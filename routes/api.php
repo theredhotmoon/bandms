@@ -2,11 +2,15 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BandController;
+use App\Http\Controllers\BandMemberController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConcertController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ReleaseController;
+use App\Http\Controllers\SocialLinkController;
+use App\Http\Controllers\TourController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\VenueController;
 use Illuminate\Http\Request;
@@ -54,6 +58,8 @@ Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index
 Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
 Route::get('/bands', [BandController::class, 'index'])->name('api.bands.index');
 Route::get('/bands/{band}', [BandController::class, 'show'])->name('api.bands.show');
+Route::get('/bands/{band}/members', [BandMemberController::class, 'index'])->name('api.bands.members.index');
+Route::get('/bands/{band}/social-links', [SocialLinkController::class, 'index'])->name('api.bands.social-links.index');
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
 
@@ -66,6 +72,12 @@ Route::get('/posts/{post}', [PostController::class, 'show'])->name('api.posts.sh
 
 Route::get('/photos', [PhotoController::class, 'index'])->name('api.photos.index');
 Route::get('/photos/{photo}', [PhotoController::class, 'show'])->name('api.photos.show');
+
+Route::get('/releases', [ReleaseController::class, 'index'])->name('api.releases.index');
+Route::get('/releases/{release}', [ReleaseController::class, 'show'])->name('api.releases.show');
+
+Route::get('/tours', [TourController::class, 'index'])->name('api.tours.index');
+Route::get('/tours/{tour}', [TourController::class, 'show'])->name('api.tours.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -83,6 +95,14 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/bands', [BandController::class, 'store'])->name('api.bands.store');
     Route::put('/bands/{band}', [BandController::class, 'update'])->name('api.bands.update');
     Route::delete('/bands/{band}', [BandController::class, 'destroy'])->name('api.bands.destroy');
+
+    Route::post('/bands/{band}/members', [BandMemberController::class, 'store'])->name('api.bands.members.store');
+    Route::put('/bands/{band}/members/{member}', [BandMemberController::class, 'update'])->name('api.bands.members.update');
+    Route::delete('/bands/{band}/members/{member}', [BandMemberController::class, 'destroy'])->name('api.bands.members.destroy');
+
+    Route::post('/bands/{band}/social-links', [SocialLinkController::class, 'store'])->name('api.bands.social-links.store');
+    Route::put('/bands/{band}/social-links/{link}', [SocialLinkController::class, 'update'])->name('api.bands.social-links.update');
+    Route::delete('/bands/{band}/social-links/{link}', [SocialLinkController::class, 'destroy'])->name('api.bands.social-links.destroy');
 
     Route::post('/concerts', [ConcertController::class, 'store'])->name('api.concerts.store');
     Route::put('/concerts/{concert}', [ConcertController::class, 'update'])->name('api.concerts.update');
@@ -103,4 +123,12 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/photos', [PhotoController::class, 'store'])->name('api.photos.store');
     Route::put('/photos/{photo}', [PhotoController::class, 'update'])->name('api.photos.update');
     Route::delete('/photos/{photo}', [PhotoController::class, 'destroy'])->name('api.photos.destroy');
+
+    Route::post('/releases', [ReleaseController::class, 'store'])->name('api.releases.store');
+    Route::put('/releases/{release}', [ReleaseController::class, 'update'])->name('api.releases.update');
+    Route::delete('/releases/{release}', [ReleaseController::class, 'destroy'])->name('api.releases.destroy');
+
+    Route::post('/tours', [TourController::class, 'store'])->name('api.tours.store');
+    Route::put('/tours/{tour}', [TourController::class, 'update'])->name('api.tours.update');
+    Route::delete('/tours/{tour}', [TourController::class, 'destroy'])->name('api.tours.destroy');
 });

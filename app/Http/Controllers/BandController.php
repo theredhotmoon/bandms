@@ -20,22 +20,22 @@ class BandController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('bands')],
+            'bio'  => ['nullable', 'string'],
         ]);
 
-        $band = Band::create($data);
-
-        return new BandResource($band);
+        return new BandResource(Band::create($data));
     }
 
     public function show(Band $band): BandResource
     {
-        return new BandResource($band);
+        return new BandResource($band->load('members'));
     }
 
     public function update(Request $request, Band $band): BandResource
     {
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('bands')->ignore($band)],
+            'bio'  => ['nullable', 'string'],
         ]);
 
         $band->update($data);

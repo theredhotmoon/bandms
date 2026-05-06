@@ -35,4 +35,9 @@ class Concert extends Model
     {
         return $this->hasMany(Photo::class);
     }
+
+    public function tours(): BelongsToMany
+    {
+        return $this->belongsToMany(Tour::class, 'concert_tour');
+    }
 }

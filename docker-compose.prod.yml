@@ -1,7 +1,7 @@
 services:
   app:
-    image: '${DOCKER_IMAGE:-movesetters-service/app}:${APP_VERSION:-latest}'
-    container_name: movesetters-app
+    image: '${DOCKER_IMAGE:-bandms-service/app}:${APP_VERSION:-latest}'
+    container_name: bandms-app
     restart: unless-stopped
     ports:
       - '${APP_PORT:-80}:80'
@@ -24,7 +24,7 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - movesetters
+      - bandms
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/api/health"]
       interval: 30s
@@ -34,7 +34,7 @@ services:
 
   mysql:
     image: 'mysql:8.4'
-    container_name: movesetters-mysql
+    container_name: bandms-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
@@ -43,9 +43,9 @@ services:
       MYSQL_USER: '${DB_USERNAME}'
       MYSQL_PASSWORD: '${DB_PASSWORD}'
     volumes:
-      - 'movesetters-mysql-data:/var/lib/mysql'
+      - 'bandms-mysql-data:/var/lib/mysql'
     networks:
-      - movesetters
+      - bandms
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
       retries: 5
@@ -54,9 +54,9 @@ services:
       start_period: 30s
 
 networks:
-  movesetters:
+  bandms:
     driver: bridge
 
 volumes:
-  movesetters-mysql-data:
+  bandms-mysql-data:
     driver: local

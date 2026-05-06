@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────
-#  Movesetters Service — Dev helpers
+#  BandMS Service — Dev helpers
 # ──────────────────────────────────────────────
 
 SAIL = ./vendor/bin/sail
@@ -35,7 +35,7 @@ ps:
 
 ## Open a shell inside the app container
 shell:
-	docker exec -it movesetters-app bash
+	docker exec -it bandms-app bash
 
 ## Tail all container logs
 logs:
@@ -43,23 +43,23 @@ logs:
 
 ## Run database migrations
 migrate:
-	docker exec movesetters-app php artisan migrate
+	docker exec bandms-app php artisan migrate
 
 ## Drop all tables and re-run all migrations
 fresh:
-	docker exec movesetters-app php artisan migrate:fresh --seed
+	docker exec bandms-app php artisan migrate:fresh --seed
 
 ## Run seeders
 seed:
-	docker exec movesetters-app php artisan db:seed
+	docker exec bandms-app php artisan db:seed
 
 ## Install Passport keys & clients (run once after migrate)
 passport:
-	docker exec movesetters-app php artisan passport:install
+	docker exec bandms-app php artisan passport:install
 
 ## Run the test suite
 test:
-	docker exec movesetters-app php artisan test
+	docker exec bandms-app php artisan test
 
 ## Check the health endpoint
 health:
