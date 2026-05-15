@@ -1,0 +1,91 @@
+.btn-add-primary {
+  padding: 0.4rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #4338ca;
+  border: none;
+  color: #fff;
+  transition: background 120ms;
+}
+.btn-add-primary:hover { background: #4f46e5; }
+
+.table-card {
+  border-radius: 0.75rem;
+  border: 1px solid #1e1c4a;
+  background: #0b0b20;
+  overflow: hidden;
+}
+
+.th {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #334155;
+}
+
+.td {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+
+.table-row {
+  border-bottom: 1px solid #13132e;
+  transition: background 100ms;
+}
+.table-row:last-child { border-bottom: none; }
+.table-row:hover { background: #0f0f28; }
+
+.btn-edit {
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #252350;
+  color: #818cf8;
+  margin-right: 0.375rem;
+  transition: background 120ms, border-color 120ms;
+}
+.btn-edit:hover { background: #1e1b4b; border-color: #4338ca; }
+
+.btn-delete {
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #2d1212;
+  color: #f87171;
+  transition: background 120ms;
+}
+.btn-delete:hover { background: #2d1010; }
+
+.empty-state {
+  padding: 3.5rem 1rem;
+  text-align: center;
+  color: #334155;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.filter-select {
+  padding: 0.3125rem 0.625rem;
+  background: #0d0d22;
+  border: 1px solid #1e1c4a;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 150ms;
+  white-space: nowrap;
+}
+.filter-select:focus { border-color: #4338ca; color: #e2e8f0; }

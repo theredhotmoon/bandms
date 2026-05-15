@@ -1,0 +1,77 @@
+services:
+
+  # ─── MySQL 8.4 ────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    container_name: bandms_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE:      ${DB_DATABASE:-bandms}
+      MYSQL_USER:          ${DB_USERNAME:-bandms}
+      MYSQL_PASSWORD:      ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - bandms
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── Laravel API (PHP-FPM + Nginx in one container) ───────────────────────
+  backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bandms_backend
+    restart: unless-stopped
+    environment:
+      APP_NAME:    "BandMS"
+      APP_ENV:     production
+      APP_DEBUG:   "false"
+      APP_KEY:     ${APP_KEY}
+      APP_URL:     ${APP_URL:-http://localhost}
+
+      DB_CONNECTION: mysql
+      DB_HOST:       mysql
+      DB_PORT:       3306
+      DB_DATABASE:   ${DB_DATABASE:-bandms}
+      DB_USERNAME:   ${DB_USERNAME:-bandms}
+      DB_PASSWORD:   ${DB_PASSWORD:-secret}
+
+      LOG_CHANNEL:      stderr
+      LOG_LEVEL:        warning
+      CACHE_DRIVER:     file
+      SESSION_DRIVER:   file
+      QUEUE_CONNECTION: sync
+    volumes:
+      - backend_storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - bandms
+
+  # ─── Vue 3 SPA (Nginx, proxies /api/* → backend) ─────────────────────────
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: bandms_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - bandms
+
+volumes:
+  mysql_data:
+  backend_storage:
+
+networks:
+  bandms:
+    driver: bridge

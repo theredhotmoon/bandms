@@ -1,0 +1,140 @@
+BandMS — Feature Recommendations
+Based on research into how bands promote themselves in 2025-2026.
+==================================================================
+
+PRIORITY 1 — CRITICAL GAPS
+----------------------------
+
+1. Band Profile & Members
+   - Extend Band model: bio, genre, founded_year, country, city
+   - New entity: BandMember — name, role/instrument, photo, bio, sort_order
+   - Needed to build any "About" page
+
+2. Discography / Releases
+   - New entity: Release — title, type (album/EP/single/compilation),
+     release_date, cover_image, description
+   - Streaming links per release: Spotify, Apple Music, Bandcamp, YouTube URL
+   - Optional: Track entity — title, duration, lyrics, sort_order, release_id
+   - Core music content — the #1 priority for any band website
+
+3. Band-Level Social Media Links
+   - New entity: SocialLink — band_id, platform, url
+   - Platforms: spotify, instagram, facebook, youtube, tiktok,
+     bandcamp, soundcloud, twitter, website
+   - Currently only individual posts have links; bands have none
+
+
+PRIORITY 2 — HIGH VALUE
+------------------------
+
+4. Tours (grouping concerts)
+   - New entity: Tour — name, description, image, start_date, end_date
+   - Add optional tour_id to Concert
+   - Useful for promotion ("European Tour 2026 — 12 dates")
+
+5. Setlists (per concert)
+   - New entity: Song — title, duration, release_id (optional)
+   - New pivot: ConcertSong — concert_id, song_id, sort_order, note
+   - Very popular with fans (see setlist.fm)
+
+6. Newsletter Subscribers
+   - New entity: Subscriber — email, name (optional), subscribed_at,
+     confirmed (bool, double opt-in), source
+   - Email list = the only audience a band truly owns
+   - Platform-independent unlike social media
+
+
+PRIORITY 3 — MEDIUM VALUE
+---------------------------
+
+7. Press Quotes / Reviews
+   - New entity: PressQuote — publication, author, quote, url,
+     published_at, featured (bool)
+   - Used in EPK and booking pitches for credibility
+
+8. Booking Requests
+   - New entity: BookingRequest — name, email, venue_name,
+     requested_date, message, status (pending/replied/declined)
+   - Structured way for promoters to reach out
+   - Add google calendar integration for members so that we can automate the whole thing. 
+
+
+EPK ANALYSIS — from "The 2026 Musician EPK Checklist" (aboutmysound.com)
+--------------------------------------------------------------------------
+Source: https://aboutmysound.com/blog-posts/the-2026-musician-epk-checklist-what-booking-agents-actually-want-to-see/
+
+What booking agents want in an EPK and BandMS coverage status:
+
+ALREADY COVERED:
+  ✅ Artist biography         — rich HTML band bio + member bios
+  ✅ Visual assets            — Photo entity with venue/concert association
+  ✅ Streaming/audio links    — Release links (Spotify, Apple Music, Bandcamp, YouTube)
+  ✅ Social media links       — Band-level + member-level (9 platforms)
+  ✅ Concert history          — Concerts + Tours with venue details
+  ✅ Band member info         — Members with roles, photos, join/quit dates
+
+MISSING / GAPS:
+
+A. Bio variants (tiny effort, high impact)
+   - Article requires THREE formats: elevator pitch (1 sentence), short bio
+     (1 paragraph), full bio (2–3 paragraphs)
+   - BandMS has a single `bio` field — add: elevator_pitch, bio_short, bio_long
+     to Band model; booking agents copy-paste these directly
+
+B. Booking contact fields (tiny effort, high impact)
+   - Agents want a dedicated booking_email clearly visible, not buried in socials
+   - Add: booking_email, booking_contact_name to Band model
+
+C. Public EPK page — /epk (medium effort, critical)
+   - The entire point of an EPK is a single shareable URL
+   - BandMS data is all there but no public press-facing layout exists
+   - Need: /epk route that surfaces bio variants, photos, streaming links,
+     social proof, contact info in one clean page
+
+D. Live video URL (tiny effort, high impact)
+   - Article says live performance video is "non-negotiable"
+   - Add: video_url field to Concert entity (or a dedicated media section)
+   - Currently BandMS has no video embed capability anywhere
+
+E. Press mentions module (medium effort, high impact)
+   - Article explicitly lists press quotes, reviews, streaming stats as EPK content
+   - Already in recommendations as item #7 (PressQuote entity) — confirmed priority
+
+F. Technical rider section (small effort, medium impact)
+   - Stage plot + rider document "signals professionalism to sound engineers"
+   - Add to Band: stage_plot_url, rider_url, tech_notes fields
+
+G. Photo type/categorization (tiny effort, medium impact)
+   - Article distinguishes: landscape banners, portrait/social, live performance shots
+   - Add: type field to Photo (promo / live / headshot / other)
+   - Allows EPK page to pull the right photos automatically
+
+SUGGESTED IMPLEMENTATION ORDER:
+  1. booking_email + bio variants on Band          (tiny, immediate EPK value)
+  2. Photo type field                              (tiny, enables EPK photo curation)
+  3. Live video URL on Concert                     (tiny, fills biggest EPK gap)
+  4. Press mentions module (see item #7 above)     (medium, high credibility value)
+  5. Technical rider on Band                       (small, professionalism signal)
+  6. Public EPK page /epk                          (medium, ties everything together)
+
+
+EFFORT vs. IMPACT SUMMARY
+---------------------------
+Band bio + social links    | Low effort    | Very high impact
+Band members               | Low effort    | High impact
+Releases / discography     | Medium effort | Very high impact
+Newsletter subscribers     | Low effort    | Very high impact
+Tour grouping              | Low effort    | Medium impact
+Setlists + songs           | Medium effort | High impact
+Press quotes               | Low effort    | Medium impact
+Booking requests           | Low effort    | High impact
+
+
+SOURCES
+--------
+- Music Ally: https://musically.com/2025/11/18/music-marketing-strategies-for-2026-eight-key-takeaways/
+- DIY Musician: https://diymusician.cdbaby.com/music-marketing/music-marketing-in-2026/
+- EPK Checklist 2026: https://aboutmysound.com/blog-posts/the-2026-musician-epk-checklist-what-booking-agents-actually-want-to-see/
+- Bandzoogle EPK guide: https://bandzoogle.com/blog/the-8-things-that-should-be-in-every-band-s-digital-press-kit
+- Email marketing for musicians: https://dittomusic.com/en/blog/email-marketing-for-musicians-how-to-build-a-mailing-list
+- Band website examples: https://10web.io/blog/musician-website-examples/

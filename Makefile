@@ -1,66 +1,78 @@
-# ──────────────────────────────────────────────
-#  BandMS Service — Dev helpers
-# ──────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+#  BandMS — Docker shortcuts
+#  Usage: make <target>
+# ──────────────────────────────────────────────────────────────────────────────
 
-SAIL = ./vendor/bin/sail
-DOCKER_COMPOSE = docker compose -f compose.yaml
-WWWUSER ?= 1000
-WWWGROUP ?= 1000
+DC      = docker compose
+BACKEND = bandms_backend
 
-.PHONY: up down restart shell logs migrate fresh seed passport test build ps
+.PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql \
+        shell migrate fresh seed passport test health
 
-## Start all containers in the background
+## Start all services (detached)
 up:
-	WWWUSER=$(WWWUSER) WWWGROUP=$(WWWGROUP) $(DOCKER_COMPOSE) up -d
+	$(DC) up -d
 
-## Stop all containers
+## Stop all services
 down:
-	WWWUSER=$(WWWUSER) WWWGROUP=$(WWWGROUP) $(DOCKER_COMPOSE) down
+	$(DC) down
 
-## Stop containers and remove volumes (fresh DB)
-reset:
-	WWWUSER=$(WWWUSER) WWWGROUP=$(WWWGROUP) $(DOCKER_COMPOSE) down -v
-
-## Restart all containers
-restart:
-	WWWUSER=$(WWWUSER) WWWGROUP=$(WWWGROUP) $(DOCKER_COMPOSE) restart
-
-## Rebuild Docker image
+## Build images without starting
 build:
-	WWWUSER=$(WWWUSER) WWWGROUP=$(WWWGROUP) $(DOCKER_COMPOSE) up -d --build
+	$(DC) build
 
-## Show running containers
-ps:
-	docker compose -f compose.yaml ps
+## Stop → rebuild images → start
+rebuild:
+	$(DC) down
+	$(DC) build --no-cache
+	$(DC) up -d
 
-## Open a shell inside the app container
-shell:
-	docker exec -it bandms-app bash
+## Stop and remove volumes (wipes DB and stored files — irreversible)
+reset:
+	$(DC) down -v
 
-## Tail all container logs
+## Tail logs from all services
 logs:
-	$(DOCKER_COMPOSE) logs -f
+	$(DC) logs -f
 
-## Run database migrations
+logs-backend:
+	$(DC) logs -f backend
+
+logs-frontend:
+	$(DC) logs -f frontend
+
+logs-mysql:
+	$(DC) logs -f mysql
+
+## Open a shell in the backend container
+shell:
+	docker exec -it $(BACKEND) sh
+
+## Run pending migrations
 migrate:
-	docker exec bandms-app php artisan migrate
+	docker exec $(BACKEND) php artisan migrate --force
 
-## Drop all tables and re-run all migrations
+## Drop all tables, re-migrate and seed
 fresh:
-	docker exec bandms-app php artisan migrate:fresh --seed
+	docker exec $(BACKEND) php artisan migrate:fresh --seed --force
 
-## Run seeders
+## Run seeders only
 seed:
-	docker exec bandms-app php artisan db:seed
+	docker exec $(BACKEND) php artisan db:seed --force
 
-## Install Passport keys & clients (run once after migrate)
+## Install Passport keys & default clients (run once on a new DB)
 passport:
-	docker exec bandms-app php artisan passport:install
+	docker exec $(BACKEND) php artisan passport:install --no-interaction
+
+## Clear and rebuild all caches
+optimize:
+	docker exec $(BACKEND) php artisan optimize:clear
+	docker exec $(BACKEND) php artisan optimize
 
 ## Run the test suite
 test:
-	docker exec bandms-app php artisan test
+	docker exec $(BACKEND) php artisan test
 
 ## Check the health endpoint
 health:
-	curl -s http://localhost:8080/api/health | python3 -m json.tool
+	curl -s http://localhost/api/health | python3 -m json.tool
