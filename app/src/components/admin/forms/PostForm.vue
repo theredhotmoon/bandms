@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
+import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import type { Post, PostPayload, PostLinkType } from '@/types/post'
 import type { Tag } from '@/types/tag'
 import type { Concert } from '@/types/concert'
@@ -25,8 +26,9 @@ interface LinkRow { type: PostLinkType; url: string; label: string }
 
 const form = reactive({
   title: '',
+  intro: '',
   content: '',
-  image: '',
+  image: null as string | null,
   published_at: '',
   tag_ids: [] as number[],
   concert_ids: [] as number[],
@@ -38,8 +40,9 @@ const form = reactive({
 
 watch(() => props.initial, (val) => {
   form.title = val?.title ?? ''
+  form.intro = val?.intro ?? ''
   form.content = val?.content ?? ''
-  form.image = val?.image ?? ''
+  form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
@@ -57,6 +60,7 @@ const linkTypes: PostLinkType[] = ['normal', 'youtube', 'instagram', 'facebook']
 function submit() {
   emit('submit', {
     title: form.title,
+    intro: form.intro || null,
     content: form.content || null,
     image: form.image || null,
     published_at: form.published_at || null,
@@ -78,21 +82,24 @@ function submit() {
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
     </div>
     <div>
+      <label class="field-label">Intro</label>
+      <textarea v-model="form.intro" class="field-input" rows="2" placeholder="Short introductory text shown in previews…" />
+      <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
+    </div>
+    <div>
       <label class="field-label">Content</label>
       <textarea v-model="form.content" class="field-input" rows="5" placeholder="Post content…" />
       <p v-if="errors?.content" class="field-error">{{ errors.content[0] }}</p>
     </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="field-label">Image URL</label>
-        <input v-model="form.image" class="field-input" placeholder="https://…" />
-        <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">Publish at</label>
-        <input v-model="form.published_at" type="datetime-local" class="field-input" />
-        <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
-      </div>
+    <div>
+      <label class="field-label">Image</label>
+      <SingleImageUpload v-model="form.image" />
+      <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
+    </div>
+    <div>
+      <label class="field-label">Publish at</label>
+      <input v-model="form.published_at" type="datetime-local" class="field-input" />
+      <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
     </div>
 
     <EntityRelationsPanel

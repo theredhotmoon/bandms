@@ -38,6 +38,7 @@ class PostController extends Controller
     {
         $data = $request->validate([
             'title'          => 'required|string|max:255',
+            'intro'          => 'nullable|string|max:1000',
             'content'        => 'nullable|string',
             'image'          => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'   => 'nullable|date',
@@ -60,6 +61,7 @@ class PostController extends Controller
         $post = Post::create([
             'title'        => $data['title'],
             'slug'         => Post::generateSlug($data['title']),
+            'intro'        => $data['intro'] ?? null,
             'content'      => $data['content'] ?? null,
             'image'        => $data['image'] ?? null,
             'published_at' => $data['published_at'] ?? null,
@@ -89,6 +91,7 @@ class PostController extends Controller
     {
         $data = $request->validate([
             'title'          => 'sometimes|required|string|max:255',
+            'intro'          => 'nullable|string|max:1000',
             'content'        => 'nullable|string',
             'image'          => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'   => 'nullable|date',

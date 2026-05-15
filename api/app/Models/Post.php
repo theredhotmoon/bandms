@@ -12,7 +12,7 @@ class Post extends Model
 {
     use HasFactory, HasSlug;
 
-    protected $fillable = ['title', 'slug', 'content', 'image', 'published_at'];
+    protected $fillable = ['title', 'slug', 'intro', 'content', 'image', 'published_at'];
 
     protected function casts(): array
     {

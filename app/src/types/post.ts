@@ -26,6 +26,7 @@ export interface PostSummary {
   id: number
   title: string
   slug: string
+  intro: string | null
   excerpt: string
   published_at: string | null
   tags: Tag[]
@@ -46,6 +47,7 @@ export interface Post extends PostSummary {
 
 export interface PostPayload {
   title: string
+  intro?: string | null
   content?: string | null
   image?: string | null
   published_at?: string | null

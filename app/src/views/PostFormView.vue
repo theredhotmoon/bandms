@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePost, usePosts } from '@/composables/usePosts'
 import { useTags } from '@/composables/useTags'
+import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import type { Post, PostLinkPayload, PostLinkType } from '@/types/post'
 
 const route  = useRoute()
@@ -20,6 +21,7 @@ const { query: tagsQuery } = useTags()
 
 // Form state
 const title       = ref('')
+const intro       = ref('')
 const content     = ref('')
 const image       = ref<string | null>(null)
 const publishedAt = ref('')
@@ -38,34 +40,13 @@ const apiError = computed(() => (create.error.value ?? update.error.value)?.mess
 watch(postQuery.data, (post: Post | undefined) => {
   if (!post) return
   title.value       = post.title
+  intro.value       = post.intro ?? ''
   content.value     = post.content ?? ''
   image.value       = post.image
   publishedAt.value = post.published_at ? post.published_at.slice(0, 16) : ''
   tagIds.value      = post.tags.map((t) => t.id)
   links.value       = post.links.map(({ type, url, label }) => ({ type, url, label }))
 }, { immediate: true })
-
-// Clipboard image paste
-function handlePaste(e: ClipboardEvent) {
-  const items = e.clipboardData?.items
-  if (!items) return
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      const file = item.getAsFile()
-      if (!file) continue
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        image.value = ev.target?.result as string
-      }
-      reader.readAsDataURL(file)
-      e.preventDefault()
-      break
-    }
-  }
-}
-
-onMounted(() => document.addEventListener('paste', handlePaste))
-onUnmounted(() => document.removeEventListener('paste', handlePaste))
 
 function toggleTag(id: number) {
   const idx = tagIds.value.indexOf(id)
@@ -91,6 +72,7 @@ function removeLink(idx: number) {
 async function submit() {
   const payload = {
     title:        title.value,
+    intro:        intro.value || null,
     content:      content.value || null,
     image:        image.value,
     published_at: publishedAt.value || null,
@@ -131,6 +113,16 @@ const LINK_TYPE_LABELS: Record<PostLinkType, string> = {
       </label>
 
       <label>
+        Intro
+        <textarea
+          v-model="intro"
+          rows="2"
+          placeholder="Short introductory text shown in previews…"
+          style="display: block; width: 100%; margin-top: 0.25rem; resize: vertical; font-family: inherit;"
+        />
+      </label>
+
+      <label>
         Content
         <textarea
           v-model="content"
@@ -141,27 +133,8 @@ const LINK_TYPE_LABELS: Record<PostLinkType, string> = {
       </label>
 
       <div>
-        <p style="margin-bottom: 0.4rem;">
-          Image
-          <span style="font-size: 0.85em; opacity: 0.6;">— paste from clipboard anywhere on this page (Ctrl+V / Cmd+V)</span>
-        </p>
-        <div
-          v-if="image"
-          style="position: relative; display: inline-block;"
-        >
-          <img :src="image" alt="Post image" style="max-width: 100%; max-height: 300px; display: block; border-radius: 4px;" />
-          <button
-            style="position: absolute; top: 0.4rem; right: 0.4rem; font-size: 0.8em;"
-            type="button"
-            @click="image = null"
-          >Remove</button>
-        </div>
-        <div
-          v-else
-          style="border: 2px dashed #444; border-radius: 6px; padding: 2rem; text-align: center; opacity: 0.5;"
-        >
-          No image — paste one with Ctrl+V / Cmd+V
-        </div>
+        <p style="margin-bottom: 0.4rem;">Image</p>
+        <SingleImageUpload v-model="image" />
       </div>
 
       <label>

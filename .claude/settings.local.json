@@ -117,7 +117,8 @@
       "Bash(node -e \"const tq = require\\('C:/Projects/bandms/app/node_modules/@tanstack/vue-query'\\); console.log\\(Object.keys\\(tq\\)\\)\")",
       "Bash(sed -n '14p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
       "Bash(sed -n '32,35p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Projects\\\\bandms\\\\api\\\\database\\\\migrations\\\\\" | Where-Object { $_.Name -match \"post\" } | Select-Object Name)"
     ]
   }
 }
