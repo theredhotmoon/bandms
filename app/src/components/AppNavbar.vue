@@ -8,8 +8,8 @@ const router = useRouter()
 const mobileOpen = ref(false)
 
 const navLinks = [
+  { to: '/about',    label: 'About' },
   { to: '/concerts', label: 'Concerts' },
-  { to: '/bands',    label: 'Bands' },
   { to: '/venues',   label: 'Venues' },
   { to: '/posts',    label: 'Posts' },
   { to: '/photos',   label: 'Photos' },

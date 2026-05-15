@@ -9,7 +9,8 @@ export function useBands() {
 
   const query = useQuery<Band[]>({
     queryKey: ['bands'],
-    queryFn: fetchBands,
+    queryFn: () => fetchBands(token.value!),
+    enabled: () => !!token.value,
   })
 
   const create = useMutation({

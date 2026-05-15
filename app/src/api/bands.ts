@@ -1,11 +1,11 @@
 import type { Band, BandPayload } from '@/types/band'
-import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface BandListResponse { data: Band[] }
 interface BandResponse { data: Band }
 
-export async function fetchBands(): Promise<Band[]> {
-  const res = await fetch(`${API_BASE}/api/bands`, { headers: jsonHeaders })
+export async function fetchBands(token: string): Promise<Band[]> {
+  const res = await fetch(`${API_BASE}/api/bands`, { headers: authHeaders(token) })
   return handleResponse<BandListResponse>(res).then((r) => r.data)
 }
 

@@ -6,18 +6,18 @@ const { isLoggedIn, user } = useAuth()
 
 const sections = [
   {
+    to: '/about',
+    label: 'About',
+    description: 'Band bio, background and story',
+    color: '#a78bfa',
+    svg: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm11 0v2m0 4v2m2-4h-4',
+  },
+  {
     to: '/concerts',
     label: 'Concerts',
     description: 'Browse upcoming and past live shows',
     color: '#fb923c',
     svg: 'M8 2v4M16 2v4M3 10h18M5 4H3a2 2 0 00-2 2v14a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2h-2',
-  },
-  {
-    to: '/bands',
-    label: 'Bands',
-    description: 'Discover artists and their discographies',
-    color: '#818cf8',
-    svg: 'M9 19V6l12-3v13M9 19c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-3c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zM9 10l12-3',
   },
   {
     to: '/venues',

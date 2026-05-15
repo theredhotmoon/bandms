@@ -64,9 +64,6 @@ Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])
 Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index');
 Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
 
-Route::get('/bands', [BandController::class, 'index'])->name('api.bands.index');
-Route::get('/bands/{band}', [BandController::class, 'show'])->name('api.bands.show');
-
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
 
@@ -172,6 +169,8 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/venues/{venue}', [VenueController::class, 'update'])->name('api.venues.update');
         Route::delete('/venues/{venue}', [VenueController::class, 'destroy'])->name('api.venues.destroy');
 
+        Route::get('/bands', [BandController::class, 'index'])->name('api.bands.index');
+        Route::get('/bands/{band}', [BandController::class, 'show'])->name('api.bands.show');
         Route::post('/bands', [BandController::class, 'store'])->name('api.bands.store');
         Route::put('/bands/{band}', [BandController::class, 'update'])->name('api.bands.update');
         Route::delete('/bands/{band}', [BandController::class, 'destroy'])->name('api.bands.destroy');
