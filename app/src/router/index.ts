@@ -57,11 +57,6 @@ const router = createRouter({
       component: () => import('@/views/PostFormView.vue'),
     },
     {
-      path: '/categories',
-      name: 'categories',
-      component: () => import('@/views/CategoriesView.vue'),
-    },
-    {
       path: '/tags',
       name: 'tags',
       component: () => import('@/views/TagsView.vue'),
@@ -122,12 +117,6 @@ const router = createRouter({
       path: '/admin/posts',
       name: 'admin-posts',
       component: () => import('@/views/admin/PostsAdminView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/admin/categories',
-      name: 'admin-categories',
-      component: () => import('@/views/admin/CategoriesAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {

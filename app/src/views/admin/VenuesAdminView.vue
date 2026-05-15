@@ -22,7 +22,7 @@ const editing = ref<Venue | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
 
-const tc = useTableControls({
+const tc = useTableControls<Venue>({
   data: query.data,
   searchFn: (v, q) =>
     v.name.toLowerCase().includes(q) ||

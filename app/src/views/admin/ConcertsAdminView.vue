@@ -36,12 +36,12 @@ const today = new Date().toISOString().slice(0, 10)
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
-  if (filterWhen.value === 'upcoming') return rows.filter(c => c.date >= today)
-  if (filterWhen.value === 'past') return rows.filter(c => c.date < today)
+  if (filterWhen.value === 'upcoming') return rows.filter((c: Concert) => c.date >= today)
+  if (filterWhen.value === 'past') return rows.filter((c: Concert) => c.date < today)
   return rows
 })
 
-const tc = useTableControls({
+const tc = useTableControls<Concert>({
   data: filteredData,
   searchFn: (c, q) =>
     c.date.includes(q) ||

@@ -16,7 +16,6 @@ class PostResource extends JsonResource
             'content'      => $this->content,
             'image'        => $this->image,
             'published_at' => $this->published_at,
-            'categories'   => CategoryResource::collection($this->whenLoaded('categories')),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'links'        => PostLinkResource::collection($this->whenLoaded('links')),
             'concerts'     => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [

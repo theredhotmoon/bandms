@@ -13,7 +13,6 @@ const navLinks = [
   { to: '/venues',   label: 'Venues' },
   { to: '/posts',    label: 'Posts' },
   { to: '/photos',   label: 'Photos' },
-  { to: '/categories', label: 'Categories' },
   { to: '/tags',     label: 'Tags' },
 ]
 

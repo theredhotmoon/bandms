@@ -22,7 +22,7 @@ import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-rel
 
 const { query, create, update, remove } = usePressReleases()
 
-const tc = useTableControls({
+const tc = useTableControls<PressReleaseSummary>({
   data: query.data,
   searchFn: (pr, q) =>
     pr.url.toLowerCase().includes(q) ||

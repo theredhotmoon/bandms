@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { Ref } from 'vue'
 import { fetchAlbum, fetchAlbums, updateAlbum, deleteAlbum, reorderAlbumPhotos } from '@/api/albums'
-import type { AlbumPayload } from '@/types/album'
+import type { Album, AlbumPayload } from '@/types/album'
 import { useAuth } from './useAuth'
 
 export function useAlbums() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<Album[]>({
     queryKey: ['albums'],
     queryFn: fetchAlbums,
   })
@@ -34,7 +34,7 @@ export function useAlbums() {
 }
 
 export function useAlbum(id: Ref<number | null>) {
-  return useQuery({
+  return useQuery<Album>({
     queryKey: ['albums', id],
     queryFn: () => fetchAlbum(id.value!),
     enabled: () => id.value !== null,

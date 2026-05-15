@@ -4,7 +4,7 @@ import {
   uploadTechRider, deleteTechRider,
   uploadStagePlot, deleteStagePlot,
 } from '@/api/bandProfile'
-import type { BandProfilePayload } from '@/types/bandProfile'
+import type { BandProfile, BandProfilePayload } from '@/types/bandProfile'
 import { useAuth } from './useAuth'
 
 export function useBandProfile() {
@@ -12,7 +12,7 @@ export function useBandProfile() {
   const queryClient = useQueryClient()
   const qk = ['band-profile']
 
-  const query = useQuery({ queryKey: qk, queryFn: fetchBandProfile })
+  const query = useQuery<BandProfile>({ queryKey: qk, queryFn: fetchBandProfile })
 
   const update = useMutation({
     mutationFn: (payload: BandProfilePayload) => updateBandProfile(token.value!, payload),

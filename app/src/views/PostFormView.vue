@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCategories } from '@/composables/useCategories'
 import { usePost, usePosts } from '@/composables/usePosts'
 import { useTags } from '@/composables/useTags'
-import type { PostLinkPayload, PostLinkType } from '@/types/post'
+import type { Post, PostLinkPayload, PostLinkType } from '@/types/post'
 
 const route  = useRoute()
 const router = useRouter()
@@ -17,7 +16,6 @@ const isEdit = computed(() => postId.value !== null)
 
 const { create, update } = usePosts()
 const postQuery = usePost(postId)
-const { query: categoriesQuery } = useCategories()
 const { query: tagsQuery } = useTags()
 
 // Form state
@@ -25,7 +23,6 @@ const title       = ref('')
 const content     = ref('')
 const image       = ref<string | null>(null)
 const publishedAt = ref('')
-const categoryIds = ref<number[]>([])
 const tagIds      = ref<number[]>([])
 const links       = ref<PostLinkPayload[]>([])
 
@@ -38,13 +35,12 @@ const saving  = computed(() => create.isPending.value || update.isPending.value)
 const apiError = computed(() => (create.error.value ?? update.error.value)?.message ?? null)
 
 // Populate form when editing
-watch(postQuery.data, (post) => {
+watch(postQuery.data, (post: Post | undefined) => {
   if (!post) return
   title.value       = post.title
   content.value     = post.content ?? ''
   image.value       = post.image
   publishedAt.value = post.published_at ? post.published_at.slice(0, 16) : ''
-  categoryIds.value = post.categories.map((c) => c.id)
   tagIds.value      = post.tags.map((t) => t.id)
   links.value       = post.links.map(({ type, url, label }) => ({ type, url, label }))
 }, { immediate: true })
@@ -70,12 +66,6 @@ function handlePaste(e: ClipboardEvent) {
 
 onMounted(() => document.addEventListener('paste', handlePaste))
 onUnmounted(() => document.removeEventListener('paste', handlePaste))
-
-function toggleCategory(id: number) {
-  const idx = categoryIds.value.indexOf(id)
-  if (idx === -1) categoryIds.value.push(id)
-  else categoryIds.value.splice(idx, 1)
-}
 
 function toggleTag(id: number) {
   const idx = tagIds.value.indexOf(id)
@@ -104,7 +94,6 @@ async function submit() {
     content:      content.value || null,
     image:        image.value,
     published_at: publishedAt.value || null,
-    category_ids: categoryIds.value,
     tag_ids:      tagIds.value,
     links:        links.value,
   }
@@ -184,24 +173,6 @@ const LINK_TYPE_LABELS: Record<PostLinkType, string> = {
         />
         <small style="opacity: 0.6;">Leave blank to save as draft.</small>
       </label>
-
-      <div v-if="categoriesQuery.data.value?.length">
-        <p style="margin-bottom: 0.4rem;">Categories</p>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-          <label
-            v-for="cat in categoriesQuery.data.value"
-            :key="cat.id"
-            style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;"
-          >
-            <input
-              type="checkbox"
-              :checked="categoryIds.includes(cat.id)"
-              @change="toggleCategory(cat.id)"
-            />
-            {{ cat.name }}
-          </label>
-        </div>
-      </div>
 
       <div v-if="tagsQuery.data.value?.length">
         <p style="margin-bottom: 0.4rem;">Tags</p>

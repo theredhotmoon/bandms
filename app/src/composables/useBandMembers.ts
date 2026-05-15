@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { createBandMember, deleteBandMember, fetchBandMembers, updateBandMember } from '@/api/bandMembers'
-import type { BandMemberPayload } from '@/types/bandMember'
+import {
+  createBandMember,
+  deleteBandMember,
+  fetchBandMembers,
+  reorderBandMembers,
+  updateBandMember,
+  uploadMemberPhoto,
+} from '@/api/bandMembers'
+import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 import { useAuth } from './useAuth'
 
 export function useBandMembers() {
@@ -8,7 +15,7 @@ export function useBandMembers() {
   const queryClient = useQueryClient()
   const qk = ['band-profile-members']
 
-  const query = useQuery({ queryKey: qk, queryFn: fetchBandMembers })
+  const query = useQuery<BandMember[]>({ queryKey: qk, queryFn: fetchBandMembers })
 
   const create = useMutation({
     mutationFn: (payload: BandMemberPayload) => createBandMember(token.value!, payload),
@@ -26,5 +33,16 @@ export function useBandMembers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
   })
 
-  return { query, create, update, remove }
+  const uploadPhoto = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) =>
+      uploadMemberPhoto(token.value!, id, file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
+  })
+
+  const reorder = useMutation({
+    mutationFn: (ids: number[]) => reorderBandMembers(token.value!, ids),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
+  })
+
+  return { query, create, update, remove, uploadPhoto, reorder }
 }

@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createTour, deleteTour, fetchTours, updateTour } from '@/api/tours'
-import type { TourPayload } from '@/types/tour'
+import type { TourSummary, TourPayload } from '@/types/tour'
 import { useAuth } from './useAuth'
 
 export function useTours() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<TourSummary[]>({
     queryKey: ['tours'],
     queryFn: fetchTours,
   })

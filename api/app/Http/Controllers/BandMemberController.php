@@ -8,6 +8,7 @@ use App\Models\BandProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
 
 class BandMemberController extends Controller
 {
@@ -113,6 +114,43 @@ class BandMemberController extends Controller
         $member->load(['socialLinks', 'instruments']);
 
         return new BandMemberResource($member);
+    }
+
+    public function uploadPhoto(Request $request, BandMember $member): BandMemberResource
+    {
+        $request->validate(['photo' => 'required|image|max:4096']);
+
+        // Delete previous locally-stored photo
+        if ($member->photo) {
+            $localPrefix = Storage::disk('public')->url('');
+            if (str_starts_with($member->photo, $localPrefix)) {
+                $storedPath = substr($member->photo, strlen($localPrefix));
+                Storage::disk('public')->delete($storedPath);
+            }
+        }
+
+        $path = $request->file('photo')->store('members', 'public');
+        $member->update(['photo' => Storage::disk('public')->url($path)]);
+        $member->load(['socialLinks', 'instruments']);
+
+        return new BandMemberResource($member);
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids'   => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $profileId = $this->profile()->id;
+        foreach ($data['ids'] as $index => $id) {
+            BandMember::where('id', $id)
+                ->where('profile_id', $profileId)
+                ->update(['sort_order' => $index]);
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function destroy(BandMember $member): JsonResponse

@@ -9,7 +9,7 @@ import {
   deleteMemberSetup,
   fetchAllMemberSetups,
 } from '@/api/bandMemberSetups'
-import type { BandMemberSetupPayload } from '@/types/bandMemberSetup'
+import type { BandMemberSetup, BandMemberSetupSummary, BandMemberSetupPayload, MemberSetupGroup } from '@/types/bandMemberSetup'
 import { useAuth } from './useAuth'
 
 /** List of setups (summaries) for a single member. */
@@ -19,7 +19,7 @@ export function useMemberSetups(memberId: Ref<number | null>) {
 
   const qk = computed(() => ['member-setups', memberId.value])
 
-  const list = useQuery({
+  const list = useQuery<BandMemberSetupSummary[]>({
     queryKey: qk,
     queryFn: () => fetchMemberSetups(memberId.value!),
     enabled: computed(() => memberId.value !== null),
@@ -50,7 +50,7 @@ export function useMemberSetup(
 
   const qk = computed(() => ['member-setup', memberId.value, setupId.value])
 
-  const query = useQuery({
+  const query = useQuery<BandMemberSetup>({
     queryKey: qk,
     queryFn: () => fetchMemberSetup(memberId.value!, setupId.value!),
     enabled: computed(() => memberId.value !== null && setupId.value !== null),
@@ -59,8 +59,7 @@ export function useMemberSetup(
   const update = useMutation({
     mutationFn: (payload: BandMemberSetupPayload) =>
       updateMemberSetup(token.value!, memberId.value!, setupId.value!, payload),
-    onSuccess: (updated) => {
-      // Update the detail cache and invalidate the list
+    onSuccess: (updated: BandMemberSetup) => {
       queryClient.setQueryData(qk.value, updated)
       queryClient.invalidateQueries({ queryKey: ['member-setups', memberId.value] })
     },
@@ -71,7 +70,7 @@ export function useMemberSetup(
 
 /** All setups for all members — used in the tech-rider import panel. */
 export function useAllMemberSetups() {
-  return useQuery({
+  return useQuery<MemberSetupGroup[]>({
     queryKey: ['all-member-setups'],
     queryFn: fetchAllMemberSetups,
   })

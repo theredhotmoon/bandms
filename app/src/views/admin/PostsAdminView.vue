@@ -9,7 +9,6 @@ import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { usePosts, usePost } from '@/composables/usePosts'
-import { useCategories } from '@/composables/useCategories'
 import { useTags } from '@/composables/useTags'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAlbums } from '@/composables/useAlbums'
@@ -17,10 +16,9 @@ import { useReleases } from '@/composables/useReleases'
 import { useTours } from '@/composables/useTours'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
-import type { PostPayload } from '@/types/post'
+import type { PostSummary, PostPayload } from '@/types/post'
 
 const { query, create, update, remove } = usePosts()
-const { query: categoriesQ } = useCategories()
 const { query: tagsQ }       = useTags()
 const { query: concertsQ }   = useConcerts()
 const { query: albumsQ }     = useAlbums()
@@ -33,27 +31,21 @@ const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
 const isCreating = ref(false)
 const filterStatus = ref<'' | 'published' | 'draft'>('')
-const filterCategoryId = ref<number | ''>('')
 
 const editQuery = usePost(editingId)
 const formPost = computed(() => isCreating.value ? null : editQuery.data.value ?? null)
 
 const filteredData = computed(() => {
   let rows = query.data.value ?? []
-  if (filterStatus.value === 'published') rows = rows.filter(p => !!p.published_at)
-  if (filterStatus.value === 'draft') rows = rows.filter(p => !p.published_at)
-  if (filterCategoryId.value !== '') {
-    const id = Number(filterCategoryId.value)
-    rows = rows.filter(p => p.categories?.some(c => c.id === id))
-  }
+  if (filterStatus.value === 'published') rows = rows.filter((p: PostSummary) => !!p.published_at)
+  if (filterStatus.value === 'draft') rows = rows.filter((p: PostSummary) => !p.published_at)
   return rows
 })
 
-const tc = useTableControls({
+const tc = useTableControls<PostSummary>({
   data: filteredData,
   searchFn: (p, q) =>
     p.title.toLowerCase().includes(q) ||
-    (p.categories ?? []).some(c => c.name.toLowerCase().includes(q)) ||
     (p.tags ?? []).some(t => t.name.toLowerCase().includes(q)),
   defaultSort: 'published_at',
   defaultDir: 'desc',
@@ -113,10 +105,6 @@ async function confirmDelete() {
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
               </select>
-              <select v-if="categoriesQ.data.value?.length" v-model="filterCategoryId" class="filter-select">
-                <option value="">All categories</option>
-                <option v-for="c in categoriesQ.data.value" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
             </template>
           </TableToolbar>
 
@@ -128,7 +116,6 @@ async function confirmDelete() {
             <thead>
               <tr style="border-bottom:1px solid #1a1a3a;">
                 <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Categories</th>
                 <th class="th">Tags</th>
                 <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">Actions</th>
@@ -138,12 +125,6 @@ async function confirmDelete() {
               <tr v-for="post in tc.paginated.value" :key="post.id" class="table-row">
                 <td class="td font-medium" style="color:#e2e8f0; max-width:16rem;">
                   <span class="truncate block">{{ post.title }}</span>
-                </td>
-                <td class="td">
-                  <span v-if="post.categories?.length" class="pill-list">
-                    <span v-for="c in post.categories" :key="c.id" class="pill">{{ c.name }}</span>
-                  </span>
-                  <span v-else style="color:#475569;">—</span>
                 </td>
                 <td class="td">
                   <span v-if="post.tags?.length" class="pill-list">
@@ -181,7 +162,6 @@ async function confirmDelete() {
       <PostForm
         v-else
         :initial="formPost"
-        :categories="categoriesQ.data.value ?? []"
         :tags="tagsQ.data.value ?? []"
         :concerts="concertsQ.data.value ?? []"
         :albums="albumsQ.data.value ?? []"

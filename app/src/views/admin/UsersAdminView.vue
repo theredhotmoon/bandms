@@ -6,7 +6,7 @@ import AdminModal from '@/components/admin/AdminModal.vue'
 import { useUsers } from '@/composables/useUsers'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAuth } from '@/composables/useAuth'
-import type { UserPayload } from '@/types/user'
+import type { ManagedUser, UserPayload } from '@/types/user'
 import type { UserRole } from '@/types/auth'
 
 const { list, create, update, remove } = useUsers()
@@ -70,7 +70,7 @@ const editForm    = reactive<Partial<UserPayload> & { password: string; password
 })
 
 function openEdit(userId: number) {
-  const u = (list.data.value ?? []).find(x => x.id === userId)
+  const u = (list.data.value ?? []).find((x: ManagedUser) => x.id === userId)
   if (!u) return
   Object.assign(editForm, {
     first_name: u.first_name,
@@ -168,7 +168,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
               </td>
               <td class="td" style="color:#94a3b8;">{{ u.email }}</td>
               <td class="td">
-                <span class="role-badge" :style="{ color: ROLE_COLORS[u.role], background: ROLE_COLORS[u.role]+'18', borderColor: ROLE_COLORS[u.role]+'30' }">
+                <span class="role-badge" :style="{ color: ROLE_COLORS[u.role as UserRole], background: ROLE_COLORS[u.role as UserRole]+'18', borderColor: ROLE_COLORS[u.role as UserRole]+'30' }">
                   {{ u.role }}
                 </span>
               </td>

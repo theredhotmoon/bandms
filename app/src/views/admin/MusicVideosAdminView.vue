@@ -43,12 +43,12 @@ const filterStatus   = ref<'' | 'published' | 'draft'>('')
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
-  if (filterStatus.value === 'published') return rows.filter(v => !!v.published_at)
-  if (filterStatus.value === 'draft') return rows.filter(v => !v.published_at)
+  if (filterStatus.value === 'published') return rows.filter((v: MusicVideo) => !!v.published_at)
+  if (filterStatus.value === 'draft') return rows.filter((v: MusicVideo) => !v.published_at)
   return rows
 })
 
-const tc = useTableControls({
+const tc = useTableControls<MusicVideo>({
   data: filteredData,
   searchFn: (v, q) => v.title.toLowerCase().includes(q) || v.video_url.toLowerCase().includes(q),
   defaultSort: 'sort_order',

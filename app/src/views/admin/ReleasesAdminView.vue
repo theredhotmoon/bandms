@@ -40,10 +40,10 @@ const filterType = ref('')
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
-  return filterType.value ? rows.filter(r => r.type === filterType.value) : rows
+  return filterType.value ? rows.filter((r: ReleaseSummary) => r.type === filterType.value) : rows
 })
 
-const tc = useTableControls({
+const tc = useTableControls<ReleaseSummary>({
   data: filteredData,
   searchFn: (r, q) => r.title.toLowerCase().includes(q) || r.type.toLowerCase().includes(q),
   defaultSort: 'release_date',
@@ -144,7 +144,7 @@ watch(
   (photos) => {
     if (photos) {
       localPhotos.value  = [...photos]
-      originalOrder.value = photos.map((p) => p.id)
+      originalOrder.value = photos.map((p: ReleasePhoto) => p.id)
     }
   },
   { immediate: true },

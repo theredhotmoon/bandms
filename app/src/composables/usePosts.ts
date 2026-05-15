@@ -2,14 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { Ref } from 'vue'
 import { fetchPost, fetchPosts, createPost, updatePost, deletePost } from '@/api/posts'
 import type { PostFilters } from '@/api/posts'
-import type { PostPayload } from '@/types/post'
+import type { Post, PostSummary, PostPayload } from '@/types/post'
 import { useAuth } from './useAuth'
 
 export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFilters>) {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<PostSummary[]>({
     queryKey: ['posts', filters],
     queryFn: () => fetchPosts(filters.value),
   })
@@ -34,7 +34,7 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
 }
 
 export function usePost(id: Ref<number | null>) {
-  return useQuery({
+  return useQuery<Post>({
     queryKey: ['posts', id],
     queryFn: () => fetchPost(id.value!),
     enabled: () => id.value !== null,

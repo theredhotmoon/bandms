@@ -1,7 +1,7 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 
 export function useTableControls<T extends object>(options: {
-  data: { readonly value: T[] | undefined }
+  data: Ref<T[] | undefined> | Ref<T[]>
   searchFn?: (row: T, query: string) => boolean
   defaultSort?: string
   defaultDir?: 'asc' | 'desc'

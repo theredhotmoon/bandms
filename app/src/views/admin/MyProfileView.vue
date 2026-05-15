@@ -7,14 +7,14 @@ import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { useAuth } from '@/composables/useAuth'
 import { ApiValidationError } from '@/api/client'
-import type { BandMemberPayload } from '@/types/bandMember'
+import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 
 const { user } = useAuth()
 const { query, update } = useBandMembers()
 const { query: instrumentsQuery } = useInstruments()
 
 const myMember = computed(() =>
-  query.data.value?.find((m) => m.id === user.value?.band_member_id) ?? null
+  query.data.value?.find((m: BandMember) => m.id === user.value?.band_member_id) ?? null
 )
 
 const errors = ref<Record<string, string[]>>({})

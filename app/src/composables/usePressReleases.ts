@@ -5,14 +5,14 @@ import {
   fetchPressReleases,
   updatePressRelease,
 } from '@/api/press-releases'
-import type { PressReleasePayload } from '@/types/press-release'
+import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 import { useAuth } from './useAuth'
 
 export function usePressReleases() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<PressReleaseSummary[]>({
     queryKey: ['press-releases'],
     queryFn: fetchPressReleases,
   })

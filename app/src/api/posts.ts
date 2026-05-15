@@ -6,15 +6,13 @@ interface PostResponse { data: Post }
 
 export interface PostFilters {
   search?: string
-  category_id?: number
   tag_id?: number
 }
 
 export async function fetchPosts(filters: PostFilters = {}): Promise<PostSummary[]> {
   const params = new URLSearchParams()
-  if (filters.search)      params.set('search', filters.search)
-  if (filters.category_id) params.set('category_id', String(filters.category_id))
-  if (filters.tag_id)      params.set('tag_id', String(filters.tag_id))
+  if (filters.search)  params.set('search', filters.search)
+  if (filters.tag_id)  params.set('tag_id', String(filters.tag_id))
 
   const qs = params.size ? `?${params}` : ''
   const res = await fetch(`${API_BASE}/api/posts${qs}`, { headers: jsonHeaders })

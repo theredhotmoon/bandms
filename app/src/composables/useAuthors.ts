@@ -1,14 +1,14 @@
 import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createAuthor, deleteAuthor, fetchAuthor, fetchAuthors, updateAuthor } from '@/api/authors'
-import type { AuthorPayload } from '@/types/author'
+import type { Author, AuthorSummary, AuthorPayload } from '@/types/author'
 import { useAuth } from './useAuth'
 
 export function useAuthors() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<AuthorSummary[]>({
     queryKey: ['authors'],
     queryFn: fetchAuthors,
   })
@@ -33,7 +33,7 @@ export function useAuthors() {
 }
 
 export function useAuthor(id: Ref<number | null>) {
-  return useQuery({
+  return useQuery<Author>({
     queryKey: computed(() => ['authors', id.value]),
     queryFn: () => fetchAuthor(id.value!),
     enabled: computed(() => id.value != null),

@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createBand, deleteBand, fetchBands, updateBand } from '@/api/bands'
-import type { BandPayload } from '@/types/band'
+import type { Band, BandPayload } from '@/types/band'
 import { useAuth } from './useAuth'
 
 export function useBands() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<Band[]>({
     queryKey: ['bands'],
     queryFn: fetchBands,
   })

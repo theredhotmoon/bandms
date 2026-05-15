@@ -7,14 +7,14 @@ import {
   deleteMusicVideo,
   fetchMusicVideoPreview,
 } from '@/api/musicVideos'
-import type { MusicVideoPayload } from '@/types/musicVideo'
+import type { MusicVideo, MusicVideoPayload } from '@/types/musicVideo'
 
 export function useMusicVideos() {
   const { token } = useAuth()
   const qc        = useQueryClient()
   const QKEY      = ['music-videos']
 
-  const query = useQuery({ queryKey: QKEY, queryFn: fetchMusicVideos })
+  const query = useQuery<MusicVideo[]>({ queryKey: QKEY, queryFn: fetchMusicVideos })
 
   const create = useMutation({
     mutationFn: (payload: MusicVideoPayload) => createMusicVideo(token.value!, payload),

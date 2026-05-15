@@ -4,12 +4,13 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAuth } from '@/composables/useAuth'
+import type { BandMember } from '@/types/bandMember'
 
 const { user } = useAuth()
 const { query } = useBandMembers()
 
 const myMember = computed(() =>
-  query.data.value?.find((m) => m.id === user.value?.band_member_id) ?? null
+  query.data.value?.find((m: BandMember) => m.id === user.value?.band_member_id) ?? null
 )
 </script>
 

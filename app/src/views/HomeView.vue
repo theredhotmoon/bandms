@@ -41,13 +41,6 @@ const sections = [
     svg: 'M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2zm4.5 5.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm10.5 7l-4-5-4 4-2-2-3 3',
   },
   {
-    to: '/categories',
-    label: 'Categories',
-    description: 'Browse content by genre and type',
-    color: '#a78bfa',
-    svg: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
-  },
-  {
     to: '/tags',
     label: 'Tags',
     description: 'Filter and discover by topic tags',
@@ -139,7 +132,6 @@ const greeting = computed(() => {
         <RouterLink to="/admin/photos"   class="qa-btn">+ Photo</RouterLink>
         <RouterLink to="/admin/releases" class="qa-btn">+ Release</RouterLink>
         <RouterLink to="/admin/tours"    class="qa-btn">+ Tour</RouterLink>
-        <RouterLink to="/admin/categories" class="qa-btn">+ Category</RouterLink>
         <RouterLink to="/admin/tags"     class="qa-btn">+ Tag</RouterLink>
       </div>
     </section>

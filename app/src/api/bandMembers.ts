@@ -40,3 +40,24 @@ export async function deleteBandMember(token: string, memberId: number): Promise
   })
   return handleResponse<void>(res)
 }
+
+export async function uploadMemberPhoto(token: string, memberId: number, file: File): Promise<BandMember> {
+  assertSafeId(memberId)
+  const body = new FormData()
+  body.append('photo', file)
+  const res = await fetch(`${API_BASE}/api/band-profile/members/${memberId}/photo`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    body,
+  })
+  return handleResponse<BandMemberResponse>(res).then((r) => r.data)
+}
+
+export async function reorderBandMembers(token: string, ids: number[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/band-profile/members/reorder`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ ids }),
+  })
+  return handleResponse<void>(res)
+}

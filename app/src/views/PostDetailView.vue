@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PostLinkDisplay from '@/components/blog/PostLinkDisplay.vue'
 import { usePost } from '@/composables/usePosts'
 import { useAuth } from '@/composables/useAuth'
+import type { Post } from '@/types/post'
 
 const route  = useRoute()
 const router = useRouter()
@@ -14,7 +15,9 @@ const postId = computed(() => {
   return isNaN(id) ? null : id
 })
 
-const { data: post, isPending, isError } = usePost(postId)
+const postQuery = usePost(postId)
+const post = computed<Post | undefined>(() => postQuery.data.value)
+const { isPending, isError } = postQuery
 
 function formatDate(iso: string | null) {
   if (!iso) return 'Draft'
@@ -37,9 +40,6 @@ function formatDate(iso: string | null) {
           <h1 style="margin: 0 0 0.4rem;">{{ post.title }}</h1>
           <div style="font-size: 0.9em; opacity: 0.6;">
             {{ formatDate(post.published_at) }}
-            <span v-if="post.categories.length">
-              · {{ post.categories.map((c) => c.name).join(', ') }}
-            </span>
           </div>
         </div>
         <button v-if="isLoggedIn" @click="router.push(`/posts/${post.id}/edit`)">Edit</button>

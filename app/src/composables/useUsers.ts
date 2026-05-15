@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/api/users'
-import type { UserPayload } from '@/types/user'
+import type { ManagedUser, UserPayload } from '@/types/user'
 
 const QK = ['users']
 
 export function useUsers() {
   const qc = useQueryClient()
 
-  const list = useQuery({
+  const list = useQuery<ManagedUser[]>({
     queryKey: QK,
     queryFn: fetchUsers,
   })

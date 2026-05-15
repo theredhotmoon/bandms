@@ -6,14 +6,14 @@ import {
   updateInstrument,
   deleteInstrument,
 } from '@/api/instruments'
-import type { InstrumentPayload } from '@/types/instrument'
+import type { Instrument, InstrumentPayload } from '@/types/instrument'
 
 export function useInstruments() {
   const { token } = useAuth()
   const qc        = useQueryClient()
   const QKEY      = ['instruments']
 
-  const query = useQuery({ queryKey: QKEY, queryFn: fetchInstruments })
+  const query = useQuery<Instrument[]>({ queryKey: QKEY, queryFn: fetchInstruments })
 
   const create = useMutation({
     mutationFn: (payload: InstrumentPayload) => createInstrument(token.value!, payload),

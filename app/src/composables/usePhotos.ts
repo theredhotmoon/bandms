@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchPhoto, fetchPhotos, updatePhoto, deletePhoto } from '@/api/photos'
-import type { PhotoPayload } from '@/types/photo'
+import type { Photo, PhotoPayload } from '@/types/photo'
 import { useAuth } from './useAuth'
 
 export function usePhotos() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<Photo[]>({
     queryKey: ['photos'],
     queryFn: fetchPhotos,
   })
@@ -27,7 +27,7 @@ export function usePhotos() {
 }
 
 export function usePhoto(id: { value: number | null }) {
-  return useQuery({
+  return useQuery<Photo>({
     queryKey: ['photos', id],
     queryFn: () => fetchPhoto(id.value!),
     enabled: () => id.value !== null,

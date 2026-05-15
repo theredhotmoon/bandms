@@ -4,6 +4,7 @@ import VenueMap from '@/components/map/VenueMap.vue'
 import { useConcerts } from '@/composables/useConcerts'
 import { useVenues } from '@/composables/useVenues'
 import type { Concert } from '@/types/concert'
+import type { Venue } from '@/types/venue'
 
 const { query, create, update, remove } = useConcerts()
 const { query: venuesQuery } = useVenues()
@@ -61,8 +62,10 @@ async function confirmDelete(concert: Concert) {
   await remove.mutateAsync(concert.id)
 }
 
+const concerts = computed<Concert[]>(() => query.data.value ?? [])
+
 const selectedVenue = computed(() =>
-  venuesQuery.data.value?.find((v) => v.id === form.value.venue_id) ?? null,
+  venuesQuery.data.value?.find((v: Venue) => v.id === form.value.venue_id) ?? null,
 )
 
 function formatDate(date: string) {
@@ -144,7 +147,7 @@ function formatDate(date: string) {
 
     <div v-else style="display: flex; flex-direction: column; gap: 1rem;">
       <div
-        v-for="concert in query.data.value"
+        v-for="concert in concerts"
         :key="concert.id"
         style="border: 1px solid #333; border-radius: 6px; padding: 1rem;"
       >

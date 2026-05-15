@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCategories } from '@/composables/useCategories'
 import { usePosts } from '@/composables/usePosts'
 import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
@@ -12,17 +11,15 @@ const router = useRouter()
 const { isLoggedIn } = useAuth()
 
 const searchInput = ref('')
-const selectedCategory = ref<number | undefined>()
 const selectedTag = ref<number | undefined>()
 
 const filters = computed<PostFilters>(() => ({
   search: searchInput.value || undefined,
-  category_id: selectedCategory.value,
   tag_id: selectedTag.value,
 }))
 
 const { query, remove } = usePosts(filters)
-const { query: categoriesQuery } = useCategories()
+const posts = computed<PostSummary[]>(() => query.data.value ?? [])
 const { query: tagsQuery } = useTags()
 
 function formatDate(iso: string | null) {
@@ -51,13 +48,6 @@ async function confirmDelete(post: PostSummary) {
         style="flex: 1; min-width: 200px;"
       />
 
-      <select v-model="selectedCategory" style="min-width: 150px;">
-        <option :value="undefined">All categories</option>
-        <option v-for="cat in categoriesQuery.data.value" :key="cat.id" :value="cat.id">
-          {{ cat.name }}
-        </option>
-      </select>
-
       <select v-model="selectedTag" style="min-width: 150px;">
         <option :value="undefined">All tags</option>
         <option v-for="tag in tagsQuery.data.value" :key="tag.id" :value="tag.id">
@@ -69,12 +59,12 @@ async function confirmDelete(post: PostSummary) {
     <div v-if="query.isPending.value">Loading posts…</div>
     <div v-else-if="query.isError.value">Failed to load posts.</div>
     <div v-else-if="!query.data.value?.length" style="opacity: 0.6;">
-      {{ searchInput || selectedCategory || selectedTag ? 'No posts match your filters.' : 'No posts yet.' }}
+      {{ searchInput || selectedTag ? 'No posts match your filters.' : 'No posts yet.' }}
     </div>
 
     <div v-else style="display: flex; flex-direction: column; gap: 1.5rem;">
       <article
-        v-for="post in query.data.value"
+        v-for="post in posts"
         :key="post.id"
         style="border: 1px solid #333; border-radius: 6px; padding: 1rem;"
       >
@@ -89,9 +79,6 @@ async function confirmDelete(post: PostSummary) {
 
             <div style="font-size: 0.85em; opacity: 0.6; margin-bottom: 0.5rem;">
               {{ formatDate(post.published_at) }}
-              <span v-if="post.categories.length">
-                · {{ post.categories.map((c) => c.name).join(', ') }}
-              </span>
             </div>
 
             <p v-if="post.excerpt" style="margin: 0 0 0.5rem; opacity: 0.8; font-size: 0.95em;">

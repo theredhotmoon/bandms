@@ -166,7 +166,7 @@ async function toggleEpk(photo: AlbumPhoto) {
   try {
     await togglePhotoEpkFeatured(token.value!, photo.id, !photo.epk_featured)
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
-    const refreshed = query.data.value?.find((a) => a.id === viewAlbum.value?.id) ?? viewAlbum.value
+    const refreshed = query.data.value?.find((a: Album) => a.id === viewAlbum.value?.id) ?? viewAlbum.value
     viewAlbum.value = refreshed ?? null
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value
     toast.success(photo.epk_featured ? 'Removed from EPK' : 'Added to EPK')
@@ -180,7 +180,7 @@ async function deletePhoto(albumId: number, photoId: number) {
   try {
     await removeAlbumPhoto(token.value!, albumId, photoId)
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
-    const refreshed = query.data.value?.find((a) => a.id === albumId) ?? viewAlbum.value
+    const refreshed = query.data.value?.find((a: Album) => a.id === albumId) ?? viewAlbum.value
     viewAlbum.value = refreshed
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)

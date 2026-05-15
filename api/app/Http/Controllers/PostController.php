@@ -15,17 +15,13 @@ class PostController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $posts = Post::select(['id', 'title', 'slug', 'content', 'published_at', 'created_at', 'updated_at'])
-            ->with(['categories', 'tags'])
+            ->with(['tags'])
             ->when(
                 $request->filled('search'),
                 fn ($q) => $q->where(fn ($q) => $q
                     ->where('title', 'like', '%' . $request->search . '%')
                     ->orWhere('content', 'like', '%' . $request->search . '%')
                 )
-            )
-            ->when(
-                $request->filled('category_id'),
-                fn ($q) => $q->whereHas('categories', fn ($q) => $q->where('categories.id', $request->category_id))
             )
             ->when(
                 $request->filled('tag_id'),
@@ -45,8 +41,6 @@ class PostController extends Controller
             'content'        => 'nullable|string',
             'image'          => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'   => 'nullable|date',
-            'category_ids'   => 'nullable|array',
-            'category_ids.*' => 'integer|exists:categories,id',
             'tag_ids'        => 'nullable|array',
             'tag_ids.*'      => 'integer|exists:tags,id',
             'concert_ids'    => 'nullable|array',
@@ -71,7 +65,6 @@ class PostController extends Controller
             'published_at' => $data['published_at'] ?? null,
         ]);
 
-        if (!empty($data['category_ids'])) $post->categories()->sync($data['category_ids']);
         if (!empty($data['tag_ids']))      $post->tags()->sync($data['tag_ids']);
         if (!empty($data['concert_ids'])) $post->concerts()->sync($data['concert_ids']);
         if (!empty($data['album_ids']))   $post->albums()->sync($data['album_ids']);
@@ -84,12 +77,12 @@ class PostController extends Controller
             );
         }
 
-        return new PostResource($post->load(['categories', 'tags', 'links', 'concerts', 'albums', 'releases', 'tours']));
+        return new PostResource($post->load(['tags', 'links', 'concerts', 'albums', 'releases', 'tours']));
     }
 
     public function show(Post $post): PostResource
     {
-        return new PostResource($post->load(['categories', 'tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours']));
+        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours']));
     }
 
     public function update(Request $request, Post $post): PostResource
@@ -99,8 +92,6 @@ class PostController extends Controller
             'content'        => 'nullable|string',
             'image'          => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'   => 'nullable|date',
-            'category_ids'   => 'nullable|array',
-            'category_ids.*' => 'integer|exists:categories,id',
             'tag_ids'        => 'nullable|array',
             'tag_ids.*'      => 'integer|exists:tags,id',
             'concert_ids'    => 'nullable|array',
@@ -117,9 +108,8 @@ class PostController extends Controller
             'links.*.label'  => 'nullable|string|max:255',
         ]);
 
-        $post->update(Arr::except($data, ['category_ids', 'tag_ids', 'concert_ids', 'album_ids', 'release_ids', 'tour_ids', 'links']));
+        $post->update(Arr::except($data, ['tag_ids', 'concert_ids', 'album_ids', 'release_ids', 'tour_ids', 'links']));
 
-        if (array_key_exists('category_ids', $data)) $post->categories()->sync($data['category_ids'] ?? []);
         if (array_key_exists('tag_ids', $data))      $post->tags()->sync($data['tag_ids'] ?? []);
         if (array_key_exists('concert_ids', $data))  $post->concerts()->sync($data['concert_ids'] ?? []);
         if (array_key_exists('album_ids', $data))    $post->albums()->sync($data['album_ids'] ?? []);
@@ -135,7 +125,7 @@ class PostController extends Controller
             }
         }
 
-        return new PostResource($post->load(['categories', 'tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours']));
+        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours']));
     }
 
     public function destroy(Post $post): JsonResponse

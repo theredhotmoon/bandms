@@ -27,6 +27,7 @@ export interface BandMemberPayload {
   last_name: string
   bio?: string | null
   photo?: string | null
+  photo_file?: File | null   // handled by view before API call; not sent as JSON
   role?: string | null
   is_current?: boolean
   joined_at?: string | null

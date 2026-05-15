@@ -2,7 +2,6 @@
 import { reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import type { Post, PostPayload, PostLinkType } from '@/types/post'
-import type { Category } from '@/types/category'
 import type { Tag } from '@/types/tag'
 import type { Concert } from '@/types/concert'
 import type { Album } from '@/types/album'
@@ -11,7 +10,6 @@ import type { TourSummary } from '@/types/tour'
 
 const props = defineProps<{
   initial?: Post | null
-  categories: Category[]
   tags: Tag[]
   concerts: Concert[]
   albums: Album[]
@@ -30,7 +28,6 @@ const form = reactive({
   content: '',
   image: '',
   published_at: '',
-  category_ids: [] as number[],
   tag_ids: [] as number[],
   concert_ids: [] as number[],
   album_ids: [] as number[],
@@ -44,7 +41,6 @@ watch(() => props.initial, (val) => {
   form.content = val?.content ?? ''
   form.image = val?.image ?? ''
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
-  form.category_ids = val?.categories?.map(c => c.id) ?? []
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.album_ids = val?.albums?.map(a => a.id) ?? []
@@ -52,12 +48,6 @@ watch(() => props.initial, (val) => {
   form.tour_ids = val?.tours?.map(t => t.id) ?? []
   form.links = val?.links?.map(l => ({ type: l.type, url: l.url, label: l.label ?? '' })) ?? []
 }, { immediate: true })
-
-function toggleId(arr: number[], id: number) {
-  const idx = arr.indexOf(id)
-  if (idx === -1) arr.push(id)
-  else arr.splice(idx, 1)
-}
 
 function addLink() { form.links.push({ type: 'normal', url: '', label: '' }) }
 function removeLink(i: number) { form.links.splice(i, 1) }
@@ -70,7 +60,6 @@ function submit() {
     content: form.content || null,
     image: form.image || null,
     published_at: form.published_at || null,
-    category_ids: form.category_ids,
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
     album_ids: form.album_ids,
@@ -103,19 +92,6 @@ function submit() {
         <label class="field-label">Publish at</label>
         <input v-model="form.published_at" type="datetime-local" class="field-input" />
         <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="field-label">Categories</label>
-        <div class="checkbox-list">
-          <label v-for="c in categories" :key="c.id" class="checkbox-item">
-            <input type="checkbox" :checked="form.category_ids.includes(c.id)" @change="toggleId(form.category_ids, c.id)" />
-            <span>{{ c.name }}</span>
-          </label>
-          <p v-if="!categories.length" class="text-xs" style="color:#475569;">None.</p>
-        </div>
       </div>
     </div>
 

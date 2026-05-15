@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchEpkVersions, createEpkVersion, publishEpkVersion, discardEpkVersion } from '@/api/epkVersions'
+import type { EpkVersion } from '@/types/epkVersion'
 import { useAuth } from './useAuth'
 
 export function useEpkVersions() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<EpkVersion[]>({
     queryKey: ['epk-versions'],
     queryFn:  () => fetchEpkVersions(token.value!),
     enabled:  () => !!token.value,

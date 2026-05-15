@@ -11,7 +11,7 @@ import { useInstruments } from '@/composables/useInstruments'
 import { ApiValidationError } from '@/api/client'
 import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 
-const { query, create, update, remove } = useBandMembers()
+const { query, create, update, remove, uploadPhoto, reorder } = useBandMembers()
 const { query: instrumentsQuery } = useInstruments()
 
 // ── Selection ──────────────────────────────────────────────────────────────────
@@ -19,14 +19,68 @@ const openId    = ref<number | null>(null)
 const detailTab = ref<'profile' | 'setups'>('profile')
 
 const openMember = computed<BandMember | null>(
-  () => query.data.value?.find((m) => m.id === openId.value) ?? null,
+  () => query.data.value?.find((m: BandMember) => m.id === openId.value) ?? null,
 )
 
 watch(openId, () => { detailTab.value = 'profile' })
 
 function selectMember(m: BandMember) {
-  openId.value    = m.id
+  openId.value = m.id
 }
+
+// ── Drag-and-drop reordering ──────────────────────────────────────────────────
+const draggedId   = ref<number | null>(null)
+const localOrder  = ref<number[] | null>(null)  // overrides render order while dragging
+
+function orderedGroup(members: BandMember[]): BandMember[] {
+  if (!localOrder.value) return members
+  return [...members].sort(
+    (a, b) => localOrder.value!.indexOf(a.id) - localOrder.value!.indexOf(b.id),
+  )
+}
+
+function onDragStart(e: DragEvent, m: BandMember) {
+  draggedId.value  = m.id
+  localOrder.value = (query.data.value ?? []).map((x: BandMember) => x.id)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onDragOver(e: DragEvent, m: BandMember) {
+  e.preventDefault()
+  if (!draggedId.value || !localOrder.value || draggedId.value === m.id) return
+  const arr     = [...localOrder.value]
+  const fromIdx = arr.indexOf(draggedId.value)
+  const toIdx   = arr.indexOf(m.id)
+  arr.splice(fromIdx, 1)
+  arr.splice(toIdx, 0, draggedId.value)
+  localOrder.value = arr
+}
+
+async function onDrop() {
+  if (!localOrder.value) return
+  const ids = [...localOrder.value]
+  draggedId.value  = null
+  localOrder.value = null
+  try {
+    await reorder.mutateAsync(ids)
+  } catch {
+    toast.error('Failed to save new order')
+  }
+}
+
+function onDragEnd() {
+  draggedId.value  = null
+  localOrder.value = null
+}
+
+const currentMembers = computed(() => {
+  const c = query.data.value?.filter((m: BandMember) => m.is_current) ?? []
+  return orderedGroup(c)
+})
+const exMembers = computed(() => {
+  const ex = query.data.value?.filter((m: BandMember) => !m.is_current) ?? []
+  return orderedGroup(ex)
+})
 
 // ── Create (modal) ─────────────────────────────────────────────────────────────
 const showCreateModal = ref(false)
@@ -34,8 +88,13 @@ const createErrors    = ref<Record<string, string[]>>({})
 
 async function handleCreate(payload: BandMemberPayload) {
   createErrors.value = {}
+  const photoFile = payload.photo_file ?? null
+  const { photo_file: _, ...rest } = payload
   try {
-    const created = await create.mutateAsync(payload)
+    const created = await create.mutateAsync(rest)
+    if (photoFile) {
+      await uploadPhoto.mutateAsync({ id: created.id, file: photoFile })
+    }
     toast.success('Member added')
     showCreateModal.value = false
     openId.value = created.id
@@ -51,8 +110,13 @@ const updateErrors = ref<Record<string, string[]>>({})
 async function handleUpdate(payload: BandMemberPayload) {
   if (!openMember.value) return
   updateErrors.value = {}
+  const photoFile = payload.photo_file ?? null
+  const { photo_file: _, ...rest } = payload
   try {
-    await update.mutateAsync({ id: openMember.value.id, payload })
+    await update.mutateAsync({ id: openMember.value.id, payload: rest })
+    if (photoFile) {
+      await uploadPhoto.mutateAsync({ id: openMember.value.id, file: photoFile })
+    }
     toast.success('Member updated')
   } catch (e) {
     if (e instanceof ApiValidationError) updateErrors.value = e.errors
@@ -72,10 +136,6 @@ async function confirmDelete() {
     toast.success('Member removed')
   } catch { toast.error('Failed to remove') }
 }
-
-// ── Grouped lists ──────────────────────────────────────────────────────────────
-const currentMembers = computed(() => query.data.value?.filter(m =>  m.is_current) ?? [])
-const exMembers      = computed(() => query.data.value?.filter(m => !m.is_current) ?? [])
 </script>
 
 <template>
@@ -100,8 +160,13 @@ const exMembers      = computed(() => query.data.value?.filter(m => !m.is_curren
               v-for="m in currentMembers"
               :key="m.id"
               class="member-item"
-              :class="{ 'member-item--open': openId === m.id }"
+              :class="{ 'member-item--open': openId === m.id, 'member-item--dragging': draggedId === m.id }"
+              draggable="true"
               @click="selectMember(m)"
+              @dragstart="onDragStart($event, m)"
+              @dragover="onDragOver($event, m)"
+              @drop.prevent="onDrop"
+              @dragend="onDragEnd"
             >
               <div class="item-avatar">
                 <img v-if="m.photo" :src="m.photo" :alt="`${m.first_name} ${m.last_name}`" class="avatar-img" />
@@ -122,8 +187,13 @@ const exMembers      = computed(() => query.data.value?.filter(m => !m.is_curren
               v-for="m in exMembers"
               :key="m.id"
               class="member-item member-item--former"
-              :class="{ 'member-item--open': openId === m.id }"
+              :class="{ 'member-item--open': openId === m.id, 'member-item--dragging': draggedId === m.id }"
+              draggable="true"
               @click="selectMember(m)"
+              @dragstart="onDragStart($event, m)"
+              @dragover="onDragOver($event, m)"
+              @drop.prevent="onDrop"
+              @dragend="onDragEnd"
             >
               <div class="item-avatar">
                 <img v-if="m.photo" :src="m.photo" :alt="`${m.first_name} ${m.last_name}`" class="avatar-img" />
@@ -305,10 +375,12 @@ const exMembers      = computed(() => query.data.value?.filter(m => !m.is_curren
   cursor: pointer; border: 1px solid transparent;
   margin-bottom: 0.15rem; transition: background 100ms, border-color 100ms;
 }
-.member-item:hover      { background: #0d0d28; border-color: #1e2040; }
-.member-item--open      { background: #0e0e26; border-color: #312e81; }
-.member-item--former    { opacity: 0.6; }
+.member-item:hover        { background: #0d0d28; border-color: #1e2040; }
+.member-item--open        { background: #0e0e26; border-color: #312e81; }
+.member-item--former      { opacity: 0.6; }
 .member-item--former.member-item--open { opacity: 0.85; }
+.member-item--dragging    { opacity: 0.35; border-color: #6366f1; cursor: grabbing; }
+.member-item[draggable]   { cursor: grab; }
 
 .item-avatar { flex-shrink: 0; }
 .avatar-img  { width: 2rem; height: 2rem; border-radius: 9999px; object-fit: cover; }

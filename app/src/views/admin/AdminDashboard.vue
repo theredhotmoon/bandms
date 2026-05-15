@@ -6,7 +6,6 @@ import CareerLevelWidget from '@/components/admin/CareerLevelWidget.vue'
 import { useBands } from '@/composables/useBands'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
-import { useCategories } from '@/composables/useCategories'
 import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
 import { useTours } from '@/composables/useTours'
@@ -17,12 +16,15 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { usePosts } from '@/composables/usePosts'
 import { useTechRiders } from '@/composables/useTechRiders'
+import type { EpkVersion } from '@/types/epkVersion'
+import type { PressReleaseSummary } from '@/types/press-release'
+import type { TechRiderSummary } from '@/types/techRider'
 
 const { user } = useAuth()
 const { query: epkVersionsQ, publish: publishEpk, discard: discardEpk } = useEpkVersions()
 
-const pendingVersion  = computed(() => epkVersionsQ.data.value?.find((v) => v.status === 'pending') ?? null)
-const publishedVersion = computed(() => epkVersionsQ.data.value?.find((v) => v.status === 'published') ?? null)
+const pendingVersion  = computed(() => epkVersionsQ.data.value?.find((v: EpkVersion) => v.status === 'pending') ?? null)
+const publishedVersion = computed(() => epkVersionsQ.data.value?.find((v: EpkVersion) => v.status === 'published') ?? null)
 
 async function handlePublish(id: number) {
   try {
@@ -40,7 +42,6 @@ async function handleDiscard(id: number) {
 const { query: bandsQ } = useBands()
 const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
-const { query: categoriesQ } = useCategories()
 const { query: tagsQ } = useTags()
 const { query: releasesQ } = useReleases()
 const { query: toursQ }    = useTours()
@@ -62,7 +63,6 @@ const stats = computed(() => [
   { label: 'Tours',    count: toursQ.data.value?.length,   link: '/admin/tours',    color: '#fbbf24' },
   { label: 'Venues', count: venuesQ.data.value?.length, link: '/admin/venues', color: '#34d399' },
   { label: 'Concerts', count: concertsQ.data.value?.length, link: '/admin/concerts', color: '#fb923c' },
-  { label: 'Categories', count: categoriesQ.data.value?.length, link: '/admin/categories', color: '#a78bfa' },
   { label: 'Tags', count: tagsQ.data.value?.length, link: '/admin/tags', color: '#22d3ee' },
 ])
 
@@ -87,15 +87,19 @@ const PR_MAX_SCORE = 13
 const enhancedPressItems = computed(() => {
   const items = pressQ.data.value ?? []
   return items
-    .map((pr) => ({ pr, score: prRichnessScore(pr) }))
-    .sort((a, b) => a.score - b.score)
+    .map((pr: PressReleaseSummary) => ({ pr, score: prRichnessScore(pr) }))
+    .sort((a: { score: number }, b: { score: number }) => a.score - b.score)
     .slice(0, 5)
 })
+
+const hasTechRiderActive = computed(() =>
+  techRidersQ.data.value?.some((r: TechRiderSummary) => r.is_active) ?? false,
+)
 
 const avgEnhanceScore = computed(() => {
   const items = pressQ.data.value ?? []
   if (!items.length) return 0
-  const sum = items.reduce((acc, pr) => acc + prRichnessScore(pr), 0)
+  const sum = items.reduce((acc: number, pr: PressReleaseSummary) => acc + prRichnessScore(pr), 0)
   return Math.round((sum / items.length / PR_MAX_SCORE) * 100)
 })
 </script>
@@ -173,7 +177,7 @@ const avgEnhanceScore = computed(() => {
           :posts-count="postsQ.data.value?.length ?? 0"
           :music-videos-count="videosQ.data.value?.length ?? 0"
           :members-count="profileQ.data.value.members?.length ?? 0"
-          :tech-rider-active="techRidersQ.data.value?.some((r) => r.is_active) ?? false"
+          :tech-rider-active="hasTechRiderActive"
           :epk-published="!!publishedVersion"
           @update:level="handleLevelUpdate"
         />

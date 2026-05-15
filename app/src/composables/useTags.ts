@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createTag, deleteTag, fetchTags, updateTag } from '@/api/tags'
-import type { TagPayload } from '@/types/tag'
+import type { Tag, TagPayload } from '@/types/tag'
 import { useAuth } from './useAuth'
 
 export function useTags() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({ queryKey: ['tags'], queryFn: fetchTags })
+  const query = useQuery<Tag[]>({ queryKey: ['tags'], queryFn: fetchTags })
 
   const create = useMutation({
     mutationFn: (payload: TagPayload) => createTag(token.value!, payload),

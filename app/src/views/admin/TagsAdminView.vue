@@ -20,7 +20,7 @@ const editing = ref<Tag | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
 
-const tc = useTableControls({
+const tc = useTableControls<Tag>({
   data: query.data,
   searchFn: (t, q) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
   defaultSort: 'name',

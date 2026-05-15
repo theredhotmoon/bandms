@@ -6,6 +6,7 @@ import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAuthors } from '@/composables/useAuthors'
+import type { AuthorSummary } from '@/types/author'
 
 const { query: profileQ } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -31,7 +32,7 @@ const copied = ref(false)
 const matchedAuthor = computed(() => {
   const q = recipientName.value.trim().toLowerCase()
   if (!q || !authorsQ.data.value?.length) return null
-  return authorsQ.data.value.find((a) => a.name.toLowerCase().includes(q)) ?? null
+  return authorsQ.data.value.find((a: AuthorSummary) => a.name.toLowerCase().includes(q)) ?? null
 })
 
 const pitchTypes: { key: PitchType; label: string; icon: string }[] = [

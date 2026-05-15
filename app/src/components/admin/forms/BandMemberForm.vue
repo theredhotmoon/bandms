@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch, onUnmounted } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 import type { Instrument } from '@/types/instrument'
@@ -19,16 +19,49 @@ const form = reactive({
   first_name: '',
   last_name: '',
   role: '',
-  photo: '',
+  photo: '',         // existing URL from backend
   bio: '',
   is_current: true,
   joined_at: '',
   quit_at: '',
-  sort_order: 0,
   calendar_url: '',
   login_email: '',
   can_login: false,
   instrument_ids: [] as number[],
+})
+
+// Photo upload state
+const photoFile    = ref<File | null>(null)
+const photoPreview = ref('')          // Object URL for picked file
+const photoInput   = ref<HTMLInputElement | null>(null)
+const photoDragActive = ref(false)
+
+function pickPhotoFile(file: File | null) {
+  if (!file || !file.type.startsWith('image/')) return
+  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+  photoFile.value    = file
+  photoPreview.value = URL.createObjectURL(file)
+}
+
+function onPhotoInputChange(e: Event) {
+  pickPhotoFile((e.target as HTMLInputElement).files?.[0] ?? null)
+  if (photoInput.value) photoInput.value.value = ''
+}
+
+function onPhotoDrop(e: DragEvent) {
+  photoDragActive.value = false
+  pickPhotoFile(e.dataTransfer?.files?.[0] ?? null)
+}
+
+function clearPhoto() {
+  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+  photoFile.value    = null
+  photoPreview.value = ''
+  form.photo         = ''
+}
+
+onUnmounted(() => {
+  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
 })
 
 const linkUrls = reactive<Record<SocialPlatform, string>>({
@@ -39,19 +72,23 @@ const linkUrls = reactive<Record<SocialPlatform, string>>({
 watch(
   () => props.initial,
   (val) => {
-    form.first_name = val?.first_name ?? ''
-    form.last_name  = val?.last_name ?? ''
-    form.role       = val?.role ?? ''
-    form.photo      = val?.photo ?? ''
-    form.bio        = val?.bio ?? ''
-    form.is_current = val?.is_current ?? true
-    form.joined_at  = val?.joined_at ?? ''
-    form.quit_at    = val?.quit_at ?? ''
-    form.sort_order     = val?.sort_order ?? 0
+    form.first_name     = val?.first_name ?? ''
+    form.last_name      = val?.last_name ?? ''
+    form.role           = val?.role ?? ''
+    form.photo          = val?.photo ?? ''
+    form.bio            = val?.bio ?? ''
+    form.is_current     = val?.is_current ?? true
+    form.joined_at      = val?.joined_at ?? ''
+    form.quit_at        = val?.quit_at ?? ''
     form.calendar_url   = val?.calendar_url ?? ''
     form.login_email    = val?.login_email ?? ''
     form.can_login      = val?.can_login ?? false
     form.instrument_ids = val?.instruments?.map((i) => i.id) ?? []
+
+    // Reset any pending photo pick
+    if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+    photoFile.value    = null
+    photoPreview.value = ''
 
     for (const p of SOCIAL_PLATFORMS) linkUrls[p.key] = ''
     for (const l of val?.social_links ?? []) linkUrls[l.platform] = l.url
@@ -64,12 +101,12 @@ function submit() {
     first_name:     form.first_name,
     last_name:      form.last_name,
     role:           form.role || null,
-    photo:          form.photo || null,
+    photo:          photoFile.value ? null : (form.photo || null),
+    photo_file:     photoFile.value,
     bio:            form.bio || null,
     is_current:     form.is_current,
     joined_at:      form.joined_at || null,
     quit_at:        form.is_current ? null : (form.quit_at || null),
-    sort_order:     form.sort_order,
     calendar_url:   form.calendar_url || null,
     login_email:    form.login_email || null,
     can_login:      form.can_login,
@@ -96,16 +133,10 @@ function submit() {
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="field-label">Role</label>
-        <input v-model="form.role" class="field-input" placeholder="Vocalist, Guitarist…" />
-        <p v-if="errors?.role" class="field-error">{{ errors.role[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">Sort order</label>
-        <input v-model.number="form.sort_order" type="number" min="0" class="field-input" />
-      </div>
+    <div>
+      <label class="field-label">Role</label>
+      <input v-model="form.role" class="field-input" placeholder="Vocalist, Guitarist…" />
+      <p v-if="errors?.role" class="field-error">{{ errors.role[0] }}</p>
     </div>
 
     <!-- Instruments -->
@@ -129,9 +160,51 @@ function submit() {
       </div>
     </div>
 
+    <!-- Photo upload -->
     <div>
-      <label class="field-label">Photo URL</label>
-      <input v-model="form.photo" class="field-input" placeholder="https://…" />
+      <label class="field-label">Photo</label>
+      <div class="photo-upload-row">
+        <!-- Current / preview avatar -->
+        <div class="photo-avatar">
+          <img
+            v-if="photoPreview || form.photo"
+            :src="photoPreview || form.photo"
+            alt="Avatar preview"
+            class="photo-avatar-img"
+          />
+          <div v-else class="photo-avatar-placeholder">
+            {{ form.first_name ? form.first_name[0] : '?' }}{{ form.last_name ? form.last_name[0] : '' }}
+          </div>
+        </div>
+        <!-- Drop zone -->
+        <div
+          class="photo-drop"
+          :class="{ 'photo-drop--active': photoDragActive, 'photo-drop--has': !!(photoPreview || form.photo) }"
+          @dragover.prevent="photoDragActive = true"
+          @dragleave="photoDragActive = false"
+          @drop.prevent="onPhotoDrop"
+          @click="photoInput?.click()"
+        >
+          <span class="photo-drop-icon">{{ photoPreview || form.photo ? '🔄' : '⬆' }}</span>
+          <span class="photo-drop-label">{{ photoPreview || form.photo ? 'Replace photo' : 'Upload photo' }}</span>
+          <span class="photo-drop-hint">JPG, PNG, WebP · max 4 MB</span>
+          <input
+            ref="photoInput"
+            type="file"
+            accept="image/*"
+            style="display:none"
+            @change="onPhotoInputChange"
+          />
+        </div>
+        <!-- Clear button -->
+        <button
+          v-if="photoPreview || form.photo"
+          type="button"
+          class="photo-clear"
+          title="Remove photo"
+          @click.stop="clearPhoto"
+        >✕</button>
+      </div>
       <p v-if="errors?.photo" class="field-error">{{ errors.photo[0] }}</p>
     </div>
 
@@ -285,4 +358,43 @@ function submit() {
   padding: 0.875rem; border-radius: 0.5rem;
   border: 1px solid #1e2040; background: #0a0a1e;
 }
+
+/* ── Photo upload ─────────────────────────────── */
+.photo-upload-row {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.photo-avatar {
+  flex-shrink: 0; width: 4rem; height: 4rem;
+  border-radius: 9999px; overflow: hidden;
+}
+.photo-avatar-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.photo-avatar-placeholder {
+  width: 100%; height: 100%;
+  background: #1e1b4b; color: #818cf8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 700; letter-spacing: .02em;
+}
+.photo-drop {
+  flex: 1; border: 1.5px dashed #1e2040; border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem; cursor: pointer;
+  display: flex; flex-direction: column; gap: 0.1rem;
+  transition: border-color 120ms, background 120ms;
+}
+.photo-drop:hover, .photo-drop--active {
+  border-color: #6366f1; background: #12103a;
+}
+.photo-drop--has { border-style: solid; border-color: #1e2040; }
+.photo-drop-icon  { font-size: 1rem; line-height: 1; }
+.photo-drop-label { font-size: 0.8rem; font-weight: 600; color: #c4b5fd; }
+.photo-drop-hint  { font-size: 0.68rem; color: #475569; }
+.photo-clear {
+  flex-shrink: 0; width: 1.75rem; height: 1.75rem;
+  border-radius: 9999px; border: 1px solid #450a0a;
+  background: transparent; color: #f87171; cursor: pointer;
+  font-size: 0.7rem; display: flex; align-items: center; justify-content: center;
+  transition: background 100ms;
+}
+.photo-clear:hover { background: #7f1d1d22; }
 </style>

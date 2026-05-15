@@ -112,7 +112,12 @@
       "PowerShell(docker compose *)",
       "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost/api/band-profile/epk\" -UseBasicParsing 2>&1; $r.StatusCode)",
       "PowerShell($token = \\(Invoke-RestMethod -Uri \"http://localhost/api/auth/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test@example.com\",\"password\":\"password\"}'\\).access_token; $r = Invoke-RestMethod -Uri \"http://localhost/api/epk-versions\" -Method POST -Headers @{Authorization=\"Bearer $token\"; \"Content-Type\"=\"application/json\"} -Body '{\"release_reason\":\"test\"}' 2>&1; $r | ConvertTo-Json)",
-      "Bash(bash rebuild.sh)"
+      "Bash(bash rebuild.sh)",
+      "Bash(xargs grep -l \"upload\\\\|Storage::\")",
+      "Bash(node -e \"const tq = require\\('C:/Projects/bandms/app/node_modules/@tanstack/vue-query'\\); console.log\\(Object.keys\\(tq\\)\\)\")",
+      "Bash(sed -n '14p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
+      "Bash(sed -n '32,35p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
+      "Bash(sed *)"
     ]
   }
 }

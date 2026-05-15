@@ -16,7 +16,6 @@ class PostSummaryResource extends JsonResource
             'slug'         => $this->slug,
             'excerpt'      => Str::limit($this->content ?? '', 280),
             'published_at' => $this->published_at,
-            'categories'   => CategoryResource::collection($this->whenLoaded('categories')),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,

@@ -33,7 +33,7 @@ const editing = ref<Band | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
 
-const tc = useTableControls({
+const tc = useTableControls<Band>({
   data: query.data,
   searchFn: (b, q) => b.name.toLowerCase().includes(q) || (b.website ?? '').toLowerCase().includes(q),
   defaultSort: 'name',

@@ -1,4 +1,3 @@
-import type { Category } from './category'
 import type { Tag } from './tag'
 
 export interface PostConcert { id: number; date: string; venue: { id: number; name: string } | null }
@@ -29,7 +28,6 @@ export interface PostSummary {
   slug: string
   excerpt: string
   published_at: string | null
-  categories: Category[]
   tags: Tag[]
   created_at: string
   updated_at: string
@@ -51,7 +49,6 @@ export interface PostPayload {
   content?: string | null
   image?: string | null
   published_at?: string | null
-  category_ids?: number[]
   tag_ids?: number[]
   concert_ids?: number[]
   album_ids?: number[]

@@ -25,14 +25,14 @@ const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Key
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
-  return filterCategory.value ? rows.filter(i => i.category === filterCategory.value) : rows
+  return filterCategory.value ? rows.filter((i: Instrument) => i.category === filterCategory.value) : rows
 })
 
 const allCategories = computed(() =>
-  [...new Set((query.data.value ?? []).map(i => i.category).filter(Boolean) as string[])].sort()
+  [...new Set((query.data.value ?? []).map((i: Instrument) => i.category).filter(Boolean) as string[])].sort()
 )
 
-const tc = useTableControls({
+const tc = useTableControls<Instrument>({
   data: filteredData,
   searchFn: (i, q) => i.name.toLowerCase().includes(q) || (i.category ?? '').toLowerCase().includes(q),
   defaultSort: 'name',

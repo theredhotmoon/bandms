@@ -14,7 +14,7 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useTours } from '@/composables/useTours'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
-import type { AuthorPayload } from '@/types/author'
+import type { AuthorSummary, AuthorPayload } from '@/types/author'
 
 const { query, create, update, remove } = useAuthors()
 const { query: pressReleasesQ } = usePressReleases()
@@ -29,7 +29,7 @@ const confirmId   = ref<number | null>(null)
 
 const fullRecord = useAuthor(computed(() => editingId.value))
 
-const tc = useTableControls({
+const tc = useTableControls<AuthorSummary>({
   data: query.data,
   searchFn: (a, q) =>
     a.name.toLowerCase().includes(q) ||

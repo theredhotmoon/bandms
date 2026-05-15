@@ -9,7 +9,7 @@ import {
   activateTechRider,
   deleteTechRider,
 } from '@/api/techRiders'
-import type { TechRiderPayload } from '@/types/techRider'
+import type { TechRider, TechRiderSummary, TechRiderPayload } from '@/types/techRider'
 import { useAuth } from './useAuth'
 
 const LIST_QK = ['tech-riders']
@@ -18,7 +18,7 @@ export function useTechRiders() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const list = useQuery({ queryKey: LIST_QK, queryFn: fetchTechRiders })
+  const list = useQuery<TechRiderSummary[]>({ queryKey: LIST_QK, queryFn: fetchTechRiders })
 
   const create = useMutation({
     mutationFn: (payload: TechRiderPayload) => createTechRider(token.value!, payload),
@@ -48,7 +48,7 @@ export function useTechRider(openId: Ref<number | null>) {
 
   const qk = computed(() => ['tech-riders', openId.value])
 
-  const query = useQuery({
+  const query = useQuery<TechRider>({
     queryKey: qk,
     queryFn: () => fetchTechRider(openId.value!),
     enabled: computed(() => openId.value !== null),
@@ -56,7 +56,7 @@ export function useTechRider(openId: Ref<number | null>) {
 
   const update = useMutation({
     mutationFn: (payload: TechRiderPayload) => updateTechRider(token.value!, openId.value!, payload),
-    onSuccess: (data) => {
+    onSuccess: (data: TechRider) => {
       queryClient.setQueryData(qk.value, data)
       queryClient.invalidateQueries({ queryKey: LIST_QK })
     },

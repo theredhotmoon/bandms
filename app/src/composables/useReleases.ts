@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createRelease, deleteRelease, fetchReleases, updateRelease } from '@/api/releases'
-import type { ReleasePayload } from '@/types/release'
+import type { ReleaseSummary, ReleasePayload } from '@/types/release'
 import { useAuth } from './useAuth'
 
 export function useReleases() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<ReleaseSummary[]>({
     queryKey: ['releases'],
     queryFn: fetchReleases,
   })

@@ -11,7 +11,6 @@ use App\Http\Controllers\BandController;
 use App\Http\Controllers\BandMemberController;
 use App\Http\Controllers\BandMemberSetupController;
 use App\Http\Controllers\BandProfileController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConcertController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
@@ -70,9 +69,6 @@ Route::get('/bands/{band}', [BandController::class, 'show'])->name('api.bands.sh
 
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
-
-Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
-Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('api.categories.show');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -161,6 +157,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/band-profile/stage-plot', [BandProfileController::class, 'uploadStagePlot'])->name('api.band-profile.stage-plot.upload');
         Route::delete('/band-profile/stage-plot', [BandProfileController::class, 'destroyStagePlot'])->name('api.band-profile.stage-plot.destroy');
         Route::post('/band-profile/members', [BandMemberController::class, 'store'])->name('api.band-profile.members.store');
+        Route::put('/band-profile/members/reorder', [BandMemberController::class, 'reorder'])->name('api.band-profile.members.reorder');
+        Route::post('/band-profile/members/{member}/photo', [BandMemberController::class, 'uploadPhoto'])->name('api.band-profile.members.photo.upload');
         Route::delete('/band-profile/members/{member}', [BandMemberController::class, 'destroy'])->name('api.band-profile.members.destroy');
 
         // All setups across all members (for tech rider import panel)
@@ -183,10 +181,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/concerts/{concert}', [ConcertController::class, 'destroy'])->name('api.concerts.destroy');
         Route::post('/concerts/{concert}/poster', [ConcertController::class, 'uploadPoster'])->name('api.concerts.poster.upload');
         Route::delete('/concerts/{concert}/poster', [ConcertController::class, 'destroyPoster'])->name('api.concerts.poster.destroy');
-
-        Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');
-        Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('api.categories.update');
-        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
 
         Route::post('/tags', [TagController::class, 'store'])->name('api.tags.store');
         Route::put('/tags/{tag}', [TagController::class, 'update'])->name('api.tags.update');

@@ -5,7 +5,7 @@ import {
   fetchProfileSocialLinks,
   updateProfileSocialLink,
 } from '@/api/socialLinks'
-import type { SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLink, SocialLinkPayload } from '@/types/socialLink'
 import { useAuth } from './useAuth'
 
 export function useSocialLinks() {
@@ -13,7 +13,7 @@ export function useSocialLinks() {
   const queryClient = useQueryClient()
   const qk = ['band-profile-social-links']
 
-  const query = useQuery({ queryKey: qk, queryFn: fetchProfileSocialLinks })
+  const query = useQuery<SocialLink[]>({ queryKey: qk, queryFn: fetchProfileSocialLinks })
 
   const create = useMutation({
     mutationFn: (payload: SocialLinkPayload) => createProfileSocialLink(token.value!, payload),

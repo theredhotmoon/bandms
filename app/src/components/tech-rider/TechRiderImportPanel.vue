@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAllMemberSetups } from '@/composables/useBandMemberSetups'
 import type { InputRow } from '@/types/techRider'
-import type { BandMemberSetup } from '@/types/bandMemberSetup'
+import type { BandMemberSetup, MemberSetupGroup } from '@/types/bandMemberSetup'
 import { CHAIN_META } from '@/utils/signalChainPresets'
 
 interface Props {
@@ -54,8 +54,15 @@ function toggleExpand(id: number) {
 
 const allSetups = computed<BandMemberSetup[]>(() => {
   if (!groups.value) return []
-  return groups.value.flatMap(g => g.setups)
+  return groups.value.flatMap((g: MemberSetupGroup) => g.setups)
 })
+
+function groupSetupIds(g: MemberSetupGroup): number[] {
+  return g.setups.map((s: BandMemberSetup) => s.id)
+}
+function groupAllSelected(g: MemberSetupGroup): boolean {
+  return g.setups.every((s: BandMemberSetup) => selected.value.has(s.id))
+}
 
 const selectedRows = computed<InputRow[]>(() => {
   return allSetups.value
@@ -114,9 +121,9 @@ function chainLabel(type: string) {
                   <button
                     type="button"
                     class="select-all-btn"
-                    @click="toggleAll(group.setups.map(s => s.id))"
+                    @click="toggleAll(groupSetupIds(group))"
                   >
-                    {{ group.setups.every(s => selected.has(s.id)) ? 'Deselect all' : 'Select all' }}
+                    {{ groupAllSelected(group) ? 'Deselect all' : 'Select all' }}
                   </button>
                 </div>
 

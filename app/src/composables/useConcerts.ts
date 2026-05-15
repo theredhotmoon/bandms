@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createConcert, deleteConcert, fetchConcerts, updateConcert } from '@/api/concerts'
-import type { ConcertPayload } from '@/types/concert'
+import type { Concert, ConcertPayload } from '@/types/concert'
 import { useAuth } from './useAuth'
 
 export function useConcerts() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery({
+  const query = useQuery<Concert[]>({
     queryKey: ['concerts'],
     queryFn: fetchConcerts,
   })
