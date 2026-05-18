@@ -1,5 +1,5 @@
 import type { Venue, VenuePayload } from '@/types/venue'
-import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface VenueListResponse {
   data: Venue[]
@@ -9,14 +9,14 @@ interface VenueResponse {
   data: Venue
 }
 
-export async function fetchVenues(): Promise<Venue[]> {
-  const res = await fetch(`${API_BASE}/api/venues`, { headers: jsonHeaders })
+export async function fetchVenues(token: string): Promise<Venue[]> {
+  const res = await fetch(`${API_BASE}/api/venues`, { headers: authHeaders(token) })
   return handleResponse<VenueListResponse>(res).then((r) => r.data)
 }
 
-export async function fetchVenue(id: number): Promise<Venue> {
+export async function fetchVenue(token: string, id: number): Promise<Venue> {
   assertSafeId(id)
-  const res = await fetch(`${API_BASE}/api/venues/${id}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/venues/${id}`, { headers: authHeaders(token) })
   return handleResponse<VenueResponse>(res).then((r) => r.data)
 }
 

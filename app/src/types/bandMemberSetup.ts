@@ -50,6 +50,22 @@ export interface MemberPowerPrefs {
   notes: string
 }
 
+// ── Wireless preferences ──────────────────────────────────────────────────────
+
+export type WirelessUnitType = 'instrument' | 'vocal' | 'iem' | 'other'
+
+export interface WirelessUnit {
+  type: WirelessUnitType
+  brand_model: string
+  frequency_band: string
+  own_unit: boolean
+  notes: string
+}
+
+export interface MemberWirelessPrefs {
+  units: WirelessUnit[]
+}
+
 // ── Top-level setup ───────────────────────────────────────────────────────────
 
 export interface BandMemberSetup {
@@ -62,6 +78,7 @@ export interface BandMemberSetup {
   monitor: MemberMonitorPrefs
   backline: MemberBacklinePrefs
   power: MemberPowerPrefs
+  wireless: WirelessUnit[]
   foh_notes: string
   created_at: string
   updated_at: string
@@ -85,6 +102,7 @@ export interface BandMemberSetupPayload {
   monitor?: MemberMonitorPrefs
   backline?: MemberBacklinePrefs
   power?: MemberPowerPrefs
+  wireless?: WirelessUnit[]
   foh_notes?: string
 }
 
@@ -122,4 +140,12 @@ export function defaultBacklinePrefs(): MemberBacklinePrefs {
 
 export function defaultPowerPrefs(): MemberPowerPrefs {
   return { outlets_needed: 2, notes: '' }
+}
+
+export function defaultWirelessPrefs(): MemberWirelessPrefs {
+  return { units: [] }
+}
+
+export function defaultWirelessUnit(): WirelessUnit {
+  return { type: 'instrument', brand_model: '', frequency_band: '', own_unit: true, notes: '' }
 }

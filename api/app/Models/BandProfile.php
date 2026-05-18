@@ -15,8 +15,14 @@ class BandProfile extends Model
         'tech_contact_phone', 'tech_contact_email', 'tech_rider_notes', 'career_level',
         'stat_spotify_monthly', 'stat_instagram_followers', 'stat_tiktok_followers',
         'stat_youtube_subscribers', 'stat_facebook_followers',
+        'facebook_likes', 'facebook_likes_synced_at',
         'tech_rider_path', 'stage_plot_path',
         'epk_release_id', 'epk_album_id',
+    ];
+
+    protected $casts = [
+        'facebook_likes'          => 'integer',
+        'facebook_likes_synced_at' => 'datetime',
     ];
 
     public function members(): HasMany

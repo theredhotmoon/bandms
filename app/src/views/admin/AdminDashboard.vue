@@ -174,7 +174,7 @@ const avgEnhanceScore = computed(() => {
           :concerts="concertsQ.data.value ?? []"
           :releases="releasesQ.data.value ?? []"
           :press-count="pressQ.data.value?.length ?? 0"
-          :posts-count="postsQ.data.value?.length ?? 0"
+          :posts-count="postsQ.data.value?.data?.length ?? 0"
           :music-videos-count="videosQ.data.value?.length ?? 0"
           :members-count="profileQ.data.value.members?.length ?? 0"
           :tech-rider-active="hasTechRiderActive"

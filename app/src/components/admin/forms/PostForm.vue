@@ -8,6 +8,8 @@ import type { Concert } from '@/types/concert'
 import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
 import type { TourSummary } from '@/types/tour'
+import type { MusicVideo } from '@/types/musicVideo'
+import type { PressReleaseSummary } from '@/types/press-release'
 
 const props = defineProps<{
   initial?: Post | null
@@ -16,6 +18,8 @@ const props = defineProps<{
   albums: Album[]
   releases: ReleaseSummary[]
   tours: TourSummary[]
+  musicVideos: MusicVideo[]
+  pressReleases: PressReleaseSummary[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -30,11 +34,14 @@ const form = reactive({
   content: '',
   image: null as string | null,
   published_at: '',
+  event_date: '',
   tag_ids: [] as number[],
   concert_ids: [] as number[],
   album_ids: [] as number[],
   release_ids: [] as number[],
   tour_ids: [] as number[],
+  music_video_ids: [] as number[],
+  press_release_ids: [] as number[],
   links: [] as LinkRow[],
 })
 
@@ -44,11 +51,14 @@ watch(() => props.initial, (val) => {
   form.content = val?.content ?? ''
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
+  form.event_date = val?.event_date ?? ''
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.album_ids = val?.albums?.map(a => a.id) ?? []
   form.release_ids = val?.releases?.map(r => r.id) ?? []
   form.tour_ids = val?.tours?.map(t => t.id) ?? []
+  form.music_video_ids = val?.music_videos?.map(v => v.id) ?? []
+  form.press_release_ids = val?.press_releases?.map(pr => pr.id) ?? []
   form.links = val?.links?.map(l => ({ type: l.type, url: l.url, label: l.label ?? '' })) ?? []
 }, { immediate: true })
 
@@ -64,11 +74,14 @@ function submit() {
     content: form.content || null,
     image: form.image || null,
     published_at: form.published_at || null,
+    event_date: form.event_date || null,
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
     album_ids: form.album_ids,
     release_ids: form.release_ids,
     tour_ids: form.tour_ids,
+    music_video_ids: form.music_video_ids,
+    press_release_ids: form.press_release_ids,
     links: form.links.map((l) => ({ type: l.type, url: l.url, label: l.label || null })),
   })
 }
@@ -96,10 +109,17 @@ function submit() {
       <SingleImageUpload v-model="form.image" />
       <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
     </div>
-    <div>
-      <label class="field-label">Publish at</label>
-      <input v-model="form.published_at" type="datetime-local" class="field-input" />
-      <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
+    <div class="flex gap-4">
+      <div class="flex-1">
+        <label class="field-label">Publish at</label>
+        <input v-model="form.published_at" type="datetime-local" class="field-input" />
+        <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
+      </div>
+      <div class="flex-1">
+        <label class="field-label">Event date</label>
+        <input v-model="form.event_date" type="date" class="field-input" />
+        <p v-if="errors?.event_date" class="field-error">{{ errors.event_date[0] }}</p>
+      </div>
     </div>
 
     <EntityRelationsPanel
@@ -113,6 +133,10 @@ function submit() {
       v-model:releaseIds="form.release_ids"
       v-model:tourIds="form.tour_ids"
       v-model:tagIds="form.tag_ids"
+      :musicVideos="musicVideos"
+      :pressReleases="pressReleases"
+      v-model:musicVideoIds="form.music_video_ids"
+      v-model:pressReleaseIds="form.press_release_ids"
     />
 
     <div>

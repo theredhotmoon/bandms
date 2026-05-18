@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    'youtube' => [
+        'api_key' => env('YOUTUBE_API_KEY'),
+    ],
+
+    'facebook' => [
+        'app_id'     => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'page_id'    => env('FACEBOOK_PAGE_ID'),
+    ],
+
+    'setlistfm' => [
+        'api_key' => env('SETLISTFM_API_KEY'),
+    ],
+
 ];

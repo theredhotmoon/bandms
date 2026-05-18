@@ -7,17 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\MusicVideo;
+use App\Models\PressRelease;
 
 class Post extends Model
 {
     use HasFactory, HasSlug;
 
-    protected $fillable = ['title', 'slug', 'intro', 'content', 'image', 'published_at'];
+    protected $fillable = ['title', 'slug', 'intro', 'content', 'image', 'published_at', 'event_date'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'event_date'   => 'date',
         ];
     }
 
@@ -54,5 +57,15 @@ class Post extends Model
     public function tours(): BelongsToMany
     {
         return $this->belongsToMany(Tour::class, 'post_tours');
+    }
+
+    public function musicVideos(): BelongsToMany
+    {
+        return $this->belongsToMany(MusicVideo::class, 'post_music_videos');
+    }
+
+    public function pressReleases(): BelongsToMany
+    {
+        return $this->belongsToMany(PressRelease::class, 'press_release_posts');
     }
 }

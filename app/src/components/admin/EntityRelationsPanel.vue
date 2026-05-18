@@ -6,6 +6,8 @@ import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
 import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
+import type { MusicVideo } from '@/types/musicVideo'
+import type { PressReleaseSummary } from '@/types/press-release'
 
 defineProps<{
   concerts?: Concert[]
@@ -14,22 +16,28 @@ defineProps<{
   releases?: ReleaseSummary[]
   tours?: TourSummary[]
   tags?: Tag[]
+  musicVideos?: MusicVideo[]
+  pressReleases?: PressReleaseSummary[]
 }>()
 
-const concertIds = defineModel<number[]>('concertIds', { default: () => [] })
-const postIds    = defineModel<number[]>('postIds',    { default: () => [] })
-const albumIds   = defineModel<number[]>('albumIds',   { default: () => [] })
-const releaseIds = defineModel<number[]>('releaseIds', { default: () => [] })
-const tourIds    = defineModel<number[]>('tourIds',    { default: () => [] })
-const tagIds     = defineModel<number[]>('tagIds',     { default: () => [] })
+const concertIds      = defineModel<number[]>('concertIds',      { default: () => [] })
+const postIds         = defineModel<number[]>('postIds',         { default: () => [] })
+const albumIds        = defineModel<number[]>('albumIds',        { default: () => [] })
+const releaseIds      = defineModel<number[]>('releaseIds',      { default: () => [] })
+const tourIds         = defineModel<number[]>('tourIds',         { default: () => [] })
+const tagIds          = defineModel<number[]>('tagIds',          { default: () => [] })
+const musicVideoIds   = defineModel<number[]>('musicVideoIds',   { default: () => [] })
+const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
 
 const expanded = reactive({
-  concerts: false,
-  posts:    false,
-  albums:   false,
-  releases: false,
-  tours:    false,
-  tags:     false,
+  concerts:      false,
+  posts:         false,
+  albums:        false,
+  releases:      false,
+  tours:         false,
+  tags:          false,
+  musicVideos:   false,
+  pressReleases: false,
 })
 
 function toggle(current: number[], set: (v: number[]) => void, id: number) {
@@ -123,6 +131,32 @@ function label(text: string, count: number) {
         <label v-for="p in posts" :key="p.id" class="checkbox-item">
           <input type="checkbox" :checked="postIds.includes(p.id)" @change="toggle(postIds, v => postIds = v, p.id)" />
           <span>{{ p.title }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="musicVideos?.length" class="assoc-section">
+      <button type="button" class="assoc-toggle" @click="expanded.musicVideos = !expanded.musicVideos">
+        <span>{{ label('Music videos', musicVideoIds.length) }}</span>
+        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.musicVideos }">›</span>
+      </button>
+      <div v-if="expanded.musicVideos" class="assoc-body checkbox-list">
+        <label v-for="v in musicVideos" :key="v.id" class="checkbox-item">
+          <input type="checkbox" :checked="musicVideoIds.includes(v.id)" @change="toggle(musicVideoIds, val => musicVideoIds = val, v.id)" />
+          <span>{{ v.og_title ?? v.title }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="pressReleases?.length" class="assoc-section">
+      <button type="button" class="assoc-toggle" @click="expanded.pressReleases = !expanded.pressReleases">
+        <span>{{ label('Press', pressReleaseIds.length) }}</span>
+        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.pressReleases }">›</span>
+      </button>
+      <div v-if="expanded.pressReleases" class="assoc-body checkbox-list">
+        <label v-for="pr in pressReleases" :key="pr.id" class="checkbox-item">
+          <input type="checkbox" :checked="pressReleaseIds.includes(pr.id)" @change="toggle(pressReleaseIds, val => pressReleaseIds = val, pr.id)" />
+          <span>{{ pr.og_title ?? pr.url }}</span>
         </label>
       </div>
     </div>

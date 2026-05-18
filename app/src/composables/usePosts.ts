@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { Ref } from 'vue'
 import { fetchPost, fetchPosts, createPost, updatePost, deletePost } from '@/api/posts'
-import type { PostFilters } from '@/api/posts'
-import type { Post, PostSummary, PostPayload } from '@/types/post'
+import type { PostFilters, PostListResponse } from '@/api/posts'
+import type { Post, PostPayload } from '@/types/post'
 import { useAuth } from './useAuth'
 
 export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFilters>) {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery<PostSummary[]>({
+  const query = useQuery<PostListResponse>({
     queryKey: ['posts', filters],
     queryFn: () => fetchPosts(filters.value),
   })

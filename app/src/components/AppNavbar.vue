@@ -9,11 +9,12 @@ const mobileOpen = ref(false)
 
 const navLinks = [
   { to: '/about',    label: 'About' },
+  { to: '/posts',    label: 'News' },
   { to: '/concerts', label: 'Concerts' },
-  { to: '/venues',   label: 'Venues' },
-  { to: '/posts',    label: 'Posts' },
-  { to: '/photos',   label: 'Photos' },
-  { to: '/tags',     label: 'Tags' },
+  { to: '/releases', label: 'Releases' },
+  { to: '/videos',   label: 'Videos' },
+  { to: '/photos',   label: 'Galleries' },
+  { to: '/booking',  label: 'Booking' },
 ]
 
 async function handleLogout() {
@@ -110,8 +111,8 @@ async function handleLogout() {
   position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 50;
   display: flex; align-items: center; gap: 0.25rem;
   padding: 0 1.25rem;
-  background: #0d0d22;
-  border-bottom: 1px solid #2d2a6e;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 /* ── Logo ───────────────────────────────────────────────── */
@@ -119,9 +120,9 @@ async function handleLogout() {
   display: flex; align-items: center; gap: 0.5rem;
   text-decoration: none; flex-shrink: 0; margin-right: 0.75rem;
 }
-.logo-icon { width: 1.125rem; height: 1.125rem; color: #6366f1; flex-shrink: 0; }
-.logo-text  { font-weight: 700; font-size: 1rem; color: #e2e8f0; letter-spacing: -0.01em; }
-.logo-accent { color: #6366f1; }
+.logo-icon { width: 1.125rem; height: 1.125rem; color: #111; flex-shrink: 0; }
+.logo-text  { font-weight: 700; font-size: 1rem; color: #111; letter-spacing: -0.01em; }
+.logo-accent { color: #111; }
 
 /* ── Desktop links ──────────────────────────────────────── */
 .desktop-links {
@@ -129,12 +130,12 @@ async function handleLogout() {
 }
 .desk-link {
   padding: 0.375rem 0.625rem; border-radius: 0.375rem;
-  font-size: 0.8125rem; font-weight: 500; color: #94a3b8;
+  font-size: 0.8125rem; font-weight: 500; color: #555;
   text-decoration: none; white-space: nowrap;
   transition: background 120ms, color 120ms;
 }
-.desk-link:hover        { background: #161630; color: #c7d2fe; }
-.desk-link--active      { background: #1e1b4b; color: #a5b4fc; }
+.desk-link:hover        { background: #f5f5f5; color: #111; }
+.desk-link--active      { background: #f0f0f0; color: #111; font-weight: 600; }
 
 .nav-spacer { flex: 1; }
 
@@ -146,30 +147,30 @@ async function handleLogout() {
   display: flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.5rem;
   font-size: 0.8125rem; font-weight: 500;
-  background: #1e1b4b; color: #a5b4fc;
-  text-decoration: none; border: 1px solid #312e81;
+  background: #f0f0f0; color: #111;
+  text-decoration: none; border: 1px solid #ddd;
   transition: background 120ms, border-color 120ms;
 }
-.btn-admin:hover { background: #2d2a6e; border-color: #4338ca; }
+.btn-admin:hover { background: #e0e0e0; border-color: #bbb; }
 
 .btn-signout {
   display: flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.5rem;
   font-size: 0.8125rem; font-weight: 500;
-  background: transparent; color: #64748b;
+  background: transparent; color: #888;
   border: 1px solid transparent; cursor: pointer;
   transition: background 120ms, color 120ms;
 }
-.btn-signout:hover { background: #161630; color: #f87171; }
+.btn-signout:hover { background: #f5f5f5; color: #111; }
 
 .btn-signin {
   padding: 0.375rem 0.875rem; border-radius: 0.5rem;
   font-size: 0.8125rem; font-weight: 600;
-  background: #4338ca; color: #fff;
+  background: #111; color: #fff;
   text-decoration: none;
   transition: background 120ms;
 }
-.btn-signin:hover { background: #5046e4; }
+.btn-signin:hover { background: #333; }
 
 /* ── Hamburger ──────────────────────────────────────────── */
 .hamburger {
@@ -179,7 +180,7 @@ async function handleLogout() {
 }
 .bar {
   display: block; width: 100%; height: 2px; border-radius: 2px;
-  background: #94a3b8;
+  background: #555;
   transition: transform 200ms, opacity 150ms;
 }
 .bar.open:first-child  { transform: translateY(7px) rotate(45deg); }
@@ -189,26 +190,26 @@ async function handleLogout() {
 /* ── Mobile menu ────────────────────────────────────────── */
 .mobile-menu {
   position: fixed; top: 56px; left: 0; right: 0; z-index: 49;
-  background: #0d0d22; border-bottom: 1px solid #2d2a6e;
+  background: #fff; border-bottom: 1px solid #e0e0e0;
   padding: 0.75rem 1rem 1rem;
   display: flex; flex-direction: column; gap: 0.25rem;
 }
 .mob-link {
   display: block; padding: 0.625rem 0.875rem; border-radius: 0.5rem;
-  font-size: 0.9375rem; font-weight: 500; color: #94a3b8;
+  font-size: 0.9375rem; font-weight: 500; color: #555;
   text-decoration: none; border: none; background: transparent;
   cursor: pointer; text-align: left;
   transition: background 120ms, color 120ms;
 }
-.mob-link:hover       { background: #161630; color: #c7d2fe; }
-.mob-link--active     { background: #1e1b4b; color: #a5b4fc; }
-.mob-signout:hover    { color: #f87171; }
-.mob-divider          { height: 1px; background: #2d2a6e; margin: 0.25rem 0; }
+.mob-link:hover       { background: #f5f5f5; color: #111; }
+.mob-link--active     { background: #f0f0f0; color: #111; font-weight: 600; }
+.mob-signout:hover    { color: #111; }
+.mob-divider          { height: 1px; background: #e0e0e0; margin: 0.25rem 0; }
 
 /* ── Backdrop ───────────────────────────────────────────── */
 .backdrop {
   position: fixed; inset: 0; top: 56px; z-index: 48;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.3);
 }
 
 /* ── Transitions ────────────────────────────────────────── */

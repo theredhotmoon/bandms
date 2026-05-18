@@ -1,10 +1,51 @@
 import type { SocialLink, SocialLinkPayload } from './socialLink'
 import type { Instrument } from './instrument'
 
+// ── Default gear ──────────────────────────────────────────────────────────────
+
+export type DefaultGearItemType =
+  | 'microphone'
+  | 'amp_head'
+  | 'amp_combo'
+  | 'cabinet'
+  | 'di_box'
+  | 'keyboard'
+  | 'drum_kit'
+  | 'drum_hardware'
+  | 'pedal_board'
+  | 'wireless_system'
+  | 'other'
+
+export interface DefaultGearItem {
+  id: string
+  type: DefaultGearItemType
+  label: string
+  brand_model: string
+  own_gear: boolean
+  notes: string
+}
+
+export const DEFAULT_GEAR_TYPE_LABELS: Record<DefaultGearItemType, string> = {
+  microphone:      'Microphone',
+  amp_head:        'Amp Head',
+  amp_combo:       'Combo Amp',
+  cabinet:         'Cabinet',
+  di_box:          'DI Box',
+  keyboard:        'Keyboard / Synth',
+  drum_kit:        'Drum Kit',
+  drum_hardware:   'Drum Hardware',
+  pedal_board:     'Pedal Board',
+  wireless_system: 'Wireless System',
+  other:           'Other',
+}
+
+// ── Band member ───────────────────────────────────────────────────────────────
+
 export interface BandMember {
   id: number
   band_id: number
   first_name: string
+  nickname: string | null
   last_name: string
   bio: string | null
   photo: string | null
@@ -16,6 +57,7 @@ export interface BandMember {
   calendar_url: string | null
   login_email: string | null
   can_login: boolean
+  default_gear: DefaultGearItem[]
   instruments: Instrument[]
   social_links: SocialLink[]
   created_at: string
@@ -24,6 +66,7 @@ export interface BandMember {
 
 export interface BandMemberPayload {
   first_name: string
+  nickname?: string | null
   last_name: string
   bio?: string | null
   photo?: string | null
@@ -38,4 +81,5 @@ export interface BandMemberPayload {
   can_login?: boolean
   instrument_ids?: number[]
   social_links?: SocialLinkPayload[]
+  default_gear?: DefaultGearItem[]
 }

@@ -24,6 +24,8 @@ export interface BandProfile {
   stat_tiktok_followers: number | null
   stat_youtube_subscribers: number | null
   stat_facebook_followers: number | null
+  facebook_likes: number | null
+  facebook_likes_synced_at: string | null
   tech_rider_url: string | null
   stage_plot_url: string | null
   epk_release_id: number | null
@@ -32,6 +34,12 @@ export interface BandProfile {
   members?: BandMember[]
   social_links?: SocialLink[]
   updated_at: string
+}
+
+export interface FacebookSyncResult {
+  message: string
+  likes: number
+  synced_at: string
 }
 
 export interface BandProfilePayload {

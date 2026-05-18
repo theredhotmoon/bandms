@@ -213,7 +213,7 @@ const LINK_TYPE_LABELS: Record<PostLinkType, string> = {
         <button @click="router.push('/posts')">Cancel</button>
       </div>
 
-      <p v-if="apiError" style="color: #f87171;">{{ apiError }}</p>
+      <p v-if="apiError" style="color: #555;">{{ apiError }}</p>
     </div>
   </div>
 </template>

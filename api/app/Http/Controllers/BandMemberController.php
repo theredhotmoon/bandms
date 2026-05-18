@@ -34,6 +34,7 @@ class BandMemberController extends Controller
     {
         $data = $request->validate([
             'first_name'              => ['required', 'string', 'max:255'],
+            'nickname'                => ['nullable', 'string', 'max:255'],
             'last_name'               => ['required', 'string', 'max:255'],
             'bio'                     => ['nullable', 'string'],
             'photo'                   => ['nullable', 'string', 'max:1000'],
@@ -50,6 +51,7 @@ class BandMemberController extends Controller
             'social_links.*.url'      => ['required', 'url', 'max:500'],
             'instrument_ids'          => ['nullable', 'array'],
             'instrument_ids.*'        => ['integer', 'exists:instruments,id'],
+            'default_gear'            => ['nullable', 'array'],
         ]);
 
         $profile = $this->profile();
@@ -81,6 +83,7 @@ class BandMemberController extends Controller
 
         $data = $request->validate([
             'first_name'              => ['sometimes', 'required', 'string', 'max:255'],
+            'nickname'                => ['nullable', 'string', 'max:255'],
             'last_name'               => ['sometimes', 'required', 'string', 'max:255'],
             'bio'                     => ['nullable', 'string'],
             'photo'                   => ['nullable', 'string', 'max:1000'],
@@ -97,6 +100,7 @@ class BandMemberController extends Controller
             'social_links.*.url'      => ['required', 'url', 'max:500'],
             'instrument_ids'          => ['nullable', 'array'],
             'instrument_ids.*'        => ['integer', 'exists:instruments,id'],
+            'default_gear'            => ['nullable', 'array'],
         ]);
 
         $member->update($data);
@@ -130,7 +134,7 @@ class BandMemberController extends Controller
         }
 
         $path = $request->file('photo')->store('members', 'public');
-        $member->update(['photo' => Storage::disk('public')->url($path)]);
+        $member->update(['photo' => '/storage/' . $path]);
         $member->load(['socialLinks', 'instruments']);
 
         return new BandMemberResource($member);

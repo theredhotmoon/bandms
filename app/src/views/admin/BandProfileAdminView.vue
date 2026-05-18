@@ -10,7 +10,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { ApiValidationError } from '@/api/client'
 
-const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot } = useBandProfile()
+const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
 const { create: createVersion } = useEpkVersions()
 
@@ -132,6 +132,15 @@ async function saveProfile() {
     else toast.error('Failed to save')
   } finally {
     saving.value = false
+  }
+}
+
+async function doSyncFb() {
+  try {
+    const result = await syncFb.mutateAsync()
+    toast.success(`${result.likes.toLocaleString()} Facebook likes synced`)
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Failed to sync Facebook likes')
   }
 }
 
@@ -348,6 +357,33 @@ const section = ref<Section>('bio')
           <!-- ── STATS ───────────────────────────────────────── -->
           <template v-if="section === 'stats'">
             <div class="section-hint">Enter your current numbers manually — these appear on your EPK as social proof. Update them periodically.</div>
+
+            <!-- Facebook likes live sync -->
+            <div class="fb-sync-row">
+              <div class="fb-sync-left">
+                <span class="fb-sync-label">Facebook page likes</span>
+                <span v-if="query.data.value?.facebook_likes != null" class="fb-sync-count">
+                  {{ query.data.value.facebook_likes.toLocaleString() }}
+                </span>
+                <span v-else class="fb-sync-none">not synced yet</span>
+                <span v-if="query.data.value?.facebook_likes_synced_at" class="fb-sync-ts">
+                  · synced {{ new Date(query.data.value.facebook_likes_synced_at).toLocaleString() }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-fb-sync"
+                :disabled="syncFb.isPending.value"
+                @click="doSyncFb"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
+                </svg>
+                {{ syncFb.isPending.value ? 'Syncing…' : 'Sync from Facebook' }}
+              </button>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="field-label">Spotify monthly listeners</label>
@@ -366,7 +402,7 @@ const section = ref<Section>('bio')
                 <input v-model="form.stat_youtube_subscribers" type="number" min="0" class="field-input" placeholder="e.g. 5000" />
               </div>
               <div>
-                <label class="field-label">Facebook followers</label>
+                <label class="field-label">Facebook followers (manual)</label>
                 <input v-model="form.stat_facebook_followers" type="number" min="0" class="field-input" placeholder="e.g. 3000" />
               </div>
             </div>
@@ -584,4 +620,23 @@ const section = ref<Section>('bio')
 .career-level-sub   { font-size: 0.65rem; color: #475569; text-align: center; }
 .career-level-card--active .career-level-name { color: #a5b4fc; }
 .career-level-card--active .career-level-sub  { color: #6366f1; }
+
+.fb-sync-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.75rem 1rem; background: #0d1a2d; border: 1px solid #1e3a5f;
+  border-radius: 0.5rem;
+}
+.fb-sync-left { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.fb-sync-label { font-size: 0.75rem; font-weight: 600; color: #7c8fa6; }
+.fb-sync-count { font-size: 1rem; font-weight: 700; color: #38bdf8; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fb-sync-none  { font-size: 0.75rem; color: #334155; }
+.fb-sync-ts    { font-size: 0.65rem; color: #334155; }
+.btn-fb-sync {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.375rem 0.75rem; border-radius: 0.4rem; font-size: 0.78rem; font-weight: 500;
+  background: #0d1a2d; color: #38bdf8; border: 1px solid #1e3a5f; cursor: pointer;
+  transition: background 120ms; white-space: nowrap;
+}
+.btn-fb-sync:hover:not(:disabled) { background: #0f2540; }
+.btn-fb-sync:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

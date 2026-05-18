@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import type { StagePlotItem, StagePlotItemType } from '@/types/techRider'
 import type { BandMember } from '@/types/bandMember'
+import { DEFAULT_GEAR_TYPE_LABELS } from '@/types/bandMember'
 import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
 
 interface Props {
@@ -220,7 +221,11 @@ function memberInitials(item: StagePlotItem): string {
 }
 
 // ── Detail popup ──────────────────────────────────────────────────────────────
-const detailItem  = ref<StagePlotItem | null>(null)
+const detailItem   = ref<StagePlotItem | null>(null)
+const detailMember = computed<BandMember | null>(() => {
+  if (!detailItem.value?.band_member_id) return null
+  return props.bandMembers.find(b => b.id === detailItem.value!.band_member_id) ?? null
+})
 const detailSetup = computed<BandMemberSetup | null>(() => {
   if (!detailItem.value?.band_member_id || !detailItem.value?.setup_id) return null
   return (
@@ -251,6 +256,23 @@ const SIGNAL_CHAIN_LABELS: Record<string, string> = {
   acoustic_mic:    'Acoustic — Mic only',
   acoustic_mic_di: 'Acoustic — Mic + DI',
   other:           'Custom / other',
+}
+
+// ── Hover state (JS-tracked so actions remain reachable) ─────────────────────
+const hoveredId  = ref<string | null>(null)
+let hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null
+
+function onItemEnter(id: string) {
+  if (hoverLeaveTimer) { clearTimeout(hoverLeaveTimer); hoverLeaveTimer = null }
+  hoveredId.value = id
+}
+
+function onItemLeave() {
+  hoverLeaveTimer = setTimeout(() => { hoveredId.value = null }, 180)
+}
+
+function onActionsEnter() {
+  if (hoverLeaveTimer) { clearTimeout(hoverLeaveTimer); hoverLeaveTimer = null }
 }
 
 // ── Edit item label / channel ─────────────────────────────────────────────────
@@ -315,6 +337,8 @@ function removeItem(id: string) {
           :style="{ left: item.x + '%', top: item.y + '%' }"
           draggable="true"
           @dragstart="onItemDragStart($event, item)"
+          @mouseenter="onItemEnter(item.id)"
+          @mouseleave="onItemLeave"
         >
           <svg viewBox="0 0 44 44" class="stage-item-icon" v-html="ICONS[item.type]" />
 
@@ -329,7 +353,8 @@ function removeItem(id: string) {
           <div v-if="item.band_member_id" class="stage-item-member">{{ memberName(item) }}</div>
 
           <!-- Actions (shown on hover) -->
-          <div class="item-actions">
+          <div class="item-actions" :class="{ 'item-actions--visible': hoveredId === item.id }"
+            @mouseenter="onActionsEnter" @mouseleave="onItemLeave">
             <button type="button" class="item-btn item-btn--info" title="View rig details"
               @click.stop="showDetail(item)">👁</button>
             <button type="button" class="item-btn item-btn--assign" title="Assign band member"
@@ -518,6 +543,21 @@ function removeItem(id: string) {
           <div class="detail-foh-notes">{{ detailSetup.foh_notes }}</div>
         </div>
       </template>
+
+      <!-- Default gear (from member profile, shown whenever a member is assigned) -->
+      <div v-if="detailMember?.default_gear?.length" class="detail-section">
+        <div class="detail-section-label">Default gear</div>
+        <div class="detail-gear-list">
+          <div v-for="g in detailMember.default_gear" :key="g.id" class="detail-gear-row">
+            <span class="gear-tag" :class="g.own_gear ? 'gear-tag--own' : 'gear-tag--backline'">
+              {{ g.own_gear ? 'Own' : 'Backline' }}
+            </span>
+            <span class="gear-name">{{ g.label || DEFAULT_GEAR_TYPE_LABELS[g.type] }}</span>
+            <span v-if="g.brand_model" class="gear-model">{{ g.brand_model }}</span>
+            <span v-if="g.notes" class="gear-note">— {{ g.notes }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -610,10 +650,11 @@ function removeItem(id: string) {
   border: 1px solid #4338ca; text-transform: uppercase;
 }
 .item-actions {
-  display: none; position: absolute; top: -0.5rem; right: -3.5rem;
-  flex-direction: column; gap: 0.15rem;
+  display: none; position: absolute; bottom: calc(100% + 0.2rem); left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row; gap: 0.15rem; z-index: 50; white-space: nowrap;
 }
-.stage-item:hover .item-actions { display: flex; }
+.item-actions--visible { display: flex; }
 .item-btn {
   padding: 0.1rem 0.25rem; font-size: 0.65rem; cursor: pointer;
   background: #0e0e26; border: 1px solid #2a2860; color: #818cf8; border-radius: 3px;
@@ -730,6 +771,21 @@ function removeItem(id: string) {
 .detail-k { color: #475569; font-weight: 600; }
 .detail-v { color: #94a3b8; }
 .detail-foh-notes { font-size: 0.78rem; color: #94a3b8; line-height: 1.6; }
+
+.detail-gear-list { display: flex; flex-direction: column; gap: 0.375rem; }
+.detail-gear-row  {
+  display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.78rem;
+  flex-wrap: wrap;
+}
+.gear-tag {
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  padding: 0.1rem 0.4rem; border-radius: 0.25rem; flex-shrink: 0;
+}
+.gear-tag--own      { background: #1e1b4b; color: #818cf8; }
+.gear-tag--backline { background: #422006; color: #f59e0b; }
+.gear-name  { color: #cbd5e1; font-weight: 500; }
+.gear-model { color: #64748b; }
+.gear-note  { color: #475569; font-size: 0.72rem; }
 
 /* ── Edit overlay ────────────────────────────────────── */
 .edit-card {

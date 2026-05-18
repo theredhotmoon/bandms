@@ -9,8 +9,19 @@ export interface MusicVideo {
   og_image: string | null
   og_site_name: string | null
   channel_name: string | null
+  view_count: number | null
+  views_synced_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface YouTubeSyncResult {
+  message: string
+  updated: number
+  skipped: number
+  total_views: number
+  synced_at: string
+  results: { id: number; title: string; view_count: number }[]
 }
 
 export interface MusicVideoPayload {

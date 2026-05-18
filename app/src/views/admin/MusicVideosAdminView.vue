@@ -11,8 +11,33 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useTableControls } from '@/composables/useTableControls'
 import type { MusicVideo, MusicVideoPayload } from '@/types/musicVideo'
 
-const { query, create, update, remove, previewFetch } = useMusicVideos()
+const { query, create, update, remove, previewFetch, syncViews } = useMusicVideos()
 const fetchingPreviewId = ref<number | null>(null)
+
+const totalViews = computed(() => {
+  const videos = query.data.value ?? []
+  return videos.reduce((sum: number, v: MusicVideo) => sum + (v.view_count ?? 0), 0)
+})
+
+const lastSyncedAt = computed(() => {
+  const videos = query.data.value ?? []
+  const ts = videos
+    .map((v: MusicVideo) => v.views_synced_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1)
+  if (!ts) return null
+  return new Date(ts).toLocaleString()
+})
+
+async function doSyncViews() {
+  try {
+    const result = await syncViews.mutateAsync()
+    toast.success(`Synced ${result.updated} video${result.updated === 1 ? '' : 's'} · ${result.total_views.toLocaleString()} total views`)
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Failed to sync YouTube views')
+  }
+}
 
 async function doFetchPreview(id: number) {
   fetchingPreviewId.value = id
@@ -130,7 +155,26 @@ function videoHost(url: string): string {
           <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Music Videos</h1>
           <p class="text-xs mt-0.5" style="color:#334155;">YouTube and Vimeo links shown on your EPK.</p>
         </div>
-        <button @click="openCreate" class="btn-add-primary">+ Add video</button>
+        <div class="header-right">
+          <!-- Total views stat -->
+          <div v-if="totalViews > 0" class="views-stat">
+            <span class="views-stat-num">{{ totalViews.toLocaleString() }}</span>
+            <span class="views-stat-label">total views</span>
+            <span v-if="lastSyncedAt" class="views-stat-ts">· synced {{ lastSyncedAt }}</span>
+          </div>
+          <button
+            class="btn-sync"
+            :disabled="syncViews.isPending.value"
+            @click="doSyncViews"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            {{ syncViews.isPending.value ? 'Syncing…' : 'Sync YouTube views' }}
+          </button>
+          <button @click="openCreate" class="btn-add-primary">+ Add video</button>
+        </div>
       </div>
 
       <div class="table-card">
@@ -158,6 +202,7 @@ function videoHost(url: string): string {
                 <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">URL / Channel</th>
                 <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader label="Views" sort-key="view_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
                 <SortHeader label="Order" sort-key="sort_order" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="4rem" @sort="tc.toggleSort" />
                 <th class="th text-right" style="width:12rem;">Actions</th>
               </tr>
@@ -178,6 +223,10 @@ function videoHost(url: string): string {
                   </a>
                 </td>
                 <td class="td" style="color:#475569; font-size:0.75rem;">{{ v.published_at ?? '—' }}</td>
+                <td class="td views-cell">
+                  <span v-if="v.view_count !== null" class="views-num">{{ v.view_count.toLocaleString() }}</span>
+                  <span v-else class="views-none">—</span>
+                </td>
                 <td class="td" style="color:#475569;">{{ v.sort_order }}</td>
                 <td class="td text-right">
                   <button
@@ -298,4 +347,56 @@ function videoHost(url: string): string {
 }
 .btn-preview:hover:not(:disabled) { background: #134e35; }
 .btn-preview:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.views-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  background: #0d1a2d;
+  border: 1px solid #1e3a5f;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.75rem;
+}
+.views-stat-num {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: -0.02em;
+}
+.views-stat-label {
+  font-size: 0.7rem;
+  color: #475569;
+  font-weight: 500;
+}
+.views-stat-ts {
+  font-size: 0.65rem;
+  color: #334155;
+}
+
+.btn-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #0d1a2d;
+  color: #38bdf8;
+  border: 1px solid #1e3a5f;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.btn-sync:hover:not(:disabled) { background: #0f2540; }
+.btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.views-cell { font-size: 0.8rem; }
+.views-num  { color: #38bdf8; font-weight: 600; font-variant-numeric: tabular-nums; }
+.views-none { color: #334155; }
 </style>

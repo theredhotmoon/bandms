@@ -17,6 +17,7 @@ class PostResource extends JsonResource
             'content'      => $this->content,
             'image'        => $this->image,
             'published_at' => $this->published_at,
+            'event_date'   => $this->event_date?->format('Y-m-d'),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'links'        => PostLinkResource::collection($this->whenLoaded('links')),
             'concerts'     => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [
@@ -30,10 +31,16 @@ class PostResource extends JsonResource
             'releases'     => $this->whenLoaded('releases', fn () => $this->releases->map(fn ($r) => [
                 'id' => $r->id, 'title' => $r->title, 'type' => $r->type,
             ])),
-            'tours'        => $this->whenLoaded('tours', fn () => $this->tours->map(fn ($t) => [
+            'tours'          => $this->whenLoaded('tours', fn () => $this->tours->map(fn ($t) => [
                 'id' => $t->id, 'name' => $t->name,
             ])),
-            'created_at'   => $this->created_at,
+            'music_videos'   => $this->whenLoaded('musicVideos', fn () => $this->musicVideos->map(fn ($v) => [
+                'id' => $v->id, 'title' => $v->og_title ?? $v->title, 'video_url' => $v->video_url,
+            ])),
+            'press_releases' => $this->whenLoaded('pressReleases', fn () => $this->pressReleases->map(fn ($pr) => [
+                'id' => $pr->id, 'title' => $pr->og_title ?? $pr->url, 'url' => $pr->url,
+            ])),
+            'created_at'     => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];
     }

@@ -69,12 +69,12 @@ function hostname(url: string): string {
 <style scoped>
 .press-page    { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 .press-header  { margin-bottom: 2.5rem; }
-.press-heading { font-size: 2rem; font-weight: 700; color: #e2e8f0; margin: 0 0 0.375rem; }
-.press-sub     { font-size: 0.9375rem; color: #64748b; margin: 0; }
+.press-heading { font-size: 2rem; font-weight: 700; color: #111; margin: 0 0 0.375rem; }
+.press-sub     { font-size: 0.9375rem; color: #888; margin: 0; }
 .press-loading, .press-error, .press-empty {
-  text-align: center; color: #475569; padding: 4rem 0; font-size: 0.9375rem;
+  text-align: center; color: #888; padding: 4rem 0; font-size: 0.9375rem;
 }
-.press-error { color: #f87171; }
+.press-error { color: #555; }
 
 .press-grid {
   display: grid;
@@ -84,38 +84,38 @@ function hostname(url: string): string {
 
 .pr-card {
   display: flex; flex-direction: column;
-  background: #0e0c2a; border: 1px solid #1e1a4a; border-radius: 0.75rem;
+  background: #fff; border: 1px solid #e0e0e0; border-radius: 0.75rem;
   overflow: hidden; text-decoration: none; transition: border-color 150ms, transform 150ms;
 }
-.pr-card:hover { border-color: #4338ca; transform: translateY(-2px); }
+.pr-card:hover { border-color: #bbb; transform: translateY(-2px); }
 
-.pr-img-wrap { width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #111128; flex-shrink: 0; }
+.pr-img-wrap { width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #f0f0f0; flex-shrink: 0; }
 .pr-img      { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pr-img-wrap.no-img .pr-img { display: none; }
 .pr-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
 
 .pr-body    { padding: 1rem 1.125rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
 .pr-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.pr-source   { font-size: 0.72rem; font-weight: 600; color: #6366f1; text-transform: uppercase; letter-spacing: 0.06em; }
-.pr-date     { font-size: 0.72rem; color: #475569; white-space: nowrap; }
+.pr-source   { font-size: 0.72rem; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.06em; }
+.pr-date     { font-size: 0.72rem; color: #888; white-space: nowrap; }
 .pr-title    {
-  font-size: 0.9375rem; font-weight: 600; color: #e2e8f0; line-height: 1.4;
+  font-size: 0.9375rem; font-weight: 600; color: #111; line-height: 1.4;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   margin: 0;
 }
 .pr-desc {
-  font-size: 0.8125rem; color: #64748b; line-height: 1.55;
+  font-size: 0.8125rem; color: #555; line-height: 1.55;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   margin: 0;
 }
 .pr-tags   { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: auto; }
 .pr-tag {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
-  background: #1e1b4b; color: #818cf8; font-size: 0.65rem; font-weight: 500;
+  background: #f0f0f0; color: #555; font-size: 0.65rem; font-weight: 500;
 }
 .pr-read {
-  font-size: 0.78rem; font-weight: 600; color: #6366f1; margin-top: 0.25rem;
+  font-size: 0.78rem; font-weight: 600; color: #333; margin-top: 0.25rem;
   transition: color 120ms;
 }
-.pr-card:hover .pr-read { color: #818cf8; }
+.pr-card:hover .pr-read { color: #111; }
 </style>

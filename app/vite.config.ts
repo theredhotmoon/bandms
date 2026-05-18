@@ -5,7 +5,9 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [
+    // @ts-ignore — FullCalendar types cause spurious overload mismatch
     vue(),
+    // @ts-ignore
     tailwindcss(),
   ],
   resolve: {

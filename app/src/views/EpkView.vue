@@ -209,7 +209,7 @@ function embedUrl(url: string): string {
               <div class="concert-date">{{ formatConcertDate(c.date) }}</div>
               <div class="concert-venue">
                 <span v-if="c.venue">{{ c.venue.name }}<template v-if="c.venue.city">, {{ c.venue.city }}</template></span>
-                <span v-else style="color:#475569;">TBC</span>
+                <span v-else style="color:#888;">TBC</span>
               </div>
               <div class="concert-links">
                 <a v-for="l in c.links" :key="l.url" :href="l.url" target="_blank"
@@ -254,31 +254,31 @@ function embedUrl(url: string): string {
 </template>
 
 <style scoped>
-.epk-page { background: #08081a; min-height: 100vh; }
+.epk-page { background: #fff; min-height: 100vh; }
 .epk-loading, .epk-error {
-  text-align: center; padding: 4rem; font-size: 0.9375rem; color: #475569;
+  text-align: center; padding: 4rem; font-size: 0.9375rem; color: #888;
 }
-.epk-error { color: #f87171; }
+.epk-error { color: #555; }
 
 .epk-wrap { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 
 /* Header */
 .epk-header { margin-bottom: 2rem; }
-.epk-name { font-size: 2.5rem; font-weight: 800; color: #e2e8f0; margin: 0 0 0.75rem; letter-spacing: -0.02em; }
+.epk-name { font-size: 2.5rem; font-weight: 800; color: #111; margin: 0 0 0.75rem; letter-spacing: -0.02em; }
 .epk-meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.625rem; margin-bottom: 0.5rem; }
 .genre-badge {
   padding: 0.15rem 0.6rem; border-radius: 0.25rem; font-size: 0.72rem; font-weight: 600;
-  background: #1e1b4b; color: #818cf8; letter-spacing: 0.04em; text-transform: uppercase;
+  background: #f0f0f0; color: #333; letter-spacing: 0.04em; text-transform: uppercase;
 }
-.epk-meta-item { font-size: 0.8125rem; color: #64748b; }
-.epk-comparable { font-size: 0.8125rem; color: #475569; margin: 0.25rem 0 0; font-style: italic; }
+.epk-meta-item { font-size: 0.8125rem; color: #888; }
+.epk-comparable { font-size: 0.8125rem; color: #888; margin: 0.25rem 0 0; font-style: italic; }
 .epk-social-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
 .social-pill {
   padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
-  background: #0d0d22; border: 1px solid #2d2a6e; color: #94a3b8; text-decoration: none;
+  background: #fff; border: 1px solid #ddd; color: #555; text-decoration: none;
   transition: border-color 120ms, color 120ms;
 }
-.social-pill:hover { border-color: #6366f1; color: #a5b4fc; }
+.social-pill:hover { border-color: #888; color: #111; }
 
 /* Hero */
 .epk-hero { margin-bottom: 2.5rem; border-radius: 0.75rem; overflow: hidden; }
@@ -293,105 +293,105 @@ function embedUrl(url: string): string {
 
 .epk-section-label {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-  color: #334155; margin-bottom: 0.75rem;
+  color: #888; margin-bottom: 0.75rem;
 }
-.epk-bio { font-size: 0.9375rem; color: #94a3b8; line-height: 1.7; }
+.epk-bio { font-size: 0.9375rem; color: #333; line-height: 1.7; }
 .epk-bio :deep(p) { margin: 0 0 0.75rem; }
 .epk-bio :deep(p:last-child) { margin: 0; }
 
 .epk-stats { display: flex; flex-direction: column; gap: 0.75rem; }
 .stat-row { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.375rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
-.stat-label { font-size: 0.72rem; color: #475569; font-weight: 500; }
-.stat-empty { font-size: 0.8rem; color: #334155; }
+.stat-value { font-size: 1.375rem; font-weight: 700; color: #111; line-height: 1.2; }
+.stat-label { font-size: 0.72rem; color: #888; font-weight: 500; }
+.stat-empty { font-size: 0.8rem; color: #bbb; }
 
 /* Sections */
 .epk-section { margin-bottom: 2.5rem; }
 
 /* Release card */
 .release-card {
-  display: flex; gap: 1.25rem; background: #0d0d22; border: 1px solid #1e1a4a;
+  display: flex; gap: 1.25rem; background: #fafafa; border: 1px solid #e0e0e0;
   border-radius: 0.75rem; padding: 1.25rem; align-items: flex-start;
 }
 .release-cover { width: 100px; height: 100px; border-radius: 0.375rem; object-fit: cover; flex-shrink: 0; }
 .release-info { flex: 1; min-width: 0; }
-.release-title { font-size: 1.125rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.25rem; }
-.release-meta { font-size: 0.75rem; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-.release-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.55; margin: 0 0 0.75rem; }
+.release-title { font-size: 1.125rem; font-weight: 700; color: #111; margin-bottom: 0.25rem; }
+.release-meta { font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.release-desc { font-size: 0.8125rem; color: #555; line-height: 1.55; margin: 0 0 0.75rem; }
 .release-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .stream-btn {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
-  background: #1e1b4b; border: 1px solid #312e81; color: #a5b4fc; text-decoration: none;
+  background: #f0f0f0; border: 1px solid #ddd; color: #333; text-decoration: none;
   transition: background 120ms;
 }
-.stream-btn:hover { background: #2d2a6e; }
+.stream-btn:hover { background: #e0e0e0; }
 
 /* Press grid */
 .press-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
 .press-card {
-  display: flex; flex-direction: column; background: #0d0d22; border: 1px solid #1e1a4a;
+  display: flex; flex-direction: column; background: #fff; border: 1px solid #e0e0e0;
   border-radius: 0.625rem; overflow: hidden; text-decoration: none;
   transition: border-color 150ms;
 }
-.press-card:hover { border-color: #4338ca; }
-.press-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #111128; }
+.press-card:hover { border-color: #bbb; }
+.press-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #f0f0f0; }
 .press-body { padding: 0.75rem; }
-.press-source { font-size: 0.68rem; font-weight: 600; color: #6366f1; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
-.press-title { font-size: 0.8125rem; font-weight: 600; color: #e2e8f0; line-height: 1.4; margin-bottom: 0.25rem;
+.press-source { font-size: 0.68rem; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+.press-title { font-size: 0.8125rem; font-weight: 600; color: #111; line-height: 1.4; margin-bottom: 0.25rem;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.press-date { font-size: 0.7rem; color: #475569; }
+.press-date { font-size: 0.7rem; color: #888; }
 
 /* Photos */
-.press-photos-hint { font-size: 0.75rem; color: #475569; margin-bottom: 0.75rem; }
+.press-photos-hint { font-size: 0.75rem; color: #888; margin-bottom: 0.75rem; }
 .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.625rem; }
 .photo-item {
   position: relative; display: block; aspect-ratio: 4/3; border-radius: 0.375rem;
-  overflow: hidden; border: 1px solid #1e1a4a; cursor: pointer;
+  overflow: hidden; border: 1px solid #e0e0e0; cursor: pointer;
 }
 .photo-item:hover .photo-overlay { opacity: 1; }
 .photo-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+  position: absolute; inset: 0; background: rgba(0,0,0,0.45);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; color: #fff; opacity: 0; transition: opacity 150ms;
 }
 
 /* Concerts */
-.concerts-list { display: flex; flex-direction: column; gap: 0; border: 1px solid #1e1a4a; border-radius: 0.625rem; overflow: hidden; }
+.concerts-list { display: flex; flex-direction: column; gap: 0; border: 1px solid #e0e0e0; border-radius: 0.625rem; overflow: hidden; }
 .concert-row {
   display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1rem;
-  border-bottom: 1px solid #1e1a4a; background: #0a0a1c;
+  border-bottom: 1px solid #e0e0e0; background: #fff;
 }
 .concert-row:last-child { border-bottom: none; }
-.concert-row:hover { background: #0d0d22; }
-.concert-date { font-size: 0.8125rem; font-weight: 600; color: #e2e8f0; white-space: nowrap; min-width: 160px; }
-.concert-venue { font-size: 0.8125rem; color: #64748b; flex: 1; }
+.concert-row:hover { background: #f5f5f5; }
+.concert-date { font-size: 0.8125rem; font-weight: 600; color: #111; white-space: nowrap; min-width: 160px; }
+.concert-venue { font-size: 0.8125rem; color: #888; flex: 1; }
 .concert-links { display: flex; gap: 0.5rem; }
 .concert-link-btn {
   padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;
-  background: #1e1b4b; border: 1px solid #312e81; color: #a5b4fc; text-decoration: none;
+  background: #f0f0f0; border: 1px solid #ddd; color: #333; text-decoration: none;
   transition: background 120ms;
 }
-.concert-link-btn:hover { background: #2d2a6e; }
+.concert-link-btn:hover { background: #e0e0e0; }
 
 /* Music videos */
 .videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .video-item { }
-.video-embed { position: relative; aspect-ratio: 16/9; border-radius: 0.5rem; overflow: hidden; background: #050510; }
+.video-embed { position: relative; aspect-ratio: 16/9; border-radius: 0.5rem; overflow: hidden; background: #111; }
 .video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
-.video-title { font-size: 0.8125rem; font-weight: 600; color: #94a3b8; margin-top: 0.5rem; }
+.video-title { font-size: 0.8125rem; font-weight: 600; color: #555; margin-top: 0.5rem; }
 
 /* Contact */
-.epk-contact { border-top: 1px solid #1e1a4a; padding-top: 2rem; }
+.epk-contact { border-top: 1px solid #e0e0e0; padding-top: 2rem; }
 .contact-grid { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 1.25rem; }
-.contact-role { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #334155; margin-bottom: 0.25rem; }
-.contact-email { font-size: 0.9375rem; color: #818cf8; text-decoration: none; font-weight: 500; }
-.contact-email:hover { color: #a5b4fc; }
+.contact-role { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.25rem; }
+.contact-email { font-size: 0.9375rem; color: #333; text-decoration: none; font-weight: 500; }
+.contact-email:hover { color: #111; }
 .downloads-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .download-btn {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  background: #0d0d22; border: 1px solid #2d2a6e; color: #94a3b8; text-decoration: none;
+  background: #fff; border: 1px solid #ddd; color: #555; text-decoration: none;
   transition: border-color 120ms, color 120ms;
 }
-.download-btn:hover { border-color: #6366f1; color: #a5b4fc; }
+.download-btn:hover { border-color: #888; color: #111; }
 </style>

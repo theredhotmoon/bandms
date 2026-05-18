@@ -14,6 +14,8 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useAlbums } from '@/composables/useAlbums'
 import { useReleases } from '@/composables/useReleases'
 import { useTours } from '@/composables/useTours'
+import { useMusicVideos } from '@/composables/useMusicVideos'
+import { usePressReleases } from '@/composables/usePressReleases'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
 import type { PostSummary, PostPayload } from '@/types/post'
@@ -23,7 +25,9 @@ const { query: tagsQ }       = useTags()
 const { query: concertsQ }   = useConcerts()
 const { query: albumsQ }     = useAlbums()
 const { query: releasesQ }   = useReleases()
-const { query: toursQ }      = useTours()
+const { query: toursQ }         = useTours()
+const { query: musicVideosQ }   = useMusicVideos()
+const { query: pressReleasesQ } = usePressReleases()
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
@@ -36,7 +40,7 @@ const editQuery = usePost(editingId)
 const formPost = computed(() => isCreating.value ? null : editQuery.data.value ?? null)
 
 const filteredData = computed(() => {
-  let rows = query.data.value ?? []
+  let rows = query.data.value?.data ?? []
   if (filterStatus.value === 'published') rows = rows.filter((p: PostSummary) => !!p.published_at)
   if (filterStatus.value === 'draft') rows = rows.filter((p: PostSummary) => !p.published_at)
   return rows
@@ -109,7 +113,7 @@ async function confirmDelete() {
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!(query.data.value?.length)">No posts yet.</span>
+            <span v-if="!(query.data.value?.data?.length)">No posts yet.</span>
             <span v-else>No posts match your search.</span>
           </div>
           <table v-else class="w-full">
@@ -167,6 +171,8 @@ async function confirmDelete() {
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"
+        :musicVideos="musicVideosQ.data.value ?? []"
+        :pressReleases="pressReleasesQ.data.value ?? []"
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"

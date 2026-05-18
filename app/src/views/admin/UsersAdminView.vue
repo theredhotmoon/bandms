@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -44,6 +44,19 @@ function openAdd() {
   showAdd.value = true
 }
 
+watch(() => addForm.band_member_id, (memberId) => {
+  const member = memberId ? bandMembers.value.find(m => m.id === memberId) : null
+  if (member) {
+    addForm.first_name = member.first_name
+    addForm.last_name  = member.last_name
+    addForm.email      = member.login_email ?? ''
+  } else {
+    addForm.first_name = ''
+    addForm.last_name  = ''
+    addForm.email      = ''
+  }
+})
+
 async function submitAdd() {
   if (!addForm.first_name.trim() || !addForm.email.trim() || !addForm.password) return
   adding.value = true
@@ -84,6 +97,15 @@ function openEdit(userId: number) {
   editingId.value = userId
   showEdit.value = true
 }
+
+watch(() => editForm.band_member_id, (memberId) => {
+  const member = memberId ? bandMembers.value.find(m => m.id === memberId) : null
+  if (member) {
+    editForm.first_name = member.first_name
+    editForm.last_name  = member.last_name
+    editForm.email      = member.login_email ?? ''
+  }
+})
 
 async function submitEdit() {
   if (editingId.value === null) return
@@ -199,19 +221,28 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <!-- Add modal -->
     <AdminModal :open="showAdd" title="Add User" max-width="30rem" @close="showAdd = false">
       <form class="modal-form" @submit.prevent="submitAdd">
+        <div>
+          <label class="field-label">Band member <span style="color:#475569;font-weight:400;">(optional — auto-fills name &amp; email)</span></label>
+          <select v-model="addForm.band_member_id" class="field-input">
+            <option :value="null">— Enter manually —</option>
+            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
+              {{ m.first_name }} {{ m.last_name }}
+            </option>
+          </select>
+        </div>
         <div class="field-row">
           <div>
             <label class="field-label">First name</label>
-            <input v-model="addForm.first_name" class="field-input" required />
+            <input v-model="addForm.first_name" class="field-input" required :disabled="!!addForm.band_member_id" />
           </div>
           <div>
             <label class="field-label">Last name</label>
-            <input v-model="addForm.last_name" class="field-input" required />
+            <input v-model="addForm.last_name" class="field-input" required :disabled="!!addForm.band_member_id" />
           </div>
         </div>
         <div>
           <label class="field-label">Email</label>
-          <input v-model="addForm.email" type="email" class="field-input" required autocomplete="off" />
+          <input v-model="addForm.email" type="email" class="field-input" required autocomplete="off" :disabled="!!addForm.band_member_id" />
         </div>
         <div>
           <label class="field-label">Role</label>
@@ -222,15 +253,6 @@ const ROLE_COLORS: Record<UserRole, string> = {
               <span class="role-card-desc">{{ r.desc }}</span>
             </label>
           </div>
-        </div>
-        <div v-if="addForm.role === 'member'">
-          <label class="field-label">Link to band member <span style="color:#475569;font-weight:400;">(optional)</span></label>
-          <select v-model="addForm.band_member_id" class="field-input">
-            <option :value="null">— None —</option>
-            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
-              {{ m.first_name }} {{ m.last_name }}
-            </option>
-          </select>
         </div>
         <div class="field-row">
           <div>
@@ -252,19 +274,28 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <!-- Edit modal -->
     <AdminModal :open="showEdit" title="Edit User" max-width="30rem" @close="showEdit = false">
       <form class="modal-form" @submit.prevent="submitEdit">
+        <div>
+          <label class="field-label">Band member <span style="color:#475569;font-weight:400;">(optional — auto-fills name &amp; email)</span></label>
+          <select v-model="editForm.band_member_id" class="field-input">
+            <option :value="null">— None —</option>
+            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
+              {{ m.first_name }} {{ m.last_name }}
+            </option>
+          </select>
+        </div>
         <div class="field-row">
           <div>
             <label class="field-label">First name</label>
-            <input v-model="editForm.first_name" class="field-input" required />
+            <input v-model="editForm.first_name" class="field-input" required :disabled="!!editForm.band_member_id" />
           </div>
           <div>
             <label class="field-label">Last name</label>
-            <input v-model="editForm.last_name" class="field-input" required />
+            <input v-model="editForm.last_name" class="field-input" required :disabled="!!editForm.band_member_id" />
           </div>
         </div>
         <div>
           <label class="field-label">Email</label>
-          <input v-model="editForm.email" type="email" class="field-input" required />
+          <input v-model="editForm.email" type="email" class="field-input" required :disabled="!!editForm.band_member_id" />
         </div>
         <div>
           <label class="field-label">Role</label>
@@ -275,15 +306,6 @@ const ROLE_COLORS: Record<UserRole, string> = {
               <span class="role-card-desc">{{ r.desc }}</span>
             </label>
           </div>
-        </div>
-        <div v-if="editForm.role === 'member'">
-          <label class="field-label">Link to band member <span style="color:#475569;font-weight:400;">(optional)</span></label>
-          <select v-model="editForm.band_member_id" class="field-input">
-            <option :value="null">— None —</option>
-            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
-              {{ m.first_name }} {{ m.last_name }}
-            </option>
-          </select>
         </div>
         <div class="field-row">
           <div>

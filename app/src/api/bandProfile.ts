@@ -1,4 +1,4 @@
-import type { BandProfile, BandProfilePayload, EpkData } from '@/types/bandProfile'
+import type { BandProfile, BandProfilePayload, EpkData, FacebookSyncResult } from '@/types/bandProfile'
 import { API_BASE, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface BandProfileResponse { data: BandProfile }
@@ -59,4 +59,16 @@ export async function deleteStagePlot(token: string): Promise<BandProfile> {
     headers: authHeaders(token),
   })
   return handleResponse<BandProfileResponse>(res).then((r) => r.data)
+}
+
+export async function syncFacebookLikes(token: string): Promise<FacebookSyncResult> {
+  const res = await fetch(`${API_BASE}/api/band-profile/sync-facebook-likes`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string }
+    throw new Error(err.message ?? 'Failed to sync Facebook likes')
+  }
+  return res.json() as Promise<FacebookSyncResult>
 }

@@ -13,9 +13,10 @@ class BandMemberResource extends JsonResource
             'id'         => $this->id,
             'band_id'    => $this->band_id,
             'first_name' => $this->first_name,
+            'nickname'   => $this->nickname,
             'last_name'  => $this->last_name,
             'bio'        => $this->bio,
-            'photo'      => $this->photo,
+            'photo'      => $this->photo ? preg_replace('#^https?://[^/]+#', '', $this->photo) : null,
             'role'       => $this->role,
             'is_current' => $this->is_current,
             'joined_at'  => $this->joined_at?->format('Y-m-d'),
@@ -34,6 +35,7 @@ class BandMemberResource extends JsonResource
                 'platform' => $l->platform,
                 'url'      => $l->url,
             ]),
+            'default_gear'   => $this->default_gear ?? [],
             // Setup summaries — loaded when setups relation is eager-loaded
             'setup_summaries' => $this->whenLoaded('setups', fn () =>
                 $this->setups->map(fn ($s) => [

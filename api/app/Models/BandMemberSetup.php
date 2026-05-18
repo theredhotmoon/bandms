@@ -16,6 +16,7 @@ class BandMemberSetup extends Model
         'monitor',
         'backline',
         'power',
+        'wireless',
         'foh_notes',
     ];
 
@@ -24,6 +25,7 @@ class BandMemberSetup extends Model
         'monitor'  => 'array',
         'backline' => 'array',
         'power'    => 'array',
+        'wireless' => 'array',
     ];
 
     public function member(): BelongsTo

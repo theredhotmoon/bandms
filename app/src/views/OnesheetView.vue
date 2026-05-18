@@ -131,9 +131,9 @@ function printPage() { window.print() }
 }
 .print-btn {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600;
-  background: #4f46e5; color: #fff; border: none; cursor: pointer;
+  background: #111; color: #fff; border: none; cursor: pointer;
 }
-.print-btn:hover { background: #4338ca; }
+.print-btn:hover { background: #333; }
 .back-link { font-size: 0.8125rem; color: #64748b; text-decoration: none; }
 .back-link:hover { color: #334155; }
 
@@ -149,7 +149,7 @@ function printPage() { window.print() }
 .os-header-text { flex: 1; }
 .os-name { font-size: 2rem; font-weight: 700; margin: 0 0 0.375rem; letter-spacing: -0.02em; }
 .os-genres { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.375rem; }
-.genre-tag { font-family: system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; background: #f1f5f9; color: #475569; padding: 0.15rem 0.5rem; border-radius: 0.25rem; }
+.genre-tag { font-family: system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; background: #f0f0f0; color: #555; padding: 0.15rem 0.5rem; border-radius: 0.25rem; }
 .os-origin     { font-size: 0.875rem; color: #64748b; margin: 0 0 0.25rem; font-family: system-ui, sans-serif; }
 .os-comparable { font-size: 0.8125rem; color: #94a3b8; margin: 0; font-style: italic; font-family: system-ui, sans-serif; }
 .os-cover { width: 90px; height: 90px; border-radius: 0.25rem; object-fit: cover; flex-shrink: 0; }

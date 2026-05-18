@@ -19,6 +19,7 @@ class BandMemberSetupResource extends JsonResource
             'monitor'           => $this->monitor  ?? $this->defaultMonitor(),
             'backline'          => $this->backline ?? $this->defaultBackline(),
             'power'             => $this->power    ?? $this->defaultPower(),
+            'wireless'          => $this->wireless ?? [],
             'foh_notes'         => $this->foh_notes ?? '',
             'created_at'        => $this->created_at,
             'updated_at'        => $this->updated_at,

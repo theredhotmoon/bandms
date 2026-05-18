@@ -15,6 +15,7 @@ class BandMember extends Model
     protected $fillable = [
         'profile_id',
         'first_name',
+        'nickname',
         'last_name',
         'bio',
         'photo',
@@ -26,14 +27,16 @@ class BandMember extends Model
         'calendar_url',
         'login_email',
         'can_login',
+        'default_gear',
     ];
 
     protected $casts = [
-        'is_current' => 'boolean',
-        'can_login'  => 'boolean',
-        'joined_at'  => 'date:Y-m-d',
-        'quit_at'    => 'date:Y-m-d',
-        'sort_order' => 'integer',
+        'is_current'   => 'boolean',
+        'can_login'    => 'boolean',
+        'joined_at'    => 'date:Y-m-d',
+        'quit_at'      => 'date:Y-m-d',
+        'sort_order'   => 'integer',
+        'default_gear' => 'array',
     ];
 
     public function profile(): BelongsTo

@@ -5,6 +5,7 @@ import MemberSetupSignalChain from './MemberSetupSignalChain.vue'
 import MemberSetupMonitor     from './MemberSetupMonitor.vue'
 import MemberSetupBackline    from './MemberSetupBackline.vue'
 import MemberSetupPower       from './MemberSetupPower.vue'
+import MemberSetupWireless    from './MemberSetupWireless.vue'
 import { useMemberSetups, useMemberSetup } from '@/composables/useBandMemberSetups'
 import type { BandMember } from '@/types/bandMember'
 import type {
@@ -38,15 +39,16 @@ watch(memberId, () => { openId.value = null })
 
 const { query: setupQ, update: setupMut } = useMemberSetup(memberId, openId)
 
-type SetupSection = 'inputs' | 'monitor' | 'backline' | 'power' | 'foh'
+type SetupSection = 'inputs' | 'monitor' | 'wireless' | 'backline' | 'power' | 'foh'
 const activeSection = ref<SetupSection>('inputs')
 
 const SECTIONS: { key: SetupSection; label: string; icon: string }[] = [
-  { key: 'inputs',  label: 'Signal chain / Inputs', icon: '🎙️' },
-  { key: 'monitor', label: 'Monitor',               icon: '🔊' },
-  { key: 'backline',label: 'Backline',               icon: '🥁' },
-  { key: 'power',   label: 'Power',                 icon: '⚡' },
-  { key: 'foh',     label: 'FOH notes',             icon: '🎛️' },
+  { key: 'inputs',   label: 'Signal chain / Inputs', icon: '🎙️' },
+  { key: 'monitor',  label: 'Monitor',               icon: '🔊' },
+  { key: 'wireless', label: 'Wireless',               icon: '📡' },
+  { key: 'backline', label: 'Backline',               icon: '🥁' },
+  { key: 'power',    label: 'Power',                  icon: '⚡' },
+  { key: 'foh',      label: 'FOH notes',              icon: '🎛️' },
 ]
 
 // ── Local form state ──────────────────────────────────────────────────────────
@@ -59,6 +61,7 @@ const form = reactive<Required<BandMemberSetupPayload>>({
   monitor:            defaultMonitorPrefs(),
   backline:           defaultBacklinePrefs(),
   power:              defaultPowerPrefs(),
+  wireless:           [],
   foh_notes:          '',
 })
 
@@ -73,6 +76,7 @@ watch(
     form.monitor           = { ...defaultMonitorPrefs(), ...s.monitor }
     form.backline          = { ...defaultBacklinePrefs(), ...s.backline }
     form.power             = { ...defaultPowerPrefs(), ...s.power }
+    form.wireless          = s.wireless ?? []
     form.foh_notes         = s.foh_notes ?? ''
   },
   { immediate: true },
@@ -115,6 +119,7 @@ async function createSetup() {
       monitor:           defaultMonitorPrefs(),
       backline:          defaultBacklinePrefs(),
       power:             defaultPowerPrefs(),
+      wireless:          [],
       foh_notes:         '',
     })
     openId.value    = setup.id
@@ -281,6 +286,10 @@ const memberFullName = computed(() =>
 
           <template v-if="activeSection === 'monitor'">
             <MemberSetupMonitor v-model="form.monitor" />
+          </template>
+
+          <template v-if="activeSection === 'wireless'">
+            <MemberSetupWireless v-model="form.wireless" />
           </template>
 
           <template v-if="activeSection === 'backline'">

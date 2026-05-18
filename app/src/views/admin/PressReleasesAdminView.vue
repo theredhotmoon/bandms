@@ -194,7 +194,7 @@ function hostname(url: string): string {
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         :concerts="concertsQ.data.value ?? []"
-        :posts="postsQ.data.value ?? []"
+        :posts="postsQ.data.value?.data ?? []"
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"

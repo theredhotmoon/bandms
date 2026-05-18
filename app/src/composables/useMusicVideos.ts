@@ -6,6 +6,7 @@ import {
   updateMusicVideo,
   deleteMusicVideo,
   fetchMusicVideoPreview,
+  syncYouTubeViews,
 } from '@/api/musicVideos'
 import type { MusicVideo, MusicVideoPayload } from '@/types/musicVideo'
 
@@ -37,5 +38,10 @@ export function useMusicVideos() {
     onSuccess:  () => qc.invalidateQueries({ queryKey: QKEY }),
   })
 
-  return { query, create, update, remove, previewFetch }
+  const syncViews = useMutation({
+    mutationFn: () => syncYouTubeViews(token.value!),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: QKEY }),
+  })
+
+  return { query, create, update, remove, previewFetch, syncViews }
 }

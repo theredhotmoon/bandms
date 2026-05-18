@@ -1,4 +1,4 @@
-import type { MusicVideo, MusicVideoPayload } from '@/types/musicVideo'
+import type { MusicVideo, MusicVideoPayload, YouTubeSyncResult } from '@/types/musicVideo'
 
 const BASE = '/api/music-videos'
 
@@ -45,6 +45,18 @@ export async function deleteMusicVideo(token: string, id: number): Promise<void>
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!res.ok) throw new Error('Failed to delete music video')
+}
+
+export async function syncYouTubeViews(token: string): Promise<YouTubeSyncResult> {
+  const res = await fetch(`${BASE}/sync-views`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string }
+    throw new Error(err.message ?? 'Failed to sync YouTube views')
+  }
+  return res.json() as Promise<YouTubeSyncResult>
 }
 
 export async function fetchMusicVideoPreview(token: string, id: number): Promise<MusicVideo> {

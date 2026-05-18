@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 body {
-  background: #111;
-  color: #f0f0f0;
+  background: #fff;
+  color: #111;
   min-height: 100vh;
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

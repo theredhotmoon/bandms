@@ -115,6 +115,7 @@ class BandMemberSetupController extends Controller
             'monitor'             => ['nullable', 'array'],
             'backline'            => ['nullable', 'array'],
             'power'               => ['nullable', 'array'],
+            'wireless'            => ['nullable', 'array'],
             'foh_notes'           => ['nullable', 'string'],
         ]);
     }

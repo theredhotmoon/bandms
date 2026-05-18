@@ -9,7 +9,8 @@ export function useVenues() {
 
   const query = useQuery<Venue[]>({
     queryKey: ['venues'],
-    queryFn: fetchVenues,
+    queryFn: () => fetchVenues(token.value!),
+    enabled: () => !!token.value,
   })
 
   const create = useMutation({

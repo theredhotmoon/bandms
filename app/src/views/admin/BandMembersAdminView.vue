@@ -6,6 +6,7 @@ import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BandMemberForm from '@/components/admin/forms/BandMemberForm.vue'
 import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
+import MemberDefaultGear from '@/components/band-member/MemberDefaultGear.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { ApiValidationError } from '@/api/client'
@@ -16,7 +17,7 @@ const { query: instrumentsQuery } = useInstruments()
 
 // ── Selection ──────────────────────────────────────────────────────────────────
 const openId    = ref<number | null>(null)
-const detailTab = ref<'profile' | 'setups'>('profile')
+const detailTab = ref<'profile' | 'setups' | 'gear'>('profile')
 
 const openMember = computed<BandMember | null>(
   () => query.data.value?.find((m: BandMember) => m.id === openId.value) ?? null,
@@ -260,6 +261,12 @@ async function confirmDelete() {
               :class="{ active: detailTab === 'setups' }"
               @click="detailTab = 'setups'"
             >🎚️ Stage Setups</button>
+            <button
+              type="button"
+              class="detail-tab"
+              :class="{ active: detailTab === 'gear' }"
+              @click="detailTab = 'gear'"
+            >🎛️ Default Gear</button>
           </div>
 
           <!-- Tab: Profile -->
@@ -280,6 +287,11 @@ async function confirmDelete() {
             <MemberSetupsPanel :key="openMember.id" :member="openMember" />
           </div>
 
+          <!-- Tab: Default Gear -->
+          <div v-if="detailTab === 'gear'" class="tab-content">
+            <MemberDefaultGear :key="openMember.id" :member="openMember" />
+          </div>
+
         </template>
       </main>
 
@@ -289,7 +301,7 @@ async function confirmDelete() {
     <AdminModal
       :open="showCreateModal"
       title="Add member"
-      max-width="36rem"
+      max-width="54rem"
       @close="showCreateModal = false; createErrors = {}"
     >
       <BandMemberForm

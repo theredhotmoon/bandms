@@ -3,8 +3,9 @@ import {
   fetchBandProfile, updateBandProfile,
   uploadTechRider, deleteTechRider,
   uploadStagePlot, deleteStagePlot,
+  syncFacebookLikes,
 } from '@/api/bandProfile'
-import type { BandProfile, BandProfilePayload } from '@/types/bandProfile'
+import type { BandProfile, BandProfilePayload, FacebookSyncResult } from '@/types/bandProfile'
 import { useAuth } from './useAuth'
 
 export function useBandProfile() {
@@ -39,5 +40,10 @@ export function useBandProfile() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
   })
 
-  return { query, update, uploadRider, deleteRider, uploadPlot, deletePlot }
+  const syncFb = useMutation<FacebookSyncResult>({
+    mutationFn: () => syncFacebookLikes(token.value!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
+  })
+
+  return { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb }
 }

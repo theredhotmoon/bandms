@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\AlbumController;
+use App\Http\Controllers\FacebookSyncController;
+use App\Http\Controllers\SetlistController;
+use App\Http\Controllers\SetlistFmController;
+use App\Http\Controllers\SongController;
+use App\Http\Controllers\BandCalendarController;
 use App\Http\Controllers\EpkVersionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthorController;
@@ -57,12 +62,10 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 */
 
 Route::get('/band-profile', [BandProfileController::class, 'show'])->name('api.band-profile.show');
+Route::get('/band-profile/calendar/availability', [BandCalendarController::class, 'availability'])->name('api.calendar.availability');
 Route::get('/band-profile/epk', [BandProfileController::class, 'showEpk'])->name('api.band-profile.epk');
 Route::get('/band-profile/members', [BandMemberController::class, 'index'])->name('api.band-profile.members.index');
 Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])->name('api.band-profile.social-links.index');
-
-Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index');
-Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
 
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
@@ -104,7 +107,16 @@ Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.au
 Route::middleware('auth:api')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user())->name('api.user');
 
+    // ── Any authenticated user: venues read ────────────────────────────────
+    Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index');
+    Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
+
     // ── Member + Admin: own BandMember record & setups ─────────────────────
+
+    // Static segment must come before the {member} wildcard to avoid shadowing.
+    Route::put('/band-profile/members/reorder', [BandMemberController::class, 'reorder'])
+        ->middleware('role:admin')
+        ->name('api.band-profile.members.reorder');
 
     Route::put('/band-profile/members/{member}', [BandMemberController::class, 'update'])
         ->middleware('role:admin,member')
@@ -148,13 +160,14 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/users/{user}', [UserController::class, 'update'])->name('api.users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('api.users.destroy');
 
+        Route::get('/band-profile/calendar/events', [BandCalendarController::class, 'events'])->name('api.calendar.events');
         Route::put('/band-profile', [BandProfileController::class, 'update'])->name('api.band-profile.update');
+        Route::post('/band-profile/sync-facebook-likes', [FacebookSyncController::class, 'syncLikes'])->name('api.band-profile.sync-facebook-likes');
         Route::post('/band-profile/tech-rider', [BandProfileController::class, 'uploadTechRider'])->name('api.band-profile.tech-rider.upload');
         Route::delete('/band-profile/tech-rider', [BandProfileController::class, 'destroyTechRider'])->name('api.band-profile.tech-rider.destroy');
         Route::post('/band-profile/stage-plot', [BandProfileController::class, 'uploadStagePlot'])->name('api.band-profile.stage-plot.upload');
         Route::delete('/band-profile/stage-plot', [BandProfileController::class, 'destroyStagePlot'])->name('api.band-profile.stage-plot.destroy');
         Route::post('/band-profile/members', [BandMemberController::class, 'store'])->name('api.band-profile.members.store');
-        Route::put('/band-profile/members/reorder', [BandMemberController::class, 'reorder'])->name('api.band-profile.members.reorder');
         Route::post('/band-profile/members/{member}/photo', [BandMemberController::class, 'uploadPhoto'])->name('api.band-profile.members.photo.upload');
         Route::delete('/band-profile/members/{member}', [BandMemberController::class, 'destroy'])->name('api.band-profile.members.destroy');
 
@@ -214,6 +227,7 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/press-releases/{pressRelease}', [PressReleaseController::class, 'destroy'])->name('api.press-releases.destroy');
 
         Route::post('/music-videos', [MusicVideoController::class, 'store'])->name('api.music-videos.store');
+        Route::post('/music-videos/sync-views', [\App\Http\Controllers\YouTubeSyncController::class, 'syncViewCounts'])->name('api.music-videos.sync-views');
         Route::put('/music-videos/{musicVideo}', [MusicVideoController::class, 'update'])->name('api.music-videos.update');
         Route::delete('/music-videos/{musicVideo}', [MusicVideoController::class, 'destroy'])->name('api.music-videos.destroy');
         Route::post('/music-videos/{musicVideo}/fetch-preview', [MusicVideoController::class, 'fetchPreview'])->name('api.music-videos.fetch-preview');
@@ -230,6 +244,29 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/epk-versions', [EpkVersionController::class, 'store'])->name('api.epk-versions.store');
         Route::post('/epk-versions/{version}/publish', [EpkVersionController::class, 'publish'])->name('api.epk-versions.publish');
         Route::delete('/epk-versions/{version}', [EpkVersionController::class, 'destroy'])->name('api.epk-versions.destroy');
+
+        // Songs library
+        Route::get('/songs', [SongController::class, 'index'])->name('api.songs.index');
+        Route::post('/songs', [SongController::class, 'store'])->name('api.songs.store');
+        Route::put('/songs/{song}', [SongController::class, 'update'])->name('api.songs.update');
+        Route::delete('/songs/{song}', [SongController::class, 'destroy'])->name('api.songs.destroy');
+
+        // Setlists — static segments before {setlist} wildcard
+        Route::get('/setlists/setlistfm/search', [SetlistFmController::class, 'searchArtist'])->name('api.setlistfm.search');
+        Route::get('/setlists/setlistfm/{mbid}/setlists', [SetlistFmController::class, 'artistSetlists'])->name('api.setlistfm.setlists');
+
+        Route::get('/setlists', [SetlistController::class, 'index'])->name('api.setlists.index');
+        Route::post('/setlists', [SetlistController::class, 'store'])->name('api.setlists.store');
+        Route::get('/setlists/{setlist}', [SetlistController::class, 'show'])->name('api.setlists.show');
+        Route::put('/setlists/{setlist}', [SetlistController::class, 'update'])->name('api.setlists.update');
+        Route::delete('/setlists/{setlist}', [SetlistController::class, 'destroy'])->name('api.setlists.destroy');
+
+        Route::post('/setlists/{setlist}/items', [SetlistController::class, 'addItem'])->name('api.setlists.items.add');
+        Route::put('/setlists/{setlist}/items/reorder', [SetlistController::class, 'reorderItems'])->name('api.setlists.items.reorder');
+        Route::put('/setlists/{setlist}/items/{item}', [SetlistController::class, 'updateItem'])->name('api.setlists.items.update');
+        Route::delete('/setlists/{setlist}/items/{item}', [SetlistController::class, 'removeItem'])->name('api.setlists.items.remove');
+
+        Route::post('/setlists/import-setlistfm', [SetlistController::class, 'importFromSetlistFm'])->name('api.setlists.import-setlistfm');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');

@@ -27,14 +27,29 @@ const router = createRouter({
       component: () => import('@/views/AboutView.vue'),
     },
     {
+      path: '/videos',
+      name: 'videos',
+      component: () => import('@/views/MusicVideosView.vue'),
+    },
+    {
+      path: '/booking',
+      name: 'booking',
+      component: () => import('@/views/BookingView.vue'),
+    },
+    {
       path: '/concerts',
       name: 'concerts',
       component: () => import('@/views/ConcertsView.vue'),
     },
     {
-      path: '/venues',
-      name: 'venues',
-      component: () => import('@/views/VenuesView.vue'),
+      path: '/concerts/:id',
+      name: 'concert-detail',
+      component: () => import('@/views/ConcertDetailView.vue'),
+    },
+    {
+      path: '/releases',
+      name: 'releases',
+      component: () => import('@/views/ReleasesView.vue'),
     },
     {
       path: '/posts',
@@ -55,11 +70,6 @@ const router = createRouter({
       path: '/posts/:id/edit',
       name: 'post-edit',
       component: () => import('@/views/PostFormView.vue'),
-    },
-    {
-      path: '/tags',
-      name: 'tags',
-      component: () => import('@/views/TagsView.vue'),
     },
     {
       path: '/photos',
@@ -194,6 +204,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/admin/band-calendar',
+      name: 'admin-band-calendar',
+      component: () => import('@/views/admin/BandCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/admin/tech-rider',
       name: 'admin-tech-rider',
       component: () => import('@/views/admin/TechRiderAdminView.vue'),
@@ -203,6 +219,12 @@ const router = createRouter({
       path: '/admin/users',
       name: 'admin-users',
       component: () => import('@/views/admin/UsersAdminView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
+      path: '/admin/setlists',
+      name: 'admin-setlists',
+      component: () => import('@/views/admin/SetlistsAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {

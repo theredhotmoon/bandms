@@ -79,17 +79,19 @@ class MusicVideoController extends Controller
     private function format(MusicVideo $v): array
     {
         return [
-            'id'           => $v->id,
-            'title'        => $v->title,
-            'video_url'    => $v->video_url,
-            'published_at' => $v->published_at?->format('Y-m-d'),
-            'sort_order'   => $v->sort_order,
-            'og_title'     => $v->og_title,
-            'og_image'     => $v->og_image,
-            'og_site_name' => $v->og_site_name,
-            'channel_name' => $v->channel_name,
-            'created_at'   => $v->created_at,
-            'updated_at'   => $v->updated_at,
+            'id'              => $v->id,
+            'title'           => $v->title,
+            'video_url'       => $v->video_url,
+            'published_at'    => $v->published_at?->format('Y-m-d'),
+            'sort_order'      => $v->sort_order,
+            'og_title'        => $v->og_title,
+            'og_image'        => $v->og_image,
+            'og_site_name'    => $v->og_site_name,
+            'channel_name'    => $v->channel_name,
+            'view_count'      => $v->view_count,
+            'views_synced_at' => $v->views_synced_at?->toIso8601String(),
+            'created_at'      => $v->created_at,
+            'updated_at'      => $v->updated_at,
         ];
     }
 }

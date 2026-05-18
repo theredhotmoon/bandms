@@ -118,7 +118,22 @@
       "Bash(sed -n '14p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
       "Bash(sed -n '32,35p' C:/Projects/bandms/app/src/views/admin/AuthorsAdminView.vue)",
       "Bash(sed *)",
-      "PowerShell(Get-ChildItem \"C:\\\\Projects\\\\bandms\\\\api\\\\database\\\\migrations\\\\\" | Where-Object { $_.Name -match \"post\" } | Select-Object Name)"
+      "PowerShell(Get-ChildItem \"C:\\\\Projects\\\\bandms\\\\api\\\\database\\\\migrations\\\\\" | Where-Object { $_.Name -match \"post\" } | Select-Object Name)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(pnpm add *)",
+      "Bash(docker run *)",
+      "Bash(bash rebuild.sh --backend-only)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(grep \"\\\\.vue$\")",
+      "WebFetch(domain:api.setlist.fm)",
+      "Bash(Get-ChildItem *)",
+      "Bash(make migrate *)",
+      "PowerShell(docker inspect bandms_backend *)",
+      "PowerShell(cd C:\\\\Projects\\\\bandms; $env:MSYS_NO_PATHCONV=1; bash rebuild.sh --backend-only)",
+      "Bash(Select-Object Name)",
+      "Bash(python -c \"import sys,json; [print\\(m['Source'], '->', m['Destination']\\) for m in json.load\\(sys.stdin\\)]\")",
+      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(t['name']\\) for t in data.get\\('tables',[]\\)]\")"
     ]
   }
 }
