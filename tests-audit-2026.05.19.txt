@@ -1,0 +1,25 @@
+
+  Overall: ~10% statement coverage across the whole app — expected, since we only have tests for the band-profile slice.
+
+  Within our tested area, coverage is strong:
+
+  ┌────────────────────────┬─────────────────────────────────────────────────────────────┐
+  │          File          │                          Coverage                           │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ SocialLinkController   │ 100%                                                        │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ SocialLinkResource     │ 100%                                                        │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ BandProfileResource    │ 100%                                                        │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ BandMemberResource     │ 100%                                                        │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ RequireRole middleware │ 100%                                                        │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ BandMemberController   │ 90% (88/98 stmts)                                           │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ BandProfileController  │ 52% (30/58 stmts) — the EPK/stage-plot actions are untested │
+  └────────────────────────┴─────────────────────────────────────────────────────────────┘
+
+  The 10% overall is simply because ~70 other controllers, resources, and services have zero tests yet. The band-profile code itself is well covered — the gaps are the EPK/stage-plot methods you explicitly
+  excluded.

@@ -145,7 +145,26 @@
       "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter BandMemberTest 2>&1 | Select-Object -Last 80)",
       "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" 2>&1)",
       "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test 2>&1 | Select-String -Pattern \"Tests:|Duration:|PASS|FAIL|WARN\")",
-      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" 2>&1 | Select-String -Pattern \"Tests:|Duration:|PASS|FAIL\")"
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" 2>&1 | Select-String -Pattern \"Tests:|Duration:|PASS|FAIL\")",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --coverage --min=0 2>&1 | Select-Object -First 20)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --coverage 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" --coverage 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" --coverage 2>&1 | Select-Object -Last 60)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey --entrypoint php bandms_test -r \"echo extension_loaded\\('pcov'\\) ? 'pcov: YES' : 'pcov: NO'; echo PHP_EOL;\" 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" --coverage 2>&1 | Select-Object -Last 40)",
+      "PowerShell(Out-File *)",
+      "PowerShell(Get-Content *)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(python --version 2>&1; python -c \"import docx; print\\('docx ok'\\)\" 2>&1)",
+      "PowerShell(pip install *)",
+      "PowerShell(python -c \"import docx; print\\('ok'\\)\" 2>&1)",
+      "Bash(python *)",
+      "Bash(make test *)",
+      "PowerShell(docker build *)",
+      "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-Object -Last 80)",
+      "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-String \"FAILED\" | Select-Object -First 80)",
+      "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-Object -Last 100)",
+      "PowerShell(docker run *)"
     ]
   }
 }

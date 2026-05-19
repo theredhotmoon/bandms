@@ -1,161 +1,200 @@
 <?php
 
-namespace Tests\Feature;
-
+use App\Models\User;
 use App\Models\Venue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Laravel\Passport\Passport;
 
-class VenueTest extends TestCase
-{
-    use RefreshDatabase;
+// ── GET /api/venues ───────────────────────────────────────────────────────────
 
-    public function test_index_returns_all_venues_ordered_by_name(): void
-    {
+describe('GET /api/venues', function () {
+    it('returns 401 without authentication', function () {
+        $this->getJson('/api/venues')->assertUnauthorized();
+    });
+
+    it('returns venues ordered by name', function () {
+        $this->actingAsAdmin();
         Venue::factory()->create(['name' => 'Zebra Club']);
         Venue::factory()->create(['name' => 'Alpha Hall']);
 
         $this->getJson('/api/venues')
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.name', 'Alpha Hall');
-    }
+    });
 
-    public function test_index_is_publicly_accessible(): void
-    {
-        $this->getJson('/api/venues')->assertOk();
-    }
+    it('returns empty collection when no venues exist', function () {
+        $this->actingAsAdmin();
 
-    public function test_store_creates_venue_with_all_fields(): void
-    {
-        $this->actingAsUser();
+        $this->getJson('/api/venues')
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+    });
+});
 
-        $payload = [
-            'name'      => 'Rock Arena',
-            'address'   => 'ul. Główna 1, Warszawa',
-            'latitude'  => 52.2297,
-            'longitude' => 21.0122,
-        ];
+// ── GET /api/venues/{venue} ───────────────────────────────────────────────────
 
-        $this->postJson('/api/venues', $payload)
+describe('GET /api/venues/{venue}', function () {
+    it('returns the venue', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create(['name' => 'My Stage']);
+
+        $this->getJson("/api/venues/{$venue->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'My Stage');
+    });
+
+    it('returns 404 for a non-existent venue', function () {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/venues/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/venues ──────────────────────────────────────────────────────────
+
+describe('POST /api/venues', function () {
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/venues', ['name' => 'Test'])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson('/api/venues', ['name' => 'Test'])->assertForbidden();
+    });
+
+    it('creates a venue with required fields only', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', ['name' => 'Rock Arena'])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Rock Arena')
-            ->assertJsonPath('data.address', 'ul. Główna 1, Warszawa')
-            ->assertJsonPath('data.latitude', 52.2297)
-            ->assertJsonPath('data.longitude', 21.0122);
+            ->assertJsonPath('data.latitude', null);
 
         $this->assertDatabaseHas('venues', ['name' => 'Rock Arena']);
-    }
+    });
 
-    public function test_store_creates_venue_without_optional_fields(): void
-    {
-        $this->actingAsUser();
+    it('creates a venue with all optional fields', function () {
+        $this->actingAsAdmin();
 
-        $this->postJson('/api/venues', ['name' => 'Minimal Venue'])
-            ->assertCreated()
-            ->assertJsonPath('data.name', 'Minimal Venue')
-            ->assertJsonPath('data.latitude', null);
-    }
+        $this->postJson('/api/venues', [
+            'name'          => 'Full Venue',
+            'street'        => 'Main St',
+            'street_number' => '42',
+            'city'          => 'Warsaw',
+            'postcode'      => '00-001',
+            'latitude'      => 52.23,
+            'longitude'     => 21.01,
+        ])->assertCreated()
+          ->assertJsonPath('data.city', 'Warsaw')
+          ->assertJsonPath('data.latitude', 52.23);
+    });
 
-    public function test_store_requires_authentication(): void
-    {
-        $this->postJson('/api/venues', ['name' => 'Test'])->assertUnauthorized();
-    }
-
-    public function test_store_validates_required_name(): void
-    {
-        $this->actingAsUser();
+    it('validates name is required', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/venues', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
-    }
+    });
 
-    public function test_store_validates_latitude_range(): void
-    {
-        $this->actingAsUser();
+    it('validates name must be unique', function () {
+        $this->actingAsAdmin();
+        Venue::factory()->create(['name' => 'Taken']);
 
-        $this->postJson('/api/venues', ['name' => 'Bad Lat', 'latitude' => 91.0, 'longitude' => 0])
+        $this->postJson('/api/venues', ['name' => 'Taken'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
+
+    it('validates latitude range', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', ['name' => 'Bad Lat', 'latitude' => 91.0])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['latitude']);
-    }
+    });
 
-    public function test_store_validates_longitude_range(): void
-    {
-        $this->actingAsUser();
+    it('validates longitude range', function () {
+        $this->actingAsAdmin();
 
-        $this->postJson('/api/venues', ['name' => 'Bad Lng', 'latitude' => 0, 'longitude' => 181.0])
+        $this->postJson('/api/venues', ['name' => 'Bad Lng', 'longitude' => 181.0])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['longitude']);
-    }
+    });
+});
 
-    public function test_show_returns_venue(): void
-    {
-        $venue = Venue::factory()->create(['name' => 'My Stage']);
+// ── PUT /api/venues/{venue} ───────────────────────────────────────────────────
 
-        $this->getJson("/api/venues/{$venue->id}")
-            ->assertOk()
-            ->assertJsonPath('data.name', 'My Stage');
-    }
-
-    public function test_show_returns_404_for_missing_venue(): void
-    {
-        $this->getJson('/api/venues/9999')->assertNotFound();
-    }
-
-    public function test_update_modifies_venue(): void
-    {
-        $this->actingAsUser();
-        $venue = Venue::factory()->create(['name' => 'Old Name']);
-
-        $this->putJson("/api/venues/{$venue->id}", ['name' => 'New Name'])
-            ->assertOk()
-            ->assertJsonPath('data.name', 'New Name');
-
-        $this->assertDatabaseHas('venues', ['id' => $venue->id, 'name' => 'New Name']);
-    }
-
-    public function test_update_requires_authentication(): void
-    {
+describe('PUT /api/venues/{venue}', function () {
+    it('returns 401 without authentication', function () {
         $venue = Venue::factory()->create();
 
         $this->putJson("/api/venues/{$venue->id}", ['name' => 'X'])->assertUnauthorized();
-    }
+    });
 
-    public function test_update_clears_coordinates_when_null_sent(): void
-    {
-        $this->actingAsUser();
+    it('returns 403 for non-admin roles', function () {
+        $venue = Venue::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/venues/{$venue->id}", ['name' => 'X'])->assertForbidden();
+    });
+
+    it('updates a venue', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create(['name' => 'Old Name']);
+
+        $this->putJson("/api/venues/{$venue->id}", ['name' => 'New Name'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'New Name');
+
+        $this->assertDatabaseHas('venues', ['id' => $venue->id, 'name' => 'New Name']);
+    });
+
+    it('clears coordinates when null is sent', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create(['latitude' => 50.0, 'longitude' => 20.0]);
 
-        $this->putJson("/api/venues/{$venue->id}", [
-            'name'      => $venue->name,
-            'latitude'  => null,
-            'longitude' => null,
-        ])->assertOk()
+        $this->putJson("/api/venues/{$venue->id}", ['latitude' => null, 'longitude' => null])
+            ->assertSuccessful()
             ->assertJsonPath('data.latitude', null);
-    }
+    });
 
-    public function test_destroy_deletes_venue(): void
-    {
-        $this->actingAsUser();
+    it('returns 404 for a non-existent venue', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/venues/9999', ['name' => 'X'])->assertNotFound();
+    });
+});
+
+// ── DELETE /api/venues/{venue} ────────────────────────────────────────────────
+
+describe('DELETE /api/venues/{venue}', function () {
+    it('returns 401 without authentication', function () {
+        $venue = Venue::factory()->create();
+
+        $this->deleteJson("/api/venues/{$venue->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $venue = Venue::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/venues/{$venue->id}")->assertForbidden();
+    });
+
+    it('deletes a venue', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create();
 
         $this->deleteJson("/api/venues/{$venue->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('venues', ['id' => $venue->id]);
-    }
+    });
 
-    public function test_destroy_requires_authentication(): void
-    {
-        $venue = Venue::factory()->create();
-
-        $this->deleteJson("/api/venues/{$venue->id}")->assertUnauthorized();
-    }
-
-    public function test_destroy_returns_404_for_missing_venue(): void
-    {
-        $this->actingAsUser();
+    it('returns 404 for a non-existent venue', function () {
+        $this->actingAsAdmin();
 
         $this->deleteJson('/api/venues/9999')->assertNotFound();
-    }
-}
+    });
+});

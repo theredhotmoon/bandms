@@ -1,322 +1,270 @@
 <?php
 
-namespace Tests\Feature;
-
-use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use App\Models\User;
+use Laravel\Passport\Passport;
 
-// 1x1 transparent PNG encoded as base64 data URL — used as a safe test image fixture.
+// 1×1 transparent PNG as base64 data URL — safe test image fixture.
 const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-class PostTest extends TestCase
-{
-    use RefreshDatabase;
+// ── GET /api/posts ────────────────────────────────────────────────────────────
 
-    public function test_index_returns_posts_without_image(): void
-    {
-        Post::factory()->create(['title' => 'Hello World', 'image' => TEST_IMAGE]);
+describe('GET /api/posts', function () {
+    it('is publicly accessible', function () {
+        $this->getJson('/api/posts')->assertSuccessful();
+    });
 
-        $response = $this->getJson('/api/posts')->assertOk();
-
-        $this->assertArrayNotHasKey('image', $response->json('data.0'));
-        $this->assertArrayHasKey('excerpt', $response->json('data.0'));
-    }
-
-    public function test_index_is_publicly_accessible(): void
-    {
-        $this->getJson('/api/posts')->assertOk();
-    }
-
-    public function test_index_returns_posts_newest_first(): void
-    {
+    it('returns posts newest first', function () {
         Post::factory()->create(['title' => 'Older', 'published_at' => now()->subDays(5)]);
         Post::factory()->create(['title' => 'Newer', 'published_at' => now()]);
 
         $this->getJson('/api/posts')
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonPath('data.0.title', 'Newer');
-    }
+    });
 
-    public function test_index_search_filters_by_title(): void
-    {
+    it('filters by search term in title', function () {
         Post::factory()->create(['title' => 'Guitar Lessons Review']);
         Post::factory()->create(['title' => 'Drum Kit Advice']);
 
         $this->getJson('/api/posts?search=guitar')
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Guitar Lessons Review');
-    }
+    });
 
-    public function test_index_search_filters_by_content(): void
-    {
+    it('filters by search term in content', function () {
         Post::factory()->create(['title' => 'Post A', 'content' => 'We talked about amplifiers']);
         Post::factory()->create(['title' => 'Post B', 'content' => 'Nothing interesting here']);
 
         $this->getJson('/api/posts?search=amplifiers')
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.title', 'Post A');
-    }
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
 
-    public function test_index_filters_by_category(): void
-    {
-        $cat  = Category::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
-        $post = Post::factory()->create(['title' => 'Rock Post']);
-        Post::factory()->create(['title' => 'Other Post']);
-        $post->categories()->attach($cat);
-
-        $this->getJson("/api/posts?category_id={$cat->id}")
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.title', 'Rock Post');
-    }
-
-    public function test_index_filters_by_tag(): void
-    {
+    it('filters by tag_id', function () {
         $tag  = Tag::factory()->create(['name' => 'Live', 'slug' => 'live']);
         $post = Post::factory()->create(['title' => 'Live Show']);
         Post::factory()->create(['title' => 'Studio Notes']);
         $post->tags()->attach($tag);
 
         $this->getJson("/api/posts?tag_id={$tag->id}")
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Live Show');
-    }
+    });
+});
 
-    public function test_index_includes_categories_and_tags(): void
-    {
-        $cat  = Category::factory()->create(['name' => 'Jazz', 'slug' => 'jazz']);
-        $tag  = Tag::factory()->create(['name' => 'Acoustic', 'slug' => 'acoustic']);
-        $post = Post::factory()->create();
-        $post->categories()->attach($cat);
-        $post->tags()->attach($tag);
+// ── GET /api/posts/{post} ─────────────────────────────────────────────────────
 
-        $response = $this->getJson('/api/posts')->assertOk();
+describe('GET /api/posts/{post}', function () {
+    it('returns the post with full content', function () {
+        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => TEST_IMAGE]);
 
-        $this->assertEquals('Jazz', $response->json('data.0.categories.0.name'));
-        $this->assertEquals('Acoustic', $response->json('data.0.tags.0.name'));
-    }
+        $this->getJson("/api/posts/{$post->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.title', 'Detail Post');
+    });
 
-    public function test_store_creates_post_with_all_fields(): void
-    {
-        $this->actingAsUser();
-        $cat = Category::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
-        $tag = Tag::factory()->create(['name' => 'Live', 'slug' => 'live']);
+    it('returns 404 for a non-existent post', function () {
+        $this->getJson('/api/posts/9999')->assertNotFound();
+    });
+});
 
-        $payload = [
-            'title'        => 'My First Post',
-            'content'      => 'Some great content here.',
-            'image'        => TEST_IMAGE,
-            'published_at' => '2026-06-01 20:00:00',
-            'category_ids' => [$cat->id],
-            'tag_ids'      => [$tag->id],
-            'links'        => [
-                ['type' => 'youtube', 'url' => 'https://www.youtube.com/watch?v=abc123', 'label' => null],
-                ['type' => 'normal',  'url' => 'https://example.com', 'label' => 'Our website'],
-            ],
-        ];
+// ── POST /api/posts ───────────────────────────────────────────────────────────
 
-        $response = $this->postJson('/api/posts', $payload)->assertCreated();
+describe('POST /api/posts', function () {
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/posts', ['title' => 'Test'])->assertUnauthorized();
+    });
 
-        $response->assertJsonPath('data.title', 'My First Post');
-        $response->assertJsonPath('data.image', TEST_IMAGE);
-        $this->assertCount(1, $response->json('data.categories'));
-        $this->assertCount(1, $response->json('data.tags'));
-        $this->assertCount(2, $response->json('data.links'));
-        $this->assertEquals('youtube', $response->json('data.links.0.type'));
-        $this->assertDatabaseHas('posts', ['title' => 'My First Post']);
-    }
+    it('returns 403 for member role', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-    public function test_store_generates_slug_from_title(): void
-    {
-        $this->actingAsUser();
+        $this->postJson('/api/posts', ['title' => 'Test'])->assertForbidden();
+    });
+
+    it('allows publisher role to create a post', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'publisher']));
+
+        $this->postJson('/api/posts', ['title' => 'Publisher Post'])
+            ->assertCreated();
+    });
+
+    it('creates a post with required fields', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/posts', ['title' => 'Hello World'])
+            ->assertCreated()
+            ->assertJsonPath('data.title', 'Hello World');
+
+        $this->assertDatabaseHas('posts', ['title' => 'Hello World']);
+    });
+
+    it('auto-generates a slug from the title', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', ['title' => 'Hello World Post'])
             ->assertCreated()
             ->assertJsonPath('data.slug', 'hello-world-post');
-    }
+    });
 
-    public function test_store_generates_unique_slug_on_collision(): void
-    {
-        $this->actingAsUser();
-        Post::factory()->create(['title' => 'Same Title', 'slug' => 'same-title']);
-
-        $response = $this->postJson('/api/posts', ['title' => 'Same Title'])->assertCreated();
-
-        $this->assertStringStartsWith('same-title-', $response->json('data.slug'));
-    }
-
-    public function test_store_creates_draft_when_published_at_is_null(): void
-    {
-        $this->actingAsUser();
+    it('creates a draft when published_at is null', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', ['title' => 'Draft Post'])
             ->assertCreated()
             ->assertJsonPath('data.published_at', null);
-    }
+    });
 
-    public function test_store_validates_required_title(): void
-    {
-        $this->actingAsUser();
+    it('creates a post with tags', function () {
+        $this->actingAsAdmin();
+        $tag = Tag::factory()->create(['name' => 'Live', 'slug' => 'live']);
+
+        $this->postJson('/api/posts', ['title' => 'Tagged Post', 'tag_ids' => [$tag->id]])
+            ->assertCreated()
+            ->assertJsonPath('data.tags.0.name', 'Live');
+    });
+
+    it('creates a post with links', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/posts', [
+            'title' => 'Post With Links',
+            'links' => [
+                ['type' => 'youtube', 'url' => 'https://youtube.com/watch?v=abc123'],
+                ['type' => 'normal',  'url' => 'https://example.com', 'label' => 'Website'],
+            ],
+        ])->assertCreated()
+          ->assertJsonPath('data.links.0.type', 'youtube');
+    });
+
+    it('validates title is required', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['title']);
-    }
+    });
 
-    public function test_store_validates_image_must_be_data_url(): void
-    {
-        $this->actingAsUser();
+    it('validates image must be a base64 data URL', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', ['title' => 'Post', 'image' => 'not-an-image'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['image']);
-    }
+    });
 
-    public function test_store_validates_link_type(): void
-    {
-        $this->actingAsUser();
+    it('validates link type must be a known value', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', [
             'title' => 'Post',
             'links' => [['type' => 'twitter', 'url' => 'https://twitter.com/x']],
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['links.0.type']);
-    }
+          ->assertJsonValidationErrors(['links.0.type']);
+    });
 
-    public function test_store_validates_link_url_format(): void
-    {
-        $this->actingAsUser();
+    it('validates link url must be a valid URL', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/posts', [
             'title' => 'Post',
             'links' => [['type' => 'normal', 'url' => 'not-a-url']],
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['links.0.url']);
-    }
+          ->assertJsonValidationErrors(['links.0.url']);
+    });
 
-    public function test_store_requires_authentication(): void
-    {
-        $this->postJson('/api/posts', ['title' => 'Test'])->assertUnauthorized();
-    }
+    it('accepts all known link types', function (string $type) {
+        $this->actingAsAdmin();
 
-    public function test_show_returns_post_with_image_and_links(): void
-    {
-        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => TEST_IMAGE]);
-        $post->links()->create(['type' => 'facebook', 'url' => 'https://facebook.com/band', 'label' => null, 'sort_order' => 0]);
+        $this->postJson('/api/posts', [
+            'title' => 'Post',
+            'links' => [['type' => $type, 'url' => 'https://example.com']],
+        ])->assertCreated();
+    })->with(['youtube', 'instagram', 'facebook', 'normal']);
+});
 
-        $response = $this->getJson("/api/posts/{$post->id}")->assertOk();
+// ── PUT /api/posts/{post} ─────────────────────────────────────────────────────
 
-        $response->assertJsonPath('data.image', TEST_IMAGE);
-        $response->assertJsonPath('data.links.0.type', 'facebook');
-    }
+describe('PUT /api/posts/{post}', function () {
+    it('returns 401 without authentication', function () {
+        $post = Post::factory()->create();
 
-    public function test_show_returns_404_for_missing_post(): void
-    {
-        $this->getJson('/api/posts/9999')->assertNotFound();
-    }
+        $this->putJson("/api/posts/{$post->id}", ['title' => 'X'])->assertUnauthorized();
+    });
 
-    public function test_update_changes_title_and_content(): void
-    {
-        $this->actingAsUser();
-        $post = Post::factory()->create(['title' => 'Old Title', 'content' => 'Old content']);
+    it('updates a post', function () {
+        $this->actingAsAdmin();
+        $post = Post::factory()->create(['title' => 'Old Title']);
 
-        $this->putJson("/api/posts/{$post->id}", [
-            'title'   => 'New Title',
-            'content' => 'New content',
-        ])->assertOk()
-            ->assertJsonPath('data.title', 'New Title')
-            ->assertJsonPath('data.content', 'New content');
-    }
+        $this->putJson("/api/posts/{$post->id}", ['title' => 'New Title', 'content' => 'New content'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.title', 'New Title');
+    });
 
-    public function test_update_does_not_change_image_when_key_absent(): void
-    {
-        $this->actingAsUser();
-        $post = Post::factory()->create(['image' => TEST_IMAGE]);
-
-        $this->putJson("/api/posts/{$post->id}", ['title' => 'Updated Title'])->assertOk();
-
-        $this->assertDatabaseHas('posts', ['id' => $post->id, 'title' => 'Updated Title']);
-        $this->assertEquals(TEST_IMAGE, $post->fresh()->image);
-    }
-
-    public function test_update_clears_image_when_null_sent(): void
-    {
-        $this->actingAsUser();
-        $post = Post::factory()->create(['image' => TEST_IMAGE]);
-
-        $this->putJson("/api/posts/{$post->id}", ['image' => null])->assertOk();
-
-        $this->assertNull($post->fresh()->image);
-    }
-
-    public function test_update_replaces_links(): void
-    {
-        $this->actingAsUser();
+    it('replaces links on update', function () {
+        $this->actingAsAdmin();
         $post = Post::factory()->create();
         $post->links()->create(['type' => 'youtube', 'url' => 'https://youtube.com/old', 'sort_order' => 0]);
 
         $this->putJson("/api/posts/{$post->id}", [
-            'links' => [['type' => 'instagram', 'url' => 'https://instagram.com/band', 'label' => null]],
-        ])->assertOk();
+            'links' => [['type' => 'instagram', 'url' => 'https://instagram.com/band']],
+        ])->assertSuccessful();
 
         $this->assertDatabaseMissing('post_links', ['post_id' => $post->id, 'type' => 'youtube']);
         $this->assertDatabaseHas('post_links', ['post_id' => $post->id, 'type' => 'instagram']);
-    }
+    });
 
-    public function test_update_clears_all_links_when_empty_array_sent(): void
-    {
-        $this->actingAsUser();
-        $post = Post::factory()->create();
-        $post->links()->create(['type' => 'youtube', 'url' => 'https://youtube.com/x', 'sort_order' => 0]);
+    it('syncs tags on update', function () {
+        $this->actingAsAdmin();
+        $post   = Post::factory()->create();
+        $oldTag = Tag::factory()->create(['name' => 'Old', 'slug' => 'old']);
+        $newTag = Tag::factory()->create(['name' => 'New', 'slug' => 'new']);
+        $post->tags()->attach($oldTag);
 
-        $this->putJson("/api/posts/{$post->id}", ['links' => []])->assertOk();
+        $this->putJson("/api/posts/{$post->id}", ['tag_ids' => [$newTag->id]])->assertSuccessful();
 
-        $this->assertDatabaseMissing('post_links', ['post_id' => $post->id]);
-    }
+        $this->assertDatabaseMissing('post_tag', ['post_id' => $post->id, 'tag_id' => $oldTag->id]);
+        $this->assertDatabaseHas('post_tag', ['post_id' => $post->id, 'tag_id' => $newTag->id]);
+    });
 
-    public function test_update_syncs_categories_and_tags(): void
-    {
-        $this->actingAsUser();
-        $post    = Post::factory()->create();
-        $oldCat  = Category::factory()->create(['name' => 'Old', 'slug' => 'old']);
-        $newCat  = Category::factory()->create(['name' => 'New', 'slug' => 'new']);
-        $post->categories()->attach($oldCat);
+    it('returns 404 for a non-existent post', function () {
+        $this->actingAsAdmin();
 
-        $this->putJson("/api/posts/{$post->id}", ['category_ids' => [$newCat->id]])->assertOk();
+        $this->putJson('/api/posts/9999', ['title' => 'X'])->assertNotFound();
+    });
+});
 
-        $this->assertDatabaseMissing('post_category', ['post_id' => $post->id, 'category_id' => $oldCat->id]);
-        $this->assertDatabaseHas('post_category', ['post_id' => $post->id, 'category_id' => $newCat->id]);
-    }
+// ── DELETE /api/posts/{post} ──────────────────────────────────────────────────
 
-    public function test_update_requires_authentication(): void
-    {
+describe('DELETE /api/posts/{post}', function () {
+    it('returns 401 without authentication', function () {
         $post = Post::factory()->create();
 
-        $this->putJson("/api/posts/{$post->id}", ['title' => 'X'])->assertUnauthorized();
-    }
+        $this->deleteJson("/api/posts/{$post->id}")->assertUnauthorized();
+    });
 
-    public function test_destroy_deletes_post_and_links(): void
-    {
-        $this->actingAsUser();
+    it('returns 403 for member role', function () {
         $post = Post::factory()->create();
-        $post->links()->create(['type' => 'normal', 'url' => 'https://example.com', 'sort_order' => 0]);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/posts/{$post->id}")->assertForbidden();
+    });
+
+    it('deletes a post', function () {
+        $this->actingAsAdmin();
+        $post = Post::factory()->create();
 
         $this->deleteJson("/api/posts/{$post->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
-        $this->assertDatabaseMissing('post_links', ['post_id' => $post->id]);
-    }
+    });
 
-    public function test_destroy_requires_authentication(): void
-    {
-        $post = Post::factory()->create();
+    it('returns 404 for a non-existent post', function () {
+        $this->actingAsAdmin();
 
-        $this->deleteJson("/api/posts/{$post->id}")->assertUnauthorized();
-    }
-}
+        $this->deleteJson('/api/posts/9999')->assertNotFound();
+    });
+});

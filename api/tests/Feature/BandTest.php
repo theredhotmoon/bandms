@@ -1,136 +1,205 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Band;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use App\Models\User;
+use Laravel\Passport\Passport;
 
-class BandTest extends TestCase
-{
-    use RefreshDatabase;
+// ── GET /api/bands ────────────────────────────────────────────────────────────
 
-    public function test_index_returns_all_bands_ordered_by_name(): void
-    {
-        Band::factory()->create(['name' => 'Zebra Band']);
-        Band::factory()->create(['name' => 'Alpha Wolves']);
+describe('GET /api/bands', function () {
+    it('returns 401 without authentication', function () {
+        $this->getJson('/api/bands')->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->getJson('/api/bands')->assertForbidden();
+    });
+
+    it('returns all bands ordered by name', function () {
+        $this->actingAsAdmin();
+        Band::create(['name' => 'Zebra Band']);
+        Band::create(['name' => 'Alpha Wolves']);
 
         $this->getJson('/api/bands')
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.name', 'Alpha Wolves');
-    }
+    });
 
-    public function test_index_is_publicly_accessible(): void
-    {
-        $this->getJson('/api/bands')->assertOk();
-    }
+    it('returns empty collection when no bands exist', function () {
+        $this->actingAsAdmin();
 
-    public function test_index_returns_empty_collection_when_no_bands(): void
-    {
         $this->getJson('/api/bands')
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonCount(0, 'data');
-    }
+    });
+});
 
-    public function test_store_creates_band(): void
-    {
-        $this->actingAsUser();
+// ── GET /api/bands/{band} ─────────────────────────────────────────────────────
+
+describe('GET /api/bands/{band}', function () {
+    it('returns the band', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Steel Panda']);
+
+        $this->getJson("/api/bands/{$band->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'Steel Panda');
+    });
+
+    it('returns 404 for a non-existent band', function () {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/bands/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/bands ───────────────────────────────────────────────────────────
+
+describe('POST /api/bands', function () {
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/bands', ['name' => 'Test'])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson('/api/bands', ['name' => 'Test'])->assertForbidden();
+    });
+
+    it('creates a band', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/bands', ['name' => 'Iron Fist'])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Iron Fist');
 
         $this->assertDatabaseHas('bands', ['name' => 'Iron Fist']);
-    }
+    });
 
-    public function test_store_requires_authentication(): void
-    {
-        $this->postJson('/api/bands', ['name' => 'Test'])->assertUnauthorized();
-    }
+    it('creates a band with a website', function () {
+        $this->actingAsAdmin();
 
-    public function test_store_validates_required_name(): void
-    {
-        $this->actingAsUser();
+        $this->postJson('/api/bands', ['name' => 'Web Band', 'website' => 'https://example.com'])
+            ->assertCreated()
+            ->assertJsonPath('data.website', 'https://example.com');
+    });
+
+    it('validates name is required', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/bands', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
-    }
+    });
 
-    public function test_store_validates_name_max_length(): void
-    {
-        $this->actingAsUser();
+    it('validates name max length is 255', function () {
+        $this->actingAsAdmin();
 
         $this->postJson('/api/bands', ['name' => str_repeat('x', 256)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
-    }
+    });
 
-    public function test_show_returns_band(): void
-    {
-        $band = Band::factory()->create(['name' => 'Steel Panda']);
+    it('validates name must be unique', function () {
+        $this->actingAsAdmin();
+        Band::create(['name' => 'Taken Name']);
 
-        $this->getJson("/api/bands/{$band->id}")
-            ->assertOk()
-            ->assertJsonPath('data.name', 'Steel Panda');
-    }
+        $this->postJson('/api/bands', ['name' => 'Taken Name'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
 
-    public function test_show_returns_404_for_missing_band(): void
-    {
-        $this->getJson('/api/bands/9999')->assertNotFound();
-    }
+    it('validates website must be a valid URL', function () {
+        $this->actingAsAdmin();
 
-    public function test_update_renames_band(): void
-    {
-        $this->actingAsUser();
-        $band = Band::factory()->create(['name' => 'Old Name']);
+        $this->postJson('/api/bands', ['name' => 'Band', 'website' => 'not-a-url'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['website']);
+    });
+});
+
+// ── PUT /api/bands/{band} ─────────────────────────────────────────────────────
+
+describe('PUT /api/bands/{band}', function () {
+    it('returns 401 without authentication', function () {
+        $band = Band::create(['name' => 'Old Name']);
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'New'])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $band = Band::create(['name' => 'Old Name']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'New'])->assertForbidden();
+    });
+
+    it('updates a band name', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Old Name']);
 
         $this->putJson("/api/bands/{$band->id}", ['name' => 'New Name'])
-            ->assertOk()
+            ->assertSuccessful()
             ->assertJsonPath('data.name', 'New Name');
 
         $this->assertDatabaseHas('bands', ['id' => $band->id, 'name' => 'New Name']);
-    }
+    });
 
-    public function test_update_requires_authentication(): void
-    {
-        $band = Band::factory()->create();
-
-        $this->putJson("/api/bands/{$band->id}", ['name' => 'X'])->assertUnauthorized();
-    }
-
-    public function test_update_validates_required_name(): void
-    {
-        $this->actingAsUser();
-        $band = Band::factory()->create();
+    it('validates name must not be empty on update', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Some Band']);
 
         $this->putJson("/api/bands/{$band->id}", ['name' => ''])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
-    }
+    });
 
-    public function test_destroy_deletes_band(): void
-    {
-        $this->actingAsUser();
-        $band = Band::factory()->create();
+    it('allows keeping the same name on update', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Same Name']);
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'Same Name'])
+            ->assertSuccessful();
+    });
+
+    it('returns 404 for a non-existent band', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/bands/9999', ['name' => 'X'])->assertNotFound();
+    });
+});
+
+// ── DELETE /api/bands/{band} ──────────────────────────────────────────────────
+
+describe('DELETE /api/bands/{band}', function () {
+    it('returns 401 without authentication', function () {
+        $band = Band::create(['name' => 'Band']);
+
+        $this->deleteJson("/api/bands/{$band->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $band = Band::create(['name' => 'Band']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/bands/{$band->id}")->assertForbidden();
+    });
+
+    it('deletes a band', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Gone Band']);
 
         $this->deleteJson("/api/bands/{$band->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('bands', ['id' => $band->id]);
-    }
+    });
 
-    public function test_destroy_requires_authentication(): void
-    {
-        $band = Band::factory()->create();
-
-        $this->deleteJson("/api/bands/{$band->id}")->assertUnauthorized();
-    }
-
-    public function test_destroy_returns_404_for_missing_band(): void
-    {
-        $this->actingAsUser();
+    it('returns 404 for a non-existent band', function () {
+        $this->actingAsAdmin();
 
         $this->deleteJson('/api/bands/9999')->assertNotFound();
-    }
-}
+    });
+});

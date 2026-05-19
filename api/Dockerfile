@@ -68,8 +68,12 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # ── Stage 4: test image (dev deps, php-cli entrypoint) ────────
 FROM app AS test
-RUN apk add --no-cache sqlite-dev \
-    && docker-php-ext-install pdo_sqlite
+RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS \
+    && docker-php-ext-install pdo_sqlite \
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
+    && apk del $PHPIZE_DEPS \
+    && rm -rf /var/cache/apk/* /tmp/pear
 COPY --from=vendor-dev /app/vendor ./vendor
 COPY docker/test-entrypoint.sh /test-entrypoint.sh
 RUN chmod +x /test-entrypoint.sh

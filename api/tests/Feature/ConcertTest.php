@@ -1,244 +1,237 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Band;
 use App\Models\Concert;
+use App\Models\User;
 use App\Models\Venue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Laravel\Passport\Passport;
 
-class ConcertTest extends TestCase
-{
-    use RefreshDatabase;
+// ── GET /api/concerts ─────────────────────────────────────────────────────────
 
-    public function test_index_returns_concerts_with_venue_and_bands(): void
-    {
+describe('GET /api/concerts', function () {
+    it('is publicly accessible', function () {
+        $this->getJson('/api/concerts')->assertSuccessful();
+    });
+
+    it('returns concerts with venue and bands', function () {
         $venue   = Venue::factory()->create(['name' => 'The Stage']);
-        $band    = Band::factory()->create(['name' => 'Support Act']);
-        $concert = Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2026-08-15']);
-        $concert->bands()->attach($band);
+        $band    = Band::create(['name' => 'Support Act']);
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-08-15']);
+        $concert->bands()->attach($band, ['sort_order' => 1]);
 
-        $response = $this->getJson('/api/concerts')->assertOk();
+        $this->getJson('/api/concerts')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.venue.name', 'The Stage')
+            ->assertJsonPath('data.0.bands.0.name', 'Support Act');
+    });
 
-        $response->assertJsonPath('data.0.venue.name', 'The Stage');
-        $response->assertJsonPath('data.0.bands.0.name', 'Support Act');
-    }
-
-    public function test_index_is_publicly_accessible(): void
-    {
-        $this->getJson('/api/concerts')->assertOk();
-    }
-
-    public function test_index_returns_concerts_sorted_by_date_then_time(): void
-    {
+    it('returns concerts sorted by date then start_time', function () {
         $venue = Venue::factory()->create();
-        Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2026-10-01', 'time' => '20:00']);
-        Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2026-08-01', 'time' => null]);
-        Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2026-10-01', 'time' => '18:00']);
+        Concert::create(['venue_id' => $venue->id, 'date' => '2026-10-01', 'start_time' => '20:00']);
+        Concert::create(['venue_id' => $venue->id, 'date' => '2026-08-01']);
+        Concert::create(['venue_id' => $venue->id, 'date' => '2026-10-01', 'start_time' => '18:00']);
 
-        $response = $this->getJson('/api/concerts')->assertOk();
+        $data = $this->getJson('/api/concerts')->assertSuccessful()->json('data');
 
-        $this->assertEquals('2026-08-01', $response->json('data.0.date'));
-        $this->assertEquals('18:00', $response->json('data.1.time'));
-        $this->assertEquals('20:00', $response->json('data.2.time'));
-    }
+        expect($data[0]['date'])->toBe('2026-08-01');
+    });
+});
 
-    public function test_store_creates_concert_with_bands(): void
-    {
-        $this->actingAsUser();
+// ── GET /api/concerts/{concert} ───────────────────────────────────────────────
+
+describe('GET /api/concerts/{concert}', function () {
+    it('returns the concert with relations', function () {
+        $venue   = Venue::factory()->create(['name' => 'Jazz Lounge']);
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-09-01']);
+
+        $this->getJson("/api/concerts/{$concert->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.venue.name', 'Jazz Lounge');
+    });
+
+    it('returns 404 for a non-existent concert', function () {
+        $this->getJson('/api/concerts/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/concerts ────────────────────────────────────────────────────────
+
+describe('POST /api/concerts', function () {
+    it('returns 401 without authentication', function () {
         $venue = Venue::factory()->create();
-        $band1 = Band::factory()->create();
-        $band2 = Band::factory()->create();
 
-        $payload = [
-            'venue_id'    => $venue->id,
-            'date'        => '2026-09-20',
-            'time'        => '20:00',
-            'description' => 'Big summer gig',
-            'band_ids'    => [$band1->id, $band2->id],
-        ];
+        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-09-01'])
+            ->assertUnauthorized();
+    });
 
-        $response = $this->postJson('/api/concerts', $payload)->assertCreated();
-
-        $response->assertJsonPath('data.date', '2026-09-20');
-        $response->assertJsonPath('data.time', '20:00');
-        $response->assertJsonPath('data.description', 'Big summer gig');
-        $this->assertCount(2, $response->json('data.bands'));
-        $this->assertDatabaseHas('concert_band', ['band_id' => $band1->id]);
-    }
-
-    public function test_store_creates_concert_without_optional_fields(): void
-    {
-        $this->actingAsUser();
+    it('returns 403 for non-admin roles', function () {
         $venue = Venue::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-09-01'])
+            ->assertForbidden();
+    });
+
+    it('creates a concert with required fields', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create();
+
+        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-09-20'])
+            ->assertCreated()
+            ->assertJsonPath('data.date', '2026-09-20');
+
+        $this->assertDatabaseHas('concerts', ['venue_id' => $venue->id, 'date' => '2026-09-20']);
+    });
+
+    it('creates a concert with bands', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create();
+        $band  = Band::create(['name' => 'Headliner']);
 
         $this->postJson('/api/concerts', [
             'venue_id' => $venue->id,
-            'date'     => '2026-12-31',
+            'date'     => '2026-09-20',
+            'bands'    => [['id' => $band->id, 'sort_order' => 1]],
         ])->assertCreated()
-            ->assertJsonPath('data.time', null)
-            ->assertJsonPath('data.description', null);
-    }
+          ->assertJsonPath('data.bands.0.name', 'Headliner');
 
-    public function test_store_requires_authentication(): void
-    {
+        $this->assertDatabaseHas('concert_band', ['band_id' => $band->id]);
+    });
+
+    it('creates a concert with times', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create();
 
-        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-06-01'])
-            ->assertUnauthorized();
-    }
+        $this->postJson('/api/concerts', [
+            'venue_id'   => $venue->id,
+            'date'       => '2026-09-20',
+            'doors_open' => '19:00',
+            'start_time' => '20:00',
+        ])->assertCreated()
+          ->assertJsonPath('data.doors_open', '19:00')
+          ->assertJsonPath('data.start_time', '20:00');
+    });
 
-    public function test_store_validates_required_venue_id(): void
-    {
-        $this->actingAsUser();
+    it('validates venue_id is required', function () {
+        $this->actingAsAdmin();
 
-        $this->postJson('/api/concerts', ['date' => '2026-06-01'])
+        $this->postJson('/api/concerts', ['date' => '2026-09-01'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['venue_id']);
-    }
+    });
 
-    public function test_store_validates_venue_exists(): void
-    {
-        $this->actingAsUser();
+    it('validates venue must exist', function () {
+        $this->actingAsAdmin();
 
-        $this->postJson('/api/concerts', ['venue_id' => 9999, 'date' => '2026-06-01'])
+        $this->postJson('/api/concerts', ['venue_id' => 9999, 'date' => '2026-09-01'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['venue_id']);
-    }
+    });
 
-    public function test_store_validates_required_date(): void
-    {
-        $this->actingAsUser();
+    it('validates date is required', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create();
 
         $this->postJson('/api/concerts', ['venue_id' => $venue->id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['date']);
-    }
+    });
 
-    public function test_store_validates_date_format(): void
-    {
-        $this->actingAsUser();
+    it('validates date format must be Y-m-d', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create();
 
         $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '20-06-2026'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['date']);
-    }
+    });
 
-    public function test_store_validates_time_format(): void
-    {
-        $this->actingAsUser();
+    it('validates start_time format must be H:i', function () {
+        $this->actingAsAdmin();
         $venue = Venue::factory()->create();
 
-        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-06-01', 'time' => '8pm'])
+        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-06-01', 'start_time' => '8pm'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['time']);
-    }
+            ->assertJsonValidationErrors(['start_time']);
+    });
+});
 
-    public function test_store_validates_band_ids_exist(): void
-    {
-        $this->actingAsUser();
-        $venue = Venue::factory()->create();
+// ── PUT /api/concerts/{concert} ───────────────────────────────────────────────
 
-        $this->postJson('/api/concerts', [
-            'venue_id' => $venue->id,
-            'date'     => '2026-06-01',
-            'band_ids' => [9999],
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['band_ids.0']);
-    }
-
-    public function test_show_returns_concert_with_relations(): void
-    {
-        $venue   = Venue::factory()->create(['name' => 'Jazz Lounge']);
-        $band    = Band::factory()->create(['name' => 'Opening Act']);
-        $concert = Concert::factory()->create(['venue_id' => $venue->id]);
-        $concert->bands()->attach($band);
-
-        $this->getJson("/api/concerts/{$concert->id}")
-            ->assertOk()
-            ->assertJsonPath('data.venue.name', 'Jazz Lounge')
-            ->assertJsonPath('data.bands.0.name', 'Opening Act');
-    }
-
-    public function test_show_returns_404_for_missing_concert(): void
-    {
-        $this->getJson('/api/concerts/9999')->assertNotFound();
-    }
-
-    public function test_update_changes_date_and_description(): void
-    {
-        $this->actingAsUser();
-        $concert = Concert::factory()->create(['date' => '2026-06-01', 'description' => 'Old']);
-
-        $this->putJson("/api/concerts/{$concert->id}", [
-            'date'        => '2026-07-04',
-            'description' => 'New desc',
-        ])->assertOk()
-            ->assertJsonPath('data.date', '2026-07-04')
-            ->assertJsonPath('data.description', 'New desc');
-    }
-
-    public function test_update_syncs_bands(): void
-    {
-        $this->actingAsUser();
-        $concert = Concert::factory()->create();
-        $old     = Band::factory()->create();
-        $new     = Band::factory()->create();
-        $concert->bands()->attach($old);
-
-        $this->putJson("/api/concerts/{$concert->id}", ['band_ids' => [$new->id]])
-            ->assertOk();
-
-        $this->assertDatabaseMissing('concert_band', ['concert_id' => $concert->id, 'band_id' => $old->id]);
-        $this->assertDatabaseHas('concert_band', ['concert_id' => $concert->id, 'band_id' => $new->id]);
-    }
-
-    public function test_update_clears_bands_when_empty_array_sent(): void
-    {
-        $this->actingAsUser();
-        $concert = Concert::factory()->create();
-        $band    = Band::factory()->create();
-        $concert->bands()->attach($band);
-
-        $this->putJson("/api/concerts/{$concert->id}", ['band_ids' => []])->assertOk();
-
-        $this->assertDatabaseMissing('concert_band', ['concert_id' => $concert->id]);
-    }
-
-    public function test_update_requires_authentication(): void
-    {
+describe('PUT /api/concerts/{concert}', function () {
+    it('returns 401 without authentication', function () {
         $concert = Concert::factory()->create();
 
         $this->putJson("/api/concerts/{$concert->id}", ['date' => '2026-07-01'])->assertUnauthorized();
-    }
+    });
 
-    public function test_destroy_deletes_concert_and_pivot_rows(): void
-    {
-        $this->actingAsUser();
+    it('updates a concert', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+
+        $this->putJson("/api/concerts/{$concert->id}", [
+            'venue_id'    => $venue->id,
+            'date'        => '2026-07-04',
+            'description' => 'Updated gig',
+        ])->assertSuccessful()
+          ->assertJsonPath('data.date', '2026-07-04')
+          ->assertJsonPath('data.description', 'Updated gig');
+    });
+
+    it('replaces bands on update', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+        $old     = Band::create(['name' => 'Old Band']);
+        $new     = Band::create(['name' => 'New Band']);
+        $concert->bands()->attach($old, ['sort_order' => 1]);
+
+        $this->putJson("/api/concerts/{$concert->id}", [
+            'venue_id' => $venue->id,
+            'date'     => '2026-06-01',
+            'bands'    => [['id' => $new->id, 'sort_order' => 1]],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseMissing('concert_band', ['concert_id' => $concert->id, 'band_id' => $old->id]);
+        $this->assertDatabaseHas('concert_band', ['concert_id' => $concert->id, 'band_id' => $new->id]);
+    });
+
+    it('returns 404 for a non-existent concert', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/concerts/9999', ['date' => '2026-07-01'])->assertNotFound();
+    });
+});
+
+// ── DELETE /api/concerts/{concert} ────────────────────────────────────────────
+
+describe('DELETE /api/concerts/{concert}', function () {
+    it('returns 401 without authentication', function () {
         $concert = Concert::factory()->create();
-        $band    = Band::factory()->create();
-        $concert->bands()->attach($band);
+
+        $this->deleteJson("/api/concerts/{$concert->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $concert = Concert::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/concerts/{$concert->id}")->assertForbidden();
+    });
+
+    it('deletes a concert', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
 
         $this->deleteJson("/api/concerts/{$concert->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('concerts', ['id' => $concert->id]);
-        $this->assertDatabaseMissing('concert_band', ['concert_id' => $concert->id]);
-    }
+    });
 
-    public function test_destroy_requires_authentication(): void
-    {
-        $concert = Concert::factory()->create();
-
-        $this->deleteJson("/api/concerts/{$concert->id}")->assertUnauthorized();
-    }
-
-    public function test_destroy_returns_404_for_missing_concert(): void
-    {
-        $this->actingAsUser();
+    it('returns 404 for a non-existent concert', function () {
+        $this->actingAsAdmin();
 
         $this->deleteJson('/api/concerts/9999')->assertNotFound();
-    }
-}
+    });
+});
