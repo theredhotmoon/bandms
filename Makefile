@@ -6,8 +6,13 @@
 DC      = docker compose
 BACKEND = bandms_backend
 
+# Read .env values for test targets
+_APP_KEY     := $(shell grep '^APP_KEY=' .env | cut -d= -f2-)
+_DB_USERNAME := $(shell grep '^DB_USERNAME=' .env | cut -d= -f2-)
+_DB_PASSWORD := $(shell grep '^DB_PASSWORD=' .env | cut -d= -f2-)
+
 .PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql \
-        shell migrate fresh seed passport test health
+        shell migrate fresh seed passport test test-build health
 
 ## Start all services (detached)
 up:
@@ -69,9 +74,16 @@ optimize:
 	docker exec $(BACKEND) php artisan optimize:clear
 	docker exec $(BACKEND) php artisan optimize
 
-## Run the test suite
-test:
-	docker exec $(BACKEND) php artisan test
+## Build the test Docker image (run once; cached on repeat runs)
+test-build:
+	docker build --target test -t bandms_test ./api
+
+## Run the test suite (SQLite in-memory, no MySQL needed)
+test: test-build
+	docker run --rm \
+		-e APP_ENV=testing \
+		-e APP_KEY=$(_APP_KEY) \
+		bandms_test
 
 ## Check the health endpoint
 health:

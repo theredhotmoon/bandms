@@ -13,7 +13,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('facebook')->nullable();
-            $table->string('instagram')->nullable();
             $table->string('whatsapp')->nullable();
             $table->string('phone')->nullable();
             $table->text('notes')->nullable();

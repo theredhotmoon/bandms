@@ -135,7 +135,17 @@
       "Bash(python -c \"import sys,json; [print\\(m['Source'], '->', m['Destination']\\) for m in json.load\\(sys.stdin\\)]\")",
       "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(t['name']\\) for t in data.get\\('tables',[]\\)]\")",
       "Bash(make health *)",
-      "Bash(xargs grep -l \"role\")"
+      "Bash(xargs grep -l \"role\")",
+      "Bash(php --version)",
+      "Bash(composer --version)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run *)",
+      "Bash(docker build *)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test artisan test 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter BandMemberTest 2>&1 | Select-Object -Last 80)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" 2>&1)",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test 2>&1 | Select-String -Pattern \"Tests:|Duration:|PASS|FAIL|WARN\")",
+      "PowerShell($appKey = \\(Select-String -Path \"C:\\\\Projects\\\\bandms\\\\.env\" -Pattern \"^APP_KEY=\"\\).Line.Substring\\(8\\); docker run --rm -e APP_ENV=testing -e APP_KEY=$appKey bandms_test --filter \"BandProfileTest|BandMemberTest|SocialLinkTest\" 2>&1 | Select-String -Pattern \"Tests:|Duration:|PASS|FAIL\")"
     ]
   }
 }

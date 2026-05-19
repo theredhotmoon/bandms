@@ -13,6 +13,5 @@ bootstrap/cache/*.php
 compose.yaml
 docker-compose*.yml
 Makefile
-tests/
 *.md
 .phpunit.result.cache

@@ -1,4 +1,4 @@
-# ── Stage 1: install PHP dependencies ────────────────────────
+# ── Stage 1: prod PHP dependencies (no dev) ───────────────────
 FROM composer:2 AS vendor
 
 WORKDIR /app
@@ -12,6 +12,20 @@ RUN composer install \
 
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative
+
+# ── Stage 2: dev+prod PHP dependencies ────────────────────────
+FROM composer:2 AS vendor-dev
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-interaction \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist
+
+COPY . .
+RUN composer dump-autoload --optimize
 
 # ── Stage 2: production image ─────────────────────────────────
 FROM php:8.4-fpm-alpine AS app
@@ -51,3 +65,12 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
+
+# ── Stage 4: test image (dev deps, php-cli entrypoint) ────────
+FROM app AS test
+RUN apk add --no-cache sqlite-dev \
+    && docker-php-ext-install pdo_sqlite
+COPY --from=vendor-dev /app/vendor ./vendor
+COPY docker/test-entrypoint.sh /test-entrypoint.sh
+RUN chmod +x /test-entrypoint.sh
+ENTRYPOINT ["/test-entrypoint.sh"]

@@ -106,9 +106,28 @@ _print_summary() {
   echo ""
 }
 
+# ── Test runner helper ───────────────────────────────────────────────────────
+_run_tests() {
+  local app_key
+  app_key=$(grep '^APP_KEY=' .env | cut -d= -f2-)
+  [[ -z "$app_key" ]] && die "APP_KEY not found in .env — cannot run tests"
+
+  begin_step "Building test image"
+  docker build --target test -t bandms_test ./api
+  end_step "Test image built"
+
+  begin_step "Running Pest test suite"
+  docker run --rm \
+    -e APP_ENV=testing \
+    -e APP_KEY="$app_key" \
+    bandms_test
+  end_step "All tests passed"
+}
+
 # ── Defaults ─────────────────────────────────────────────────────────────────
 FRESH_DB=false
 BACKEND_ONLY=false
+RUN_TESTS=false
 BACKEND_CONTAINER="bandms_backend"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
@@ -116,14 +135,16 @@ for arg in "$@"; do
   case "$arg" in
     --fresh-db)      FRESH_DB=true ;;
     --backend-only)  BACKEND_ONLY=true ;;
+    --run-tests)     RUN_TESTS=true ;;
     --help|-h)
       echo -e "${BOLD}BandMS rebuild script${RESET}"
       echo ""
-      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db]"
+      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db] [--run-tests]"
       echo ""
       echo "  (no flags)       Rebuild all Docker images, start containers, run pending migrations"
       echo "  --backend-only   Rebuild only the backend image — faster for PHP-only changes"
       echo "  --fresh-db       Rebuild all images + wipe DB volumes + re-migrate + seed"
+      echo "  --run-tests      After rebuild, build the test image and run the Pest suite"
       echo "  --help           Show this message"
       echo ""
       echo "  IMPORTANT: Always use this script instead of raw docker commands."
@@ -189,6 +210,10 @@ if [[ "$BACKEND_ONLY" == true ]]; then
   docker exec "$BACKEND_CONTAINER" php artisan optimize
   end_step "Caches rebuilt"
 
+  if [[ "$RUN_TESTS" == true ]]; then
+    _run_tests
+  fi
+
   echo ""
   echo -e "${GREEN}${BOLD}✔  Backend rebuilt and running.${RESET}"
   echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -251,6 +276,11 @@ begin_step "Clearing and rebuilding caches"
 docker exec "$BACKEND_CONTAINER" php artisan optimize:clear
 docker exec "$BACKEND_CONTAINER" php artisan optimize
 end_step "Caches rebuilt"
+
+# ── 7. Tests (optional) ──────────────────────────────────────────────────────
+if [[ "$RUN_TESTS" == true ]]; then
+  _run_tests
+fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""

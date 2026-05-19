@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BandProfile extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name', 'bio_short', 'bio_medium', 'bio_long', 'bio_full',
         'formation_year', 'hometown', 'genres', 'comparable_artists',

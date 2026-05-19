@@ -19,6 +19,7 @@ return new class extends Migration
         Schema::table('photos', function (Blueprint $table) {
             $table->dropForeign(['venue_id']);
             $table->dropForeign(['concert_id']);
+            $table->dropUnique('photos_slug_unique');
             $table->dropColumn(['title', 'slug', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at']);
         });
     }
