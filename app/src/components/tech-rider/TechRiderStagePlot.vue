@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
+import { toast } from 'vue-sonner'
+import { useQueryClient } from '@tanstack/vue-query'
+import { useAuth } from '@/composables/useAuth'
+import { createMemberSetup, updateMemberSetup } from '@/api/bandMemberSetups'
+import MemberSetupEditorPane from '@/components/band-member/MemberSetupEditorPane.vue'
+import type { SetupEditorModel } from '@/components/band-member/MemberSetupEditorPane.vue'
 import type { StagePlotItem, StagePlotItemType } from '@/types/techRider'
 import type { BandMember } from '@/types/bandMember'
 import { DEFAULT_GEAR_TYPE_LABELS } from '@/types/bandMember'
 import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
+import {
+  defaultMonitorPrefs,
+  defaultBacklinePrefs,
+  defaultPowerPrefs,
+} from '@/types/bandMemberSetup'
 
 interface Props {
   modelValue: StagePlotItem[]
@@ -164,6 +175,7 @@ function openAssign(item: StagePlotItem) {
   assignItem.value     = item
   assignMemberId.value = item.band_member_id ?? null
   assignSetupId.value  = item.setup_id ?? null
+  setupEditMode.value  = 'none'
 }
 
 const memberSetups = computed<BandMemberSetup[]>(() => {
@@ -174,12 +186,120 @@ const memberSetups = computed<BandMemberSetup[]>(() => {
 function selectMember(memberId: number) {
   assignMemberId.value = memberId
   assignSetupId.value  = null
+  setupEditMode.value  = 'none'
+}
+
+// ── Inline setup editor ───────────────────────────────────────────────────────
+const { token }  = useAuth()
+const queryClient = useQueryClient()
+
+type SetupEditMode = 'none' | 'edit-existing' | 'new' | 'rider-only'
+const setupEditMode  = ref<SetupEditMode>('none')
+const setupSaving    = ref(false)
+const setupSaved     = ref(false)
+
+const editForm = reactive<SetupEditorModel>({
+  name:              '',
+  instrument_id:     null,
+  signal_chain_type: 'other',
+  inputs:            [],
+  monitor:           defaultMonitorPrefs(),
+  backline:          defaultBacklinePrefs(),
+  power:             defaultPowerPrefs(),
+  wireless:          [],
+  foh_notes:         '',
+})
+
+const selectedAssignMember = computed<BandMember | null>(() =>
+  props.bandMembers.find(m => m.id === assignMemberId.value) ?? null,
+)
+
+function startEditSetup(setup: BandMemberSetup) {
+  assignSetupId.value = setup.id
+  setupEditMode.value = 'edit-existing'
+  Object.assign(editForm, {
+    name:              setup.name,
+    instrument_id:     setup.instrument_id,
+    signal_chain_type: setup.signal_chain_type,
+    inputs:            setup.inputs ?? [],
+    monitor:           { ...defaultMonitorPrefs(), ...setup.monitor },
+    backline:          { ...defaultBacklinePrefs(), ...setup.backline },
+    power:             { ...defaultPowerPrefs(), ...setup.power },
+    wireless:          setup.wireless ?? [],
+    foh_notes:         setup.foh_notes ?? '',
+  })
+}
+
+function startNewSetup() {
+  assignSetupId.value = null
+  setupEditMode.value = 'new'
+  Object.assign(editForm, {
+    name:              '',
+    instrument_id:     null,
+    signal_chain_type: 'other',
+    inputs:            [],
+    monitor:           defaultMonitorPrefs(),
+    backline:          defaultBacklinePrefs(),
+    power:             defaultPowerPrefs(),
+    wireless:          [],
+    foh_notes:         '',
+  })
+}
+
+function cancelEdit() {
+  setupEditMode.value = 'none'
+}
+
+function applyToRiderOnly() {
+  setupEditMode.value = 'rider-only'
+}
+
+async function saveSetupToProfile() {
+  if (!assignMemberId.value) return
+  setupSaving.value = true
+  try {
+    if (setupEditMode.value === 'edit-existing' && assignSetupId.value) {
+      await updateMemberSetup(token.value!, assignMemberId.value, assignSetupId.value, { ...editForm })
+    } else {
+      const created       = await createMemberSetup(token.value!, assignMemberId.value, { ...editForm })
+      assignSetupId.value = created.id
+    }
+    await queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
+    setupEditMode.value = 'none'
+    setupSaved.value = true
+    setTimeout(() => { setupSaved.value = false }, 2000)
+    toast.success('Setup saved to profile')
+  } catch {
+    toast.error('Failed to save setup')
+  } finally {
+    setupSaving.value = false
+  }
 }
 
 function confirmAssign() {
   if (!assignItem.value) return
 
-  const setup  = memberSetups.value.find(s => s.id === assignSetupId.value) ?? null
+  let setup: BandMemberSetup | null
+
+  if (setupEditMode.value !== 'none') {
+    setup = {
+      id:                assignSetupId.value ?? 0,
+      band_member_id:    assignMemberId.value!,
+      instrument_id:     editForm.instrument_id,
+      name:              editForm.name || 'Custom',
+      signal_chain_type: editForm.signal_chain_type,
+      inputs:            editForm.inputs,
+      monitor:           { ...editForm.monitor },
+      backline:          { ...editForm.backline },
+      power:             { ...editForm.power },
+      wireless:          editForm.wireless,
+      foh_notes:         editForm.foh_notes,
+      created_at:        '',
+      updated_at:        '',
+    }
+  } else {
+    setup = memberSetups.value.find(s => s.id === assignSetupId.value) ?? null
+  }
 
   const updated: StagePlotItem = {
     ...assignItem.value,
@@ -196,15 +316,17 @@ function confirmAssign() {
       itemId:   updated.id,
       memberId: assignMemberId.value,
       setupId:  assignSetupId.value,
-      setup:    setup,
+      setup,
     })
   }
 
-  assignItem.value = null
+  assignItem.value    = null
+  setupEditMode.value = 'none'
 }
 
 function skipAssign() {
-  assignItem.value = null
+  assignItem.value    = null
+  setupEditMode.value = 'none'
 }
 
 // ── Helper: member name for a placed item ─────────────────────────────────────
@@ -372,80 +494,128 @@ function removeItem(id: string) {
 
   <!-- ── Member assignment modal ─────────────────────────────────────────── -->
   <div v-if="assignItem" class="overlay" @click.self="skipAssign">
-    <div class="assign-card">
+    <div class="assign-dialog">
+
+      <!-- Header bar -->
       <div class="assign-header">
-        <div class="assign-title">Assign band member</div>
-        <div class="assign-sub">{{ assignItem.label }} — select who plays this position</div>
-      </div>
-
-      <!-- Member grid -->
-      <div class="member-grid">
-        <button
-          type="button"
-          class="member-card"
-          :class="{ 'member-card--active': assignMemberId === null }"
-          @click="assignMemberId = null; assignSetupId = null"
-        >
-          <div class="member-avatar" style="color:#475569;background:#0f0f28;">—</div>
-          <div class="member-card-name">No assignment</div>
-        </button>
-        <button
-          v-for="m in bandMembers"
-          :key="m.id"
-          type="button"
-          class="member-card"
-          :class="{ 'member-card--active': assignMemberId === m.id }"
-          @click="selectMember(m.id)"
-        >
-          <div class="member-avatar">{{ (m.first_name[0] ?? '') }}{{ (m.last_name[0] ?? '') }}</div>
-          <div class="member-card-name">{{ m.first_name }} {{ m.last_name }}</div>
-          <div class="member-card-role">{{ m.role || '—' }}</div>
-        </button>
-      </div>
-
-      <!-- Setup selection (shown when a member is selected) -->
-      <template v-if="assignMemberId !== null">
-        <div class="assign-section-label">
-          Rig template
-          <span v-if="memberSetups.length === 0" style="color:#334155;font-weight:400;">— no setups saved for this member</span>
+        <div>
+          <div class="assign-title">Assign band member</div>
+          <div class="assign-sub">{{ assignItem.label }} — select who plays this position</div>
         </div>
-        <div v-if="memberSetups.length > 0" class="setup-grid">
+        <div class="assign-header-actions">
+          <button type="button" class="btn-ghost" @click="skipAssign">Skip</button>
+          <button type="button" class="btn-primary" @click="confirmAssign">
+            {{ assignMemberId ? (assignSetupId !== null || setupEditMode === 'new' || setupEditMode === 'rider-only' ? 'Assign + Import' : 'Assign') : 'Confirm' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="assign-body">
+
+        <!-- Left (20%): member list -->
+        <div class="assign-left">
+          <div class="assign-section-label">Band member</div>
           <button
             type="button"
-            class="setup-card"
-            :class="{ 'setup-card--active': assignSetupId === null }"
-            @click="assignSetupId = null"
+            class="member-row"
+            :class="{ 'member-row--active': assignMemberId === null }"
+            @click="assignMemberId = null; assignSetupId = null"
           >
-            <div class="setup-card-name">No template</div>
-            <div class="setup-card-desc">Just assign the member, skip import</div>
+            <div class="member-avatar" style="color:#475569;background:#0f0f28;">—</div>
+            <span class="member-row-name">No assignment</span>
           </button>
           <button
-            v-for="s in memberSetups"
-            :key="s.id"
+            v-for="m in bandMembers"
+            :key="m.id"
             type="button"
-            class="setup-card"
-            :class="{ 'setup-card--active': assignSetupId === s.id }"
-            @click="assignSetupId = s.id"
+            class="member-row"
+            :class="{ 'member-row--active': assignMemberId === m.id }"
+            @click="selectMember(m.id)"
           >
-            <div class="setup-card-name">{{ s.name }}</div>
-            <div class="setup-card-desc">
-              {{ SIGNAL_CHAIN_LABELS[s.signal_chain_type] ?? s.signal_chain_type }}
-              · {{ s.inputs?.length ?? 0 }} ch
+            <div class="member-avatar">{{ (m.first_name[0] ?? '') }}{{ (m.last_name[0] ?? '') }}</div>
+            <div class="member-row-info">
+              <span class="member-row-name">{{ m.first_name }} {{ m.last_name }}</span>
+              <span class="member-row-role">{{ m.role || '—' }}</span>
             </div>
           </button>
         </div>
-        <p v-if="assignSetupId" class="assign-import-hint">
-          ✓ Inputs, monitor, backline and power from this template will be added to the rider.
-        </p>
-      </template>
 
-      <div class="assign-actions">
-        <button type="button" class="btn-ghost" @click="skipAssign">Skip</button>
-        <button type="button" class="btn-primary" @click="confirmAssign">
-          {{ assignMemberId ? (assignSetupId ? 'Assign + Import' : 'Assign') : 'Confirm' }}
-        </button>
-      </div>
-    </div>
+        <!-- Right (80%): rig template + editor -->
+        <div class="assign-right">
+          <template v-if="assignMemberId !== null">
+            <div class="assign-section-label">Rig template</div>
+
+            <div class="setup-grid">
+              <button
+                type="button"
+                class="setup-card"
+                :class="{ 'setup-card--active': assignSetupId === null && setupEditMode === 'none' }"
+                @click="assignSetupId = null; setupEditMode = 'none'"
+              >
+                <div class="setup-card-name">No template</div>
+                <div class="setup-card-desc">Just assign the member, skip import</div>
+              </button>
+
+              <button
+                v-for="s in memberSetups"
+                :key="s.id"
+                type="button"
+                class="setup-card"
+                :class="{ 'setup-card--active': assignSetupId === s.id && setupEditMode !== 'new' }"
+                @click="startEditSetup(s)"
+              >
+                <div class="setup-card-name">{{ s.name }}</div>
+                <div class="setup-card-desc">
+                  {{ SIGNAL_CHAIN_LABELS[s.signal_chain_type] ?? s.signal_chain_type }}
+                  · {{ s.inputs?.length ?? 0 }} ch
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="setup-card setup-card--new"
+                :class="{ 'setup-card--active': setupEditMode === 'new' }"
+                @click="startNewSetup"
+              >
+                <div class="setup-card-name">+ New setup</div>
+                <div class="setup-card-desc">Define a new rig template for this member</div>
+              </button>
+            </div>
+
+            <!-- Inline setup editor (edit-existing or new) -->
+            <div v-if="setupEditMode === 'edit-existing' || setupEditMode === 'new'" class="setup-editor">
+              <div class="setup-editor-title">
+                {{ setupEditMode === 'new' ? 'New setup' : 'Edit: ' + (memberSetups.find(s => s.id === assignSetupId)?.name ?? 'Setup') }}
+                <button type="button" class="setup-editor-close" @click="cancelEdit">✕</button>
+              </div>
+              <MemberSetupEditorPane
+                :model-value="{ ...editForm }"
+                :member="selectedAssignMember"
+                :saving="setupSaving"
+                :saved="setupSaved"
+                :show-apply-rider-only="true"
+                @update:model-value="Object.assign(editForm, $event)"
+                @save="saveSetupToProfile"
+                @apply-rider-only="applyToRiderOnly"
+              />
+            </div>
+
+            <p v-if="setupEditMode === 'none' && assignSetupId !== null" class="assign-import-hint assign-import-hint--green">
+              ✓ Template saved to profile — will be imported on confirm.
+            </p>
+            <p v-if="setupEditMode === 'rider-only'" class="assign-import-hint assign-import-hint--amber">
+              ✓ Custom modifications will be imported for this rider only (not saved to profile).
+            </p>
+          </template>
+
+          <div v-else class="assign-right-empty">
+            Select a band member on the left to load their rig templates.
+          </div>
+        </div>
+
+      </div><!-- /assign-body -->
+    </div><!-- /assign-dialog -->
   </div>
 
   <!-- ── Detail popup ────────────────────────────────────────────────────── -->
@@ -670,49 +840,87 @@ function removeItem(id: string) {
 
 /* ── Shared overlay ──────────────────────────────────── */
 .overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200;
-  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 0.75rem;
 }
 
-/* ── Assignment modal ────────────────────────────────── */
-.assign-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.875rem;
-  width: min(48rem, 100%); max-height: 85vh; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem;
+/* ── Assignment modal (fullscreen split) ─────────────── */
+.assign-dialog {
+  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
+  width: calc(100vw - 1.5rem); height: calc(100vh - 1.5rem);
+  display: flex; flex-direction: column; overflow: hidden;
 }
-.assign-header  { display: flex; flex-direction: column; gap: 0.2rem; }
-.assign-title   { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
-.assign-sub     { font-size: 0.8rem; color: #475569; }
+
+.assign-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid #1e2040;
+  background: #070718; flex-shrink: 0; gap: 1rem;
+}
+.assign-title { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; }
+.assign-sub   { font-size: 0.78rem; color: #475569; margin-top: 0.1rem; }
+.assign-header-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+
+.assign-body {
+  flex: 1; display: grid; grid-template-columns: 20% 80%;
+  min-height: 0; overflow: hidden;
+}
+
+.assign-left {
+  border-right: 1px solid #1e2040; background: #060614;
+  overflow-y: auto; padding: 0.75rem 0.625rem;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+
+.assign-right {
+  overflow-y: auto; padding: 1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
 .assign-section-label {
-  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: #a5b4fc; margin-top: 0.25rem;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #a5b4fc; flex-shrink: 0; padding-bottom: 0.25rem;
 }
-.assign-import-hint {
-  font-size: 0.75rem; color: #4ade80; background: #052e1630; border: 1px solid #14532d40;
-  border-radius: 0.375rem; padding: 0.4rem 0.625rem;
-}
-.assign-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem; }
 
-.member-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 0.5rem;
-}
-.member-card {
-  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
-  padding: 0.625rem 0.5rem; border-radius: 0.5rem; cursor: pointer;
-  border: 1px solid #1e2040; background: #0a0a1e;
+/* Left panel: member list rows */
+.member-row {
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.4rem 0.5rem; border-radius: 0.4rem;
+  cursor: pointer; text-align: left; width: 100%;
+  border: 1px solid transparent; background: transparent;
   transition: border-color 100ms, background 100ms;
 }
-.member-card:hover       { border-color: #312e81; background: #12123a; }
-.member-card--active     { border-color: #6366f1 !important; background: #16164a !important; }
+.member-row:hover     { border-color: #1e2040; background: #0d0d28; }
+.member-row--active   { border-color: #6366f1 !important; background: #16164a !important; }
+.member-row-info      { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0; flex: 1; }
+.member-row-name      {
+  font-size: 0.75rem; font-weight: 600; color: #e2e8f0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.member-row--active .member-row-name { color: #a5b4fc; }
+.member-row-role      { font-size: 0.62rem; color: #475569; }
+
 .member-avatar {
-  width: 2rem; height: 2rem; border-radius: 50%;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%; flex-shrink: 0;
   background: #1e1b4b; color: #818cf8;
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
   display: flex; align-items: center; justify-content: center;
 }
-.member-card--active .member-avatar { background: #312e81; color: #a5b4fc; }
-.member-card-name { font-size: 0.72rem; font-weight: 600; color: #e2e8f0; text-align: center; line-height: 1.2; }
-.member-card-role { font-size: 0.65rem; color: #475569; text-align: center; }
+.member-row--active .member-avatar { background: #312e81; color: #a5b4fc; }
+
+.assign-right-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; color: #2e3a52; text-align: center; padding: 3rem 2rem;
+}
+
+.assign-import-hint {
+  font-size: 0.75rem; border-radius: 0.375rem; padding: 0.4rem 0.75rem; flex-shrink: 0;
+}
+.assign-import-hint--green {
+  color: #4ade80; background: #052e1630; border: 1px solid #14532d40;
+}
+.assign-import-hint--amber {
+  color: #fbbf24; background: #78350f18; border: 1px solid #92400e40;
+}
 
 .setup-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem;
@@ -728,6 +936,26 @@ function removeItem(id: string) {
 .setup-card-name     { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
 .setup-card-desc     { font-size: 0.68rem; color: #475569; line-height: 1.4; }
 .setup-card--active .setup-card-name { color: #a5b4fc; }
+.setup-card--new { border-style: dashed; }
+.setup-card--new .setup-card-name { color: #4f6096; }
+.setup-card--active.setup-card--new .setup-card-name { color: #a5b4fc; }
+
+/* ── Setup editor wrapper ────────────────────────────── */
+.setup-editor {
+  background: #070718; border: 1px solid #2a2860; border-left: 3px solid #4338ca;
+  border-radius: 0.5rem; overflow: hidden;
+}
+.setup-editor-title {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.625rem 1rem; font-size: 0.8rem; font-weight: 700; color: #a5b4fc;
+  border-bottom: 1px solid #1e2040;
+}
+.setup-editor-close {
+  background: none; border: 1px solid #1e2040; color: #64748b;
+  border-radius: 0.375rem; cursor: pointer; padding: 0.15rem 0.45rem;
+  font-size: 0.75rem; transition: background 100ms;
+}
+.setup-editor-close:hover { background: #1a1a3a; }
 
 /* ── Detail popup ────────────────────────────────────── */
 .detail-card {

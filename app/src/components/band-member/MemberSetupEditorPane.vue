@@ -1,0 +1,273 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import MemberSetupSignalChain from './MemberSetupSignalChain.vue'
+import MemberSetupMonitor     from './MemberSetupMonitor.vue'
+import MemberSetupBackline    from './MemberSetupBackline.vue'
+import MemberSetupPower       from './MemberSetupPower.vue'
+import MemberSetupWireless    from './MemberSetupWireless.vue'
+import type { BandMember } from '@/types/bandMember'
+import type {
+  MemberMonitorPrefs,
+  MemberBacklinePrefs,
+  MemberPowerPrefs,
+  WirelessUnit,
+  SignalChainType,
+} from '@/types/bandMemberSetup'
+import type { InputRow } from '@/types/techRider'
+
+export interface SetupEditorModel {
+  name: string
+  instrument_id: number | null
+  signal_chain_type: SignalChainType
+  inputs: InputRow[]
+  monitor: MemberMonitorPrefs
+  backline: MemberBacklinePrefs
+  power: MemberPowerPrefs
+  wireless: WirelessUnit[]
+  foh_notes: string
+}
+
+interface Props {
+  modelValue: SetupEditorModel
+  member: BandMember | null
+  saving: boolean
+  saved: boolean
+  fillHeight?: boolean
+  showApplyRiderOnly?: boolean
+}
+const props = withDefaults(defineProps<Props>(), { fillHeight: false, showApplyRiderOnly: false })
+const emit  = defineEmits<{ 'update:modelValue': [SetupEditorModel]; save: []; 'apply-rider-only': [] }>()
+
+type SetupSection = 'inputs' | 'monitor' | 'wireless' | 'backline' | 'power' | 'foh'
+const activeSection = ref<SetupSection>('inputs')
+
+const SECTIONS: { key: SetupSection; label: string; icon: string }[] = [
+  { key: 'inputs',   label: 'Signal chain / Inputs', icon: '🎙️' },
+  { key: 'monitor',  label: 'Monitor',               icon: '🔊' },
+  { key: 'wireless', label: 'Wireless',               icon: '📡' },
+  { key: 'backline', label: 'Backline',               icon: '🥁' },
+  { key: 'power',    label: 'Power',                  icon: '⚡' },
+  { key: 'foh',      label: 'FOH notes',              icon: '🎛️' },
+]
+
+function patch<K extends keyof SetupEditorModel>(key: K, val: SetupEditorModel[K]) {
+  emit('update:modelValue', { ...props.modelValue, [key]: val })
+}
+
+const selectedInstrument = computed(() =>
+  props.member?.instruments?.find(i => i.id === props.modelValue.instrument_id) ?? null,
+)
+const memberFullName = computed(() =>
+  props.member ? `${props.member.first_name} ${props.member.last_name}` : '',
+)
+
+const inputsModel = computed({
+  get: () => props.modelValue.inputs,
+  set: (v: InputRow[]) => patch('inputs', v),
+})
+const chainTypeModel = computed({
+  get: () => props.modelValue.signal_chain_type,
+  set: (v: SignalChainType) => patch('signal_chain_type', v),
+})
+const monitorModel = computed({
+  get: () => props.modelValue.monitor,
+  set: (v: MemberMonitorPrefs) => patch('monitor', v),
+})
+const wirelessModel = computed({
+  get: () => props.modelValue.wireless,
+  set: (v: WirelessUnit[]) => patch('wireless', v),
+})
+const backlineModel = computed({
+  get: () => props.modelValue.backline,
+  set: (v: MemberBacklinePrefs) => patch('backline', v),
+})
+const powerModel = computed({
+  get: () => props.modelValue.power,
+  set: (v: MemberPowerPrefs) => patch('power', v),
+})
+
+defineExpose({ activeSection })
+</script>
+
+<template>
+  <div class="pane-shell" :class="{ 'pane-shell--fill': fillHeight }">
+
+    <!-- Setup meta -->
+    <div class="setup-meta-bar">
+      <div class="field-group">
+        <label class="field-label">Setup name</label>
+        <input
+          :value="modelValue.name"
+          class="field-input field-input--sm"
+          placeholder="e.g. Festival rig"
+          @input="patch('name', ($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div v-if="member" class="field-group">
+        <label class="field-label">Instrument (optional)</label>
+        <select
+          :value="modelValue.instrument_id ?? ''"
+          class="field-input field-input--sm"
+          @change="patch('instrument_id', Number(($event.target as HTMLSelectElement).value) || null)"
+        >
+          <option value="">— Any / not specified —</option>
+          <option v-for="inst in member.instruments" :key="inst.id" :value="inst.id">{{ inst.name }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="section-tabs">
+      <button
+        v-for="s in SECTIONS"
+        :key="s.key"
+        type="button"
+        class="section-tab"
+        :class="{ active: activeSection === s.key }"
+        @click="activeSection = s.key"
+      >
+        <span class="tab-icon">{{ s.icon }}</span>{{ s.label }}
+      </button>
+    </div>
+
+    <!-- Section content -->
+    <div class="section-content">
+      <template v-if="activeSection === 'inputs'">
+        <MemberSetupSignalChain
+          v-model="inputsModel"
+          v-model:chainType="chainTypeModel"
+          :instrument="selectedInstrument"
+          :memberName="memberFullName"
+        />
+      </template>
+      <template v-if="activeSection === 'monitor'">
+        <MemberSetupMonitor v-model="monitorModel" />
+      </template>
+      <template v-if="activeSection === 'wireless'">
+        <MemberSetupWireless v-model="wirelessModel" />
+      </template>
+      <template v-if="activeSection === 'backline'">
+        <MemberSetupBackline v-model="backlineModel" />
+      </template>
+      <template v-if="activeSection === 'power'">
+        <MemberSetupPower v-model="powerModel" />
+      </template>
+      <template v-if="activeSection === 'foh'">
+        <div class="foh-section">
+          <label class="field-label">FOH / PA notes</label>
+          <textarea
+            :value="modelValue.foh_notes"
+            class="foh-textarea"
+            rows="6"
+            placeholder="Any specific requests for the front-of-house mix — EQ preferences, effects, compression notes, etc."
+            @input="patch('foh_notes', ($event.target as HTMLTextAreaElement).value)"
+          />
+        </div>
+      </template>
+    </div>
+
+    <!-- Bottom save bar -->
+    <div class="bottom-bar">
+      <span v-if="showApplyRiderOnly" class="save-hint">Confirm without saving keeps changes for this rider only.</span>
+      <button
+        v-if="showApplyRiderOnly"
+        type="button"
+        class="btn-rider-only"
+        @click="$emit('apply-rider-only')"
+      >Apply to this rider only</button>
+      <button
+        type="button"
+        class="btn-save"
+        :class="{ 'btn-save--ok': saved }"
+        :disabled="saving"
+        @click="$emit('save')"
+      >{{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save to profile' }}</button>
+    </div>
+
+  </div>
+</template>
+
+<style scoped>
+.pane-shell {
+  display: flex;
+  flex-direction: column;
+}
+.pane-shell--fill {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.setup-meta-bar {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+  padding: 0.75rem 1rem; border-bottom: 1px solid #0f0f28;
+  background: #070718; flex-shrink: 0;
+}
+.field-group  { display: flex; flex-direction: column; gap: 0.2rem; }
+.field-label  { font-size: 0.68rem; font-weight: 600; color: #7c8fa6; }
+.field-input {
+  display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
+  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
+}
+.field-input:focus { border-color: #5154e5; }
+.field-input--sm { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
+.field-input option { background: #0e0e26; }
+
+.section-tabs {
+  display: flex; overflow-x: auto; border-bottom: 1px solid #0f0f28;
+  background: #070718; flex-shrink: 0; scrollbar-width: none;
+}
+.section-tabs::-webkit-scrollbar { display: none; }
+.section-tab {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.45rem 0.75rem; font-size: 0.72rem; font-weight: 500; color: #475569;
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; white-space: nowrap; transition: color 120ms, border-color 120ms;
+  margin-bottom: -1px;
+}
+.section-tab:hover  { color: #64748b; }
+.section-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.tab-icon { font-size: 0.8rem; }
+
+.section-content {
+  padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+  overflow-y: auto;
+}
+.pane-shell--fill .section-content { flex: 1; }
+
+.bottom-bar {
+  border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 0.75rem; background: #070718; flex-shrink: 0;
+}
+.save-hint {
+  flex: 1; font-size: 0.65rem; color: #2e3a52;
+}
+
+.btn-rider-only {
+  padding: 0.4rem 1rem; border-radius: 0.45rem; font-size: 0.78rem; font-weight: 500;
+  cursor: pointer; background: transparent; border: 1px solid #334155; color: #64748b;
+  transition: background 150ms, border-color 150ms, color 150ms;
+}
+.btn-rider-only:hover { background: #0a0a1e; border-color: #475569; color: #94a3b8; }
+
+.btn-save {
+  padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  transition: background 150ms; min-width: 7rem;
+}
+.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:disabled { opacity: 0.55; cursor: default; }
+.btn-save--ok { background: #166534 !important; }
+
+.foh-section  { display: flex; flex-direction: column; gap: 0.35rem; }
+.foh-textarea {
+  width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem;
+  border: 1px solid #1e2040; background: #0e0e26; color: #e2e8f0;
+  font-size: 0.85rem; font-family: inherit; outline: none; resize: vertical;
+  transition: border-color 150ms;
+}
+.foh-textarea:focus  { border-color: #5154e5; }
+.foh-textarea::placeholder { color: #2a3050; }
+</style>

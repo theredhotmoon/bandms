@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
-import MemberSetupSignalChain from './MemberSetupSignalChain.vue'
-import MemberSetupMonitor     from './MemberSetupMonitor.vue'
-import MemberSetupBackline    from './MemberSetupBackline.vue'
-import MemberSetupPower       from './MemberSetupPower.vue'
-import MemberSetupWireless    from './MemberSetupWireless.vue'
+import MemberSetupEditorPane from './MemberSetupEditorPane.vue'
+import type { SetupEditorModel } from './MemberSetupEditorPane.vue'
 import { useMemberSetups, useMemberSetup } from '@/composables/useBandMemberSetups'
 import type { BandMember } from '@/types/bandMember'
-import type {
-  BandMemberSetupPayload,
-  SignalChainType,
-} from '@/types/bandMemberSetup'
 import {
   defaultMonitorPrefs,
   defaultBacklinePrefs,
@@ -39,24 +32,12 @@ watch(memberId, () => { openId.value = null })
 
 const { query: setupQ, update: setupMut } = useMemberSetup(memberId, openId)
 
-type SetupSection = 'inputs' | 'monitor' | 'wireless' | 'backline' | 'power' | 'foh'
-const activeSection = ref<SetupSection>('inputs')
-
-const SECTIONS: { key: SetupSection; label: string; icon: string }[] = [
-  { key: 'inputs',   label: 'Signal chain / Inputs', icon: '🎙️' },
-  { key: 'monitor',  label: 'Monitor',               icon: '🔊' },
-  { key: 'wireless', label: 'Wireless',               icon: '📡' },
-  { key: 'backline', label: 'Backline',               icon: '🥁' },
-  { key: 'power',    label: 'Power',                  icon: '⚡' },
-  { key: 'foh',      label: 'FOH notes',              icon: '🎛️' },
-]
-
 // ── Local form state ──────────────────────────────────────────────────────────
 
-const form = reactive<Required<BandMemberSetupPayload>>({
+const form = reactive<SetupEditorModel>({
   name:               '',
   instrument_id:      null,
-  signal_chain_type:  'other' as SignalChainType,
+  signal_chain_type:  'other',
   inputs:             [],
   monitor:            defaultMonitorPrefs(),
   backline:           defaultBacklinePrefs(),
@@ -125,7 +106,6 @@ async function createSetup() {
     openId.value    = setup.id
     showNewRow.value = false
     newName.value   = ''
-    activeSection.value = 'inputs'
     toast.success('Setup created')
   } catch {
     toast.error('Failed to create setup')
@@ -150,15 +130,6 @@ async function confirmDelete() {
   }
 }
 
-// ── Resolved instrument for the signal chain component ────────────────────────
-
-const selectedInstrument = computed(() =>
-  props.member.instruments.find((i) => i.id === form.instrument_id) ?? null,
-)
-
-const memberFullName = computed(() =>
-  `${props.member.first_name} ${props.member.last_name}`,
-)
 </script>
 
 <template>
@@ -197,7 +168,7 @@ const memberFullName = computed(() =>
           :key="s.id"
           class="setup-item"
           :class="{ 'setup-item--open': openId === s.id }"
-          @click="openId = s.id; activeSection = 'inputs'"
+          @click="openId = s.id"
         >
           <div class="setup-item-info">
             <span class="setup-name">{{ s.name }}</span>
@@ -241,89 +212,15 @@ const memberFullName = computed(() =>
           >{{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save setup' }}</button>
         </div>
 
-        <!-- Setup meta -->
-        <div class="setup-meta-bar">
-          <div class="field-group">
-            <label class="field-label">Setup name</label>
-            <input v-model="form.name" class="field-input field-input--sm" placeholder="e.g. Festival rig" />
-          </div>
-          <div class="field-group">
-            <label class="field-label">Instrument (optional)</label>
-            <select v-model="form.instrument_id" class="field-input field-input--sm">
-              <option :value="null">— Any / not specified —</option>
-              <option v-for="inst in member.instruments" :key="inst.id" :value="inst.id">
-                {{ inst.name }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Section tabs -->
-        <div class="section-tabs">
-          <button
-            v-for="s in SECTIONS"
-            :key="s.key"
-            type="button"
-            class="section-tab"
-            :class="{ active: activeSection === s.key }"
-            @click="activeSection = s.key"
-          >
-            <span class="tab-icon">{{ s.icon }}</span>{{ s.label }}
-          </button>
-        </div>
-
-        <!-- Section content -->
-        <div class="section-content">
-
-          <template v-if="activeSection === 'inputs'">
-            <MemberSetupSignalChain
-              v-model="form.inputs"
-              v-model:chain-type="form.signal_chain_type"
-              :instrument="selectedInstrument"
-              :member-name="memberFullName"
-            />
-          </template>
-
-          <template v-if="activeSection === 'monitor'">
-            <MemberSetupMonitor v-model="form.monitor" />
-          </template>
-
-          <template v-if="activeSection === 'wireless'">
-            <MemberSetupWireless v-model="form.wireless" />
-          </template>
-
-          <template v-if="activeSection === 'backline'">
-            <MemberSetupBackline v-model="form.backline" />
-          </template>
-
-          <template v-if="activeSection === 'power'">
-            <MemberSetupPower v-model="form.power" />
-          </template>
-
-          <template v-if="activeSection === 'foh'">
-            <div class="foh-section">
-              <label class="field-label">FOH / PA notes</label>
-              <textarea
-                v-model="form.foh_notes"
-                class="foh-textarea"
-                rows="6"
-                placeholder="Any specific requests for the front-of-house mix — EQ preferences, effects, compression notes, etc."
-              />
-            </div>
-          </template>
-
-        </div><!-- /section-content -->
-
-        <!-- Bottom save bar -->
-        <div class="bottom-bar">
-          <button
-            type="button"
-            class="btn-save"
-            :class="{ 'btn-save--ok': saved }"
-            :disabled="saving"
-            @click="saveSetup"
-          >{{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save setup' }}</button>
-        </div>
+        <MemberSetupEditorPane
+          :model-value="{ ...form }"
+          :member="member"
+          :saving="saving"
+          :saved="saved"
+          :fill-height="true"
+          @update:model-value="Object.assign(form, $event)"
+          @save="saveSetup"
+        />
 
       </template>
     </div><!-- /editor-pane -->
@@ -432,48 +329,6 @@ const memberFullName = computed(() =>
 }
 .topbar-name { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
 
-.setup-meta-bar {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
-  padding: 0.75rem 1rem; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0;
-}
-.field-group  { display: flex; flex-direction: column; gap: 0.2rem; }
-.field-label  { font-size: 0.68rem; font-weight: 600; color: #7c8fa6; }
-.field-input {
-  display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
-  font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
-}
-.field-input:focus { border-color: #5154e5; }
-.field-input--sm { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-.field-input option { background: #0e0e26; }
-
-.section-tabs {
-  display: flex; overflow-x: auto; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0; scrollbar-width: none;
-}
-.section-tabs::-webkit-scrollbar { display: none; }
-.section-tab {
-  display: flex; align-items: center; gap: 0.3rem;
-  padding: 0.45rem 0.75rem; font-size: 0.72rem; font-weight: 500; color: #475569;
-  background: transparent; border: none; border-bottom: 2px solid transparent;
-  cursor: pointer; white-space: nowrap; transition: color 120ms, border-color 120ms;
-  margin-bottom: -1px;
-}
-.section-tab:hover  { color: #64748b; }
-.section-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
-.tab-icon { font-size: 0.8rem; }
-
-.section-content {
-  flex: 1; overflow-y: auto; padding: 1rem;
-  display: flex; flex-direction: column; gap: 0.75rem;
-}
-
-.bottom-bar {
-  border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;
-  display: flex; justify-content: flex-end; background: #070718; flex-shrink: 0;
-}
-
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
   cursor: pointer; background: #4338ca; border: none; color: #fff;
@@ -482,17 +337,6 @@ const memberFullName = computed(() =>
 .btn-save:hover:not(:disabled) { background: #4f46e5; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
 .btn-save--ok { background: #166534 !important; }
-
-/* FOH textarea */
-.foh-section  { display: flex; flex-direction: column; gap: 0.35rem; }
-.foh-textarea {
-  width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0e0e26; color: #e2e8f0;
-  font-size: 0.85rem; font-family: inherit; outline: none; resize: vertical;
-  transition: border-color 150ms;
-}
-.foh-textarea:focus  { border-color: #5154e5; }
-.foh-textarea::placeholder { color: #2a3050; }
 
 /* Confirm delete overlay */
 .confirm-overlay {
