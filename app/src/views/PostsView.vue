@@ -34,9 +34,16 @@ function formatDate(iso: string | null) {
 </script>
 
 <template>
-  <div style="padding: 1.5rem; max-width: 900px; margin: 0 auto;">
-    <h1 style="margin-bottom: 1.5rem;">Blog</h1>
+  <div class="posts-page">
+    <header class="page-header">
+      <div class="page-header-inner">
+        <p class="page-eyebrow">News</p>
+        <h1 class="page-title">News</h1>
+        <p class="page-sub">Updates, announcements and stories from the band.</p>
+      </div>
+    </header>
 
+    <div class="posts-body">
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
       <input
         v-model="searchInput"
@@ -99,5 +106,22 @@ function formatDate(iso: string | null) {
       <span style="font-size: 0.9em; opacity: 0.6;">Page {{ page }} of {{ meta.last_page }}</span>
       <button :disabled="page >= meta.last_page" @click="page++">Next →</button>
     </div>
+    </div><!-- posts-body -->
   </div>
 </template>
+
+<style scoped>
+.posts-page { background: #fff; color: #111; min-height: calc(100vh - 56px); }
+.page-header { padding: 4rem 1.5rem 3rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.page-header-inner { max-width: 960px; margin: 0 auto; }
+.page-eyebrow {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #888; margin-bottom: 0.75rem;
+}
+.page-title {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 0.5rem;
+}
+.page-sub { font-size: 1rem; color: #888; }
+.posts-body { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+</style>

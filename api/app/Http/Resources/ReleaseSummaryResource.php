@@ -18,6 +18,11 @@ class ReleaseSummaryResource extends JsonResource
             'cover_image'  => $this->cover_image ? '/storage/' . $this->cover_image : null,
             'is_upcoming'  => (bool) $this->is_upcoming,
             'presave_url'  => $this->presave_url,
+            'links'        => $this->whenLoaded('links', fn () => $this->links->map(fn ($l) => [
+                'id'       => $l->id,
+                'platform' => $l->platform,
+                'url'      => $l->url,
+            ])),
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];

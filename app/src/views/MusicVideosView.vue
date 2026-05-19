@@ -38,9 +38,12 @@ function thumbnailUrl(v: MusicVideo): string | null {
 
 <template>
   <div class="mv-page">
-    <header class="mv-header">
-      <p class="mv-eyebrow">Music Videos</p>
-      <h1 class="mv-title">Watch</h1>
+    <header class="page-header">
+      <div class="page-header-inner">
+        <p class="page-eyebrow">Videos</p>
+        <h1 class="page-title">Music Videos</h1>
+        <p class="page-sub">Official videos and visual releases.</p>
+      </div>
     </header>
 
     <div v-if="isPending" class="mv-loading">Loading…</div>
@@ -114,21 +117,17 @@ function thumbnailUrl(v: MusicVideo): string | null {
 }
 
 /* ── Header ──────────────────────────────────────────────── */
-.mv-header {
-  padding: 4rem 1.5rem 3rem;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  max-width: 960px;
-  margin: 0 auto;
-}
-.mv-eyebrow {
+.page-header { padding: 4rem 1.5rem 3rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.page-header-inner { max-width: 960px; margin: 0 auto; }
+.page-eyebrow {
   font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
   text-transform: uppercase; color: #888; margin-bottom: 0.75rem;
 }
-.mv-title {
+.page-title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
-  font-weight: 700; color: #111; line-height: 1.2;
+  font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 0.5rem;
 }
+.page-sub { font-size: 1rem; color: #888; }
 
 .mv-loading, .mv-empty {
   text-align: center; color: #888;

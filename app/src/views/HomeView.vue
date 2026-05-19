@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
 
 const { isLoggedIn, user } = useAuth()
 
@@ -126,6 +127,11 @@ const greeting = computed(() => {
       </div>
     </section>
 
+    <!-- Newsletter signup (public only) -->
+    <section v-if="!isLoggedIn" class="nl-section">
+      <NewsletterSignup source="home" />
+    </section>
+
     <!-- Admin quick-actions (logged-in only) -->
     <section v-if="isLoggedIn" class="qa-wrap">
       <h2 class="section-heading">Quick actions</h2>
@@ -228,6 +234,9 @@ const greeting = computed(() => {
 
 .card-arrow { width: 16px; height: 16px; color: #bbb; flex-shrink: 0; }
 .section-card:hover .card-arrow { color: #555; }
+
+/* ── Newsletter ───────────────────────────────────────────── */
+.nl-section { padding: 0 1.5rem 3rem; max-width: 960px; margin: 0 auto; }
 
 /* ── Quick actions ────────────────────────────────────────── */
 .qa-wrap { padding: 0 1.5rem 3rem; max-width: 960px; margin: 0 auto; }

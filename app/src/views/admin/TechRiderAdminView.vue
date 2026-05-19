@@ -51,7 +51,7 @@ const { query: riderQ, update: riderMut } = useTechRider(openId)
 // ── Local form state (synced from query) ──────────────────────────────────────
 type Section = 'cover' | 'stage' | 'inputs' | 'monitors' | 'backline' | 'pafoh' | 'power' | 'rf'
 
-const activeSection = ref<Section>('cover')
+const activeSection = ref<Section>('stage')
 
 const form = reactive<Required<TechRiderPayload>>({
   name:            '',
@@ -319,8 +319,8 @@ function handleMemberAssigned(payload: {
 
 // ── Section definitions ───────────────────────────────────────────────────────
 const SECTIONS: { key: Section; label: string; icon: string }[] = [
-  { key: 'cover',    label: 'Cover / Header',   icon: '📄' },
   { key: 'stage',    label: 'Stage Plot',        icon: '🎭' },
+  { key: 'cover',    label: 'Contact',           icon: '📋' },
   { key: 'inputs',   label: 'Inputs List',       icon: '🎙️' },
   { key: 'monitors', label: 'Monitors / IEM',    icon: '🔊' },
   { key: 'backline', label: 'Backline',           icon: '🥁' },
@@ -351,7 +351,7 @@ const bandProfile = computed(() => profileQ.data.value)
             :key="r.id"
             class="template-item"
             :class="{ 'template-item--open': openId === r.id }"
-            @click="openId = r.id; activeSection = 'cover'"
+            @click="openId = r.id; activeSection = 'stage'"
           >
             <div class="template-item-info">
               <span class="template-name">{{ r.name }}</span>
@@ -475,16 +475,15 @@ const bandProfile = computed(() => profileQ.data.value)
                 </div>
                 <RouterLink to="/admin/band-profile" class="btn-go-profile">Edit in Band Profile →</RouterLink>
               </div>
-
-              <div class="field-group">
-                <label class="field-label">Rider template name</label>
-                <input v-model="form.name" class="field-input" placeholder="e.g. Festival rider, Club show, Full production" />
-                <p class="field-hint">This name is for your internal reference only — not shown to the venue.</p>
-              </div>
             </template>
 
             <!-- ── 2. Stage plot ───────────────────────────────────────── -->
             <template v-if="activeSection === 'stage'">
+              <div class="field-group">
+                <label class="field-label">Rider template name</label>
+                <input v-model="form.name" class="field-input" placeholder="e.g. Festival rider, Club show, Full production" />
+                <p class="field-hint">Internal reference only — not shown to the venue.</p>
+              </div>
               <TechRiderStagePlot
                 v-model="form.stage_plot_data"
                 :band-members="bandMembers"

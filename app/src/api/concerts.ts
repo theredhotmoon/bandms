@@ -1,4 +1,5 @@
 import type { Concert, ConcertPayload } from '@/types/concert'
+import type { PublicSetlist } from '@/types/setlist'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface ConcertListResponse {
@@ -71,4 +72,11 @@ export async function deleteConcertPoster(token: string, id: number): Promise<Co
     headers: authHeaders(token),
   })
   return handleResponse<ConcertResponse>(res).then((r) => r.data)
+}
+
+export async function fetchConcertSetlist(id: number): Promise<PublicSetlist | null> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/concerts/${id}/setlist`, { headers: jsonHeaders })
+  if (res.status === 404) return null
+  return handleResponse<{ data: PublicSetlist }>(res).then((r) => r.data)
 }

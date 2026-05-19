@@ -14,7 +14,7 @@ const navLinks = [
   { to: '/releases', label: 'Releases' },
   { to: '/videos',   label: 'Videos' },
   { to: '/photos',   label: 'Galleries' },
-  { to: '/booking',  label: 'Booking' },
+  { to: '/contact',  label: 'Contact' },
 ]
 
 async function handleLogout() {

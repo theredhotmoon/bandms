@@ -44,11 +44,35 @@ const TYPE_LABEL: Record<ReleaseType, string> = {
 }
 
 const PLATFORM_LABELS: Record<string, string> = {
-  spotify: 'Spotify',
+  spotify:     'Spotify',
   apple_music: 'Apple Music',
-  bandcamp: 'Bandcamp',
-  youtube: 'YouTube',
-  instagram: 'Instagram',
+  bandcamp:    'Bandcamp',
+  youtube:     'YouTube',
+  instagram:   'Instagram',
+}
+
+const PLATFORM_VERBS: Record<string, string> = {
+  spotify:     'Listen on',
+  apple_music: 'Listen on',
+  bandcamp:    'Buy on',
+  youtube:     'Watch on',
+  instagram:   'View on',
+}
+
+const PLATFORM_ABBR: Record<string, string> = {
+  spotify:     'Spotify',
+  apple_music: 'Apple',
+  bandcamp:    'Bandcamp',
+  youtube:     'YouTube',
+  instagram:   'Instagram',
+}
+
+const PLATFORM_COLORS: Record<string, string> = {
+  spotify:     '#1db954',
+  apple_music: '#fc3c44',
+  bandcamp:    '#1da0c3',
+  youtube:     '#ff0000',
+  instagram:   '#e1306c',
 }
 
 function releaseYear(r: ReleaseSummary): string {
@@ -100,6 +124,15 @@ function releaseYear(r: ReleaseSummary): string {
             <div class="rl-type-badge">{{ TYPE_LABEL[r.type] }}</div>
             <div class="rl-card-title">{{ r.title }}</div>
             <div class="rl-card-year">{{ releaseYear(r) }}</div>
+            <div v-if="r.links?.length" class="rl-card-platforms">
+              <span
+                v-for="link in r.links"
+                :key="link.platform"
+                class="rl-platform-dot"
+                :style="`background:${PLATFORM_COLORS[link.platform] ?? '#888'}`"
+                :title="PLATFORM_LABELS[link.platform] ?? link.platform"
+              />
+            </div>
           </div>
         </button>
       </div>
@@ -141,16 +174,20 @@ function releaseYear(r: ReleaseSummary): string {
                   </div>
                   <p v-if="detail.description" class="rl-modal-desc">{{ detail.description }}</p>
                   <!-- Streaming links -->
-                  <div v-if="detail.links.length" class="rl-links">
+                  <div v-if="detail.links.length" class="rl-streams">
                     <a
                       v-for="link in detail.links"
                       :key="link.id"
                       :href="link.url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="rl-link-btn"
+                      class="rl-stream-btn"
+                      :style="`--c:${PLATFORM_COLORS[link.platform] ?? '#444'}`"
                     >
-                      {{ PLATFORM_LABELS[link.platform] ?? link.platform }}
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13" aria-hidden="true">
+                        <polygon points="5,3 19,12 5,21"/>
+                      </svg>
+                      {{ PLATFORM_VERBS[link.platform] ?? 'Listen on' }} {{ PLATFORM_LABELS[link.platform] ?? link.platform }}
                     </a>
                   </div>
                 </div>
@@ -167,6 +204,18 @@ function releaseYear(r: ReleaseSummary): string {
                   >
                     <span class="rl-track-num">{{ i + 1 }}</span>
                     <span class="rl-track-title">{{ track.title }}</span>
+                    <div v-if="track.links?.length" class="rl-track-links">
+                      <a
+                        v-for="tl in track.links"
+                        :key="tl.id"
+                        :href="tl.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="rl-track-link-btn"
+                        :style="`--c:${PLATFORM_COLORS[tl.platform] ?? '#888'}`"
+                        :title="`${PLATFORM_VERBS[tl.platform] ?? 'Listen on'} ${PLATFORM_LABELS[tl.platform] ?? tl.platform}`"
+                      >{{ PLATFORM_ABBR[tl.platform] ?? tl.platform }}</a>
+                    </div>
                     <span v-if="track.duration" class="rl-track-dur">{{ track.duration }}</span>
                   </li>
                 </ol>
@@ -328,16 +377,38 @@ function releaseYear(r: ReleaseSummary): string {
 }
 .rl-presave-btn:hover { background: #333; }
 
-/* ── Streaming links ─────────────────────────────────────── */
-.rl-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.rl-link-btn {
-  padding: 0.375rem 0.875rem; border-radius: 0.5rem;
-  font-size: 0.8125rem; font-weight: 500;
-  background: #f0f0f0; color: #333;
-  text-decoration: none; border: 1px solid #ddd;
-  transition: background 150ms;
+/* ── Card platform dots ──────────────────────────────────── */
+.rl-card-platforms {
+  display: flex; flex-wrap: wrap; gap: 0.3rem;
+  margin-top: 0.5rem;
 }
-.rl-link-btn:hover { background: #e0e0e0; }
+.rl-platform-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+}
+
+/* ── Streaming links ─────────────────────────────────────── */
+.rl-streams { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+
+.rl-stream-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: #fff;
+  background: var(--c);
+  transition: filter 150ms, transform 150ms;
+  white-space: nowrap;
+}
+.rl-stream-btn:hover {
+  filter: brightness(0.88);
+  transform: translateY(-1px);
+}
 
 /* ── Tracklist ───────────────────────────────────────────── */
 .rl-tracks { border-top: 1px solid #e0e0e0; padding-top: 1.25rem; }
@@ -355,6 +426,17 @@ function releaseYear(r: ReleaseSummary): string {
 .rl-track-num { width: 1.25rem; text-align: right; font-size: 0.8125rem; color: #888; flex-shrink: 0; }
 .rl-track-title { flex: 1; font-size: 0.9rem; color: #111; }
 .rl-track-dur { font-size: 0.75rem; color: #888; flex-shrink: 0; }
+
+.rl-track-links { display: flex; flex-wrap: wrap; gap: 0.25rem; flex-shrink: 0; align-items: center; }
+.rl-track-link-btn {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.01em;
+  padding: 0.175rem 0.5rem; border-radius: 1rem;
+  text-decoration: none; color: #fff;
+  background: var(--c);
+  white-space: nowrap;
+  transition: filter 120ms, transform 120ms;
+}
+.rl-track-link-btn:hover { filter: brightness(0.85); transform: translateY(-1px); }
 
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 500px) {

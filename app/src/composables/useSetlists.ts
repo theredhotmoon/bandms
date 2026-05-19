@@ -8,7 +8,8 @@ import {
   importFromSetlistFm,
   searchSetlistFmArtist, fetchSetlistFmSetlists,
 } from '@/api/setlists'
-import type { SetlistPayload, SetlistItemPayload, Setlist } from '@/types/setlist'
+import { fetchConcertSetlist } from '@/api/concerts'
+import type { SetlistPayload, SetlistItemPayload, Setlist, PublicSetlist } from '@/types/setlist'
 import { useAuth } from './useAuth'
 
 const LIST_QK = ['setlists']
@@ -84,6 +85,16 @@ export function useSetlist(openId: Ref<number | null>) {
   })
 
   return { query, update, addItem, updateItem, removeItem, reorder }
+}
+
+export function useConcertSetlist(concertId: Ref<number | null>) {
+  const query = useQuery<PublicSetlist | null>({
+    queryKey: computed(() => ['concert-setlist', concertId.value]),
+    queryFn: () => fetchConcertSetlist(concertId.value!),
+    enabled: computed(() => concertId.value !== null),
+  })
+
+  return { query }
 }
 
 export function useSetlistFmSearch() {

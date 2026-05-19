@@ -43,14 +43,18 @@ function initials(m: BandMember) {
 
     <template v-else-if="profile">
 
-      <!-- ── Hero ──────────────────────────────────────────────── -->
-      <header class="about-header">
-        <p class="about-eyebrow">About</p>
-        <h1 class="about-name">{{ profile.name }}</h1>
-        <div v-if="profile.hometown || profile.formation_year || profile.genres" class="about-meta">
-          <span v-if="profile.formation_year">est. {{ profile.formation_year }}</span>
-          <span v-if="profile.hometown">{{ profile.hometown }}</span>
-          <span v-if="profile.genres">{{ profile.genres }}</span>
+      <!-- ── Header ─────────────────────────────────────────────── -->
+      <header class="page-header">
+        <div class="page-header-inner">
+          <p class="page-eyebrow">About</p>
+          <h1 class="page-title">{{ profile.name }}</h1>
+          <p v-if="profile.hometown || profile.formation_year || profile.genres" class="page-sub">
+            <template v-if="profile.formation_year">Est. {{ profile.formation_year }}</template>
+            <template v-if="profile.formation_year && (profile.hometown || profile.genres)"> · </template>
+            <template v-if="profile.hometown">{{ profile.hometown }}</template>
+            <template v-if="profile.hometown && profile.genres"> · </template>
+            <template v-if="profile.genres">{{ profile.genres }}</template>
+          </p>
         </div>
       </header>
 
@@ -146,29 +150,18 @@ function initials(m: BandMember) {
   color: #888;
 }
 
-/* ── Hero ─────────────────────────────────────────────────── */
-.about-header {
-  padding: 4rem 1.5rem 3rem;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.about-header { max-width: 720px; margin: 0 auto; }
-
-.about-eyebrow {
+/* ── Header ─────────────────────────────────────────────────── */
+.page-header { padding: 4rem 1.5rem 3rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.page-header-inner { max-width: 960px; margin: 0 auto; }
+.page-eyebrow {
   font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
   text-transform: uppercase; color: #888; margin-bottom: 0.75rem;
 }
-
-.about-name {
+.page-title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
-  font-weight: 700; color: #111; margin-bottom: 0.75rem; line-height: 1.2;
+  font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 0.5rem;
 }
-
-.about-meta {
-  display: flex; flex-wrap: wrap; gap: 0.25rem 1rem;
-  font-size: 0.875rem; color: #888;
-}
+.page-sub { font-size: 1rem; color: #888; }
 
 /* ── Shared section wrapper ───────────────────────────────── */
 .section-wrap {

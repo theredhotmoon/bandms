@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PublicSetlistResource;
 use App\Http\Resources\SetlistResource;
 use App\Http\Resources\SetlistSummaryResource;
 use App\Http\Resources\SetlistItemResource;
+use App\Models\Concert;
 use App\Models\Setlist;
 use App\Models\SetlistItem;
 use App\Models\Song;
@@ -23,6 +25,13 @@ class SetlistController extends Controller
             ->get();
 
         return SetlistSummaryResource::collection($setlists);
+    }
+
+    public function showByConcert(Concert $concert): PublicSetlistResource
+    {
+        $setlist = Setlist::where('concert_id', $concert->id)->firstOrFail();
+
+        return new PublicSetlistResource($setlist);
     }
 
     public function store(Request $request): SetlistResource

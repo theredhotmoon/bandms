@@ -16,7 +16,7 @@ class ReleaseController extends Controller
 {
     public function index(): ResourceCollection
     {
-        $releases = Release::orderByDesc('release_date')->orderByDesc('id')->get();
+        $releases = Release::with('links')->orderByDesc('release_date')->orderByDesc('id')->get();
 
         return ReleaseSummaryResource::collection($releases);
     }

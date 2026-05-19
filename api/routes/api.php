@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NewsletterSubscriberController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\FacebookSyncController;
 use App\Http\Controllers\SetlistController;
@@ -69,6 +70,7 @@ Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])
 
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
+Route::get('/concerts/{concert}/setlist', [SetlistController::class, 'showByConcert'])->name('api.concerts.setlist');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -94,6 +96,10 @@ Route::get('/press-releases/{pressRelease}', [PressReleaseController::class, 'sh
 Route::get('/music-videos', [MusicVideoController::class, 'index'])->name('api.music-videos.index');
 
 Route::get('/instruments', [InstrumentController::class, 'index'])->name('api.instruments.index');
+
+Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'subscribe'])
+    ->middleware('throttle:5,1')
+    ->name('api.newsletter.subscribe');
 
 Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
 Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
@@ -267,6 +273,10 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/setlists/{setlist}/items/{item}', [SetlistController::class, 'removeItem'])->name('api.setlists.items.remove');
 
         Route::post('/setlists/import-setlistfm', [SetlistController::class, 'importFromSetlistFm'])->name('api.setlists.import-setlistfm');
+
+        // Newsletter subscribers
+        Route::get('/newsletter-subscribers', [NewsletterSubscriberController::class, 'index'])->name('api.newsletter-subscribers.index');
+        Route::delete('/newsletter-subscribers/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('api.newsletter-subscribers.destroy');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');

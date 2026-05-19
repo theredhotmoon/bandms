@@ -52,24 +52,16 @@ function formatDay(date: string) {
 </script>
 
 <template>
-  <div style="padding: 1.5rem; max-width: 960px; margin: 0 auto;">
+  <div class="concerts-page">
+    <header class="page-header">
+      <div class="page-header-inner">
+        <p class="page-eyebrow">Live</p>
+        <h1 class="page-title">Concert Schedule</h1>
+        <p class="page-sub">Upcoming shows and past gigs.</p>
+      </div>
+    </header>
 
-    <!-- Header row -->
-    <div class="page-header">
-      <h1 style="margin:0;">Concert Schedule</h1>
-      <button
-        v-if="concertsWithCoords.length"
-        class="map-btn"
-        @click="showVenuesMap = true"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-          <line x1="9" y1="3" x2="9" y2="18"/>
-          <line x1="15" y1="6" x2="15" y2="21"/>
-        </svg>
-        Show where we played
-      </button>
-    </div>
+    <div class="concerts-body">
 
     <!-- Stats -->
     <div v-if="!query.isPending.value && allConcerts.length" class="stats-row">
@@ -89,8 +81,9 @@ function formatDay(date: string) {
       </div>
     </div>
 
-    <!-- Filter tabs -->
-    <div v-if="!query.isPending.value && allConcerts.length" class="filter-row">
+    <!-- Filter tabs + map button -->
+    <div v-if="!query.isPending.value && allConcerts.length" class="toolbar-row">
+      <div class="filter-row">
       <button
         v-for="opt in ([
           { key: 'all',      label: 'All' },
@@ -102,7 +95,20 @@ function formatDay(date: string) {
         :class="{ 'filter-btn--active': filter === opt.key }"
         @click="filter = opt.key"
       >{{ opt.label }}</button>
-    </div>
+      </div><!-- filter-row -->
+      <button
+        v-if="concertsWithCoords.length"
+        class="map-btn"
+        @click="showVenuesMap = true"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+        Show where we played
+      </button>
+    </div><!-- toolbar-row -->
 
     <div v-if="query.isPending.value">Loading concerts…</div>
     <div v-else-if="query.isError.value">Failed to load concerts.</div>
@@ -152,8 +158,9 @@ function formatDay(date: string) {
           </button>
         </div>
       </div>
-    </div>
-  </div>
+    </div><!-- concerts-grid -->
+    </div><!-- concerts-body -->
+  </div><!-- concerts-page -->
 
   <AllVenuesMapModal
     v-if="showVenuesMap"
@@ -164,14 +171,30 @@ function formatDay(date: string) {
 
 <style scoped>
 /* ── Header ─────────────────────────────────────────────── */
-.page-header {
+.page-header { padding: 4rem 1.5rem 3rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.page-header-inner { max-width: 960px; margin: 0 auto; }
+.page-eyebrow {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #888; margin-bottom: 0.75rem;
+}
+.page-title {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 0.5rem;
+}
+.page-sub { font-size: 1rem; color: #888; }
+
+.concerts-body { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* ── Toolbar (filters + map button) ──────────────────────── */
+.toolbar-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
   gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
+.filter-row { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 
 .map-btn {
   display: inline-flex; align-items: center; gap: 0.4rem;
@@ -226,12 +249,6 @@ function formatDay(date: string) {
 }
 
 /* ── Filter tabs ────────────────────────────────────────── */
-.filter-row {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: 1.25rem;
-}
-
 .filter-btn {
   padding: 0.3rem 0.75rem;
   border-radius: 0.375rem;

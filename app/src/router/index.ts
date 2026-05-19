@@ -32,9 +32,13 @@ const router = createRouter({
       component: () => import('@/views/MusicVideosView.vue'),
     },
     {
+      path: '/contact',
+      name: 'contact',
+      component: () => import('@/views/ContactView.vue'),
+    },
+    {
       path: '/booking',
-      name: 'booking',
-      component: () => import('@/views/BookingView.vue'),
+      redirect: { name: 'contact' },
     },
     {
       path: '/concerts',
@@ -213,6 +217,12 @@ const router = createRouter({
       path: '/admin/tech-rider',
       name: 'admin-tech-rider',
       component: () => import('@/views/admin/TechRiderAdminView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
+      path: '/admin/newsletter',
+      name: 'admin-newsletter',
+      component: () => import('@/views/admin/NewsletterAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {

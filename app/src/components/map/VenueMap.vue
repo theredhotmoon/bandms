@@ -7,9 +7,10 @@ interface Props {
   latitude: number | null
   longitude: number | null
   editable?: boolean
+  grayscale?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), { editable: false })
+const props = withDefaults(defineProps<Props>(), { editable: false, grayscale: false })
 
 const emit = defineEmits<{
   'update:coordinates': [lat: number, lng: number]
@@ -93,7 +94,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="mapContainer" class="venue-map" />
+  <div ref="mapContainer" class="venue-map" :class="{ 'venue-map--grayscale': props.grayscale }" />
 </template>
 
 <style scoped>
@@ -101,5 +102,9 @@ onUnmounted(() => {
   width: 100%;
   height: 300px;
   border-radius: 4px;
+}
+
+.venue-map--grayscale :deep(.leaflet-layer) {
+  filter: grayscale(1) contrast(1.05) brightness(1.05);
 }
 </style>

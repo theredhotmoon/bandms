@@ -18,12 +18,16 @@ function hostname(url: string): string {
 </script>
 
 <template>
-  <main class="press-page">
-    <div class="press-header">
-      <h1 class="press-heading">Press</h1>
-      <p class="press-sub">Articles and coverage from around the web</p>
-    </div>
+  <div class="press-page">
+    <header class="page-header">
+      <div class="page-header-inner">
+        <p class="page-eyebrow">Press</p>
+        <h1 class="page-title">In the Press</h1>
+        <p class="page-sub">Articles and coverage from around the web.</p>
+      </div>
+    </header>
 
+    <div class="press-body">
     <div v-if="query.isPending.value" class="press-loading">Loading…</div>
     <div v-else-if="query.isError.value" class="press-error">Failed to load press releases.</div>
     <div v-else-if="!query.data.value?.length" class="press-empty">No press coverage yet.</div>
@@ -63,14 +67,27 @@ function hostname(url: string): string {
         </div>
       </a>
     </div>
-  </main>
+    </div><!-- press-body -->
+  </div>
 </template>
 
 <style scoped>
-.press-page    { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-.press-header  { margin-bottom: 2.5rem; }
-.press-heading { font-size: 2rem; font-weight: 700; color: #111; margin: 0 0 0.375rem; }
-.press-sub     { font-size: 0.9375rem; color: #888; margin: 0; }
+.press-page { background: #fff; color: #111; min-height: calc(100vh - 56px); }
+
+.page-header { padding: 4rem 1.5rem 3rem; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.page-header-inner { max-width: 960px; margin: 0 auto; }
+.page-eyebrow {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #888; margin-bottom: 0.75rem;
+}
+.page-title {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700; color: #111; line-height: 1.2; margin-bottom: 0.5rem;
+}
+.page-sub { font-size: 1rem; color: #888; }
+
+.press-body { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
 .press-loading, .press-error, .press-empty {
   text-align: center; color: #888; padding: 4rem 0; font-size: 0.9375rem;
 }
