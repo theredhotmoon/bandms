@@ -3,6 +3,7 @@
 use App\Models\PressRelease;
 use App\Models\Tag;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Laravel\Passport\Passport;
 
 beforeEach(fn () => $this->createProfile());
@@ -113,6 +114,13 @@ describe('PUT /api/press-releases/{pressRelease}', function () {
         $this->putJson("/api/press-releases/{$pr->id}", ['url' => 'https://new.com'])->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $pr = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/press-releases/{$pr->id}", ['url' => 'https://new.com'])->assertForbidden();
+    });
+
     it('updates a press release', function () {
         $this->actingAsAdmin();
         $pr = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com', 'og_title' => 'Old Title']);
@@ -142,6 +150,13 @@ describe('DELETE /api/press-releases/{pressRelease}', function () {
         $this->deleteJson("/api/press-releases/{$pr->id}")->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $pr = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/press-releases/{$pr->id}")->assertForbidden();
+    });
+
     it('deletes a press release', function () {
         $this->actingAsAdmin();
         $pr = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com']);
@@ -155,5 +170,63 @@ describe('DELETE /api/press-releases/{pressRelease}', function () {
         $this->actingAsAdmin();
 
         $this->deleteJson('/api/press-releases/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/press-releases/fetch-meta ──────────────────────────────────────
+
+describe('POST /api/press-releases/fetch-meta', function () {
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com'])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com'])->assertForbidden();
+    });
+
+    it('validates url is required', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/press-releases/fetch-meta', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['url']);
+    });
+
+    it('validates url must be a valid URL', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'not-a-url'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['url']);
+    });
+
+    it('returns parsed OG metadata from the URL', function () {
+        $this->actingAsAdmin();
+
+        $html = '<html><head>
+            <meta property="og:title" content="Great Review" />
+            <meta property="og:image" content="https://example.com/image.jpg" />
+            <meta property="og:description" content="An amazing review." />
+            <meta property="og:site_name" content="Music Blog" />
+        </head><body></body></html>';
+
+        Http::fake(['example.com/*' => Http::response($html, 200)]);
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com/review'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.og_title', 'Great Review')
+            ->assertJsonPath('data.og_image', 'https://example.com/image.jpg')
+            ->assertJsonPath('data.og_site_name', 'Music Blog');
+    });
+
+    it('returns 422 when the URL cannot be fetched', function () {
+        $this->actingAsAdmin();
+
+        Http::fake(['example.com/*' => Http::response('', 503)]);
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com/broken'])
+            ->assertStatus(422);
     });
 });

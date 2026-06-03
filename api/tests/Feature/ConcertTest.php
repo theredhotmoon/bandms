@@ -2,8 +2,11 @@
 
 use App\Models\Band;
 use App\Models\Concert;
+use App\Models\Setlist;
 use App\Models\User;
 use App\Models\Venue;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 
 // ── GET /api/concerts ─────────────────────────────────────────────────────────
@@ -202,6 +205,16 @@ describe('PUT /api/concerts/{concert}', function () {
 
         $this->putJson('/api/concerts/9999', ['date' => '2026-07-01'])->assertNotFound();
     });
+
+    it('validates date format must be Y-m-d', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+
+        $this->putJson("/api/concerts/{$concert->id}", ['date' => '01/06/2026'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['date']);
+    });
 });
 
 // ── DELETE /api/concerts/{concert} ────────────────────────────────────────────
@@ -233,5 +246,185 @@ describe('DELETE /api/concerts/{concert}', function () {
         $this->actingAsAdmin();
 
         $this->deleteJson('/api/concerts/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/concerts/{concert}/poster ───────────────────────────────────────
+
+describe('POST /api/concerts/{concert}/poster', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $concert = Concert::factory()->create();
+
+        $this->postJson("/api/concerts/{$concert->id}/poster")
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $concert = Concert::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('poster.jpg', 100, 'image/jpeg'),
+        ])->assertForbidden();
+    });
+
+    it('returns 404 for a non-existent concert', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/concerts/9999/poster', [
+            'poster' => UploadedFile::fake()->create('poster.jpg', 100, 'image/jpeg'),
+        ])->assertNotFound();
+    });
+
+    it('requires an image file', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        $this->postJson("/api/concerts/{$concert->id}/poster")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['poster']);
+    });
+
+    it('rejects non-image files', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
+        ])->assertUnprocessable()
+          ->assertJsonValidationErrors(['poster']);
+    });
+
+    it('stores the poster and updates the concert poster field', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('poster.jpg', 100, 'image/jpeg'),
+        ])->assertSuccessful()
+          ->assertJsonPath('data.id', $concert->id);
+
+        $concert->refresh();
+        expect($concert->poster)->not->toBeNull();
+        Storage::disk('public')->assertExists($concert->poster);
+    });
+
+    it('deletes the old poster when a new one is uploaded', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        // Upload first poster
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('first.jpg', 100, 'image/jpeg'),
+        ])->assertSuccessful();
+
+        $concert->refresh();
+        $firstPosterPath = $concert->poster;
+
+        // Upload second poster
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('second.jpg', 100, 'image/jpeg'),
+        ])->assertSuccessful();
+
+        Storage::disk('public')->assertMissing($firstPosterPath);
+
+        $concert->refresh();
+        Storage::disk('public')->assertExists($concert->poster);
+    });
+});
+
+// ── DELETE /api/concerts/{concert}/poster ─────────────────────────────────────
+
+describe('DELETE /api/concerts/{concert}/poster', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $concert = Concert::factory()->create();
+
+        $this->deleteJson("/api/concerts/{$concert->id}/poster")
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $concert = Concert::factory()->create();
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/concerts/{$concert->id}/poster")
+            ->assertForbidden();
+    });
+
+    it('returns 404 for a non-existent concert', function () {
+        $this->actingAsAdmin();
+
+        $this->deleteJson('/api/concerts/9999/poster')->assertNotFound();
+    });
+
+    it('clears the poster field and deletes the stored file', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        // Upload a poster first
+        $this->postJson("/api/concerts/{$concert->id}/poster", [
+            'poster' => UploadedFile::fake()->create('poster.jpg', 100, 'image/jpeg'),
+        ])->assertSuccessful();
+
+        $concert->refresh();
+        $posterPath = $concert->poster;
+        Storage::disk('public')->assertExists($posterPath);
+
+        // Delete the poster
+        $this->deleteJson("/api/concerts/{$concert->id}/poster")
+            ->assertSuccessful()
+            ->assertJsonPath('data.poster', null);
+
+        Storage::disk('public')->assertMissing($posterPath);
+        $this->assertDatabaseHas('concerts', ['id' => $concert->id, 'poster' => null]);
+    });
+
+    it('returns the concert resource even when there is no poster', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create(['poster' => null]);
+
+        $this->deleteJson("/api/concerts/{$concert->id}/poster")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $concert->id);
+    });
+});
+
+// ── GET /api/concerts/{concert}/setlist ───────────────────────────────────────
+
+describe('GET /api/concerts/{concert}/setlist', function () {
+    it('is publicly accessible', function () {
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-09-01']);
+        Setlist::create(['concert_id' => $concert->id, 'name' => 'Main Set']);
+
+        $this->getJson("/api/concerts/{$concert->id}/setlist")
+            ->assertSuccessful();
+    });
+
+    it('returns the setlist for the concert', function () {
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-09-01']);
+        Setlist::create(['concert_id' => $concert->id, 'name' => 'Main Set']);
+
+        $this->getJson("/api/concerts/{$concert->id}/setlist")
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'Main Set');
+    });
+
+    it('returns 404 when the concert has no setlist', function () {
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-09-01']);
+
+        $this->getJson("/api/concerts/{$concert->id}/setlist")
+            ->assertNotFound();
+    });
+
+    it('returns 404 when the concert does not exist', function () {
+        $this->getJson('/api/concerts/9999/setlist')
+            ->assertNotFound();
     });
 });

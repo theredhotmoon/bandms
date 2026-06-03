@@ -74,6 +74,14 @@ describe('POST /api/instruments', function () {
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
     });
+
+    it('validates name max length', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => str_repeat('a', 101)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
 });
 
 // ── PUT /api/instruments/{instrument} ─────────────────────────────────────────
@@ -108,6 +116,25 @@ describe('PUT /api/instruments/{instrument}', function () {
         $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Drums'])->assertSuccessful();
     });
 
+    it('validates name must not be empty when provided', function () {
+        $this->actingAsAdmin();
+        $instrument = Instrument::create(['name' => 'Flute']);
+
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ''])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
+
+    it('validates name must be unique across other instruments on update', function () {
+        $this->actingAsAdmin();
+        Instrument::create(['name' => 'Piano']);
+        $instrument = Instrument::create(['name' => 'Violin']);
+
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Piano'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
+
     it('returns 404 for a non-existent instrument', function () {
         $this->actingAsAdmin();
 
@@ -122,6 +149,13 @@ describe('DELETE /api/instruments/{instrument}', function () {
         $instrument = Instrument::create(['name' => 'Flute']);
 
         $this->deleteJson("/api/instruments/{$instrument->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $instrument = Instrument::create(['name' => 'Flute']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/instruments/{$instrument->id}")->assertForbidden();
     });
 
     it('deletes an instrument', function () {

@@ -174,6 +174,15 @@ describe('PUT /api/setlists/{setlist}', function () {
 
         $this->putJson('/api/setlists/9999', ['name' => 'X'])->assertNotFound();
     });
+
+    it('validates name does not exceed 255 characters', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Valid Name']);
+
+        $this->putJson("/api/setlists/{$setlist->id}", ['name' => str_repeat('a', 256)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
 });
 
 // ── DELETE /api/setlists/{setlist} ────────────────────────────────────────────
@@ -210,6 +219,15 @@ describe('POST /api/setlists/{setlist}/items', function () {
         $this->assertDatabaseHas('setlist_items', ['setlist_id' => $setlist->id, 'song_id' => $song->id]);
     });
 
+    it('validates song_id is required', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+
+        $this->postJson("/api/setlists/{$setlist->id}/items", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['song_id']);
+    });
+
     it('validates song_id must exist', function () {
         $this->actingAsAdmin();
         $setlist = Setlist::create(['name' => 'Set']);
@@ -223,6 +241,21 @@ describe('POST /api/setlists/{setlist}/items', function () {
 // ── PUT /api/setlists/{setlist}/items/reorder ─────────────────────────────────
 
 describe('PUT /api/setlists/{setlist}/items/reorder', function () {
+    it('returns 401 without authentication', function () {
+        $setlist = Setlist::create(['name' => 'Set']);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/reorder", ['order' => []])
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+        $setlist = Setlist::create(['name' => 'Set']);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/reorder", ['order' => []])
+            ->assertForbidden();
+    });
+
     it('reorders setlist items', function () {
         $this->actingAsAdmin();
         $setlist = Setlist::create(['name' => 'Set']);
@@ -239,11 +272,129 @@ describe('PUT /api/setlists/{setlist}/items/reorder', function () {
         expect(SetlistItem::find($itemB->id)->position)->toBe(1);
         expect(SetlistItem::find($itemA->id)->position)->toBe(2);
     });
+
+    it('validates order array is required', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/reorder", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['order']);
+    });
+});
+
+// ── PUT /api/setlists/{setlist}/items/{item} ──────────────────────────────────
+
+describe('PUT /api/setlists/{setlist}/items/{item}', function () {
+    it('returns 401 without authentication', function () {
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/{$item->id}", ['is_encore' => true])
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/{$item->id}", ['is_encore' => true])
+            ->assertForbidden();
+    });
+
+    it('updates a setlist item', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1, 'is_encore' => false]);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/{$item->id}", [
+            'is_encore'    => true,
+            'transition'   => 'segue',
+            'lighting_cue' => 'Fade to red',
+            'sound_note'   => 'Boost bass',
+        ])->assertSuccessful()
+          ->assertJsonPath('data.is_encore', true)
+          ->assertJsonPath('data.transition', 'segue');
+
+        $this->assertDatabaseHas('setlist_items', [
+            'id'           => $item->id,
+            'is_encore'    => true,
+            'transition'   => 'segue',
+            'lighting_cue' => 'Fade to red',
+            'sound_note'   => 'Boost bass',
+        ]);
+    });
+
+    it('updates override_duration_sec on a setlist item', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/{$item->id}", [
+            'override_duration_sec' => 300,
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('setlist_items', ['id' => $item->id, 'override_duration_sec' => 300]);
+    });
+
+    it('returns 404 if item belongs to a different setlist', function () {
+        $this->actingAsAdmin();
+        $setlistA = Setlist::create(['name' => 'A']);
+        $setlistB = Setlist::create(['name' => 'B']);
+        $song     = Song::create(['title' => 'Test Song']);
+        $item     = SetlistItem::create(['setlist_id' => $setlistB->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->putJson("/api/setlists/{$setlistA->id}/items/{$item->id}", ['is_encore' => true])
+            ->assertNotFound();
+    });
+
+    it('returns 404 for a non-existent item', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/9999", ['is_encore' => true])
+            ->assertNotFound();
+    });
+
+    it('validates transition must be an allowed value', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->putJson("/api/setlists/{$setlist->id}/items/{$item->id}", ['transition' => 'invalid_value'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['transition']);
+    });
 });
 
 // ── DELETE /api/setlists/{setlist}/items/{item} ───────────────────────────────
 
 describe('DELETE /api/setlists/{setlist}/items/{item}', function () {
+    it('returns 401 without authentication', function () {
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->deleteJson("/api/setlists/{$setlist->id}/items/{$item->id}")
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+        $setlist = Setlist::create(['name' => 'Set']);
+        $song    = Song::create(['title' => 'Test Song']);
+        $item    = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+        $this->deleteJson("/api/setlists/{$setlist->id}/items/{$item->id}")
+            ->assertForbidden();
+    });
+
     it('removes an item from a setlist', function () {
         $this->actingAsAdmin();
         $setlist = Setlist::create(['name' => 'Set']);
@@ -253,6 +404,22 @@ describe('DELETE /api/setlists/{setlist}/items/{item}', function () {
         $this->deleteJson("/api/setlists/{$setlist->id}/items/{$item->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('setlist_items', ['id' => $item->id]);
+    });
+
+    it('resequences remaining items after deletion', function () {
+        $this->actingAsAdmin();
+        $setlist = Setlist::create(['name' => 'Set']);
+        $songA   = Song::create(['title' => 'Song A']);
+        $songB   = Song::create(['title' => 'Song B']);
+        $songC   = Song::create(['title' => 'Song C']);
+        $itemA   = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $songA->id, 'position' => 1]);
+        $itemB   = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $songB->id, 'position' => 2]);
+        $itemC   = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $songC->id, 'position' => 3]);
+
+        $this->deleteJson("/api/setlists/{$setlist->id}/items/{$itemA->id}")->assertNoContent();
+
+        expect(SetlistItem::find($itemB->id)->position)->toBe(1);
+        expect(SetlistItem::find($itemC->id)->position)->toBe(2);
     });
 
     it('returns 404 if item belongs to a different setlist', function () {
@@ -269,6 +436,24 @@ describe('DELETE /api/setlists/{setlist}/items/{item}', function () {
 // ── POST /api/setlists/import-setlistfm ──────────────────────────────────────
 
 describe('POST /api/setlists/import-setlistfm', function () {
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'abc123',
+            'name'         => 'Test Set',
+            'songs'        => [['title' => 'Song One']],
+        ])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'abc123',
+            'name'         => 'Test Set',
+            'songs'        => [['title' => 'Song One']],
+        ])->assertForbidden();
+    });
+
     it('imports a setlist from setlist.fm data', function () {
         $this->actingAsAdmin();
 
@@ -288,11 +473,67 @@ describe('POST /api/setlists/import-setlistfm', function () {
         $this->assertDatabaseCount('setlist_items', 2);
     });
 
+    it('reuses an existing song when importing duplicate title', function () {
+        $this->actingAsAdmin();
+        Song::create(['title' => 'Existing Song']);
+
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'dup001',
+            'name'         => 'Dup Set',
+            'songs'        => [['title' => 'Existing Song']],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseCount('songs', 1);
+        $this->assertDatabaseCount('setlist_items', 1);
+    });
+
+    it('assigns sequential positions to imported songs', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'pos001',
+            'name'         => 'Position Set',
+            'songs'        => [
+                ['title' => 'First'],
+                ['title' => 'Second'],
+                ['title' => 'Third'],
+            ],
+        ])->assertSuccessful();
+
+        $setlist = Setlist::where('setlistfm_id', 'pos001')->firstOrFail();
+        $items   = SetlistItem::where('setlist_id', $setlist->id)->orderBy('position')->get();
+
+        expect($items[0]->position)->toBe(1);
+        expect($items[1]->position)->toBe(2);
+        expect($items[2]->position)->toBe(3);
+    });
+
     it('validates setlistfm_id and name are required', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/setlists/import-setlistfm', ['songs' => []])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['setlistfm_id', 'name', 'songs']);
+    });
+
+    it('validates songs array is required', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'abc123',
+            'name'         => 'Test Set',
+        ])->assertUnprocessable()
+          ->assertJsonValidationErrors(['songs']);
+    });
+
+    it('validates each song entry must have a title', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/setlists/import-setlistfm', [
+            'setlistfm_id' => 'abc123',
+            'name'         => 'Test Set',
+            'songs'        => [['is_encore' => false]],
+        ])->assertUnprocessable()
+          ->assertJsonValidationErrors(['songs.0.title']);
     });
 });
