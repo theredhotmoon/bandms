@@ -75,7 +75,10 @@ watch(
     if (!rider) return
     form.name            = rider.name
     form.is_active       = rider.is_active
-    form.gig_lineup      = { regular_members: [], temp_musicians: [], ...(rider.gig_lineup ?? {}) } as GigLineup
+    form.gig_lineup      = {
+      regular_members: (rider.gig_lineup as GigLineup | null)?.regular_members ?? [],
+      temp_musicians:  (rider.gig_lineup as GigLineup | null)?.temp_musicians  ?? [],
+    }
     form.stage_plot_data = rider.stage_plot_data ?? []
     form.inputs          = rider.inputs          ?? []
     form.monitors        = rider.monitors        ?? []

@@ -17,14 +17,12 @@ import {
 import type {
   StagePlotMemberItem,
   PlacedInstrument,
-  PlacedMonitor,
   GigTempMusician,
 } from '@/types/stagePlot'
 import {
   defaultPlacedInstrument,
   defaultPlacedMonitor,
   INSTRUMENT_PALETTE,
-  INSTRUMENT_TYPE_LABELS,
 } from '@/types/stagePlot'
 import type { StagePlotItemType } from '@/types/techRider'
 
@@ -215,11 +213,6 @@ const memberInitials = computed(() => {
   if (!props.member) return '?'
   return `${props.member.first_name[0] ?? ''}${props.member.last_name[0] ?? ''}`.toUpperCase()
 })
-
-function setupLabel(setupId: number | null): string {
-  if (!setupId) return 'No setup linked'
-  return props.memberSetups.find(s => s.id === setupId)?.name ?? `Setup #${setupId}`
-}
 
 const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(
   p => !['monitor_wedge'].includes(p.type)

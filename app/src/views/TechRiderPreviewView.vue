@@ -29,17 +29,38 @@ onMounted(async () => {
 })
 
 const stagePlot  = computed(() => rider.value?.stage_plot_data ?? [])
-const inputs     = computed(() => rider.value?.inputs ?? [])
-const monitors   = computed(() => rider.value?.monitors ?? [])
 const backline   = computed(() => rider.value?.backline ?? [])
 const power      = computed(() => rider.value?.power ?? null)
 const rfWireless = computed(() => rider.value?.rf_wireless ?? [])
 const paFoh      = computed(() => rider.value?.pa_foh ?? null)
 
-// Derive inputs from stage plot members if inputs section is empty
-const effectiveInputs = computed(() => {
-  if (inputs.value.length) return inputs.value
-  const rows: { channel: number; instrument: string; mic_di: string; mic_model: string; notes: string }[] = []
+interface PreviewInput {
+  channel: number
+  instrument: string
+  mic_di: string
+  mic_model: string
+  notes: string
+}
+
+interface PreviewMonitor {
+  label: string
+  type: string
+  mix_description: string
+}
+
+// Normalise saved inputs or derive from stage plot member configs
+const effectiveInputs = computed<PreviewInput[]>(() => {
+  const saved = rider.value?.inputs ?? []
+  if (saved.length) {
+    return saved.map(r => ({
+      channel:    r.channel,
+      instrument: r.instrument,
+      mic_di:     r.mic_di,
+      mic_model:  r.mic_model,
+      notes:      r.notes,
+    }))
+  }
+  const rows: PreviewInput[] = []
   let ch = 1
   for (const item of stagePlot.value) {
     for (const inst of item.instruments) {
@@ -51,13 +72,20 @@ const effectiveInputs = computed(() => {
   return rows
 })
 
-// Derive monitors from stage plot members if monitors section is empty
-const effectiveMonitors = computed(() => {
-  if (monitors.value.length) return monitors.value
-  const mixes: { label: string; type: string; mix_description: string; iem?: boolean }[] = []
+// Normalise saved monitors or derive from stage plot member configs
+const effectiveMonitors = computed<PreviewMonitor[]>(() => {
+  const saved = rider.value?.monitors ?? []
+  if (saved.length) {
+    return saved.map(m => ({
+      label:           m.custom_name || m.band_member_id?.toString() || '',
+      type:            m.type === 'iem' ? 'IEM' : 'Wedge',
+      mix_description: m.mix_description,
+    }))
+  }
+  const mixes: PreviewMonitor[] = []
   for (const item of stagePlot.value) {
     for (const mon of item.monitors) {
-      mixes.push({ label: mon.label, type: mon.type === 'iem' ? 'IEM' : 'Wedge', mix_description: mon.mix_description, iem: mon.type === 'iem' })
+      mixes.push({ label: mon.label, type: mon.type === 'iem' ? 'IEM' : 'Wedge', mix_description: mon.mix_description })
     }
   }
   return mixes
@@ -208,12 +236,12 @@ function printPage() {
               <tr><th>Ch</th><th>Instrument</th><th>Mic / DI</th><th>Model</th><th>Notes</th></tr>
             </thead>
             <tbody>
-              <tr v-for="row in effectiveInputs" :key="(row as { channel: number }).channel">
-                <td>{{ (row as { channel: number }).channel }}</td>
-                <td>{{ (row as { instrument: string }).instrument }}</td>
-                <td>{{ (row as { mic_di: string }).mic_di }}</td>
-                <td>{{ (row as { mic_model: string }).mic_model }}</td>
-                <td>{{ (row as { notes: string }).notes }}</td>
+              <tr v-for="row in effectiveInputs" :key="row.channel">
+                <td>{{ row.channel }}</td>
+                <td>{{ row.instrument }}</td>
+                <td>{{ row.mic_di }}</td>
+                <td>{{ row.mic_model }}</td>
+                <td>{{ row.notes }}</td>
               </tr>
             </tbody>
           </table>
@@ -224,9 +252,9 @@ function printPage() {
           <h2 class="section-title">Monitor / IEM Requirements</h2>
           <div class="monitor-grid">
             <div v-for="(mon, i) in effectiveMonitors" :key="i" class="monitor-card">
-              <div class="monitor-card-type">{{ (mon as { type: string }).type }}</div>
-              <div class="monitor-card-label">{{ (mon as { label?: string; custom_name?: string }).label ?? (mon as { custom_name?: string }).custom_name }}</div>
-              <div v-if="(mon as { mix_description: string }).mix_description" class="monitor-card-desc">{{ (mon as { mix_description: string }).mix_description }}</div>
+              <div class="monitor-card-type">{{ mon.type }}</div>
+              <div class="monitor-card-label">{{ mon.label }}</div>
+              <div v-if="mon.mix_description" class="monitor-card-desc">{{ mon.mix_description }}</div>
             </div>
           </div>
         </section>

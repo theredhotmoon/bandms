@@ -93,7 +93,6 @@ const dragOffsetX        = ref(0)
 const dragOffsetY        = ref(0)
 
 function onPanelMemberDragStart(e: DragEvent, memberId: number) {
-  const check = checkProfile(memberId)
   draggingMemberId.value   = memberId
   draggingTempId.value     = null
   draggingExistingId.value = null
@@ -149,7 +148,7 @@ function onStageDrop(e: DragEvent) {
     if (!check.ok) {
       warnPending.value = { memberId, x, y, warnings: check.warnings }
     } else {
-      placeOnStage(memberId, null, x, y)
+      placeOnStage(memberId, undefined, x, y)
     }
   } else if (draggingTempId.value) {
     placeOnStage(null, draggingTempId.value, x, y)
