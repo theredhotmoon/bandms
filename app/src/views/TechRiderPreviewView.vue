@@ -63,10 +63,8 @@ const effectiveInputs = computed<PreviewInput[]>(() => {
   const rows: PreviewInput[] = []
   let ch = 1
   for (const item of stagePlot.value) {
-    for (const inst of item.instruments) {
-      for (const inp of inst.inputs) {
-        rows.push({ channel: ch++, instrument: inp.instrument, mic_di: inp.mic_di, mic_model: inp.mic_model, notes: inp.notes })
-      }
+    for (const inp of item.inputs) {
+      rows.push({ channel: ch++, instrument: inp.instrument, mic_di: inp.mic_di, mic_model: inp.mic_model, notes: inp.notes })
     }
   }
   return rows
@@ -169,37 +167,42 @@ function printPage() {
               </span>
             </div>
 
-            <!-- Instruments -->
+            <!-- Instruments (visual list) -->
             <div v-if="item.instruments.length" class="detail-section">
-              <div class="detail-title">Instruments &amp; Inputs</div>
-              <div
-                v-for="inst in item.instruments"
-                :key="inst.id"
-                class="instrument-block"
-              >
-                <div class="instrument-header">
+              <div class="detail-title">Instruments</div>
+              <div class="instrument-list">
+                <span
+                  v-for="inst in item.instruments"
+                  :key="inst.id"
+                  class="instrument-tag"
+                >
                   <strong>{{ INSTRUMENT_TYPE_LABELS[inst.type] }}</strong>
-                  <span v-if="inst.label" class="instrument-label"> — {{ inst.label }}</span>
-                  <span class="instrument-chain">{{ inst.signal_chain_type.replace(/_/g, ' ') }}</span>
-                </div>
-                <table v-if="inst.inputs.length" class="inputs-table">
-                  <thead>
-                    <tr>
-                      <th>Ch</th><th>Instrument</th><th>Mic/DI</th><th>Model</th><th>Stand</th><th>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="row in inst.inputs" :key="row.id">
-                      <td>{{ row.channel }}</td>
-                      <td>{{ row.instrument }}</td>
-                      <td>{{ row.mic_di }}</td>
-                      <td>{{ row.mic_model }}</td>
-                      <td>{{ row.stand_type }}</td>
-                      <td>{{ row.notes }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                  <span v-if="inst.label"> — {{ inst.label }}</span>
+                </span>
               </div>
+            </div>
+
+            <!-- Inputs (member level) -->
+            <div v-if="item.inputs.length" class="detail-section">
+              <div class="detail-title">
+                Inputs
+                <span class="instrument-chain">{{ item.signal_chain_type.replace(/_/g, ' ') }}</span>
+              </div>
+              <table class="inputs-table">
+                <thead>
+                  <tr><th>Ch</th><th>Instrument</th><th>Mic/DI</th><th>Model</th><th>Stand</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in item.inputs" :key="row.id">
+                    <td>{{ row.channel }}</td>
+                    <td>{{ row.instrument }}</td>
+                    <td>{{ row.mic_di }}</td>
+                    <td>{{ row.mic_model }}</td>
+                    <td>{{ row.stand_type }}</td>
+                    <td>{{ row.notes }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <!-- Monitors -->
@@ -214,8 +217,8 @@ function printPage() {
                   <span class="monitor-type">{{ mon.type === 'iem' ? '📡 IEM' : '🔊 Wedge' }}</span>
                   <span v-if="mon.label" class="monitor-label">{{ mon.label }}</span>
                   <span v-if="mon.mix_description" class="monitor-desc">— {{ mon.mix_description }}</span>
-                  <span v-if="mon.type === 'iem' && mon.transmitter_model" class="monitor-model">{{ mon.transmitter_model }}</span>
-                  <span v-if="mon.type === 'iem' && mon.frequency" class="monitor-freq">{{ mon.frequency }}</span>
+                  <span v-if="mon.type === 'iem' && mon.iem_transmitter_model" class="monitor-model">{{ mon.iem_transmitter_model }}</span>
+                  <span v-if="mon.type === 'iem' && mon.iem_frequency" class="monitor-freq">{{ mon.iem_frequency }}</span>
                 </div>
               </div>
             </div>
@@ -424,10 +427,9 @@ function printPage() {
 .detail-section:last-child { border-bottom: none; }
 .detail-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin-bottom: 0.5rem; }
 
-.instrument-block { margin-bottom: 0.75rem; }
-.instrument-header { font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.instrument-label { color: #334155; }
-.instrument-chain { font-size: 0.7rem; background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 3px; color: #64748b; }
+.instrument-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.instrument-tag { font-size: 0.8rem; background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 0.25rem; color: #334155; }
+.instrument-chain { font-size: 0.7rem; background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 3px; color: #64748b; margin-left: 0.5rem; }
 
 .monitor-list { display: flex; flex-direction: column; gap: 0.35rem; }
 .monitor-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }

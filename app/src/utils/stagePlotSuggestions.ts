@@ -222,10 +222,8 @@ export function suggestInputsFromMembers(items: StagePlotMemberItem[]): InputRow
   const rows: InputRow[] = []
   let channel = 1
   for (const item of items) {
-    for (const inst of item.instruments) {
-      for (const input of inst.inputs) {
-        rows.push({ ...input, id: uid('row'), channel: channel++ })
-      }
+    for (const input of item.inputs) {
+      rows.push({ ...input, id: uid('row'), channel: channel++ })
     }
   }
   return rows
@@ -245,8 +243,8 @@ export function suggestMonitorsFromMembers(items: StagePlotMemberItem[]): Monito
         type:             mon.type as MonitorType,
         mix_description:  mon.mix_description,
         iem_own_pack:     mon.iem_own_pack,
-        transmitter_model:mon.transmitter_model,
-        frequency:        mon.frequency,
+        transmitter_model:mon.iem_transmitter_model,
+        frequency:        mon.iem_frequency,
       })
     }
   }
