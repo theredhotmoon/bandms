@@ -30,3 +30,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `scripts/ship.sh` summary showed duplicate step entries due to pre-populated `STEP_NAMES[]` array conflicting with `begin_step()`. Fixed step tracking.
 - `--dry-run` incorrectly skipped the CHANGELOG update. Fixed to only skip git operations.
 - `test-all.sh` summary showed `✅` for skipped suites. Fixed to `⚠️ (skipped)`.
+
+## [Unreleased] — 2026-06-04
+
+### Added
+- **Band logo system** — upload, version, and manage multiple logo variants. Each logo carries variant (full/icon/horizontal/stacked/wordmark), background (light/dark/transparent/any), label, version history label, and notes.
+- **`is_default` global default** — exactly one logo can be the global default; enforced transactionally. First upload auto-becomes default.
+- **`is_deprecated` flag** — mark old logo versions as deprecated. They are excluded from public API responses and context-pin dropdowns but remain in the admin for history.
+- **Context-specific logo pins** — `band_profiles` gains `epk_logo_id`, `tech_rider_logo_id`, `website_logo_id`. Each context falls back to the global default when not pinned.
+- **Auto-detect SVG vs raster** — mime type stored on upload; width/height populated for raster, null for SVG; `is_vector` boolean surfaced in API.
+- **`BandLogoManager` admin component** — drag-and-drop upload with per-file metadata form, logo grid with badges (DEFAULT, SVG, DEPRECATED), inline edit, inline delete confirm, context pins section with per-context selects and Save button.
+- **Logo tab in Band Profile admin** — new "Logo" section tab alongside Bio, Career, Social, Contacts, Stats, EPK.
+- **Logo in Tech Rider preview** — cover page and toolbar both show the logo (tech_rider_logo_id pin if set, else global default).
+- **Logo in EPK page** — band logo shown above band name in the EPK header.
+- **Logo in public navbar** — `AppNavbar` shows the band logo image (website_logo_id pin or global default) instead of the static "BandMS" text when a logo is available.
+- New API routes: `GET/POST /api/band-profile/logos`, `PUT/DELETE /api/band-profile/logos/{logo}`, `POST /api/band-profile/logos/{logo}/set-default`.
+- `logo_url` added to `GET /api/band-profile` and `GET /api/band-profile/epk` responses.

@@ -1,6 +1,7 @@
 import type { BandMember } from './bandMember'
 import type { SocialLink } from './socialLink'
 import type { ReleaseType, ReleasePlatform } from './release'
+import type { BandLogo } from './bandLogo'
 
 export interface BandProfile {
   id: number
@@ -30,6 +31,11 @@ export interface BandProfile {
   stage_plot_url: string | null
   epk_release_id: number | null
   epk_album_id: number | null
+  logo_url: string | null              // current default logo URL (convenience)
+  epk_logo_id: number | null
+  tech_rider_logo_id: number | null
+  website_logo_id: number | null
+  logos?: BandLogo[]                   // non-deprecated logos (public API)
   career_level: 1 | 2 | 3 | 4
   members?: BandMember[]
   social_links?: SocialLink[]
@@ -65,6 +71,9 @@ export interface BandProfilePayload {
   stat_facebook_followers?: number | null
   epk_release_id?: number | null
   epk_album_id?: number | null
+  epk_logo_id?: number | null
+  tech_rider_logo_id?: number | null
+  website_logo_id?: number | null
   career_level?: 1 | 2 | 3 | 4
 }
 
@@ -170,6 +179,7 @@ export interface EpkData {
   stat_facebook_followers: number | null
   tech_rider_url: string | null
   stage_plot_url: string | null
+  logo_url: string | null
   social_links: EpkSocialLink[]
   testimonials: EpkTestimonial[]
   music_videos: EpkMusicVideo[]

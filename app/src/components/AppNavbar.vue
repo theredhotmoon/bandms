@@ -1,11 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useBandProfile } from '@/composables/useBandProfile'
 
 const { isLoggedIn, logout } = useAuth()
 const router = useRouter()
 const mobileOpen = ref(false)
+
+const { query: profileQ } = useBandProfile()
+
+const bandLogoUrl = computed(() => {
+  const p = profileQ.data.value
+  if (!p) return null
+  // Use website_logo_id pin if set
+  if (p.website_logo_id && p.logos?.length) {
+    const pinned = p.logos.find((l: { id: number; url: string }) => l.id === p.website_logo_id)
+    if (pinned) return pinned.url
+  }
+  return p.logo_url ?? null
+})
 
 const navLinks = [
   { to: '/about',    label: 'About' },
@@ -29,10 +43,20 @@ async function handleLogout() {
   <nav class="app-nav">
     <!-- Logo -->
     <RouterLink to="/" class="nav-logo" @click="mobileOpen = false">
-      <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 19V6l12-3v13M9 19c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-3c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zM9 10l12-3"/>
-      </svg>
-      <span class="logo-text">Band<span class="logo-accent">MS</span></span>
+      <!-- Band logo image when available -->
+      <img
+        v-if="bandLogoUrl"
+        :src="bandLogoUrl"
+        alt="Band logo"
+        class="nav-band-logo"
+      />
+      <!-- Fallback: original BandMS logo -->
+      <template v-else>
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19V6l12-3v13M9 19c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-3c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zM9 10l12-3"/>
+        </svg>
+        <span class="logo-text">Band<span class="logo-accent">MS</span></span>
+      </template>
     </RouterLink>
 
     <!-- Desktop links -->
@@ -121,6 +145,7 @@ async function handleLogout() {
   text-decoration: none; flex-shrink: 0; margin-right: 0.75rem;
 }
 .logo-icon { width: 1.125rem; height: 1.125rem; color: #111; flex-shrink: 0; }
+.nav-band-logo { height: 1.75rem; max-width: 8rem; object-fit: contain; display: block; }
 .logo-text  { font-weight: 700; font-size: 1rem; color: #111; letter-spacing: -0.01em; }
 .logo-accent { color: #111; }
 

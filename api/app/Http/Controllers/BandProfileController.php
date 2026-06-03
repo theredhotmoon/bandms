@@ -19,7 +19,9 @@ class BandProfileController extends Controller
 
     public function show(): BandProfileResource
     {
-        return new BandProfileResource($this->profile()->load(['members', 'socialLinks']));
+        return new BandProfileResource(
+            $this->profile()->load(['members', 'socialLinks', 'logos', 'defaultLogo'])
+        );
     }
 
     public function update(Request $request): BandProfileResource
@@ -48,12 +50,16 @@ class BandProfileController extends Controller
             'epk_release_id'           => ['nullable', 'integer', 'exists:releases,id'],
             'epk_album_id'             => ['nullable', 'integer', 'exists:albums,id'],
             'career_level'             => ['nullable', 'integer', 'min:1', 'max:4'],
+            // Context-specific logo pins (must belong to this profile)
+            'epk_logo_id'              => ['nullable', 'integer', 'exists:band_logos,id'],
+            'tech_rider_logo_id'       => ['nullable', 'integer', 'exists:band_logos,id'],
+            'website_logo_id'          => ['nullable', 'integer', 'exists:band_logos,id'],
         ]);
 
         $profile = $this->profile();
         $profile->update($data);
 
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
+        return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo']));
     }
 
     public function uploadTechRider(Request $request): BandProfileResource

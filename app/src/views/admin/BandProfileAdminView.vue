@@ -11,6 +11,7 @@ import { useSocialLinks } from '@/composables/useSocialLinks'
 import { SOCIAL_PLATFORMS } from '@/types/socialLink'
 import type { SocialLink, SocialPlatform } from '@/types/socialLink'
 import { ApiValidationError } from '@/api/client'
+import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 
 const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -86,6 +87,9 @@ watch(
     form.stat_facebook_followers  = val.stat_facebook_followers  ?? ''
     form.epk_release_id = val.epk_release_id ?? null
     form.career_level   = (val.career_level ?? 1) as 1 | 2 | 3 | 4
+    contextPins.epk_logo_id        = val.epk_logo_id        ?? null
+    contextPins.tech_rider_logo_id = val.tech_rider_logo_id ?? null
+    contextPins.website_logo_id    = val.website_logo_id    ?? null
   },
   { immediate: true },
 )
@@ -137,6 +141,15 @@ async function saveProfile() {
   }
 }
 
+async function saveContextPins() {
+  try {
+    await update.mutateAsync(contextPins)
+    toast.success('Logo settings saved')
+  } catch {
+    toast.error('Failed to save logo settings')
+  }
+}
+
 async function doSyncFb() {
   try {
     const result = await syncFb.mutateAsync()
@@ -179,8 +192,14 @@ async function removePlot() {
   catch { toast.error('Failed to remove') }
 }
 
-type Section = 'bio' | 'career' | 'social' | 'contacts' | 'stats' | 'epk'
+type Section = 'bio' | 'career' | 'social' | 'contacts' | 'stats' | 'epk' | 'logo'
 const section = ref<Section>('bio')
+
+const contextPins = reactive({
+  epk_logo_id: null as number | null,
+  tech_rider_logo_id: null as number | null,
+  website_logo_id: null as number | null,
+})
 
 // ── Social links ──────────────────────────────────────────────────────────────
 const { query: linksQuery, create: linkCreate, update: linkUpdate, remove: linkRemove } = useSocialLinks()
@@ -254,6 +273,9 @@ function platformMeta(key: SocialPlatform) {
             @click="section = s"
           >
             {{ s === 'bio' ? 'Bio' : s === 'career' ? 'Career' : s === 'social' ? 'Social' : s === 'contacts' ? 'Contacts' : s === 'stats' ? 'Stats' : 'EPK' }}
+          </button>
+          <button key="logo" type="button" class="section-tab" :class="{ active: section === 'logo' }" @click="section = 'logo'">
+            Logo
           </button>
         </div>
 
@@ -545,13 +567,22 @@ function platformMeta(key: SocialPlatform) {
             </div>
           </template>
 
-          <div v-if="section !== 'social'" class="flex justify-end pt-1">
+          <div v-if="section !== 'social' && section !== 'logo'" class="flex justify-end pt-1">
             <button type="submit" :disabled="saving" class="btn-save" :class="{ 'btn-save--ok': saved }">
               {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save profile' }}
             </button>
           </div>
 
         </form>
+
+        <template v-if="section === 'logo'">
+          <BandLogoManager
+            :epk-logo-id="contextPins.epk_logo_id"
+            :tech-rider-logo-id="contextPins.tech_rider_logo_id"
+            :website-logo-id="contextPins.website_logo_id"
+            @update:context-pins="async (pins) => { Object.assign(contextPins, pins); await saveContextPins() }"
+          />
+        </template>
       </template>
     </div>
 

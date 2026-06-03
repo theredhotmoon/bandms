@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\BandLogo;
+use App\Http\Resources\BandLogoResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -39,6 +41,16 @@ class BandProfileResource extends JsonResource
             'stage_plot_url'          => $this->stage_plot_path ? '/storage/' . $this->stage_plot_path : null,
             'epk_release_id'          => $this->epk_release_id,
             'epk_album_id'            => $this->epk_album_id,
+            // Logo fields
+            'logo_url'                => $this->defaultLogo?->url ?? $this->whenLoaded('defaultLogo', fn () => $this->defaultLogo?->url),
+            'epk_logo_id'             => $this->epk_logo_id,
+            'tech_rider_logo_id'      => $this->tech_rider_logo_id,
+            'website_logo_id'         => $this->website_logo_id,
+            'logos'                   => $this->whenLoaded('logos', fn () =>
+                BandLogoResource::collection(
+                    $this->logos->filter(fn ($l) => !$l->is_deprecated)
+                )
+            ),
             'members'                 => BandMemberResource::collection($this->whenLoaded('members')),
             'social_links'            => SocialLinkResource::collection($this->whenLoaded('socialLinks')),
             'updated_at'              => $this->updated_at,
