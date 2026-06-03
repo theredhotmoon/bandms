@@ -6,12 +6,14 @@ import MemberSetupBackline    from './MemberSetupBackline.vue'
 import MemberSetupPower       from './MemberSetupPower.vue'
 import MemberSetupWireless    from './MemberSetupWireless.vue'
 import type { BandMember } from '@/types/bandMember'
+import type { Instrument } from '@/types/instrument'
 import type {
   MemberMonitorPrefs,
   MemberBacklinePrefs,
   MemberPowerPrefs,
   WirelessUnit,
   SignalChainType,
+  BandMemberSetupSummary,
 } from '@/types/bandMemberSetup'
 import type { InputRow } from '@/types/techRider'
 
@@ -25,6 +27,7 @@ export interface SetupEditorModel {
   power: MemberPowerPrefs
   wireless: WirelessUnit[]
   foh_notes: string
+  shared_monitor_id: number | null
 }
 
 interface Props {
@@ -34,8 +37,13 @@ interface Props {
   saved: boolean
   fillHeight?: boolean
   showApplyRiderOnly?: boolean
+  otherSetups?: BandMemberSetupSummary[]
 }
-const props = withDefaults(defineProps<Props>(), { fillHeight: false, showApplyRiderOnly: false })
+const props = withDefaults(defineProps<Props>(), {
+  fillHeight: false,
+  showApplyRiderOnly: false,
+  otherSetups: () => [],
+})
 const emit  = defineEmits<{ 'update:modelValue': [SetupEditorModel]; save: []; 'apply-rider-only': [] }>()
 
 type SetupSection = 'inputs' | 'monitor' | 'wireless' | 'backline' | 'power' | 'foh'
@@ -86,6 +94,36 @@ const powerModel = computed({
   set: (v: MemberPowerPrefs) => patch('power', v),
 })
 
+const sharedMonitorId = computed({
+  get: () => props.modelValue.shared_monitor_id,
+  set: (v: number | null) => patch('shared_monitor_id', v),
+})
+
+const sharedSetupName = computed(() => {
+  if (!props.modelValue.shared_monitor_id) return ''
+  const found = props.otherSetups.find(s => s.id === props.modelValue.shared_monitor_id)
+  return found ? (found.instrument_name ?? found.name) : ''
+})
+
+const STAGE_ICON: Record<string, string> = {
+  drums: '🥁',
+  guitar_amp: '🎸',
+  bass_amp: '🎸',
+  keyboard: '🎹',
+  vocalist: '🎤',
+  acoustic_guitar: '🎸',
+  violin: '🎻',
+  brass: '🎺',
+  monitor_wedge: '🔊',
+  di_box: '🔌',
+  rack: '📦',
+  custom: '⚙️',
+}
+
+function instrumentIcon(inst: Instrument | null): string {
+  return inst?.stage_plot_type ? (STAGE_ICON[inst.stage_plot_type] ?? '🎵') : '🎵'
+}
+
 defineExpose({ activeSection })
 </script>
 
@@ -116,6 +154,12 @@ defineExpose({ activeSection })
       </div>
     </div>
 
+    <!-- Instrument context tag -->
+    <div v-if="selectedInstrument" class="setup-instrument-tag">
+      <span>{{ instrumentIcon(selectedInstrument) }}</span>
+      <span>{{ selectedInstrument.name }}</span>
+    </div>
+
     <!-- Section tabs -->
     <div class="section-tabs">
       <button
@@ -141,7 +185,27 @@ defineExpose({ activeSection })
         />
       </template>
       <template v-if="activeSection === 'monitor'">
-        <MemberSetupMonitor v-model="monitorModel" />
+        <div class="shared-monitor-row">
+          <label class="field-label">Monitor</label>
+          <div class="shared-monitor-options">
+            <label class="shared-opt" :class="{ 'shared-opt--active': !props.modelValue.shared_monitor_id }">
+              <input type="radio" :value="null" v-model="sharedMonitorId" /> Own monitor mix
+            </label>
+            <label
+              v-for="s in otherSetups"
+              :key="s.id"
+              class="shared-opt"
+              :class="{ 'shared-opt--active': props.modelValue.shared_monitor_id === s.id }"
+            >
+              <input type="radio" :value="s.id" v-model="sharedMonitorId" />
+              Share with "{{ s.instrument_name ?? s.name }}"
+            </label>
+          </div>
+        </div>
+        <div v-if="sharedMonitorId" class="shared-monitor-note">
+          Monitor settings are shared with "{{ sharedSetupName }}". Edit them in that setup.
+        </div>
+        <MemberSetupMonitor v-else v-model="monitorModel" />
       </template>
       <template v-if="activeSection === 'wireless'">
         <MemberSetupWireless v-model="wirelessModel" />
@@ -214,6 +278,12 @@ defineExpose({ activeSection })
 .field-input--sm { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
 .field-input option { background: #0e0e26; }
 
+.setup-instrument-tag {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 1rem; background: #0a0a20; border-bottom: 1px solid #0f0f28;
+  font-size: 0.72rem; color: #64748b; flex-shrink: 0;
+}
+
 .section-tabs {
   display: flex; overflow-x: auto; border-bottom: 1px solid #0f0f28;
   background: #070718; flex-shrink: 0; scrollbar-width: none;
@@ -235,6 +305,28 @@ defineExpose({ activeSection })
   overflow-y: auto;
 }
 .pane-shell--fill .section-content { flex: 1; }
+
+.shared-monitor-row {
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.shared-monitor-options {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.shared-opt {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.65rem; border-radius: 0.4rem; font-size: 0.75rem;
+  border: 1px solid #1e2040; color: #64748b; cursor: pointer;
+  transition: border-color 150ms, color 150ms, background 150ms;
+}
+.shared-opt:hover { border-color: #334155; color: #94a3b8; }
+.shared-opt--active { border-color: #6366f1; color: #a5b4fc; background: #0f0f2a; }
+.shared-opt input[type="radio"] { accent-color: #6366f1; }
+
+.shared-monitor-note {
+  padding: 0.75rem 1rem; border-radius: 0.5rem;
+  border: 1px solid #1e2040; background: #0a0a20;
+  font-size: 0.8rem; color: #64748b; font-style: italic;
+}
 
 .bottom-bar {
   border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;

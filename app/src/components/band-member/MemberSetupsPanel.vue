@@ -44,6 +44,7 @@ const form = reactive<SetupEditorModel>({
   power:              defaultPowerPrefs(),
   wireless:           [],
   foh_notes:          '',
+  shared_monitor_id:  null as number | null,
 })
 
 watch(
@@ -59,6 +60,7 @@ watch(
     form.power             = { ...defaultPowerPrefs(), ...s.power }
     form.wireless          = s.wireless ?? []
     form.foh_notes         = s.foh_notes ?? ''
+    form.shared_monitor_id = s.shared_monitor_id ?? null
   },
   { immediate: true },
 )
@@ -102,6 +104,7 @@ async function createSetup() {
       power:             defaultPowerPrefs(),
       wireless:          [],
       foh_notes:         '',
+      shared_monitor_id: null,
     })
     openId.value    = setup.id
     showNewRow.value = false
@@ -113,6 +116,12 @@ async function createSetup() {
     creating.value = false
   }
 }
+
+// ── Other setups (for MemberSetupEditorPane) ──────────────────────────────
+
+const otherSetups = computed(() =>
+  (list.data.value ?? []).filter(s => s.id !== openId.value)
+)
 
 // ── Delete ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +181,7 @@ async function confirmDelete() {
         >
           <div class="setup-item-info">
             <span class="setup-name">{{ s.name }}</span>
+            <span v-if="s.instrument_name" class="setup-instrument">{{ s.instrument_name }}</span>
             <span class="setup-meta">{{ s.input_count }} ch</span>
           </div>
           <button
@@ -218,6 +228,7 @@ async function confirmDelete() {
           :saving="saving"
           :saved="saved"
           :fill-height="true"
+          :other-setups="otherSetups"
           @update:model-value="Object.assign(form, $event)"
           @save="saveSetup"
         />
@@ -299,6 +310,7 @@ async function confirmDelete() {
 .setup-item--open  { background: #0e0e26; border-color: #312e81; }
 .setup-item-info   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
 .setup-name        { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-instrument  { font-size: 0.62rem; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-meta        { font-size: 0.62rem; color: #334155; }
 
 .del-btn {

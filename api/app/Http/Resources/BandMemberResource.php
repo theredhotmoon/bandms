@@ -25,10 +25,18 @@ class BandMemberResource extends JsonResource
             'calendar_url' => $this->calendar_url,
             'login_email'  => $this->when($request->user()?->isAdmin(), $this->login_email),
             'can_login'    => $this->can_login,
+            'main_instrument_id' => $this->main_instrument_id,
+            'main_instrument'    => $this->mainInstrument ? [
+                'id'             => $this->mainInstrument->id,
+                'name'           => $this->mainInstrument->name,
+                'category'       => $this->mainInstrument->category,
+                'stage_plot_type'=> $this->mainInstrument->stage_plot_type,
+            ] : null,
             'instruments'  => $this->instruments->map(fn ($i) => [
-                'id'       => $i->id,
-                'name'     => $i->name,
-                'category' => $i->category,
+                'id'             => $i->id,
+                'name'           => $i->name,
+                'category'       => $i->category,
+                'stage_plot_type'=> $i->stage_plot_type,
             ]),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,

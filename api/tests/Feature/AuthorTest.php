@@ -103,6 +103,13 @@ describe('PUT /api/authors/{author}', function () {
         $this->putJson("/api/authors/{$author->id}", ['name' => 'B'])->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $author = Author::create(['name' => 'A']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/authors/{$author->id}", ['name' => 'B'])->assertForbidden();
+    });
+
     it('updates an author', function () {
         $this->actingAsAdmin();
         $author = Author::create(['name' => 'Old Name', 'notes' => 'Old note']);
@@ -127,6 +134,13 @@ describe('DELETE /api/authors/{author}', function () {
         $author = Author::create(['name' => 'A']);
 
         $this->deleteJson("/api/authors/{$author->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $author = Author::create(['name' => 'A']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/authors/{$author->id}")->assertForbidden();
     });
 
     it('deletes an author', function () {

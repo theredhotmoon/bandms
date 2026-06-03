@@ -18,8 +18,9 @@ class InstrumentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'     => ['required', 'string', 'max:100', 'unique:instruments,name'],
-            'category' => ['nullable', 'string', 'max:100'],
+            'name'            => ['required', 'string', 'max:100', 'unique:instruments,name'],
+            'category'        => ['nullable', 'string', 'max:100'],
+            'stage_plot_type' => ['nullable', 'string', 'in:drums,guitar_amp,bass_amp,keyboard,vocalist,monitor_wedge,di_box,rack,acoustic_guitar,violin,brass,custom'],
         ]);
 
         $instrument = Instrument::create($data);
@@ -30,8 +31,9 @@ class InstrumentController extends Controller
     public function update(Request $request, Instrument $instrument): JsonResponse
     {
         $data = $request->validate([
-            'name'     => ['sometimes', 'required', 'string', 'max:100', 'unique:instruments,name,' . $instrument->id],
-            'category' => ['nullable', 'string', 'max:100'],
+            'name'            => ['sometimes', 'required', 'string', 'max:100', 'unique:instruments,name,' . $instrument->id],
+            'category'        => ['nullable', 'string', 'max:100'],
+            'stage_plot_type' => ['nullable', 'string', 'in:drums,guitar_amp,bass_amp,keyboard,vocalist,monitor_wedge,di_box,rack,acoustic_guitar,violin,brass,custom'],
         ]);
 
         $instrument->update($data);

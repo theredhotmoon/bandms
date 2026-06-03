@@ -10,18 +10,49 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { useInstruments } from '@/composables/useInstruments'
 import { useTableControls } from '@/composables/useTableControls'
 import type { Instrument, InstrumentPayload } from '@/types/instrument'
+import type { StagePlotItemType } from '@/types/techRider'
 
 const { query, create, update, remove } = useInstruments()
 
 const showModal = ref(false)
 const editing   = ref<Instrument | null>(null)
-const form = reactive<InstrumentPayload>({ name: '', category: null })
+const form = reactive<InstrumentPayload>({ name: '', category: null, stage_plot_type: null })
 const confirmOpen    = ref(false)
 const confirmId      = ref<number | null>(null)
 const confirmLoading = ref(false)
 const filterCategory = ref('')
 
 const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other']
+
+const STAGE_PLOT_OPTIONS: { value: StagePlotItemType; label: string }[] = [
+  { value: 'drums',          label: '🥁 Drum Kit' },
+  { value: 'guitar_amp',     label: '🎸 Guitar Amp' },
+  { value: 'bass_amp',       label: '🎸 Bass Amp' },
+  { value: 'keyboard',       label: '🎹 Keyboard' },
+  { value: 'vocalist',       label: '🎤 Vocalist' },
+  { value: 'acoustic_guitar',label: '🎸 Acoustic Guitar' },
+  { value: 'violin',         label: '🎻 Violin' },
+  { value: 'brass',          label: '🎺 Brass' },
+  { value: 'monitor_wedge',  label: '🔊 Monitor Wedge' },
+  { value: 'di_box',         label: '🔌 DI Box' },
+  { value: 'rack',           label: '📦 Rack Unit' },
+  { value: 'custom',         label: '⚙️ Custom' },
+]
+
+const STAGE_PLOT_EMOJI: Record<StagePlotItemType, string> = {
+  drums:          '🥁',
+  guitar_amp:     '🎸',
+  bass_amp:       '🎸',
+  keyboard:       '🎹',
+  vocalist:       '🎤',
+  acoustic_guitar:'🎸',
+  violin:         '🎻',
+  brass:          '🎺',
+  monitor_wedge:  '🔊',
+  di_box:         '🔌',
+  rack:           '📦',
+  custom:         '⚙️',
+}
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
@@ -39,25 +70,28 @@ const tc = useTableControls<Instrument>({
 })
 
 function openCreate() {
-  editing.value   = null
-  form.name       = ''
-  form.category   = null
-  showModal.value = true
+  editing.value        = null
+  form.name            = ''
+  form.category        = null
+  form.stage_plot_type = null
+  showModal.value      = true
 }
 
 function openEdit(i: Instrument) {
-  editing.value   = i
-  form.name       = i.name
-  form.category   = i.category
-  showModal.value = true
+  editing.value        = i
+  form.name            = i.name
+  form.category        = i.category
+  form.stage_plot_type = i.stage_plot_type ?? null
+  showModal.value      = true
 }
 
 function closeModal() { showModal.value = false; editing.value = null }
 
 async function submit() {
   const payload: InstrumentPayload = {
-    name:     form.name.trim(),
-    category: form.category?.trim() || null,
+    name:            form.name.trim(),
+    category:        form.category?.trim() || null,
+    stage_plot_type: form.stage_plot_type || null,
   }
   try {
     if (editing.value) {
@@ -117,6 +151,7 @@ async function confirmDelete() {
               <tr style="border-bottom:1px solid #1a1a3a;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader label="Category" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">Stage icon</th>
                 <th class="th text-right" style="width:8rem;">Actions</th>
               </tr>
             </thead>
@@ -125,6 +160,10 @@ async function confirmDelete() {
                 <td class="td" style="color:#e2e8f0; font-weight:500;">{{ i.name }}</td>
                 <td class="td">
                   <span v-if="i.category" class="category-badge">{{ i.category }}</span>
+                  <span v-else style="color:#334155; font-size:0.75rem;">—</span>
+                </td>
+                <td class="td stage-icon-cell">
+                  <span v-if="i.stage_plot_type">{{ STAGE_PLOT_EMOJI[i.stage_plot_type] }}</span>
                   <span v-else style="color:#334155; font-size:0.75rem;">—</span>
                 </td>
                 <td class="td text-right">
@@ -162,6 +201,15 @@ async function confirmDelete() {
             <option v-for="c in CATEGORY_SUGGESTIONS" :key="c" :value="c" />
           </datalist>
         </div>
+        <div>
+          <label class="field-label">Stage plot icon</label>
+          <select v-model="form.stage_plot_type" class="field-input">
+            <option :value="null">— Not mapped —</option>
+            <option v-for="opt in STAGE_PLOT_OPTIONS" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
         <div class="flex gap-2 justify-end pt-1">
           <button type="button" class="btn-ghost" @click="closeModal">Cancel</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
@@ -190,4 +238,5 @@ async function confirmDelete() {
   font-size: 0.7rem; font-weight: 600;
   background: #1e1b4b; color: #818cf8;
 }
+.stage-icon-cell { font-size: 1.1rem; }
 </style>

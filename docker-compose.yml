@@ -25,6 +25,7 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
+      target: app
     container_name: bandms_backend
     restart: unless-stopped
     environment:

@@ -1,8 +1,4 @@
 {
-  "enabledPlugins": {
-    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
-    "frontend-design@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "mcp__figma-local__get_metadata",
@@ -13,5 +9,10 @@
       "PowerShell(Select-String*C:\\Projects\\bandms*)",
       "Bash(git -C C:/Projects/bandms *)"
     ]
+  },
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "frontend-design@claude-plugins-official": true,
+    "playwright-skill@playwright-skill": true
   }
 }

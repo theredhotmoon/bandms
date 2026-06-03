@@ -7,4 +7,6 @@ seed_*.php
 /tech-rider-ideas-report.md
 /app/node_modules
 /app/dist
-/api/vendor
+/api/vendorship.log
+unit-test.log
+e2e-test.log

@@ -10,6 +10,7 @@ class BandMemberSetup extends Model
     protected $fillable = [
         'band_member_id',
         'instrument_id',
+        'shared_monitor_id',
         'name',
         'signal_chain_type',
         'inputs',
@@ -36,5 +37,10 @@ class BandMemberSetup extends Model
     public function instrument(): BelongsTo
     {
         return $this->belongsTo(Instrument::class);
+    }
+
+    public function sharedMonitor(): BelongsTo
+    {
+        return $this->belongsTo(BandMemberSetup::class, 'shared_monitor_id');
     }
 }

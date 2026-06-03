@@ -1,10 +1,16 @@
 <?php
 
 use App\Models\Release;
+use App\Models\ReleasePhoto;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 
-beforeEach(fn () => $this->createProfile());
+beforeEach(function () {
+    $this->createProfile();
+    Storage::fake('public');
+});
 
 // ── GET /api/releases ─────────────────────────────────────────────────────────
 
@@ -137,6 +143,13 @@ describe('PUT /api/releases/{release}', function () {
         $this->putJson("/api/releases/{$release->id}", ['title' => 'Y', 'type' => 'EP'])->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/releases/{$release->id}", ['title' => 'Y', 'type' => 'EP'])->assertForbidden();
+    });
+
     it('updates a release', function () {
         $this->actingAsAdmin();
         $release = Release::create(['profile_id' => 1, 'title' => 'Old', 'type' => 'EP']);
@@ -145,6 +158,17 @@ describe('PUT /api/releases/{release}', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.title', 'Updated')
             ->assertJsonPath('data.type', 'LP');
+    });
+
+    it('updates release_date field', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'Old', 'type' => 'EP', 'release_date' => '2020-01-01']);
+
+        $this->putJson("/api/releases/{$release->id}", ['title' => 'Old', 'type' => 'EP', 'release_date' => '2025-12-01'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.release_date', '2025-12-01');
+
+        $this->assertDatabaseHas('releases', ['id' => $release->id, 'release_date' => '2025-12-01']);
     });
 
     it('replaces streaming links on update', function () {
@@ -160,6 +184,15 @@ describe('PUT /api/releases/{release}', function () {
 
         $this->assertDatabaseMissing('release_links', ['platform' => 'spotify']);
         $this->assertDatabaseHas('release_links', ['platform' => 'bandcamp']);
+    });
+
+    it('validates title is required', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->putJson("/api/releases/{$release->id}", ['type' => 'EP'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['title']);
     });
 
     it('returns 404 for a non-existent release', function () {
@@ -178,6 +211,13 @@ describe('DELETE /api/releases/{release}', function () {
         $this->deleteJson("/api/releases/{$release->id}")->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/releases/{$release->id}")->assertForbidden();
+    });
+
     it('deletes a release', function () {
         $this->actingAsAdmin();
         $release = Release::create(['profile_id' => 1, 'title' => 'Gone', 'type' => 'EP']);
@@ -191,5 +231,229 @@ describe('DELETE /api/releases/{release}', function () {
         $this->actingAsAdmin();
 
         $this->deleteJson('/api/releases/9999')->assertNotFound();
+    });
+});
+
+// ── POST /api/releases/{release}/cover ───────────────────────────────────────
+
+describe('POST /api/releases/{release}/cover', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->postJson("/api/releases/{$release->id}/cover", [])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson("/api/releases/{$release->id}/cover", [])->assertForbidden();
+    });
+
+    it('stores the cover image and updates the release', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'My LP', 'type' => 'LP']);
+        $file    = UploadedFile::fake()->create('cover.jpg', 100, 'image/jpeg');
+
+        $this->postJson("/api/releases/{$release->id}/cover", ['cover' => $file])
+            ->assertSuccessful();
+
+        $release->refresh();
+        expect($release->cover_image)->not->toBeNull();
+        Storage::disk('public')->assertExists($release->cover_image);
+    });
+
+    it('requires an image file', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->postJson("/api/releases/{$release->id}/cover", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['cover']);
+    });
+
+    it('returns 404 for a non-existent release', function () {
+        $this->actingAsAdmin();
+        $file = UploadedFile::fake()->create('cover.jpg', 100, 'image/jpeg');
+
+        $this->postJson('/api/releases/9999/cover', ['cover' => $file])->assertNotFound();
+    });
+});
+
+// ── DELETE /api/releases/{release}/cover ─────────────────────────────────────
+
+describe('DELETE /api/releases/{release}/cover', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->deleteJson("/api/releases/{$release->id}/cover")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/releases/{$release->id}/cover")->assertForbidden();
+    });
+
+    it('clears the cover_image field', function () {
+        $this->actingAsAdmin();
+        $file    = UploadedFile::fake()->create('cover.jpg', 100, 'image/jpeg');
+        $path    = $file->store('release-covers', 'public');
+        $release = Release::create(['profile_id' => 1, 'title' => 'My LP', 'type' => 'LP', 'cover_image' => $path]);
+
+        $this->deleteJson("/api/releases/{$release->id}/cover")
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('releases', ['id' => $release->id, 'cover_image' => null]);
+    });
+
+    it('returns 404 for a non-existent release', function () {
+        $this->actingAsAdmin();
+
+        $this->deleteJson('/api/releases/9999/cover')->assertNotFound();
+    });
+});
+
+// ── POST /api/releases/{release}/photos ──────────────────────────────────────
+
+describe('POST /api/releases/{release}/photos', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->postJson("/api/releases/{$release->id}/photos", [])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson("/api/releases/{$release->id}/photos", [])->assertForbidden();
+    });
+
+    it('attaches uploaded photos to the release', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'My LP', 'type' => 'LP']);
+        $file1   = UploadedFile::fake()->create('photo1.jpg', 100, 'image/jpeg');
+        $file2   = UploadedFile::fake()->create('photo2.jpg', 100, 'image/jpeg');
+
+        $this->postJson("/api/releases/{$release->id}/photos", [
+            'files' => [$file1, $file2],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseCount('release_photos', 2);
+        $this->assertDatabaseHas('release_photos', ['release_id' => $release->id]);
+    });
+
+    it('requires a files array', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->postJson("/api/releases/{$release->id}/photos", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['files']);
+    });
+
+    it('returns 404 for a non-existent release', function () {
+        $this->actingAsAdmin();
+        $file = UploadedFile::fake()->create('photo.jpg', 100, 'image/jpeg');
+
+        $this->postJson('/api/releases/9999/photos', ['files' => [$file]])->assertNotFound();
+    });
+});
+
+// ── DELETE /api/releases/{release}/photos/{photo} ────────────────────────────
+
+describe('DELETE /api/releases/{release}/photos/{photo}', function () {
+    beforeEach(fn () => Storage::fake('public'));
+
+    it('returns 401 without authentication', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        $photo   = ReleasePhoto::create(['release_id' => $release->id, 'image' => 'release-photos/p.jpg', 'sort_order' => 0]);
+
+        $this->deleteJson("/api/releases/{$release->id}/photos/{$photo->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        $photo   = ReleasePhoto::create(['release_id' => $release->id, 'image' => 'release-photos/p.jpg', 'sort_order' => 0]);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/releases/{$release->id}/photos/{$photo->id}")->assertForbidden();
+    });
+
+    it('detaches the photo from the release', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'My LP', 'type' => 'LP']);
+        $photo   = ReleasePhoto::create(['release_id' => $release->id, 'image' => 'release-photos/p.jpg', 'sort_order' => 0]);
+
+        $this->deleteJson("/api/releases/{$release->id}/photos/{$photo->id}")->assertNoContent();
+
+        $this->assertDatabaseMissing('release_photos', ['id' => $photo->id]);
+    });
+
+    it('returns 404 for a non-existent release', function () {
+        $this->actingAsAdmin();
+
+        $this->deleteJson('/api/releases/9999/photos/1')->assertNotFound();
+    });
+
+    it('returns 404 for a non-existent photo', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->deleteJson("/api/releases/{$release->id}/photos/9999")->assertNotFound();
+    });
+});
+
+// ── PUT /api/releases/{release}/photos/reorder ───────────────────────────────
+
+describe('PUT /api/releases/{release}/photos/reorder', function () {
+    it('returns 401 without authentication', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->putJson("/api/releases/{$release->id}/photos/reorder", ['order' => []])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/releases/{$release->id}/photos/reorder", ['order' => []])->assertForbidden();
+    });
+
+    it('reorders photos', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'My LP', 'type' => 'LP']);
+        $photo1  = ReleasePhoto::create(['release_id' => $release->id, 'image' => 'release-photos/p1.jpg', 'sort_order' => 0]);
+        $photo2  = ReleasePhoto::create(['release_id' => $release->id, 'image' => 'release-photos/p2.jpg', 'sort_order' => 1]);
+
+        $this->putJson("/api/releases/{$release->id}/photos/reorder", [
+            'order' => [$photo2->id, $photo1->id],
+        ])->assertSuccessful();
+
+        expect(ReleasePhoto::find($photo2->id)->sort_order)->toBe(0);
+        expect(ReleasePhoto::find($photo1->id)->sort_order)->toBe(1);
+    });
+
+    it('validates order array is required', function () {
+        $this->actingAsAdmin();
+        $release = Release::create(['profile_id' => 1, 'title' => 'X', 'type' => 'EP']);
+
+        $this->putJson("/api/releases/{$release->id}/photos/reorder", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['order']);
+    });
+
+    it('returns 404 for a non-existent release', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/releases/9999/photos/reorder', ['order' => []])->assertNotFound();
     });
 });

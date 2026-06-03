@@ -28,6 +28,7 @@ class BandMember extends Model
         'login_email',
         'can_login',
         'default_gear',
+        'main_instrument_id',
     ];
 
     protected $casts = [
@@ -47,6 +48,11 @@ class BandMember extends Model
     public function socialLinks(): HasMany
     {
         return $this->hasMany(SocialLink::class, 'member_id');
+    }
+
+    public function mainInstrument(): BelongsTo
+    {
+        return $this->belongsTo(Instrument::class, 'main_instrument_id');
     }
 
     public function instruments(): BelongsToMany

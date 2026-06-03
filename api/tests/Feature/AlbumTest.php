@@ -147,9 +147,67 @@ describe('DELETE /api/albums/{album}', function () {
     });
 });
 
+// ── POST /api/albums/{album}/photos ──────────────────────────────────────────
+
+describe('POST /api/albums/{album}/photos', function () {
+    it('returns 401 without authentication', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+
+        $this->postJson("/api/albums/{$album->id}/photos", [])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson("/api/albums/{$album->id}/photos", [])->assertForbidden();
+    });
+
+    it('adds photos to an album', function () {
+        $this->actingAsAdmin();
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+        $file  = UploadedFile::fake()->create('shot.jpg', 100, 'image/jpeg');
+
+        $this->postJson("/api/albums/{$album->id}/photos", ['files' => [$file]])
+            ->assertSuccessful();
+
+        $this->assertDatabaseCount('photos', 1);
+        expect(Photo::first()->album_id)->toBe($album->id);
+    });
+
+    it('validates files are required', function () {
+        $this->actingAsAdmin();
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+
+        $this->postJson("/api/albums/{$album->id}/photos", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['files']);
+    });
+
+    it('returns 404 for a non-existent album', function () {
+        $this->actingAsAdmin();
+        $file = UploadedFile::fake()->create('x.jpg', 100, 'image/jpeg');
+
+        $this->postJson('/api/albums/9999/photos', ['files' => [$file]])->assertNotFound();
+    });
+});
+
 // ── PUT /api/albums/{album}/photos/reorder ────────────────────────────────────
 
 describe('PUT /api/albums/{album}/photos/reorder', function () {
+    it('returns 401 without authentication', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+
+        $this->putJson("/api/albums/{$album->id}/photos/reorder", ['order' => []])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/albums/{$album->id}/photos/reorder", ['order' => []])->assertForbidden();
+    });
+
     it('reorders photos', function () {
         $this->actingAsAdmin();
         $album  = Album::create(['title' => 'A', 'slug' => 'a']);
@@ -168,6 +226,21 @@ describe('PUT /api/albums/{album}/photos/reorder', function () {
 // ── DELETE /api/albums/{album}/photos/{photo} ─────────────────────────────────
 
 describe('DELETE /api/albums/{album}/photos/{photo}', function () {
+    it('returns 401 without authentication', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+        $photo = Photo::create(['album_id' => $album->id, 'image' => 'photos/test.jpg', 'sort_order' => 0]);
+
+        $this->deleteJson("/api/albums/{$album->id}/photos/{$photo->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $album = Album::create(['title' => 'A', 'slug' => 'a']);
+        $photo = Photo::create(['album_id' => $album->id, 'image' => 'photos/test.jpg', 'sort_order' => 0]);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/albums/{$album->id}/photos/{$photo->id}")->assertForbidden();
+    });
+
     it('removes a photo from an album', function () {
         $this->actingAsAdmin();
         $album = Album::create(['title' => 'A', 'slug' => 'a']);

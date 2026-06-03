@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Instrument extends Model
 {
-    protected $fillable = ['name', 'category'];
+    protected $fillable = ['name', 'category', 'stage_plot_type'];
 
     public function members(): BelongsToMany
     {

@@ -12,7 +12,7 @@ _DB_USERNAME := $(shell grep '^DB_USERNAME=' .env | cut -d= -f2-)
 _DB_PASSWORD := $(shell grep '^DB_PASSWORD=' .env | cut -d= -f2-)
 
 .PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql \
-        shell migrate fresh seed passport test test-build health
+        shell migrate fresh seed passport test test-build test-all ship health
 
 ## Start all services (detached)
 up:
@@ -84,6 +84,24 @@ test: test-build
 		-e APP_ENV=testing \
 		-e APP_KEY=$(_APP_KEY) \
 		bandms_test
+
+## Run all test suites (unit + E2E). Options: SKIP_E2E=1  SKIP_UNIT=1
+test-all:
+	bash scripts/test-all.sh $(if $(SKIP_E2E),--skip-e2e) $(if $(SKIP_UNIT),--skip-unit)
+
+## Full ship pipeline: rebuild? → tests → changelog → branch → commit → push → PR
+## Options: REBUILD=1  REBUILD_BACKEND=1  REBUILD_FRESH=1  SKIP_E2E=1  SKIP_UNIT=1  DRY_RUN=1  NO_PR=1
+ship:
+	bash scripts/ship.sh \
+		$(if $(REBUILD),--rebuild) \
+		$(if $(REBUILD_BACKEND),--rebuild-backend) \
+		$(if $(REBUILD_FRESH),--rebuild-fresh) \
+		$(if $(SKIP_E2E),--skip-e2e) \
+		$(if $(SKIP_UNIT),--skip-unit) \
+		$(if $(DRY_RUN),--dry-run) \
+		$(if $(NO_PR),--no-pr) \
+		$(if $(BRANCH),--branch $(BRANCH)) \
+		-y
 
 ## Check the health endpoint
 health:

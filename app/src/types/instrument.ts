@@ -1,7 +1,10 @@
+import type { StagePlotItemType } from './techRider'
+
 export interface Instrument {
   id: number
   name: string
   category: string | null
+  stage_plot_type: StagePlotItemType | null
   created_at: string
   updated_at: string
 }
@@ -9,4 +12,5 @@ export interface Instrument {
 export interface InstrumentPayload {
   name: string
   category?: string | null
+  stage_plot_type?: StagePlotItemType | null
 }

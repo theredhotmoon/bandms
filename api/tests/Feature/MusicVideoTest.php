@@ -2,6 +2,7 @@
 
 use App\Models\MusicVideo;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Laravel\Passport\Passport;
 
 beforeEach(fn () => $this->createProfile());
@@ -94,6 +95,13 @@ describe('PUT /api/music-videos/{musicVideo}', function () {
         $this->putJson("/api/music-videos/{$video->id}", ['title' => 'New'])->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'V', 'video_url' => 'https://youtube.com/x']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson("/api/music-videos/{$video->id}", ['title' => 'New'])->assertForbidden();
+    });
+
     it('updates a music video', function () {
         $this->actingAsAdmin();
         $video = MusicVideo::create(['profile_id' => 1, 'title' => 'Old Title', 'video_url' => 'https://youtube.com/x']);
@@ -119,6 +127,13 @@ describe('DELETE /api/music-videos/{musicVideo}', function () {
         $this->deleteJson("/api/music-videos/{$video->id}")->assertUnauthorized();
     });
 
+    it('returns 403 for non-admin roles', function () {
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'V', 'video_url' => 'https://youtube.com/x']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->deleteJson("/api/music-videos/{$video->id}")->assertForbidden();
+    });
+
     it('deletes a music video', function () {
         $this->actingAsAdmin();
         $video = MusicVideo::create(['profile_id' => 1, 'title' => 'Gone', 'video_url' => 'https://youtube.com/x']);
@@ -134,3 +149,64 @@ describe('DELETE /api/music-videos/{musicVideo}', function () {
         $this->deleteJson('/api/music-videos/9999')->assertNotFound();
     });
 });
+
+// ── POST /api/music-videos/{musicVideo}/fetch-preview ─────────────────────────
+
+describe('POST /api/music-videos/{musicVideo}/fetch-preview', function () {
+    it('returns 401 without authentication', function () {
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'V', 'video_url' => 'https://www.youtube.com/watch?v=abc123']);
+
+        $this->postJson("/api/music-videos/{$video->id}/fetch-preview")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'V', 'video_url' => 'https://www.youtube.com/watch?v=abc123']);
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->postJson("/api/music-videos/{$video->id}/fetch-preview")->assertForbidden();
+    });
+
+    it('fetches OEmbed data and updates the video record', function () {
+        $this->actingAsAdmin();
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'My Video', 'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ']);
+
+        Http::fake([
+            'www.youtube.com/oembed*' => Http::response([
+                'title'          => 'Never Gonna Give You Up',
+                'thumbnail_url'  => 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+                'provider_name'  => 'YouTube',
+                'author_name'    => 'Rick Astley',
+            ], 200),
+        ]);
+
+        $this->postJson("/api/music-videos/{$video->id}/fetch-preview")
+            ->assertSuccessful()
+            ->assertJsonPath('data.og_title', 'Never Gonna Give You Up')
+            ->assertJsonPath('data.channel_name', 'Rick Astley');
+
+        $this->assertDatabaseHas('music_videos', [
+            'id'           => $video->id,
+            'og_title'     => 'Never Gonna Give You Up',
+            'og_site_name' => 'YouTube',
+            'channel_name' => 'Rick Astley',
+        ]);
+    });
+
+    it('returns 422 when OEmbed fetch fails', function () {
+        $this->actingAsAdmin();
+        $video = MusicVideo::create(['profile_id' => 1, 'title' => 'V', 'video_url' => 'https://www.youtube.com/watch?v=notfound']);
+
+        Http::fake(['www.youtube.com/oembed*' => Http::response([], 404)]);
+
+        $this->postJson("/api/music-videos/{$video->id}/fetch-preview")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Could not fetch preview for this URL.');
+    });
+
+    it('returns 404 for a non-existent video', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/music-videos/9999/fetch-preview')->assertNotFound();
+    });
+});
+
