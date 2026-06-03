@@ -220,6 +220,12 @@ if [[ "$BACKEND_ONLY" == true ]]; then
   echo -e "${GREEN}${BOLD}✔  Backend rebuilt and running.${RESET}"
   echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
   _print_summary
+  if [[ "$RUN_TESTS" == true ]]; then
+    echo -e "  ${CYAN}ℹ  E2E tests not included in rebuild — run: ${BOLD}make test-all${RESET}"
+  else
+    echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}make test-all${RESET}${YELLOW} before shipping${RESET}"
+  fi
+  echo ""
   exit 0
 fi
 
@@ -290,8 +296,14 @@ echo -e "${GREEN}${BOLD}✔  All done! Stack is up and running.${RESET}"
 echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
 _print_summary
 
+if [[ "$RUN_TESTS" == true ]]; then
+  echo -e "  ${CYAN}ℹ  E2E tests not included in rebuild — run: ${BOLD}make test-all${RESET}"
+else
+  echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}make test-all${RESET}${YELLOW} before shipping${RESET}"
+fi
+echo ""
 echo "  Useful next steps:"
 echo "    make logs          # tail all service logs"
 echo "    make health        # check /api/health"
-echo "    make test          # run the test suite"
+echo "    make test-all      # unit + E2E tests"
 echo ""
