@@ -15,6 +15,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
 
+const STAGE_PLOT_ICONS: Record<string, string> = {
+  drums: '🥁', guitar_amp: '🎸', bass_amp: '🎸', keyboard: '🎹',
+  vocalist: '🎤', acoustic_guitar: '🎸', violin: '🎻', brass: '🎺',
+  monitor_wedge: '🔊', di_box: '🔌', rack: '📦', custom: '⚙️',
+}
+
 const form = reactive({
   first_name: '',
   nickname: '',
@@ -28,6 +34,7 @@ const form = reactive({
   calendar_url: '',
   login_email: '',
   instrument_ids: [] as number[],
+  main_instrument_id: null as number | null,
 })
 
 // Photo upload state
@@ -66,18 +73,19 @@ const linkUrls = reactive<Record<SocialPlatform, string>>({
 watch(
   () => props.initial,
   (val) => {
-    form.first_name     = val?.first_name ?? ''
-    form.nickname       = val?.nickname ?? ''
-    form.last_name      = val?.last_name ?? ''
-    form.role           = val?.role ?? ''
-    form.photo          = val?.photo ?? ''
-    form.bio            = val?.bio ?? ''
-    form.is_current     = val?.is_current ?? true
-    form.joined_at      = val?.joined_at ?? ''
-    form.quit_at        = val?.quit_at ?? ''
-    form.calendar_url   = val?.calendar_url ?? ''
-    form.login_email    = val?.login_email ?? ''
-    form.instrument_ids = val?.instruments?.map((i) => i.id) ?? []
+    form.first_name          = val?.first_name ?? ''
+    form.nickname            = val?.nickname ?? ''
+    form.last_name           = val?.last_name ?? ''
+    form.role                = val?.role ?? ''
+    form.photo               = val?.photo ?? ''
+    form.bio                 = val?.bio ?? ''
+    form.is_current          = val?.is_current ?? true
+    form.joined_at           = val?.joined_at ?? ''
+    form.quit_at             = val?.quit_at ?? ''
+    form.calendar_url        = val?.calendar_url ?? ''
+    form.login_email         = val?.login_email ?? ''
+    form.instrument_ids      = val?.instruments?.map((i) => i.id) ?? []
+    form.main_instrument_id  = val?.main_instrument_id ?? null
 
     if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
     photoFile.value    = null
@@ -89,22 +97,44 @@ watch(
   { immediate: true },
 )
 
+function selectMainInstrument(id: number) {
+  form.main_instrument_id = id
+  // Auto-add to also-plays list if not already there
+  if (!form.instrument_ids.includes(id)) {
+    form.instrument_ids.push(id)
+  }
+}
+
+function toggleAlsoPlays(id: number) {
+  const idx = form.instrument_ids.indexOf(id)
+  if (idx === -1) {
+    form.instrument_ids.push(id)
+  } else {
+    form.instrument_ids.splice(idx, 1)
+    // If the deselected instrument was the main one, clear it
+    if (form.main_instrument_id === id) {
+      form.main_instrument_id = null
+    }
+  }
+}
+
 function submit() {
   emit('submit', {
-    first_name:     form.first_name,
-    nickname:       form.nickname || null,
-    last_name:      form.last_name,
-    role:           form.role || null,
-    photo:          photoFile.value ? null : (form.photo || null),
-    photo_file:     photoFile.value,
-    bio:            form.bio || null,
-    is_current:     form.is_current,
-    joined_at:      form.joined_at || null,
-    quit_at:        form.is_current ? null : (form.quit_at || null),
-    calendar_url:   form.calendar_url || null,
-    login_email:    form.login_email,
-    instrument_ids: form.instrument_ids,
-    social_links:   SOCIAL_PLATFORMS
+    first_name:          form.first_name,
+    nickname:            form.nickname || null,
+    last_name:           form.last_name,
+    role:                form.role || null,
+    photo:               photoFile.value ? null : (form.photo || null),
+    photo_file:          photoFile.value,
+    bio:                 form.bio || null,
+    is_current:          form.is_current,
+    joined_at:           form.joined_at || null,
+    quit_at:             form.is_current ? null : (form.quit_at || null),
+    calendar_url:        form.calendar_url || null,
+    login_email:         form.login_email,
+    instrument_ids:      form.instrument_ids,
+    main_instrument_id:  form.main_instrument_id,
+    social_links:        SOCIAL_PLATFORMS
       .filter((p) => linkUrls[p.key].trim())
       .map((p) => ({ platform: p.key, url: linkUrls[p.key].trim() })),
   })
@@ -249,7 +279,29 @@ function submit() {
 
         <!-- Instruments -->
         <div v-if="availableInstruments?.length">
-          <div class="member-links-heading">Instruments</div>
+
+          <!-- Main instrument (single-select radio cards) -->
+          <div class="member-links-heading">Main instrument</div>
+          <p class="instruments-hint">Used as icon on the stage plot &amp; tech rider.</p>
+          <div class="instruments-grid">
+            <button
+              v-for="inst in availableInstruments"
+              :key="inst.id"
+              type="button"
+              class="main-inst-card"
+              :class="{ 'main-inst-card--on': form.main_instrument_id === inst.id }"
+              @click="selectMainInstrument(inst.id)"
+            >
+              <span v-if="inst.stage_plot_type && STAGE_PLOT_ICONS[inst.stage_plot_type]" class="main-inst-emoji">
+                {{ STAGE_PLOT_ICONS[inst.stage_plot_type] }}
+              </span>
+              <span class="main-inst-name">{{ inst.name }}</span>
+            </button>
+          </div>
+
+          <!-- Also plays (multi-select checkboxes) -->
+          <div class="member-links-heading" style="margin-top:0.75rem;">Also plays</div>
+          <p class="instruments-hint">Optional. All instruments this member can cover.</p>
           <div class="instruments-grid">
             <label
               v-for="inst in availableInstruments"
@@ -257,10 +309,16 @@ function submit() {
               class="instrument-check"
               :class="{ 'instrument-check--on': form.instrument_ids.includes(inst.id) }"
             >
-              <input type="checkbox" :value="inst.id" v-model="form.instrument_ids" class="sr-only" />
+              <input
+                type="checkbox"
+                :checked="form.instrument_ids.includes(inst.id)"
+                class="sr-only"
+                @change="toggleAlsoPlays(inst.id)"
+              />
               {{ inst.name }}
             </label>
           </div>
+
         </div>
 
       </div>
@@ -311,6 +369,30 @@ function submit() {
   width: 7rem; flex-shrink: 0;
 }
 .instruments-grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.instruments-hint {
+  font-size: 0.65rem; color: #475569; margin-bottom: 0.375rem; margin-top: -0.25rem;
+}
+
+/* ── Main instrument cards ──────────────────────────────────── */
+.main-inst-card {
+  display: inline-flex; flex-direction: column; align-items: center;
+  gap: 0.2rem; padding: 0.375rem 0.5rem; border-radius: 0.5rem;
+  font-size: 0.7rem; font-weight: 500; cursor: pointer;
+  border: 1.5px solid #1e2040; color: #64748b;
+  background: transparent; user-select: none;
+  transition: border-color 100ms, color 100ms, background 100ms;
+  line-height: 1.2;
+}
+.main-inst-card:hover { border-color: #3730a3; color: #94a3b8; }
+.main-inst-card--on {
+  border-color: #818cf8; color: #e0e7ff;
+  background: #1e1b4b;
+  box-shadow: 0 0 0 1px #4338ca44;
+}
+.main-inst-emoji { font-size: 1rem; line-height: 1; }
+.main-inst-name  { font-size: 0.68rem; }
+
+/* ── Also-plays checkboxes ──────────────────────────────────── */
 .instrument-check {
   display: inline-flex; align-items: center;
   padding: 0.25rem 0.625rem; border-radius: 9999px;

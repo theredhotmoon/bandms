@@ -13,6 +13,8 @@ class BandMemberSetupSummaryResource extends JsonResource
             'id'                => $this->id,
             'band_member_id'    => $this->band_member_id,
             'instrument_id'     => $this->instrument_id,
+            'instrument_name'   => $this->instrument?->name,
+            'shared_monitor_id' => $this->shared_monitor_id,
             'name'              => $this->name,
             'signal_chain_type' => $this->signal_chain_type,
             'input_count'       => count($this->inputs ?? []),

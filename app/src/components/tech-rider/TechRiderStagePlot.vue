@@ -5,6 +5,7 @@ import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
 import type { StagePlotMemberItem, GigLineup, GigTempMusician } from '@/types/stagePlot'
 import {
   defaultStageMemberItem,
+  defaultPlacedInstrument,
   isMemberItemComplete,
   isMemberItemPartial,
   INSTRUMENT_TYPE_LABELS,
@@ -163,6 +164,19 @@ function onStageDrop(e: DragEvent) {
 
 function placeOnStage(memberId: number | null, tempId: string | undefined, x: number, y: number) {
   const item = defaultStageMemberItem(memberId, tempId, x, y)
+
+  // Auto-add main instrument if available
+  if (memberId !== null) {
+    const member = props.bandMembers.find(m => m.id === memberId)
+    const mainInst = member?.main_instrument
+    if (mainInst?.stage_plot_type) {
+      const placed = defaultPlacedInstrument()
+      placed.type  = mainInst.stage_plot_type as StagePlotItemType
+      placed.label = mainInst.name
+      item.instruments = [placed]
+    }
+  }
+
   emit('update:modelValue', [...props.modelValue, item])
   openModal(item.id)
 }
@@ -207,6 +221,11 @@ function removeItem(itemId: string) {
 }
 
 // ── Display helpers ───────────────────────────────────────────────────────────
+
+function memberMainInstrumentIcon(member: BandMember): string {
+  const type = member.main_instrument?.stage_plot_type
+  return type ? (INSTRUMENT_ICONS[type] ?? '') : ''
+}
 
 const INSTRUMENT_ICONS: Record<StagePlotItemType, string> = {
   drums:          '🥁',
@@ -286,6 +305,11 @@ function statusClass(item: StagePlotMemberItem): string {
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium text-white truncate">{{ memberName(member) }}</div>
             <div class="text-[10px] text-slate-400 truncate">{{ member.role ?? 'Musician' }}</div>
+          </div>
+
+          <!-- Main instrument icon -->
+          <div v-if="member.main_instrument" class="text-sm flex-shrink-0" :title="member.main_instrument.name">
+            {{ memberMainInstrumentIcon(member) }}
           </div>
 
           <!-- Status indicators -->

@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -26,6 +30,7 @@
     "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^25.5.0",
     "@vitejs/plugin-vue": "^5.2.0",

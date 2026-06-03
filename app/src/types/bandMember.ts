@@ -1,5 +1,6 @@
 import type { SocialLink, SocialLinkPayload } from './socialLink'
 import type { Instrument } from './instrument'
+import type { StagePlotItemType } from './techRider'
 
 // ── Default gear ──────────────────────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ export interface BandMember {
   can_login: boolean
   default_gear: DefaultGearItem[]
   instruments: Instrument[]
+  main_instrument_id: number | null
+  main_instrument: (Instrument & { stage_plot_type: StagePlotItemType | null }) | null
   social_links: SocialLink[]
   created_at: string
   updated_at: string
@@ -80,6 +83,7 @@ export interface BandMemberPayload {
   login_email?: string | null
   can_login?: boolean
   instrument_ids?: number[]
+  main_instrument_id?: number | null
   social_links?: SocialLinkPayload[]
   default_gear?: DefaultGearItem[]
 }

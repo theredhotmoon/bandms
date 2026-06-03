@@ -26,7 +26,7 @@ class BandMemberSetupController extends Controller
     public function index(BandMember $member): AnonymousResourceCollection
     {
         $this->authorizeForMember($member);
-        $setups = $member->setups()->orderBy('updated_at', 'desc')->get();
+        $setups = $member->setups()->with('instrument')->orderBy('updated_at', 'desc')->get();
 
         return BandMemberSetupSummaryResource::collection($setups);
     }
@@ -103,6 +103,7 @@ class BandMemberSetupController extends Controller
         return $request->validate([
             'name'                => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
             'instrument_id'       => ['nullable', 'integer', 'exists:instruments,id'],
+            'shared_monitor_id'   => ['nullable', 'integer', 'exists:band_member_setups,id'],
             'signal_chain_type'   => [
                 $partial ? 'sometimes' : 'required',
                 'string',
