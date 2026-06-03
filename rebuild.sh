@@ -127,7 +127,7 @@ _run_tests() {
 # ── Defaults ─────────────────────────────────────────────────────────────────
 FRESH_DB=false
 BACKEND_ONLY=false
-RUN_TESTS=false
+RUN_TESTS=true
 BACKEND_CONTAINER="bandms_backend"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
@@ -135,16 +135,18 @@ for arg in "$@"; do
   case "$arg" in
     --fresh-db)      FRESH_DB=true ;;
     --backend-only)  BACKEND_ONLY=true ;;
-    --run-tests)     RUN_TESTS=true ;;
+    --run-tests)     RUN_TESTS=true ;;   # kept for backwards-compat
+    --skip-tests)    RUN_TESTS=false ;;
     --help|-h)
       echo -e "${BOLD}BandMS rebuild script${RESET}"
       echo ""
-      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db] [--run-tests]"
+      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db] [--skip-tests]"
       echo ""
-      echo "  (no flags)       Rebuild all Docker images, start containers, run pending migrations"
+      echo "  (no flags)       Rebuild all Docker images, start containers, run migrations, run tests"
       echo "  --backend-only   Rebuild only the backend image — faster for PHP-only changes"
       echo "  --fresh-db       Rebuild all images + wipe DB volumes + re-migrate + seed"
-      echo "  --run-tests      After rebuild, build the test image and run the Pest suite"
+      echo "  --skip-tests     Skip the Pest test suite after rebuild (tests run by default)"
+      echo "  --run-tests      (alias for default behaviour — kept for backwards-compat)"
       echo "  --help           Show this message"
       echo ""
       echo "  IMPORTANT: Always use this script instead of raw docker commands."

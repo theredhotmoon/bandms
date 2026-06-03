@@ -104,13 +104,34 @@ The script rebuilds images, restarts containers, runs migrations, and rebuilds c
 
 ```bash
 # After adding/changing PHP files (most common):
-bash rebuild.sh --backend-only   # fast — rebuilds only the backend image
+bash rebuild.sh --backend-only          # fast — rebuild backend + run tests
 
 # After changing frontend Dockerfile or docker-compose.yml:
-bash rebuild.sh                  # full rebuild of all images
+bash rebuild.sh                         # full rebuild + run tests
 
 # Full reset (wipes DB):
-bash rebuild.sh --fresh-db       # prompts for confirmation
+bash rebuild.sh --fresh-db              # prompts for confirmation + run tests
+
+# Skip tests (mid-feature, intentionally broken):
+bash rebuild.sh --backend-only --skip-tests
 ```
 
 The script writes a full log to `rebuild.log` in the project root.
+
+---
+
+## Quality standard — tests run by default
+
+**Always run the full test suite before reporting a feature done or before shipping.**
+Quality over speed: a feature that breaks existing tests is not done, even if it works visually.
+
+```bash
+make test        # backend unit tests (Pest, ~15 s) — run after every backend change
+make test-all    # unit + E2E Playwright — run before shipping
+```
+
+- Run `make test` automatically after any backend change (models, controllers, migrations, resources).
+- Run `make test-all` before every `/ship` or PR.
+- Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.
+- If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
+- **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.

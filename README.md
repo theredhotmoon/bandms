@@ -74,10 +74,10 @@ Run from the project root. Always prefer these over raw `docker compose` command
 The script rebuilds images, restarts containers, runs migrations, and rebuilds caches in the correct order.
 
 ```bash
-bash rebuild.sh                    # full rebuild (all images)
-bash rebuild.sh --backend-only     # fast — PHP changes only
-bash rebuild.sh --fresh-db         # wipe DB + full rebuild + seed (prompts for confirmation)
-bash rebuild.sh --run-tests        # any mode + run Pest suite after rebuild
+bash rebuild.sh                    # full rebuild + run Pest tests (default)
+bash rebuild.sh --backend-only     # fast — PHP changes only + run tests
+bash rebuild.sh --fresh-db         # wipe DB + full rebuild + seed + tests
+bash rebuild.sh --skip-tests       # any mode without running tests (mid-feature only)
 ```
 
 Output is tee'd to **`rebuild.log`** — share it with Claude if anything fails.
