@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BandProfile extends Model
 {
@@ -21,12 +22,41 @@ class BandProfile extends Model
         'facebook_likes', 'facebook_likes_synced_at',
         'tech_rider_path', 'stage_plot_path',
         'epk_release_id', 'epk_album_id',
+        'epk_logo_id', 'tech_rider_logo_id', 'website_logo_id',
     ];
 
     protected $casts = [
         'facebook_likes'          => 'integer',
         'facebook_likes_synced_at' => 'datetime',
     ];
+
+    public function logos(): HasMany
+    {
+        return $this->hasMany(BandLogo::class, 'profile_id')
+            ->orderBy('sort_order')
+            ->orderBy('created_at', 'desc');
+    }
+
+    public function defaultLogo(): HasOne
+    {
+        return $this->hasOne(BandLogo::class, 'profile_id')
+            ->where('is_default', true);
+    }
+
+    public function epkLogo(): BelongsTo
+    {
+        return $this->belongsTo(BandLogo::class, 'epk_logo_id');
+    }
+
+    public function techRiderLogo(): BelongsTo
+    {
+        return $this->belongsTo(BandLogo::class, 'tech_rider_logo_id');
+    }
+
+    public function websiteLogo(): BelongsTo
+    {
+        return $this->belongsTo(BandLogo::class, 'website_logo_id');
+    }
 
     public function members(): HasMany
     {

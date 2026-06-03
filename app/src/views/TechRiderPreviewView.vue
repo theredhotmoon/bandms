@@ -3,8 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchActiveTechRider, fetchTechRider } from '@/api/techRiders'
 import { fetchBandMembers } from '@/api/bandMembers'
+import { fetchBandProfile } from '@/api/bandProfile'
 import type { TechRider } from '@/types/techRider'
 import type { BandMember } from '@/types/bandMember'
+import type { BandProfile } from '@/types/bandProfile'
 import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
 import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
 
@@ -13,24 +15,36 @@ import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
 const route   = useRoute()
 const rider   = ref<TechRider | null>(null)
 const members = ref<BandMember[]>([])
+const profile = ref<BandProfile | null>(null)
 const loading = ref(true)
 const error   = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    const [riderData, membersData] = await Promise.all([
+    const [riderData, membersData, profileData] = await Promise.all([
       route.params.id
         ? fetchTechRider(parseInt(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id, 10))
         : fetchActiveTechRider(),
       fetchBandMembers().catch(() => [] as BandMember[]),
+      fetchBandProfile().catch(() => null),
     ])
     rider.value   = riderData
     members.value = membersData
+    profile.value = profileData
   } catch {
     error.value = 'Could not load the tech rider. Please check that a rider is published.'
   } finally {
     loading.value = false
   }
+})
+
+const logoUrl = computed(() => {
+  // Use tech_rider_logo_id pin if set, else fall back to global default
+  if (profile.value?.tech_rider_logo_id && profile.value?.logos?.length) {
+    const pinned = profile.value.logos.find(l => l.id === profile.value!.tech_rider_logo_id)
+    if (pinned) return pinned.url
+  }
+  return profile.value?.logo_url ?? null
 })
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -197,6 +211,7 @@ function printPage() { window.print() }
       <div class="print-toolbar no-print">
         <div class="toolbar-left">
           <span class="toolbar-badge">Tech Rider</span>
+          <img v-if="logoUrl" :src="logoUrl" alt="" class="toolbar-logo" />
           <span class="toolbar-name">{{ rider.name }}</span>
         </div>
         <button type="button" class="toolbar-print-btn" @click="printPage">
@@ -214,6 +229,12 @@ function printPage() { window.print() }
         <!-- ── Cover ──────────────────────────────────────────── -->
         <div class="cover-page page-break">
           <div class="cover-title">Technical Rider</div>
+          <img
+            v-if="logoUrl"
+            :src="logoUrl"
+            alt="Band logo"
+            class="cover-logo"
+          />
           <div class="cover-rider-name">{{ rider.name }}</div>
           <div class="cover-divider" />
           <div class="cover-meta">
@@ -600,6 +621,7 @@ function printPage() { window.print() }
 }
 .toolbar-left { display: flex; align-items: center; gap: 1rem; }
 .toolbar-badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; background: #312e81; color: #a5b4fc; text-transform: uppercase; letter-spacing: .05em; font-family: ui-sans-serif, system-ui, sans-serif; }
+.toolbar-logo { height: 1.5rem; object-fit: contain; margin-right: 0.5rem; }
 .toolbar-name { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; font-family: ui-sans-serif, system-ui, sans-serif; }
 .toolbar-print-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.1rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: #4338ca; border: none; color: #fff; font-family: ui-sans-serif, system-ui, sans-serif; transition: background 150ms; }
 .toolbar-print-btn:hover { background: #4f46e5; }
@@ -610,6 +632,7 @@ function printPage() { window.print() }
 /* ── Cover ─────────────────────────────────────────────────── */
 .cover-page { padding: 4rem 0 2rem; }
 .cover-title { font-size: 0.75rem; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: .15em; margin-bottom: 0.5rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+.cover-logo { max-height: 3.5rem; max-width: 16rem; object-fit: contain; margin-bottom: 0.5rem; display: block; }
 .cover-rider-name { font-size: 2.5rem; font-weight: 800; color: #0f172a; line-height: 1.15; }
 .cover-divider { height: 3px; background: linear-gradient(90deg, #6366f1, transparent); margin: 1.5rem 0; }
 .cover-meta { display: flex; gap: 2.5rem; }

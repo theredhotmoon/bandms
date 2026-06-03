@@ -62,6 +62,12 @@ function embedUrl(url: string): string {
         <!-- ── HEADER ───────────────────────────────────────── -->
         <header class="epk-header">
           <div class="epk-header-text">
+            <img
+              v-if="query.data.value.logo_url"
+              :src="query.data.value.logo_url"
+              alt="Band logo"
+              class="epk-logo"
+            />
             <h1 class="epk-name">{{ query.data.value.name }}</h1>
             <div class="epk-meta-row">
               <div v-if="query.data.value.genres" class="epk-genres">
@@ -264,6 +270,7 @@ function embedUrl(url: string): string {
 
 /* Header */
 .epk-header { margin-bottom: 2rem; }
+.epk-logo { max-height: 5rem; max-width: 20rem; object-fit: contain; margin: 0 auto 1rem; display: block; }
 .epk-name { font-size: 2.5rem; font-weight: 800; color: #111; margin: 0 0 0.75rem; letter-spacing: -0.02em; }
 .epk-meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.625rem; margin-bottom: 0.5rem; }
 .genre-badge {

@@ -16,6 +16,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BandController;
 use App\Http\Controllers\BandMemberController;
 use App\Http\Controllers\BandMemberSetupController;
+use App\Http\Controllers\BandLogoController;
 use App\Http\Controllers\BandProfileController;
 use App\Http\Controllers\ConcertController;
 use App\Http\Controllers\HealthCheckController;
@@ -181,6 +182,18 @@ Route::middleware('auth:api')->group(function () {
 
         // All setups across all members (for tech rider import panel)
         Route::get('/band-profile/member-setups', [BandMemberSetupController::class, 'allSetups'])->name('api.member-setups.all');
+
+        // ── Band logos ────────────────────────────────────────────────────────
+        Route::get('/band-profile/logos', [BandLogoController::class, 'index'])
+            ->name('api.band-profile.logos.index');
+        Route::post('/band-profile/logos', [BandLogoController::class, 'store'])
+            ->name('api.band-profile.logos.store');
+        Route::put('/band-profile/logos/{logo}', [BandLogoController::class, 'update'])
+            ->name('api.band-profile.logos.update');
+        Route::post('/band-profile/logos/{logo}/set-default', [BandLogoController::class, 'setDefault'])
+            ->name('api.band-profile.logos.set-default');
+        Route::delete('/band-profile/logos/{logo}', [BandLogoController::class, 'destroy'])
+            ->name('api.band-profile.logos.destroy');
 
         Route::post('/band-profile/social-links', [SocialLinkController::class, 'store'])->name('api.band-profile.social-links.store');
         Route::put('/band-profile/social-links/{link}', [SocialLinkController::class, 'update'])->name('api.band-profile.social-links.update');
