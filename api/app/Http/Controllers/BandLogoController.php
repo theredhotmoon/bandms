@@ -110,9 +110,10 @@ class BandLogoController extends Controller
         abort_if($logo->is_deprecated, 422, 'Cannot set a deprecated logo as default.');
 
         DB::transaction(function () use ($logo) {
-            BandLogo::where('profile_id', $logo->profile_id)
-                ->update(['is_default' => false]);
-            $logo->update(['is_default' => true]);
+            // Mass update sets all to false in DB — bypass Eloquent dirty-tracking
+            // by using a direct query for the targeted row too.
+            BandLogo::where('profile_id', $logo->profile_id)->update(['is_default' => false]);
+            BandLogo::where('id', $logo->id)->update(['is_default' => true]);
         });
 
         return new BandLogoResource($logo->fresh());
