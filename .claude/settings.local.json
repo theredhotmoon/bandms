@@ -164,7 +164,12 @@
       "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-Object -Last 80)",
       "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-String \"FAILED\" | Select-Object -First 80)",
       "PowerShell($key = \\(Get-Content \"C:\\\\Projects\\\\bandms\\\\.env\" | Select-String \"^APP_KEY=\"\\).ToString\\(\\).Split\\(\"=\",2\\)[1]; docker run --rm -e APP_ENV=testing -e APP_KEY=$key bandms_test 2>&1 | Select-Object -Last 100)",
-      "PowerShell(docker run *)"
+      "PowerShell(docker run *)",
+      "PowerShell(docker compose build *)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8000/api/tech-riders/active\" -UseBasicParsing 2>&1 | Select-Object StatusCode, Content)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

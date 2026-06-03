@@ -14,12 +14,13 @@ export type StagePlotItemType =
   | 'brass'
   | 'custom'
 
+// Legacy single-instrument item (kept for type reference only)
 export interface StagePlotItem {
   id: string
   type: StagePlotItemType
   label: string
-  x: number   // percentage 0–100 (left offset inside stage area)
-  y: number   // percentage 0–100 (top offset inside stage area)
+  x: number
+  y: number
   inputNumber?: number | null
   band_member_id?: number | null
   setup_id?: number | null
@@ -109,12 +110,15 @@ export interface RfWirelessUnit {
 
 // ── Top-level TechRider ───────────────────────────────────────────────────────
 
+import type { GigLineup, StagePlotMemberItem } from './stagePlot'
+
 export interface TechRider {
   id: number
   profile_id: number
   name: string
   is_active: boolean
-  stage_plot_data: StagePlotItem[]
+  gig_lineup: GigLineup
+  stage_plot_data: StagePlotMemberItem[]
   inputs: InputRow[]
   monitors: MonitorMix[]
   backline: BacklineItem[]
@@ -135,7 +139,8 @@ export interface TechRiderSummary {
 export interface TechRiderPayload {
   name?: string
   is_active?: boolean
-  stage_plot_data?: StagePlotItem[]
+  gig_lineup?: GigLineup
+  stage_plot_data?: StagePlotMemberItem[]
   inputs?: InputRow[]
   monitors?: MonitorMix[]
   backline?: BacklineItem[]

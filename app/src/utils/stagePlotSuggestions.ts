@@ -2,8 +2,8 @@
  * stagePlotSuggestions.ts
  *
  * Pure functions that derive tech-rider list data from a stage plot.
- * Each function scans StagePlotItem[] and returns pre-populated rows
- * for the Inputs, Monitors, Backline, and Power sections.
+ * Includes both legacy StagePlotItem[] functions and new member-centric
+ * StagePlotMemberItem[] functions.
  */
 
 import type {
@@ -17,6 +17,7 @@ import type {
   BacklineCategory,
   PowerPosition,
 } from '@/types/techRider'
+import type { StagePlotMemberItem } from '@/types/stagePlot'
 
 function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -208,5 +209,76 @@ export function suggestPowerPositions(items: StagePlotItem[]): PowerPosition[] {
       location: item.label,
       outlets_needed: POWER_OUTLETS[item.type]!,
       notes: '',
+    }))
+}
+
+// ── Member-centric versions (new stage plot format) ───────────────────────────
+
+/**
+ * Build a complete inputs list from StagePlotMemberItem[] by collecting
+ * all inputs from every instrument slot across all placed members.
+ */
+export function suggestInputsFromMembers(items: StagePlotMemberItem[]): InputRow[] {
+  const rows: InputRow[] = []
+  let channel = 1
+  for (const item of items) {
+    for (const inst of item.instruments) {
+      for (const input of inst.inputs) {
+        rows.push({ ...input, id: uid('row'), channel: channel++ })
+      }
+    }
+  }
+  return rows
+}
+
+/**
+ * Build monitor mixes from all monitor slots in the member stage plot.
+ */
+export function suggestMonitorsFromMembers(items: StagePlotMemberItem[]): MonitorMix[] {
+  const mixes: MonitorMix[] = []
+  for (const item of items) {
+    for (const mon of item.monitors) {
+      mixes.push({
+        id:               uid('mon'),
+        band_member_id:   item.band_member_id,
+        custom_name:      mon.label || (item.temp_id ? 'Guest monitor' : ''),
+        type:             mon.type as MonitorType,
+        mix_description:  mon.mix_description,
+        iem_own_pack:     mon.iem_own_pack,
+        transmitter_model:mon.transmitter_model,
+        frequency:        mon.frequency,
+      })
+    }
+  }
+  return mixes
+}
+
+/**
+ * Collect backline requirements from members that have backline.needed = true.
+ */
+export function suggestBacklineFromMembers(items: StagePlotMemberItem[]): BacklineItem[] {
+  return items
+    .filter(i => i.backline?.needed)
+    .map(i => ({
+      id:               uid('bl'),
+      category:         (i.backline.category as BacklineCategory) || 'other',
+      name:             i.instruments[0]?.label || 'Backline',
+      brand_preference: i.backline.brand_preference,
+      specs:            i.backline.specs,
+      notes:            i.backline.notes,
+    }))
+}
+
+/**
+ * Collect power positions from members that need outlets.
+ */
+export function suggestPowerFromMembers(items: StagePlotMemberItem[]): PowerPosition[] {
+  return items
+    .filter(i => (i.power?.outlets_needed ?? 0) > 0)
+    .map(i => ({
+      id:              uid('pwr'),
+      location:        i.instruments[0]?.label || 'Stage position',
+      outlets_needed:  i.power.outlets_needed,
+      notes:           i.power.notes,
     }))
 }

@@ -1,128 +1,123 @@
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
-import { toast } from 'vue-sonner'
-import { useQueryClient } from '@tanstack/vue-query'
-import { useAuth } from '@/composables/useAuth'
-import { createMemberSetup, updateMemberSetup } from '@/api/bandMemberSetups'
-import MemberSetupEditorPane from '@/components/band-member/MemberSetupEditorPane.vue'
-import type { SetupEditorModel } from '@/components/band-member/MemberSetupEditorPane.vue'
-import type { StagePlotItem, StagePlotItemType } from '@/types/techRider'
+import { ref, computed } from 'vue'
 import type { BandMember } from '@/types/bandMember'
-import { DEFAULT_GEAR_TYPE_LABELS } from '@/types/bandMember'
 import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
+import type { StagePlotMemberItem, GigLineup, GigTempMusician } from '@/types/stagePlot'
 import {
-  defaultMonitorPrefs,
-  defaultBacklinePrefs,
-  defaultPowerPrefs,
-} from '@/types/bandMemberSetup'
+  defaultStageMemberItem,
+  isMemberItemComplete,
+  isMemberItemPartial,
+  INSTRUMENT_TYPE_LABELS,
+} from '@/types/stagePlot'
+import type { StagePlotItemType } from '@/types/techRider'
+import StagePlotMemberModal from './StagePlotMemberModal.vue'
 
 interface Props {
-  modelValue: StagePlotItem[]
-  bandMembers?: BandMember[]
-  allSetups?: MemberSetupGroup[]
+  modelValue: StagePlotMemberItem[]
+  lineup: GigLineup
+  bandMembers: BandMember[]
+  allSetups: MemberSetupGroup[]
 }
 const props = withDefaults(defineProps<Props>(), {
   bandMembers: () => [],
-  allSetups: () => [],
+  allSetups:   () => [],
 })
 const emit = defineEmits<{
-  'update:modelValue': [value: StagePlotItem[]]
-  'member-assigned': [payload: { itemId: string; memberId: number | null; setupId: number | null; setup: BandMemberSetup | null }]
+  'update:modelValue': [StagePlotMemberItem[]]
 }>()
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const PALETTE: { type: StagePlotItemType; label: string }[] = [
-  { type: 'drums',          label: 'Drum Kit'       },
-  { type: 'guitar_amp',     label: 'Guitar Amp'     },
-  { type: 'bass_amp',       label: 'Bass Amp'       },
-  { type: 'keyboard',       label: 'Keyboard'       },
-  { type: 'vocalist',       label: 'Vocalist'       },
-  { type: 'acoustic_guitar',label: 'Acoustic Guitar'},
-  { type: 'violin',         label: 'Violin'         },
-  { type: 'brass',          label: 'Brass'          },
-  { type: 'monitor_wedge',  label: 'Monitor Wedge'  },
-  { type: 'di_box',         label: 'DI Box'         },
-  { type: 'rack',           label: 'Rack Unit'      },
-  { type: 'custom',         label: 'Custom'         },
-]
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const ICONS: Record<StagePlotItemType, string> = {
-  drums: `<ellipse cx="22" cy="30" rx="14" ry="8" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="8" y="10" width="10" height="10" rx="5" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="26" y="8" width="10" height="10" rx="5" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="13" y1="20" x2="18" y2="30" stroke="#818cf8" stroke-width="1.2"/>
-    <line x1="31" y1="18" x2="26" y2="28" stroke="#818cf8" stroke-width="1.2"/>`,
-  guitar_amp: `<rect x="6" y="8" width="32" height="28" rx="3" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="22" cy="22" r="9" fill="none" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="22" cy="22" r="4" fill="#4338ca" stroke="#818cf8" stroke-width="1"/>`,
-  bass_amp: `<rect x="5" y="8" width="34" height="30" rx="3" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="22" cy="23" r="10" fill="none" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="8" y="10" width="28" height="5" rx="1" fill="#4338ca"/>`,
-  keyboard: `<rect x="4" y="12" width="36" height="20" rx="3" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="7" y="16" width="4" height="10" rx="1" fill="#e2e8f0"/>
-    <rect x="12" y="16" width="4" height="10" rx="1" fill="#e2e8f0"/>
-    <rect x="17" y="16" width="4" height="10" rx="1" fill="#e2e8f0"/>
-    <rect x="22" y="16" width="4" height="10" rx="1" fill="#e2e8f0"/>
-    <rect x="27" y="16" width="4" height="10" rx="1" fill="#e2e8f0"/>
-    <rect x="9" y="16" width="3" height="6" rx="1" fill="#1e1b4b"/>
-    <rect x="14" y="16" width="3" height="6" rx="1" fill="#1e1b4b"/>
-    <rect x="24" y="16" width="3" height="6" rx="1" fill="#1e1b4b"/>
-    <rect x="29" y="16" width="3" height="6" rx="1" fill="#1e1b4b"/>`,
-  vocalist: `<circle cx="22" cy="14" r="7" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="22" y1="21" x2="22" y2="36" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="14" y1="38" x2="30" y2="38" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="22" y1="30" x2="14" y2="36" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="22" y1="30" x2="30" y2="36" stroke="#818cf8" stroke-width="1.5"/>`,
-  acoustic_guitar: `<ellipse cx="22" cy="28" rx="10" ry="12" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="22" y1="6" x2="22" y2="17" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="18" y="6" width="8" height="5" rx="1" fill="#4338ca" stroke="#818cf8" stroke-width="1"/>
-    <circle cx="22" cy="26" r="3" fill="none" stroke="#818cf8" stroke-width="1.2"/>`,
-  violin: `<ellipse cx="22" cy="26" rx="7" ry="10" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="22" y1="6" x2="22" y2="16" stroke="#818cf8" stroke-width="1.5"/>
-    <line x1="15" y1="26" x2="29" y2="26" stroke="#818cf8" stroke-width="1.2"/>`,
-  brass: `<path d="M10 20 Q10 10 22 10 Q34 10 34 20 L34 30 L28 30 L28 22 Q28 16 22 16 Q16 16 16 22 L16 36 L10 36 Z"
-    fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="10" cy="36" r="4" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>`,
-  monitor_wedge: `<polygon points="4,38 40,38 34,20 10,20" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="22" cy="30" r="5" fill="none" stroke="#818cf8" stroke-width="1.5"/>`,
-  di_box: `<rect x="10" y="12" width="24" height="20" rx="2" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="16" cy="22" r="3" fill="#4338ca"/>
-    <circle cx="28" cy="22" r="3" fill="#4338ca"/>
-    <text x="22" y="10" text-anchor="middle" font-size="7" fill="#818cf8" font-family="sans-serif">DI</text>`,
-  rack: `<rect x="6" y="8" width="32" height="30" rx="2" fill="#334155" stroke="#818cf8" stroke-width="1.5"/>
-    <rect x="8" y="11" width="28" height="4" rx="1" fill="#1e2040"/>
-    <rect x="8" y="17" width="28" height="4" rx="1" fill="#1e2040"/>
-    <rect x="8" y="23" width="28" height="4" rx="1" fill="#1e2040"/>
-    <circle cx="12" cy="13" r="1.5" fill="#818cf8"/>
-    <circle cx="12" cy="19" r="1.5" fill="#818cf8"/>
-    <circle cx="12" cy="25" r="1.5" fill="#818cf8"/>`,
-  custom: `<rect x="8" y="8" width="28" height="28" rx="4" fill="#334155" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="3 2"/>
-    <text x="22" y="26" text-anchor="middle" font-size="14" fill="#818cf8" font-family="sans-serif">?</text>`,
+function memberName(m: BandMember): string {
+  return m.nickname ?? `${m.first_name} ${m.last_name}`
 }
 
-// ── Drag state ────────────────────────────────────────────────────────────────
+function memberInitials(m: BandMember): string {
+  return `${m.first_name[0] ?? ''}${m.last_name[0] ?? ''}`.toUpperCase()
+}
+
+function tempInitials(t: GigTempMusician): string {
+  return (t.name[0] ?? '?').toUpperCase()
+}
+
+// Returns member setups for a given member id
+function setupsFor(memberId: number | null): BandMemberSetup[] {
+  if (!memberId) return []
+  return props.allSetups.find(g => g.member_id === memberId)?.setups ?? []
+}
+
+// Which band members are available (is_available=true or not listed = default available)
+const availableMembers = computed<BandMember[]>(() =>
+  props.bandMembers.filter(m => m.is_current && (() => {
+    const entry = props.lineup.regular_members.find(r => r.band_member_id === m.id)
+    return entry ? entry.is_available : true
+  })()),
+)
+
+const tempMusicians = computed(() => props.lineup.temp_musicians ?? [])
+
+// Number of times a member appears on stage
+function memberPositionCount(memberId: number): number {
+  return props.modelValue.filter(i => i.band_member_id === memberId).length
+}
+
+function tempPositionCount(tempId: string): number {
+  return props.modelValue.filter(i => i.temp_id === tempId).length
+}
+
+// ── Profile completeness check ────────────────────────────────────────────────
+
+interface ProfileCheck { ok: boolean; warnings: string[] }
+
+function checkProfile(memberId: number): ProfileCheck {
+  const setups = setupsFor(memberId)
+  if (!setups.length) return { ok: false, warnings: ['No technical setup configured for this member'] }
+  const hasInputs  = setups.some(s => s.inputs?.length > 0)
+  const hasMonitor = setups.some(s => s.monitor?.type)
+  const warnings: string[] = []
+  if (!hasInputs)  warnings.push('No input channels configured in any setup')
+  if (!hasMonitor) warnings.push('No monitor preferences configured')
+  return { ok: warnings.length === 0, warnings }
+}
+
+// Warning dialog state
+const warnPending = ref<{ memberId: number | null; tempId?: string; x: number; y: number; warnings: string[] } | null>(null)
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+
 const stageRef           = ref<HTMLElement | null>(null)
-const draggingType       = ref<StagePlotItemType | null>(null)
-const draggingExistingId = ref<string | null>(null)
+const draggingMemberId   = ref<number | null>(null)   // dragging from panel
+const draggingTempId     = ref<string | null>(null)   // dragging temp from panel
+const draggingExistingId = ref<string | null>(null)   // dragging placed item
 const dragOffsetX        = ref(0)
 const dragOffsetY        = ref(0)
 
-function onPaletteDragStart(e: DragEvent, type: StagePlotItemType) {
-  draggingType.value = type
+function onPanelMemberDragStart(e: DragEvent, memberId: number) {
+  const check = checkProfile(memberId)
+  draggingMemberId.value   = memberId
+  draggingTempId.value     = null
   draggingExistingId.value = null
-  e.dataTransfer?.setData('text/plain', type)
+  e.dataTransfer?.setData('text/plain', `member:${memberId}`)
 }
 
-function onItemDragStart(e: DragEvent, item: StagePlotItem) {
+function onPanelTempDragStart(e: DragEvent, tempId: string) {
+  draggingTempId.value     = tempId
+  draggingMemberId.value   = null
+  draggingExistingId.value = null
+  e.dataTransfer?.setData('text/plain', `temp:${tempId}`)
+}
+
+function onItemDragStart(e: DragEvent, item: StagePlotMemberItem) {
   draggingExistingId.value = item.id
-  draggingType.value = null
-  const el = (e.target as HTMLElement).closest('.stage-item') as HTMLElement
+  draggingMemberId.value   = null
+  draggingTempId.value     = null
+  const el = (e.target as HTMLElement).closest('.stage-member-card') as HTMLElement | null
   if (el && stageRef.value) {
-    const itemRect = el.getBoundingClientRect()
-    dragOffsetX.value = e.clientX - itemRect.left - itemRect.width / 2
-    dragOffsetY.value = e.clientY - itemRect.top  - itemRect.height / 2
+    const rect = el.getBoundingClientRect()
+    dragOffsetX.value = e.clientX - rect.left - rect.width / 2
+    dragOffsetY.value = e.clientY - rect.top - rect.height / 2
   }
-  e.dataTransfer?.setData('text/plain', item.id)
+  e.dataTransfer?.setData('text/plain', `item:${item.id}`)
 }
 
 function onStageDragOver(e: DragEvent) {
@@ -130,916 +125,391 @@ function onStageDragOver(e: DragEvent) {
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
 }
 
+function dropCoords(e: DragEvent): { x: number; y: number } {
+  const stage = stageRef.value!
+  const rect  = stage.getBoundingClientRect()
+  const x = Math.min(Math.max(((e.clientX - rect.left - dragOffsetX.value) / rect.width)  * 100, 5), 93)
+  const y = Math.min(Math.max(((e.clientY - rect.top  - dragOffsetY.value) / rect.height) * 100, 5), 88)
+  return { x, y }
+}
+
 function onStageDrop(e: DragEvent) {
   e.preventDefault()
-  const stage = stageRef.value
-  if (!stage) return
-
-  const rect = stage.getBoundingClientRect()
-  const x = Math.min(Math.max(((e.clientX - rect.left - dragOffsetX.value) / rect.width)  * 100, 2), 94)
-  const y = Math.min(Math.max(((e.clientY - rect.top  - dragOffsetY.value) / rect.height) * 100, 2), 90)
+  if (!stageRef.value) return
+  const { x, y } = dropCoords(e)
 
   if (draggingExistingId.value) {
-    emit('update:modelValue', props.modelValue.map(item =>
-      item.id === draggingExistingId.value ? { ...item, x, y } : item
+    // Reposition existing item
+    emit('update:modelValue', props.modelValue.map(i =>
+      i.id === draggingExistingId.value ? { ...i, x, y } : i,
     ))
-  } else if (draggingType.value) {
-    const label = PALETTE.find(p => p.type === draggingType.value)?.label ?? 'Item'
-    const newItem: StagePlotItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      type: draggingType.value,
-      label,
-      x,
-      y,
-      inputNumber: null,
-      band_member_id: null,
-      setup_id: null,
+  } else if (draggingMemberId.value !== null) {
+    const memberId = draggingMemberId.value
+    const check    = checkProfile(memberId)
+    if (!check.ok) {
+      warnPending.value = { memberId, x, y, warnings: check.warnings }
+    } else {
+      placeOnStage(memberId, null, x, y)
     }
-    // Add to plot immediately, then prompt for member assignment
-    emit('update:modelValue', [...props.modelValue, newItem])
-    openAssign(newItem)
+  } else if (draggingTempId.value) {
+    placeOnStage(null, draggingTempId.value, x, y)
   }
 
-  draggingType.value = null
+  draggingMemberId.value   = null
+  draggingTempId.value     = null
   draggingExistingId.value = null
   dragOffsetX.value = 0
   dragOffsetY.value = 0
 }
 
-// ── Member assignment modal ───────────────────────────────────────────────────
-const assignItem       = ref<StagePlotItem | null>(null)
-const assignMemberId   = ref<number | null>(null)
-const assignSetupId    = ref<number | null>(null)
-
-function openAssign(item: StagePlotItem) {
-  assignItem.value     = item
-  assignMemberId.value = item.band_member_id ?? null
-  assignSetupId.value  = item.setup_id ?? null
-  setupEditMode.value  = 'none'
+function placeOnStage(memberId: number | null, tempId: string | undefined, x: number, y: number) {
+  const item = defaultStageMemberItem(memberId, tempId, x, y)
+  emit('update:modelValue', [...props.modelValue, item])
+  openModal(item.id)
 }
 
-const memberSetups = computed<BandMemberSetup[]>(() => {
-  if (!assignMemberId.value) return []
-  return props.allSetups.find(g => g.member_id === assignMemberId.value)?.setups ?? []
-})
-
-function selectMember(memberId: number) {
-  assignMemberId.value = memberId
-  assignSetupId.value  = null
-  setupEditMode.value  = 'none'
+function confirmPlaceAnyway() {
+  if (!warnPending.value) return
+  const { memberId, tempId, x, y } = warnPending.value
+  placeOnStage(memberId ?? null, tempId, x, y)
+  warnPending.value = null
 }
 
-// ── Inline setup editor ───────────────────────────────────────────────────────
-const { token }  = useAuth()
-const queryClient = useQueryClient()
+// ── Modal ─────────────────────────────────────────────────────────────────────
 
-type SetupEditMode = 'none' | 'edit-existing' | 'new' | 'rider-only'
-const setupEditMode  = ref<SetupEditMode>('none')
-const setupSaving    = ref(false)
-const setupSaved     = ref(false)
+const modalItemId = ref<string | null>(null)
+const modalItem   = computed(() => props.modelValue.find(i => i.id === modalItemId.value) ?? null)
 
-const editForm = reactive<SetupEditorModel>({
-  name:              '',
-  instrument_id:     null,
-  signal_chain_type: 'other',
-  inputs:            [],
-  monitor:           defaultMonitorPrefs(),
-  backline:          defaultBacklinePrefs(),
-  power:             defaultPowerPrefs(),
-  wireless:          [],
-  foh_notes:         '',
+const modalMember = computed<BandMember | null>(() => {
+  if (!modalItem.value?.band_member_id) return null
+  return props.bandMembers.find(m => m.id === modalItem.value!.band_member_id) ?? null
 })
 
-const selectedAssignMember = computed<BandMember | null>(() =>
-  props.bandMembers.find(m => m.id === assignMemberId.value) ?? null,
+const modalTemp = computed<GigTempMusician | null>(() => {
+  if (!modalItem.value?.temp_id) return null
+  return tempMusicians.value.find(t => t.id === modalItem.value!.temp_id) ?? null
+})
+
+const modalSetups = computed<BandMemberSetup[]>(() =>
+  setupsFor(modalItem.value?.band_member_id ?? null),
 )
 
-function startEditSetup(setup: BandMemberSetup) {
-  assignSetupId.value = setup.id
-  setupEditMode.value = 'edit-existing'
-  Object.assign(editForm, {
-    name:              setup.name,
-    instrument_id:     setup.instrument_id,
-    signal_chain_type: setup.signal_chain_type,
-    inputs:            setup.inputs ?? [],
-    monitor:           { ...defaultMonitorPrefs(), ...setup.monitor },
-    backline:          { ...defaultBacklinePrefs(), ...setup.backline },
-    power:             { ...defaultPowerPrefs(), ...setup.power },
-    wireless:          setup.wireless ?? [],
-    foh_notes:         setup.foh_notes ?? '',
-  })
+function openModal(itemId: string) {
+  modalItemId.value = itemId
 }
 
-function startNewSetup() {
-  assignSetupId.value = null
-  setupEditMode.value = 'new'
-  Object.assign(editForm, {
-    name:              '',
-    instrument_id:     null,
-    signal_chain_type: 'other',
-    inputs:            [],
-    monitor:           defaultMonitorPrefs(),
-    backline:          defaultBacklinePrefs(),
-    power:             defaultPowerPrefs(),
-    wireless:          [],
-    foh_notes:         '',
-  })
+function onModalUpdate(updated: StagePlotMemberItem) {
+  emit('update:modelValue', props.modelValue.map(i => i.id === updated.id ? updated : i))
 }
 
-function cancelEdit() {
-  setupEditMode.value = 'none'
+function removeItem(itemId: string) {
+  emit('update:modelValue', props.modelValue.filter(i => i.id !== itemId))
+  if (modalItemId.value === itemId) modalItemId.value = null
 }
 
-function applyToRiderOnly() {
-  setupEditMode.value = 'rider-only'
+// ── Display helpers ───────────────────────────────────────────────────────────
+
+const INSTRUMENT_ICONS: Record<StagePlotItemType, string> = {
+  drums:          '🥁',
+  guitar_amp:     '🎸',
+  bass_amp:       '🎸',
+  keyboard:       '🎹',
+  vocalist:       '🎤',
+  acoustic_guitar:'🎸',
+  violin:         '🎻',
+  brass:          '🎺',
+  monitor_wedge:  '🔊',
+  di_box:         '🔌',
+  rack:           '📦',
+  custom:         '⚙️',
 }
 
-async function saveSetupToProfile() {
-  if (!assignMemberId.value) return
-  setupSaving.value = true
-  try {
-    if (setupEditMode.value === 'edit-existing' && assignSetupId.value) {
-      await updateMemberSetup(token.value!, assignMemberId.value, assignSetupId.value, { ...editForm })
-    } else {
-      const created       = await createMemberSetup(token.value!, assignMemberId.value, { ...editForm })
-      assignSetupId.value = created.id
-    }
-    await queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
-    setupEditMode.value = 'none'
-    setupSaved.value = true
-    setTimeout(() => { setupSaved.value = false }, 2000)
-    toast.success('Setup saved to profile')
-  } catch {
-    toast.error('Failed to save setup')
-  } finally {
-    setupSaving.value = false
+function itemDisplayName(item: StagePlotMemberItem): string {
+  if (item.temp_id) {
+    return tempMusicians.value.find(t => t.id === item.temp_id)?.name ?? 'Guest'
   }
+  const m = props.bandMembers.find(b => b.id === item.band_member_id)
+  if (!m) return 'Unknown'
+  return m.nickname ?? `${m.first_name} ${m.last_name}`
 }
 
-function confirmAssign() {
-  if (!assignItem.value) return
-
-  let setup: BandMemberSetup | null
-
-  if (setupEditMode.value !== 'none') {
-    setup = {
-      id:                assignSetupId.value ?? 0,
-      band_member_id:    assignMemberId.value!,
-      instrument_id:     editForm.instrument_id,
-      name:              editForm.name || 'Custom',
-      signal_chain_type: editForm.signal_chain_type,
-      inputs:            editForm.inputs,
-      monitor:           { ...editForm.monitor },
-      backline:          { ...editForm.backline },
-      power:             { ...editForm.power },
-      wireless:          editForm.wireless,
-      foh_notes:         editForm.foh_notes,
-      created_at:        '',
-      updated_at:        '',
-    }
-  } else {
-    setup = memberSetups.value.find(s => s.id === assignSetupId.value) ?? null
+function itemAvatar(item: StagePlotMemberItem): string {
+  if (item.temp_id) {
+    const t = tempMusicians.value.find(t => t.id === item.temp_id)
+    return (t?.name[0] ?? '?').toUpperCase()
   }
-
-  const updated: StagePlotItem = {
-    ...assignItem.value,
-    band_member_id: assignMemberId.value,
-    setup_id:       assignSetupId.value,
-  }
-
-  emit('update:modelValue', props.modelValue.map(i =>
-    i.id === updated.id ? updated : i
-  ))
-
-  if (assignMemberId.value !== null) {
-    emit('member-assigned', {
-      itemId:   updated.id,
-      memberId: assignMemberId.value,
-      setupId:  assignSetupId.value,
-      setup,
-    })
-  }
-
-  assignItem.value    = null
-  setupEditMode.value = 'none'
+  const m = props.bandMembers.find(b => b.id === item.band_member_id)
+  if (!m) return '?'
+  return `${m.first_name[0] ?? ''}${m.last_name[0] ?? ''}`.toUpperCase()
 }
 
-function skipAssign() {
-  assignItem.value    = null
-  setupEditMode.value = 'none'
-}
-
-// ── Helper: member name for a placed item ─────────────────────────────────────
-function memberName(item: StagePlotItem): string | null {
+function itemPhoto(item: StagePlotMemberItem): string | null {
   if (!item.band_member_id) return null
-  const m = props.bandMembers.find(b => b.id === item.band_member_id)
-  return m ? `${m.first_name} ${m.last_name}` : null
+  return props.bandMembers.find(b => b.id === item.band_member_id)?.photo ?? null
 }
 
-function memberInitials(item: StagePlotItem): string {
-  if (!item.band_member_id) return ''
-  const m = props.bandMembers.find(b => b.id === item.band_member_id)
-  return m ? `${m.first_name[0] ?? ''}${m.last_name[0] ?? ''}` : ''
-}
-
-// ── Detail popup ──────────────────────────────────────────────────────────────
-const detailItem   = ref<StagePlotItem | null>(null)
-const detailMember = computed<BandMember | null>(() => {
-  if (!detailItem.value?.band_member_id) return null
-  return props.bandMembers.find(b => b.id === detailItem.value!.band_member_id) ?? null
-})
-const detailSetup = computed<BandMemberSetup | null>(() => {
-  if (!detailItem.value?.band_member_id || !detailItem.value?.setup_id) return null
-  return (
-    props.allSetups
-      .find(g => g.member_id === detailItem.value!.band_member_id)
-      ?.setups.find(s => s.id === detailItem.value!.setup_id) ?? null
-  )
-})
-
-function showDetail(item: StagePlotItem) {
-  detailItem.value = item
-}
-
-const SIGNAL_CHAIN_LABELS: Record<string, string> = {
-  modeler_mono:    'Modeler — Mono DI',
-  modeler_stereo:  'Modeler — Stereo DI',
-  amp_mic:         'Amp — Mic only',
-  amp_mic_di:      'Amp — Mic + DI',
-  amp_di:          'Amp — DI only',
-  direct_mono:     'Direct — Mono DI',
-  direct_stereo:   'Direct — Stereo DI',
-  drum_acoustic:   'Drums — Acoustic kit',
-  drum_electronic: 'Drums — Electronic',
-  drum_hybrid:     'Drums — Hybrid',
-  vocal_mic:       'Vocal — Wired mic',
-  vocal_wireless:  'Vocal — Wireless',
-  acoustic_di:     'Acoustic — DI only',
-  acoustic_mic:    'Acoustic — Mic only',
-  acoustic_mic_di: 'Acoustic — Mic + DI',
-  other:           'Custom / other',
-}
-
-// ── Hover state (JS-tracked so actions remain reachable) ─────────────────────
-const hoveredId  = ref<string | null>(null)
-let hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null
-
-function onItemEnter(id: string) {
-  if (hoverLeaveTimer) { clearTimeout(hoverLeaveTimer); hoverLeaveTimer = null }
-  hoveredId.value = id
-}
-
-function onItemLeave() {
-  hoverLeaveTimer = setTimeout(() => { hoveredId.value = null }, 180)
-}
-
-function onActionsEnter() {
-  if (hoverLeaveTimer) { clearTimeout(hoverLeaveTimer); hoverLeaveTimer = null }
-}
-
-// ── Edit item label / channel ─────────────────────────────────────────────────
-const editingId   = ref<string | null>(null)
-const editLabel   = ref('')
-const editChannel = ref<number | null>(null)
-
-function startEdit(item: StagePlotItem) {
-  editingId.value  = item.id
-  editLabel.value  = item.label
-  editChannel.value = item.inputNumber ?? null
-}
-
-function commitEdit() {
-  if (!editingId.value) return
-  emit('update:modelValue', props.modelValue.map(item =>
-    item.id === editingId.value
-      ? { ...item, label: editLabel.value, inputNumber: editChannel.value }
-      : item
-  ))
-  editingId.value = null
-}
-
-function removeItem(id: string) {
-  emit('update:modelValue', props.modelValue.filter(i => i.id !== id))
+function statusClass(item: StagePlotMemberItem): string {
+  if (isMemberItemComplete(item)) return 'bg-emerald-500'
+  if (isMemberItemPartial(item))  return 'bg-amber-500'
+  return 'bg-red-500'
 }
 </script>
 
 <template>
-  <div class="stage-editor">
-    <!-- Palette -->
-    <div class="palette">
-      <div class="palette-title">Drag to stage →</div>
-      <div
-        v-for="p in PALETTE"
-        :key="p.type"
-        class="palette-item"
-        draggable="true"
-        @dragstart="onPaletteDragStart($event, p.type)"
-      >
-        <svg viewBox="0 0 44 44" class="palette-icon" v-html="ICONS[p.type]" />
-        <span class="palette-label">{{ p.label }}</span>
+  <div class="flex h-full min-h-0">
+
+    <!-- ── Member panel (left) ─────────────────────────────────────────── -->
+    <div class="w-52 flex-shrink-0 border-r border-slate-700/60 bg-slate-900/40 flex flex-col">
+      <p class="px-3 pt-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+        Drag to place
+      </p>
+
+      <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-1.5">
+
+        <!-- Regular members -->
+        <div
+          v-for="member in availableMembers"
+          :key="member.id"
+          draggable="true"
+          class="flex items-center gap-2 p-2 rounded-lg border border-slate-700/60 bg-slate-800/40 cursor-grab active:cursor-grabbing hover:border-indigo-600/50 hover:bg-indigo-950/30 transition-all select-none"
+          :class="{ 'opacity-50': memberPositionCount(member.id) > 0 }"
+          @dragstart="onPanelMemberDragStart($event, member.id)"
+        >
+          <!-- Avatar -->
+          <div
+            class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold overflow-hidden"
+            :class="checkProfile(member.id).ok ? 'bg-indigo-700 text-white' : 'bg-slate-700 text-slate-400'"
+          >
+            <img v-if="member.photo" :src="member.photo" :alt="memberName(member)" class="w-full h-full object-cover" />
+            <span v-else>{{ memberInitials(member) }}</span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-medium text-white truncate">{{ memberName(member) }}</div>
+            <div class="text-[10px] text-slate-400 truncate">{{ member.role ?? 'Musician' }}</div>
+          </div>
+
+          <!-- Status indicators -->
+          <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
+            <!-- Profile check -->
+            <div
+              class="w-1.5 h-1.5 rounded-full"
+              :class="checkProfile(member.id).ok ? 'bg-emerald-500' : 'bg-amber-400'"
+              :title="checkProfile(member.id).ok ? 'Profile complete' : checkProfile(member.id).warnings.join(', ')"
+            />
+            <!-- On stage count -->
+            <span v-if="memberPositionCount(member.id) > 0" class="text-[10px] text-indigo-400">
+              ×{{ memberPositionCount(member.id) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Temp musicians -->
+        <div
+          v-for="temp in tempMusicians"
+          :key="temp.id"
+          draggable="true"
+          class="flex items-center gap-2 p-2 rounded-lg border border-amber-700/40 bg-amber-950/20 cursor-grab active:cursor-grabbing hover:border-amber-600/60 transition-all select-none"
+          :class="{ 'opacity-50': tempPositionCount(temp.id) > 0 }"
+          @dragstart="onPanelTempDragStart($event, temp.id)"
+        >
+          <div class="w-8 h-8 rounded-full bg-amber-800/60 text-amber-300 flex-shrink-0 flex items-center justify-center text-[11px] font-bold">
+            {{ tempInitials(temp) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-medium text-amber-200 truncate">{{ temp.name }}</div>
+            <div class="text-[10px] text-amber-400/70">Guest</div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <p v-if="availableMembers.length === 0 && tempMusicians.length === 0" class="text-xs text-slate-500 text-center py-4 px-2">
+          Set up the lineup first — click "Edit lineup" above.
+        </p>
+      </div>
+
+      <!-- Legend -->
+      <div class="px-3 py-2 border-t border-slate-700/50 space-y-1">
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-500">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>Profile complete
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-500">
+          <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>Profile incomplete
+        </div>
       </div>
     </div>
 
-    <!-- Stage floor plan -->
-    <div class="stage-wrapper">
-      <div class="audience-label">← AUDIENCE →</div>
+    <!-- ── Stage canvas ────────────────────────────────────────────────── -->
+    <div class="flex-1 flex flex-col min-w-0 p-3">
+      <!-- Stage area -->
       <div
         ref="stageRef"
-        class="stage-floor"
+        class="relative flex-1 rounded-lg overflow-hidden select-none"
+        style="background: linear-gradient(180deg, #1a1f3a 0%, #0f1629 100%); border: 1px solid #2d3461; aspect-ratio: 16/9; min-height: 340px; max-height: 100%;"
         @dragover="onStageDragOver"
         @drop="onStageDrop"
       >
-        <div class="stage-back-wall">BACK OF STAGE</div>
+        <!-- Stage backdrop label -->
+        <div class="absolute inset-x-0 bottom-0 flex items-center justify-center pb-3 pointer-events-none">
+          <span class="text-slate-600 text-xs font-medium tracking-[0.3em] uppercase">Audience</span>
+        </div>
+        <div class="absolute inset-x-0 top-0 flex items-center justify-center pt-2 pointer-events-none">
+          <span class="text-slate-700 text-[10px] uppercase tracking-widest">Stage back</span>
+        </div>
 
+        <!-- Drop hint when empty -->
+        <div
+          v-if="modelValue.length === 0"
+          class="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
+          <div class="text-center">
+            <p class="text-slate-600 text-sm">Drag musicians from the panel to place them on stage</p>
+          </div>
+        </div>
+
+        <!-- Placed member cards -->
         <div
           v-for="item in modelValue"
           :key="item.id"
-          class="stage-item"
-          :class="{ 'stage-item--assigned': !!item.band_member_id }"
-          :style="{ left: item.x + '%', top: item.y + '%' }"
+          class="stage-member-card absolute"
           draggable="true"
+          style="transform: translate(-50%, -50%); cursor: grab; z-index: 10;"
+          :style="{ left: `${item.x}%`, top: `${item.y}%` }"
           @dragstart="onItemDragStart($event, item)"
-          @mouseenter="onItemEnter(item.id)"
-          @mouseleave="onItemLeave"
         >
-          <svg viewBox="0 0 44 44" class="stage-item-icon" v-html="ICONS[item.type]" />
-
-          <!-- Member avatar dot -->
-          <div v-if="item.band_member_id" class="member-dot" :title="memberName(item) ?? ''">
-            {{ memberInitials(item) }}
-          </div>
-
-          <div v-if="item.inputNumber" class="channel-badge">{{ item.inputNumber }}</div>
-
-          <div class="stage-item-label">{{ item.label }}</div>
-          <div v-if="item.band_member_id" class="stage-item-member">{{ memberName(item) }}</div>
-
-          <!-- Actions (shown on hover) -->
-          <div class="item-actions" :class="{ 'item-actions--visible': hoveredId === item.id }"
-            @mouseenter="onActionsEnter" @mouseleave="onItemLeave">
-            <button type="button" class="item-btn item-btn--info" title="View rig details"
-              @click.stop="showDetail(item)">👁</button>
-            <button type="button" class="item-btn item-btn--assign" title="Assign band member"
-              @click.stop="openAssign(item)">👤</button>
-            <button type="button" class="item-btn" title="Edit label / channel"
-              @click.stop="startEdit(item)">✎</button>
-            <button type="button" class="item-btn item-btn--del" title="Remove"
-              @click.stop="removeItem(item.id)">✕</button>
-          </div>
-        </div>
-      </div>
-      <div class="stage-hint">Drag items from the palette. Drop a new item to assign a band member and load their rig templates.</div>
-    </div>
-  </div>
-
-  <!-- ── Member assignment modal ─────────────────────────────────────────── -->
-  <div v-if="assignItem" class="overlay" @click.self="skipAssign">
-    <div class="assign-dialog">
-
-      <!-- Header bar -->
-      <div class="assign-header">
-        <div>
-          <div class="assign-title">Assign band member</div>
-          <div class="assign-sub">{{ assignItem.label }} — select who plays this position</div>
-        </div>
-        <div class="assign-header-actions">
-          <button type="button" class="btn-ghost" @click="skipAssign">Skip</button>
-          <button type="button" class="btn-primary" @click="confirmAssign">
-            {{ assignMemberId ? (assignSetupId !== null || setupEditMode === 'new' || setupEditMode === 'rider-only' ? 'Assign + Import' : 'Assign') : 'Confirm' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Two-column body -->
-      <div class="assign-body">
-
-        <!-- Left (20%): member list -->
-        <div class="assign-left">
-          <div class="assign-section-label">Band member</div>
-          <button
-            type="button"
-            class="member-row"
-            :class="{ 'member-row--active': assignMemberId === null }"
-            @click="assignMemberId = null; assignSetupId = null"
+          <div
+            class="relative w-20 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
+            :class="
+              isMemberItemComplete(item) ? 'border-emerald-600/60 bg-slate-900/95' :
+              isMemberItemPartial(item)  ? 'border-amber-600/50 bg-slate-900/95' :
+              'border-red-700/50 bg-slate-900/95'
+            "
           >
-            <div class="member-avatar" style="color:#475569;background:#0f0f28;">—</div>
-            <span class="member-row-name">No assignment</span>
-          </button>
-          <button
-            v-for="m in bandMembers"
-            :key="m.id"
-            type="button"
-            class="member-row"
-            :class="{ 'member-row--active': assignMemberId === m.id }"
-            @click="selectMember(m.id)"
-          >
-            <div class="member-avatar">{{ (m.first_name[0] ?? '') }}{{ (m.last_name[0] ?? '') }}</div>
-            <div class="member-row-info">
-              <span class="member-row-name">{{ m.first_name }} {{ m.last_name }}</span>
-              <span class="member-row-role">{{ m.role || '—' }}</span>
-            </div>
-          </button>
-        </div>
+            <!-- Status dot -->
+            <div class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-slate-900" :class="statusClass(item)" />
 
-        <!-- Right (80%): rig template + editor -->
-        <div class="assign-right">
-          <template v-if="assignMemberId !== null">
-            <div class="assign-section-label">Rig template</div>
-
-            <div class="setup-grid">
-              <button
-                type="button"
-                class="setup-card"
-                :class="{ 'setup-card--active': assignSetupId === null && setupEditMode === 'none' }"
-                @click="assignSetupId = null; setupEditMode = 'none'"
-              >
-                <div class="setup-card-name">No template</div>
-                <div class="setup-card-desc">Just assign the member, skip import</div>
-              </button>
-
-              <button
-                v-for="s in memberSetups"
-                :key="s.id"
-                type="button"
-                class="setup-card"
-                :class="{ 'setup-card--active': assignSetupId === s.id && setupEditMode !== 'new' }"
-                @click="startEditSetup(s)"
-              >
-                <div class="setup-card-name">{{ s.name }}</div>
-                <div class="setup-card-desc">
-                  {{ SIGNAL_CHAIN_LABELS[s.signal_chain_type] ?? s.signal_chain_type }}
-                  · {{ s.inputs?.length ?? 0 }} ch
-                </div>
-              </button>
-
-              <button
-                type="button"
-                class="setup-card setup-card--new"
-                :class="{ 'setup-card--active': setupEditMode === 'new' }"
-                @click="startNewSetup"
-              >
-                <div class="setup-card-name">+ New setup</div>
-                <div class="setup-card-desc">Define a new rig template for this member</div>
-              </button>
+            <!-- Avatar -->
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0"
+              :class="item.temp_id ? 'bg-amber-800 text-amber-200' : 'bg-indigo-700 text-white'"
+            >
+              <img v-if="itemPhoto(item)" :src="itemPhoto(item)!" :alt="itemDisplayName(item)" class="w-full h-full object-cover" />
+              <span v-else>{{ itemAvatar(item) }}</span>
             </div>
 
-            <!-- Inline setup editor (edit-existing or new) -->
-            <div v-if="setupEditMode === 'edit-existing' || setupEditMode === 'new'" class="setup-editor">
-              <div class="setup-editor-title">
-                {{ setupEditMode === 'new' ? 'New setup' : 'Edit: ' + (memberSetups.find(s => s.id === assignSetupId)?.name ?? 'Setup') }}
-                <button type="button" class="setup-editor-close" @click="cancelEdit">✕</button>
-              </div>
-              <MemberSetupEditorPane
-                :model-value="{ ...editForm }"
-                :member="selectedAssignMember"
-                :saving="setupSaving"
-                :saved="setupSaved"
-                :show-apply-rider-only="true"
-                @update:model-value="Object.assign(editForm, $event)"
-                @save="saveSetupToProfile"
-                @apply-rider-only="applyToRiderOnly"
-              />
+            <!-- Name -->
+            <div class="text-[10px] font-medium text-white text-center leading-tight max-w-full truncate w-full text-center">
+              {{ itemDisplayName(item) }}
             </div>
 
-            <p v-if="setupEditMode === 'none' && assignSetupId !== null" class="assign-import-hint assign-import-hint--green">
-              ✓ Template saved to profile — will be imported on confirm.
-            </p>
-            <p v-if="setupEditMode === 'rider-only'" class="assign-import-hint assign-import-hint--amber">
-              ✓ Custom modifications will be imported for this rider only (not saved to profile).
-            </p>
-          </template>
+            <!-- Instrument icons -->
+            <div v-if="item.instruments.length" class="flex gap-0.5 flex-wrap justify-center">
+              <span
+                v-for="inst in item.instruments.slice(0, 3)"
+                :key="inst.id"
+                class="text-[11px]"
+                :title="INSTRUMENT_TYPE_LABELS[inst.type]"
+              >{{ INSTRUMENT_ICONS[inst.type] }}</span>
+              <span v-if="item.instruments.length > 3" class="text-[10px] text-slate-500">+{{ item.instruments.length - 3 }}</span>
+            </div>
 
-          <div v-else class="assign-right-empty">
-            Select a band member on the left to load their rig templates.
-          </div>
-        </div>
+            <!-- Monitor icons -->
+            <div v-if="item.monitors.length" class="flex gap-0.5 justify-center">
+              <span
+                v-for="mon in item.monitors.slice(0, 2)"
+                :key="mon.id"
+                class="text-[10px]"
+                :title="mon.label || (mon.type === 'wedge' ? 'Monitor wedge' : 'IEM')"
+              >{{ mon.type === 'wedge' ? '🔊' : '📡' }}</span>
+              <span v-if="item.monitors.length > 2" class="text-[10px] text-slate-500">+{{ item.monitors.length - 2 }}</span>
+            </div>
 
-      </div><!-- /assign-body -->
-    </div><!-- /assign-dialog -->
-  </div>
-
-  <!-- ── Detail popup ────────────────────────────────────────────────────── -->
-  <div v-if="detailItem" class="overlay" @click.self="detailItem = null">
-    <div class="detail-card">
-      <div class="detail-header">
-        <div>
-          <div class="detail-title">{{ detailItem.label }}</div>
-          <div class="detail-member">
-            <span v-if="memberName(detailItem)" class="detail-member-name">{{ memberName(detailItem) }}</span>
-            <span v-else style="color:#334155;">No member assigned</span>
-          </div>
-        </div>
-        <button type="button" class="detail-close" @click="detailItem = null">✕</button>
-      </div>
-
-      <!-- No setup -->
-      <div v-if="!detailSetup && detailItem.band_member_id" class="detail-empty">
-        No rig template linked. Use the 👤 button to assign a setup.
-      </div>
-      <div v-else-if="!detailItem.band_member_id" class="detail-empty">
-        No band member assigned to this position.
-      </div>
-
-      <!-- Setup detail sections -->
-      <template v-if="detailSetup">
-        <div class="detail-setup-name">{{ detailSetup.name }}</div>
-        <div class="detail-chain">{{ SIGNAL_CHAIN_LABELS[detailSetup.signal_chain_type] ?? detailSetup.signal_chain_type }}</div>
-
-        <!-- Inputs -->
-        <div v-if="detailSetup.inputs?.length" class="detail-section">
-          <div class="detail-section-label">Inputs ({{ detailSetup.inputs.length }} ch)</div>
-          <table class="detail-table">
-            <thead><tr>
-              <th>Ch</th><th>Instrument</th><th>Mic/DI</th><th>Model</th>
-            </tr></thead>
-            <tbody>
-              <tr v-for="row in detailSetup.inputs" :key="row.id">
-                <td>{{ row.channel }}</td>
-                <td>{{ row.instrument }}</td>
-                <td>{{ row.mic_di }}</td>
-                <td style="color:#64748b;">{{ row.mic_model || '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Monitor -->
-        <div class="detail-section">
-          <div class="detail-section-label">Monitor</div>
-          <div class="detail-kv-grid">
-            <span class="detail-k">Type</span>
-            <span class="detail-v">{{ detailSetup.monitor.type === 'iem' ? 'IEM' : 'Wedge' }} · {{ detailSetup.monitor.config }}</span>
-            <span class="detail-k">Mix</span>
-            <span class="detail-v">{{ detailSetup.monitor.mix_description || '—' }}</span>
-            <template v-if="detailSetup.monitor.type === 'iem'">
-              <span class="detail-k">Own pack</span>
-              <span class="detail-v">{{ detailSetup.monitor.iem_own_pack ? 'Yes' : 'No' }}</span>
-              <span v-if="detailSetup.monitor.iem_transmitter_model" class="detail-k">Transmitter</span>
-              <span v-if="detailSetup.monitor.iem_transmitter_model" class="detail-v">{{ detailSetup.monitor.iem_transmitter_model }}</span>
-              <span v-if="detailSetup.monitor.iem_frequency" class="detail-k">Frequency</span>
-              <span v-if="detailSetup.monitor.iem_frequency" class="detail-v">{{ detailSetup.monitor.iem_frequency }}</span>
-            </template>
-          </div>
-        </div>
-
-        <!-- Backline -->
-        <div v-if="detailSetup.backline?.needed" class="detail-section">
-          <div class="detail-section-label">Backline needed</div>
-          <div class="detail-kv-grid">
-            <span class="detail-k">Category</span><span class="detail-v">{{ detailSetup.backline.category }}</span>
-            <span v-if="detailSetup.backline.brand_preference" class="detail-k">Brand</span>
-            <span v-if="detailSetup.backline.brand_preference" class="detail-v">{{ detailSetup.backline.brand_preference }}</span>
-            <span v-if="detailSetup.backline.specs" class="detail-k">Specs</span>
-            <span v-if="detailSetup.backline.specs" class="detail-v">{{ detailSetup.backline.specs }}</span>
-            <span v-if="detailSetup.backline.notes" class="detail-k">Notes</span>
-            <span v-if="detailSetup.backline.notes" class="detail-v">{{ detailSetup.backline.notes }}</span>
-          </div>
-        </div>
-
-        <!-- Power -->
-        <div class="detail-section">
-          <div class="detail-section-label">Power</div>
-          <div class="detail-kv-grid">
-            <span class="detail-k">Outlets</span>
-            <span class="detail-v">{{ detailSetup.power.outlets_needed }}</span>
-            <span v-if="detailSetup.power.notes" class="detail-k">Notes</span>
-            <span v-if="detailSetup.power.notes" class="detail-v">{{ detailSetup.power.notes }}</span>
-          </div>
-        </div>
-
-        <!-- FOH notes -->
-        <div v-if="detailSetup.foh_notes" class="detail-section">
-          <div class="detail-section-label">FOH notes</div>
-          <div class="detail-foh-notes">{{ detailSetup.foh_notes }}</div>
-        </div>
-      </template>
-
-      <!-- Default gear (from member profile, shown whenever a member is assigned) -->
-      <div v-if="detailMember?.default_gear?.length" class="detail-section">
-        <div class="detail-section-label">Default gear</div>
-        <div class="detail-gear-list">
-          <div v-for="g in detailMember.default_gear" :key="g.id" class="detail-gear-row">
-            <span class="gear-tag" :class="g.own_gear ? 'gear-tag--own' : 'gear-tag--backline'">
-              {{ g.own_gear ? 'Own' : 'Backline' }}
-            </span>
-            <span class="gear-name">{{ g.label || DEFAULT_GEAR_TYPE_LABELS[g.type] }}</span>
-            <span v-if="g.brand_model" class="gear-model">{{ g.brand_model }}</span>
-            <span v-if="g.notes" class="gear-note">— {{ g.notes }}</span>
+            <!-- Action buttons -->
+            <div class="flex gap-1 mt-0.5">
+              <button
+                type="button"
+                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-indigo-700 text-slate-300 hover:text-white transition-colors"
+                title="Edit configuration"
+                @click.stop="openModal(item.id)"
+              >
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-red-700 text-slate-300 hover:text-white transition-colors"
+                title="Remove from stage"
+                @click.stop="removeItem(item.id)"
+              >
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Edit label / channel overlay ───────────────────────────────────── -->
-  <div v-if="editingId" class="overlay" @click.self="commitEdit">
-    <div class="edit-card">
-      <div class="edit-title">Edit item</div>
-      <label class="field-label">Label</label>
-      <input v-model="editLabel" class="field-input" @keydown.enter="commitEdit" @keydown.escape="editingId = null" />
-      <label class="field-label mt-3">Input channel # <span style="color:#475569">(optional)</span></label>
-      <input v-model.number="editChannel" type="number" min="1" class="field-input" placeholder="e.g. 1" />
-      <div class="edit-actions">
-        <button type="button" class="btn-ghost" @click="editingId = null">Cancel</button>
-        <button type="button" class="btn-primary" @click="commitEdit">Done</button>
+    <!-- ── Incomplete profile warning dialog ──────────────────────────── -->
+    <Teleport to="body">
+      <div
+        v-if="warnPending"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        style="background: rgba(0,0,0,0.6)"
+      >
+        <div class="bg-slate-900 border border-amber-700/50 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-amber-900/60 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-white text-sm">Incomplete profile</h3>
+              <p class="text-xs text-slate-400">This musician's tech profile has gaps</p>
+            </div>
+          </div>
+
+          <ul class="space-y-1 mb-5">
+            <li
+              v-for="(w, i) in warnPending.warnings"
+              :key="i"
+              class="flex items-start gap-2 text-sm text-amber-300"
+            >
+              <span class="mt-0.5 text-amber-500">·</span> {{ w }}
+            </li>
+          </ul>
+
+          <p class="text-xs text-slate-400 mb-5">You can configure everything after placing. Do you want to continue?</p>
+
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="flex-1 py-2 text-sm font-medium rounded-lg border border-slate-600 text-slate-300 hover:text-white transition-colors"
+              @click="warnPending = null"
+            >Cancel</button>
+            <button
+              type="button"
+              class="flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+              @click="confirmPlaceAnyway"
+            >Place anyway</button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Teleport>
+
+    <!-- ── Member config modal ────────────────────────────────────────── -->
+    <StagePlotMemberModal
+      v-if="modalItem"
+      :model-value="modalItem"
+      :member="modalMember"
+      :temp-musician="modalTemp"
+      :member-setups="modalSetups"
+      :open="!!modalItemId"
+      @update:model-value="onModalUpdate"
+      @close="modalItemId = null"
+    />
   </div>
 </template>
-
-<style scoped>
-.stage-editor { display: flex; gap: 1rem; align-items: flex-start; min-height: 28rem; }
-
-/* ── Palette ─────────────────────────────────────────── */
-.palette {
-  display: flex; flex-direction: column; gap: 0.35rem;
-  min-width: 9rem; max-width: 9rem;
-  background: #070718; border: 1px solid #1a1a3a; border-radius: 0.5rem; padding: 0.625rem;
-}
-.palette-title { font-size: 0.65rem; color: #475569; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 0.25rem; }
-.palette-item {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.3rem 0.4rem; border-radius: 0.375rem; cursor: grab;
-  background: #0e0e26; border: 1px solid #1e2040;
-  transition: border-color 120ms, background 120ms; user-select: none;
-}
-.palette-item:hover { border-color: #4338ca; background: #12123a; }
-.palette-item:active { cursor: grabbing; }
-.palette-icon { width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
-.palette-label { font-size: 0.7rem; color: #94a3b8; line-height: 1.2; }
-
-/* ── Stage ───────────────────────────────────────────── */
-.stage-wrapper { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
-.audience-label {
-  text-align: center; font-size: 0.65rem; color: #334155;
-  letter-spacing: .1em; text-transform: uppercase;
-  border-top: 2px dashed #1e2040; padding-top: 0.25rem;
-}
-.stage-floor {
-  position: relative; width: 100%; aspect-ratio: 16/9;
-  background: #0a0a1e; border: 2px solid #1e2040; border-radius: 0.5rem;
-  overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
-}
-.stage-back-wall {
-  position: absolute; top: 0.5rem; left: 50%; transform: translateX(-50%);
-  font-size: 0.6rem; color: #1e2040; letter-spacing: .12em; text-transform: uppercase;
-}
-.stage-hint { font-size: 0.68rem; color: #334155; text-align: center; }
-
-/* ── Placed items ────────────────────────────────────── */
-.stage-item {
-  position: absolute; transform: translate(-50%, -50%);
-  display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
-  cursor: grab; user-select: none; z-index: 10;
-}
-.stage-item:active { cursor: grabbing; }
-.stage-item--assigned .stage-item-icon { filter: drop-shadow(0 0 4px #6366f180); }
-.stage-item-icon { width: 2.5rem; height: 2.5rem; flex-shrink: 0; }
-.stage-item-label {
-  font-size: 0.6rem; color: #94a3b8; text-align: center; max-width: 5.5rem;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  background: rgba(7,7,24,0.8); padding: 0 0.25rem; border-radius: 2px;
-}
-.stage-item-member {
-  font-size: 0.6rem; color: #818cf8; font-weight: 600; text-align: center; max-width: 5.5rem;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  background: rgba(7,7,24,0.8); padding: 0 0.25rem; border-radius: 2px;
-}
-.channel-badge {
-  position: absolute; top: -0.4rem; right: -0.4rem;
-  background: #4338ca; color: #e0e7ff; font-size: 0.6rem; font-weight: 700;
-  min-width: 1.1rem; height: 1.1rem; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid #312e81;
-}
-.member-dot {
-  position: absolute; top: -0.4rem; left: -0.4rem;
-  background: #1e1b4b; color: #a5b4fc; font-size: 0.5rem; font-weight: 700;
-  width: 1.1rem; height: 1.1rem; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid #4338ca; text-transform: uppercase;
-}
-.item-actions {
-  display: none; position: absolute; bottom: calc(100% + 0.2rem); left: 50%;
-  transform: translateX(-50%);
-  flex-direction: row; gap: 0.15rem; z-index: 50; white-space: nowrap;
-}
-.item-actions--visible { display: flex; }
-.item-btn {
-  padding: 0.1rem 0.25rem; font-size: 0.65rem; cursor: pointer;
-  background: #0e0e26; border: 1px solid #2a2860; color: #818cf8; border-radius: 3px;
-  transition: background 100ms; white-space: nowrap;
-}
-.item-btn:hover        { background: #1e1b4b; }
-.item-btn--del         { color: #f87171; border-color: #7f1d1d; }
-.item-btn--del:hover   { background: #450a0a; }
-.item-btn--assign      { color: #4ade80; border-color: #14532d; }
-.item-btn--assign:hover{ background: #052e16; }
-.item-btn--info        { color: #fb923c; border-color: #7c2d12; }
-.item-btn--info:hover  { background: #431407; }
-
-/* ── Shared overlay ──────────────────────────────────── */
-.overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200;
-  display: flex; align-items: center; justify-content: center; padding: 0.75rem;
-}
-
-/* ── Assignment modal (fullscreen split) ─────────────── */
-.assign-dialog {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
-  width: calc(100vw - 1.5rem); height: calc(100vh - 1.5rem);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-
-.assign-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 1.25rem; border-bottom: 1px solid #1e2040;
-  background: #070718; flex-shrink: 0; gap: 1rem;
-}
-.assign-title { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; }
-.assign-sub   { font-size: 0.78rem; color: #475569; margin-top: 0.1rem; }
-.assign-header-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
-
-.assign-body {
-  flex: 1; display: grid; grid-template-columns: 20% 80%;
-  min-height: 0; overflow: hidden;
-}
-
-.assign-left {
-  border-right: 1px solid #1e2040; background: #060614;
-  overflow-y: auto; padding: 0.75rem 0.625rem;
-  display: flex; flex-direction: column; gap: 0.2rem;
-}
-
-.assign-right {
-  overflow-y: auto; padding: 1rem 1.25rem;
-  display: flex; flex-direction: column; gap: 1rem;
-}
-
-.assign-section-label {
-  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
-  color: #a5b4fc; flex-shrink: 0; padding-bottom: 0.25rem;
-}
-
-/* Left panel: member list rows */
-.member-row {
-  display: flex; align-items: center; gap: 0.55rem;
-  padding: 0.4rem 0.5rem; border-radius: 0.4rem;
-  cursor: pointer; text-align: left; width: 100%;
-  border: 1px solid transparent; background: transparent;
-  transition: border-color 100ms, background 100ms;
-}
-.member-row:hover     { border-color: #1e2040; background: #0d0d28; }
-.member-row--active   { border-color: #6366f1 !important; background: #16164a !important; }
-.member-row-info      { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0; flex: 1; }
-.member-row-name      {
-  font-size: 0.75rem; font-weight: 600; color: #e2e8f0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
-}
-.member-row--active .member-row-name { color: #a5b4fc; }
-.member-row-role      { font-size: 0.62rem; color: #475569; }
-
-.member-avatar {
-  width: 1.75rem; height: 1.75rem; border-radius: 50%; flex-shrink: 0;
-  background: #1e1b4b; color: #818cf8;
-  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-  display: flex; align-items: center; justify-content: center;
-}
-.member-row--active .member-avatar { background: #312e81; color: #a5b4fc; }
-
-.assign-right-empty {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 0.82rem; color: #2e3a52; text-align: center; padding: 3rem 2rem;
-}
-
-.assign-import-hint {
-  font-size: 0.75rem; border-radius: 0.375rem; padding: 0.4rem 0.75rem; flex-shrink: 0;
-}
-.assign-import-hint--green {
-  color: #4ade80; background: #052e1630; border: 1px solid #14532d40;
-}
-.assign-import-hint--amber {
-  color: #fbbf24; background: #78350f18; border: 1px solid #92400e40;
-}
-
-.setup-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem;
-}
-.setup-card {
-  display: flex; flex-direction: column; gap: 0.2rem; padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem; cursor: pointer; text-align: left;
-  border: 1px solid #1e2040; background: #0a0a1e;
-  transition: border-color 100ms, background 100ms;
-}
-.setup-card:hover    { border-color: #312e81; background: #12123a; }
-.setup-card--active  { border-color: #6366f1 !important; background: #16164a !important; }
-.setup-card-name     { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
-.setup-card-desc     { font-size: 0.68rem; color: #475569; line-height: 1.4; }
-.setup-card--active .setup-card-name { color: #a5b4fc; }
-.setup-card--new { border-style: dashed; }
-.setup-card--new .setup-card-name { color: #4f6096; }
-.setup-card--active.setup-card--new .setup-card-name { color: #a5b4fc; }
-
-/* ── Setup editor wrapper ────────────────────────────── */
-.setup-editor {
-  background: #070718; border: 1px solid #2a2860; border-left: 3px solid #4338ca;
-  border-radius: 0.5rem; overflow: hidden;
-}
-.setup-editor-title {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.625rem 1rem; font-size: 0.8rem; font-weight: 700; color: #a5b4fc;
-  border-bottom: 1px solid #1e2040;
-}
-.setup-editor-close {
-  background: none; border: 1px solid #1e2040; color: #64748b;
-  border-radius: 0.375rem; cursor: pointer; padding: 0.15rem 0.45rem;
-  font-size: 0.75rem; transition: background 100ms;
-}
-.setup-editor-close:hover { background: #1a1a3a; }
-
-/* ── Detail popup ────────────────────────────────────── */
-.detail-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.875rem;
-  width: min(42rem, 100%); max-height: 85vh; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 0.875rem; padding: 1.5rem;
-}
-.detail-header       { display: flex; justify-content: space-between; align-items: flex-start; }
-.detail-title        { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
-.detail-member       { font-size: 0.8rem; margin-top: 0.15rem; }
-.detail-member-name  { color: #818cf8; font-weight: 600; }
-.detail-close {
-  background: none; border: 1px solid #1e2040; color: #64748b;
-  border-radius: 0.375rem; cursor: pointer; padding: 0.25rem 0.5rem; font-size: 0.8rem;
-}
-.detail-close:hover { background: #1a1a3a; color: #94a3b8; }
-.detail-setup-name   { font-size: 0.875rem; font-weight: 600; color: #a5b4fc; }
-.detail-chain        { font-size: 0.75rem; color: #475569; }
-.detail-empty        { font-size: 0.8rem; color: #334155; padding: 1rem 0; }
-
-.detail-section      { display: flex; flex-direction: column; gap: 0.5rem; }
-.detail-section-label {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: #4f5f80; border-bottom: 1px solid #1a1a3a; padding-bottom: 0.25rem;
-}
-.detail-table {
-  width: 100%; border-collapse: collapse; font-size: 0.75rem;
-}
-.detail-table th {
-  text-align: left; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-  color: #334155; padding: 0.2rem 0.4rem; border-bottom: 1px solid #1a1a3a;
-}
-.detail-table td {
-  padding: 0.25rem 0.4rem; color: #94a3b8; border-bottom: 1px solid #0f0f28;
-}
-.detail-table tr:last-child td { border-bottom: none; }
-.detail-kv-grid {
-  display: grid; grid-template-columns: 6rem 1fr; gap: 0.2rem 0.5rem;
-  font-size: 0.78rem;
-}
-.detail-k { color: #475569; font-weight: 600; }
-.detail-v { color: #94a3b8; }
-.detail-foh-notes { font-size: 0.78rem; color: #94a3b8; line-height: 1.6; }
-
-.detail-gear-list { display: flex; flex-direction: column; gap: 0.375rem; }
-.detail-gear-row  {
-  display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.78rem;
-  flex-wrap: wrap;
-}
-.gear-tag {
-  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-  padding: 0.1rem 0.4rem; border-radius: 0.25rem; flex-shrink: 0;
-}
-.gear-tag--own      { background: #1e1b4b; color: #818cf8; }
-.gear-tag--backline { background: #422006; color: #f59e0b; }
-.gear-name  { color: #cbd5e1; font-weight: 500; }
-.gear-model { color: #64748b; }
-.gear-note  { color: #475569; font-size: 0.72rem; }
-
-/* ── Edit overlay ────────────────────────────────────── */
-.edit-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
-  padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.5rem;
-}
-.edit-title   { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.25rem; }
-.edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
-
-/* Buttons */
-.btn-ghost {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
-}
-.btn-ghost:hover { background: #0a0a1e; }
-.btn-primary {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
-}
-.btn-primary:hover { background: #4f46e5; }
-.field-label { display: block; font-size: 0.75rem; font-weight: 600; color: #7c8fa6; margin-bottom: 0.3rem; }
-.field-input {
-  display: block; width: 100%; padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0a0a1e; color: #e2e8f0;
-  font-size: 0.875rem; outline: none; font-family: inherit;
-}
-.field-input:focus { border-color: #5154e5; }
-.mt-3 { margin-top: 0.75rem; }
-</style>

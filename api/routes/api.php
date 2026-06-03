@@ -87,6 +87,8 @@ Route::get('/photos/{photo}', [PhotoController::class, 'show'])->name('api.photo
 Route::get('/releases', [ReleaseController::class, 'index'])->name('api.releases.index');
 Route::get('/releases/{release}', [ReleaseController::class, 'show'])->name('api.releases.show');
 
+Route::get('/tech-riders/active', [TechRiderController::class, 'showActive'])->name('api.tech-riders.active');
+
 Route::get('/tours', [TourController::class, 'index'])->name('api.tours.index');
 Route::get('/tours/{tour}', [TourController::class, 'show'])->name('api.tours.show');
 

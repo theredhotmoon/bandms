@@ -4,6 +4,8 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import TechRiderStagePlot from '@/components/tech-rider/TechRiderStagePlot.vue'
+import StagePlotMemberSelector from '@/components/tech-rider/StagePlotMemberSelector.vue'
+import TechRiderCompleteness from '@/components/tech-rider/TechRiderCompleteness.vue'
 import TechRiderInputsTable from '@/components/tech-rider/TechRiderInputsTable.vue'
 import TechRiderMonitors from '@/components/tech-rider/TechRiderMonitors.vue'
 import TechRiderBackline from '@/components/tech-rider/TechRiderBackline.vue'
@@ -26,12 +28,13 @@ import type {
   PowerPosition,
 } from '@/types/techRider'
 import { defaultPaFoh, defaultPower } from '@/types/techRider'
-import type { BandMemberSetup } from '@/types/bandMemberSetup'
+import type { GigLineup } from '@/types/stagePlot'
+import { defaultGigLineup } from '@/types/stagePlot'
 import {
-  suggestInputs,
-  suggestMonitors,
-  suggestBackline,
-  suggestPowerPositions,
+  suggestInputsFromMembers,
+  suggestMonitorsFromMembers,
+  suggestBacklineFromMembers,
+  suggestPowerFromMembers,
 } from '@/utils/stagePlotSuggestions'
 
 // ── Template list ─────────────────────────────────────────────────────────────
@@ -56,6 +59,7 @@ const activeSection = ref<Section>('stage')
 const form = reactive<Required<TechRiderPayload>>({
   name:            '',
   is_active:       false,
+  gig_lineup:      defaultGigLineup(),
   stage_plot_data: [],
   inputs:          [],
   monitors:        [],
@@ -71,6 +75,7 @@ watch(
     if (!rider) return
     form.name            = rider.name
     form.is_active       = rider.is_active
+    form.gig_lineup      = { regular_members: [], temp_musicians: [], ...(rider.gig_lineup ?? {}) } as GigLineup
     form.stage_plot_data = rider.stage_plot_data ?? []
     form.inputs          = rider.inputs          ?? []
     form.monitors        = rider.monitors        ?? []
@@ -100,6 +105,9 @@ async function saveRider() {
     saving.value = false
   }
 }
+
+// ── Lineup modal ──────────────────────────────────────────────────────────────
+const showLineupModal = ref(false)
 
 // ── New template modal ────────────────────────────────────────────────────────
 const showNewModal  = ref(false)
@@ -148,9 +156,11 @@ async function setActive(id: number) {
   }
 }
 
-// ── Print ──────────────────────────────────────────────────────────────────────
-function printRider() {
-  window.print()
+// ── Print / preview ────────────────────────────────────────────────────────────
+function openPreview() {
+  if (openId.value) {
+    window.open(`/tech-rider/${openId.value}`, '_blank')
+  }
 }
 
 // ── Build from stage plot ─────────────────────────────────────────────────────
@@ -169,10 +179,10 @@ const pendingBuild = ref<PendingBuild | null>(null)
 const buildCounts = computed(() => {
   const items = form.stage_plot_data
   return {
-    inputs:   suggestInputs(items).length,
-    monitors: suggestMonitors(items).length,
-    backline: suggestBackline(items).length,
-    power:    suggestPowerPositions(items).length,
+    inputs:   suggestInputsFromMembers(items).length,
+    monitors: suggestMonitorsFromMembers(items).length,
+    backline: suggestBacklineFromMembers(items).length,
+    power:    suggestPowerFromMembers(items).length,
   }
 })
 
@@ -186,13 +196,13 @@ function requestBuild(section: BuildSection) {
   let pending: PendingBuild
 
   if (section === 'inputs') {
-    pending = { section, generated: suggestInputs(items) }
+    pending = { section, generated: suggestInputsFromMembers(items) }
   } else if (section === 'monitors') {
-    pending = { section, generated: suggestMonitors(items) }
+    pending = { section, generated: suggestMonitorsFromMembers(items) }
   } else if (section === 'backline') {
-    pending = { section, generated: suggestBackline(items) }
+    pending = { section, generated: suggestBacklineFromMembers(items) }
   } else {
-    pending = { section: 'power', generated: suggestPowerPositions(items) }
+    pending = { section: 'power', generated: suggestPowerFromMembers(items) }
   }
 
   if (currentSectionLength(section) === 0) {
@@ -248,74 +258,6 @@ function handleMemberImport(rows: InputRow[]) {
   toast.success(`Imported ${rows.length} channel${rows.length === 1 ? '' : 's'}`)
 }
 
-// ── Stage plot member assignment → auto-import setup ─────────────────────────
-
-function handleMemberAssigned(payload: {
-  itemId: string
-  memberId: number | null
-  setupId: number | null
-  setup: BandMemberSetup | null
-}) {
-  const { setup, memberId, itemId } = payload
-  const itemLabel = form.stage_plot_data.find(i => i.id === itemId)?.label ?? 'Stage position'
-  if (!setup) return
-
-  const parts: string[] = []
-
-  // Inputs — renumber channels after existing rows
-  if (setup.inputs.length) {
-    const offset = form.inputs.length
-    const renumbered = setup.inputs.map((r, i) => ({ ...r, channel: offset + i + 1 }))
-    form.inputs = [...form.inputs, ...renumbered]
-    parts.push(`${setup.inputs.length} ch`)
-  }
-
-  // Monitor
-  const mon = setup.monitor
-  const monitor: MonitorMix = {
-    id: crypto.randomUUID(),
-    band_member_id: memberId,
-    custom_name: '',
-    type: mon.type,
-    mix_description: mon.mix_description,
-    iem_own_pack: mon.iem_own_pack,
-    transmitter_model: mon.iem_transmitter_model,
-    frequency: mon.iem_frequency,
-  }
-  form.monitors = [...form.monitors, monitor]
-  parts.push('monitor')
-
-  // Backline (only if needed)
-  if (setup.backline.needed) {
-    const bl = setup.backline
-    const backlineItem: BacklineItem = {
-      id: crypto.randomUUID(),
-      category: bl.category as BacklineItem['category'],
-      name: itemLabel,
-      brand_preference: bl.brand_preference,
-      specs: bl.specs,
-      notes: bl.notes,
-    }
-    form.backline = [...form.backline, backlineItem]
-    parts.push('backline')
-  }
-
-  // Power position
-  if (setup.power.outlets_needed > 0) {
-    const pos: PowerPosition = {
-      id: crypto.randomUUID(),
-      location: itemLabel,
-      outlets_needed: setup.power.outlets_needed,
-      notes: setup.power.notes,
-    }
-    form.power = { ...form.power, positions: [...form.power.positions, pos] }
-    parts.push('power')
-  }
-
-  if (parts.length) {
-    toast.success(`Imported ${parts.join(', ')} from ${setup.name}`)
-  }
-}
 
 // ── Section definitions ───────────────────────────────────────────────────────
 const SECTIONS: { key: Section; label: string; icon: string }[] = [
@@ -407,9 +349,9 @@ const bandProfile = computed(() => profileQ.data.value)
               </div>
             </div>
             <div class="topbar-actions">
-              <button type="button" class="btn-print" title="Print / Save as PDF" @click="printRider">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print / PDF
+              <button type="button" class="btn-print" title="Open public preview (PDF-ready)" @click="openPreview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Preview / PDF
               </button>
               <button type="button" class="btn-save" :class="{ 'btn-save--ok': saved }" :disabled="saving" @click="saveRider">
                 {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save rider' }}
@@ -433,7 +375,7 @@ const bandProfile = computed(() => profileQ.data.value)
           </div>
 
           <!-- Section content -->
-          <div class="section-content">
+          <div class="section-content" :class="{ 'section-content--stage': activeSection === 'stage' }">
 
             <!-- ── 1. Cover / Header ───────────────────────────────────── -->
             <template v-if="activeSection === 'cover'">
@@ -479,17 +421,47 @@ const bandProfile = computed(() => profileQ.data.value)
 
             <!-- ── 2. Stage plot ───────────────────────────────────────── -->
             <template v-if="activeSection === 'stage'">
-              <div class="field-group">
-                <label class="field-label">Rider template name</label>
-                <input v-model="form.name" class="field-input" placeholder="e.g. Festival rider, Club show, Full production" />
-                <p class="field-hint">Internal reference only — not shown to the venue.</p>
+              <!-- Rider name + lineup bar -->
+              <div class="stage-topbar">
+                <div class="field-group" style="flex:1; min-width:0; margin-bottom:0;">
+                  <input v-model="form.name" class="field-input" placeholder="Rider name (e.g. Festival rider, Club show)" />
+                </div>
+                <div class="lineup-bar">
+                  <div class="lineup-avatars">
+                    <template v-for="member in bandMembers.filter(m => m.is_current)" :key="member.id">
+                      <div
+                        v-if="(() => { const e = form.gig_lineup.regular_members.find(r => r.band_member_id === member.id); return e ? e.is_available : true })()"
+                        class="lineup-avatar"
+                        :title="member.nickname ?? `${member.first_name} ${member.last_name}`"
+                      >
+                        <img v-if="member.photo" :src="member.photo" class="w-full h-full object-cover" />
+                        <span v-else class="text-[10px] font-bold">{{ (member.first_name[0] ?? '') + (member.last_name[0] ?? '') }}</span>
+                      </div>
+                    </template>
+                    <template v-for="temp in form.gig_lineup.temp_musicians" :key="temp.id">
+                      <div class="lineup-avatar lineup-avatar--guest" :title="temp.name">
+                        {{ temp.name[0]?.toUpperCase() }}
+                      </div>
+                    </template>
+                  </div>
+                  <button type="button" class="btn-lineup" @click="showLineupModal = true">
+                    ✏️ Edit lineup
+                  </button>
+                </div>
               </div>
-              <TechRiderStagePlot
-                v-model="form.stage_plot_data"
-                :band-members="bandMembers"
-                :all-setups="allSetups"
-                @member-assigned="handleMemberAssigned"
-              />
+
+              <!-- Stage plot canvas -->
+              <div class="stage-plot-wrapper">
+                <TechRiderStagePlot
+                  v-model="form.stage_plot_data"
+                  :lineup="form.gig_lineup"
+                  :band-members="bandMembers"
+                  :all-setups="allSetups"
+                />
+              </div>
+
+              <!-- Completeness bar -->
+              <TechRiderCompleteness :items="form.stage_plot_data" />
             </template>
 
             <!-- ── 3. Inputs list ──────────────────────────────────────── -->
@@ -627,6 +599,15 @@ const bandProfile = computed(() => profileQ.data.value)
         </template>
       </main>
     </div>
+
+    <!-- Lineup modal -->
+    <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">
+      <StagePlotMemberSelector
+        v-model="form.gig_lineup"
+        :band-members="bandMembers"
+        @close="showLineupModal = false"
+      />
+    </AdminModal>
 
     <!-- New template modal -->
     <AdminModal :open="showNewModal" title="New Rider Template" max-width="28rem" @close="showNewModal = false">
@@ -784,6 +765,10 @@ const bandProfile = computed(() => profileQ.data.value)
   flex: 1; overflow-y: auto; padding: 1.25rem;
   display: flex; flex-direction: column; gap: 1rem;
 }
+/* Stage section needs no scroll — fills height */
+.section-content--stage {
+  overflow: hidden; padding: 0.75rem;
+}
 
 /* Bottom bar */
 .bottom-bar {
@@ -902,6 +887,40 @@ const bandProfile = computed(() => profileQ.data.value)
   background: transparent; border-color: #1e2040; color: #475569;
 }
 .build-btn--cancel:hover { color: #64748b; border-color: #334155; }
+
+/* ── Stage section layout ────────────────────────────── */
+.stage-topbar {
+  display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap;
+}
+.lineup-bar {
+  display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+}
+.lineup-avatars {
+  display: flex; gap: 0;
+}
+.lineup-avatar {
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  background: #3730a3; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; overflow: hidden;
+  border: 2px solid #0a0b1a;
+  margin-left: -0.5rem;
+}
+.lineup-avatar:first-child { margin-left: 0; }
+.lineup-avatar--guest {
+  background: #92400e; color: #fde68a; border-color: #0a0b1a;
+}
+.btn-lineup {
+  padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+  border-radius: 0.375rem; cursor: pointer;
+  background: #0e0e26; border: 1px solid #2d3461; color: #818cf8;
+  white-space: nowrap; transition: background 100ms;
+}
+.btn-lineup:hover { background: #12123a; }
+.stage-plot-wrapper {
+  flex: 1; min-height: 360px; overflow: hidden; border-radius: 0.5rem;
+  border: 1px solid #1e2040; background: #0a0b1a;
+}
 
 /* ── Print styles ────────────────────────────────────── */
 @media print {

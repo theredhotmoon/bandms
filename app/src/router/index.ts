@@ -184,6 +184,16 @@ const router = createRouter({
       component: () => import('@/views/OnesheetView.vue'),
     },
     {
+      path: '/tech-rider',
+      name: 'tech-rider-preview',
+      component: () => import('@/views/TechRiderPreviewView.vue'),
+    },
+    {
+      path: '/tech-rider/:id',
+      name: 'tech-rider-preview-id',
+      component: () => import('@/views/TechRiderPreviewView.vue'),
+    },
+    {
       path: '/admin/music-videos',
       name: 'admin-music-videos',
       component: () => import('@/views/admin/MusicVideosAdminView.vue'),

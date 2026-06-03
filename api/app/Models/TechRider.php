@@ -11,6 +11,7 @@ class TechRider extends Model
         'profile_id',
         'name',
         'is_active',
+        'gig_lineup',
         'stage_plot_data',
         'inputs',
         'monitors',
@@ -22,6 +23,7 @@ class TechRider extends Model
 
     protected $casts = [
         'is_active'       => 'boolean',
+        'gig_lineup'      => 'array',
         'stage_plot_data' => 'array',
         'inputs'          => 'array',
         'monitors'        => 'array',

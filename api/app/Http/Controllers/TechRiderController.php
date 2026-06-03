@@ -27,11 +27,18 @@ class TechRiderController extends Controller
         return TechRiderSummaryResource::collection($riders);
     }
 
+    public function showActive(): TechRiderResource
+    {
+        $rider = TechRider::where('profile_id', 1)->where('is_active', true)->firstOrFail();
+        return new TechRiderResource($rider);
+    }
+
     public function store(Request $request): TechRiderResource
     {
         $data = $request->validate([
             'name'            => ['required', 'string', 'max:255'],
             'is_active'       => ['boolean'],
+            'gig_lineup'      => ['nullable', 'array'],
             'stage_plot_data' => ['nullable', 'array'],
             'inputs'          => ['nullable', 'array'],
             'monitors'        => ['nullable', 'array'],
@@ -63,6 +70,7 @@ class TechRiderController extends Controller
         $data = $request->validate([
             'name'            => ['sometimes', 'required', 'string', 'max:255'],
             'is_active'       => ['boolean'],
+            'gig_lineup'      => ['nullable', 'array'],
             'stage_plot_data' => ['nullable', 'array'],
             'inputs'          => ['nullable', 'array'],
             'monitors'        => ['nullable', 'array'],
