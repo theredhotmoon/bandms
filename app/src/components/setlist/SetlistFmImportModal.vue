@@ -220,7 +220,7 @@ function monthName(m: string): string {
 .search-row { display: flex; gap: 0.5rem; }
 .field-input {
   flex: 1; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit;
 }
 .field-input:focus { border-color: #888888; }

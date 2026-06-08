@@ -662,7 +662,7 @@ const bandProfile = computed(() => profileQ.data.value)
 .template-sidebar {
   width: 17rem; flex-shrink: 0;
   border-right: 1px solid #1a1a1a;
-  background: #060614;
+  background: #0a0a0a;
   display: flex; flex-direction: column;
   overflow: hidden;
 }
@@ -692,7 +692,7 @@ const bandProfile = computed(() => profileQ.data.value)
   border: 1px solid transparent; margin-bottom: 0.25rem;
   transition: background 100ms, border-color 100ms;
 }
-.template-item:hover  { background: #0d0d28; border-color: #2a2a2a; }
+.template-item:hover  { background: #181818; border-color: #2a2a2a; }
 .template-item--open  { background: #141414; border-color: #444444; }
 .template-item-info   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .template-name        { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -731,7 +731,7 @@ const bandProfile = computed(() => profileQ.data.value)
 .editor-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.875rem 1.25rem; border-bottom: 1px solid #1a1a1a;
-  background: #070718; flex-shrink: 0;
+  background: #0d0d0d; flex-shrink: 0;
 }
 .editor-title    { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
 .editor-subtitle { font-size: 0.75rem; margin-top: 0.1rem; }
@@ -749,7 +749,7 @@ const bandProfile = computed(() => profileQ.data.value)
 /* Section tabs */
 .section-tabs {
   display: flex; overflow-x: auto; border-bottom: 1px solid #1a1a1a;
-  background: #070718; flex-shrink: 0; scrollbar-width: none;
+  background: #0d0d0d; flex-shrink: 0; scrollbar-width: none;
 }
 .section-tabs::-webkit-scrollbar { display: none; }
 .section-tab {
@@ -776,12 +776,12 @@ const bandProfile = computed(() => profileQ.data.value)
 /* Bottom bar */
 .bottom-bar {
   border-top: 1px solid #1a1a1a; padding: 0.75rem 1.25rem;
-  display: flex; justify-content: flex-end; background: #070718; flex-shrink: 0;
+  display: flex; justify-content: flex-end; background: #0d0d0d; flex-shrink: 0;
 }
 
 /* ── Cover section ───────────────────────────────────── */
 .cover-preview {
-  background: #070718; border: 1px solid #2a2a2a; border-radius: 0.5rem;
+  background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
   border-left: 3px solid #888888;
 }
@@ -801,7 +801,7 @@ const bandProfile = computed(() => profileQ.data.value)
 .cover-contact-fields { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .cover-field-row {
   flex: 1; min-width: 12rem;
-  background: #070718; border: 1px solid #1a1a1a; border-radius: 0.375rem;
+  background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 0.375rem;
   padding: 0.5rem 0.75rem; display: flex; flex-direction: column; gap: 0.15rem;
 }
 .cover-field-row--wide { flex-basis: 100%; }

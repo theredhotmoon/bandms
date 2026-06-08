@@ -344,7 +344,7 @@ function formatDur(sec: number | null): string {
 }
 
 .main-tabs {
-  display: flex; border-bottom: 1px solid #1a1a1a; background: #070718; flex-shrink: 0;
+  display: flex; border-bottom: 1px solid #1a1a1a; background: #0d0d0d; flex-shrink: 0;
 }
 .main-tab {
   padding: 0.5rem 1rem; font-size: 0.78rem; font-weight: 500; color: #475569;
@@ -357,7 +357,7 @@ function formatDur(sec: number | null): string {
 .split-view { flex: 1; display: flex; overflow: hidden; }
 
 .sidebar {
-  width: 16rem; flex-shrink: 0; border-right: 1px solid #1a1a1a; background: #060614;
+  width: 16rem; flex-shrink: 0; border-right: 1px solid #1a1a1a; background: #0a0a0a;
   display: flex; flex-direction: column; overflow: hidden;
 }
 .sidebar-header {
@@ -402,7 +402,7 @@ function formatDur(sec: number | null): string {
   cursor: pointer; border: 1px solid transparent; margin-bottom: 0.25rem;
   transition: background 100ms, border-color 100ms;
 }
-.setlist-item:hover { background: #0d0d28; border-color: #2a2a2a; }
+.setlist-item:hover { background: #181818; border-color: #2a2a2a; }
 .setlist-item--open { background: #141414; border-color: #444444; }
 .setlist-item-info { flex: 1; min-width: 0; }
 .setlist-name { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -489,7 +489,7 @@ function formatDur(sec: number | null): string {
 .opt { color: #334155; font-weight: 400; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }

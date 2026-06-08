@@ -480,7 +480,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.625rem 1rem; border-bottom: 1px solid #0f0f28; background: #070718; flex-shrink: 0;
+  padding: 0.625rem 1rem; border-bottom: 1px solid #1a1a1a; background: #0d0d0d; flex-shrink: 0;
 }
 .topbar-name { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
 .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
@@ -488,7 +488,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
 
 .meta-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem;
-  padding: 0.75rem 1rem; border-bottom: 1px solid #0f0f28; background: #070718; flex-shrink: 0;
+  padding: 0.75rem 1rem; border-bottom: 1px solid #1a1a1a; background: #0d0d0d; flex-shrink: 0;
 }
 .col-span-2 { grid-column: span 2; }
 .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
@@ -496,7 +496,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
 .opt { color: #334155; font-weight: 400; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }
@@ -558,13 +558,13 @@ select.field-input {
 .btn-remove:hover:not(:disabled) { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
 
 .song-expanded {
-  border-top: 1px solid #2a2a2a; padding: 0.75rem 0.875rem; background: #060614;
+  border-top: 1px solid #2a2a2a; padding: 0.75rem 0.875rem; background: #0a0a0a;
 }
 .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
 
 .toggle {
   position: relative; width: 2.5rem; height: 1.375rem; border-radius: 9999px;
-  border: none; cursor: pointer; background: #1e293b; transition: background 200ms;
+  border: none; cursor: pointer; background: #2a2a2a; transition: background 200ms;
 }
 .toggle--on { background: #2a2a2a; }
 .toggle-thumb {
@@ -589,7 +589,7 @@ select.field-input {
 .add-song-list { max-height: 12rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.2rem; }
 .add-song-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.35rem 0.5rem; border-radius: 0.3rem; background: #060614;
+  padding: 0.35rem 0.5rem; border-radius: 0.3rem; background: #0a0a0a;
   border: 1px solid transparent; cursor: pointer; text-align: left; font-size: 0.8rem; color: #e2e8f0;
   transition: border-color 100ms;
 }
@@ -605,8 +605,8 @@ select.field-input {
 .btn-create-song:hover:not(:disabled) { background: #333333; }
 .btn-create-song:disabled { opacity: 0.4; cursor: default; }
 
-.notes-section { border-top: 1px solid #0f0f28; padding: 0.75rem 1rem 0; flex-shrink: 0; }
-.notes-tabs { display: flex; border-bottom: 1px solid #0f0f28; margin-bottom: 0.5rem; }
+.notes-section { border-top: 1px solid #1a1a1a; padding: 0.75rem 1rem 0; flex-shrink: 0; }
+.notes-tabs { display: flex; border-bottom: 1px solid #1a1a1a; margin-bottom: 0.5rem; }
 .notes-tab {
   padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 500; color: #475569;
   background: transparent; border: none; border-bottom: 2px solid transparent;
@@ -623,8 +623,8 @@ select.field-input {
 .notes-textarea:focus { border-color: #888888; }
 
 .bottom-bar {
-  border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;
-  display: flex; justify-content: flex-end; background: #070718; flex-shrink: 0;
+  border-top: 1px solid #1a1a1a; padding: 0.625rem 1rem;
+  display: flex; justify-content: flex-end; background: #0d0d0d; flex-shrink: 0;
 }
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;

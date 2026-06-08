@@ -185,7 +185,7 @@ function exportCsv() {
   border-bottom: 1px solid #0d0d0d;
   vertical-align: middle;
 }
-.sub-table tr:hover td { background: #0d0d25; }
+.sub-table tr:hover td { background: #181818; }
 
 .cell-email    { color: #e2e8f0; font-weight: 500; }
 .cell-secondary { color: #64748b; }

@@ -62,6 +62,12 @@ const fieldErrors = ref<Record<string, string[]>>({})
 const saving = ref(false)
 const saved  = ref(false)
 
+const contextPins = reactive({
+  epk_logo_id: null as number | null,
+  tech_rider_logo_id: null as number | null,
+  website_logo_id: null as number | null,
+})
+
 watch(
   () => query.data.value,
   (val) => {
@@ -194,12 +200,6 @@ async function removePlot() {
 
 type Section = 'bio' | 'career' | 'social' | 'contacts' | 'stats' | 'epk' | 'logo'
 const section = ref<Section>('bio')
-
-const contextPins = reactive({
-  epk_logo_id: null as number | null,
-  tech_rider_logo_id: null as number | null,
-  website_logo_id: null as number | null,
-})
 
 // ── Social links ──────────────────────────────────────────────────────────────
 const { query: linksQuery, create: linkCreate, update: linkUpdate, remove: linkRemove } = useSocialLinks()
