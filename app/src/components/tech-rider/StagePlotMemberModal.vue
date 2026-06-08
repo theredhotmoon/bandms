@@ -202,6 +202,16 @@ const memberFullName = computed(() =>
 )
 
 const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedge')
+
+const tabDone = computed<Record<Tab, boolean>>(() => ({
+  instruments: local.instruments.length > 0 && local.instruments.some(i => i.label),
+  inputs:      local.inputs.length > 0,
+  monitor:     local.monitors.length > 0,
+  wireless:    local.wireless.length > 0,
+  backline:    local.backline.needed === true,
+  power:       (local.power.outlets_needed ?? 0) > 0,
+  foh:         !!(local.foh_notes?.trim()),
+}))
 </script>
 
 <template>
@@ -247,13 +257,13 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
           </button>
         </div>
 
-        <!-- Tabs (same as MemberSetupEditorPane) -->
+        <!-- Tabs -->
         <div class="flex overflow-x-auto border-b border-slate-700 flex-shrink-0 scrollbar-none">
           <button
             v-for="tab in TABS"
             :key="tab.key"
             type="button"
-            class="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
+            class="relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === tab.key
               ? 'border-zinc-400 text-zinc-200'
               : 'border-transparent text-slate-400 hover:text-white'"
@@ -261,6 +271,11 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
             @click="activeTab = tab.key"
           >
             <span>{{ tab.icon }}</span>{{ tab.label }}
+            <span
+              v-if="tabDone[tab.key]"
+              class="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"
+              :title="tab.label + ' complete'"
+            />
           </button>
         </div>
 
