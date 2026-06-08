@@ -26,6 +26,22 @@ const emit = defineEmits<{
   'update:modelValue': [StagePlotMemberItem[]]
 }>()
 
+// ── Stage view toggle ─────────────────────────────────────────────────────────
+
+type StageView = 'members' | 'instruments' | 'signal_chain' | 'monitor' | 'wireless' | 'backline' | 'power' | 'foh'
+const stageView = ref<StageView>('members')
+
+const STAGE_VIEWS: { key: StageView; icon: string; label: string }[] = [
+  { key: 'members',     icon: '👤', label: 'Members'      },
+  { key: 'instruments', icon: '🎸', label: 'Instruments'  },
+  { key: 'signal_chain',icon: '🎙️', label: 'Inputs'       },
+  { key: 'monitor',     icon: '🔊', label: 'Monitor'      },
+  { key: 'wireless',    icon: '📡', label: 'Wireless'     },
+  { key: 'backline',    icon: '🥁', label: 'Backline'     },
+  { key: 'power',       icon: '⚡', label: 'Power'        },
+  { key: 'foh',         icon: '🎛️', label: 'FOH notes'   },
+]
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function memberName(m: BandMember): string {
@@ -362,7 +378,22 @@ function statusClass(item: StagePlotMemberItem): string {
     </div>
 
     <!-- ── Stage canvas ────────────────────────────────────────────────── -->
-    <div class="flex-1 flex flex-col min-w-0 p-3">
+    <div class="flex-1 flex flex-col min-w-0 p-3 gap-2">
+
+      <!-- View toggle -->
+      <div class="flex flex-wrap gap-1">
+        <button
+          v-for="v in STAGE_VIEWS"
+          :key="v.key"
+          type="button"
+          class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors"
+          :class="stageView === v.key
+            ? 'bg-zinc-200 text-zinc-900'
+            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'"
+          @click="stageView = v.key"
+        >{{ v.icon }} {{ v.label }}</button>
+      </div>
+
       <!-- Stage area -->
       <div
         ref="stageRef"
@@ -420,43 +451,92 @@ function statusClass(item: StagePlotMemberItem): string {
             </div>
 
             <!-- Name -->
-            <div class="text-[10px] font-medium text-white text-center leading-tight max-w-full truncate w-full text-center">
+            <div class="text-[10px] font-medium text-white text-center leading-tight max-w-full truncate w-full">
               {{ itemDisplayName(item) }}
             </div>
 
-            <!-- Core completeness: instruments · inputs · monitor · power -->
-            <div class="flex gap-1 justify-center" title="Instruments / Signal chain / Monitor / Power">
-              <span
-                class="text-[11px] transition-opacity"
-                :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'"
-                title="Instruments"
-              >🎸</span>
-              <span
-                class="text-[11px] transition-opacity"
-                :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'"
-                title="Signal chain"
-              >🎙️</span>
-              <span
-                class="text-[11px] transition-opacity"
-                :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'"
-                title="Monitor"
-              >🔊</span>
-              <span
-                class="text-[11px] transition-opacity"
-                :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'"
-                title="Power"
-              >⚡</span>
-            </div>
+            <!-- ── View-specific body ─────────────────────────────── -->
 
-            <!-- Optional extras: wireless · backline · FOH -->
-            <div
-              v-if="item.wireless.length || item.backline.needed || item.foh_notes?.trim()"
-              class="flex gap-1 justify-center"
-            >
-              <span v-if="item.wireless.length"   class="text-[10px]" title="Wireless configured">📡</span>
-              <span v-if="item.backline.needed"    class="text-[10px]" title="Backline needed">🥁</span>
-              <span v-if="item.foh_notes?.trim()"  class="text-[10px]" title="FOH notes">🎛️</span>
-            </div>
+            <!-- members: completeness dots -->
+            <template v-if="stageView === 'members'">
+              <div class="flex gap-1 justify-center">
+                <span class="text-[11px] transition-opacity" :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'" title="Instruments">🎸</span>
+                <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
+                <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
+                <span class="text-[11px] transition-opacity" :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
+              </div>
+              <div v-if="item.wireless.length || item.backline.needed || item.foh_notes?.trim()" class="flex gap-1 justify-center">
+                <span v-if="item.wireless.length"  class="text-[10px]" title="Wireless">📡</span>
+                <span v-if="item.backline.needed"   class="text-[10px]" title="Backline">🥁</span>
+                <span v-if="item.foh_notes?.trim()" class="text-[10px]" title="FOH notes">🎛️</span>
+              </div>
+            </template>
+
+            <!-- instruments -->
+            <template v-else-if="stageView === 'instruments'">
+              <div v-if="item.instruments.length" class="flex flex-col items-center gap-0.5 w-full">
+                <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
+                  {{ INSTRUMENT_ICONS[inst.type] }} {{ inst.label || inst.type }}
+                </div>
+                <span v-if="item.instruments.length > 3" class="text-[10px] text-slate-500">+{{ item.instruments.length - 3 }}</span>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- signal chain / inputs -->
+            <template v-else-if="stageView === 'signal_chain'">
+              <div v-if="item.inputs.length" class="text-center">
+                <div class="text-sm font-bold text-white">{{ item.inputs.length }}</div>
+                <div class="text-[10px] text-slate-400">ch{{ item.signal_chain_type ? ' · ' + item.signal_chain_type : '' }}</div>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- monitor -->
+            <template v-else-if="stageView === 'monitor'">
+              <div v-if="item.monitors.length" class="flex flex-col items-center gap-0.5">
+                <div v-for="mon in item.monitors.slice(0, 3)" :key="mon.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
+                  {{ mon.type === 'wedge' ? '🔊' : '🎧' }} {{ mon.label || (mon.type === 'wedge' ? 'Wedge' : 'IEM') }}
+                </div>
+                <span v-if="item.monitors.length > 3" class="text-[10px] text-slate-500">+{{ item.monitors.length - 3 }}</span>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- wireless -->
+            <template v-else-if="stageView === 'wireless'">
+              <div v-if="item.wireless.length" class="text-center">
+                <div class="text-sm font-bold text-white">{{ item.wireless.length }}</div>
+                <div class="text-[10px] text-slate-400">unit{{ item.wireless.length !== 1 ? 's' : '' }}</div>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- backline -->
+            <template v-else-if="stageView === 'backline'">
+              <div v-if="item.backline.needed" class="text-center">
+                <div class="text-[11px] text-zinc-300">{{ item.backline.category || 'needed' }}</div>
+                <div v-if="item.backline.specs" class="text-[10px] text-slate-500 truncate w-full text-center">{{ item.backline.specs }}</div>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- power -->
+            <template v-else-if="stageView === 'power'">
+              <div v-if="(item.power.outlets_needed ?? 0) > 0" class="text-center">
+                <div class="text-sm font-bold text-white">{{ item.power.outlets_needed }}</div>
+                <div class="text-[10px] text-slate-400">outlet{{ item.power.outlets_needed !== 1 ? 's' : '' }}</div>
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
+
+            <!-- FOH notes -->
+            <template v-else-if="stageView === 'foh'">
+              <div v-if="item.foh_notes?.trim()" class="text-[10px] text-zinc-300 text-center line-clamp-3 leading-snug">
+                {{ item.foh_notes.trim() }}
+              </div>
+              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+            </template>
 
             <!-- Action buttons -->
             <div class="flex gap-1 mt-0.5">
