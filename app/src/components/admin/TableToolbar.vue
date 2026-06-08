@@ -38,8 +38,8 @@ defineProps<{
   align-items: center;
   gap: 0.625rem;
   padding: 0.625rem 1rem;
-  border-bottom: 1px solid #13132e;
-  background: #09091e;
+  border-bottom: 1px solid #1f1f1f;
+  background: #0d0d0d;
 }
 
 .search-wrap {
@@ -62,16 +62,16 @@ defineProps<{
 .search-input {
   width: 100%;
   padding: 0.3125rem 0.625rem 0.3125rem 1.75rem;
-  background: #0d0d22;
-  border: 1px solid #1e1c4a;
+  background: #141414;
+  border: 1px solid #252525;
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   color: #e2e8f0;
   outline: none;
   transition: border-color 150ms;
 }
-.search-input::placeholder { color: #2d3b52; }
-.search-input:focus { border-color: #4338ca; }
+.search-input::placeholder { color: #3a3a3a; }
+.search-input:focus { border-color: #888888; }
 .search-input::-webkit-search-cancel-button { display: none; }
 
 .result-count {

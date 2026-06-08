@@ -92,7 +92,7 @@ function dateRange(t: TourSummary): string {
         <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">No tours yet. Add the first one above.</div>
         <table v-else class="w-full">
           <thead>
-            <tr style="border-bottom:1px solid #1a1a3a;">
+            <tr style="border-bottom:1px solid #222222;">
               <th class="th" style="width:3rem;">ID</th>
               <th class="th" style="width:3rem;">Poster</th>
               <th class="th">Name</th>
@@ -151,18 +151,18 @@ function dateRange(t: TourSummary): string {
 <style scoped>
 .poster-thumb {
   width: 2.5rem; height: 2.5rem; border-radius: 0.25rem;
-  object-fit: cover; border: 1px solid #1a1a38;
+  object-fit: cover; border: 1px solid #222222;
 }
 .poster-placeholder {
   width: 2.5rem; height: 2.5rem; border-radius: 0.25rem;
-  background: #111128; border: 1px solid #1a1a38;
+  background: #1a1a1a; border: 1px solid #222222;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.875rem; color: #334155;
 }
 .concerts-pill {
   display: inline-block; min-width: 1.5rem; text-align: center;
   padding: 0.1rem 0.4rem; border-radius: 0.3rem;
-  background: #1e293b; border: 1px solid #2d2a6e;
+  background: #222222; border: 1px solid #333333;
   font-size: 0.7rem; font-weight: 600; color: #64748b;
 }
 </style>

@@ -197,7 +197,7 @@ function videoHost(url: string): string {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <th class="th" style="width:5rem;">Preview</th>
                 <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">URL / Channel</th>
@@ -305,11 +305,11 @@ function videoHost(url: string): string {
 .url-link {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #818cf8;
+  color: #c0c0c0;
   text-decoration: none;
   transition: color 120ms;
 }
-.url-link:hover { color: #a5b4fc; }
+.url-link:hover { color: #d0d0d0; }
 .field-req { color: #f87171; }
 
 .video-thumb {
@@ -318,14 +318,14 @@ function videoHost(url: string): string {
   object-fit: cover;
   border-radius: 0.25rem;
   display: block;
-  background: #111128;
+  background: #1a1a1a;
 }
 .video-thumb-empty {
   width: 4.5rem;
   aspect-ratio: 16/9;
   border-radius: 0.25rem;
-  background: #111128;
-  border: 1px solid #1a1a3a;
+  background: #1a1a1a;
+  border: 1px solid #222222;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -358,8 +358,8 @@ function videoHost(url: string): string {
   display: flex;
   align-items: baseline;
   gap: 0.3rem;
-  background: #0d1a2d;
-  border: 1px solid #1e3a5f;
+  background: #111111;
+  border: 1px solid #222222;
   border-radius: 0.5rem;
   padding: 0.3rem 0.75rem;
 }
@@ -387,9 +387,9 @@ function videoHost(url: string): string {
   border-radius: 0.4rem;
   font-size: 0.78rem;
   font-weight: 500;
-  background: #0d1a2d;
+  background: #111111;
   color: #38bdf8;
-  border: 1px solid #1e3a5f;
+  border: 1px solid #222222;
   cursor: pointer;
   transition: background 120ms;
 }

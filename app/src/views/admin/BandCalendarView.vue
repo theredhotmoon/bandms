@@ -21,7 +21,7 @@ const calendarMembers = computed(() =>
   (membersQuery.data.value ?? []).filter((m: BandMember) => m.is_current && m.calendar_url)
 )
 
-const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6']
+const COLORS = ['#888888', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6']
 
 // ── Selected event popup ──────────────────────────────────────────
 interface SelectedEvent {
@@ -46,7 +46,7 @@ function onEventClick(arg: EventClickArg) {
     memberName:  e.extendedProps.memberName as string,
     memberRole:  e.extendedProps.memberRole as string | null,
     description: e.extendedProps.description as string | null,
-    color:       (e.backgroundColor || '#6366f1'),
+    color:       (e.backgroundColor || '#888888'),
   }
 }
 
@@ -172,15 +172,15 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 .legend-role { font-size: 0.7rem; color: #64748b; }
 
 .cal-notice {
-  background: #111128; border: 1px solid #1e1b4b; border-radius: 0.5rem;
+  background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 1rem 1.25rem; font-size: 0.8125rem; color: #64748b;
   margin-bottom: 1.25rem;
 }
 
 /* ── Calendar wrap ─────────────────────────────────────────── */
 .cal-wrap {
-  background: #0d0d22;
-  border: 1px solid #1e1b4b;
+  background: #141414;
+  border: 1px solid #2a2a2a;
   border-radius: 0.75rem;
   padding: 1rem;
   overflow: hidden;
@@ -194,35 +194,35 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 :deep(.fc-theme-standard td),
 :deep(.fc-theme-standard th),
 :deep(.fc-theme-standard .fc-scrollgrid) {
-  border-color: #1e1b4b;
+  border-color: #2a2a2a;
 }
 :deep(.fc-col-header-cell-cushion),
 :deep(.fc-daygrid-day-number) {
   color: #94a3b8;
   text-decoration: none;
 }
-:deep(.fc-daygrid-day-number:hover) { color: #c7d2fe; }
-:deep(.fc-day-today) { background: #111128 !important; }
-:deep(.fc-day-today .fc-daygrid-day-number) { color: #a5b4fc; font-weight: 700; }
+:deep(.fc-daygrid-day-number:hover) { color: #e0e0e0; }
+:deep(.fc-day-today) { background: #1a1a1a !important; }
+:deep(.fc-day-today .fc-daygrid-day-number) { color: #d0d0d0; font-weight: 700; }
 :deep(.fc-button-primary) {
-  background: #1e1b4b !important; border-color: #312e81 !important;
-  color: #a5b4fc !important; font-size: 0.8125rem !important;
+  background: #2a2a2a !important; border-color: #444444 !important;
+  color: #d0d0d0 !important; font-size: 0.8125rem !important;
   transition: background 150ms !important;
 }
-:deep(.fc-button-primary:hover) { background: #2d2a6e !important; }
+:deep(.fc-button-primary:hover) { background: #333333 !important; }
 :deep(.fc-button-primary:not(:disabled).fc-button-active) {
-  background: #4338ca !important; border-color: #4338ca !important;
+  background: #888888 !important; border-color: #888888 !important;
 }
 :deep(.fc-toolbar-title) { font-size: 1.0625rem !important; font-weight: 700 !important; color: #f1f5f9 !important; }
 :deep(.fc-event) { cursor: pointer; border-radius: 3px !important; border: none !important; font-size: 0.75rem !important; }
-:deep(.fc-list-event:hover td) { background: #111128 !important; }
-:deep(.fc-list-day-cushion) { background: #0d0d22 !important; }
+:deep(.fc-list-event:hover td) { background: #1a1a1a !important; }
+:deep(.fc-list-day-cushion) { background: #141414 !important; }
 :deep(.fc-list-day-text), :deep(.fc-list-day-side-text) { color: #94a3b8 !important; text-decoration: none; }
-:deep(.fc-popover) { background: #0d0d22 !important; border-color: #1e1b4b !important; }
-:deep(.fc-popover-title) { background: #111128 !important; color: #e2e8f0 !important; }
-:deep(.fc-more-popover .fc-popover-body) { background: #0d0d22 !important; }
-:deep(.fc-daygrid-more-link) { color: #6366f1 !important; }
-:deep(.fc-timegrid-slot) { border-color: #1e1b4b !important; height: 2rem !important; }
+:deep(.fc-popover) { background: #141414 !important; border-color: #2a2a2a !important; }
+:deep(.fc-popover-title) { background: #1a1a1a !important; color: #e2e8f0 !important; }
+:deep(.fc-more-popover .fc-popover-body) { background: #141414 !important; }
+:deep(.fc-daygrid-more-link) { color: #888888 !important; }
+:deep(.fc-timegrid-slot) { border-color: #2a2a2a !important; height: 2rem !important; }
 :deep(.fc-timegrid-axis-cushion) { color: #475569 !important; font-size: 0.7rem !important; }
 :deep(.fc-now-indicator-line) { border-color: #f87171 !important; }
 
@@ -234,7 +234,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   padding: 1rem;
 }
 .ev-modal {
-  background: #0d0d22; border: 1px solid #1e1b4b;
+  background: #141414; border: 1px solid #2a2a2a;
   border-radius: 0.875rem; width: 100%; max-width: 420px;
   overflow: hidden; display: flex; flex-direction: column;
 }

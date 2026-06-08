@@ -148,7 +148,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader label="Category" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Stage icon</th>
@@ -236,7 +236,7 @@ async function confirmDelete() {
 .category-badge {
   display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px;
   font-size: 0.7rem; font-weight: 600;
-  background: #1e1b4b; color: #818cf8;
+  background: #2a2a2a; color: #c0c0c0;
 }
 .stage-icon-cell { font-size: 1.1rem; }
 </style>

@@ -167,14 +167,14 @@ function label(text: string, count: number) {
 <style scoped>
 .assoc-sections {
   display: flex; flex-direction: column; gap: 0;
-  border: 1px solid #1e1a4a; border-radius: 0.5rem; overflow: hidden;
+  border: 1px solid #222222; border-radius: 0.5rem; overflow: hidden;
 }
 .assoc-title {
   font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.07em; color: #334155; padding: 0.5rem 0.875rem;
-  background: #0e0e26; border-bottom: 1px solid #1e1a4a;
+  letter-spacing: 0.07em; color: #555555; padding: 0.5rem 0.875rem;
+  background: #141414; border-bottom: 1px solid #222222;
 }
-.assoc-section { border-bottom: 1px solid #1e1a4a; }
+.assoc-section { border-bottom: 1px solid #222222; }
 .assoc-section:last-child { border-bottom: none; }
 .assoc-toggle {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
@@ -182,13 +182,13 @@ function label(text: string, count: number) {
   color: #94a3b8; font-size: 0.8rem; font-weight: 500; text-align: left;
   transition: background 100ms;
 }
-.assoc-toggle:hover { background: #0b0b20; }
-.assoc-chevron { font-size: 1rem; line-height: 1; transition: transform 200ms; color: #334155; }
+.assoc-toggle:hover { background: #111111; }
+.assoc-chevron { font-size: 1rem; line-height: 1; transition: transform 200ms; color: #555555; }
 .assoc-chevron--open { transform: rotate(90deg); }
-.assoc-body { padding: 0.5rem 0.875rem 0.75rem; background: #0e0e26; }
+.assoc-body { padding: 0.5rem 0.875rem 0.75rem; background: #141414; }
 .assoc-badge {
   display: inline-block; padding: 0.05rem 0.35rem; border-radius: 0.2rem;
-  background: #1e1b4b; color: #818cf8; font-size: 0.62rem; font-weight: 600;
+  background: #2a2a2a; color: #aaaaaa; font-size: 0.62rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.04em; margin-left: 0.35rem;
 }
 </style>

@@ -219,7 +219,7 @@ async function confirmDelete() {
         <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">No albums yet.</div>
         <table v-else class="w-full">
           <thead>
-            <tr style="border-bottom:1px solid #1a1a3a;">
+            <tr style="border-bottom:1px solid #222222;">
               <th class="th" style="width:60px;"></th>
               <th class="th">Album</th>
               <th class="th">Concert / Venue</th>
@@ -395,15 +395,15 @@ async function confirmDelete() {
 .pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:#0f2a1e; color:#34d399; white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }
-.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid #2d2a6e; }
-.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#2d2a6e; }
+.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid #333333; }
+.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#333333; }
 
 .photo-count-btn {
-  color: #818cf8; background: transparent; border: none;
+  color: #c0c0c0; background: transparent; border: none;
   cursor: pointer; font-size: 0.8rem; padding: 0;
   text-decoration: underline; text-underline-offset: 2px;
 }
-.photo-count-btn:hover { color: #c4b5fd; }
+.photo-count-btn:hover { color: #d0d0d0; }
 
 .photos-grid {
   display: grid;
@@ -414,12 +414,12 @@ async function confirmDelete() {
   padding: 2px;
 }
 .photo-item {
-  background:#0e0c2a; border:1px solid #2d2a6e; border-radius:8px;
+  background:#0e0c2a; border:1px solid #333333; border-radius:8px;
   overflow:hidden; cursor:grab; position:relative;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
 .photo-item:active { cursor: grabbing; }
-.photo-dragging { opacity: 0.4; box-shadow: 0 0 0 2px #818cf8; }
+.photo-dragging { opacity: 0.4; box-shadow: 0 0 0 2px #c0c0c0; }
 .drag-handle {
   position:absolute; top:4px; left:6px; font-size:0.85rem;
   color:#475569; pointer-events:none; line-height:1;
@@ -446,8 +446,8 @@ async function confirmDelete() {
 .photo-remove:disabled { opacity:0.4; cursor:default; }
 .reorder-bar {
   display:flex; align-items:center; justify-content:space-between;
-  margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #2d2a6e;
+  margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #333333;
 }
 .reorder-hint { font-size:0.75rem; color:#475569; }
-.reorder-hint-idle { margin-top:0.6rem; font-size:0.72rem; color:#2d2a6e; text-align:center; }
+.reorder-hint-idle { margin-top:0.6rem; font-size:0.72rem; color:#333333; text-align:center; }
 </style>

@@ -101,28 +101,28 @@ function platformMeta(key: SocialPlatform) {
 <style scoped>
 .btn-add-sm {
   padding: 0.3rem 0.75rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff; transition: background 120ms;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; transition: background 120ms;
 }
-.btn-add-sm:hover { background: #4f46e5; }
+.btn-add-sm:hover { background: #ffffff; }
 .links-list { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.5rem; }
 .link-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.375rem 0.625rem; border-radius: 0.375rem;
-  background: #0b0b20; border: 1px solid #1a1a38;
+  background: #111111; border: 1px solid #222222;
 }
 .link-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 .link-platform { font-size: 0.7rem; font-weight: 600; color: #94a3b8; width: 6.5rem; flex-shrink: 0; }
 .link-url {
-  flex: 1; min-width: 0; font-size: 0.75rem; color: #6366f1;
+  flex: 1; min-width: 0; font-size: 0.75rem; color: #aaaaaa;
   text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.link-url:hover { color: #818cf8; }
+.link-url:hover { color: #d0d0d0; }
 .btn-edit-sm {
   padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #818cf8;
+  cursor: pointer; background: transparent; border: 1px solid #333333; color: #9ca3af;
   transition: background 100ms;
 }
-.btn-edit-sm:hover { background: #1e1b4b; }
+.btn-edit-sm:hover { background: #2a2a2a; }
 .btn-del-sm {
   padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid #3a1212; color: #f87171;
@@ -132,32 +132,32 @@ function platformMeta(key: SocialPlatform) {
 .link-form-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.5rem 0.625rem; border-radius: 0.375rem;
-  background: #0f0f26; border: 1px solid #1e2040; margin-top: 0.375rem;
+  background: #141414; border: 1px solid #2a2a2a; margin-top: 0.375rem;
 }
 .link-platform-select {
-  background: #0b0b20; border: 1px solid #1e2040; border-radius: 0.3rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.3rem;
   color: #e2e8f0; font-size: 0.75rem; padding: 0.25rem 0.375rem;
   outline: none; cursor: pointer; flex-shrink: 0;
 }
-.link-platform-select:focus { border-color: #6366f1; }
+.link-platform-select:focus { border-color: #888888; }
 .link-url-input {
-  flex: 1; min-width: 0; background: #0b0b20; border: 1px solid #1e2040;
+  flex: 1; min-width: 0; background: #111111; border: 1px solid #2a2a2a;
   border-radius: 0.3rem; color: #e2e8f0; font-size: 0.75rem;
   padding: 0.25rem 0.5rem; outline: none;
 }
-.link-url-input:focus { border-color: #6366f1; }
-.link-url-input::placeholder { color: #334155; }
+.link-url-input:focus { border-color: #888888; }
+.link-url-input::placeholder { color: #444444; }
 .btn-link-save {
   padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 100ms; flex-shrink: 0;
 }
-.btn-link-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-link-save:hover:not(:disabled) { background: #ffffff; }
 .btn-link-save:disabled { opacity: 0.5; cursor: default; }
 .btn-link-cancel {
   padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
   transition: background 100ms; flex-shrink: 0;
 }
-.btn-link-cancel:hover { background: #0f0f26; color: #94a3b8; }
+.btn-link-cancel:hover { background: #1a1a1a; color: #94a3b8; }
 </style>

@@ -26,7 +26,7 @@ import { ApiValidationError } from '@/api/client'
 import type { Release, ReleaseSummary, ReleasePayload, ReleasePhoto } from '@/types/release'
 
 const TYPE_BADGE: Record<string, string> = {
-  LP:          '#4338ca',
+  LP:          '#888888',
   EP:          '#0891b2',
   single:      '#059669',
   compilation: '#b45309',
@@ -240,7 +240,7 @@ async function uploadPhotos() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <th class="th" style="width:3.5rem;">Cover</th>
                 <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader label="Type" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
@@ -374,14 +374,14 @@ async function uploadPhotos() {
   height: 2.5rem;
   border-radius: 0.25rem;
   object-fit: cover;
-  border: 1px solid #1a1a38;
+  border: 1px solid #222222;
 }
 .cover-placeholder {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.25rem;
-  background: #111128;
-  border: 1px solid #1a1a38;
+  background: #1a1a1a;
+  border: 1px solid #222222;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,7 +405,7 @@ async function uploadPhotos() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #475569;
-  border-top: 1px solid #1e1a4a;
+  border-top: 1px solid #252525;
   margin-top: 1.5rem;
   padding-top: 0.875rem;
   margin-bottom: 0.75rem;
@@ -417,11 +417,11 @@ async function uploadPhotos() {
 }
 .rp-card {
   position: relative;
-  border: 1px solid #1a1a38;
+  border: 1px solid #222222;
   border-radius: 6px;
   overflow: hidden;
   cursor: grab;
-  background: #0d0d22;
+  background: #141414;
   transition: opacity 0.15s;
 }
 .rp-card:active { cursor: grabbing; }
@@ -429,12 +429,12 @@ async function uploadPhotos() {
 .rp-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 .rp-thumb-placeholder {
   width: 100%; aspect-ratio: 4/3; display: flex; align-items: center;
-  justify-content: center; color: #334155; font-size: 1.25rem; background: #111128;
+  justify-content: center; color: #334155; font-size: 1.25rem; background: #1a1a1a;
 }
 .rp-del {
   position: absolute; top: 3px; right: 3px;
   width: 18px; height: 18px; border-radius: 50%;
-  background: #0d0d22cc; border: 1px solid #3a1212;
+  background: #141414cc; border: 1px solid #3a1212;
   color: #f87171; font-size: 0.55rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 100ms;
@@ -448,10 +448,10 @@ async function uploadPhotos() {
 .rp-order-row { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .rp-btn-save {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; background: #1e1b4b;
-  border: 1px solid #312e81; color: #a5b4fc; transition: background 100ms;
+  font-weight: 600; cursor: pointer; background: #2a2a2a;
+  border: 1px solid #444444; color: #d0d0d0; transition: background 100ms;
 }
-.rp-btn-save:hover { background: #2d2a6e; }
+.rp-btn-save:hover { background: #333333; }
 
 .rp-add { margin-top: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .rp-add-title {
@@ -459,14 +459,14 @@ async function uploadPhotos() {
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 .rp-progress-wrap  { display: flex; flex-direction: column; gap: 0.3rem; }
-.rp-progress-bar   { height: 4px; background: #1e1a4a; border-radius: 9999px; overflow: hidden; }
-.rp-progress-fill  { height: 100%; background: #6366f1; border-radius: 9999px; transition: width 0.2s ease; }
+.rp-progress-bar   { height: 4px; background: #252525; border-radius: 9999px; overflow: hidden; }
+.rp-progress-fill  { height: 100%; background: #888888; border-radius: 9999px; transition: width 0.2s ease; }
 .rp-progress-label { font-size: 0.7rem; color: #94a3b8; text-align: center; }
 .rp-btn-upload {
   padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; background: #4f46e5;
-  border: 1px solid #4338ca; color: #fff; transition: background 100ms;
+  font-weight: 600; cursor: pointer; background: #333333;
+  border: 1px solid #888888; color: #fff; transition: background 100ms;
 }
-.rp-btn-upload:hover:not(:disabled) { background: #4338ca; }
+.rp-btn-upload:hover:not(:disabled) { background: #888888; }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 </style>

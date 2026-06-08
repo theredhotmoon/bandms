@@ -93,7 +93,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Website</th>
                 <SortHeader label="Gigs" sort-key="gigs_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="7rem" @sort="tc.toggleSort" />
@@ -106,7 +106,7 @@ async function confirmDelete() {
                 <td class="td font-medium" style="color:#e2e8f0;">{{ band.name }}</td>
                 <td class="td">
                   <a v-if="band.website" :href="band.website" target="_blank" rel="noopener"
-                     class="text-xs" style="color:#6366f1;">{{ band.website }}</a>
+                     class="text-xs" style="color:#9ca3af;">{{ band.website }}</a>
                   <span v-else style="color:#475569;">—</span>
                 </td>
                 <td class="td">
@@ -151,7 +151,7 @@ async function confirmDelete() {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.5rem; height: 1.5rem; padding: 0 0.375rem;
   border-radius: 9999px; font-size: 0.7rem; font-weight: 700;
-  background: #1e1b4b; color: #818cf8;
+  background: #2a2a2a; color: #c0c0c0;
 }
 .btn-message {
   padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;

@@ -109,13 +109,13 @@ function buildInputs() {
 .field-label { font-size: 0.75rem; font-weight: 600; color: #7c8fa6; }
 .chain-select {
   width: 100%; max-width: 28rem; padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem; border: 1px solid #1e2040;
-  background: #0e0e26; color: #e2e8f0; font-size: 0.875rem;
+  border-radius: 0.5rem; border: 1px solid #2a2a2a;
+  background: #141414; color: #e2e8f0; font-size: 0.875rem;
   outline: none; font-family: inherit;
   transition: border-color 150ms;
 }
 .chain-select:focus { border-color: #5154e5; }
-.chain-select option { background: #0e0e26; }
+.chain-select option { background: #141414; }
 .chain-desc { font-size: 0.72rem; color: #475569; margin-top: 0.15rem; }
 
 /* Build banner */
@@ -123,11 +123,11 @@ function buildInputs() {
   display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
   padding: 0.55rem 0.875rem;
   background: #0a0c1e; border: 1px solid #2a2860; border-radius: 0.5rem;
-  border-left: 3px solid #6366f1;
+  border-left: 3px solid #888888;
 }
 .build-icon  { font-size: 0.9rem; flex-shrink: 0; }
 .build-body  { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
-.build-label { font-size: 0.72rem; font-weight: 700; color: #a5b4fc; }
+.build-label { font-size: 0.72rem; font-weight: 700; color: #d0d0d0; }
 .build-desc  { font-size: 0.68rem; color: #475569; }
 .build-warn  { font-size: 0.72rem; color: #64748b; white-space: nowrap; }
 
@@ -137,11 +137,11 @@ function buildInputs() {
   white-space: nowrap; transition: background 120ms;
 }
 .build-btn--go {
-  background: #1e1b4b; border-color: #312e81; color: #a5b4fc;
+  background: #2a2a2a; border-color: #444444; color: #d0d0d0;
 }
-.build-btn--go:hover { background: #252370; }
+.build-btn--go:hover { background: #333333; }
 .build-btn--replace {
-  background: #4338ca; border-color: #4338ca; color: #fff;
+  background: #e8e8e8; border-color: #e8e8e8; color: #111111;
 }
-.build-btn--replace:hover { background: #4f46e5; }
+.build-btn--replace:hover { background: #333333; }
 </style>

@@ -118,7 +118,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Date" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Doors / Start</th>
                 <th class="th">Venue</th>
@@ -137,7 +137,7 @@ async function confirmDelete() {
                 </td>
                 <td class="td" style="color:#94a3b8;">{{ concert.venue?.name ?? '—' }}</td>
                 <td class="td">
-                  <span v-if="concert.bands?.length" class="text-xs" style="color:#a5b4fc;">
+                  <span v-if="concert.bands?.length" class="text-xs" style="color:#d0d0d0;">
                     {{ concert.bands.map(b => b.name).join(', ') }}
                   </span>
                   <span v-else style="color:#475569;">—</span>

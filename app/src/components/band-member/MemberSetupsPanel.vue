@@ -271,27 +271,27 @@ async function confirmDelete() {
 .sidebar-title { font-size: 0.7rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; }
 .btn-new {
   width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
-  background: #1e1b4b; border: 1px solid #312e81; color: #818cf8;
+  background: #2a2a2a; border: 1px solid #444444; color: #c0c0c0;
   font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.btn-new:hover { background: #252370; }
+.btn-new:hover { background: #333333; }
 
 .new-setup-row {
   display: flex; gap: 0.3rem; padding: 0.4rem 0.5rem;
   border-bottom: 1px solid #0f0f28;
 }
 .new-setup-input {
-  flex: 1; background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.3rem;
+  flex: 1; background: #111111; border: 1px solid #2a2a2a; border-radius: 0.3rem;
   color: #e2e8f0; font-size: 0.75rem; padding: 0.3rem 0.5rem; outline: none;
   font-family: inherit;
 }
-.new-setup-input:focus { border-color: #4338ca; }
+.new-setup-input:focus { border-color: #888888; }
 .btn-create {
   padding: 0.25rem 0.5rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 100ms;
 }
-.btn-create:hover:not(:disabled) { background: #4f46e5; }
+.btn-create:hover:not(:disabled) { background: #333333; }
 .btn-create:disabled { opacity: 0.4; cursor: default; }
 
 .sidebar-state {
@@ -306,15 +306,15 @@ async function confirmDelete() {
   border: 1px solid transparent; margin-bottom: 0.2rem;
   transition: background 100ms, border-color 100ms;
 }
-.setup-item:hover  { background: #0d0d28; border-color: #1e2040; }
-.setup-item--open  { background: #0e0e26; border-color: #312e81; }
+.setup-item:hover  { background: #0d0d28; border-color: #2a2a2a; }
+.setup-item--open  { background: #141414; border-color: #444444; }
 .setup-item-info   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
 .setup-name        { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.setup-instrument  { font-size: 0.62rem; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-instrument  { font-size: 0.62rem; color: #888888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-meta        { font-size: 0.62rem; color: #334155; }
 
 .del-btn {
-  background: none; border: none; cursor: pointer; color: #1e2040; font-size: 0.65rem;
+  background: none; border: none; cursor: pointer; color: #2a2a2a; font-size: 0.65rem;
   padding: 0.15rem 0.3rem; transition: color 100ms;
 }
 .del-btn:hover { color: #f87171; }
@@ -337,16 +337,16 @@ async function confirmDelete() {
 .editor-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.625rem 1rem; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0;
+  background: #0d0d0d; flex-shrink: 0;
 }
 .topbar-name { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
 
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms; min-width: 7rem;
 }
-.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:hover:not(:disabled) { background: #333333; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
 .btn-save--ok { background: #166534 !important; }
 
@@ -356,7 +356,7 @@ async function confirmDelete() {
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
+  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.75rem;
   padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .confirm-title  { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; }
@@ -364,9 +364,9 @@ async function confirmDelete() {
 .confirm-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .btn-ghost {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
 }
-.btn-ghost:hover { background: #0a0a1e; }
+.btn-ghost:hover { background: #111111; }
 .btn-danger {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
   cursor: pointer; background: #7f1d1d; border: 1px solid #991b1b; color: #fca5a5;

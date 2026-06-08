@@ -265,18 +265,18 @@ defineExpose({ activeSection })
 .setup-meta-bar {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
   padding: 0.75rem 1rem; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0;
+  background: #0d0d0d; flex-shrink: 0;
 }
 .field-group  { display: flex; flex-direction: column; gap: 0.2rem; }
 .field-label  { font-size: 0.68rem; font-weight: 600; color: #7c8fa6; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: #5154e5; }
 .field-input--sm { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-.field-input option { background: #0e0e26; }
+.field-input option { background: #141414; }
 
 .setup-instrument-tag {
   display: flex; align-items: center; gap: 0.4rem;
@@ -286,7 +286,7 @@ defineExpose({ activeSection })
 
 .section-tabs {
   display: flex; overflow-x: auto; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0; scrollbar-width: none;
+  background: #0d0d0d; flex-shrink: 0; scrollbar-width: none;
 }
 .section-tabs::-webkit-scrollbar { display: none; }
 .section-tab {
@@ -297,7 +297,7 @@ defineExpose({ activeSection })
   margin-bottom: -1px;
 }
 .section-tab:hover  { color: #64748b; }
-.section-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.section-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .tab-icon { font-size: 0.8rem; }
 
 .section-content {
@@ -315,23 +315,23 @@ defineExpose({ activeSection })
 .shared-opt {
   display: flex; align-items: center; gap: 0.35rem;
   padding: 0.3rem 0.65rem; border-radius: 0.4rem; font-size: 0.75rem;
-  border: 1px solid #1e2040; color: #64748b; cursor: pointer;
+  border: 1px solid #2a2a2a; color: #64748b; cursor: pointer;
   transition: border-color 150ms, color 150ms, background 150ms;
 }
 .shared-opt:hover { border-color: #334155; color: #94a3b8; }
-.shared-opt--active { border-color: #6366f1; color: #a5b4fc; background: #0f0f2a; }
-.shared-opt input[type="radio"] { accent-color: #6366f1; }
+.shared-opt--active { border-color: #888888; color: #d0d0d0; background: #0f0f2a; }
+.shared-opt input[type="radio"] { accent-color: #888888; }
 
 .shared-monitor-note {
   padding: 0.75rem 1rem; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0a0a20;
+  border: 1px solid #2a2a2a; background: #0a0a20;
   font-size: 0.8rem; color: #64748b; font-style: italic;
 }
 
 .bottom-bar {
   border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;
   display: flex; align-items: center; justify-content: flex-end;
-  gap: 0.75rem; background: #070718; flex-shrink: 0;
+  gap: 0.75rem; background: #0d0d0d; flex-shrink: 0;
 }
 .save-hint {
   flex: 1; font-size: 0.65rem; color: #2e3a52;
@@ -342,21 +342,21 @@ defineExpose({ activeSection })
   cursor: pointer; background: transparent; border: 1px solid #334155; color: #64748b;
   transition: background 150ms, border-color 150ms, color 150ms;
 }
-.btn-rider-only:hover { background: #0a0a1e; border-color: #475569; color: #94a3b8; }
+.btn-rider-only:hover { background: #111111; border-color: #475569; color: #94a3b8; }
 
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms; min-width: 7rem;
 }
-.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:hover:not(:disabled) { background: #333333; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
 .btn-save--ok { background: #166534 !important; }
 
 .foh-section  { display: flex; flex-direction: column; gap: 0.35rem; }
 .foh-textarea {
   width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0e0e26; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #141414; color: #e2e8f0;
   font-size: 0.85rem; font-family: inherit; outline: none; resize: vertical;
   transition: border-color 150ms;
 }

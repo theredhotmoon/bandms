@@ -391,11 +391,11 @@ function handleSubmit() {
 .toggle-row--small { gap: 0.375rem; }
 .toggle-check { display: none; }
 .toggle-track {
-  width: 2rem; height: 1rem; border-radius: 9999px; background: #1a1a38;
+  width: 2rem; height: 1rem; border-radius: 9999px; background: #222222;
   position: relative; flex-shrink: 0; transition: background 150ms;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
 }
-.toggle-check:checked + .toggle-track { background: #4f46e5; border-color: #4f46e5; }
+.toggle-check:checked + .toggle-track { background: #333333; border-color: #333333; }
 .toggle-thumb {
   position: absolute; top: 1px; left: 1px; width: 0.625rem; height: 0.625rem;
   border-radius: 9999px; background: #475569; transition: transform 150ms, background 150ms;
@@ -405,30 +405,30 @@ function handleSubmit() {
 
 /* ── Cover drop ──────────────────────────────────────────────── */
 .cover-drop {
-  border: 2px dashed #1e2040; border-radius: 0.5rem;
-  background: #0e0e26; cursor: pointer; overflow: hidden;
+  border: 2px dashed #2a2a2a; border-radius: 0.5rem;
+  background: #141414; cursor: pointer; overflow: hidden;
   transition: border-color 150ms, background 150ms;
   min-height: 120px; display: flex; align-items: center; justify-content: center;
 }
-.cover-drop:hover { border-color: #6366f1; background: #0d0d22; }
-.cover-drop.has-image { border-style: solid; border-color: #1e2040; min-height: 0; }
-.cover-img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: #050510; }
+.cover-drop:hover { border-color: #888888; background: #141414; }
+.cover-drop.has-image { border-style: solid; border-color: #2a2a2a; min-height: 0; }
+.cover-img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: #0d0d0d; }
 .cover-placeholder { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1.5rem; }
 .cover-icon { width: 2rem; height: 2rem; color: #334155; }
 .cover-hint { font-size: 0.8125rem; color: #475569; }
 
 /* ── Tracks ──────────────────────────────────────────────────── */
-.track-block { border: 1px solid #1e2040; border-radius: 0.5rem; overflow: hidden; }
-.track-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; background: #0e0e26; }
+.track-block { border: 1px solid #2a2a2a; border-radius: 0.5rem; overflow: hidden; }
+.track-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; background: #141414; }
 .track-num { font-size: 0.75rem; font-weight: 600; color: #475569; width: 1.25rem; text-align: center; flex-shrink: 0; }
 .track-dur { max-width: 5rem; }
 .track-toggle-btn {
   padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #475569;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #475569;
   transition: background 120ms, border-color 120ms, color 120ms; flex-shrink: 0;
 }
-.track-toggle-btn:hover { background: #16163a; border-color: #252350; color: #94a3b8; }
-.track-toggle-btn--has  { border-color: #252350; color: #818cf8; }
+.track-toggle-btn:hover { background: #16163a; border-color: #333333; color: #94a3b8; }
+.track-toggle-btn--has  { border-color: #333333; color: #c0c0c0; }
 .track-remove {
   padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.75rem;
   cursor: pointer; background: transparent; border: 1px solid #2d1212; color: #f87171;
@@ -436,18 +436,18 @@ function handleSubmit() {
 }
 .track-remove:hover { background: #2d1010; }
 
-.track-panel { padding: 0.625rem 0.875rem; border-top: 1px solid #1a1a3a; background: #0b0b20; }
+.track-panel { padding: 0.625rem 0.875rem; border-top: 1px solid #222222; background: #111111; }
 .track-links-panel { display: flex; flex-direction: column; gap: 0.375rem; }
 .track-links-hint { font-size: 0.7rem; color: #475569; margin-bottom: 0.375rem; }
 
 .lyrics-textarea {
-  width: 100%; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  width: 100%; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
   color: #e2e8f0; font-size: 0.8125rem; padding: 0.5rem 0.625rem; outline: none;
   font-family: 'Courier New', monospace; line-height: 1.6; resize: vertical;
   transition: border-color 150ms, box-shadow 150ms;
 }
 .lyrics-textarea:focus {
-  border-color: #5154e5;
+  border-color: #888888;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 </style>

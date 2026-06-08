@@ -114,7 +114,7 @@ function update(field: keyof MemberMonitorPrefs, value: unknown) {
 .monitor-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
 }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -124,7 +124,7 @@ function update(field: keyof MemberMonitorPrefs, value: unknown) {
 
 .field-input {
   display: block; width: 100%; padding: 0.45rem 0.65rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: #5154e5; }
@@ -133,13 +133,13 @@ function update(field: keyof MemberMonitorPrefs, value: unknown) {
 .type-buttons { display: flex; gap: 0.375rem; flex-wrap: wrap; }
 .type-btn {
   padding: 0.3rem 0.75rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
-  cursor: pointer; background: #0e0e26; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: #141414; border: 1px solid #2a2a2a; color: #64748b;
   transition: background 100ms, border-color 100ms, color 100ms;
 }
-.type-btn:hover  { border-color: #3730a3; color: #94a3b8; }
-.type-btn--on    { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }
+.type-btn:hover  { border-color: #555555; color: #94a3b8; }
+.type-btn--on    { background: #2a2a2a; border-color: #888888; color: #d0d0d0; }
 
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.25rem; }
-.toggle-input { accent-color: #4338ca; width: 1rem; height: 1rem; cursor: pointer; }
+.toggle-input { accent-color: #888888; width: 1rem; height: 1rem; cursor: pointer; }
 .toggle-text  { font-size: 0.8rem; color: #94a3b8; }
 </style>

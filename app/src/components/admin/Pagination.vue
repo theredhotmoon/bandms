@@ -66,7 +66,7 @@ const pages = computed<(number | '…')[]>(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  border-top: 1px solid #13132e;
+  border-top: 1px solid #1f1f1f;
 }
 
 .pg-info {
@@ -97,11 +97,11 @@ const pages = computed<(number | '…')[]>(() => {
   transition: all 100ms;
 }
 .pg-btn svg { width: 0.875rem; height: 0.875rem; }
-.pg-btn:hover:not(:disabled) { background: #0f0f28; border-color: #1e1c4a; color: #e2e8f0; }
+.pg-btn:hover:not(:disabled) { background: #1a1a1a; border-color: #333333; color: #e2e8f0; }
 .pg-btn:disabled { opacity: 0.3; cursor: default; }
 
 .pg-num { font-variant-numeric: tabular-nums; }
-.pg-num--active { background: #1e1b4b; border-color: #4338ca; color: #818cf8; }
+.pg-num--active { background: #2a2a2a; border-color: #555555; color: #ffffff; }
 
 .pg-ellipsis {
   font-size: 0.75rem;

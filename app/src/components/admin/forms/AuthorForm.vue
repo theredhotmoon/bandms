@@ -190,11 +190,11 @@ function submit() {
 .hint       { font-weight: 400; text-transform: none; letter-spacing: 0; color: #334155; font-size: 0.65rem; }
 .field-error { font-size: 0.72rem; color: #f87171; margin-top: 0.2rem; }
 
-.assoc-section { border: 1px solid #1a1a38; border-radius: 0.375rem; overflow: hidden; }
+.assoc-section { border: 1px solid #222222; border-radius: 0.375rem; overflow: hidden; }
 .assoc-toggle {
   width: 100%; display: flex; align-items: center; gap: 0.5rem;
   padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 500; color: #94a3b8;
-  background: #0d0d22; border: none; cursor: pointer; text-align: left;
+  background: #141414; border: none; cursor: pointer; text-align: left;
   transition: color 120ms;
 }
 .assoc-toggle:hover { color: #e2e8f0; }
@@ -204,13 +204,13 @@ function submit() {
 .assoc-chevron--open { transform: rotate(90deg); }
 .assoc-list {
   max-height: 12rem; overflow-y: auto; padding: 0.375rem 0;
-  border-top: 1px solid #1a1a38; background: #050510;
+  border-top: 1px solid #222222; background: #0d0d0d;
 }
 .assoc-item {
   display: flex; align-items: center; gap: 0.625rem;
   padding: 0.3rem 0.875rem; cursor: pointer; transition: background 80ms;
 }
-.assoc-item:hover { background: #111128; }
-.assoc-check { accent-color: #6366f1; flex-shrink: 0; }
+.assoc-item:hover { background: #1a1a1a; }
+.assoc-check { accent-color: #888888; flex-shrink: 0; }
 .assoc-text { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

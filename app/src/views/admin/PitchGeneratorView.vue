@@ -244,17 +244,17 @@ async function copyPitch() {
 .type-tabs { display: flex; flex-direction: column; gap: 0.25rem; }
 .type-tab {
   padding: 0.375rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
-  background: transparent; border: 1px solid #1a1a38; color: #64748b; cursor: pointer;
+  background: transparent; border: 1px solid #222222; color: #64748b; cursor: pointer;
   text-align: left; transition: background 100ms, border-color 100ms, color 100ms;
 }
-.type-tab:hover { background: #111128; color: #94a3b8; }
-.type-tab--active { background: #1e1b4b; border-color: #312e81; color: #a5b4fc; }
+.type-tab:hover { background: #1a1a1a; color: #94a3b8; }
+.type-tab--active { background: #2a2a2a; border-color: #444444; color: #d0d0d0; }
 .ctrl-input {
-  width: 100%; background: #050510; border: 1px solid #2d2a6e; border-radius: 0.375rem;
+  width: 100%; background: #111111; border: 1px solid #2a2a2a; border-radius: 0.375rem;
   color: #e2e8f0; font-size: 0.8125rem; padding: 0.4rem 0.625rem; outline: none; font-family: inherit;
   transition: border-color 150ms;
 }
-.ctrl-input:focus { border-color: #6366f1; }
+.ctrl-input:focus { border-color: #888888; }
 .warning-box {
   font-size: 0.75rem; color: #fbbf24; background: #1a160a; border: 1px solid #433410;
   border-radius: 0.375rem; padding: 0.5rem 0.75rem;
@@ -262,32 +262,32 @@ async function copyPitch() {
 
 .contact-status {
   display: flex; align-items: center; flex-wrap: wrap; gap: 0.375rem;
-  padding: 0.375rem 0.5rem; border-radius: 0.375rem; background: #0a0a1c;
-  border: 1px solid #1a1a38;
+  padding: 0.375rem 0.5rem; border-radius: 0.375rem; background: #111111;
+  border: 1px solid #222222;
 }
 .contact-badge {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
 }
 .contact-badge--returning { background: #0f2a1e; color: #34d399; border: 1px solid #065f46; }
-.contact-badge--new       { background: #1a1a38; color: #64748b; border: 1px solid #2d2a6e; }
+.contact-badge--new       { background: #222222; color: #64748b; border: 1px solid #333333; }
 .contact-name   { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
 .contact-detail { font-size: 0.75rem; color: #475569; }
 .contact-hint   { font-size: 0.75rem; color: #334155; }
 
-.pg-output { display: flex; flex-direction: column; gap: 0; border: 1px solid #1a1a38; border-radius: 0.5rem; overflow: hidden; }
+.pg-output { display: flex; flex-direction: column; gap: 0; border: 1px solid #222222; border-radius: 0.5rem; overflow: hidden; }
 .output-toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.5rem 0.75rem; background: #0d0d22; border-bottom: 1px solid #1a1a38;
+  padding: 0.5rem 0.75rem; background: #141414; border-bottom: 1px solid #222222;
 }
-.output-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #334155; }
+.output-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #555555; }
 .copy-btn {
   padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 600;
-  background: #1e1b4b; border: 1px solid #312e81; color: #a5b4fc; cursor: pointer;
+  background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0; cursor: pointer;
 }
-.copy-btn:hover { background: #2d2a6e; }
+.copy-btn:hover { background: #333333; }
 .pitch-text {
-  background: #050510; color: #94a3b8; font-family: 'Courier New', monospace;
+  background: #0d0d0d; color: #94a3b8; font-family: 'Courier New', monospace;
   font-size: 0.8rem; line-height: 1.7; padding: 1rem; margin: 0;
   white-space: pre-wrap; word-break: break-word; min-height: 320px;
 }

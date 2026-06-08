@@ -167,12 +167,12 @@ function submit() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #475569;
-  border-top: 1px solid #1e1a4a;
+  border-top: 1px solid #252525;
   padding-top: 0.75rem;
 }
 
 .progress-wrap  { display: flex; flex-direction: column; gap: 0.35rem; }
-.progress-bar   { height: 5px; background: #1e1a4a; border-radius: 9999px; overflow: hidden; }
-.progress-fill  { height: 100%; background: #6366f1; border-radius: 9999px; transition: width 0.2s ease; }
+.progress-bar   { height: 5px; background: #252525; border-radius: 9999px; overflow: hidden; }
+.progress-fill  { height: 100%; background: #888888; border-radius: 9999px; transition: width 0.2s ease; }
 .progress-label { font-size: 0.72rem; color: #94a3b8; text-align: center; }
 </style>

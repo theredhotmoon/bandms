@@ -7,7 +7,7 @@ defineEmits<{ confirm: []; cancel: [] }>()
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="$emit('cancel')" />
-      <div class="relative z-10 w-full max-w-sm rounded-xl shadow-2xl" style="background:#0f0f26; border:1px solid #1e2040;">
+      <div class="relative z-10 w-full max-w-sm rounded-xl shadow-2xl" style="background:#111111; border:1px solid #222222;">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:#3f1212;">
@@ -31,10 +31,10 @@ defineEmits<{ confirm: []; cancel: [] }>()
 <style scoped>
 .btn-ghost {
   padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #94a3b8;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #94a3b8;
   transition: background 120ms;
 }
-.btn-ghost:hover { background: #1a1a38; }
+.btn-ghost:hover { background: #1a1a1a; }
 .btn-danger {
   padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
   cursor: pointer; background: #7f1d1d; border: none; color: #fca5a5;

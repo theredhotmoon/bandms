@@ -527,7 +527,7 @@ function isAnyUpdatePending(id: number): boolean {
   font-weight: 600;
   color: #475569;
   background: #12122e;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   border-radius: 9999px;
   padding: 0 0.45rem;
   line-height: 1.6;
@@ -535,7 +535,7 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Drop zone ─────────────────────────────────────────────── */
 .blm-drop {
-  border: 2px dashed #1e2040;
+  border: 2px dashed #2a2a2a;
   border-radius: 0.625rem;
   padding: 2rem 1.5rem;
   text-align: center;
@@ -549,20 +549,20 @@ function isAnyUpdatePending(id: number): boolean {
 }
 .blm-drop:hover,
 .blm-drop--active {
-  border-color: #6366f1;
+  border-color: #888888;
   background: #100e30;
 }
 
 .blm-drop-icon {
   width: 2rem;
   height: 2rem;
-  color: #4338ca;
+  color: #888888;
   margin-bottom: 0.25rem;
 }
 .blm-drop-label {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #c4b5fd;
+  color: #d0d0d0;
 }
 .blm-drop-hint {
   font-size: 0.7rem;
@@ -574,8 +574,8 @@ function isAnyUpdatePending(id: number): boolean {
   display: flex;
   gap: 1.25rem;
   padding: 1rem;
-  background: #0b0b20;
-  border: 1px solid #1e2040;
+  background: #111111;
+  border: 1px solid #2a2a2a;
   border-radius: 0.625rem;
 }
 @media (max-width: 560px) {
@@ -587,7 +587,7 @@ function isAnyUpdatePending(id: number): boolean {
   width: 8rem;
   min-height: 6rem;
   background: #141230;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -648,22 +648,22 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Logo card ─────────────────────────────────────────────── */
 .blm-card {
-  background: #0b0b20;
-  border: 1px solid #1a1a38;
+  background: #111111;
+  border: 1px solid #222222;
   border-radius: 0.625rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: border-color 150ms;
 }
-.blm-card:hover { border-color: #252350; }
+.blm-card:hover { border-color: #333333; }
 .blm-card--default { border-color: #78400a; box-shadow: 0 0 0 1px #92400e33; }
 .blm-card--deprecated { opacity: 0.55; }
 
 .blm-card-thumb {
   position: relative;
   background: #141230;
-  border-bottom: 1px solid #1a1a38;
+  border-bottom: 1px solid #222222;
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -707,9 +707,9 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-badge--vector {
-  background: #1e3a5f;
+  background: #222222;
   color: #7dd3fc;
-  border: 1px solid #1d4ed8;
+  border: 1px solid #444444;
 }
 
 .blm-badge--deprecated {
@@ -737,8 +737,8 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-chip {
   font-size: 0.6rem;
   font-weight: 600;
-  color: #6366f1;
-  background: #1a1848;
+  color: #888888;
+  background: #1a1a1a;
   border: 1px solid #252470;
   border-radius: 0.25rem;
   padding: 0.1rem 0.375rem;
@@ -757,7 +757,7 @@ function isAnyUpdatePending(id: number): boolean {
 
 .blm-card-version {
   font-size: 0.68rem;
-  color: #818cf8;
+  color: #c0c0c0;
   margin: 0;
 }
 
@@ -778,7 +778,7 @@ function isAnyUpdatePending(id: number): boolean {
   gap: 0.25rem;
 }
 
-.blm-meta-sep { color: #1e2040; }
+.blm-meta-sep { color: #2a2a2a; }
 
 /* ── Card action buttons ───────────────────────────────────── */
 .blm-card-actions {
@@ -797,13 +797,13 @@ function isAnyUpdatePending(id: number): boolean {
   border-radius: 0.3rem;
   cursor: pointer;
   background: #0e0c2a;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   color: #64748b;
   transition: background 100ms, color 100ms, border-color 100ms;
   line-height: 1.4;
 }
 .blm-action-btn:hover:not(:disabled) {
-  background: #161440;
+  background: #141414;
   color: #94a3b8;
   border-color: #252468;
 }
@@ -832,9 +832,9 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-action-btn--edit:hover:not(:disabled) {
-  background: #1e1b4b;
-  color: #a5b4fc;
-  border-color: #312e81;
+  background: #2a2a2a;
+  color: #d0d0d0;
+  border-color: #444444;
 }
 
 .blm-action-btn--delete {
@@ -889,8 +889,8 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Context pins ──────────────────────────────────────────── */
 .blm-pins-section {
-  background: #0b0b20;
-  border: 1px solid #1e2040;
+  background: #111111;
+  border: 1px solid #2a2a2a;
   border-radius: 0.625rem;
   padding: 1rem 1.25rem;
 }

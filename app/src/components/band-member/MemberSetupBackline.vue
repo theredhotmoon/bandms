@@ -90,13 +90,13 @@ function update(field: keyof MemberBacklinePrefs, value: unknown) {
 .backline-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
 }
 .needed-row { display: flex; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-.toggle-input { accent-color: #4338ca; width: 1rem; height: 1rem; cursor: pointer; }
+.toggle-input { accent-color: #888888; width: 1rem; height: 1rem; cursor: pointer; }
 .toggle-text { font-size: 0.85rem; color: #475569; }
-.toggle-text--on { color: #a5b4fc; font-weight: 600; }
+.toggle-text--on { color: #d0d0d0; font-weight: 600; }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -104,10 +104,10 @@ function update(field: keyof MemberBacklinePrefs, value: unknown) {
 .field-label { font-size: 0.72rem; font-weight: 600; color: #7c8fa6; }
 .field-input {
   display: block; width: 100%; padding: 0.45rem 0.65rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: #5154e5; }
 .field-input::placeholder { color: #1e2a40; }
-.field-input option { background: #0e0e26; }
+.field-input option { background: #141414; }
 </style>

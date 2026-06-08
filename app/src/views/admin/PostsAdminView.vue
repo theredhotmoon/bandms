@@ -118,7 +118,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Tags</th>
                 <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
@@ -187,6 +187,6 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped>
 .pill-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:#1e1b4b; color:#a5b4fc; white-space:nowrap; }
+.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:#2a2a2a; color:#d0d0d0; white-space:nowrap; }
 .pill--tag { background:#0f2a1e; color:#34d399; }
 </style>

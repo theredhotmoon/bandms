@@ -150,7 +150,7 @@ function exportCsv() {
   display: inline-flex; align-items: center; gap: 0.4rem;
   padding: 0.4rem 0.875rem; border-radius: 0.5rem;
   font-size: 0.8125rem; font-weight: 500;
-  background: #1e293b; color: #94a3b8;
+  background: #1f1f1f; color: #94a3b8;
   border: 1px solid #334155; cursor: pointer;
   transition: background 120ms, color 120ms;
 }
@@ -160,7 +160,7 @@ function exportCsv() {
 .search-input {
   width: 100%; max-width: 360px;
   padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #1e293b; background: #0f172a;
+  border: 1px solid #1f1f1f; background: #0d0d0d;
   color: #e2e8f0; font-size: 0.875rem; outline: none;
 }
 .search-input:focus { border-color: #334155; }
@@ -178,11 +178,11 @@ function exportCsv() {
   text-align: left; padding: 0.5rem 0.75rem;
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.07em; color: #475569;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid #1f1f1f;
 }
 .sub-table td {
   padding: 0.625rem 0.75rem;
-  border-bottom: 1px solid #0f172a;
+  border-bottom: 1px solid #0d0d0d;
   vertical-align: middle;
 }
 .sub-table tr:hover td { background: #0d0d25; }
@@ -195,7 +195,7 @@ function exportCsv() {
   display: inline-block;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
   font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-  background: #1e293b; color: #64748b;
+  background: #1f1f1f; color: #64748b;
 }
 
 .confirm-text  { font-size: 0.78rem; color: #94a3b8; margin-right: 0.375rem; }
@@ -210,7 +210,7 @@ function exportCsv() {
 .btn-confirm-no {
   padding: 0.2rem 0.6rem; border-radius: 0.25rem;
   font-size: 0.75rem; font-weight: 600;
-  background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+  background: #1f1f1f; color: #94a3b8; border: 1px solid #334155;
   cursor: pointer;
   transition: background 100ms;
 }
@@ -230,7 +230,7 @@ function exportCsv() {
 }
 .pagination button {
   padding: 0.35rem 0.75rem; border-radius: 0.375rem;
-  background: #1e293b; color: #94a3b8;
+  background: #1f1f1f; color: #94a3b8;
   border: 1px solid #334155; cursor: pointer; font-size: 0.8125rem;
   transition: background 100ms;
 }

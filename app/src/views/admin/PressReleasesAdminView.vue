@@ -129,7 +129,7 @@ function hostname(url: string): string {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <th class="th" style="width:3.5rem;">Image</th>
                 <SortHeader label="Article" sort-key="og_title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Tags</th>
@@ -218,11 +218,11 @@ function hostname(url: string): string {
 <style scoped>
 .og-thumb {
   width: 3rem; height: 2.25rem; border-radius: 0.25rem;
-  object-fit: cover; border: 1px solid #1a1a38;
+  object-fit: cover; border: 1px solid #222222;
 }
 .og-thumb-placeholder {
   width: 3rem; height: 2.25rem; border-radius: 0.25rem;
-  background: #111128; border: 1px solid #1a1a38;
+  background: #1a1a1a; border: 1px solid #222222;
   display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
 }
 .pr-title {
@@ -233,11 +233,11 @@ function hostname(url: string): string {
 .tag-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .epk-badge {
   display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.2rem; margin-right: 0.375rem;
-  background: #1e1b4b; color: #818cf8; font-size: 0.62rem; font-weight: 700;
+  background: #2a2a2a; color: #c0c0c0; font-size: 0.62rem; font-weight: 700;
   letter-spacing: 0.06em; vertical-align: middle;
 }
 .tag-chip {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
-  background: #1e1b4b; color: #818cf8; font-size: 0.65rem; font-weight: 500;
+  background: #2a2a2a; color: #c0c0c0; font-size: 0.65rem; font-weight: 500;
 }
 </style>

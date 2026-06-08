@@ -336,8 +336,8 @@ async function confirmDelete() {
 .members-sidebar {
   width: 15rem;
   flex-shrink: 0;
-  border-right: 1px solid #0f0f28;
-  background: #060614;
+  border-right: 1px solid #1a1a1a;
+  background: #0a0a0a;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -348,7 +348,7 @@ async function confirmDelete() {
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 0.875rem 0.625rem;
-  border-bottom: 1px solid #0f0f28;
+  border-bottom: 1px solid #1a1a1a;
   flex-shrink: 0;
 }
 .sidebar-title {
@@ -360,11 +360,11 @@ async function confirmDelete() {
 }
 .btn-new {
   width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
-  background: #1e1b4b; border: 1px solid #312e81; color: #818cf8;
+  background: #2a2a2a; border: 1px solid #444444; color: #c0c0c0;
   font-size: 0.9rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.btn-new:hover { background: #252370; }
+.btn-new:hover { background: #333333; }
 
 .sidebar-state {
   padding: 1.25rem 0.875rem;
@@ -376,7 +376,7 @@ async function confirmDelete() {
 
 .list-group-label {
   font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.07em; color: #a5b4fc;
+  letter-spacing: 0.07em; color: #d0d0d0;
   padding: 0.5rem 0.5rem 0.2rem;
 }
 .list-group-label--dim { color: #334155; }
@@ -387,27 +387,27 @@ async function confirmDelete() {
   cursor: pointer; border: 1px solid transparent;
   margin-bottom: 0.15rem; transition: background 100ms, border-color 100ms;
 }
-.member-item:hover        { background: #0d0d28; border-color: #1e2040; }
-.member-item--open        { background: #0e0e26; border-color: #312e81; }
+.member-item:hover        { background: #181818; border-color: #2a2a2a; }
+.member-item--open        { background: #141414; border-color: #444444; }
 .member-item--former      { opacity: 0.6; }
 .member-item--former.member-item--open { opacity: 0.85; }
-.member-item--dragging    { opacity: 0.35; border-color: #6366f1; cursor: grabbing; }
+.member-item--dragging    { opacity: 0.35; border-color: #888888; cursor: grabbing; }
 .member-item[draggable]   { cursor: grab; }
 
 .item-avatar { flex-shrink: 0; }
 .avatar-img  { width: 2rem; height: 2rem; border-radius: 9999px; object-fit: cover; }
 .avatar-placeholder {
   width: 2rem; height: 2rem; border-radius: 9999px;
-  background: #1e1b4b; color: #818cf8;
+  background: #2a2a2a; color: #c0c0c0;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.02em;
 }
-.avatar-placeholder--dim { background: #1a1a30; color: #475569; }
+.avatar-placeholder--dim { background: #222222; color: #475569; }
 
 .item-info  { flex: 1; min-width: 0; }
 .item-name  { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-name--dim { color: #94a3b8; }
-.item-role  { font-size: 0.65rem; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-role  { font-size: 0.65rem; color: #888888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-role--dim { color: #334155; }
 .item-instrs { font-size: 0.62rem; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -431,16 +431,16 @@ async function confirmDelete() {
 
 .btn-primary-lg {
   margin-top: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 0.5rem;
-  background: #4338ca; border: none; color: #fff;
+  background: #e8e8e8; border: none; color: #111111;
   font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 150ms;
 }
-.btn-primary-lg:hover { background: #4f46e5; }
+.btn-primary-lg:hover { background: #ffffff; }
 
 /* Topbar */
 .detail-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.625rem 1.25rem; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0;
+  padding: 0.625rem 1.25rem; border-bottom: 1px solid #1a1a1a;
+  background: #0d0d0d; flex-shrink: 0;
 }
 .topbar-member { display: flex; align-items: center; gap: 0.75rem; }
 .topbar-avatar { flex-shrink: 0; }
@@ -449,12 +449,12 @@ async function confirmDelete() {
 }
 .topbar-avatar-placeholder {
   width: 2.5rem; height: 2.5rem; border-radius: 9999px;
-  background: #1e1b4b; color: #818cf8;
+  background: #2a2a2a; color: #c0c0c0;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.72rem; font-weight: 700;
 }
 .topbar-name { font-size: 0.925rem; font-weight: 700; color: #e2e8f0; }
-.topbar-role { font-size: 0.75rem; color: #6366f1; margin-top: 0.1rem; }
+.topbar-role { font-size: 0.75rem; color: #888888; margin-top: 0.1rem; }
 
 .btn-delete {
   padding: 0.3rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
@@ -465,8 +465,8 @@ async function confirmDelete() {
 
 /* Tab bar */
 .detail-tabs {
-  display: flex; border-bottom: 1px solid #0f0f28;
-  background: #070718; flex-shrink: 0;
+  display: flex; border-bottom: 1px solid #1a1a1a;
+  background: #0d0d0d; flex-shrink: 0;
 }
 .detail-tab {
   display: flex; align-items: center; gap: 0.3rem;
@@ -476,7 +476,7 @@ async function confirmDelete() {
   margin-bottom: -1px;
 }
 .detail-tab:hover  { color: #64748b; }
-.detail-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.detail-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 
 /* Tab content */
 .tab-content {

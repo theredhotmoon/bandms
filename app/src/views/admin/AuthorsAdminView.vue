@@ -111,7 +111,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1a1a3a;">
+              <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Contact channels</th>
                 <th class="th">Notes</th>
@@ -197,7 +197,7 @@ async function confirmDelete() {
 .contact-chip--email   { background: #0c1e2e; color: #60a5fa; border: 1px solid #1e3a5f; }
 .contact-chip--phone   { background: #0f2a1e; color: #34d399; border: 1px solid #166534; }
 .contact-chip--whatsapp{ background: #0f2a1e; color: #4ade80; border: 1px solid #166534; }
-.contact-chip--fb      { background: #111740; color: #818cf8; border: 1px solid #312e81; }
+.contact-chip--fb      { background: #111740; color: #c0c0c0; border: 1px solid #444444; }
 .contact-chip--ig      { background: #2a0f1e; color: #f472b6; border: 1px solid #831843; }
 .contact-chip:hover    { opacity: 0.8; }
 </style>

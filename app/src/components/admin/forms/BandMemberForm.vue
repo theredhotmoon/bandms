@@ -258,7 +258,7 @@ function submit() {
             >
               <span class="toggle-thumb" />
             </button>
-            <span class="text-sm" :style="form.is_current ? 'color:#818cf8;' : 'color:#94a3b8;'">
+            <span class="text-sm" :style="form.is_current ? 'color:#e0e0e0;' : 'color:#94a3b8;'">
               {{ form.is_current ? 'Current' : 'Ex-member' }}
             </span>
           </label>
@@ -360,7 +360,7 @@ function submit() {
 /* ── Labels / platform row ──────────────────────────────────── */
 .member-links-heading {
   font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: #a5b4fc; margin-bottom: 0.5rem;
+  letter-spacing: 0.06em; color: #d0d0d0; margin-bottom: 0.5rem;
 }
 .platform-row { display: flex; align-items: center; gap: 0.625rem; }
 .platform-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
@@ -378,16 +378,16 @@ function submit() {
   display: inline-flex; flex-direction: column; align-items: center;
   gap: 0.2rem; padding: 0.375rem 0.5rem; border-radius: 0.5rem;
   font-size: 0.7rem; font-weight: 500; cursor: pointer;
-  border: 1.5px solid #1e2040; color: #64748b;
+  border: 1.5px solid #2a2a2a; color: #64748b;
   background: transparent; user-select: none;
   transition: border-color 100ms, color 100ms, background 100ms;
   line-height: 1.2;
 }
-.main-inst-card:hover { border-color: #3730a3; color: #94a3b8; }
+.main-inst-card:hover { border-color: #555555; color: #94a3b8; }
 .main-inst-card--on {
-  border-color: #818cf8; color: #e0e7ff;
-  background: #1e1b4b;
-  box-shadow: 0 0 0 1px #4338ca44;
+  border-color: #888888; color: #ffffff;
+  background: #2a2a2a;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
 }
 .main-inst-emoji { font-size: 1rem; line-height: 1; }
 .main-inst-name  { font-size: 0.68rem; }
@@ -397,27 +397,27 @@ function submit() {
   display: inline-flex; align-items: center;
   padding: 0.25rem 0.625rem; border-radius: 9999px;
   font-size: 0.75rem; font-weight: 500; cursor: pointer;
-  border: 1px solid #1e2040; color: #64748b;
+  border: 1px solid #2a2a2a; color: #64748b;
   background: transparent; user-select: none;
   transition: border-color 100ms, color 100ms, background 100ms;
 }
-.instrument-check:hover { border-color: #3730a3; color: #94a3b8; }
-.instrument-check--on { border-color: #4338ca; color: #a5b4fc; background: #1e1b4b; }
+.instrument-check:hover { border-color: #555555; color: #94a3b8; }
+.instrument-check--on { border-color: #888888; color: #ffffff; background: #2a2a2a; }
 
 /* ── Status toggle ──────────────────────────────────────────── */
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle {
   position: relative; width: 2.5rem; height: 1.375rem;
   border-radius: 9999px; border: none; cursor: pointer;
-  background: #1e293b; transition: background 200ms;
+  background: #2a2a2a; transition: background 200ms;
 }
-.toggle--on { background: #1e1b4b; }
+.toggle--on { background: #2a2a2a; }
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
   background: #475569; transition: transform 200ms, background 200ms;
 }
-.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #818cf8; }
+.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #e0e0e0; }
 
 /* ── Aside photo widget ─────────────────────────────────────── */
 .aside-avatar-wrap {
@@ -427,19 +427,19 @@ function submit() {
 .aside-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .aside-avatar-placeholder {
   width: 100%; height: 100%;
-  background: #1e1b4b; color: #818cf8;
+  background: #2a2a2a; color: #c0c0c0;
   display: flex; align-items: center; justify-content: center;
   font-size: 2rem; font-weight: 700;
 }
 .aside-drop {
-  border: 1.5px dashed #1e2040; border-radius: 0.5rem;
+  border: 1.5px dashed #2a2a2a; border-radius: 0.5rem;
   padding: 0.5rem 0.625rem; cursor: pointer; text-align: center;
   display: flex; flex-direction: column; gap: 0.1rem;
   transition: border-color 120ms, background 120ms;
 }
-.aside-drop:hover, .aside-drop--active { border-color: #6366f1; background: #12103a; }
-.aside-drop--has { border-style: solid; border-color: #1e2040; }
-.aside-drop-label { font-size: 0.75rem; font-weight: 600; color: #c4b5fd; }
+.aside-drop:hover, .aside-drop--active { border-color: #888888; background: #1a1a1a; }
+.aside-drop--has { border-style: solid; border-color: #2a2a2a; }
+.aside-drop-label { font-size: 0.75rem; font-weight: 600; color: #d0d0d0; }
 .aside-drop-hint  { font-size: 0.65rem; color: #475569; }
 .aside-clear {
   display: block; width: 100%; margin-top: 0.375rem;

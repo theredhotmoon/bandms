@@ -58,7 +58,7 @@ async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
 }
 
 const stats = computed(() => [
-  { label: 'Bands', count: bandsQ.data.value?.length, link: '/admin/bands', color: '#818cf8' },
+  { label: 'Bands', count: bandsQ.data.value?.length, link: '/admin/bands', color: '#c0c0c0' },
   { label: 'Releases', count: releasesQ.data.value?.length, link: '/admin/releases', color: '#f472b6' },
   { label: 'Tours',    count: toursQ.data.value?.length,   link: '/admin/tours',    color: '#fbbf24' },
   { label: 'Venues', count: venuesQ.data.value?.length, link: '/admin/venues', color: '#34d399' },
@@ -162,7 +162,7 @@ const avgEnhanceScore = computed(() => {
           </div>
         </div>
         <div v-else class="epk-no-pending">
-          No pending snapshot. Go to <RouterLink to="/admin/band-profile" style="color:#818cf8;">Band Profile → EPK</RouterLink> to create one.
+          No pending snapshot. Go to <RouterLink to="/admin/band-profile" style="color:#c0c0c0;">Band Profile → EPK</RouterLink> to create one.
         </div>
       </div>
 
@@ -192,7 +192,7 @@ const avgEnhanceScore = computed(() => {
           </div>
           <div class="score-ring">
             <svg viewBox="0 0 40 40" class="ring-svg">
-              <circle cx="20" cy="20" r="16" fill="none" stroke="#1a1a38" stroke-width="4" />
+              <circle cx="20" cy="20" r="16" fill="none" stroke="#222222" stroke-width="4" />
               <circle
                 cx="20" cy="20" r="16" fill="none"
                 :stroke="avgEnhanceScore >= 70 ? '#34d399' : avgEnhanceScore >= 40 ? '#fbbf24' : '#f87171'"
@@ -250,30 +250,30 @@ const avgEnhanceScore = computed(() => {
 .stat-card {
   display: flex; flex-direction: column; justify-content: center;
   padding: 1.25rem; border-radius: 0.75rem; text-decoration: none;
-  background: #111128; border: 1px solid #2d2a6e;
+  background: #1a1a1a; border: 1px solid #333333;
   transition: border-color 150ms, background 150ms;
 }
-.stat-card:hover { background: #151535; border-color: #4338ca; }
+.stat-card:hover { background: #151535; border-color: #888888; }
 .quick-btn {
   padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem;
-  font-weight: 500; text-decoration: none; color: #a5b4fc;
-  background: #1e1b4b; border: 1px solid #312e81;
+  font-weight: 500; text-decoration: none; color: #d0d0d0;
+  background: #2a2a2a; border: 1px solid #444444;
   transition: background 120ms;
 }
-.quick-btn:hover { background: #2d2a6e; }
+.quick-btn:hover { background: #333333; }
 
 /* EPK widget */
 .epk-create-link {
-  font-size: 0.78rem; color: #818cf8; text-decoration: none;
+  font-size: 0.78rem; color: #c0c0c0; text-decoration: none;
   white-space: nowrap; padding: 0.3rem 0.75rem;
-  border: 1px solid #252350; border-radius: 0.375rem;
+  border: 1px solid #333333; border-radius: 0.375rem;
   transition: background 100ms;
 }
-.epk-create-link:hover { background: #1e1b4b; }
+.epk-create-link:hover { background: #2a2a2a; }
 
 .epk-pending {
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  padding: 0.625rem 0.75rem; background: #0b0b20; border: 1px solid #252370;
+  padding: 0.625rem 0.75rem; background: #111111; border: 1px solid #333333;
   border-radius: 0.5rem;
 }
 .epk-pending-badge {
@@ -282,7 +282,7 @@ const avgEnhanceScore = computed(() => {
   flex-shrink: 0;
 }
 .epk-pending-meta { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
-.epk-version-num { font-size: 0.85rem; font-weight: 700; color: #a5b4fc; }
+.epk-version-num { font-size: 0.85rem; font-weight: 700; color: #d0d0d0; }
 .epk-pending-date { font-size: 0.75rem; color: #475569; }
 .epk-pending-reason { font-size: 0.78rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .epk-pending-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
@@ -310,7 +310,7 @@ const avgEnhanceScore = computed(() => {
 
 /* Shared widget shell (used by EPK versions + enhance level) */
 .readiness-widget {
-  margin-top: 2rem; background: #0d0d22; border: 1px solid #1a1a38;
+  margin-top: 2rem; background: #141414; border: 1px solid #222222;
   border-radius: 0.75rem; padding: 1.25rem 1.5rem;
 }
 .readiness-header {
@@ -331,8 +331,8 @@ const avgEnhanceScore = computed(() => {
   display: flex; align-items: center; gap: 0.75rem; padding: 0.375rem 0.5rem;
   border-radius: 0.375rem; text-decoration: none; transition: background 100ms;
 }
-.enhance-item:hover { background: #111128; }
-.enhance-bar-wrap { width: 5rem; height: 4px; background: #1a1a38; border-radius: 2px; flex-shrink: 0; overflow: hidden; }
+.enhance-item:hover { background: #1a1a1a; }
+.enhance-bar-wrap { width: 5rem; height: 4px; background: #222222; border-radius: 2px; flex-shrink: 0; overflow: hidden; }
 .enhance-bar { height: 100%; border-radius: 2px; transition: width 400ms; }
 .enhance-score { font-size: 0.7rem; font-weight: 700; color: #475569; width: 2.5rem; flex-shrink: 0; }
 .enhance-label {

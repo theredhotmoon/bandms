@@ -661,7 +661,7 @@ const bandProfile = computed(() => profileQ.data.value)
 /* ── Template sidebar ────────────────────────────────── */
 .template-sidebar {
   width: 17rem; flex-shrink: 0;
-  border-right: 1px solid #0f0f28;
+  border-right: 1px solid #1a1a1a;
   background: #060614;
   display: flex; flex-direction: column;
   overflow: hidden;
@@ -669,16 +669,16 @@ const bandProfile = computed(() => profileQ.data.value)
 .sidebar-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 1rem 1rem 0.625rem;
-  border-bottom: 1px solid #0f0f28;
+  border-bottom: 1px solid #1a1a1a;
 }
 .sidebar-title { font-size: 0.8125rem; font-weight: 700; color: #94a3b8; }
 .btn-new {
   width: 1.75rem; height: 1.75rem; border-radius: 0.375rem;
-  background: #1e1b4b; border: 1px solid #312e81; color: #818cf8;
+  background: #2a2a2a; border: 1px solid #444444; color: #c0c0c0;
   font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: background 100ms;
 }
-.btn-new:hover { background: #252370; }
+.btn-new:hover { background: #333333; }
 
 .sidebar-loading, .sidebar-error, .sidebar-empty {
   padding: 1.5rem 1rem; font-size: 0.8rem; color: #334155; text-align: center; line-height: 1.6;
@@ -692,8 +692,8 @@ const bandProfile = computed(() => profileQ.data.value)
   border: 1px solid transparent; margin-bottom: 0.25rem;
   transition: background 100ms, border-color 100ms;
 }
-.template-item:hover  { background: #0d0d28; border-color: #1e2040; }
-.template-item--open  { background: #0e0e26; border-color: #312e81; }
+.template-item:hover  { background: #0d0d28; border-color: #2a2a2a; }
+.template-item--open  { background: #141414; border-color: #444444; }
 .template-item-info   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .template-name        { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .template-badges      { display: flex; align-items: center; gap: 0.4rem; }
@@ -704,7 +704,7 @@ const bandProfile = computed(() => profileQ.data.value)
   background: none; border: none; cursor: pointer; color: #334155; font-size: 0.7rem;
   padding: 0.2rem 0.35rem; border-radius: 3px; transition: color 100ms, background 100ms;
 }
-.tpl-btn:hover { color: #818cf8; background: #1e1b4b; }
+.tpl-btn:hover { color: #c0c0c0; background: #2a2a2a; }
 .tpl-btn--del:hover { color: #f87171; background: #450a0a; }
 
 /* ── Editor pane ─────────────────────────────────────── */
@@ -723,14 +723,14 @@ const bandProfile = computed(() => profileQ.data.value)
 .loading-state  { color: #475569; font-size: 0.875rem; }
 .btn-primary-lg {
   padding: 0.6rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff; margin-top: 0.5rem;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; margin-top: 0.5rem;
 }
-.btn-primary-lg:hover { background: #4f46e5; }
+.btn-primary-lg:hover { background: #333333; }
 
 /* Top bar */
 .editor-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.875rem 1.25rem; border-bottom: 1px solid #0f0f28;
+  padding: 0.875rem 1.25rem; border-bottom: 1px solid #1a1a1a;
   background: #070718; flex-shrink: 0;
 }
 .editor-title    { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
@@ -741,14 +741,14 @@ const bandProfile = computed(() => profileQ.data.value)
 .btn-print {
   display: flex; align-items: center; gap: 0.375rem;
   padding: 0.4rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
   transition: border-color 100ms, color 100ms;
 }
 .btn-print:hover { border-color: #334155; color: #94a3b8; }
 
 /* Section tabs */
 .section-tabs {
-  display: flex; overflow-x: auto; border-bottom: 1px solid #0f0f28;
+  display: flex; overflow-x: auto; border-bottom: 1px solid #1a1a1a;
   background: #070718; flex-shrink: 0; scrollbar-width: none;
 }
 .section-tabs::-webkit-scrollbar { display: none; }
@@ -760,7 +760,7 @@ const bandProfile = computed(() => profileQ.data.value)
   margin-bottom: -1px;
 }
 .section-tab:hover  { color: #64748b; }
-.section-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.section-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .tab-icon { font-size: 0.85rem; }
 
 /* Section content */
@@ -775,33 +775,33 @@ const bandProfile = computed(() => profileQ.data.value)
 
 /* Bottom bar */
 .bottom-bar {
-  border-top: 1px solid #0f0f28; padding: 0.75rem 1.25rem;
+  border-top: 1px solid #1a1a1a; padding: 0.75rem 1.25rem;
   display: flex; justify-content: flex-end; background: #070718; flex-shrink: 0;
 }
 
 /* ── Cover section ───────────────────────────────────── */
 .cover-preview {
-  background: #070718; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #070718; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
-  border-left: 3px solid #4338ca;
+  border-left: 3px solid #888888;
 }
 .cover-band-name { font-size: 1.5rem; font-weight: 800; color: #e2e8f0; letter-spacing: -.02em; }
-.cover-rider-name { font-size: 0.875rem; color: #818cf8; font-weight: 600; }
+.cover-rider-name { font-size: 0.875rem; color: #c0c0c0; font-weight: 600; }
 .cover-contacts { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #64748b; }
-.cover-notes-preview { font-size: 0.8rem; color: #64748b; line-height: 1.6; border-top: 1px solid #1a1a3a; padding-top: 0.5rem; }
+.cover-notes-preview { font-size: 0.8rem; color: #64748b; line-height: 1.6; border-top: 1px solid #222222; padding-top: 0.5rem; }
 
 .cover-info-box {
-  background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem; padding: 1rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem; padding: 1rem;
   display: flex; flex-direction: column; gap: 0.625rem;
 }
 .cover-info-title { font-size: 0.8rem; font-weight: 600; color: #94a3b8; }
 .cover-info-desc  { font-size: 0.775rem; color: #475569; line-height: 1.5; }
-.cover-link       { color: #818cf8; text-decoration: none; }
-.cover-link:hover { color: #a5b4fc; }
+.cover-link       { color: #c0c0c0; text-decoration: none; }
+.cover-link:hover { color: #d0d0d0; }
 .cover-contact-fields { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .cover-field-row {
   flex: 1; min-width: 12rem;
-  background: #070718; border: 1px solid #0f0f28; border-radius: 0.375rem;
+  background: #070718; border: 1px solid #1a1a1a; border-radius: 0.375rem;
   padding: 0.5rem 0.75rem; display: flex; flex-direction: column; gap: 0.15rem;
 }
 .cover-field-row--wide { flex-basis: 100%; }
@@ -809,31 +809,31 @@ const bandProfile = computed(() => profileQ.data.value)
 .cover-field-val   { font-size: 0.8rem; color: #94a3b8; }
 .btn-go-profile {
   align-self: flex-start; padding: 0.35rem 0.875rem; border-radius: 0.375rem;
-  font-size: 0.78rem; font-weight: 600; color: #818cf8; text-decoration: none;
-  background: #0e0e26; border: 1px solid #1e2040; transition: background 100ms;
+  font-size: 0.78rem; font-weight: 600; color: #c0c0c0; text-decoration: none;
+  background: #141414; border: 1px solid #2a2a2a; transition: background 100ms;
 }
-.btn-go-profile:hover { background: #12123a; }
+.btn-go-profile:hover { background: #1a1a1a; }
 
 /* ── Shared buttons ──────────────────────────────────── */
 .btn-save {
   padding: 0.45rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms; min-width: 7.5rem;
 }
-.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:hover:not(:disabled) { background: #333333; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
 .btn-save--ok { background: #166534 !important; }
 
 .btn-ghost {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
 }
-.btn-ghost:hover { background: #0a0a1e; }
+.btn-ghost:hover { background: #111111; }
 .btn-primary {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
 }
-.btn-primary:hover:not(:disabled) { background: #4f46e5; }
+.btn-primary:hover:not(:disabled) { background: #333333; }
 .btn-primary:disabled { opacity: 0.45; cursor: default; }
 .btn-danger {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
@@ -850,15 +850,15 @@ const bandProfile = computed(() => profileQ.data.value)
 .build-banner {
   display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
   padding: 0.6rem 0.875rem;
-  background: #0a0c1e; border: 1px solid #2a2860; border-radius: 0.5rem;
-  border-left: 3px solid #4338ca;
+  background: #0a0c1e; border: 1px solid #3a3a3a; border-radius: 0.5rem;
+  border-left: 3px solid #888888;
 }
 .build-banner-icon { font-size: 1rem; flex-shrink: 0; }
 .build-banner-body {
   display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0;
 }
 .build-banner-label {
-  font-size: 0.75rem; font-weight: 700; color: #a5b4fc;
+  font-size: 0.75rem; font-weight: 700; color: #d0d0d0;
 }
 .build-banner-desc {
   font-size: 0.7rem; color: #475569;
@@ -872,14 +872,14 @@ const bandProfile = computed(() => profileQ.data.value)
   white-space: nowrap; transition: background 120ms, border-color 120ms;
 }
 .build-btn--go {
-  background: #1e1b4b; border-color: #312e81; color: #a5b4fc;
+  background: #2a2a2a; border-color: #444444; color: #d0d0d0;
 }
-.build-btn--go:hover { background: #252370; border-color: #4338ca; }
+.build-btn--go:hover { background: #333333; border-color: #888888; }
 
 .build-btn--replace {
-  background: #4338ca; border-color: #4338ca; color: #fff;
+  background: #e8e8e8; border-color: #e8e8e8; color: #111111;
 }
-.build-btn--replace:hover { background: #4f46e5; }
+.build-btn--replace:hover { background: #333333; }
 
 .build-btn--append {
   background: #0e2a1a; border-color: #14532d; color: #4ade80;
@@ -887,7 +887,7 @@ const bandProfile = computed(() => profileQ.data.value)
 .build-btn--append:hover { background: #0d3d20; }
 
 .build-btn--cancel {
-  background: transparent; border-color: #1e2040; color: #475569;
+  background: transparent; border-color: #2a2a2a; color: #475569;
 }
 .build-btn--cancel:hover { color: #64748b; border-color: #334155; }
 
@@ -916,13 +916,13 @@ const bandProfile = computed(() => profileQ.data.value)
 .btn-lineup {
   padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 600;
   border-radius: 0.375rem; cursor: pointer;
-  background: #0e0e26; border: 1px solid #2d3461; color: #818cf8;
+  background: #141414; border: 1px solid #2d3461; color: #c0c0c0;
   white-space: nowrap; transition: background 100ms;
 }
-.btn-lineup:hover { background: #12123a; }
+.btn-lineup:hover { background: #1a1a1a; }
 .stage-plot-wrapper {
   flex: 1; min-height: 360px; overflow: hidden; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0a0b1a;
+  border: 1px solid #2a2a2a; background: #0a0b1a;
 }
 
 /* ── Print styles ────────────────────────────────────── */

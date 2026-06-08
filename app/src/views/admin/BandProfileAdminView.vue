@@ -511,7 +511,7 @@ function platformMeta(key: SocialPlatform) {
           <!-- ── EPK SETTINGS ────────────────────────────────── -->
           <template v-if="section === 'epk'">
             <div class="section-hint">
-              Choose which content appears on your public EPK page at <code style="color:#818cf8;">/epk</code>. Mark individual photos as EPK press shots in the Photos section. Featured press articles are toggled individually in the Press section.
+              Choose which content appears on your public EPK page at <code style="color:#9ca3af;">/epk</code>. Mark individual photos as EPK press shots in the Photos section. Featured press articles are toggled individually in the Press section.
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="col-span-2">
@@ -529,7 +529,7 @@ function platformMeta(key: SocialPlatform) {
             <div class="epk-snapshot-section">
               <div>
                 <div class="field-label mb-0.5">EPK Snapshot</div>
-                <p class="field-hint">Create a snapshot of the current EPK content. Once accepted on the Dashboard, it becomes the live version served at <code style="color:#818cf8;">/epk</code>.</p>
+                <p class="field-hint">Create a snapshot of the current EPK content. Once accepted on the Dashboard, it becomes the live version served at <code style="color:#9ca3af;">/epk</code>.</p>
               </div>
               <button type="button" @click="showSnapshotModal = true" class="btn-snapshot">
                 Create EPK snapshot
@@ -610,7 +610,7 @@ function platformMeta(key: SocialPlatform) {
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
 .section-tabs {
-  display: flex; gap: 0.25rem; border-bottom: 1px solid #1a1a3a; padding-bottom: 0;
+  display: flex; gap: 0.25rem; border-bottom: 1px solid #222222; padding-bottom: 0;
 }
 .section-tab {
   padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 500; color: #64748b;
@@ -618,17 +618,17 @@ function platformMeta(key: SocialPlatform) {
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .section-tab:hover { color: #94a3b8; }
-.section-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.section-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 
 .section-hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a;
   border-radius: 0.375rem;
 }
 
 .bio-tabs {
   display: flex; gap: 0.25rem; margin-bottom: 0.5rem;
-  border-bottom: 1px solid #1a1a3a; padding-bottom: 0;
+  border-bottom: 1px solid #222222; padding-bottom: 0;
 }
 .bio-tab {
   padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 500;
@@ -637,7 +637,7 @@ function platformMeta(key: SocialPlatform) {
   transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .bio-tab:hover { color: #94a3b8; }
-.bio-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.bio-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .bio-tab.has-error { color: #f87171; }
 .bio-tab.has-error.active { border-bottom-color: #f87171; }
 .bio-panel { padding-top: 0.25rem; }
@@ -653,8 +653,8 @@ function platformMeta(key: SocialPlatform) {
 .char-count.over { color: #f87171; }
 
 .file-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.375rem; }
-.file-link { font-size: 0.8rem; color: #818cf8; text-decoration: none; transition: color 120ms; }
-.file-link:hover { color: #a5b4fc; }
+.file-link { font-size: 0.8rem; color: #9ca3af; text-decoration: none; transition: color 120ms; }
+.file-link:hover { color: #d0d0d0; }
 
 .btn-remove-file {
   padding: 0.25rem 0.625rem; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 500;
@@ -667,37 +667,37 @@ function platformMeta(key: SocialPlatform) {
 .file-upload-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.375rem; }
 .btn-upload-file {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #1e1b4b; border: 1px solid #312e81; color: #a5b4fc;
+  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0;
   transition: background 100ms;
 }
-.btn-upload-file:hover:not(:disabled) { background: #252370; }
+.btn-upload-file:hover:not(:disabled) { background: #333333; }
 .btn-upload-file:disabled { opacity: 0.4; cursor: default; }
 .file-hint { font-size: 0.7rem; color: #475569; }
 
 .epk-snapshot-section {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-  padding: 0.875rem 1rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.5rem;
+  padding: 0.875rem 1rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.5rem;
 }
 .btn-snapshot {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600;
-  cursor: pointer; background: #1e1b4b; border: 1px solid #312e81; color: #a5b4fc;
+  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0;
   white-space: nowrap; transition: background 100ms;
 }
-.btn-snapshot:hover { background: #252370; }
+.btn-snapshot:hover { background: #333333; }
 
 .stage-thumb {
-  width: 10rem; border-radius: 0.375rem; border: 1px solid #1e2040;
-  object-fit: contain; background: #0e0e26;
+  width: 10rem; border-radius: 0.375rem; border: 1px solid #2a2a2a;
+  object-fit: contain; background: #141414;
 }
 
 .btn-save {
   padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms, box-shadow 150ms; min-width: 8rem;
 }
-.btn-save:hover:not(:disabled) { background: #4f46e5; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); }
+.btn-save:hover:not(:disabled) { background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); }
 .btn-save:disabled { opacity: 0.6; cursor: default; }
-.btn-save--ok { background: #4338ca !important; }
+.btn-save--ok { background: #e8e8e8 !important; }
 
 .career-level-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
@@ -708,20 +708,20 @@ function platformMeta(key: SocialPlatform) {
 .career-level-card {
   display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
   padding: 0.75rem 0.5rem; border-radius: 0.5rem; cursor: pointer;
-  background: #0e0e26; border: 1px solid #1e2040;
+  background: #141414; border: 1px solid #2a2a2a;
   transition: background 120ms, border-color 120ms;
 }
-.career-level-card:hover { background: #13133a; border-color: #312e81; }
-.career-level-card--active { background: #161650; border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
+.career-level-card:hover { background: #1a1a1a; border-color: #444444; }
+.career-level-card--active { background: #1f1f1f; border-color: #888888; box-shadow: 0 0 0 1px #888888; }
 .career-level-emoji { font-size: 1.35rem; line-height: 1; }
 .career-level-name  { font-size: 0.78rem; font-weight: 700; color: #e2e8f0; }
 .career-level-sub   { font-size: 0.65rem; color: #475569; text-align: center; }
-.career-level-card--active .career-level-name { color: #a5b4fc; }
-.career-level-card--active .career-level-sub  { color: #6366f1; }
+.career-level-card--active .career-level-name { color: #d0d0d0; }
+.career-level-card--active .career-level-sub  { color: #888888; }
 
 .fb-sync-row {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.75rem 1rem; background: #0d1a2d; border: 1px solid #1e3a5f;
+  padding: 0.75rem 1rem; background: #111111; border: 1px solid #222222;
   border-radius: 0.5rem;
 }
 .fb-sync-left { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
@@ -732,7 +732,7 @@ function platformMeta(key: SocialPlatform) {
 .btn-fb-sync {
   display: inline-flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.4rem; font-size: 0.78rem; font-weight: 500;
-  background: #0d1a2d; color: #38bdf8; border: 1px solid #1e3a5f; cursor: pointer;
+  background: #111111; color: #38bdf8; border: 1px solid #222222; cursor: pointer;
   transition: background 120ms; white-space: nowrap;
 }
 .btn-fb-sync:hover:not(:disabled) { background: #0f2540; }
@@ -743,21 +743,21 @@ function platformMeta(key: SocialPlatform) {
 .link-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.375rem 0.75rem; border-radius: 0.375rem;
-  background: #0b0b20; border: 1px solid #1a1a38;
+  background: #111111; border: 1px solid #222222;
 }
 .link-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 .link-platform { font-size: 0.7rem; font-weight: 600; color: #94a3b8; width: 7rem; flex-shrink: 0; }
 .link-url {
-  flex: 1; min-width: 0; font-size: 0.75rem; color: #6366f1;
+  flex: 1; min-width: 0; font-size: 0.75rem; color: #888888;
   text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.link-url:hover { color: #818cf8; }
+.link-url:hover { color: #9ca3af; }
 .btn-edit-sm {
   padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #818cf8;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #9ca3af;
   transition: background 100ms;
 }
-.btn-edit-sm:hover { background: #1e1b4b; }
+.btn-edit-sm:hover { background: #2a2a2a; }
 .btn-del-sm {
   padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid #3a1212; color: #f87171;
@@ -766,37 +766,37 @@ function platformMeta(key: SocialPlatform) {
 .btn-del-sm:hover { background: #3f1212; }
 .btn-add-sm {
   padding: 0.3rem 0.875rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff; transition: background 120ms;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; transition: background 120ms;
 }
-.btn-add-sm:hover { background: #4f46e5; }
+.btn-add-sm:hover { background: #ffffff; }
 .link-form-row {
   display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
   padding: 0.625rem 0.75rem; border-radius: 0.375rem;
-  background: #0f0f26; border: 1px solid #1e2040; margin-bottom: 0.5rem;
+  background: #141414; border: 1px solid #2a2a2a; margin-bottom: 0.5rem;
 }
 .link-platform-select {
-  background: #0b0b20; border: 1px solid #1e2040; border-radius: 0.3rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.3rem;
   color: #e2e8f0; font-size: 0.8125rem; padding: 0.3rem 0.5rem;
   outline: none; cursor: pointer; flex-shrink: 0;
 }
-.link-platform-select:focus { border-color: #6366f1; }
+.link-platform-select:focus { border-color: #888888; }
 .link-url-input {
-  flex: 1; min-width: 160px; background: #0b0b20; border: 1px solid #1e2040;
+  flex: 1; min-width: 160px; background: #111111; border: 1px solid #2a2a2a;
   border-radius: 0.3rem; color: #e2e8f0; font-size: 0.8125rem;
   padding: 0.3rem 0.625rem; outline: none;
 }
-.link-url-input:focus { border-color: #6366f1; }
+.link-url-input:focus { border-color: #888888; }
 .link-url-input::placeholder { color: #334155; }
 .btn-link-save {
   padding: 0.3rem 0.75rem; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff; transition: background 100ms; flex-shrink: 0;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; transition: background 100ms; flex-shrink: 0;
 }
-.btn-link-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-link-save:hover:not(:disabled) { background: #ffffff; }
 .btn-link-save:disabled { opacity: 0.5; cursor: default; }
 .btn-link-cancel {
   padding: 0.3rem 0.625rem; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
   transition: background 100ms; flex-shrink: 0;
 }
-.btn-link-cancel:hover { background: #0f0f26; color: #94a3b8; }
+.btn-link-cancel:hover { background: #141414; color: #94a3b8; }
 </style>

@@ -529,10 +529,10 @@ function submit() {
 /* ── Venue card ─────────────────────────────────────────────── */
 .venue-card {
   margin-top: 0.625rem;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
   overflow: hidden;
-  background: #0e0e26;
+  background: #141414;
 }
 .venue-info {
   padding: 0.625rem 0.875rem;
@@ -544,7 +544,7 @@ function submit() {
 .venue-addr  { font-size: 0.8rem;   color: #94a3b8;  margin: 0; }
 .venue-extra { font-size: 0.75rem;  color: #64748b;  margin: 0; }
 .venue-no-coords { font-size: 0.7rem; color: #475569; margin: 0; }
-.venue-map-wrap { border-top: 1px solid #1a1a38; }
+.venue-map-wrap { border-top: 1px solid #222222; }
 .venue-map-wrap :deep(.venue-map) { height: 180px; }
 
 /* ── Date / time grid ───────────────────────────────────────── */
@@ -556,7 +556,7 @@ function submit() {
 .label-note {
   font-weight: 400;
   font-size: 0.68rem;
-  color: #4338ca;
+  color: #888888;
   margin-left: 0.2rem;
 }
 
@@ -570,9 +570,9 @@ function submit() {
 
 .band-pool,
 .lineup-panel {
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
-  background: #0e0e26;
+  background: #141414;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -583,8 +583,8 @@ function submit() {
 }
 
 .lineup-panel.drag-over {
-  border-color: #6366f1;
-  background: #0b0b20;
+  border-color: #888888;
+  background: #111111;
 }
 
 .panel-title {
@@ -595,7 +595,7 @@ function submit() {
   letter-spacing: 0.05em;
   margin: 0 0 0.25rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #1a1a38;
+  border-bottom: 1px solid #222222;
 }
 .panel-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: #334155; }
 
@@ -608,15 +608,15 @@ function submit() {
   gap: 0.375rem;
   padding: 0.35rem 0.5rem;
   border-radius: 0.375rem;
-  background: #0f0f26;
-  border: 1px solid #1e1e40;
+  background: #141414;
+  border: 1px solid #252525;
   font-size: 0.8125rem;
   color: #cbd5e1;
   cursor: grab;
   user-select: none;
   transition: background 100ms, border-color 100ms;
 }
-.pool-chip:hover { background: #161630; border-color: #1e2040; }
+.pool-chip:hover { background: #1a1a1a; border-color: #2a2a2a; }
 .pool-chip:active { cursor: grabbing; }
 
 /* Lineup items */
@@ -626,25 +626,25 @@ function submit() {
   gap: 0.375rem;
   padding: 0.35rem 0.5rem;
   border-radius: 0.375rem;
-  background: #0f0f26;
-  border: 1px solid #1e1e40;
+  background: #141414;
+  border: 1px solid #252525;
   font-size: 0.8125rem;
   color: #cbd5e1;
   cursor: grab;
   user-select: none;
   transition: background 100ms, border-color 100ms;
 }
-.lineup-item:hover { background: #161630; border-color: #1e2040; }
+.lineup-item:hover { background: #1a1a1a; border-color: #2a2a2a; }
 .lineup-item.is-main {
-  background: #1e1b4b;
-  border-color: #4338ca;
-  color: #a5b4fc;
+  background: #2a2a2a;
+  border-color: #888888;
+  color: #d0d0d0;
   cursor: grab;
 }
-.lineup-item.drop-above { border-top: 2px solid #6366f1; }
+.lineup-item.drop-above { border-top: 2px solid #888888; }
 
 .drag-dots { font-size: 0.875rem; color: #334155; flex-shrink: 0; line-height: 1; }
-.is-main .drag-dots { color: #4338ca; }
+.is-main .drag-dots { color: #888888; }
 
 .item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -657,8 +657,8 @@ function submit() {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: #4338ca;
-  color: #c7d2fe;
+  background: #3a3a3a;
+  color: #e0e0e0;
   vertical-align: middle;
 }
 
@@ -671,7 +671,7 @@ function submit() {
 .time-auto {
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
-  color: #818cf8;
+  color: #9ca3af;
   min-width: 3rem;
   text-align: right;
 }
@@ -682,15 +682,15 @@ function submit() {
   width: 5.5rem;
   padding: 0.2rem 0.375rem;
   border-radius: 0.375rem;
-  border: 1px solid #1e2040;
-  background: #0e0e26;
+  border: 1px solid #2a2a2a;
+  background: #141414;
   color: #e2e8f0;
   font-size: 0.8rem;
   outline: none;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
-.play-time-input:focus { border-color: #6366f1; }
+.play-time-input:focus { border-color: #888888; }
 
 .remove-btn {
   flex-shrink: 0;
@@ -712,9 +712,9 @@ function submit() {
 
 /* ── Concert poster ─────────────────────────────────────────── */
 .poster-drop {
-  border: 2px dashed #1e2040;
+  border: 2px dashed #2a2a2a;
   border-radius: 0.5rem;
-  background: #0e0e26;
+  background: #141414;
   cursor: pointer;
   overflow: hidden;
   transition: border-color 150ms, background 150ms;
@@ -723,8 +723,8 @@ function submit() {
   align-items: center;
   justify-content: center;
 }
-.poster-drop:hover { border-color: #6366f1; background: #0b0b20; }
-.poster-drop.has-image { border-style: solid; border-color: #1e2040; min-height: 0; }
+.poster-drop:hover { border-color: #888888; background: #111111; }
+.poster-drop.has-image { border-style: solid; border-color: #2a2a2a; min-height: 0; }
 
 .poster-img {
   display: block;
@@ -770,14 +770,14 @@ function submit() {
   gap: 0.5rem;
   padding: 0.3rem 0.5rem;
   border-radius: 0.375rem;
-  background: #0e0e26;
-  border: 1px solid #1e1e40;
+  background: #141414;
+  border: 1px solid #252525;
   font-size: 0.8125rem;
 }
 .link-label {
   flex-shrink: 0;
   min-width: 7rem;
-  color: #a5b4fc;
+  color: #d0d0d0;
   font-weight: 500;
 }
 .link-url {
@@ -800,17 +800,17 @@ function submit() {
 .preset-chip {
   padding: 0.2rem 0.625rem;
   border-radius: 999px;
-  border: 1px solid #1e2040;
-  background: #0e0e26;
+  border: 1px solid #2a2a2a;
+  background: #141414;
   color: #94a3b8;
   font-size: 0.75rem;
   cursor: pointer;
   transition: border-color 100ms, color 100ms, background 100ms;
 }
 .preset-chip:hover, .preset-chip.active {
-  border-color: #6366f1;
-  color: #a5b4fc;
-  background: #13123a;
+  border-color: #888888;
+  color: #d0d0d0;
+  background: #1a1a1a;
 }
 
 .link-add-row {
@@ -824,12 +824,12 @@ function submit() {
   flex-shrink: 0;
   padding: 0.4rem 0.875rem;
   border-radius: 0.375rem;
-  border: 1px solid #4338ca;
-  background: #1e1b4b;
-  color: #a5b4fc;
+  border: 1px solid #555555;
+  background: #2a2a2a;
+  color: #d0d0d0;
   font-size: 0.8125rem;
   cursor: pointer;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add-link:hover { background: #1e2040; border-color: #6366f1; }
+.btn-add-link:hover { background: #2a2a2a; border-color: #888888; }
 </style>

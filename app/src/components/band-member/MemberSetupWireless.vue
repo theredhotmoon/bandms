@@ -86,7 +86,7 @@ const TYPE_LABELS: Record<string, string> = {
                 >
                   <span class="toggle-thumb" />
                 </button>
-                <span class="toggle-text" :style="unit.own_unit ? 'color:#818cf8;' : 'color:#94a3b8;'">
+                <span class="toggle-text" :style="unit.own_unit ? 'color:#c0c0c0;' : 'color:#94a3b8;'">
                   {{ unit.own_unit ? 'Member brings their own' : 'Needs to be provided by venue' }}
                 </span>
               </label>
@@ -116,7 +116,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 .section-intro {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
 }
 .no-units {
@@ -124,7 +124,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 .units-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .unit-card {
-  background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .unit-header {
@@ -132,7 +132,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 .unit-num {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: #a5b4fc;
+  color: #d0d0d0;
 }
 .btn-remove-unit {
   font-size: 0.68rem; font-weight: 500; color: #f87171;
@@ -151,11 +151,11 @@ const TYPE_LABELS: Record<string, string> = {
 .mb-0 { margin-bottom: 0; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: #5154e5; }
-.field-input option { background: #0e0e26; }
+.field-input option { background: #141414; }
 select.field-input {
   appearance: none; -webkit-appearance: none; padding-right: 2rem; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -168,20 +168,20 @@ select.field-input {
   position: relative; width: 2.5rem; height: 1.375rem; border-radius: 9999px;
   border: none; cursor: pointer; background: #1e293b; transition: background 200ms;
 }
-.toggle--on { background: #1e1b4b; }
+.toggle--on { background: #2a2a2a; }
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
   background: #475569; transition: transform 200ms, background 200ms;
 }
-.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #818cf8; }
+.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #c0c0c0; }
 .toggle-text { font-size: 0.75rem; }
 
 .btn-add-unit {
   align-self: flex-start;
-  font-size: 0.75rem; font-weight: 600; color: #818cf8;
-  background: transparent; border: 1px dashed #312e81; border-radius: 0.375rem;
+  font-size: 0.75rem; font-weight: 600; color: #c0c0c0;
+  background: transparent; border: 1px dashed #444444; border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
-.btn-add-unit:hover { background: #12103a; border-color: #4338ca; }
+.btn-add-unit:hover { background: #1a1a1a; border-color: #888888; }
 </style>

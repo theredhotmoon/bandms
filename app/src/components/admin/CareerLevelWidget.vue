@@ -478,11 +478,11 @@ function advanceLevel() {
 
 <style scoped>
 .clw {
-  background: #0d0d22; border: 1px solid #1a1a38; border-radius: 0.75rem; overflow: hidden;
+  background: #141414; border: 1px solid #222222; border-radius: 0.75rem; overflow: hidden;
 }
 
 /* ── Tab bar ──────────────────────────────────────────── */
-.clw-header { border-bottom: 1px solid #1a1a38; }
+.clw-header { border-bottom: 1px solid #222222; }
 .clw-tabs { display: flex; }
 
 .clw-tab {
@@ -492,14 +492,14 @@ function advanceLevel() {
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: background 120ms, border-color 120ms;
 }
-.clw-tab:hover      { background: #111128; }
-.clw-tab--active    { background: #111130; border-bottom-color: #6366f1; }
+.clw-tab:hover      { background: #1a1a1a; }
+.clw-tab--active    { background: #1f1f1f; border-bottom-color: #ffffff; }
 .clw-tab--past      { opacity: 0.6; }
 .clw-tab-emoji      { font-size: 1.1rem; line-height: 1; }
 .clw-tab-name       { font-size: 0.72rem; font-weight: 700; color: #e2e8f0; }
-.clw-tab-num        { font-size: 0.6rem; color: #334155; text-transform: uppercase; letter-spacing: 0.06em; }
-.clw-tab--active .clw-tab-name { color: #a5b4fc; }
-.clw-tab--active .clw-tab-num  { color: #4338ca; }
+.clw-tab-num        { font-size: 0.6rem; color: #555555; text-transform: uppercase; letter-spacing: 0.06em; }
+.clw-tab--active .clw-tab-name { color: #ffffff; }
+.clw-tab--active .clw-tab-num  { color: #aaaaaa; }
 
 /* ── Body ────────────────────────────────────────────── */
 .clw-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
@@ -510,13 +510,13 @@ function advanceLevel() {
 .clw-tagline { font-size: 0.8125rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.5rem; }
 
 .clw-progress-row { display: flex; align-items: center; gap: 0.75rem; }
-.clw-prog-wrap { width: 10rem; height: 5px; background: #1a1a38; border-radius: 3px; overflow: hidden; }
+.clw-prog-wrap { width: 10rem; height: 5px; background: #222222; border-radius: 3px; overflow: hidden; }
 .clw-prog-bar { height: 100%; border-radius: 3px; transition: width 400ms; }
 .clw-prog-label { font-size: 0.75rem; font-weight: 700; }
 
 .clw-advance-box {
   display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end;
-  padding: 0.625rem 0.875rem; background: #0a0a1e; border: 1px solid #1e2040;
+  padding: 0.625rem 0.875rem; background: #111111; border: 1px solid #2a2a2a;
   border-radius: 0.5rem; border-left: 3px solid #34d399; flex-shrink: 0;
 }
 .clw-advance-title { font-size: 0.8rem; font-weight: 700; color: #34d399; }
@@ -542,7 +542,7 @@ function advanceLevel() {
   border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem;
   transition: background 100ms;
 }
-.clw-item:hover { background: #111128; }
+.clw-item:hover { background: #1a1a1a; }
 .clw-check { font-size: 0.75rem; flex-shrink: 0; color: #334155; }
 .clw-item--done .clw-label { color: #64748b; text-decoration: line-through; }
 .clw-item--todo .clw-label { color: #94a3b8; }
@@ -562,7 +562,7 @@ function advanceLevel() {
 }
 .clw-custom-item {
   display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.75rem;
-  background: #0a0a1e; border: 1px dashed #1e1b4b; border-radius: 0.375rem; opacity: 0.5;
+  background: #111111; border: 1px dashed #2a2a2a; border-radius: 0.375rem; opacity: 0.5;
 }
 .clw-custom-check { font-size: 0.75rem; color: #334155; }
 .clw-custom-label { font-size: 0.8rem; color: #64748b; font-style: italic; }
@@ -570,9 +570,9 @@ function advanceLevel() {
 /* ── Next level peek ─────────────────────────────────── */
 .clw-next-peek {
   display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.5rem 0.75rem; background: #0a0a1a; border: 1px solid #15152a;
+  padding: 0.5rem 0.75rem; background: #111111; border: 1px solid #1f1f1f;
   border-radius: 0.375rem;
 }
 .clw-next-label { font-size: 0.78rem; font-weight: 600; color: #334155; }
-.clw-next-sub   { font-size: 0.72rem; color: #1e293b; }
+.clw-next-sub   { font-size: 0.72rem; color: #555555; }
 </style>

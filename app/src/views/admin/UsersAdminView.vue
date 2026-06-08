@@ -150,7 +150,7 @@ async function confirmDelete() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin:     '#818cf8',
+  admin:     '#c0c0c0',
   member:    '#4ade80',
   publisher: '#fb923c',
 }
@@ -186,7 +186,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
             <tr v-for="u in (list.data.value ?? [])" :key="u.id" class="table-row">
               <td class="td" style="color:#e2e8f0; font-weight:600;">
                 {{ u.first_name }} {{ u.last_name }}
-                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:#6366f1;margin-left:0.4rem;">(you)</span>
+                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:#888888;margin-left:0.4rem;">(you)</span>
               </td>
               <td class="td" style="color:#94a3b8;">{{ u.email }}</td>
               <td class="td">
@@ -359,14 +359,14 @@ const ROLE_COLORS: Record<UserRole, string> = {
 .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
 .role-card {
   display: flex; flex-direction: column; gap: 0.2rem; padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem; border: 1px solid #1e2040; background: #0e0e26; cursor: pointer;
+  border-radius: 0.5rem; border: 1px solid #2a2a2a; background: #141414; cursor: pointer;
   transition: border-color 120ms, background 120ms;
 }
-.role-card:hover        { border-color: #312e81; background: #12123a; }
-.role-card--active      { border-color: #6366f1 !important; background: #16164a !important; }
+.role-card:hover        { border-color: #444444; background: #12123a; }
+.role-card--active      { border-color: #888888 !important; background: #1f1f1f !important; }
 .role-card-name         { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; }
 .role-card-desc         { font-size: 0.65rem; color: #475569; line-height: 1.4; }
-.role-card--active .role-card-name { color: #a5b4fc; }
+.role-card--active .role-card-name { color: #d0d0d0; }
 
 .btn-danger {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;

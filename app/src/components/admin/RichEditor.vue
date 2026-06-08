@@ -92,21 +92,21 @@ function cmd(action: () => void) {
 
 <style scoped>
 .rich-editor-wrap {
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
   overflow: hidden;
-  background: #0e0e26;
+  background: #141414;
 }
 .rich-editor-wrap:focus-within {
-  border-color: #6366f1;
+  border-color: #888888;
 }
 .toolbar {
   display: flex;
   align-items: center;
   gap: 0.125rem;
   padding: 0.375rem 0.5rem;
-  border-bottom: 1px solid #1e2040;
-  background: #0b0b20;
+  border-bottom: 1px solid #2a2a2a;
+  background: #111111;
   flex-wrap: wrap;
 }
 .tb-btn {
@@ -116,10 +116,10 @@ function cmd(action: () => void) {
   color: #64748b; font-size: 0.8rem; cursor: pointer;
   transition: background 100ms, color 100ms;
 }
-.tb-btn:hover { background: #1a1a38; color: #c7d2fe; }
-.tb-btn.active { background: #1e1b4b; color: #a5b4fc; }
+.tb-btn:hover { background: #1f1f1f; color: #d0d0d0; }
+.tb-btn.active { background: #2a2a2a; color: #ffffff; }
 .tb-divider {
-  width: 1px; height: 1.125rem; background: #1e2040; margin: 0 0.25rem; flex-shrink: 0;
+  width: 1px; height: 1.125rem; background: #2a2a2a; margin: 0 0.25rem; flex-shrink: 0;
 }
 .editor-body {
   min-height: 8rem;
@@ -140,11 +140,11 @@ function cmd(action: () => void) {
 .editor-body :deep(ul), .editor-body :deep(ol) { padding-left: 1.4rem; margin: 0.25rem 0 0.5rem; }
 .editor-body :deep(li) { margin: 0.15rem 0; }
 .editor-body :deep(blockquote) {
-  border-left: 3px solid #4338ca; padding-left: 0.75rem;
+  border-left: 3px solid #555555; padding-left: 0.75rem;
   color: #94a3b8; margin: 0.5rem 0; font-style: italic;
 }
 .editor-body :deep(strong) { color: #f1f5f9; }
-.editor-body :deep(em) { color: #c7d2fe; }
+.editor-body :deep(em) { color: #c0c0c0; }
 .editor-body :deep(p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
   color: #334155; pointer-events: none; float: left; height: 0;

@@ -296,27 +296,27 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
 .btn-search {
   padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
-  cursor: pointer; background: #1e1b4b; border: 1px solid #4338ca; color: #a5b4fc;
+  cursor: pointer; background: #2a2a2a; border: 1px solid #888888; color: #d0d0d0;
   transition: background 120ms; white-space: nowrap; flex-shrink: 0;
 }
 .btn-search:hover:not(:disabled) { background: #2e2a6e; }
 .btn-search:disabled { opacity: 0.5; cursor: default; }
 
 .search-results {
-  background: #0b0b20; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   margin-bottom: 0.375rem; overflow: hidden; display: flex; flex-direction: column;
 }
 .result-item {
   padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #cbd5e1;
   background: transparent; border: none; text-align: left; cursor: pointer;
-  transition: background 100ms; border-bottom: 1px solid #1a1a38;
+  transition: background 100ms; border-bottom: 1px solid #222222;
 }
 .result-item:last-child { border-bottom: none; }
-.result-item:hover { background: #161630; color: #a5b4fc; }
+.result-item:hover { background: #1a1a1a; color: #d0d0d0; }
 
 .map-container {
   height: 240px; border-radius: 0.5rem; overflow: hidden;
-  border: 1px solid #1e2040; margin-bottom: 0.375rem;
+  border: 1px solid #2a2a2a; margin-bottom: 0.375rem;
 }
 .map-hint { font-size: 0.7rem; color: #334155; margin: 0; }
 </style>

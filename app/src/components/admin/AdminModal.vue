@@ -53,8 +53,8 @@ defineEmits<{ close: [] }>()
   width: 100%;
   border-radius: 0.75rem;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
-  background: #0f0f26;
-  border: 1px solid #252350;
+  background: #141414;
+  border: 1px solid #333333;
   margin: auto 0;
 }
 
@@ -63,7 +63,7 @@ defineEmits<{ close: [] }>()
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #1e1c4a;
+  border-bottom: 1px solid #252525;
 }
 .modal-title {
   font-size: 0.875rem;
@@ -80,7 +80,7 @@ defineEmits<{ close: [] }>()
   border: none;
   transition: background 120ms, color 120ms;
 }
-.modal-close:hover { background: #1a1a38; color: #94a3b8; }
+.modal-close:hover { background: #222222; color: #94a3b8; }
 
 .modal-body { padding: 1.25rem 1.5rem 1.5rem; }
 

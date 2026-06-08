@@ -164,7 +164,7 @@ async function handleLogout() {
 .admin-shell {
   display: flex;
   min-height: 100vh;
-  background: #07071a;
+  background: #0a0a0a;
   color: #e2e8f0;
 }
 
@@ -174,13 +174,13 @@ async function handleLogout() {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: #0b0b20;
-  border-right: 1px solid #1a1a3a;
+  background: #111111;
+  border-right: 1px solid #222222;
 }
 
 .sidebar-logo {
   padding: 1.125rem 1.25rem 1rem;
-  border-bottom: 1px solid #1a1a3a;
+  border-bottom: 1px solid #222222;
 }
 .logo-mark {
   font-size: 1.125rem;
@@ -189,13 +189,13 @@ async function handleLogout() {
   line-height: 1;
 }
 .logo-band { color: #e2e8f0; }
-.logo-ms   { color: #6366f1; }
+.logo-ms   { color: #ffffff; }
 .logo-sub {
   font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #334155;
+  color: #555555;
   margin-top: 0.25rem;
 }
 
@@ -214,7 +214,7 @@ async function handleLogout() {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #2d3a50;
+  color: #444444;
   padding: 0.875rem 0.875rem 0.25rem;
 }
 
@@ -228,7 +228,7 @@ async function handleLogout() {
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #64748b;
+  color: #555555;
   text-decoration: none;
   cursor: pointer;
   border: none;
@@ -239,19 +239,19 @@ async function handleLogout() {
   text-align: left;
 }
 .nav-item:hover {
-  background: #13132c;
-  color: #94a3b8;
+  background: #1a1a1a;
+  color: #aaaaaa;
 }
 .nav-item--active {
-  background: #16164a !important;
-  color: #a5b4fc !important;
-  box-shadow: inset 2px 0 0 #6366f1 !important;
+  background: #1f1f1f !important;
+  color: #ffffff !important;
+  box-shadow: inset 2px 0 0 #ffffff !important;
 }
 
 /* ── Footer ──────────────────────────────────────── */
 .sidebar-footer {
   padding: 0.625rem 0.5rem;
-  border-top: 1px solid #1a1a3a;
+  border-top: 1px solid #222222;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -267,8 +267,8 @@ async function handleLogout() {
   width: 1.625rem;
   height: 1.625rem;
   border-radius: 9999px;
-  background: #1e1b4b;
-  color: #818cf8;
+  background: #2a2a2a;
+  color: #c0c0c0;
   font-size: 0.625rem;
   font-weight: 700;
   display: flex;
@@ -281,7 +281,7 @@ async function handleLogout() {
 .user-name {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: #d0d0d0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -291,7 +291,7 @@ async function handleLogout() {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #334155;
+  color: #555555;
 }
 
 .btn-signout {
@@ -303,14 +303,14 @@ async function handleLogout() {
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #475569;
+  color: #666666;
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 120ms, color 120ms;
   text-align: left;
 }
-.btn-signout:hover { background: #1f0a0a; color: #f87171; }
+.btn-signout:hover { background: #1a0a0a; color: #f87171; }
 
 /* ── Main ────────────────────────────────────────── */
 .main-content {

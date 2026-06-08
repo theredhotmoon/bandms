@@ -62,7 +62,7 @@ function remove() {
 .siu-wrap { display: flex; flex-direction: column; }
 
 .siu-drop {
-  border: 2px dashed #1e2040;
+  border: 2px dashed #2a2a2a;
   border-radius: 0.5rem;
   padding: 1.25rem;
   text-align: center;
@@ -74,9 +74,9 @@ function remove() {
   background: #0e0c2a;
   transition: border-color 0.15s, background 0.15s;
 }
-.siu-drop.active, .siu-drop:hover { border-color: #6366f1; background: #14103a; }
+.siu-drop.active, .siu-drop:hover { border-color: #888888; background: #1a1a1a; }
 .siu-icon  { font-size: 1.25rem; line-height: 1; }
-.siu-label { font-size: 0.8rem; font-weight: 600; color: #c4b5fd; }
+.siu-label { font-size: 0.8rem; font-weight: 600; color: #d0d0d0; }
 .siu-hint  { font-size: 0.7rem; color: #475569; }
 
 .siu-preview {
@@ -84,7 +84,7 @@ function remove() {
   display: inline-block;
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #1e2040;
+  border: 1px solid #2a2a2a;
   max-width: 100%;
 }
 .siu-img { display: block; max-width: 100%; max-height: 220px; object-fit: contain; background: #0a0820; }
