@@ -292,8 +292,8 @@ function statusClass(item: StagePlotMemberItem): string {
   <div class="flex h-full min-h-0">
 
     <!-- ── Member panel (left) ─────────────────────────────────────────── -->
-    <div class="w-52 flex-shrink-0 border-r border-slate-700/60 bg-slate-900/40 flex flex-col">
-      <p class="px-3 pt-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+    <div class="w-52 flex-shrink-0 border-r border-zinc-700/60 bg-zinc-900/40 flex flex-col">
+      <p class="px-3 pt-3 pb-2 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
         Drag to place
       </p>
 
@@ -304,14 +304,14 @@ function statusClass(item: StagePlotMemberItem): string {
           v-for="member in availableMembers"
           :key="member.id"
           draggable="true"
-          class="flex items-center gap-2 p-2 rounded-lg border border-slate-700/60 bg-slate-800/40 cursor-grab active:cursor-grabbing hover:border-zinc-500/50 hover:bg-zinc-700/30 transition-all select-none"
+          class="flex items-center gap-2 p-2 rounded-lg border border-zinc-700/60 bg-zinc-800/40 cursor-grab active:cursor-grabbing hover:border-zinc-500/50 hover:bg-zinc-700/30 transition-all select-none"
           :class="{ 'opacity-50': memberPositionCount(member.id) > 0 }"
           @dragstart="onPanelMemberDragStart($event, member.id)"
         >
           <!-- Avatar -->
           <div
             class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold overflow-hidden"
-            :class="checkProfile(member.id).ok ? 'bg-zinc-600 text-white' : 'bg-slate-700 text-slate-400'"
+            :class="checkProfile(member.id).ok ? 'bg-zinc-600 text-white' : 'bg-zinc-700 text-zinc-400'"
           >
             <img v-if="member.photo" :src="member.photo" :alt="memberName(member)" class="w-full h-full object-cover" />
             <span v-else>{{ memberInitials(member) }}</span>
@@ -319,7 +319,7 @@ function statusClass(item: StagePlotMemberItem): string {
 
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium text-white truncate">{{ memberName(member) }}</div>
-            <div class="text-[10px] text-slate-400 truncate">{{ member.role ?? 'Musician' }}</div>
+            <div class="text-[10px] text-zinc-400 truncate">{{ member.role ?? 'Musician' }}</div>
           </div>
 
           <!-- Main instrument icon -->
@@ -361,17 +361,17 @@ function statusClass(item: StagePlotMemberItem): string {
         </div>
 
         <!-- Empty state -->
-        <p v-if="availableMembers.length === 0 && tempMusicians.length === 0" class="text-xs text-slate-500 text-center py-4 px-2">
+        <p v-if="availableMembers.length === 0 && tempMusicians.length === 0" class="text-xs text-zinc-500 text-center py-4 px-2">
           Set up the lineup first — click "Edit lineup" above.
         </p>
       </div>
 
       <!-- Legend -->
-      <div class="px-3 py-2 border-t border-slate-700/50 space-y-1">
-        <div class="flex items-center gap-1.5 text-[10px] text-slate-500">
+      <div class="px-3 py-2 border-t border-zinc-700/50 space-y-1">
+        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">
           <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>Profile complete
         </div>
-        <div class="flex items-center gap-1.5 text-[10px] text-slate-500">
+        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">
           <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>Profile incomplete
         </div>
       </div>
@@ -404,10 +404,10 @@ function statusClass(item: StagePlotMemberItem): string {
       >
         <!-- Stage backdrop label -->
         <div class="absolute inset-x-0 bottom-0 flex items-center justify-center pb-3 pointer-events-none">
-          <span class="text-slate-600 text-xs font-medium tracking-[0.3em] uppercase">Audience</span>
+          <span class="text-zinc-600 text-xs font-medium tracking-[0.3em] uppercase">Audience</span>
         </div>
         <div class="absolute inset-x-0 top-0 flex items-center justify-center pt-2 pointer-events-none">
-          <span class="text-slate-700 text-[10px] uppercase tracking-widest">Stage back</span>
+          <span class="text-zinc-700 text-[10px] uppercase tracking-widest">Stage back</span>
         </div>
 
         <!-- Drop hint when empty -->
@@ -416,7 +416,7 @@ function statusClass(item: StagePlotMemberItem): string {
           class="absolute inset-0 flex items-center justify-center pointer-events-none"
         >
           <div class="text-center">
-            <p class="text-slate-600 text-sm">Drag musicians from the panel to place them on stage</p>
+            <p class="text-zinc-600 text-sm">Drag musicians from the panel to place them on stage</p>
           </div>
         </div>
 
@@ -433,13 +433,13 @@ function statusClass(item: StagePlotMemberItem): string {
           <div
             class="relative w-20 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
             :class="
-              isMemberItemComplete(item) ? 'border-emerald-600/60 bg-slate-900/95' :
-              isMemberItemPartial(item)  ? 'border-amber-600/50 bg-slate-900/95' :
-              'border-red-700/50 bg-slate-900/95'
+              isMemberItemComplete(item) ? 'border-emerald-600/60 bg-zinc-900/95' :
+              isMemberItemPartial(item)  ? 'border-amber-600/50 bg-zinc-900/95' :
+              'border-red-700/50 bg-zinc-900/95'
             "
           >
             <!-- Status dot -->
-            <div class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-slate-900" :class="statusClass(item)" />
+            <div class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-zinc-900" :class="statusClass(item)" />
 
             <!-- Avatar -->
             <div
@@ -478,18 +478,18 @@ function statusClass(item: StagePlotMemberItem): string {
                 <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
                   {{ INSTRUMENT_ICONS[inst.type] }} {{ inst.label || inst.type }}
                 </div>
-                <span v-if="item.instruments.length > 3" class="text-[10px] text-slate-500">+{{ item.instruments.length - 3 }}</span>
+                <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-500">+{{ item.instruments.length - 3 }}</span>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- signal chain / inputs -->
             <template v-else-if="stageView === 'signal_chain'">
               <div v-if="item.inputs.length" class="text-center">
                 <div class="text-sm font-bold text-white">{{ item.inputs.length }}</div>
-                <div class="text-[10px] text-slate-400">ch{{ item.signal_chain_type ? ' · ' + item.signal_chain_type : '' }}</div>
+                <div class="text-[10px] text-zinc-400">ch{{ item.signal_chain_type ? ' · ' + item.signal_chain_type : '' }}</div>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- monitor -->
@@ -498,36 +498,36 @@ function statusClass(item: StagePlotMemberItem): string {
                 <div v-for="mon in item.monitors.slice(0, 3)" :key="mon.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
                   {{ mon.type === 'wedge' ? '🔊' : '🎧' }} {{ mon.label || (mon.type === 'wedge' ? 'Wedge' : 'IEM') }}
                 </div>
-                <span v-if="item.monitors.length > 3" class="text-[10px] text-slate-500">+{{ item.monitors.length - 3 }}</span>
+                <span v-if="item.monitors.length > 3" class="text-[10px] text-zinc-500">+{{ item.monitors.length - 3 }}</span>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- wireless -->
             <template v-else-if="stageView === 'wireless'">
               <div v-if="item.wireless.length" class="text-center">
                 <div class="text-sm font-bold text-white">{{ item.wireless.length }}</div>
-                <div class="text-[10px] text-slate-400">unit{{ item.wireless.length !== 1 ? 's' : '' }}</div>
+                <div class="text-[10px] text-zinc-400">unit{{ item.wireless.length !== 1 ? 's' : '' }}</div>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- backline -->
             <template v-else-if="stageView === 'backline'">
               <div v-if="item.backline.needed" class="text-center">
                 <div class="text-[11px] text-zinc-300">{{ item.backline.category || 'needed' }}</div>
-                <div v-if="item.backline.specs" class="text-[10px] text-slate-500 truncate w-full text-center">{{ item.backline.specs }}</div>
+                <div v-if="item.backline.specs" class="text-[10px] text-zinc-500 truncate w-full text-center">{{ item.backline.specs }}</div>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- power -->
             <template v-else-if="stageView === 'power'">
               <div v-if="(item.power.outlets_needed ?? 0) > 0" class="text-center">
                 <div class="text-sm font-bold text-white">{{ item.power.outlets_needed }}</div>
-                <div class="text-[10px] text-slate-400">outlet{{ item.power.outlets_needed !== 1 ? 's' : '' }}</div>
+                <div class="text-[10px] text-zinc-400">outlet{{ item.power.outlets_needed !== 1 ? 's' : '' }}</div>
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- FOH notes -->
@@ -535,14 +535,14 @@ function statusClass(item: StagePlotMemberItem): string {
               <div v-if="item.foh_notes?.trim()" class="text-[10px] text-zinc-300 text-center line-clamp-3 leading-snug">
                 {{ item.foh_notes.trim() }}
               </div>
-              <div v-else class="text-[10px] text-slate-600 text-center">—</div>
+              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- Action buttons -->
             <div class="flex gap-1 mt-0.5">
               <button
                 type="button"
-                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-zinc-600 text-slate-300 hover:text-white transition-colors"
+                class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-zinc-600 text-zinc-300 hover:text-white transition-colors"
                 title="Edit configuration"
                 @click.stop="openModal(item.id)"
               >
@@ -552,7 +552,7 @@ function statusClass(item: StagePlotMemberItem): string {
               </button>
               <button
                 type="button"
-                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-red-700 text-slate-300 hover:text-white transition-colors"
+                class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-red-700 text-zinc-300 hover:text-white transition-colors"
                 title="Remove from stage"
                 @click.stop="removeItem(item.id)"
               >
@@ -573,7 +573,7 @@ function statusClass(item: StagePlotMemberItem): string {
         class="fixed inset-0 z-50 flex items-center justify-center"
         style="background: rgba(0,0,0,0.6)"
       >
-        <div class="bg-slate-900 border border-amber-700/50 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+        <div class="bg-zinc-900 border border-amber-700/50 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-amber-900/60 flex items-center justify-center flex-shrink-0">
               <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -582,7 +582,7 @@ function statusClass(item: StagePlotMemberItem): string {
             </div>
             <div>
               <h3 class="font-semibold text-white text-sm">Incomplete profile</h3>
-              <p class="text-xs text-slate-400">This musician's tech profile has gaps</p>
+              <p class="text-xs text-zinc-400">This musician's tech profile has gaps</p>
             </div>
           </div>
 
@@ -596,12 +596,12 @@ function statusClass(item: StagePlotMemberItem): string {
             </li>
           </ul>
 
-          <p class="text-xs text-slate-400 mb-5">You can configure everything after placing. Do you want to continue?</p>
+          <p class="text-xs text-zinc-400 mb-5">You can configure everything after placing. Do you want to continue?</p>
 
           <div class="flex gap-2">
             <button
               type="button"
-              class="flex-1 py-2 text-sm font-medium rounded-lg border border-slate-600 text-slate-300 hover:text-white transition-colors"
+              class="flex-1 py-2 text-sm font-medium rounded-lg border border-zinc-600 text-zinc-300 hover:text-white transition-colors"
               @click="warnPending = null"
             >Cancel</button>
             <button

@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Next Steps
+
+Ideas and features planned for future development:
+
+### Tech Rider
+- **QR codes for instruments / backline / amps** — each placed instrument on the stage plot generates a QR code that links to an interactive tech rider page for that specific channel/position. Venue crew can scan the QR code on a physical amp or mic stand and see live input requirements, signal chain, monitor mix, and rider notes for that musician.
+- **Interactive tech rider landing page** — a mobile-friendly public page (no login required) served at `/rider/:token` that displays the tech rider for a single gig — stage plot, inputs list, monitor requirements, and backline. Linked from QR codes.
+
+### Music Discovery & Playlist Promotion
+- **Spotify playlist research** — investigate playlist pitching workflows: editorial playlist submission via Spotify for Artists, third-party playlist pitching platforms (SubmitHub, Groover, Playlist Push, Daily Playlists), and curated playlist discovery via API. Goal: surface playlists that match the band's genre tags and comparable artists, and allow tracking pitch status per playlist.
+- **YouTube & other platform playlists** — similar research for YouTube Music, Apple Music, Deezer, Tidal, and SoundCloud. Identify which platforms expose playlist curator contact data via API or third-party services.
+- **"Similar bands" playlists** — use comparable artists (already in band profile) to discover playlists that already feature those artists and pitch to the same curators.
+- **Playlist pitch tracker** — a new admin section to track outreach: platform, playlist name, curator contact, date pitched, response status, and notes.
+
+---
+
 ## [Unreleased] — 2026-06-03
 
 ### Added

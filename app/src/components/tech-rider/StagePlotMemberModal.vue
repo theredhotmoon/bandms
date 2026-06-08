@@ -222,10 +222,10 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
       style="background: rgba(0,0,0,0.7)"
       @mousedown.self="save"
     >
-      <div class="bg-slate-900 rounded-xl border border-slate-700 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+      <div class="bg-zinc-900 rounded-xl border border-zinc-700 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
 
         <!-- Header -->
-        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-700 flex-shrink-0">
+        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-zinc-700 flex-shrink-0">
           <div
             class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0"
             :class="tempMusician ? 'bg-amber-800 text-amber-200' : 'bg-zinc-600 text-white'"
@@ -235,7 +235,7 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
           </div>
           <div class="flex-1">
             <div class="font-semibold text-white text-sm">{{ memberName }}</div>
-            <div class="text-xs text-slate-400">
+            <div class="text-xs text-zinc-400">
               {{ tempMusician?.role || member?.role || 'Musician' }}
               <span v-if="tempMusician" class="ml-2 px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 text-[10px] font-medium">GUEST</span>
             </div>
@@ -246,11 +246,11 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
             v-if="member"
             type="button"
             :disabled="setupSaving"
-            class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-600 text-slate-300 hover:text-white hover:border-zinc-400 transition-colors disabled:opacity-50"
+            class="px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-400 transition-colors disabled:opacity-50"
             @click="saveToProfile"
           >{{ setupSaving ? 'Saving…' : 'Save to profile' }}</button>
 
-          <button type="button" class="text-slate-400 hover:text-white transition-colors p-1" @click="save">
+          <button type="button" class="text-zinc-400 hover:text-white transition-colors p-1" @click="save">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -258,7 +258,7 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
         </div>
 
         <!-- Tabs -->
-        <div class="flex overflow-x-auto border-b border-slate-700 flex-shrink-0 scrollbar-none">
+        <div class="flex overflow-x-auto border-b border-zinc-700 flex-shrink-0 scrollbar-none">
           <button
             v-for="tab in TABS"
             :key="tab.key"
@@ -266,7 +266,7 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
             class="relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === tab.key
               ? 'border-zinc-400 text-zinc-200'
-              : 'border-transparent text-slate-400 hover:text-white'"
+              : 'border-transparent text-zinc-400 hover:text-white'"
             style="margin-bottom: -1px"
             @click="activeTab = tab.key"
           >
@@ -285,16 +285,16 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
           <!-- ── Instruments tab ─────────────────────────────────────────── -->
           <template v-if="activeTab === 'instruments'">
             <div class="p-5 space-y-4">
-              <p class="text-xs text-slate-400">Select all instruments this musician plays at this stage position. Use the setup links to auto-import inputs.</p>
+              <p class="text-xs text-zinc-400">Select all instruments this musician plays at this stage position. Use the setup links to auto-import inputs.</p>
 
               <!-- Member's profile instruments as quick-add -->
               <div v-if="member?.instruments?.length" class="flex flex-wrap gap-1.5">
-                <span class="text-xs text-slate-500 self-center mr-1">From profile:</span>
+                <span class="text-xs text-zinc-500 self-center mr-1">From profile:</span>
                 <button
                   v-for="profInst in member.instruments"
                   :key="profInst.id"
                   type="button"
-                  class="px-2.5 py-1 text-xs rounded-full border border-slate-700 text-slate-400 hover:border-zinc-400 hover:text-zinc-200 transition-colors"
+                  class="px-2.5 py-1 text-xs rounded-full border border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-zinc-200 transition-colors"
                   @click="() => { const i = defaultPlacedInstrument(); i.label = profInst.name; local.instruments.push(i) }"
                 >+ {{ profInst.name }}</button>
               </div>
@@ -303,13 +303,13 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
               <div
                 v-for="inst in local.instruments"
                 :key="inst.id"
-                class="rounded-lg border border-slate-700 bg-slate-800/30 overflow-hidden"
+                class="rounded-lg border border-zinc-700 bg-zinc-800/30 overflow-hidden"
               >
                 <div class="flex items-center gap-3 px-4 py-3">
                   <!-- Type selector -->
                   <select
                     :value="inst.type"
-                    class="text-xs bg-slate-800 border border-slate-600 rounded-md px-2 py-1.5 text-slate-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+                    class="text-xs bg-zinc-800 border border-zinc-600 rounded-md px-2 py-1.5 text-zinc-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
                     @change="inst.type = ($event.target as HTMLSelectElement).value as StagePlotItemType"
                   >
                     <option v-for="opt in INSTRUMENT_TYPES" :key="opt.type" :value="opt.type">{{ opt.label }}</option>
@@ -320,24 +320,24 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                     v-model="inst.label"
                     type="text"
                     placeholder="Label (e.g. Guitar, Acoustic)"
-                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 py-0.5"
+                    class="flex-1 text-sm bg-transparent border-b border-zinc-600 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 py-0.5"
                   />
 
                   <!-- Setup status -->
                   <span
                     class="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                    :class="inst.setup_id ? 'bg-green-900/40 text-green-400' : 'bg-slate-700/60 text-slate-500'"
+                    :class="inst.setup_id ? 'bg-green-900/40 text-green-400' : 'bg-zinc-700/60 text-zinc-500'"
                   >{{ inst.setup_id ? 'Setup linked' : 'No setup' }}</span>
 
                   <!-- Remove -->
-                  <button type="button" class="text-slate-500 hover:text-red-400 transition-colors p-1 flex-shrink-0" @click="removeInstrument(inst.id)">
+                  <button type="button" class="text-zinc-500 hover:text-red-400 transition-colors p-1 flex-shrink-0" @click="removeInstrument(inst.id)">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
 
                 <!-- Setup links -->
-                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-slate-700/40 bg-slate-900/20">
-                  <span class="text-[10px] text-slate-500 mr-2">Link setup (imports inputs):</span>
+                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-zinc-700/40 bg-zinc-900/20">
+                  <span class="text-[10px] text-zinc-500 mr-2">Link setup (imports inputs):</span>
                   <div class="flex flex-wrap gap-1.5 mt-1.5">
                     <button
                       v-for="setup in memberSetups"
@@ -346,7 +346,7 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                       class="text-xs px-2.5 py-1 rounded-md border transition-colors"
                       :class="inst.setup_id === setup.id
                         ? 'border-zinc-400 bg-zinc-800/40 text-zinc-200'
-                        : 'border-slate-600 text-slate-400 hover:border-slate-500 hover:text-white'"
+                        : 'border-zinc-600 text-zinc-400 hover:border-zinc-500 hover:text-white'"
                       @click="inst.setup_id === setup.id ? unlinkSetup(inst) : linkSetup(inst, setup)"
                     >
                       {{ setup.name }} ({{ setup.inputs?.length ?? 0 }} ch.)
@@ -355,7 +355,7 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                 </div>
               </div>
 
-              <div v-if="!local.instruments.length" class="text-center py-4 text-slate-500 text-sm">
+              <div v-if="!local.instruments.length" class="text-center py-4 text-zinc-500 text-sm">
                 No instruments added yet
               </div>
 
@@ -381,24 +381,24 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
           <!-- ── Monitor tab ─────────────────────────────────────────────── -->
           <template v-else-if="activeTab === 'monitor'">
             <div class="p-5 space-y-4">
-              <p v-if="!local.monitors.length" class="text-xs text-slate-400">
+              <p v-if="!local.monitors.length" class="text-xs text-zinc-400">
                 Add monitor mixes needed by this musician. Multiple wedges or IEM units are supported.
               </p>
 
               <div
                 v-for="mon in local.monitors"
                 :key="mon.id"
-                class="rounded-lg border border-slate-700 bg-slate-800/20 overflow-hidden"
+                class="rounded-lg border border-zinc-700 bg-zinc-800/20 overflow-hidden"
               >
                 <!-- Monitor label + remove -->
-                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-slate-700/50">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-700/50">
                   <input
                     v-model="mon.label"
                     type="text"
                     placeholder="Label (e.g. Stage left wedge, IEM)"
-                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 py-0.5"
+                    class="flex-1 text-sm bg-transparent border-b border-zinc-600 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 py-0.5"
                   />
-                  <button type="button" class="text-slate-500 hover:text-red-400 transition-colors p-1" @click="removeMonitor(mon.id)">
+                  <button type="button" class="text-zinc-500 hover:text-red-400 transition-colors p-1" @click="removeMonitor(mon.id)">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -442,12 +442,12 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
           <!-- ── FOH notes tab ──────────────────────────────────────────── -->
           <template v-else-if="activeTab === 'foh'">
             <div class="p-5">
-              <label class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-2">FOH / PA notes</label>
+              <label class="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-2">FOH / PA notes</label>
               <textarea
                 v-model="local.foh_notes"
                 rows="6"
                 placeholder="Any specific requests for the front-of-house mix — EQ preferences, effects, compression notes, cue requests…"
-                class="w-full px-3 py-2.5 text-sm bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 resize-none"
+                class="w-full px-3 py-2.5 text-sm bg-zinc-900/60 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 resize-none"
               />
             </div>
           </template>
@@ -455,14 +455,14 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
         </div><!-- /body -->
 
         <!-- Footer -->
-        <div class="flex items-center justify-between px-5 py-3.5 border-t border-slate-700 flex-shrink-0">
-          <span class="text-xs text-slate-500">
+        <div class="flex items-center justify-between px-5 py-3.5 border-t border-zinc-700 flex-shrink-0">
+          <span class="text-xs text-zinc-500">
             {{ local.instruments.length }} instrument{{ local.instruments.length !== 1 ? 's' : '' }}
             · {{ local.inputs.length }} ch.
             · {{ local.monitors.length }} monitor{{ local.monitors.length !== 1 ? 's' : '' }}
           </span>
           <div class="flex gap-2">
-            <button type="button" class="px-4 py-2 text-sm text-slate-400 hover:text-white rounded-lg border border-slate-700 transition-colors" @click="emit('close')">
+            <button type="button" class="px-4 py-2 text-sm text-zinc-400 hover:text-white rounded-lg border border-zinc-700 transition-colors" @click="emit('close')">
               Cancel
             </button>
             <button type="button" class="px-5 py-2 text-sm font-semibold rounded-lg bg-zinc-200 hover:bg-white text-zinc-900 transition-colors" @click="save">

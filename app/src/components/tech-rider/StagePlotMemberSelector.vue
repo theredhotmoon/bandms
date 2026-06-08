@@ -83,12 +83,12 @@ function initials(m: BandMember): string {
     <!-- Header -->
     <div>
       <h3 class="text-base font-semibold text-white">Who's playing at this gig?</h3>
-      <p class="text-xs text-slate-400 mt-0.5">Toggle members off if they won't be attending. Add replacement musicians as needed.</p>
+      <p class="text-xs text-zinc-400 mt-0.5">Toggle members off if they won't be attending. Add replacement musicians as needed.</p>
     </div>
 
     <!-- Band members grid -->
     <div>
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Band members</p>
+      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Band members</p>
       <div class="grid grid-cols-2 gap-2">
         <button
           v-for="member in currentMembers"
@@ -97,13 +97,13 @@ function initials(m: BandMember): string {
           class="flex items-center gap-3 p-3 rounded-lg border transition-all text-left"
           :class="isAvailable(member.id)
             ? 'border-zinc-400/50 bg-zinc-800/40 text-white'
-            : 'border-slate-700/50 bg-slate-800/30 text-slate-500 opacity-60'"
+            : 'border-zinc-700/50 bg-zinc-800/30 text-zinc-500 opacity-60'"
           @click="toggleMember(member.id)"
         >
           <!-- Avatar -->
           <div
             class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
-            :class="isAvailable(member.id) ? 'bg-zinc-600 text-white' : 'bg-slate-700 text-slate-400'"
+            :class="isAvailable(member.id) ? 'bg-zinc-600 text-white' : 'bg-zinc-700 text-zinc-400'"
           >
             <img
               v-if="member.photo"
@@ -119,7 +119,7 @@ function initials(m: BandMember): string {
             <div class="text-sm font-medium truncate">
               {{ member.nickname ?? `${member.first_name} ${member.last_name}` }}
             </div>
-            <div class="text-xs truncate" :class="isAvailable(member.id) ? 'text-slate-400' : 'text-slate-600'">
+            <div class="text-xs truncate" :class="isAvailable(member.id) ? 'text-zinc-400' : 'text-zinc-600'">
               {{ member.role ?? 'Musician' }}
             </div>
           </div>
@@ -129,7 +129,7 @@ function initials(m: BandMember): string {
             <svg v-if="isAvailable(member.id)" class="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <svg v-else class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg v-else class="w-4 h-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
@@ -139,7 +139,7 @@ function initials(m: BandMember): string {
 
     <!-- Temp musicians -->
     <div>
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Temporary / Replacement musicians</p>
+      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Temporary / Replacement musicians</p>
 
       <!-- Existing temp musicians -->
       <div v-if="modelValue.temp_musicians.length" class="space-y-2 mb-3">
@@ -158,7 +158,7 @@ function initials(m: BandMember): string {
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 font-medium mr-1">GUEST</span>
           <button
             type="button"
-            class="text-slate-500 hover:text-red-400 transition-colors p-1"
+            class="text-zinc-500 hover:text-red-400 transition-colors p-1"
             @click="removeTempMusician(temp.id)"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,19 +169,19 @@ function initials(m: BandMember): string {
       </div>
 
       <!-- Add temp form -->
-      <div v-if="showTempForm" class="p-3 rounded-lg border border-slate-700 bg-slate-800/40 space-y-2">
+      <div v-if="showTempForm" class="p-3 rounded-lg border border-zinc-700 bg-zinc-800/40 space-y-2">
         <input
           v-model="tempName"
           type="text"
           placeholder="Full name"
-          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400"
+          class="w-full px-3 py-2 text-sm bg-zinc-900/60 border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
         <input
           v-model="tempRole"
           type="text"
           placeholder="Role / Position (e.g. Guitar, Bass)"
-          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400"
+          class="w-full px-3 py-2 text-sm bg-zinc-900/60 border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
         <div class="flex gap-2">
@@ -193,7 +193,7 @@ function initials(m: BandMember): string {
           >Add musician</button>
           <button
             type="button"
-            class="px-3 py-1.5 text-sm text-slate-400 hover:text-white rounded-md border border-slate-700 transition-colors"
+            class="px-3 py-1.5 text-sm text-zinc-400 hover:text-white rounded-md border border-zinc-700 transition-colors"
             @click="showTempForm = false; tempName = ''; tempRole = ''"
           >Cancel</button>
         </div>
@@ -213,8 +213,8 @@ function initials(m: BandMember): string {
     </div>
 
     <!-- Summary + close -->
-    <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
-      <span class="text-sm text-slate-400">
+    <div class="flex items-center justify-between pt-2 border-t border-zinc-700/50">
+      <span class="text-sm text-zinc-400">
         <span class="font-medium text-white">{{ availableCount }}</span> musician{{ availableCount !== 1 ? 's' : '' }} in tonight's lineup
       </span>
       <button

@@ -25,25 +25,25 @@ const label = computed(() => {
 </script>
 
 <template>
-  <div class="px-4 py-3 bg-slate-900/80 border-t border-slate-700/60">
+  <div class="px-4 py-3 bg-zinc-900/80 border-t border-zinc-700/60">
     <div class="flex items-center gap-3">
       <!-- Label -->
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-slate-300">Tech rider completeness</span>
-          <span class="text-xs font-semibold" :class="stats.pct === 100 ? 'text-emerald-400' : 'text-slate-400'">
+          <span class="text-xs font-medium text-zinc-300">Tech rider completeness</span>
+          <span class="text-xs font-semibold" :class="stats.pct === 100 ? 'text-emerald-400' : 'text-zinc-400'">
             {{ stats.pct }}%
           </span>
         </div>
         <!-- Progress bar -->
-        <div class="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+        <div class="h-1.5 w-full bg-zinc-700 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-500"
             :class="barColor"
             :style="{ width: `${stats.pct}%` }"
           />
         </div>
-        <p class="text-[11px] text-slate-500 mt-1">{{ label }}</p>
+        <p class="text-[11px] text-zinc-500 mt-1">{{ label }}</p>
       </div>
 
       <!-- Member dots -->
