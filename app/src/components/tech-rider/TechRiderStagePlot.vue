@@ -289,14 +289,14 @@ function statusClass(item: StagePlotMemberItem): string {
           v-for="member in availableMembers"
           :key="member.id"
           draggable="true"
-          class="flex items-center gap-2 p-2 rounded-lg border border-slate-700/60 bg-slate-800/40 cursor-grab active:cursor-grabbing hover:border-indigo-600/50 hover:bg-indigo-950/30 transition-all select-none"
+          class="flex items-center gap-2 p-2 rounded-lg border border-slate-700/60 bg-slate-800/40 cursor-grab active:cursor-grabbing hover:border-zinc-500/50 hover:bg-zinc-700/30 transition-all select-none"
           :class="{ 'opacity-50': memberPositionCount(member.id) > 0 }"
           @dragstart="onPanelMemberDragStart($event, member.id)"
         >
           <!-- Avatar -->
           <div
             class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold overflow-hidden"
-            :class="checkProfile(member.id).ok ? 'bg-indigo-700 text-white' : 'bg-slate-700 text-slate-400'"
+            :class="checkProfile(member.id).ok ? 'bg-zinc-600 text-white' : 'bg-slate-700 text-slate-400'"
           >
             <img v-if="member.photo" :src="member.photo" :alt="memberName(member)" class="w-full h-full object-cover" />
             <span v-else>{{ memberInitials(member) }}</span>
@@ -321,7 +321,7 @@ function statusClass(item: StagePlotMemberItem): string {
               :title="checkProfile(member.id).ok ? 'Profile complete' : checkProfile(member.id).warnings.join(', ')"
             />
             <!-- On stage count -->
-            <span v-if="memberPositionCount(member.id) > 0" class="text-[10px] text-indigo-400">
+            <span v-if="memberPositionCount(member.id) > 0" class="text-[10px] text-zinc-400">
               ×{{ memberPositionCount(member.id) }}
             </span>
           </div>
@@ -368,7 +368,7 @@ function statusClass(item: StagePlotMemberItem): string {
       <div
         ref="stageRef"
         class="relative flex-1 rounded-lg overflow-hidden select-none"
-        style="background: linear-gradient(180deg, #1a1f3a 0%, #0f1629 100%); border: 1px solid #2d3461; aspect-ratio: 16/9; min-height: 340px; max-height: 100%;"
+        style="background: linear-gradient(180deg, #1a1a1a 0%, #111111 100%); border: 1px solid #2a2a2a; aspect-ratio: 16/9; min-height: 340px; max-height: 100%;"
         @dragover="onStageDragOver"
         @drop="onStageDrop"
       >
@@ -414,7 +414,7 @@ function statusClass(item: StagePlotMemberItem): string {
             <!-- Avatar -->
             <div
               class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0"
-              :class="item.temp_id ? 'bg-amber-800 text-amber-200' : 'bg-indigo-700 text-white'"
+              :class="item.temp_id ? 'bg-amber-800 text-amber-200' : 'bg-zinc-600 text-white'"
             >
               <img v-if="itemPhoto(item)" :src="itemPhoto(item)!" :alt="itemDisplayName(item)" class="w-full h-full object-cover" />
               <span v-else>{{ itemAvatar(item) }}</span>
@@ -451,7 +451,7 @@ function statusClass(item: StagePlotMemberItem): string {
             <div class="flex gap-1 mt-0.5">
               <button
                 type="button"
-                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-indigo-700 text-slate-300 hover:text-white transition-colors"
+                class="w-5 h-5 rounded flex items-center justify-center bg-slate-700/80 hover:bg-zinc-600 text-slate-300 hover:text-white transition-colors"
                 title="Edit configuration"
                 @click.stop="openModal(item.id)"
               >

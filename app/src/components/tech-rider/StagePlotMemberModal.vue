@@ -218,7 +218,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
         <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-700 flex-shrink-0">
           <div
             class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0"
-            :class="tempMusician ? 'bg-amber-800 text-amber-200' : 'bg-indigo-700 text-white'"
+            :class="tempMusician ? 'bg-amber-800 text-amber-200' : 'bg-zinc-600 text-white'"
           >
             <img v-if="member?.photo" :src="member.photo" :alt="memberName" class="w-full h-full object-cover" />
             <span v-else>{{ memberInitials }}</span>
@@ -236,7 +236,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
             v-if="member"
             type="button"
             :disabled="setupSaving"
-            class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-600 text-slate-300 hover:text-white hover:border-indigo-500 transition-colors disabled:opacity-50"
+            class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-600 text-slate-300 hover:text-white hover:border-zinc-400 transition-colors disabled:opacity-50"
             @click="saveToProfile"
           >{{ setupSaving ? 'Saving…' : 'Save to profile' }}</button>
 
@@ -255,7 +255,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
             type="button"
             class="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === tab.key
-              ? 'border-indigo-500 text-indigo-300'
+              ? 'border-zinc-400 text-zinc-200'
               : 'border-transparent text-slate-400 hover:text-white'"
             style="margin-bottom: -1px"
             @click="activeTab = tab.key"
@@ -279,7 +279,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                   v-for="profInst in member.instruments"
                   :key="profInst.id"
                   type="button"
-                  class="px-2.5 py-1 text-xs rounded-full border border-slate-700 text-slate-400 hover:border-indigo-500 hover:text-indigo-300 transition-colors"
+                  class="px-2.5 py-1 text-xs rounded-full border border-slate-700 text-slate-400 hover:border-zinc-400 hover:text-zinc-200 transition-colors"
                   @click="() => { const i = defaultPlacedInstrument(); i.label = profInst.name; local.instruments.push(i) }"
                 >+ {{ profInst.name }}</button>
               </div>
@@ -294,7 +294,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                   <!-- Type selector -->
                   <select
                     :value="inst.type"
-                    class="text-xs bg-slate-800 border border-slate-600 rounded-md px-2 py-1.5 text-slate-300 focus:outline-none focus:border-indigo-500 flex-shrink-0"
+                    class="text-xs bg-slate-800 border border-slate-600 rounded-md px-2 py-1.5 text-slate-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
                     @change="inst.type = ($event.target as HTMLSelectElement).value as StagePlotItemType"
                   >
                     <option v-for="opt in INSTRUMENT_TYPES" :key="opt.type" :value="opt.type">{{ opt.label }}</option>
@@ -305,7 +305,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                     v-model="inst.label"
                     type="text"
                     placeholder="Label (e.g. Guitar, Acoustic)"
-                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 py-0.5"
+                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 py-0.5"
                   />
 
                   <!-- Setup status -->
@@ -330,7 +330,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                       type="button"
                       class="text-xs px-2.5 py-1 rounded-md border transition-colors"
                       :class="inst.setup_id === setup.id
-                        ? 'border-indigo-500 bg-indigo-900/40 text-indigo-300'
+                        ? 'border-zinc-400 bg-zinc-800/40 text-zinc-200'
                         : 'border-slate-600 text-slate-400 hover:border-slate-500 hover:text-white'"
                       @click="inst.setup_id === setup.id ? unlinkSetup(inst) : linkSetup(inst, setup)"
                     >
@@ -344,7 +344,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                 No instruments added yet
               </div>
 
-              <button type="button" class="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors" @click="addInstrument">
+              <button type="button" class="flex items-center gap-1.5 text-sm text-zinc-300 hover:text-zinc-100 transition-colors" @click="addInstrument">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                 Add instrument
               </button>
@@ -381,7 +381,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                     v-model="mon.label"
                     type="text"
                     placeholder="Label (e.g. Stage left wedge, IEM)"
-                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 py-0.5"
+                    class="flex-1 text-sm bg-transparent border-b border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 py-0.5"
                   />
                   <button type="button" class="text-slate-500 hover:text-red-400 transition-colors p-1" @click="removeMonitor(mon.id)">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -396,7 +396,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                 </div>
               </div>
 
-              <button type="button" class="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors" @click="addMonitor">
+              <button type="button" class="flex items-center gap-1.5 text-sm text-zinc-300 hover:text-zinc-100 transition-colors" @click="addMonitor">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                 Add monitor / IEM
               </button>
@@ -432,7 +432,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
                 v-model="local.foh_notes"
                 rows="6"
                 placeholder="Any specific requests for the front-of-house mix — EQ preferences, effects, compression notes, cue requests…"
-                class="w-full px-3 py-2.5 text-sm bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+                class="w-full px-3 py-2.5 text-sm bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400 resize-none"
               />
             </div>
           </template>
@@ -450,7 +450,7 @@ const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedg
             <button type="button" class="px-4 py-2 text-sm text-slate-400 hover:text-white rounded-lg border border-slate-700 transition-colors" @click="emit('close')">
               Cancel
             </button>
-            <button type="button" class="px-5 py-2 text-sm font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors" @click="save">
+            <button type="button" class="px-5 py-2 text-sm font-semibold rounded-lg bg-zinc-200 hover:bg-white text-zinc-900 transition-colors" @click="save">
               Done
             </button>
           </div>

@@ -159,13 +159,13 @@ function memberName(m: MonitorMix): string {
 .monitors-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .section-hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
 }
 .mix-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .empty-state { text-align: center; color: #334155; font-size: 0.8rem; padding: 1.5rem 0; }
 
 .mix-card {
-  background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 0.875rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .mix-header { display: flex; align-items: center; gap: 0.625rem; }
@@ -173,7 +173,7 @@ function memberName(m: MonitorMix): string {
 .mix-type-badge {
   font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; text-transform: uppercase;
 }
-.mix-type-badge.wedge { background: #1e2040; color: #818cf8; }
+.mix-type-badge.wedge { background: #2a2a2a; color: #c0c0c0; }
 .mix-type-badge.iem   { background: #14284a; color: #38bdf8; }
 .del-btn {
   background: none; border: none; cursor: pointer; color: #3d1a1a; font-size: 0.75rem;
@@ -189,22 +189,22 @@ function memberName(m: MonitorMix): string {
 .field-label { font-size: 0.7rem; font-weight: 600; color: #7c8fa6; }
 .field-input {
   display: block; width: 100%; padding: 0.45rem 0.65rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit;
   transition: border-color 150ms;
 }
-.field-input:focus { border-color: #5154e5; }
-.field-input option { background: #0e0e26; }
+.field-input:focus { border-color: #888888; }
+.field-input option { background: #141414; }
 
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-.toggle-input { accent-color: #4338ca; width: 1rem; height: 1rem; cursor: pointer; }
+.toggle-input { accent-color: #888888; width: 1rem; height: 1rem; cursor: pointer; }
 .toggle-text  { font-size: 0.8rem; color: #94a3b8; }
 
 .btn-add {
   align-self: flex-start; padding: 0.35rem 0.875rem; border-radius: 0.375rem;
   font-size: 0.78rem; font-weight: 600; cursor: pointer;
-  background: #0e0e26; border: 1px solid #1e2040; color: #818cf8;
+  background: #141414; border: 1px solid #2a2a2a; color: #c0c0c0;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add:hover { background: #12123a; border-color: #312e81; }
+.btn-add:hover { background: #12123a; border-color: #444444; }
 </style>

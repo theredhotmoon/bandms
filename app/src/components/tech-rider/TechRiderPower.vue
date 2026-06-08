@@ -131,7 +131,7 @@ function removePosition(id: string) {
 .power-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .section-hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -139,14 +139,14 @@ function removePosition(id: string) {
 .field-hint  { font-size: 0.7rem; color: #334155; margin-top: 0.15rem; }
 .field-input {
   display: block; width: 100%; padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #1e2040; background: #0e0e26; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #141414; color: #e2e8f0;
   font-size: 0.875rem; outline: none; font-family: inherit;
   transition: border-color 150ms; resize: vertical;
 }
-.field-input:focus { border-color: #5154e5; }
+.field-input:focus { border-color: #888888; }
 .field-input::placeholder { color: #2a3050; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-.toggle-input { accent-color: #4338ca; width: 1rem; height: 1rem; cursor: pointer; }
+.toggle-input { accent-color: #888888; width: 1rem; height: 1rem; cursor: pointer; }
 .toggle-text  { font-size: 0.8rem; color: #94a3b8; }
 
 .positions-section { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -156,7 +156,7 @@ function removePosition(id: string) {
 
 .pos-row {
   display: grid; grid-template-columns: 1fr 6rem 1fr auto; gap: 0.5rem;
-  align-items: end; background: #0a0a1e; border: 1px solid #1e2040;
+  align-items: end; background: #111111; border: 1px solid #2a2a2a;
   border-radius: 0.4rem; padding: 0.625rem;
 }
 .outlets-group { min-width: 0; }
@@ -168,8 +168,8 @@ function removePosition(id: string) {
 
 .btn-add {
   padding: 0.3rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #0e0e26; border: 1px solid #1e2040; color: #818cf8;
+  cursor: pointer; background: #141414; border: 1px solid #2a2a2a; color: #c0c0c0;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add:hover { background: #12123a; border-color: #312e81; }
+.btn-add:hover { background: #12123a; border-color: #444444; }
 </style>

@@ -17,7 +17,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   bandcamp:   '#1da0c3',
   soundcloud: '#ff5500',
   twitter:    '#6b7280',
-  website:    '#6366f1',
+  website:    '#888888',
 }
 
 const PLATFORM_LABELS: Record<string, string> = {

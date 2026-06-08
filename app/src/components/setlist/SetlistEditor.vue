@@ -496,12 +496,12 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
 .opt { color: #334155; font-weight: 400; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }
-.field-input:focus { border-color: #5154e5; }
-.field-input option { background: #0e0e26; }
+.field-input:focus { border-color: #888888; }
+.field-input option { background: #141414; }
 select.field-input {
   appearance: none; -webkit-appearance: none; padding-right: 2rem; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -510,8 +510,8 @@ select.field-input {
 
 .concert-info { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
 .concert-info-chip {
-  font-size: 0.7rem; color: #a5b4fc; background: #1e1b4b;
-  border: 1px solid #312e81; border-radius: 0.3rem; padding: 0.15rem 0.5rem;
+  font-size: 0.7rem; color: #d0d0d0; background: #2a2a2a;
+  border: 1px solid #444444; border-radius: 0.3rem; padding: 0.15rem 0.5rem;
 }
 .preset-note {
   font-size: 0.68rem; color: #334155; margin-top: 0.2rem; font-style: italic;
@@ -527,8 +527,8 @@ select.field-input {
 .song-list { display: flex; flex-direction: column; gap: 0.3rem; padding: 0 1rem; flex-shrink: 0; }
 .empty-songs { font-size: 0.78rem; color: #334155; text-align: center; padding: 1.5rem 0; }
 
-.song-card { background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem; overflow: hidden; }
-.song-card--encore { border-color: #312e81; }
+.song-card { background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem; overflow: hidden; }
+.song-card--encore { border-color: #444444; }
 
 .song-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; }
 .song-pos { font-size: 0.65rem; color: #334155; width: 1.5rem; text-align: right; flex-shrink: 0; }
@@ -536,29 +536,29 @@ select.field-input {
 .song-title { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .song-badges { display: flex; gap: 0.25rem; flex-shrink: 0; }
 .badge-encore {
-  font-size: 0.58rem; font-weight: 700; color: #818cf8;
-  background: #1e1b4b; border-radius: 0.2rem; padding: 0.1rem 0.3rem;
+  font-size: 0.58rem; font-weight: 700; color: #c0c0c0;
+  background: #2a2a2a; border-radius: 0.2rem; padding: 0.1rem 0.3rem;
 }
 .badge-transition {
-  font-size: 0.58rem; color: #475569; background: #0e0e26;
-  border: 1px solid #1e2040; border-radius: 0.2rem; padding: 0.1rem 0.3rem;
+  font-size: 0.58rem; color: #475569; background: #141414;
+  border: 1px solid #2a2a2a; border-radius: 0.2rem; padding: 0.1rem 0.3rem;
 }
 .badge-cue { font-size: 0.7rem; }
 .song-dur { font-size: 0.68rem; color: #334155; width: 2.5rem; text-align: right; flex-shrink: 0; }
 .song-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
 
 .btn-icon {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; border: 1px solid #1e2040;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; border: 1px solid #2a2a2a;
   background: transparent; color: #475569; cursor: pointer; font-size: 0.7rem;
   display: flex; align-items: center; justify-content: center; transition: all 100ms;
 }
-.btn-icon:hover:not(:disabled) { background: #0e0e26; color: #94a3b8; border-color: #334155; }
+.btn-icon:hover:not(:disabled) { background: #141414; color: #94a3b8; border-color: #334155; }
 .btn-icon:disabled { opacity: 0.25; cursor: default; }
-.btn-expand.active { background: #1e1b4b; color: #818cf8; border-color: #312e81; }
+.btn-expand.active { background: #2a2a2a; color: #c0c0c0; border-color: #444444; }
 .btn-remove:hover:not(:disabled) { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
 
 .song-expanded {
-  border-top: 1px solid #1e2040; padding: 0.75rem 0.875rem; background: #060614;
+  border-top: 1px solid #2a2a2a; padding: 0.75rem 0.875rem; background: #060614;
 }
 .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
 
@@ -566,24 +566,24 @@ select.field-input {
   position: relative; width: 2.5rem; height: 1.375rem; border-radius: 9999px;
   border: none; cursor: pointer; background: #1e293b; transition: background 200ms;
 }
-.toggle--on { background: #1e1b4b; }
+.toggle--on { background: #2a2a2a; }
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
   background: #475569; transition: transform 200ms, background 200ms;
 }
-.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #818cf8; }
+.toggle--on .toggle-thumb { transform: translateX(1.125rem); background: #c0c0c0; }
 
 .add-section { padding: 0.75rem 1rem; flex-shrink: 0; }
 .btn-add-song {
-  font-size: 0.75rem; font-weight: 600; color: #818cf8;
-  background: transparent; border: 1px dashed #312e81; border-radius: 0.375rem;
+  font-size: 0.75rem; font-weight: 600; color: #c0c0c0;
+  background: transparent; border: 1px dashed #444444; border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
-.btn-add-song:hover { background: #12103a; border-color: #4338ca; }
+.btn-add-song:hover { background: #12103a; border-color: #888888; }
 
 .add-panel {
-  margin-top: 0.5rem; background: #0a0a1e; border: 1px solid #1e2040;
+  margin-top: 0.5rem; background: #111111; border: 1px solid #2a2a2a;
   border-radius: 0.5rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
 }
 .add-song-list { max-height: 12rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.2rem; }
@@ -593,16 +593,16 @@ select.field-input {
   border: 1px solid transparent; cursor: pointer; text-align: left; font-size: 0.8rem; color: #e2e8f0;
   transition: border-color 100ms;
 }
-.add-song-row:hover { border-color: #4338ca; }
+.add-song-row:hover { border-color: #888888; }
 .add-song-dur { font-size: 0.68rem; color: #334155; }
 .add-song-empty { font-size: 0.75rem; color: #334155; text-align: center; padding: 0.75rem 0; }
 .add-new-row { display: flex; gap: 0.5rem; }
 .btn-create-song {
   padding: 0.4rem 0.75rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #1e1b4b; border: 1px solid #312e81; color: #818cf8;
+  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #c0c0c0;
   white-space: nowrap; transition: background 100ms;
 }
-.btn-create-song:hover:not(:disabled) { background: #252370; }
+.btn-create-song:hover:not(:disabled) { background: #333333; }
 .btn-create-song:disabled { opacity: 0.4; cursor: default; }
 
 .notes-section { border-top: 1px solid #0f0f28; padding: 0.75rem 1rem 0; flex-shrink: 0; }
@@ -613,14 +613,14 @@ select.field-input {
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .notes-tab:hover { color: #64748b; }
-.notes-tab.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+.notes-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .notes-textarea {
   width: 100%; padding: 0.5rem 0.625rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #0e0e26; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #141414; color: #e2e8f0;
   font-size: 0.82rem; font-family: inherit; outline: none; resize: vertical;
   transition: border-color 150ms; box-sizing: border-box;
 }
-.notes-textarea:focus { border-color: #5154e5; }
+.notes-textarea:focus { border-color: #888888; }
 
 .bottom-bar {
   border-top: 1px solid #0f0f28; padding: 0.625rem 1rem;
@@ -628,10 +628,10 @@ select.field-input {
 }
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms; min-width: 6rem;
 }
-.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:hover:not(:disabled) { background: #333333; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
 .btn-save--ok { background: #166534 !important; }
 
@@ -640,7 +640,7 @@ select.field-input {
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
+  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.75rem;
   padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .confirm-title { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; }
@@ -648,9 +648,9 @@ select.field-input {
 .confirm-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .btn-ghost {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
 }
-.btn-ghost:hover { background: #0a0a1e; }
+.btn-ghost:hover { background: #111111; }
 .btn-danger {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
   cursor: pointer; background: #7f1d1d; border: 1px solid #991b1b; color: #fca5a5;

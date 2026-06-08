@@ -219,7 +219,7 @@ function chainLabel(type: string) {
   width: min(42rem, 95vw);
   height: 100%;
   background: #070718;
-  border-left: 1px solid #1e2040;
+  border-left: 1px solid #2a2a2a;
   display: flex; flex-direction: column;
   box-shadow: -1rem 0 3rem rgba(0,0,0,0.5);
 }
@@ -263,20 +263,20 @@ function chainLabel(type: string) {
 }
 .group-info   { display: flex; align-items: baseline; gap: 0.5rem; }
 .group-name   { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; }
-.group-role   { font-size: 0.7rem; color: #6366f1; }
+.group-role   { font-size: 0.7rem; color: #888888; }
 .select-all-btn {
   font-size: 0.68rem; color: #475569; background: none; border: none; cursor: pointer;
   padding: 0.15rem 0.4rem; border-radius: 0.25rem; transition: color 100ms, background 100ms;
 }
-.select-all-btn:hover { color: #94a3b8; background: #0a0a1e; }
+.select-all-btn:hover { color: #94a3b8; background: #111111; }
 
 /* ── Setup cards ──────────────────────────────────────── */
 .setups-list { display: flex; flex-direction: column; gap: 0.375rem; }
 .setup-card {
-  background: #0a0a1e; border: 1px solid #1a1a38; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #222222; border-radius: 0.5rem;
   overflow: hidden; transition: border-color 120ms;
 }
-.setup-card--selected { border-color: #312e81; background: #0e0e26; }
+.setup-card--selected { border-color: #444444; background: #141414; }
 
 .setup-card-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -286,12 +286,12 @@ function chainLabel(type: string) {
 .setup-check-label {
   display: flex; align-items: center; gap: 0.5rem; cursor: pointer; flex: 1; min-width: 0;
 }
-.setup-check { accent-color: #4338ca; width: 0.9rem; height: 0.9rem; cursor: pointer; flex-shrink: 0; }
+.setup-check { accent-color: #888888; width: 0.9rem; height: 0.9rem; cursor: pointer; flex-shrink: 0; }
 .setup-name  { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .setup-badges { display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0; }
 .badge-chain {
-  font-size: 0.65rem; color: #818cf8; background: #1e1b4b; border-radius: 0.3rem;
+  font-size: 0.65rem; color: #c0c0c0; background: #2a2a2a; border-radius: 0.3rem;
   padding: 0.1rem 0.4rem; white-space: nowrap;
 }
 .badge-ch {
@@ -302,7 +302,7 @@ function chainLabel(type: string) {
   background: none; border: none; cursor: pointer; color: #334155; font-size: 0.55rem;
   padding: 0.2rem 0.3rem; transition: color 100ms;
 }
-.expand-btn:hover { color: #818cf8; }
+.expand-btn:hover { color: #c0c0c0; }
 
 /* Channel preview */
 .channel-preview {
@@ -319,7 +319,7 @@ function chainLabel(type: string) {
 .ch-num   { font-weight: 700; color: #475569; min-width: 1.5rem; text-align: right; font-size: 0.7rem; }
 .ch-instr { flex: 1; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-type  { font-size: 0.65rem; font-weight: 600; padding: 0.05rem 0.35rem; border-radius: 0.25rem; white-space: nowrap; }
-.ch-type--mic   { background: #1e1b4b; color: #818cf8; }
+.ch-type--mic   { background: #2a2a2a; color: #c0c0c0; }
 .ch-type--di    { background: #052e16; color: #34d399; }
 .ch-type--micdi { background: #291d02; color: #f59e0b; }
 .ch-model { font-size: 0.65rem; color: #475569; }
@@ -337,15 +337,15 @@ function chainLabel(type: string) {
 
 .btn-ghost {
   padding: 0.4rem 0.875rem; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #1e2040; color: #64748b;
+  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
   transition: background 100ms;
 }
-.btn-ghost:hover { background: #0a0a1e; }
+.btn-ghost:hover { background: #111111; }
 .btn-import {
   padding: 0.4rem 1.1rem; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 700;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   transition: background 150ms; min-width: 8rem;
 }
-.btn-import:hover:not(:disabled) { background: #4f46e5; }
+.btn-import:hover:not(:disabled) { background: #333333; }
 .btn-import:disabled { opacity: 0.4; cursor: default; }
 </style>

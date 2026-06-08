@@ -200,13 +200,13 @@ function monthName(m: string): string {
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .modal-card {
-  background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.75rem;
+  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.75rem;
   width: 100%; max-width: 30rem; max-height: 85vh;
   display: flex; flex-direction: column; overflow: hidden;
 }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.875rem 1rem; border-bottom: 1px solid #1e2040; flex-shrink: 0;
+  padding: 0.875rem 1rem; border-bottom: 1px solid #2a2a2a; flex-shrink: 0;
 }
 .modal-title { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
 .btn-close {
@@ -220,50 +220,50 @@ function monthName(m: string): string {
 .search-row { display: flex; gap: 0.5rem; }
 .field-input {
   flex: 1; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
-  border: 1px solid #1e2040; background: #070718; color: #e2e8f0;
+  border: 1px solid #2a2a2a; background: #070718; color: #e2e8f0;
   font-size: 0.8rem; outline: none; font-family: inherit;
 }
-.field-input:focus { border-color: #5154e5; }
+.field-input:focus { border-color: #888888; }
 
 .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
 .field-label { font-size: 0.68rem; font-weight: 600; color: #7c8fa6; }
 
 .btn-primary {
   padding: 0.4rem 0.9rem; border-radius: 0.4rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #4338ca; border: none; color: #fff; white-space: nowrap;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; white-space: nowrap;
   transition: background 100ms;
 }
-.btn-primary:hover:not(:disabled) { background: #4f46e5; }
+.btn-primary:hover:not(:disabled) { background: #333333; }
 .btn-primary:disabled { opacity: 0.4; cursor: default; }
 
 .results-list { display: flex; flex-direction: column; gap: 0.25rem; }
 .result-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.5rem 0.625rem; border-radius: 0.4rem;
-  background: #0a0a1e; border: 1px solid #1e2040;
+  background: #111111; border: 1px solid #2a2a2a;
   cursor: pointer; text-align: left; transition: border-color 100ms;
   width: 100%;
 }
-.result-row:hover { border-color: #4338ca; }
+.result-row:hover { border-color: #888888; }
 .result-name { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
 .result-venue { font-size: 0.7rem; color: #475569; }
 .result-count { font-size: 0.7rem; color: #4a5568; white-space: nowrap; }
-.result-arrow { color: #4338ca; font-size: 1rem; }
+.result-arrow { color: #888888; font-size: 1rem; }
 .setlist-row-info { display: flex; flex-direction: column; gap: 0.1rem; }
 
 .section-title { font-size: 0.72rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; }
 
 .btn-back {
-  background: none; border: none; cursor: pointer; color: #6366f1;
+  background: none; border: none; cursor: pointer; color: #888888;
   font-size: 0.75rem; font-weight: 600; padding: 0; align-self: flex-start;
 }
-.btn-back:hover { color: #818cf8; }
+.btn-back:hover { color: #c0c0c0; }
 
 .empty-note, .loading-note { font-size: 0.78rem; color: #334155; text-align: center; padding: 1rem 0; }
 
 .confirm-block { display: flex; flex-direction: column; gap: 1rem; }
 .songs-preview {
-  background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 0.625rem 0.75rem; max-height: 16rem; overflow-y: auto;
   display: flex; flex-direction: column; gap: 0.25rem;
 }
@@ -272,15 +272,15 @@ function monthName(m: string): string {
 .preview-pos { font-size: 0.65rem; color: #334155; width: 1.2rem; text-align: right; flex-shrink: 0; }
 .preview-title { font-size: 0.78rem; color: #cbd5e1; flex: 1; }
 .preview-encore {
-  font-size: 0.58rem; font-weight: 700; color: #818cf8;
-  background: #1e1b4b; border-radius: 0.25rem; padding: 0.1rem 0.3rem;
+  font-size: 0.58rem; font-weight: 700; color: #c0c0c0;
+  background: #2a2a2a; border-radius: 0.25rem; padding: 0.1rem 0.3rem;
 }
 
 .btn-import {
   padding: 0.5rem 1.25rem; border-radius: 0.45rem; font-size: 0.82rem; font-weight: 700;
-  cursor: pointer; background: #4338ca; border: none; color: #fff;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
   align-self: flex-end; transition: background 100ms;
 }
-.btn-import:hover:not(:disabled) { background: #4f46e5; }
+.btn-import:hover:not(:disabled) { background: #333333; }
 .btn-import:disabled { opacity: 0.4; cursor: default; }
 </style>

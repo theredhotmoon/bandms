@@ -27,7 +27,7 @@ interface Seg { color: string; dash: string; offset: string; label: string; coun
 const segments = computed<Seg[]>(() => {
   if (!total.value) return []
   const items = [
-    { color: '#818cf8', count: mic.value,   label: 'Mic'    },
+    { color: '#c0c0c0', count: mic.value,   label: 'Mic'    },
     { color: '#34d399', count: di.value,    label: 'DI'     },
     { color: '#f59e0b', count: micdi.value, label: 'Mic+DI' },
   ].filter(s => s.count > 0)
@@ -117,7 +117,7 @@ const topModels = computed<ModelEntry[]>(() => {
           </svg>
           <!-- Legend -->
           <div class="donut-legend">
-            <div v-if="mic"   class="legend-row"><span class="legend-dot" style="background:#818cf8" />Mic <span class="legend-pct">{{ pct(mic) }}%</span></div>
+            <div v-if="mic"   class="legend-row"><span class="legend-dot" style="background:#c0c0c0" />Mic <span class="legend-pct">{{ pct(mic) }}%</span></div>
             <div v-if="di"    class="legend-row"><span class="legend-dot" style="background:#34d399" />DI <span class="legend-pct">{{ pct(di) }}%</span></div>
             <div v-if="micdi" class="legend-row"><span class="legend-dot" style="background:#f59e0b" />Mic+DI <span class="legend-pct">{{ pct(micdi) }}%</span></div>
           </div>
@@ -161,8 +161,8 @@ const topModels = computed<ModelEntry[]>(() => {
 <style scoped>
 .dashboard {
   display: flex; flex-direction: column; gap: 0.875rem;
-  background: #070718; border: 1px solid #1a1a38; border-radius: 0.625rem;
-  padding: 0.875rem; border-left: 3px solid #4338ca;
+  background: #070718; border: 1px solid #222222; border-radius: 0.625rem;
+  padding: 0.875rem; border-left: 3px solid #888888;
 }
 
 /* ── Stat row ─────────────────────────────────────────── */
@@ -170,21 +170,21 @@ const topModels = computed<ModelEntry[]>(() => {
 .stat-card {
   display: flex; flex-direction: column; gap: 0.15rem;
   padding: 0.5rem 0.875rem; border-radius: 0.5rem;
-  background: #0a0a1e; border: 1px solid #1e2040; min-width: 5.5rem;
+  background: #111111; border: 1px solid #2a2a2a; min-width: 5.5rem;
 }
 .stat-num { font-size: 1.625rem; font-weight: 800; color: #e2e8f0; line-height: 1; }
-.stat-num--mic   { color: #818cf8; }
+.stat-num--mic   { color: #c0c0c0; }
 .stat-num--di    { color: #34d399; }
 .stat-num--micdi { color: #f59e0b; }
 .stat-label { font-size: 0.67rem; color: #475569; font-weight: 500; white-space: nowrap; }
-.stat-card--mic   { border-color: #818cf820; }
+.stat-card--mic   { border-color: #c0c0c020; }
 .stat-card--di    { border-color: #34d39920; }
 .stat-card--micdi { border-color: #f59e0b20; }
 
 /* ── Charts row ───────────────────────────────────────── */
 .charts-row { display: flex; gap: 0.875rem; align-items: flex-start; flex-wrap: wrap; }
 .chart-panel {
-  background: #0a0a1e; border: 1px solid #1e2040; border-radius: 0.5rem;
+  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
   padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
 }
 .chart-panel--grow { flex: 1; min-width: 0; }
@@ -210,7 +210,7 @@ const topModels = computed<ModelEntry[]>(() => {
   transition: transform 100ms;
 }
 .ch-cell:hover { transform: scale(1.15); z-index: 1; }
-.ch-cell--mic   { background: #1e1b4b; color: #818cf8; border-color: #312e81; }
+.ch-cell--mic   { background: #2a2a2a; color: #c0c0c0; border-color: #444444; }
 .ch-cell--di    { background: #052e16; color: #34d399; border-color: #14532d; }
 .ch-cell--micdi { background: #291d02; color: #f59e0b; border-color: #451a03; }
 
@@ -219,6 +219,6 @@ const topModels = computed<ModelEntry[]>(() => {
 .model-row { display: flex; align-items: center; gap: 0.5rem; }
 .model-name { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; min-width: 3.5rem; }
 .model-bar-wrap { flex: 1; height: 0.35rem; background: #0f0f28; border-radius: 999px; overflow: hidden; }
-.model-bar { display: block; height: 100%; background: #4338ca; border-radius: 999px; transition: width 400ms; }
+.model-bar { display: block; height: 100%; background: #888888; border-radius: 999px; transition: width 400ms; }
 .model-count { font-size: 0.65rem; color: #475569; min-width: 1rem; text-align: right; }
 </style>

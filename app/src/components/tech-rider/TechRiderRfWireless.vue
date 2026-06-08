@@ -110,19 +110,19 @@ function remove(id: string) {
 .rf-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .section-hint {
   font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #0e0e26; border: 1px solid #1e2040; border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
 }
-.table-scroll { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #1e2040; }
+.table-scroll { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #2a2a2a; }
 .rf-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .rf-table thead th {
   background: #070718; color: #475569; font-weight: 600; font-size: 0.7rem;
   text-transform: uppercase; letter-spacing: .05em;
-  padding: 0.5rem 0.625rem; text-align: left; border-bottom: 1px solid #1e2040;
+  padding: 0.5rem 0.625rem; text-align: left; border-bottom: 1px solid #2a2a2a;
   white-space: nowrap;
 }
 .data-row { border-bottom: 1px solid #0f0f28; }
 .data-row:last-child { border-bottom: none; }
-.data-row td { padding: 0.35rem 0.5rem; vertical-align: middle; background: #0a0a1e; }
+.data-row td { padding: 0.35rem 0.5rem; vertical-align: middle; background: #111111; }
 .data-row:hover td { background: #0d0d28; }
 
 .col-model { min-width: 10rem; }
@@ -138,17 +138,17 @@ function remove(id: string) {
   border-bottom: 1px solid transparent; padding: 0.1rem 0.25rem;
   transition: border-color 120ms;
 }
-.cell-input:focus { border-bottom-color: #4338ca; }
+.cell-input:focus { border-bottom-color: #888888; }
 .cell-input::placeholder { color: #1e2a40; }
 
 .cell-select {
-  width: 100%; background: #0a0a1e; border: none; outline: none;
+  width: 100%; background: #111111; border: none; outline: none;
   color: #e2e8f0; font-size: 0.8rem; font-family: inherit; cursor: pointer;
   border-bottom: 1px solid transparent; padding: 0.1rem 0.1rem; appearance: none;
   transition: border-color 120ms;
 }
-.cell-select:focus { border-bottom-color: #4338ca; }
-.cell-select option { background: #0e0e26; }
+.cell-select:focus { border-bottom-color: #888888; }
+.cell-select option { background: #141414; }
 
 .del-btn {
   background: none; border: none; cursor: pointer; color: #3d1a1a; font-size: 0.75rem;
@@ -160,9 +160,9 @@ function remove(id: string) {
 .table-footer { display: flex; align-items: center; justify-content: space-between; }
 .btn-add {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #0e0e26; border: 1px solid #1e2040; color: #818cf8;
+  cursor: pointer; background: #141414; border: 1px solid #2a2a2a; color: #c0c0c0;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add:hover { background: #12123a; border-color: #312e81; }
+.btn-add:hover { background: #12123a; border-color: #444444; }
 .unit-count { font-size: 0.7rem; color: #334155; }
 </style>

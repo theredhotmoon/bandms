@@ -96,14 +96,14 @@ function initials(m: BandMember): string {
           type="button"
           class="flex items-center gap-3 p-3 rounded-lg border transition-all text-left"
           :class="isAvailable(member.id)
-            ? 'border-indigo-500/50 bg-indigo-950/40 text-white'
+            ? 'border-zinc-400/50 bg-zinc-800/40 text-white'
             : 'border-slate-700/50 bg-slate-800/30 text-slate-500 opacity-60'"
           @click="toggleMember(member.id)"
         >
           <!-- Avatar -->
           <div
             class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
-            :class="isAvailable(member.id) ? 'bg-indigo-700 text-white' : 'bg-slate-700 text-slate-400'"
+            :class="isAvailable(member.id) ? 'bg-zinc-600 text-white' : 'bg-slate-700 text-slate-400'"
           >
             <img
               v-if="member.photo"
@@ -126,7 +126,7 @@ function initials(m: BandMember): string {
 
           <!-- Status icon -->
           <div class="flex-shrink-0">
-            <svg v-if="isAvailable(member.id)" class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg v-if="isAvailable(member.id)" class="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             <svg v-else class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,21 +174,21 @@ function initials(m: BandMember): string {
           v-model="tempName"
           type="text"
           placeholder="Full name"
-          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
         <input
           v-model="tempRole"
           type="text"
           placeholder="Role / Position (e.g. Guitar, Bass)"
-          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+          class="w-full px-3 py-2 text-sm bg-slate-900/60 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
         <div class="flex gap-2">
           <button
             type="button"
             :disabled="!tempName.trim()"
-            class="flex-1 py-1.5 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+            class="flex-1 py-1.5 text-sm font-medium rounded-md bg-zinc-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-zinc-900 transition-colors"
             @click="addTempMusician"
           >Add musician</button>
           <button
@@ -220,7 +220,7 @@ function initials(m: BandMember): string {
       <button
         type="button"
         :disabled="availableCount === 0"
-        class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+        class="px-4 py-2 text-sm font-semibold rounded-lg bg-zinc-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-zinc-900 transition-colors"
         @click="emit('close')"
       >
         Done — place on stage →
