@@ -8,7 +8,6 @@ import {
   defaultPlacedInstrument,
   isMemberItemComplete,
   isMemberItemPartial,
-  INSTRUMENT_TYPE_LABELS,
 } from '@/types/stagePlot'
 import type { StagePlotItemType } from '@/types/techRider'
 import StagePlotMemberModal from './StagePlotMemberModal.vue'
@@ -425,26 +424,38 @@ function statusClass(item: StagePlotMemberItem): string {
               {{ itemDisplayName(item) }}
             </div>
 
-            <!-- Instrument icons -->
-            <div v-if="item.instruments.length" class="flex gap-0.5 flex-wrap justify-center">
+            <!-- Core completeness: instruments · inputs · monitor · power -->
+            <div class="flex gap-1 justify-center" title="Instruments / Signal chain / Monitor / Power">
               <span
-                v-for="inst in item.instruments.slice(0, 3)"
-                :key="inst.id"
-                class="text-[11px]"
-                :title="INSTRUMENT_TYPE_LABELS[inst.type]"
-              >{{ INSTRUMENT_ICONS[inst.type] }}</span>
-              <span v-if="item.instruments.length > 3" class="text-[10px] text-slate-500">+{{ item.instruments.length - 3 }}</span>
+                class="text-[11px] transition-opacity"
+                :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'"
+                title="Instruments"
+              >🎸</span>
+              <span
+                class="text-[11px] transition-opacity"
+                :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'"
+                title="Signal chain"
+              >🎙️</span>
+              <span
+                class="text-[11px] transition-opacity"
+                :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'"
+                title="Monitor"
+              >🔊</span>
+              <span
+                class="text-[11px] transition-opacity"
+                :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'"
+                title="Power"
+              >⚡</span>
             </div>
 
-            <!-- Monitor icons -->
-            <div v-if="item.monitors.length" class="flex gap-0.5 justify-center">
-              <span
-                v-for="mon in item.monitors.slice(0, 2)"
-                :key="mon.id"
-                class="text-[10px]"
-                :title="mon.label || (mon.type === 'wedge' ? 'Monitor wedge' : 'IEM')"
-              >{{ mon.type === 'wedge' ? '🔊' : '📡' }}</span>
-              <span v-if="item.monitors.length > 2" class="text-[10px] text-slate-500">+{{ item.monitors.length - 2 }}</span>
+            <!-- Optional extras: wireless · backline · FOH -->
+            <div
+              v-if="item.wireless.length || item.backline.needed || item.foh_notes?.trim()"
+              class="flex gap-1 justify-center"
+            >
+              <span v-if="item.wireless.length"   class="text-[10px]" title="Wireless configured">📡</span>
+              <span v-if="item.backline.needed"    class="text-[10px]" title="Backline needed">🥁</span>
+              <span v-if="item.foh_notes?.trim()"  class="text-[10px]" title="FOH notes">🎛️</span>
             </div>
 
             <!-- Action buttons -->
