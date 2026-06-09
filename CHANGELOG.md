@@ -27,6 +27,8 @@ Ideas and features planned for future development:
 
 ### Fixed
 - **500 on public rider endpoint** — `GET /api/public/rider/:token` returned 500 when a rider had no concert linked (`concert_id = null`). The `TechRiderResource` callback now guards against a null relation before accessing `concert->id`.
+- **Public rider page stayed blank** — `showByToken` returned `response()->json(...->resolve())`, stripping the `{data:…}` wrapper the frontend's `handleResponse` expects, so `rider` was always `null`. Fixed by returning `new TechRiderResource(...)` directly.
+- **Public rider page crashed on old-format stage items** — `RiderPublicView` and `TechRiderPreviewView` accessed `.inputs`, `.monitors`, and `.instruments` without null guards. Instrument/equipment placements stored in `stage_plot_data` before the member-centric format was introduced don't carry those arrays, causing a `TypeError` that froze the page in the loading state. Added `?? []` / optional-chaining guards throughout both views and in `isMemberItemComplete` / `isMemberItemPartial`.
 
 ---
 
