@@ -9,15 +9,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Ideas and features planned for future development:
 
-### Tech Rider
-- **QR codes for instruments / backline / amps** — each placed instrument on the stage plot generates a QR code that links to an interactive tech rider page for that specific channel/position. Venue crew can scan the QR code on a physical amp or mic stand and see live input requirements, signal chain, monitor mix, and rider notes for that musician.
-- **Interactive tech rider landing page** — a mobile-friendly public page (no login required) served at `/rider/:token` that displays the tech rider for a single gig — stage plot, inputs list, monitor requirements, and backline. Linked from QR codes.
-
 ### Music Discovery & Playlist Promotion
 - **Spotify playlist research** — investigate playlist pitching workflows: editorial playlist submission via Spotify for Artists, third-party playlist pitching platforms (SubmitHub, Groover, Playlist Push, Daily Playlists), and curated playlist discovery via API. Goal: surface playlists that match the band's genre tags and comparable artists, and allow tracking pitch status per playlist.
 - **YouTube & other platform playlists** — similar research for YouTube Music, Apple Music, Deezer, Tidal, and SoundCloud. Identify which platforms expose playlist curator contact data via API or third-party services.
 - **"Similar bands" playlists** — use comparable artists (already in band profile) to discover playlists that already feature those artists and pitch to the same curators.
 - **Playlist pitch tracker** — a new admin section to track outreach: platform, playlist name, curator contact, date pitched, response status, and notes.
+
+---
+
+## [Unreleased] — 2026-06-09
+
+### Added
+- **Public rider page at `/rider/:token`** — mobile-friendly, print-ready public page (no login required) served via a stable token URL. Displays stage plot, musician configuration, input list, monitor summary, wireless registry, backline, PA/FOH, and power requirements. Includes a concert date/venue in the cover and toolbar when a concert is linked.
+- **QR code per placed stage member** — each musician card on the stage plot canvas now has a QR button that opens a modal with a scannable QR code. The code links to the rider's public `/rider/:token` URL so venue crew can access the full rider from any phone.
+- **Concert picker in tech rider admin** — a compact select in the stage tab links a rider template to a specific concert. Saved automatically on change. The linked concert date and venue appear on the public rider page.
+- **Default setup toggle in member setups panel** — each setup in the sidebar now shows a ★ star when it is the default setup. The star button on non-default setups promotes that setup to default (clearing the previous one). A `is_default` field is now returned in the setup summary API response.
+
+### Fixed
+- **500 on public rider endpoint** — `GET /api/public/rider/:token` returned 500 when a rider had no concert linked (`concert_id = null`). The `TechRiderResource` callback now guards against a null relation before accessing `concert->id`.
 
 ---
 

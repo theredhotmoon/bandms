@@ -10,10 +10,12 @@ class TechRiderSummaryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'name'       => $this->name,
-            'is_active'  => $this->is_active,
-            'updated_at' => $this->updated_at,
+            'id'           => $this->id,
+            'name'         => $this->name,
+            'is_active'    => $this->is_active,
+            'public_token' => $this->public_token,
+            'concert_id'   => $this->concert_id,
+            'updated_at'   => $this->updated_at,
         ];
     }
 }

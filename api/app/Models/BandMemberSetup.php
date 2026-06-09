@@ -12,6 +12,7 @@ class BandMemberSetup extends Model
         'instrument_id',
         'shared_monitor_id',
         'name',
+        'is_default',
         'signal_chain_type',
         'inputs',
         'monitor',
@@ -22,11 +23,12 @@ class BandMemberSetup extends Model
     ];
 
     protected $casts = [
-        'inputs'   => 'array',
-        'monitor'  => 'array',
-        'backline' => 'array',
-        'power'    => 'array',
-        'wireless' => 'array',
+        'is_default' => 'boolean',
+        'inputs'     => 'array',
+        'monitor'    => 'array',
+        'backline'   => 'array',
+        'power'      => 'array',
+        'wireless'   => 'array',
     ];
 
     public function member(): BelongsTo

@@ -112,11 +112,20 @@ export interface RfWirelessUnit {
 
 import type { GigLineup, StagePlotMemberItem } from './stagePlot'
 
+export interface TechRiderConcert {
+  id: number
+  date: string
+  venue: string | null
+}
+
 export interface TechRider {
   id: number
   profile_id: number
   name: string
   is_active: boolean
+  public_token: string
+  concert_id: number | null
+  concert?: TechRiderConcert | null
   gig_lineup: GigLineup
   stage_plot_data: StagePlotMemberItem[]
   inputs: InputRow[]
@@ -133,12 +142,15 @@ export interface TechRiderSummary {
   id: number
   name: string
   is_active: boolean
+  public_token: string
+  concert_id: number | null
   updated_at: string
 }
 
 export interface TechRiderPayload {
   name?: string
   is_active?: boolean
+  concert_id?: number | null
   gig_lineup?: GigLineup
   stage_plot_data?: StagePlotMemberItem[]
   inputs?: InputRow[]

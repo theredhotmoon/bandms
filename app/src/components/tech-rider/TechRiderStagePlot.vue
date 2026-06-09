@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import QRCode from 'qrcode'
 import type { BandMember } from '@/types/bandMember'
 import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
 import type { StagePlotMemberItem, GigLineup, GigTempMusician } from '@/types/stagePlot'
@@ -17,10 +18,12 @@ interface Props {
   lineup: GigLineup
   bandMembers: BandMember[]
   allSetups: MemberSetupGroup[]
+  publicToken?: string
 }
 const props = withDefaults(defineProps<Props>(), {
   bandMembers: () => [],
   allSetups:   () => [],
+  publicToken: undefined,
 })
 const emit = defineEmits<{
   'update:modelValue': [StagePlotMemberItem[]]
@@ -234,6 +237,27 @@ function removeItem(itemId: string) {
   emit('update:modelValue', props.modelValue.filter(i => i.id !== itemId))
   if (modalItemId.value === itemId) modalItemId.value = null
 }
+
+// ── QR code modal ────────────────────────────────────────────────────────────
+
+const qrItemId  = ref<string | null>(null)
+const qrDataUrl = ref<string>('')
+
+const riderPublicUrl = computed(() =>
+  props.publicToken ? `${window.location.origin}/rider/${props.publicToken}` : '',
+)
+
+watch(qrItemId, async (id) => {
+  if (id && riderPublicUrl.value) {
+    qrDataUrl.value = await QRCode.toDataURL(riderPublicUrl.value, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+  } else {
+    qrDataUrl.value = ''
+  }
+})
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -551,6 +575,20 @@ function statusClass(item: StagePlotMemberItem): string {
                 </svg>
               </button>
               <button
+                v-if="publicToken"
+                type="button"
+                class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-zinc-600 text-zinc-300 hover:text-white transition-colors"
+                title="QR code — public rider link"
+                @click.stop="qrItemId = item.id"
+              >
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <rect x="3" y="3" width="7" height="7" stroke-width="2" rx="1"/>
+                  <rect x="14" y="3" width="7" height="7" stroke-width="2" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" stroke-width="2" rx="1"/>
+                  <path stroke-width="2" d="M14 14h2v2h-2zM18 14h3v2h-3zM14 18h3v3h-3zM19 19h2v2h-2z"/>
+                </svg>
+              </button>
+              <button
                 type="button"
                 class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-red-700 text-zinc-300 hover:text-white transition-colors"
                 title="Remove from stage"
@@ -625,5 +663,47 @@ function statusClass(item: StagePlotMemberItem): string {
       @update:model-value="onModalUpdate"
       @close="modalItemId = null"
     />
+
+    <!-- ── QR code modal ──────────────────────────────────────────────── -->
+    <Teleport to="body">
+      <div
+        v-if="qrItemId"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        style="background: rgba(0,0,0,0.7)"
+        @click.self="qrItemId = null"
+      >
+        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-72 flex flex-col items-center gap-4 shadow-2xl">
+          <div class="text-sm font-semibold text-white">Public rider QR code</div>
+          <img
+            v-if="qrDataUrl"
+            :src="qrDataUrl"
+            alt="QR code"
+            class="w-48 h-48 rounded-lg"
+          />
+          <div v-else class="w-48 h-48 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-500 text-xs">
+            Generating…
+          </div>
+          <div class="w-full">
+            <p class="text-[10px] text-zinc-400 text-center mb-1">Scan to open the interactive rider</p>
+            <div class="bg-zinc-800 rounded px-2 py-1.5 text-[10px] text-zinc-300 break-all text-center font-mono select-all">
+              {{ riderPublicUrl }}
+            </div>
+          </div>
+          <div class="flex gap-2 w-full">
+            <a
+              :href="riderPublicUrl"
+              target="_blank"
+              rel="noopener"
+              class="flex-1 py-1.5 text-xs font-medium text-center rounded-lg border border-zinc-600 text-zinc-300 hover:text-white transition-colors"
+            >Open link</a>
+            <button
+              type="button"
+              class="flex-1 py-1.5 text-xs font-medium rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+              @click="qrItemId = null"
+            >Close</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

@@ -194,6 +194,11 @@ const router = createRouter({
       component: () => import('@/views/TechRiderPreviewView.vue'),
     },
     {
+      path: '/rider/:token',
+      name: 'rider-public',
+      component: () => import('@/views/RiderPublicView.vue'),
+    },
+    {
       path: '/admin/music-videos',
       name: 'admin-music-videos',
       component: () => import('@/views/admin/MusicVideosAdminView.vue'),

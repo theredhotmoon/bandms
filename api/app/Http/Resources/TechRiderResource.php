@@ -14,6 +14,13 @@ class TechRiderResource extends JsonResource
             'profile_id'      => $this->profile_id,
             'name'            => $this->name,
             'is_active'       => $this->is_active,
+            'public_token'    => $this->public_token,
+            'concert_id'      => $this->concert_id,
+            'concert'         => $this->whenLoaded('concert', fn () => $this->concert ? [
+                'id'    => $this->concert->id,
+                'date'  => $this->concert->date,
+                'venue' => $this->concert->venue?->name,
+            ] : null),
             'gig_lineup'      => $this->gig_lineup      ?? (object)[],
             'stage_plot_data' => $this->stage_plot_data ?? [],
             'inputs'          => $this->inputs          ?? [],

@@ -30,7 +30,14 @@ class TechRiderController extends Controller
     public function showActive(): TechRiderResource
     {
         $rider = TechRider::where('profile_id', 1)->where('is_active', true)->firstOrFail();
-        return new TechRiderResource($rider);
+        return new TechRiderResource($rider->load('concert.venue'));
+    }
+
+    /** Public endpoint — no auth required, accessed via QR code. */
+    public function showByToken(string $token): JsonResponse
+    {
+        $rider = TechRider::with('concert.venue')->where('public_token', $token)->firstOrFail();
+        return response()->json((new TechRiderResource($rider))->resolve());
     }
 
     public function store(Request $request): TechRiderResource
@@ -38,6 +45,7 @@ class TechRiderController extends Controller
         $data = $request->validate([
             'name'            => ['required', 'string', 'max:255'],
             'is_active'       => ['boolean'],
+            'concert_id'      => ['nullable', 'integer', 'exists:concerts,id'],
             'gig_lineup'      => ['nullable', 'array'],
             'stage_plot_data' => ['nullable', 'array'],
             'inputs'          => ['nullable', 'array'],
@@ -57,12 +65,12 @@ class TechRiderController extends Controller
 
         $rider = TechRider::create($data);
 
-        return new TechRiderResource($rider);
+        return new TechRiderResource($rider->load('concert.venue'));
     }
 
     public function show(TechRider $techRider): TechRiderResource
     {
-        return new TechRiderResource($techRider);
+        return new TechRiderResource($techRider->load('concert.venue'));
     }
 
     public function update(Request $request, TechRider $techRider): TechRiderResource
@@ -70,6 +78,7 @@ class TechRiderController extends Controller
         $data = $request->validate([
             'name'            => ['sometimes', 'required', 'string', 'max:255'],
             'is_active'       => ['boolean'],
+            'concert_id'      => ['nullable', 'integer', 'exists:concerts,id'],
             'gig_lineup'      => ['nullable', 'array'],
             'stage_plot_data' => ['nullable', 'array'],
             'inputs'          => ['nullable', 'array'],
@@ -88,7 +97,7 @@ class TechRiderController extends Controller
 
         $techRider->update($data);
 
-        return new TechRiderResource($techRider->fresh());
+        return new TechRiderResource($techRider->fresh()->load('concert.venue'));
     }
 
     public function activate(TechRider $techRider): TechRiderResource
@@ -99,7 +108,7 @@ class TechRiderController extends Controller
 
         $techRider->update(['is_active' => true]);
 
-        return new TechRiderResource($techRider->fresh());
+        return new TechRiderResource($techRider->fresh()->load('concert.venue'));
     }
 
     public function destroy(TechRider $techRider): JsonResponse

@@ -18,6 +18,7 @@ import { useTechRiders, useTechRider } from '@/composables/useTechRiders'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAllMemberSetups } from '@/composables/useBandMemberSetups'
+import { useConcerts } from '@/composables/useConcerts'
 import type {
   TechRiderPayload,
   PaFohRequirements,
@@ -45,6 +46,8 @@ const allSetupsQ = useAllMemberSetups()
 
 const bandMembers = computed(() => membersQ.data.value ?? [])
 const allSetups   = computed(() => allSetupsQ.data.value ?? [])
+const { query: concertsQ } = useConcerts()
+const concerts    = computed(() => concertsQ.data.value ?? [])
 
 // ── Currently open rider ──────────────────────────────────────────────────────
 // openId is a Ref — passed directly so useTechRider can be called ONCE at setup root
@@ -59,6 +62,7 @@ const activeSection = ref<Section>('stage')
 const form = reactive<Required<TechRiderPayload>>({
   name:            '',
   is_active:       false,
+  concert_id:      null,
   gig_lineup:      defaultGigLineup(),
   stage_plot_data: [],
   inputs:          [],
@@ -75,6 +79,7 @@ watch(
     if (!rider) return
     form.name            = rider.name
     form.is_active       = rider.is_active
+    form.concert_id      = rider.concert_id ?? null
     form.gig_lineup      = {
       regular_members: (rider.gig_lineup as GigLineup | null)?.regular_members ?? [],
       temp_musicians:  (rider.gig_lineup as GigLineup | null)?.temp_musicians  ?? [],
@@ -453,6 +458,22 @@ const bandProfile = computed(() => profileQ.data.value)
                 </div>
               </div>
 
+              <!-- Concert picker -->
+              <div class="field-group concert-picker-group">
+                <select
+                  v-model="form.concert_id"
+                  class="field-input concert-select"
+                  @change="saveRider"
+                >
+                  <option :value="null">No concert linked</option>
+                  <option
+                    v-for="c in concerts"
+                    :key="c.id"
+                    :value="c.id"
+                  >{{ c.date }} — {{ c.venue?.name ?? 'Unknown venue' }}</option>
+                </select>
+              </div>
+
               <!-- Stage plot canvas -->
               <div class="stage-plot-wrapper">
                 <TechRiderStagePlot
@@ -460,6 +481,7 @@ const bandProfile = computed(() => profileQ.data.value)
                   :lineup="form.gig_lineup"
                   :band-members="bandMembers"
                   :all-setups="allSetups"
+                  :public-token="riderQ.data.value?.public_token"
                 />
               </div>
 
@@ -895,6 +917,14 @@ const bandProfile = computed(() => profileQ.data.value)
 .stage-topbar {
   display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap;
 }
+.concert-picker-group { margin-bottom: 0; flex-shrink: 0; }
+.concert-select {
+  height: 2.1rem; font-size: 0.78rem; padding: 0 0.75rem;
+  background: #0d0d0d; border: 1px solid #2a2a2a; color: #94a3b8;
+  border-radius: 0.375rem; cursor: pointer; max-width: 16rem;
+}
+.concert-select:focus { outline: none; border-color: #444444; }
+.concert-select option { background: #0d0d0d; }
 .lineup-bar {
   display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
 }

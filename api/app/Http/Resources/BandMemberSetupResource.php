@@ -15,6 +15,7 @@ class BandMemberSetupResource extends JsonResource
             'instrument_id'     => $this->instrument_id,
             'shared_monitor_id' => $this->shared_monitor_id,
             'name'              => $this->name,
+            'is_default'        => (bool) $this->is_default,
             'signal_chain_type' => $this->signal_chain_type,
             'inputs'            => $this->inputs   ?? [],
             'monitor'           => $this->monitor  ?? $this->defaultMonitor(),

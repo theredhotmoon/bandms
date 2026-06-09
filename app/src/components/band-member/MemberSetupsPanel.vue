@@ -21,7 +21,7 @@ const props = defineProps<Props>()
 const memberId = computed(() => props.member.id)
 const openId   = ref<number | null>(null)
 
-const { list, create, remove } = useMemberSetups(
+const { list, create, remove, setDefault } = useMemberSetups(
   computed(() => memberId.value ?? null),
 )
 
@@ -180,16 +180,28 @@ async function confirmDelete() {
           @click="openId = s.id"
         >
           <div class="setup-item-info">
-            <span class="setup-name">{{ s.name }}</span>
+            <div class="setup-name-row">
+              <span class="setup-name">{{ s.name }}</span>
+              <span v-if="s.is_default" class="default-star" title="Default setup">★</span>
+            </div>
             <span v-if="s.instrument_name" class="setup-instrument">{{ s.instrument_name }}</span>
             <span class="setup-meta">{{ s.input_count }} ch</span>
           </div>
-          <button
-            type="button"
-            class="del-btn"
-            title="Delete"
-            @click.stop="confirmDeleteId = s.id"
-          >✕</button>
+          <div class="item-actions">
+            <button
+              v-if="!s.is_default"
+              type="button"
+              class="default-btn"
+              title="Set as default"
+              @click.stop="setDefault.mutate(s.id)"
+            >★</button>
+            <button
+              type="button"
+              class="del-btn"
+              title="Delete"
+              @click.stop="confirmDeleteId = s.id"
+            >✕</button>
+          </div>
         </div>
       </div>
     </aside>
@@ -312,6 +324,17 @@ async function confirmDelete() {
 .setup-name        { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-instrument  { font-size: 0.62rem; color: #888888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-meta        { font-size: 0.62rem; color: #334155; }
+
+.setup-name-row { display: flex; align-items: center; gap: 0.25rem; }
+.default-star { color: #f59e0b; font-size: 0.65rem; flex-shrink: 0; }
+
+.item-actions { display: flex; align-items: center; gap: 0.1rem; flex-shrink: 0; }
+
+.default-btn {
+  background: none; border: none; cursor: pointer; color: #334155; font-size: 0.65rem;
+  padding: 0.15rem 0.3rem; transition: color 100ms;
+}
+.default-btn:hover { color: #f59e0b; }
 
 .del-btn {
   background: none; border: none; cursor: pointer; color: #2a2a2a; font-size: 0.65rem;

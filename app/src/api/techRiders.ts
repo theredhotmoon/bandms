@@ -56,6 +56,12 @@ export async function activateTechRider(token: string, id: number): Promise<Tech
   return handleResponse<SingleResponse>(res).then((r) => r.data)
 }
 
+export async function fetchRiderByToken(token: string): Promise<TechRider> {
+  if (!token || !/^[A-Za-z0-9]{16,64}$/.test(token)) throw new Error('Invalid rider token')
+  const res = await fetch(`${API_BASE}/api/public/rider/${encodeURIComponent(token)}`)
+  return handleResponse<SingleResponse>(res).then((r) => r.data)
+}
+
 export async function deleteTechRider(token: string, id: number): Promise<void> {
   if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid tech rider id')
   const res = await fetch(`${API_BASE}/api/tech-riders/${id}`, {

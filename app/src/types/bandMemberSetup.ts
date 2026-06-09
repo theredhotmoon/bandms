@@ -74,6 +74,7 @@ export interface BandMemberSetup {
   instrument_id: number | null
   shared_monitor_id: number | null
   name: string
+  is_default: boolean
   signal_chain_type: SignalChainType
   inputs: InputRow[]
   monitor: MemberMonitorPrefs
@@ -92,6 +93,7 @@ export interface BandMemberSetupSummary {
   instrument_name: string | null
   shared_monitor_id: number | null
   name: string
+  is_default: boolean
   signal_chain_type: SignalChainType
   input_count: number
   updated_at: string
@@ -99,6 +101,7 @@ export interface BandMemberSetupSummary {
 
 export interface BandMemberSetupPayload {
   name?: string
+  is_default?: boolean
   instrument_id?: number | null
   shared_monitor_id?: number | null
   signal_chain_type?: SignalChainType

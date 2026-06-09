@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class TechRider extends Model
 {
@@ -11,6 +12,8 @@ class TechRider extends Model
         'profile_id',
         'name',
         'is_active',
+        'public_token',
+        'concert_id',
         'gig_lineup',
         'stage_plot_data',
         'inputs',
@@ -33,8 +36,22 @@ class TechRider extends Model
         'rf_wireless'     => 'array',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $rider) {
+            if (empty($rider->public_token)) {
+                $rider->public_token = Str::random(32);
+            }
+        });
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');
+    }
+
+    public function concert(): BelongsTo
+    {
+        return $this->belongsTo(Concert::class);
     }
 }

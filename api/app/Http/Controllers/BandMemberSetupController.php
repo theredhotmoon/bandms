@@ -35,6 +35,9 @@ class BandMemberSetupController extends Controller
     {
         $this->authorizeForMember($member);
         $data = $this->validated($request);
+        if (!empty($data['is_default'])) {
+            $member->setups()->update(['is_default' => false]);
+        }
         $setup = $member->setups()->create($data);
 
         return new BandMemberSetupResource($setup);
@@ -53,9 +56,12 @@ class BandMemberSetupController extends Controller
         abort_unless($setup->band_member_id === $member->id, 404);
         $this->authorizeForMember($member);
         $data = $this->validated($request, partial: true);
+        if (!empty($data['is_default'])) {
+            $member->setups()->where('id', '!=', $setup->id)->update(['is_default' => false]);
+        }
         $setup->update($data);
 
-        return new BandMemberSetupResource($setup);
+        return new BandMemberSetupResource($setup->fresh());
     }
 
     public function destroy(BandMember $member, BandMemberSetup $setup): JsonResponse
@@ -102,6 +108,7 @@ class BandMemberSetupController extends Controller
 
         return $request->validate([
             'name'                => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
+            'is_default'          => ['nullable', 'boolean'],
             'instrument_id'       => ['nullable', 'integer', 'exists:instruments,id'],
             'shared_monitor_id'   => ['nullable', 'integer', 'exists:band_member_setups,id'],
             'signal_chain_type'   => [

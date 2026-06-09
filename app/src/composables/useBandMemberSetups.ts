@@ -37,7 +37,13 @@ export function useMemberSetups(memberId: Ref<number | null>) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.value }),
   })
 
-  return { list, create, remove }
+  const setDefault = useMutation({
+    mutationFn: (setupId: number) =>
+      updateMemberSetup(token.value!, memberId.value!, setupId, { is_default: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.value }),
+  })
+
+  return { list, create, remove, setDefault }
 }
 
 /** Single full setup — for the editor. */
