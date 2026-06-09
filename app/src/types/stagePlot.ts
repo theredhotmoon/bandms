@@ -152,12 +152,12 @@ function uid(prefix: string): string {
 // ── Completeness helpers ──────────────────────────────────────────────────────
 
 export function isMemberItemComplete(item: StagePlotMemberItem): boolean {
-  return item.instruments.length > 0 && item.inputs.length > 0 && item.monitors.length > 0
+  return (item.instruments?.length ?? 0) > 0 && (item.inputs?.length ?? 0) > 0 && (item.monitors?.length ?? 0) > 0
 }
 
 export function isMemberItemPartial(item: StagePlotMemberItem): boolean {
   return !isMemberItemComplete(item) && (
-    item.instruments.length > 0 || item.inputs.length > 0 || item.monitors.length > 0
+    (item.instruments?.length ?? 0) > 0 || (item.inputs?.length ?? 0) > 0 || (item.monitors?.length ?? 0) > 0
   )
 }
 

@@ -34,10 +34,10 @@ class TechRiderController extends Controller
     }
 
     /** Public endpoint — no auth required, accessed via QR code. */
-    public function showByToken(string $token): JsonResponse
+    public function showByToken(string $token): TechRiderResource
     {
         $rider = TechRider::with('concert.venue')->where('public_token', $token)->firstOrFail();
-        return response()->json((new TechRiderResource($rider))->resolve());
+        return new TechRiderResource($rider);
     }
 
     public function store(Request $request): TechRiderResource

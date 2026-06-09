@@ -100,7 +100,7 @@ const effectiveInputs = computed<PreviewInput[]>(() => {
   const rows: PreviewInput[] = []
   let ch = 1
   for (const item of stagePlot.value) {
-    for (const inp of item.inputs) {
+    for (const inp of (item.inputs ?? [])) {
       rows.push({ channel: ch++, instrument: inp.instrument, mic_di: inp.mic_di, mic_model: inp.mic_model, stand_type: inp.stand_type, notes: inp.notes })
     }
   }
@@ -123,7 +123,7 @@ const effectiveMonitors = computed<PreviewMonitor[]>(() => {
   }
   const mixes: PreviewMonitor[] = []
   for (const item of stagePlot.value) {
-    for (const mon of item.monitors) {
+    for (const mon of (item.monitors ?? [])) {
       mixes.push({
         label: `${memberDisplayName(item)}${mon.label ? ` — ${mon.label}` : ''}`,
         type:  mon.type === 'iem' ? 'IEM' : 'Wedge',
@@ -325,7 +325,7 @@ function printPage() { window.print() }
                   :y="svgY(item.y) + 55"
                   text-anchor="middle"
                   class="svg-member-role"
-                >{{ item.instruments.map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' / ') }}</text>
+                >{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' / ') }}</text>
               </g>
             </svg>
           </div>
@@ -335,7 +335,7 @@ function printPage() { window.print() }
             <div v-for="(item, idx) in stagePlot" :key="item.id" class="stage-index-item">
               <span class="stage-index-num">{{ idx + 1 }}</span>
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
-              <span class="stage-index-role">{{ item.instruments.map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' · ') }}</span>
+              <span class="stage-index-role">{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' · ') }}</span>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
             </div>
           </div>
@@ -357,8 +357,8 @@ function printPage() { window.print() }
                 <div class="member-name">{{ memberDisplayName(item) }}</div>
                 <div class="member-role-line">
                   {{ memberRole(item) }}
-                  <span v-if="item.instruments.length">
-                    — {{ item.instruments.map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(', ') }}
+                  <span v-if="item.instruments?.length">
+                    — {{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(', ') }}
                   </span>
                 </div>
               </div>
@@ -369,10 +369,10 @@ function printPage() { window.print() }
             </div>
 
             <!-- Signal chain / Inputs -->
-            <div v-if="item.inputs.length" class="detail-section">
+            <div v-if="item.inputs?.length" class="detail-section">
               <div class="detail-title">
                 Signal chain / Inputs
-                <span class="chain-badge">{{ item.signal_chain_type.replace(/_/g, ' ') }}</span>
+                <span class="chain-badge">{{ item.signal_chain_type?.replace(/_/g, ' ') }}</span>
               </div>
               <table class="data-table">
                 <thead>
@@ -393,7 +393,7 @@ function printPage() { window.print() }
             <div v-else class="detail-section detail-empty">No inputs configured</div>
 
             <!-- Monitors -->
-            <div v-if="item.monitors.length" class="detail-section">
+            <div v-if="item.monitors?.length" class="detail-section">
               <div class="detail-title">Monitor / IEM</div>
               <table class="data-table">
                 <thead>
