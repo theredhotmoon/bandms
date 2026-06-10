@@ -17,7 +17,7 @@ Ideas and features planned for future development:
 
 ---
 
-## [Unreleased] — 2026-06-09
+## [Unreleased] — 2026-06-10
 
 ### Added
 - **Public rider page at `/rider/:token`** — mobile-friendly, print-ready public page (no login required) served via a stable token URL. Displays stage plot, musician configuration, input list, monitor summary, wireless registry, backline, PA/FOH, and power requirements. Includes a concert date/venue in the cover and toolbar when a concert is linked.
