@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -9,10 +9,34 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useTableControls } from '@/composables/useTableControls'
-import type { MusicVideo, MusicVideoPayload } from '@/types/musicVideo'
+import type { MusicVideo, MusicVideoPayload, VideoMetadata } from '@/types/musicVideo'
 
-const { query, create, update, remove, previewFetch, syncViews } = useMusicVideos()
+const { query, create, update, remove, previewFetch, retrieveMetadata, syncViews } = useMusicVideos()
 const fetchingPreviewId = ref<number | null>(null)
+
+// ── In-form metadata retrieval ─────────────────────────────────
+const retrievedMeta = ref<VideoMetadata | null>(null)
+
+function isVideoUrl(url: string): boolean {
+  return /youtu(\.be|be\.com)|vimeo\.com/.test(url)
+}
+
+async function doRetrieveMetadata() {
+  if (!form.video_url) return
+  retrievedMeta.value = null
+  try {
+    const meta = await retrieveMetadata.mutateAsync(form.video_url)
+    retrievedMeta.value = meta
+    if (meta.title && !form.title) {
+      form.title = meta.title
+    }
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Could not retrieve metadata')
+  }
+}
+
+// Clear retrieved meta when URL changes significantly
+watch(() => form.video_url, () => { retrievedMeta.value = null })
 
 const totalViews = computed(() => {
   const videos = query.data.value ?? []
@@ -80,31 +104,41 @@ const tc = useTableControls<MusicVideo>({
 })
 
 function openCreate() {
-  editing.value     = null
-  form.title        = ''
-  form.video_url    = ''
-  form.published_at = null
-  form.sort_order   = query.data.value?.length ?? 0
-  showModal.value   = true
+  editing.value       = null
+  form.title          = ''
+  form.video_url      = ''
+  form.published_at   = null
+  form.sort_order     = query.data.value?.length ?? 0
+  retrievedMeta.value = null
+  showModal.value     = true
 }
 
 function openEdit(v: MusicVideo) {
-  editing.value     = v
-  form.title        = v.title
-  form.video_url    = v.video_url
-  form.published_at = v.published_at
-  form.sort_order   = v.sort_order
-  showModal.value   = true
+  editing.value       = v
+  form.title          = v.title
+  form.video_url      = v.video_url
+  form.published_at   = v.published_at
+  form.sort_order     = v.sort_order
+  retrievedMeta.value = null
+  showModal.value     = true
 }
 
-function closeModal() { showModal.value = false; editing.value = null }
+function closeModal() { showModal.value = false; editing.value = null; retrievedMeta.value = null }
 
 async function submit() {
+  const meta = retrievedMeta.value
   const payload: MusicVideoPayload = {
     title:        form.title,
     video_url:    form.video_url,
     published_at: form.published_at || null,
     sort_order:   Number(form.sort_order),
+    ...(meta ? {
+      og_title:     meta.title,
+      og_image:     meta.thumbnail_url,
+      channel_name: meta.channel_name,
+      view_count:   meta.view_count,
+      duration:     meta.duration,
+    } : {}),
   }
   try {
     if (editing.value) {
@@ -215,7 +249,10 @@ function videoHost(url: string): string {
                 </td>
                 <td class="td font-medium" style="color:#e2e8f0;">
                   {{ v.title }}
-                  <div v-if="v.channel_name" style="font-size:0.7rem;color:#475569;font-weight:400;">{{ v.channel_name }}</div>
+                  <div style="font-size:0.7rem;color:#475569;font-weight:400;display:flex;gap:0.5rem;margin-top:1px;">
+                    <span v-if="v.channel_name">{{ v.channel_name }}</span>
+                    <span v-if="v.duration">· {{ v.duration }}</span>
+                  </div>
                 </td>
                 <td class="td">
                   <a :href="v.video_url" target="_blank" rel="noopener noreferrer" class="url-link">
@@ -263,12 +300,44 @@ function videoHost(url: string): string {
     >
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
+          <label class="field-label">YouTube / Vimeo URL <span class="field-req">*</span></label>
+          <div class="url-row">
+            <input v-model="form.video_url" required type="url" class="field-input url-input" placeholder="https://youtu.be/…" />
+            <button
+              type="button"
+              class="btn-retrieve"
+              :class="{ 'btn-retrieve--active': isVideoUrl(form.video_url) }"
+              :disabled="!isVideoUrl(form.video_url) || retrieveMetadata.isPending.value"
+              @click="doRetrieveMetadata"
+            >
+              <svg v-if="!retrieveMetadata.isPending.value" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+              </svg>
+              {{ retrieveMetadata.isPending.value ? 'Retrieving…' : 'Retrieve data' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata preview card -->
+        <div v-if="retrievedMeta" class="meta-card">
+          <img v-if="retrievedMeta.thumbnail_url" :src="retrievedMeta.thumbnail_url" class="meta-thumb" alt="" />
+          <div class="meta-info">
+            <div class="meta-title">{{ retrievedMeta.title ?? '—' }}</div>
+            <div class="meta-details">
+              <span v-if="retrievedMeta.channel_name" class="meta-chip">{{ retrievedMeta.channel_name }}</span>
+              <span v-if="retrievedMeta.duration" class="meta-chip">{{ retrievedMeta.duration }}</span>
+              <span v-if="retrievedMeta.view_count !== null" class="meta-chip">{{ retrievedMeta.view_count?.toLocaleString() }} views</span>
+              <span v-if="retrievedMeta.view_count === null && retrievedMeta.provider_name" class="meta-chip meta-chip--dim">No API key — views not retrieved</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
           <label class="field-label">Title <span class="field-req">*</span></label>
           <input v-model="form.title" required class="field-input" placeholder="Video title" />
-        </div>
-        <div>
-          <label class="field-label">YouTube / Vimeo URL <span class="field-req">*</span></label>
-          <input v-model="form.video_url" required type="url" class="field-input" placeholder="https://youtu.be/…" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -399,4 +468,41 @@ function videoHost(url: string): string {
 .views-cell { font-size: 0.8rem; }
 .views-num  { color: #38bdf8; font-weight: 600; font-variant-numeric: tabular-nums; }
 .views-none { color: #334155; }
+
+/* Retrieve button + URL row */
+.url-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.url-input { flex: 1; min-width: 0; }
+.btn-retrieve {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0 0.75rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
+  white-space: nowrap; cursor: pointer;
+  background: #1a1a1a; border: 1px solid #2a2a2a; color: #475569;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  flex-shrink: 0;
+}
+.btn-retrieve--active { border-color: #065f46; color: #34d399; background: #0f2a1e; }
+.btn-retrieve--active:hover:not(:disabled) { background: #134e35; }
+.btn-retrieve:disabled { opacity: 0.45; cursor: not-allowed; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; }
+
+/* Metadata preview card */
+.meta-card {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  background: #111111; border: 1px solid #222222; border-radius: 0.5rem;
+  padding: 0.625rem; overflow: hidden;
+}
+.meta-thumb {
+  width: 7rem; aspect-ratio: 16/9; object-fit: cover;
+  border-radius: 0.25rem; flex-shrink: 0; display: block; background: #1a1a1a;
+}
+.meta-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.375rem; }
+.meta-title { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; line-height: 1.3; }
+.meta-details { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.meta-chip {
+  font-size: 0.68rem; font-weight: 500; color: #64748b;
+  background: #1e1e1e; border: 1px solid #2a2a2a;
+  border-radius: 0.25rem; padding: 0.15rem 0.4rem;
+}
+.meta-chip--dim { color: #334155; border-color: #1e1e1e; }
 </style>

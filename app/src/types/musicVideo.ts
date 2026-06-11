@@ -9,10 +9,20 @@ export interface MusicVideo {
   og_image: string | null
   og_site_name: string | null
   channel_name: string | null
+  duration: string | null
   view_count: number | null
   views_synced_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface VideoMetadata {
+  title: string | null
+  thumbnail_url: string | null
+  channel_name: string | null
+  provider_name: string | null
+  view_count: number | null
+  duration: string | null
 }
 
 export interface YouTubeSyncResult {
@@ -29,4 +39,9 @@ export interface MusicVideoPayload {
   video_url: string
   published_at: string | null
   sort_order: number
+  og_image?: string | null
+  og_title?: string | null
+  channel_name?: string | null
+  view_count?: number | null
+  duration?: string | null
 }
