@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import type { ShopItem, ShopItemPayload, ShopItemType } from '@/types/shop'
 import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
 import type { Tag } from '@/types/tag'
@@ -45,6 +45,7 @@ const form = reactive({
 })
 
 const prices = reactive<Record<string, string>>({})
+const localPriceError = ref<string | null>(null)
 
 watch(
   [() => props.currencies, () => props.initial],
@@ -114,6 +115,12 @@ function handleSubmit() {
     .filter(([, amt]) => amt !== '')
     .map(([currency, amt]) => ({ currency, amount: Number(amt) }))
 
+  if (builtPrices.length === 0 && Object.keys(prices).length > 0) {
+    localPriceError.value = 'At least one price is required.'
+    return
+  }
+  localPriceError.value = null
+
   const payload: ShopItemPayload = {
     name:             form.name,
     type:             form.type,
@@ -180,7 +187,8 @@ function handleSubmit() {
           />
         </div>
       </div>
-      <span v-if="err('prices')" class="field-error">{{ err('prices') }}</span>
+      <span v-if="localPriceError" class="field-error">{{ localPriceError }}</span>
+      <span v-else-if="err('prices')" class="field-error">{{ err('prices') }}</span>
     </template>
 
     <!-- ── Inventory ─────────────────────────────────────────────── -->

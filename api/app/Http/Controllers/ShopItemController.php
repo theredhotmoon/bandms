@@ -9,6 +9,7 @@ use App\Http\Resources\ShopItemResource;
 use App\Http\Resources\ShopItemSummaryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ShopItemController extends Controller
@@ -28,6 +29,7 @@ class ShopItemController extends Controller
 
     public function show(ShopItem $shopItem): ShopItemResource
     {
+        abort_if(! $shopItem->is_available, 404);
         $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos']);
         return new ShopItemResource($shopItem);
     }
@@ -71,7 +73,7 @@ class ShopItemController extends Controller
 
     public function update(Request $request, ShopItem $shopItem): ShopItemResource
     {
-        $data = $this->validated($request, $shopItem->id);
+        $data = $this->validated($request);
         $prices = $request->input('prices', []);
 
         $this->validatePrices($request);
@@ -80,15 +82,17 @@ class ShopItemController extends Controller
             $data['slug'] = ShopItem::generateSlug($data['name'], $shopItem->id);
         }
 
-        $shopItem->update($data);
+        DB::transaction(function () use ($shopItem, $data, $prices) {
+            $shopItem->update($data);
 
-        $shopItem->prices()->delete();
-        foreach ($prices as $price) {
-            $shopItem->prices()->create([
-                'currency' => strtoupper($price['currency']),
-                'amount'   => $price['amount'],
-            ]);
-        }
+            $shopItem->prices()->delete();
+            foreach ($prices as $price) {
+                $shopItem->prices()->create([
+                    'currency' => strtoupper($price['currency']),
+                    'amount'   => $price['amount'],
+                ]);
+            }
+        });
 
         $this->syncRelations($request, $shopItem);
 
@@ -98,6 +102,7 @@ class ShopItemController extends Controller
 
     public function destroy(ShopItem $shopItem): \Illuminate\Http\JsonResponse
     {
+        $shopItem->load('photos');
         foreach ($shopItem->photos as $photo) {
             Storage::disk('public')->delete($photo->image);
         }
@@ -142,9 +147,11 @@ class ShopItemController extends Controller
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
 
-        foreach ($request->input('ids') as $order => $id) {
-            $shopItem->photos()->where('id', $id)->update(['sort_order' => $order]);
-        }
+        DB::transaction(function () use ($request, $shopItem) {
+            foreach ($request->input('ids') as $order => $id) {
+                $shopItem->photos()->where('id', $id)->update(['sort_order' => $order]);
+            }
+        });
 
         return response()->json(['message' => 'Reordered']);
     }
@@ -172,7 +179,7 @@ class ShopItemController extends Controller
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private function validated(Request $request, ?int $ignoreId = null): array
+    private function validated(Request $request): array
     {
         return $request->validate([
             'name'             => 'required|string|max:255',

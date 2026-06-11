@@ -126,9 +126,10 @@ class MusicVideoController extends Controller
 
     public function fetchPreview(MusicVideo $musicVideo): JsonResponse
     {
-        $url = $musicVideo->video_url;
+        $url  = $musicVideo->video_url;
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
 
-        $oembedUrl = str_contains($url, 'vimeo')
+        $oembedUrl = str_contains($host, 'vimeo')
             ? 'https://vimeo.com/api/oembed.json?url=' . urlencode($url)
             : 'https://www.youtube.com/oembed?url=' . urlencode($url) . '&format=json';
 

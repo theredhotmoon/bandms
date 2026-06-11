@@ -24,8 +24,8 @@ class ShopItemSummaryResource extends JsonResource
                 'currency' => $p->currency,
                 'amount'   => (float) $p->amount,
             ])->values(),
-            'cover_photo'      => $this->photos->first()
-                ? '/storage/' . $this->photos->first()->image
+            'cover_photo'      => ($first = $this->photos->first())
+                ? '/storage/' . $first->image
                 : null,
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
