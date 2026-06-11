@@ -4,8 +4,9 @@ import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from
 interface BandMemberListResponse { data: BandMember[] }
 interface BandMemberResponse { data: BandMember }
 
-export async function fetchBandMembers(): Promise<BandMember[]> {
-  const res = await fetch(`${API_BASE}/api/band-profile/members`, { headers: jsonHeaders })
+export async function fetchBandMembers(token?: string | null): Promise<BandMember[]> {
+  const headers = token ? authHeaders(token) : jsonHeaders
+  const res = await fetch(`${API_BASE}/api/band-profile/members`, { headers })
   return handleResponse<BandMemberListResponse>(res).then((r) => r.data)
 }
 
