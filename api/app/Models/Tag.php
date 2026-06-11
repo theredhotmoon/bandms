@@ -37,4 +37,9 @@ class Tag extends Model
     {
         return $this->belongsToMany(Concert::class, 'concert_tag');
     }
+
+    public function shopItems(): BelongsToMany
+    {
+        return $this->belongsToMany(ShopItem::class, 'shop_item_tag');
+    }
 }

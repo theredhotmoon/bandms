@@ -50,8 +50,9 @@ async function handleSubmit() {
     </p>
 
     <div>
-      <label class="field-label">Email</label>
+      <label class="field-label" for="signin-email">Email</label>
       <input
+        id="signin-email"
         v-model="email"
         type="email"
         required
@@ -64,8 +65,9 @@ async function handleSubmit() {
     </div>
 
     <div>
-      <label class="field-label">Password</label>
+      <label class="field-label" for="signin-password">Password</label>
       <input
+        id="signin-password"
         v-model="password"
         type="password"
         required

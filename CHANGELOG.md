@@ -17,6 +17,20 @@ Ideas and features planned for future development:
 
 ---
 
+## [Unreleased] — 2026-06-11
+
+### Added
+- **Shop admin section** — full CRUD for shop items with multi-currency pricing, availability/pre-sale toggles, stock quantity, external purchase URL, per-item photo gallery (upload, drag-to-reorder, delete), and links to releases, concerts, posts, videos, and tags. A "Currencies" button in the header manages which currency codes are available for pricing.
+- **"Retrieve data" button in music video form** — paste a YouTube or Vimeo URL and click "Retrieve data" to fetch title, thumbnail, channel name, duration, and view count via oEmbed (no key needed) and optionally the YouTube Data API v3. A preview card shows the metadata before saving; the title field auto-fills if empty.
+- **`duration` field on music videos** — stored and displayed alongside channel name in the video table (e.g. `4:33`).
+- **`label_name` field on releases** — free-text label name field on the release form and returned in API responses.
+
+### Fixed
+- **SSRF vulnerability in video metadata endpoint** — `POST /api/music-videos/retrieve-metadata` validated the URL with a loose string-contains check that could be bypassed by crafted query parameters. Fixed with an explicit host whitelist using `parse_url()` so only `youtube.com`, `youtu.be`, and `vimeo.com` are reachable.
+- **`view_count` stored as 0 when YouTube API returns no stats** — changed fallback from `?? 0` to a `null` guard so missing statistics are stored as `null` rather than falsely recorded as zero views.
+
+---
+
 ## [Unreleased] — 2026-06-10
 
 ### Added

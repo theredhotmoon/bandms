@@ -15,7 +15,7 @@ export function useBandMembers() {
   const queryClient = useQueryClient()
   const qk = ['band-profile-members']
 
-  const query = useQuery<BandMember[]>({ queryKey: qk, queryFn: fetchBandMembers })
+  const query = useQuery<BandMember[]>({ queryKey: qk, queryFn: () => fetchBandMembers(token.value) })
 
   const create = useMutation({
     mutationFn: (payload: BandMemberPayload) => createBandMember(token.value!, payload),

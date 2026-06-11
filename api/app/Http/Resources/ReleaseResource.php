@@ -19,6 +19,7 @@ class ReleaseResource extends JsonResource
             'description'  => $this->description,
             'is_upcoming'  => (bool) $this->is_upcoming,
             'presave_url'  => $this->presave_url,
+            'label_name'   => $this->label_name,
             'links'        => $this->whenLoaded('links', fn () => $this->links->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,

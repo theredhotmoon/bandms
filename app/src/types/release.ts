@@ -45,6 +45,7 @@ export interface ReleaseSummary {
   cover_image: string | null
   is_upcoming: boolean
   presave_url: string | null
+  label_name: string | null
   links: ReleaseLink[]
   created_at: string
   updated_at: string
@@ -89,6 +90,7 @@ export interface ReleasePayload {
   description: string | null
   is_upcoming: boolean
   presave_url: string | null
+  label_name: string | null
   links: ReleaseLinkPayload[]
   tracks: ReleaseTrackPayload[]
 }

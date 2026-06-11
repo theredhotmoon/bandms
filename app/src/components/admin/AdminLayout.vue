@@ -117,6 +117,12 @@ async function handleLogout() {
             Venues
           </RouterLink>
 
+          <div class="nav-group-label">Shop</div>
+          <RouterLink to="/admin/shop" class="nav-item" active-class="nav-item--active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            Shop
+          </RouterLink>
+
           <div class="nav-group-label">Library</div>
           <RouterLink to="/admin/bands" class="nav-item" active-class="nav-item--active">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="3"/><path d="M15 8a3 3 0 010 8M18 5a7 7 0 010 14"/></svg>

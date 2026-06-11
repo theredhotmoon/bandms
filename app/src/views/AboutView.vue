@@ -19,13 +19,14 @@ interface BioVersion {
   key: 'bio_short' | 'bio_medium' | 'bio_long' | 'bio_full'
   label: string
   hint: string
+  isHtml: boolean
 }
 
 const bioVersions: BioVersion[] = [
-  { key: 'bio_short',  label: 'Short',  hint: '~100 words' },
-  { key: 'bio_medium', label: 'Medium', hint: '~200 words' },
-  { key: 'bio_long',   label: 'Long',   hint: '~400 words' },
-  { key: 'bio_full',   label: 'Full',   hint: 'complete'   },
+  { key: 'bio_short',  label: 'Short',  hint: '~100 words',  isHtml: false },
+  { key: 'bio_medium', label: 'Medium', hint: '~200 words',  isHtml: false },
+  { key: 'bio_long',   label: 'Long',   hint: '~400 words',  isHtml: true  },
+  { key: 'bio_full',   label: 'Full',   hint: 'complete',    isHtml: true  },
 ]
 
 const filledBios = computed(() =>
@@ -34,6 +35,11 @@ const filledBios = computed(() =>
 
 function initials(m: BandMember) {
   return (m.first_name[0] + m.last_name[0]).toUpperCase()
+}
+
+function bioExcerpt(html: string): string {
+  const plain = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  return plain.length > 120 ? plain.slice(0, 120) + '…' : plain
 }
 </script>
 
@@ -67,7 +73,8 @@ function initials(m: BandMember) {
               <span class="bio-label">{{ bio.label }}</span>
               <span class="bio-hint">{{ bio.hint }}</span>
             </div>
-            <p class="bio-text">{{ profile[bio.key] }}</p>
+            <div v-if="bio.isHtml" class="bio-text bio-html" v-html="profile[bio.key]" />
+            <p v-else class="bio-text">{{ profile[bio.key] }}</p>
           </section>
         </div>
       </div>
@@ -107,9 +114,7 @@ function initials(m: BandMember) {
             </div>
 
             <!-- Bio excerpt -->
-            <p v-if="m.bio" class="member-bio">
-              {{ m.bio.length > 120 ? m.bio.slice(0, 120) + '…' : m.bio }}
-            </p>
+            <p v-if="m.bio" class="member-bio">{{ bioExcerpt(m.bio) }}</p>
 
             <!-- Social links -->
             <div v-if="m.social_links?.length" class="member-socials">
@@ -199,6 +204,14 @@ function initials(m: BandMember) {
 .bio-text {
   font-size: 0.9375rem; line-height: 1.75; color: #333; white-space: pre-wrap;
 }
+.bio-html {
+  white-space: normal;
+}
+.bio-html :deep(p) { margin: 0 0 0.75em; }
+.bio-html :deep(p:last-child) { margin-bottom: 0; }
+.bio-html :deep(ul), .bio-html :deep(ol) { margin: 0 0 0.75em 1.25em; }
+.bio-html :deep(strong) { font-weight: 700; }
+.bio-html :deep(em) { font-style: italic; }
 
 /* ── Members heading row ──────────────────────────────────── */
 .members-heading-row {

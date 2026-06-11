@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ShopItemController;
 use App\Http\Controllers\NewsletterSubscriberController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\FacebookSyncController;
@@ -100,6 +101,9 @@ Route::get('/press-releases/{pressRelease}', [PressReleaseController::class, 'sh
 Route::get('/music-videos', [MusicVideoController::class, 'index'])->name('api.music-videos.index');
 
 Route::get('/instruments', [InstrumentController::class, 'index'])->name('api.instruments.index');
+
+Route::get('/shop', [ShopItemController::class, 'index'])->name('api.shop.index');
+Route::get('/shop/{shopItem}', [ShopItemController::class, 'show'])->name('api.shop.show');
 
 Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'subscribe'])
     ->middleware('throttle:5,1')
@@ -250,6 +254,7 @@ Route::middleware('auth:api')->group(function () {
 
         Route::post('/music-videos', [MusicVideoController::class, 'store'])->name('api.music-videos.store');
         Route::post('/music-videos/sync-views', [\App\Http\Controllers\YouTubeSyncController::class, 'syncViewCounts'])->name('api.music-videos.sync-views');
+        Route::post('/music-videos/retrieve-metadata', [MusicVideoController::class, 'retrieveMetadata'])->name('api.music-videos.retrieve-metadata');
         Route::put('/music-videos/{musicVideo}', [MusicVideoController::class, 'update'])->name('api.music-videos.update');
         Route::delete('/music-videos/{musicVideo}', [MusicVideoController::class, 'destroy'])->name('api.music-videos.destroy');
         Route::post('/music-videos/{musicVideo}/fetch-preview', [MusicVideoController::class, 'fetchPreview'])->name('api.music-videos.fetch-preview');
@@ -293,6 +298,17 @@ Route::middleware('auth:api')->group(function () {
         // Newsletter subscribers
         Route::get('/newsletter-subscribers', [NewsletterSubscriberController::class, 'index'])->name('api.newsletter-subscribers.index');
         Route::delete('/newsletter-subscribers/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('api.newsletter-subscribers.destroy');
+
+        // Shop
+        Route::get('/shop-admin', [ShopItemController::class, 'adminIndex'])->name('api.shop.admin-index');
+        Route::post('/shop', [ShopItemController::class, 'store'])->name('api.shop.store');
+        Route::put('/shop/{shopItem}', [ShopItemController::class, 'update'])->name('api.shop.update');
+        Route::delete('/shop/{shopItem}', [ShopItemController::class, 'destroy'])->name('api.shop.destroy');
+        Route::post('/shop/{shopItem}/photos', [ShopItemController::class, 'uploadPhoto'])->name('api.shop.photos.upload');
+        Route::delete('/shop/{shopItem}/photos/{photo}', [ShopItemController::class, 'deletePhoto'])->name('api.shop.photos.delete');
+        Route::put('/shop/{shopItem}/photos/reorder', [ShopItemController::class, 'reorderPhotos'])->name('api.shop.photos.reorder');
+        Route::get('/shop-currencies', [ShopItemController::class, 'getCurrencies'])->name('api.shop.currencies.get');
+        Route::put('/shop-currencies', [ShopItemController::class, 'updateCurrencies'])->name('api.shop.currencies.update');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');

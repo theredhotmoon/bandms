@@ -172,7 +172,7 @@ function releaseYear(r: ReleaseSummary): string {
                       Pre-save
                     </a>
                   </div>
-                  <p v-if="detail.description" class="rl-modal-desc">{{ detail.description }}</p>
+                  <div v-if="detail.description" class="rl-modal-desc" v-html="detail.description" />
                   <!-- Streaming links -->
                   <div v-if="detail.links.length" class="rl-streams">
                     <a
@@ -365,6 +365,8 @@ function releaseYear(r: ReleaseSummary): string {
 }
 .rl-modal-year { font-size: 0.875rem; color: #888; margin-bottom: 0.75rem; }
 .rl-modal-desc { font-size: 0.875rem; color: #555; line-height: 1.6; margin-bottom: 0.75rem; }
+.rl-modal-desc :deep(p) { margin: 0 0 0.5em; }
+.rl-modal-desc :deep(p:last-child) { margin-bottom: 0; }
 
 .rl-presave-wrap { margin-bottom: 0.75rem; }
 .rl-presave-btn {

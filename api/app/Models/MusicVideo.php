@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class MusicVideo extends Model
 {
-    protected $fillable = ['profile_id', 'title', 'video_url', 'published_at', 'sort_order', 'og_title', 'og_image', 'og_site_name', 'channel_name', 'view_count', 'views_synced_at'];
+    protected $fillable = ['profile_id', 'title', 'video_url', 'published_at', 'sort_order', 'og_title', 'og_image', 'og_site_name', 'channel_name', 'duration', 'view_count', 'views_synced_at'];
 
     protected $casts = [
         'published_at'   => 'date:Y-m-d',

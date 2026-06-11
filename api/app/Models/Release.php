@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Release extends Model
 {
-    protected $fillable = ['profile_id', 'title', 'type', 'release_date', 'cover_image', 'description', 'is_upcoming', 'presave_url'];
+    protected $fillable = ['profile_id', 'title', 'type', 'release_date', 'cover_image', 'description', 'is_upcoming', 'presave_url', 'label_name'];
 
     protected $casts = [
         'release_date' => 'date:Y-m-d',
