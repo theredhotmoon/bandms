@@ -149,9 +149,7 @@ function embedUrl(url: string): string {
                   · {{ query.data.value.featured_release.release_date.slice(0, 4) }}
                 </template>
               </div>
-              <p v-if="query.data.value.featured_release.description" class="release-desc">
-                {{ query.data.value.featured_release.description }}
-              </p>
+              <div v-if="query.data.value.featured_release.description" class="release-desc" v-html="query.data.value.featured_release.description" />
               <div class="release-links">
                 <a v-for="l in query.data.value.featured_release.links" :key="l.platform"
                   :href="l.url" target="_blank" rel="noopener noreferrer" class="stream-btn">
@@ -325,6 +323,8 @@ function embedUrl(url: string): string {
 .release-title { font-size: 1.125rem; font-weight: 700; color: #111; margin-bottom: 0.25rem; }
 .release-meta { font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
 .release-desc { font-size: 0.8125rem; color: #555; line-height: 1.55; margin: 0 0 0.75rem; }
+.release-desc :deep(p) { margin: 0 0 0.5em; }
+.release-desc :deep(p:last-child) { margin-bottom: 0; }
 .release-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .stream-btn {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;

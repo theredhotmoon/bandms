@@ -54,7 +54,7 @@ function formatDate(iso: string | null) {
         style="width: 100%; max-height: 500px; object-fit: cover; border-radius: 6px; margin-bottom: 1.5rem;"
       />
 
-      <div style="line-height: 1.7; white-space: pre-wrap; margin-bottom: 1.5rem;">{{ post.content }}</div>
+      <div class="post-content" v-html="post.content" />
 
       <PostLinkDisplay :links="post.links" />
 
@@ -104,3 +104,15 @@ function formatDate(iso: string | null) {
     </article>
   </div>
 </template>
+
+<style scoped>
+.post-content { line-height: 1.7; margin-bottom: 1.5rem; font-size: 1rem; }
+.post-content :deep(p) { margin: 0 0 0.85em; }
+.post-content :deep(p:last-child) { margin-bottom: 0; }
+.post-content :deep(ul), .post-content :deep(ol) { margin: 0 0 0.85em 1.5em; }
+.post-content :deep(h2), .post-content :deep(h3) { font-weight: 700; margin: 1.25em 0 0.5em; }
+.post-content :deep(strong) { font-weight: 700; }
+.post-content :deep(em) { font-style: italic; }
+.post-content :deep(a) { color: #2563eb; text-decoration: underline; }
+.post-content :deep(blockquote) { border-left: 3px solid #ddd; margin: 0 0 0.85em; padding: 0 0 0 1em; color: #555; }
+</style>
