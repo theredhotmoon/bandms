@@ -23,11 +23,13 @@ class BandProfile extends Model
         'tech_rider_path', 'stage_plot_path',
         'epk_release_id', 'epk_album_id',
         'epk_logo_id', 'tech_rider_logo_id', 'website_logo_id',
+        'shop_currencies',
     ];
 
     protected $casts = [
         'facebook_likes'          => 'integer',
         'facebook_likes_synced_at' => 'datetime',
+        'shop_currencies'          => 'array',
     ];
 
     public function logos(): HasMany

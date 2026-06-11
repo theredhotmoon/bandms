@@ -1,4 +1,4 @@
-import type { MusicVideo, MusicVideoPayload, YouTubeSyncResult } from '@/types/musicVideo'
+import type { MusicVideo, MusicVideoPayload, VideoMetadata, YouTubeSyncResult } from '@/types/musicVideo'
 
 const BASE = '/api/music-videos'
 
@@ -57,6 +57,19 @@ export async function syncYouTubeViews(token: string): Promise<YouTubeSyncResult
     throw new Error(err.message ?? 'Failed to sync YouTube views')
   }
   return res.json() as Promise<YouTubeSyncResult>
+}
+
+export async function retrieveVideoMetadata(token: string, url: string): Promise<VideoMetadata> {
+  const res = await fetch(`${BASE}/retrieve-metadata`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ url }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string }
+    throw new Error(err.message ?? 'Could not retrieve metadata')
+  }
+  return res.json() as Promise<VideoMetadata>
 }
 
 export async function fetchMusicVideoPreview(token: string, id: number): Promise<MusicVideo> {
