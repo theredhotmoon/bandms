@@ -110,6 +110,7 @@ const form = reactive({
   description:  '' as string,
   is_upcoming:  false,
   presave_url:  '',
+  label_name:   '',
   links:        emptyLinks(),
 })
 
@@ -125,6 +126,7 @@ watch(
       form.description  = ''
       form.is_upcoming  = false
       form.presave_url  = ''
+      form.label_name   = ''
       form.links        = emptyLinks()
       tracks.value      = [emptyTrack(0)]
       coverFile.value    = null
@@ -138,6 +140,7 @@ watch(
     form.description  = val.description ?? ''
     form.is_upcoming  = val.is_upcoming
     form.presave_url  = val.presave_url ?? ''
+    form.label_name   = val.label_name ?? ''
     const lm = emptyLinks()
     for (const l of val.links) lm[l.platform] = l.url
     form.links = lm
@@ -186,6 +189,7 @@ function handleSubmit() {
     description:  form.description  || null,
     is_upcoming:  form.is_upcoming,
     presave_url:  form.is_upcoming ? (form.presave_url || null) : null,
+    label_name:   form.label_name || null,
     links: PLATFORMS
       .filter(p => form.links[p.key])
       .map(p => ({ platform: p.key, url: form.links[p.key] })),
@@ -264,6 +268,13 @@ function handleSubmit() {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Label name -->
+    <div class="mb-4">
+      <label class="field-label">Record label</label>
+      <input v-model="form.label_name" class="field-input" placeholder="e.g. Rough Trade, Epitaph, self-released…" />
+      <p v-if="errors?.label_name" class="field-error">{{ errors.label_name[0] }}</p>
     </div>
 
     <!-- Description -->
