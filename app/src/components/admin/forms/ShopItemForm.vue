@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { ShopItem, ShopItemPayload, ShopItemType, ShopCategory } from '@/types/shop'
-import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
+import type { ShopItem, ShopItemPayload, ShopCategory } from '@/types/shop'
 import type { Tag } from '@/types/tag'
 import type { ReleaseSummary } from '@/types/release'
 import type { Concert } from '@/types/concert'
@@ -27,11 +26,8 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const TYPES = Object.keys(SHOP_ITEM_TYPE_LABELS) as ShopItemType[]
-
 const form = reactive({
   name:              '',
-  type:              'record' as ShopItemType,
   description:       '' as string,
   is_available:      true,
   is_presale:        false,
@@ -69,7 +65,6 @@ watch(
   (item) => {
     if (!item) {
       form.name             = ''
-      form.type             = 'record'
       form.description      = ''
       form.is_available     = true
       form.is_presale       = false
@@ -85,7 +80,6 @@ watch(
       form.category_ids     = []
     } else {
       form.name             = item.name
-      form.type             = item.type
       form.description      = item.description ?? ''
       form.is_available     = item.is_available
       form.is_presale       = item.is_presale
@@ -104,6 +98,12 @@ watch(
   { immediate: true },
 )
 
+function toggleCategory(id: number) {
+  const idx = form.category_ids.indexOf(id)
+  if (idx === -1) form.category_ids.push(id)
+  else form.category_ids.splice(idx, 1)
+}
+
 function err(field: string): string | undefined {
   return props.errors?.[field]?.[0]
 }
@@ -121,7 +121,6 @@ function handleSubmit() {
 
   const payload: ShopItemPayload = {
     name:             form.name,
-    type:             form.type,
     description:      form.description || null,
     is_available:     form.is_available,
     is_presale:       form.is_presale,
@@ -146,18 +145,24 @@ function handleSubmit() {
 
     <!-- ── Info ─────────────────────────────────────────────────── -->
     <div class="section-label">Info</div>
-    <div class="form-row two-col">
-      <div class="field">
-        <label class="field-label">Name *</label>
-        <input v-model="form.name" type="text" class="field-input" :class="{ 'field-input--error': err('name') }" placeholder="e.g. Debut LP — Limited Edition" />
-        <span v-if="err('name')" class="field-error">{{ err('name') }}</span>
-      </div>
-      <div class="field">
-        <label class="field-label">Type *</label>
-        <select v-model="form.type" class="field-select">
-          <option v-for="t in TYPES" :key="t" :value="t">{{ SHOP_ITEM_TYPE_LABELS[t] }}</option>
-        </select>
-        <span v-if="err('type')" class="field-error">{{ err('type') }}</span>
+    <div class="field">
+      <label class="field-label">Name *</label>
+      <input v-model="form.name" type="text" class="field-input" :class="{ 'field-input--error': err('name') }" placeholder="e.g. Debut LP — Limited Edition" />
+      <span v-if="err('name')" class="field-error">{{ err('name') }}</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Categories</label>
+      <div v-if="!categories.length" class="empty-hint">No categories yet. Add some via the Categories button.</div>
+      <div v-else class="chips-wrap">
+        <label
+          v-for="cat in categories" :key="cat.id"
+          class="chip-label"
+          :class="{ 'chip-label--on': form.category_ids.includes(cat.id) }"
+        >
+          <input type="checkbox" :checked="form.category_ids.includes(cat.id)" @change="toggleCategory(cat.id)" class="chip-cb" />
+          {{ cat.name }}
+        </label>
       </div>
     </div>
 
@@ -235,13 +240,11 @@ function handleSubmit() {
       :concerts="concerts"
       :posts="posts"
       :musicVideos="videos"
-      :shopCategories="categories"
       v-model:tagIds="form.tag_ids"
       v-model:releaseIds="form.release_ids"
       v-model:concertIds="form.concert_ids"
       v-model:postIds="form.post_ids"
       v-model:musicVideoIds="form.video_ids"
-      v-model:shopCategoryIds="form.category_ids"
     />
 
     <!-- ── Actions ────────────────────────────────────────────────── -->
@@ -274,7 +277,6 @@ function handleSubmit() {
 .field-label { font-size: 0.78rem; font-weight: 500; color: #94a3b8; }
 .field-hint { font-weight: 400; color: #475569; }
 .field-input,
-.field-select,
 .field-textarea {
   background: #141414;
   border: 1px solid #2a2a2a;
@@ -287,15 +289,29 @@ function handleSubmit() {
   width: 100%;
 }
 .field-input:focus,
-.field-select:focus,
 .field-textarea:focus { border-color: #555555; }
 .field-input--error { border-color: #f87171 !important; }
 .field-textarea { resize: vertical; min-height: 5rem; }
-.field-select { appearance: none; cursor: pointer; }
 .field-error { font-size: 0.72rem; color: #f87171; }
 
 .form-row { display: flex; gap: 0.75rem; }
 .two-col > * { flex: 1; min-width: 0; }
+
+/* Category chips */
+.chips-wrap { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.25rem; }
+.chip-label {
+  display: flex; align-items: center; gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  font-size: 0.75rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+.chip-label--on { border-color: #666; color: #e2e8f0; background: #1f1f1f; }
+.chip-cb { display: none; }
 
 /* Pricing */
 .price-grid { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.75rem; }

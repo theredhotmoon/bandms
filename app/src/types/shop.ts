@@ -60,7 +60,6 @@ export interface ShopItem extends ShopItemSummary {
 
 export interface ShopItemPayload {
   name: string
-  type: ShopItemType
   description: string | null
   is_available: boolean
   is_presale: boolean

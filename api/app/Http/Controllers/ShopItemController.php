@@ -183,7 +183,7 @@ class ShopItemController extends Controller
     {
         return $request->validate([
             'name'             => 'required|string|max:255',
-            'type'             => 'required|in:record,apparel,accessory,ticket,bundle,other',
+            'type'             => 'sometimes|in:record,apparel,accessory,ticket,bundle,other',
             'description'      => 'nullable|string',
             'is_available'     => 'boolean',
             'is_presale'       => 'boolean',
