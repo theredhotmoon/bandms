@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { ShopItem, ShopItemPayload, ShopItemType } from '@/types/shop'
+import type { ShopItem, ShopItemPayload, ShopItemType, ShopCategory } from '@/types/shop'
 import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
 import type { Tag } from '@/types/tag'
 import type { ReleaseSummary } from '@/types/release'
 import type { Concert } from '@/types/concert'
 import type { PostSummary } from '@/types/post'
 import type { MusicVideo } from '@/types/musicVideo'
+import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 
 const props = defineProps<{
   initial?: ShopItem | null
@@ -16,6 +17,7 @@ const props = defineProps<{
   concerts: Concert[]
   posts: PostSummary[]
   videos: MusicVideo[]
+  categories: ShopCategory[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -42,6 +44,7 @@ const form = reactive({
   concert_ids:       [] as number[],
   post_ids:          [] as number[],
   video_ids:         [] as number[],
+  category_ids:      [] as number[],
 })
 
 const prices = reactive<Record<string, string>>({})
@@ -55,7 +58,6 @@ watch(
       const existing = props.initial?.prices.find((p) => p.currency === c)
       next[c] = existing ? String(existing.amount) : ''
     })
-    // reset prices keys to match currencies
     Object.keys(prices).forEach((k) => delete prices[k])
     Object.assign(prices, next)
   },
@@ -80,6 +82,7 @@ watch(
       form.concert_ids      = []
       form.post_ids         = []
       form.video_ids        = []
+      form.category_ids     = []
     } else {
       form.name             = item.name
       form.type             = item.type
@@ -95,16 +98,11 @@ watch(
       form.concert_ids      = item.concert_ids ?? []
       form.post_ids         = item.post_ids ?? []
       form.video_ids        = item.video_ids ?? []
+      form.category_ids     = item.category_ids ?? []
     }
   },
   { immediate: true },
 )
-
-function toggleId(arr: number[], id: number) {
-  const idx = arr.indexOf(id)
-  if (idx === -1) arr.push(id)
-  else arr.splice(idx, 1)
-}
 
 function err(field: string): string | undefined {
   return props.errors?.[field]?.[0]
@@ -137,6 +135,7 @@ function handleSubmit() {
     concert_ids:      form.concert_ids,
     post_ids:         form.post_ids,
     video_ids:        form.video_ids,
+    category_ids:     form.category_ids,
   }
   emit('submit', payload)
 }
@@ -229,70 +228,21 @@ function handleSubmit() {
     </div>
 
     <!-- ── Links ─────────────────────────────────────────────────── -->
-    <div class="section-label">Tags</div>
-    <div v-if="!tags.length" class="empty-hint">No tags yet.</div>
-    <div v-else class="chips-wrap">
-      <label
-        v-for="t in tags" :key="t.id"
-        class="chip-label"
-        :class="{ 'chip-label--on': form.tag_ids.includes(t.id) }"
-      >
-        <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleId(form.tag_ids, t.id)" class="chip-cb" />
-        {{ t.name }}
-      </label>
-    </div>
-
-    <div class="section-label">Releases</div>
-    <div v-if="!releases.length" class="empty-hint">No releases yet.</div>
-    <div v-else class="link-list">
-      <label
-        v-for="r in releases" :key="r.id"
-        class="link-item"
-        :class="{ 'link-item--on': form.release_ids.includes(r.id) }"
-      >
-        <input type="checkbox" :checked="form.release_ids.includes(r.id)" @change="toggleId(form.release_ids, r.id)" class="chip-cb" />
-        <span class="link-item-text">{{ r.title }} <span class="link-item-meta">{{ r.type }}</span></span>
-      </label>
-    </div>
-
-    <div class="section-label">Concerts</div>
-    <div v-if="!concerts.length" class="empty-hint">No concerts yet.</div>
-    <div v-else class="link-list">
-      <label
-        v-for="c in concerts" :key="c.id"
-        class="link-item"
-        :class="{ 'link-item--on': form.concert_ids.includes(c.id) }"
-      >
-        <input type="checkbox" :checked="form.concert_ids.includes(c.id)" @change="toggleId(form.concert_ids, c.id)" class="chip-cb" />
-        <span class="link-item-text">{{ c.date }} <span class="link-item-meta">{{ c.venue?.name ?? '' }}</span></span>
-      </label>
-    </div>
-
-    <div class="section-label">Posts</div>
-    <div v-if="!posts.length" class="empty-hint">No posts yet.</div>
-    <div v-else class="link-list">
-      <label
-        v-for="p in posts" :key="p.id"
-        class="link-item"
-        :class="{ 'link-item--on': form.post_ids.includes(p.id) }"
-      >
-        <input type="checkbox" :checked="form.post_ids.includes(p.id)" @change="toggleId(form.post_ids, p.id)" class="chip-cb" />
-        <span class="link-item-text">{{ p.title }}</span>
-      </label>
-    </div>
-
-    <div class="section-label">Videos</div>
-    <div v-if="!videos.length" class="empty-hint">No videos yet.</div>
-    <div v-else class="link-list">
-      <label
-        v-for="v in videos" :key="v.id"
-        class="link-item"
-        :class="{ 'link-item--on': form.video_ids.includes(v.id) }"
-      >
-        <input type="checkbox" :checked="form.video_ids.includes(v.id)" @change="toggleId(form.video_ids, v.id)" class="chip-cb" />
-        <span class="link-item-text">{{ v.title }}</span>
-      </label>
-    </div>
+    <div class="section-label">Links</div>
+    <EntityRelationsPanel
+      :tags="tags"
+      :releases="releases"
+      :concerts="concerts"
+      :posts="posts"
+      :musicVideos="videos"
+      :shopCategories="categories"
+      v-model:tagIds="form.tag_ids"
+      v-model:releaseIds="form.release_ids"
+      v-model:concertIds="form.concert_ids"
+      v-model:postIds="form.post_ids"
+      v-model:musicVideoIds="form.video_ids"
+      v-model:shopCategoryIds="form.category_ids"
+    />
 
     <!-- ── Actions ────────────────────────────────────────────────── -->
     <div class="form-actions">
@@ -370,42 +320,10 @@ function handleSubmit() {
 .toggle-cb { width: 0.875rem; height: 0.875rem; accent-color: #888; cursor: pointer; }
 .toggle-text { font-size: 0.8125rem; color: #94a3b8; }
 
-/* Chips (tags) */
-.chips-wrap { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
-.chip-label {
-  display: flex; align-items: center; gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  border: 1px solid #2a2a2a;
-  background: #141414;
-  font-size: 0.75rem;
-  color: #64748b;
-  cursor: pointer;
-  transition: border-color 120ms, color 120ms, background 120ms;
-}
-.chip-label--on { border-color: #666; color: #e2e8f0; background: #1f1f1f; }
-.chip-cb { display: none; }
-
-/* Link lists */
-.link-list { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; max-height: 10rem; overflow-y: auto; }
-.link-item {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: background 100ms, border-color 100ms;
-}
-.link-item:hover { background: #1a1a1a; }
-.link-item--on { background: #1a1a1a; border-color: #333333; }
-.link-item-text { font-size: 0.8rem; color: #94a3b8; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.link-item--on .link-item-text { color: #e2e8f0; }
-.link-item-meta { font-size: 0.7rem; color: #475569; margin-left: 0.25rem; }
-
 .empty-hint { font-size: 0.78rem; color: #334155; margin-bottom: 0.75rem; }
 
 /* Actions */
-.form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 1rem; margin-top: 0.5rem; border-top: 1px solid #1e1e1e; }
+.form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 1rem; margin-top: 0.75rem; border-top: 1px solid #1e1e1e; }
 .btn-cancel {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
   background: transparent; border: 1px solid #2a2a2a; color: #64748b; cursor: pointer;

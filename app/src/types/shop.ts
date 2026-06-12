@@ -1,3 +1,11 @@
+export interface ShopCategory {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  sort_order: number
+}
+
 export type ShopItemType = 'record' | 'apparel' | 'accessory' | 'ticket' | 'bundle' | 'other'
 
 export const SHOP_ITEM_TYPE_LABELS: Record<ShopItemType, string> = {
@@ -46,6 +54,7 @@ export interface ShopItem extends ShopItemSummary {
   concert_ids: number[]
   post_ids: number[]
   video_ids: number[]
+  category_ids: number[]
 }
 
 export interface ShopItemPayload {
@@ -64,4 +73,5 @@ export interface ShopItemPayload {
   concert_ids: number[]
   post_ids: number[]
   video_ids: number[]
+  category_ids: number[]
 }

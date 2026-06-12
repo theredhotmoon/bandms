@@ -1,4 +1,4 @@
-import type { ShopItem, ShopItemSummary, ShopItemPayload } from '@/types/shop'
+import type { ShopItem, ShopItemSummary, ShopItemPayload, ShopCategory } from '@/types/shop'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface ListResponse<T> { data: T[] }
@@ -96,4 +96,39 @@ export async function updateShopCurrencies(token: string, currencies: string[]):
     body: JSON.stringify({ currencies }),
   })
   return handleResponse<{ currencies: string[] }>(res).then(r => r.currencies)
+}
+
+// ── Shop categories ──────────────────────────────────────────────────────────
+
+export async function fetchShopCategories(): Promise<ShopCategory[]> {
+  const res = await fetch(`${API_BASE}/api/shop-categories`, { headers: jsonHeaders })
+  return handleResponse<ListResponse<ShopCategory>>(res).then(r => r.data)
+}
+
+export async function createShopCategory(token: string, payload: { name: string; description?: string | null; sort_order?: number }): Promise<ShopCategory> {
+  const res = await fetch(`${API_BASE}/api/shop-categories`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  return handleResponse<ItemResponse<ShopCategory>>(res).then(r => r.data)
+}
+
+export async function updateShopCategory(token: string, id: number, payload: { name: string; description?: string | null; sort_order?: number }): Promise<ShopCategory> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/shop-categories/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  return handleResponse<ItemResponse<ShopCategory>>(res).then(r => r.data)
+}
+
+export async function deleteShopCategory(token: string, id: number): Promise<void> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/shop-categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  return handleResponse<void>(res)
 }

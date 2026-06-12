@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -11,6 +11,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import ShopItemForm from '@/components/admin/forms/ShopItemForm.vue'
 import { useShop } from '@/composables/useShop'
 import { useShopItem } from '@/composables/useShopItem'
+import { useShopCategories } from '@/composables/useShopCategories'
 import { useTableControls } from '@/composables/useTableControls'
 import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
@@ -20,7 +21,7 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useAuth } from '@/composables/useAuth'
 import { ApiValidationError } from '@/api/client'
 import { uploadShopPhoto, deleteShopPhoto, reorderShopPhotos } from '@/api/shop'
-import type { ShopItemPayload, ShopItemPhoto, ShopItemSummary } from '@/types/shop'
+import type { ShopItemPayload, ShopItemPhoto, ShopItemSummary, ShopCategory } from '@/types/shop'
 import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
 import type { PostFilters } from '@/api/posts'
 
@@ -28,13 +29,15 @@ const { token } = useAuth()
 const qc = useQueryClient()
 
 const { query, currenciesQuery, create, update, remove, saveCurrencies } = useShop()
-const tagsQ     = useTags()
-const releasesQ = useReleases()
-const concertsQ = useConcerts()
-const postsQ    = usePosts(ref<PostFilters>({}))
-const videosQ   = useMusicVideos()
+const categoriesQ = useShopCategories()
+const tagsQ       = useTags()
+const releasesQ   = useReleases()
+const concertsQ   = useConcerts()
+const postsQ      = usePosts(ref<PostFilters>({}))
+const videosQ     = useMusicVideos()
 
 const currencies = computed(() => currenciesQuery.data.value ?? [])
+const categories = computed(() => categoriesQ.query.data.value ?? [])
 const tags       = computed(() => tagsQ.query.data.value ?? [])
 const releases   = computed(() => releasesQ.query.data.value ?? [])
 const concerts   = computed(() => concertsQ.query.data.value ?? [])
@@ -187,6 +190,60 @@ async function deletePhoto(photoId: number) {
   }
 }
 
+// ── Categories modal ───────────────────────────────────────────
+const showCategoriesModal   = ref(false)
+const editingCategory       = ref<ShopCategory | null>(null)
+const categoryForm          = reactive({ name: '', description: '', sort_order: '0' })
+const categoryFieldErrors   = ref<Record<string, string[]>>({})
+
+function openNewCategory() {
+  editingCategory.value     = null
+  categoryForm.name         = ''
+  categoryForm.description  = ''
+  categoryForm.sort_order   = '0'
+  categoryFieldErrors.value = {}
+}
+
+function openEditCategory(cat: ShopCategory) {
+  editingCategory.value     = cat
+  categoryForm.name         = cat.name
+  categoryForm.description  = cat.description ?? ''
+  categoryForm.sort_order   = String(cat.sort_order)
+  categoryFieldErrors.value = {}
+}
+
+async function saveCategory() {
+  categoryFieldErrors.value = {}
+  const payload = {
+    name:        categoryForm.name,
+    description: categoryForm.description || null,
+    sort_order:  Number(categoryForm.sort_order) || 0,
+  }
+  try {
+    if (editingCategory.value) {
+      await categoriesQ.update.mutateAsync({ id: editingCategory.value.id, payload })
+      toast.success('Category updated')
+    } else {
+      await categoriesQ.create.mutateAsync(payload)
+      toast.success('Category created')
+    }
+    openNewCategory()
+  } catch (e) {
+    if (e instanceof ApiValidationError) categoryFieldErrors.value = e.errors
+    else toast.error('Something went wrong')
+  }
+}
+
+async function deleteCategory(id: number) {
+  try {
+    await categoriesQ.remove.mutateAsync(id)
+    toast.success('Category deleted')
+    if (editingCategory.value?.id === id) openNewCategory()
+  } catch {
+    toast.error('Failed to delete')
+  }
+}
+
 // ── Currency settings modal ────────────────────────────────────
 const showCurrencyModal  = ref(false)
 const currencyInput      = ref('')
@@ -236,6 +293,7 @@ const TYPE_COLOURS: Record<string, string> = {
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Shop</h1>
         <div class="flex gap-2">
+          <button @click="showCategoriesModal = true; openNewCategory()" class="btn-currencies">Categories</button>
           <button @click="openCurrencyModal" class="btn-currencies">Currencies</button>
           <button @click="openCreate" class="btn-add-primary">+ Add item</button>
         </div>
@@ -321,6 +379,7 @@ const TYPE_COLOURS: Record<string, string> = {
         <ShopItemForm
           :initial="isCreating ? null : (fullItem.data.value ?? null)"
           :currencies="currencies"
+          :categories="categories"
           :tags="tags"
           :releases="releases"
           :concerts="concerts"
@@ -373,6 +432,63 @@ const TYPE_COLOURS: Record<string, string> = {
           </div>
         </template>
       </template>
+    </AdminModal>
+
+    <!-- ── Categories modal ─────────────────────────────────────── -->
+    <AdminModal :open="showCategoriesModal" title="Shop categories" max-width="36rem" @close="showCategoriesModal = false">
+      <div class="cat-modal">
+        <div class="cat-list">
+          <div v-if="!categories.length" class="cat-empty">No categories yet. Create one below.</div>
+          <div
+            v-for="cat in categories"
+            :key="cat.id"
+            class="cat-row"
+            :class="{ 'cat-row--active': editingCategory?.id === cat.id }"
+            @click="openEditCategory(cat)"
+          >
+            <span class="cat-name">{{ cat.name }}</span>
+            <span v-if="cat.description" class="cat-desc">{{ cat.description }}</span>
+            <button type="button" class="cat-del" @click.stop="deleteCategory(cat.id)" title="Delete">✕</button>
+          </div>
+        </div>
+
+        <div class="cat-form-title">{{ editingCategory ? 'Edit category' : 'New category' }}</div>
+
+        <div class="field">
+          <label class="field-label">Name *</label>
+          <input
+            v-model="categoryForm.name"
+            type="text"
+            class="field-input"
+            :class="{ 'field-input--error': categoryFieldErrors.name }"
+            placeholder="e.g. Limited Editions"
+            @keydown.enter.prevent="saveCategory"
+          />
+          <span v-if="categoryFieldErrors.name?.[0]" class="field-error">{{ categoryFieldErrors.name[0] }}</span>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Description</label>
+          <input v-model="categoryForm.description" type="text" class="field-input" placeholder="Optional" />
+        </div>
+
+        <div class="field" style="max-width:8rem;">
+          <label class="field-label">Sort order</label>
+          <input v-model="categoryForm.sort_order" type="number" min="0" step="1" class="field-input" />
+        </div>
+
+        <div class="cat-actions">
+          <button v-if="editingCategory" type="button" @click="openNewCategory" class="btn-cancel-sm">New</button>
+          <button
+            type="button"
+            :disabled="categoriesQ.create.isPending.value || categoriesQ.update.isPending.value"
+            @click="saveCategory"
+            class="btn-save-sm"
+          >
+            {{ (categoriesQ.create.isPending.value || categoriesQ.update.isPending.value) ? 'Saving…' : (editingCategory ? 'Save changes' : 'Create') }}
+          </button>
+        </div>
+      </div>
     </AdminModal>
 
     <!-- ── Currency settings modal ─────────────────────────────── -->
@@ -541,4 +657,29 @@ const TYPE_COLOURS: Record<string, string> = {
 }
 .btn-save-sm:hover:not(:disabled) { background: #444444; }
 .btn-save-sm:disabled { opacity: 0.4; cursor: default; }
+
+/* Categories modal */
+.cat-modal { display: flex; flex-direction: column; gap: 0.875rem; }
+.cat-list { display: flex; flex-direction: column; gap: 0.1875rem; max-height: 12rem; overflow-y: auto; }
+.cat-empty { font-size: 0.78rem; color: #334155; padding: 0.25rem 0; }
+.cat-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.375rem 0.625rem; border-radius: 0.3rem;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background 100ms, border-color 100ms;
+}
+.cat-row:hover { background: #181818; }
+.cat-row--active { background: #1a1a1a; border-color: #333333; }
+.cat-name { font-size: 0.8125rem; font-weight: 500; color: #d0d0d0; flex: 1; min-width: 0; }
+.cat-desc { font-size: 0.72rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
+.cat-del {
+  color: #475569; background: none; border: none; cursor: pointer; font-size: 0.6rem;
+  padding: 0.2rem 0.3rem; border-radius: 0.2rem; flex-shrink: 0;
+}
+.cat-del:hover { color: #f87171; background: #1a0a0a; }
+.cat-form-title {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #475569; border-top: 1px solid #222222; padding-top: 0.875rem;
+}
+.cat-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.25rem; }
 </style>

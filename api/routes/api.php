@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ShopItemController;
+use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\NewsletterSubscriberController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\FacebookSyncController;
@@ -104,6 +105,7 @@ Route::get('/instruments', [InstrumentController::class, 'index'])->name('api.in
 
 Route::get('/shop', [ShopItemController::class, 'index'])->name('api.shop.index');
 Route::get('/shop/{shopItem}', [ShopItemController::class, 'show'])->name('api.shop.show');
+Route::get('/shop-categories', [ShopCategoryController::class, 'index'])->name('api.shop-categories.index');
 
 Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'subscribe'])
     ->middleware('throttle:5,1')
@@ -309,6 +311,10 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/shop/{shopItem}/photos/reorder', [ShopItemController::class, 'reorderPhotos'])->name('api.shop.photos.reorder');
         Route::get('/shop-currencies', [ShopItemController::class, 'getCurrencies'])->name('api.shop.currencies.get');
         Route::put('/shop-currencies', [ShopItemController::class, 'updateCurrencies'])->name('api.shop.currencies.update');
+
+        Route::post('/shop-categories', [ShopCategoryController::class, 'store'])->name('api.shop-categories.store');
+        Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');
+        Route::delete('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'destroy'])->name('api.shop-categories.destroy');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');

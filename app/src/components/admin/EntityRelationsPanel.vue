@@ -8,6 +8,7 @@ import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
 import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
+import type { ShopCategory } from '@/types/shop'
 
 defineProps<{
   concerts?: Concert[]
@@ -18,6 +19,7 @@ defineProps<{
   tags?: Tag[]
   musicVideos?: MusicVideo[]
   pressReleases?: PressReleaseSummary[]
+  shopCategories?: ShopCategory[]
 }>()
 
 const concertIds      = defineModel<number[]>('concertIds',      { default: () => [] })
@@ -27,17 +29,19 @@ const releaseIds      = defineModel<number[]>('releaseIds',      { default: () =
 const tourIds         = defineModel<number[]>('tourIds',         { default: () => [] })
 const tagIds          = defineModel<number[]>('tagIds',          { default: () => [] })
 const musicVideoIds   = defineModel<number[]>('musicVideoIds',   { default: () => [] })
-const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
+const pressReleaseIds  = defineModel<number[]>('pressReleaseIds',  { default: () => [] })
+const shopCategoryIds  = defineModel<number[]>('shopCategoryIds',  { default: () => [] })
 
 const expanded = reactive({
-  concerts:      false,
-  posts:         false,
-  albums:        false,
-  releases:      false,
-  tours:         false,
-  tags:          false,
-  musicVideos:   false,
-  pressReleases: false,
+  concerts:       false,
+  posts:          false,
+  albums:         false,
+  releases:       false,
+  tours:          false,
+  tags:           false,
+  musicVideos:    false,
+  pressReleases:  false,
+  shopCategories: false,
 })
 
 function toggle(current: number[], set: (v: number[]) => void, id: number) {
@@ -157,6 +161,19 @@ function label(text: string, count: number) {
         <label v-for="pr in pressReleases" :key="pr.id" class="checkbox-item">
           <input type="checkbox" :checked="pressReleaseIds.includes(pr.id)" @change="toggle(pressReleaseIds, val => pressReleaseIds = val, pr.id)" />
           <span>{{ pr.og_title ?? pr.url }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="shopCategories?.length" class="assoc-section">
+      <button type="button" class="assoc-toggle" @click="expanded.shopCategories = !expanded.shopCategories">
+        <span>{{ label('Categories', shopCategoryIds.length) }}</span>
+        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.shopCategories }">›</span>
+      </button>
+      <div v-if="expanded.shopCategories" class="assoc-body checkbox-list">
+        <label v-for="c in shopCategories" :key="c.id" class="checkbox-item">
+          <input type="checkbox" :checked="shopCategoryIds.includes(c.id)" @change="toggle(shopCategoryIds, val => shopCategoryIds = val, c.id)" />
+          <span>{{ c.name }}</span>
         </label>
       </div>
     </div>

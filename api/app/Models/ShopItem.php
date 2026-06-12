@@ -59,4 +59,9 @@ class ShopItem extends Model
     {
         return $this->belongsToMany(MusicVideo::class, 'shop_item_video');
     }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(ShopCategory::class, 'shop_item_category');
+    }
 }

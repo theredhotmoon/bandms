@@ -30,7 +30,7 @@ class ShopItemController extends Controller
     public function show(ShopItem $shopItem): ShopItemResource
     {
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
         return new ShopItemResource($shopItem);
     }
 
@@ -67,7 +67,7 @@ class ShopItemController extends Controller
 
         $this->syncRelations($request, $item);
 
-        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos']);
+        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
         return new ShopItemResource($item);
     }
 
@@ -96,7 +96,7 @@ class ShopItemController extends Controller
 
         $this->syncRelations($request, $shopItem);
 
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
         return new ShopItemResource($shopItem);
     }
 
@@ -210,5 +210,6 @@ class ShopItemController extends Controller
         $item->concerts()->sync($request->input('concert_ids', []));
         $item->posts()->sync($request->input('post_ids', []));
         $item->videos()->sync($request->input('video_ids', []));
+        $item->categories()->sync($request->input('category_ids', []));
     }
 }

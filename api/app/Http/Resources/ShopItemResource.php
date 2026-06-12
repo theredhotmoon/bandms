@@ -40,6 +40,7 @@ class ShopItemResource extends JsonResource
             'concert_ids'      => $this->concerts->pluck('id')->values(),
             'post_ids'         => $this->posts->pluck('id')->values(),
             'video_ids'        => $this->videos->pluck('id')->values(),
+            'category_ids'     => $this->categories->pluck('id')->values(),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
         ];
