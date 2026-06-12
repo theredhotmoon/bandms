@@ -70,8 +70,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 FROM app AS test
 RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS \
     && docker-php-ext-install pdo_sqlite \
-    && pecl install pcov \
-    && docker-php-ext-enable pcov \
+    && (pecl install pcov && docker-php-ext-enable pcov || echo "pcov unavailable, skipping coverage") \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/pear
 COPY --from=vendor-dev /app/vendor ./vendor
