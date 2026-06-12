@@ -27,6 +27,10 @@ class ShopItemSummaryResource extends JsonResource
             'cover_photo'      => ($first = $this->photos->first())
                 ? '/storage/' . $first->image
                 : null,
+            'categories'       => $this->categories->map(fn ($c) => [
+                'id'   => $c->id,
+                'name' => $c->name,
+            ])->values(),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
         ];

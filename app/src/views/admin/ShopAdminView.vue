@@ -318,6 +318,7 @@ const TYPE_COLOURS: Record<string, string> = {
                 <th class="th" style="width:10rem;">Price</th>
                 <th class="th" style="width:6rem;">Status</th>
                 <SortHeader label="Stock" sort-key="stock_quantity" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
+                <th class="th" style="width:12rem;">Categories</th>
                 <th class="th text-right">Actions</th>
               </tr>
             </thead>
@@ -347,6 +348,10 @@ const TYPE_COLOURS: Record<string, string> = {
                 </td>
                 <td class="td" style="color:#64748b;">
                   {{ item.stock_quantity !== null ? item.stock_quantity : '∞' }}
+                </td>
+                <td class="td">
+                  <span v-if="!item.categories.length" style="color:#334155;">—</span>
+                  <span v-for="cat in item.categories" :key="cat.id" class="cat-chip">{{ cat.name }}</span>
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(item)" class="btn-edit">Edit</button>
@@ -570,6 +575,12 @@ const TYPE_COLOURS: Record<string, string> = {
 .price-chip {
   display: inline-block; font-size: 0.72rem; color: #64748b;
   margin-right: 0.25rem; white-space: nowrap;
+}
+
+.cat-chip {
+  display: inline-block; font-size: 0.68rem; font-weight: 500;
+  padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin: 0.1rem 0.2rem 0.1rem 0;
+  background: #1e1e1e; border: 1px solid #2a2a2a; color: #94a3b8; white-space: nowrap;
 }
 
 .status-badge {

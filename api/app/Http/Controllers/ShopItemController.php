@@ -38,7 +38,7 @@ class ShopItemController extends Controller
 
     public function adminIndex(): ResourceCollection
     {
-        $items = ShopItem::with(['prices', 'photos'])
+        $items = ShopItem::with(['prices', 'photos', 'categories'])
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->get();

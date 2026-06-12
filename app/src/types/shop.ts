@@ -42,6 +42,7 @@ export interface ShopItemSummary {
   sort_order: number
   prices: ShopItemPrice[]
   cover_photo: string | null
+  categories: { id: number; name: string }[]
   created_at: string
   updated_at: string
 }
