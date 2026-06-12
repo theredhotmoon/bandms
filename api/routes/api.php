@@ -111,6 +111,14 @@ Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'su
     ->middleware('throttle:5,1')
     ->name('api.newsletter.subscribe');
 
+Route::get('/newsletter/confirm/{token}', [NewsletterSubscriberController::class, 'confirm'])
+    ->middleware('throttle:20,1')
+    ->name('api.newsletter.confirm');
+
+Route::get('/newsletter/unsubscribe/{token}', [NewsletterSubscriberController::class, 'unsubscribe'])
+    ->middleware('throttle:20,1')
+    ->name('api.newsletter.unsubscribe');
+
 Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
 Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
 

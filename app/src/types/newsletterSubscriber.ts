@@ -4,4 +4,5 @@ export interface NewsletterSubscriber {
   name: string | null
   source: string | null
   subscribed_at: string
+  confirmed_at: string | null
 }

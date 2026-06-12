@@ -10,6 +10,7 @@ export async function subscribeToNewsletter(payload: {
   email: string
   name?: string
   source?: string
+  website?: string
 }): Promise<void> {
   const res = await fetch(`${API_BASE}/api/newsletter/subscribe`, {
     method: 'POST',
@@ -19,6 +20,24 @@ export async function subscribeToNewsletter(payload: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { message?: string }
     throw new Error(err.message ?? 'Failed to subscribe.')
+  }
+}
+
+export async function confirmNewsletterSubscription(token: string): Promise<void> {
+  if (!token || typeof token !== 'string') throw new Error('Invalid token.')
+  const res = await fetch(`${API_BASE}/api/newsletter/confirm/${encodeURIComponent(token)}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string }
+    throw new Error(err.message ?? 'Confirmation failed.')
+  }
+}
+
+export async function unsubscribeFromNewsletter(token: string): Promise<void> {
+  if (!token || typeof token !== 'string') throw new Error('Invalid token.')
+  const res = await fetch(`${API_BASE}/api/newsletter/unsubscribe/${encodeURIComponent(token)}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string }
+    throw new Error(err.message ?? 'Unsubscribe failed.')
   }
 }
 

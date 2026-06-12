@@ -14,9 +14,10 @@ const props = withDefaults(defineProps<{
   compact:  false,
 })
 
-const email = ref('')
-const name  = ref('')
-const state = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const email    = ref('')
+const name     = ref('')
+const honeypot = ref('')  // hidden — bots fill this, humans don't
+const state    = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
 const errorMsg = ref('')
 
 async function submit() {
@@ -25,9 +26,10 @@ async function submit() {
   errorMsg.value = ''
   try {
     await subscribeToNewsletter({
-      email:  email.value.trim(),
-      name:   name.value.trim() || undefined,
-      source: props.source,
+      email:   email.value.trim(),
+      name:    name.value.trim() || undefined,
+      source:  props.source,
+      website: honeypot.value,
     })
     state.value = 'success'
   } catch (e) {
@@ -43,7 +45,7 @@ async function submit() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <span>You're subscribed — thanks!</span>
+      <span>Check your inbox to confirm your subscription.</span>
     </div>
 
     <template v-else>
@@ -54,6 +56,17 @@ async function submit() {
       </div>
 
       <form class="nl-form" @submit.prevent="submit">
+        <!-- Honeypot: hidden from real users, bots fill it -->
+        <input
+          v-model="honeypot"
+          type="text"
+          name="website"
+          tabindex="-1"
+          autocomplete="off"
+          aria-hidden="true"
+          style="display:none"
+        />
+
         <div v-if="!compact" class="nl-field">
           <input
             v-model="name"

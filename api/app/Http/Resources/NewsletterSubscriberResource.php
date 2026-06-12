@@ -15,6 +15,7 @@ class NewsletterSubscriberResource extends JsonResource
             'name'          => $this->name,
             'source'        => $this->source,
             'subscribed_at' => $this->subscribed_at?->toIso8601String(),
+            'confirmed_at'  => $this->confirmed_at?->toIso8601String(),
         ];
     }
 }
