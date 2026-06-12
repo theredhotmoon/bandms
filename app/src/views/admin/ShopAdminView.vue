@@ -350,8 +350,8 @@ const TYPE_COLOURS: Record<string, string> = {
                   {{ item.stock_quantity !== null ? item.stock_quantity : '∞' }}
                 </td>
                 <td class="td">
-                  <span v-if="!item.categories.length" style="color:#334155;">—</span>
-                  <span v-for="cat in item.categories" :key="cat.id" class="cat-chip">{{ cat.name }}</span>
+                  <span v-if="!item.categories?.length" style="color:#334155;">—</span>
+                  <span v-for="cat in item.categories ?? []" :key="cat.id" class="cat-chip">{{ cat.name }}</span>
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(item)" class="btn-edit">Edit</button>
