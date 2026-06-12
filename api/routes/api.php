@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
+use App\Http\Controllers\ShopItemVariantController;
 use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\NewsletterSubscriberController;
 use App\Http\Controllers\AlbumController;
@@ -104,8 +107,13 @@ Route::get('/music-videos', [MusicVideoController::class, 'index'])->name('api.m
 Route::get('/instruments', [InstrumentController::class, 'index'])->name('api.instruments.index');
 
 Route::get('/shop', [ShopItemController::class, 'index'])->name('api.shop.index');
+Route::get('/shop/by-slug/{slug}', [ShopItemController::class, 'showBySlug'])->name('api.shop.show-by-slug');
 Route::get('/shop/{shopItem}', [ShopItemController::class, 'show'])->name('api.shop.show');
 Route::get('/shop-categories', [ShopCategoryController::class, 'index'])->name('api.shop-categories.index');
+
+Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('throttle:20,1')->name('api.checkout');
+Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
+Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
 
 Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'subscribe'])
     ->middleware('throttle:5,1')
@@ -319,6 +327,11 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/shop/{shopItem}/photos/reorder', [ShopItemController::class, 'reorderPhotos'])->name('api.shop.photos.reorder');
         Route::get('/shop-currencies', [ShopItemController::class, 'getCurrencies'])->name('api.shop.currencies.get');
         Route::put('/shop-currencies', [ShopItemController::class, 'updateCurrencies'])->name('api.shop.currencies.update');
+
+        Route::get('/shop/{shopItem}/variants', [ShopItemVariantController::class, 'index'])->name('api.shop.variants.index');
+        Route::post('/shop/{shopItem}/variants', [ShopItemVariantController::class, 'store'])->name('api.shop.variants.store');
+        Route::put('/shop/{shopItem}/variants/{variant}', [ShopItemVariantController::class, 'update'])->name('api.shop.variants.update');
+        Route::delete('/shop/{shopItem}/variants/{variant}', [ShopItemVariantController::class, 'destroy'])->name('api.shop.variants.destroy');
 
         Route::post('/shop-categories', [ShopCategoryController::class, 'store'])->name('api.shop-categories.store');
         Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');

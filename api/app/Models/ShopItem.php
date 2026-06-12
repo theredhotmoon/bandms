@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\ShopItemVariant;
 
 class ShopItem extends Model
 {
@@ -64,5 +65,10 @@ class ShopItem extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(ShopCategory::class, 'shop_item_category');
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ShopItemVariant::class)->orderBy('sort_order');
     }
 }

@@ -10,8 +10,12 @@ import {
   reorderShopPhotos,
   fetchShopCurrencies,
   updateShopCurrencies,
+  createShopVariant,
+  updateShopVariant,
+  deleteShopVariant,
 } from '@/api/shop'
 import type { ShopItemPayload } from '@/types/shop'
+import type { ShopItemVariantPayload } from '@/api/shop'
 import { useAuth } from './useAuth'
 
 export function useShop() {
@@ -70,5 +74,23 @@ export function useShop() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ckk }),
   })
 
-  return { query, currenciesQuery, create, update, remove, addPhoto, removePhoto, reorderPhotos, saveCurrencies }
+  const addVariant = useMutation({
+    mutationFn: ({ itemId, payload }: { itemId: number; payload: ShopItemVariantPayload }) =>
+      createShopVariant(token.value!, itemId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+  })
+
+  const editVariant = useMutation({
+    mutationFn: ({ itemId, variantId, payload }: { itemId: number; variantId: number; payload: ShopItemVariantPayload }) =>
+      updateShopVariant(token.value!, itemId, variantId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+  })
+
+  const removeVariant = useMutation({
+    mutationFn: ({ itemId, variantId }: { itemId: number; variantId: number }) =>
+      deleteShopVariant(token.value!, itemId, variantId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+  })
+
+  return { query, currenciesQuery, create, update, remove, addPhoto, removePhoto, reorderPhotos, saveCurrencies, addVariant, editVariant, removeVariant }
 }
