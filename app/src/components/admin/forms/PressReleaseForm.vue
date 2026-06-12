@@ -48,6 +48,12 @@ const release_ids  = ref<number[]>([])
 const tour_ids     = ref<number[]>([])
 const tag_ids      = ref<number[]>([])
 
+// ── Meta fetch ────────────────────────────────────────────────
+const fetching     = ref(false)
+const fetchError   = ref('')
+const metaPreview  = ref<PressReleaseMeta | null>(null)
+const previewImage = ref<string | null>(null)
+
 watch(
   () => props.initial,
   (val) => {
@@ -69,12 +75,6 @@ watch(
   },
   { immediate: true },
 )
-
-// ── Meta fetch ────────────────────────────────────────────────
-const fetching     = ref(false)
-const fetchError   = ref('')
-const metaPreview  = ref<PressReleaseMeta | null>(null)
-const previewImage = ref<string | null>(null)
 
 async function fetchMeta() {
   if (!form.url || !token.value) return

@@ -1,0 +1,11 @@
+# No domain yet — serving over HTTP on the server IP.
+#
+# To enable HTTPS, replace ":80" with your domain name:
+#   yourdomain.com {
+#       reverse_proxy frontend:80
+#   }
+# Caddy will automatically obtain a Let's Encrypt certificate.
+
+:80 {
+    reverse_proxy frontend:80
+}
