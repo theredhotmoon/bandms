@@ -17,6 +17,20 @@ Ideas and features planned for future development:
 
 ---
 
+## [Unreleased] — 2026-06-12
+
+### Added
+- **Newsletter double opt-in** — new subscribers receive a confirmation email with a unique link; `confirmed_at` is only set after clicking it. Pending subscribers show an amber "Pending" badge in the admin table; confirmed subscribers show green "Confirmed". CSV export includes the status column.
+- **Newsletter public pages** — dedicated `/newsletter` signup page and `/newsletter/confirm/:token` / `/newsletter/unsubscribe/:token` pages that handle email confirmation and one-click unsubscribe directly from email links.
+- **Newsletter spam protection** — four layers: (1) honeypot hidden field silently discards bot submissions; (2) MX/DNS record check rejects addresses whose domain has no mail servers; (3) API rate limit of 5 requests/min/IP on the subscribe endpoint; (4) double opt-in prevents fake or mistyped addresses from being activated.
+- **Unsubscribe link in confirmation emails** — every confirmation email includes a one-click unsubscribe link backed by a per-subscriber 64-char random token.
+
+### Changed
+- **Newsletter subscribe success message** updated from "You're subscribed — thanks!" to "Check your inbox to confirm your subscription." to reflect the new opt-in flow.
+- **Email addresses normalised to lowercase** on subscribe to prevent duplicate subscriptions from case variations (e.g. `Fan@Music.com` and `fan@music.com` are now treated as the same address).
+
+---
+
 ## [Unreleased] — 2026-06-11
 
 ### Added

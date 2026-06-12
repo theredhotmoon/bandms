@@ -209,7 +209,7 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('more') && !openGroups.has('more')" class="active-dot" />
-              More
+              Settings
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('more') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>

@@ -241,6 +241,23 @@ const router = createRouter({
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
+      path: '/newsletter',
+      name: 'newsletter',
+      component: () => import('@/views/NewsletterView.vue'),
+    },
+    {
+      path: '/newsletter/confirm/:token',
+      name: 'newsletter-confirm',
+      component: () => import('@/views/NewsletterActionView.vue'),
+      props: { action: 'confirm' },
+    },
+    {
+      path: '/newsletter/unsubscribe/:token',
+      name: 'newsletter-unsubscribe',
+      component: () => import('@/views/NewsletterActionView.vue'),
+      props: { action: 'unsubscribe' },
+    },
+    {
       path: '/admin/newsletter',
       name: 'admin-newsletter',
       component: () => import('@/views/admin/NewsletterAdminView.vue'),

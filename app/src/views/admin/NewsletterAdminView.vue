@@ -40,9 +40,9 @@ function formatDate(iso: string) {
 }
 
 function exportCsv() {
-  const rows = [['Email', 'Name', 'Source', 'Subscribed at']]
+  const rows = [['Email', 'Name', 'Source', 'Subscribed at', 'Status']]
   for (const s of subscribers.value) {
-    rows.push([s.email, s.name ?? '', s.source ?? '', formatDate(s.subscribed_at)])
+    rows.push([s.email, s.name ?? '', s.source ?? '', formatDate(s.subscribed_at), s.confirmed_at ? 'Confirmed' : 'Pending'])
   }
   const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -93,6 +93,7 @@ function exportCsv() {
               <th>Name</th>
               <th>Source</th>
               <th>Subscribed</th>
+              <th>Status</th>
               <th></th>
             </tr>
           </thead>
@@ -104,6 +105,11 @@ function exportCsv() {
                 <span class="source-badge">{{ s.source ?? 'website' }}</span>
               </td>
               <td class="cell-secondary">{{ formatDate(s.subscribed_at) }}</td>
+              <td class="cell-secondary">
+                <span class="status-badge" :class="s.confirmed_at ? 'status-badge--confirmed' : 'status-badge--pending'">
+                  {{ s.confirmed_at ? 'Confirmed' : 'Pending' }}
+                </span>
+              </td>
               <td class="cell-action">
                 <template v-if="confirmId === s.id">
                   <span class="confirm-text">Remove?</span>
@@ -197,6 +203,14 @@ function exportCsv() {
   font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
   background: #1f1f1f; color: #64748b;
 }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem; border-radius: 0.25rem;
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.status-badge--confirmed { background: #052e16; color: #4ade80; }
+.status-badge--pending   { background: #1c1107; color: #fbbf24; }
 
 .confirm-text  { font-size: 0.78rem; color: #94a3b8; margin-right: 0.375rem; }
 .btn-confirm-yes {
