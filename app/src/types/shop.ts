@@ -29,6 +29,14 @@ export interface ShopItemPhoto {
   sort_order: number
 }
 
+export interface ShopItemVariant {
+  id: number
+  name: string
+  value: string
+  stock_quantity: number | null
+  sort_order: number
+}
+
 export interface ShopItemSummary {
   id: number
   name: string
@@ -43,6 +51,7 @@ export interface ShopItemSummary {
   prices: ShopItemPrice[]
   cover_photo: string | null
   categories: { id: number; name: string }[]
+  variants: ShopItemVariant[]
   created_at: string
   updated_at: string
 }

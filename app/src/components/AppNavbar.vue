@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useBandProfile } from '@/composables/useBandProfile'
+import CartBadge from '@/components/merch/CartBadge.vue'
+import CartDrawer from '@/components/merch/CartDrawer.vue'
 
 const { isLoggedIn, logout } = useAuth()
 const router = useRouter()
@@ -28,6 +30,7 @@ const navLinks = [
   { to: '/releases', label: 'Releases' },
   { to: '/videos',   label: 'Videos' },
   { to: '/photos',   label: 'Galleries' },
+  { to: '/merch',    label: 'Merch' },
   { to: '/contact',  label: 'Contact' },
 ]
 
@@ -76,6 +79,7 @@ async function handleLogout() {
 
     <!-- Right actions (desktop) -->
     <div class="right-actions">
+      <CartBadge />
       <RouterLink v-if="isLoggedIn" to="/admin" class="btn-admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -127,6 +131,8 @@ async function handleLogout() {
   <Transition name="fade">
     <div v-if="mobileOpen" class="backdrop" @click="mobileOpen = false" />
   </Transition>
+
+  <CartDrawer />
 </template>
 
 <style scoped>

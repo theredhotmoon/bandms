@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\ShopItemVariantResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,7 @@ class ShopItemSummaryResource extends JsonResource
                 'id'   => $c->id,
                 'name' => $c->name,
             ])->values(),
+            'variants'         => ShopItemVariantResource::collection($this->whenLoaded('variants')),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
         ];

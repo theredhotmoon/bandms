@@ -18,7 +18,7 @@ class ShopItemController extends Controller
 
     public function index(): ResourceCollection
     {
-        $items = ShopItem::with(['prices', 'photos'])
+        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants'])
             ->where('is_available', true)
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
@@ -30,7 +30,15 @@ class ShopItemController extends Controller
     public function show(ShopItem $shopItem): ShopItemResource
     {
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants']);
+        return new ShopItemResource($shopItem);
+    }
+
+    public function showBySlug(string $slug): ShopItemResource
+    {
+        $shopItem = ShopItem::where('slug', $slug)->firstOrFail();
+        abort_if(! $shopItem->is_available, 404);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants']);
         return new ShopItemResource($shopItem);
     }
 
@@ -38,7 +46,7 @@ class ShopItemController extends Controller
 
     public function adminIndex(): ResourceCollection
     {
-        $items = ShopItem::with(['prices', 'photos', 'categories'])
+        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants'])
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->get();

@@ -383,6 +383,7 @@ const TYPE_COLOURS: Record<string, string> = {
       <template v-else>
         <ShopItemForm
           :initial="isCreating ? null : (fullItem.data.value ?? null)"
+          :item-id="editingId"
           :currencies="currencies"
           :categories="categories"
           :tags="tags"

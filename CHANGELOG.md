@@ -17,6 +17,20 @@ Ideas and features planned for future development:
 
 ---
 
+## [Unreleased] — 2026-06-13
+
+### Added
+- **Public merch store** — new `/merch` catalog page with category chip filter and a responsive product grid; `/merch/:slug` detail page with photo gallery (thumbnail strip), variant selectors (size, colour, etc.), and an "Add to cart" button. `/shop` and `/shop/:slug` redirect to the equivalent merch URLs.
+- **Stripe Checkout integration** — guest checkout (no account required): customer fills a shipping form, clicks "Pay", and is redirected to Stripe's hosted payment page. On success the order is marked paid via a signed webhook; on cancel the cart is preserved.
+- **Shopping cart** — persistent Pinia store backed by `localStorage`. CartBadge with live item count in the navbar; slide-in CartDrawer; full `/cart` page with editable quantities and per-currency subtotal. Cart is cleared only after the order is confirmed on the server.
+- **Product variants** — shop items can have size/colour variants with per-variant stock tracking. Sold-out variants are shown disabled with strikethrough in the selector. Admin can add, edit, and delete variants inline in the shop item form (only available after the item is saved).
+- **Order schema** — new `orders`, `order_items`, and `shop_item_variants` tables. Orders use a UUID as the public identifier; customer PII is stored server-side only and is never returned via the public API.
+- **"Merch" nav link** — added to the top navigation bar (desktop and mobile drawer).
+
+### Changed
+- **Shop item API** now eager-loads variants in all list and detail responses; added `GET /api/shop/by-slug/:slug` endpoint for frontend slug-based routing.
+- **Order public API** strips PII (`email`, `name`, `shipping_address`) from the `GET /api/orders/:uuid` response — only status, items, and total are returned.
+
 ## [Unreleased] — 2026-06-12
 
 ### Added

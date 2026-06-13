@@ -90,6 +90,46 @@ const router = createRouter({
       redirect: () => ({ name: 'photos' }),
     },
 
+    // ── Merch / shop ──────────────────────────────────────────────────
+    {
+      path: '/merch',
+      name: 'merch',
+      component: () => import('@/views/MerchView.vue'),
+    },
+    {
+      path: '/merch/success',
+      name: 'merch-success',
+      component: () => import('@/views/MerchSuccessView.vue'),
+    },
+    {
+      path: '/merch/cancel',
+      name: 'merch-cancel',
+      component: () => import('@/views/MerchCancelView.vue'),
+    },
+    {
+      path: '/merch/:slug',
+      name: 'merch-item',
+      component: () => import('@/views/MerchItemView.vue'),
+    },
+    {
+      path: '/cart',
+      name: 'cart',
+      component: () => import('@/views/CartView.vue'),
+    },
+    {
+      path: '/checkout',
+      name: 'checkout',
+      component: () => import('@/views/CheckoutView.vue'),
+    },
+    {
+      path: '/shop',
+      redirect: { name: 'merch' },
+    },
+    {
+      path: '/shop/:slug',
+      redirect: (to) => ({ name: 'merch-item', params: { slug: to.params.slug } }),
+    },
+
     // ── Admin panel (requires authentication) ──────────────────────────
     {
       path: '/admin',

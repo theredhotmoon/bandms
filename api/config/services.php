@@ -49,4 +49,10 @@ return [
         'api_key' => env('SETLISTFM_API_KEY'),
     ],
 
+    'stripe' => [
+        'secret'       => env('STRIPE_SECRET_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'frontend_url' => env('APP_FRONTEND_URL', 'http://localhost:5173'),
+    ],
+
 ];
