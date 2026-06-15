@@ -18,6 +18,11 @@ class PostResource extends JsonResource
             'image'        => $this->image,
             'published_at' => $this->published_at,
             'event_date'   => $this->event_date?->format('Y-m-d'),
+            'translations' => [
+                'title'   => $this->getTranslations('title'),
+                'intro'   => $this->getTranslations('intro'),
+                'content' => $this->getTranslations('content'),
+            ],
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'links'        => PostLinkResource::collection($this->whenLoaded('links')),
             'concerts'     => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [

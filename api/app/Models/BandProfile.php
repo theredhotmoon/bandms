@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Translatable\HasTranslations;
 
 class BandProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslations;
+
+    public array $translatable = ['bio_short', 'bio_medium', 'bio_long', 'bio_full', 'artistic_statement'];
 
     protected $fillable = [
         'name', 'bio_short', 'bio_medium', 'bio_long', 'bio_full',

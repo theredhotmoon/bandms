@@ -9,17 +9,20 @@
       content="
         default-src 'self';
         script-src 'self';
-        style-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         connect-src 'self' ws://localhost:* wss://localhost:* https://api.stripe.com;
-        img-src 'self' data: http://localhost http://localhost:* https://*.tile.openstreetmap.org https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com;
-        font-src 'self';
+        img-src 'self' data: blob: http://localhost http://localhost:* https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com;
+        font-src 'self' https://fonts.gstatic.com;
         frame-src https://www.youtube.com;
         object-src 'none';
         base-uri 'self';
         frame-ancestors 'none';
       "
     />
-    <title>App</title>
+    <title>Skanking Storks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="app"></div>

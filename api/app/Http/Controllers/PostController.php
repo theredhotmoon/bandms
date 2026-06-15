@@ -40,9 +40,15 @@ class PostController extends Controller
     public function store(Request $request): PostResource
     {
         $data = $request->validate([
-            'title'               => 'required|string|max:255',
-            'intro'               => 'nullable|string|max:1000',
-            'content'             => 'nullable|string',
+            'title'               => 'required',
+            'title.en'            => 'nullable|string|max:255',
+            'title.pl'            => 'nullable|string|max:255',
+            'intro'               => 'nullable',
+            'intro.en'            => 'nullable|string|max:1000',
+            'intro.pl'            => 'nullable|string|max:1000',
+            'content'             => 'nullable',
+            'content.en'          => 'nullable|string',
+            'content.pl'          => 'nullable|string',
             'image'               => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'        => 'nullable|date',
             'event_date'          => 'nullable|date',
@@ -66,9 +72,13 @@ class PostController extends Controller
             'links.*.label'       => 'nullable|string|max:255',
         ]);
 
+        $titleForSlug = is_array($data['title'])
+            ? ($data['title']['en'] ?? reset($data['title']) ?? 'post')
+            : $data['title'];
+
         $post = Post::create([
             'title'        => $data['title'],
-            'slug'         => Post::generateSlug($data['title']),
+            'slug'         => Post::generateSlug($titleForSlug),
             'intro'        => $data['intro'] ?? null,
             'content'      => $data['content'] ?? null,
             'image'        => $data['image'] ?? null,
@@ -101,9 +111,15 @@ class PostController extends Controller
     public function update(Request $request, Post $post): PostResource
     {
         $data = $request->validate([
-            'title'               => 'sometimes|required|string|max:255',
-            'intro'               => 'nullable|string|max:1000',
-            'content'             => 'nullable|string',
+            'title'               => 'sometimes|required',
+            'title.en'            => 'nullable|string|max:255',
+            'title.pl'            => 'nullable|string|max:255',
+            'intro'               => 'nullable',
+            'intro.en'            => 'nullable|string|max:1000',
+            'intro.pl'            => 'nullable|string|max:1000',
+            'content'             => 'nullable',
+            'content.en'          => 'nullable|string',
+            'content.pl'          => 'nullable|string',
             'image'               => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'        => 'nullable|date',
             'event_date'          => 'nullable|date',

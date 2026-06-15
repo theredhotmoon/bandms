@@ -10,9 +10,9 @@
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/band-profile` | Full band profile with members & social links |
+| `GET /api/band-profile` | Full band profile with members, social links, and logos |
 | `GET /api/band-profile/epk` | EPK snapshot (published or live-built) |
-| `GET /api/band-profile/calendar/availability` | Booking availability calendar |
+| `GET /api/band-profile/calendar/availability?date=YYYY-MM-DD` | Check band availability for a given date |
 | `GET /api/band-profile/members` | All band members (current first, ordered by sort_order) |
 | `GET /api/band-profile/social-links` | Band's social media links |
 
@@ -27,6 +27,10 @@ stat_spotify_monthly, stat_instagram_followers, stat_tiktok_followers,
 stat_youtube_subscribers, stat_facebook_followers, facebook_likes, facebook_likes_synced_at,
 tech_rider_url (PDF), stage_plot_url (image),
 epk_release_id, epk_album_id,
+logo_url (default logo, convenience shortcut),
+epk_logo_id, tech_rider_logo_id, website_logo_id,
+logos[]: { id, url, original_name, mime_type, file_size, width, height, is_vector,
+           label, variant, background, is_default, version_label, notes, sort_order },
 members[], social_links[]
 ```
 
@@ -34,13 +38,22 @@ members[], social_links[]
 ```
 id, first_name, last_name, nickname, bio, photo (URL), role,
 is_current (bool), joined_at, quit_at, sort_order, calendar_url,
-can_login (bool),
-instruments[]: { id, name, category }
-social_links[]: { id, platform, url }
+can_login (bool), main_instrument_id,
+main_instrument: { id, name, category, stage_plot_type },
+instruments[]: { id, name, category, stage_plot_type },
+social_links[]: { id, platform, url },
 default_gear (JSON)
 ```
 
 **Social link platforms:** `spotify | instagram | facebook | youtube | tiktok | bandcamp | soundcloud | twitter | website`
+
+**Calendar availability response:**
+```
+data: {
+  date (YYYY-MM-DD), available (bool), total_members, busy_count,
+  busy_members[]: { id, name, role }
+}
+```
 
 ---
 
@@ -56,11 +69,19 @@ default_gear (JSON)
 ```
 id, date (Y-m-d), doors_open (H:i), sound_check_time (H:i), start_time (H:i),
 own_sort_order, description (max 2000), poster_url,
-venue: { id, name },
+venue: { id, name, street, street_number, city, postcode, additional_info, latitude, longitude },
 bands[]: { id, name, website, sort_order, play_time },
 tags[]: { id, name, slug },
 links[]: { id, label, url },
 created_at, updated_at
+```
+
+**Public setlist fields:**
+```
+id, name, concert_id,
+items[]: { id, position, is_encore, transition, override_duration_sec,
+           song: { id, title, duration_sec } },
+total_duration_sec
 ```
 
 ---
@@ -72,7 +93,9 @@ created_at, updated_at
 | `GET /api/posts` | `?search=query&tag_id=5` (pagination optional) |
 | `GET /api/posts/{id}` | Full post with all relations |
 
-**Post fields:**
+**Post list fields (summary):** `id, title, slug, intro, excerpt (280 chars), published_at, event_date, tags[]`
+
+**Post detail fields:**
 ```
 id, title, slug, intro, content, image (base64),
 published_at, event_date,
@@ -89,16 +112,19 @@ concerts[], albums[], releases[], tours[], music_videos[], press_releases[]
 | `GET /api/releases` | Summary list ordered by release_date desc |
 | `GET /api/releases/{id}` | Full release with tracks, links, photos |
 
-**Release fields:**
+**Release list fields (summary):**
 ```
-id, title, type (LP|EP|single|compilation),
-release_date (Y-m-d), description, cover_image (path),
-is_upcoming (bool), presave_url,
-links[]: { platform (spotify|apple_music|bandcamp|youtube|instagram), url },
+id, title, type (LP|EP|single|compilation), release_date, cover_image, is_upcoming, presave_url,
+links[]: { platform, url }
+```
+
+**Release detail adds:**
+```
+description, label_name,
 tracks[]: {
   id, title, duration, lyrics, sort_order,
   bpm, musical_key, mood_tags, isrc, explicit (bool), stems_available (bool),
-  sync_placements, links[]
+  sync_placements, links[]: { platform, url }
 },
 photos[]: { id, image_url, sort_order, caption }
 ```
@@ -109,7 +135,7 @@ photos[]: { id, image_url, sort_order, caption }
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/albums` | List ordered by taken_at desc |
+| `GET /api/albums` | List ordered by taken_at desc (includes all photos) |
 | `GET /api/albums/{id}` | Full album with all photos |
 
 **Album fields:**
@@ -131,7 +157,7 @@ photo_count, cover_url
 | `GET /api/photos` | All photos ordered by sort_order |
 | `GET /api/photos/{id}` | Single photo with album |
 
-**Photo fields:** `id, image_url, sort_order, caption, epk_featured (bool), album: { id, title }`
+**Photo fields:** `id, album_id, image_url, sort_order, caption, epk_featured (bool), created_at, updated_at`
 
 ---
 
@@ -146,7 +172,7 @@ photo_count, cover_url
 id, title, video_url,
 published_at, sort_order,
 og_title, og_image (thumbnail), og_site_name (provider), channel_name,
-view_count, views_synced_at
+view_count, duration (formatted string e.g. "4:33"), views_synced_at
 ```
 
 ---
@@ -180,20 +206,21 @@ concerts[]: { id, date, venue_name }
 id, url (external link),
 og_title, og_description, og_image, og_site_name,
 published_at, featured (bool),
+tags[]: { id, name, slug },
 concerts_count, posts_count, albums_count, releases_count, tours_count, authors_count,
-concerts[], posts[], albums[], releases[], tours[], tags[]
+concerts[], posts[], albums[], releases[], tours[]   (detail only)
 ```
 
 ---
 
-### Tags & Instruments & Authors
+### Tags, Instruments & Authors
 
 ```
 GET /api/tags           → [{ id, name, slug }]
-GET /api/tags/{id}      → single tag
-GET /api/instruments    → [{ id, name, category }] — ordered by category, name
-GET /api/authors        → [{ id, name, email, facebook, instagram, ... }]
-GET /api/authors/{id}   → single author
+GET /api/tags/{id}      → single tag with full fields
+GET /api/instruments    → [{ id, name, category, stage_plot_type }] — ordered by category, name
+GET /api/authors        → [{ id, name, email, facebook, instagram, whatsapp, phone, notes }]
+GET /api/authors/{id}   → + press_releases[], concerts[], tours[], photos[]
 ```
 
 ---
@@ -201,12 +228,73 @@ GET /api/authors/{id}   → single author
 ### Tech Rider (Active — public)
 
 ```
-GET /api/tech-riders/active → {
-  id, name, is_active,
-  gig_lineup (JSON),
-  stage_plot_data (JSON),
-  inputs[], monitors[], backline[], pa_foh, power, rf_wireless[]
+GET /api/tech-riders/active        → active rider for press/bookers
+GET /api/public/rider/{token}      → rider by share token (QR code access, no auth)
+```
+
+**Tech rider fields:**
+```
+id, name, is_active, public_token,
+concert: { id, date, venue },
+gig_lineup (JSON), stage_plot_data (JSON),
+inputs[], monitors[], backline[], pa_foh, power, rf_wireless[]
+```
+
+---
+
+### Shop / Merch
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/shop` | Public item list (available items only) |
+| `GET /api/shop/{id}` | Item detail with full relations |
+| `GET /api/shop/by-slug/{slug}` | Item detail by URL slug |
+| `GET /api/shop-categories` | All categories |
+| `POST /api/checkout` | Create Stripe checkout session |
+| `GET /api/orders/{uuid}` | Order status by UUID |
+
+**Shop item summary (list) fields:**
+```
+id, name, slug, type (record|apparel|accessory|ticket|bundle|other),
+is_available, is_presale, presale_ships_at (Y-m-d),
+stock_quantity, purchase_url, sort_order,
+prices[]: { currency (ISO 4217), amount (float) },
+cover_photo (URL of first photo),
+categories[]: { id, name },
+variants[]: { id, name, value, stock_quantity, sort_order },
+created_at, updated_at
+```
+
+**Shop item detail adds:**
+```
+description,
+photos[]: { id, url, alt_text, sort_order },
+tags[]: { id, name, slug },
+release_ids[], concert_ids[], post_ids[], video_ids[], category_ids[]
+```
+
+**Shop category fields:** `id, name, slug, description, sort_order`
+
+**Checkout request body:**
+```json
+{
+  "currency": "PLN",
+  "customer": { "name": "...", "email": "...",
+    "shipping_address": { "line1", "line2", "city", "postal_code", "country" }
+  },
+  "items": [{ "shop_item_id", "shop_item_variant_id", "quantity" }]
 }
+```
+
+**Checkout response:** `{ checkout_url, order_uuid }`
+
+**Order fields:**
+```
+id, uuid, email, name,
+status (pending|paid|shipped|cancelled), currency, total (float),
+shipping_address: { line1, line2, city, postal_code, country },
+items[]: { id, shop_item_id, shop_item_variant_id, name, variant_label, price, currency, quantity },
+created_at
 ```
 
 ---
@@ -214,11 +302,13 @@ GET /api/tech-riders/active → {
 ### Auth & Newsletter
 
 ```
-POST /api/auth/login        → { token, user }     (rate-limited: 10/min)
-POST /api/auth/logout       → { message }          (requires auth)
-POST /api/newsletter/subscribe → success/409        (rate-limited: 5/min)
+POST /api/auth/login                   → { token, user }          (rate-limited: 10/min)
+POST /api/auth/logout                  → { message }               (requires auth)
+POST /api/newsletter/subscribe         → success/409               (rate-limited: 5/min)
   Body: { email*, name, source }
-GET  /api/health            → { status, checks }
+GET  /api/newsletter/confirm/{token}   → double opt-in confirm     (rate-limited: 20/min)
+GET  /api/newsletter/unsubscribe/{token} → unsubscribe             (rate-limited: 20/min)
+GET  /api/health                       → { status, checks }
 ```
 
 ---
@@ -228,18 +318,19 @@ GET  /api/health            → { status, checks }
 Members can read/write **their own** band member record and setups.
 
 ```
+PUT    /api/band-profile/members/{member}               (own record only)
 GET    /api/band-profile/members/{member}/setups
 POST   /api/band-profile/members/{member}/setups
 GET    /api/band-profile/members/{member}/setups/{setup}
 PUT    /api/band-profile/members/{member}/setups/{setup}
 DELETE /api/band-profile/members/{member}/setups/{setup}
-PUT    /api/band-profile/members/{member}   (own record only)
 ```
 
 **Member setup fields:**
 ```
 id, band_member_id, instrument_id, name,
-signal_chain_type, inputs[], monitor, backline, power, wireless[], foh_notes
+signal_chain_type, inputs[], monitor, backline, power, wireless[], foh_notes,
+created_at, updated_at
 ```
 
 ---
@@ -255,16 +346,31 @@ DELETE /api/band-profile/tech-rider
 POST   /api/band-profile/stage-plot               (upload image, max 4 MB)
 DELETE /api/band-profile/stage-plot
 POST   /api/band-profile/sync-facebook-likes      (sync FB page likes)
-GET    /api/band-profile/calendar/events          (all calendar events)
+GET    /api/band-profile/calendar/events?start=&end=  (all members' iCal events)
 PUT    /api/band-profile/members/reorder          (body: { ids: [] })
 POST   /api/band-profile/members                  (create member)
 POST   /api/band-profile/members/{member}/photo   (upload photo)
 DELETE /api/band-profile/members/{member}
-PUT    /api/band-profile/social-links             
 POST   /api/band-profile/social-links             (body: { platform, url })
 PUT    /api/band-profile/social-links/{link}
 DELETE /api/band-profile/social-links/{link}
 GET    /api/band-profile/member-setups            (all setups for all members)
+```
+
+**Calendar events response:**
+```
+data[]: { id, title, start (ISO/Y-m-d), end, allDay,
+          color, extendedProps: { memberId, memberName, memberRole, description } }
+```
+
+### Band Logos (Admin)
+
+```
+GET    /api/band-profile/logos
+POST   /api/band-profile/logos                    (upload logo file)
+PUT    /api/band-profile/logos/{logo}             (update label/variant/background/notes)
+POST   /api/band-profile/logos/{logo}/set-default
+DELETE /api/band-profile/logos/{logo}
 ```
 
 ### Content CRUD
@@ -282,21 +388,22 @@ DELETE          /api/releases/{id}/photos/{photo}
 PUT             /api/releases/{id}/photos/reorder  (body: { order: [id,...] })
 
 POST/PUT/DELETE /api/albums/{album}
-POST            /api/albums/batch                  (creates album + uploads photos)
+POST            /api/albums/batch                  (creates album + uploads photos at once)
 POST            /api/albums/{album}/photos         (add photos to album)
 DELETE          /api/albums/{album}/photos/{photo}
 PUT             /api/albums/{album}/photos/reorder (body: { order: [id,...] })
 
-POST/PUT/DELETE /api/photos/{photo}
+PATCH           /api/photos/{photo}                (caption, sort_order, epk_featured)
+DELETE          /api/photos/{photo}
 
 POST/PUT/DELETE /api/tours/{tour}
 
-POST/DELETE     /api/press-releases/fetch-meta     (scrape OG tags from URL)
+POST            /api/press-releases/fetch-meta     (scrape OG tags from URL)
 POST/PUT/DELETE /api/press-releases/{id}
 
 POST/PUT/DELETE /api/music-videos/{id}
-POST            /api/music-videos/{id}/fetch-preview (fetch OEmbed data)
-POST            /api/music-videos/sync-views          (sync YouTube view counts)
+POST            /api/music-videos/{id}/fetch-preview  (fetch OEmbed metadata)
+POST            /api/music-videos/sync-views           (sync YouTube view counts)
 
 POST/PUT/DELETE /api/tags/{tag}
 POST/PUT/DELETE /api/venues/{venue}
@@ -322,11 +429,33 @@ GET                 /api/setlists/setlistfm/search?q=artist
 GET                 /api/setlists/setlistfm/{mbid}/setlists
 ```
 
+### Shop Admin
+
+```
+GET    /api/shop-admin                            (all items, including unavailable)
+POST   /api/shop                                  (create item)
+PUT    /api/shop/{shopItem}                       (update item)
+DELETE /api/shop/{shopItem}
+POST   /api/shop/{shopItem}/photos               (upload photo, max 4 MB)
+DELETE /api/shop/{shopItem}/photos/{photo}
+PUT    /api/shop/{shopItem}/photos/reorder       (body: { ids: [] })
+
+GET    /api/shop/{shopItem}/variants
+POST   /api/shop/{shopItem}/variants
+PUT    /api/shop/{shopItem}/variants/{variant}
+DELETE /api/shop/{shopItem}/variants/{variant}
+
+POST/PUT/DELETE /api/shop-categories/{id}
+
+GET    /api/shop-currencies                       (enabled currencies list)
+PUT    /api/shop-currencies                       (body: { currencies: ['PLN','EUR'] })
+```
+
 ### Tech Riders
 
 ```
 GET    /api/tech-riders
-POST   /api/tech-riders        (body: { name, is_active, gig_lineup, stage_plot_data, inputs, ... })
+POST   /api/tech-riders        (body: { name, is_active, concert_id, gig_lineup, stage_plot_data, inputs, monitors, backline, pa_foh, power, rf_wireless })
 GET    /api/tech-riders/{id}
 PUT    /api/tech-riders/{id}
 POST   /api/tech-riders/{id}/activate
@@ -338,7 +467,7 @@ DELETE /api/tech-riders/{id}
 ```
 GET    /api/epk-versions
 POST   /api/epk-versions                    (creates snapshot of current profile)
-POST   /api/epk-versions/{version}/publish  (only pending → published, archives previous)
+POST   /api/epk-versions/{version}/publish  (pending → published, archives previous)
 DELETE /api/epk-versions/{version}          (only pending can be deleted)
 ```
 
@@ -347,6 +476,14 @@ DELETE /api/epk-versions/{version}          (only pending can be deleted)
 ```
 GET/POST/PUT/DELETE /api/users/{user}
 GET/DELETE          /api/newsletter-subscribers/{id}
+```
+
+### Venues (read: any authenticated user)
+
+```
+GET    /api/venues
+GET    /api/venues/{venue}
+POST/PUT/DELETE /api/venues/{venue}   (admin only)
 ```
 
 ---
@@ -358,40 +495,45 @@ GET/DELETE          /api/newsletter-subscribers/{id}
 | **Home** | band-profile, concerts, releases | Hero, bio_short, next 3 shows, featured release, social links |
 | **About** | band-profile, members | bio_long/full, formation_year, hometown, genres, comparable_artists, member grid |
 | **Concerts** | concerts | List/calendar, venue, times, poster, bands, ticket links |
-| **Concert Detail** | concerts/{id}, setlist | Full info + setlist |
-| **Music / Releases** | releases | Discography by type, streaming links, presave |
-| **Release Detail** | releases/{id} | Cover, tracks, photos |
+| **Concert Detail** | concerts/{id}, setlist | Full info + setlist with songs |
+| **Music / Releases** | releases | Discography by type, streaming links, presave CTA for upcoming |
+| **Release Detail** | releases/{id} | Cover, tracks, photos, label |
 | **Music Videos** | music-videos | Embedded players, channel, view count |
-| **Gallery** | albums, photos | Album grid, lightbox, captions |
+| **Gallery** | albums, photos | Album grid, lightbox, captions, EPK-badge |
 | **Tours** | tours | Name, dates, concerts, images |
 | **News / Blog** | posts | Search, tag filter, pagination |
 | **Post Detail** | posts/{id} | Full content, related concerts/releases/videos |
 | **Press** | press-releases | OG image cards linking to external articles |
 | **Band Members** | members | Current (featured) + former, instruments, social links |
-| **EPK** | band-profile/epk | Combined press kit page, downloadable |
-| **Booking/Tech** | band-profile, tech-riders/active | Contact, tech rider download, stage plot, inputs summary |
+| **EPK** | band-profile/epk | Combined press kit: bio, featured album, EPK photos, stats, download |
+| **Booking/Tech** | band-profile, tech-riders/active | Contact emails, tech rider PDF, stage plot, inputs summary |
+| **Merch / Shop** | shop, shop-categories | Product grid, category filter, presale badges |
+| **Product Detail** | shop/by-slug/{slug} | Gallery, variants, multi-currency price, buy button |
+| **Cart** | (client-side) | Line items, quantity, currency selection |
+| **Checkout** | checkout | Stripe redirect |
+| **Order Success** | orders/{uuid} | Status, items, total |
 
 ---
 
 ## DESIGN BRIEF (Public Section)
 
 ### Audiences
-1. **Fans** — recent news, upcoming shows, photos, social following
+1. **Fans** — recent news, upcoming shows, photos, social following, merch
 2. **Venue bookers** — tech specs, available dates, booking contact, rider PDF
 3. **Press / industry** — EPK, bio variants, streaming stats, press releases, member bios
 4. **Music professionals** — discography detail (ISRC, BPM, keys, stems, sync placements)
 
 ### Key Sections
 
-**Hero**: Band name, visual identity, genre, one CTA (Upcoming Shows / Listen / Watch)
+**Hero**: Band name, visual identity, genre, one CTA (Upcoming Shows / Listen / Shop)
 
 **Quick links bar**: next concert, latest release, newsletter signup
 
-**About / Bio**: Switchable bio length (short → full), genre badges, social stats chips, formation year + hometown, comparable artists
+**About / Bio**: Switchable bio length (short → full), genre badges, social stats chips, formation_year + hometown, comparable_artists
 
 **Members grid**: Photo, name, role, instruments — current members prominent, former expandable
 
-**Discography**: Cover grid, type filter (LP/EP/Single), release_date, streaming links, presave CTA for upcoming
+**Discography**: Cover grid, type filter (LP/EP/Single), release_date, streaming links, presale CTA for upcoming
 
 **Concerts / Events**: List/calendar toggle, venue + time, poster, bands on bill, ticket link, past/upcoming toggle
 
@@ -405,7 +547,11 @@ GET/DELETE          /api/newsletter-subscribers/{id}
 
 **News / Blog**: Search bar, tag filter chips, paginated cards (title, excerpt, image, date)
 
-**Booking / Tech**: Contact emails, PDF download buttons (tech rider, stage plot), key specs summary
+**Booking / Tech**: Contact emails, PDF download buttons (tech rider, stage plot), key specs summary, availability checker (calendar/availability)
+
+**Merch**: Category tabs, product cards (cover photo, name, price, presale badge, variant count), stock indicators
+
+**Product page**: Photo gallery carousel, variant picker (size/color/etc.), multi-currency price toggle, stock badge, buy / external-link CTA
 
 **EPK page**: Standalone presskit — bio, featured album, EPK photos, press quotes, stats, download
 
@@ -419,6 +565,8 @@ GET/DELETE          /api/newsletter-subscribers/{id}
 - `PressCard` — og_image, og_title, og_site_name, published_at, external link
 - `AlbumGrid` — cover, title, caption, click to open
 - `TourCard` — name, date range, poster, concert count
+- `ShopItemCard` — cover photo, name, price (primary currency), presale badge, variant count
+- `VariantPicker` — name/value chips, stock aware, disabled when out of stock
 
 ### Data → UI mapping for E2E tests
 
@@ -427,6 +575,7 @@ GET/DELETE          /api/newsletter-subscribers/{id}
 band-profile.name               → page title / hero heading
 band-profile.bio_short          → meta description / hero subtitle
 band-profile.social_links[]     → social icon links in header/footer
+band-profile.logo_url           → header logo img src
 concerts[].date                 → show date display
 concerts[].venue.name           → show venue label
 concerts[].poster_url           → concert poster image src
@@ -442,6 +591,11 @@ members[].is_current            → separates current from former list
 press-releases[].og_image       → press card thumbnail
 press-releases[].url            → press card external link href
 tours[].start_date/end_date     → tour date range display
+shop[].cover_photo              → product card image src
+shop[].prices[].amount          → product price display
+shop[].is_presale               → presale badge visibility
+shop[].variants[].value         → variant chip labels
+orders[].status                 → success/pending/cancelled state
 ```
 
 ---
@@ -466,7 +620,16 @@ tours[].start_date/end_date     → tour date range display
 | `auth.password` | required, string |
 | `file uploads (PDF)` | mimes:pdf, max 10 MB |
 | `file uploads (image)` | image, max 4 MB |
+| `shop-item.type` | in: record, apparel, accessory, ticket, bundle, other |
+| `shop-item.prices` | required, at least 1, each: currency (3-char ISO), amount >= 0 |
+| `shop-item.purchase_url` | nullable, valid URL, max 1000 |
+| `shop-item-variant.name` | required, string |
+| `shop-item-variant.value` | required, string |
+| `checkout.currency` | required, 3-char ISO code |
+| `checkout.customer.email` | required, valid email |
+| `checkout.items` | required, at least 1 item |
+| `calendar.date` | required, valid date (YYYY-MM-DD) |
 
 ---
 
-*Generated 2026-06-03 — covers 92 API routes across 31 controllers*
+*Generated 2026-06-13 — covers 108 API routes across 31 controllers*

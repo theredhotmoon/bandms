@@ -99,7 +99,8 @@ describe('POST /api/posts', function () {
             ->assertCreated()
             ->assertJsonPath('data.title', 'Hello World');
 
-        $this->assertDatabaseHas('posts', ['title' => 'Hello World']);
+        // title is a JSON column — assert via the model accessor
+        expect(Post::latest('id')->first()->title)->toBe('Hello World');
     });
 
     it('auto-generates a slug from the title', function () {

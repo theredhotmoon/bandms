@@ -23,6 +23,9 @@ class ReleaseSummaryResource extends JsonResource
                 'platform' => $l->platform,
                 'url'      => $l->url,
             ])),
+            'translations' => [
+                'title' => $this->getTranslations('title'),
+            ],
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];

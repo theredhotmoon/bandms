@@ -32,14 +32,19 @@ async function createSnapshot() {
 }
 
 type BioTab = 'short' | 'medium' | 'long' | 'full'
-const bioTab = ref<BioTab>('short')
+const bioTab  = ref<BioTab>('short')
+const bioLang = ref<'en' | 'pl'>('en')
 
 const form = reactive({
-  name:       '',
-  bio_short:  '',
-  bio_medium: '',
-  bio_long:   '',
-  bio_full:   '',
+  name:          '',
+  bio_short_en:  '',
+  bio_short_pl:  '',
+  bio_medium_en: '',
+  bio_medium_pl: '',
+  bio_long_en:   '',
+  bio_long_pl:   '',
+  bio_full_en:   '',
+  bio_full_pl:   '',
   formation_year:      '' as string | number,
   hometown:            '',
   genres:              '',
@@ -72,11 +77,15 @@ watch(
   () => query.data.value,
   (val) => {
     if (!val) return
-    form.name       = val.name       ?? ''
-    form.bio_short  = val.bio_short  ?? ''
-    form.bio_medium = val.bio_medium ?? ''
-    form.bio_long   = val.bio_long   ?? ''
-    form.bio_full   = val.bio_full   ?? ''
+    form.name          = val.name       ?? ''
+    form.bio_short_en  = val.translations?.bio_short?.en  ?? val.bio_short  ?? ''
+    form.bio_short_pl  = val.translations?.bio_short?.pl  ?? ''
+    form.bio_medium_en = val.translations?.bio_medium?.en ?? val.bio_medium ?? ''
+    form.bio_medium_pl = val.translations?.bio_medium?.pl ?? ''
+    form.bio_long_en   = val.translations?.bio_long?.en   ?? val.bio_long   ?? ''
+    form.bio_long_pl   = val.translations?.bio_long?.pl   ?? ''
+    form.bio_full_en   = val.translations?.bio_full?.en   ?? val.bio_full   ?? ''
+    form.bio_full_pl   = val.translations?.bio_full?.pl   ?? ''
     form.formation_year     = val.formation_year     ?? ''
     form.hometown           = val.hometown           ?? ''
     form.genres             = val.genres             ?? ''
@@ -100,7 +109,7 @@ watch(
   { immediate: true },
 )
 
-const shortChars     = computed(() => form.bio_short.toString().length)
+const shortChars     = computed(() => (bioLang.value === 'en' ? form.bio_short_en : form.bio_short_pl).length)
 const shortOverLimit = computed(() => shortChars.value > 280)
 const bioTabHasError = (tab: BioTab) => !!(fieldErrors.value[`bio_${tab}`])
 
@@ -115,10 +124,14 @@ async function saveProfile() {
   try {
     await update.mutateAsync({
       name:       form.name || undefined,
-      bio_short:  form.bio_short  || null,
-      bio_medium: form.bio_medium || null,
-      bio_long:   form.bio_long   || null,
-      bio_full:   form.bio_full   || null,
+      bio_short:  (form.bio_short_en || form.bio_short_pl)
+        ? { en: form.bio_short_en || undefined, pl: form.bio_short_pl || undefined } : null,
+      bio_medium: (form.bio_medium_en || form.bio_medium_pl)
+        ? { en: form.bio_medium_en || undefined, pl: form.bio_medium_pl || undefined } : null,
+      bio_long:   (form.bio_long_en || form.bio_long_pl)
+        ? { en: form.bio_long_en || undefined, pl: form.bio_long_pl || undefined } : null,
+      bio_full:   (form.bio_full_en || form.bio_full_pl)
+        ? { en: form.bio_full_en || undefined, pl: form.bio_full_pl || undefined } : null,
       formation_year:      numOrNull(form.formation_year),
       hometown:            form.hometown            || null,
       genres:              form.genres              || null,
@@ -291,24 +304,32 @@ function platformMeta(key: SocialPlatform) {
 
             <div>
               <label class="field-label">Bio</label>
-              <div class="bio-tabs">
-                <button
-                  v-for="tab in (['short','medium','long','full'] as BioTab[])"
-                  :key="tab"
-                  type="button"
-                  class="bio-tab"
-                  :class="{ active: bioTab === tab, 'has-error': bioTabHasError(tab) }"
-                  @click="bioTab = tab"
-                >
-                  {{ tab === 'short' ? 'One-liner' : tab === 'medium' ? 'Short' : tab === 'long' ? 'Long' : 'Full' }}
-                </button>
+              <div class="bio-tabs-row">
+                <div class="bio-tabs">
+                  <button
+                    v-for="tab in (['short','medium','long','full'] as BioTab[])"
+                    :key="tab"
+                    type="button"
+                    class="bio-tab"
+                    :class="{ active: bioTab === tab, 'has-error': bioTabHasError(tab) }"
+                    @click="bioTab = tab"
+                  >
+                    {{ tab === 'short' ? 'One-liner' : tab === 'medium' ? 'Short' : tab === 'long' ? 'Long' : 'Full' }}
+                  </button>
+                </div>
+                <div class="bio-lang-switcher">
+                  <button type="button" class="bio-lang-btn" :class="{ active: bioLang === 'en' }" @click="bioLang = 'en'">EN</button>
+                  <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button>
+                </div>
               </div>
 
               <div v-show="bioTab === 'short'" class="bio-panel">
                 <div class="bio-hint">Festival lineups, social media bios, radio intros — 1 sentence, ≤280 chars.</div>
                 <div class="char-wrap">
-                  <textarea v-model="form.bio_short" class="field-input bio-plain" rows="2"
+                  <textarea v-show="bioLang === 'en'" v-model="form.bio_short_en" class="field-input bio-plain" rows="2"
                     placeholder="A single punchy sentence that captures your sound…" maxlength="300" />
+                  <textarea v-show="bioLang === 'pl'" v-model="form.bio_short_pl" class="field-input bio-plain" rows="2"
+                    placeholder="Jedno zdanie oddające Wasze brzmienie…" maxlength="300" />
                   <span class="char-count" :class="{ warn: shortChars > 240, over: shortOverLimit }">
                     {{ shortChars }}&thinsp;/&thinsp;280
                   </span>
@@ -318,20 +339,24 @@ function platformMeta(key: SocialPlatform) {
 
               <div v-show="bioTab === 'medium'" class="bio-panel">
                 <div class="bio-hint">Event listings, concert programs, booking emails — 2–3 sentences.</div>
-                <textarea v-model="form.bio_medium" class="field-input bio-plain" rows="3"
+                <textarea v-show="bioLang === 'en'" v-model="form.bio_medium_en" class="field-input bio-plain" rows="3"
                   placeholder="2–3 sentences covering where you're from, your sound, and a key highlight…" />
+                <textarea v-show="bioLang === 'pl'" v-model="form.bio_medium_pl" class="field-input bio-plain" rows="3"
+                  placeholder="2–3 zdania o Waszym brzmieniu i kluczowych momentach…" />
                 <p v-if="fieldErrors.bio_medium" class="field-error">{{ fieldErrors.bio_medium[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'long'" class="bio-panel">
                 <div class="bio-hint">EPK documents, label/booking agency profiles, magazine features — 2–3 paragraphs.</div>
-                <RichEditor v-model="form.bio_long" placeholder="Craft the story across 2–3 paragraphs…" />
+                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_long_en" placeholder="Craft the story across 2–3 paragraphs…" />
+                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_long_pl" placeholder="Napisz historię w 2–3 akapitach…" />
                 <p v-if="fieldErrors.bio_long" class="field-error">{{ fieldErrors.bio_long[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
                 <div class="bio-hint">Website About page, grant applications, full press kit — no length limit.</div>
-                <RichEditor v-model="form.bio_full" placeholder="Write the full press biography…" />
+                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" placeholder="Write the full press biography…" />
+                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" placeholder="Napisz pełną biografię prasową…" />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>
               </div>
             </div>
@@ -626,9 +651,12 @@ function platformMeta(key: SocialPlatform) {
   border-radius: 0.375rem;
 }
 
+.bio-tabs-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #222222;
+}
 .bio-tabs {
-  display: flex; gap: 0.25rem; margin-bottom: 0.5rem;
-  border-bottom: 1px solid #222222; padding-bottom: 0;
+  display: flex; gap: 0.25rem; padding-bottom: 0;
 }
 .bio-tab {
   padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 500;
@@ -640,6 +668,17 @@ function platformMeta(key: SocialPlatform) {
 .bio-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .bio-tab.has-error { color: #f87171; }
 .bio-tab.has-error.active { border-bottom-color: #f87171; }
+.bio-lang-switcher { display: flex; gap: 0.25rem; padding-bottom: 0.25rem; }
+.bio-lang-btn {
+  padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.05em; cursor: pointer; border: 1px solid #2a2a2a;
+  background: transparent; color: #475569;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+.bio-lang-btn:hover { background: #1a1a1a; color: #64748b; }
+.bio-lang-btn.active { background: #1e3a5f; border-color: #1e4a7a; color: #60a5fa; }
+.bio-lang-btn--pl.active { background: #3f1010; border-color: #5a1a1a; color: #f87171; }
+
 .bio-panel { padding-top: 0.25rem; }
 .bio-hint { font-size: 0.7rem; color: #475569; margin-bottom: 0.5rem; line-height: 1.4; }
 .bio-plain { resize: vertical; }

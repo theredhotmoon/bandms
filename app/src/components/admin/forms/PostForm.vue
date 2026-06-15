@@ -29,9 +29,12 @@ const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 interface LinkRow { type: PostLinkType; url: string; label: string }
 
 const form = reactive({
-  title: '',
-  intro: '',
-  content: '',
+  title_en: '',
+  title_pl: '',
+  intro_en: '',
+  intro_pl: '',
+  content_en: '',
+  content_pl: '',
   image: null as string | null,
   published_at: '',
   event_date: '',
@@ -46,9 +49,12 @@ const form = reactive({
 })
 
 watch(() => props.initial, (val) => {
-  form.title = val?.title ?? ''
-  form.intro = val?.intro ?? ''
-  form.content = val?.content ?? ''
+  form.title_en = val?.translations?.title?.en ?? val?.title ?? ''
+  form.title_pl = val?.translations?.title?.pl ?? ''
+  form.intro_en = val?.translations?.intro?.en ?? val?.intro ?? ''
+  form.intro_pl = val?.translations?.intro?.pl ?? ''
+  form.content_en = val?.translations?.content?.en ?? val?.content ?? ''
+  form.content_pl = val?.translations?.content?.pl ?? ''
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   form.event_date = val?.event_date ?? ''
@@ -69,9 +75,9 @@ const linkTypes: PostLinkType[] = ['normal', 'youtube', 'instagram', 'facebook']
 
 function submit() {
   emit('submit', {
-    title: form.title,
-    intro: form.intro || null,
-    content: form.content || null,
+    title: { en: form.title_en, pl: form.title_pl || undefined },
+    intro: (form.intro_en || form.intro_pl) ? { en: form.intro_en || undefined, pl: form.intro_pl || undefined } : null,
+    content: (form.content_en || form.content_pl) ? { en: form.content_en || undefined, pl: form.content_pl || undefined } : null,
     image: form.image || null,
     published_at: form.published_at || null,
     event_date: form.event_date || null,
@@ -91,17 +97,44 @@ function submit() {
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
       <label class="field-label">Title <span style="color:#f87171;">*</span></label>
-      <input v-model="form.title" required class="field-input" placeholder="Post title" />
+      <div class="trans-group">
+        <div class="trans-row">
+          <span class="lang-badge">EN</span>
+          <input v-model="form.title_en" required class="field-input flex-1" placeholder="Post title" />
+        </div>
+        <div class="trans-row">
+          <span class="lang-badge lang-badge--pl">PL</span>
+          <input v-model="form.title_pl" class="field-input flex-1" placeholder="Tytuł posta" />
+        </div>
+      </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
     </div>
     <div>
       <label class="field-label">Intro</label>
-      <textarea v-model="form.intro" class="field-input" rows="2" placeholder="Short introductory text shown in previews…" />
+      <div class="trans-group">
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge">EN</span>
+          <textarea v-model="form.intro_en" class="field-input flex-1" rows="2" placeholder="Short introductory text shown in previews…" />
+        </div>
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge lang-badge--pl">PL</span>
+          <textarea v-model="form.intro_pl" class="field-input flex-1" rows="2" placeholder="Krótki tekst wprowadzający…" />
+        </div>
+      </div>
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
     </div>
     <div>
       <label class="field-label">Content</label>
-      <textarea v-model="form.content" class="field-input" rows="5" placeholder="Post content…" />
+      <div class="trans-group">
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge">EN</span>
+          <textarea v-model="form.content_en" class="field-input flex-1" rows="5" placeholder="Post content…" />
+        </div>
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge lang-badge--pl">PL</span>
+          <textarea v-model="form.content_pl" class="field-input flex-1" rows="5" placeholder="Treść posta…" />
+        </div>
+      </div>
       <p v-if="errors?.content" class="field-error">{{ errors.content[0] }}</p>
     </div>
     <div>
@@ -169,6 +202,15 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
+.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
+.trans-row--top { align-items: flex-start; }
+.lang-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
+  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
+}
+.lang-badge--pl { background: #3f1010; color: #f87171; }
 .link-row { display: flex; align-items: center; gap: 0.5rem; }
 .btn-remove {
   display:flex; align-items:center; justify-content:center;

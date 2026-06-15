@@ -20,9 +20,12 @@ const postQuery = usePost(postId)
 const { query: tagsQuery } = useTags()
 
 // Form state
-const title       = ref('')
-const intro       = ref('')
-const content     = ref('')
+const titleEn     = ref('')
+const titlePl     = ref('')
+const introEn     = ref('')
+const introPl     = ref('')
+const contentEn   = ref('')
+const contentPl   = ref('')
 const image       = ref<string | null>(null)
 const publishedAt = ref('')
 const tagIds      = ref<number[]>([])
@@ -39,9 +42,12 @@ const apiError = computed(() => (create.error.value ?? update.error.value)?.mess
 // Populate form when editing
 watch(postQuery.data, (post: Post | undefined) => {
   if (!post) return
-  title.value       = post.title
-  intro.value       = post.intro ?? ''
-  content.value     = post.content ?? ''
+  titleEn.value     = post.translations?.title?.en ?? post.title
+  titlePl.value     = post.translations?.title?.pl ?? ''
+  introEn.value     = post.translations?.intro?.en ?? post.intro ?? ''
+  introPl.value     = post.translations?.intro?.pl ?? ''
+  contentEn.value   = post.translations?.content?.en ?? post.content ?? ''
+  contentPl.value   = post.translations?.content?.pl ?? ''
   image.value       = post.image
   publishedAt.value = post.published_at ? post.published_at.slice(0, 16) : ''
   tagIds.value      = post.tags.map((t) => t.id)
@@ -71,9 +77,9 @@ function removeLink(idx: number) {
 
 async function submit() {
   const payload = {
-    title:        title.value,
-    intro:        intro.value || null,
-    content:      content.value || null,
+    title:        { en: titleEn.value, pl: titlePl.value || undefined },
+    intro:        (introEn.value || introPl.value) ? { en: introEn.value || undefined, pl: introPl.value || undefined } : null,
+    content:      (contentEn.value || contentPl.value) ? { en: contentEn.value || undefined, pl: contentPl.value || undefined } : null,
     image:        image.value,
     published_at: publishedAt.value || null,
     tag_ids:      tagIds.value,
@@ -107,30 +113,47 @@ const LINK_TYPE_LABELS: Record<PostLinkType, string> = {
 
     <div v-else style="display: flex; flex-direction: column; gap: 1.25rem;">
 
-      <label>
-        Title *
-        <input v-model="title" type="text" placeholder="Post title" style="display: block; width: 100%; margin-top: 0.25rem;" />
-      </label>
+      <div>
+        <p style="margin-bottom: 0.4rem;">Title *</p>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#1e3a5f;color:#60a5fa;width:2rem;text-align:center;flex-shrink:0;">EN</span>
+            <input v-model="titleEn" required type="text" placeholder="Post title" style="display: block; flex: 1;" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#3f1010;color:#f87171;width:2rem;text-align:center;flex-shrink:0;">PL</span>
+            <input v-model="titlePl" type="text" placeholder="Tytuł posta" style="display: block; flex: 1;" />
+          </div>
+        </div>
+      </div>
 
-      <label>
-        Intro
-        <textarea
-          v-model="intro"
-          rows="2"
-          placeholder="Short introductory text shown in previews…"
-          style="display: block; width: 100%; margin-top: 0.25rem; resize: vertical; font-family: inherit;"
-        />
-      </label>
+      <div>
+        <p style="margin-bottom: 0.4rem;">Intro</p>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#1e3a5f;color:#60a5fa;width:2rem;text-align:center;flex-shrink:0;margin-top:0.25rem;">EN</span>
+            <textarea v-model="introEn" rows="2" placeholder="Short introductory text shown in previews…" style="display: block; flex: 1; resize: vertical; font-family: inherit;" />
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#3f1010;color:#f87171;width:2rem;text-align:center;flex-shrink:0;margin-top:0.25rem;">PL</span>
+            <textarea v-model="introPl" rows="2" placeholder="Krótki tekst wprowadzający…" style="display: block; flex: 1; resize: vertical; font-family: inherit;" />
+          </div>
+        </div>
+      </div>
 
-      <label>
-        Content
-        <textarea
-          v-model="content"
-          rows="12"
-          placeholder="Write your post here…"
-          style="display: block; width: 100%; margin-top: 0.25rem; resize: vertical; font-family: inherit;"
-        />
-      </label>
+      <div>
+        <p style="margin-bottom: 0.4rem;">Content</p>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#1e3a5f;color:#60a5fa;width:2rem;text-align:center;flex-shrink:0;margin-top:0.25rem;">EN</span>
+            <textarea v-model="contentEn" rows="12" placeholder="Write your post here…" style="display: block; flex: 1; resize: vertical; font-family: inherit;" />
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:3px;background:#3f1010;color:#f87171;width:2rem;text-align:center;flex-shrink:0;margin-top:0.25rem;">PL</span>
+            <textarea v-model="contentPl" rows="12" placeholder="Treść posta…" style="display: block; flex: 1; resize: vertical; font-family: inherit;" />
+          </div>
+        </div>
+      </div>
 
       <div>
         <p style="margin-bottom: 0.4rem;">Image</p>

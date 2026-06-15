@@ -1,4 +1,5 @@
 import type { Tag } from './tag'
+import type { TranslationMap } from './shared'
 
 export interface PostConcert      { id: number; date: string; venue: { id: number; name: string } | null }
 export interface PostAlbum        { id: number; title: string }
@@ -35,6 +36,10 @@ export interface PostSummary {
   tags: Tag[]
   created_at: string
   updated_at: string
+  translations?: {
+    title: { en?: string | null; pl?: string | null }
+    intro: { en?: string | null; pl?: string | null }
+  }
 }
 
 /** Returned in detail response — includes image, full content, links, and linked entities. */
@@ -48,12 +53,17 @@ export interface Post extends PostSummary {
   tours: PostTour[]
   music_videos: PostMusicVideo[]
   press_releases: PostPressRelease[]
+  translations?: {
+    title:   { en?: string | null; pl?: string | null }
+    intro:   { en?: string | null; pl?: string | null }
+    content: { en?: string | null; pl?: string | null }
+  }
 }
 
 export interface PostPayload {
-  title: string
-  intro?: string | null
-  content?: string | null
+  title: string | TranslationMap
+  intro?: string | TranslationMap | null
+  content?: string | TranslationMap | null
   image?: string | null
   published_at?: string | null
   event_date?: string | null

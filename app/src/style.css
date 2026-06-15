@@ -1,9 +1,38 @@
 @import "tailwindcss";
 
-body {
-  background: #fff;
-  color: #111;
-  min-height: 100vh;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+@theme {
+  --color-ink: #121212;
+  --color-paper: #EFE7D6;
+  --color-accent: #E2702A;
 }
+
+/* ── Global reset / base ─────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: #EFE7D6;
+  color: #121212;
+  min-height: 100vh;
+  font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* ── Checker pattern helper ──────────────────────── */
+.checker {
+  background-image: repeating-conic-gradient(#121212 0% 25%, transparent 0% 50%);
+  background-size: 20px 20px;
+}
+
+.checker-accent {
+  background-image: repeating-conic-gradient(#E2702A 0% 25%, #EFE7D6 0% 50%);
+  background-size: 20px 20px;
+}
+
+/* ── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 3px; }
+
+/* ── Page offset for admin pages that still use AppNavbar ── */
+.page-offset { padding-top: 56px; }

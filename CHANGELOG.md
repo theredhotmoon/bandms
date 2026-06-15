@@ -17,6 +17,19 @@ Ideas and features planned for future development:
 
 ---
 
+## [Unreleased] — 2026-06-15
+
+### Added
+- **EN/PL bilingual support** — the entire public website now renders in English or Polish based on a language toggle in the nav bar. The selected locale is persisted in `localStorage`. All public API endpoints accept `?lang=en|pl` via a new `SetLocale` middleware; the backend resolves translatable fields to the requested locale using `spatie/laravel-translatable`.
+- **Translatable content fields** — post titles, intros, and body content; release titles and descriptions; and band profile bios (`bio_short`, `bio_medium`, `bio_long`, `bio_full`, `artistic_statement`) are now stored as JSON columns supporting per-locale values. Three safe migrations wrap existing data in `{"en": "…"}` before altering column types; rollback unwraps them.
+- **Admin bilingual editing** — the Band Profile, Post, and Release admin forms now show EN/PL tab switchers so editors can enter text in both languages. The API admin responses include a `translations` object exposing all locale values for pre-population.
+- **Contact form endpoint** — new `POST /api/contact` endpoint (public, rate-limited to 5 req/min) that validates the submission, applies a honeypot bot filter, and sends an HTML notification email to a configurable `CONTACT_EMAIL` address with the sender set as Reply-To. A `CONTACT_EMAIL` env var controls the recipient (defaults to `hello@skankingstorks.com`).
+- **Contact page redesign** — `/contact` now matches the brand design exactly: 140 px Anton hero title with two CTA buttons and info pills; a dark-header card form with reason picker, name/email grid, subject, and message fields; a three-card direct-contact sidebar (booking, press, general) with a social-links follow row; a promoter resources section (Book us, EPK, Tech rider, Press photos) on a cream background; and a square +/– FAQ accordion in Anton typeface.
+
+### Changed
+- **TanStack Query cache keys** for all public composables (`useBandProfile`, `usePosts`, `useReleases`, `useRelease`) now include the active locale — switching language automatically refetches the relevant data without manual cache invalidation.
+- **Lang files added** — `lang/en/` and `lang/pl/` directories with `validation.php` and `api.php` for static backend strings.
+
 ## [Unreleased] — 2026-06-13
 
 ### Added

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
@@ -114,6 +115,10 @@ Route::get('/shop-categories', [ShopCategoryController::class, 'index'])->name('
 Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('throttle:20,1')->name('api.checkout');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
 Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
+
+Route::post('/contact', [ContactController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('api.contact.store');
 
 Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'subscribe'])
     ->middleware('throttle:5,1')

@@ -1,5 +1,6 @@
 import type { Release, ReleaseSummary, ReleasePayload } from '@/types/release'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import type { Lang } from '@/composables/useLang'
 
 interface ReleaseListResponse { data: ReleaseSummary[] }
 interface ReleaseResponse     { data: Release }
@@ -10,14 +11,14 @@ export interface UploadProgress {
   percent: number
 }
 
-export async function fetchReleases(): Promise<ReleaseSummary[]> {
-  const res = await fetch(`${API_BASE}/api/releases`, { headers: jsonHeaders })
+export async function fetchReleases(lang: Lang = 'en'): Promise<ReleaseSummary[]> {
+  const res = await fetch(`${API_BASE}/api/releases?lang=${lang}`, { headers: jsonHeaders })
   return handleResponse<ReleaseListResponse>(res).then((r) => r.data)
 }
 
-export async function fetchRelease(id: number): Promise<Release> {
+export async function fetchRelease(id: number, lang: Lang = 'en'): Promise<Release> {
   assertSafeId(id)
-  const res = await fetch(`${API_BASE}/api/releases/${id}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/releases/${id}?lang=${lang}`, { headers: jsonHeaders })
   return handleResponse<ReleaseResponse>(res).then((r) => r.data)
 }
 

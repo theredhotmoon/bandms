@@ -75,7 +75,9 @@ describe('POST /api/releases', function () {
           ->assertJsonPath('data.title', 'My EP')
           ->assertJsonPath('data.type', 'EP');
 
-        $this->assertDatabaseHas('releases', ['title' => 'My EP', 'type' => 'EP']);
+        // title is a JSON column — assert type via DB, title via model accessor
+        $this->assertDatabaseHas('releases', ['type' => 'EP']);
+        expect(Release::latest('id')->first()->title)->toBe('My EP');
     });
 
     it('creates a release with streaming links', function () {
