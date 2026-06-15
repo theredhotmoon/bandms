@@ -5,9 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 class Release extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['title', 'description'];
+
     protected $fillable = ['profile_id', 'title', 'type', 'release_date', 'cover_image', 'description', 'is_upcoming', 'presave_url', 'label_name'];
 
     protected $casts = [

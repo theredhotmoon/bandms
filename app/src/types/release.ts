@@ -1,3 +1,5 @@
+import type { TranslationMap } from './shared'
+
 export type ReleaseType     = 'LP' | 'EP' | 'single' | 'compilation'
 export type ReleasePlatform = 'spotify' | 'apple_music' | 'bandcamp' | 'youtube' | 'instagram'
 
@@ -49,6 +51,10 @@ export interface ReleaseSummary {
   links: ReleaseLink[]
   created_at: string
   updated_at: string
+  translations?: {
+    title:       { en?: string | null; pl?: string | null }
+    description?: { en?: string | null; pl?: string | null }
+  }
 }
 
 export interface Release extends ReleaseSummary {
@@ -84,10 +90,10 @@ export interface ReleaseLinkPayload {
 }
 
 export interface ReleasePayload {
-  title: string
+  title: string | TranslationMap
   type: ReleaseType
   release_date: string | null
-  description: string | null
+  description: string | TranslationMap | null
   is_upcoming: boolean
   presave_url: string | null
   label_name: string | null

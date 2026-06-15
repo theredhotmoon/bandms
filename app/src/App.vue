@@ -6,9 +6,17 @@ import AppNavbar from '@/components/AppNavbar.vue'
 
 const route = useRoute()
 
-const showNavbar = computed(
-  () => !route.path.startsWith('/admin') && route.name !== 'login' && route.name !== 'register',
-)
+// Public redesigned routes embed their own SiteNav — hide the old AppNavbar for them
+const PUBLIC_ROUTES = new Set([
+  'home', 'concerts', 'photos', 'posts', 'merch', 'about', 'contact', 'releases',
+])
+
+const showNavbar = computed(() => {
+  if (route.path.startsWith('/admin')) return false
+  if (route.name === 'login' || route.name === 'register') return false
+  if (PUBLIC_ROUTES.has(route.name as string)) return false
+  return true
+})
 </script>
 
 <template>

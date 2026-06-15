@@ -2,6 +2,15 @@ import type { BandMember } from './bandMember'
 import type { SocialLink } from './socialLink'
 import type { ReleaseType, ReleasePlatform } from './release'
 import type { BandLogo } from './bandLogo'
+import type { TranslationMap } from './shared'
+
+export interface BandProfileTranslations {
+  bio_short:          { en?: string | null; pl?: string | null }
+  bio_medium:         { en?: string | null; pl?: string | null }
+  bio_long:           { en?: string | null; pl?: string | null }
+  bio_full:           { en?: string | null; pl?: string | null }
+  artistic_statement: { en?: string | null; pl?: string | null }
+}
 
 export interface BandProfile {
   id: number
@@ -20,6 +29,7 @@ export interface BandProfile {
   tech_contact_email: string | null
   tech_rider_notes: string | null
   artistic_statement: string | null
+  translations?: BandProfileTranslations
   stat_spotify_monthly: number | null
   stat_instagram_followers: number | null
   stat_tiktok_followers: number | null
@@ -48,12 +58,43 @@ export interface FacebookSyncResult {
   synced_at: string
 }
 
+export interface CalendarBusyMember {
+  id: number
+  name: string
+  role: string
+}
+
+export interface CalendarAvailability {
+  date: string
+  available: boolean
+  total_members: number
+  busy_count: number
+  busy_members: CalendarBusyMember[]
+}
+
+export interface CalendarEventExtendedProps {
+  memberId: number
+  memberName: string
+  memberRole: string
+  description: string | null
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  start: string
+  end: string | null
+  allDay: boolean
+  color: string
+  extendedProps: CalendarEventExtendedProps
+}
+
 export interface BandProfilePayload {
   name?: string
-  bio_short?: string | null
-  bio_medium?: string | null
-  bio_long?: string | null
-  bio_full?: string | null
+  bio_short?: string | TranslationMap | null
+  bio_medium?: string | TranslationMap | null
+  bio_long?: string | TranslationMap | null
+  bio_full?: string | TranslationMap | null
   formation_year?: number | null
   hometown?: string | null
   genres?: string | null
@@ -63,7 +104,7 @@ export interface BandProfilePayload {
   tech_contact_phone?: string | null
   tech_contact_email?: string | null
   tech_rider_notes?: string | null
-  artistic_statement?: string | null
+  artistic_statement?: string | TranslationMap | null
   stat_spotify_monthly?: number | null
   stat_instagram_followers?: number | null
   stat_tiktok_followers?: number | null

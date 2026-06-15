@@ -28,10 +28,22 @@ class BandProfileController extends Controller
     {
         $data = $request->validate([
             'name'                     => ['sometimes', 'required', 'string', 'max:255'],
-            'bio_short'                => ['nullable', 'string', 'max:280'],
-            'bio_medium'               => ['nullable', 'string'],
-            'bio_long'                 => ['nullable', 'string'],
-            'bio_full'                 => ['nullable', 'string'],
+            'bio_short'                => ['nullable', function ($attribute, $value, $fail) {
+                if (is_string($value) && mb_strlen($value) > 280) {
+                    $fail("The {$attribute} may not be greater than 280 characters.");
+                }
+            }],
+            'bio_short.en'             => ['nullable', 'string', 'max:280'],
+            'bio_short.pl'             => ['nullable', 'string', 'max:280'],
+            'bio_medium'               => ['nullable'],
+            'bio_medium.en'            => ['nullable', 'string'],
+            'bio_medium.pl'            => ['nullable', 'string'],
+            'bio_long'                 => ['nullable'],
+            'bio_long.en'              => ['nullable', 'string'],
+            'bio_long.pl'              => ['nullable', 'string'],
+            'bio_full'                 => ['nullable'],
+            'bio_full.en'              => ['nullable', 'string'],
+            'bio_full.pl'              => ['nullable', 'string'],
             'formation_year'           => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'hometown'                 => ['nullable', 'string', 'max:255'],
             'genres'                   => ['nullable', 'string', 'max:500'],
@@ -41,7 +53,9 @@ class BandProfileController extends Controller
             'tech_contact_phone'       => ['nullable', 'string', 'max:50'],
             'tech_contact_email'       => ['nullable', 'email', 'max:255'],
             'tech_rider_notes'         => ['nullable', 'string'],
-            'artistic_statement'       => ['nullable', 'string'],
+            'artistic_statement'       => ['nullable'],
+            'artistic_statement.en'    => ['nullable', 'string'],
+            'artistic_statement.pl'    => ['nullable', 'string'],
             'stat_spotify_monthly'     => ['nullable', 'integer', 'min:0'],
             'stat_instagram_followers' => ['nullable', 'integer', 'min:0'],
             'stat_tiktok_followers'    => ['nullable', 'integer', 'min:0'],

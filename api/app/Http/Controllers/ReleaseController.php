@@ -31,10 +31,14 @@ class ReleaseController extends Controller
     public function store(Request $request): ReleaseResource
     {
         $validated = $request->validate([
-            'title'                           => 'required|string|max:255',
+            'title'                           => 'required',
+            'title.en'                        => 'nullable|string|max:255',
+            'title.pl'                        => 'nullable|string|max:255',
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
-            'description'                     => 'nullable|string',
+            'description'                     => 'nullable',
+            'description.en'                  => 'nullable|string',
+            'description.pl'                  => 'nullable|string',
             'is_upcoming'                     => 'boolean',
             'presave_url'                     => 'nullable|url|max:500',
             'label_name'                      => 'nullable|string|max:255',
@@ -83,10 +87,14 @@ class ReleaseController extends Controller
     public function update(Request $request, Release $release): ReleaseResource
     {
         $validated = $request->validate([
-            'title'                           => 'required|string|max:255',
+            'title'                           => 'required',
+            'title.en'                        => 'nullable|string|max:255',
+            'title.pl'                        => 'nullable|string|max:255',
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
-            'description'                     => 'nullable|string',
+            'description'                     => 'nullable',
+            'description.en'                  => 'nullable|string',
+            'description.pl'                  => 'nullable|string',
             'is_upcoming'                     => 'boolean',
             'presave_url'                     => 'nullable|url|max:500',
             'label_name'                      => 'nullable|string|max:255',

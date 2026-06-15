@@ -1,5 +1,6 @@
 import type { Post, PostPayload, PostSummary } from '@/types/post'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import type { Lang } from '@/composables/useLang'
 
 export interface PaginationMeta {
   current_page: number
@@ -23,21 +24,21 @@ export interface PostFilters {
   page?: number
 }
 
-export async function fetchPosts(filters: PostFilters = {}): Promise<PostListResponse> {
+export async function fetchPosts(filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
   const params = new URLSearchParams()
   if (filters.search)  params.set('search', filters.search)
   if (filters.tag_id)  params.set('tag_id', String(filters.tag_id))
   if (filters.page)    params.set('page', String(filters.page))
+  params.set('lang', lang)
 
-  const qs = params.size ? `?${params}` : ''
-  const res = await fetch(`${API_BASE}/api/posts${qs}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/posts?${params}`, { headers: jsonHeaders })
   const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
   return { data: raw.data, meta: raw.meta }
 }
 
-export async function fetchPost(id: number): Promise<Post> {
+export async function fetchPost(id: number, lang: Lang = 'en'): Promise<Post> {
   assertSafeId(id)
-  const res = await fetch(`${API_BASE}/api/posts/${id}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/posts/${id}?lang=${lang}`, { headers: jsonHeaders })
   return handleResponse<PostResponse>(res).then((r) => r.data)
 }
 

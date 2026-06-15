@@ -104,10 +104,12 @@ function emptyTrack(sort_order = 0): TrackRow {
 
 // ── Form ──────────────────────────────────────────────────────
 const form = reactive({
-  title:        '',
+  title_en:     '',
+  title_pl:     '',
   type:         'single' as ReleaseType,
   release_date: '',
-  description:  '' as string,
+  description_en: '',
+  description_pl: '',
   is_upcoming:  false,
   presave_url:  '',
   label_name:   '',
@@ -120,27 +122,31 @@ watch(
   () => props.initial,
   (val) => {
     if (!val) {
-      form.title        = ''
-      form.type         = 'single'
-      form.release_date = ''
-      form.description  = ''
-      form.is_upcoming  = false
-      form.presave_url  = ''
-      form.label_name   = ''
-      form.links        = emptyLinks()
-      tracks.value      = [emptyTrack(0)]
-      coverFile.value    = null
-      coverPreview.value = null
-      coverDelete.value  = false
+      form.title_en       = ''
+      form.title_pl       = ''
+      form.type           = 'single'
+      form.release_date   = ''
+      form.description_en = ''
+      form.description_pl = ''
+      form.is_upcoming    = false
+      form.presave_url    = ''
+      form.label_name     = ''
+      form.links          = emptyLinks()
+      tracks.value        = [emptyTrack(0)]
+      coverFile.value     = null
+      coverPreview.value  = null
+      coverDelete.value   = false
       return
     }
-    form.title        = val.title
-    form.type         = val.type
-    form.release_date = val.release_date ?? ''
-    form.description  = val.description ?? ''
-    form.is_upcoming  = val.is_upcoming
-    form.presave_url  = val.presave_url ?? ''
-    form.label_name   = val.label_name ?? ''
+    form.title_en       = val.translations?.title?.en ?? val.title
+    form.title_pl       = val.translations?.title?.pl ?? ''
+    form.type           = val.type
+    form.release_date   = val.release_date ?? ''
+    form.description_en = val.translations?.description?.en ?? val.description ?? ''
+    form.description_pl = val.translations?.description?.pl ?? ''
+    form.is_upcoming    = val.is_upcoming
+    form.presave_url    = val.presave_url ?? ''
+    form.label_name     = val.label_name ?? ''
     const lm = emptyLinks()
     for (const l of val.links) lm[l.platform] = l.url
     form.links = lm
@@ -183,10 +189,12 @@ function removeTrack(i: number) {
 
 function handleSubmit() {
   const payload: ReleasePayload = {
-    title:        form.title,
+    title:       { en: form.title_en, pl: form.title_pl || undefined },
     type:         form.type,
     release_date: form.release_date || null,
-    description:  form.description  || null,
+    description: (form.description_en || form.description_pl)
+      ? { en: form.description_en || undefined, pl: form.description_pl || undefined }
+      : null,
     is_upcoming:  form.is_upcoming,
     presave_url:  form.is_upcoming ? (form.presave_url || null) : null,
     label_name:   form.label_name || null,
@@ -241,7 +249,16 @@ function handleSubmit() {
       <div class="flex flex-col gap-3">
         <div>
           <label class="field-label">Title <span class="field-req">*</span></label>
-          <input v-model="form.title" required class="field-input" placeholder="Release title" />
+          <div class="trans-group">
+            <div class="trans-row">
+              <span class="lang-badge">EN</span>
+              <input v-model="form.title_en" required class="field-input flex-1" placeholder="Release title" />
+            </div>
+            <div class="trans-row">
+              <span class="lang-badge lang-badge--pl">PL</span>
+              <input v-model="form.title_pl" class="field-input flex-1" placeholder="Tytuł wydawnictwa" />
+            </div>
+          </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -280,7 +297,20 @@ function handleSubmit() {
     <!-- Description -->
     <div class="mb-5">
       <label class="field-label">Description</label>
-      <RichEditor v-model="form.description" placeholder="Optional release notes or liner notes…" />
+      <div class="trans-group">
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge" style="margin-top:0.5rem;">EN</span>
+          <div class="flex-1">
+            <RichEditor v-model="form.description_en" placeholder="Optional release notes or liner notes…" />
+          </div>
+        </div>
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge lang-badge--pl" style="margin-top:0.5rem;">PL</span>
+          <div class="flex-1">
+            <RichEditor v-model="form.description_pl" placeholder="Opcjonalne notatki o wydawnictwie…" />
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Streaming links -->
@@ -386,6 +416,16 @@ function handleSubmit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
+.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
+.trans-row--top { align-items: flex-start; }
+.lang-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
+  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
+}
+.lang-badge--pl { background: #3f1010; color: #f87171; }
+
 .section-title {
   font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.06em; color: #64748b; margin-bottom: 0.625rem;

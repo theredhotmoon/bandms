@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchEpk } from '@/api/bandProfile'
+import { useLang } from '@/composables/useLang'
 
-const query = useQuery({ queryKey: ['epk'], queryFn: fetchEpk })
+const { lang } = useLang()
+const epkQk = computed(() => ['epk', lang.value])
+const query = useQuery({ queryKey: epkQk, queryFn: () => fetchEpk(lang.value) })
 
 function formatStat(n: number | null): string {
   if (n == null) return ''

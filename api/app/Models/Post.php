@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MusicVideo;
 use App\Models\PressRelease;
+use Spatie\Translatable\HasTranslations;
 
 class Post extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory, HasSlug, HasTranslations;
+
+    public array $translatable = ['title', 'intro', 'content'];
 
     protected $fillable = ['title', 'slug', 'intro', 'content', 'image', 'published_at', 'event_date'];
 

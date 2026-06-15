@@ -129,6 +129,11 @@ const router = createRouter({
       path: '/shop/:slug',
       redirect: (to) => ({ name: 'merch-item', params: { slug: to.params.slug } }),
     },
+    // Alias routes for redesigned public pages
+    { path: '/shows', redirect: { name: 'concerts' } },
+    { path: '/gallery', redirect: { name: 'photos' } },
+    { path: '/news', redirect: { name: 'posts' } },
+    { path: '/music', redirect: { name: 'releases' } },
 
     // ── Admin panel (requires authentication) ──────────────────────────
     {

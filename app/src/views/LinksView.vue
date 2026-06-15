@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchBandProfile } from '@/api/bandProfile'
 import { fetchReleases } from '@/api/releases'
+import { useLang } from '@/composables/useLang'
 
-const profileQuery = useQuery({ queryKey: ['band-profile'], queryFn: fetchBandProfile })
-const releasesQuery = useQuery({ queryKey: ['releases'], queryFn: fetchReleases })
+const { lang } = useLang()
+
+const profileQk = computed(() => ['band-profile', lang.value])
+const releasesQk = computed(() => ['releases', lang.value])
+
+const profileQuery = useQuery({ queryKey: profileQk, queryFn: () => fetchBandProfile(lang.value) })
+const releasesQuery = useQuery({ queryKey: releasesQk, queryFn: () => fetchReleases(lang.value) })
 
 const platformLabels: Record<string, string> = {
   spotify:     'Spotify',

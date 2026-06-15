@@ -30,7 +30,7 @@ onMounted(async () => {
     const [riderData, membersData, profileData] = await Promise.all([
       fetchRiderByToken(token),
       fetchBandMembers().catch(() => [] as BandMember[]),
-      fetchBandProfile().catch(() => null),
+      fetchBandProfile('en').catch(() => null),
     ])
     rider.value   = riderData
     members.value = membersData

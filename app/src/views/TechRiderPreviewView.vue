@@ -26,7 +26,7 @@ onMounted(async () => {
         ? fetchTechRider(parseInt(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id, 10))
         : fetchActiveTechRider(),
       fetchBandMembers().catch(() => [] as BandMember[]),
-      fetchBandProfile().catch(() => null),
+      fetchBandProfile('en').catch(() => null),
     ])
     rider.value   = riderData
     members.value = membersData
