@@ -32,6 +32,9 @@ function scrollToForm() {
   if (el) window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 80, behavior: 'smooth' })
 }
 
+const formBodyEl = ref<HTMLElement | null>(null)
+const formContentHeight = ref('')
+
 async function submit(e: Event) {
   e.preventDefault()
   if (!fname.value.trim() || !femail.value.includes('@') || !fmessage.value.trim()) { hasErr.value = true; return }
@@ -42,7 +45,10 @@ async function submit(e: Event) {
       method: 'POST', headers: jsonHeaders,
       body: JSON.stringify({ reason: reason.value, name: fname.value, email: femail.value, subject: fsubject.value, message: fmessage.value, website: fhoneypot.value }),
     })
-    if (res.ok) sent.value = true
+    if (res.ok) {
+      if (formBodyEl.value) formContentHeight.value = formBodyEl.value.offsetHeight + 'px'
+      sent.value = true
+    }
     else hasErr.value = true
   } catch { hasErr.value = true }
   finally { sending.value = false }
@@ -50,14 +56,15 @@ async function submit(e: Event) {
 
 function reset() {
   fname.value = ''; femail.value = ''; fsubject.value = ''; fmessage.value = ''
-  reason.value = 'general'; sent.value = false; hasErr.value = false
+  reason.value = 'general'; sent.value = false; hasErr.value = false; formContentHeight.value = ''
 }
 
 const openFaq = ref(0)
 function toggleFaq(i: number) { openFaq.value = openFaq.value === i ? -1 : i }
 
-const bookingEmail = computed(() => profile.value?.booking_email ?? 'booking@skankingstorks.com')
-const pressEmail   = computed(() => profile.value?.press_email   ?? 'press@skankingstorks.com')
+const bookingEmail  = computed(() => profile.value?.booking_email  ?? 'booking@skankingstorks.com')
+const pressEmail    = computed(() => profile.value?.press_email    ?? 'press@skankingstorks.com')
+const generalEmail  = computed(() => profile.value?.contact_email  ?? 'hello@skankingstorks.com')
 
 const T = {
   en: {
@@ -87,8 +94,8 @@ const T = {
     formErr: 'Please add your name, a valid email and a message.',
     replyNote: 'Replies within 48h',
     directTitle: 'Reach us directly',
-    bookingLabel: 'Booking',  bookingNote: 'Shows, festivals, private parties',
-    pressLabel:   'Press',    pressNote:   'Interviews, premieres, reviews',
+    bookingLabel: 'Booking',  bookingNote: 'Shows, festivals, private parties',  bookingAvailBtn: 'Check our availability',
+    pressLabel:   'Press',    pressNote:   'Interviews, premieres, reviews',        pressEpkBtn: 'Our EPK',
     generalLabel: 'General',  generalNote: 'Everything else — say hi!',
     followLabel: 'Or find us on',
     promoTitle: 'Promoters & press',
@@ -137,8 +144,8 @@ const T = {
     formErr: 'Podaj imię, poprawny email i treść wiadomości.',
     replyNote: 'Odpowiedź w 48h',
     directTitle: 'Napisz bezpośrednio',
-    bookingLabel: 'Booking', bookingNote: 'Koncerty, festiwale, imprezy prywatne',
-    pressLabel:   'Prasa',   pressNote:   'Wywiady, premiery, recenzje',
+    bookingLabel: 'Booking', bookingNote: 'Koncerty, festiwale, imprezy prywatne',  bookingAvailBtn: 'Sprawdź dostępność',
+    pressLabel:   'Prasa',   pressNote:   'Wywiady, premiery, recenzje',             pressEpkBtn: 'Nasz EPK',
     generalLabel: 'Ogólny',  generalNote: 'Wszystko inne — cześć!',
     followLabel: 'Albo znajdź nas na',
     promoTitle: 'Organizatorzy i prasa',
@@ -187,17 +194,17 @@ const t = computed(() => T[lang.value])
         </div>
         <div class="hero-pills">
           <span class="hero-pill">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
             {{ t.replyBadge }}
           </span>
           <span class="hero-pill">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
             {{ t.basedIn }}
           </span>
         </div>
       </div>
     </section>
-    <CheckerStrip :h="16" :size="22" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="16" :size="22" color-a="var(--color-accent)" color-b="#EFE7D6" />
 
     <!-- FORM + DIRECT CONTACTS -->
     <section class="form-section">
@@ -214,6 +221,9 @@ const t = computed(() => T[lang.value])
             </div>
           </div>
 
+          <!-- sent / form content (wrapper locks height to prevent layout shift) -->
+          <div class="form-content" :style="formContentHeight ? { minHeight: formContentHeight } : {}">
+
           <!-- sent state -->
           <div v-if="sent" class="form-sent">
             <div class="form-sent-icon">
@@ -224,7 +234,7 @@ const t = computed(() => T[lang.value])
           </div>
 
           <!-- form body -->
-          <form v-else class="form-body" @submit="submit">
+          <form v-else ref="formBodyEl" class="form-body" @submit="submit">
             <input v-model="fhoneypot" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;overflow:hidden" />
             <div>
               <span class="field-label">{{ t.reasonLabel }}</span>
@@ -267,7 +277,7 @@ const t = computed(() => T[lang.value])
 
             <div class="form-footer">
               <span class="form-reply-note">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
                 {{ t.replyNote }}
               </span>
               <button type="submit" class="btn-submit" :disabled="sending">
@@ -276,39 +286,42 @@ const t = computed(() => T[lang.value])
               </button>
             </div>
           </form>
+          </div><!-- /form-content -->
         </div>
 
         <!-- Direct contacts sidebar -->
         <aside class="contacts-aside">
           <div class="contacts-head">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             <h2 class="contacts-title">{{ t.directTitle }}</h2>
           </div>
 
-          <a :href="`mailto:${bookingEmail}`" class="contact-card">
+          <div class="contact-card">
             <div class="cc-label-row">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
               <span class="cc-label">{{ t.bookingLabel }}</span>
             </div>
-            <div class="cc-email">{{ bookingEmail }}</div>
+            <a :href="`mailto:${bookingEmail}`" class="cc-email">{{ bookingEmail }}</a>
             <div class="cc-note">{{ t.bookingNote }}</div>
-          </a>
+            <RouterLink to="/concerts" class="cc-action-btn">{{ t.bookingAvailBtn }} →</RouterLink>
+          </div>
 
-          <a :href="`mailto:${pressEmail}`" class="contact-card">
+          <div class="contact-card">
             <div class="cc-label-row">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z" fill="currentColor" stroke="none"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z" fill="currentColor" stroke="none"/></svg>
               <span class="cc-label">{{ t.pressLabel }}</span>
             </div>
-            <div class="cc-email">{{ pressEmail }}</div>
+            <a :href="`mailto:${pressEmail}`" class="cc-email">{{ pressEmail }}</a>
             <div class="cc-note">{{ t.pressNote }}</div>
-          </a>
+            <RouterLink to="/epk" class="cc-action-btn">{{ t.pressEpkBtn }} →</RouterLink>
+          </div>
 
-          <a href="mailto:hello@skankingstorks.com" class="contact-card">
+          <a :href="`mailto:${generalEmail}`" class="contact-card">
             <div class="cc-label-row">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
               <span class="cc-label">{{ t.generalLabel }}</span>
             </div>
-            <div class="cc-email">hello@skankingstorks.com</div>
+            <div class="cc-email">{{ generalEmail }}</div>
             <div class="cc-note">{{ t.generalNote }}</div>
           </a>
 
@@ -337,7 +350,7 @@ const t = computed(() => T[lang.value])
     <!-- PROMOTERS & PRESS -->
     <section class="promo-section">
       <div class="promo-head">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10M8 11l4 4 4-4M5 19h14"/></svg>
         <h2 class="promo-title">{{ t.promoTitle }}</h2>
       </div>
       <p class="promo-sub">{{ t.promoSub }}</p>
@@ -345,7 +358,7 @@ const t = computed(() => T[lang.value])
       <div class="promo-grid">
         <!-- Book us -->
         <button class="promo-card" @click="scrollToForm">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
           <div class="promo-card-body">
             <h3 class="promo-card-title">{{ t.bookTitle }}</h3>
             <p class="promo-card-sub">{{ t.bookSub }}</p>
@@ -355,7 +368,7 @@ const t = computed(() => T[lang.value])
 
         <!-- EPK -->
         <RouterLink to="/epk" class="promo-card">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill="#E2702A" stroke="none"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill="var(--color-accent)" stroke="none"/></svg>
           <div class="promo-card-body">
             <h3 class="promo-card-title">{{ t.epkTitle }}</h3>
             <p class="promo-card-sub">{{ t.epkSub }}</p>
@@ -365,7 +378,7 @@ const t = computed(() => T[lang.value])
 
         <!-- Tech rider -->
         <RouterLink to="/tech-rider" class="promo-card">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
           <div class="promo-card-body">
             <h3 class="promo-card-title">{{ t.riderTitle }}</h3>
             <p class="promo-card-sub">{{ t.riderSub }}</p>
@@ -375,7 +388,7 @@ const t = computed(() => T[lang.value])
 
         <!-- Press photos -->
         <RouterLink to="/photos" class="promo-card">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L18 6h0a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L18 6h0a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
           <div class="promo-card-body">
             <h3 class="promo-card-title">{{ t.photosTitle }}</h3>
             <p class="promo-card-sub">{{ t.photosSub }}</p>
@@ -384,12 +397,12 @@ const t = computed(() => T[lang.value])
         </RouterLink>
       </div>
     </section>
-    <CheckerStrip :h="14" :size="20" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="14" :size="20" color-a="var(--color-accent)" color-b="#EFE7D6" />
 
     <!-- FAQ -->
     <section class="faq-section">
       <div class="faq-head">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="#E2702A" stroke="none" style="flex-shrink:0"><path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--color-accent)" stroke="none" style="flex-shrink:0"><path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z"/></svg>
         <h2 class="faq-title">{{ t.faqTitle }}</h2>
       </div>
       <p class="faq-sub">{{ t.faqSub }}</p>
@@ -422,13 +435,13 @@ const t = computed(() => T[lang.value])
   background-size: 32px 32px;
 }
 .hero-inner { position: relative; padding: 54px 90px 58px; }
-.hero-kicker { display: block; font: 800 14px/1 'Archivo', sans-serif; letter-spacing: .34em; color: #E2702A; text-transform: uppercase; margin-bottom: 16px; }
+.hero-kicker { display: block; font: 800 14px/1 'Archivo', sans-serif; letter-spacing: .34em; color: var(--color-accent); text-transform: uppercase; margin-bottom: 16px; }
 .hero-title { font: 400 140px/.82 'Anton', sans-serif; text-transform: uppercase; margin: 0; }
 .hero-lead { font: 500 20px/1.55 'Archivo', sans-serif; color: rgba(239,231,214,.82); max-width: 680px; margin: 22px 0 0; }
 .hero-btns { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
 .btn-primary {
   display: inline-flex; align-items: center; gap: 10px;
-  background: #E2702A; color: #fff; border: none;
+  background: var(--color-accent); color: #fff; border: none;
   font: 400 18px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 15px 24px; cursor: pointer; box-shadow: 5px 5px 0 #EFE7D6;
 }
@@ -458,24 +471,31 @@ const t = computed(() => T[lang.value])
 }
 .form-card-checker {
   width: 30px; height: 30px; flex-shrink: 0;
-  background-image: repeating-conic-gradient(#E2702A 0% 25%, #EFE7D6 0% 50%);
+  background-image: repeating-conic-gradient(var(--color-accent) 0% 25%, #EFE7D6 0% 50%);
   background-size: 10px 10px;
   border: 2px solid #EFE7D6;
 }
 .form-card-title { font: 400 30px/1 'Anton', sans-serif; text-transform: uppercase; margin: 0; }
 .form-card-sub { font: 500 13px/1.4 'Archivo', sans-serif; color: rgba(239,231,214,.7); margin: 6px 0 0; }
 
+/* Sent / form content wrapper */
+.form-content { display: flex; flex-direction: column; }
+
 /* Sent state */
-.form-sent { padding: 56px 36px; text-align: center; }
+.form-sent {
+  flex: 1; padding: 36px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+}
 .form-sent-icon {
   width: 70px; height: 70px; margin: 0 auto 24px; border-radius: 50%;
-  background: #E2702A; display: grid; place-items: center; box-shadow: 5px 5px 0 #121212;
+  background: var(--color-accent); display: grid; place-items: center; box-shadow: 5px 5px 0 #121212;
 }
 .form-sent-msg { font: 400 30px/1.05 'Anton', sans-serif; text-transform: uppercase; max-width: 460px; margin: 0 auto 22px; }
 .btn-ink {
   background: #121212; color: #EFE7D6; border: none;
   font: 400 16px/1 'Anton', sans-serif; text-transform: uppercase;
-  padding: 13px 22px; cursor: pointer; box-shadow: 5px 5px 0 #E2702A;
+  padding: 13px 22px; cursor: pointer; box-shadow: 5px 5px 0 var(--color-accent);
 }
 
 /* Form body */
@@ -490,7 +510,7 @@ const t = computed(() => T[lang.value])
   border: 3px solid #121212; background: #EFE7D6; padding: 14px 16px;
   font: 600 16px/1.3 'Archivo', sans-serif; color: #121212; outline: none;
 }
-.field:focus { outline: 3px solid #E2702A; outline-offset: -3px; }
+.field:focus { outline: 3px solid var(--color-accent); outline-offset: -3px; }
 .field--ta { resize: vertical; min-height: 130px; line-height: 1.5; font-family: 'Archivo', sans-serif; }
 .reason-row { display: flex; flex-wrap: wrap; gap: 9px; }
 .reason-btn {
@@ -498,7 +518,7 @@ const t = computed(() => T[lang.value])
   font: 800 12px/1 'Archivo', sans-serif; letter-spacing: .06em; text-transform: uppercase;
   padding: 11px 16px; cursor: pointer;
 }
-.reason-btn--on { background: #121212; color: #EFE7D6; box-shadow: 4px 4px 0 #E2702A; }
+.reason-btn--on { background: #121212; color: #EFE7D6; box-shadow: 4px 4px 0 var(--color-accent); }
 .form-err { display: flex; align-items: center; gap: 8px; font: 600 14px/1.4 'Archivo', sans-serif; color: #C23A2B; }
 .form-err-dot { width: 8px; height: 8px; background: #C23A2B; flex-shrink: 0; }
 .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -508,7 +528,7 @@ const t = computed(() => T[lang.value])
 }
 .btn-submit {
   display: inline-flex; align-items: center; gap: 10px;
-  background: #E2702A; color: #fff; border: none;
+  background: var(--color-accent); color: #fff; border: none;
   font: 400 20px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 16px 28px; cursor: pointer; box-shadow: 6px 6px 0 #121212;
 }
@@ -521,12 +541,21 @@ const t = computed(() => T[lang.value])
 .contact-card {
   display: block; background: #121212; color: #EFE7D6;
   padding: 18px 20px; text-decoration: none;
-  box-shadow: 6px 6px 0 #E2702A;
+  box-shadow: 6px 6px 0 var(--color-accent);
 }
 .cc-label-row { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
-.cc-label { font: 800 11px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #E2702A; }
-.cc-email { font: 700 17px/1.2 'Archivo', sans-serif; word-break: break-word; }
+.cc-label { font: 800 11px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent); }
+.cc-email { display: block; font: 700 17px/1.2 'Archivo', sans-serif; word-break: break-word; color: #EFE7D6; text-decoration: none; }
+.cc-email:hover { text-decoration: underline; }
 .cc-note { font: 500 13px/1.4 'Archivo', sans-serif; color: rgba(239,231,214,.6); margin-top: 7px; }
+.cc-action-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  font: 800 11px/1 'Archivo', sans-serif; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--color-accent); text-decoration: none;
+  border: 2px solid var(--color-accent); padding: 8px 13px;
+  transition: background 120ms, color 120ms;
+}
+.cc-action-btn:hover { background: var(--color-accent); color: #121212; }
 .social-card { border: 3px solid #121212; background: #fff; padding: 18px 20px; }
 .social-label { font: 800 11px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #8a8475; }
 .social-icons { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 14px; }
@@ -550,14 +579,14 @@ const t = computed(() => T[lang.value])
   text-align: left; text-decoration: none; color: #121212; cursor: pointer;
   font: inherit; appearance: none;
 }
-.promo-card:hover { box-shadow: 8px 8px 0 #E2702A; }
+.promo-card:hover { box-shadow: 8px 8px 0 var(--color-accent); }
 .promo-card-body { flex: 1; }
 .promo-card-title { font: 400 23px/1.02 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 8px; }
 .promo-card-sub { font: 500 13px/1.45 'Archivo', sans-serif; color: #666; margin: 0; }
 .promo-cta {
   display: inline-flex; align-items: center; gap: 8px;
   font: 800 12px/1 'Archivo', sans-serif; letter-spacing: .08em; text-transform: uppercase;
-  color: #E2702A;
+  color: var(--color-accent);
 }
 
 /* FAQ */
@@ -573,13 +602,13 @@ const t = computed(() => T[lang.value])
   padding: 22px 4px;
   font: 400 26px/1.05 'Anton', sans-serif; text-transform: uppercase; color: #121212;
 }
-.faq-q:hover { color: #E2702A; }
+.faq-q:hover { color: var(--color-accent); }
 .faq-toggle {
   width: 34px; height: 34px; flex-shrink: 0;
   border: 2.5px solid #121212; display: grid; place-items: center;
   font: 800 22px/1 'Archivo', sans-serif; background: transparent; color: #121212;
 }
-.faq-toggle--open { background: #E2702A; border-color: #E2702A; color: #fff; }
+.faq-toggle--open { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
 .faq-a { font: 500 17px/1.6 'Archivo', sans-serif; color: #2a2a2a; margin: 0 4px 24px; max-width: 760px; }
 
 /* Responsive */

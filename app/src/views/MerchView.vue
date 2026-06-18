@@ -235,7 +235,7 @@ const t = computed(() => T[lang.value])
       </div>
     </Teleport>
 
-    <CheckerStrip :h="14" :size="28" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
     <SiteFooter />
   </div>
 </template>
@@ -254,7 +254,7 @@ const t = computed(() => T[lang.value])
   position: relative; padding: 64px 90px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap;
 }
-.hero-kicker { font: 800 13px/1 'Archivo', sans-serif; letter-spacing: .28em; color: #E2702A; text-transform: uppercase; display: block; margin-bottom: 16px; }
+.hero-kicker { font: 800 13px/1 'Archivo', sans-serif; letter-spacing: .28em; color: var(--color-accent); text-transform: uppercase; display: block; margin-bottom: 16px; }
 .hero-title { font: 400 80px/.85 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 18px; }
 .hero-sub { font: 500 18px/1.5 'Archivo', sans-serif; color: rgba(239,231,214,.75); max-width: 480px; margin: 0; }
 .hero-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 16px; flex-shrink: 0; }
@@ -265,18 +265,18 @@ const t = computed(() => T[lang.value])
   font: 700 14px/1 'Archivo', sans-serif; letter-spacing: .1em;
   padding: 10px 18px; cursor: pointer; transition: all 150ms;
 }
-.currency-btn--active { background: #E2702A; color: #fff; }
+.currency-btn--active { background: var(--color-accent); color: #fff; }
 
 .cart-btn {
   display: inline-flex; align-items: center; gap: 10px; position: relative;
-  background: #E2702A; color: #fff; text-decoration: none;
+  background: var(--color-accent); color: #fff; text-decoration: none;
   font: 400 16px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 14px 20px; box-shadow: 5px 5px 0 rgba(239,231,214,.3);
   transition: opacity 150ms;
 }
 .cart-btn:hover { opacity: .9; }
 .cart-badge {
-  background: #fff; color: #E2702A;
+  background: #fff; color: var(--color-accent);
   font: 800 12px/1 'Archivo', sans-serif;
   border-radius: 50%; width: 22px; height: 22px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -294,7 +294,7 @@ const t = computed(() => T[lang.value])
   padding: 14px 22px; cursor: pointer; transition: all 150ms; margin-bottom: -3px;
 }
 .cat-tab:hover { color: #121212; }
-.cat-tab--active { color: #E2702A; border-bottom-color: #E2702A; }
+.cat-tab--active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
 
 /* PRODUCTS */
 .products-section { padding: 36px 90px 56px; }
@@ -305,7 +305,7 @@ const t = computed(() => T[lang.value])
   background: #fff; border: 3px solid #121212; box-shadow: 5px 5px 0 #121212;
   cursor: pointer; transition: box-shadow 180ms;
 }
-.product-card:hover { box-shadow: 8px 8px 0 #E2702A; }
+.product-card:hover { box-shadow: 8px 8px 0 var(--color-accent); }
 .product-img { position: relative; aspect-ratio: 1; overflow: hidden; }
 .product-photo { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms; }
 .product-card:hover .product-photo { transform: scale(1.04); }
@@ -320,7 +320,7 @@ const t = computed(() => T[lang.value])
   padding: 6px 10px; transform: rotate(-3deg);
 }
 .product-body { padding: 16px 18px 20px; }
-.product-cats { font: 700 11px/1 'Archivo', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #E2702A; margin-bottom: 7px; }
+.product-cats { font: 700 11px/1 'Archivo', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 7px; }
 .product-name { font: 400 22px/.95 'Anton', sans-serif; text-transform: uppercase; margin-bottom: 8px; }
 .product-price { font: 800 18px/1 'Archivo', sans-serif; color: #121212; }
 .product-variants { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
@@ -345,7 +345,7 @@ const t = computed(() => T[lang.value])
   position: absolute; top: 14px; right: 16px; background: transparent; border: none; cursor: pointer;
   color: #121212; transition: color 150ms;
 }
-.modal-close:hover { color: #E2702A; }
+.modal-close:hover { color: var(--color-accent); }
 .modal-inner { display: grid; grid-template-columns: 1fr 1fr; }
 .modal-img { border-right: 3px solid #121212; overflow: hidden; }
 .modal-img-el { width: 100%; height: 100%; min-height: 340px; object-fit: cover; }
@@ -354,7 +354,7 @@ const t = computed(() => T[lang.value])
   background: repeating-linear-gradient(45deg, #c8c0b0, #c8c0b0 9px, #d6cebd 9px, #d6cebd 18px);
 }
 .modal-body { padding: 36px 32px 36px; display: flex; flex-direction: column; }
-.modal-cats { font: 700 12px/1 'Archivo', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #E2702A; margin-bottom: 10px; }
+.modal-cats { font: 700 12px/1 'Archivo', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 10px; }
 .modal-name { font: 400 36px/.9 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 12px; }
 .modal-price { font: 800 24px/1 'Archivo', sans-serif; margin-bottom: 24px; }
 .variant-picker { margin-bottom: 24px; }
@@ -366,12 +366,12 @@ const t = computed(() => T[lang.value])
   transition: all 150ms;
 }
 .variant-option:hover:not(:disabled) { background: #121212; color: #EFE7D6; }
-.variant-option--active { background: #E2702A; border-color: #E2702A; color: #fff; box-shadow: 4px 4px 0 #121212; }
+.variant-option--active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; box-shadow: 4px 4px 0 #121212; }
 .variant-option--oos { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
 .modal-actions { display: flex; flex-direction: column; gap: 12px; margin-top: auto; }
 .add-to-cart-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-  background: #E2702A; color: #fff; border: none;
+  background: var(--color-accent); color: #fff; border: none;
   font: 400 18px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 18px 24px; cursor: pointer; box-shadow: 5px 5px 0 #121212; transition: opacity 150ms;
 }

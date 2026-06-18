@@ -48,7 +48,7 @@ const { lang, setLang } = useLang()
   color: rgba(255,255,255,.55);
 }
 .lang-btn--active {
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff !important;
 }
 </style>

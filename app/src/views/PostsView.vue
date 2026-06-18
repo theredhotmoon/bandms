@@ -144,7 +144,7 @@ function goToPost(id: number) {
       <p v-else class="empty-text">{{ t.noPosts }}</p>
     </section>
 
-    <CheckerStrip :h="14" :size="28" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
     <SiteFooter />
   </div>
 </template>
@@ -162,7 +162,7 @@ function goToPost(id: number) {
 .hero-inner { position: relative; padding: 64px 90px; }
 .hero-kicker {
   font: 800 13px/1 'Archivo', sans-serif; letter-spacing: .28em;
-  color: #E2702A; text-transform: uppercase; display: block; margin-bottom: 16px;
+  color: var(--color-accent); text-transform: uppercase; display: block; margin-bottom: 16px;
 }
 .hero-title { font: 400 80px/.85 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 20px; }
 .hero-sub { font: 500 18px/1.5 'Archivo', sans-serif; color: rgba(239,231,214,.75); max-width: 520px; margin: 0; }
@@ -182,7 +182,7 @@ function goToPost(id: number) {
   border: 3px solid #121212; background: #fff; color: #121212;
   font: 600 16px/1 'Archivo', sans-serif; outline: none;
 }
-.search-input:focus { outline: 3px solid #E2702A; outline-offset: -3px; }
+.search-input:focus { outline: 3px solid var(--color-accent); outline-offset: -3px; }
 .tag-filters { display: flex; gap: 8px; flex-wrap: wrap; }
 .tag-btn {
   border: 3px solid #121212; background: transparent; color: #121212;
@@ -190,7 +190,7 @@ function goToPost(id: number) {
   padding: 10px 16px; cursor: pointer; transition: all 150ms;
 }
 .tag-btn:hover, .tag-btn--active {
-  background: #E2702A; border-color: #E2702A; color: #fff;
+  background: var(--color-accent); border-color: var(--color-accent); color: #fff;
   box-shadow: 4px 4px 0 #121212;
 }
 
@@ -201,11 +201,11 @@ function goToPost(id: number) {
 
 .featured-post {
   display: grid; grid-template-columns: 1.15fr 1fr;
-  border: 3px solid #121212; box-shadow: 10px 10px 0 #E2702A;
+  border: 3px solid #121212; box-shadow: 10px 10px 0 var(--color-accent);
   cursor: pointer; margin-bottom: 36px; transition: box-shadow 200ms;
   background: #fff;
 }
-.featured-post:hover { box-shadow: 14px 14px 0 #E2702A; }
+.featured-post:hover { box-shadow: 14px 14px 0 var(--color-accent); }
 .featured-img { position: relative; overflow: hidden; min-height: 360px; }
 .img-placeholder-dark {
   width: 100%; height: 100%; min-height: 360px;
@@ -223,7 +223,7 @@ function goToPost(id: number) {
 }
 .post-tag {
   position: absolute; top: 14px; right: 14px;
-  background: #E2702A; color: #fff;
+  background: var(--color-accent); color: #fff;
   font: 800 12px/1 'Archivo', sans-serif; letter-spacing: .12em; text-transform: uppercase;
   padding: 7px 11px;
 }
@@ -237,7 +237,7 @@ function goToPost(id: number) {
 .featured-excerpt { font: 500 17px/1.55 'Archivo', sans-serif; color: #444; margin: 0; flex: 1; }
 .read-more {
   display: inline-block; font: 800 13px/1 'Archivo', sans-serif; letter-spacing: .08em;
-  text-transform: uppercase; color: #E2702A; margin-top: 20px; cursor: pointer;
+  text-transform: uppercase; color: var(--color-accent); margin-top: 20px; cursor: pointer;
 }
 .read-more--small { margin-top: 14px; font-size: 12px; }
 
@@ -246,7 +246,7 @@ function goToPost(id: number) {
   background: #fff; border: 3px solid #121212; box-shadow: 5px 5px 0 #121212;
   cursor: pointer; display: flex; flex-direction: column; transition: box-shadow 180ms;
 }
-.post-card:hover { box-shadow: 8px 8px 0 #E2702A; }
+.post-card:hover { box-shadow: 8px 8px 0 var(--color-accent); }
 .card-img { position: relative; overflow: hidden; }
 .card-body { padding: 20px 22px 24px; flex: 1; display: flex; flex-direction: column; }
 .card-title {

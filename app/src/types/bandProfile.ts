@@ -25,6 +25,7 @@ export interface BandProfile {
   comparable_artists: string | null
   booking_email: string | null
   press_email: string | null
+  contact_email: string | null
   tech_contact_phone: string | null
   tech_contact_email: string | null
   tech_rider_notes: string | null
@@ -101,6 +102,7 @@ export interface BandProfilePayload {
   comparable_artists?: string | null
   booking_email?: string | null
   press_email?: string | null
+  contact_email?: string | null
   tech_contact_phone?: string | null
   tech_contact_email?: string | null
   tech_rider_notes?: string | null

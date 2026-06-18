@@ -3,7 +3,7 @@
 @theme {
   --color-ink: #121212;
   --color-paper: #EFE7D6;
-  --color-accent: #E2702A;
+  --color-accent: #1f8f7a;
 }
 
 /* ── Global reset / base ─────────────────────────── */
@@ -25,7 +25,7 @@ body {
 }
 
 .checker-accent {
-  background-image: repeating-conic-gradient(#E2702A 0% 25%, #EFE7D6 0% 50%);
+  background-image: repeating-conic-gradient(var(--color-accent) 0% 25%, #EFE7D6 0% 50%);
   background-size: 20px 20px;
 }
 

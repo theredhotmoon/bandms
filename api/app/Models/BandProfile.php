@@ -18,7 +18,7 @@ class BandProfile extends Model
     protected $fillable = [
         'name', 'bio_short', 'bio_medium', 'bio_long', 'bio_full',
         'formation_year', 'hometown', 'genres', 'comparable_artists',
-        'booking_email', 'press_email', 'artistic_statement',
+        'booking_email', 'press_email', 'contact_email', 'artistic_statement',
         'tech_contact_phone', 'tech_contact_email', 'tech_rider_notes', 'career_level',
         'stat_spotify_monthly', 'stat_instagram_followers', 'stat_tiktok_followers',
         'stat_youtube_subscribers', 'stat_facebook_followers',

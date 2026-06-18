@@ -34,7 +34,7 @@ const rights = { en: 'All rights reserved.', pl: 'Wszelkie prawa zastrzeżone.' 
 
 <template>
   <footer class="site-footer">
-    <CheckerStrip :h="14" :size="28" color-a="#E2702A" color-b="#EFE7D6" style="position:absolute;top:0;left:0;right:0;" />
+    <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" style="position:absolute;top:0;left:0;right:0;" />
     <div class="site-footer__grid">
       <div>
         <RouterLink to="/" class="site-footer__brand">SKANKING STORKS</RouterLink>
@@ -51,7 +51,7 @@ const rights = { en: 'All rights reserved.', pl: 'Wszelkie prawa zastrzeżone.' 
         <h3 class="site-footer__head">{{ bookingTitle[lang] }}</h3>
         <p class="site-footer__sub">{{ bookingText[lang] }}</p>
         <a href="mailto:booking@skankingstorks.com" class="site-footer__email">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
           booking@skankingstorks.com
         </a>
       </div>
@@ -118,7 +118,7 @@ const rights = { en: 'All rights reserved.', pl: 'Wszelkie prawa zastrzeżone.' 
   font: 400 26px/1 'Anton', sans-serif;
   text-transform: uppercase;
   margin-bottom: 14px;
-  color: #E2702A;
+  color: var(--color-accent);
 }
 .site-footer__sub {
   font: 500 15px/1.5 'Archivo', sans-serif;
@@ -146,7 +146,7 @@ const rights = { en: 'All rights reserved.', pl: 'Wszelkie prawa zastrzeżone.' 
   text-decoration: none;
   transition: color 120ms;
 }
-.site-footer__nav-link:hover { color: #E2702A; }
+.site-footer__nav-link:hover { color: var(--color-accent); }
 .site-footer__bottom {
   display: flex;
   justify-content: space-between;

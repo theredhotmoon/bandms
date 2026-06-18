@@ -51,6 +51,7 @@ const form = reactive({
   comparable_artists:  '',
   booking_email:        '',
   press_email:          '',
+  contact_email:        '',
   tech_contact_phone:   '',
   tech_contact_email:   '',
   tech_rider_notes:     '',
@@ -92,6 +93,7 @@ watch(
     form.comparable_artists = val.comparable_artists ?? ''
     form.booking_email        = val.booking_email        ?? ''
     form.press_email          = val.press_email          ?? ''
+    form.contact_email        = val.contact_email        ?? ''
     form.tech_contact_phone   = val.tech_contact_phone   ?? ''
     form.tech_contact_email   = val.tech_contact_email   ?? ''
     form.tech_rider_notes     = val.tech_rider_notes     ?? ''
@@ -138,6 +140,7 @@ async function saveProfile() {
       comparable_artists:  form.comparable_artists  || null,
       booking_email:         form.booking_email         || null,
       press_email:           form.press_email           || null,
+      contact_email:         form.contact_email         || null,
       tech_contact_phone:    form.tech_contact_phone    || null,
       tech_contact_email:    form.tech_contact_email    || null,
       tech_rider_notes:      form.tech_rider_notes      || null,
@@ -459,6 +462,11 @@ function platformMeta(key: SocialPlatform) {
                 <label class="field-label">Press / PR email</label>
                 <input v-model="form.press_email" type="email" class="field-input" placeholder="press@yourband.com" />
                 <p class="field-hint">For journalists, bloggers, playlist curators.</p>
+              </div>
+              <div>
+                <label class="field-label">General contact email</label>
+                <input v-model="form.contact_email" type="email" class="field-input" placeholder="hello@yourband.com" />
+                <p class="field-hint">Shown as the "General" address on the contact page. Defaults to hello@skankingstorks.com if left blank.</p>
               </div>
               <div>
                 <label class="field-label">Tech contact email</label>
