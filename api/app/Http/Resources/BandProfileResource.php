@@ -32,6 +32,7 @@ class BandProfileResource extends JsonResource
             'comparable_artists'      => $this->comparable_artists,
             'booking_email'           => $this->booking_email,
             'press_email'             => $this->press_email,
+            'contact_email'           => $this->contact_email,
             'tech_contact_phone'      => $this->tech_contact_phone,
             'tech_contact_email'      => $this->tech_contact_email,
             'tech_rider_notes'        => $this->tech_rider_notes,

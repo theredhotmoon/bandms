@@ -85,7 +85,7 @@ onMounted(async () => {
         const isUpcoming = new Date(c.date + 'T00:00:00') >= today
         const icon = isUpcoming ? upcomingIcon : pastIcon
         const badge = isUpcoming
-          ? `<div style="display:inline-block;background:#E2702A;color:#fff;font:800 10px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;margin-bottom:8px;">${lang.value === 'pl' ? 'NADCHODZĄCY' : 'UPCOMING'}</div>`
+          ? `<div style="display:inline-block;background:var(--color-accent);color:#fff;font:800 10px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;margin-bottom:8px;">${lang.value === 'pl' ? 'NADCHODZĄCY' : 'UPCOMING'}</div>`
           : ''
         L.marker([lat, lng], { icon })
           .addTo(map!)
@@ -212,7 +212,7 @@ const t = computed(() => T[lang.value])
     <section class="concerts-section">
       <div class="section-inner">
         <h2 class="section-head">{{ t.upcomingShows }}</h2>
-        <CheckerStrip :h="12" :size="22" color-a="#E2702A" color-b="#EFE7D6" style="margin: 20px 0;" />
+        <CheckerStrip :h="12" :size="22" color-a="var(--color-accent)" color-b="#EFE7D6" style="margin: 20px 0;" />
 
         <div v-if="upcoming.length" class="concert-list">
           <div v-for="c in upcoming" :key="c.id" class="concert-row">
@@ -270,7 +270,7 @@ const t = computed(() => T[lang.value])
         </div>
         <p v-else class="empty-text empty-text--cream">{{ t.noPast }}</p>
       </div>
-      <CheckerStrip :h="14" :size="18" color-a="#E2702A" color-b="#121212" />
+      <CheckerStrip :h="14" :size="18" color-a="var(--color-accent)" color-b="#121212" />
     </section>
 
     <SiteFooter />
@@ -299,7 +299,7 @@ const t = computed(() => T[lang.value])
 .hero-kicker {
   font: 800 13px/1 'Archivo', sans-serif;
   letter-spacing: .28em;
-  color: #E2702A;
+  color: var(--color-accent);
   text-transform: uppercase;
   display: block;
   margin-bottom: 16px;
@@ -308,7 +308,7 @@ const t = computed(() => T[lang.value])
 .hero-sub { font: 500 18px/1.5 'Archivo', sans-serif; color: rgba(239,231,214,.75); max-width: 480px; margin: 0 0 28px; }
 .solid-btn {
   display: inline-flex; align-items: center; gap: 10px;
-  background: #E2702A; color: #fff; text-decoration: none;
+  background: var(--color-accent); color: #fff; text-decoration: none;
   font: 400 16px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 14px 22px; box-shadow: 5px 5px 0 #EFE7D6;
   transition: opacity 150ms;
@@ -324,7 +324,7 @@ const t = computed(() => T[lang.value])
   min-width: 110px;
 }
 .stat-box + .stat-box { border-left: none; }
-.stat-num { font: 400 52px/.9 'Anton', sans-serif; color: #E2702A; }
+.stat-num { font: 400 52px/.9 'Anton', sans-serif; color: var(--color-accent); }
 .stat-label { font: 700 13px/1 'Archivo', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: rgba(239,231,214,.6); margin-top: 8px; }
 
 /* MAP */
@@ -366,7 +366,7 @@ const t = computed(() => T[lang.value])
 }
 .date-block {
   display: flex; flex-direction: column; align-items: center;
-  background: #E2702A; color: #fff;
+  background: var(--color-accent); color: #fff;
   padding: 12px 10px 8px;
   box-shadow: 4px 4px 0 #121212;
   min-width: 72px;
@@ -375,10 +375,10 @@ const t = computed(() => T[lang.value])
 .date-month { font: 800 12px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase; margin-top: 4px; }
 .concert-venue { font: 400 30px/.95 'Anton', sans-serif; text-transform: uppercase; }
 .concert-city { font: 600 15px/1 'Archivo', sans-serif; color: #666; margin-top: 5px; }
-.concert-bands { font: 600 13px/1 'Archivo', sans-serif; color: #E2702A; margin-top: 5px; }
+.concert-bands { font: 600 13px/1 'Archivo', sans-serif; color: var(--color-accent); margin-top: 5px; }
 .concert-actions {}
 .ticket-btn {
-  display: inline-block; background: #E2702A; color: #fff;
+  display: inline-block; background: var(--color-accent); color: #fff;
   font: 400 15px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 14px 18px; text-decoration: none;
   box-shadow: 4px 4px 0 #121212; white-space: nowrap;
@@ -405,7 +405,7 @@ const t = computed(() => T[lang.value])
   transition: all 150ms;
 }
 .year-btn:hover, .year-btn--active {
-  background: #E2702A; border-color: #E2702A; color: #fff;
+  background: var(--color-accent); border-color: var(--color-accent); color: #fff;
   box-shadow: 4px 4px 0 rgba(239,231,214,.2);
 }
 .archive-list {}
@@ -415,7 +415,7 @@ const t = computed(() => T[lang.value])
   font: 600 15px/1 'Archivo', sans-serif;
 }
 .archive-date { color: rgba(239,231,214,.5); min-width: 160px; flex-shrink: 0; }
-.archive-sep { color: #E2702A; flex-shrink: 0; }
+.archive-sep { color: var(--color-accent); flex-shrink: 0; }
 .archive-venue { color: rgba(239,231,214,.85); }
 
 @media (max-width: 1100px) {
@@ -448,7 +448,7 @@ const t = computed(() => T[lang.value])
 .ss-ring {
   position: absolute;
   inset: -5px;
-  border: 3px solid #E2702A;
+  border: 3px solid var(--color-accent);
   border-radius: 50%;
   animation: ss-pulse 2s ease-out infinite;
   pointer-events: none;
@@ -456,7 +456,7 @@ const t = computed(() => T[lang.value])
 .ss-dot { display: block; border-radius: 50%; flex-shrink: 0; }
 .ss-dot--upcoming {
   width: 20px; height: 20px;
-  background: #E2702A;
+  background: var(--color-accent);
   border: 3px solid #121212;
   box-shadow: 3px 3px 0 rgba(18,18,18,.35);
   position: relative; z-index: 1;
@@ -487,7 +487,7 @@ const t = computed(() => T[lang.value])
   width: 22px !important; height: 22px !important;
   line-height: 20px !important; text-align: center !important;
 }
-.leaflet-popup-close-button:hover { color: #E2702A !important; }
+.leaflet-popup-close-button:hover { color: var(--color-accent) !important; }
 
 /* Leaflet zoom control branding */
 .leaflet-control-zoom a {

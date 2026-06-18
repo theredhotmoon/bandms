@@ -179,7 +179,7 @@ function formatViews(v: number | null): string {
         </div>
       </div>
     </section>
-    <CheckerStrip :h="16" :size="30" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="16" :size="30" color-a="var(--color-accent)" color-b="#EFE7D6" />
 
     <!-- FEATURED RELEASE -->
     <section v-if="featured" class="section section--featured">
@@ -266,7 +266,7 @@ function formatViews(v: number | null): string {
       <div class="section-inner">
         <h2 class="section-head">{{ t.disco }}</h2>
         <p class="disco-sub">{{ t.discoSub }}</p>
-        <CheckerStrip :h="12" :size="20" color-a="#E2702A" color-b="#EFE7D6" style="margin: 24px 0;" />
+        <CheckerStrip :h="12" :size="20" color-a="var(--color-accent)" color-b="#EFE7D6" style="margin: 24px 0;" />
         <div class="disco-grid">
           <div v-for="r in discography" :key="r.id" class="disco-card" :class="{ 'disco-card--open': openId === r.id }">
             <!-- Card header (always visible) -->
@@ -323,7 +323,7 @@ function formatViews(v: number | null): string {
     <section class="section">
       <div class="section-inner">
         <h2 class="section-head">{{ t.videos }}</h2>
-        <CheckerStrip :h="12" :size="20" color-a="#E2702A" color-b="#EFE7D6" style="margin: 24px 0;" />
+        <CheckerStrip :h="12" :size="20" color-a="var(--color-accent)" color-b="#EFE7D6" style="margin: 24px 0;" />
         <div v-if="videos.length" class="videos-grid">
           <button
             v-for="v in videos"
@@ -413,7 +413,7 @@ function formatViews(v: number | null): string {
 .hero-kicker {
   display: block;
   font: 800 13px/1 'Archivo', sans-serif;
-  letter-spacing: .3em; color: #E2702A; text-transform: uppercase; margin-bottom: 20px;
+  letter-spacing: .3em; color: var(--color-accent); text-transform: uppercase; margin-bottom: 20px;
 }
 .hero-title {
   font: 400 140px/.82 'Anton', sans-serif;
@@ -443,7 +443,7 @@ function formatViews(v: number | null): string {
 .featured-cover-wrap {
   position: relative;
   border: 4px solid #121212;
-  box-shadow: 10px 10px 0 #E2702A;
+  box-shadow: 10px 10px 0 var(--color-accent);
   aspect-ratio: 1; overflow: hidden;
 }
 .featured-cover { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -454,7 +454,7 @@ function formatViews(v: number | null): string {
 }
 .upcoming-stamp {
   position: absolute; top: 14px; left: 14px;
-  border: 3px solid #E2702A; color: #E2702A;
+  border: 3px solid var(--color-accent); color: var(--color-accent);
   font: 800 11px/1 'Archivo', sans-serif; letter-spacing: .12em;
   text-transform: uppercase; padding: 6px 10px; background: #EFE7D6;
   transform: rotate(-3deg);
@@ -469,7 +469,7 @@ function formatViews(v: number | null): string {
 .featured-links { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 22px; }
 .solid-btn {
   display: inline-flex; align-items: center; gap: 10px;
-  background: #E2702A; color: #fff; text-decoration: none;
+  background: var(--color-accent); color: #fff; text-decoration: none;
   font: 400 16px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 14px 22px; box-shadow: 5px 5px 0 #121212;
   transition: opacity 150ms; white-space: nowrap;
@@ -489,7 +489,7 @@ function formatViews(v: number | null): string {
   align-items: center; gap: 12px; padding: 10px 0;
   border-bottom: 1.5px solid rgba(18,18,18,.1);
 }
-.track-num { font: 400 18px/1 'Anton', sans-serif; color: #E2702A; }
+.track-num { font: 400 18px/1 'Anton', sans-serif; color: var(--color-accent); }
 .track-title { font: 600 15px/1.3 'Archivo', sans-serif; color: #222; }
 .track-dur { font: 600 13px/1 ui-monospace, Menlo, monospace; color: #888; }
 
@@ -506,7 +506,7 @@ function formatViews(v: number | null): string {
   padding: 13px 18px; text-decoration: none; transition: border-color 150ms, color 150ms;
 }
 .platform-btn:not(.platform-btn--dim):hover {
-  border-color: #E2702A; color: #E2702A;
+  border-color: var(--color-accent); color: var(--color-accent);
 }
 .platform-btn--dim { opacity: .35; cursor: default; }
 
@@ -517,7 +517,7 @@ function formatViews(v: number | null): string {
   border: 3px solid #121212; background: #fff;
   transition: box-shadow .15s;
 }
-.disco-card--open { box-shadow: 6px 6px 0 #E2702A; }
+.disco-card--open { box-shadow: 6px 6px 0 var(--color-accent); }
 .disco-card-header {
   all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
 }
@@ -537,7 +537,7 @@ function formatViews(v: number | null): string {
 }
 .disco-toggle {
   font: 800 22px/1 'Archivo', sans-serif;
-  color: #E2702A; padding: 0 16px 14px;
+  color: var(--color-accent); padding: 0 16px 14px;
   display: block; text-align: right;
 }
 .disco-expanded { padding: 0 16px 16px; }
@@ -557,7 +557,7 @@ function formatViews(v: number | null): string {
   border: 3px solid #121212; background: #fff;
   transition: box-shadow .15s;
 }
-.video-card:hover { box-shadow: 5px 5px 0 #E2702A; }
+.video-card:hover { box-shadow: 5px 5px 0 var(--color-accent); }
 .video-thumb-wrap {
   position: relative; aspect-ratio: 16/9;
   border-bottom: 3px solid #121212; overflow: hidden; background: #111;
@@ -570,7 +570,7 @@ function formatViews(v: number | null): string {
 }
 .video-play-btn > svg {
   width: 52px; height: 52px; padding: 14px;
-  background: #E2702A; color: #fff;
+  background: var(--color-accent); color: #fff;
   box-shadow: 4px 4px 0 #121212;
   border-radius: 50%;
 }
@@ -583,7 +583,7 @@ function formatViews(v: number | null): string {
 .video-info { padding: 12px 14px 14px; }
 .video-channel {
   font: 800 10px/1 'Archivo', sans-serif;
-  letter-spacing: .12em; text-transform: uppercase; color: #E2702A; margin-bottom: 8px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 8px;
 }
 .video-title {
   font: 400 22px/1.05 'Anton', sans-serif;
@@ -599,7 +599,7 @@ function formatViews(v: number | null): string {
   background: #fff;
 }
 .nl-stamp {
-  display: inline-block; border: 3px solid #E2702A; color: #E2702A;
+  display: inline-block; border: 3px solid var(--color-accent); color: var(--color-accent);
   font: 800 12px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase;
   padding: 7px 12px; border-radius: 3px; margin-bottom: 14px;
 }
@@ -610,20 +610,20 @@ function formatViews(v: number | null): string {
 .nl-sub { font: 500 16px/1.5 'Archivo', sans-serif; color: #555; margin: 0; }
 .nl-done {
   font: 400 28px/1.1 'Anton', sans-serif;
-  color: #E2702A; text-transform: uppercase;
+  color: var(--color-accent); text-transform: uppercase;
 }
 .nl-form { display: flex; flex-direction: column; gap: 12px; }
 .nl-input {
   border: 3px solid #121212; padding: 15px 17px;
   font: 600 16px/1 'Archivo', sans-serif; outline: none; background: #EFE7D6;
 }
-.nl-input:focus { border-color: #E2702A; }
+.nl-input:focus { border-color: var(--color-accent); }
 .nl-submit {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   background: #121212; color: #EFE7D6; border: none;
   font: 400 18px/1 'Anton', sans-serif; text-transform: uppercase;
   padding: 15px 24px; cursor: pointer;
-  box-shadow: 6px 6px 0 #E2702A; transition: opacity 150ms;
+  box-shadow: 6px 6px 0 var(--color-accent); transition: opacity 150ms;
 }
 .nl-submit:hover { opacity: .85; }
 
@@ -636,7 +636,7 @@ function formatViews(v: number | null): string {
 .lb-modal {
   width: 860px; max-width: 100%;
   background: #EFE7D6; border: 5px solid #121212;
-  box-shadow: 14px 14px 0 #E2702A;
+  box-shadow: 14px 14px 0 var(--color-accent);
 }
 .lb-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -654,7 +654,7 @@ function formatViews(v: number | null): string {
 .lb-placeholder { width: 100%; height: 100%; display: grid; place-items: center; }
 .lb-play-big {
   width: 80px; height: 80px; border-radius: 50%;
-  background: #E2702A; display: grid; place-items: center;
+  background: var(--color-accent); display: grid; place-items: center;
   color: #fff; box-shadow: 5px 5px 0 #121212;
 }
 .lb-footer {

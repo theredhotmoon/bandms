@@ -167,7 +167,7 @@ const bioText = computed(() =>
 
         <RouterLink to="/releases" class="hero-listen-btn">
           <span class="hero-play-circle">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#E2702A" stroke="none"><path d="M8 5.5l11 6.5-11 6.5z" /></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-accent)" stroke="none"><path d="M8 5.5l11 6.5-11 6.5z" /></svg>
           </span>
           {{ t.listen }}
         </RouterLink>
@@ -239,7 +239,7 @@ const bioText = computed(() =>
 
     <!-- ── NEWS ──────────────────────────────── -->
     <section class="news-section">
-      <CheckerStrip :h="14" :size="28" color-a="#E2702A" color-b="#EFE7D6" />
+      <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
       <div class="news-inner">
         <div class="news-hd">
           <div>
@@ -301,7 +301,7 @@ const bioText = computed(() =>
           <!-- Releases -->
           <div>
             <div class="col-hd-row">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#E2702A" stroke="none"><path d="M8 5.5l11 6.5-11 6.5z" /></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-accent)" stroke="none"><path d="M8 5.5l11 6.5-11 6.5z" /></svg>
               <h3 class="col-hd">{{ t.releasesHead }}</h3>
             </div>
             <div v-if="releases.length" class="releases-list">
@@ -326,7 +326,7 @@ const bioText = computed(() =>
           <!-- Videos -->
           <div>
             <div class="col-hd-row">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E2702A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="M11 9.5l4 2.5-4 2.5z" fill="#E2702A" stroke="none" /></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="M11 9.5l4 2.5-4 2.5z" fill="var(--color-accent)" stroke="none" /></svg>
               <h3 class="col-hd">{{ t.videosHead }}</h3>
             </div>
             <div v-if="videos.length" class="videos-list">
@@ -441,13 +441,13 @@ const bioText = computed(() =>
 }
 .hero-nav-item:hover { opacity: .7; }
 .hero-admin-btn {
-  color: #E2702A;
+  color: var(--color-accent);
   text-decoration: none;
-  border: 2px solid #E2702A;
+  border: 2px solid var(--color-accent);
   padding: 6px 12px;
   transition: background 120ms, color 120ms;
 }
-.hero-admin-btn:hover { background: #E2702A; color: #fff; }
+.hero-admin-btn:hover { background: var(--color-accent); color: #fff; }
 
 /* center content */
 .hero-center {
@@ -463,7 +463,7 @@ const bioText = computed(() =>
 .hero-kicker {
   font: 800 15px/1 'Archivo', sans-serif;
   letter-spacing: .36em;
-  color: #E2702A;
+  color: var(--color-accent);
   text-transform: uppercase;
   margin-bottom: 28px;
 }
@@ -471,7 +471,7 @@ const bioText = computed(() =>
   width: 340px;
   height: 340px;
   border-radius: 50%;
-  border: 16px solid #E2702A;
+  border: 16px solid var(--color-accent);
   overflow: hidden;
   background: #1a1a1a;
   display: flex;
@@ -500,7 +500,7 @@ const bioText = computed(() =>
   display: inline-flex;
   align-items: center;
   gap: 18px;
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff;
   text-decoration: none;
   font: 400 36px/1 'Anton', sans-serif;
@@ -529,12 +529,12 @@ const bioText = computed(() =>
   text-decoration: none;
   transition: color 120ms;
 }
-.hero-social:hover { color: #E2702A; }
+.hero-social:hover { color: var(--color-accent); }
 
 /* ── MARQUEE ─────────────────────────────────── */
 .marquee-bar {
   background: #121212;
-  border-bottom: 4px solid #E2702A;
+  border-bottom: 4px solid var(--color-accent);
   height: 56px;
   overflow: hidden;
   display: flex;
@@ -551,7 +551,7 @@ const bioText = computed(() =>
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
-.marquee-dot { color: #E2702A; }
+.marquee-dot { color: var(--color-accent); }
 
 /* ── SHARED UTILS ────────────────────────────── */
 .section-head {
@@ -588,12 +588,12 @@ const bioText = computed(() =>
   cursor: pointer;
 }
 .ghost-btn:hover { background: #121212; color: #EFE7D6; }
-.act { color: #E2702A; }
+.act { color: var(--color-accent); }
 .solid-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff;
   border: none;
   font: 400 16px/1 'Anton', sans-serif;
@@ -624,7 +624,7 @@ const bioText = computed(() =>
 }
 .show-num {
   font: 400 30px/1 'Anton', sans-serif;
-  color: #E2702A;
+  color: var(--color-accent);
 }
 .show-city {
   font: 400 28px/.95 'Anton', sans-serif;
@@ -638,7 +638,7 @@ const bioText = computed(() =>
 .show-date { color: #888; }
 .show-ticket-btn {
   display: inline-block;
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff;
   font: 400 15px/1 'Anton', sans-serif;
   text-transform: uppercase;
@@ -665,8 +665,8 @@ const bioText = computed(() =>
 
 .genre-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .genre-chip {
-  border: 2px solid #E2702A;
-  color: #E2702A;
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
   font: 800 12px/1 'Archivo', sans-serif;
   letter-spacing: .1em;
   padding: 8px 11px;
@@ -700,7 +700,7 @@ const bioText = computed(() =>
   font: 700 14px/1 'Archivo', sans-serif;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #E2702A;
+  color: var(--color-accent);
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
@@ -725,7 +725,7 @@ const bioText = computed(() =>
 .post-tag {
   position: absolute;
   top: 14px; left: 14px;
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff;
   font: 800 12px/1 'Archivo', sans-serif;
   letter-spacing: .12em;
@@ -754,7 +754,7 @@ const bioText = computed(() =>
   font: 800 13px/1 'Archivo', sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: #E2702A;
+  color: var(--color-accent);
   margin-top: 18px;
   cursor: pointer;
 }
@@ -779,7 +779,7 @@ const bioText = computed(() =>
   font: 700 11px/1 'Archivo', sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: #E2702A;
+  color: var(--color-accent);
 }
 .news-side-title {
   font: 400 22px/.98 'Anton', sans-serif;
@@ -849,8 +849,8 @@ const bioText = computed(() =>
 .release-meta { font: 600 13px/1 'Archivo', sans-serif; color: #555; margin: 6px 0 10px; }
 .stamp-soon {
   display: inline-block;
-  border: 3px solid #E2702A;
-  color: #E2702A;
+  border: 3px solid var(--color-accent);
+  color: var(--color-accent);
   font: 800 12px/1 'Archivo', sans-serif;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -904,7 +904,7 @@ const bioText = computed(() =>
   content: '';
   display: block;
   width: 38px; height: 38px;
-  background: #E2702A url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5.5l11 6.5-11 6.5z'/%3E%3C/svg%3E") center/22px no-repeat;
+  background: var(--color-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5.5l11 6.5-11 6.5z'/%3E%3C/svg%3E") center/22px no-repeat;
   border-radius: 50%;
   box-shadow: 3px 3px 0 #121212;
 }
@@ -924,8 +924,8 @@ const bioText = computed(() =>
 }
 .nl-stamp {
   display: inline-block;
-  border: 3px solid #E2702A;
-  color: #E2702A;
+  border: 3px solid var(--color-accent);
+  color: var(--color-accent);
   font: 800 12px/1 'Archivo', sans-serif;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -948,7 +948,7 @@ const bioText = computed(() =>
   color: #121212;
   outline: none;
 }
-.nl-input:focus { outline: 3px solid #E2702A; outline-offset: -3px; }
+.nl-input:focus { outline: 3px solid var(--color-accent); outline-offset: -3px; }
 .nl-submit {
   background: #121212;
   color: #EFE7D6;
@@ -957,13 +957,13 @@ const bioText = computed(() =>
   text-transform: uppercase;
   padding: 16px 24px;
   cursor: pointer;
-  box-shadow: 6px 6px 0 #E2702A;
+  box-shadow: 6px 6px 0 var(--color-accent);
   transition: opacity 150ms;
 }
 .nl-submit:hover { opacity: .9; }
 .nl-done {
   font: 400 28px/1.1 'Anton', sans-serif;
-  color: #E2702A;
+  color: var(--color-accent);
   text-transform: uppercase;
 }
 

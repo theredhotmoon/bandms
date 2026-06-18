@@ -177,7 +177,7 @@ const t = computed(() => T[lang.value])
       </div>
     </Teleport>
 
-    <CheckerStrip :h="14" :size="28" color-a="#E2702A" color-b="#EFE7D6" />
+    <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
     <SiteFooter />
   </div>
 </template>
@@ -195,7 +195,7 @@ const t = computed(() => T[lang.value])
 .hero-inner { position: relative; padding: 64px 90px; }
 .hero-kicker {
   font: 800 13px/1 'Archivo', sans-serif; letter-spacing: .28em;
-  color: #E2702A; text-transform: uppercase; display: block; margin-bottom: 16px;
+  color: var(--color-accent); text-transform: uppercase; display: block; margin-bottom: 16px;
 }
 .hero-title { font: 400 80px/.85 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 20px; }
 .hero-sub { font: 500 18px/1.5 'Archivo', sans-serif; color: rgba(239,231,214,.75); max-width: 520px; margin: 0; }
@@ -211,7 +211,7 @@ const t = computed(() => T[lang.value])
   padding: 10px 18px; cursor: pointer; transition: all 150ms;
 }
 .filter-btn:hover, .filter-btn--active {
-  background: #E2702A; border-color: #E2702A; color: #fff;
+  background: var(--color-accent); border-color: var(--color-accent); color: #fff;
   box-shadow: 4px 4px 0 #121212;
 }
 
@@ -224,7 +224,7 @@ const t = computed(() => T[lang.value])
   border: 3px solid #121212; box-shadow: 5px 5px 0 #121212;
   transition: box-shadow 150ms;
 }
-.album-cover:hover { box-shadow: 8px 8px 0 #E2702A; }
+.album-cover:hover { box-shadow: 8px 8px 0 var(--color-accent); }
 .album-cover-img { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms; }
 .album-cover:hover .album-cover-img { transform: scale(1.04); }
 .album-cover-placeholder {
@@ -238,7 +238,7 @@ const t = computed(() => T[lang.value])
 }
 .album-cover:hover .album-cover-overlay { opacity: 1; }
 .album-count {
-  background: #E2702A; color: #fff; font: 800 12px/1 'Archivo', sans-serif;
+  background: var(--color-accent); color: #fff; font: 800 12px/1 'Archivo', sans-serif;
   letter-spacing: .1em; text-transform: uppercase; padding: 7px 10px;
 }
 .album-meta { padding: 14px 3px 10px; }
@@ -262,23 +262,23 @@ const t = computed(() => T[lang.value])
   background: transparent; border: none; color: #EFE7D6; cursor: pointer;
   transition: color 150ms;
 }
-.lb-close:hover { color: #E2702A; }
+.lb-close:hover { color: var(--color-accent); }
 .lb-arrow {
   position: absolute; top: 50%; transform: translateY(-50%);
   background: transparent; border: none; color: #EFE7D6; cursor: pointer;
   padding: 12px; transition: color 150ms;
 }
-.lb-arrow:hover { color: #E2702A; }
+.lb-arrow:hover { color: var(--color-accent); }
 .lb-arrow--prev { left: 20px; }
 .lb-arrow--next { right: 20px; }
 .lb-img-wrap {
   max-width: min(90vw, 1200px); max-height: 88vh;
   display: flex; flex-direction: column; align-items: center;
 }
-.lb-img { max-width: 100%; max-height: 80vh; object-fit: contain; box-shadow: 8px 8px 0 #E2702A; }
+.lb-img { max-width: 100%; max-height: 80vh; object-fit: contain; box-shadow: 8px 8px 0 var(--color-accent); }
 .lb-placeholder {
   width: 800px; max-width: 90vw; height: 500px; max-height: 70vh;
-  background: #333; box-shadow: 8px 8px 0 #E2702A;
+  background: #333; box-shadow: 8px 8px 0 var(--color-accent);
 }
 .lb-caption {
   font: 500 15px/1.4 'Archivo', sans-serif; color: rgba(239,231,214,.7);

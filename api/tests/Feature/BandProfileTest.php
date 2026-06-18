@@ -153,11 +153,13 @@ describe('PUT /api/band-profile', function () {
         $this->putJson('/api/band-profile', [
             'booking_email'      => 'booking@band.com',
             'press_email'        => 'press@band.com',
+            'contact_email'      => 'hello@band.com',
             'tech_contact_phone' => '+48 123 456 789',
             'tech_contact_email' => 'tech@band.com',
         ])->assertSuccessful()
           ->assertJsonPath('data.booking_email', 'booking@band.com')
           ->assertJsonPath('data.press_email', 'press@band.com')
+          ->assertJsonPath('data.contact_email', 'hello@band.com')
           ->assertJsonPath('data.tech_contact_phone', '+48 123 456 789')
           ->assertJsonPath('data.tech_contact_email', 'tech@band.com');
     });
@@ -172,6 +174,10 @@ describe('PUT /api/band-profile', function () {
         $this->putJson('/api/band-profile', ['press_email' => 'also-invalid'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['press_email']);
+
+        $this->putJson('/api/band-profile', ['contact_email' => 'not-valid'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['contact_email']);
 
         $this->putJson('/api/band-profile', ['tech_contact_email' => 'bad'])
             ->assertUnprocessable()

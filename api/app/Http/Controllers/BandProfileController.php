@@ -50,6 +50,7 @@ class BandProfileController extends Controller
             'comparable_artists'       => ['nullable', 'string', 'max:500'],
             'booking_email'            => ['nullable', 'email', 'max:255'],
             'press_email'              => ['nullable', 'email', 'max:255'],
+            'contact_email'            => ['nullable', 'email', 'max:255'],
             'tech_contact_phone'       => ['nullable', 'string', 'max:50'],
             'tech_contact_email'       => ['nullable', 'email', 'max:255'],
             'tech_rider_notes'         => ['nullable', 'string'],

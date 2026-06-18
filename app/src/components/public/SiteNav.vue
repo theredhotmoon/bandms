@@ -79,20 +79,20 @@ const NAV = [
 }
 .site-nav__item:hover { opacity: .7; }
 .site-nav__item--active {
-  color: #E2702A;
+  color: var(--color-accent);
   cursor: default;
 }
 .site-nav__admin {
-  color: #E2702A;
+  color: var(--color-accent);
   text-decoration: none;
   font: 700 13px/1 'Archivo', sans-serif;
   letter-spacing: .08em;
-  border: 2px solid #E2702A;
+  border: 2px solid var(--color-accent);
   padding: 6px 12px;
   transition: background 120ms, color 120ms;
 }
 .site-nav__admin:hover {
-  background: #E2702A;
+  background: var(--color-accent);
   color: #fff;
 }
 @media (max-width: 900px) {
