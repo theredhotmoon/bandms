@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import CartSummary from './CartSummary.vue'
@@ -8,6 +8,8 @@ const cartStore = useCartStore()
 const router = useRouter()
 
 const currency = computed(() => cartStore.selectedCurrency ?? cartStore.currencies[0] ?? 'USD')
+const drawerEl = ref<HTMLElement>()
+const closeBtn = ref<HTMLButtonElement>()
 
 function goToCart() {
   cartStore.closeDrawer()
@@ -23,6 +25,29 @@ function browseMerch() {
   cartStore.closeDrawer()
   router.push('/merch')
 }
+
+// Move focus to close button when drawer opens; trap focus inside; close on Esc
+watch(() => cartStore.isDrawerOpen, (open) => {
+  if (open) {
+    requestAnimationFrame(() => closeBtn.value?.focus())
+  }
+})
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { cartStore.closeDrawer(); return }
+  if (e.key !== 'Tab' || !drawerEl.value) return
+  const focusable = drawerEl.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  )
+  if (!focusable.length) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault(); last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault(); first.focus()
+  }
+}
 </script>
 
 <template>
@@ -32,10 +57,10 @@ function browseMerch() {
     </Transition>
 
     <Transition name="slide-right">
-      <div v-if="cartStore.isDrawerOpen" class="cart-drawer" role="dialog" aria-label="Cart">
+      <div v-if="cartStore.isDrawerOpen" ref="drawerEl" class="cart-drawer" role="dialog" aria-modal="true" aria-label="Cart" @keydown="onKeydown">
         <div class="drawer-header">
           <span class="drawer-title">Your cart</span>
-          <button type="button" class="drawer-close" aria-label="Close" @click="cartStore.closeDrawer()">✕</button>
+          <button ref="closeBtn" type="button" class="drawer-close" aria-label="Close cart" @click="cartStore.closeDrawer()">✕</button>
         </div>
 
         <div class="drawer-body">

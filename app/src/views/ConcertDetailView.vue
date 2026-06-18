@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import VenueMap from '@/components/map/VenueMap.vue'
 import { useConcerts } from '@/composables/useConcerts'
@@ -33,6 +33,10 @@ function formatDate(date: string) {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 }
+
+watch(concert, (c) => {
+  if (c?.date) document.title = `${formatDate(c.date)} — Skanking Storks`
+}, { immediate: true })
 
 function formatDuration(sec: number): string {
   const m = Math.floor(sec / 60)

@@ -55,7 +55,7 @@ async function handleLogout() {
       />
       <!-- Fallback: original BandMS logo -->
       <template v-else>
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M9 19V6l12-3v13M9 19c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-3c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zM9 10l12-3"/>
         </svg>
         <span class="logo-text">Band<span class="logo-accent">MS</span></span>
@@ -96,7 +96,7 @@ async function handleLogout() {
     </div>
 
     <!-- Hamburger (mobile) -->
-    <button class="hamburger" :aria-expanded="mobileOpen" aria-label="Toggle navigation" @click="mobileOpen = !mobileOpen">
+    <button class="hamburger" :aria-expanded="mobileOpen" aria-controls="mobile-nav-menu" aria-label="Toggle navigation" @click="mobileOpen = !mobileOpen">
       <span class="bar" :class="{ open: mobileOpen }" />
       <span class="bar mid" :class="{ open: mobileOpen }" />
       <span class="bar" :class="{ open: mobileOpen }" />
@@ -105,7 +105,7 @@ async function handleLogout() {
 
   <!-- Mobile drawer -->
   <Transition name="slide">
-    <div v-if="mobileOpen" class="mobile-menu">
+    <nav v-if="mobileOpen" id="mobile-nav-menu" class="mobile-menu" aria-label="Mobile navigation">
       <RouterLink
         v-for="link in navLinks"
         :key="link.to"
@@ -124,7 +124,7 @@ async function handleLogout() {
       </RouterLink>
       <button v-if="isLoggedIn" class="mob-link mob-signout" @click="handleLogout">Sign out</button>
       <RouterLink v-else to="/login" class="mob-link" @click="mobileOpen = false">Sign in</RouterLink>
-    </div>
+    </nav>
   </Transition>
 
   <!-- Backdrop -->

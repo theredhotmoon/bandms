@@ -363,4 +363,35 @@ router.beforeEach((to) => {
   }
 })
 
+// Per-page <title> updates (WCAG 2.4.2)
+const ROUTE_TITLES: Record<string, string> = {
+  home: 'Skanking Storks',
+  about: 'About — Skanking Storks',
+  contact: 'Contact — Skanking Storks',
+  concerts: 'Shows — Skanking Storks',
+  'concert-detail': 'Concert — Skanking Storks',
+  releases: 'Music — Skanking Storks',
+  posts: 'News — Skanking Storks',
+  'post-detail': 'Post — Skanking Storks',
+  photos: 'Gallery — Skanking Storks',
+  'photo-detail': 'Photo — Skanking Storks',
+  merch: 'Shop — Skanking Storks',
+  'merch-item': 'Item — Skanking Storks',
+  'merch-success': 'Order confirmed — Skanking Storks',
+  'merch-cancel': 'Order cancelled — Skanking Storks',
+  cart: 'Cart — Skanking Storks',
+  checkout: 'Checkout — Skanking Storks',
+  login: 'Sign In — Skanking Storks',
+  epk: 'EPK — Skanking Storks',
+  'tech-rider-preview': 'Tech Rider — Skanking Storks',
+  newsletter: 'Newsletter — Skanking Storks',
+  videos: 'Videos — Skanking Storks',
+  press: 'Press — Skanking Storks',
+}
+
+router.afterEach((to) => {
+  const name = typeof to.name === 'string' ? to.name : ''
+  document.title = ROUTE_TITLES[name] ?? 'Skanking Storks'
+})
+
 export default router

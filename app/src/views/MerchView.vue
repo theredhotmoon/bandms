@@ -40,12 +40,38 @@ const filteredItems = computed(() => {
 // Product modal
 const modalItem = ref<ShopItemSummary | null>(null)
 const selectedVariant = ref<ShopItemVariant | null>(null)
+const modalEl = ref<HTMLElement>()
+const modalCloseBtn = ref<HTMLButtonElement>()
+let triggerEl: HTMLElement | null = null
 
-function openModal(item: ShopItemSummary) {
+function openModal(item: ShopItemSummary, trigger?: HTMLElement) {
+  triggerEl = trigger ?? (document.activeElement as HTMLElement | null)
   modalItem.value = item
   selectedVariant.value = item.variants?.[0] ?? null
+  requestAnimationFrame(() => modalCloseBtn.value?.focus())
 }
-function closeModal() { modalItem.value = null }
+
+function closeModal() {
+  modalItem.value = null
+  triggerEl?.focus()
+  triggerEl = null
+}
+
+function onModalKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { closeModal(); return }
+  if (e.key !== 'Tab' || !modalEl.value) return
+  const focusable = modalEl.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  )
+  if (!focusable.length) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault(); last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault(); first.focus()
+  }
+}
 
 function addToCart() {
   if (!modalItem.value) return
@@ -101,7 +127,7 @@ const t = computed(() => T[lang.value])
 <template>
   <div class="merch-page">
     <SiteNav active="shop" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -152,11 +178,13 @@ const t = computed(() => T[lang.value])
     <section class="products-section">
       <div v-if="itemsQ.isPending.value" class="loading">{{ t.loading }}</div>
       <div v-else-if="filteredItems.length" class="products-grid">
-        <article
+        <button
           v-for="item in filteredItems"
           :key="item.id"
+          type="button"
           class="product-card"
-          @click="openModal(item)"
+          :aria-label="`${item.name}, ${priceFor(item)}`"
+          @click="openModal(item, $event.currentTarget as HTMLElement)"
         >
           <div class="product-img">
             <img
@@ -169,7 +197,7 @@ const t = computed(() => T[lang.value])
             <div v-else class="product-img-placeholder" />
             <span v-if="item.is_presale" class="stamp-presale">{{ t.presale }}</span>
           </div>
-          <div class="product-body">
+          <div class="product-body" aria-hidden="true">
             <div class="product-cats">{{ item.categories.map(c => c.name).join(' · ') }}</div>
             <div class="product-name">{{ item.name }}</div>
             <div class="product-price">{{ priceFor(item) }}</div>
@@ -178,16 +206,16 @@ const t = computed(() => T[lang.value])
               <span v-if="item.variants.length > 4" class="variant-more">+{{ item.variants.length - 4 }}</span>
             </div>
           </div>
-        </article>
+        </button>
       </div>
       <p v-else class="empty-text">{{ t.noItems }}</p>
     </section>
 
     <!-- PRODUCT MODAL -->
     <Teleport to="body">
-      <div v-if="modalItem" class="modal-backdrop" @click.self="closeModal">
-        <div class="modal" role="dialog" :aria-label="modalItem.name">
-          <button class="modal-close" :aria-label="t.close" @click="closeModal">
+      <div v-if="modalItem" class="modal-backdrop" @click.self="closeModal" @keydown.escape="closeModal">
+        <div ref="modalEl" class="modal" role="dialog" aria-modal="true" :aria-label="modalItem.name" @keydown="onModalKeydown">
+          <button ref="modalCloseBtn" class="modal-close" :aria-label="t.close" @click="closeModal">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
           <div class="modal-inner">
@@ -236,6 +264,7 @@ const t = computed(() => T[lang.value])
     </Teleport>
 
     <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
+    </main>
     <SiteFooter />
   </div>
 </template>
@@ -304,7 +333,9 @@ const t = computed(() => T[lang.value])
 .product-card {
   background: #fff; border: 3px solid #121212; box-shadow: 5px 5px 0 #121212;
   cursor: pointer; transition: box-shadow 180ms;
+  appearance: none; padding: 0; text-align: left; font: inherit; color: inherit;
 }
+.product-card:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 .product-card:hover { box-shadow: 8px 8px 0 var(--color-accent); }
 .product-img { position: relative; aspect-ratio: 1; overflow: hidden; }
 .product-photo { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms; }

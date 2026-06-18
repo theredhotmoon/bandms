@@ -162,7 +162,7 @@ const t = computed(() => T[lang.value])
 <template>
   <div class="concerts-page">
     <SiteNav active="shows" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -272,6 +272,7 @@ const t = computed(() => T[lang.value])
       </div>
       <CheckerStrip :h="14" :size="18" color-a="var(--color-accent)" color-b="#121212" />
     </section>
+    </main>
 
     <SiteFooter />
   </div>

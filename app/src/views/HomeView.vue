@@ -7,14 +7,22 @@ import { usePosts } from '@/composables/usePosts'
 import { useReleases } from '@/composables/useReleases'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useLang } from '@/composables/useLang'
+import { usePublicSocialLinks } from '@/composables/usePublicSocialLinks'
 import SiteFooter from '@/components/public/SiteFooter.vue'
 import CheckerStrip from '@/components/public/CheckerStrip.vue'
 import LangToggle from '@/components/public/LangToggle.vue'
 import { useAuth } from '@/composables/useAuth'
+import type { SocialPlatform } from '@/types/socialLink'
 
 const { lang } = useLang()
 const { isLoggedIn } = useAuth()
 const { query: profileQ } = useBandProfile()
+const { query: socialLinksQ } = usePublicSocialLinks()
+const socialUrlMap = computed(() => {
+  const map: Partial<Record<SocialPlatform, string>> = {}
+  for (const s of socialLinksQ.data.value ?? []) map[s.platform] = s.url
+  return map
+})
 const { query: concertsQ } = useConcerts()
 const postsFilters = ref({})
 const { query: postsQ } = usePosts(postsFilters)
@@ -39,6 +47,9 @@ const recentPosts = computed(() =>
 
 const releases = computed(() => (releasesQ.data.value ?? []).slice(0, 3))
 const videos = computed(() => (videosQ.data.value ?? []).slice(0, 3))
+
+// Marquee
+const marqueePaused = ref(false)
 
 // Newsletter
 const nlEmail = ref('')
@@ -122,6 +133,7 @@ const bioText = computed(() =>
 
 <template>
   <div class="home-page">
+    <main>
     <!-- ── HERO ──────────────────────────────────── -->
     <section class="hero">
       <img
@@ -173,27 +185,38 @@ const bioText = computed(() =>
         </RouterLink>
 
         <div class="hero-socials">
-          <a href="#" class="hero-social" aria-label="instagram">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" stroke="none" /></svg>
+          <a v-if="socialUrlMap.instagram" :href="socialUrlMap.instagram" target="_blank" rel="noopener noreferrer" class="hero-social" :aria-label="lang === 'en' ? 'Instagram (opens in new tab)' : 'Instagram (otwiera się w nowej karcie)'">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" stroke="none" /></svg>
           </a>
-          <a href="#" class="hero-social" aria-label="facebook">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>
+          <a v-if="socialUrlMap.facebook" :href="socialUrlMap.facebook" target="_blank" rel="noopener noreferrer" class="hero-social" :aria-label="lang === 'en' ? 'Facebook (opens in new tab)' : 'Facebook (otwiera się w nowej karcie)'">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>
           </a>
-          <a href="#" class="hero-social" aria-label="youtube">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="M11 9.5l4 2.5-4 2.5z" fill="currentColor" stroke="none" /></svg>
+          <a v-if="socialUrlMap.youtube" :href="socialUrlMap.youtube" target="_blank" rel="noopener noreferrer" class="hero-social" :aria-label="lang === 'en' ? 'YouTube (opens in new tab)' : 'YouTube (otwiera się w nowej karcie)'">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="M11 9.5l4 2.5-4 2.5z" fill="currentColor" stroke="none" /></svg>
           </a>
-          <a href="#" class="hero-social" aria-label="spotify">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2" /><path d="M8 10.4c2.6-.7 5.6-.4 7.8.9M8.4 13.2c2-.5 4.3-.3 6 .8M9 15.7c1.4-.4 2.9-.2 4.1.6" /></svg>
+          <a v-if="socialUrlMap.spotify" :href="socialUrlMap.spotify" target="_blank" rel="noopener noreferrer" class="hero-social" :aria-label="lang === 'en' ? 'Spotify (opens in new tab)' : 'Spotify (otwiera się w nowej karcie)'">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.2" /><path d="M8 10.4c2.6-.7 5.6-.4 7.8.9M8.4 13.2c2-.5 4.3-.3 6 .8M9 15.7c1.4-.4 2.9-.2 4.1.6" /></svg>
           </a>
         </div>
       </div>
     </section>
 
     <!-- ── MARQUEE ─────────────────────────────── -->
-    <div class="marquee-bar" aria-hidden="true">
-      <div class="marquee-track">
-        <span v-for="i in 16" :key="i">SKA <span class="marquee-dot">✦</span> SKA-JAZZ <span class="marquee-dot">✦</span> ROCKSTEADY <span class="marquee-dot">✦</span>&nbsp;</span>
+    <div class="marquee-bar">
+      <div class="marquee-wrap" aria-hidden="true">
+        <div class="marquee-track" :class="{ 'marquee-paused': marqueePaused }">
+          <span v-for="i in 16" :key="i">SKA <span class="marquee-dot">✦</span> SKA-JAZZ <span class="marquee-dot">✦</span> ROCKSTEADY <span class="marquee-dot">✦</span>&nbsp;</span>
+        </div>
       </div>
+      <button
+        type="button"
+        class="marquee-pause-btn"
+        :aria-label="marqueePaused ? (lang === 'en' ? 'Play marquee' : 'Wznów') : (lang === 'en' ? 'Pause marquee' : 'Zatrzymaj')"
+        @click="marqueePaused = !marqueePaused"
+      >
+        <svg v-if="marqueePaused" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" focusable="false"><path d="M8 5.5l11 6.5-11 6.5z"/></svg>
+        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 4h3v16H6zM15 4h3v16h-3z"/></svg>
+      </button>
     </div>
 
     <!-- ── SHOWS + ABOUT ──────────────────────── -->
@@ -251,16 +274,18 @@ const bioText = computed(() =>
 
         <div v-if="recentPosts.length" class="news-grid">
           <!-- Featured post -->
-          <article class="news-featured" tabindex="0" role="button" @click="$router.push(`/posts/${recentPosts[0].id}`)" @keydown.enter="$router.push(`/posts/${recentPosts[0].id}`)">
+          <article class="news-featured">
             <div class="news-feat-img">
               <div class="img-placeholder" />
-              <span v-if="recentPosts[0].tags.length" class="post-tag">{{ recentPosts[0].tags[0].name }}</span>
+              <span v-if="recentPosts[0].tags.length" class="post-tag" aria-hidden="true">{{ recentPosts[0].tags[0].name }}</span>
             </div>
             <div class="news-feat-body">
               <span class="post-date">{{ formatDate(recentPosts[0].published_at ?? recentPosts[0].created_at) }}</span>
-              <h3 class="news-feat-title">{{ recentPosts[0].title }}</h3>
+              <h3 class="news-feat-title">
+                <RouterLink :to="`/posts/${recentPosts[0].id}`" class="stretched-link">{{ recentPosts[0].title }}</RouterLink>
+              </h3>
               <p class="news-feat-excerpt">{{ recentPosts[0].excerpt }}</p>
-              <span class="read-more-link">{{ t.readMore }} →</span>
+              <span class="read-more-link" aria-hidden="true">{{ t.readMore }} →</span>
             </div>
           </article>
 
@@ -270,15 +295,13 @@ const bioText = computed(() =>
               v-for="post in recentPosts.slice(1)"
               :key="post.id"
               class="news-side-card"
-              tabindex="0"
-              role="button"
-              @click="$router.push(`/posts/${post.id}`)"
-              @keydown.enter="$router.push(`/posts/${post.id}`)"
             >
-              <div class="news-side-img" />
+              <div class="news-side-img" aria-hidden="true" />
               <div class="news-side-body">
-                <span class="post-tag-small">{{ post.tags[0]?.name ?? '' }} · {{ formatDate(post.published_at ?? post.created_at) }}</span>
-                <h3 class="news-side-title">{{ post.title }}</h3>
+                <span class="post-tag-small" aria-hidden="true">{{ post.tags[0]?.name ?? '' }} · {{ formatDate(post.published_at ?? post.created_at) }}</span>
+                <h3 class="news-side-title">
+                  <RouterLink :to="`/posts/${post.id}`" class="stretched-link">{{ post.title }}</RouterLink>
+                </h3>
                 <p class="news-side-excerpt">{{ post.excerpt }}</p>
               </div>
             </article>
@@ -362,12 +385,14 @@ const bioText = computed(() =>
           ✦ {{ lang === 'en' ? "You're on the list!" : 'Jesteś na liście!' }}
         </div>
         <form v-else class="nl-form" @submit="nlSubmit">
-          <input v-model="nlEmail" type="email" :placeholder="t.emailPh" class="nl-input" required />
+          <label for="nl-email" class="sr-only">{{ lang === 'en' ? 'Email address' : 'Adres email' }}</label>
+          <input id="nl-email" v-model="nlEmail" type="email" :placeholder="t.emailPh" class="nl-input" required autocomplete="email" />
           <button type="submit" class="nl-submit">{{ t.subscribe }} →</button>
         </form>
       </div>
     </section>
 
+    </main>
     <SiteFooter />
   </div>
 </template>
@@ -536,7 +561,13 @@ const bioText = computed(() =>
   background: #121212;
   border-bottom: 4px solid var(--color-accent);
   height: 56px;
+  display: flex;
+  align-items: center;
+}
+.marquee-wrap {
+  flex: 1;
   overflow: hidden;
+  height: 100%;
   display: flex;
   align-items: center;
 }
@@ -547,11 +578,32 @@ const bioText = computed(() =>
   font: 400 28px/2 'Anton', sans-serif;
   color: #EFE7D6;
 }
+.marquee-paused { animation-play-state: paused; }
 @keyframes scroll-left {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}
 .marquee-dot { color: var(--color-accent); }
+.marquee-pause-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255,255,255,.1);
+  color: #EFE7D6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  border-radius: 4px;
+  transition: background 120ms;
+}
+.marquee-pause-btn:hover { background: rgba(255,255,255,.2); }
+.marquee-pause-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* ── SHARED UTILS ────────────────────────────── */
 .section-head {
@@ -712,7 +764,7 @@ const bioText = computed(() =>
   color: #121212;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
+  position: relative;
   transition: opacity 150ms;
   border: 3px solid #EFE7D6;
 }
@@ -744,6 +796,18 @@ const bioText = computed(() =>
   text-transform: uppercase;
   margin: 12px 0;
 }
+.news-feat-title a, .news-side-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.news-feat-title a:hover, .news-side-title a:hover { text-decoration: underline; }
+
+/* Stretched link — makes the whole card clickable via the title link */
+.stretched-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
 .news-feat-excerpt {
   font: 500 16px/1.55 'Archivo', sans-serif;
   color: #444;
@@ -765,7 +829,7 @@ const bioText = computed(() =>
   color: #121212;
   display: grid;
   grid-template-columns: 144px 1fr;
-  cursor: pointer;
+  position: relative;
   transition: opacity 150ms;
   border: 3px solid #EFE7D6;
 }

@@ -132,7 +132,7 @@ function formatStat(n: number | string | null): string {
 <template>
   <div class="about-page">
     <SiteNav active="about" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -287,6 +287,7 @@ function formatStat(n: number | string | null): string {
         </div>
       </div>
     </Teleport>
+    </main>
 
     <SiteFooter />
   </div>

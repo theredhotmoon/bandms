@@ -174,7 +174,7 @@ const t = computed(() => T[lang.value])
 <template>
   <div class="cp">
     <SiteNav active="contact" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -245,6 +245,7 @@ const t = computed(() => T[lang.value])
                   type="button"
                   class="reason-btn"
                   :class="{ 'reason-btn--on': reason === r.v }"
+                  :aria-pressed="reason === r.v"
                   @click="reason = r.v"
                 >{{ r.l }}</button>
               </div>
@@ -252,27 +253,29 @@ const t = computed(() => T[lang.value])
 
             <div class="field-2col">
               <div>
-                <label class="field-label">{{ t.nameLabel }}</label>
-                <input v-model="fname" class="field" :placeholder="t.namePh" required />
+                <label class="field-label" for="contact-name">{{ t.nameLabel }}</label>
+                <input id="contact-name" v-model="fname" class="field" :placeholder="t.namePh" required autocomplete="name" />
               </div>
               <div>
-                <label class="field-label">{{ t.emailLabel }}</label>
-                <input v-model="femail" type="email" class="field" :placeholder="t.emailPh" required />
+                <label class="field-label" for="contact-email">{{ t.emailLabel }}</label>
+                <input id="contact-email" v-model="femail" type="email" class="field" :placeholder="t.emailPh" required autocomplete="email" />
               </div>
             </div>
 
             <div>
-              <label class="field-label">{{ t.subjectLabel }}</label>
-              <input v-model="fsubject" class="field" :placeholder="t.subjectPh" />
+              <label class="field-label" for="contact-subject">{{ t.subjectLabel }}</label>
+              <input id="contact-subject" v-model="fsubject" class="field" :placeholder="t.subjectPh" />
             </div>
 
             <div>
-              <label class="field-label">{{ t.msgLabel }}</label>
-              <textarea v-model="fmessage" class="field field--ta" rows="6" :placeholder="t.msgPh" required />
+              <label class="field-label" for="contact-message">{{ t.msgLabel }}</label>
+              <textarea id="contact-message" v-model="fmessage" class="field field--ta" rows="6" :placeholder="t.msgPh" required />
             </div>
 
-            <div v-if="hasErr" class="form-err">
-              <span class="form-err-dot" />{{ t.formErr }}
+            <div role="alert" aria-live="assertive" aria-atomic="true">
+              <div v-if="hasErr" class="form-err">
+                <span class="form-err-dot" />{{ t.formErr }}
+              </div>
             </div>
 
             <div class="form-footer">
@@ -336,9 +339,9 @@ const t = computed(() => T[lang.value])
                 target="_blank"
                 rel="noopener noreferrer"
                 class="social-icon-btn"
-                :title="s.platform"
+                :aria-label="`${s.platform} (opens in new tab)`"
               >
-                {{ s.platform.slice(0, 2).toUpperCase() }}
+                <span aria-hidden="true">{{ s.platform.slice(0, 2).toUpperCase() }}</span>
               </a>
             </div>
           </div>
@@ -409,16 +412,17 @@ const t = computed(() => T[lang.value])
 
       <div class="faq-list">
         <div v-for="(item, i) in t.faqs" :key="i" class="faq-item">
-          <button class="faq-q" :aria-expanded="openFaq === i" @click="toggleFaq(i)">
+          <button class="faq-q" :aria-expanded="openFaq === i" :aria-controls="`faq-answer-${i}`" @click="toggleFaq(i)">
             <span>{{ item.q }}</span>
-            <span class="faq-toggle" :class="{ 'faq-toggle--open': openFaq === i }">
+            <span class="faq-toggle" :class="{ 'faq-toggle--open': openFaq === i }" aria-hidden="true">
               {{ openFaq === i ? '–' : '+' }}
             </span>
           </button>
-          <p v-if="openFaq === i" class="faq-a">{{ item.a }}</p>
+          <p v-if="openFaq === i" :id="`faq-answer-${i}`" class="faq-a">{{ item.a }}</p>
         </div>
       </div>
     </section>
+    </main>
 
     <SiteFooter />
   </div>

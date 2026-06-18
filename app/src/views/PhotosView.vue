@@ -85,7 +85,7 @@ const t = computed(() => T[lang.value])
 <template>
   <div class="photos-page" @keydown="handleKey" tabindex="-1">
     <SiteNav active="gallery" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -178,6 +178,7 @@ const t = computed(() => T[lang.value])
     </Teleport>
 
     <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
+    </main>
     <SiteFooter />
   </div>
 </template>

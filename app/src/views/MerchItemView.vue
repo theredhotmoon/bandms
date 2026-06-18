@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchShopItemBySlug } from '@/api/shop'
@@ -60,6 +60,10 @@ const selectedPhoto = ref<string | null>(null)
 const displayPhoto = computed(() => selectedPhoto.value ?? item.value?.cover_photo ?? null)
 
 const cartStore = useCartStore()
+
+watch(item, (i) => {
+  if (i?.name) document.title = `${i.name} — Skanking Storks`
+}, { immediate: true })
 
 function addToCart() {
   if (!item.value || !canAddToCart.value) return

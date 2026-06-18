@@ -16,6 +16,8 @@ const { lang, setLang } = useLang()
       :key="l"
       class="lang-btn"
       :class="{ 'lang-btn--active': lang === l }"
+      :aria-pressed="lang === l"
+      :aria-label="`${l === 'en' ? 'English' : 'Polski'}`"
       @click="setLang(l)"
     >{{ l.toUpperCase() }}</button>
   </div>

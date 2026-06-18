@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PostLinkDisplay from '@/components/blog/PostLinkDisplay.vue'
 import { usePost } from '@/composables/usePosts'
@@ -18,6 +18,10 @@ const postId = computed(() => {
 const postQuery = usePost(postId)
 const post = computed<Post | undefined>(() => postQuery.data.value)
 const { isPending, isError } = postQuery
+
+watch(post, (p) => {
+  if (p?.title) document.title = `${p.title} — Skanking Storks`
+}, { immediate: true })
 
 function formatDate(iso: string | null) {
   if (!iso) return ''

@@ -66,7 +66,7 @@ function goToPost(id: number) {
 <template>
   <div class="posts-page">
     <SiteNav active="news" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -145,6 +145,7 @@ function goToPost(id: number) {
     </section>
 
     <CheckerStrip :h="14" :size="28" color-a="var(--color-accent)" color-b="#EFE7D6" />
+    </main>
     <SiteFooter />
   </div>
 </template>

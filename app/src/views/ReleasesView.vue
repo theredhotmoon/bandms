@@ -167,7 +167,7 @@ function formatViews(v: number | null): string {
 <template>
   <div class="music-page">
     <SiteNav active="music" />
-
+    <main>
     <!-- HERO -->
     <section class="hero">
       <div class="hero-checker" />
@@ -365,6 +365,7 @@ function formatViews(v: number | null): string {
         </form>
       </div>
     </section>
+    </main>
 
     <SiteFooter />
 
