@@ -1,0 +1,159 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import MemberCard from '@/components/MemberCard.astro'
+import SocialLinks from '@/components/SocialLinks.astro'
+import { getBandProfile, getMembers, getSocialLinks } from '@/lib/cms'
+import { formatNumber } from '@/lib/i18n'
+
+const [profile, members, socialLinks] = await Promise.all([
+  getBandProfile('en'),
+  getMembers(),
+  getSocialLinks(),
+])
+
+const currentMembers = members.filter(m => m.is_current)
+const pastMembers    = members.filter(m => !m.is_current)
+
+const stats = [
+  { label: 'Spotify Monthly', value: formatNumber(profile.stat_spotify_monthly), show: !!profile.stat_spotify_monthly },
+  { label: 'Instagram',       value: formatNumber(profile.stat_instagram_followers), show: !!profile.stat_instagram_followers },
+  { label: 'YouTube',         value: formatNumber(profile.stat_youtube_subscribers), show: !!profile.stat_youtube_subscribers },
+  { label: 'TikTok',          value: formatNumber(profile.stat_tiktok_followers), show: !!profile.stat_tiktok_followers },
+  { label: 'Facebook',        value: formatNumber(profile.stat_facebook_followers), show: !!profile.stat_facebook_followers },
+].filter(s => s.show)
+
+const bio = profile.bio_long ?? profile.bio_medium ?? profile.bio_short ?? ''
+---
+
+<BaseLayout
+  title={`About — ${profile.name}`}
+  description={`Learn about ${profile.name}. ${profile.bio_short ?? ''}`}
+>
+  <!-- Header -->
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-8">
+    <div class="accent-line mb-4" />
+    <h1 class="text-4xl font-black text-white sm:text-5xl">About</h1>
+  </div>
+
+  <!-- Bio + Stats -->
+  <section class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+    <div class="grid gap-12 lg:grid-cols-[1fr_300px]">
+      <!-- Bio -->
+      <div>
+        {profile.logo_url && (
+          <img src={profile.logo_url} alt={profile.name} class="mb-6 h-14 object-contain" />
+        )}
+        <div class="prose">
+          {bio.split('\n\n').map(para => <p>{para}</p>)}
+        </div>
+
+        {profile.artistic_statement && (
+          <blockquote class="mt-8 border-l-4 border-accent pl-4 text-zinc-300 italic text-lg leading-relaxed">
+            "{profile.artistic_statement}"
+          </blockquote>
+        )}
+
+        {socialLinks.length > 0 && (
+          <div class="mt-8">
+            <p class="text-sm text-zinc-500 mb-3 uppercase tracking-wide">Find us on</p>
+            <SocialLinks links={socialLinks} />
+          </div>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        <!-- Quick facts -->
+        <div class="rounded-xl border border-border bg-surface p-5 space-y-3">
+          <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider">Quick facts</h3>
+          {profile.formation_year && (
+            <div class="flex justify-between text-sm">
+              <span class="text-zinc-500">Founded</span>
+              <span class="text-white font-medium">{profile.formation_year}</span>
+            </div>
+          )}
+          {profile.hometown && (
+            <div class="flex justify-between text-sm">
+              <span class="text-zinc-500">Based in</span>
+              <span class="text-white font-medium">{profile.hometown}</span>
+            </div>
+          )}
+          {profile.genres && (
+            <div class="flex justify-between text-sm">
+              <span class="text-zinc-500">Genre</span>
+              <span class="text-white font-medium">{profile.genres}</span>
+            </div>
+          )}
+          {profile.comparable_artists && (
+            <div class="flex justify-between text-sm">
+              <span class="text-zinc-500">FFO</span>
+              <span class="text-white font-medium text-right max-w-36 leading-snug">{profile.comparable_artists}</span>
+            </div>
+          )}
+        </div>
+
+        <!-- Stats -->
+        {stats.length > 0 && (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Reach</h3>
+            <div class="space-y-3">
+              {stats.map(s => (
+                <div class="flex items-baseline justify-between">
+                  <span class="text-xs text-zinc-500">{s.label}</span>
+                  <span class="text-lg font-black text-accent">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Booking -->
+        {(profile.booking_email || profile.press_email) && (
+          <div class="rounded-xl border border-border bg-surface p-5 space-y-2">
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact</h3>
+            {profile.booking_email && (
+              <div class="text-sm">
+                <p class="text-zinc-500 text-xs">Booking</p>
+                <a href={`mailto:${profile.booking_email}`} class="text-accent hover:underline">{profile.booking_email}</a>
+              </div>
+            )}
+            {profile.press_email && (
+              <div class="text-sm">
+                <p class="text-zinc-500 text-xs">Press</p>
+                <a href={`mailto:${profile.press_email}`} class="text-accent hover:underline">{profile.press_email}</a>
+              </div>
+            )}
+          </div>
+        )}
+      </aside>
+    </div>
+  </section>
+
+  <!-- Current Members -->
+  {currentMembers.length > 0 && (
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-12">
+      <div class="mb-10">
+        <div class="accent-line mb-3" />
+        <h2 class="text-2xl font-black text-white">Band Members</h2>
+      </div>
+      <div class="flex flex-wrap gap-8 sm:gap-12">
+        {currentMembers.map(m => <MemberCard member={m} />)}
+      </div>
+    </section>
+  )}
+
+  <!-- Past Members -->
+  {pastMembers.length > 0 && (
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <h3 class="text-sm font-bold text-zinc-600 uppercase tracking-wider mb-6">Past Members</h3>
+      <div class="flex flex-wrap gap-6">
+        {pastMembers.map(m => (
+          <div class="text-center">
+            <p class="text-sm text-zinc-400">{m.first_name} {m.last_name}</p>
+            {m.role && <p class="text-xs text-zinc-600">{m.role}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

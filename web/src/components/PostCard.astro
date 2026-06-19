@@ -1,0 +1,39 @@
+---
+import type { PostSummary } from '@/types/post'
+import { fmtDateShort } from '@/lib/i18n'
+
+export interface Props {
+  post: PostSummary
+}
+
+const { post } = Astro.props
+---
+
+<a href={`/posts/${post.id}`} class="group block">
+  <article class="overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all h-full flex flex-col">
+    <!-- Date & Tags -->
+    <div class="flex items-center gap-3 px-4 pt-4 pb-0">
+      <time class="text-xs text-zinc-500" datetime={post.published_at ?? post.created_at}>
+        {fmtDateShort(post.published_at ?? post.created_at)}
+      </time>
+      {post.tags.slice(0, 2).map(tag => (
+        <span class="rounded-full bg-surface-3 px-2 py-0.5 text-xs text-zinc-400">
+          {tag.name}
+        </span>
+      ))}
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 flex-1 flex flex-col">
+      <h3 class="font-bold text-white text-base leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
+        {post.title}
+      </h3>
+      {post.intro && (
+        <p class="text-sm text-zinc-400 line-clamp-3 leading-relaxed flex-1">
+          {post.intro}
+        </p>
+      )}
+      <p class="mt-3 text-xs font-medium text-accent">Read more →</p>
+    </div>
+  </article>
+</a>

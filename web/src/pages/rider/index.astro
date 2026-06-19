@@ -1,0 +1,17 @@
+---
+// Nginx serves this page for any sub-path of /rider/
+// e.g., /rider/TOKEN → this index.html is served
+// The PublicRider vue island fetches /api/public/rider/{token} client-side.
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import PublicRider from '@/components/PublicRider.vue'
+---
+
+<BaseLayout
+  title="Technical Rider"
+  description="Technical rider document."
+  noindex={true}
+>
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-24">
+    <PublicRider client:load />
+  </div>
+</BaseLayout>

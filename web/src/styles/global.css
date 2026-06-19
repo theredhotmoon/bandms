@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: oklch(72% 0.19 82);
+  --color-accent-dark: oklch(58% 0.15 82);
+  --color-surface: rgb(16 16 16);
+  --color-surface-2: rgb(24 24 24);
+  --color-surface-3: rgb(32 32 32);
+  --color-border: rgb(40 40 40);
+  --color-muted: rgb(120 120 120);
+
+  --font-sans: "Inter", "system-ui", sans-serif;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: rgb(8 8 8);
+  color: rgb(240 240 240);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* ── Typography ────────────────────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Prose (for post content) ──────────────────────────────────────────────── */
+
+.prose {
+  max-width: 68ch;
+  line-height: 1.75;
+  color: rgb(210 210 210);
+}
+
+.prose h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 0.75rem; color: rgb(240 240 240); }
+.prose h3 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: rgb(240 240 240); }
+.prose p  { margin-bottom: 1.25rem; }
+.prose a  { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.prose ul, .prose ol { margin-bottom: 1.25rem; padding-left: 1.5rem; }
+.prose li { margin-bottom: 0.4rem; }
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  color: rgb(160 160 160);
+  font-style: italic;
+  margin: 1.5rem 0;
+}
+.prose img { border-radius: 0.5rem; max-width: 100%; }
+.prose hr  { border-color: rgb(40 40 40); margin: 2rem 0; }
+
+/* ── Utilities ─────────────────────────────────────────────────────────────── */
+
+.accent-line {
+  width: 3rem;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgb(8 8 8); }
+::-webkit-scrollbar-thumb { background: rgb(50 50 50); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(70 70 70); }

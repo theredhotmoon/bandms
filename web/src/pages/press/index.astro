@@ -1,0 +1,108 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getPressReleases, getBandProfile } from '@/lib/cms'
+import { fmtDateShort } from '@/lib/i18n'
+
+const [press, profile] = await Promise.all([getPressReleases(), getBandProfile('en')])
+const sorted = [...press].sort((a, b) => (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at))
+const featured = sorted.filter(p => p.featured)
+const rest     = sorted.filter(p => !p.featured)
+---
+
+<BaseLayout
+  title={`Press — ${profile.name}`}
+  description={`Media coverage and press releases for ${profile.name}.`}
+>
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
+    <div class="mb-12">
+      <div class="accent-line mb-4" />
+      <h1 class="text-4xl font-black text-white sm:text-5xl">Press</h1>
+    </div>
+
+    {press.length === 0 && (
+      <p class="text-zinc-500">No press coverage yet.</p>
+    )}
+
+    {/* Featured */}
+    {featured.length > 0 && (
+      <section class="mb-10">
+        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Featured</h2>
+        <div class="space-y-4">
+          {featured.map(item => (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group flex gap-4 rounded-xl border border-border bg-surface hover:border-zinc-700 p-4 transition-colors"
+            >
+              {item.og_image && (
+                <img
+                  src={item.og_image}
+                  alt={item.og_title ?? ''}
+                  loading="lazy"
+                  class="w-24 h-16 rounded-lg object-cover flex-none bg-zinc-900"
+                />
+              )}
+              <div class="min-w-0">
+                <p class="font-semibold text-white group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                  {item.og_title ?? item.url}
+                </p>
+                {item.og_site_name && <p class="text-xs text-accent mt-0.5">{item.og_site_name}</p>}
+                {item.og_description && (
+                  <p class="text-sm text-zinc-500 mt-1 line-clamp-2">{item.og_description}</p>
+                )}
+                {item.published_at && (
+                  <time class="text-xs text-zinc-600 mt-1 block" datetime={item.published_at}>
+                    {fmtDateShort(item.published_at)}
+                  </time>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* All */}
+    {rest.length > 0 && (
+      <section>
+        {featured.length > 0 && (
+          <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">All coverage</h2>
+        )}
+        <div class="space-y-3">
+          {rest.map(item => (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group flex items-start justify-between gap-4 py-3 border-b border-border hover:border-zinc-700 transition-colors"
+            >
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors line-clamp-1">
+                  {item.og_title ?? item.url}
+                </p>
+                {item.og_site_name && <p class="text-xs text-zinc-600">{item.og_site_name}</p>}
+              </div>
+              {item.published_at && (
+                <time class="text-xs text-zinc-600 shrink-0" datetime={item.published_at}>
+                  {fmtDateShort(item.published_at)}
+                </time>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* Contacts */}
+    {profile.press_email && (
+      <div class="mt-12 rounded-xl border border-border bg-surface p-6">
+        <h2 class="font-bold text-white mb-1">Press inquiries</h2>
+        <p class="text-sm text-zinc-400">
+          For press materials, interviews, and photo requests:
+          <a href={`mailto:${profile.press_email}`} class="ml-1 text-accent hover:underline">{profile.press_email}</a>
+        </p>
+      </div>
+    )}
+  </div>
+</BaseLayout>

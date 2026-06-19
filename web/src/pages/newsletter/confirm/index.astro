@@ -1,0 +1,17 @@
+---
+// Nginx serves this page for any sub-path of /newsletter/confirm/
+// e.g., /newsletter/confirm/TOKEN-UUID → this index.html is served
+// The TokenAction vue island reads window.location.pathname to extract the token.
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import TokenAction from '@/components/TokenAction.vue'
+---
+
+<BaseLayout
+  title="Confirm subscription"
+  description="Confirm your newsletter subscription."
+  noindex={true}
+>
+  <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32">
+    <TokenAction action="confirm" client:load />
+  </div>
+</BaseLayout>

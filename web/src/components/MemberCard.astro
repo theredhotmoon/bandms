@@ -1,0 +1,39 @@
+---
+import type { BandMember } from '@/types/bandMember'
+
+export interface Props {
+  member: BandMember
+}
+
+const { member } = Astro.props
+const fullName = [member.first_name, member.nickname ? `"${member.nickname}"` : null, member.last_name]
+  .filter(Boolean)
+  .join(' ')
+---
+
+<div class="flex flex-col items-center text-center gap-3">
+  <!-- Photo -->
+  <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-border bg-zinc-900">
+    {member.photo ? (
+      <img
+        src={member.photo}
+        alt={fullName}
+        loading="lazy"
+        class="w-full h-full object-cover"
+      />
+    ) : (
+      <div class="w-full h-full flex items-center justify-center text-zinc-700">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
+    )}
+  </div>
+
+  <!-- Info -->
+  <div>
+    <p class="font-bold text-white">{fullName}</p>
+    {member.role && <p class="text-sm text-accent">{member.role}</p>}
+    {member.bio && <p class="mt-1 text-sm text-zinc-500 line-clamp-3 max-w-48">{member.bio}</p>}
+  </div>
+</div>

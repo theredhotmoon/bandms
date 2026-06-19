@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Astro public site** (`web/`) — a fully static (SSG) public-facing website built with Astro 5, replacing the Vue SPA's public pages. Served by Nginx; built at container startup so the Astro build can reach the backend over Docker networking.
+- 20 public pages: home, concerts (index + detail), releases (index + detail), posts (index + detail), EPK, merch (index + detail), photo gallery, music videos, press, contact, newsletter, and token-action pages (newsletter confirm/unsubscribe, public tech rider).
+- 9 Vue islands with hydration directives (`client:visible`, `client:idle`, `client:load`): `MobileNav`, `CartIcon`, `CartDrawer`, `ContactForm`, `NewsletterSignup`, `PhotoLightbox`, `AddToCart`, `TokenAction`, `PublicRider`.
+- JSON-LD structured data on key pages: `MusicGroup` (home), `MusicEvent` (concert detail), `MusicAlbum` (release detail), `Article` (post detail).
+- Cross-island cart state via nanostores (`cartItems`, `cartOpen`, `cartCount`), persisted to `localStorage`.
+- `@astrojs/sitemap` integration — generates `sitemap.xml` at build time.
+- Caddy routing updated: `/api/*` and `/storage/*` → backend; `/admin*` and `/login` → Vue SPA; all other traffic → Astro public site.
+- `make web-dev` and `make web-build` targets; `make logs-web` for the new container.
 - `contact_email` field on `BandProfile` — admins can set a general-purpose contact address in the band profile editor; the Contact page uses it as the "General" email with a fallback to `hello@skankingstorks.com`.
 
 ### Changed
