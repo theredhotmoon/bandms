@@ -35,9 +35,6 @@ async function doRetrieveMetadata() {
   }
 }
 
-// Clear retrieved meta when URL changes significantly
-watch(() => form.video_url, () => { retrievedMeta.value = null })
-
 const totalViews = computed(() => {
   const videos = query.data.value ?? []
   return videos.reduce((sum: number, v: MusicVideo) => sum + (v.view_count ?? 0), 0)
@@ -84,6 +81,8 @@ const form = reactive<MusicVideoPayload>({
   published_at: null,
   sort_order:   0,
 })
+
+watch(() => form.video_url, () => { retrievedMeta.value = null })
 
 const confirmOpen    = ref(false)
 const confirmId      = ref<number | null>(null)

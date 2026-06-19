@@ -12,6 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Accent colour switched from hardcoded orange (`#E2702A`) to a CSS custom property (`--color-accent`, now teal `#1f8f7a`). All components reference the variable — future rebranding requires a single-line change in `style.css`.
 
+### Fixed
+- Admin releases: creating a release no longer fails when the track list contains an untitled entry; empty tracks are silently filtered before the payload is sent to the API.
+- Admin concerts: editing an existing concert now correctly trims time fields (doors open, sound check, start time) to HH:MM, preventing the seconds component from leaking into the inputs.
+- Admin delete dialogs: `ConfirmDialog` now correctly exposes `role="dialog"` and `aria-modal` for assistive technology.
+- Admin Band Profile: section-switcher buttons now carry `role="tab"` and `aria-selected`, matching ARIA authoring practices for tab widgets.
+- Admin sidebars: page titles in Band Members, Tech Rider, Setlists, and Users are now proper `<h1>` elements instead of styled `<div>` elements.
+- Admin setlists: inline delete confirmation card now has `role="dialog"` and `aria-modal`.
+- Tests: fixed a concurrency bug in the Playwright E2E suite where the Logout tests revoked the shared Passport token mid-run, causing up to 38 parallel tests to receive 401 responses and redirect to `/login`. Logout tests now mock the backend endpoint so only frontend behaviour (localStorage cleared, redirect) is verified. All 174 admin E2E tests now pass in parallel.
+
 ## [0.6.0] - 2026-06-15
 
 ### Added

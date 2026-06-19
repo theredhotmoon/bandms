@@ -279,18 +279,20 @@ function platformMeta(key: SocialPlatform) {
       <div v-else-if="query.isError.value" class="py-16 text-center text-sm" style="color:#f87171;">Failed to load profile.</div>
 
       <template v-else>
-        <div class="section-tabs mb-6">
+        <div class="section-tabs mb-6" role="tablist">
           <button
             v-for="s in (['bio','career','social','contacts','stats','epk'] as Section[])"
             :key="s"
             type="button"
+            role="tab"
             class="section-tab"
             :class="{ active: section === s }"
+            :aria-selected="section === s"
             @click="section = s"
           >
             {{ s === 'bio' ? 'Bio' : s === 'career' ? 'Career' : s === 'social' ? 'Social' : s === 'contacts' ? 'Contacts' : s === 'stats' ? 'Stats' : 'EPK' }}
           </button>
-          <button key="logo" type="button" class="section-tab" :class="{ active: section === 'logo' }" @click="section = 'logo'">
+          <button key="logo" type="button" role="tab" class="section-tab" :class="{ active: section === 'logo' }" :aria-selected="section === 'logo'" @click="section = 'logo'">
             Logo
           </button>
         </div>

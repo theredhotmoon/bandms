@@ -161,7 +161,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <div class="page-wrap">
       <div class="page-header">
         <div>
-          <div class="page-title">Users</div>
+          <h1 class="page-title">Users</h1>
           <div class="page-sub">Admin can create and manage all system users</div>
         </div>
         <button type="button" class="btn-add-primary" @click="openAdd">+ Add User</button>

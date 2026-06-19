@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { expectToast, openModal, closeModal, confirmDelete } from '../../fixtures/test-base'
+import { expectToast, closeModal, confirmDelete } from '../../fixtures/test-base'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 const FIRST_NAME = `E2E${Date.now()}`
 const LAST_NAME = 'Testmember'
+const EMAIL = `e2e${Date.now()}@bandms.test`
 const ROLE_INITIAL = 'Lead Vocals'
 const ROLE_UPDATED = 'Rhythm Guitar'
 
@@ -23,95 +24,90 @@ test.describe.serial('Admin Band Members', () => {
 
   // ---------------------------------------------------------------------------
   // 2. Create member
+  //    UI: sidebar "+" button → AdminModal with BandMemberForm
   // ---------------------------------------------------------------------------
   test('create member: fill required fields → save → toast → member appears', async ({ page }) => {
-    await openModal(page, /\+ new member/i)
-
+    await page.locator('button.btn-new').click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
-    // first_name
-    const firstNameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="first_name"], input[id="first_name"], input[placeholder*="first" i]')
-      .first()
-    await firstNameInput.fill(FIRST_NAME)
+    const modal = page.locator('.modal-overlay')
 
-    // last_name
-    const lastNameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="last_name"], input[id="last_name"], input[placeholder*="last" i]')
-      .first()
-    await lastNameInput.fill(LAST_NAME)
+    // first_name — placeholder "Jane"
+    await modal.locator('input[placeholder="Jane"]').fill(FIRST_NAME)
 
-    // role
-    const roleInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="role"], input[id="role"], input[placeholder*="role" i]')
-      .first()
-    const roleVisible = await roleInput.isVisible().catch(() => false)
-    if (roleVisible) {
+    // last_name — placeholder "Smith"
+    await modal.locator('input[placeholder="Smith"]').fill(LAST_NAME)
+
+    // email — required; placeholder "member@example.com"
+    await modal.locator('input[placeholder="member@example.com"]').fill(EMAIL)
+
+    // role — optional; placeholder "Vocalist, Guitarist…"
+    const roleInput = modal.locator('input[placeholder*="Vocalist"]')
+    if (await roleInput.isVisible().catch(() => false)) {
       await roleInput.fill(ROLE_INITIAL)
     }
 
-    await page.locator('.modal-overlay').getByRole('button', { name: /save|create/i }).click()
+    await modal.getByRole('button', { name: 'Add member' }).click()
 
-    await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
-    await expectToast(page, /member created/i)
+    await expect(modal).not.toBeVisible({ timeout: 8000 })
+    await expectToast(page, /member added/i)
 
-    // Member row should be visible
+    // Member should appear as a sidebar item
     await expect(
-      page.locator('tr, [data-testid="member-card"], li').filter({ hasText: FIRST_NAME }),
+      page.locator('.member-item').filter({ hasText: FIRST_NAME }),
     ).toBeVisible({ timeout: 8000 })
   })
 
   // ---------------------------------------------------------------------------
   // 3. Edit member
+  //    UI: click sidebar item → detail pane opens with BandMemberForm inline
   // ---------------------------------------------------------------------------
-  test('edit member: click Edit → change role → save → toast success', async ({ page }) => {
-    const memberRow = page
-      .locator('tr, [data-testid="member-card"], li')
-      .filter({ hasText: FIRST_NAME })
+  test('edit member: click sidebar item → change role → save → toast success', async ({ page }) => {
+    // Wait for the query to resolve (member-list only appears when query succeeds)
+    await expect(page.locator('.member-list')).toBeVisible({ timeout: 20000 })
+    const memberItem = page.locator('.member-item').filter({ hasText: FIRST_NAME })
+    await expect(memberItem).toBeVisible({ timeout: 10000 })
+    await memberItem.click()
 
-    await expect(memberRow).toBeVisible()
-    await memberRow.getByRole('button', { name: /edit/i }).click()
+    // Profile form is in the detail pane (not a modal)
+    // Email is required but may not be pre-filled from the list API response
+    const emailInput = page.locator('.tab-content').locator('input[placeholder="member@example.com"]')
+    if (await emailInput.isVisible().catch(() => false)) {
+      await emailInput.fill(EMAIL)
+    }
 
-    await expect(page.locator('.modal-overlay')).toBeVisible()
-
-    const roleInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="role"], input[id="role"], input[placeholder*="role" i]')
-      .first()
-    const roleVisible = await roleInput.isVisible().catch(() => false)
-    if (roleVisible) {
+    const roleInput = page.locator('.tab-content').locator('input[placeholder*="Vocalist"]')
+    if (await roleInput.isVisible().catch(() => false)) {
       await roleInput.clear()
       await roleInput.fill(ROLE_UPDATED)
     }
 
-    await page.locator('.modal-overlay').getByRole('button', { name: /save|update/i }).click()
+    await page.locator('.tab-content').getByRole('button', { name: 'Update member' }).click()
 
-    await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
     await expectToast(page, /member updated/i)
   })
 
   // ---------------------------------------------------------------------------
   // 4. Delete member
+  //    UI: click sidebar item → "Remove" button in topbar → ConfirmDialog
   // ---------------------------------------------------------------------------
-  test('delete member: click Delete → ConfirmDialog → Delete → toast "Member deleted"', async ({
+  test('delete member: click Remove → ConfirmDialog → Delete → toast "Member removed"', async ({
     page,
   }) => {
-    const memberRow = page
-      .locator('tr, [data-testid="member-card"], li')
-      .filter({ hasText: FIRST_NAME })
+    await expect(page.locator('.member-list')).toBeVisible({ timeout: 20000 })
+    const memberItem = page.locator('.member-item').filter({ hasText: FIRST_NAME })
+    await expect(memberItem).toBeVisible({ timeout: 10000 })
+    await memberItem.click()
 
-    await expect(memberRow).toBeVisible()
-    await memberRow.getByRole('button', { name: /delete/i }).click()
+    // "Remove" button lives in the detail-pane topbar
+    await page.locator('button.btn-delete').click()
 
     await confirmDelete(page)
 
-    await expectToast(page, /member deleted/i)
+    await expectToast(page, /member removed/i)
 
     await expect(
-      page.locator('tr, [data-testid="member-card"], li').filter({ hasText: FIRST_NAME }),
+      page.locator('.member-item').filter({ hasText: FIRST_NAME }),
     ).toHaveCount(0, { timeout: 8000 })
   })
 
@@ -119,7 +115,7 @@ test.describe.serial('Admin Band Members', () => {
   // 5. Modal X close works
   // ---------------------------------------------------------------------------
   test('modal X close button closes modal without saving', async ({ page }) => {
-    await openModal(page, /\+ new member/i)
+    await page.locator('button.btn-new').click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
     await closeModal(page)
@@ -129,69 +125,53 @@ test.describe.serial('Admin Band Members', () => {
   // ---------------------------------------------------------------------------
   // 6. Validation: empty first_name
   // ---------------------------------------------------------------------------
-  test('validation: empty first_name → error shown, modal stays open', async ({ page }) => {
-    await openModal(page, /\+ new member/i)
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+  test('validation: empty first_name → error shown or modal stays open', async ({ page }) => {
+    await page.locator('button.btn-new').click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
 
-    // Leave first_name empty, fill last_name so only first_name is missing
-    const lastNameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="last_name"], input[id="last_name"], input[placeholder*="last" i]')
-      .first()
-    await lastNameInput.fill(LAST_NAME)
+    // Fill last_name and email; leave first_name empty
+    await modal.locator('input[placeholder="Smith"]').fill(LAST_NAME)
+    await modal.locator('input[placeholder="member@example.com"]').fill(`empty-test-${Date.now()}@bandms.test`)
 
-    // Ensure first_name is empty
-    const firstNameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="first_name"], input[id="first_name"], input[placeholder*="first" i]')
-      .first()
+    const firstNameInput = modal.locator('input[placeholder="Jane"]')
     await firstNameInput.fill('')
 
-    await page.locator('.modal-overlay').getByRole('button', { name: /save|create/i }).click()
+    await modal.getByRole('button', { name: 'Add member' }).click()
 
-    // Modal must remain open
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    // Modal must remain open (browser required validation prevents submit)
+    await expect(modal).toBeVisible()
 
-    // Check for inline error message or HTML5 native validation
-    const inlineError = page
-      .locator('.modal-overlay')
-      .locator('[class*="error"], [class*="invalid"], .text-red-500, [role="alert"], [aria-invalid="true"]')
-      .first()
-
+    // Check HTML5 native validation state
     const inputInvalid = await firstNameInput
       .evaluate((el: HTMLInputElement) => !el.validity.valid)
       .catch(() => false)
 
-    const errorVisible = await inlineError.isVisible().catch(() => false)
+    const inlineError = modal.locator('[class*="error"], [class*="invalid"], .field-error, [role="alert"]')
+    const errorVisible = await inlineError.first().isVisible().catch(() => false)
 
     expect(errorVisible || inputInvalid).toBe(true)
 
-    // Clean up
-    await page.locator('.modal-overlay').locator('button[aria-label="Close"]').click()
+    await modal.locator('button[aria-label="Close"]').click()
   })
 
   // ---------------------------------------------------------------------------
-  // 7. is_current checkbox defaults to checked for new member
+  // 7. is_current toggle defaults to active for new member
   // ---------------------------------------------------------------------------
-  test('is_current checkbox defaults to checked when opening new member modal', async ({
+  test('is_current toggle defaults to active when opening new member modal', async ({
     page,
   }) => {
-    await openModal(page, /\+ new member/i)
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    await page.locator('button.btn-new').click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
 
-    const isCurrentCheckbox = page
-      .locator('.modal-overlay')
-      .locator(
-        'input[name="is_current"][type="checkbox"], input[id="is_current"][type="checkbox"]',
-      )
-      .first()
-
-    const checkboxVisible = await isCurrentCheckbox.isVisible().catch(() => false)
-    if (checkboxVisible) {
-      await expect(isCurrentCheckbox).toBeChecked()
+    // is_current is a toggle button with aria-pressed, not an input[type=checkbox]
+    const isCurrentToggle = modal.locator('[aria-pressed]').first()
+    const toggleVisible = await isCurrentToggle.isVisible().catch(() => false)
+    if (toggleVisible) {
+      await expect(isCurrentToggle).toHaveAttribute('aria-pressed', 'true')
     }
 
-    // Clean up
-    await page.locator('.modal-overlay').locator('button[aria-label="Close"]').click()
+    await modal.locator('button[aria-label="Close"]').click()
   })
 })

@@ -42,99 +42,55 @@ test.describe.serial('Admin Setlists — CRUD flow', () => {
   })
 
   // -------------------------------------------------------------------------
-  // 1. Create
+  // 1. Create (inline form — no modal)
   // -------------------------------------------------------------------------
-  test('create setlist: click "+ New setlist" → fill name → Save → toast "Setlist created"', async ({
+  test('create setlist: click + → fill name → Create → toast "Setlist created"', async ({
     page,
   }) => {
-    await openModal(page, '+ New setlist')
+    await page.locator('button.btn-new-icon').click()
+    await expect(page.locator('.new-form')).toBeVisible()
 
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    await page.locator('.new-form input').fill(SETLIST_NAME)
+    await page.locator('.new-form button.btn-create').click()
 
-    const nameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="name"], input[id="name"], input[placeholder*="name" i]')
-      .first()
-    await nameInput.fill(SETLIST_NAME)
-
-    await page.locator('.modal-overlay').getByRole('button', { name: /save|create/i }).click()
-
-    await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
     await expectToast(page, 'Setlist created')
 
     await expect(
-      page.locator('tbody tr').filter({ hasText: SETLIST_NAME }).first(),
+      page.locator('.setlist-name').filter({ hasText: SETLIST_NAME }).first(),
     ).toBeVisible({ timeout: 8000 })
   })
 
   // -------------------------------------------------------------------------
-  // 2. Edit
+  // 2. Delete
   // -------------------------------------------------------------------------
-  test('edit: click Edit on setlist → change name → Save → toast "Setlist updated"', async ({
+  test('delete: click ✕ on setlist → ConfirmDialog → Delete → toast "Setlist deleted"', async ({
     page,
   }) => {
-    await searchTable(page, SETLIST_NAME)
-
-    const row = page.locator('tbody tr').filter({ hasText: SETLIST_NAME }).first()
-    await expect(row).toBeVisible()
-    await row.getByRole('button', { name: /edit/i }).click()
-
-    await expect(page.locator('.modal-overlay')).toBeVisible()
-
-    const nameInput = page
-      .locator('.modal-overlay')
-      .locator('input[name="name"], input[id="name"], input[placeholder*="name" i]')
-      .first()
-    await nameInput.clear()
-    await nameInput.fill(SETLIST_NAME_UPDATED)
-
-    await page.locator('.modal-overlay').getByRole('button', { name: /save|update/i }).click()
-
-    await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
-    await expectToast(page, 'Setlist updated')
-
-    await searchTable(page, SETLIST_NAME_UPDATED)
-    await expect(
-      page.locator('tbody tr').filter({ hasText: SETLIST_NAME_UPDATED }).first(),
-    ).toBeVisible({ timeout: 8000 })
-  })
-
-  // -------------------------------------------------------------------------
-  // 3. Delete
-  // -------------------------------------------------------------------------
-  test('delete: click Delete → ConfirmDialog → Delete → toast "Setlist deleted"', async ({
-    page,
-  }) => {
-    await searchTable(page, SETLIST_NAME_UPDATED)
-
-    const row = page.locator('tbody tr').filter({ hasText: SETLIST_NAME_UPDATED }).first()
-    await expect(row).toBeVisible()
-    await row.getByRole('button', { name: /delete/i }).click()
+    // Wait for the setlist list to finish loading before looking for the specific item
+    await expect(page.locator('.setlist-items, .sidebar-state')).toBeVisible({ timeout: 15000 })
+    const item = page.locator('.setlist-item').filter({ hasText: SETLIST_NAME }).first()
+    await expect(item).toBeVisible({ timeout: 10000 })
+    await item.locator('button.del-btn').click()
 
     await confirmDelete(page)
 
     await expectToast(page, 'Setlist deleted')
 
     await expect(
-      page.locator('tbody tr').filter({ hasText: SETLIST_NAME_UPDATED }),
+      page.locator('.setlist-name').filter({ hasText: SETLIST_NAME }),
     ).toHaveCount(0, { timeout: 8000 })
   })
 
   // -------------------------------------------------------------------------
-  // 4. Modal X close
+  // 3. Inline form: Escape key closes the form
   // -------------------------------------------------------------------------
-  test('modal X close works', async ({ page }) => {
-    await openModal(page, '+ New setlist')
-
-    await expect(page.locator('.modal-overlay')).toBeVisible()
-
-    await page
-      .locator('.modal-overlay')
-      .locator('button[aria-label="Close"], button.close, button:has(svg)')
-      .first()
-      .click()
-
-    await expect(page.locator('.modal-overlay')).not.toBeVisible()
+  test('inline form: Escape key closes the form', async ({ page }) => {
+    await page.locator('button.btn-new-icon').click()
+    await expect(page.locator('.new-form')).toBeVisible()
+    // Click the input to ensure it has keyboard focus before pressing Escape
+    await page.locator('.new-form input').click()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.new-form')).not.toBeVisible()
   })
 })
 

@@ -22,7 +22,7 @@ test.describe('Band Profile Admin', () => {
 
     // 2. Update band name, save, toast
     test('update band name, save, shows "Profile saved" toast', async ({ page }) => {
-      const nameInput = page.getByLabel('Band name *')
+      const nameInput = page.locator('input[placeholder="Your band name"]')
       await nameInput.fill('Test Band Name')
 
       await page.getByRole('button', { name: 'Save profile' }).click()
@@ -34,19 +34,19 @@ test.describe('Band Profile Admin', () => {
 
     // 3. Clear name, save → validation error
     test('clear band name and save shows validation error', async ({ page }) => {
-      const nameInput = page.getByLabel('Band name *')
+      const nameInput = page.locator('input[placeholder="Your band name"]')
       await nameInput.fill('')
 
       await page.getByRole('button', { name: 'Save profile' }).click()
 
-      // Expect a field-level validation error near the name input
-      const fieldError = page.locator('text=/required|cannot be empty|name is required/i').first()
-      await expect(fieldError).toBeVisible()
+      // input[required] with empty value — browser HTML5 validation fires
+      const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid)
+      expect(isInvalid).toBe(true)
     })
 
     // 4. One-liner char counter
     test('One-liner char counter updates as user types', async ({ page }) => {
-      await page.getByRole('tab', { name: 'One-liner' }).click()
+      await page.getByRole('button', { name: 'One-liner' }).click()
 
       const textarea = page.locator('textarea').first()
       await textarea.fill('')
@@ -104,7 +104,7 @@ test.describe('Band Profile Admin', () => {
       await page.getByRole('button', { name: 'Add' }).click()
 
       await expect(page.locator('[data-sonner-toast]')).toContainText('Link added')
-      await expect(page.locator('text=https://instagram.com/testband')).toBeVisible()
+      await expect(page.locator('text=https://instagram.com/testband').first()).toBeVisible()
     })
 
     // 7. Edit existing link
@@ -153,8 +153,11 @@ test.describe('Band Profile Admin', () => {
 
       await page.getByRole('button', { name: 'Save profile' }).click()
 
-      const fieldError = page.locator('text=/invalid|valid email|email format/i').first()
-      await expect(fieldError).toBeVisible()
+      // HTML5 type="email" validation fires before submit — check validity API
+      const isInvalid = await bookingEmailInput.evaluate(
+        (el: HTMLInputElement) => !el.validity.valid,
+      )
+      expect(isInvalid).toBe(true)
     })
   })
 
@@ -169,7 +172,7 @@ test.describe('Band Profile Admin', () => {
     test('"Create EPK snapshot" button opens modal with title "Create EPK Snapshot"', async ({ page }) => {
       await page.getByRole('button', { name: 'Create EPK snapshot' }).click()
 
-      const modal = page.locator('[role="dialog"], .modal, [data-modal]').first()
+      const modal = page.locator('.modal-overlay').first()
       await expect(modal).toBeVisible()
       await expect(modal).toContainText('Create EPK Snapshot')
     })
@@ -178,7 +181,7 @@ test.describe('Band Profile Admin', () => {
     test('EPK modal Cancel button closes the modal', async ({ page }) => {
       await page.getByRole('button', { name: 'Create EPK snapshot' }).click()
 
-      const modal = page.locator('[role="dialog"], .modal, [data-modal]').first()
+      const modal = page.locator('.modal-overlay').first()
       await expect(modal).toBeVisible()
 
       await modal.getByRole('button', { name: 'Cancel' }).click()

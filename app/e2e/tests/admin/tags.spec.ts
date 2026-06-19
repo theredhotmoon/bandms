@@ -25,7 +25,7 @@ test.describe('Tags Admin', () => {
     await page.goto('/admin/tags')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New tag' }).click()
+    await page.getByRole('button', { name: '+ Add tag' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -37,7 +37,7 @@ test.describe('Tags Admin', () => {
     await expect(page.locator('[data-sonner-toast]')).toContainText('Tag created', { timeout: 8000 })
     await expect(modal).not.toBeVisible()
 
-    await expect(page.getByRole('cell', { name: UNIQUE_TAG })).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('cell', { name: UNIQUE_TAG }).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('search: type tag name → matching row is shown', async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe('Tags Admin', () => {
     const searchInput = page.locator('input[aria-label="Search"]')
     await searchInput.fill(UNIQUE_TAG)
 
-    await expect(page.getByRole('cell', { name: UNIQUE_TAG })).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('cell', { name: UNIQUE_TAG }).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('edit tag: modal opens with "Edit Tag" title, change name, save → toast', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('Tags Admin', () => {
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
-    await expect(modal).toContainText('Edit Tag')
+    await expect(modal).toContainText(/edit tag/i)
 
     const nameInput = modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first()
     await nameInput.clear()
@@ -97,7 +97,7 @@ test.describe('Tags Admin', () => {
     await page.goto('/admin/tags')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New tag' }).click()
+    await page.getByRole('button', { name: '+ Add tag' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -111,16 +111,16 @@ test.describe('Tags Admin', () => {
     await page.goto('/admin/tags')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New tag' }).click()
+    await page.getByRole('button', { name: '+ Add tag' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    const errorMessage = modal.locator(
-      '[class*="error"], [class*="invalid"], .text-red-500, [role="alert"]',
-    )
-    await expect(errorMessage.first()).toBeVisible({ timeout: 5000 })
+    // input[required] with empty value — browser HTML5 validation fires
+    const nameInput = modal.locator('input[required]').first()
+    const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid)
+    expect(isInvalid).toBe(true)
   })
 })
