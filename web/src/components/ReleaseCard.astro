@@ -1,0 +1,55 @@
+---
+import type { ReleaseSummary } from '@/types/release'
+import { RELEASE_TYPE_LABELS } from '@/types/release'
+
+export interface Props {
+  release: ReleaseSummary
+  large?: boolean
+}
+
+const { release, large = false } = Astro.props
+const year = release.release_date ? new Date(release.release_date).getFullYear() : null
+---
+
+<a
+  href={`/releases/${release.id}`}
+  class:list={[
+    'group block overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all hover:-translate-y-0.5',
+  ]}
+>
+  <!-- Cover -->
+  <div class:list={['relative overflow-hidden bg-zinc-900', large ? 'aspect-square' : 'aspect-square']}>
+    {release.cover_image ? (
+      <img
+        src={release.cover_image}
+        alt={release.title}
+        loading="lazy"
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+    ) : (
+      <div class="flex h-full items-center justify-center text-zinc-700">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+    )}
+    {release.is_upcoming && (
+      <span class="absolute top-2 right-2 rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-black">
+        PRE-SAVE
+      </span>
+    )}
+  </div>
+
+  <!-- Info -->
+  <div class="p-3">
+    <p class="text-xs text-zinc-500 uppercase tracking-wider mb-0.5">
+      {RELEASE_TYPE_LABELS[release.type]}{year ? ` · ${year}` : ''}
+    </p>
+    <p class="font-semibold text-white text-sm leading-tight group-hover:text-accent transition-colors line-clamp-2">
+      {release.title}
+    </p>
+    {release.label_name && (
+      <p class="mt-1 text-xs text-zinc-600">{release.label_name}</p>
+    )}
+  </div>
+</a>

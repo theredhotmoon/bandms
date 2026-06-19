@@ -1,11 +1,38 @@
-# No domain yet — serving over HTTP on the server IP.
+# Production Caddy config.
 #
-# To enable HTTPS, replace ":80" with your domain name:
+# Replace ":80" with your domain name to enable automatic HTTPS:
 #   yourdomain.com {
-#       reverse_proxy frontend:80
+#       ...
 #   }
-# Caddy will automatically obtain a Let's Encrypt certificate.
+#
+# Routing:
+#   /api/*         → Laravel backend
+#   /storage/*     → Laravel backend (uploaded files)
+#   /admin*        → Vue SPA (admin panel)
+#   /login         → Vue SPA
+#   /*             → Astro public site
 
 :80 {
-    reverse_proxy frontend:80
+    # ── Backend API ──────────────────────────────────────────────────────────
+    handle /api/* {
+        reverse_proxy backend:80
+    }
+
+    # ── Storage (uploaded media served by Laravel) ───────────────────────────
+    handle /storage/* {
+        reverse_proxy backend:80
+    }
+
+    # ── Vue SPA — admin panel and login ──────────────────────────────────────
+    handle /admin* {
+        reverse_proxy frontend:80
+    }
+    handle /login {
+        reverse_proxy frontend:80
+    }
+
+    # ── Astro public site — everything else ───────────────────────────────────
+    handle {
+        reverse_proxy web:80
+    }
 }

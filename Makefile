@@ -11,8 +11,9 @@ _APP_KEY     := $(shell grep '^APP_KEY=' .env | cut -d= -f2-)
 _DB_USERNAME := $(shell grep '^DB_USERNAME=' .env | cut -d= -f2-)
 _DB_PASSWORD := $(shell grep '^DB_PASSWORD=' .env | cut -d= -f2-)
 
-.PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql \
-        shell migrate fresh seed passport test test-build test-all ship health
+.PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql logs-web \
+        shell migrate fresh seed passport test test-build test-all ship health \
+        web-dev web-build
 
 ## Start all services (detached)
 up:
@@ -48,6 +49,9 @@ logs-frontend:
 
 logs-mysql:
 	$(DC) logs -f mysql
+
+logs-web:
+	$(DC) logs -f web
 
 ## Open a shell in the backend container
 shell:
@@ -102,6 +106,14 @@ ship:
 		$(if $(NO_PR),--no-pr) \
 		$(if $(BRANCH),--branch $(BRANCH)) \
 		-y
+
+## Start Astro dev server (pnpm dev in web/, proxies /api to localhost:80)
+web-dev:
+	cd web && pnpm dev
+
+## Build the Astro static site locally (requires API_BASE to be set)
+web-build:
+	cd web && pnpm build
 
 ## Check the health endpoint
 health:

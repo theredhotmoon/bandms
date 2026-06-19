@@ -1,0 +1,15 @@
+---
+// Nginx serves this page for any sub-path of /newsletter/unsubscribe/
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import TokenAction from '@/components/TokenAction.vue'
+---
+
+<BaseLayout
+  title="Unsubscribe"
+  description="Unsubscribe from the newsletter."
+  noindex={true}
+>
+  <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32">
+    <TokenAction action="unsubscribe" client:load />
+  </div>
+</BaseLayout>

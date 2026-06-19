@@ -55,6 +55,23 @@ services:
     networks:
       - bandms
 
+  # ─── Astro public site (SSG built at container start, served by Nginx) ───
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: bandms_web
+    restart: unless-stopped
+    environment:
+      API_BASE:  "http://backend"
+      SITE_URL:  "${SITE_URL:-https://skanking-storks.com}"
+    ports:
+      - "${WEB_PORT:-4322}:80"
+    depends_on:
+      - backend
+    networks:
+      - bandms
+
   # ─── Vue 3 SPA (Nginx, proxies /api/* → backend) ─────────────────────────
   frontend:
     build:

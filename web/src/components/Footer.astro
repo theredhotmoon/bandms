@@ -1,0 +1,40 @@
+---
+const year = new Date().getFullYear()
+
+const links = [
+  { href: '/concerts', label: 'Shows' },
+  { href: '/releases', label: 'Music' },
+  { href: '/posts',    label: 'News' },
+  { href: '/photos',   label: 'Photos' },
+  { href: '/videos',   label: 'Videos' },
+  { href: '/press',    label: 'Press' },
+  { href: '/epk',      label: 'EPK' },
+  { href: '/merch',    label: 'Merch' },
+  { href: '/contact',  label: 'Contact' },
+  { href: '/newsletter', label: 'Newsletter' },
+]
+---
+
+<footer class="border-t border-border mt-24 py-12 text-zinc-500 text-sm">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6">
+    <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <!-- Brand -->
+      <div>
+        <a href="/" class="text-lg font-black text-white tracking-tight">Skanking Storks</a>
+        <p class="mt-1 text-xs">Ska · Reggae · Good Vibes</p>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer navigation">
+        {links.map(({ href, label }) => (
+          <a href={href} class="hover:text-white transition-colors">{label}</a>
+        ))}
+      </nav>
+    </div>
+
+    <div class="mt-8 border-t border-border pt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
+      <p>&copy; {year} Skanking Storks. All rights reserved.</p>
+      <a href="/admin" class="hover:text-white transition-colors">Admin</a>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,145 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getReleases, getRelease, getBandProfile } from '@/lib/cms'
+import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
+import { fmtDate } from '@/lib/i18n'
+
+export async function getStaticPaths() {
+  const releases = await getReleases('en')
+  return releases.map(r => ({ params: { id: String(r.id) } }))
+}
+
+const { id } = Astro.params
+const [release, profile] = await Promise.all([
+  getRelease(Number(id), 'en'),
+  getBandProfile('en'),
+])
+
+const year = release.release_date ? new Date(release.release_date).getFullYear() : null
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'MusicAlbum',
+  name: release.title,
+  byArtist: { '@type': 'MusicGroup', name: profile.name },
+  datePublished: release.release_date ?? undefined,
+  image: release.cover_image ?? undefined,
+  url: Astro.url.href,
+  numTracks: release.tracks.length > 0 ? release.tracks.length : undefined,
+}
+---
+
+<BaseLayout
+  title={`${release.title} — ${profile.name}`}
+  description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
+  image={release.cover_image}
+  structuredData={structuredData}
+>
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
+    <nav class="mb-8 text-sm text-zinc-600">
+      <a href="/releases" class="hover:text-zinc-400 transition-colors">Music</a>
+      <span class="mx-2">›</span>
+      <span class="text-zinc-400">{release.title}</span>
+    </nav>
+
+    <div class="grid gap-10 md:grid-cols-[220px_1fr]">
+      <!-- Cover -->
+      <div class="flex flex-col gap-4">
+        <div class="overflow-hidden rounded-xl border border-border bg-zinc-900 aspect-square">
+          {release.cover_image ? (
+            <img src={release.cover_image} alt={release.title} loading="eager" class="w-full h-full object-cover" />
+          ) : (
+            <div class="flex h-full items-center justify-center text-zinc-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Streaming Links */}
+        {release.links.length > 0 && (
+          <div class="space-y-2">
+            {release.links.map(link => (
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-zinc-300 hover:border-zinc-600 hover:text-white transition-colors"
+              >
+                {PLATFORM_LABELS[link.platform] ?? link.platform}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {release.presave_url && (
+          <a
+            href={release.presave_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex w-full items-center justify-center rounded-lg bg-accent py-2.5 text-sm font-bold text-black hover:bg-accent-dark transition-colors"
+          >
+            Pre-save →
+          </a>
+        )}
+      </div>
+
+      <!-- Details -->
+      <div>
+        <p class="text-sm text-zinc-500 uppercase tracking-wider mb-1">
+          {RELEASE_TYPE_LABELS[release.type]}{year ? ` · ${year}` : ''}
+          {release.label_name ? ` · ${release.label_name}` : ''}
+        </p>
+        <h1 class="text-3xl font-black text-white sm:text-4xl leading-tight">{release.title}</h1>
+        <p class="mt-1 text-zinc-400 font-medium">{profile.name}</p>
+
+        {release.release_date && (
+          <p class="mt-1 text-sm text-zinc-600">{fmtDate(release.release_date, 'en')}</p>
+        )}
+
+        {release.description && (
+          <div class="prose mt-6">
+            {release.description.split('\n\n').map(p => <p>{p}</p>)}
+          </div>
+        )}
+
+        {/* Tracklist */}
+        {release.tracks.length > 0 && (
+          <div class="mt-8">
+            <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Tracklist</h2>
+            <ol class="space-y-1">
+              {release.tracks
+                .sort((a, b) => a.sort_order - b.sort_order)
+                .map((track, i) => (
+                  <li class="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                    <span class="text-xs text-zinc-600 w-5 text-right tabular-nums">{i + 1}</span>
+                    <span class="flex-1 text-white">{track.title}</span>
+                    {track.explicit && <span class="text-[10px] border border-zinc-700 text-zinc-600 px-1 rounded">E</span>}
+                    {track.duration && <span class="text-xs text-zinc-600 tabular-nums">{track.duration}</span>}
+                  </li>
+                ))}
+            </ol>
+          </div>
+        )}
+
+        {/* Photos */}
+        {release.photos.length > 0 && (
+          <div class="mt-8">
+            <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Photos</h2>
+            <div class="grid grid-cols-3 gap-2">
+              {release.photos.map(p => p.image_url && (
+                <div class="overflow-hidden rounded-lg aspect-square bg-zinc-900">
+                  <img src={p.image_url} alt={p.caption ?? ''} loading="lazy" class="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
