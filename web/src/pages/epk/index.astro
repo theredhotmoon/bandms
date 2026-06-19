@@ -9,7 +9,7 @@ import type { SocialLink, SocialPlatform } from '@/types/socialLink'
 const [epk, profile] = await Promise.all([getEpk('en'), getBandProfile('en')])
 
 // Adapt EpkSocialLinks to SocialLink shape for the SocialLinks component
-const socialLinks: SocialLink[] = epk.social_links.map((l, i) => ({
+const socialLinks: SocialLink[] = (epk.social_links ?? []).map((l, i) => ({
   id: i,
   band_id: 0,
   member_id: null,
@@ -86,9 +86,9 @@ const stats = [
             {epk.featured_release.release_date && (
               <p class="text-sm text-zinc-400">{fmtDate(epk.featured_release.release_date)}</p>
             )}
-            {epk.featured_release.links.length > 0 && (
+            {(epk.featured_release.links ?? []).length > 0 && (
               <div class="mt-2 flex flex-wrap gap-2">
-                {epk.featured_release.links.map(l => (
+                {(epk.featured_release.links ?? []).map(l => (
                   <a href={l.url} target="_blank" rel="noopener noreferrer" class="text-xs text-accent hover:underline">
                     {PLATFORM_LABELS[l.platform] ?? l.platform}
                   </a>
@@ -101,11 +101,11 @@ const stats = [
     )}
 
     <!-- Upcoming Shows -->
-    {epk.upcoming_concerts.length > 0 && (
+    {(epk.upcoming_concerts ?? []).length > 0 && (
       <section class="mb-12">
         <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Upcoming Shows</h2>
         <div class="space-y-2">
-          {epk.upcoming_concerts.map(c => (
+          {(epk.upcoming_concerts ?? []).map(c => (
             <div class="flex items-center justify-between border-b border-border pb-2 last:border-0">
               <div>
                 <p class="font-medium text-white">{c.venue?.name ?? '—'}</p>
@@ -119,11 +119,11 @@ const stats = [
     )}
 
     <!-- Press Photos -->
-    {epk.press_photos.length > 0 && (
+    {(epk.press_photos ?? []).length > 0 && (
       <section class="mb-12">
         <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Press Photos</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {epk.press_photos.map(p => p.image_url && (
+          {(epk.press_photos ?? []).map(p => p.image_url && (
             <a href={p.image_url} target="_blank" rel="noopener noreferrer" class="overflow-hidden rounded-lg border border-border aspect-square bg-zinc-900">
               <img src={p.image_url} alt={p.caption ?? 'Press photo'} loading="lazy" class="w-full h-full object-cover hover:opacity-80 transition-opacity" />
             </a>
@@ -134,11 +134,11 @@ const stats = [
     )}
 
     <!-- Testimonials -->
-    {epk.testimonials.length > 0 && (
+    {(epk.testimonials ?? []).length > 0 && (
       <section class="mb-12">
         <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">What people say</h2>
         <div class="space-y-5">
-          {epk.testimonials.map(t => (
+          {(epk.testimonials ?? []).map(t => (
             <blockquote class="border-l-4 border-accent pl-4">
               <p class="text-zinc-300 italic leading-relaxed">"{t.quote}"</p>
               <footer class="mt-2 text-sm">

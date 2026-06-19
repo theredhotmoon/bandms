@@ -88,11 +88,11 @@ const structuredData = {
         )}
 
         {/* Bands */}
-        {concert.bands.length > 0 && (
+        {(concert.bands ?? []).length > 0 && (
           <div class="mt-8">
             <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Line-up</h2>
             <div class="space-y-2">
-              {concert.bands.sort((a, b) => a.sort_order - b.sort_order).map(band => (
+              {(concert.bands ?? []).sort((a, b) => a.sort_order - b.sort_order).map(band => (
                 <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <span class="font-medium text-white">{band.name}</span>
                   {band.play_time && <span class="text-sm text-zinc-500">{fmtTime(band.play_time)}</span>}
@@ -103,11 +103,11 @@ const structuredData = {
         )}
 
         {/* Setlist */}
-        {setlist && setlist.items.length > 0 && (
+        {setlist && (setlist.items ?? []).length > 0 && (
           <div class="mt-8">
             <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Setlist</h2>
             <ol class="space-y-1">
-              {setlist.items
+              {(setlist.items ?? [])
                 .sort((a, b) => a.position - b.position)
                 .map((item, i) => (
                   <li class="flex items-center gap-3 py-1.5 border-b border-border/50 last:border-0">

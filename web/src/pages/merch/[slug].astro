@@ -14,7 +14,7 @@ const [item, profile] = await Promise.all([
   getBandProfile('en'),
 ])
 
-const images = item.photos.sort((a, b) => a.sort_order - b.sort_order)
+const images = (item.photos ?? []).sort((a, b) => a.sort_order - b.sort_order)
 const mainImage = images[0]?.url ?? item.cover_photo
 ---
 
@@ -60,9 +60,9 @@ const mainImage = images[0]?.url ?? item.cover_photo
         <p class="text-xs text-zinc-500 uppercase tracking-wider mb-1">{item.type}</p>
         <h1 class="text-3xl font-black text-white leading-tight">{item.name}</h1>
 
-        {item.categories.length > 0 && (
+        {(item.categories ?? []).length > 0 && (
           <div class="flex flex-wrap gap-2 mt-2">
-            {item.categories.map(c => (
+            {(item.categories ?? []).map(c => (
               <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-zinc-500">{c.name}</span>
             ))}
           </div>
@@ -78,9 +78,9 @@ const mainImage = images[0]?.url ?? item.cover_photo
           </div>
         )}
 
-        {item.tags.length > 0 && (
+        {(item.tags ?? []).length > 0 && (
           <div class="mt-6 flex flex-wrap gap-2">
-            {item.tags.map(t => (
+            {(item.tags ?? []).map(t => (
               <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-zinc-500">#{t.name}</span>
             ))}
           </div>

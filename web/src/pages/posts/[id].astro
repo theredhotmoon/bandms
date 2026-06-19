@@ -41,9 +41,9 @@ const structuredData = {
     </nav>
 
     {/* Tags */}
-    {post.tags.length > 0 && (
+    {(post.tags ?? []).length > 0 && (
       <div class="flex flex-wrap gap-2 mb-4">
-        {post.tags.map(tag => (
+        {(post.tags ?? []).map(tag => (
           <span class="rounded-full bg-surface-2 px-3 py-0.5 text-xs text-zinc-400">{tag.name}</span>
         ))}
       </div>
@@ -72,10 +72,10 @@ const structuredData = {
     )}
 
     {/* Links */}
-    {post.links.length > 0 && (
+    {(post.links ?? []).length > 0 && (
       <div class="mt-8 space-y-2">
         <p class="text-sm font-bold text-zinc-500 uppercase tracking-wider">Links</p>
-        {post.links.map(link => (
+        {(post.links ?? []).map(link => (
           <a
             href={link.url}
             target="_blank"
@@ -92,22 +92,22 @@ const structuredData = {
     )}
 
     {/* Related */}
-    {post.releases.length > 0 && (
+    {(post.releases ?? []).length > 0 && (
       <div class="mt-8 rounded-xl border border-border bg-surface p-5">
         <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Related releases</p>
         <div class="flex flex-wrap gap-3">
-          {post.releases.map(r => (
+          {(post.releases ?? []).map(r => (
             <a href={`/releases/${r.id}`} class="text-sm text-accent hover:underline">{r.title}</a>
           ))}
         </div>
       </div>
     )}
 
-    {post.concerts.length > 0 && (
+    {(post.concerts ?? []).length > 0 && (
       <div class="mt-4 rounded-xl border border-border bg-surface p-5">
         <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Related shows</p>
         <div class="flex flex-wrap gap-3">
-          {post.concerts.map(c => (
+          {(post.concerts ?? []).map(c => (
             <a href={`/concerts/${c.id}`} class="text-sm text-accent hover:underline">
               {fmtDate(c.date, 'en')}{c.venue ? ` @ ${c.venue.name}` : ''}
             </a>

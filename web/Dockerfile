@@ -1,7 +1,7 @@
 # ── Stage 1: install deps ──────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN pnpm install --no-frozen-lockfile
 FROM node:22-alpine AS app
 
 RUN apk add --no-cache nginx wget && \
-    npm install -g pnpm@latest && \
+    npm install -g pnpm@9 && \
     mkdir -p /usr/share/nginx/html /var/log/nginx /run/nginx
 
 WORKDIR /app
@@ -26,7 +26,7 @@ COPY . .
 # Nginx + startup script
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/start.sh   /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
 EXPOSE 80
 

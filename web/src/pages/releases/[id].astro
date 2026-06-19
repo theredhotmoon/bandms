@@ -25,7 +25,7 @@ const structuredData = {
   datePublished: release.release_date ?? undefined,
   image: release.cover_image ?? undefined,
   url: Astro.url.href,
-  numTracks: release.tracks.length > 0 ? release.tracks.length : undefined,
+  numTracks: (release.tracks ?? []).length > 0 ? (release.tracks ?? []).length : undefined,
 }
 ---
 
@@ -58,9 +58,9 @@ const structuredData = {
         </div>
 
         {/* Streaming Links */}
-        {release.links.length > 0 && (
+        {(release.links ?? []).length > 0 && (
           <div class="space-y-2">
-            {release.links.map(link => (
+            {(release.links ?? []).map(link => (
               <a
                 href={link.url}
                 target="_blank"
@@ -108,11 +108,11 @@ const structuredData = {
         )}
 
         {/* Tracklist */}
-        {release.tracks.length > 0 && (
+        {(release.tracks ?? []).length > 0 && (
           <div class="mt-8">
             <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Tracklist</h2>
             <ol class="space-y-1">
-              {release.tracks
+              {(release.tracks ?? [])
                 .sort((a, b) => a.sort_order - b.sort_order)
                 .map((track, i) => (
                   <li class="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
@@ -127,11 +127,11 @@ const structuredData = {
         )}
 
         {/* Photos */}
-        {release.photos.length > 0 && (
+        {(release.photos ?? []).length > 0 && (
           <div class="mt-8">
             <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Photos</h2>
             <div class="grid grid-cols-3 gap-2">
-              {release.photos.map(p => p.image_url && (
+              {(release.photos ?? []).map(p => p.image_url && (
                 <div class="overflow-hidden rounded-lg aspect-square bg-zinc-900">
                   <img src={p.image_url} alt={p.caption ?? ''} loading="lazy" class="w-full h-full object-cover" />
                 </div>

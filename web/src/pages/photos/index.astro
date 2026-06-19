@@ -41,7 +41,7 @@ const visible = albums.filter(a => a.published_at && a.photo_count > 0)
 
         <PhotoLightbox
           client:visible
-          photos={album.photos.map(p => ({ src: p.image_url ?? '', caption: p.caption }))}
+          photos={(album.photos ?? []).map(p => ({ src: p.image_url ?? '', caption: p.caption }))}
         />
       </section>
     ))}
