@@ -82,6 +82,18 @@ interface LineupEntry {
 
 const lineup = ref<LineupEntry[]>([{ type: 'main', play_time: '' }])
 
+// ── Links ─────────────────────────────────────────────────────
+const LINK_PRESETS = [
+  { label: 'Buy Tickets', url: '' },
+  { label: 'Facebook Event', url: '' },
+  { label: 'Event Info', url: '' },
+  { label: 'Live Stream', url: '' },
+]
+
+const links = ref<ConcertLinkPayload[]>([])
+const newLinkLabel = ref('')
+const newLinkUrl   = ref('')
+
 const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
 
 watch(() => props.initial, (concert) => {
@@ -104,11 +116,12 @@ watch(() => props.initial, (concert) => {
   posterFile.value    = null
   posterPreview.value = null
   posterDelete.value  = false
+  const toHHMM = (t: string | null | undefined) => (t ?? '').slice(0, 5)
   form.venue_id         = concert.venue?.id ?? 0
   form.date             = concert.date ?? ''
-  form.doors_open       = concert.doors_open ?? ''
-  form.sound_check_time = concert.sound_check_time ?? ''
-  form.start_time       = concert.start_time ?? ''
+  form.doors_open       = toHHMM(concert.doors_open)
+  form.sound_check_time = toHHMM(concert.sound_check_time)
+  form.start_time       = toHHMM(concert.start_time)
   form.description = concert.description ?? ''
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
@@ -217,18 +230,6 @@ function toggleTag(id: number) {
   if (idx === -1) form.tag_ids.push(id)
   else form.tag_ids.splice(idx, 1)
 }
-
-// ── Links ─────────────────────────────────────────────────────
-const LINK_PRESETS = [
-  { label: 'Buy Tickets', url: '' },
-  { label: 'Facebook Event', url: '' },
-  { label: 'Event Info', url: '' },
-  { label: 'Live Stream', url: '' },
-]
-
-const links = ref<ConcertLinkPayload[]>([])
-const newLinkLabel = ref('')
-const newLinkUrl   = ref('')
 
 function addLink() {
   const label = newLinkLabel.value.trim()

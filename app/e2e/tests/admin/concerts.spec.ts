@@ -29,10 +29,10 @@ test.describe('Admin Concerts — read-only', () => {
       return
     }
 
-    // Type in the first row's venue text (if visible) or a generic search term
-    const firstCell = rowsBefore.first().locator('td').nth(1)
-    const venueText = await firstCell.textContent()
-    const query = venueText ? venueText.trim().substring(0, 4) : 'a'
+    // Use the Venue column (index 2) for search query
+    const venueCell = rowsBefore.first().locator('td').nth(2)
+    const venueText = await venueCell.textContent()
+    const query = venueText && venueText.trim() !== '—' ? venueText.trim().substring(0, 4) : 'a'
 
     await searchTable(page, query)
 
@@ -41,19 +41,17 @@ test.describe('Admin Concerts — read-only', () => {
     await expect(rowsAfter.first()).toBeVisible()
   })
 
-  test('"Upcoming" filter button shows only upcoming concerts', async ({ page }) => {
-    const upcomingBtn = page
-      .getByRole('button', { name: /upcoming/i })
-      .or(page.locator('button').filter({ hasText: /upcoming/i }))
+  test('"Upcoming" filter shows only upcoming concerts', async ({ page }) => {
+    const filterSelect = page.locator('select.filter-select')
+      .or(page.locator('select').filter({ has: page.locator('option', { hasText: /upcoming/i }) }))
       .first()
 
-    await expect(upcomingBtn).toBeVisible()
-    await upcomingBtn.click()
+    await expect(filterSelect).toBeVisible()
+    await filterSelect.selectOption({ label: 'Upcoming' })
     await page.waitForTimeout(300)
 
-    // After clicking Upcoming, table should not show a row labelled "Past"
-    // (just verify the click doesn't error and the table is still rendered)
-    await expect(page.locator('table')).toBeVisible()
+    // Either a table (upcoming concerts exist) or an empty-state message is shown
+    await expect(page.locator('table').or(page.locator('.empty-state'))).toBeVisible()
   })
 })
 
@@ -64,9 +62,12 @@ test.describe('Admin Concerts — read-only', () => {
 test.describe.configure({ mode: 'serial' })
 
 test.describe('Admin Concerts — CRUD flow', () => {
-  // A future date used throughout the serial suite
-  const futureDate = '2027-08-15'
-  const updatedDate = '2027-09-20'
+  // Use a unique date per test run to avoid conflicts with leftover concerts
+  const runSuffix = String(Date.now()).slice(-5)
+  const futureMonth = String(1 + (parseInt(runSuffix.slice(0, 2)) % 11) + 1).padStart(2, '0')
+  const futureDay   = String(1 + (parseInt(runSuffix.slice(2, 4)) % 27)).padStart(2, '0')
+  const futureDate  = `2099-${futureMonth}-${futureDay}`
+  const updatedDate = `2099-${futureMonth}-${String(parseInt(futureDay) + 1).padStart(2, '0')}`
   // We'll store the created row locator text for later steps
   let createdRowDate: string
 
@@ -79,36 +80,35 @@ test.describe('Admin Concerts — CRUD flow', () => {
   // 1. Create
   // -------------------------------------------------------------------------
   test('create concert — modal opens, form fills, toast confirms', async ({ page }) => {
-    await openModal(page, '+ New concert')
+    await page.locator('button.btn-add-primary').click()
 
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    await expect(page.locator('.modal-overlay')).toBeVisible({ timeout: 8000 })
     await expect(
-      page.locator('.modal-overlay').getByRole('heading', { name: 'New Concert' }),
+      page.locator('.modal-overlay').getByRole('heading', { name: /new concert/i }),
     ).toBeVisible()
 
+    const modal = page.locator('.modal-overlay')
+
     // Wait for venue select to be populated (async load)
-    const venueSelect = page
-      .locator('select[name="venue_id"], select')
-      .first()
-    await expect(venueSelect).not.toBeEmpty()
+    const venueSelect = modal.locator('select').first()
+    // Wait for at least one venue option beyond the disabled placeholder
+    await expect(venueSelect.locator('option:not([disabled])')).not.toHaveCount(0, { timeout: 10000 })
 
     // Fill date
-    const dateInput = page
-      .locator('input[type="date"], input[name="date"]')
-      .first()
+    const dateInput = modal.locator('input[type="date"], input[name="date"]').first()
     await dateInput.fill(futureDate)
 
     // Select first available venue
     await venueSelect.selectOption({ index: 1 })
 
     // Fill start_time if visible
-    const timeInput = page.locator('input[name="start_time"], input[type="time"]').first()
+    const timeInput = modal.locator('input[type="time"]').first()
     const timeVisible = await timeInput.isVisible().catch(() => false)
     if (timeVisible) {
       await timeInput.fill('20:00')
     }
 
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.locator('.modal-overlay').getByRole('button', { name: /create|save/i }).click()
 
     // Modal should close
     await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
@@ -138,21 +138,21 @@ test.describe('Admin Concerts — CRUD flow', () => {
     // Click Edit action button in that row
     await row.getByRole('button', { name: /edit/i }).click()
 
-    await expect(page.locator('.modal-overlay')).toBeVisible()
-    await expect(
-      page.locator('.modal-overlay').getByRole('heading', { name: 'Edit Concert' }),
-    ).toBeVisible()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await expect(modal.getByRole('heading', { name: /edit concert/i })).toBeVisible()
+
+    // Wait for venue select to have options (ensures venuesQ has resolved)
+    const venueSelectEdit = modal.locator('select').first()
+    await expect(venueSelectEdit.locator('option:not([disabled])')).not.toHaveCount(0, { timeout: 10000 })
 
     // Change the date
-    const dateInput = page
-      .locator('.modal-overlay')
-      .locator('input[type="date"], input[name="date"]')
-      .first()
+    const dateInput = modal.locator('input[type="date"], input[name="date"]').first()
     await dateInput.fill(updatedDate)
 
-    await page.locator('.modal-overlay').getByRole('button', { name: 'Save' }).click()
+    await modal.getByRole('button', { name: /update|save/i }).click()
 
-    await expect(page.locator('.modal-overlay')).not.toBeVisible({ timeout: 8000 })
+    await expect(modal).not.toBeVisible({ timeout: 8000 })
     await expectToast(page, 'Concert updated')
 
     // Update stored date for subsequent steps
@@ -214,7 +214,7 @@ test.describe('Admin Concerts — form validation', () => {
   })
 
   test('submit without date shows validation error', async ({ page }) => {
-    await openModal(page, '+ New concert')
+    await page.locator('button.btn-add-primary').click()
 
     // Wait for modal
     await expect(page.locator('.modal-overlay')).toBeVisible()
@@ -234,7 +234,7 @@ test.describe('Admin Concerts — form validation', () => {
     await expect(venueSelect).not.toBeEmpty()
     await venueSelect.selectOption({ index: 1 })
 
-    await page.locator('.modal-overlay').getByRole('button', { name: 'Save' }).click()
+    await page.locator('.modal-overlay').getByRole('button', { name: /create|save/i }).click()
 
     // Expect an error message or the modal to remain open
     const modalStillOpen = await page.locator('.modal-overlay').isVisible()
@@ -259,7 +259,7 @@ test.describe('Admin Concerts — form validation', () => {
   })
 
   test('submit without venue shows validation error', async ({ page }) => {
-    await openModal(page, '+ New concert')
+    await page.locator('button.btn-add-primary').click()
 
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
@@ -270,33 +270,28 @@ test.describe('Admin Concerts — form validation', () => {
       .first()
     await dateInput.fill('2027-08-15')
 
+    const modal = page.locator('.modal-overlay')
+
     // Do NOT select a venue — submit immediately
-    await page.locator('.modal-overlay').getByRole('button', { name: 'Save' }).click()
+    await modal.getByRole('button', { name: /create|save/i }).click()
 
-    // Modal should remain open
-    const modalStillOpen = await page.locator('.modal-overlay').isVisible()
-    expect(modalStillOpen).toBe(true)
+    // Modal should remain open (browser or backend validation rejects the submit)
+    await expect(modal).toBeVisible()
 
-    // Check for an inline error or HTML5 required validation
-    const venueSelect = page
-      .locator('.modal-overlay')
-      .locator('select[name="venue_id"], select')
-      .first()
-
-    const errorVisible = await page
-      .locator('.modal-overlay')
-      .locator('[class*="error"], [class*="invalid"], .text-red-500, [aria-invalid="true"]')
-      .first()
-      .isVisible()
-      .catch(() => false)
-
+    // venue_id="0" is truthy so browser required doesn't fire; backend returns 422
+    // Wait for the field-error element to appear
+    const fieldError = modal.locator('.field-error')
+    const venueSelect = modal.locator('select').first()
     const selectInvalid = await venueSelect
       .evaluate((el: HTMLSelectElement) => !el.validity.valid)
       .catch(() => false)
 
-    expect(errorVisible || selectInvalid).toBe(true)
+    if (!selectInvalid) {
+      // Backend validation path — wait for inline error to appear
+      await expect(fieldError.first()).toBeVisible({ timeout: 5000 })
+    }
 
     // Close modal to clean up
-    await page.locator('.modal-overlay').locator('button[aria-label="Close"]').click()
+    await modal.locator('button[aria-label="Close"]').click()
   })
 })

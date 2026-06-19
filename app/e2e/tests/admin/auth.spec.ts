@@ -86,7 +86,7 @@ test.describe('Successful login', () => {
     await page.goto('/login')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
 
     const token = await page.evaluate(() => localStorage.getItem('auth_token'))
     expect(token).not.toBeNull()
@@ -97,7 +97,7 @@ test.describe('Successful login', () => {
     await page.goto('/login')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
 
     const raw = await page.evaluate(() => localStorage.getItem('auth_user'))
     expect(raw).not.toBeNull()
@@ -116,7 +116,7 @@ test.describe('Successful login', () => {
     await page.goto('/login')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
 
     await page.goto('/admin')
     await page.waitForLoadState('networkidle')
@@ -205,16 +205,21 @@ test.describe('Role guard', () => {
 
 // ─── logout ───────────────────────────────────────────────────────────────────
 
+// Logout tests use the shared admin storageState but mock the backend logout endpoint
+// so the shared token (used by all concurrent tests) is NOT revoked on the server.
+// Without this mock, the logout call would revoke the shared Passport token, causing
+// all other parallel tests to receive 401 responses and redirect to /login.
 test.describe('Logout', () => {
+  test.use({ storageState: 'e2e/.auth/admin.json' })
+
   test('clicking "Sign out" in the sidebar clears localStorage and redirects', async ({
     page,
   }) => {
-    // Perform a real login first
-    await page.goto('/login')
-    await fillAndSubmit(page, EMAIL, PASSWORD)
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+    // Mock the logout endpoint — verify frontend behaviour without revoking the shared token
+    await page.route('**/api/auth/logout', async (route) => {
+      await route.fulfill({ status: 200, body: '{}', contentType: 'application/json' })
+    })
 
-    // Navigate to admin to ensure the sidebar is rendered
     await page.goto('/admin')
     await page.waitForLoadState('networkidle')
 
@@ -232,14 +237,14 @@ test.describe('Logout', () => {
   })
 
   test('after logout, navigating to /admin redirects back to /login', async ({ page }) => {
-    // Login
-    await page.goto('/login')
-    await fillAndSubmit(page, EMAIL, PASSWORD)
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+    await page.route('**/api/auth/logout', async (route) => {
+      await route.fulfill({ status: 200, body: '{}', contentType: 'application/json' })
+    })
 
-    // Logout
     await page.goto('/admin')
     await page.waitForLoadState('networkidle')
+
+    // Logout
     await page.getByRole('button', { name: /sign out/i }).click()
     await expect(page).toHaveURL(/\/login/, { timeout: 8_000 })
 

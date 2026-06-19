@@ -146,7 +146,7 @@ async function confirmDelete() {
       <!-- ── Member sidebar ──────────────────────────────────────────────── -->
       <aside class="members-sidebar">
         <div class="sidebar-header">
-          <div class="sidebar-title">Band Members</div>
+          <h1 class="sidebar-title">Band Members</h1>
           <button type="button" class="btn-new" title="Add member" @click="showCreateModal = true">+</button>
         </div>
 

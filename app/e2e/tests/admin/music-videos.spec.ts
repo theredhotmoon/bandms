@@ -19,7 +19,7 @@ test.describe('Music Videos Admin', () => {
     await page.goto('/admin/music-videos')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New video' }).click()
+    await page.getByRole('button', { name: '+ Add video' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -36,7 +36,7 @@ test.describe('Music Videos Admin', () => {
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText('Music video created', { timeout: 8000 })
+    await expect(page.locator('[data-sonner-toast]')).toContainText('Music video added', { timeout: 8000 })
     await expect(modal).not.toBeVisible()
 
     await expect(page.getByRole('cell', { name: UNIQUE_TITLE })).toBeVisible({ timeout: 8000 })
@@ -84,7 +84,7 @@ test.describe('Music Videos Admin', () => {
     await page.goto('/admin/music-videos')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New video' }).click()
+    await page.getByRole('button', { name: '+ Add video' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -94,48 +94,48 @@ test.describe('Music Videos Admin', () => {
     await expect(modal).not.toBeVisible()
   })
 
-  test('validation: empty title → error message shown', async ({ page }) => {
+  test('validation: empty title → browser required validation fires', async ({ page }) => {
     await page.goto('/admin/music-videos')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New video' }).click()
+    await page.getByRole('button', { name: '+ Add video' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal
-      .locator('input[name="video_url"], input[id="video_url"], input[type="url"], input[placeholder*="url" i]')
-      .first()
-      .fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    await modal.locator('input[type="url"]').first().fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
 
-    await modal.getByRole('button', { name: /save|create/i }).click()
+    await modal.getByRole('button', { name: /save/i }).click()
 
-    const errorMessage = modal.locator(
-      '[class*="error"], [class*="invalid"], .text-red-500, [role="alert"]',
-    )
-    await expect(errorMessage.first()).toBeVisible({ timeout: 5000 })
+    // Modal stays open (native validation blocks submit)
+    await expect(modal).toBeVisible()
+
+    // title input is required and empty → validity.valid = false
+    const titleInput = modal.locator('input[placeholder="Video title"]')
+    const titleInvalid = await titleInput.evaluate((el: HTMLInputElement) => !el.validity.valid).catch(() => false)
+    expect(titleInvalid).toBe(true)
   })
 
-  test('validation: empty video_url → error message shown', async ({ page }) => {
+  test('validation: empty video_url → browser required validation fires', async ({ page }) => {
     await page.goto('/admin/music-videos')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New video' }).click()
+    await page.getByRole('button', { name: '+ Add video' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal
-      .locator('input[name="title"], input[id="title"], input[placeholder*="title" i]')
-      .first()
-      .fill(`e2e-val-${Date.now()}`)
+    await modal.locator('input[placeholder="Video title"]').fill(`e2e-val-${Date.now()}`)
 
-    await modal.getByRole('button', { name: /save|create/i }).click()
+    await modal.getByRole('button', { name: /save/i }).click()
 
-    const errorMessage = modal.locator(
-      '[class*="error"], [class*="invalid"], .text-red-500, [role="alert"]',
-    )
-    await expect(errorMessage.first()).toBeVisible({ timeout: 5000 })
+    // Modal stays open (native validation blocks submit)
+    await expect(modal).toBeVisible()
+
+    // video_url input is required and empty → validity.valid = false
+    const urlInput = modal.locator('input[type="url"]').first()
+    const urlInvalid = await urlInput.evaluate((el: HTMLInputElement) => !el.validity.valid).catch(() => false)
+    expect(urlInvalid).toBe(true)
   })
 
   test('fetch-preview button fills og_title and view_count fields', async ({ page }) => {

@@ -13,12 +13,9 @@ test.describe('Admin Dashboard', () => {
   })
 
   test('all 6 stat cards are visible', async ({ page }) => {
-    await expect(page.getByText('Bands')).toBeVisible()
-    await expect(page.getByText('Releases')).toBeVisible()
-    await expect(page.getByText('Tours')).toBeVisible()
-    await expect(page.getByText('Venues')).toBeVisible()
-    await expect(page.getByText('Concerts')).toBeVisible()
-    await expect(page.getByText('Tags')).toBeVisible()
+    for (const label of ['Bands', 'Releases', 'Tours', 'Venues', 'Concerts', 'Tags']) {
+      await expect(page.locator('a.stat-card').filter({ hasText: label })).toBeVisible()
+    }
   })
 
   test('each stat card links to the correct admin route', async ({ page }) => {
@@ -52,12 +49,12 @@ test.describe('Admin Dashboard', () => {
   })
 
   test('Quick actions section is visible with "+ Concert" link', async ({ page }) => {
-    const concertAction = page.getByRole('link', { name: '+ Concert' })
+    const concertAction = page.getByRole('link', { name: '+ Concert', exact: true })
     await expect(concertAction).toBeVisible()
   })
 
   test('"+ Concert" quick action navigates to /admin/concerts', async ({ page }) => {
-    const concertAction = page.getByRole('link', { name: '+ Concert' })
+    const concertAction = page.getByRole('link', { name: '+ Concert', exact: true })
     await expect(concertAction).toHaveAttribute('href', '/admin/concerts')
   })
 })

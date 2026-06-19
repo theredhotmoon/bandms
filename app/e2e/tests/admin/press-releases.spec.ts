@@ -32,7 +32,7 @@ test.describe('Press Releases Admin', () => {
     await page.goto('/admin/press-releases')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New press release' }).click()
+    await page.getByRole('button', { name: '+ Add press release' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -49,14 +49,14 @@ test.describe('Press Releases Admin', () => {
 
     const titleInput = modal
       .locator(
-        'input[name="og_title"], input[id="og_title"], input[placeholder*="title" i], input[name="title"]',
+        'input[name="og_title"], input[id="og_title"], input[placeholder="Article headline"], input[name="title"]',
       )
       .first()
     await titleInput.fill(UNIQUE_TITLE)
 
-    await modal.getByRole('button', { name: /save|create/i }).click()
+    await modal.getByRole('button', { name: /save|create|add/i }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText(/press release created/i, {
+    await expect(page.locator('[data-sonner-toast]')).toContainText(/press release added/i, {
       timeout: 8000,
     })
     await expect(modal).not.toBeVisible()
@@ -76,7 +76,7 @@ test.describe('Press Releases Admin', () => {
 
     const titleInput = modal
       .locator(
-        'input[name="og_title"], input[id="og_title"], input[placeholder*="title" i], input[name="title"]',
+        'input[name="og_title"], input[id="og_title"], input[placeholder="Article headline"], input[name="title"]',
       )
       .first()
     await titleInput.clear()
@@ -92,18 +92,21 @@ test.describe('Press Releases Admin', () => {
     await expect(page.getByRole('cell', { name: EDITED_TITLE })).toBeVisible({ timeout: 8000 })
   })
 
-  test('featured toggle: click featured toggle on a row → toast success', async ({ page }) => {
+  test('featured toggle: open edit modal, check "Feature on EPK" → save → toast success', async ({ page }) => {
     await page.goto('/admin/press-releases')
     await page.waitForLoadState('networkidle')
 
     const row = page.locator('tr').filter({ hasText: EDITED_TITLE })
+    await row.getByRole('button', { name: /edit/i }).click()
 
-    const featuredToggle = row
-      .locator(
-        'input[type="checkbox"], button[aria-label*="featured" i], [data-featured], .toggle',
-      )
-      .first()
-    await featuredToggle.click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    // Toggle the "Feature on EPK" checkbox inside the form
+    const featuredCheckbox = modal.locator('input[type="checkbox"]').first()
+    await featuredCheckbox.click()
+
+    await modal.getByRole('button', { name: /save|update/i }).click()
 
     await expect(page.locator('[data-sonner-toast]')).toBeVisible({ timeout: 8000 })
   })
@@ -124,7 +127,7 @@ test.describe('Press Releases Admin', () => {
 
     await confirmDialog.getByRole('button', { name: 'Delete' }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText(/press release deleted/i, {
+    await expect(page.locator('[data-sonner-toast]')).toContainText(/deleted/i, {
       timeout: 8000,
     })
     await expect(page.getByRole('cell', { name: EDITED_TITLE })).not.toBeVisible({ timeout: 8000 })

@@ -289,7 +289,7 @@ const bandProfile = computed(() => profileQ.data.value)
       <!-- ── Template sidebar ────────────────────────────────────────────── -->
       <aside class="template-sidebar">
         <div class="sidebar-header">
-          <div class="sidebar-title">Tech Riders</div>
+          <h1 class="sidebar-title">Tech Riders</h1>
           <button type="button" class="btn-new" @click="showNewModal = true">+</button>
         </div>
 

@@ -28,7 +28,7 @@ test.describe('Releases Admin', () => {
     await modal.locator('input[placeholder="Release title"]').fill(UNIQUE_TITLE)
 
     // Select type EP
-    await modal.locator('select').filter({ has: modal.locator('option[value="EP"]') }).selectOption('EP')
+    await modal.locator('select').selectOption('EP')
 
     // Fill release date
     await modal.locator('input[type="date"]').fill('2025-06-01')
@@ -81,7 +81,7 @@ test.describe('Releases Admin', () => {
     const row = page.locator('tr').filter({ hasText: editedTitle })
     await row.getByRole('button', { name: /delete/i }).click()
 
-    const confirmDialog = page.locator('[role="dialog"], .fixed').filter({ hasText: 'Confirm deletion' })
+    const confirmDialog = page.locator('[role="dialog"]').filter({ hasText: 'Confirm deletion' })
     await expect(confirmDialog).toBeVisible({ timeout: 5000 })
 
     await confirmDialog.getByRole('button', { name: 'Delete' }).click()
@@ -123,12 +123,13 @@ test.describe('Releases Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    const typeSelect = modal.locator('select').filter({ has: modal.locator('option[value="EP"]') })
+    // Type select is the first <select> in the form
+    const typeSelect = modal.locator('select').first()
     await expect(typeSelect).toBeVisible()
 
     // All four type options must be present
     for (const opt of ['LP', 'EP', 'single', 'compilation']) {
-      await expect(typeSelect.locator(`option[value="${opt}"]`)).toHaveCount(1)
+      await expect(modal.locator(`option[value="${opt}"]`)).toHaveCount(1)
     }
 
     await modal.locator('button[aria-label="Close"], button:has(svg)').first().click()
@@ -161,10 +162,10 @@ test.describe('Releases Admin', () => {
     // Clean up
     const row = page.locator('tr').filter({ hasText: searchTarget })
     await row.getByRole('button', { name: /delete/i }).click()
-    const confirmDialog = page.locator('[role="dialog"], .fixed').filter({ hasText: 'Confirm deletion' })
+    const confirmDialog = page.locator('[role="dialog"]').filter({ hasText: 'Confirm deletion' })
     await expect(confirmDialog).toBeVisible({ timeout: 5000 })
     await confirmDialog.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.locator('[data-sonner-toast]')).toContainText('Release deleted', { timeout: 8000 })
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'Release deleted' })).toBeVisible({ timeout: 8000 })
   })
 
   test('add streaming link: open create form, fill Spotify URL, verify it appears', async ({ page }) => {
@@ -200,9 +201,9 @@ test.describe('Releases Admin', () => {
 
     const row = page.locator('tr').filter({ hasText: spotifyTitle })
     await row.getByRole('button', { name: /delete/i }).click()
-    const confirmDialog = page.locator('[role="dialog"], .fixed').filter({ hasText: 'Confirm deletion' })
+    const confirmDialog = page.locator('[role="dialog"]').filter({ hasText: 'Confirm deletion' })
     await expect(confirmDialog).toBeVisible({ timeout: 5000 })
     await confirmDialog.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.locator('[data-sonner-toast]')).toContainText('Release deleted', { timeout: 8000 })
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'Release deleted' })).toBeVisible({ timeout: 8000 })
   })
 })

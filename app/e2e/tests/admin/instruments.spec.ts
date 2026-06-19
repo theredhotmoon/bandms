@@ -19,24 +19,22 @@ test.describe('Instruments Admin', () => {
     await page.goto('/admin/instruments')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New instrument' }).click()
+    await page.getByRole('button', { name: '+ Add instrument' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first().fill(UNIQUE_INSTRUMENT)
+    await modal.locator('input[placeholder*="Guitar" i]').first().fill(UNIQUE_INSTRUMENT)
 
-    const categoryField = modal.locator('select[name="category"], select[id="category"], input[name="category"], input[id="category"]').first()
-    const tagName = await categoryField.evaluate((el) => el.tagName.toLowerCase())
-    if (tagName === 'select') {
-      await categoryField.selectOption('strings')
-    } else {
+    const categoryField = modal.locator('input[placeholder*="Strings" i]').first()
+    const categoryVisible = await categoryField.isVisible().catch(() => false)
+    if (categoryVisible) {
       await categoryField.fill('strings')
     }
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText('Instrument created', { timeout: 8000 })
+    await expect(page.locator('[data-sonner-toast]')).toContainText('Instrument added', { timeout: 8000 })
     await expect(modal).not.toBeVisible()
 
     await expect(page.getByRole('cell', { name: UNIQUE_INSTRUMENT })).toBeVisible({ timeout: 8000 })
@@ -65,7 +63,7 @@ test.describe('Instruments Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    const nameInput = modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first()
+    const nameInput = modal.locator('input[placeholder*="Guitar" i]').first()
     await nameInput.clear()
     await nameInput.fill(editedInstrumentName)
 
@@ -98,7 +96,7 @@ test.describe('Instruments Admin', () => {
     await page.goto('/admin/instruments')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New instrument' }).click()
+    await page.getByRole('button', { name: '+ Add instrument' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -112,16 +110,16 @@ test.describe('Instruments Admin', () => {
     await page.goto('/admin/instruments')
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: '+ New instrument' }).click()
+    await page.getByRole('button', { name: '+ Add instrument' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    const errorMessage = modal.locator(
-      '[class*="error"], [class*="invalid"], .text-red-500, [role="alert"]',
-    )
-    await expect(errorMessage.first()).toBeVisible({ timeout: 5000 })
+    // name input has required — browser HTML5 validation fires, not a DOM error element
+    const nameInput = modal.locator('input[required]').first()
+    const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid)
+    expect(isInvalid).toBe(true)
   })
 })

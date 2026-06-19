@@ -23,8 +23,9 @@ export async function closeModal(page: Page) {
 
 // Helper: confirm delete dialog
 export async function confirmDelete(page: Page) {
-  await expect(page.getByText('Confirm deletion')).toBeVisible()
-  await page.getByRole('button', { name: 'Delete' }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Delete' }).click()
 }
 
 // Helper: fill search and wait

@@ -201,7 +201,7 @@ function handleSubmit() {
     links: PLATFORMS
       .filter(p => form.links[p.key])
       .map(p => ({ platform: p.key, url: form.links[p.key] })),
-    tracks: tracks.value.map((t, i) => ({
+    tracks: tracks.value.filter(t => t.title.trim() !== '').map((t, i) => ({
       title:           t.title,
       duration:        t.duration || null,
       lyrics:          t.lyrics   || null,

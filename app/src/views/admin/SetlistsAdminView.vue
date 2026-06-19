@@ -160,7 +160,7 @@ function formatDur(sec: number | null): string {
         <!-- Left sidebar -->
         <aside class="sidebar">
           <div class="sidebar-header">
-            <span class="sidebar-title">Setlists</span>
+            <h1 class="sidebar-title">Setlists</h1>
             <div class="sidebar-actions">
               <button type="button" class="btn-import-fm" @click="showImportModal = true">↓ setlist.fm</button>
               <button type="button" class="btn-new-icon" @click="showNewForm = !showNewForm">+</button>
@@ -324,7 +324,7 @@ function formatDur(sec: number | null): string {
 
       <!-- Confirm delete setlist -->
       <div v-if="confirmDeleteId !== null" class="confirm-overlay" @click.self="confirmDeleteId = null">
-        <div class="confirm-card">
+        <div class="confirm-card" role="dialog" aria-modal="true">
           <div class="confirm-title">Delete setlist?</div>
           <p class="confirm-text">This permanently deletes the setlist and all its items.</p>
           <div class="confirm-actions">
