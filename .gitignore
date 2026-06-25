@@ -10,3 +10,4 @@ seed_*.php
 /api/vendorship.log
 unit-test.log
 e2e-test.log
+.worktrees/
