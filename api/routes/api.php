@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
@@ -341,6 +342,10 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/shop-categories', [ShopCategoryController::class, 'store'])->name('api.shop-categories.store');
         Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');
         Route::delete('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'destroy'])->name('api.shop-categories.destroy');
+
+        // Door check — QR scanning at venue entry
+        Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->name('api.door-check');
+        Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->name('api.door-check.scan');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
