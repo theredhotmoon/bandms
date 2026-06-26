@@ -154,8 +154,7 @@
                 @if($qrBase64)
                     <img src="data:image/png;base64,{{ $qrBase64 }}" alt="QR Code for ticket {{ $ticket->uuid }}"/>
                 @else
-                    {{-- Fallback: show uuid as text if QR generation failed --}}
-                    {{-- TODO: QR package not available — install endroid/qr-code for graphical QR --}}
+                    {{-- QR generation failed; fall back to text --}}
                     <div class="qr-fallback">{{ $ticket->uuid }}</div>
                 @endif
                 <div class="uuid">{{ $ticket->uuid }}</div>

@@ -63,7 +63,7 @@ describe('GET /api/tickets/{uuid}/pdf', function () {
         $this->get("/api/tickets/{$uuid}/pdf")->assertStatus(200);
     });
 
-    it('includes ticket holder name in PDF content', function () {
+    it('response has correct content disposition filename', function () {
         $venue      = Venue::factory()->create(['name' => 'Stadium']);
         $concert    = Concert::create(['venue_id' => $venue->id, 'date' => '2026-11-15']);
         $ticketType = ConcertTicketType::create([
