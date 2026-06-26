@@ -1,4 +1,4 @@
-import { API_BASE, handleResponse, authHeaders, jsonHeaders, ApiValidationError } from './client'
+import { API_BASE, authHeaders, jsonHeaders, ApiValidationError } from './client'
 import type { FanAccount, FanTicket, FanOrder } from '@/types/fan'
 
 export interface MagicLinkResponse {
@@ -45,7 +45,7 @@ export async function requestMagicLink(email: string, name?: string): Promise<Ma
     headers: jsonHeaders,
     body: JSON.stringify(body),
   })
-  return handleResponse<MagicLinkResponse>(response)
+  return fanHandleResponse<MagicLinkResponse>(response)
 }
 
 export async function verifyMagicLink(token: string): Promise<VerifyResponse> {

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanOrders } from '@/api/fan'
+import { API_BASE } from '@/api/client'
 
 const { token } = useFanAccount()
 const { data: orders, isPending, isError } = useQuery({
@@ -10,8 +11,6 @@ const { data: orders, isPending, isError } = useQuery({
   queryFn: () => fetchFanOrders(token.value!),
   enabled: computed(() => !!token.value),
 })
-
-const API_BASE = import.meta.env.VITE_API_URL as string
 </script>
 
 <template>

@@ -79,8 +79,10 @@ class FanAccountController extends Controller
     {
         $fan = $request->attributes->get('fan');
 
-        $tickets = Ticket::where('fan_account_id', $fan->id)
+        $tickets = Ticket::where(fn($q) => $q
+            ->where('fan_account_id', $fan->id)
             ->orWhere('holder_email', $fan->email)
+        )
             ->with(['concertTicketType.concert.venue'])
             ->orderByDesc('created_at')
             ->get();
