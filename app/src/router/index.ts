@@ -135,6 +135,13 @@ const router = createRouter({
     { path: '/news', redirect: { name: 'posts' } },
     { path: '/music', redirect: { name: 'releases' } },
 
+    // ── Fan account portal ────────────────────────────────────────────
+    {
+      path: '/account',
+      name: 'fan-account',
+      component: () => import('@/views/FanAccountView.vue'),
+    },
+
     // ── Admin panel (requires authentication) ──────────────────────────
     {
       path: '/admin',
@@ -382,6 +389,7 @@ const ROUTE_TITLES: Record<string, string> = {
   cart: 'Cart — Skanking Storks',
   checkout: 'Checkout — Skanking Storks',
   login: 'Sign In — Skanking Storks',
+  'fan-account': 'My Account — Skanking Storks',
   epk: 'EPK — Skanking Storks',
   'tech-rider-preview': 'Tech Rider — Skanking Storks',
   newsletter: 'Newsletter — Skanking Storks',

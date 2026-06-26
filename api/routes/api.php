@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FanAccountController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
@@ -140,6 +141,26 @@ Route::get('/newsletter/unsubscribe/{token}', [NewsletterSubscriberController::c
 
 Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
 Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
+
+/*
+|--------------------------------------------------------------------------
+| Fan auth (public)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('fan/auth')->group(function () {
+    Route::post('magic-link', [FanAccountController::class, 'requestMagicLink'])
+        ->middleware('throttle:5,1');
+    Route::get('verify', [FanAccountController::class, 'verifyMagicLink'])
+        ->middleware('throttle:20,1');
+});
+
+// Fan portal (fan-auth protected)
+Route::prefix('fan')->middleware('fan.auth')->group(function () {
+    Route::get('me', [FanAccountController::class, 'me']);
+    Route::get('tickets', [FanAccountController::class, 'tickets']);
+    Route::get('orders', [FanAccountController::class, 'orders']);
+});
 
 /*
 |--------------------------------------------------------------------------

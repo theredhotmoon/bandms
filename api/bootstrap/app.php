@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(\App\Http\Middleware\SetLocale::class);
         $middleware->alias([
-            'role' => \App\Http\Middleware\RequireRole::class,
+            'role'     => \App\Http\Middleware\RequireRole::class,
+            'fan.auth' => \App\Http\Middleware\FanAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
