@@ -117,6 +117,8 @@ Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('t
 Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
 Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
 
+Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->name('api.tickets.pdf');
+
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('api.contact.store');
