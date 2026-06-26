@@ -117,6 +117,7 @@ Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('t
 Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
 Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
 
+Route::get('/tickets/{uuid}/qr', [ConcertTicketController::class, 'qrCode'])->name('api.tickets.qr');
 Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->name('api.tickets.pdf');
 Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->name('api.tickets.wallet.apple');
 Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->name('api.tickets.wallet.google');

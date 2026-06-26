@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchOrder } from '@/api/shop'
 import { useCartStore } from '@/stores/cart'
+import TicketDownloadCard from '../components/TicketDownloadCard.vue'
 
 const route = useRoute()
 const uuid = computed(() => {
@@ -41,6 +42,23 @@ watch(order, (o) => {
             <span class="line-qty">× {{ item.quantity }}</span>
             <span class="line-price">{{ item.currency }} {{ Number(item.price * item.quantity).toFixed(2) }}</span>
           </div>
+        </div>
+      </template>
+
+      <template v-if="order && order.items.some(i => i.ticket_uuids?.length)">
+        <div class="ticket-section">
+          <h2 class="ticket-heading">Your Tickets</h2>
+          <template v-for="item in order.items" :key="item.id">
+            <TicketDownloadCard
+              v-for="uuid in item.ticket_uuids"
+              :key="uuid"
+              :uuid="uuid"
+            />
+          </template>
+          <p class="account-nudge">
+            <RouterLink to="/account/register" class="account-link">Create an account</RouterLink>
+            to manage your tickets.
+          </p>
         </div>
       </template>
 
@@ -93,4 +111,31 @@ watch(order, (o) => {
   transition: background 120ms;
 }
 .btn-continue:hover { background: #333; }
+
+.ticket-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.ticket-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  margin: 0;
+}
+.account-nudge {
+  font-size: 0.8125rem;
+  color: #666;
+  text-align: center;
+  margin: 0;
+}
+.account-link {
+  color: #111;
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+.account-link:hover { color: #444; }
 </style>

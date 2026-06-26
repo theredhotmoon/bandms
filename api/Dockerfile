@@ -70,8 +70,9 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # ── Stage 4: test image (dev deps, php-cli entrypoint) ────────
 FROM app AS test
-RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS \
-    && docker-php-ext-install pdo_sqlite \
+RUN apk add --no-cache sqlite-dev libpng-dev libjpeg-turbo-dev freetype-dev $PHPIZE_DEPS \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_sqlite gd \
     && (pecl install pcov && docker-php-ext-enable pcov || echo "pcov unavailable, skipping coverage") \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/pear

@@ -15,6 +15,26 @@ use ZipArchive;
 
 class ConcertTicketController extends Controller
 {
+    public function qrCode(string $uuid): Response
+    {
+        if (! preg_match('/^[0-9a-f-]{36}$/i', $uuid)) {
+            abort(404);
+        }
+
+        $ticket = Ticket::where('uuid', $uuid)->firstOrFail();
+
+        $result = (new Builder(
+            writer: new PngWriter(),
+            data: $ticket->uuid,
+            size: 200,
+        ))->build();
+
+        return response($result->getString(), 200, [
+            'Content-Type'  => $result->getMimeType(),
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
     public function pdf(string $uuid): Response
     {
         if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
