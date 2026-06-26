@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::create('promo_codes', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 64)->unique();
-            $table->unsignedInteger('discount_percent')->nullable();
-            $table->decimal('discount_amount', 10, 2)->nullable();
-            $table->char('currency', 3)->nullable();
+            $table->string('code', 32)->unique();
+            $table->enum('discount_type', ['percent', 'fixed']);
+            $table->decimal('value', 10, 2);
             $table->unsignedInteger('max_uses')->nullable();
             $table->unsignedInteger('used_count')->default(0);
-            $table->timestamp('valid_from')->nullable();
-            $table->timestamp('valid_until')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->string('description')->default('');
+            $table->date('expires_at')->nullable();
+            $table->foreignId('ticket_type_id')
+                ->nullable()
+                ->constrained('concert_ticket_types')
+                ->nullOnDelete();
             $table->timestamps();
         });
     }

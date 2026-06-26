@@ -14,10 +14,9 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('price', 10, 2);
             $table->char('currency', 3)->default('PLN');
-            $table->unsignedInteger('capacity')->nullable();
-            $table->timestamp('sale_starts_at')->nullable();
-            $table->timestamp('sale_ends_at')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->date('available_from')->nullable();
+            $table->date('available_until')->nullable();
+            $table->unsignedInteger('available_count')->nullable();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });

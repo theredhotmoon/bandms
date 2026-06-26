@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('concert_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->unsignedInteger('capacity')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->date('on_sale_until')->nullable();
+            $table->unsignedSmallInteger('max_per_order')->nullable();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });

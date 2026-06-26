@@ -19,6 +19,8 @@ return new class extends Migration
                 ->after('concert_ticket_type_id')
                 ->constrained()
                 ->nullOnDelete();
+            $table->string('ticket_code', 64)->nullable()->unique()->after('concert_ticket_price_tier_id');
+            $table->timestamp('scanned_at')->nullable()->after('ticket_code');
         });
     }
 
