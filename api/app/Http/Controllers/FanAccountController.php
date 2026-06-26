@@ -40,10 +40,12 @@ class FanAccountController extends Controller
 
         $verifyUrl = url("/api/fan/auth/verify?token={$token}");
 
-        return response()->json([
-            'message'  => 'Magic link sent to your email.',
-            'dev_link' => $verifyUrl,
-        ]);
+        $response = ['message' => 'Magic link sent to your email.'];
+        if (config('app.debug')) {
+            $response['dev_link'] = $verifyUrl;
+        }
+
+        return response()->json($response);
     }
 
     // GET /api/fan/auth/verify?token={token}
@@ -105,6 +107,17 @@ class FanAccountController extends Controller
             'concert_date' => $t->concertTicketType?->concert?->date?->format('Y-m-d'),
             'venue'        => $t->concertTicketType?->concert?->venue?->name,
         ]));
+    }
+
+    // POST /api/fan/auth/logout — invalidates the session token
+    public function logout(Request $request): JsonResponse
+    {
+        $token = $request->bearerToken();
+        if ($token) {
+            cache()->forget("fan_session:{$token}");
+        }
+
+        return response()->json(['message' => 'Logged out.']);
     }
 
     // GET /api/fan/orders  (requires fan.auth middleware)

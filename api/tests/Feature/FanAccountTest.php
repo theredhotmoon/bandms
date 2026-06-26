@@ -6,21 +6,21 @@ use App\Models\FanAccount;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Laravel\Passport\Passport;
 
 describe('POST /api/fan/auth/magic-link', function () {
-    it('returns 200 and dev_link for a valid email', function () {
+    it('returns 200 and message for a valid email', function () {
         $response = $this->postJson('/api/fan/auth/magic-link', [
             'email' => 'fan@example.com',
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'dev_link'])
-            ->assertJson(['message' => 'Magic link sent to your email.']);
-
-        expect($response->json('dev_link'))->toContain('/api/fan/auth/verify?token=');
+            ->assertJson(['message' => 'Magic link sent to your email.'])
+            ->assertJsonMissingPath('dev_link');
     });
 
     it('creates a new fan account if email not found', function () {
@@ -156,5 +156,41 @@ describe('GET /api/fan/orders', function () {
 
     it('returns 401 without authentication', function () {
         $this->getJson('/api/fan/orders')->assertStatus(401);
+    });
+});
+
+describe('GET /api/fan-accounts (admin list)', function () {
+    it('returns 403 for a member role user', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->getJson('/api/fan-accounts')->assertStatus(403);
+    });
+
+    it('returns 200 for an admin user', function () {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/fan-accounts')->assertStatus(200);
+    });
+
+    it('returns 401 without authentication', function () {
+        $this->getJson('/api/fan-accounts')->assertStatus(401);
+    });
+});
+
+describe('POST /api/fan/auth/logout', function () {
+    it('returns 200 and clears the session token', function () {
+        $fan          = FanAccount::create(['email' => 'logout@example.com', 'name' => 'Logout Fan']);
+        $sessionToken = Str::random(64);
+        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+
+        $this->postJson('/api/fan/auth/logout', [], ['Authorization' => "Bearer {$sessionToken}"])
+            ->assertStatus(200)
+            ->assertJson(['message' => 'Logged out.']);
+
+        expect(Cache::get("fan_session:{$sessionToken}"))->toBeNull();
+    });
+
+    it('returns 401 without authentication', function () {
+        $this->postJson('/api/fan/auth/logout')->assertStatus(401);
     });
 });

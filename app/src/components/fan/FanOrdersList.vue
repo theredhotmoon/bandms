@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanOrders } from '@/api/fan'
-import { API_BASE } from '@/api/client'
 
 const { token } = useFanAccount()
 const { data: orders, isPending, isError } = useQuery({
@@ -36,7 +35,7 @@ const { data: orders, isPending, isError } = useQuery({
               <a
                 v-for="uuid in item.ticket_uuids"
                 :key="uuid"
-                :href="`${API_BASE}/tickets/${uuid}/pdf`"
+                :href="`/api/tickets/${uuid}/pdf`"
                 class="fol-pdf-link"
                 target="_blank"
                 rel="noopener"

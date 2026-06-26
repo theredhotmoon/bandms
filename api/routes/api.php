@@ -118,12 +118,12 @@ Route::get('/shop-categories', [ShopCategoryController::class, 'index'])->name('
 
 Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('throttle:20,1')->name('api.checkout');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
-Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
+Route::get('/orders/{uuid}', [OrderController::class, 'show'])->middleware('throttle:30,1')->name('api.orders.show');
 
-Route::get('/tickets/{uuid}/qr', [ConcertTicketController::class, 'qrCode'])->name('api.tickets.qr');
-Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->name('api.tickets.pdf');
-Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->name('api.tickets.wallet.apple');
-Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->name('api.tickets.wallet.google');
+Route::get('/tickets/{uuid}/qr', [ConcertTicketController::class, 'qrCode'])->middleware('throttle:30,1')->name('api.tickets.qr');
+Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->middleware('throttle:30,1')->name('api.tickets.pdf');
+Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->middleware('throttle:30,1')->name('api.tickets.wallet.apple');
+Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->middleware('throttle:30,1')->name('api.tickets.wallet.google');
 
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
@@ -163,6 +163,7 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
     Route::get('tickets', [FanAccountController::class, 'tickets']);
     Route::get('orders', [FanAccountController::class, 'orders']);
     Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate']);
+    Route::post('auth/logout', [FanAccountController::class, 'logout']);
 });
 
 // Ticket claim — public (recipient may not have an account)
@@ -179,9 +180,6 @@ Route::post('/presale-codes/validate', [PresaleCodeController::class, 'validate'
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user())->name('api.user');
-
-    // ── Fan accounts admin list ────────────────────────────────────────────────
-    Route::get('/fan-accounts', [FanAccountController::class, 'adminList'])->name('api.fan-accounts.index');
 
     // ── Ticket analytics ──────────────────────────────────────────────────────
     Route::get('/admin/ticket-stats', function () {
@@ -397,6 +395,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/shop-categories', [ShopCategoryController::class, 'store'])->name('api.shop-categories.store');
         Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');
         Route::delete('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'destroy'])->name('api.shop-categories.destroy');
+
+        // Fan accounts admin list
+        Route::get('/fan-accounts', [FanAccountController::class, 'adminList'])->name('api.fan-accounts.index');
 
         // Door check — QR scanning at venue entry
         Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->name('api.door-check');

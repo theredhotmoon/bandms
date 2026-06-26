@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { FanAccount } from '@/types/fan'
+import { logoutFan } from '@/api/fan'
 
 // Module-level singletons — shared across the app
 const token = ref<string | null>(localStorage.getItem('fan_token'))
@@ -26,6 +27,10 @@ export function useFanAccount() {
   }
 
   function clearSession(): void {
+    // Best-effort server-side invalidation — fire and forget
+    if (token.value) {
+      logoutFan(token.value).catch(() => {/* ignore */})
+    }
     token.value = null
     fan.value = null
     localStorage.removeItem('fan_token')

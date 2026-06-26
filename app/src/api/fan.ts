@@ -107,3 +107,13 @@ export async function claimTransfer(token: string): Promise<ClaimTransferRespons
   })
   return fanHandleResponse<ClaimTransferResponse>(response)
 }
+
+export async function logoutFan(authToken: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/fan/auth/logout`, {
+    method: 'POST',
+    headers: authHeaders(authToken),
+  })
+  // Ignore errors — we clear local state regardless
+  if (!response.ok) return
+  await response.json()
+}

@@ -38,6 +38,10 @@ class ConcertTicketController extends Controller
 
         $ticket = Ticket::where('uuid', $uuid)->firstOrFail();
 
+        if (in_array($ticket->status, ['voided', 'transferred'])) {
+            abort(410, 'This ticket is no longer valid.');
+        }
+
         $result = (new Builder(
             writer: new PngWriter(),
             data: $ticket->uuid,
@@ -59,6 +63,10 @@ class ConcertTicketController extends Controller
         $ticket = Ticket::where('uuid', $uuid)
             ->with(['concertTicketType.concert.venue'])
             ->firstOrFail();
+
+        if (in_array($ticket->status, ['voided', 'transferred'])) {
+            abort(410, 'This ticket is no longer valid.');
+        }
 
         $qrBase64 = null;
         try {
@@ -88,6 +96,10 @@ class ConcertTicketController extends Controller
         $ticket = Ticket::where('uuid', $uuid)
             ->with(['concertTicketType.concert.venue'])
             ->firstOrFail();
+
+        if (in_array($ticket->status, ['voided', 'transferred'])) {
+            abort(410, 'This ticket is no longer valid.');
+        }
 
         $passData    = $this->buildPassJson($ticket);
         $zipContents = $this->buildPkpass($passData, $ticket->uuid);
@@ -199,6 +211,10 @@ class ConcertTicketController extends Controller
         $ticket = Ticket::where('uuid', $uuid)
             ->with(['concertTicketType.concert.venue'])
             ->firstOrFail();
+
+        if (in_array($ticket->status, ['voided', 'transferred'])) {
+            abort(410, 'This ticket is no longer valid.');
+        }
 
         if (! config('services.google_wallet.enabled', false)) {
             return response()->json([
