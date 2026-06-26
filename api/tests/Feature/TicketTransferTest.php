@@ -52,7 +52,7 @@ function makeTicket(FanAccount $fan, string $status = 'active'): Ticket
 
 describe('POST /api/fan/tickets/{uuid}/transfer', function () {
 
-    it('happy path: fan initiates transfer and gets dev_link', function () {
+    it('happy path: fan initiates transfer', function () {
         [$fan, $token] = makeFan();
         $ticket        = makeTicket($fan);
 
@@ -63,8 +63,8 @@ describe('POST /api/fan/tickets/{uuid}/transfer', function () {
         );
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'dev_link'])
-            ->assertJsonPath('dev_link', fn ($v) => str_contains($v, '/api/tickets/claim/'));
+            ->assertJsonStructure(['message'])
+            ->assertJsonPath('message', fn ($v) => str_contains($v, 'Transfer initiated'));
 
         $this->assertDatabaseHas('ticket_transfers', [
             'from_ticket_id' => $ticket->id,
