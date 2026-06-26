@@ -36,6 +36,7 @@ RUN apk add --no-cache \
         curl \
         libxml2-dev \
         oniguruma-dev \
+        libzip-dev \
     && docker-php-ext-install \
         pdo_mysql \
         mbstring \
@@ -43,6 +44,7 @@ RUN apk add --no-cache \
         bcmath \
         opcache \
         pcntl \
+        zip \
     && rm -rf /var/cache/apk/*
 
 COPY docker/php.ini "$PHP_INI_DIR/conf.d/app.ini"
