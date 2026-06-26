@@ -41,8 +41,6 @@ RUN apk add --no-cache \
         libzip-dev \
     && docker-php-ext-install \
         pdo_mysql \
-        mbstring \
-        xml \
         bcmath \
         opcache \
         pcntl \
@@ -74,7 +72,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 FROM app AS test
 RUN apk add --no-cache sqlite-dev libpng-dev libjpeg-turbo-dev freetype-dev $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_sqlite gd \
+    && docker-php-ext-install gd \
     && (pecl install pcov && docker-php-ext-enable pcov || echo "pcov unavailable, skipping coverage") \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/pear
