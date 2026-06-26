@@ -160,6 +160,102 @@ class ConcertTicketController extends Controller
         return $zipContents;
     }
 
+    public function walletGoogle(string $uuid): \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        if (! preg_match('/^[0-9a-f-]{36}$/i', $uuid)) {
+            abort(404);
+        }
+
+        $ticket = Ticket::where('uuid', $uuid)
+            ->with(['concertTicketType.concert.venue'])
+            ->firstOrFail();
+
+        if (! config('services.google_wallet.enabled', false)) {
+            return response()->json([
+                'message' => 'Google Wallet not configured',
+                'uuid'    => $ticket->uuid,
+            ]);
+        }
+
+        $jwt = $this->buildGoogleWalletJwt($ticket);
+
+        return redirect("https://pay.google.com/gp/v/save/{$jwt}");
+    }
+
+    /**
+     * Build a Google Wallet "Add to Wallet" JWT for the given ticket.
+     *
+     * Produces a RS256-signed JWT following Google's Save-to-Wallet format.
+     * Requires GOOGLE_WALLET_ENABLED=true, GOOGLE_WALLET_SA_EMAIL,
+     * GOOGLE_WALLET_ISSUER_ID, and GOOGLE_WALLET_SA_KEY to be set.
+     */
+    private function buildGoogleWalletJwt(Ticket $ticket): string
+    {
+        $issuerId = config('services.google_wallet.issuer_id');
+        $saEmail  = config('services.google_wallet.sa_email');
+        $saKey    = config('services.google_wallet.sa_key');
+
+        $concert = $ticket->concertTicketType?->concert;
+        $venue   = $concert?->venue;
+
+        $payload = [
+            'iss' => $saEmail,
+            'aud' => 'google',
+            'typ' => 'savetowallet',
+            'iat' => time(),
+            'payload' => [
+                'eventTicketObjects' => [
+                    [
+                        'id'               => "{$issuerId}.{$ticket->uuid}",
+                        'classId'          => "{$issuerId}.{$concert?->id}",
+                        'state'            => 'ACTIVE',
+                        'ticketHolderName' => $ticket->holder_name ?? '',
+                        'ticketNumber'     => $ticket->uuid,
+                        'barcode'          => [
+                            'type'          => 'QR_CODE',
+                            'value'         => $ticket->uuid,
+                            'alternateText' => $ticket->uuid,
+                        ],
+                        'eventName' => [
+                            'defaultValue' => [
+                                'language' => 'en-US',
+                                'value'    => $venue?->name ?? '',
+                            ],
+                        ],
+                        'seatInfo' => [
+                            'section' => [
+                                'defaultValue' => [
+                                    'language' => 'en-US',
+                                    'value'    => 'GA',
+                                ],
+                            ],
+                        ],
+                        'faceValue' => [
+                            'micros'       => 0,
+                            'currencyCode' => 'PLN',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $header = rtrim(strtr($header, '+/', '-_'), '=');
+
+        $body = base64_encode(json_encode($payload));
+        $body = rtrim(strtr($body, '+/', '-_'), '=');
+
+        $signingInput = "{$header}.{$body}";
+
+        $privateKey = openssl_pkey_get_private($saKey);
+        openssl_sign($signingInput, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+        $sig = base64_encode($signature);
+        $sig = rtrim(strtr($sig, '+/', '-_'), '=');
+
+        return "{$signingInput}.{$sig}";
+    }
+
     public function doorCheck(Request $request): JsonResponse
     {
         $request->validate(['code' => 'required|string']);

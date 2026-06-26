@@ -119,6 +119,7 @@ Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders
 
 Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->name('api.tickets.pdf');
 Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->name('api.tickets.wallet.apple');
+Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->name('api.tickets.wallet.google');
 
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
