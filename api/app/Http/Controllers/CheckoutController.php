@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Jobs\SendTicketConfirmationEmail;
 use App\Models\Order;
 use App\Models\PromoCode;
 use App\Models\ShopItem;
@@ -166,14 +167,14 @@ class CheckoutController extends Controller
                 return response()->json(['received' => true]);
             }
 
-            DB::transaction(function () use ($stripeSession, $orderUuid) {
+            $paidOrder = DB::transaction(function () use ($stripeSession, $orderUuid) {
                 $order = Order::where('uuid', $orderUuid)
                     ->lockForUpdate()
                     ->with('items.shopItem', 'items.shopItemVariant')
                     ->first();
 
                 if (! $order || $order->status !== OrderStatus::Pending) {
-                    return;
+                    return null;
                 }
 
                 $order->update([
@@ -210,7 +211,14 @@ class CheckoutController extends Controller
                 if ($order->promo_code_id !== null) {
                     PromoCode::where('id', $order->promo_code_id)->increment('used_count');
                 }
+
+                return $order;
             });
+
+            // Dispatch confirmation email after the transaction commits.
+            if ($paidOrder !== null) {
+                SendTicketConfirmationEmail::dispatch($paidOrder);
+            }
         }
 
         return response()->json(['received' => true]);

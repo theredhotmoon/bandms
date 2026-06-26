@@ -10,6 +10,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^6.1",
         "laravel/framework": "^11.31",
+        "laravel/horizon": "^5.47",
         "laravel/passport": "^13.7",
         "laravel/tinker": "^2.9",
         "sabre/vobject": "^4.5",

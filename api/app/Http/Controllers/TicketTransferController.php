@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendTicketTransferNotification;
 use App\Models\Ticket;
 use App\Models\TicketTransfer;
 use Illuminate\Http\JsonResponse;
@@ -54,12 +55,14 @@ class TicketTransferController extends Controller
 
         $claimToken = Str::random(64);
 
-        TicketTransfer::create([
+        $transfer = TicketTransfer::create([
             'from_ticket_id' => $ticket->id,
             'to_email'       => $data['to_email'],
             'claim_token'    => $claimToken,
             'expires_at'     => now()->addHours(48),
         ]);
+
+        SendTicketTransferNotification::dispatch($transfer);
 
         $response = ['message' => 'Transfer initiated. The recipient will receive a claim link.'];
 
