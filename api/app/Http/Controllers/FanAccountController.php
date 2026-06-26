@@ -11,6 +11,15 @@ use Illuminate\Support\Str;
 
 class FanAccountController extends Controller
 {
+    // GET /api/fan-accounts  (admin)
+    public function adminList(Request $request): JsonResponse
+    {
+        $fans = \App\Models\FanAccount::withCount('tickets')
+            ->orderByDesc('created_at')
+            ->paginate(50);
+        return response()->json($fans);
+    }
+
     // POST /api/fan/auth/magic-link
     // Body: {email: string, name?: string}
     // Creates fan_account if email not found, generates signed token, returns {message, dev_link}

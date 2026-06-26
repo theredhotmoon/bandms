@@ -344,6 +344,24 @@ const router = createRouter({
       component: () => import('@/views/admin/MySetupsView.vue'),
       meta: { requiresAuth: true, requiredRole: 'member' },
     },
+    {
+      path: '/admin/concerts/:concertId/tickets',
+      name: 'admin-concert-tickets',
+      component: () => import('@/views/admin/ConcertTicketListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/fan-accounts',
+      name: 'admin-fan-accounts',
+      component: () => import('@/views/admin/FanAccountsAdminView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
+      path: '/admin/door',
+      name: 'admin-door',
+      component: () => import('@/views/admin/DoorCheckView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
@@ -401,6 +419,9 @@ const ROUTE_TITLES: Record<string, string> = {
   newsletter: 'Newsletter — Skanking Storks',
   videos: 'Videos — Skanking Storks',
   press: 'Press — Skanking Storks',
+  'admin-concert-tickets': 'Concert Tickets — Admin',
+  'admin-fan-accounts': 'Fan Accounts — Admin',
+  'admin-door': 'Door Check — Admin',
 }
 
 router.afterEach((to) => {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Concert;
 use App\Models\Ticket;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -12,6 +13,23 @@ use ZipArchive;
 
 class ConcertTicketController extends Controller
 {
+    // GET /api/concerts/{concert}/tickets  (admin)
+    public function adminTicketList(Concert $concert): JsonResponse
+    {
+        $tickets = Ticket::whereHas('concertTicketType', fn ($q) => $q->where('concert_id', $concert->id))
+            ->with('concertTicketType')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($tickets->map(fn ($t) => [
+            'uuid'          => $t->uuid,
+            'status'        => $t->status,
+            'holder_name'   => $t->holder_name,
+            'holder_email'  => $t->holder_email,
+            'ticket_type'   => $t->concertTicketType?->name,
+        ]));
+    }
+
     public function qrCode(string $uuid): Response
     {
         if (! preg_match('/^[0-9a-f-]{36}$/i', $uuid)) {
