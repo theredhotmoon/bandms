@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
@@ -32,6 +33,11 @@ class Ticket extends Model
     public function fanAccount(): BelongsTo
     {
         return $this->belongsTo(FanAccount::class);
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(TicketTransfer::class, 'from_ticket_id');
     }
 
     public function transferredFrom(): BelongsTo

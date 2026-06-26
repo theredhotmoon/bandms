@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
@@ -160,7 +161,11 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
     Route::get('me', [FanAccountController::class, 'me']);
     Route::get('tickets', [FanAccountController::class, 'tickets']);
     Route::get('orders', [FanAccountController::class, 'orders']);
+    Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate']);
 });
+
+// Ticket claim — public (recipient may not have an account)
+Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim']);
 
 /*
 |--------------------------------------------------------------------------

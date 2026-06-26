@@ -76,3 +76,34 @@ export async function fetchFanOrders(authToken: string): Promise<FanOrder[]> {
   })
   return fanHandleResponse<FanOrder[]>(response)
 }
+
+export interface InitiateTransferResponse {
+  message: string
+  dev_link: string
+}
+
+export interface ClaimTransferResponse {
+  message: string
+  ticket_uuid: string
+}
+
+export async function initiateTransfer(
+  authToken: string,
+  ticketUuid: string,
+  toEmail: string,
+): Promise<InitiateTransferResponse> {
+  const response = await fetch(`${API_BASE}/fan/tickets/${encodeURIComponent(ticketUuid)}/transfer`, {
+    method: 'POST',
+    headers: authHeaders(authToken),
+    body: JSON.stringify({ to_email: toEmail }),
+  })
+  return fanHandleResponse<InitiateTransferResponse>(response)
+}
+
+export async function claimTransfer(token: string): Promise<ClaimTransferResponse> {
+  const response = await fetch(`${API_BASE}/tickets/claim/${encodeURIComponent(token)}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+  })
+  return fanHandleResponse<ClaimTransferResponse>(response)
+}

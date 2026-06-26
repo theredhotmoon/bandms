@@ -141,6 +141,11 @@ const router = createRouter({
       name: 'fan-account',
       component: () => import('@/views/FanAccountView.vue'),
     },
+    {
+      path: '/tickets/claim/:token',
+      name: 'ticket-claim',
+      component: () => import('@/views/TicketClaimView.vue'),
+    },
 
     // ── Admin panel (requires authentication) ──────────────────────────
     {
@@ -390,6 +395,7 @@ const ROUTE_TITLES: Record<string, string> = {
   checkout: 'Checkout — Skanking Storks',
   login: 'Sign In — Skanking Storks',
   'fan-account': 'My Account — Skanking Storks',
+  'ticket-claim': 'Claim Ticket — Skanking Storks',
   epk: 'EPK — Skanking Storks',
   'tech-rider-preview': 'Tech Rider — Skanking Storks',
   newsletter: 'Newsletter — Skanking Storks',
