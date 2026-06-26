@@ -235,6 +235,12 @@ fi
 
 # ── 1. Stop containers ────────────────────────────────────────────────────────
 begin_step "Stopping containers"
+# Force-remove any containers stuck in an uninterruptible state before compose down.
+# This handles the Docker daemon zombie case: "tried to kill container, but did
+# not receive an exit event".  'docker rm -f' bypasses the signal path entirely.
+for cid in $(docker compose ps -q 2>/dev/null); do
+  docker rm -f "$cid" >/dev/null 2>&1 || true
+done
 if [[ "$FRESH_DB" == true ]]; then
   docker compose down -v
   end_step "Containers stopped and volumes removed"
