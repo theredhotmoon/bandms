@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,23 +42,18 @@ class ConcertTicketController extends Controller
             ->with(['concertTicketType.concert.venue'])
             ->firstOrFail();
 
-        // Generate QR code as base64 PNG
         $qrBase64 = null;
         try {
-            $result = Builder::create()
-                ->writer(new PngWriter())
-                ->writerOptions([])
-                ->data($uuid)
-                ->encoding(new Encoding('UTF-8'))
-                ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-                ->size(200)
-                ->margin(10)
-                ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-                ->build();
+            $result = (new Builder(
+                writer: new PngWriter(),
+                data: $uuid,
+                size: 200,
+                margin: 10,
+            ))->build();
 
             $qrBase64 = base64_encode($result->getString());
         } catch (\Throwable) {
-            // Fall back to text-only if QR generation fails
+            // fall back to text-only UUID if QR generation fails
         }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.pdf', compact('ticket', 'qrBase64'));
