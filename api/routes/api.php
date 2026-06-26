@@ -181,22 +181,6 @@ Route::post('/presale-codes/validate', [PresaleCodeController::class, 'validate'
 Route::middleware('auth:api')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user())->name('api.user');
 
-    // ── Ticket analytics ──────────────────────────────────────────────────────
-    Route::get('/admin/ticket-stats', function () {
-        $total       = \App\Models\Ticket::count();
-        $active      = \App\Models\Ticket::where('status', 'active')->count();
-        $transferred = \App\Models\Ticket::where('status', 'transferred')->count();
-        $scanned     = \App\Models\Ticket::where('status', 'scanned')->count();
-        return response()->json([
-            'total'         => $total,
-            'active'        => $active,
-            'transferred'   => $transferred,
-            'scanned'       => $scanned,
-            'transfer_rate' => $total > 0 ? round($transferred / $total * 100, 1) : 0,
-            'scan_rate'     => $total > 0 ? round($scanned / $total * 100, 1) : 0,
-        ]);
-    })->name('api.admin.ticket-stats');
-
     // ── Any authenticated user: venues read ────────────────────────────────
     Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index');
     Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
@@ -407,6 +391,22 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/presale-codes', [PresaleCodeController::class, 'index'])->name('api.presale-codes.index');
         Route::post('/presale-codes', [PresaleCodeController::class, 'store'])->name('api.presale-codes.store');
         Route::delete('/presale-codes/{id}', [PresaleCodeController::class, 'destroy'])->name('api.presale-codes.destroy');
+
+        // Ticket analytics
+        Route::get('/admin/ticket-stats', function () {
+            $total       = \App\Models\Ticket::count();
+            $active      = \App\Models\Ticket::where('status', 'active')->count();
+            $transferred = \App\Models\Ticket::where('status', 'transferred')->count();
+            $scanned     = \App\Models\Ticket::where('status', 'scanned')->count();
+            return response()->json([
+                'total'         => $total,
+                'active'        => $active,
+                'transferred'   => $transferred,
+                'scanned'       => $scanned,
+                'transfer_rate' => $total > 0 ? round($transferred / $total * 100, 1) : 0,
+                'scan_rate'     => $total > 0 ? round($scanned / $total * 100, 1) : 0,
+            ]);
+        })->name('api.admin.ticket-stats');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
