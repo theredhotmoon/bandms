@@ -51,7 +51,7 @@ export async function validatePresaleCode(
   code: string,
   concertId: number,
 ): Promise<{ valid: boolean; tier_ids?: number[]; message?: string }> {
-  const res = await fetch(`${API_BASE}/api/presale-codes/validate`, {
+  const res = await fetch('/api/presale-codes/validate', {
     method: 'POST',
     headers: jsonHeaders,
     body: JSON.stringify({ code, concert_id: concertId }),
