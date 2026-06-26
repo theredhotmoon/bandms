@@ -12,6 +12,8 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id', 'shop_item_id', 'shop_item_variant_id',
+        'concert_ticket_type_id', 'concert_ticket_price_tier_id',
+        'ticket_code', 'scanned_at',
         'name', 'variant_label', 'price', 'currency', 'quantity',
     ];
 
