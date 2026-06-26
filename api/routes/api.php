@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PresaleCodeController;
 use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
 use App\Http\Controllers\CheckoutController;
@@ -166,6 +167,9 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
 
 // Ticket claim — public (recipient may not have an account)
 Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim'])->middleware('throttle:20,1');
+
+// Public presale code validation (BEFORE auth:api group — no auth required)
+Route::post('/presale-codes/validate', [PresaleCodeController::class, 'validate'])->middleware('throttle:30,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -377,6 +381,11 @@ Route::middleware('auth:api')->group(function () {
         // Door check — QR scanning at venue entry
         Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->name('api.door-check');
         Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->name('api.door-check.scan');
+
+        // Presale codes (admin CRUD)
+        Route::get('/presale-codes', [PresaleCodeController::class, 'index'])->name('api.presale-codes.index');
+        Route::post('/presale-codes', [PresaleCodeController::class, 'store'])->name('api.presale-codes.store');
+        Route::delete('/presale-codes/{id}', [PresaleCodeController::class, 'destroy'])->name('api.presale-codes.destroy');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
