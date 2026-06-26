@@ -165,7 +165,7 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
 });
 
 // Ticket claim — public (recipient may not have an account)
-Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim']);
+Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim'])->middleware('throttle:20,1');
 
 /*
 |--------------------------------------------------------------------------

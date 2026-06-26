@@ -61,10 +61,13 @@ class TicketTransferController extends Controller
             'expires_at'     => now()->addHours(48),
         ]);
 
-        return response()->json([
-            'message'  => 'Transfer initiated. The recipient will receive a claim link.',
-            'dev_link' => url("/api/tickets/claim/{$claimToken}"),
-        ]);
+        $response = ['message' => 'Transfer initiated. The recipient will receive a claim link.'];
+
+        if (config('app.debug')) {
+            $response['dev_link'] = url("/api/tickets/claim/{$claimToken}");
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -73,42 +76,49 @@ class TicketTransferController extends Controller
      */
     public function claim(Request $request, string $token): JsonResponse
     {
-        $transfer = TicketTransfer::where('claim_token', $token)->firstOrFail();
+        // Optimistic pre-check to return fast on obvious 404
+        abort_unless(TicketTransfer::where('claim_token', $token)->exists(), 404);
 
-        if ($transfer->claimed_at !== null) {
-            return response()->json(['message' => 'Already claimed.'], 409);
+        try {
+            $newTicket = DB::transaction(function () use ($token) {
+                // Re-fetch with row lock to prevent concurrent double-claim
+                $transfer = TicketTransfer::where('claim_token', $token)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($transfer->claimed_at !== null) {
+                    abort(409, 'Already claimed.');
+                }
+
+                if ($transfer->expires_at < now()) {
+                    abort(410, 'Transfer expired.');
+                }
+
+                $oldTicket = $transfer->fromTicket()->lockForUpdate()->firstOrFail();
+
+                $oldTicket->update([
+                    'status'         => 'transferred',
+                    'transferred_at' => now(),
+                ]);
+
+                $newTicket = Ticket::create([
+                    'uuid'                   => (string) Str::uuid(),
+                    'order_item_id'          => $oldTicket->order_item_id,
+                    'concert_ticket_type_id' => $oldTicket->concert_ticket_type_id,
+                    'status'                 => 'active',
+                    'holder_email'           => $transfer->to_email,
+                    'holder_name'            => explode('@', $transfer->to_email)[0],
+                    'transferred_from_id'    => $oldTicket->id,
+                    'transferred_at'         => now(),
+                ]);
+
+                $transfer->update(['claimed_at' => now()]);
+
+                return $newTicket;
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
-
-        if ($transfer->expires_at < now()) {
-            return response()->json(['message' => 'Transfer expired.'], 410);
-        }
-
-        $oldTicket = $transfer->fromTicket()->with('concertTicketType')->firstOrFail();
-
-        $newTicket = DB::transaction(function () use ($transfer, $oldTicket) {
-            // Void the original ticket
-            $oldTicket->update([
-                'status'         => 'transferred',
-                'transferred_at' => now(),
-            ]);
-
-            // Mint new ticket for the recipient
-            $newTicket = Ticket::create([
-                'uuid'                   => (string) Str::uuid(),
-                'order_item_id'          => $oldTicket->order_item_id,
-                'concert_ticket_type_id' => $oldTicket->concert_ticket_type_id,
-                'status'                 => 'active',
-                'holder_email'           => $transfer->to_email,
-                'holder_name'            => explode('@', $transfer->to_email)[0],
-                'transferred_from_id'    => $oldTicket->id,
-                'transferred_at'         => now(),
-            ]);
-
-            // Stamp the transfer as claimed
-            $transfer->update(['claimed_at' => now()]);
-
-            return $newTicket;
-        });
 
         return response()->json([
             'message'     => 'Ticket claimed successfully.',
