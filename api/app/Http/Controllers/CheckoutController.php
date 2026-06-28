@@ -340,7 +340,7 @@ class CheckoutController extends Controller
 
                     // Generate unique ticket code for ticket items
                     if ($item->concert_ticket_type_id !== null && $item->ticket_code === null) {
-                        $code = strtoupper(substr(str_replace('-', '', (string) Str::uuid()), 0, 12));
+                        $code = strtoupper(Str::random(12));
                         $item->update(['ticket_code' => $code]);
                     }
                 }
