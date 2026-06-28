@@ -120,6 +120,23 @@ The script writes a full log to `rebuild.log` in the project root.
 
 ---
 
+## Git workflow — always use a feature branch
+
+**At the start of every new conversation that will produce a commit, create a feature branch immediately.**
+Never commit directly to `main`.
+
+```bash
+git checkout main && git pull          # start from latest main
+git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
+```
+
+- Branch name: `feature/<kebab-description>` for features, `fix/<kebab-description>` for bug fixes.
+- Keep one branch per conversation / logical unit of work.
+- Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
+- Merge via GitHub PR — never `git merge` directly into main locally.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
