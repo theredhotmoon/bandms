@@ -1,18 +1,56 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile } from '@/lib/cms'
-import { fmtDate } from '@/lib/i18n'
+import type { PostSummary } from '@/types/post'
+
+const ACCENT = '#1F8F7A'
 
 export async function getStaticPaths() {
-  const { data: posts } = await getPosts('en', 1)
-  return posts.map(p => ({ params: { id: String(p.id) } }))
+  // Fetch all pages to enumerate every post
+  const allPosts: PostSummary[] = []
+  let page = 1
+  while (true) {
+    const { data, meta } = await getPosts('en', page)
+    allPosts.push(...data)
+    if (page >= meta.last_page) break
+    page++
+  }
+  const summaries = allPosts.map(p => ({
+    id: p.id,
+    title: p.title,
+    date: p.published_at ?? p.created_at,
+    tags: p.tags,
+  }))
+  return allPosts.map((_, idx) => ({
+    params: { id: String(allPosts[idx].id) },
+    props: { summaries, idx },
+  }))
 }
 
 const { id } = Astro.params
+const { summaries, idx } = Astro.props
+
 const [post, profile] = await Promise.all([
   getPost(Number(id), 'en'),
   getBandProfile('en'),
 ])
+
+const d = new Date((post.published_at ?? post.created_at) + 'T00:00:00')
+const mo = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const dateStr = `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear()}`
+
+// Prev (newer) / next (older) — posts are newest-first
+const prevId = idx > 0                   ? summaries[idx - 1].id : null
+const nextId = idx < summaries.length - 1 ? summaries[idx + 1].id : null
+
+// More: up to 3 other posts
+const more = summaries.filter((_, i) => i !== idx).slice(0, 3)
+
+function moShort(iso: string): string {
+  const dd = new Date(iso + 'T00:00:00')
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  return `${dd.getDate()} ${months[dd.getMonth()]} ${dd.getFullYear()}`
+}
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -33,87 +71,653 @@ const structuredData = {
   image={post.image}
   structuredData={structuredData}
 >
-  <div class="mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-24">
-    <nav class="mb-8 text-sm text-zinc-600">
-      <a href="/posts" class="hover:text-zinc-400 transition-colors">News</a>
-      <span class="mx-2">›</span>
-      <span class="text-zinc-400 line-clamp-1">{post.title}</span>
-    </nav>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  </Fragment>
 
-    {/* Tags */}
-    {(post.tags ?? []).length > 0 && (
-      <div class="flex flex-wrap gap-2 mb-4">
-        {(post.tags ?? []).map(tag => (
-          <span class="rounded-full bg-surface-2 px-3 py-0.5 text-xs text-zinc-400">{tag.name}</span>
-        ))}
-      </div>
-    )}
+  <div class="ss">
+    <div class="grain" aria-hidden="true"></div>
 
-    <h1 class="text-3xl font-black text-white sm:text-4xl leading-tight">{post.title}</h1>
+    <!-- ── DARK HERO HEADER ──────────────────────────────────── -->
+    <header class="art-hero">
+      <!-- background image -->
+      {post.image ? (
+        <img src={post.image} alt="" class="art-hero-img" aria-hidden="true" loading="eager" />
+      ) : (
+        <div class="art-hero-placeholder" aria-hidden="true"></div>
+      )}
+      <!-- overlays -->
+      <div class="art-hero-checker" aria-hidden="true"></div>
+      <div class="art-hero-grad" aria-hidden="true"></div>
 
-    {post.intro && (
-      <p class="mt-4 text-lg text-zinc-400 leading-relaxed">{post.intro}</p>
-    )}
+      <!-- content inside hero -->
+      <div class="ar-col art-hero-content">
+        <!-- breadcrumb -->
+        <nav class="art-crumb" aria-label="Breadcrumb">
+          <a class="art-crumb-link" href="/">Home</a>
+          <span class="art-crumb-sep" aria-hidden="true">→</span>
+          <a class="art-crumb-link" href="/posts">News</a>
+          <span class="art-crumb-sep" aria-hidden="true">→</span>
+          <span class="art-crumb-cur">
+            {post.tags?.[0]?.name ?? 'Article'}
+          </span>
+        </nav>
 
-    <time class="mt-3 block text-sm text-zinc-600" datetime={post.published_at ?? post.created_at}>
-      {fmtDate(post.published_at ?? post.created_at, 'en')}
-    </time>
+        <!-- tag stamps -->
+        {(post.tags ?? []).length > 0 && (
+          <div class="art-stamps">
+            {(post.tags ?? []).map(tg => (
+              <span class="art-stamp">{tg.name}</span>
+            ))}
+          </div>
+        )}
 
-    {/* Cover image */}
-    {post.image && (
-      <div class="mt-8 overflow-hidden rounded-xl border border-border">
-        <img src={post.image} alt={post.title} loading="eager" class="w-full object-cover" />
-      </div>
-    )}
+        <!-- title -->
+        <h1 class="art-title">{post.title}</h1>
 
-    {/* Content */}
-    {post.content && (
-      <div class="prose mt-8" set:html={post.content} />
-    )}
+        <!-- intro / standfirst -->
+        {post.intro && (
+          <p class="art-intro">{post.intro}</p>
+        )}
 
-    {/* Links */}
-    {(post.links ?? []).length > 0 && (
-      <div class="mt-8 space-y-2">
-        <p class="text-sm font-bold text-zinc-500 uppercase tracking-wider">Links</p>
-        {(post.links ?? []).map(link => (
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-2 text-accent hover:underline text-sm"
-          >
-            {link.label ?? link.url}
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        <!-- meta row -->
+        <div class="art-meta">
+          <span class="art-meta-date">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
             </svg>
-          </a>
-        ))}
-      </div>
-    )}
-
-    {/* Related */}
-    {(post.releases ?? []).length > 0 && (
-      <div class="mt-8 rounded-xl border border-border bg-surface p-5">
-        <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Related releases</p>
-        <div class="flex flex-wrap gap-3">
-          {(post.releases ?? []).map(r => (
-            <a href={`/releases/${r.id}`} class="text-sm text-accent hover:underline">{r.title}</a>
-          ))}
+            {dateStr}
+          </span>
+          <span class="art-meta-diamond" aria-hidden="true"></span>
+          <button id="art-share-btn" class="art-share-btn" type="button">
+            <svg id="art-share-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+              <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+            </svg>
+            <span id="art-share-label">Share</span>
+          </button>
         </div>
       </div>
-    )}
+    </header>
 
-    {(post.concerts ?? []).length > 0 && (
-      <div class="mt-4 rounded-xl border border-border bg-surface p-5">
-        <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Related shows</p>
-        <div class="flex flex-wrap gap-3">
-          {(post.concerts ?? []).map(c => (
-            <a href={`/concerts/${c.id}`} class="text-sm text-accent hover:underline">
-              {fmtDate(c.date, 'en')}{c.venue ? ` @ ${c.venue.name}` : ''}
+    <!-- checker strip divider (teal + paper) -->
+    <div class="checker-strip-tp" aria-hidden="true"></div>
+
+    <!-- ── ARTICLE BODY ──────────────────────────────────────── -->
+    <article class="ar-col art-body">
+      {post.content && (
+        <div class="art-prose" set:html={post.content} />
+      )}
+    </article>
+
+    <!-- ── RELATED ───────────────────────────────────────────── -->
+    {(post.releases.length > 0 || post.concerts.length > 0 || post.music_videos.length > 0) && (
+      <section class="ar-col art-related">
+        <h3 class="art-related-title">Related</h3>
+        <div class="art-related-links">
+          {post.releases.map(r => (
+            <a href={`/releases/${r.id}`} class="art-rel-link">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="0.8" fill={ACCENT} stroke="none"/>
+              </svg>
+              {r.title}
+            </a>
+          ))}
+          {post.music_videos.map(v => (
+            <a href={`/releases`} class="art-rel-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 5.5l11 6.5-11 6.5z" fill={ACCENT} stroke="none"/>
+              </svg>
+              {v.title}
+            </a>
+          ))}
+          {post.concerts.map(c => (
+            <a href={`/concerts/${c.slug_en}`} class="art-rel-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+              </svg>
+              {c.venue ? `${c.venue.name}` : c.date}
             </a>
           ))}
         </div>
-      </div>
+      </section>
+    )}
+
+    <!-- links (from API) -->
+    {(post.links ?? []).length > 0 && (
+      <section class="ar-col art-links-sec">
+        {post.links.map(l => (
+          <a href={l.url} target="_blank" rel="noopener noreferrer" class="art-ext-link">
+            <span>{l.label ?? l.url}</span>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+              <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+            </svg>
+          </a>
+        ))}
+      </section>
+    )}
+
+    <!-- ── BACK ───────────────────────────────────────────────── -->
+    <div class="ar-col art-back">
+      <a href="/posts" class="art-back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6"/>
+        </svg>
+        Back to news
+      </a>
+    </div>
+
+    <!-- ── PREV / NEXT ────────────────────────────────────────── -->
+    {(prevId || nextId) && (
+      <section class="ar-col art-prevnext">
+        <div class="art-pn-row">
+          {prevId ? (
+            <a class="art-pn-btn art-pn-prev" href={`/posts/${prevId}`}>
+              <span class="art-pn-dir">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M15 6l-6 6 6 6"/>
+                </svg>
+                Newer post
+              </span>
+              <span class="art-pn-title">{summaries[idx - 1]?.title}</span>
+            </a>
+          ) : <div />}
+          {nextId ? (
+            <a class="art-pn-btn art-pn-next" href={`/posts/${nextId}`}>
+              <span class="art-pn-dir">
+                Older post
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M9 6l6 6-6 6"/>
+                </svg>
+              </span>
+              <span class="art-pn-title">{summaries[idx + 1]?.title}</span>
+            </a>
+          ) : <div />}
+        </div>
+      </section>
+    )}
+
+    <!-- ── MORE FROM THE BLOG ─────────────────────────────────── -->
+    {more.length > 0 && (
+      <section class="art-more-sec">
+        <!-- strip: teal + ink (reversed) -->
+        <div class="checker-strip-ta" aria-hidden="true"></div>
+        <div class="ar-col art-more-inner">
+          <h3 class="art-more-title">More from the blog</h3>
+          <div class="art-more-grid">
+            {more.map(p => (
+              <a href={`/posts/${p.id}`} class="art-more-card">
+                <div class="art-more-img" aria-hidden="true"></div>
+                <div class="art-more-body">
+                  {p.tags.length > 0 && (
+                    <span class="art-more-tag">{p.tags[0].name}</span>
+                  )}
+                  <h4 class="art-more-card-title">{p.title}</h4>
+                  <span class="art-more-date">{moShort(p.date)}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
     )}
   </div>
 </BaseLayout>
+
+<script>
+  const btn   = document.getElementById('art-share-btn') as HTMLButtonElement | null
+  const label = document.getElementById('art-share-label') as HTMLSpanElement | null
+  const icon  = document.getElementById('art-share-icon') as SVGElement | null
+
+  btn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = window.location.href
+      document.body.appendChild(ta); ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    if (!btn || !label || !icon) return
+    btn.style.background = '#1F8F7A'
+    btn.style.borderColor = '#1F8F7A'
+    icon.setAttribute('stroke', '#fff')
+    label.textContent = 'Copied'
+    setTimeout(() => {
+      btn.style.background = ''
+      btn.style.borderColor = ''
+      icon.setAttribute('stroke', '#1F8F7A')
+      label.textContent = 'Share'
+    }, 1800)
+  })
+</script>
+
+<style>
+  /* ── Tokens ─────────────────────────── */
+  .ss {
+    --paper: #EFE7D6;
+    --ink:   #121212;
+    --acc:   #1F8F7A;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* Grain */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 100;
+  }
+
+  /* Editorial column (760px, centred, padded) */
+  .ar-col {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 32px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  /* ── Checker strips ──────────────────── */
+  /* teal + paper */
+  .checker-strip-tp {
+    height: 14px;
+    background-image: repeating-conic-gradient(var(--acc) 0% 25%, var(--paper) 0% 50%);
+    background-size: 29px 14px;
+  }
+  /* teal + ink (reversed, for the "more" section) */
+  .checker-strip-ta {
+    height: 14px;
+    background-image: repeating-conic-gradient(var(--acc) 0% 25%, var(--ink) 0% 50%);
+    background-size: 29px 14px;
+  }
+
+  /* ── DARK HERO ───────────────────────── */
+  .art-hero {
+    position: relative;
+    background: var(--ink);
+    color: var(--paper);
+    overflow: hidden;
+    min-height: 420px;
+  }
+  .art-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  .art-hero-placeholder {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      #1b1b1b,
+      #1b1b1b 9px,
+      #222 9px,
+      #222 18px
+    );
+  }
+  .art-hero-checker {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-conic-gradient(var(--ink) 0% 25%, rgba(255,255,255,.5) 0% 50%);
+    background-size: 32px 32px;
+    opacity: .10;
+  }
+  .art-hero-grad {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(18,18,18,.62) 0%,
+      rgba(18,18,18,.74) 52%,
+      rgba(18,18,18,.93) 100%
+    );
+  }
+  .art-hero-content {
+    position: relative;
+    padding-top: 26px;
+    padding-bottom: 44px;
+  }
+
+  /* Breadcrumb */
+  .art-crumb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font: 700 12px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(239,231,214,.6);
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+  }
+  .art-crumb-link {
+    color: rgba(239,231,214,.6);
+    text-decoration: none;
+    transition: color .12s;
+  }
+  .art-crumb-link:hover { color: var(--paper); }
+  .art-crumb-sep { color: var(--acc); }
+  .art-crumb-cur { color: var(--paper); }
+
+  /* Tag stamps (filled) */
+  .art-stamps {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .art-stamp {
+    background: var(--acc);
+    color: #fff;
+    border: 2px solid var(--acc);
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  /* Title */
+  .art-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: .96;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 22px;
+    color: var(--paper);
+    text-wrap: balance;
+  }
+
+  /* Standfirst / intro */
+  .art-intro {
+    font: 600 22px/1.5 'Archivo', sans-serif;
+    color: rgba(239,231,214,.86);
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  /* Meta row */
+  .art-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 2px solid rgba(239,231,214,.22);
+    flex-wrap: wrap;
+  }
+  .art-meta-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 13px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(239,231,214,.72);
+  }
+  .art-meta-diamond {
+    width: 5px;
+    height: 5px;
+    background: var(--acc);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+  .art-share-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--paper);
+    border: 2px solid var(--paper);
+    font: 800 12px/1 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 8px 13px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .art-share-btn:hover { background: rgba(239,231,214,.12); }
+
+  /* ── ARTICLE BODY ────────────────────── */
+  .art-body { padding-top: 44px; padding-bottom: 8px; }
+  .art-prose {
+    font: 500 18.5px/1.72 'Archivo', sans-serif;
+    color: #222;
+  }
+  /* Drop cap on first paragraph's first letter */
+  .art-prose > p:first-of-type::first-letter {
+    float: left;
+    font-family: 'Anton', sans-serif;
+    font-size: 96px;
+    line-height: .74;
+    color: var(--acc);
+    margin-right: 14px;
+    margin-top: 6px;
+  }
+  .art-prose > p { margin: 0 0 24px; text-wrap: pretty; }
+  .art-prose > p:last-child { margin-bottom: 0; }
+  .art-prose > h2,
+  .art-prose > h3 {
+    font-family: 'Anton', sans-serif;
+    text-transform: uppercase;
+    margin: 32px 0 12px;
+    color: var(--ink);
+  }
+  .art-prose a { color: var(--acc); text-underline-offset: 3px; }
+  .art-prose blockquote {
+    margin: 12px 0 30px;
+    border-left: 6px solid var(--acc);
+    padding-left: 26px;
+  }
+
+  /* ── RELATED ─────────────────────────── */
+  .art-related { padding-top: 14px; padding-bottom: 8px; }
+  .art-related-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    line-height: 1.05;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 16px;
+    color: var(--ink);
+  }
+  .art-related-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .art-rel-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 3px solid var(--ink);
+    padding: 11px 15px;
+    font: 700 14px/1 'Archivo', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ink);
+    text-decoration: none;
+    background: #fff;
+    transition: background .12s, color .12s;
+  }
+  .art-rel-link:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── EXTERNAL LINKS ──────────────────── */
+  .art-links-sec { padding-top: 14px; padding-bottom: 8px; }
+  .art-ext-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 16px 20px;
+    text-decoration: none;
+    font: 600 15px/1.4 'Archivo', sans-serif;
+    margin-bottom: 10px;
+  }
+  .art-ext-link:last-child { margin-bottom: 0; }
+  .art-ext-link:hover { background: #333; }
+
+  /* ── BACK ────────────────────────────── */
+  .art-back { padding-top: 30px; padding-bottom: 8px; }
+  .art-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    text-decoration: none;
+    transition: background .12s, color .12s;
+  }
+  .art-back-btn:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── PREV / NEXT ─────────────────────── */
+  .art-prevnext { padding-top: 30px; padding-bottom: 10px; }
+  .art-pn-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .art-pn-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 3px solid var(--ink);
+    background: #fff;
+    padding: 18px 20px;
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 200px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: background .12s;
+  }
+  .art-pn-btn:hover { background: var(--paper); }
+  .art-pn-next { align-items: flex-end; text-align: right; }
+  .art-pn-dir {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--acc);
+  }
+  .art-pn-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    line-height: 1.02;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+
+  /* ── MORE FROM THE BLOG ──────────────── */
+  .art-more-sec {
+    margin-top: 36px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .art-more-inner {
+    padding-top: 34px;
+    padding-bottom: 60px;
+  }
+  .art-more-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(26px, 3vw, 34px);
+    line-height: 1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 22px;
+    color: var(--paper);
+  }
+  .art-more-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .art-more-card {
+    border: 3px solid rgba(239,231,214,.25);
+    background: rgba(239,231,214,.06);
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: var(--paper);
+    transition: border-color .14s;
+  }
+  .art-more-card:hover { border-color: var(--acc); }
+  .art-more-img {
+    height: 132px;
+    border-bottom: 3px solid rgba(239,231,214,.25);
+    background: repeating-linear-gradient(
+      45deg,
+      #1b1b1b,
+      #1b1b1b 9px,
+      #222 9px,
+      #222 18px
+    );
+    flex-shrink: 0;
+  }
+  .art-more-body {
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .art-more-tag {
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 9px;
+  }
+  .art-more-card-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    line-height: 1.04;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    color: var(--paper);
+  }
+  .art-more-date {
+    margin-top: auto;
+    font: 700 11px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(239,231,214,.5);
+  }
+
+  /* ── Responsive ─────────────────────── */
+  @media (max-width: 768px) {
+    .ar-col { padding: 0 20px; }
+    .art-title { font-size: clamp(28px, 8vw, 52px); }
+    .art-intro { font-size: 18px; }
+    .art-hero { min-height: 340px; }
+    .art-more-grid { grid-template-columns: 1fr 1fr; }
+    .art-pn-row { flex-direction: column; }
+  }
+  @media (max-width: 480px) {
+    .art-more-grid { grid-template-columns: 1fr; }
+  }
+</style>

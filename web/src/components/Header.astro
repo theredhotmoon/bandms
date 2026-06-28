@@ -9,7 +9,7 @@ const links = [
   { href: '/photos',   label: 'Photos' },
   { href: '/videos',   label: 'Videos' },
   { href: '/press',    label: 'Press' },
-  { href: '/merch',    label: 'Merch' },
+  { href: '/merch',    label: 'Shop' },
   { href: '/epk',      label: 'EPK' },
   { href: '/contact',  label: 'Contact' },
 ]
@@ -17,35 +17,93 @@ const links = [
 const current = Astro.url.pathname
 ---
 
-<header class="sticky top-0 z-40 border-b border-border bg-[rgb(8,8,8)/90] backdrop-blur-md">
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-    <!-- Logo / band name -->
-    <a href="/" class="text-xl font-black tracking-tight text-white hover:text-accent transition-colors shrink-0">
-      Skanking Storks
-    </a>
+<header class="ss-header">
+  <div class="ss-header-inner">
+    <a href="/" class="ss-logo">Skanking Storks</a>
 
-    <!-- Desktop nav -->
-    <nav class="hidden lg:flex items-center gap-6" aria-label="Main navigation">
+    <nav class="ss-desktop-nav" aria-label="Main navigation">
       {links.map(({ href, label }) => (
-        <a
-          href={href}
-          class:list={[
-            'text-sm font-medium transition-colors',
-            current.startsWith(href)
-              ? 'text-accent'
-              : 'text-zinc-400 hover:text-white',
-          ]}
-        >
-          {label}
-        </a>
+        current.startsWith(href)
+          ? <span class="ss-nav-link is-active" aria-current="page">{label}</span>
+          : <a href={href} class="ss-nav-link">{label}</a>
       ))}
     </nav>
 
-    <!-- Right side actions -->
-    <div class="flex items-center gap-3">
+    <div class="ss-header-right">
       <CartIcon client:idle />
-      <!-- Mobile hamburger -->
       <MobileNav links={links} client:idle />
     </div>
   </div>
 </header>
+
+<style>
+  .ss-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: #121212;
+    color: #EFE7D6;
+  }
+  .ss-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 90px;
+    flex-wrap: nowrap;
+  }
+
+  .ss-logo {
+    font-family: 'Anton', 'Impact', sans-serif;
+    font-size: 22px;
+    line-height: 1;
+    color: #EFE7D6;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color .12s;
+  }
+  .ss-logo:hover { color: #1F8F7A; }
+
+  .ss-desktop-nav {
+    display: none;
+    align-items: center;
+    gap: 20px;
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  @media (min-width: 1024px) {
+    .ss-desktop-nav { display: flex; }
+  }
+
+  .ss-nav-link {
+    color: #EFE7D6;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color .12s;
+    cursor: pointer;
+  }
+  a.ss-nav-link:hover { color: rgba(239,231,214,.55); }
+  span.ss-nav-link.is-active { color: #1F8F7A; }
+
+  .ss-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 1100px) {
+    .ss-header-inner { padding: 20px 40px; }
+  }
+  @media (max-width: 600px) {
+    .ss-header-inner { padding: 18px 20px; }
+    .ss-logo { font-size: 18px; }
+  }
+</style>

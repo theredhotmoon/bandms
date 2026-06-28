@@ -5,6 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import ConcertForm from '@/components/admin/forms/ConcertForm.vue'
+import ConcertTicketsManager from '@/components/admin/ConcertTicketsManager.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
@@ -30,6 +31,7 @@ const showModal = ref(false)
 const editing = ref<Concert | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
+const ticketsConcert = ref<Concert | null>(null)
 const filterWhen = ref<'' | 'upcoming' | 'past'>('')
 
 const today = new Date().toISOString().slice(0, 10)
@@ -45,6 +47,7 @@ const tc = useTableControls<Concert>({
   data: filteredData,
   searchFn: (c, q) =>
     c.date.includes(q) ||
+    (c.name ?? '').toLowerCase().includes(q) ||
     (c.venue?.name ?? '').toLowerCase().includes(q) ||
     (c.bands ?? []).some(b => b.name.toLowerCase().includes(q)),
   defaultSort: 'date',
@@ -120,15 +123,16 @@ async function confirmDelete() {
             <thead>
               <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Date" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">Name</th>
                 <th class="th">Doors / Start</th>
                 <th class="th">Venue</th>
-                <th class="th">Lineup</th>
                 <th class="th text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="concert in tc.paginated.value" :key="concert.id" class="table-row">
                 <td class="td font-medium" style="color:#e2e8f0;">{{ concert.date }}</td>
+                <td class="td" style="color:#d0d0d0;">{{ concert.name ?? '—' }}</td>
                 <td class="td text-xs" style="color:#94a3b8; font-variant-numeric:tabular-nums;">
                   <span v-if="concert.doors_open">🚪 {{ concert.doors_open }}</span>
                   <span v-if="concert.doors_open && concert.start_time"> · </span>
@@ -136,13 +140,8 @@ async function confirmDelete() {
                   <span v-if="!concert.doors_open && !concert.start_time">—</span>
                 </td>
                 <td class="td" style="color:#94a3b8;">{{ concert.venue?.name ?? '—' }}</td>
-                <td class="td">
-                  <span v-if="concert.bands?.length" class="text-xs" style="color:#d0d0d0;">
-                    {{ concert.bands.map(b => b.name).join(', ') }}
-                  </span>
-                  <span v-else style="color:#475569;">—</span>
-                </td>
                 <td class="td text-right">
+                  <button @click="ticketsConcert = concert" class="btn-edit">Tickets</button>
                   <button @click="openEdit(concert)" class="btn-edit">Edit</button>
                   <button @click="confirmId = concert.id" class="btn-delete">Delete</button>
                 </td>
@@ -178,6 +177,10 @@ async function confirmDelete() {
     </AdminModal>
 
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
+
+    <AdminModal :open="ticketsConcert !== null" :title="`Tickets — ${ticketsConcert?.name ?? ticketsConcert?.date ?? ''}`" maxWidth="52rem" @close="ticketsConcert = null">
+      <ConcertTicketsManager v-if="ticketsConcert" :concert-id="ticketsConcert.id" />
+    </AdminModal>
   </AdminLayout>
 </template>
 

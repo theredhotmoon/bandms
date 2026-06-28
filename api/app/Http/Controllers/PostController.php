@@ -9,12 +9,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Post::select(['id', 'title', 'slug', 'intro', 'content', 'published_at', 'event_date', 'created_at', 'updated_at'])
+        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'content', 'published_at', 'event_date', 'created_at', 'updated_at'])
             ->with(['tags'])
             ->when(
                 $request->filled('search'),
@@ -43,6 +44,8 @@ class PostController extends Controller
             'title'               => 'required',
             'title.en'            => 'nullable|string|max:255',
             'title.pl'            => 'nullable|string|max:255',
+            'slug_en'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_en')],
+            'slug_pl'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_pl')],
             'intro'               => 'nullable',
             'intro.en'            => 'nullable|string|max:1000',
             'intro.pl'            => 'nullable|string|max:1000',
@@ -72,13 +75,13 @@ class PostController extends Controller
             'links.*.label'       => 'nullable|string|max:255',
         ]);
 
-        $titleForSlug = is_array($data['title'])
-            ? ($data['title']['en'] ?? reset($data['title']) ?? 'post')
-            : $data['title'];
+        $titleEn = is_array($data['title']) ? ($data['title']['en'] ?? reset($data['title']) ?? 'post') : $data['title'];
+        $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
 
         $post = Post::create([
             'title'        => $data['title'],
-            'slug'         => Post::generateSlug($titleForSlug),
+            'slug_en'      => ($data['slug_en'] ?? null) ?: Post::generateSlug($titleEn, null, 'slug_en'),
+            'slug_pl'      => ($data['slug_pl'] ?? null) ?: ($titlePl ? Post::generateSlug($titlePl, null, 'slug_pl') : null),
             'intro'        => $data['intro'] ?? null,
             'content'      => $data['content'] ?? null,
             'image'        => $data['image'] ?? null,
@@ -114,6 +117,8 @@ class PostController extends Controller
             'title'               => 'sometimes|required',
             'title.en'            => 'nullable|string|max:255',
             'title.pl'            => 'nullable|string|max:255',
+            'slug_en'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_en')->ignore($post->id)],
+            'slug_pl'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_pl')->ignore($post->id)],
             'intro'               => 'nullable',
             'intro.en'            => 'nullable|string|max:1000',
             'intro.pl'            => 'nullable|string|max:1000',

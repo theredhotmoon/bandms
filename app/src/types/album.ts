@@ -22,7 +22,8 @@ export interface AlbumPhoto {
 export interface Album {
   id: number
   title: string
-  slug: string
+  slug_en: string
+  slug_pl: string | null
   description: string | null
   taken_at: string | null
   published_at: string | null
@@ -38,6 +39,8 @@ export interface Album {
 
 export interface AlbumPayload {
   title: string
+  slug_en?: string | null
+  slug_pl?: string | null
   description?: string | null
   venue_id?: number | null
   concert_id?: number | null
@@ -48,6 +51,8 @@ export interface AlbumPayload {
 
 export interface BatchAlbumUploadMeta {
   title: string
+  slug_en?: string | null
+  slug_pl?: string | null
   description?: string | null
   venue_id?: number | null
   concert_id?: number | null

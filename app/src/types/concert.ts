@@ -17,6 +17,9 @@ export interface ConcertLink {
 
 export interface Concert {
   id: number
+  name: string | null
+  slug_en: string | null
+  slug_pl: string | null
   date: string
   doors_open: string | null
   sound_check_time: string | null
@@ -28,6 +31,10 @@ export interface Concert {
   bands: ConcertBand[]
   tags?: Tag[]
   links?: ConcertLink[]
+  translations?: {
+    name?:        { en?: string | null; pl?: string | null }
+    description?: { en?: string | null; pl?: string | null }
+  }
   created_at: string
   updated_at: string
 }
@@ -44,13 +51,16 @@ export interface ConcertLinkPayload {
 }
 
 export interface ConcertPayload {
+  name?: { en?: string; pl?: string } | null
+  description?: { en?: string; pl?: string } | null
   venue_id: number
   date: string
+  slug_en?: string | null
+  slug_pl?: string | null
   doors_open?: string | null
   sound_check_time?: string | null
   start_time?: string | null
   own_sort_order?: number
-  description?: string | null
   bands?: ConcertBandPayload[]
   tag_ids?: number[]
   links?: ConcertLinkPayload[]

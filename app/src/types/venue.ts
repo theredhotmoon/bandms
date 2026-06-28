@@ -8,6 +8,7 @@ export interface Venue {
   city: string | null
   postcode: string | null
   additional_info: string | null
+  capacity: number | null
   latitude: number | null
   longitude: number | null
   tags?: Tag[]
@@ -22,6 +23,7 @@ export interface VenuePayload {
   city?: string | null
   postcode?: string | null
   additional_info?: string | null
+  capacity?: number | null
   latitude?: number | null
   longitude?: number | null
   tag_ids?: number[]

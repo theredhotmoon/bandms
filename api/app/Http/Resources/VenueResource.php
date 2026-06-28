@@ -17,6 +17,7 @@ class VenueResource extends JsonResource
             'city'            => $this->city,
             'postcode'        => $this->postcode,
             'additional_info' => $this->additional_info,
+            'capacity'        => $this->capacity,
             'latitude'        => $this->latitude,
             'longitude'       => $this->longitude,
             'tags'            => TagResource::collection($this->whenLoaded('tags')),

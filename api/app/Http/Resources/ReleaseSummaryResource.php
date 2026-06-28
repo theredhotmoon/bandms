@@ -13,6 +13,8 @@ class ReleaseSummaryResource extends JsonResource
             'id'           => $this->id,
             'profile_id'   => $this->profile_id,
             'title'        => $this->title,
+            'slug_en'      => $this->slug_en,
+            'slug_pl'      => $this->slug_pl,
             'type'         => $this->type,
             'release_date' => $this->release_date?->format('Y-m-d'),
             'cover_image'  => $this->cover_image ? '/storage/' . $this->cover_image : null,

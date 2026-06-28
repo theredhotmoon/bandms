@@ -5,7 +5,7 @@ import { getShopItems, getShopItem, getBandProfile } from '@/lib/cms'
 
 export async function getStaticPaths() {
   const items = await getShopItems()
-  return items.map(i => ({ params: { slug: i.slug } }))
+  return items.map(i => ({ params: { slug: i.slug_en } }))
 }
 
 const { slug } = Astro.params

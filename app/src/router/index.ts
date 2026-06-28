@@ -332,6 +332,12 @@ const router = createRouter({
       component: () => import('@/views/admin/MySetupsView.vue'),
       meta: { requiresAuth: true, requiredRole: 'member' },
     },
+    {
+      path: '/admin/door',
+      name: 'admin-door',
+      component: () => import('@/views/admin/DoorCheckView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

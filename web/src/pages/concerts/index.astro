@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import ConcertCard from '@/components/ConcertCard.astro'
+import ShowsMap from '@/components/ShowsMap.vue'
+import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getConcerts, getBandProfile } from '@/lib/cms'
 import { isUpcoming } from '@/lib/i18n'
+import type { Concert } from '@/types/concert'
+
+const ACCENT = '#1F8F7A'
 
 const [concerts, profile] = await Promise.all([getConcerts(), getBandProfile('en')])
 
@@ -13,42 +18,652 @@ const upcoming = concerts
 const past = concerts
   .filter(c => !isUpcoming(c.date))
   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+const cities = new Set(concerts.map(c => c.venue.city).filter(Boolean)).size
+
+const concertsWithCoords = concerts.filter(
+  c => c.venue.latitude != null && c.venue.longitude != null
+)
+const coordIds = new Set(concertsWithCoords.map(c => c.id))
+
+function getDay(date: string) {
+  return new Date(date + 'T00:00:00').getDate().toString().padStart(2, '0')
+}
+function getMo(date: string) {
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { month: 'short' })
+}
+function getYr(date: string) {
+  return new Date(date + 'T00:00:00').getFullYear()
+}
+function getTicketLink(concert: Concert) {
+  return concert.links?.find(l => /ticket|buy|bilet/i.test(l.label))?.url ?? null
+}
+function getTypeLabel(concert: Concert) {
+  const slug = concert.tags?.find(t => ['festival','support','club'].includes(t.slug))?.slug
+  if (slug === 'festival') return 'Festival'
+  if (slug === 'support') return 'Support'
+  return null
+}
 ---
 
 <BaseLayout
   title={`Shows — ${profile.name}`}
   description={`Live performances by ${profile.name}. Upcoming shows and past concerts.`}
 >
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-white sm:text-5xl">Shows</h1>
-    </div>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  </Fragment>
 
-    {/* Upcoming */}
-    {upcoming.length > 0 ? (
-      <section class="mb-16">
-        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Upcoming</h2>
-        <div class="space-y-3">
-          {upcoming.map(c => <ConcertCard concert={c} />)}
+  <div class="ss">
+    <!-- Grain overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ── HERO ──────────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="checker-bg" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="hero-text">
+          <span class="kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
+          <h1 class="page-title">Shows</h1>
+          <p class="lead">
+            Brass, bass and the upbeat — live. Every date we're playing next,
+            and every floor we've already moved.
+          </p>
+        </div>
+        <div class="stats">
+          <div class="stat stat-accent">
+            <span class="stat-n">{upcoming.length}</span>
+            <span class="stat-l">upcoming</span>
+          </div>
+          <div class="stat">
+            <span class="stat-n">{past.length}</span>
+            <span class="stat-l">shows played</span>
+          </div>
+          <div class="stat">
+            <span class="stat-n">{cities}</span>
+            <span class="stat-l">cities</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MAP ───────────────────────────────────────────────────── -->
+    {concertsWithCoords.length > 0 && (
+      <section id="shows-map" class="map-section">
+        <div class="map-intro">
+          <div class="sec-head">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
+              <circle cx="12" cy="10" r="2.6"/>
+            </svg>
+            <h2 class="sec-title">Where we play</h2>
+          </div>
+          <p class="sec-sub">
+            Every dot is a gig. Teal = coming up, ink = already played.
+            Tap a pin to open.
+          </p>
+        </div>
+        <div class="map-frame">
+          <ShowsMap
+            concerts={concertsWithCoords.map(c => ({
+              id: c.id,
+              slug: c.slug_en,
+              lat: c.venue.latitude as number,
+              lng: c.venue.longitude as number,
+              city: c.venue.city,
+              venue: c.venue.name,
+              date: c.date,
+              upcoming: isUpcoming(c.date),
+            }))}
+            accent={ACCENT}
+            client:visible
+          />
         </div>
       </section>
-    ) : (
-      <div class="mb-16 rounded-xl border border-border bg-surface p-8 text-center text-zinc-500">
-        <p class="text-lg font-medium text-zinc-400">No upcoming shows announced yet.</p>
-        <p class="mt-1 text-sm">Subscribe to the newsletter to be the first to know.</p>
-        <a href="/newsletter" class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
+    )}
+
+    <!-- ── UPCOMING ───────────────────────────────────────────────── -->
+    <section class="sec upcoming-sec">
+      <div class="sec-head">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
+          <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+        </svg>
+        <h2 class="sec-title">Upcoming shows</h2>
+      </div>
+      <p class="sec-sub">Grab a ticket before the room fills up.</p>
+
+      {upcoming.length > 0 ? (
+        <div class="gig-list">
+          {upcoming.map(c => {
+            const ticketUrl = getTicketLink(c)
+            const typeLabel = getTypeLabel(c)
+            return (
+              <div class="gig-row">
+                <a class="date-block" href={`/concerts/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${getMo(c.date)} ${getYr(c.date)}`}>
+                  <span class="date-day">{getDay(c.date)}</span>
+                  <span class="date-mo">{getMo(c.date)} {getYr(c.date)}</span>
+                </a>
+                <a class="row-main" href={`/concerts/${c.slug_en}`}>
+                  <span class="city-name">{c.name ?? (c.venue.city ?? c.venue.name)}</span>
+                  <span class="venue-line">
+                    <span class="venue-name">{c.name ? (c.venue.city ?? c.venue.name) + ' · ' + c.venue.name : c.venue.name}</span>
+                    {typeLabel && <span class="type-badge">{typeLabel}</span>}
+                    <span class="view-link">
+                      Details
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M9 6l6 6-6 6"/>
+                      </svg>
+                    </span>
+                  </span>
+                </a>
+                <div class="gig-actions">
+                  {coordIds.has(c.id) && (
+                    <button
+                      class="map-pin-btn"
+                      data-concert-id={c.id}
+                      aria-label={`Show ${c.venue.city ?? c.venue.name} on map`}
+                      type="button"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="none" aria-hidden="true">
+                        <path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill="currentColor"/>
+                      </svg>
+                      Show on map
+                    </button>
+                  )}
+                  {ticketUrl
+                    ? (
+                      <a class="ticket-btn" href={ticketUrl} target="_blank" rel="noopener noreferrer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                          <path d="M5 12h14M13 6l6 6-6 6"/>
+                        </svg>
+                        Tickets
+                      </a>
+                    )
+                    : (
+                      <a class="details-btn" href={`/concerts/${c.slug_en}`}>Details</a>
+                    )
+                  }
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <div class="empty-checker" aria-hidden="true"></div>
+          <p class="empty-title">No upcoming shows announced yet.</p>
+          <p class="empty-sub">Get on the list to be first to know.</p>
+          <a class="empty-link" href="/newsletter">Join the newsletter →</a>
+        </div>
+      )}
+    </section>
+
+    <!-- ── CHECKER STRIP ─────────────────────────────────────────── -->
+    <div class="checker-strip" aria-hidden="true"></div>
+
+    <!-- ── ARCHIVE ────────────────────────────────────────────────── -->
+    {past.length > 0 && (
+      <div class="archive-wrap-outer">
+        <ShowsArchiveFilter
+          concerts={past.map(c => ({
+            id: c.id,
+            slug: c.slug_en,
+            date: c.date,
+            day: getDay(c.date),
+            mo: getMo(c.date),
+            yr: String(getYr(c.date)),
+            city: c.venue.city ?? c.venue.name,
+            venue: c.venue.name,
+            type: getTypeLabel(c) ?? '',
+            hasCoords: c.venue.latitude != null && c.venue.longitude != null,
+          }))}
+          accent={ACCENT}
+          client:visible
+        />
       </div>
     )}
 
-    {/* Past */}
-    {past.length > 0 && (
-      <section>
-        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Past Shows</h2>
-        <div class="space-y-3">
-          {past.map(c => <ConcertCard concert={c} />)}
+    <!-- ── NEWSLETTER ─────────────────────────────────────────────── -->
+    <div class="nl-strip" aria-hidden="true"></div>
+    <section class="nl-sec">
+      <div class="nl-box">
+        <div class="nl-text">
+          <span class="nl-badge">★ SKA</span>
+          <h2 class="nl-title">Never miss a skank</h2>
+          <p class="nl-sub">
+            Tour dates, new tunes and where to catch us live —
+            straight to your inbox.
+          </p>
         </div>
-      </section>
-    )}
+        <div class="nl-form-wrap">
+          <NewsletterSignup client:visible />
+        </div>
+      </div>
+    </section>
   </div>
 </BaseLayout>
+
+<script>
+  document.querySelectorAll('.map-pin-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = Number((el as HTMLElement).dataset.concertId)
+      const mapSection = document.getElementById('shows-map')
+      mapSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('ss:fly-to', { detail: { id } }))
+      }, mapSection ? 700 : 0)
+    })
+  })
+</script>
+
+<style>
+  /* ── Design tokens (non-conflicting since this is the page scope) */
+  .ss {
+    --paper: #EFE7D6;
+    --ink: #121212;
+    --acc: #1F8F7A;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* Grain */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 100;
+  }
+
+  /* ── HERO ─────────────────────── */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 54px 90px 58px;
+    position: relative;
+    overflow: hidden;
+  }
+  .checker-bg {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-conic-gradient(
+      rgba(0,0,0,0) 0% 25%,
+      rgba(255,255,255,.04) 0% 50%
+    );
+    background-size: 46px 46px;
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: flex-end;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .kicker {
+    display: block;
+    font: 800 14px/1 'Archivo', sans-serif;
+    letter-spacing: .34em;
+    color: var(--acc);
+    margin-bottom: 18px;
+  }
+  .page-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(72px, 12vw, 150px);
+    line-height: .82;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--paper);
+  }
+  .lead {
+    font: 500 20px/1.55 'Archivo', sans-serif;
+    color: rgba(239,231,214,.82);
+    max-width: 640px;
+    margin: 22px 0 0;
+  }
+  .stats {
+    display: flex;
+    gap: 14px;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .stat {
+    border: 3px solid var(--paper);
+    padding: 16px 18px;
+    min-width: 100px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stat-n {
+    font-family: 'Anton', sans-serif;
+    font-size: 48px;
+    line-height: .9;
+    letter-spacing: .01em;
+    color: var(--paper);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-accent .stat-n { color: var(--acc); }
+  .stat-l {
+    font: 800 10px/1.3 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(239,231,214,.7);
+  }
+
+  /* ── MAP ──────────────────────── */
+  .map-section { background: var(--paper); }
+  .map-intro {
+    padding: 50px 90px 22px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .map-frame {
+    border-top: 4px solid var(--ink);
+    border-bottom: 4px solid var(--ink);
+  }
+
+  /* ── Section common ───────────── */
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .sec-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: .96;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--ink);
+  }
+  .sec-sub {
+    font: 500 17px/1.5 'Archivo', sans-serif;
+    color: #444;
+    margin: 14px 0 0;
+    max-width: 640px;
+  }
+
+  /* ── Upcoming section ─────────── */
+  .sec {
+    padding: 56px 90px 52px;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .upcoming-sec {}
+
+  .gig-list {
+    border-top: 3px solid var(--ink);
+    margin-top: 26px;
+  }
+  .gig-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 26px;
+    padding: 18px 4px;
+    border-bottom: 3px solid var(--ink);
+  }
+  .date-block {
+    text-align: center;
+    min-width: 72px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .date-day {
+    display: block;
+    font-family: 'Anton', sans-serif;
+    font-size: 40px;
+    line-height: .86;
+    letter-spacing: .01em;
+    color: var(--acc);
+  }
+  .date-mo {
+    display: block;
+    font: 800 11px/1.2 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #777;
+    margin-top: 4px;
+  }
+  .row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .city-name {
+    font-family: 'Anton', sans-serif;
+    font-size: 32px;
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .venue-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .venue-name {
+    font: 600 15px/1 'Archivo', sans-serif;
+    color: #555;
+  }
+  .type-badge {
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--acc);
+    border: 2px solid var(--acc);
+    padding: 4px 7px;
+  }
+  .view-link {
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #999;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .gig-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .map-pin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: transparent;
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    font-family: 'Anton', sans-serif;
+    font-size: 14px;
+    line-height: 1;
+    text-transform: uppercase;
+    padding: 11px 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+  }
+  .map-pin-btn svg { color: var(--acc); flex-shrink: 0; }
+  .map-pin-btn:hover { background: var(--ink); color: var(--paper); }
+  .map-pin-btn:hover svg { color: var(--acc); }
+  .ticket-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: var(--acc);
+    color: #fff;
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    text-decoration: none;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: background .15s;
+  }
+  .ticket-btn:hover { background: #167a62; }
+  .details-btn {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    font-family: 'Anton', sans-serif;
+    font-size: 14px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 11px 14px;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .details-btn:hover { background: var(--ink); color: var(--paper); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    border: 3px dashed var(--ink);
+    padding: 48px 32px;
+    background: #fff;
+    margin-top: 26px;
+  }
+  .empty-checker {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background-image: repeating-conic-gradient(var(--ink) 0% 25%, var(--paper) 0% 50%);
+    background-size: 20px 20px;
+    border: 3px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--acc);
+    transform: rotate(-4deg);
+  }
+  .empty-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 28px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .empty-sub {
+    font: 500 16px/1.5 'Archivo', sans-serif;
+    color: #555;
+    margin: 0 0 20px;
+  }
+  .empty-link {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    text-decoration: none;
+    box-shadow: 5px 5px 0 var(--acc);
+  }
+
+  /* ── Checker strip ─────────────── */
+  .checker-strip {
+    height: 14px;
+    background-image: repeating-conic-gradient(var(--ink) 0% 25%, var(--paper) 0% 50%);
+    background-size: 28px 14px;
+    width: 100%;
+  }
+
+  /* ── Archive ──────────────────── */
+  .archive-wrap-outer {
+    width: 100%;
+  }
+
+  /* ── Newsletter ────────────────── */
+  .nl-strip {
+    height: 14px;
+    background-image: repeating-conic-gradient(var(--acc) 0% 25%, var(--paper) 0% 50%);
+    background-size: 28px 14px;
+    width: 100%;
+  }
+  .nl-sec {
+    padding: 52px 90px 56px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .nl-box {
+    border: 4px dashed var(--ink);
+    padding: 40px 48px;
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 420px);
+    gap: 40px;
+    align-items: center;
+    background: #fff;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .nl-badge {
+    display: inline-block;
+    border: 3px solid var(--acc);
+    color: var(--acc);
+    font: 800 13px/1 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    transform: rotate(-4deg);
+    white-space: nowrap;
+    border-radius: 3px;
+  }
+  .nl-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(32px, 5vw, 50px);
+    line-height: .92;
+    text-transform: uppercase;
+    margin: 16px 0 10px;
+    letter-spacing: .01em;
+    color: var(--ink);
+  }
+  .nl-sub {
+    font: 500 17px/1.5 'Archivo', sans-serif;
+    color: #444;
+    margin: 0;
+  }
+
+  /* ── Responsive ─────────────────── */
+  @media (max-width: 1100px) {
+    .hero { padding: 48px 40px 52px; }
+    .map-intro { padding: 40px 40px 18px; }
+    .sec { padding: 48px 40px; }
+    .nl-sec { padding: 48px 40px; }
+  }
+  @media (max-width: 800px) {
+    .hero { padding: 36px 24px 40px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 28px; align-items: flex-start; }
+    .stats { flex-wrap: wrap; gap: 10px; }
+    .map-intro { padding: 32px 24px 16px; }
+    .sec { padding: 40px 24px; }
+    .nl-sec { padding: 40px 24px; }
+    .nl-box { grid-template-columns: 1fr; padding: 28px 24px; gap: 24px; }
+    .gig-row { grid-template-columns: auto 1fr; gap: 16px; }
+    .gig-row .gig-actions { grid-column: 1 / -1; justify-self: start; }
+    .city-name { font-size: 24px; }
+  }
+</style>

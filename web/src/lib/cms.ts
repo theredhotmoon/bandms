@@ -62,6 +62,9 @@ export const getConcert = (id: number) =>
 export const getConcertSetlist = (id: number) =>
   getOptional<PublicSetlist>(`/concerts/${id}/setlist`)
 
+export const getConcertTickets = (id: number) =>
+  get<{ id: number; is_on_sale: boolean }[]>(`/concerts/${id}/tickets`)
+
 // ── Releases ──────────────────────────────────────────────────────────────────
 
 export const getReleases = (lang: Locale = 'en') =>

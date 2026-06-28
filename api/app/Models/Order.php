@@ -16,6 +16,7 @@ class Order extends Model
         'uuid', 'email', 'name', 'status',
         'stripe_session_id', 'stripe_payment_intent_id',
         'currency', 'total', 'shipping_address',
+        'promo_code_id', 'discount_amount',
     ];
 
     protected $casts = [

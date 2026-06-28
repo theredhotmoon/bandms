@@ -8,7 +8,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist
+    --prefer-source
 
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative
@@ -22,7 +22,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist
+    --prefer-source
 
 COPY . .
 RUN composer dump-autoload --optimize
@@ -38,8 +38,6 @@ RUN apk add --no-cache \
         oniguruma-dev \
     && docker-php-ext-install \
         pdo_mysql \
-        mbstring \
-        xml \
         bcmath \
         opcache \
         pcntl \
@@ -69,7 +67,6 @@ ENTRYPOINT ["/entrypoint.sh"]
 # ── Stage 4: test image (dev deps, php-cli entrypoint) ────────
 FROM app AS test
 RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS \
-    && docker-php-ext-install pdo_sqlite \
     && (pecl install pcov && docker-php-ext-enable pcov || echo "pcov unavailable, skipping coverage") \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/pear

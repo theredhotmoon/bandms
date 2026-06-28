@@ -1,0 +1,1620 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ConcertMap from '@/components/ConcertMap.vue'
+import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
+import { fmtTime, isUpcoming } from '@/lib/i18n'
+
+export async function getStaticPaths() {
+  const concerts = await getConcerts()
+  const summaries = concerts.map(x => ({
+    id: x.id,
+    slug: x.slug_en,
+    date: x.date,
+    city: x.venue.city ?? x.venue.name,
+    venue: x.venue.name,
+    tags: x.tags ?? [],
+  }))
+  return concerts.map((_c, idx) => ({
+    params: { slug: _c.slug_en },
+    props: { allConcerts: summaries, idx, concertId: _c.id },
+  }))
+}
+
+const ACCENT = '#1F8F7A'
+
+const { allConcerts, idx, concertId } = Astro.props
+
+const [concert, setlist, profile, ticketTypes] = await Promise.all([
+  getConcert(concertId),
+  getConcertSetlist(concertId),
+  getBandProfile('en'),
+  getConcertTickets(concertId).catch(() => [] as { id: number; is_on_sale: boolean }[]),
+])
+
+const hasInternalTickets = ticketTypes.length > 0
+
+const upcoming = isUpcoming(concert.date)
+const isPast = !upcoming
+
+const d = new Date(concert.date + 'T00:00:00')
+const dayNum  = d.getDate().toString().padStart(2, '0')
+const moShort = d.toLocaleDateString('en-GB', { month: 'short' })
+const yrNum   = d.getFullYear()
+const weekday = d.toLocaleDateString('en-GB', { weekday: 'long' })
+
+const fullAddr = [
+  concert.venue.street ? `${concert.venue.street}${concert.venue.street_number ? ' ' + concert.venue.street_number : ''}` : null,
+  concert.venue.postcode,
+  concert.venue.city,
+].filter(Boolean).join(', ')
+
+const ticketLinks = concert.links?.filter(l => /ticket|buy|bilet/i.test(l.label)) ?? []
+const eventLinks  = concert.links?.filter(l => !/ticket|buy|bilet/i.test(l.label)) ?? []
+
+const hasMap = concert.venue.latitude != null && concert.venue.longitude != null
+
+// Prev / next IDs
+const prevSlug = idx > 0 ? allConcerts[idx - 1].slug : null
+const nextSlug = idx < allConcerts.length - 1 ? allConcerts[idx + 1].slug : null
+
+// More shows: same status, different gig, limit 3
+const moreConcerts = allConcerts
+  .filter((c, i) => i !== idx && isUpcoming(c.date) === upcoming)
+  .slice(0, 3)
+
+// Google Calendar link
+function gcalLink() {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const [hh = 20, mm = 0] = (concert.start_time ?? '20:00').split(':').map(Number)
+  const start = new Date(concert.date + 'T00:00:00')
+  start.setHours(hh, mm)
+  const end = new Date(start.getTime() + 2.5 * 3600 * 1000)
+  const fmt = (dt: Date) =>
+    `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`
+  const text = concert.name ?? `${profile.name} — ${concert.venue.city ?? concert.venue.name}`
+  const det  = concert.description ?? ''
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(text)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(det)}&location=${encodeURIComponent(fullAddr)}`
+}
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'MusicEvent',
+  name: concert.name ?? `${profile.name} @ ${concert.venue.name}`,
+  startDate: concert.date + (concert.start_time ? `T${concert.start_time}` : ''),
+  location: {
+    '@type': 'MusicVenue',
+    name: concert.venue.name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: [concert.venue.street, concert.venue.street_number].filter(Boolean).join(' '),
+      addressLocality: concert.venue.city,
+      postalCode: concert.venue.postcode,
+    },
+  },
+  performer: { '@type': 'MusicGroup', name: profile.name },
+  image: concert.poster_url ?? undefined,
+  url: Astro.url.href,
+}
+
+// Setlist split
+const mainSongs  = setlist?.items.filter(s => !s.is_encore).sort((a,b) => a.position - b.position) ?? []
+const encoreSongs = setlist?.items.filter(s => s.is_encore).sort((a,b) => a.position - b.position) ?? []
+const setTotal   = setlist?.total_duration_sec
+  ? `${Math.floor(setlist.total_duration_sec / 60)} min`
+  : null
+---
+
+<BaseLayout
+  title={concert.name ? `${concert.name} — ${dayNum} ${moShort} ${yrNum}` : `${profile.name} @ ${concert.venue.name} — ${dayNum} ${moShort} ${yrNum}`}
+  description={concert.description ?? `${profile.name} live at ${concert.venue.name}, ${dayNum} ${moShort} ${yrNum}`}
+  image={concert.poster_url}
+  structuredData={structuredData}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  </Fragment>
+
+  <div class="ss">
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ── BREADCRUMB ──────────────────────────────────────── -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a class="crumb-link" href="/">Home</a>
+      <span class="crumb-sep" aria-hidden="true">→</span>
+      <a class="crumb-link" href="/concerts">Shows</a>
+      <span class="crumb-sep" aria-hidden="true">→</span>
+      <span class="crumb-cur">{concert.venue.city ?? concert.venue.name} · {yrNum}</span>
+    </nav>
+
+    <!-- ── HEADER ─────────────────────────────────────────── -->
+    <header class="concert-header">
+      <!-- Tags / status badges -->
+      <div class="badge-row">
+        <span class={`status-badge ${isPast ? 'status-past' : 'status-up'}`}>
+          {isPast ? 'Past show' : 'Upcoming show'}
+        </span>
+        {concert.tags?.map(tg => (
+          <span class="tag-badge">{tg.name}</span>
+        ))}
+      </div>
+
+      <!-- Date -->
+      <div class="date-eyebrow">{weekday} · {dayNum} {moShort} {yrNum}</div>
+
+      <!-- Name / City heading -->
+      <h1 class="concert-city">{concert.name ?? (concert.venue.city ?? concert.venue.name)}</h1>
+
+      <!-- Venue -->
+      <div class="concert-venue-line">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.6"/>
+        </svg>
+        <span class="concert-venue-name">
+          {concert.name ? `${concert.venue.city ?? concert.venue.name} · ${concert.venue.name}` : concert.venue.name}
+        </span>
+      </div>
+
+      <!-- CTAs -->
+      <div class="cta-row">
+        {!isPast && ticketLinks.length > 0 && (
+          <a class="cta-ticket" href={ticketLinks[0].url} target="_blank" rel="noopener noreferrer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+            Buy tickets
+          </a>
+        )}
+        {!isPast && ticketLinks.length === 0 && hasInternalTickets && (
+          <a class="cta-ticket" href="#tickets-section">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+            </svg>
+            Buy tickets
+          </a>
+        )}
+        {!isPast && ticketLinks.length === 0 && !hasInternalTickets && (
+          <a class="cta-ticket cta-tba" href={`/concerts/${concert.slug_en}`}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+            </svg>
+            Tickets TBA
+          </a>
+        )}
+        <a class="cta-secondary" href={gcalLink()} target="_blank" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
+            <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+          </svg>
+          Add to calendar
+        </a>
+        <button id="share-btn" class="cta-secondary" type="button">
+          <svg id="share-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+            <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+          </svg>
+          <span id="share-label">Share</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── POSTER + FACTS ──────────────────────────────────── -->
+    <section class="poster-facts">
+      <!-- Poster -->
+      <div class="poster-col">
+        {concert.poster_url ? (
+          <div class="poster-frame">
+            <img
+              src={concert.poster_url}
+              alt={`Poster for ${profile.name} at ${concert.venue.name}`}
+              class="poster-img"
+              loading="eager"
+            />
+          </div>
+        ) : (
+          <div class="poster-placeholder">
+            <div class="poster-checker" aria-hidden="true"></div>
+            <span>Poster coming soon</span>
+          </div>
+        )}
+        <p class="poster-caption">Gig poster</p>
+      </div>
+
+      <!-- Facts grid -->
+      <div class="facts-grid">
+        {concert.doors_open && (
+          <div class="fact">
+            <span class="fact-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>
+              </svg>
+              Doors
+            </span>
+            <span class="fact-val">{fmtTime(concert.doors_open)}</span>
+          </div>
+        )}
+        {concert.start_time && (
+          <div class="fact">
+            <span class="fact-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill={ACCENT} stroke="none"/>
+              </svg>
+              On stage
+            </span>
+            <span class="fact-val">{fmtTime(concert.start_time)}</span>
+          </div>
+        )}
+        {setTotal && (
+          <div class="fact">
+            <span class="fact-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
+              </svg>
+              Set length
+            </span>
+            <span class="fact-val">{setTotal}</span>
+          </div>
+        )}
+        {concert.venue.city && (
+          <div class="fact">
+            <span class="fact-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+              </svg>
+              City
+            </span>
+            <span class="fact-val">{concert.venue.city}</span>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- ── ABOUT ───────────────────────────────────────────── -->
+    {concert.description && (
+      <section class="sec about-sec">
+        <div class="sec-head">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill={ACCENT} stroke="none"/>
+          </svg>
+          <h2 class="sec-title">About this show</h2>
+        </div>
+        <p class="about-body">{concert.description}</p>
+      </section>
+    )}
+
+    <!-- ── LINE-UP ─────────────────────────────────────────── -->
+    {concert.bands.length > 0 && (
+      <section class="sec lineup-sec">
+        <div class="sec-head">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/>
+            <path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17 13.6a5.5 5.5 0 0 1 3.5 5.4"/>
+          </svg>
+          <h2 class="sec-title">Line-up for the night</h2>
+        </div>
+        <div class="lineup-list">
+          {concert.bands.sort((a, b) => a.sort_order - b.sort_order).map((band, i) => (
+            <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`}>
+              <span class="lineup-num">{String(i + 1).padStart(2, '0')}</span>
+              <div class="lineup-info">
+                <span class="lineup-name">{band.name}</span>
+                <span class="lineup-role">
+                  {i === 0 ? 'Headliner' : 'Support'}
+                  {band.play_time && ` · ${fmtTime(band.play_time)}`}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── SETLIST ─────────────────────────────────────────── -->
+    {setlist && setlist.items.length > 0 && (
+      <section class="sec setlist-sec">
+        <div class="setlist-top">
+          <div class="sec-head">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
+              <circle cx="12" cy="12" r="0.8" fill={ACCENT} stroke="none"/>
+            </svg>
+            <h2 class="sec-title">{isPast ? 'What we played' : 'Planned set'}</h2>
+          </div>
+          {setTotal && (
+            <span class="setlist-meta">
+              {setlist.items.length} songs{setTotal ? ` · ${setTotal}` : ''}
+            </span>
+          )}
+        </div>
+        <div class="setlist-table">
+          {mainSongs.map((item, i) => (
+            <div class="setlist-row">
+              <span class="setlist-num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="setlist-title">{item.song?.title ?? '—'}</span>
+            </div>
+          ))}
+          {encoreSongs.length > 0 && (
+            <>
+              <div class="encore-bar">★ Encore</div>
+              {encoreSongs.map((item, i) => (
+                <div class="setlist-row">
+                  <span class="setlist-num">E{i + 1}</span>
+                  <span class="setlist-title">{item.song?.title ?? '—'}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </section>
+    )}
+
+    <!-- ── VENUE & GETTING THERE ───────────────────────────── -->
+    <section class="sec venue-sec">
+      <div class="sec-head">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.6"/>
+        </svg>
+        <h2 class="sec-title">Venue & getting there</h2>
+      </div>
+
+      <div class="venue-card">
+        <!-- Top bar: name + address + open-map link -->
+        <div class="venue-top">
+          <div>
+            <div class="venue-card-name">{concert.venue.name}</div>
+            <div class="venue-addr">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+              </svg>
+              <span>{fullAddr}</span>
+            </div>
+            {concert.venue.additional_info && (
+              <div class="venue-addr">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill={ACCENT} stroke="none"/>
+                </svg>
+                <span>{concert.venue.additional_info}</span>
+              </div>
+            )}
+          </div>
+          {fullAddr && (
+            <a
+              class="open-map-btn"
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+                <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+              </svg>
+              Open in maps
+            </a>
+          )}
+        </div>
+
+        <!-- Map or address-only row -->
+        {hasMap ? (
+          <div class="venue-bottom venue-two-col">
+            <div class="venue-map-col">
+              <ConcertMap
+                lat={concert.venue.latitude as number}
+                lng={concert.venue.longitude as number}
+                venueName={concert.venue.name}
+                city={concert.venue.city}
+                accent={ACCENT}
+                upcoming={upcoming}
+                client:visible
+              />
+            </div>
+            <div class="venue-info-col">
+              <div class="venue-info-head">Getting there</div>
+              {concert.venue.additional_info ? (
+                <p class="venue-info-body">{concert.venue.additional_info}</p>
+              ) : (
+                <p class="venue-info-body venue-info-muted">No transport info yet.</p>
+              )}
+              {fullAddr && (
+                <div class="venue-info-addr">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                    <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+                  </svg>
+                  {fullAddr}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : concert.venue.city && (
+          <div class="venue-no-map">
+            <span>{concert.venue.city}</span>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- ── LIVE TICKET AVAILABILITY ─────────────────────────── -->
+    {upcoming && (
+      <section class="sec tickets-sec" id="tickets-section" data-concert-id={concertId}>
+        <div class="sec-head">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+          </svg>
+          <h2 class="sec-title">Tickets</h2>
+        </div>
+        <div id="tickets-container" class="tickets-loading">Loading availability…</div>
+      </section>
+    )}
+
+    <!-- ── TICKET / EVENT LINKS ────────────────────────────── -->
+    {(ticketLinks.length > 0 || eventLinks.length > 0) && (
+      <section class="sec links-sec">
+        <div class="sec-head">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+          <h2 class="sec-title">{isPast ? 'Links' : 'Tickets'}</h2>
+        </div>
+        <div class="links-list">
+          {ticketLinks.map(l => (
+            <a class="link-ticket" href={l.url} target="_blank" rel="noopener noreferrer">
+              <span>{l.label}</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </a>
+          ))}
+          {eventLinks.map(l => (
+            <a class="link-event" href={l.url} target="_blank" rel="noopener noreferrer">
+              <span>{l.label}</span>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+                <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+              </svg>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── MORE SHOWS ──────────────────────────────────────── -->
+    {moreConcerts.length > 0 && (
+      <section class="sec more-sec">
+        <div class="sec-head">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
+            <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+          </svg>
+          <h2 class="sec-title">{upcoming ? 'More upcoming shows' : 'More past shows'}</h2>
+        </div>
+        <div class="more-grid">
+          {moreConcerts.map(c => {
+            const md = new Date(c.date + 'T00:00:00')
+            const mDay = md.getDate().toString().padStart(2, '0')
+            const mMo  = md.toLocaleDateString('en-GB', { month: 'short' })
+            const mYr  = md.getFullYear()
+            const mUp  = isUpcoming(c.date)
+            return (
+              <a href={`/concerts/${c.slug}`} class="more-card">
+                <div class={`more-card-date ${mUp ? 'more-date-up' : 'more-date-past'}`}>
+                  <span class="more-day">{mDay}</span>
+                  <span class="more-mo">{mMo} {mYr}</span>
+                </div>
+                <div class="more-card-body">
+                  <span class="more-city">{c.city}</span>
+                  <span class="more-venue">{c.venue}</span>
+                  {c.tags.length > 0 && (
+                    <span class="more-tag">{c.tags[0].name}</span>
+                  )}
+                </div>
+              </a>
+            )
+          })}
+        </div>
+      </section>
+    )}
+
+    <!-- ── NAVIGATION ─────────────────────────────────────── -->
+    <div class="sec back-sec">
+      <a class="back-btn" href="/concerts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6"/>
+        </svg>
+        All shows
+      </a>
+    </div>
+
+    {(prevSlug || nextSlug) && (
+      <div class="sec prevnext-sec">
+        <div class="prevnext-row">
+          {prevSlug ? (
+            <a class="prevnext-btn prev-btn" href={`/concerts/${prevSlug}`}>
+              <span class="pn-dir">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
+                  <path d="M15 6l-6 6 6 6"/>
+                </svg>
+                Previous
+              </span>
+              <span class="pn-city">Show</span>
+            </a>
+          ) : <div />}
+          {nextSlug ? (
+            <a class="prevnext-btn next-btn" href={`/concerts/${nextSlug}`}>
+              <span class="pn-dir">
+                Next
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
+                  <path d="M9 6l6 6-6 6"/>
+                </svg>
+              </span>
+              <span class="pn-city">Show</span>
+            </a>
+          ) : <div />}
+        </div>
+      </div>
+    )}
+  </div>
+
+  <!-- ── Ticket purchase modal ─────────────────────────────── -->
+  <div id="tkt-modal" class="tkt-modal-backdrop" hidden aria-modal="true" role="dialog" aria-labelledby="tkt-modal-title">
+    <div class="tkt-modal-box">
+      <h3 id="tkt-modal-title" class="tkt-modal-title">Your details</h3>
+      <p class="tkt-modal-sub">Your tickets will be emailed to you after payment.</p>
+      <form id="tkt-modal-form" novalidate>
+        <div class="tkt-modal-field">
+          <label class="tkt-modal-lbl" for="tkt-name">Full name</label>
+          <input id="tkt-name" class="tkt-modal-inp" type="text" autocomplete="name" required placeholder="Jane Smith" />
+        </div>
+        <div class="tkt-modal-field">
+          <label class="tkt-modal-lbl" for="tkt-email">Email address</label>
+          <input id="tkt-email" class="tkt-modal-inp" type="email" autocomplete="email" required placeholder="jane@example.com" />
+        </div>
+        <p id="tkt-modal-error" class="tkt-modal-error"></p>
+        <div class="tkt-modal-actions">
+          <button id="tkt-modal-cancel" type="button" class="tkt-modal-ghost">Cancel</button>
+          <button id="tkt-modal-submit" type="submit" class="tkt-modal-submit">Proceed to payment →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const btn   = document.getElementById('share-btn') as HTMLButtonElement | null
+  const label = document.getElementById('share-label') as HTMLSpanElement | null
+  const icon  = document.getElementById('share-icon') as SVGElement | null
+
+  btn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+    } catch {
+      // fallback for non-secure contexts
+      const ta = document.createElement('textarea')
+      ta.value = window.location.href
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    if (!btn || !label || !icon) return
+    btn.style.background = '#1F8F7A'
+    btn.style.color = '#fff'
+    btn.style.borderColor = '#1F8F7A'
+    icon.setAttribute('stroke', '#fff')
+    label.textContent = 'Link copied'
+    setTimeout(() => {
+      btn.style.background = ''
+      btn.style.color = ''
+      btn.style.borderColor = ''
+      icon.setAttribute('stroke', '#1F8F7A')
+      label.textContent = 'Share'
+    }, 2500)
+  })
+</script>
+
+<script>
+  // ── Live ticket availability + purchase flow ──────────────────────────────
+  const section   = document.getElementById('tickets-section') as HTMLElement | null
+  const container = document.getElementById('tickets-container') as HTMLElement | null
+  const modal     = document.getElementById('tkt-modal') as HTMLElement | null
+  const modalForm = document.getElementById('tkt-modal-form') as HTMLFormElement | null
+
+  if (!section || !container) { /* no ticket section on past shows */ }
+  else {
+    const concertId = section.dataset.concertId!
+    const apiBase   = (window as unknown as Record<string, string>).__API_BASE__ ?? ''
+
+    // Pending purchase state (set when user clicks "Buy →")
+    let pending: { typeId: number; currency: string; maxQty: number | null } | null = null
+
+    fetch(`${apiBase}/api/concerts/${concertId}/tickets`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then((json: { data?: unknown[] }) => {
+        const types: {
+          id: number
+          name: string
+          description?: string | null
+          is_on_sale: boolean
+          sold_count: number
+          available_from?: string | null
+          on_sale_until?: string | null
+          max_per_order?: number | null
+          active_tier?: {
+            name: string
+            price: number
+            currency: string
+            remaining: number | null
+          } | null
+        }[] = Array.isArray(json) ? json : (json.data ?? [])
+
+        if (!types.length) {
+          container.innerHTML = '<p class="tkt-none">No tickets available for this event.</p>'
+          return
+        }
+
+        const html = types.map(t => {
+          if (!t.is_on_sale) {
+            let status = 'Not available'
+            if (t.available_from) {
+              const d = new Date(t.available_from)
+              if (d > new Date()) {
+                status = 'On sale from ' + d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+              }
+            }
+            return `<div class="tkt-row tkt-off">
+              <div class="tkt-name">${t.name}</div>
+              <div class="tkt-status">${status}</div>
+            </div>`
+          }
+          const tier      = t.active_tier!
+          const price     = new Intl.NumberFormat('en-GB', { style: 'currency', currency: tier.currency }).format(tier.price)
+          const remaining = tier.remaining != null ? `${tier.remaining} left` : 'Available'
+          const maxQty    = Math.min(t.max_per_order ?? 10, tier.remaining ?? 10, 10)
+          return `<div class="tkt-row tkt-on">
+            <div class="tkt-info">
+              <div class="tkt-name">${t.name}</div>
+              ${tier.name ? `<div class="tkt-tier">${tier.name}</div>` : ''}
+              ${t.description ? `<div class="tkt-desc">${t.description}</div>` : ''}
+            </div>
+            <div class="tkt-right">
+              <div class="tkt-price">${price}</div>
+              <div class="tkt-rem ${tier.remaining !== null && tier.remaining < 20 ? 'tkt-low' : ''}">${remaining}</div>
+              <div class="tkt-buy-row">
+                <label class="tkt-qty-label" for="qty-${t.id}">Qty</label>
+                <input id="qty-${t.id}" class="tkt-qty" type="number" value="1" min="1" max="${maxQty}" />
+                <button class="tkt-buy-btn"
+                  data-type-id="${t.id}"
+                  data-currency="${tier.currency}"
+                  data-max="${maxQty}">
+                  Buy →
+                </button>
+              </div>
+            </div>
+          </div>`
+        }).join('')
+
+        container.innerHTML = `<div class="tkt-list">${html}</div>`
+
+        // Wire up buy buttons
+        container.querySelectorAll<HTMLButtonElement>('.tkt-buy-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            pending = {
+              typeId:   parseInt(btn.dataset.typeId!),
+              currency: btn.dataset.currency!,
+              maxQty:   parseInt(btn.dataset.max!) || null,
+            }
+            if (modal) {
+              modal.removeAttribute('hidden')
+              modal.querySelector<HTMLInputElement>('#tkt-name')?.focus()
+            }
+          })
+        })
+      })
+      .catch(() => {
+        container.innerHTML = '<p class="tkt-none">Could not load ticket info.</p>'
+      })
+
+    // ── Modal logic ─────────────────────────────────────────────────────────
+    if (modal && modalForm) {
+      // Close on backdrop click
+      modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal()
+      })
+
+      document.getElementById('tkt-modal-cancel')?.addEventListener('click', closeModal)
+
+      modalForm.addEventListener('submit', async e => {
+        e.preventDefault()
+        if (!pending) return
+
+        const name  = (modalForm.querySelector('#tkt-name') as HTMLInputElement).value.trim()
+        const email = (modalForm.querySelector('#tkt-email') as HTMLInputElement).value.trim()
+
+        // Resolve quantity from the matching qty input
+        const qtyInput = container?.querySelector<HTMLInputElement>(`#qty-${pending.typeId}`)
+        const qty      = Math.max(1, Math.min(parseInt(qtyInput?.value ?? '1'), pending.maxQty ?? 99))
+
+        const submitBtn = modalForm.querySelector<HTMLButtonElement>('#tkt-modal-submit')!
+        submitBtn.disabled  = true
+        submitBtn.textContent = 'Processing…'
+
+        try {
+          const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              currency: pending.currency,
+              customer: {
+                name,
+                email,
+                shipping_address: { line1: null, city: null, postal_code: null, country: null },
+              },
+              items: [{ ticket_type_id: pending.typeId, quantity: qty }],
+            }),
+          })
+          const data = (await res.json()) as { checkout_url?: string; message?: string }
+          if (data.checkout_url) {
+            window.location.href = data.checkout_url
+          } else {
+            showModalError(data.message ?? 'Checkout failed. Please try again.')
+            submitBtn.disabled   = false
+            submitBtn.textContent = 'Proceed to payment →'
+          }
+        } catch {
+          showModalError('Network error. Please try again.')
+          submitBtn.disabled   = false
+          submitBtn.textContent = 'Proceed to payment →'
+        }
+      })
+    }
+
+    function closeModal() {
+      modal?.setAttribute('hidden', '')
+      pending = null
+      const err = document.getElementById('tkt-modal-error')
+      if (err) err.textContent = ''
+      modalForm?.reset()
+    }
+
+    function showModalError(msg: string) {
+      const err = document.getElementById('tkt-modal-error')
+      if (err) err.textContent = msg
+    }
+  }
+</script>
+
+<style>
+  /* ── Tokens ─────────────────────────── */
+  .ss {
+    --paper: #EFE7D6;
+    --ink: #121212;
+    --acc: #1F8F7A;
+    --warm: #8a8175;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* Grain */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 100;
+  }
+
+  /* ── Breadcrumb ─────────────────────── */
+  .crumb {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 26px 90px 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font: 700 12px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--warm);
+    flex-wrap: wrap;
+  }
+  .crumb-link { color: var(--warm); text-decoration: none; }
+  .crumb-link:hover { color: var(--ink); }
+  .crumb-sep { color: var(--acc); }
+  .crumb-cur { color: var(--ink); }
+
+  /* ── Concert header ─────────────────── */
+  .concert-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 22px 90px 30px;
+  }
+  .badge-row {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    align-items: center;
+  }
+  .status-badge {
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 7px 11px;
+    color: #fff;
+  }
+  .status-up   { background: var(--acc); }
+  .status-past { background: var(--ink); }
+  .tag-badge {
+    border: 2px solid var(--acc);
+    color: var(--acc);
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+  }
+  .date-eyebrow {
+    font: 800 16px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 8px;
+  }
+  .concert-city {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(56px, 10vw, 96px);
+    line-height: .88;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .concert-venue-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 600 20px/1.3 'Archivo', sans-serif;
+    color: #2a2a2a;
+    margin-bottom: 24px;
+  }
+  .concert-venue-name { /* inline */ }
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .cta-ticket {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--acc);
+    color: #fff;
+    border: 3px solid var(--acc);
+    font-family: 'Anton', sans-serif;
+    font-size: 17px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 13px 22px;
+    text-decoration: none;
+    box-shadow: 6px 6px 0 var(--ink);
+    transition: background .15s;
+  }
+  .cta-ticket:hover { background: #167a62; }
+  .cta-tba { background: #4a4a4a; box-shadow: 6px 6px 0 #2a2a2a; cursor: default; }
+  .cta-tba:hover { background: #4a4a4a; }
+  .cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    font: 800 13px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .cta-secondary:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── Poster + facts ─────────────────── */
+  .poster-facts {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 34px 90px 8px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  .poster-frame {
+    border: 4px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--acc);
+    position: relative;
+    background: var(--paper);
+  }
+  .poster-img { width: 100%; display: block; }
+  .poster-placeholder {
+    border: 4px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--acc);
+    width: 100%;
+    aspect-ratio: 2/3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    overflow: hidden;
+    position: relative;
+    background: var(--paper);
+  }
+  .poster-checker {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-conic-gradient(#dcd3c0 0% 25%, #e6ddca 0% 50%);
+    background-size: 18px 18px;
+  }
+  .poster-placeholder > span {
+    position: relative;
+    font: 600 12px/1.4 ui-monospace, Menlo, monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(0,0,0,.45);
+    text-align: center;
+    padding: 0 16px;
+    z-index: 1;
+  }
+  .poster-caption {
+    margin-top: 10px;
+    font: 800 10px/1.4 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #999;
+  }
+  .facts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-content: start;
+  }
+  .fact {
+    border: 3px solid var(--ink);
+    background: #fff;
+    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .fact-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #888;
+  }
+  .fact-val {
+    font-family: 'Anton', sans-serif;
+    font-size: 26px;
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /* ── Common section ─────────────────── */
+  .sec {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 34px 90px 8px;
+  }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 16px;
+  }
+  .sec-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 30px;
+    line-height: 1.02;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* ── About ──────────────────────────── */
+  .about-body {
+    font: 500 19px/1.7 'Archivo', sans-serif;
+    color: #222;
+    margin: 0;
+  }
+
+  /* ── Line-up ────────────────────────── */
+  .lineup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lineup-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 3px solid var(--ink);
+    background: #fff;
+    color: var(--ink);
+    padding: 16px 20px;
+  }
+  .lineup-headliner {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .lineup-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    line-height: 1;
+    color: #bbb;
+    min-width: 28px;
+  }
+  .lineup-headliner .lineup-num { color: var(--acc); }
+  .lineup-info { flex: 1; }
+  .lineup-name {
+    display: block;
+    font-family: 'Anton', sans-serif;
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+  .lineup-role {
+    display: block;
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-top: 7px;
+  }
+
+  /* ── Setlist ────────────────────────── */
+  .setlist-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .setlist-meta {
+    font: 800 12px/1 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #888;
+  }
+  .setlist-table {
+    border: 3px solid var(--ink);
+    background: #fff;
+  }
+  .setlist-row {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    border-bottom: 2px solid rgba(18,18,18,.1);
+  }
+  .setlist-row:last-child { border-bottom: none; }
+  .setlist-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--acc);
+  }
+  .setlist-title {
+    font: 600 17px/1.3 'Archivo', sans-serif;
+    color: var(--ink);
+  }
+  .encore-bar {
+    background: var(--ink);
+    color: var(--acc);
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+  }
+
+  /* ── Venue ──────────────────────────── */
+  .venue-sec {}
+  .venue-card {
+    border: 3px solid var(--ink);
+    background: #fff;
+  }
+  .venue-top {
+    padding: 20px 24px;
+    border-bottom: 3px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .venue-card-name {
+    font-family: 'Anton', sans-serif;
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+    color: var(--ink);
+  }
+  .venue-addr {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 600 15px/1.45 'Archivo', sans-serif;
+    color: #444;
+    margin-top: 4px;
+  }
+  .open-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 3px solid var(--ink);
+    font: 800 12px/1 'Archivo', sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 11px 15px;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .open-map-btn:hover { background: #333; }
+  .venue-bottom {
+    border-top: none;
+  }
+  .venue-map-col { width: 100%; }
+  .venue-no-map {
+    padding: 24px;
+    font: 600 16px/1.5 'Archivo', sans-serif;
+    color: #555;
+  }
+
+  /* ── Venue 2-col ───────────────────── */
+  .venue-two-col {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+  }
+  .venue-map-col { overflow: hidden; }
+  .venue-info-col {
+    padding: 24px 28px;
+    border-left: 3px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .venue-info-head {
+    font-family: 'Anton', sans-serif;
+    font-size: 18px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .venue-info-body {
+    font: 500 15px/1.65 'Archivo', sans-serif;
+    color: #333;
+    margin: 0;
+  }
+  .venue-info-muted { color: #999; font-style: italic; }
+  .venue-info-addr {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font: 600 13px/1.5 'Archivo', sans-serif;
+    color: #555;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 2px solid rgba(18,18,18,.1);
+  }
+  .venue-info-addr svg { flex-shrink: 0; margin-top: 2px; }
+
+  /* ── More shows ─────────────────────── */
+  .more-sec { padding-bottom: 16px; }
+  .more-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .more-card {
+    border: 3px solid var(--ink);
+    background: #fff;
+    text-decoration: none;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .14s;
+  }
+  .more-card:hover { box-shadow: 6px 6px 0 var(--acc); }
+  .more-card-date {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .more-date-up   { background: var(--acc); color: #fff; }
+  .more-date-past { background: var(--ink); color: var(--paper); }
+  .more-day {
+    font-family: 'Anton', sans-serif;
+    font-size: 36px;
+    line-height: .85;
+    letter-spacing: .01em;
+  }
+  .more-mo {
+    font: 800 10px/1.2 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    opacity: .75;
+  }
+  .more-card-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+  .more-city {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .more-venue {
+    font: 600 13px/1.3 'Archivo', sans-serif;
+    color: #666;
+  }
+  .more-tag {
+    margin-top: auto;
+    align-self: flex-start;
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--acc);
+    border: 2px solid var(--acc);
+    padding: 3px 7px;
+  }
+
+  /* ── Links ──────────────────────────── */
+  .links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .link-ticket {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--acc);
+    color: #fff;
+    padding: 16px 20px;
+    text-decoration: none;
+    box-shadow: 5px 5px 0 var(--ink);
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+  .link-ticket:hover { background: #167a62; }
+  .link-event {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 20px;
+    text-decoration: none;
+    font: 700 15px/1.3 'Archivo', sans-serif;
+  }
+  .link-event:hover { background: #333; }
+
+  /* ── Back / Prev–Next ───────────────── */
+  .back-sec { padding-top: 30px; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    text-decoration: none;
+  }
+  .back-btn:hover { background: var(--ink); color: var(--paper); }
+  .prevnext-sec { padding-top: 20px; padding-bottom: 60px; }
+  .prevnext-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .prevnext-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 3px solid var(--ink);
+    background: #fff;
+    padding: 18px 20px;
+    box-sizing: border-box;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .prevnext-btn:hover { background: var(--paper); }
+  .next-btn { align-items: flex-end; text-align: right; }
+  .pn-dir {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--acc);
+  }
+  .pn-city {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    line-height: 1.02;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+
+  /* ── Responsive ─────────────────────── */
+  @media (max-width: 1100px) {
+    .crumb { padding: 24px 40px 0; }
+    .concert-header { padding: 22px 40px 28px; }
+    .poster-facts { padding: 28px 40px 8px; }
+    .sec { padding: 28px 40px 8px; }
+    .back-sec { padding-left: 40px; }
+    .prevnext-sec { padding-left: 40px; padding-right: 40px; }
+  }
+  @media (max-width: 800px) {
+    .crumb { padding: 20px 24px 0; }
+    .concert-header { padding: 18px 24px 22px; }
+    .poster-facts {
+      padding: 24px 24px 8px;
+      grid-template-columns: 1fr;
+    }
+    .poster-col { max-width: 300px; }
+    .facts-grid { grid-template-columns: repeat(2, 1fr); }
+    .sec { padding: 24px 24px 8px; }
+    .back-sec { padding: 24px 24px 0; }
+    .prevnext-sec { padding: 16px 24px 40px; }
+    .venue-top { flex-direction: column; }
+    .venue-two-col { grid-template-columns: 1fr; }
+    .venue-info-col { border-left: none; border-top: 3px solid var(--ink); }
+    .more-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 520px) {
+    .more-grid { grid-template-columns: 1fr; }
+  }
+
+</style>
+
+<style is:global>
+  /* ── Ticket section (injected via innerHTML — must be global) ── */
+  :root {
+    --tkt-paper: #EFE7D6;
+    --tkt-ink:   #121212;
+    --tkt-acc:   #1F8F7A;
+  }
+  .tickets-loading {
+    font: 500 14px/1.5 'Archivo', sans-serif;
+    color: #888;
+  }
+  .tkt-none {
+    font: 500 15px/1.5 'Archivo', sans-serif;
+    color: #777;
+    margin: 0;
+  }
+  .tkt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tkt-row {
+    border: 3px solid var(--tkt-ink);
+    background: #fff;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .tkt-off { opacity: .55; }
+  .tkt-info { flex: 1; }
+  .tkt-name {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--tkt-ink);
+  }
+  .tkt-tier, .tkt-desc {
+    font: 600 13px/1.4 'Archivo', sans-serif;
+    color: #666;
+    margin-top: 3px;
+  }
+  .tkt-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .tkt-price {
+    font-family: 'Anton', sans-serif;
+    font-size: 24px;
+    color: var(--tkt-acc);
+  }
+  .tkt-rem {
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #888;
+  }
+  .tkt-rem.tkt-low { color: #e05c0a; }
+  .tkt-status {
+    font: 800 12px/1 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #aaa;
+  }
+  /* Buy row */
+  .tkt-buy-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .tkt-qty-label {
+    font: 700 11px/1 'Archivo', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #888;
+  }
+  .tkt-qty {
+    width: 56px;
+    border: 2px solid var(--tkt-ink);
+    background: #fff;
+    padding: 6px 8px;
+    font: 700 14px/1 'Archivo', sans-serif;
+    color: var(--tkt-ink);
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  .tkt-qty::-webkit-inner-spin-button,
+  .tkt-qty::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .tkt-buy-btn {
+    padding: 8px 18px;
+    background: var(--tkt-acc);
+    color: #fff;
+    border: 2px solid var(--tkt-ink);
+    font: 800 13px/1 'Archivo', sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--tkt-ink);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .tkt-buy-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--tkt-ink);
+  }
+  .tkt-buy-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--tkt-ink);
+  }
+  /* Purchase modal */
+  .tkt-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .tkt-modal-backdrop[hidden] { display: none; }
+  .tkt-modal-box {
+    background: var(--tkt-paper);
+    border: 3px solid var(--tkt-ink);
+    box-shadow: 8px 8px 0 var(--tkt-ink);
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .tkt-modal-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 26px;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--tkt-ink);
+    margin: 0 0 4px;
+  }
+  .tkt-modal-sub {
+    font: 500 13px/1.5 'Archivo', sans-serif;
+    color: #666;
+    margin: 0 0 20px;
+  }
+  .tkt-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+  .tkt-modal-lbl {
+    font: 700 11px/1 'Archivo', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: #555;
+  }
+  .tkt-modal-inp {
+    border: 2px solid var(--tkt-ink);
+    background: #fff;
+    padding: 10px 12px;
+    font: 500 15px/1 'Archivo', sans-serif;
+    color: var(--tkt-ink);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .tkt-modal-inp:focus { outline: 3px solid var(--tkt-acc); outline-offset: 1px; }
+  .tkt-modal-error {
+    font: 600 13px/1.4 'Archivo', sans-serif;
+    color: #c00;
+    min-height: 18px;
+    margin: 0 0 10px;
+  }
+  .tkt-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+  .tkt-modal-submit {
+    padding: 10px 20px;
+    background: var(--tkt-acc);
+    color: #fff;
+    border: 2px solid var(--tkt-ink);
+    font: 800 13px/1 'Archivo', sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--tkt-ink);
+  }
+  .tkt-modal-submit:disabled { opacity: .55; cursor: default; box-shadow: none; }
+  .tkt-modal-ghost {
+    padding: 10px 16px;
+    background: transparent;
+    color: #666;
+    border: 2px solid #bbb;
+    font: 700 13px/1 'Archivo', sans-serif;
+    cursor: pointer;
+  }
+  .tkt-modal-ghost:hover { border-color: var(--tkt-ink); color: var(--tkt-ink); }
+</style>

@@ -25,6 +25,7 @@ use App\Http\Controllers\BandMemberSetupController;
 use App\Http\Controllers\BandLogoController;
 use App\Http\Controllers\BandProfileController;
 use App\Http\Controllers\ConcertController;
+use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\MusicVideoController;
@@ -78,6 +79,10 @@ Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
 Route::get('/concerts/{concert}/setlist', [SetlistController::class, 'showByConcert'])->name('api.concerts.setlist');
+Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'index'])->name('api.concerts.tickets.index');
+
+Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware(['throttle:60,1', 'auth:api'])->name('api.door-check');
+Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('auth:api')->name('api.door-check.scan');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -242,6 +247,21 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/concerts/{concert}', [ConcertController::class, 'destroy'])->name('api.concerts.destroy');
         Route::post('/concerts/{concert}/poster', [ConcertController::class, 'uploadPoster'])->name('api.concerts.poster.upload');
         Route::delete('/concerts/{concert}/poster', [ConcertController::class, 'destroyPoster'])->name('api.concerts.poster.destroy');
+
+        // Ticket types
+        Route::post('/concerts/{concert}/tickets', [ConcertTicketController::class, 'store'])->name('api.concerts.tickets.store');
+        Route::put('/concerts/{concert}/tickets/{ticketType}', [ConcertTicketController::class, 'update'])->name('api.concerts.tickets.update');
+        Route::delete('/concerts/{concert}/tickets/{ticketType}', [ConcertTicketController::class, 'destroy'])->name('api.concerts.tickets.destroy');
+
+        // Price tiers
+        Route::post('/concerts/{concert}/tickets/{ticketType}/tiers', [ConcertTicketController::class, 'storeTier'])->name('api.concerts.tickets.tiers.store');
+        Route::put('/concerts/{concert}/tickets/{ticketType}/tiers/{tier}', [ConcertTicketController::class, 'updateTier'])->name('api.concerts.tickets.tiers.update');
+        Route::delete('/concerts/{concert}/tickets/{ticketType}/tiers/{tier}', [ConcertTicketController::class, 'destroyTier'])->name('api.concerts.tickets.tiers.destroy');
+
+        // Promo codes
+        Route::get('/promo-codes', [ConcertTicketController::class, 'promoCodes'])->name('api.promo-codes.index');
+        Route::post('/promo-codes', [ConcertTicketController::class, 'storePromoCode'])->name('api.promo-codes.store');
+        Route::delete('/promo-codes/{promoCode}', [ConcertTicketController::class, 'destroyPromoCode'])->name('api.promo-codes.destroy');
 
         Route::post('/tags', [TagController::class, 'store'])->name('api.tags.store');
         Route::put('/tags/{tag}', [TagController::class, 'update'])->name('api.tags.update');
