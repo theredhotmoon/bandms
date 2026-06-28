@@ -15,7 +15,8 @@ class PostSummaryResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug'         => $this->slug,
+            'slug_en'      => $this->slug_en,
+            'slug_pl'      => $this->slug_pl,
             'intro'        => $this->intro,
             'excerpt'      => Str::limit($content, 280),
             'published_at' => $this->published_at,

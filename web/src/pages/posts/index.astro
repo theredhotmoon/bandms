@@ -1,36 +1,125 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import PostCard from '@/components/PostCard.astro'
+import NewsFilter from '@/components/NewsFilter.vue'
 import { getPosts, getBandProfile } from '@/lib/cms'
 
-const [{ data: posts, meta }, profile] = await Promise.all([
+const ACCENT = '#1F8F7A'
+
+const [firstPage, profile] = await Promise.all([
   getPosts('en', 1),
   getBandProfile('en'),
 ])
+
+let allPosts = [...firstPage.data]
+if (firstPage.meta.last_page > 1) {
+  const extra = await Promise.all(
+    Array.from({ length: firstPage.meta.last_page - 1 }, (_, i) => getPosts('en', i + 2))
+  )
+  extra.forEach(r => allPosts.push(...r.data))
+}
 ---
 
 <BaseLayout
   title={`News — ${profile.name}`}
-  description={`News, updates, and stories from ${profile.name}.`}
+  description="Studio updates, fresh dates and stories from the road."
 >
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-white sm:text-5xl">News</h1>
-    </div>
+  <div class="ss">
+    <div class="grain" aria-hidden="true"></div>
 
-    {posts.length === 0 ? (
-      <p class="text-zinc-500">No posts yet — check back soon.</p>
-    ) : (
-      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map(p => <PostCard post={p} />)}
+    <!-- ── HERO ──────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="hero-checker" aria-hidden="true"></div>
+      <div class="hero-content">
+        <span class="hero-kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
+        <h1 class="hero-title">News</h1>
+        <p class="hero-lead">Studio updates, fresh dates and stories from the road.</p>
       </div>
-    )}
+    </section>
 
-    {meta && meta.last_page > 1 && (
-      <p class="mt-8 text-center text-sm text-zinc-600">
-        Showing {posts.length} of {meta.total} posts — more pages coming soon.
-      </p>
-    )}
+    <!-- checker strip divider -->
+    <div class="checker-strip" aria-hidden="true"></div>
+
+    <!-- ── FILTER + POSTS (Vue island) ───────────────────────── -->
+    <NewsFilter
+      posts={allPosts}
+      accent={ACCENT}
+      client:idle
+    />
   </div>
 </BaseLayout>
+
+<style>
+  .ss {
+    --paper: #EFE7D6;
+    --ink:   #121212;
+    --acc:   #1F8F7A;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* Grain overlay */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 100;
+  }
+
+  /* ── HERO ──────────────────────────── */
+  .hero {
+    position: relative;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 54px 90px 58px;
+    overflow: hidden;
+  }
+  .hero-checker {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-conic-gradient(rgba(0,0,0,0) 0% 25%, rgba(255,255,255,.05) 0% 50%);
+    background-size: 46px 46px;
+  }
+  .hero-content { position: relative; }
+  .hero-kicker {
+    display: block;
+    font: 800 14px/1 'Archivo', sans-serif;
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 16px;
+  }
+  .hero-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(64px, 12vw, 140px);
+    line-height: .82;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--paper);
+  }
+  .hero-lead {
+    font: 500 20px/1.55 'Archivo', sans-serif;
+    color: rgba(239,231,214,.82);
+    max-width: 640px;
+    margin: 22px 0 0;
+  }
+
+  /* checker strip */
+  .checker-strip {
+    height: 16px;
+    background-image: repeating-conic-gradient(var(--acc) 0% 25%, var(--paper) 0% 50%);
+    background-size: 31px 16px;
+  }
+
+  /* ── Responsive ──────────────────── */
+  @media (max-width: 1100px) {
+    .hero { padding: 44px 40px 50px; }
+  }
+  @media (max-width: 768px) {
+    .hero { padding: 36px 24px 40px; }
+    .hero-kicker { letter-spacing: .18em; }
+  }
+</style>

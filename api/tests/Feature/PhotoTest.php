@@ -5,7 +5,7 @@ use App\Models\Photo;
 
 function makeAlbum(): Album
 {
-    return Album::create(['title' => 'Test Album', 'slug' => 'test-album']);
+    return Album::create(['title' => 'Test Album', 'slug_en' => 'test-album']);
 }
 
 function makePhoto(?Album $album = null): Photo

@@ -12,7 +12,7 @@ class Album extends Model
 {
     use HasSlug;
 
-    protected $fillable = ['title', 'slug', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at'];
+    protected $fillable = ['title', 'slug_en', 'slug_pl', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at'];
 
     protected function casts(): array
     {

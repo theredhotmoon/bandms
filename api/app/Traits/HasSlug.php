@@ -6,14 +6,14 @@ use Illuminate\Support\Str;
 
 trait HasSlug
 {
-    public static function generateSlug(string $title, ?int $ignoreId = null): string
+    public static function generateSlug(string $title, ?int $ignoreId = null, string $column = 'slug'): string
     {
         $base = Str::slug($title) ?: 'item';
         $slug = $base;
         $i = 2;
 
         while (
-            static::where('slug', $slug)
+            static::where($column, $slug)
                 ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
                 ->exists()
         ) {

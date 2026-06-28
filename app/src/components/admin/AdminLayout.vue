@@ -19,7 +19,7 @@ const groupRoutes: Record<GroupId, string[]> = {
             '/admin/releases', '/admin/music-videos', '/admin/photos', '/admin/band-calendar',
             '/admin/tech-rider', '/admin/setlists'],
   content: ['/admin/posts', '/admin/press-releases', '/admin/pitch', '/admin/newsletter', '/admin/authors'],
-  shows:   ['/admin/concerts', '/admin/tours', '/admin/venues'],
+  shows:   ['/admin/concerts', '/admin/tours', '/admin/venues', '/admin/door'],
   more:    ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users'],
 }
 
@@ -196,6 +196,10 @@ watch(() => route.path, (path) => {
             <RouterLink to="/admin/venues" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               Venues
+            </RouterLink>
+            <RouterLink to="/admin/door" class="nav-item" active-class="nav-item--active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M15 15h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2z"/></svg>
+              Door Check
             </RouterLink>
           </div>
         </template>

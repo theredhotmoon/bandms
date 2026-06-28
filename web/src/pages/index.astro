@@ -1,27 +1,29 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import ConcertCard from '@/components/ConcertCard.astro'
-import ReleaseCard from '@/components/ReleaseCard.astro'
-import PostCard from '@/components/PostCard.astro'
-import MemberCard from '@/components/MemberCard.astro'
-import SocialLinks from '@/components/SocialLinks.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getMembers } from '@/lib/cms'
-import { isUpcoming } from '@/lib/i18n'
+import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks } from '@/lib/cms'
+import { isUpcoming, fmtTime } from '@/lib/i18n'
 
-const [profile, concerts, releases, { data: posts }, socialLinks, members] = await Promise.all([
+const [profile, concerts, releases, { data: posts }, socialLinks] = await Promise.all([
   getBandProfile('en'),
   getConcerts(),
   getReleases('en'),
   getPosts('en', 1),
   getSocialLinks(),
-  getMembers(),
 ])
 
-const upcoming = concerts.filter(c => isUpcoming(c.date)).slice(0, 3)
+const upcoming  = concerts.filter(c => isUpcoming(c.date)).slice(0, 4)
 const latestReleases = releases.slice(0, 4)
-const latestPosts = posts.slice(0, 3)
-const currentMembers = members.filter(m => m.is_current)
+const latestPosts    = posts.slice(0, 3)
+
+function fmtDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return {
+    day:  d.getDate().toString().padStart(2, '0'),
+    mo:   d.toLocaleDateString('en-GB', { month: 'short' }),
+    yr:   d.getFullYear(),
+  }
+}
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -40,128 +42,593 @@ const structuredData = {
   title={profile.name}
   description={profile.bio_short ?? `${profile.name} — ${profile.genres ?? 'Ska & Reggae'} band`}
   structuredData={structuredData}
-  bandName={profile.name}
 >
-  <!-- ── Hero ── -->
-  <section class="relative flex min-h-[85vh] items-end pb-16 pt-24">
-    <!-- Background gradient -->
-    <div class="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-[rgb(8,8,8)]" />
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,180,0,0.08),_transparent_60%)]" />
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  </Fragment>
 
-    <div class="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
-      {profile.logo_url && (
-        <img src={profile.logo_url} alt={profile.name} class="mb-8 h-16 object-contain" />
-      )}
-      <h1 class="text-5xl font-black text-white sm:text-7xl md:text-8xl leading-none tracking-tighter">
-        {profile.name}
-      </h1>
-      {profile.genres && (
-        <p class="mt-3 text-lg text-accent font-medium tracking-wide uppercase">
-          {profile.genres}
-        </p>
-      )}
-      {profile.bio_short && (
-        <p class="mt-4 max-w-2xl text-lg text-zinc-400 leading-relaxed">
-          {profile.bio_short}
-        </p>
-      )}
+  <div class="hp">
+    <div class="grain" aria-hidden="true"></div>
 
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a href="/concerts" class="rounded-lg bg-accent px-6 py-3 font-bold text-black hover:bg-accent-dark transition-colors">
-          See Shows
-        </a>
-        <a href="/releases" class="rounded-lg border border-border px-6 py-3 font-bold text-white hover:border-zinc-600 transition-colors">
-          Our Music
-        </a>
-        {profile.booking_email && (
-          <a href="/contact" class="rounded-lg border border-border px-6 py-3 font-bold text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors">
-            Book Us
+    <!-- ── HERO ──────────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="hero-checker" aria-hidden="true"></div>
+      <div class="hero-inner">
+        {profile.logo_url && (
+          <img src={profile.logo_url} alt={profile.name} class="hero-logo" />
+        )}
+        {profile.genres && (
+          <p class="hero-kicker">{profile.genres}</p>
+        )}
+        <h1 class="hero-title">{profile.name}</h1>
+        {profile.hometown && profile.formation_year && (
+          <p class="hero-origin">{profile.hometown} · Est. {profile.formation_year}</p>
+        )}
+        {profile.bio_short && (
+          <p class="hero-bio">{profile.bio_short}</p>
+        )}
+        <div class="hero-ctas">
+          <a class="cta-primary" href="/concerts">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+            </svg>
+            See shows
           </a>
+          <a class="cta-secondary" href="/releases">Our music</a>
+          {profile.booking_email && (
+            <a class="cta-secondary" href="/contact">Book us</a>
+          )}
+        </div>
+        {socialLinks.length > 0 && (
+          <div class="hero-social">
+            {socialLinks.map(l => (
+              <a href={l.url} target="_blank" rel="noopener noreferrer" class="social-chip" aria-label={l.platform}>
+                {l.platform}
+              </a>
+            ))}
+          </div>
         )}
       </div>
+    </section>
 
-      {socialLinks.length > 0 && (
-        <div class="mt-8">
-          <SocialLinks links={socialLinks} />
-        </div>
-      )}
-    </div>
-  </section>
+    <!-- ── CHECKER STRIP ─────────────────────────────────────────── -->
+    <div class="checker-strip" aria-hidden="true"></div>
 
-  <!-- ── Upcoming Shows ── -->
-  {upcoming.length > 0 && (
-    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-      <div class="mb-8 flex items-end justify-between">
-        <div>
-          <div class="accent-line mb-3" />
-          <h2 class="text-2xl font-black text-white">Upcoming Shows</h2>
+    <!-- ── UPCOMING SHOWS ────────────────────────────────────────── -->
+    {upcoming.length > 0 && (
+      <section class="sec">
+        <div class="sec-head-row">
+          <div class="sec-head">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+            </svg>
+            <h2 class="sec-title">Upcoming shows</h2>
+          </div>
+          <a class="see-all" href="/concerts">All shows →</a>
         </div>
-        <a href="/concerts" class="text-sm text-accent hover:underline">All shows →</a>
-      </div>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {upcoming.map(c => <ConcertCard concert={c} />)}
+
+        <div class="gig-list">
+          {upcoming.map(c => {
+            const { day, mo, yr } = fmtDate(c.date)
+            return (
+              <a class="gig-row" href={`/concerts/${c.slug_en}`}>
+                <div class="gig-date">
+                  <span class="gig-day">{day}</span>
+                  <span class="gig-mo">{mo} {yr}</span>
+                </div>
+                <div class="gig-info">
+                  <span class="gig-city">{c.venue.city ?? c.venue.name}</span>
+                  <span class="gig-venue">{c.venue.name}</span>
+                </div>
+                {c.start_time && (
+                  <span class="gig-time">{fmtTime(c.start_time)}</span>
+                )}
+                <span class="gig-arrow">→</span>
+              </a>
+            )
+          })}
+        </div>
+      </section>
+    )}
+
+    <!-- ── CHECKER STRIP ─────────────────────────────────────────── -->
+    <div class="checker-strip" aria-hidden="true"></div>
+
+    <!-- ── LATEST MUSIC ──────────────────────────────────────────── -->
+    {latestReleases.length > 0 && (
+      <section class="sec sec-dark">
+        <div class="sec-head-row">
+          <div class="sec-head">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
+            </svg>
+            <h2 class="sec-title">Music</h2>
+          </div>
+          <a class="see-all" href="/releases">Discography →</a>
+        </div>
+        <div class="releases-grid">
+          {latestReleases.map(r => (
+            <a class="release-card" href={`/releases/${r.id}`}>
+              <div class="release-cover">
+                {r.cover_image
+                  ? <img src={r.cover_image} alt={r.title} loading="lazy" />
+                  : <div class="release-cover-placeholder"></div>
+                }
+              </div>
+              <div class="release-meta">
+                <span class="release-type">{r.type}</span>
+                <span class="release-name">{r.title}</span>
+                {r.release_date && (
+                  <span class="release-year">{new Date(r.release_date).getFullYear()}</span>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── CHECKER STRIP ─────────────────────────────────────────── -->
+    <div class="checker-strip checker-acc" aria-hidden="true"></div>
+
+    <!-- ── LATEST NEWS ───────────────────────────────────────────── -->
+    {latestPosts.length > 0 && (
+      <section class="sec">
+        <div class="sec-head-row">
+          <div class="sec-head">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 5h16M4 10h16M4 15h10"/>
+            </svg>
+            <h2 class="sec-title">News</h2>
+          </div>
+          <a class="see-all" href="/posts">All posts →</a>
+        </div>
+        <div class="posts-list">
+          {latestPosts.map(p => {
+            const { day, mo, yr } = fmtDate(p.published_at ?? p.created_at)
+            return (
+              <a class="post-row" href={`/posts/${p.id}`}>
+                <div class="post-date">
+                  <span class="post-day">{day}</span>
+                  <span class="post-mo">{mo} {yr}</span>
+                </div>
+                <div class="post-info">
+                  <span class="post-title">{p.title}</span>
+                  {p.excerpt && <span class="post-excerpt">{p.excerpt}</span>}
+                </div>
+                <span class="post-arrow">→</span>
+              </a>
+            )
+          })}
+        </div>
+      </section>
+    )}
+
+    <!-- ── NEWSLETTER ────────────────────────────────────────────── -->
+    <div class="checker-strip checker-acc" aria-hidden="true"></div>
+    <section class="nl-section">
+      <div class="nl-inner">
+        <p class="nl-kicker">Stay in the loop</p>
+        <h2 class="nl-title">Get the news first</h2>
+        <p class="nl-sub">New shows, releases, and behind-the-scenes — straight to your inbox. No spam.</p>
+        <div class="nl-form-wrap">
+          <NewsletterSignup client:visible />
+        </div>
       </div>
     </section>
-  )}
-
-  <!-- ── Latest Music ── -->
-  {latestReleases.length > 0 && (
-    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-      <div class="mb-8 flex items-end justify-between">
-        <div>
-          <div class="accent-line mb-3" />
-          <h2 class="text-2xl font-black text-white">Music</h2>
-        </div>
-        <a href="/releases" class="text-sm text-accent hover:underline">Discography →</a>
-      </div>
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {latestReleases.map(r => <ReleaseCard release={r} />)}
-      </div>
-    </section>
-  )}
-
-  <!-- ── Band Members ── -->
-  {currentMembers.length > 0 && (
-    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-      <div class="mb-10 text-center">
-        <div class="accent-line mx-auto mb-3" />
-        <h2 class="text-2xl font-black text-white">The Band</h2>
-      </div>
-      <div class="flex flex-wrap justify-center gap-8 sm:gap-12">
-        {currentMembers.map(m => <MemberCard member={m} />)}
-      </div>
-      <div class="mt-8 text-center">
-        <a href="/about" class="text-sm text-accent hover:underline">Read our story →</a>
-      </div>
-    </section>
-  )}
-
-  <!-- ── Latest News ── -->
-  {latestPosts.length > 0 && (
-    <section class="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-      <div class="mb-8 flex items-end justify-between">
-        <div>
-          <div class="accent-line mb-3" />
-          <h2 class="text-2xl font-black text-white">News</h2>
-        </div>
-        <a href="/posts" class="text-sm text-accent hover:underline">All posts →</a>
-      </div>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {latestPosts.map(p => <PostCard post={p} />)}
-      </div>
-    </section>
-  )}
-
-  <!-- ── Newsletter ── -->
-  <section class="bg-surface-2 border-y border-border py-16">
-    <div class="mx-auto max-w-xl px-4 sm:px-6 text-center">
-      <div class="accent-line mx-auto mb-4" />
-      <h2 class="text-2xl font-black text-white mb-2">Stay in the loop</h2>
-      <p class="text-zinc-400 mb-6">
-        New shows, releases, and behind-the-scenes straight to your inbox.
-      </p>
-      <NewsletterSignup client:visible />
-      <p class="mt-3 text-xs text-zinc-600">No spam. Unsubscribe any time.</p>
-    </div>
-  </section>
+    <div class="checker-strip checker-acc" aria-hidden="true"></div>
+  </div>
 </BaseLayout>
+
+<style>
+  /* ── Tokens ────────────────────────────── */
+  .hp {
+    --paper: #EFE7D6;
+    --ink:   #121212;
+    --acc:   #1F8F7A;
+    --warm:  #8a8175;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* Grain */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 100;
+  }
+
+  /* ── Hero ──────────────────────────────── */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    position: relative;
+    overflow: hidden;
+    min-height: 90vh;
+    display: flex;
+    align-items: flex-end;
+    padding: 80px 90px 60px;
+  }
+  .hero-checker {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-conic-gradient(rgba(239,231,214,.04) 0% 25%, transparent 0% 50%);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative;
+    max-width: 900px;
+  }
+  .hero-logo {
+    height: 56px;
+    object-fit: contain;
+    margin-bottom: 24px;
+    display: block;
+  }
+  .hero-kicker {
+    font: 800 13px/1 'Archivo', sans-serif;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(64px, 13vw, 130px);
+    line-height: .86;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 16px;
+    text-wrap: balance;
+    color: var(--paper);
+  }
+  .hero-origin {
+    font: 600 14px/1.4 'Archivo', sans-serif;
+    letter-spacing: .04em;
+    color: rgba(239,231,214,.5);
+    margin-bottom: 18px;
+  }
+  .hero-bio {
+    font: 500 20px/1.65 'Archivo', sans-serif;
+    color: rgba(239,231,214,.75);
+    max-width: 600px;
+    margin-bottom: 30px;
+  }
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--acc);
+    color: #fff;
+    border: 3px solid var(--acc);
+    font-family: 'Anton', sans-serif;
+    font-size: 18px;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    padding: 13px 24px;
+    text-decoration: none;
+    box-shadow: 6px 6px 0 var(--paper);
+    transition: background .15s;
+  }
+  .cta-primary:hover { background: #167a62; }
+  .cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--paper);
+    border: 3px solid rgba(239,231,214,.4);
+    font: 800 14px/1 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+  .cta-secondary:hover { border-color: var(--paper); color: var(--paper); }
+  .hero-social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .social-chip {
+    border: 2px solid rgba(239,231,214,.25);
+    color: rgba(239,231,214,.55);
+    font: 700 10px/1 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+  .social-chip:hover { border-color: var(--acc); color: var(--acc); }
+
+  /* ── Checker strip ─────────────────────── */
+  .checker-strip {
+    height: 14px;
+    background-image: repeating-conic-gradient(var(--ink) 0% 25%, var(--paper) 0% 50%);
+    background-size: 28px 28px;
+    flex-shrink: 0;
+  }
+  .checker-acc {
+    background-image: repeating-conic-gradient(var(--acc) 0% 25%, var(--paper) 0% 50%);
+  }
+
+  /* ── Shared section ────────────────────── */
+  .sec {
+    background: var(--paper);
+    padding: 52px 90px 48px;
+  }
+  .sec-dark {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .sec-head-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sec-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .see-all {
+    font: 800 12px/1 'Archivo', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--acc);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .see-all:hover { text-decoration: underline; }
+  .sec-dark .see-all { color: var(--acc); }
+
+  /* ── Gig list ──────────────────────────── */
+  .gig-list {
+    border-top: 3px solid var(--ink);
+  }
+  .gig-row {
+    display: grid;
+    grid-template-columns: 76px 1fr auto auto;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 4px;
+    border-bottom: 2px solid rgba(18,18,18,.15);
+    text-decoration: none;
+    color: var(--ink);
+    transition: background .1s;
+  }
+  .gig-row:hover { background: rgba(18,18,18,.04); }
+  .gig-date { text-align: center; }
+  .gig-day {
+    display: block;
+    font-family: 'Anton', sans-serif;
+    font-size: 36px;
+    line-height: .86;
+    color: var(--acc);
+  }
+  .gig-mo {
+    display: block;
+    font: 800 10px/1.4 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-top: 4px;
+  }
+  .gig-info { display: flex; flex-direction: column; gap: 3px; }
+  .gig-city {
+    font-family: 'Anton', sans-serif;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+  .gig-venue {
+    font: 600 13px/1.2 'Archivo', sans-serif;
+    color: var(--warm);
+  }
+  .gig-time {
+    font: 800 14px/1 'Archivo', sans-serif;
+    color: var(--warm);
+    letter-spacing: .04em;
+    justify-self: end;
+  }
+  .gig-arrow {
+    font-size: 20px;
+    color: var(--acc);
+    transition: transform .15s;
+  }
+  .gig-row:hover .gig-arrow { transform: translateX(4px); }
+
+  /* ── Releases grid ─────────────────────── */
+  .releases-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .release-card {
+    text-decoration: none;
+    color: var(--paper);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform .15s;
+  }
+  .release-card:hover { transform: translateY(-3px); }
+  .release-cover {
+    aspect-ratio: 1;
+    border: 3px solid rgba(239,231,214,.15);
+    box-shadow: 8px 8px 0 var(--acc);
+    overflow: hidden;
+    background: #222;
+  }
+  .release-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .release-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    background-image: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%);
+    background-size: 20px 20px;
+  }
+  .release-meta { display: flex; flex-direction: column; gap: 3px; }
+  .release-type {
+    font: 800 10px/1 'Archivo', sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--acc);
+  }
+  .release-name {
+    font-family: 'Anton', sans-serif;
+    font-size: 20px;
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--paper);
+  }
+  .release-year {
+    font: 600 12px/1 'Archivo', sans-serif;
+    color: rgba(239,231,214,.45);
+  }
+
+  /* ── Posts list ────────────────────────── */
+  .posts-list {
+    border-top: 3px solid var(--ink);
+  }
+  .post-row {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 4px;
+    border-bottom: 2px solid rgba(18,18,18,.15);
+    text-decoration: none;
+    color: var(--ink);
+    transition: background .1s;
+  }
+  .post-row:hover { background: rgba(18,18,18,.04); }
+  .post-date { text-align: center; }
+  .post-day {
+    display: block;
+    font-family: 'Anton', sans-serif;
+    font-size: 32px;
+    line-height: .86;
+    color: var(--ink);
+  }
+  .post-mo {
+    display: block;
+    font: 800 10px/1.4 'Archivo', sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-top: 4px;
+  }
+  .post-info { display: flex; flex-direction: column; gap: 4px; }
+  .post-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .post-excerpt {
+    font: 500 14px/1.4 'Archivo', sans-serif;
+    color: var(--warm);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .post-arrow {
+    font-size: 20px;
+    color: var(--acc);
+    transition: transform .15s;
+  }
+  .post-row:hover .post-arrow { transform: translateX(4px); }
+
+  /* ── Newsletter ────────────────────────── */
+  .nl-section {
+    background: var(--paper);
+    padding: 52px 90px 56px;
+  }
+  .nl-inner {
+    max-width: 540px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .nl-kicker {
+    font: 800 11px/1 'Archivo', sans-serif;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 10px;
+  }
+  .nl-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
+    line-height: .9;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  .nl-sub {
+    font: 500 17px/1.6 'Archivo', sans-serif;
+    color: var(--warm);
+    margin-bottom: 28px;
+  }
+  .nl-form-wrap {
+    border: 3px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--acc);
+    padding: 20px;
+    background: #fff;
+  }
+
+  /* ── Responsive ────────────────────────── */
+  @media (max-width: 1100px) {
+    .hero { padding: 72px 40px 52px; }
+    .sec, .nl-section { padding: 44px 40px 40px; }
+    .releases-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 800px) {
+    .hero { padding: 60px 24px 44px; min-height: 75vh; }
+    .sec, .nl-section { padding: 36px 24px 32px; }
+    .gig-row { grid-template-columns: 60px 1fr auto; }
+    .gig-time { display: none; }
+    .releases-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .post-row { grid-template-columns: 56px 1fr auto; }
+  }
+  @media (max-width: 480px) {
+    .releases-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

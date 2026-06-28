@@ -72,6 +72,7 @@ class VenueController extends Controller
             'city'            => 'nullable|string|max:100',
             'postcode'        => 'nullable|string|max:20',
             'additional_info' => 'nullable|string|max:500',
+            'capacity'        => 'nullable|integer|min:1|max:1000000',
             'latitude'        => 'nullable|numeric|between:-90,90',
             'longitude'       => 'nullable|numeric|between:-180,180',
         ];

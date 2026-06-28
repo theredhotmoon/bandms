@@ -12,12 +12,19 @@ class ConcertResource extends JsonResource
     {
         return [
             'id'             => $this->id,
+            'name'           => $this->getTranslation('name', 'en'),
+            'slug_en'        => $this->slug_en ?? 'concert-' . $this->id,
+            'slug_pl'        => $this->slug_pl,
             'date'           => $this->date?->format('Y-m-d'),
             'doors_open'       => $this->doors_open,
             'sound_check_time' => $this->sound_check_time,
             'start_time'       => $this->start_time,
             'own_sort_order' => $this->own_sort_order,
-            'description'    => $this->description,
+            'description'    => $this->getTranslation('description', 'en'),
+            'translations'   => [
+                'name'        => $this->getTranslations('name'),
+                'description' => $this->getTranslations('description'),
+            ],
             'poster_url'     => $this->poster ? '/storage/' . $this->poster : null,
             'venue'          => new VenueResource($this->whenLoaded('venue')),
             'bands'          => $this->whenLoaded('bands', fn () =>

@@ -14,7 +14,7 @@ class ShopItem extends Model
     use HasFactory, HasSlug;
 
     protected $fillable = [
-        'profile_id', 'name', 'slug', 'type', 'description',
+        'profile_id', 'name', 'slug_en', 'slug_pl', 'type', 'description',
         'is_available', 'is_presale', 'presale_ships_at',
         'stock_quantity', 'purchase_url', 'sort_order',
     ];

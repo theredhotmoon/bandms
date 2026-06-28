@@ -20,6 +20,7 @@ const form = reactive({
   city:            '',
   postcode:        '',
   additional_info: '',
+  capacity:        '' as string,
   latitude:        '' as string,
   longitude:       '' as string,
   tag_ids:         [] as number[],
@@ -157,6 +158,7 @@ watch(() => props.initial, (val) => {
   form.city            = val?.city            ?? ''
   form.postcode        = val?.postcode        ?? ''
   form.additional_info = val?.additional_info ?? ''
+  form.capacity        = val?.capacity != null ? String(val.capacity) : ''
   form.latitude        = val?.latitude  != null ? String(val.latitude)  : ''
   form.longitude       = val?.longitude != null ? String(val.longitude) : ''
   form.tag_ids         = val?.tags?.map(t => t.id) ?? []
@@ -180,6 +182,7 @@ function submit() {
     city:            form.city            || null,
     postcode:        form.postcode        || null,
     additional_info: form.additional_info || null,
+    capacity:        form.capacity !== '' ? parseInt(form.capacity, 10) : null,
     latitude:        form.latitude  !== '' ? parseFloat(form.latitude)  : null,
     longitude:       form.longitude !== '' ? parseFloat(form.longitude) : null,
     tag_ids:         form.tag_ids,
@@ -226,6 +229,11 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
       <label class="field-label">Additional info</label>
       <input v-model="form.additional_info" class="field-input" placeholder="Floor, entrance, parking notes…" />
       <p v-if="errors?.additional_info" class="field-error">{{ errors.additional_info[0] }}</p>
+    </div>
+    <div>
+      <label class="field-label">Venue capacity</label>
+      <input v-model="form.capacity" type="number" min="1" class="field-input" placeholder="e.g. 500" style="max-width:12rem;" />
+      <p v-if="errors?.capacity" class="field-error">{{ errors.capacity[0] }}</p>
     </div>
 
     <!-- Map + search -->

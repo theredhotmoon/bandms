@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed, onMounted } from 'vue'
+import { reactive, computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useCheckout } from '@/composables/useCheckout'
@@ -16,6 +16,10 @@ onMounted(() => {
 const currency      = computed(() => cartStore.selectedCurrency ?? cartStore.currencies[0] ?? 'USD')
 const total         = computed(() => cartStore.total(currency.value))
 const checkoutItems = computed(() => cartStore.items.filter(i => i.snapshot.currency === currency.value))
+const hasShopItems  = computed(() => checkoutItems.value.some(i => i.type === 'shop'))
+
+const promoCode = ref('')
+const promoError = ref('')
 
 const form = reactive({
   name:         '',
@@ -31,34 +35,38 @@ const fieldErrors = reactive<Record<string, string>>({})
 
 function validate(): boolean {
   const e: Record<string, string> = {}
-  if (!form.name.trim())        e.name = 'Name is required'
+  if (!form.name.trim())  e.name = 'Name is required'
   if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Valid email is required'
-  if (!form.line1.trim())       e.line1 = 'Address is required'
-  if (!form.city.trim())        e.city = 'City is required'
-  if (!form.postal_code.trim()) e.postal_code = 'Postal code is required'
-  if (!form.country)            e.country = 'Country is required'
+  if (hasShopItems.value) {
+    if (!form.line1.trim())       e.line1 = 'Address is required'
+    if (!form.city.trim())        e.city = 'City is required'
+    if (!form.postal_code.trim()) e.postal_code = 'Postal code is required'
+    if (!form.country)            e.country = 'Country is required'
+  }
   Object.assign(fieldErrors, e)
   return Object.keys(e).length === 0
 }
 
 async function handleCheckout() {
   Object.keys(fieldErrors).forEach(k => delete (fieldErrors as Record<string, string>)[k])
+  promoError.value = ''
   if (!validate()) return
 
-  const items = checkoutItems.value.map(i => ({
-    shop_item_id:         i.shop_item_id,
-    shop_item_variant_id: i.variant_id,
-    quantity:             i.quantity,
-  }))
+  const items = checkoutItems.value.map(i => {
+    if (i.type === 'ticket') {
+      return { ticket_type_id: i.ticket_type_id!, ticket_price_tier_id: i.ticket_price_tier_id!, quantity: i.quantity }
+    }
+    return { shop_item_id: i.shop_item_id!, shop_item_variant_id: i.variant_id, quantity: i.quantity }
+  })
 
   if (!items.length) return
 
-  try {
-    await checkout.mutateAsync({
-      currency: currency.value,
-      customer: {
-        name:  form.name,
-        email: form.email,
+  const payload: Parameters<typeof checkout.mutateAsync>[0] = {
+    currency: currency.value,
+    customer: {
+      name:  form.name,
+      email: form.email,
+      ...(hasShopItems.value && {
         shipping_address: {
           line1:       form.line1,
           line2:       form.line2 || undefined,
@@ -66,11 +74,16 @@ async function handleCheckout() {
           postal_code: form.postal_code,
           country:     form.country,
         },
-      },
-      items,
-    })
+      }),
+    },
+    items,
+    ...(promoCode.value.trim() && { promo_code: promoCode.value.trim().toUpperCase() }),
+  }
+
+  try {
+    await checkout.mutateAsync(payload)
   } catch {
-    // onError in useCheckout shows the toast; swallow here to avoid unhandled rejection
+    // onError in useCheckout shows the toast
   }
 }
 
@@ -120,38 +133,55 @@ const COUNTRIES = [
           <span v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</span>
         </div>
 
-        <div class="form-section-label">Shipping address</div>
+        <template v-if="hasShopItems">
+          <div class="form-section-label">Shipping address</div>
 
-        <div class="field">
-          <label class="field-label">Address line 1 *</label>
-          <input v-model="form.line1" type="text" class="field-input" :class="{ error: fieldErrors.line1 }" autocomplete="address-line1" />
-          <span v-if="fieldErrors.line1" class="field-error">{{ fieldErrors.line1 }}</span>
-        </div>
-
-        <div class="field">
-          <label class="field-label">Address line 2</label>
-          <input v-model="form.line2" type="text" class="field-input" autocomplete="address-line2" />
-        </div>
-
-        <div class="form-row">
           <div class="field">
-            <label class="field-label">City *</label>
-            <input v-model="form.city" type="text" class="field-input" :class="{ error: fieldErrors.city }" autocomplete="address-level2" />
-            <span v-if="fieldErrors.city" class="field-error">{{ fieldErrors.city }}</span>
+            <label class="field-label">Address line 1 *</label>
+            <input v-model="form.line1" type="text" class="field-input" :class="{ error: fieldErrors.line1 }" autocomplete="address-line1" />
+            <span v-if="fieldErrors.line1" class="field-error">{{ fieldErrors.line1 }}</span>
           </div>
-          <div class="field" style="max-width: 10rem;">
-            <label class="field-label">Postal code *</label>
-            <input v-model="form.postal_code" type="text" class="field-input" :class="{ error: fieldErrors.postal_code }" autocomplete="postal-code" />
-            <span v-if="fieldErrors.postal_code" class="field-error">{{ fieldErrors.postal_code }}</span>
-          </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label">Country *</label>
-          <select v-model="form.country" class="field-input" :class="{ error: fieldErrors.country }" autocomplete="country">
-            <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
-          </select>
-          <span v-if="fieldErrors.country" class="field-error">{{ fieldErrors.country }}</span>
+          <div class="field">
+            <label class="field-label">Address line 2</label>
+            <input v-model="form.line2" type="text" class="field-input" autocomplete="address-line2" />
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label class="field-label">City *</label>
+              <input v-model="form.city" type="text" class="field-input" :class="{ error: fieldErrors.city }" autocomplete="address-level2" />
+              <span v-if="fieldErrors.city" class="field-error">{{ fieldErrors.city }}</span>
+            </div>
+            <div class="field" style="max-width: 10rem;">
+              <label class="field-label">Postal code *</label>
+              <input v-model="form.postal_code" type="text" class="field-input" :class="{ error: fieldErrors.postal_code }" autocomplete="postal-code" />
+              <span v-if="fieldErrors.postal_code" class="field-error">{{ fieldErrors.postal_code }}</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Country *</label>
+            <select v-model="form.country" class="field-input" :class="{ error: fieldErrors.country }" autocomplete="country">
+              <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
+            </select>
+            <span v-if="fieldErrors.country" class="field-error">{{ fieldErrors.country }}</span>
+          </div>
+        </template>
+
+        <div class="form-section-label">Promo code</div>
+
+        <div class="promo-row">
+          <input
+            v-model="promoCode"
+            type="text"
+            class="field-input promo-input"
+            :class="{ error: promoError }"
+            placeholder="Enter code (optional)"
+            autocomplete="off"
+            style="text-transform: uppercase;"
+          />
+          <span v-if="promoError" class="field-error">{{ promoError }}</span>
         </div>
 
         <button type="submit" class="btn-pay" :disabled="checkout.isPending.value">
@@ -203,6 +233,9 @@ const COUNTRIES = [
 
 .form-row { display: flex; gap: 0.75rem; }
 .form-row .field { flex: 1; }
+
+.promo-row { display: flex; flex-direction: column; gap: 0.25rem; }
+.promo-input { font-family: monospace; letter-spacing: 0.05em; }
 
 .btn-pay {
   margin-top: 0.5rem;

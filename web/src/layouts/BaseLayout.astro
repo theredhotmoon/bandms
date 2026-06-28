@@ -39,6 +39,7 @@ const pageTitle = title === bandName ? title : `${title} — ${bandName}`
       noindex={noindex}
       structuredData={structuredData}
     />
+    <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
     <Header />

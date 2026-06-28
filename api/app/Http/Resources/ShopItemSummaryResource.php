@@ -13,7 +13,8 @@ class ShopItemSummaryResource extends JsonResource
         return [
             'id'               => $this->id,
             'name'             => $this->name,
-            'slug'             => $this->slug,
+            'slug_en'          => $this->slug_en,
+            'slug_pl'          => $this->slug_pl,
             'type'             => $this->type,
             'is_available'     => $this->is_available,
             'is_presale'       => $this->is_presale,

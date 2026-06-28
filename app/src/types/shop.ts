@@ -40,7 +40,8 @@ export interface ShopItemVariant {
 export interface ShopItemSummary {
   id: number
   name: string
-  slug: string
+  slug_en: string
+  slug_pl: string | null
   type: ShopItemType
   is_available: boolean
   is_presale: boolean
@@ -69,6 +70,8 @@ export interface ShopItem extends ShopItemSummary {
 
 export interface ShopItemPayload {
   name: string
+  slug_en?: string | null
+  slug_pl?: string | null
   description: string | null
   is_available: boolean
   is_presale: boolean

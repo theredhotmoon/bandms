@@ -187,10 +187,19 @@ export async function deleteShopVariant(token: string, itemId: number, variantId
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
 
+export type CheckoutItem =
+  | { shop_item_id: number; shop_item_variant_id: number | null; quantity: number }
+  | { ticket_type_id: number; ticket_price_tier_id: number; quantity: number }
+
 export interface CheckoutPayload {
   currency: string
-  customer: { name: string; email: string; shipping_address: { line1: string; line2?: string; city: string; postal_code: string; country: string } }
-  items: { shop_item_id: number; shop_item_variant_id: number | null; quantity: number }[]
+  customer: {
+    name: string
+    email: string
+    shipping_address?: { line1: string; line2?: string; city: string; postal_code: string; country: string }
+  }
+  items: CheckoutItem[]
+  promo_code?: string
 }
 
 export async function createCheckoutSession(payload: CheckoutPayload): Promise<{ checkout_url: string; order_uuid: string }> {

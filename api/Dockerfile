@@ -8,7 +8,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist
+    --prefer-source
 
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative
@@ -22,7 +22,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist
+    --prefer-source
 
 COPY . .
 RUN composer dump-autoload --optimize
