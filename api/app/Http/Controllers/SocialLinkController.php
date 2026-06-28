@@ -52,4 +52,24 @@ class SocialLinkController extends Controller
 
         return response()->noContent();
     }
+
+    public function sync(Request $request): ResourceCollection
+    {
+        $data = $request->validate([
+            'links'            => ['nullable', 'array'],
+            'links.*.platform' => ['required', 'in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website'],
+            'links.*.url'      => ['required', 'url', 'max:500'],
+        ]);
+
+        $profile = $this->profile();
+        $profile->socialLinks()->delete();
+
+        foreach ($data['links'] ?? [] as $link) {
+            $profile->socialLinks()->create($link);
+        }
+
+        return SocialLinkResource::collection(
+            $profile->socialLinks()->orderBy('platform')->get()
+        );
+    }
 }

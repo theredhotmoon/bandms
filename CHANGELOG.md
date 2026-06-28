@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **`SocialLinksEditor` — reusable social links component** — single Vue 3 component (`SocialLinksEditor.vue`) for managing social media links across all entities. Supports all 9 platforms (Spotify, Instagram, Facebook, YouTube, TikTok, Bandcamp, SoundCloud, Twitter/X, Website) with coloured platform indicators. Replaces the per-link CRUD UI in Band Profile (now bulk-save), the inline platform rows in Band Member form, and adds social link support to Authors & Contacts and Venues for the first time.
 - **Concert ticket platform** — full ticketing system for concerts: ticket types with sale windows, multi-tier pricing (Early Bird, Regular, VIP), per-order quantity limits, venue capacity checks, and QR-code door scanning. Integrated into the shared checkout alongside merch.
 - **Concert slugs** — concerts now have bilingual URL slugs (`slug_en`, `slug_pl`) used by the Astro public site's concert detail pages (`/concerts/[slug]`).
 - **Door check admin view** — `/admin/door-check` lets staff scan a ticket code and mark it as scanned in one step.
@@ -31,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `POST /door-check` now requires a valid Bearer token (`auth:api` middleware); previously it was publicly accessible and returned customer name and order UUID for any guessed ticket code.
 
 ### Fixed
+- **Astro Docker build** — pinned pnpm to v9 in the `web/` Dockerfile (pnpm v10 dropped `package.json` `pnpm` field support, blocking `esbuild`/`sharp` post-install scripts); stripped CRLF from `start.sh` so the Linux shebang resolves on Windows-built images; added `web/.gitattributes` to enforce LF line endings for `*.sh` going forward.
+- **Astro public pages** — guarded all API array properties with `?? []` before `.length`/`.map()` calls; the Laravel API returns `null` (not `[]`) for empty relationship arrays. Affected: EPK, release detail, post detail, concert detail, merch detail, photos index.
 - Admin releases: creating a release no longer fails when the track list contains an untitled entry; empty tracks are silently filtered before the payload is sent to the API.
 - Admin concerts: editing an existing concert now correctly trims time fields (doors open, sound check, start time) to HH:MM, preventing the seconds component from leaking into the inputs.
 - Admin delete dialogs: `ConfirmDialog` now correctly exposes `role="dialog"` and `aria-modal` for assistive technology.

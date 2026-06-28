@@ -20,9 +20,13 @@ class VenueResource extends JsonResource
             'capacity'        => $this->capacity,
             'latitude'        => $this->latitude,
             'longitude'       => $this->longitude,
-            'tags'            => TagResource::collection($this->whenLoaded('tags')),
-            'created_at'      => $this->created_at,
-            'updated_at'      => $this->updated_at,
+            'tags'         => TagResource::collection($this->whenLoaded('tags')),
+            'social_links' => $this->whenLoaded('socialLinks', fn () => $this->socialLinks->map(fn ($l) => [
+                'platform' => $l->platform,
+                'url'      => $l->url,
+            ])),
+            'created_at'   => $this->created_at,
+            'updated_at'   => $this->updated_at,
         ];
     }
 }

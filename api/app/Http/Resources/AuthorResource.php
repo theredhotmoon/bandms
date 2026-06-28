@@ -9,6 +9,10 @@ class AuthorResource extends AuthorSummaryResource
     public function toArray(Request $request): array
     {
         return array_merge(parent::toArray($request), [
+            'social_links' => $this->whenLoaded('socialLinks', fn () => $this->socialLinks->map(fn ($l) => [
+                'platform' => $l->platform,
+                'url'      => $l->url,
+            ])),
             'press_releases' => $this->whenLoaded('pressReleases', fn () => $this->pressReleases->map(fn ($pr) => [
                 'id'       => $pr->id,
                 'url'      => $pr->url,

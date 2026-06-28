@@ -10,7 +10,7 @@ class SocialLink extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['profile_id', 'member_id', 'platform', 'url'];
+    protected $fillable = ['profile_id', 'member_id', 'author_id', 'venue_id', 'platform', 'url'];
 
     public function profile(): BelongsTo
     {
@@ -20,5 +20,15 @@ class SocialLink extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(BandMember::class, 'member_id');
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(Author::class, 'author_id');
+    }
+
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class, 'venue_id');
     }
 }

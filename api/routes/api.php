@@ -229,6 +229,7 @@ Route::middleware('auth:api')->group(function () {
             ->name('api.band-profile.logos.destroy');
 
         Route::post('/band-profile/social-links', [SocialLinkController::class, 'store'])->name('api.band-profile.social-links.store');
+        Route::put('/band-profile/social-links', [SocialLinkController::class, 'sync'])->name('api.band-profile.social-links.sync');
         Route::put('/band-profile/social-links/{link}', [SocialLinkController::class, 'update'])->name('api.band-profile.social-links.update');
         Route::delete('/band-profile/social-links/{link}', [SocialLinkController::class, 'destroy'])->name('api.band-profile.social-links.destroy');
 

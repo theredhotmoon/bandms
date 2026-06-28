@@ -1,8 +1,6 @@
 # ── Stage 1: build ────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
-RUN npm install -g npm@11.17.0
-
 WORKDIR /app
 
 COPY package.json ./

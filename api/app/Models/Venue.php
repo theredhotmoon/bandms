@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+
 class Venue extends Model
 {
     use HasFactory;
@@ -35,5 +36,10 @@ class Venue extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'venue_tag');
+    }
+
+    public function socialLinks(): HasMany
+    {
+        return $this->hasMany(SocialLink::class, 'venue_id');
     }
 }

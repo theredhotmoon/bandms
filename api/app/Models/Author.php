@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Author extends Model
 {
@@ -29,5 +30,10 @@ class Author extends Model
     public function photos(): BelongsToMany
     {
         return $this->belongsToMany(Photo::class, 'author_photos');
+    }
+
+    public function socialLinks(): HasMany
+    {
+        return $this->hasMany(SocialLink::class, 'author_id');
     }
 }

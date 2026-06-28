@@ -1,9 +1,9 @@
+import type { SocialLinkPayload } from './socialLink'
+
 export interface AuthorSummary {
   id: number
   name: string
   email: string | null
-  facebook: string | null
-  instagram: string | null
   whatsapp: string | null
   phone: string | null
   notes: string | null
@@ -33,6 +33,7 @@ export interface AuthorPhoto {
 }
 
 export interface Author extends AuthorSummary {
+  social_links: SocialLinkPayload[]
   press_releases: AuthorPressRelease[]
   concerts: AuthorConcert[]
   tours: AuthorTour[]
@@ -42,11 +43,10 @@ export interface Author extends AuthorSummary {
 export interface AuthorPayload {
   name: string
   email: string | null
-  facebook: string | null
-  instagram: string | null
   whatsapp: string | null
   phone: string | null
   notes: string | null
+  social_links: SocialLinkPayload[]
   press_release_ids: number[]
   concert_ids: number[]
   tour_ids: number[]

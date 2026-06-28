@@ -13,48 +13,65 @@ class VenueController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return VenueResource::collection(Venue::with('tags')->orderBy('name')->get());
+        return VenueResource::collection(Venue::with('tags', 'socialLinks')->orderBy('name')->get());
     }
 
     public function store(Request $request): VenueResource
     {
         $data = $request->validate([
-            'name'      => ['required', 'string', 'max:255', Rule::unique('venues')],
-            'tag_ids'   => ['nullable', 'array'],
-            'tag_ids.*' => ['integer', 'exists:tags,id'],
+            'name'                    => ['required', 'string', 'max:255', Rule::unique('venues')],
+            'tag_ids'                 => ['nullable', 'array'],
+            'tag_ids.*'               => ['integer', 'exists:tags,id'],
+            'social_links'            => ['nullable', 'array'],
+            'social_links.*.platform' => ['required', 'in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website'],
+            'social_links.*.url'      => ['required', 'url', 'max:500'],
             ...$this->locationRules(),
         ]);
 
-        $venue = Venue::create(\Illuminate\Support\Arr::except($data, ['tag_ids']));
+        $venue = Venue::create(\Illuminate\Support\Arr::except($data, ['tag_ids', 'social_links']));
 
         if (array_key_exists('tag_ids', $data)) {
             $venue->tags()->sync($data['tag_ids'] ?? []);
         }
 
-        return new VenueResource($venue->load('tags'));
+        foreach ($data['social_links'] ?? [] as $link) {
+            $venue->socialLinks()->create($link);
+        }
+
+        return new VenueResource($venue->load('tags', 'socialLinks'));
     }
 
     public function show(Venue $venue): VenueResource
     {
-        return new VenueResource($venue->load('tags'));
+        return new VenueResource($venue->load('tags', 'socialLinks'));
     }
 
     public function update(Request $request, Venue $venue): VenueResource
     {
         $data = $request->validate([
-            'name'      => ['sometimes', 'required', 'string', 'max:255', Rule::unique('venues')->ignore($venue)],
-            'tag_ids'   => ['nullable', 'array'],
-            'tag_ids.*' => ['integer', 'exists:tags,id'],
+            'name'                    => ['sometimes', 'required', 'string', 'max:255', Rule::unique('venues')->ignore($venue)],
+            'tag_ids'                 => ['nullable', 'array'],
+            'tag_ids.*'               => ['integer', 'exists:tags,id'],
+            'social_links'            => ['nullable', 'array'],
+            'social_links.*.platform' => ['required', 'in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website'],
+            'social_links.*.url'      => ['required', 'url', 'max:500'],
             ...$this->locationRules(),
         ]);
 
-        $venue->update(\Illuminate\Support\Arr::except($data, ['tag_ids']));
+        $venue->update(\Illuminate\Support\Arr::except($data, ['tag_ids', 'social_links']));
 
         if (array_key_exists('tag_ids', $data)) {
             $venue->tags()->sync($data['tag_ids'] ?? []);
         }
 
-        return new VenueResource($venue->load('tags'));
+        if (array_key_exists('social_links', $data)) {
+            $venue->socialLinks()->delete();
+            foreach ($data['social_links'] as $link) {
+                $venue->socialLinks()->create($link);
+            }
+        }
+
+        return new VenueResource($venue->load('tags', 'socialLinks'));
     }
 
     public function destroy(Venue $venue): JsonResponse

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { Map as LMap, Marker } from 'leaflet'
+import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
+import type { SocialLinkPayload } from '@/types/socialLink'
 
 const props = defineProps<{
   initial?: Venue | null
@@ -25,6 +27,8 @@ const form = reactive({
   longitude:       '' as string,
   tag_ids:         [] as number[],
 })
+
+const socialLinks = ref<SocialLinkPayload[]>([])
 
 // ── Map ───────────────────────────────────────────────────────
 const mapEl = ref<HTMLElement | null>(null)
@@ -162,6 +166,7 @@ watch(() => props.initial, (val) => {
   form.latitude        = val?.latitude  != null ? String(val.latitude)  : ''
   form.longitude       = val?.longitude != null ? String(val.longitude) : ''
   form.tag_ids         = val?.tags?.map(t => t.id) ?? []
+  socialLinks.value    = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
 
   if (lmap && val?.latitude != null) {
     nextTick(() => placeMarker(val.latitude!, val.longitude!))
@@ -186,6 +191,7 @@ function submit() {
     latitude:        form.latitude  !== '' ? parseFloat(form.latitude)  : null,
     longitude:       form.longitude !== '' ? parseFloat(form.longitude) : null,
     tag_ids:         form.tag_ids,
+    social_links:    socialLinks.value,
   })
 }
 
@@ -275,6 +281,9 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
         <p v-if="!tags.length" class="text-xs" style="color:#475569;">No tags available.</p>
       </div>
     </div>
+
+    <!-- Social links -->
+    <SocialLinksEditor v-model="socialLinks" />
 
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
