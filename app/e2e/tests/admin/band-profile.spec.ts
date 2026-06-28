@@ -80,52 +80,31 @@ test.describe('Band Profile Admin', () => {
 
   // ── Social tab ──────────────────────────────────────────────────────────
 
-  test.describe('Social tab — CRUD', () => {
-    test.describe.configure({ mode: 'serial' })
-
+  test.describe('Social tab', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/admin/band-profile')
       await page.waitForLoadState('networkidle')
       await page.getByRole('tab', { name: 'Social' }).click()
     })
 
-    // 6. Add a new link
-    test('add new social link shows toast "Link added" and link appears in list', async ({ page }) => {
-      await page.getByRole('button', { name: '+ Add link' }).click()
+    // 6. Fill a platform URL and save — toast "Social links saved"
+    test('fill Spotify URL and save shows "Social links saved" toast', async ({ page }) => {
+      const spotifyInput = page.getByLabel('Spotify')
+      await spotifyInput.fill('https://open.spotify.com/artist/testband')
 
-      // Select a platform
-      const platformSelect = page.locator('select').first()
-      await platformSelect.selectOption({ index: 1 })
+      await page.getByRole('button', { name: 'Save social links' }).click()
 
-      // Enter URL
-      const urlInput = page.locator('input[type="url"], input[placeholder*="http"], input[placeholder*="URL"]').first()
-      await urlInput.fill('https://instagram.com/testband')
-
-      await page.getByRole('button', { name: 'Add' }).click()
-
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Link added')
-      await expect(page.locator('text=https://instagram.com/testband').first()).toBeVisible()
+      await expect(page.locator('[data-sonner-toast]')).toContainText('Social links saved')
     })
 
-    // 7. Edit existing link
-    test('edit existing social link shows toast "Link updated"', async ({ page }) => {
-      const firstEditButton = page.getByRole('button', { name: 'Edit' }).first()
-      await firstEditButton.click()
+    // 7. Clear a URL and save — still shows success toast
+    test('clear all URLs and save shows "Social links saved" toast', async ({ page }) => {
+      const spotifyInput = page.getByLabel('Spotify')
+      await spotifyInput.fill('')
 
-      const urlInput = page.locator('input[type="url"], input[placeholder*="http"], input[placeholder*="URL"]').first()
-      await urlInput.fill('https://instagram.com/testband-updated')
+      await page.getByRole('button', { name: 'Save social links' }).click()
 
-      await page.getByRole('button', { name: 'Update' }).click()
-
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Link updated')
-    })
-
-    // 8. Delete link
-    test('delete social link shows toast "Link removed"', async ({ page }) => {
-      const firstDeleteButton = page.getByRole('button', { name: '✕' }).first()
-      await firstDeleteButton.click()
-
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Link removed')
+      await expect(page.locator('[data-sonner-toast]')).toContainText('Social links saved')
     })
   })
 

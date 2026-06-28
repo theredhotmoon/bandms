@@ -34,7 +34,13 @@ warn()   { echo -e "${YELLOW}⚠️  $1${RESET}"; }
 # ── Backend unit tests ────────────────────────────────────────────────────────
 if [ "$SKIP_UNIT" -eq 0 ]; then
   banner "Backend unit tests (Pest)"
-  if make test; then
+  APP_KEY=$(grep '^APP_KEY=' .env 2>/dev/null | cut -d= -f2-)
+  if [ -z "$APP_KEY" ]; then
+    fail "APP_KEY not found in .env — run: cp .env.example .env && php artisan key:generate"
+    exit 1
+  fi
+  docker build --target test -t bandms_test ./api >/dev/null
+  if docker run --rm -e APP_ENV=testing -e APP_KEY="${APP_KEY}" bandms_test; then
     ok "Backend tests passed"
   else
     fail "Backend tests FAILED"
