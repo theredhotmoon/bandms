@@ -34,7 +34,9 @@ warn()   { echo -e "${YELLOW}⚠️  $1${RESET}"; }
 # ── Backend unit tests ────────────────────────────────────────────────────────
 if [ "$SKIP_UNIT" -eq 0 ]; then
   banner "Backend unit tests (Pest)"
-  if make test; then
+  APP_KEY=$(grep '^APP_KEY=' .env | cut -d= -f2-)
+  docker build --target test -t bandms_test ./api >/dev/null 2>&1
+  if docker run --rm -e APP_ENV=testing -e APP_KEY="${APP_KEY}" bandms_test; then
     ok "Backend tests passed"
   else
     fail "Backend tests FAILED"

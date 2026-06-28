@@ -70,8 +70,12 @@ seed:
 	docker exec $(BACKEND) php artisan db:seed --force
 
 ## Install Passport keys & default clients (run once on a new DB)
+## Uses passport:keys + passport:client directly to avoid passport:install
+## publishing duplicate migration files into database/migrations/.
 passport:
-	docker exec $(BACKEND) php artisan passport:install --no-interaction
+	docker exec $(BACKEND) php artisan passport:keys --no-interaction
+	docker exec $(BACKEND) php artisan passport:client --personal --name="BandMS Personal" --no-interaction
+	docker exec $(BACKEND) php artisan passport:client --password  --name="BandMS Password" --no-interaction
 
 ## Clear and rebuild all caches
 optimize:

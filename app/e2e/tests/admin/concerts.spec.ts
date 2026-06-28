@@ -29,8 +29,8 @@ test.describe('Admin Concerts — read-only', () => {
       return
     }
 
-    // Use the Venue column (index 2) for search query
-    const venueCell = rowsBefore.first().locator('td').nth(2)
+    // Use the Venue column (index 3: Date=0, Name=1, Doors/Start=2, Venue=3)
+    const venueCell = rowsBefore.first().locator('td').nth(3)
     const venueText = await venueCell.textContent()
     const query = venueText && venueText.trim() !== '—' ? venueText.trim().substring(0, 4) : 'a'
 

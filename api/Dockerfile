@@ -58,6 +58,7 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 
 COPY docker/nginx.conf       /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/www.conf         /usr/local/etc/php-fpm.d/zz-bandms.conf
 COPY docker/entrypoint.sh    /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
