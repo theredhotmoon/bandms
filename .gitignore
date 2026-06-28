@@ -11,3 +11,8 @@ seed_*.php
 unit-test.log
 e2e-test.log
 .worktrees/
+.claude/worktrees/
+/web/node_modules
+/web/dist
+/web/.astro
+/web/dev.err
