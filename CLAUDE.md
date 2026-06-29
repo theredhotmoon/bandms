@@ -214,6 +214,26 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 ---
 
+### Astro public site may build with incomplete data on first startup
+
+**Symptom:** Some public pages load but show missing/empty data (e.g. no concerts listed) immediately after a fresh stack start, even though the API is healthy.
+
+**Root cause:** `web/docker/start.sh` waits for `GET /api/health` to return 200 before building. Laravel's `/api/health` can return 200 while migrations or seeders are still running in the background. The Astro build then fetches data mid-migration and bakes the incomplete snapshot into the static HTML.
+
+**Fix:** If the public site looks empty right after first boot, wait 30–60 seconds for migrations/seeders to fully settle, then `docker compose restart web` to trigger a fresh build with complete data.
+
+---
+
+### `FRONTEND_URL` in `.env` must match the port users actually browse on
+
+**Symptom:** Newsletter confirmation emails (and any other email with a link) contain `http://localhost/newsletter/confirm/...` but clicking the link goes to the wrong port or host.
+
+**Root cause:** Laravel uses `FRONTEND_URL` from `.env` to generate links in outgoing emails (e.g. double opt-in confirmation). It defaults to `http://localhost` (port 80), but the public site runs on port 4322 in development. No validation catches the mismatch.
+
+**Fix:** Set `FRONTEND_URL=http://localhost:4322` in `.env` for local development. In production set it to the real public domain. Check this any time email link behaviour changes unexpectedly.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
