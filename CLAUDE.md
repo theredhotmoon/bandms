@@ -153,6 +153,67 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 ---
 
+### `make fresh` kills Passport clients — must follow with `make passport`
+
+**Symptom:** All API calls that require a Bearer token return 401 after running `make fresh`.
+
+**Root cause:** `make fresh` runs `migrate:fresh --seed` which wipes the `oauth_clients` table. The backend container's entrypoint only creates Passport clients on first startup (when `CLIENT_COUNT = 0`). Reusing the already-running container means the entrypoint never re-runs.
+
+**Fix:** Always run `make passport` immediately after `make fresh`.
+`rebuild.sh --fresh-db` handles this automatically — only `make fresh` (direct) does not.
+
+---
+
+### Public site shows stale content after admin changes
+
+**Symptom:** You add/edit a concert, release, or post in the admin, but the public site (`localhost:4322`) still shows the old data.
+
+**Root cause:** The Astro SSG build runs once at container startup (`web/docker/start.sh`). It fetches all API data at that moment and bakes it into static HTML. The container does not watch for changes.
+
+**Fix:** `docker compose restart web` — this re-runs `start.sh`, re-fetches all data, and rebuilds the static site. No image rebuild needed.
+
+---
+
+### `docker compose build web` does NOT rebuild the Astro site
+
+**Symptom:** You run `docker compose build web` expecting the public site to reflect new content or source changes, but nothing changes.
+
+**Root cause:** The Astro SSG build happens inside `start.sh` at container *startup*, not at image build time. `docker compose build` only rebuilds the Node.js image layers. The site is only rebuilt when the container starts.
+
+**Fix:** Always follow a `build` with `docker compose up -d web` (which recreates and starts the container, triggering `start.sh`). Or just use `docker compose restart web` for content-only refreshes.
+
+---
+
+### `web` container hangs silently if backend never becomes healthy
+
+**Symptom:** `bandms_web` stays in a running state but the public site never loads; `docker logs bandms_web` shows the health-check loop still printing.
+
+**Root cause:** `start.sh` polls `/api/health` in an infinite loop with no timeout. If the backend is stuck (bad env var, failed migration, DB issue), the web container waits forever.
+
+**Fix:** Check the backend first: `docker logs bandms_backend`. Fix whatever is blocking it — the web container will unblock automatically once `/api/health` responds.
+
+---
+
+### Backend env var changes require a container restart
+
+**Symptom:** You update an env var in `docker-compose.yml` (e.g. `APP_URL`, `LOG_LEVEL`) but the backend behaves as if the old value is still set.
+
+**Root cause:** `entrypoint.sh` runs `php artisan optimize` at startup, baking env values into the config cache. The cache survives for the lifetime of the container — editing `docker-compose.yml` without recreating the container has no effect.
+
+**Fix:** `docker compose up -d backend` (recreates and restarts the container, re-running the entrypoint with the new env). Or manually: `docker exec bandms_backend php artisan optimize:clear && php artisan optimize`.
+
+---
+
+### `pnpm dev` in `app/` proxies API to port 8081 — must match `.env`
+
+**Symptom:** Running `pnpm dev` in `app/`, API calls (`/api/*`) return network errors or hit the wrong host.
+
+**Root cause:** `app/vite.config.ts` hardcodes `target: 'http://localhost:8081'`. The `frontend` Docker container is exposed on `${FRONTEND_PORT:-80}`. If `FRONTEND_PORT` is not set to `8081` in `.env`, nothing is listening on 8081 and all proxied API calls fail silently.
+
+**Fix:** Add `FRONTEND_PORT=8081` to your `.env` at the monorepo root, then `docker compose up -d frontend` to re-map the port. Vite's dev proxy will then reach the frontend Nginx (which itself proxies `/api/*` to the backend over Docker networking).
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
