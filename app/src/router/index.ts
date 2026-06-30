@@ -338,6 +338,12 @@ const router = createRouter({
       component: () => import('@/views/admin/DoorCheckView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin/website-modules',
+      name: 'admin-website-modules',
+      component: () => import('@/views/admin/WebsiteModulesView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
   ],
 })
 
@@ -393,6 +399,7 @@ const ROUTE_TITLES: Record<string, string> = {
   newsletter: 'Newsletter — Skanking Storks',
   videos: 'Videos — Skanking Storks',
   press: 'Press — Skanking Storks',
+  'admin-website-modules': 'Website Modules — Admin',
 }
 
 router.afterEach((to) => {
