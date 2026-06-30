@@ -1,9 +1,12 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
-import { getShopItems, getShopItem, getBandProfile } from '@/lib/cms'
+import { getSiteConfig, getShopItems, getShopItem, getBandProfile } from '@/lib/cms'
 
 export async function getStaticPaths() {
+  const siteConfig = await getSiteConfig()
+  if (siteConfig.modules['merch'] === false) return []
+
   const items = await getShopItems()
   return items.map(i => ({ params: { slug: i.slug_en } }))
 }

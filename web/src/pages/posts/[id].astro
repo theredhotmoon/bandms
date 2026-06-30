@@ -1,11 +1,14 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getPosts, getPost, getBandProfile } from '@/lib/cms'
+import { getSiteConfig, getPosts, getPost, getBandProfile } from '@/lib/cms'
 import type { PostSummary } from '@/types/post'
 
 const ACCENT = '#1F8F7A'
 
 export async function getStaticPaths() {
+  const siteConfig = await getSiteConfig()
+  if (siteConfig.modules['posts'] === false) return []
+
   // Fetch all pages to enumerate every post
   const allPosts: PostSummary[] = []
   let page = 1

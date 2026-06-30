@@ -1,10 +1,13 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getReleases, getRelease, getBandProfile } from '@/lib/cms'
+import { getSiteConfig, getReleases, getRelease, getBandProfile } from '@/lib/cms'
 import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
 import { fmtDate } from '@/lib/i18n'
 
 export async function getStaticPaths() {
+  const siteConfig = await getSiteConfig()
+  if (siteConfig.modules['releases'] === false) return []
+
   const releases = await getReleases('en')
   return releases.map(r => ({ params: { id: String(r.id) } }))
 }
