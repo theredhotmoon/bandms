@@ -23,10 +23,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Nginx + startup script
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY docker/start.sh   /start.sh
-RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
+# Nginx + startup scripts
+COPY docker/nginx.conf           /etc/nginx/http.d/default.conf
+COPY docker/start.sh             /start.sh
+COPY docker/rebuild-webhook.js   /docker/rebuild-webhook.js
+COPY docker/rebuild.sh           /docker/rebuild.sh
+RUN sed -i 's/\r$//' /start.sh /docker/rebuild.sh && \
+    chmod +x /start.sh /docker/rebuild.sh
 
 EXPOSE 80
 
