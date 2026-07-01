@@ -15,6 +15,7 @@ export interface SocialLink {
   member_id: number | null
   platform: SocialPlatform
   url: string
+  position: number
 }
 
 export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {

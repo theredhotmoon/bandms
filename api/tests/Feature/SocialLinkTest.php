@@ -26,15 +26,16 @@ describe('GET /api/band-profile/social-links', function () {
             ->assertJsonCount(0, 'data');
     });
 
-    it('returns band-level links ordered by platform', function () {
+    it('returns band-level links in saved position order', function () {
         $this->createProfile();
-        SocialLink::create(['profile_id' => 1, 'platform' => 'youtube',   'url' => 'https://youtube.com/test']);
-        SocialLink::create(['profile_id' => 1, 'platform' => 'instagram', 'url' => 'https://instagram.com/test']);
+        SocialLink::create(['profile_id' => 1, 'platform' => 'youtube',   'url' => 'https://youtube.com/test',   'position' => 0]);
+        SocialLink::create(['profile_id' => 1, 'platform' => 'instagram', 'url' => 'https://instagram.com/test', 'position' => 1]);
 
         $this->getJson('/api/band-profile/social-links')
             ->assertSuccessful()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.platform', 'instagram');
+            ->assertJsonPath('data.0.platform', 'youtube')
+            ->assertJsonPath('data.1.platform', 'instagram');
     });
 
     it('excludes member-scoped social links', function () {
@@ -199,6 +200,63 @@ describe('PUT /api/band-profile/social-links/{link}', function () {
             'platform' => 'spotify',
             'url'      => 'https://spotify.com/test',
         ])->assertNotFound();
+    });
+});
+
+// ── PUT /api/band-profile/social-links (sync) ─────────────────────────────────
+
+describe('PUT /api/band-profile/social-links (sync)', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    it('returns 401 without authentication', function () {
+        $this->putJson('/api/band-profile/social-links', ['links' => []])->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->putJson('/api/band-profile/social-links', ['links' => []])->assertForbidden();
+    });
+
+    it('replaces all links and preserves request order', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile/social-links', [
+            'links' => [
+                ['platform' => 'youtube',   'url' => 'https://youtube.com/test'],
+                ['platform' => 'instagram', 'url' => 'https://instagram.com/test'],
+                ['platform' => 'spotify',   'url' => 'https://spotify.com/test'],
+            ],
+        ])->assertSuccessful()
+          ->assertJsonCount(3, 'data')
+          ->assertJsonPath('data.0.platform', 'youtube')
+          ->assertJsonPath('data.1.platform', 'instagram')
+          ->assertJsonPath('data.2.platform', 'spotify');
+    });
+
+    it('stores position values matching the request index', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile/social-links', [
+            'links' => [
+                ['platform' => 'tiktok',   'url' => 'https://tiktok.com/test'],
+                ['platform' => 'facebook', 'url' => 'https://facebook.com/test'],
+            ],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('social_links', ['platform' => 'tiktok',   'position' => 0]);
+        $this->assertDatabaseHas('social_links', ['platform' => 'facebook', 'position' => 1]);
+    });
+
+    it('clears all links when links is empty', function () {
+        $this->actingAsAdmin();
+        SocialLink::create(['profile_id' => 1, 'platform' => 'spotify', 'url' => 'https://spotify.com/test', 'position' => 0]);
+
+        $this->putJson('/api/band-profile/social-links', ['links' => []])
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+
+        $this->assertDatabaseCount('social_links', 0);
     });
 });
 
