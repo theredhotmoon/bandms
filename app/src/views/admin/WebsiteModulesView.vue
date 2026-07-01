@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
+import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import type { WebsiteModule } from '@/types/website-module'
 
@@ -90,6 +91,7 @@ function onDragEnd() {
 </script>
 
 <template>
+  <AdminLayout>
   <div class="p-6 max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
       <div>
@@ -209,4 +211,5 @@ function onDragEnd() {
       </div>
     </div>
   </div>
+  </AdminLayout>
 </template>
