@@ -18,6 +18,15 @@ export async function updateModule(token: string, slug: string, enabled: boolean
   return handleResponse<{ data: WebsiteModule }>(res)
 }
 
+export async function reorderModules(token: string, slugs: string[]): Promise<WebsiteModulesResponse> {
+  const res = await fetch(`${API_BASE}/api/admin/modules/reorder`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ slugs }),
+  })
+  return handleResponse<WebsiteModulesResponse>(res)
+}
+
 export async function updateSiteSettings(token: string, autoRebuild: boolean): Promise<SiteSettings> {
   const res = await fetch(`${API_BASE}/api/admin/site/settings`, {
     method: 'PUT',

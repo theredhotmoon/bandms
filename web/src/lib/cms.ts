@@ -120,6 +120,7 @@ export const getShopCategories = () =>
 
 export interface SiteConfig {
   modules: Record<string, boolean>
+  module_order: string[]
 }
 
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -127,10 +128,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     const res = await fetch(`${BASE}/api/site-config`, {
       headers: { Accept: 'application/json' },
     })
-    if (!res.ok) return { modules: {} }
+    if (!res.ok) return { modules: {}, module_order: [] }
     return res.json() as Promise<SiteConfig>
   } catch {
     // Fail open: if API is unreachable during build, treat all modules as enabled
-    return { modules: {} }
+    return { modules: {}, module_order: [] }
   }
 }

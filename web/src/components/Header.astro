@@ -5,20 +5,29 @@ import CartIcon from './CartIcon.vue'
 
 const siteConfig = await getSiteConfig()
 
-const allLinks = [
-  { href: '/concerts', label: 'Shows',   module: 'concerts' },
-  { href: '/releases', label: 'Music',   module: 'releases' },
-  { href: '/posts',    label: 'News',    module: 'posts'    },
-  { href: '/photos',   label: 'Photos',  module: 'photos'   },
-  { href: '/videos',   label: 'Videos',  module: 'videos'   },
-  { href: '/press',    label: 'Press',   module: 'press'    },
-  { href: '/merch',    label: 'Shop',    module: 'merch'    },
-  { href: '/epk',      label: 'EPK',     module: 'epk'      },
-  { href: '/contact',  label: 'Contact', module: null       },
-]
+// All module-gated link definitions, keyed by slug for lookup.
+const MODULE_LINK_MAP: Record<string, { href: string; label: string }> = {
+  concerts: { href: '/concerts', label: 'Shows'  },
+  releases: { href: '/releases', label: 'Music'  },
+  posts:    { href: '/posts',    label: 'News'   },
+  photos:   { href: '/photos',   label: 'Photos' },
+  videos:   { href: '/videos',   label: 'Videos' },
+  press:    { href: '/press',    label: 'Press'  },
+  merch:    { href: '/merch',    label: 'Shop'   },
+  epk:      { href: '/epk',      label: 'EPK'    },
+}
 
-// module === null means always show; module === false (explicit) means hide
-const links = allLinks.filter(l => l.module === null || siteConfig.modules[l.module] !== false)
+// Build ordered links from the API's module_order (fallback: alphabetical via Object.keys).
+const orderedSlugs = siteConfig.module_order.length > 0
+  ? siteConfig.module_order
+  : Object.keys(MODULE_LINK_MAP)
+
+const moduleLinks = orderedSlugs
+  .filter(slug => MODULE_LINK_MAP[slug] && siteConfig.modules[slug] !== false)
+  .map(slug => ({ ...MODULE_LINK_MAP[slug], module: slug }))
+
+// Contact is always last and never gated.
+const links = [...moduleLinks, { href: '/contact', label: 'Contact', module: null }]
 
 const current = Astro.url.pathname
 ---

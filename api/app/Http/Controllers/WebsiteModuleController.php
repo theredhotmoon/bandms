@@ -13,15 +13,36 @@ class WebsiteModuleController extends Controller
 {
     public function siteConfig(): JsonResponse
     {
-        $modules = WebsiteModule::all(['slug', 'enabled'])
-            ->keyBy('slug')
-            ->map(fn ($m) => (bool) $m->enabled);
+        $all = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get(['slug', 'enabled', 'sort_order']);
 
-        return response()->json(['modules' => $modules]);
+        $modules      = $all->keyBy('slug')->map(fn ($m) => (bool) $m->enabled);
+        $module_order = $all->pluck('slug')->values();
+
+        return response()->json(['modules' => $modules, 'module_order' => $module_order]);
     }
 
     public function index(): JsonResponse
     {
+        $modules     = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
+        $autoRebuild = SiteSetting::get('auto_rebuild', 'false') === 'true';
+
+        return response()->json([
+            'data'         => WebsiteModuleResource::collection($modules),
+            'auto_rebuild' => $autoRebuild,
+        ]);
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'slugs'   => ['required', 'array'],
+            'slugs.*' => ['required', 'string'],
+        ]);
+
+        foreach ($data['slugs'] as $index => $slug) {
+            WebsiteModule::where('slug', $slug)->update(['sort_order' => $index]);
+        }
+
         $modules     = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
         $autoRebuild = SiteSetting::get('auto_rebuild', 'false') === 'true';
 
