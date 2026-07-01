@@ -20,6 +20,18 @@ it('returns enabled module map on site-config', function () {
         ->assertJsonPath('modules.videos', false);
 });
 
+it('returns module_order sorted by sort_order on site-config', function () {
+    WebsiteModule::create(['slug' => 'releases', 'display_name' => 'Releases', 'enabled' => true, 'sort_order' => 0]);
+    WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
+    WebsiteModule::create(['slug' => 'news',     'display_name' => 'News',     'enabled' => true, 'sort_order' => 2]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_order.0', 'releases')
+        ->assertJsonPath('module_order.1', 'concerts')
+        ->assertJsonPath('module_order.2', 'news');
+});
+
 it('returns empty modules map when no modules seeded', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
@@ -191,4 +203,36 @@ it('returns rebuild status from webhook', function () {
 
 it('requires auth for rebuild status', function () {
     $this->getJson('/api/admin/site/rebuild/status')->assertUnauthorized();
+});
+
+// ── PUT /api/admin/modules/reorder ────────────────────────────────────────────
+
+it('reorders modules by the given slug array', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 0]);
+    WebsiteModule::create(['slug' => 'releases', 'display_name' => 'Releases', 'enabled' => true, 'sort_order' => 1]);
+    WebsiteModule::create(['slug' => 'news',     'display_name' => 'News',     'enabled' => true, 'sort_order' => 2]);
+
+    $this->putJson('/api/admin/modules/reorder', [
+        'slugs' => ['news', 'concerts', 'releases'],
+    ])->assertOk()
+      ->assertJsonPath('data.0.slug', 'news')
+      ->assertJsonPath('data.1.slug', 'concerts')
+      ->assertJsonPath('data.2.slug', 'releases');
+
+    $this->assertDatabaseHas('website_modules', ['slug' => 'news',     'sort_order' => 0]);
+    $this->assertDatabaseHas('website_modules', ['slug' => 'concerts', 'sort_order' => 1]);
+    $this->assertDatabaseHas('website_modules', ['slug' => 'releases', 'sort_order' => 2]);
+});
+
+it('requires auth to reorder modules', function () {
+    $this->putJson('/api/admin/modules/reorder', ['slugs' => []])->assertUnauthorized();
+});
+
+it('forbids non-admin from reordering modules', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+    $this->putJson('/api/admin/modules/reorder', ['slugs' => []])->assertForbidden();
 });

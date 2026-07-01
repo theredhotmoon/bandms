@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import type { WebsiteModule } from '@/types/website-module'
 
-const { query, rebuildStatusQuery, toggleModule, setAutoRebuild, rebuild } = useWebsiteModules()
+const { query, rebuildStatusQuery, toggleModule, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
-const modules     = computed(() => query.data.value?.data ?? [])
 const autoRebuild = computed(() => query.data.value?.auto_rebuild ?? false)
 
 const rebuildStatus  = computed(() => rebuildStatusQuery.data.value?.status ?? 'idle')
@@ -43,12 +43,59 @@ const showBar = computed(() =>
   rebuildStatus.value === 'done'     ||
   rebuildStatus.value === 'error'
 )
+
+// ── Draggable ordered list ────────────────────────────────────────────────────
+
+const localModules = ref<WebsiteModule[]>([])
+
+watch(() => query.data.value?.data, (data) => {
+  if (data) localModules.value = [...data]
+}, { immediate: true, deep: false })
+
+let dragFrom = -1
+const dragOverIndex = ref(-1)
+
+function onDragStart(index: number, event: DragEvent) {
+  dragFrom = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(index: number, event: DragEvent) {
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverIndex.value = index
+}
+
+function onDrop(toIndex: number, event: DragEvent) {
+  event.preventDefault()
+  dragOverIndex.value = -1
+  if (dragFrom === -1 || dragFrom === toIndex) { dragFrom = -1; return }
+
+  const next = [...localModules.value]
+  const [moved] = next.splice(dragFrom, 1)
+  next.splice(toIndex, 0, moved)
+  localModules.value = next
+  dragFrom = -1
+
+  reorder.mutate(next.map((m) => m.slug))
+}
+
+function onDragEnd() {
+  dragFrom = -1
+  dragOverIndex.value = -1
+}
 </script>
 
 <template>
-  <div class="p-6 max-w-5xl mx-auto">
+  <div class="p-6 max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
-      <h1 class="text-2xl font-bold text-white">Website Modules</h1>
+      <div>
+        <h1 class="text-2xl font-bold text-white">Website Modules</h1>
+        <p class="text-sm text-zinc-500 mt-1">Drag rows to set the nav order. Order takes effect after a rebuild.</p>
+      </div>
 
       <div class="flex items-center gap-4 flex-wrap">
         <label class="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer select-none">
@@ -106,27 +153,50 @@ const showBar = computed(() =>
       Failed to load modules. Check the API connection.
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div v-else class="flex flex-col gap-2">
       <div
-        v-for="mod in modules"
+        v-for="(mod, i) in localModules"
         :key="mod.slug"
-        class="rounded-xl border bg-zinc-900 p-5 flex flex-col gap-3 transition-colors"
-        :class="mod.enabled ? 'border-zinc-700' : 'border-zinc-800 opacity-60'"
+        class="flex items-center gap-3 rounded-xl border bg-zinc-900 px-4 py-3 transition-colors select-none"
+        :class="{
+          'border-zinc-700': mod.enabled,
+          'border-zinc-800 opacity-60': !mod.enabled,
+          'border-t-2 border-t-teal-500': dragOverIndex === i,
+        }"
+        draggable="true"
+        @dragstart="onDragStart(i, $event)"
+        @dragover="onDragOver(i, $event)"
+        @drop="onDrop(i, $event)"
+        @dragend="onDragEnd"
       >
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <h3 class="font-semibold text-white">{{ mod.display_name }}</h3>
-            <p class="text-xs text-zinc-500 mt-0.5">/{{ mod.slug === 'tech-rider' ? 'rider' : mod.slug }}</p>
-          </div>
-          <span
-            class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0"
-            :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
-          >
-            {{ mod.enabled ? 'Live' : 'Disabled' }}
-          </span>
+        <!-- Drag handle -->
+        <span class="cursor-grab text-zinc-600 hover:text-zinc-400 active:cursor-grabbing flex-shrink-0" aria-hidden="true">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+            <circle cx="3" cy="2"  r="1.5" /><circle cx="7" cy="2"  r="1.5" />
+            <circle cx="3" cy="7"  r="1.5" /><circle cx="7" cy="7"  r="1.5" />
+            <circle cx="3" cy="12" r="1.5" /><circle cx="7" cy="12" r="1.5" />
+          </svg>
+        </span>
+
+        <!-- Position number -->
+        <span class="w-5 text-center text-xs font-mono text-zinc-500 flex-shrink-0">{{ i + 1 }}</span>
+
+        <!-- Module info -->
+        <div class="flex-1 min-w-0">
+          <span class="font-semibold text-white text-sm">{{ mod.display_name }}</span>
+          <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : mod.slug }}</span>
         </div>
 
-        <label class="flex items-center gap-2 cursor-pointer text-sm text-zinc-300 mt-auto">
+        <!-- Status badge -->
+        <span
+          class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+          :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
+        >
+          {{ mod.enabled ? 'Live' : 'Off' }}
+        </span>
+
+        <!-- Toggle -->
+        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
           <input
             type="checkbox"
             class="w-4 h-4 rounded accent-teal-500"

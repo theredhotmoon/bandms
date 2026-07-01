@@ -367,6 +367,7 @@ Route::middleware('auth:api')->group(function () {
 
         // Website modules
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
+        Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
         Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
         Route::put('/admin/site/settings', [WebsiteModuleController::class, 'updateSettings'])->name('api.admin.site.settings');
         Route::post('/admin/site/rebuild', [WebsiteModuleController::class, 'rebuild'])->name('api.admin.site.rebuild');
