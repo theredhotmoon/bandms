@@ -1,6 +1,8 @@
 import type { WebsiteModule, WebsiteModulesResponse, SiteSettings, RebuildStatus } from '@/types/website-module'
 import { API_BASE, authHeaders, handleResponse, assertSafeSlug } from './client'
 
+const REBUILD_STATUSES = ['idle', 'building', 'done', 'error', 'unknown'] as const
+
 export async function fetchModules(token: string): Promise<WebsiteModulesResponse> {
   const res = await fetch(`${API_BASE}/api/admin/modules`, { headers: authHeaders(token) })
   return handleResponse<WebsiteModulesResponse>(res)
@@ -25,15 +27,23 @@ export async function updateSiteSettings(token: string, autoRebuild: boolean): P
   return handleResponse<SiteSettings>(res)
 }
 
-export async function triggerRebuild(token: string): Promise<{ status: string }> {
+export async function triggerRebuild(token: string): Promise<Pick<RebuildStatus, 'status'>> {
   const res = await fetch(`${API_BASE}/api/admin/site/rebuild`, {
     method: 'POST',
     headers: authHeaders(token),
   })
-  return handleResponse<{ status: string }>(res)
+  return handleResponse<Pick<RebuildStatus, 'status'>>(res)
 }
 
 export async function fetchRebuildStatus(token: string): Promise<RebuildStatus> {
   const res = await fetch(`${API_BASE}/api/admin/site/rebuild/status`, { headers: authHeaders(token) })
-  return handleResponse<RebuildStatus>(res)
+  const raw = await handleResponse<Record<string, unknown>>(res)
+  const status = REBUILD_STATUSES.includes(raw.status as RebuildStatus['status'])
+    ? (raw.status as RebuildStatus['status'])
+    : 'unknown'
+  return {
+    status,
+    startedAt: typeof raw.startedAt === 'number' ? raw.startedAt : null,
+    finishedAt: typeof raw.finishedAt === 'number' ? raw.finishedAt : null,
+  }
 }

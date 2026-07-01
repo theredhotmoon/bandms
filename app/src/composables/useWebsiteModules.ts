@@ -9,11 +9,13 @@ export function useWebsiteModules() {
   const query = useQuery({
     queryKey: ['website-modules'],
     queryFn: () => fetchModules(token.value!),
+    enabled: () => token.value !== null,
   })
 
   const rebuildStatusQuery = useQuery({
     queryKey: ['rebuild-status'],
     queryFn: () => fetchRebuildStatus(token.value!),
+    enabled: () => token.value !== null,
     refetchInterval: (query) => query.state.data?.status === 'building' ? 2000 : false,
     staleTime: 0,
   })

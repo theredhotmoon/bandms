@@ -12,12 +12,18 @@ function triggerRebuild() {
   state = { status: 'building', startedAt, finishedAt: null }
   console.log('[webhook] Rebuild started')
 
+  let timedOut = false
+
   const child = spawn('sh', ['/docker/rebuild.sh'], {
-    stdio: 'inherit',
-    env:   process.env,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: process.env,
   })
 
+  child.stdout.on('data', (d) => process.stdout.write(d))
+  child.stderr.on('data', (d) => process.stderr.write(d))
+
   const timer = setTimeout(() => {
+    timedOut = true
     child.kill('SIGTERM')
     state = { status: 'error', startedAt, finishedAt: Date.now() }
     console.error('[webhook] Rebuild timed out — child killed')
@@ -31,6 +37,7 @@ function triggerRebuild() {
 
   child.on('exit', (code) => {
     clearTimeout(timer)
+    if (timedOut) return
     state = { status: code === 0 ? 'done' : 'error', startedAt, finishedAt: Date.now() }
     console.log(`[webhook] Rebuild ${state.status} (exit ${code})`)
   })
