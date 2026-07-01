@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Website Module Management** — admin panel at `/admin/website-modules` to enable or disable each of the 10 public website sections (Concerts, Releases, News, Photos, Press, Videos, Shop, EPK, Tech Rider, Newsletter). Disabled modules are removed from the public site's navigation and their pages redirect to 404. Changes take effect after a rebuild.
+- **Public site hot-swap rebuild** — a Node.js webhook server inside the `web` container listens on port 3001 (Docker-internal only). Admins can trigger a full Astro SSG rebuild from the admin panel without restarting the container; a progress bar shows real-time build status (building / done / error) with elapsed time and a 5-minute timeout guard.
+- **Auto-rebuild on module changes** — a toggle in the admin panel enables automatic rebuild whenever a module's enabled state is changed.
+- **`GET /api/site-config`** — public endpoint returning the enabled/disabled state of all modules; used by the Astro build to gate pages and nav links at build time (fail-open: missing config treats all modules as enabled).
+- **`assertSafeSlug`** utility in `app/src/api/client.ts` — validates slug strings before URL interpolation, consistent with the existing `assertSafeId` guard.
 - **`SocialLinksEditor` — reusable social links component** — single Vue 3 component (`SocialLinksEditor.vue`) for managing social media links across all entities. Supports all 9 platforms (Spotify, Instagram, Facebook, YouTube, TikTok, Bandcamp, SoundCloud, Twitter/X, Website) with coloured platform indicators. Replaces the per-link CRUD UI in Band Profile (now bulk-save), the inline platform rows in Band Member form, and adds social link support to Authors & Contacts and Venues for the first time.
 - **Concert ticket platform** — full ticketing system for concerts: ticket types with sale windows, multi-tier pricing (Early Bird, Regular, VIP), per-order quantity limits, venue capacity checks, and QR-code door scanning. Integrated into the shared checkout alongside merch.
 - **Concert slugs** — concerts now have bilingual URL slugs (`slug_en`, `slug_pl`) used by the Astro public site's concert detail pages (`/concerts/[slug]`).

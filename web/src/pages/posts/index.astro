@@ -1,4 +1,8 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules['posts'] === false) return Astro.redirect('/404', 307)
+
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsFilter from '@/components/NewsFilter.vue'
 import { getPosts, getBandProfile } from '@/lib/cms'

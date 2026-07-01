@@ -1,4 +1,8 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules['epk'] === false) return Astro.redirect('/404', 307)
+
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import SocialLinks from '@/components/SocialLinks.astro'
 import { getEpk, getBandProfile } from '@/lib/cms'

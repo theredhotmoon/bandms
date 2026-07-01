@@ -115,3 +115,22 @@ export const getShopItem = (slug: string) =>
 
 export const getShopCategories = () =>
   get<ShopCategory[]>('/shop-categories')
+
+// ── Site config ───────────────────────────────────────────────────────────────
+
+export interface SiteConfig {
+  modules: Record<string, boolean>
+}
+
+export async function getSiteConfig(): Promise<SiteConfig> {
+  try {
+    const res = await fetch(`${BASE}/api/site-config`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return { modules: {} }
+    return res.json() as Promise<SiteConfig>
+  } catch {
+    // Fail open: if API is unreachable during build, treat all modules as enabled
+    return { modules: {} }
+  }
+}

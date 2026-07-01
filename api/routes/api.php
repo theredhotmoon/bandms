@@ -36,6 +36,7 @@ use App\Http\Controllers\SocialLinkController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\VenueController;
+use App\Http\Controllers\WebsiteModuleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/health', HealthCheckController::class)->name('api.health');
+Route::get('/site-config', [WebsiteModuleController::class, 'siteConfig'])->name('api.site-config');
 
 /*
 |--------------------------------------------------------------------------
@@ -362,6 +364,13 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/shop-categories', [ShopCategoryController::class, 'store'])->name('api.shop-categories.store');
         Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');
         Route::delete('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'destroy'])->name('api.shop-categories.destroy');
+
+        // Website modules
+        Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
+        Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
+        Route::put('/admin/site/settings', [WebsiteModuleController::class, 'updateSettings'])->name('api.admin.site.settings');
+        Route::post('/admin/site/rebuild', [WebsiteModuleController::class, 'rebuild'])->name('api.admin.site.rebuild');
+        Route::get('/admin/site/rebuild/status', [WebsiteModuleController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
