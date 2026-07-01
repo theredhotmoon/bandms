@@ -1,18 +1,24 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
 import MobileNav from './MobileNav.vue'
 import CartIcon from './CartIcon.vue'
 
-const links = [
-  { href: '/concerts', label: 'Shows' },
-  { href: '/releases', label: 'Music' },
-  { href: '/posts',    label: 'News' },
-  { href: '/photos',   label: 'Photos' },
-  { href: '/videos',   label: 'Videos' },
-  { href: '/press',    label: 'Press' },
-  { href: '/merch',    label: 'Shop' },
-  { href: '/epk',      label: 'EPK' },
-  { href: '/contact',  label: 'Contact' },
+const siteConfig = await getSiteConfig()
+
+const allLinks = [
+  { href: '/concerts', label: 'Shows',   module: 'concerts' },
+  { href: '/releases', label: 'Music',   module: 'releases' },
+  { href: '/posts',    label: 'News',    module: 'posts'    },
+  { href: '/photos',   label: 'Photos',  module: 'photos'   },
+  { href: '/videos',   label: 'Videos',  module: 'videos'   },
+  { href: '/press',    label: 'Press',   module: 'press'    },
+  { href: '/merch',    label: 'Shop',    module: 'merch'    },
+  { href: '/epk',      label: 'EPK',     module: 'epk'      },
+  { href: '/contact',  label: 'Contact', module: null       },
 ]
+
+// module === null means always show; module === false (explicit) means hide
+const links = allLinks.filter(l => l.module === null || siteConfig.modules[l.module] !== false)
 
 const current = Astro.url.pathname
 ---

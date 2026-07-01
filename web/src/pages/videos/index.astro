@@ -1,4 +1,8 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules['videos'] === false) return Astro.redirect('/404', 307)
+
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getMusicVideos, getBandProfile } from '@/lib/cms'
 import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, fmtDateShort } from '@/lib/i18n'

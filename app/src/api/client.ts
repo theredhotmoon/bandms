@@ -67,4 +67,11 @@ export function assertSafeId(id: unknown): asserts id is number {
   }
 }
 
+/** Throws if slug is not a safe non-empty string (prevents URL injection). */
+export function assertSafeSlug(slug: unknown): asserts slug is string {
+  if (typeof slug !== 'string' || slug.trim() === '' || /[/?#\\]/.test(slug)) {
+    throw new Error(`Invalid slug: ${String(slug)}`)
+  }
+}
+
 export { API_BASE }

@@ -1,10 +1,13 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
-import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
+import { getSiteConfig, getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
 import { fmtTime, isUpcoming } from '@/lib/i18n'
 
 export async function getStaticPaths() {
+  const siteConfig = await getSiteConfig()
+  if (siteConfig.modules['concerts'] === false) return []
+
   const concerts = await getConcerts()
   const summaries = concerts.map(x => ({
     id: x.id,

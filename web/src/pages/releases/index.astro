@@ -1,4 +1,8 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules['releases'] === false) return Astro.redirect('/404', 307)
+
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ReleaseCard from '@/components/ReleaseCard.astro'
 import { getReleases, getBandProfile } from '@/lib/cms'
