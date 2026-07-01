@@ -370,6 +370,7 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
         Route::put('/admin/site/settings', [WebsiteModuleController::class, 'updateSettings'])->name('api.admin.site.settings');
         Route::post('/admin/site/rebuild', [WebsiteModuleController::class, 'rebuild'])->name('api.admin.site.rebuild');
+        Route::get('/admin/site/rebuild/status', [WebsiteModuleController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');

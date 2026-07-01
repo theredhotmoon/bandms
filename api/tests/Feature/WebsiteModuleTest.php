@@ -143,3 +143,52 @@ it('triggers rebuild on demand', function () {
 it('requires auth to trigger rebuild', function () {
     $this->postJson('/api/admin/site/rebuild')->assertUnauthorized();
 });
+
+// ── Role-authorization (non-admin authenticated users) ───────────────────────
+
+it('forbids a non-admin from listing modules', function () {
+    $member = User::factory()->create(['role' => 'member']);
+    Passport::actingAs($member);
+
+    $this->getJson('/api/admin/modules')->assertForbidden();
+});
+
+it('forbids a non-admin from updating a module', function () {
+    $member = User::factory()->create(['role' => 'member']);
+    Passport::actingAs($member);
+
+    WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/concerts', ['enabled' => false])->assertForbidden();
+});
+
+it('forbids a non-admin from triggering rebuild', function () {
+    $member = User::factory()->create(['role' => 'member']);
+    Passport::actingAs($member);
+
+    $this->postJson('/api/admin/site/rebuild')->assertForbidden();
+});
+
+it('forbids a non-admin from reading rebuild status', function () {
+    $member = User::factory()->create(['role' => 'member']);
+    Passport::actingAs($member);
+
+    $this->getJson('/api/admin/site/rebuild/status')->assertForbidden();
+});
+
+// ── GET /api/admin/site/rebuild/status ────────────────────────────────────────
+
+it('returns rebuild status from webhook', function () {
+    Http::fake(['http://web:3001/status' => Http::response(['status' => 'idle', 'startedAt' => null, 'finishedAt' => null], 200)]);
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    $this->getJson('/api/admin/site/rebuild/status')
+        ->assertOk()
+        ->assertJsonPath('status', 'idle');
+});
+
+it('requires auth for rebuild status', function () {
+    $this->getJson('/api/admin/site/rebuild/status')->assertUnauthorized();
+});

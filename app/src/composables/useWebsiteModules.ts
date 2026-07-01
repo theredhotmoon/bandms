@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { fetchModules, updateModule, updateSiteSettings, triggerRebuild } from '@/api/website-modules'
+import { fetchModules, updateModule, updateSiteSettings, triggerRebuild, fetchRebuildStatus } from '@/api/website-modules'
 import { useAuth } from './useAuth'
 
 export function useWebsiteModules() {
@@ -9,6 +9,13 @@ export function useWebsiteModules() {
   const query = useQuery({
     queryKey: ['website-modules'],
     queryFn: () => fetchModules(token.value!),
+  })
+
+  const rebuildStatusQuery = useQuery({
+    queryKey: ['rebuild-status'],
+    queryFn: () => fetchRebuildStatus(token.value!),
+    refetchInterval: (query) => query.state.data?.status === 'building' ? 2000 : false,
+    staleTime: 0,
   })
 
   const toggleModule = useMutation({
@@ -24,7 +31,8 @@ export function useWebsiteModules() {
 
   const rebuild = useMutation({
     mutationFn: () => triggerRebuild(token.value!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rebuild-status'] }),
   })
 
-  return { query, toggleModule, setAutoRebuild, rebuild }
+  return { query, rebuildStatusQuery, toggleModule, setAutoRebuild, rebuild }
 }

@@ -61,6 +61,26 @@ class WebsiteModuleController extends Controller
         return response()->json(['status' => 'rebuild_started']);
     }
 
+    public function rebuildStatus(): JsonResponse
+    {
+        $fallback = ['status' => 'unknown', 'startedAt' => null, 'finishedAt' => null];
+
+        try {
+            $response = Http::timeout(5)->get('http://web:3001/status');
+            if (! $response->successful()) {
+                return response()->json($fallback);
+            }
+            $body = $response->json();
+            return response()->json([
+                'status'     => $body['status']     ?? 'unknown',
+                'startedAt'  => $body['startedAt']  ?? null,
+                'finishedAt' => $body['finishedAt'] ?? null,
+            ]);
+        } catch (\Exception) {
+            return response()->json($fallback);
+        }
+    }
+
     private function triggerRebuild(): void
     {
         try {

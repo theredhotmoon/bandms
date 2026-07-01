@@ -14,3 +14,9 @@ export interface WebsiteModulesResponse {
 export interface SiteSettings {
   auto_rebuild: boolean
 }
+
+export interface RebuildStatus {
+  status: 'idle' | 'building' | 'done' | 'error' | 'unknown'
+  startedAt: number | null
+  finishedAt: number | null
+}

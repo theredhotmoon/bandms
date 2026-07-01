@@ -20,7 +20,7 @@ const groupRoutes: Record<GroupId, string[]> = {
             '/admin/tech-rider', '/admin/setlists'],
   content: ['/admin/posts', '/admin/press-releases', '/admin/pitch', '/admin/newsletter', '/admin/authors'],
   shows:   ['/admin/concerts', '/admin/tours', '/admin/venues', '/admin/door'],
-  more:    ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users'],
+  more:    ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users', '/admin/website-modules'],
 }
 
 function groupForRoute(path: string): GroupId | null {

@@ -1,5 +1,5 @@
-import type { WebsiteModule, WebsiteModulesResponse, SiteSettings } from '@/types/website-module'
-import { API_BASE, authHeaders, jsonHeaders, handleResponse } from './client'
+import type { WebsiteModule, WebsiteModulesResponse, SiteSettings, RebuildStatus } from '@/types/website-module'
+import { API_BASE, authHeaders, handleResponse, assertSafeSlug } from './client'
 
 export async function fetchModules(token: string): Promise<WebsiteModulesResponse> {
   const res = await fetch(`${API_BASE}/api/admin/modules`, { headers: authHeaders(token) })
@@ -7,9 +7,10 @@ export async function fetchModules(token: string): Promise<WebsiteModulesRespons
 }
 
 export async function updateModule(token: string, slug: string, enabled: boolean): Promise<{ data: WebsiteModule }> {
+  assertSafeSlug(slug)
   const res = await fetch(`${API_BASE}/api/admin/modules/${encodeURIComponent(slug)}`, {
     method: 'PUT',
-    headers: { ...authHeaders(token), ...jsonHeaders },
+    headers: authHeaders(token),
     body: JSON.stringify({ enabled }),
   })
   return handleResponse<{ data: WebsiteModule }>(res)
@@ -18,7 +19,7 @@ export async function updateModule(token: string, slug: string, enabled: boolean
 export async function updateSiteSettings(token: string, autoRebuild: boolean): Promise<SiteSettings> {
   const res = await fetch(`${API_BASE}/api/admin/site/settings`, {
     method: 'PUT',
-    headers: { ...authHeaders(token), ...jsonHeaders },
+    headers: authHeaders(token),
     body: JSON.stringify({ auto_rebuild: autoRebuild }),
   })
   return handleResponse<SiteSettings>(res)
@@ -30,4 +31,9 @@ export async function triggerRebuild(token: string): Promise<{ status: string }>
     headers: authHeaders(token),
   })
   return handleResponse<{ status: string }>(res)
+}
+
+export async function fetchRebuildStatus(token: string): Promise<RebuildStatus> {
+  const res = await fetch(`${API_BASE}/api/admin/site/rebuild/status`, { headers: authHeaders(token) })
+  return handleResponse<RebuildStatus>(res)
 }
