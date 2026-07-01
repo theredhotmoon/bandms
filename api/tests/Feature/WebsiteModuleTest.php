@@ -347,6 +347,9 @@ it('clears custom_name when null values sent', function () {
         ->assertOk()
         ->assertJsonPath('data.custom_name.en', null)
         ->assertJsonPath('data.custom_name.pl', null);
+
+    $fresh = WebsiteModule::where('slug', 'shop')->first();
+    expect($fresh->getTranslation('custom_name', 'en', false))->toEqual('');
 });
 
 // ── site-config module_config ─────────────────────────────────────────────────
@@ -367,6 +370,16 @@ it('falls back to display_name when custom_name absent', function () {
     $this->getJson('/api/site-config?lang=en')
         ->assertOk()
         ->assertJsonPath('module_config.shop.label', 'Shop');
+});
+
+it('returns pl label when lang=pl requested', function () {
+    $module = WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $module->setTranslations('custom_name', ['en' => 'Merch', 'pl' => 'Sklep']);
+    $module->save();
+
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertOk()
+        ->assertJsonPath('module_config.shop.label', 'Sklep');
 });
 
 it('returns per_page in module_config', function () {
