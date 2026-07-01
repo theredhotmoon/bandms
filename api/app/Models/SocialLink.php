@@ -10,7 +10,7 @@ class SocialLink extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['profile_id', 'member_id', 'author_id', 'venue_id', 'platform', 'url'];
+    protected $fillable = ['profile_id', 'member_id', 'author_id', 'venue_id', 'platform', 'url', 'position'];
 
     public function profile(): BelongsTo
     {

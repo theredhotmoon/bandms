@@ -17,7 +17,7 @@ class SocialLinkController extends Controller
 
     public function index(): ResourceCollection
     {
-        $links = $this->profile()->socialLinks()->orderBy('platform')->get();
+        $links = $this->profile()->socialLinks()->orderBy('position')->get();
 
         return SocialLinkResource::collection($links);
     }
@@ -64,12 +64,12 @@ class SocialLinkController extends Controller
         $profile = $this->profile();
         $profile->socialLinks()->delete();
 
-        foreach ($data['links'] ?? [] as $link) {
-            $profile->socialLinks()->create($link);
+        foreach ($data['links'] ?? [] as $index => $link) {
+            $profile->socialLinks()->create(array_merge($link, ['position' => $index]));
         }
 
         return SocialLinkResource::collection(
-            $profile->socialLinks()->orderBy('platform')->get()
+            $profile->socialLinks()->orderBy('position')->get()
         );
     }
 }
