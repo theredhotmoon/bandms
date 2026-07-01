@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Social link ordering** — drag handles on each row of the `SocialLinksEditor` let admins reorder social links; the custom order is persisted to the database (new `position` column on `social_links`) and reflected on the public site after a rebuild.
 - **Website Module Management** — admin panel at `/admin/website-modules` to enable or disable each of the 10 public website sections (Concerts, Releases, News, Photos, Press, Videos, Shop, EPK, Tech Rider, Newsletter). Disabled modules are removed from the public site's navigation and their pages redirect to 404. Changes take effect after a rebuild.
 - **Public site hot-swap rebuild** — a Node.js webhook server inside the `web` container listens on port 3001 (Docker-internal only). Admins can trigger a full Astro SSG rebuild from the admin panel without restarting the container; a progress bar shows real-time build status (building / done / error) with elapsed time and a 5-minute timeout guard.
 - **Auto-rebuild on module changes** — a toggle in the admin panel enables automatic rebuild whenever a module's enabled state is changed.

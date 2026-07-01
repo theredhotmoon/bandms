@@ -15,6 +15,7 @@ class SocialLinkResource extends JsonResource
             'member_id' => $this->member_id,
             'platform'  => $this->platform,
             'url'       => $this->url,
+            'position'  => $this->position,
         ];
     }
 }
