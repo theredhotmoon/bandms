@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { fetchModules, updateModule, reorderModules, updateSiteSettings, triggerRebuild, fetchRebuildStatus } from '@/api/website-modules'
+import {
+  fetchModules,
+  updateModule,
+  updateModuleSettings,
+  reorderModules,
+  updateSiteSettings,
+  triggerRebuild,
+  fetchRebuildStatus,
+} from '@/api/website-modules'
 import { useAuth } from './useAuth'
 
 export function useWebsiteModules() {
@@ -26,6 +34,20 @@ export function useWebsiteModules() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
   })
 
+  const updateSettings = useMutation({
+    mutationFn: ({
+      slug,
+      payload,
+    }: {
+      slug: string
+      payload: {
+        custom_name?: { en: string | null; pl: string | null }
+        per_page?: number | null
+      }
+    }) => updateModuleSettings(token.value!, slug, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
+  })
+
   const setAutoRebuild = useMutation({
     mutationFn: (autoRebuild: boolean) => updateSiteSettings(token.value!, autoRebuild),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
@@ -41,5 +63,5 @@ export function useWebsiteModules() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rebuild-status'] }),
   })
 
-  return { query, rebuildStatusQuery, toggleModule, reorder, setAutoRebuild, rebuild }
+  return { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild }
 }
