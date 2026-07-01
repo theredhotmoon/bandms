@@ -236,3 +236,143 @@ it('forbids non-admin from reordering modules', function () {
 
     $this->putJson('/api/admin/modules/reorder', ['slugs' => []])->assertForbidden();
 });
+
+// ── custom_name + per_page ────────────────────────────────────────────────────
+
+it('returns custom_name and per_page in admin module list', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    $module = WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1, 'per_page' => 12]);
+    $module->setTranslations('custom_name', ['en' => 'Merch', 'pl' => 'Sklep']);
+    $module->save();
+
+    $this->getJson('/api/admin/modules')
+        ->assertOk()
+        ->assertJsonPath('data.0.custom_name.en', 'Merch')
+        ->assertJsonPath('data.0.custom_name.pl', 'Sklep')
+        ->assertJsonPath('data.0.per_page', 12);
+});
+
+it('saves custom_name translations', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/shop', [
+        'custom_name' => ['en' => 'Merch', 'pl' => 'Sklep'],
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.custom_name.en', 'Merch')
+        ->assertJsonPath('data.custom_name.pl', 'Sklep');
+
+    $module = WebsiteModule::where('slug', 'shop')->first();
+    expect($module->getTranslation('custom_name', 'en'))->toBe('Merch');
+    expect($module->getTranslation('custom_name', 'pl'))->toBe('Sklep');
+});
+
+it('saves per_page', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'news', 'display_name' => 'News', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/news', ['per_page' => 12])
+        ->assertOk()
+        ->assertJsonPath('data.per_page', 12);
+
+    expect(WebsiteModule::where('slug', 'news')->value('per_page'))->toBe(12);
+});
+
+it('clears per_page when null is sent', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'news', 'display_name' => 'News', 'enabled' => true, 'sort_order' => 1, 'per_page' => 10]);
+
+    $this->putJson('/api/admin/modules/news', ['per_page' => null])
+        ->assertOk()
+        ->assertJsonPath('data.per_page', null);
+
+    expect(WebsiteModule::where('slug', 'news')->value('per_page'))->toBeNull();
+});
+
+it('rejects invalid per_page value', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'news', 'display_name' => 'News', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/news', ['per_page' => 7])->assertUnprocessable();
+});
+
+it('rejects custom_name.en exceeding 80 characters', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'news', 'display_name' => 'News', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/news', [
+        'custom_name' => ['en' => str_repeat('a', 81)],
+    ])->assertUnprocessable();
+});
+
+it('allows enabled update alongside custom_name', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/concerts', [
+        'enabled'     => false,
+        'custom_name' => ['en' => 'Gigs'],
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.enabled', false)
+        ->assertJsonPath('data.custom_name.en', 'Gigs');
+});
+
+it('clears custom_name when null values sent', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+
+    $module = WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $module->setTranslations('custom_name', ['en' => 'Merch', 'pl' => 'Sklep']);
+    $module->save();
+
+    $this->putJson('/api/admin/modules/shop', [
+        'custom_name' => ['en' => null, 'pl' => null],
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.custom_name.en', null)
+        ->assertJsonPath('data.custom_name.pl', null);
+});
+
+// ── site-config module_config ─────────────────────────────────────────────────
+
+it('returns module_config with label from custom_name', function () {
+    $module = WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $module->setTranslations('custom_name', ['en' => 'Merch']);
+    $module->save();
+
+    $this->getJson('/api/site-config?lang=en')
+        ->assertOk()
+        ->assertJsonPath('module_config.shop.label', 'Merch');
+});
+
+it('falls back to display_name when custom_name absent', function () {
+    WebsiteModule::create(['slug' => 'shop', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->getJson('/api/site-config?lang=en')
+        ->assertOk()
+        ->assertJsonPath('module_config.shop.label', 'Shop');
+});
+
+it('returns per_page in module_config', function () {
+    WebsiteModule::create(['slug' => 'news', 'display_name' => 'News', 'enabled' => true, 'sort_order' => 1, 'per_page' => 12]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.news.per_page', 12);
+});
