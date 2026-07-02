@@ -12,15 +12,16 @@ async function handleLogout() {
   router.push('/login')
 }
 
-type GroupId = 'band' | 'content' | 'shows' | 'more'
+type GroupId = 'band' | 'content' | 'shows' | 'more' | 'pageconfig'
 
 const groupRoutes: Record<GroupId, string[]> = {
-  band:    ['/admin/my-profile', '/admin/my-setups', '/admin/band-profile', '/admin/band-members',
-            '/admin/releases', '/admin/music-videos', '/admin/photos', '/admin/band-calendar',
-            '/admin/tech-rider', '/admin/setlists'],
-  content: ['/admin/posts', '/admin/press-releases', '/admin/pitch', '/admin/newsletter', '/admin/authors'],
-  shows:   ['/admin/concerts', '/admin/tours', '/admin/venues', '/admin/door'],
-  more:    ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users', '/admin/website-modules'],
+  band:       ['/admin/my-profile', '/admin/my-setups', '/admin/band-profile', '/admin/band-members',
+               '/admin/releases', '/admin/music-videos', '/admin/photos', '/admin/band-calendar',
+               '/admin/tech-rider', '/admin/setlists'],
+  content:    ['/admin/posts', '/admin/press-releases', '/admin/pitch', '/admin/newsletter', '/admin/authors'],
+  shows:      ['/admin/concerts', '/admin/tours', '/admin/venues', '/admin/door'],
+  more:       ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users'],
+  pageconfig: ['/admin/website-modules'],
 }
 
 function groupForRoute(path: string): GroupId | null {
@@ -238,6 +239,23 @@ watch(() => route.path, (path) => {
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
               Users
             </RouterLink>
+          </div>
+        </template>
+
+        <!-- ── Page Configuration ─────────────────── -->
+        <template v-if="isAdmin">
+          <button
+            class="accordion-header"
+            :class="{ 'accordion-header--active': isGroupActive('pageconfig') }"
+            @click="toggleGroup('pageconfig')"
+          >
+            <span class="accordion-title">
+              <span v-if="isGroupActive('pageconfig') && !openGroups.has('pageconfig')" class="active-dot" />
+              Page Configuration
+            </span>
+            <svg class="chevron" :class="{ 'chevron--open': openGroups.has('pageconfig') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div v-if="openGroups.has('pageconfig')" class="accordion-body">
             <RouterLink to="/admin/website-modules" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="4" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="3" y="10" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="4" rx="1"/><rect x="3" y="17" width="7" height="4" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/></svg>
               Website Modules

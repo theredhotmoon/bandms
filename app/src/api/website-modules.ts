@@ -56,3 +56,20 @@ export async function fetchRebuildStatus(token: string): Promise<RebuildStatus> 
     finishedAt: typeof raw.finishedAt === 'number' ? raw.finishedAt : null,
   }
 }
+
+export async function updateModuleSettings(
+  token: string,
+  slug: string,
+  payload: {
+    custom_name?: { en: string | null; pl: string | null }
+    per_page?: number | null
+  },
+): Promise<{ data: WebsiteModule }> {
+  assertSafeSlug(slug)
+  const res = await fetch(`${API_BASE}/api/admin/modules/${encodeURIComponent(slug)}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  return handleResponse<{ data: WebsiteModule }>(res)
+}

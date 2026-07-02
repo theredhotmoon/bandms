@@ -13,12 +13,22 @@ class WebsiteModuleController extends Controller
 {
     public function siteConfig(): JsonResponse
     {
-        $all = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get(['slug', 'enabled', 'sort_order']);
+        $locale       = app()->getLocale();
+        $all          = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
 
         $modules      = $all->keyBy('slug')->map(fn ($m) => (bool) $m->enabled);
         $module_order = $all->pluck('slug')->values();
+        $module_config = $all->keyBy('slug')->map(fn ($m) => [
+            'enabled'  => (bool) $m->enabled,
+            'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
+            'per_page' => $m->per_page,
+        ]);
 
-        return response()->json(['modules' => $modules, 'module_order' => $module_order]);
+        return response()->json([
+            'modules'       => $modules,
+            'module_order'  => $module_order,
+            'module_config' => $module_config,
+        ]);
     }
 
     public function index(): JsonResponse
@@ -56,8 +66,29 @@ class WebsiteModuleController extends Controller
     {
         $module = WebsiteModule::where('slug', $slug)->firstOrFail();
 
-        $validated = $request->validate(['enabled' => 'required|boolean']);
-        $module->update($validated);
+        $validated = $request->validate([
+            'enabled'        => ['sometimes', 'boolean'],
+            'custom_name.en' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'custom_name.pl' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'per_page'       => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
+        ]);
+
+        if (array_key_exists('enabled', $validated)) {
+            $module->enabled = $validated['enabled'];
+        }
+
+        if (array_key_exists('custom_name', $validated)) {
+            $module->setTranslations('custom_name', [
+                'en' => ($validated['custom_name']['en'] ?? null) ?: null,
+                'pl' => ($validated['custom_name']['pl'] ?? null) ?: null,
+            ]);
+        }
+
+        if (array_key_exists('per_page', $validated)) {
+            $module->per_page = $validated['per_page'];
+        }
+
+        $module->save();
 
         if (SiteSetting::get('auto_rebuild', 'false') === 'true') {
             $this->triggerRebuild();
