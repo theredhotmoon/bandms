@@ -15,8 +15,8 @@ class WebsiteModuleResource extends JsonResource
             'slug'         => $this->slug,
             'display_name' => $this->display_name,
             'custom_name'  => [
-                'en' => $translations['en'] ?? null,
-                'pl' => $translations['pl'] ?? null,
+                'en' => ($translations['en'] ?? null) ?: null,
+                'pl' => ($translations['pl'] ?? null) ?: null,
             ],
             'per_page'     => $this->per_page,
             'enabled'      => (bool) $this->enabled,
