@@ -4,7 +4,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import type { WebsiteModule } from '@/types/website-module'
 
-const { query, rebuildStatusQuery, toggleModule, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
+const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
 const autoRebuild = computed(() => query.data.value?.auto_rebuild ?? false)
 
@@ -88,6 +88,43 @@ function onDragEnd() {
   dragFrom = -1
   dragOverIndex.value = -1
 }
+
+// ── Inline edit ───────────────────────────────────────────────────────────────
+
+const LIST_SLUGS       = new Set(['news', 'concerts', 'photos', 'press', 'videos', 'shop'])
+const PER_PAGE_OPTIONS = [6, 9, 10, 12, 15, 20, 24] as const
+
+const editingSlug  = ref<string | null>(null)
+const draftNameEn  = ref('')
+const draftNamePl  = ref('')
+const draftPerPage = ref<number | null>(null)
+
+function startEdit(mod: WebsiteModule) {
+  editingSlug.value  = mod.slug
+  draftNameEn.value  = mod.custom_name?.en ?? ''
+  draftNamePl.value  = mod.custom_name?.pl ?? ''
+  draftPerPage.value = mod.per_page ?? null
+}
+
+function cancelEdit() {
+  editingSlug.value = null
+}
+
+function saveEdit(slug: string) {
+  updateSettings.mutate(
+    {
+      slug,
+      payload: {
+        custom_name: {
+          en: draftNameEn.value.trim() || null,
+          pl: draftNamePl.value.trim() || null,
+        },
+        per_page: draftPerPage.value,
+      },
+    },
+    { onSuccess: () => { editingSlug.value = null } },
+  )
+}
 </script>
 
 <template>
@@ -159,55 +196,138 @@ function onDragEnd() {
       <div
         v-for="(mod, i) in localModules"
         :key="mod.slug"
-        class="flex items-center gap-3 rounded-xl border bg-zinc-900 px-4 py-3 transition-colors select-none"
+        class="rounded-xl border bg-zinc-900 transition-colors select-none overflow-hidden"
         :class="{
           'border-zinc-700': mod.enabled,
-          'border-zinc-800 opacity-60': !mod.enabled,
+          'border-zinc-800': !mod.enabled,
           'border-t-2 border-t-teal-500': dragOverIndex === i,
         }"
-        draggable="true"
-        @dragstart="onDragStart(i, $event)"
-        @dragover="onDragOver(i, $event)"
-        @drop="onDrop(i, $event)"
-        @dragend="onDragEnd"
       >
-        <!-- Drag handle -->
-        <span class="cursor-grab text-zinc-600 hover:text-zinc-400 active:cursor-grabbing flex-shrink-0" aria-hidden="true">
-          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-            <circle cx="3" cy="2"  r="1.5" /><circle cx="7" cy="2"  r="1.5" />
-            <circle cx="3" cy="7"  r="1.5" /><circle cx="7" cy="7"  r="1.5" />
-            <circle cx="3" cy="12" r="1.5" /><circle cx="7" cy="12" r="1.5" />
-          </svg>
-        </span>
+        <!-- ── Row ── -->
+        <div
+          class="flex items-center gap-3 px-4 transition-colors"
+          :class="mod.enabled ? 'py-3' : 'py-1.5'"
+          draggable="true"
+          @dragstart="onDragStart(i, $event)"
+          @dragover="onDragOver(i, $event)"
+          @drop="onDrop(i, $event)"
+          @dragend="onDragEnd"
+        >
+          <!-- Drag handle -->
+          <span class="cursor-grab text-zinc-600 hover:text-zinc-400 active:cursor-grabbing flex-shrink-0" aria-hidden="true">
+            <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+              <circle cx="3" cy="2"  r="1.5" /><circle cx="7" cy="2"  r="1.5" />
+              <circle cx="3" cy="7"  r="1.5" /><circle cx="7" cy="7"  r="1.5" />
+              <circle cx="3" cy="12" r="1.5" /><circle cx="7" cy="12" r="1.5" />
+            </svg>
+          </span>
 
-        <!-- Position number -->
-        <span class="w-5 text-center text-xs font-mono text-zinc-500 flex-shrink-0">{{ i + 1 }}</span>
+          <!-- Position number -->
+          <span class="w-5 text-center text-xs font-mono text-zinc-500 flex-shrink-0">{{ i + 1 }}</span>
 
-        <!-- Module info -->
-        <div class="flex-1 min-w-0">
-          <span class="font-semibold text-white text-sm">{{ mod.display_name }}</span>
-          <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : mod.slug }}</span>
+          <!-- Module info -->
+          <div class="flex-1 min-w-0">
+            <span
+              class="font-semibold text-sm"
+              :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
+            >{{ mod.custom_name?.en || mod.display_name }}</span>
+            <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
+            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : mod.slug }}</span>
+          </div>
+
+          <!-- Status badge -->
+          <span
+            class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+            :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
+          >
+            {{ mod.enabled ? 'Live' : 'Off' }}
+          </span>
+
+          <!-- Edit button -->
+          <button
+            class="flex-shrink-0 p-1 rounded transition-colors"
+            :class="editingSlug === mod.slug ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400'"
+            :aria-label="`Edit ${mod.display_name} settings`"
+            @click="editingSlug === mod.slug ? cancelEdit() : startEdit(mod)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+
+          <!-- Toggle -->
+          <label class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
+            <input
+              type="checkbox"
+              class="w-4 h-4 rounded accent-teal-500"
+              :checked="mod.enabled"
+              :disabled="toggleModule.isPending.value"
+              @change="toggleModule.mutate({ slug: mod.slug, enabled: !mod.enabled })"
+            />
+            {{ mod.enabled ? 'Enabled' : 'Disabled' }}
+          </label>
         </div>
 
-        <!-- Status badge -->
-        <span
-          class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
-          :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
-        >
-          {{ mod.enabled ? 'Live' : 'Off' }}
-        </span>
+        <!-- ── Expand area ── -->
+        <div v-if="editingSlug === mod.slug" class="border-t border-zinc-800 px-4 py-3 flex flex-col gap-3">
 
-        <!-- Toggle -->
-        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
-          <input
-            type="checkbox"
-            class="w-4 h-4 rounded accent-teal-500"
-            :checked="mod.enabled"
-            :disabled="toggleModule.isPending.value"
-            @change="toggleModule.mutate({ slug: mod.slug, enabled: !mod.enabled })"
-          />
-          {{ mod.enabled ? 'Enabled' : 'Disabled' }}
-        </label>
+          <!-- Custom name inputs -->
+          <div class="flex flex-col gap-1.5">
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Custom name</span>
+            <div class="flex gap-3">
+              <div class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-zinc-600">EN</span>
+                <input
+                  v-model="draftNameEn"
+                  type="text"
+                  maxlength="80"
+                  :placeholder="mod.display_name"
+                  class="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 transition-colors"
+                />
+              </div>
+              <div class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-zinc-600">PL</span>
+                <input
+                  v-model="draftNamePl"
+                  type="text"
+                  maxlength="80"
+                  :placeholder="mod.display_name"
+                  class="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Per-page select (list modules only) -->
+          <div v-if="LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Items per page</span>
+            <select
+              v-model="draftPerPage"
+              class="w-44 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors"
+            >
+              <option :value="null">Default</option>
+              <option v-for="n in PER_PAGE_OPTIONS" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex justify-end gap-2 pt-1">
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+              @click="cancelEdit"
+            >
+              Cancel
+            </button>
+            <button
+              class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="updateSettings.isPending.value"
+              @click="saveEdit(mod.slug)"
+            >
+              {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
