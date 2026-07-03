@@ -1,18 +1,44 @@
 ---
+import type { Locale } from '@/types/shared'
+import LanguageSelector from '@/components/LanguageSelector.astro'
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang?: Locale
+  alternateHref?: string
+}
+
+const { lang = 'en', alternateHref } = Astro.props
+
+const [siteConfig, slugMap] = await Promise.all([
+  getSiteConfig(lang),
+  getSlugMap(),
+])
+
 const year = new Date().getFullYear()
 
-const links = [
-  { href: '/concerts', label: 'Shows' },
-  { href: '/releases', label: 'Music' },
-  { href: '/posts',    label: 'News' },
-  { href: '/photos',   label: 'Photos' },
-  { href: '/videos',   label: 'Videos' },
-  { href: '/press',    label: 'Press' },
-  { href: '/epk',      label: 'EPK' },
-  { href: '/merch',    label: 'Merch' },
-  { href: '/contact',  label: 'Contact' },
-  { href: '/newsletter', label: 'Newsletter' },
+// CMS-module nav links, ordered by module_order, filtered to enabled only.
+// contact + newsletter are always shown (not in module system).
+const MODULE_LINK_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk'] as const
+
+const orderedSlugs = siteConfig.module_order.length > 0
+  ? siteConfig.module_order
+  : MODULE_LINK_SLUGS.slice()
+
+const moduleLinks = orderedSlugs
+  .filter(s => MODULE_LINK_SLUGS.includes(s as typeof MODULE_LINK_SLUGS[number]) && siteConfig.modules[s] !== false)
+  .map(s => ({
+    href: `/${lang}/${slugMap[lang][s] ?? s}`,
+    label: siteConfig.module_config[s]?.label ?? s,
+  }))
+
+const staticLinks = [
+  { href: `/${lang}/${slugMap[lang].contact}`, label: lang === 'pl' ? 'Kontakt' : 'Contact' },
+  { href: `/${lang}/${slugMap[lang].newsletter}`, label: 'Newsletter' },
 ]
+
+const links = [...moduleLinks, ...staticLinks]
 ---
 
 <footer class="border-t border-border mt-24 py-12 text-zinc-500 text-sm">
@@ -20,7 +46,7 @@ const links = [
     <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <!-- Brand -->
       <div>
-        <a href="/" class="text-lg font-black text-white tracking-tight">Skanking Storks</a>
+        <a href={`/${lang}`} class="text-lg font-black text-white tracking-tight">Skanking Storks</a>
         <p class="mt-1 text-xs">Ska · Reggae · Good Vibes</p>
       </div>
 
@@ -32,9 +58,14 @@ const links = [
       </nav>
     </div>
 
-    <div class="mt-8 border-t border-border pt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
+    <div class="mt-8 border-t border-border pt-6 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
       <p>&copy; {year} Skanking Storks. All rights reserved.</p>
-      <a href="/admin" class="hover:text-white transition-colors">Admin</a>
+      <div class="flex items-center gap-6">
+        {alternateHref && (
+          <LanguageSelector lang={lang} alternateHref={alternateHref} />
+        )}
+        <a href="/admin" class="hover:text-white transition-colors">Admin</a>
+      </div>
     </div>
   </div>
 </footer>
