@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 interface Pin {
   id: number
-  slug: string
+  href: string
   lat: number
   lng: number
   city: string | null
@@ -55,7 +55,7 @@ function popupHTML(c: Pin, accent: string) {
     </div>
     <div style="font:400 22px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:.01em;color:${INK};">${c.city ?? ''}</div>
     <div style="font:600 13px/1.3 Archivo,sans-serif;color:#333;margin-top:4px;">${c.venue}</div>
-    <a href="/concerts/${c.slug}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">View details →</a>
+    <a href="${c.href}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">View details →</a>
   </div>`
 }
 
