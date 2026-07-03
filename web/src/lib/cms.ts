@@ -118,20 +118,27 @@ export const getShopCategories = () =>
 
 // ── Site config ───────────────────────────────────────────────────────────────
 
+export interface ModuleConfig {
+  enabled: boolean
+  label: string
+  per_page: number | null
+}
+
 export interface SiteConfig {
   modules: Record<string, boolean>
   module_order: string[]
+  module_config: Record<string, ModuleConfig>
 }
 
-export async function getSiteConfig(): Promise<SiteConfig> {
+export async function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   try {
-    const res = await fetch(`${BASE}/api/site-config`, {
+    const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
       headers: { Accept: 'application/json' },
     })
-    if (!res.ok) return { modules: {}, module_order: [] }
+    if (!res.ok) return { modules: {}, module_order: [], module_config: {} }
     return res.json() as Promise<SiteConfig>
   } catch {
     // Fail open: if API is unreachable during build, treat all modules as enabled
-    return { modules: {}, module_order: [] }
+    return { modules: {}, module_order: [], module_config: {} }
   }
 }
