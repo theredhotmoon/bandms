@@ -13,14 +13,11 @@ import EpkSection        from '@/components/sections/EpkSection.astro'
 import ContactSection    from '@/components/sections/ContactSection.astro'
 import NewsletterSection from '@/components/sections/NewsletterSection.astro'
 
-// Section types that have list pages but NOT detail pages.
-// Detail pages (concerts/[slug], posts/[id], releases/[id], merch/[slug])
-// are handled by [section]/[slug].astro.
-const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
-const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
-const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
-
 export async function getStaticPaths() {
+  const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
+  const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
+  const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
+
   const slugMap = await getSlugMap()
 
   return LOCALES.flatMap(lang =>
