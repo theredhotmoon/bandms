@@ -9,9 +9,10 @@ import ReleaseDetail   from '@/components/detail/ReleaseDetail.astro'
 import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 
 export async function getStaticPaths() {
-  const [slugMap, siteConfig, concerts, posts, releases, shopItems] = await Promise.all([
+  const [slugMap, enCfg, plCfg, concerts, posts, releases, shopItems] = await Promise.all([
     getSlugMap(),
     getSiteConfig('en'),
+    getSiteConfig('pl'),
     getConcerts(),
     getPosts('en').then(r => r.data),
     getReleases('en'),
@@ -22,8 +23,9 @@ export async function getStaticPaths() {
 
   for (const lang of LOCALES) {
     const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
+    const cfg = lang === 'en' ? enCfg : plCfg
 
-    if (siteConfig.modules.concerts !== false) {
+    if (cfg.modules.concerts !== false) {
       for (const c of concerts) {
         paths.push({
           params: { lang, section: slugMap[lang].concerts ?? 'concerts', slug: c.slug_en },
@@ -33,7 +35,7 @@ export async function getStaticPaths() {
       }
     }
 
-    if (siteConfig.modules.posts !== false) {
+    if (cfg.modules.posts !== false) {
       for (const p of posts) {
         paths.push({
           params: { lang, section: slugMap[lang].posts ?? 'posts', slug: String(p.id) },
@@ -43,7 +45,7 @@ export async function getStaticPaths() {
       }
     }
 
-    if (siteConfig.modules.releases !== false) {
+    if (cfg.modules.releases !== false) {
       for (const r of releases) {
         paths.push({
           params: { lang, section: slugMap[lang].releases ?? 'releases', slug: String(r.id) },
@@ -53,7 +55,7 @@ export async function getStaticPaths() {
       }
     }
 
-    if (siteConfig.modules.merch !== false) {
+    if (cfg.modules.merch !== false) {
       for (const item of shopItems) {
         paths.push({
           params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug_en },
