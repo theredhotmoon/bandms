@@ -1,0 +1,75 @@
+---
+import type { Locale } from '@/types/shared'
+import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getConcerts, getPosts, getReleases, getShopItems } from '@/lib/cms'
+
+import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
+import PostDetail      from '@/components/detail/PostDetail.astro'
+import ReleaseDetail   from '@/components/detail/ReleaseDetail.astro'
+import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
+
+export async function getStaticPaths() {
+  const slugMap = await getSlugMap()
+  const [concerts, posts, releases, shopItems] = await Promise.all([
+    getConcerts(),
+    getPosts('en').then(r => r.data),
+    getReleases('en'),
+    getShopItems(),
+  ])
+
+  const paths = []
+
+  for (const lang of LOCALES) {
+    const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
+
+    for (const c of concerts) {
+      paths.push({
+        params: { lang, section: slugMap[lang].concerts ?? 'concerts', slug: c.slug_en },
+        props: { sectionType: 'concerts', lang, itemId: c.id, itemSlug: c.slug_en,
+          alternateHref: `/${otherLang}/${slugMap[otherLang].concerts ?? 'concerts'}/${c.slug_en}` },
+      })
+    }
+
+    for (const p of posts) {
+      paths.push({
+        params: { lang, section: slugMap[lang].posts ?? 'posts', slug: String(p.id) },
+        props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: '',
+          alternateHref: `/${otherLang}/${slugMap[otherLang].posts ?? 'posts'}/${p.id}` },
+      })
+    }
+
+    for (const r of releases) {
+      paths.push({
+        params: { lang, section: slugMap[lang].releases ?? 'releases', slug: String(r.id) },
+        props: { sectionType: 'releases', lang, itemId: r.id, itemSlug: '',
+          alternateHref: `/${otherLang}/${slugMap[otherLang].releases ?? 'releases'}/${r.id}` },
+      })
+    }
+
+    for (const item of shopItems) {
+      paths.push({
+        params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug_en },
+        props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug_en,
+          alternateHref: `/${otherLang}/${slugMap[otherLang].merch ?? 'merch'}/${item.slug_en}` },
+      })
+    }
+  }
+
+  return paths
+}
+
+interface Props {
+  sectionType: string
+  lang: Locale
+  alternateHref: string
+  itemId: number
+  itemSlug: string
+}
+
+const { sectionType, lang, alternateHref, itemId, itemSlug } = Astro.props
+---
+
+{sectionType === 'concerts'  && <ConcertDetail   lang={lang} alternateHref={alternateHref} itemId={itemId} />}
+{sectionType === 'posts'     && <PostDetail      lang={lang} alternateHref={alternateHref} itemId={itemId} />}
+{sectionType === 'releases'  && <ReleaseDetail   lang={lang} alternateHref={alternateHref} itemId={itemId} />}
+{sectionType === 'merch'     && <MerchItemDetail lang={lang} alternateHref={alternateHref} itemSlug={itemSlug} />}
