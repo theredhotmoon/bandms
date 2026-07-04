@@ -16,7 +16,10 @@ interface PostSummary {
 const props = defineProps<{
   posts: PostSummary[]
   accent: string
+  postHrefBase?: string
 }>()
+
+const resolvedPostHrefBase = computed(() => props.postHrefBase ?? '/posts')
 
 const q   = ref('')
 const tag = ref('all')
@@ -90,7 +93,7 @@ function postDate(p: PostSummary): string {
 
     <!-- FEATURED POST -->
     <section v-if="featured" class="nf-featured-wrap">
-      <a :href="`/posts/${featured.id}`" class="nf-featured">
+      <a :href="`${resolvedPostHrefBase}/${featured.id}`" class="nf-featured">
         <div class="nf-feat-img">
           <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           <span class="nf-feat-badge" :style="{ background: accent }">Featured</span>
@@ -125,7 +128,7 @@ function postDate(p: PostSummary): string {
         <a
           v-for="p in rest"
           :key="p.id"
-          :href="`/posts/${p.id}`"
+          :href="`${resolvedPostHrefBase}/${p.id}`"
           class="nf-card"
         >
           <div class="nf-card-img">

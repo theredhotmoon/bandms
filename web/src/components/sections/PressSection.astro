@@ -1,19 +1,27 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['press'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPressReleases, getBandProfile } from '@/lib/cms'
 import { fmtDateShort } from '@/lib/i18n'
 
-const [press, profile] = await Promise.all([getPressReleases(), getBandProfile('en')])
+const [press, profile] = await Promise.all([getPressReleases(), getBandProfile(lang)])
 const sorted = [...press].sort((a, b) => (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at))
 const featured = sorted.filter(p => p.featured)
 const rest     = sorted.filter(p => !p.featured)
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Press — ${profile.name}`}
   description={`Media coverage and press releases for ${profile.name}.`}
 >

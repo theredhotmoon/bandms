@@ -1,20 +1,28 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['photos'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import PhotoLightbox from '@/components/PhotoLightbox.vue'
 import { getAlbums, getBandProfile } from '@/lib/cms'
 import { fmtDateShort } from '@/lib/i18n'
 
-const [albums, profile] = await Promise.all([getAlbums(), getBandProfile('en')])
+const [albums, profile] = await Promise.all([getAlbums(), getBandProfile(lang)])
 
 // Only published albums with at least one photo
 const visible = albums.filter(a => a.published_at && a.photo_count > 0)
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Photos — ${profile.name}`}
   description={`Photo gallery of ${profile.name} — concerts, behind the scenes, and more.`}
 >

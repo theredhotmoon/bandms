@@ -1,17 +1,25 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['videos'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getMusicVideos, getBandProfile } from '@/lib/cms'
 import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, fmtDateShort } from '@/lib/i18n'
 
-const [videos, profile] = await Promise.all([getMusicVideos(), getBandProfile('en')])
+const [videos, profile] = await Promise.all([getMusicVideos(), getBandProfile(lang)])
 const sorted = [...videos].sort((a, b) => a.sort_order - b.sort_order)
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Videos — ${profile.name}`}
   description={`Music videos by ${profile.name}. Watch on YouTube.`}
 >

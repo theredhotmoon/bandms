@@ -1,41 +1,41 @@
 ---
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getSiteConfig, getPosts, getPost, getBandProfile } from '@/lib/cms'
+import { getPosts, getPost, getBandProfile } from '@/lib/cms'
 import type { PostSummary } from '@/types/post'
 
 const ACCENT = '#1F8F7A'
 
-export async function getStaticPaths() {
-  const siteConfig = await getSiteConfig()
-  if (siteConfig.modules['posts'] === false) return []
-
-  // Fetch all pages to enumerate every post
-  const allPosts: PostSummary[] = []
-  let page = 1
-  while (true) {
-    const { data, meta } = await getPosts('en', page)
-    allPosts.push(...data)
-    if (page >= meta.last_page) break
-    page++
-  }
-  const summaries = allPosts.map(p => ({
-    id: p.id,
-    title: p.title,
-    date: p.published_at ?? p.created_at,
-    tags: p.tags,
-  }))
-  return allPosts.map((_, idx) => ({
-    params: { id: String(allPosts[idx].id) },
-    props: { summaries, idx },
-  }))
+interface Props {
+  lang: Locale
+  alternateHref: string
+  itemId: number
 }
 
-const { id } = Astro.params
-const { summaries, idx } = Astro.props
+const { lang, alternateHref, itemId } = Astro.props
+const slugMap = await getSlugMap()
+
+// Fetch all pages to build summaries for prev/next navigation
+const allPosts: PostSummary[] = []
+let page = 1
+while (true) {
+  const { data, meta } = await getPosts(lang, page)
+  allPosts.push(...data)
+  if (page >= meta.last_page) break
+  page++
+}
+const summaries = allPosts.map(p => ({
+  id: p.id,
+  title: p.title,
+  date: p.published_at ?? p.created_at,
+  tags: p.tags,
+}))
+const idx = summaries.findIndex(s => s.id === itemId)
 
 const [post, profile] = await Promise.all([
-  getPost(Number(id), 'en'),
-  getBandProfile('en'),
+  getPost(itemId, lang),
+  getBandProfile(lang),
 ])
 
 const d = new Date((post.published_at ?? post.created_at) + 'T00:00:00')
@@ -66,6 +66,10 @@ const structuredData = {
   publisher: { '@type': 'Organization', name: profile.name },
   url: Astro.url.href,
 }
+
+const postsSection = slugMap[lang].posts ?? 'posts'
+const releasesSection = slugMap[lang].releases ?? 'releases'
+const concertsSection = slugMap[lang].concerts ?? 'concerts'
 ---
 
 <BaseLayout
@@ -73,6 +77,8 @@ const structuredData = {
   description={post.intro ?? post.excerpt}
   image={post.image}
   structuredData={structuredData}
+  lang={lang}
+  alternateHref={alternateHref}
 >
   <Fragment slot="head">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -99,9 +105,9 @@ const structuredData = {
       <div class="ar-col art-hero-content">
         <!-- breadcrumb -->
         <nav class="art-crumb" aria-label="Breadcrumb">
-          <a class="art-crumb-link" href="/">Home</a>
+          <a class="art-crumb-link" href={`/${lang}`}>Home</a>
           <span class="art-crumb-sep" aria-hidden="true">→</span>
-          <a class="art-crumb-link" href="/posts">News</a>
+          <a class="art-crumb-link" href={`/${lang}/${postsSection}`}>News</a>
           <span class="art-crumb-sep" aria-hidden="true">→</span>
           <span class="art-crumb-cur">
             {post.tags?.[0]?.name ?? 'Article'}
@@ -161,7 +167,7 @@ const structuredData = {
         <h3 class="art-related-title">Related</h3>
         <div class="art-related-links">
           {post.releases.map(r => (
-            <a href={`/releases/${r.id}`} class="art-rel-link">
+            <a href={`/${lang}/${releasesSection}/${r.id}`} class="art-rel-link">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="0.8" fill={ACCENT} stroke="none"/>
               </svg>
@@ -169,7 +175,7 @@ const structuredData = {
             </a>
           ))}
           {post.music_videos.map(v => (
-            <a href={`/releases`} class="art-rel-link">
+            <a href={`/${lang}/${releasesSection}`} class="art-rel-link">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M8 5.5l11 6.5-11 6.5z" fill={ACCENT} stroke="none"/>
               </svg>
@@ -177,7 +183,7 @@ const structuredData = {
             </a>
           ))}
           {post.concerts.map(c => (
-            <a href={`/concerts/${c.slug_en}`} class="art-rel-link">
+            <a href={`/${lang}/${concertsSection}/${c.slug_en}`} class="art-rel-link">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
               </svg>
@@ -205,7 +211,7 @@ const structuredData = {
 
     <!-- ── BACK ───────────────────────────────────────────────── -->
     <div class="ar-col art-back">
-      <a href="/posts" class="art-back-btn">
+      <a href={`/${lang}/${postsSection}`} class="art-back-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path d="M15 6l-6 6 6 6"/>
         </svg>
@@ -218,7 +224,7 @@ const structuredData = {
       <section class="ar-col art-prevnext">
         <div class="art-pn-row">
           {prevId ? (
-            <a class="art-pn-btn art-pn-prev" href={`/posts/${prevId}`}>
+            <a class="art-pn-btn art-pn-prev" href={`/${lang}/${postsSection}/${prevId}`}>
               <span class="art-pn-dir">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
@@ -229,7 +235,7 @@ const structuredData = {
             </a>
           ) : <div />}
           {nextId ? (
-            <a class="art-pn-btn art-pn-next" href={`/posts/${nextId}`}>
+            <a class="art-pn-btn art-pn-next" href={`/${lang}/${postsSection}/${nextId}`}>
               <span class="art-pn-dir">
                 Older post
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -252,7 +258,7 @@ const structuredData = {
           <h3 class="art-more-title">More from the blog</h3>
           <div class="art-more-grid">
             {more.map(p => (
-              <a href={`/posts/${p.id}`} class="art-more-card">
+              <a href={`/${lang}/${postsSection}/${p.id}`} class="art-more-card">
                 <div class="art-more-img" aria-hidden="true"></div>
                 <div class="art-more-body">
                   {p.tags.length > 0 && (

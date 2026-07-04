@@ -1,13 +1,25 @@
 ---
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
+
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ContactForm from '@/components/ContactForm.vue'
 import SocialLinks from '@/components/SocialLinks.astro'
 import { getBandProfile, getSocialLinks } from '@/lib/cms'
 
-const [profile, socialLinks] = await Promise.all([getBandProfile('en'), getSocialLinks()])
+const [profile, socialLinks] = await Promise.all([getBandProfile(lang), getSocialLinks()])
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Contact — ${profile.name}`}
   description={`Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
 >

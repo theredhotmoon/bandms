@@ -1,40 +1,45 @@
 ---
+import type { Locale } from '@/types/shared'
 import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 import MobileNav from './MobileNav.vue'
 import CartIcon from './CartIcon.vue'
 
-const siteConfig = await getSiteConfig()
-
-// All module-gated link definitions, keyed by slug for lookup.
-const MODULE_LINK_MAP: Record<string, { href: string; label: string }> = {
-  concerts: { href: '/concerts', label: 'Shows'  },
-  releases: { href: '/releases', label: 'Music'  },
-  posts:    { href: '/posts',    label: 'News'   },
-  photos:   { href: '/photos',   label: 'Photos' },
-  videos:   { href: '/videos',   label: 'Videos' },
-  press:    { href: '/press',    label: 'Press'  },
-  merch:    { href: '/merch',    label: 'Shop'   },
-  epk:      { href: '/epk',      label: 'EPK'    },
+interface Props {
+  lang?: Locale
 }
+const { lang = 'en' } = Astro.props
 
-// Build ordered links from the API's module_order (fallback: alphabetical via Object.keys).
+const [siteConfig, slugMap] = await Promise.all([
+  getSiteConfig(lang),
+  getSlugMap(),
+])
+
+const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk'] as const
+
 const orderedSlugs = siteConfig.module_order.length > 0
   ? siteConfig.module_order
-  : Object.keys(MODULE_LINK_MAP)
+  : MODULE_SLUGS.slice()
 
 const moduleLinks = orderedSlugs
-  .filter(slug => MODULE_LINK_MAP[slug] && siteConfig.modules[slug] !== false)
-  .map(slug => ({ ...MODULE_LINK_MAP[slug], module: slug }))
+  .filter(s => MODULE_SLUGS.includes(s as typeof MODULE_SLUGS[number]) && siteConfig.modules[s] !== false)
+  .map(s => ({
+    href: `/${lang}/${slugMap[lang][s] ?? s}`,
+    label: siteConfig.module_config[s]?.label ?? s,
+    module: s,
+  }))
 
-// Contact is always last and never gated.
-const links = [...moduleLinks, { href: '/contact', label: 'Contact', module: null }]
+const links = [
+  ...moduleLinks,
+  { href: `/${lang}/${slugMap[lang].contact}`, label: lang === 'pl' ? 'Kontakt' : 'Contact', module: null },
+]
 
 const current = Astro.url.pathname
 ---
 
 <header class="ss-header">
   <div class="ss-header-inner">
-    <a href="/" class="ss-logo">Skanking Storks</a>
+    <a href={`/${lang}`} class="ss-logo">Skanking Storks</a>
 
     <nav class="ss-desktop-nav" aria-label="Main navigation">
       {links.map(({ href, label }) => (

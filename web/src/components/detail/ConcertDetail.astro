@@ -1,37 +1,38 @@
 ---
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
-import { getSiteConfig, getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
+import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
 import { fmtTime, isUpcoming } from '@/lib/i18n'
 
-export async function getStaticPaths() {
-  const siteConfig = await getSiteConfig()
-  if (siteConfig.modules['concerts'] === false) return []
-
-  const concerts = await getConcerts()
-  const summaries = concerts.map(x => ({
-    id: x.id,
-    slug: x.slug_en,
-    date: x.date,
-    city: x.venue.city ?? x.venue.name,
-    venue: x.venue.name,
-    tags: x.tags ?? [],
-  }))
-  return concerts.map((_c, idx) => ({
-    params: { slug: _c.slug_en },
-    props: { allConcerts: summaries, idx, concertId: _c.id },
-  }))
+interface Props {
+  lang: Locale
+  alternateHref: string
+  itemId: number
 }
+
+const { lang, alternateHref, itemId } = Astro.props
+const slugMap = await getSlugMap()
 
 const ACCENT = '#1F8F7A'
 
-const { allConcerts, idx, concertId } = Astro.props
+const concerts = await getConcerts()
+const summaries = concerts.map(x => ({
+  id: x.id,
+  slug: x.slug_en,
+  date: x.date,
+  city: x.venue.city ?? x.venue.name,
+  venue: x.venue.name,
+  tags: x.tags ?? [],
+}))
+const idx = summaries.findIndex(s => s.id === itemId)
 
 const [concert, setlist, profile, ticketTypes] = await Promise.all([
-  getConcert(concertId),
-  getConcertSetlist(concertId),
-  getBandProfile('en'),
-  getConcertTickets(concertId).catch(() => [] as { id: number; is_on_sale: boolean }[]),
+  getConcert(itemId),
+  getConcertSetlist(itemId),
+  getBandProfile(lang),
+  getConcertTickets(itemId).catch(() => [] as { id: number; is_on_sale: boolean }[]),
 ])
 
 const hasInternalTickets = ticketTypes.length > 0
@@ -57,11 +58,11 @@ const eventLinks  = concert.links?.filter(l => !/ticket|buy|bilet/i.test(l.label
 const hasMap = concert.venue.latitude != null && concert.venue.longitude != null
 
 // Prev / next IDs
-const prevSlug = idx > 0 ? allConcerts[idx - 1].slug : null
-const nextSlug = idx < allConcerts.length - 1 ? allConcerts[idx + 1].slug : null
+const prevSlug = idx > 0 ? summaries[idx - 1].slug : null
+const nextSlug = idx < summaries.length - 1 ? summaries[idx + 1].slug : null
 
 // More shows: same status, different gig, limit 3
-const moreConcerts = allConcerts
+const moreConcerts = summaries
   .filter((c, i) => i !== idx && isUpcoming(c.date) === upcoming)
   .slice(0, 3)
 
@@ -105,6 +106,8 @@ const encoreSongs = setlist?.items.filter(s => s.is_encore).sort((a,b) => a.posi
 const setTotal   = setlist?.total_duration_sec
   ? `${Math.floor(setlist.total_duration_sec / 60)} min`
   : null
+
+const concertsSection = slugMap[lang].concerts ?? 'concerts'
 ---
 
 <BaseLayout
@@ -112,6 +115,8 @@ const setTotal   = setlist?.total_duration_sec
   description={concert.description ?? `${profile.name} live at ${concert.venue.name}, ${dayNum} ${moShort} ${yrNum}`}
   image={concert.poster_url}
   structuredData={structuredData}
+  lang={lang}
+  alternateHref={alternateHref}
 >
   <Fragment slot="head">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -124,9 +129,9 @@ const setTotal   = setlist?.total_duration_sec
 
     <!-- ── BREADCRUMB ──────────────────────────────────────── -->
     <nav class="crumb" aria-label="Breadcrumb">
-      <a class="crumb-link" href="/">Home</a>
+      <a class="crumb-link" href={`/${lang}`}>Home</a>
       <span class="crumb-sep" aria-hidden="true">→</span>
-      <a class="crumb-link" href="/concerts">Shows</a>
+      <a class="crumb-link" href={`/${lang}/${concertsSection}`}>Shows</a>
       <span class="crumb-sep" aria-hidden="true">→</span>
       <span class="crumb-cur">{concert.venue.city ?? concert.venue.name} · {yrNum}</span>
     </nav>
@@ -179,7 +184,7 @@ const setTotal   = setlist?.total_duration_sec
           </a>
         )}
         {!isPast && ticketLinks.length === 0 && !hasInternalTickets && (
-          <a class="cta-ticket cta-tba" href={`/concerts/${concert.slug_en}`}>
+          <a class="cta-ticket cta-tba" href={`/${lang}/${concertsSection}/${concert.slug_en}`}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
               <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
             </svg>
@@ -440,7 +445,7 @@ const setTotal   = setlist?.total_duration_sec
 
     <!-- ── LIVE TICKET AVAILABILITY ─────────────────────────── -->
     {upcoming && (
-      <section class="sec tickets-sec" id="tickets-section" data-concert-id={concertId}>
+      <section class="sec tickets-sec" id="tickets-section" data-concert-id={itemId}>
         <div class="sec-head">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
@@ -500,7 +505,7 @@ const setTotal   = setlist?.total_duration_sec
             const mYr  = md.getFullYear()
             const mUp  = isUpcoming(c.date)
             return (
-              <a href={`/concerts/${c.slug}`} class="more-card">
+              <a href={`/${lang}/${concertsSection}/${c.slug}`} class="more-card">
                 <div class={`more-card-date ${mUp ? 'more-date-up' : 'more-date-past'}`}>
                   <span class="more-day">{mDay}</span>
                   <span class="more-mo">{mMo} {mYr}</span>
@@ -521,7 +526,7 @@ const setTotal   = setlist?.total_duration_sec
 
     <!-- ── NAVIGATION ─────────────────────────────────────── -->
     <div class="sec back-sec">
-      <a class="back-btn" href="/concerts">
+      <a class="back-btn" href={`/${lang}/${concertsSection}`}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M15 6l-6 6 6 6"/>
         </svg>
@@ -533,7 +538,7 @@ const setTotal   = setlist?.total_duration_sec
       <div class="sec prevnext-sec">
         <div class="prevnext-row">
           {prevSlug ? (
-            <a class="prevnext-btn prev-btn" href={`/concerts/${prevSlug}`}>
+            <a class="prevnext-btn prev-btn" href={`/${lang}/${concertsSection}/${prevSlug}`}>
               <span class="pn-dir">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
@@ -544,7 +549,7 @@ const setTotal   = setlist?.total_duration_sec
             </a>
           ) : <div />}
           {nextSlug ? (
-            <a class="prevnext-btn next-btn" href={`/concerts/${nextSlug}`}>
+            <a class="prevnext-btn next-btn" href={`/${lang}/${concertsSection}/${nextSlug}`}>
               <span class="pn-dir">
                 Next
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">

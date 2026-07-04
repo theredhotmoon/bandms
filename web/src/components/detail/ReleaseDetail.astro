@@ -1,21 +1,23 @@
 ---
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getSiteConfig, getReleases, getRelease, getBandProfile } from '@/lib/cms'
+import { getRelease, getBandProfile } from '@/lib/cms'
 import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
 import { fmtDate } from '@/lib/i18n'
 
-export async function getStaticPaths() {
-  const siteConfig = await getSiteConfig()
-  if (siteConfig.modules['releases'] === false) return []
-
-  const releases = await getReleases('en')
-  return releases.map(r => ({ params: { id: String(r.id) } }))
+interface Props {
+  lang: Locale
+  alternateHref: string
+  itemId: number
 }
 
-const { id } = Astro.params
+const { lang, alternateHref, itemId } = Astro.props
+const slugMap = await getSlugMap()
+
 const [release, profile] = await Promise.all([
-  getRelease(Number(id), 'en'),
-  getBandProfile('en'),
+  getRelease(itemId, lang),
+  getBandProfile(lang),
 ])
 
 const year = release.release_date ? new Date(release.release_date).getFullYear() : null
@@ -37,10 +39,12 @@ const structuredData = {
   description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
   image={release.cover_image}
   structuredData={structuredData}
+  lang={lang}
+  alternateHref={alternateHref}
 >
   <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
     <nav class="mb-8 text-sm text-zinc-600">
-      <a href="/releases" class="hover:text-zinc-400 transition-colors">Music</a>
+      <a href={`/${lang}/${slugMap[lang].releases ?? 'releases'}`} class="hover:text-zinc-400 transition-colors">Music</a>
       <span class="mx-2">›</span>
       <span class="text-zinc-400">{release.title}</span>
     </nav>
@@ -101,7 +105,7 @@ const structuredData = {
         <p class="mt-1 text-zinc-400 font-medium">{profile.name}</p>
 
         {release.release_date && (
-          <p class="mt-1 text-sm text-zinc-600">{fmtDate(release.release_date, 'en')}</p>
+          <p class="mt-1 text-sm text-zinc-600">{fmtDate(release.release_date, lang)}</p>
         )}
 
         {release.description && (

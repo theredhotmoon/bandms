@@ -1,7 +1,13 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['posts'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsFilter from '@/components/NewsFilter.vue'
@@ -10,20 +16,22 @@ import { getPosts, getBandProfile } from '@/lib/cms'
 const ACCENT = '#1F8F7A'
 
 const [firstPage, profile] = await Promise.all([
-  getPosts('en', 1),
-  getBandProfile('en'),
+  getPosts(lang, 1),
+  getBandProfile(lang),
 ])
 
 let allPosts = [...firstPage.data]
 if (firstPage.meta.last_page > 1) {
   const extra = await Promise.all(
-    Array.from({ length: firstPage.meta.last_page - 1 }, (_, i) => getPosts('en', i + 2))
+    Array.from({ length: firstPage.meta.last_page - 1 }, (_, i) => getPosts(lang, i + 2))
   )
   extra.forEach(r => allPosts.push(...r.data))
 }
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`News — ${profile.name}`}
   description="Studio updates, fresh dates and stories from the road."
 >
@@ -47,6 +55,7 @@ if (firstPage.meta.last_page > 1) {
     <NewsFilter
       posts={allPosts}
       accent={ACCENT}
+      postHrefBase={`/${lang}/${slugMap[lang].posts}`}
       client:idle
     />
   </div>

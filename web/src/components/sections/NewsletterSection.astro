@@ -1,16 +1,24 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['newsletter'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getBandProfile } from '@/lib/cms'
 
-const profile = await getBandProfile('en')
+const profile = await getBandProfile(lang)
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Newsletter — ${profile.name}`}
   description={`Subscribe to the ${profile.name} newsletter for news, shows, and exclusive updates.`}
 >

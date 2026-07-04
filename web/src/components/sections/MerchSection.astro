@@ -1,7 +1,13 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['merch'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getShopItems, getShopCategories, getBandProfile } from '@/lib/cms'
@@ -10,13 +16,15 @@ import { formatPrice, preferredPrice } from '@/stores/cart'
 const [items, categories, profile] = await Promise.all([
   getShopItems(),
   getShopCategories(),
-  getBandProfile('en'),
+  getBandProfile(lang),
 ])
 
 const available = items.filter(i => i.is_available || i.is_presale)
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Merch — ${profile.name}`}
   description={`Official merchandise from ${profile.name}. Records, apparel, and more.`}
 >
@@ -30,7 +38,7 @@ const available = items.filter(i => i.is_available || i.is_presale)
       <div class="rounded-xl border border-border bg-surface p-10 text-center">
         <p class="text-lg text-zinc-400">No items available right now.</p>
         <p class="mt-1 text-sm text-zinc-600">Check back soon, or subscribe to the newsletter for updates.</p>
-        <a href="/newsletter" class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
+        <a href={`/${lang}/${slugMap[lang].newsletter}`} class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
       </div>
     ) : (
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -39,7 +47,7 @@ const available = items.filter(i => i.is_available || i.is_presale)
           .map(item => {
             const price = preferredPrice(item.prices)
             return (
-              <a href={`/merch/${item.slug_en}`} class="group block overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all hover:-translate-y-0.5">
+              <a href={`/${lang}/${slugMap[lang].merch}/${item.slug_en}`} class="group block overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all hover:-translate-y-0.5">
                 <!-- Cover photo -->
                 <div class="aspect-square overflow-hidden bg-zinc-900 relative">
                   {item.cover_photo ? (

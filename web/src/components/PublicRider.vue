@@ -42,7 +42,7 @@ onMounted(async () => {
 
     <div v-else-if="status === 'error'" class="text-center py-20 text-zinc-400">
       <p class="text-lg">{{ error }}</p>
-      <a href="/contact" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
+      <a href="/en/contact" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
     </div>
 
     <div v-else>

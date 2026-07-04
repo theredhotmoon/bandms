@@ -1,7 +1,13 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['epk'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import SocialLinks from '@/components/SocialLinks.astro'
@@ -10,7 +16,7 @@ import { formatNumber, fmtDate } from '@/lib/i18n'
 import { PLATFORM_LABELS } from '@/types/release'
 import type { SocialLink, SocialPlatform } from '@/types/socialLink'
 
-const [epk, profile] = await Promise.all([getEpk('en'), getBandProfile('en')])
+const [epk, profile] = await Promise.all([getEpk(lang), getBandProfile(lang)])
 
 // Adapt EpkSocialLinks to SocialLink shape for the SocialLinks component
 const socialLinks: SocialLink[] = (epk.social_links ?? []).map((l, i) => ({
@@ -31,6 +37,8 @@ const stats = [
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Electronic Press Kit — ${epk.name}`}
   description={`Official EPK for ${epk.name}. ${epk.bio_short ?? ''}`}
   noindex={true}

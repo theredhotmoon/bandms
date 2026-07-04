@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 interface ArchivedConcert {
   id: number
-  slug: string
+  href: string
   date: string
   day: string
   mo: string
@@ -18,6 +18,8 @@ const props = defineProps<{
   concerts: ArchivedConcert[]
   accent: string
 }>()
+
+const safeHref = (u: string) => u.startsWith('/') || /^https?:\/\//i.test(u) ? u : '#'
 
 const selectedYear = ref('all')
 
@@ -65,11 +67,11 @@ function showOnMap(id: number) {
 
     <div class="archive-list">
       <div v-for="c in shown" :key="c.id" class="archive-row">
-        <a :href="`/concerts/${c.slug}`" class="arc-date-block">
+        <a :href="safeHref(c.href)" class="arc-date-block">
           <span class="arc-day">{{ c.day }}</span>
           <span class="arc-mo">{{ c.mo }} {{ c.yr }}</span>
         </a>
-        <a :href="`/concerts/${c.slug}`" class="arc-main">
+        <a :href="safeHref(c.href)" class="arc-main">
           <span class="arc-city">{{ c.city }}</span>
           <span class="arc-venue">{{ c.venue }}</span>
         </a>

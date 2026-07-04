@@ -1,7 +1,13 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['releases'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ReleaseCard from '@/components/ReleaseCard.astro'
@@ -9,7 +15,7 @@ import { getReleases, getBandProfile } from '@/lib/cms'
 import { RELEASE_TYPE_LABELS } from '@/types/release'
 import type { ReleaseType } from '@/types/release'
 
-const [releases, profile] = await Promise.all([getReleases('en'), getBandProfile('en')])
+const [releases, profile] = await Promise.all([getReleases(lang), getBandProfile(lang)])
 
 const grouped = releases.reduce<Record<string, typeof releases>>((acc, r) => {
   const key = r.type
@@ -22,6 +28,8 @@ const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Music — ${profile.name}`}
   description={`Discography of ${profile.name} — albums, EPs, singles, and compilations.`}
 >
@@ -43,7 +51,12 @@ const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {grouped[type]!
             .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
-            .map(r => <ReleaseCard release={r} />)}
+            .map(r => (
+              <ReleaseCard
+                release={r}
+                href={`/${lang}/${slugMap[lang].releases}/${r.id}`}
+              />
+            ))}
         </div>
       </section>
     ))}

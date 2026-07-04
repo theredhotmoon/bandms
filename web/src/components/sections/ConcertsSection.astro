@@ -1,7 +1,13 @@
 ---
-import { getSiteConfig } from '@/lib/cms'
-const siteConfig = await getSiteConfig()
-if (siteConfig.modules['concerts'] === false) return Astro.redirect('/404', 307)
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
+
+interface Props {
+  lang: Locale
+  alternateHref: string
+}
+const { lang, alternateHref } = Astro.props
+const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ShowsMap from '@/components/ShowsMap.vue'
@@ -13,7 +19,7 @@ import type { Concert } from '@/types/concert'
 
 const ACCENT = '#1F8F7A'
 
-const [concerts, profile] = await Promise.all([getConcerts(), getBandProfile('en')])
+const [concerts, profile] = await Promise.all([getConcerts(), getBandProfile(lang)])
 
 const upcoming = concerts
   .filter(c => isUpcoming(c.date))
@@ -51,6 +57,8 @@ function getTypeLabel(concert: Concert) {
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`Shows — ${profile.name}`}
   description={`Live performances by ${profile.name}. Upcoming shows and past concerts.`}
 >
@@ -113,7 +121,7 @@ function getTypeLabel(concert: Concert) {
           <ShowsMap
             concerts={concertsWithCoords.map(c => ({
               id: c.id,
-              slug: c.slug_en,
+              href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
               lat: c.venue.latitude as number,
               lng: c.venue.longitude as number,
               city: c.venue.city,
@@ -146,11 +154,11 @@ function getTypeLabel(concert: Concert) {
             const typeLabel = getTypeLabel(c)
             return (
               <div class="gig-row">
-                <a class="date-block" href={`/concerts/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${getMo(c.date)} ${getYr(c.date)}`}>
+                <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${getMo(c.date)} ${getYr(c.date)}`}>
                   <span class="date-day">{getDay(c.date)}</span>
                   <span class="date-mo">{getMo(c.date)} {getYr(c.date)}</span>
                 </a>
-                <a class="row-main" href={`/concerts/${c.slug_en}`}>
+                <a class="row-main" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>
                   <span class="city-name">{c.name ?? (c.venue.city ?? c.venue.name)}</span>
                   <span class="venue-line">
                     <span class="venue-name">{c.name ? (c.venue.city ?? c.venue.name) + ' · ' + c.venue.name : c.venue.name}</span>
@@ -187,7 +195,7 @@ function getTypeLabel(concert: Concert) {
                       </a>
                     )
                     : (
-                      <a class="details-btn" href={`/concerts/${c.slug_en}`}>Details</a>
+                      <a class="details-btn" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>Details</a>
                     )
                   }
                 </div>
@@ -200,7 +208,7 @@ function getTypeLabel(concert: Concert) {
           <div class="empty-checker" aria-hidden="true"></div>
           <p class="empty-title">No upcoming shows announced yet.</p>
           <p class="empty-sub">Get on the list to be first to know.</p>
-          <a class="empty-link" href="/newsletter">Join the newsletter →</a>
+          <a class="empty-link" href={`/${lang}/${slugMap[lang].newsletter}`}>Join the newsletter →</a>
         </div>
       )}
     </section>
@@ -214,7 +222,7 @@ function getTypeLabel(concert: Concert) {
         <ShowsArchiveFilter
           concerts={past.map(c => ({
             id: c.id,
-            slug: c.slug_en,
+            href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
             date: c.date,
             day: getDay(c.date),
             mo: getMo(c.date),

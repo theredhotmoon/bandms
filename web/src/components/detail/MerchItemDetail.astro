@@ -1,20 +1,22 @@
 ---
+import type { Locale } from '@/types/shared'
+import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
-import { getSiteConfig, getShopItems, getShopItem, getBandProfile } from '@/lib/cms'
+import { getShopItem, getBandProfile } from '@/lib/cms'
 
-export async function getStaticPaths() {
-  const siteConfig = await getSiteConfig()
-  if (siteConfig.modules['merch'] === false) return []
-
-  const items = await getShopItems()
-  return items.map(i => ({ params: { slug: i.slug_en } }))
+interface Props {
+  lang: Locale
+  alternateHref: string
+  itemSlug: string
 }
 
-const { slug } = Astro.params
+const { lang, alternateHref, itemSlug } = Astro.props
+const slugMap = await getSlugMap()
+
 const [item, profile] = await Promise.all([
-  getShopItem(slug!),
-  getBandProfile('en'),
+  getShopItem(itemSlug),
+  getBandProfile(lang),
 ])
 
 const images = (item.photos ?? []).sort((a, b) => a.sort_order - b.sort_order)
@@ -25,10 +27,12 @@ const mainImage = images[0]?.url ?? item.cover_photo
   title={`${item.name} — ${profile.name} Merch`}
   description={item.description ?? `${item.name} — official merch from ${profile.name}`}
   image={mainImage}
+  lang={lang}
+  alternateHref={alternateHref}
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-24">
     <nav class="mb-8 text-sm text-zinc-600">
-      <a href="/merch" class="hover:text-zinc-400 transition-colors">Merch</a>
+      <a href={`/${lang}/${slugMap[lang].merch ?? 'merch'}`} class="hover:text-zinc-400 transition-colors">Merch</a>
       <span class="mx-2">›</span>
       <span class="text-zinc-400">{item.name}</span>
     </nav>

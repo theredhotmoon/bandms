@@ -91,7 +91,7 @@ function onDragEnd() {
 
 // ── Inline edit ───────────────────────────────────────────────────────────────
 
-const LIST_SLUGS       = new Set(['news', 'concerts', 'photos', 'press', 'videos', 'shop'])
+const LIST_SLUGS       = new Set(['posts', 'concerts', 'photos', 'press', 'videos', 'merch'])
 const PER_PAGE_OPTIONS = [6, 9, 10, 12, 15, 20, 24] as const
 
 const editingSlug  = ref<string | null>(null)
