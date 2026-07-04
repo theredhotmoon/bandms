@@ -27,6 +27,20 @@ export function slugify(str: string): string {
 
 let _cache: SlugMap | null = null
 
+function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
+  const seen = new Set<string>()
+  const result: Record<string, string> = {}
+  for (const [key, slug] of Object.entries(m)) {
+    if (seen.has(slug)) {
+      result[key] = key
+    } else {
+      seen.add(slug)
+      result[key] = slug
+    }
+  }
+  return result
+}
+
 /**
  * Returns the full slug map for all modules + hardcoded sections.
  * Fetches /api/site-config for both locales in parallel; result is cached.
@@ -51,6 +65,6 @@ export async function getSlugMap(): Promise<SlugMap> {
     map.pl[moduleSlug] = slugify(plLabel) || moduleSlug
   }
 
-  _cache = map
+  _cache = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
   return _cache
 }

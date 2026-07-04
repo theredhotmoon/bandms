@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getSiteConfig } from '@/lib/cms'
 
 import ConcertsSection   from '@/components/sections/ConcertsSection.astro'
 import ReleasesSection   from '@/components/sections/ReleasesSection.astro'
@@ -17,13 +18,20 @@ export async function getStaticPaths() {
   const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
   const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
   const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
+  const ALWAYS_ON          = new Set(['contact', 'newsletter'])
 
-  const slugMap = await getSlugMap()
+  const [slugMap, enCfg, plCfg] = await Promise.all([
+    getSlugMap(),
+    getSiteConfig('en'),
+    getSiteConfig('pl'),
+  ])
 
-  return LOCALES.flatMap(lang =>
-    ALL_SECTIONS.map(sectionType => {
-      const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
-      return {
+  return LOCALES.flatMap(lang => {
+    const cfg = lang === 'en' ? enCfg : plCfg
+    const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
+    return ALL_SECTIONS
+      .filter(sectionType => ALWAYS_ON.has(sectionType) || cfg.modules[sectionType] !== false)
+      .map(sectionType => ({
         params: {
           lang,
           section: slugMap[lang][sectionType] ?? sectionType,
@@ -33,9 +41,8 @@ export async function getStaticPaths() {
           lang,
           alternateHref: `/${otherLang}/${slugMap[otherLang][sectionType] ?? sectionType}`,
         },
-      }
-    })
-  )
+      }))
+  })
 }
 
 interface Props {
