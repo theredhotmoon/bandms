@@ -39,7 +39,7 @@ App is then available at:
 
 | Field    | Value              |
 |---|---|
-| Email    | `test@example.com` |
+| Email    | `admin@bandms.test`|
 | Password | `password`         |
 
 ---
