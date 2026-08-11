@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StagePlotType;
 use App\Models\Instrument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InstrumentController extends Controller
 {
@@ -20,7 +22,7 @@ class InstrumentController extends Controller
         $data = $request->validate([
             'name'            => ['required', 'string', 'max:100', 'unique:instruments,name'],
             'category'        => ['nullable', 'string', 'max:100'],
-            'stage_plot_type' => ['nullable', 'string', 'in:drums,guitar_amp,bass_amp,keyboard,vocalist,monitor_wedge,di_box,rack,acoustic_guitar,violin,brass,custom'],
+            'stage_plot_type' => ['nullable', 'string', Rule::in(StagePlotType::values())],
         ]);
 
         $instrument = Instrument::create($data);
@@ -33,7 +35,7 @@ class InstrumentController extends Controller
         $data = $request->validate([
             'name'            => ['sometimes', 'required', 'string', 'max:100', 'unique:instruments,name,' . $instrument->id],
             'category'        => ['nullable', 'string', 'max:100'],
-            'stage_plot_type' => ['nullable', 'string', 'in:drums,guitar_amp,bass_amp,keyboard,vocalist,monitor_wedge,di_box,rack,acoustic_guitar,violin,brass,custom'],
+            'stage_plot_type' => ['nullable', 'string', Rule::in(StagePlotType::values())],
         ]);
 
         $instrument->update($data);

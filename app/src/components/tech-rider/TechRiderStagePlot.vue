@@ -9,8 +9,11 @@ import {
   defaultPlacedInstrument,
   isMemberItemComplete,
   isMemberItemPartial,
+  INSTRUMENT_TYPE_LABELS,
 } from '@/types/stagePlot'
 import type { StagePlotItemType } from '@/types/techRider'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 import StagePlotMemberModal from './StagePlotMemberModal.vue'
 
 interface Props {
@@ -187,9 +190,10 @@ function placeOnStage(memberId: number | null, tempId: string | undefined, x: nu
   if (memberId !== null) {
     const member = props.bandMembers.find(m => m.id === memberId)
     const mainInst = member?.main_instrument
-    if (mainInst?.stage_plot_type) {
+    const iconType = member ? memberMainInstrumentType(member) : null
+    if (mainInst && iconType) {
       const placed = defaultPlacedInstrument()
-      placed.type  = mainInst.stage_plot_type as StagePlotItemType
+      placed.type  = iconType
       placed.label = mainInst.name
       item.instruments = [placed]
     }
@@ -261,24 +265,12 @@ watch(qrItemId, async (id) => {
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
-function memberMainInstrumentIcon(member: BandMember): string {
-  const type = member.main_instrument?.stage_plot_type
-  return type ? (INSTRUMENT_ICONS[type] ?? '') : ''
-}
-
-const INSTRUMENT_ICONS: Record<StagePlotItemType, string> = {
-  drums:          '🥁',
-  guitar_amp:     '🎸',
-  bass_amp:       '🎸',
-  keyboard:       '🎹',
-  vocalist:       '🎤',
-  acoustic_guitar:'🎸',
-  violin:         '🎻',
-  brass:          '🎺',
-  monitor_wedge:  '🔊',
-  di_box:         '🔌',
-  rack:           '📦',
-  custom:         '⚙️',
+// Icon type for a member's main instrument — falls back to a name-based guess
+// when the instrument record has no explicit stage_plot_type yet.
+function memberMainInstrumentType(member: BandMember): StagePlotItemType | null {
+  const inst = member.main_instrument
+  if (!inst) return null
+  return inst.stage_plot_type ?? guessInstrumentType(inst.name)
 }
 
 function itemDisplayName(item: StagePlotMemberItem): string {
@@ -347,9 +339,13 @@ function statusClass(item: StagePlotMemberItem): string {
           </div>
 
           <!-- Main instrument icon -->
-          <div v-if="member.main_instrument" class="text-sm flex-shrink-0" :title="member.main_instrument.name">
-            {{ memberMainInstrumentIcon(member) }}
-          </div>
+          <InstrumentIcon
+            v-if="member.main_instrument"
+            :type="memberMainInstrumentType(member)"
+            :title="member.main_instrument.name"
+            :size="18"
+            class="flex-shrink-0 text-zinc-300"
+          />
 
           <!-- Status indicators -->
           <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
@@ -483,8 +479,14 @@ function statusClass(item: StagePlotMemberItem): string {
 
             <!-- members: completeness dots -->
             <template v-if="stageView === 'members'">
-              <div class="flex gap-1 justify-center">
-                <span class="text-[11px] transition-opacity" :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'" title="Instruments">🎸</span>
+              <div class="flex gap-1 justify-center items-center">
+                <InstrumentIcon
+                  :type="item.instruments[0]?.type ?? 'custom'"
+                  :size="13"
+                  title="Instruments"
+                  class="transition-opacity"
+                  :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'"
+                />
                 <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
                 <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
                 <span class="text-[11px] transition-opacity" :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
@@ -499,8 +501,9 @@ function statusClass(item: StagePlotMemberItem): string {
             <!-- instruments -->
             <template v-else-if="stageView === 'instruments'">
               <div v-if="item.instruments.length" class="flex flex-col items-center gap-0.5 w-full">
-                <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
-                  {{ INSTRUMENT_ICONS[inst.type] }} {{ inst.label || inst.type }}
+                <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="flex items-center gap-1 text-[10px] text-zinc-300 w-full min-w-0">
+                  <InstrumentIcon :type="inst.type" :size="14" class="flex-shrink-0" />
+                  <span class="truncate">{{ inst.label || INSTRUMENT_TYPE_LABELS[inst.type] }}</span>
                 </div>
                 <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-500">+{{ item.instruments.length - 3 }}</span>
               </div>

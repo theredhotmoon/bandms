@@ -15,7 +15,9 @@ import type {
   SignalChainType,
   BandMemberSetupSummary,
 } from '@/types/bandMemberSetup'
-import type { InputRow } from '@/types/techRider'
+import type { InputRow, StagePlotItemType } from '@/types/techRider'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
 
 export interface SetupEditorModel {
   name: string
@@ -105,23 +107,9 @@ const sharedSetupName = computed(() => {
   return found ? (found.instrument_name ?? found.name) : ''
 })
 
-const STAGE_ICON: Record<string, string> = {
-  drums: '🥁',
-  guitar_amp: '🎸',
-  bass_amp: '🎸',
-  keyboard: '🎹',
-  vocalist: '🎤',
-  acoustic_guitar: '🎸',
-  violin: '🎻',
-  brass: '🎺',
-  monitor_wedge: '🔊',
-  di_box: '🔌',
-  rack: '📦',
-  custom: '⚙️',
-}
-
-function instrumentIcon(inst: Instrument | null): string {
-  return inst?.stage_plot_type ? (STAGE_ICON[inst.stage_plot_type] ?? '🎵') : '🎵'
+function instrumentIconType(inst: Instrument | null): StagePlotItemType | null {
+  if (!inst) return null
+  return inst.stage_plot_type ?? guessInstrumentType(inst.name)
 }
 
 defineExpose({ activeSection })
@@ -156,7 +144,7 @@ defineExpose({ activeSection })
 
     <!-- Instrument context tag -->
     <div v-if="selectedInstrument" class="setup-instrument-tag">
-      <span>{{ instrumentIcon(selectedInstrument) }}</span>
+      <InstrumentIcon :type="instrumentIconType(selectedInstrument)" :size="16" />
       <span>{{ selectedInstrument.name }}</span>
     </div>
 

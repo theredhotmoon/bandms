@@ -99,14 +99,75 @@ export function suggestInputs(items: StagePlotItem[]): InputRow[] {
         break
 
       case 'violin':
+      case 'cello':
+      case 'double_bass':
         raw.push(
           row(lbl, 'Mic', 'DPA 4099', 'Tall boom', 'Clip-on preferred'),
         )
         break
 
       case 'brass':
+      case 'trumpet':
+      case 'trombone':
+      case 'saxophone':
         raw.push(
           row(lbl, 'Mic', 'SM57 / Beta 98A', 'Short boom'),
+        )
+        break
+
+      case 'flute':
+      case 'clarinet':
+        raw.push(
+          row(lbl, 'Mic', 'SM81 / C451B', 'Tall boom'),
+        )
+        break
+
+      case 'harmonica':
+        raw.push(
+          row(lbl, 'Mic', 'SM58 / Green Bullet', 'Tall boom'),
+        )
+        break
+
+      case 'backing_vocals':
+        raw.push(
+          row(lbl, 'Mic', 'SM58 / e935', 'Tall boom'),
+        )
+        break
+
+      case 'electric_guitar':
+      case 'banjo':
+        raw.push(
+          row(lbl, 'Mic+DI', 'SM57', 'Short boom'),
+        )
+        break
+
+      case 'bass_guitar':
+        raw.push(
+          row(lbl, 'DI', '', 'None', 'Pre-amp out preferred'),
+        )
+        break
+
+      case 'piano':
+        raw.push(
+          row(`${lbl} — L`, 'Mic', 'AKG C414 / KM184', 'Tall boom'),
+          row(`${lbl} — R`, 'Mic', 'AKG C414 / KM184', 'Tall boom', 'Stereo pair'),
+        )
+        break
+
+      case 'synth':
+      case 'accordion':
+      case 'dj_deck':
+      case 'laptop':
+        raw.push(
+          row(`${lbl} — L`, 'DI', '', 'Desk'),
+          row(`${lbl} — R`, 'DI', '', 'Desk', 'Stereo pair'),
+        )
+        break
+
+      case 'percussion':
+      case 'cajon':
+        raw.push(
+          row(lbl, 'Mic', 'Beta 91A / e904', 'Short boom'),
         )
         break
 
@@ -160,10 +221,14 @@ export function suggestMonitors(items: StagePlotItem[]): MonitorMix[] {
 // ── Backline ──────────────────────────────────────────────────────────────────
 
 const BACKLINE_MAP: Partial<Record<StagePlotItemType, BacklineCategory>> = {
-  drums:      'drum_kit',
-  guitar_amp: 'guitar_amp',
-  bass_amp:   'bass_amp',
-  keyboard:   'keyboard',
+  drums:       'drum_kit',
+  percussion:  'drum_kit',
+  cajon:       'drum_kit',
+  guitar_amp:  'guitar_amp',
+  bass_amp:    'bass_amp',
+  keyboard:    'keyboard',
+  piano:       'keyboard',
+  synth:       'keyboard',
 }
 
 /**
@@ -192,6 +257,9 @@ const POWER_OUTLETS: Partial<Record<StagePlotItemType, number>> = {
   guitar_amp: 2,
   bass_amp:   2,
   keyboard:   4,  // multiple units likely
+  synth:      4,
+  dj_deck:    4,
+  laptop:     2,
   rack:       4,
 }
 

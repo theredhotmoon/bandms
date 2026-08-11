@@ -2,6 +2,8 @@
 import { reactive, ref, watch, onUnmounted } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
 import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 import type { Instrument } from '@/types/instrument'
 import type { SocialLinkPayload } from '@/types/socialLink'
@@ -14,12 +16,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
-
-const STAGE_PLOT_ICONS: Record<string, string> = {
-  drums: '🥁', guitar_amp: '🎸', bass_amp: '🎸', keyboard: '🎹',
-  vocalist: '🎤', acoustic_guitar: '🎸', violin: '🎻', brass: '🎺',
-  monitor_wedge: '🔊', di_box: '🔌', rack: '📦', custom: '⚙️',
-}
 
 const form = reactive({
   first_name: '',
@@ -276,9 +272,11 @@ function submit() {
               :class="{ 'main-inst-card--on': form.main_instrument_id === inst.id }"
               @click="selectMainInstrument(inst.id)"
             >
-              <span v-if="inst.stage_plot_type && STAGE_PLOT_ICONS[inst.stage_plot_type]" class="main-inst-emoji">
-                {{ STAGE_PLOT_ICONS[inst.stage_plot_type] }}
-              </span>
+              <InstrumentIcon
+                :type="inst.stage_plot_type ?? guessInstrumentType(inst.name)"
+                :size="18"
+                class="main-inst-icon"
+              />
               <span class="main-inst-name">{{ inst.name }}</span>
             </button>
           </div>
@@ -362,7 +360,7 @@ function submit() {
   background: #2a2a2a;
   box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
 }
-.main-inst-emoji { font-size: 1rem; line-height: 1; }
+.main-inst-icon { flex-shrink: 0; }
 .main-inst-name  { font-size: 0.68rem; }
 
 /* ── Also-plays checkboxes ──────────────────────────────────── */

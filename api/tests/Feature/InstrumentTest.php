@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\StagePlotType;
 use App\Models\Instrument;
 use App\Models\User;
 use Laravel\Passport\Passport;
@@ -81,6 +82,32 @@ describe('POST /api/instruments', function () {
         $this->postJson('/api/instruments', ['name' => str_repeat('a', 101)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
+    });
+
+    it('accepts every stage plot type in the enum', function () {
+        $this->actingAsAdmin();
+
+        foreach (StagePlotType::values() as $i => $type) {
+            $this->postJson('/api/instruments', ['name' => "Instrument {$i}", 'stage_plot_type' => $type])
+                ->assertCreated()
+                ->assertJsonPath('stage_plot_type', $type);
+        }
+    });
+
+    it('rejects an unknown stage plot type', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => 'Kazoo', 'stage_plot_type' => 'kazoo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['stage_plot_type']);
+    });
+
+    it('allows a null stage plot type', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => 'Theremin', 'stage_plot_type' => null])
+            ->assertCreated()
+            ->assertJsonPath('stage_plot_type', null);
     });
 });
 
