@@ -343,7 +343,7 @@ function statusClass(item: StagePlotMemberItem): string {
             v-if="member.main_instrument"
             :type="memberMainInstrumentType(member)"
             :title="member.main_instrument.name"
-            :size="18"
+            :size="22"
             class="flex-shrink-0 text-zinc-300"
           />
 
@@ -451,7 +451,7 @@ function statusClass(item: StagePlotMemberItem): string {
           @dragstart="onItemDragStart($event, item)"
         >
           <div
-            class="relative w-20 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
+            class="relative w-24 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
             :class="
               isMemberItemComplete(item) ? 'border-emerald-600/60 bg-zinc-900/95' :
               isMemberItemPartial(item)  ? 'border-amber-600/50 bg-zinc-900/95' :
@@ -475,18 +475,28 @@ function statusClass(item: StagePlotMemberItem): string {
               {{ itemDisplayName(item) }}
             </div>
 
+            <!-- Instruments — the headline of the card in the member/instrument views -->
+            <div
+              v-if="(stageView === 'members' || stageView === 'instruments') && item.instruments.length"
+              class="flex flex-wrap items-center justify-center gap-1 text-zinc-100"
+            >
+              <InstrumentIcon
+                v-for="inst in item.instruments.slice(0, 3)"
+                :key="inst.id"
+                :type="inst.type"
+                :size="stageView === 'instruments' ? 34 : 26"
+                :title="inst.label || INSTRUMENT_TYPE_LABELS[inst.type]"
+              />
+              <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-400 self-end">
+                +{{ item.instruments.length - 3 }}
+              </span>
+            </div>
+
             <!-- ── View-specific body ─────────────────────────────── -->
 
             <!-- members: completeness dots -->
             <template v-if="stageView === 'members'">
               <div class="flex gap-1 justify-center items-center">
-                <InstrumentIcon
-                  :type="item.instruments[0]?.type ?? 'custom'"
-                  :size="13"
-                  title="Instruments"
-                  class="transition-opacity"
-                  :class="item.instruments.length > 0 ? 'opacity-100' : 'opacity-20'"
-                />
                 <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
                 <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
                 <span class="text-[11px] transition-opacity" :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
@@ -498,14 +508,14 @@ function statusClass(item: StagePlotMemberItem): string {
               </div>
             </template>
 
-            <!-- instruments -->
+            <!-- instruments — names under the icons above -->
             <template v-else-if="stageView === 'instruments'">
-              <div v-if="item.instruments.length" class="flex flex-col items-center gap-0.5 w-full">
-                <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="flex items-center gap-1 text-[10px] text-zinc-300 w-full min-w-0">
-                  <InstrumentIcon :type="inst.type" :size="14" class="flex-shrink-0" />
-                  <span class="truncate">{{ inst.label || INSTRUMENT_TYPE_LABELS[inst.type] }}</span>
-                </div>
-                <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-500">+{{ item.instruments.length - 3 }}</span>
+              <div v-if="item.instruments.length" class="w-full text-center leading-tight">
+                <div
+                  v-for="inst in item.instruments.slice(0, 3)"
+                  :key="inst.id"
+                  class="text-[10px] text-zinc-300 truncate"
+                >{{ inst.label || INSTRUMENT_TYPE_LABELS[inst.type] }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>

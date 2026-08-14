@@ -199,11 +199,14 @@ function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2
 
 // Icon badges for a placed musician — one per instrument they play at this
 // position (up to 3), arranged down the left side of the avatar circle.
+const BADGE_R = 14
+
+// Kept at least 2*BADGE_R apart so the badges never overlap each other.
 const BADGE_OFFSETS: [number, number][][] = [
   [],
-  [[-19, -19]],
-  [[-19, -19], [-19, 19]],
-  [[-19, -19], [-27, 0], [-19, 19]],
+  [[-25, -22]],
+  [[-25, -25], [-25, 25]],
+  [[-25, -27], [-40, 0], [-25, 27]],
 ]
 
 function instrumentBadges(item: StagePlotMemberItem) {
@@ -294,12 +297,12 @@ function printPage() { window.print() }
                 <circle :cx="svgX(item.x)+19" :cy="svgY(item.y)-19" r="10" class="svg-badge-circle"/>
                 <text :x="svgX(item.x)+19" :y="svgY(item.y)-15" text-anchor="middle" class="svg-badge-text">{{ idx+1 }}</text>
                 <template v-for="badge in instrumentBadges(item)" :key="badge.id">
-                  <circle :cx="svgX(item.x)+badge.dx" :cy="svgY(item.y)+badge.dy" r="11" class="svg-instrument-badge"/>
+                  <circle :cx="svgX(item.x)+badge.dx" :cy="svgY(item.y)+badge.dy" :r="BADGE_R" class="svg-instrument-badge"/>
                   <InstrumentIcon
                     :type="badge.type"
-                    :size="15"
-                    :x="svgX(item.x)+badge.dx-7.5"
-                    :y="svgY(item.y)+badge.dy-7.5"
+                    :size="20"
+                    :x="svgX(item.x)+badge.dx-10"
+                    :y="svgY(item.y)+badge.dy-10"
                     class="svg-instrument-icon"
                   />
                 </template>
@@ -315,7 +318,7 @@ function printPage() { window.print() }
                 v-for="inst in (item.instruments ?? []).slice(0, 3)"
                 :key="inst.id"
                 :type="inst.type"
-                :size="15"
+                :size="18"
                 class="stage-index-icon"
               />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
