@@ -485,7 +485,7 @@ function statusClass(item: StagePlotMemberItem): string {
                   :size="13"
                   title="Instruments"
                   class="transition-opacity"
-                  :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'"
+                  :class="item.instruments.length > 0 ? 'opacity-100' : 'opacity-20'"
                 />
                 <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
                 <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>

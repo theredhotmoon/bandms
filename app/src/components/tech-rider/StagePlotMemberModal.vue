@@ -214,7 +214,8 @@ const memberFullName = computed(() =>
 )
 
 const tabDone = computed<Record<Tab, boolean>>(() => ({
-  instruments: local.instruments.length > 0 && local.instruments.some(i => i.label),
+  // An instrument slot always carries an icon type, so a label is optional.
+  instruments: local.instruments.length > 0,
   inputs:      local.inputs.length > 0,
   monitor:     local.monitors.length > 0,
   wireless:    local.wireless.length > 0,
