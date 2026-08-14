@@ -197,6 +197,26 @@ const PAD   = 40
 function svgX(pct: number): number { return PAD + (pct / 100) * (SVG_W - PAD * 2) }
 function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2) }
 
+// Icon badges for a placed musician — one per instrument they play at this
+// position (up to 3), arranged down the left side of the avatar circle.
+const BADGE_OFFSETS: [number, number][][] = [
+  [],
+  [[-19, -19]],
+  [[-19, -19], [-19, 19]],
+  [[-19, -19], [-27, 0], [-19, 19]],
+]
+
+function instrumentBadges(item: StagePlotMemberItem) {
+  const list = (item.instruments ?? []).slice(0, 3)
+  const offsets = BADGE_OFFSETS[list.length] ?? []
+  return list.map((inst, i) => ({
+    id:   inst.id,
+    type: inst.type,
+    dx:   offsets[i][0],
+    dy:   offsets[i][1],
+  }))
+}
+
 function printPage() { window.print() }
 </script>
 
@@ -273,13 +293,13 @@ function printPage() { window.print() }
                 <text :x="svgX(item.x)" :y="svgY(item.y)+5" text-anchor="middle" class="svg-member-initials">{{ memberInitials(item) }}</text>
                 <circle :cx="svgX(item.x)+19" :cy="svgY(item.y)-19" r="10" class="svg-badge-circle"/>
                 <text :x="svgX(item.x)+19" :y="svgY(item.y)-15" text-anchor="middle" class="svg-badge-text">{{ idx+1 }}</text>
-                <template v-if="item.instruments?.length">
-                  <circle :cx="svgX(item.x)-19" :cy="svgY(item.y)-19" r="11" class="svg-instrument-badge"/>
+                <template v-for="badge in instrumentBadges(item)" :key="badge.id">
+                  <circle :cx="svgX(item.x)+badge.dx" :cy="svgY(item.y)+badge.dy" r="11" class="svg-instrument-badge"/>
                   <InstrumentIcon
-                    :type="item.instruments[0].type"
+                    :type="badge.type"
                     :size="15"
-                    :x="svgX(item.x)-26.5"
-                    :y="svgY(item.y)-26.5"
+                    :x="svgX(item.x)+badge.dx-7.5"
+                    :y="svgY(item.y)+badge.dy-7.5"
                     class="svg-instrument-icon"
                   />
                 </template>
