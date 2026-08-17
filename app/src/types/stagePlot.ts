@@ -8,6 +8,7 @@ import type {
   MonitorConfig,
 } from './bandMemberSetup'
 import { defaultBacklinePrefs, defaultPowerPrefs, defaultMonitorPrefs } from './bandMemberSetup'
+import { INSTRUMENT_ICON_CATALOG } from '@/utils/instrumentIcons'
 
 // ── Gig lineup (who's playing tonight) ───────────────────────────────────────
 
@@ -179,33 +180,12 @@ export function computeCompleteness(items: StagePlotMemberItem[]): {
 }
 
 // ── Instrument type label map ─────────────────────────────────────────────────
+// Labels and ordering come from the icon catalogue so a new icon only has to be
+// declared in one place.
 
-export const INSTRUMENT_TYPE_LABELS: Record<StagePlotItemType, string> = {
-  drums:          'Drum Kit',
-  guitar_amp:     'Guitar Amp',
-  bass_amp:       'Bass Amp',
-  keyboard:       'Keyboard',
-  vocalist:       'Vocalist',
-  acoustic_guitar:'Acoustic Guitar',
-  violin:         'Violin',
-  brass:          'Brass',
-  monitor_wedge:  'Monitor Wedge',
-  di_box:         'DI Box',
-  rack:           'Rack Unit',
-  custom:         'Custom',
-}
+export const INSTRUMENT_TYPE_LABELS = Object.fromEntries(
+  INSTRUMENT_ICON_CATALOG.map(def => [def.type, def.label]),
+) as Record<StagePlotItemType, string>
 
-export const INSTRUMENT_PALETTE: { type: StagePlotItemType; label: string }[] = [
-  { type: 'vocalist',       label: 'Vocalist'        },
-  { type: 'guitar_amp',     label: 'Guitar Amp'      },
-  { type: 'bass_amp',       label: 'Bass Amp'        },
-  { type: 'acoustic_guitar',label: 'Acoustic Guitar' },
-  { type: 'keyboard',       label: 'Keyboard'        },
-  { type: 'drums',          label: 'Drum Kit'        },
-  { type: 'violin',         label: 'Violin'          },
-  { type: 'brass',          label: 'Brass'           },
-  { type: 'di_box',         label: 'DI Box'          },
-  { type: 'rack',           label: 'Rack Unit'       },
-  { type: 'monitor_wedge',  label: 'Monitor Wedge'   },
-  { type: 'custom',         label: 'Custom'          },
-]
+export const INSTRUMENT_PALETTE: { type: StagePlotItemType; label: string }[] =
+  INSTRUMENT_ICON_CATALOG.map(def => ({ type: def.type, label: def.label }))

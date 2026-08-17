@@ -10,7 +10,8 @@ import {
   isMemberItemComplete,
   isMemberItemPartial,
 } from '@/types/stagePlot'
-import type { StagePlotItemType } from '@/types/techRider'
+import { resolveStageInstruments, memberMainInstrumentType } from '@/utils/stageInstruments'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 import StagePlotMemberModal from './StagePlotMemberModal.vue'
 
 interface Props {
@@ -187,9 +188,10 @@ function placeOnStage(memberId: number | null, tempId: string | undefined, x: nu
   if (memberId !== null) {
     const member = props.bandMembers.find(m => m.id === memberId)
     const mainInst = member?.main_instrument
-    if (mainInst?.stage_plot_type) {
+    const iconType = member ? memberMainInstrumentType(member) : null
+    if (mainInst && iconType) {
       const placed = defaultPlacedInstrument()
-      placed.type  = mainInst.stage_plot_type as StagePlotItemType
+      placed.type  = iconType
       placed.label = mainInst.name
       item.instruments = [placed]
     }
@@ -261,24 +263,9 @@ watch(qrItemId, async (id) => {
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
-function memberMainInstrumentIcon(member: BandMember): string {
-  const type = member.main_instrument?.stage_plot_type
-  return type ? (INSTRUMENT_ICONS[type] ?? '') : ''
-}
 
-const INSTRUMENT_ICONS: Record<StagePlotItemType, string> = {
-  drums:          '🥁',
-  guitar_amp:     '🎸',
-  bass_amp:       '🎸',
-  keyboard:       '🎹',
-  vocalist:       '🎤',
-  acoustic_guitar:'🎸',
-  violin:         '🎻',
-  brass:          '🎺',
-  monitor_wedge:  '🔊',
-  di_box:         '🔌',
-  rack:           '📦',
-  custom:         '⚙️',
+function displayInstruments(item: StagePlotMemberItem) {
+  return resolveStageInstruments(item, props.bandMembers)
 }
 
 function itemDisplayName(item: StagePlotMemberItem): string {
@@ -347,9 +334,13 @@ function statusClass(item: StagePlotMemberItem): string {
           </div>
 
           <!-- Main instrument icon -->
-          <div v-if="member.main_instrument" class="text-sm flex-shrink-0" :title="member.main_instrument.name">
-            {{ memberMainInstrumentIcon(member) }}
-          </div>
+          <InstrumentIcon
+            v-if="member.main_instrument"
+            :type="memberMainInstrumentType(member)"
+            :title="member.main_instrument.name"
+            :size="22"
+            class="flex-shrink-0 text-zinc-300"
+          />
 
           <!-- Status indicators -->
           <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
@@ -455,7 +446,7 @@ function statusClass(item: StagePlotMemberItem): string {
           @dragstart="onItemDragStart($event, item)"
         >
           <div
-            class="relative w-20 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
+            class="relative w-24 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
             :class="
               isMemberItemComplete(item) ? 'border-emerald-600/60 bg-zinc-900/95' :
               isMemberItemPartial(item)  ? 'border-amber-600/50 bg-zinc-900/95' :
@@ -479,12 +470,29 @@ function statusClass(item: StagePlotMemberItem): string {
               {{ itemDisplayName(item) }}
             </div>
 
+            <!-- Instruments — the headline of the card in the member/instrument views -->
+            <div
+              v-if="(stageView === 'members' || stageView === 'instruments') && displayInstruments(item).length"
+              class="flex flex-wrap items-center justify-center gap-1 text-zinc-100"
+            >
+              <InstrumentIcon
+                v-for="inst in displayInstruments(item).slice(0, 3)"
+                :key="inst.id"
+                :type="inst.type"
+                :size="stageView === 'instruments' ? 34 : 26"
+                :title="inst.inferred ? `${inst.label} — from profile, not configured yet` : inst.label"
+                :class="inst.inferred ? 'opacity-40' : ''"
+              />
+              <span v-if="(item.instruments?.length ?? 0) > 3" class="text-[10px] text-zinc-400 self-end">
+                +{{ (item.instruments?.length ?? 0) - 3 }}
+              </span>
+            </div>
+
             <!-- ── View-specific body ─────────────────────────────── -->
 
             <!-- members: completeness dots -->
             <template v-if="stageView === 'members'">
-              <div class="flex gap-1 justify-center">
-                <span class="text-[11px] transition-opacity" :class="(item.instruments.length > 0 && item.instruments.some(i => i.label)) ? 'opacity-100' : 'opacity-20'" title="Instruments">🎸</span>
+              <div class="flex gap-1 justify-center items-center">
                 <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
                 <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
                 <span class="text-[11px] transition-opacity" :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
@@ -496,13 +504,15 @@ function statusClass(item: StagePlotMemberItem): string {
               </div>
             </template>
 
-            <!-- instruments -->
+            <!-- instruments — names under the icons above -->
             <template v-else-if="stageView === 'instruments'">
-              <div v-if="item.instruments.length" class="flex flex-col items-center gap-0.5 w-full">
-                <div v-for="inst in item.instruments.slice(0, 3)" :key="inst.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
-                  {{ INSTRUMENT_ICONS[inst.type] }} {{ inst.label || inst.type }}
-                </div>
-                <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-500">+{{ item.instruments.length - 3 }}</span>
+              <div v-if="displayInstruments(item).length" class="w-full text-center leading-tight">
+                <div
+                  v-for="inst in displayInstruments(item).slice(0, 3)"
+                  :key="inst.id"
+                  class="text-[10px] truncate"
+                  :class="inst.inferred ? 'text-zinc-500 italic' : 'text-zinc-300'"
+                >{{ inst.label }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>

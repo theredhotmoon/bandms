@@ -9,6 +9,8 @@ import type { BandMember } from '@/types/bandMember'
 import type { BandProfile } from '@/types/bandProfile'
 import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
 import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+import { resolveStageInstruments, instrumentBadgesFor, BADGE_R } from '@/utils/stageInstruments'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
@@ -196,6 +198,23 @@ const PAD   = 40
 function svgX(pct: number): number { return PAD + (pct / 100) * (SVG_W - PAD * 2) }
 function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2) }
 
+// Icon badges for a placed musician — one per instrument they play at this
+// position (up to 3), arranged down the left side of the avatar circle.
+function instrumentBadges(item: StagePlotMemberItem) {
+  return instrumentBadgesFor(item, members.value)
+}
+
+// True when nothing was configured on this position and we are showing the
+// member's profile instrument instead — the printed name is dimmed to match.
+function isInferred(item: StagePlotMemberItem): boolean {
+  return resolveStageInstruments(item, members.value).some(i => i.inferred)
+}
+
+// Instrument names shown under each musician, with the same profile fallback.
+function instrumentNames(item: StagePlotMemberItem, sep: string): string {
+  return resolveStageInstruments(item, members.value).map(i => i.label).join(sep)
+}
+
 function printPage() { window.print() }
 </script>
 
@@ -272,16 +291,35 @@ function printPage() { window.print() }
                 <text :x="svgX(item.x)" :y="svgY(item.y)+5" text-anchor="middle" class="svg-member-initials">{{ memberInitials(item) }}</text>
                 <circle :cx="svgX(item.x)+19" :cy="svgY(item.y)-19" r="10" class="svg-badge-circle"/>
                 <text :x="svgX(item.x)+19" :y="svgY(item.y)-15" text-anchor="middle" class="svg-badge-text">{{ idx+1 }}</text>
+                <template v-for="badge in instrumentBadges(item)" :key="badge.id">
+                  <circle :cx="svgX(item.x)+badge.dx" :cy="svgY(item.y)+badge.dy" :r="BADGE_R" class="svg-instrument-badge"/>
+                  <InstrumentIcon
+                    :type="badge.type"
+                    :size="20"
+                    :x="svgX(item.x)+badge.dx-10"
+                    :y="svgY(item.y)+badge.dy-10"
+                    class="svg-instrument-icon"
+                    :class="{ 'is-inferred': badge.inferred }"
+                  />
+                </template>
                 <text :x="svgX(item.x)" :y="svgY(item.y)+42" text-anchor="middle" class="svg-member-name">{{ memberDisplayName(item) }}</text>
-                <text :x="svgX(item.x)" :y="svgY(item.y)+55" text-anchor="middle" class="svg-member-role">{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' / ') }}</text>
+                <text :x="svgX(item.x)" :y="svgY(item.y)+55" text-anchor="middle" class="svg-member-role" :class="{ 'is-inferred': isInferred(item) }">{{ instrumentNames(item, ' / ') }}</text>
               </g>
             </svg>
           </div>
           <div class="stage-index">
             <div v-for="(item, idx) in stagePlot" :key="item.id" class="stage-index-item">
               <span class="stage-index-num">{{ idx+1 }}</span>
+              <InstrumentIcon
+                v-for="inst in instrumentBadges(item)"
+                :key="inst.id"
+                :type="inst.type"
+                :size="18"
+                class="stage-index-icon"
+                :class="{ 'is-inferred': inst.inferred }"
+              />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
-              <span class="stage-index-role">{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' · ') }}</span>
+              <span class="stage-index-role" :class="{ 'is-inferred': isInferred(item) }">{{ instrumentNames(item, ' · ') }}</span>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
             </div>
           </div>
@@ -505,6 +543,11 @@ function printPage() { window.print() }
 .svg-member-circle--guest { fill: #92400e; }
 .svg-member-initials { fill: #fff; font-size: 16px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-badge-circle { fill: #ef4444; }
+.svg-instrument-badge { fill: #1f2937; stroke: #4b5563; stroke-width: 1; }
+.svg-instrument-icon { color: #e5e7eb; }
+.stage-index-icon { color: #9ca3af; flex-shrink: 0; }
+/* Taken from the member's profile rather than configured on this position */
+.is-inferred { opacity: 0.55; }
 .svg-badge-text { fill: #fff; font-size: 12px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-name { fill: #e2e8f0; font-size: 11px; font-weight: 600; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-role { fill: #94a3b8; font-size: 9px; font-family: ui-sans-serif, system-ui, sans-serif; }

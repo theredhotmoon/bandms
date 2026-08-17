@@ -9,8 +9,10 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useInstruments } from '@/composables/useInstruments'
 import { useTableControls } from '@/composables/useTableControls'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { Instrument, InstrumentPayload } from '@/types/instrument'
-import type { StagePlotItemType } from '@/types/techRider'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
 
 const { query, create, update, remove } = useInstruments()
 
@@ -24,35 +26,8 @@ const filterCategory = ref('')
 
 const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other']
 
-const STAGE_PLOT_OPTIONS: { value: StagePlotItemType; label: string }[] = [
-  { value: 'drums',          label: '🥁 Drum Kit' },
-  { value: 'guitar_amp',     label: '🎸 Guitar Amp' },
-  { value: 'bass_amp',       label: '🎸 Bass Amp' },
-  { value: 'keyboard',       label: '🎹 Keyboard' },
-  { value: 'vocalist',       label: '🎤 Vocalist' },
-  { value: 'acoustic_guitar',label: '🎸 Acoustic Guitar' },
-  { value: 'violin',         label: '🎻 Violin' },
-  { value: 'brass',          label: '🎺 Brass' },
-  { value: 'monitor_wedge',  label: '🔊 Monitor Wedge' },
-  { value: 'di_box',         label: '🔌 DI Box' },
-  { value: 'rack',           label: '📦 Rack Unit' },
-  { value: 'custom',         label: '⚙️ Custom' },
-]
-
-const STAGE_PLOT_EMOJI: Record<StagePlotItemType, string> = {
-  drums:          '🥁',
-  guitar_amp:     '🎸',
-  bass_amp:       '🎸',
-  keyboard:       '🎹',
-  vocalist:       '🎤',
-  acoustic_guitar:'🎸',
-  violin:         '🎻',
-  brass:          '🎺',
-  monitor_wedge:  '🔊',
-  di_box:         '🔌',
-  rack:           '📦',
-  custom:         '⚙️',
-}
+// Icon suggestion derived from the instrument name, offered while none is set.
+const suggestedType = computed(() => guessInstrumentType(form.name ?? ''))
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
@@ -163,7 +138,7 @@ async function confirmDelete() {
                   <span v-else style="color:#334155; font-size:0.75rem;">—</span>
                 </td>
                 <td class="td stage-icon-cell">
-                  <span v-if="i.stage_plot_type">{{ STAGE_PLOT_EMOJI[i.stage_plot_type] }}</span>
+                  <InstrumentIcon v-if="i.stage_plot_type" :type="i.stage_plot_type" :size="22" />
                   <span v-else style="color:#334155; font-size:0.75rem;">—</span>
                 </td>
                 <td class="td text-right">
@@ -203,12 +178,21 @@ async function confirmDelete() {
         </div>
         <div>
           <label class="field-label">Stage plot icon</label>
-          <select v-model="form.stage_plot_type" class="field-input">
-            <option :value="null">— Not mapped —</option>
-            <option v-for="opt in STAGE_PLOT_OPTIONS" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
+          <InstrumentIconPicker
+            :model-value="form.stage_plot_type ?? null"
+            clearable
+            placeholder="— Not mapped —"
+            @update:model-value="form.stage_plot_type = $event"
+          />
+          <button
+            v-if="!form.stage_plot_type && suggestedType"
+            type="button"
+            class="icon-suggestion"
+            @click="form.stage_plot_type = suggestedType"
+          >
+            <InstrumentIcon :type="suggestedType" :size="16" />
+            Use suggested icon for "{{ form.name.trim() }}"
+          </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">
           <button type="button" class="btn-ghost" @click="closeModal">Cancel</button>
@@ -238,5 +222,13 @@ async function confirmDelete() {
   font-size: 0.7rem; font-weight: 600;
   background: #2a2a2a; color: #c0c0c0;
 }
-.stage-icon-cell { font-size: 1.1rem; }
+.stage-icon-cell { color: #cbd5e1; }
+.icon-suggestion {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  margin-top: 0.5rem; padding: 0.25rem 0.5rem;
+  border: 1px solid #334155; border-radius: 0.375rem;
+  font-size: 0.7rem; color: #94a3b8; background: transparent;
+  cursor: pointer; transition: color .15s, border-color .15s;
+}
+.icon-suggestion:hover { color: #e2e8f0; border-color: #64748b; }
 </style>

@@ -17,8 +17,11 @@ import {
   defaultPlacedMonitor,
   monitorToPrefs,
   prefsToMonitor,
-  INSTRUMENT_PALETTE,
+  INSTRUMENT_TYPE_LABELS,
 } from '@/types/stagePlot'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { StagePlotItemType } from '@/types/techRider'
 
 interface Props {
@@ -77,6 +80,15 @@ function addInstrument() {
   local.instruments.push(inst)
 }
 
+// Quick-add straight from the member's profile instruments. The icon comes from
+// the instrument's stage_plot_type, falling back to a guess from its name.
+function addProfileInstrument(profInst: { name: string; stage_plot_type?: StagePlotItemType | null }) {
+  const inst = defaultPlacedInstrument()
+  inst.label = profInst.name
+  inst.type  = profInst.stage_plot_type ?? guessInstrumentType(profInst.name) ?? 'custom'
+  local.instruments.push(inst)
+}
+
 function removeInstrument(id: string) {
   const idx = local.instruments.findIndex(i => i.id === id)
   if (idx !== -1) local.instruments.splice(idx, 1)
@@ -113,7 +125,7 @@ async function saveToProfile() {
   setupSaving.value = true
   try {
     const payload = {
-      name:              `Stage rig — ${local.instruments.map(i => i.label || i.type).join(' + ')}`,
+      name:              `Stage rig — ${local.instruments.map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' + ')}`,
       signal_chain_type: local.signal_chain_type,
       inputs:            local.inputs,
       monitor:           local.monitors[0] ? monitorToPrefs(local.monitors[0]) : undefined,
@@ -201,10 +213,9 @@ const memberFullName = computed(() =>
   props.member ? `${props.member.first_name} ${props.member.last_name}` : '',
 )
 
-const INSTRUMENT_TYPES = INSTRUMENT_PALETTE.filter(p => p.type !== 'monitor_wedge')
-
 const tabDone = computed<Record<Tab, boolean>>(() => ({
-  instruments: local.instruments.length > 0 && local.instruments.some(i => i.label),
+  // An instrument slot always carries an icon type, so a label is optional.
+  instruments: local.instruments.length > 0,
   inputs:      local.inputs.length > 0,
   monitor:     local.monitors.length > 0,
   wireless:    local.wireless.length > 0,
@@ -294,32 +305,38 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                   v-for="profInst in member.instruments"
                   :key="profInst.id"
                   type="button"
-                  class="px-2.5 py-1 text-xs rounded-full border border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-zinc-200 transition-colors"
-                  @click="() => { const i = defaultPlacedInstrument(); i.label = profInst.name; local.instruments.push(i) }"
-                >+ {{ profInst.name }}</button>
+                  class="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-zinc-200 transition-colors"
+                  @click="addProfileInstrument(profInst)"
+                >
+                  <InstrumentIcon
+                    :type="profInst.stage_plot_type ?? guessInstrumentType(profInst.name)"
+                    :size="14"
+                  />
+                  {{ profInst.name }}
+                </button>
               </div>
 
               <!-- Instrument list -->
               <div
                 v-for="inst in local.instruments"
                 :key="inst.id"
-                class="rounded-lg border border-zinc-700 bg-zinc-800/30 overflow-hidden"
+                class="rounded-lg border border-zinc-700 bg-zinc-800/30"
               >
                 <div class="flex items-center gap-3 px-4 py-3">
-                  <!-- Type selector -->
-                  <select
-                    :value="inst.type"
-                    class="text-xs bg-zinc-800 border border-zinc-600 rounded-md px-2 py-1.5 text-zinc-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
-                    @change="inst.type = ($event.target as HTMLSelectElement).value as StagePlotItemType"
-                  >
-                    <option v-for="opt in INSTRUMENT_TYPES" :key="opt.type" :value="opt.type">{{ opt.label }}</option>
-                  </select>
+                  <!-- Icon picker -->
+                  <div class="w-44 flex-shrink-0">
+                    <InstrumentIconPicker
+                      :model-value="inst.type"
+                      :exclude-types="['monitor_wedge']"
+                      @update:model-value="inst.type = $event ?? 'custom'"
+                    />
+                  </div>
 
                   <!-- Label input -->
                   <input
                     v-model="inst.label"
                     type="text"
-                    placeholder="Label (e.g. Guitar, Acoustic)"
+                    :placeholder="INSTRUMENT_TYPE_LABELS[inst.type]"
                     class="flex-1 text-sm bg-transparent border-b border-zinc-600 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 py-0.5"
                   />
 
@@ -336,7 +353,8 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                 </div>
 
                 <!-- Setup links -->
-                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-zinc-700/40 bg-zinc-900/20">
+                <!-- rounded-b-lg replaces the row's overflow-hidden, which clipped the icon picker popover -->
+                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-zinc-700/40 bg-zinc-900/20 rounded-b-lg">
                   <span class="text-[10px] text-zinc-500 mr-2">Link setup (imports inputs):</span>
                   <div class="flex flex-wrap gap-1.5 mt-1.5">
                     <button
