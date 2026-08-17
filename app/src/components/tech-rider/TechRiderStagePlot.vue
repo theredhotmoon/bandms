@@ -273,6 +273,41 @@ function memberMainInstrumentType(member: BandMember): StagePlotItemType | null 
   return inst.stage_plot_type ?? guessInstrumentType(inst.name)
 }
 
+// What the card draws in the instrument row. Falls back to the member's
+// profile (main instrument, else a guess from their role) when nothing has
+// been configured on this stage position yet, so a freshly placed musician
+// still reads as "the trumpet player" instead of showing nothing at all.
+interface DisplayInstrument {
+  id: string
+  type: StagePlotItemType
+  label: string
+  inferred: boolean
+}
+
+function displayInstruments(item: StagePlotMemberItem): DisplayInstrument[] {
+  if (item.instruments.length) {
+    return item.instruments.map(i => ({
+      id:    i.id,
+      type:  i.type,
+      label: i.label || INSTRUMENT_TYPE_LABELS[i.type],
+      inferred: false,
+    }))
+  }
+
+  const member = props.bandMembers.find(b => b.id === item.band_member_id)
+  if (!member) return []
+
+  const type = memberMainInstrumentType(member) ?? guessInstrumentType(member.role ?? '')
+  if (!type) return []
+
+  return [{
+    id:    `${item.id}-inferred`,
+    type,
+    label: member.main_instrument?.name ?? member.role ?? INSTRUMENT_TYPE_LABELS[type],
+    inferred: true,
+  }]
+}
+
 function itemDisplayName(item: StagePlotMemberItem): string {
   if (item.temp_id) {
     return tempMusicians.value.find(t => t.id === item.temp_id)?.name ?? 'Guest'
@@ -477,15 +512,16 @@ function statusClass(item: StagePlotMemberItem): string {
 
             <!-- Instruments — the headline of the card in the member/instrument views -->
             <div
-              v-if="(stageView === 'members' || stageView === 'instruments') && item.instruments.length"
+              v-if="(stageView === 'members' || stageView === 'instruments') && displayInstruments(item).length"
               class="flex flex-wrap items-center justify-center gap-1 text-zinc-100"
             >
               <InstrumentIcon
-                v-for="inst in item.instruments.slice(0, 3)"
+                v-for="inst in displayInstruments(item).slice(0, 3)"
                 :key="inst.id"
                 :type="inst.type"
                 :size="stageView === 'instruments' ? 34 : 26"
-                :title="inst.label || INSTRUMENT_TYPE_LABELS[inst.type]"
+                :title="inst.inferred ? `${inst.label} — from profile, not configured yet` : inst.label"
+                :class="inst.inferred ? 'opacity-40' : ''"
               />
               <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-400 self-end">
                 +{{ item.instruments.length - 3 }}
@@ -510,12 +546,13 @@ function statusClass(item: StagePlotMemberItem): string {
 
             <!-- instruments — names under the icons above -->
             <template v-else-if="stageView === 'instruments'">
-              <div v-if="item.instruments.length" class="w-full text-center leading-tight">
+              <div v-if="displayInstruments(item).length" class="w-full text-center leading-tight">
                 <div
-                  v-for="inst in item.instruments.slice(0, 3)"
+                  v-for="inst in displayInstruments(item).slice(0, 3)"
                   :key="inst.id"
-                  class="text-[10px] text-zinc-300 truncate"
-                >{{ inst.label || INSTRUMENT_TYPE_LABELS[inst.type] }}</div>
+                  class="text-[10px] truncate"
+                  :class="inst.inferred ? 'text-zinc-500 italic' : 'text-zinc-300'"
+                >{{ inst.label }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
