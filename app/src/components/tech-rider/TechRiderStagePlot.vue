@@ -9,10 +9,8 @@ import {
   defaultPlacedInstrument,
   isMemberItemComplete,
   isMemberItemPartial,
-  INSTRUMENT_TYPE_LABELS,
 } from '@/types/stagePlot'
-import type { StagePlotItemType } from '@/types/techRider'
-import { guessInstrumentType } from '@/utils/instrumentIcons'
+import { resolveStageInstruments, memberMainInstrumentType } from '@/utils/stageInstruments'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 import StagePlotMemberModal from './StagePlotMemberModal.vue'
 
@@ -265,47 +263,9 @@ watch(qrItemId, async (id) => {
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
-// Icon type for a member's main instrument — falls back to a name-based guess
-// when the instrument record has no explicit stage_plot_type yet.
-function memberMainInstrumentType(member: BandMember): StagePlotItemType | null {
-  const inst = member.main_instrument
-  if (!inst) return null
-  return inst.stage_plot_type ?? guessInstrumentType(inst.name)
-}
 
-// What the card draws in the instrument row. Falls back to the member's
-// profile (main instrument, else a guess from their role) when nothing has
-// been configured on this stage position yet, so a freshly placed musician
-// still reads as "the trumpet player" instead of showing nothing at all.
-interface DisplayInstrument {
-  id: string
-  type: StagePlotItemType
-  label: string
-  inferred: boolean
-}
-
-function displayInstruments(item: StagePlotMemberItem): DisplayInstrument[] {
-  if (item.instruments.length) {
-    return item.instruments.map(i => ({
-      id:    i.id,
-      type:  i.type,
-      label: i.label || INSTRUMENT_TYPE_LABELS[i.type],
-      inferred: false,
-    }))
-  }
-
-  const member = props.bandMembers.find(b => b.id === item.band_member_id)
-  if (!member) return []
-
-  const type = memberMainInstrumentType(member) ?? guessInstrumentType(member.role ?? '')
-  if (!type) return []
-
-  return [{
-    id:    `${item.id}-inferred`,
-    type,
-    label: member.main_instrument?.name ?? member.role ?? INSTRUMENT_TYPE_LABELS[type],
-    inferred: true,
-  }]
+function displayInstruments(item: StagePlotMemberItem) {
+  return resolveStageInstruments(item, props.bandMembers)
 }
 
 function itemDisplayName(item: StagePlotMemberItem): string {

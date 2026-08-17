@@ -9,6 +9,7 @@ import type { BandMember } from '@/types/bandMember'
 import type { BandProfile } from '@/types/bandProfile'
 import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
 import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+import { resolveStageInstruments } from '@/utils/stageInstruments'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 // ── Data loading ──────────────────────────────────────────────────────────────
@@ -211,14 +212,20 @@ const BADGE_OFFSETS: [number, number][][] = [
 ]
 
 function instrumentBadges(item: StagePlotMemberItem) {
-  const list = (item.instruments ?? []).slice(0, 3)
+  const list = resolveStageInstruments(item, members.value).slice(0, 3)
   const offsets = BADGE_OFFSETS[list.length] ?? []
   return list.map((inst, i) => ({
-    id:   inst.id,
-    type: inst.type,
-    dx:   offsets[i][0],
-    dy:   offsets[i][1],
+    id:       inst.id,
+    type:     inst.type,
+    inferred: inst.inferred,
+    dx:       offsets[i][0],
+    dy:       offsets[i][1],
   }))
+}
+
+// Instrument names printed under each musician, with the same profile fallback.
+function instrumentNames(item: StagePlotMemberItem, sep: string): string {
+  return resolveStageInstruments(item, members.value).map(i => i.label).join(sep)
 }
 
 function printPage() { window.print() }
@@ -349,6 +356,7 @@ function printPage() { window.print() }
                     :x="svgX(item.x) + badge.dx - 10"
                     :y="svgY(item.y) + badge.dy - 10"
                     class="svg-instrument-icon"
+                    :class="{ 'is-inferred': badge.inferred }"
                   />
                 </template>
                 <!-- Name -->
@@ -364,7 +372,7 @@ function printPage() { window.print() }
                   :y="svgY(item.y) + 55"
                   text-anchor="middle"
                   class="svg-member-role"
-                >{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' / ') }}</text>
+                >{{ instrumentNames(item, " / ") }}</text>
               </g>
             </svg>
           </div>
@@ -374,14 +382,15 @@ function printPage() { window.print() }
             <div v-for="(item, idx) in stagePlot" :key="item.id" class="stage-index-item">
               <span class="stage-index-num">{{ idx + 1 }}</span>
               <InstrumentIcon
-                v-for="inst in (item.instruments ?? []).slice(0, 3)"
+                v-for="inst in instrumentBadges(item)"
                 :key="inst.id"
                 :type="inst.type"
                 :size="18"
                 class="stage-index-icon"
+                :class="{ 'is-inferred': inst.inferred }"
               />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
-              <span class="stage-index-role">{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' · ') }}</span>
+              <span class="stage-index-role">{{ instrumentNames(item, " · ") }}</span>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
             </div>
           </div>
@@ -707,6 +716,8 @@ function printPage() { window.print() }
 .svg-instrument-badge { fill: #1f2937; stroke: #4b5563; stroke-width: 1; }
 .svg-instrument-icon { color: #e5e7eb; }
 .stage-index-icon { color: #94a3b8; flex-shrink: 0; }
+/* Taken from the member's profile rather than configured on this position */
+.is-inferred { opacity: 0.55; }
 .svg-badge-text { fill: #fff; font-size: 12px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-name { fill: #e2e8f0; font-size: 11px; font-weight: 600; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-role { fill: #94a3b8; font-size: 9px; font-family: ui-sans-serif, system-ui, sans-serif; }
