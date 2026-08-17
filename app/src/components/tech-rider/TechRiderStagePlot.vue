@@ -1,33 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+/**
+ * The stage plot — where placements are created and positioned.
+ *
+ * A card shows the *resolved* rig (saved setup + this gig's overrides), never a
+ * copy held on the placement itself, so what you see here is what the channel
+ * list and the printed rider show.
+ */
+import { computed, ref, watch } from 'vue'
 import QRCode from 'qrcode'
-import type { BandMember } from '@/types/bandMember'
-import type { MemberSetupGroup, BandMemberSetup } from '@/types/bandMemberSetup'
-import type { StagePlotMemberItem, GigLineup, GigTempMusician } from '@/types/stagePlot'
-import {
-  defaultStageMemberItem,
-  defaultPlacedInstrument,
-  isMemberItemComplete,
-  isMemberItemPartial,
-} from '@/types/stagePlot'
-import { resolveStageInstruments, memberMainInstrumentType } from '@/utils/stageInstruments'
+import PlacementModal from './PlacementModal.vue'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
-import StagePlotMemberModal from './StagePlotMemberModal.vue'
+import type { BandMember } from '@/types/bandMember'
+import type { BandMemberSetup, SetupLookup } from '@/types/bandMemberSetup'
+import type { RigSpec } from '@/types/rig'
+import type { GigLineup, GigTempMusician, StagePlacement } from '@/types/stagePlot'
+import { defaultPlacement, defaultPlacedInstrument } from '@/types/stagePlot'
+import { placementStatus, resolveRig, overriddenFields } from '@/utils/riderResolver'
+import { memberMainInstrumentType, resolveStageInstruments } from '@/utils/stageInstruments'
 
 interface Props {
-  modelValue: StagePlotMemberItem[]
+  modelValue: StagePlacement[]
   lineup: GigLineup
   bandMembers: BandMember[]
-  allSetups: MemberSetupGroup[]
+  /** Every saved rig, keyed by id — placements reference these. */
+  setups: SetupLookup
   publicToken?: string
+  /** Placement to open on mount, e.g. when jumped to from the channel list. */
+  focusId?: string | null
+  promoting?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   bandMembers: () => [],
-  allSetups:   () => [],
+  setups: () => ({}),
   publicToken: undefined,
+  focusId: null,
+  promoting: false,
 })
+
 const emit = defineEmits<{
-  'update:modelValue': [StagePlotMemberItem[]]
+  'update:modelValue': [StagePlacement[]]
+  promote: [placement: StagePlacement]
+  'focus-handled': []
 }>()
 
 // ── Stage view toggle ─────────────────────────────────────────────────────────
@@ -36,15 +49,38 @@ type StageView = 'members' | 'instruments' | 'signal_chain' | 'monitor' | 'wirel
 const stageView = ref<StageView>('members')
 
 const STAGE_VIEWS: { key: StageView; icon: string; label: string }[] = [
-  { key: 'members',     icon: '👤', label: 'Members'      },
-  { key: 'instruments', icon: '🎸', label: 'Instruments'  },
-  { key: 'signal_chain',icon: '🎙️', label: 'Inputs'       },
-  { key: 'monitor',     icon: '🔊', label: 'Monitor'      },
-  { key: 'wireless',    icon: '📡', label: 'Wireless'     },
-  { key: 'backline',    icon: '🥁', label: 'Backline'     },
-  { key: 'power',       icon: '⚡', label: 'Power'        },
-  { key: 'foh',         icon: '🎛️', label: 'FOH notes'   },
+  { key: 'members',     icon: '👤', label: 'Members'     },
+  { key: 'instruments', icon: '🎸', label: 'Instruments' },
+  { key: 'signal_chain',icon: '🎙️', label: 'Inputs'      },
+  { key: 'monitor',     icon: '🔊', label: 'Monitor'     },
+  { key: 'wireless',    icon: '📡', label: 'Wireless'    },
+  { key: 'backline',    icon: '🥁', label: 'Backline'    },
+  { key: 'power',       icon: '⚡', label: 'Power'       },
+  { key: 'foh',         icon: '🎛️', label: 'FOH notes'  },
 ]
+
+// ── Resolving ─────────────────────────────────────────────────────────────────
+
+/** Resolved rigs by placement id, so each card resolves once per render. */
+const resolvedRigs = computed<Record<string, RigSpec>>(() => {
+  const out: Record<string, RigSpec> = {}
+  for (const placement of props.modelValue) {
+    out[placement.id] = resolveRig(placement, props.setups)
+  }
+  return out
+})
+
+function rigFor(placement: StagePlacement): RigSpec {
+  return resolvedRigs.value[placement.id]
+}
+
+function backlineNeeded(placement: StagePlacement): boolean {
+  return rigFor(placement).backline.some((b) => b.needed)
+}
+
+function isOverridden(placement: StagePlacement): boolean {
+  return overriddenFields(placement).length > 0
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -60,29 +96,28 @@ function tempInitials(t: GigTempMusician): string {
   return (t.name[0] ?? '?').toUpperCase()
 }
 
-// Returns member setups for a given member id
+/** A member's own saved rigs, pulled out of the shared lookup. */
 function setupsFor(memberId: number | null): BandMemberSetup[] {
   if (!memberId) return []
-  return props.allSetups.find(g => g.member_id === memberId)?.setups ?? []
+  return Object.values(props.setups).filter((s) => s.band_member_id === memberId)
 }
 
-// Which band members are available (is_available=true or not listed = default available)
 const availableMembers = computed<BandMember[]>(() =>
-  props.bandMembers.filter(m => m.is_current && (() => {
-    const entry = props.lineup.regular_members.find(r => r.band_member_id === m.id)
+  props.bandMembers.filter((m) => {
+    if (!m.is_current) return false
+    const entry = props.lineup.regular_members.find((r) => r.band_member_id === m.id)
     return entry ? entry.is_available : true
-  })()),
+  }),
 )
 
 const tempMusicians = computed(() => props.lineup.temp_musicians ?? [])
 
-// Number of times a member appears on stage
 function memberPositionCount(memberId: number): number {
-  return props.modelValue.filter(i => i.band_member_id === memberId).length
+  return props.modelValue.filter((i) => i.band_member_id === memberId).length
 }
 
 function tempPositionCount(tempId: string): number {
-  return props.modelValue.filter(i => i.temp_id === tempId).length
+  return props.modelValue.filter((i) => i.temp_id === tempId).length
 }
 
 // ── Profile completeness check ────────────────────────────────────────────────
@@ -91,45 +126,42 @@ interface ProfileCheck { ok: boolean; warnings: string[] }
 
 function checkProfile(memberId: number): ProfileCheck {
   const setups = setupsFor(memberId)
-  if (!setups.length) return { ok: false, warnings: ['No technical setup configured for this member'] }
-  const hasInputs  = setups.some(s => s.inputs?.length > 0)
-  const hasMonitor = setups.some(s => s.monitor?.type)
+  if (!setups.length) return { ok: false, warnings: ['No saved rig for this member'] }
   const warnings: string[] = []
-  if (!hasInputs)  warnings.push('No input channels configured in any setup')
-  if (!hasMonitor) warnings.push('No monitor preferences configured')
+  if (!setups.some((s) => (s.inputs?.length ?? 0) > 0)) warnings.push('No input channels in any saved rig')
+  if (!setups.some((s) => (s.monitors?.length ?? 0) > 0)) warnings.push('No monitor sends configured')
   return { ok: warnings.length === 0, warnings }
 }
 
-// Warning dialog state
 const warnPending = ref<{ memberId: number | null; tempId?: string; x: number; y: number; warnings: string[] } | null>(null)
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
 
-const stageRef           = ref<HTMLElement | null>(null)
-const draggingMemberId   = ref<number | null>(null)   // dragging from panel
-const draggingTempId     = ref<string | null>(null)   // dragging temp from panel
-const draggingExistingId = ref<string | null>(null)   // dragging placed item
-const dragOffsetX        = ref(0)
-const dragOffsetY        = ref(0)
+const stageRef = ref<HTMLElement | null>(null)
+const draggingMemberId = ref<number | null>(null)
+const draggingTempId = ref<string | null>(null)
+const draggingExistingId = ref<string | null>(null)
+const dragOffsetX = ref(0)
+const dragOffsetY = ref(0)
 
 function onPanelMemberDragStart(e: DragEvent, memberId: number) {
-  draggingMemberId.value   = memberId
-  draggingTempId.value     = null
+  draggingMemberId.value = memberId
+  draggingTempId.value = null
   draggingExistingId.value = null
   e.dataTransfer?.setData('text/plain', `member:${memberId}`)
 }
 
 function onPanelTempDragStart(e: DragEvent, tempId: string) {
-  draggingTempId.value     = tempId
-  draggingMemberId.value   = null
+  draggingTempId.value = tempId
+  draggingMemberId.value = null
   draggingExistingId.value = null
   e.dataTransfer?.setData('text/plain', `temp:${tempId}`)
 }
 
-function onItemDragStart(e: DragEvent, item: StagePlotMemberItem) {
+function onItemDragStart(e: DragEvent, item: StagePlacement) {
   draggingExistingId.value = item.id
-  draggingMemberId.value   = null
-  draggingTempId.value     = null
+  draggingMemberId.value = null
+  draggingTempId.value = null
   const el = (e.target as HTMLElement).closest('.stage-member-card') as HTMLElement | null
   if (el && stageRef.value) {
     const rect = el.getBoundingClientRect()
@@ -145,10 +177,9 @@ function onStageDragOver(e: DragEvent) {
 }
 
 function dropCoords(e: DragEvent): { x: number; y: number } {
-  const stage = stageRef.value!
-  const rect  = stage.getBoundingClientRect()
-  const x = Math.min(Math.max(((e.clientX - rect.left - dragOffsetX.value) / rect.width)  * 100, 5), 93)
-  const y = Math.min(Math.max(((e.clientY - rect.top  - dragOffsetY.value) / rect.height) * 100, 5), 88)
+  const rect = stageRef.value!.getBoundingClientRect()
+  const x = Math.min(Math.max(((e.clientX - rect.left - dragOffsetX.value) / rect.width) * 100, 5), 93)
+  const y = Math.min(Math.max(((e.clientY - rect.top - dragOffsetY.value) / rect.height) * 100, 5), 88)
   return { x, y }
 }
 
@@ -158,13 +189,12 @@ function onStageDrop(e: DragEvent) {
   const { x, y } = dropCoords(e)
 
   if (draggingExistingId.value) {
-    // Reposition existing item
-    emit('update:modelValue', props.modelValue.map(i =>
+    emit('update:modelValue', props.modelValue.map((i) =>
       i.id === draggingExistingId.value ? { ...i, x, y } : i,
     ))
   } else if (draggingMemberId.value !== null) {
     const memberId = draggingMemberId.value
-    const check    = checkProfile(memberId)
+    const check = checkProfile(memberId)
     if (!check.ok) {
       warnPending.value = { memberId, x, y, warnings: check.warnings }
     } else {
@@ -174,31 +204,37 @@ function onStageDrop(e: DragEvent) {
     placeOnStage(null, draggingTempId.value, x, y)
   }
 
-  draggingMemberId.value   = null
-  draggingTempId.value     = null
+  draggingMemberId.value = null
+  draggingTempId.value = null
   draggingExistingId.value = null
   dragOffsetX.value = 0
   dragOffsetY.value = 0
 }
 
 function placeOnStage(memberId: number | null, tempId: string | undefined, x: number, y: number) {
-  const item = defaultStageMemberItem(memberId, tempId, x, y)
+  const placement = defaultPlacement(memberId, tempId, x, y)
 
-  // Auto-add main instrument if available
   if (memberId !== null) {
-    const member = props.bandMembers.find(m => m.id === memberId)
+    const member = props.bandMembers.find((m) => m.id === memberId)
+
+    // Link the member's default rig straight away — placing someone should give
+    // you their channels immediately, not an empty position to fill in.
+    const own = setupsFor(memberId)
+    const chosen = own.find((s) => s.is_default) ?? own[0]
+    if (chosen) placement.setup_id = chosen.id
+
     const mainInst = member?.main_instrument
     const iconType = member ? memberMainInstrumentType(member) : null
     if (mainInst && iconType) {
       const placed = defaultPlacedInstrument()
-      placed.type  = iconType
+      placed.type = iconType
       placed.label = mainInst.name
-      item.instruments = [placed]
+      placement.instruments = [placed]
     }
   }
 
-  emit('update:modelValue', [...props.modelValue, item])
-  openModal(item.id)
+  emit('update:modelValue', [...props.modelValue, placement])
+  openModal(placement.id)
 }
 
 function confirmPlaceAnyway() {
@@ -211,16 +247,16 @@ function confirmPlaceAnyway() {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 const modalItemId = ref<string | null>(null)
-const modalItem   = computed(() => props.modelValue.find(i => i.id === modalItemId.value) ?? null)
+const modalItem = computed(() => props.modelValue.find((i) => i.id === modalItemId.value) ?? null)
 
 const modalMember = computed<BandMember | null>(() => {
   if (!modalItem.value?.band_member_id) return null
-  return props.bandMembers.find(m => m.id === modalItem.value!.band_member_id) ?? null
+  return props.bandMembers.find((m) => m.id === modalItem.value!.band_member_id) ?? null
 })
 
 const modalTemp = computed<GigTempMusician | null>(() => {
   if (!modalItem.value?.temp_id) return null
-  return tempMusicians.value.find(t => t.id === modalItem.value!.temp_id) ?? null
+  return tempMusicians.value.find((t) => t.id === modalItem.value!.temp_id) ?? null
 })
 
 const modalSetups = computed<BandMemberSetup[]>(() =>
@@ -231,18 +267,29 @@ function openModal(itemId: string) {
   modalItemId.value = itemId
 }
 
-function onModalUpdate(updated: StagePlotMemberItem) {
-  emit('update:modelValue', props.modelValue.map(i => i.id === updated.id ? updated : i))
+// The channel list and the completeness bar link back to a placement.
+watch(
+  () => props.focusId,
+  (id) => {
+    if (!id) return
+    openModal(id)
+    emit('focus-handled')
+  },
+  { immediate: true },
+)
+
+function onModalUpdate(updated: StagePlacement) {
+  emit('update:modelValue', props.modelValue.map((i) => (i.id === updated.id ? updated : i)))
 }
 
 function removeItem(itemId: string) {
-  emit('update:modelValue', props.modelValue.filter(i => i.id !== itemId))
+  emit('update:modelValue', props.modelValue.filter((i) => i.id !== itemId))
   if (modalItemId.value === itemId) modalItemId.value = null
 }
 
 // ── QR code modal ────────────────────────────────────────────────────────────
 
-const qrItemId  = ref<string | null>(null)
+const qrItemId = ref<string | null>(null)
 const qrDataUrl = ref<string>('')
 
 const riderPublicUrl = computed(() =>
@@ -263,39 +310,48 @@ watch(qrItemId, async (id) => {
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
-
-function displayInstruments(item: StagePlotMemberItem) {
+function displayInstruments(item: StagePlacement) {
   return resolveStageInstruments(item, props.bandMembers)
 }
 
-function itemDisplayName(item: StagePlotMemberItem): string {
+function itemDisplayName(item: StagePlacement): string {
   if (item.temp_id) {
-    return tempMusicians.value.find(t => t.id === item.temp_id)?.name ?? 'Guest'
+    return tempMusicians.value.find((t) => t.id === item.temp_id)?.name ?? 'Guest'
   }
-  const m = props.bandMembers.find(b => b.id === item.band_member_id)
+  const m = props.bandMembers.find((b) => b.id === item.band_member_id)
   if (!m) return 'Unknown'
   return m.nickname ?? `${m.first_name} ${m.last_name}`
 }
 
-function itemAvatar(item: StagePlotMemberItem): string {
+function itemAvatar(item: StagePlacement): string {
   if (item.temp_id) {
-    const t = tempMusicians.value.find(t => t.id === item.temp_id)
+    const t = tempMusicians.value.find((x) => x.id === item.temp_id)
     return (t?.name[0] ?? '?').toUpperCase()
   }
-  const m = props.bandMembers.find(b => b.id === item.band_member_id)
+  const m = props.bandMembers.find((b) => b.id === item.band_member_id)
   if (!m) return '?'
   return `${m.first_name[0] ?? ''}${m.last_name[0] ?? ''}`.toUpperCase()
 }
 
-function itemPhoto(item: StagePlotMemberItem): string | null {
+function itemPhoto(item: StagePlacement): string | null {
   if (!item.band_member_id) return null
-  return props.bandMembers.find(b => b.id === item.band_member_id)?.photo ?? null
+  return props.bandMembers.find((b) => b.id === item.band_member_id)?.photo ?? null
 }
 
-function statusClass(item: StagePlotMemberItem): string {
-  if (isMemberItemComplete(item)) return 'bg-emerald-500'
-  if (isMemberItemPartial(item))  return 'bg-amber-500'
-  return 'bg-red-500'
+function statusOf(item: StagePlacement) {
+  return placementStatus(item, props.setups, props.bandMembers, tempMusicians.value)
+}
+
+function statusClass(item: StagePlacement): string {
+  const status = statusOf(item)
+  if (status.complete) return 'bg-emerald-500'
+  return status.missing.length >= 3 ? 'bg-red-500' : 'bg-amber-500'
+}
+
+function cardBorderClass(item: StagePlacement): string {
+  const status = statusOf(item)
+  if (status.complete) return 'border-emerald-600/60'
+  return status.missing.length >= 3 ? 'border-red-700/50' : 'border-amber-600/50'
 }
 </script>
 
@@ -447,14 +503,17 @@ function statusClass(item: StagePlotMemberItem): string {
         >
           <div
             class="relative w-24 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
-            :class="
-              isMemberItemComplete(item) ? 'border-emerald-600/60 bg-zinc-900/95' :
-              isMemberItemPartial(item)  ? 'border-amber-600/50 bg-zinc-900/95' :
-              'border-red-700/50 bg-zinc-900/95'
-            "
+            :class="[cardBorderClass(item), 'bg-zinc-900/95']"
           >
             <!-- Status dot -->
             <div class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-zinc-900" :class="statusClass(item)" />
+
+            <!-- Overridden marker — this gig differs from the saved rig -->
+            <div
+              v-if="isOverridden(item)"
+              class="absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-zinc-900 bg-amber-400"
+              title="Changed for this gig"
+            />
 
             <!-- Avatar -->
             <div
@@ -493,14 +552,14 @@ function statusClass(item: StagePlotMemberItem): string {
             <!-- members: completeness dots -->
             <template v-if="stageView === 'members'">
               <div class="flex gap-1 justify-center items-center">
-                <span class="text-[11px] transition-opacity" :class="item.inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
-                <span class="text-[11px] transition-opacity" :class="item.monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
-                <span class="text-[11px] transition-opacity" :class="(item.power.outlets_needed ?? 0) > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
+                <span class="text-[11px] transition-opacity" :class="rigFor(item).inputs.length > 0 ? 'opacity-100' : 'opacity-20'" title="Signal chain">🎙️</span>
+                <span class="text-[11px] transition-opacity" :class="rigFor(item).monitors.length > 0 ? 'opacity-100' : 'opacity-20'" title="Monitor">🔊</span>
+                <span class="text-[11px] transition-opacity" :class="rigFor(item).power.outlets_needed > 0 ? 'opacity-100' : 'opacity-20'" title="Power">⚡</span>
               </div>
-              <div v-if="item.wireless.length || item.backline.needed || item.foh_notes?.trim()" class="flex gap-1 justify-center">
-                <span v-if="item.wireless.length"  class="text-[10px]" title="Wireless">📡</span>
-                <span v-if="item.backline.needed"   class="text-[10px]" title="Backline">🥁</span>
-                <span v-if="item.foh_notes?.trim()" class="text-[10px]" title="FOH notes">🎛️</span>
+              <div v-if="rigFor(item).wireless.length || backlineNeeded(item) || rigFor(item).foh_notes?.trim()" class="flex gap-1 justify-center">
+                <span v-if="rigFor(item).wireless.length" class="text-[10px]" title="Wireless">📡</span>
+                <span v-if="backlineNeeded(item)" class="text-[10px]" title="Backline">🥁</span>
+                <span v-if="rigFor(item).foh_notes?.trim()" class="text-[10px]" title="FOH notes">🎛️</span>
               </div>
             </template>
 
@@ -519,55 +578,58 @@ function statusClass(item: StagePlotMemberItem): string {
 
             <!-- signal chain / inputs -->
             <template v-else-if="stageView === 'signal_chain'">
-              <div v-if="item.inputs.length" class="text-center">
-                <div class="text-sm font-bold text-white">{{ item.inputs.length }}</div>
-                <div class="text-[10px] text-zinc-400">ch{{ item.signal_chain_type ? ' · ' + item.signal_chain_type : '' }}</div>
+              <div v-if="rigFor(item).inputs.length" class="text-center">
+                <div class="text-sm font-bold text-white">{{ rigFor(item).inputs.length }}</div>
+                <div class="text-[10px] text-zinc-400">ch · {{ rigFor(item).signal_chain_type }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- monitor -->
             <template v-else-if="stageView === 'monitor'">
-              <div v-if="item.monitors.length" class="flex flex-col items-center gap-0.5">
-                <div v-for="mon in item.monitors.slice(0, 3)" :key="mon.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
+              <div v-if="rigFor(item).monitors.length" class="flex flex-col items-center gap-0.5">
+                <div v-for="mon in rigFor(item).monitors.slice(0, 3)" :key="mon.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
                   {{ mon.type === 'wedge' ? '🔊' : '🎧' }} {{ mon.label || (mon.type === 'wedge' ? 'Wedge' : 'IEM') }}
                 </div>
-                <span v-if="item.monitors.length > 3" class="text-[10px] text-zinc-500">+{{ item.monitors.length - 3 }}</span>
+                <span v-if="rigFor(item).monitors.length > 3" class="text-[10px] text-zinc-500">+{{ rigFor(item).monitors.length - 3 }}</span>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- wireless -->
             <template v-else-if="stageView === 'wireless'">
-              <div v-if="item.wireless.length" class="text-center">
-                <div class="text-sm font-bold text-white">{{ item.wireless.length }}</div>
-                <div class="text-[10px] text-zinc-400">unit{{ item.wireless.length !== 1 ? 's' : '' }}</div>
+              <div v-if="rigFor(item).wireless.length" class="text-center">
+                <div class="text-sm font-bold text-white">{{ rigFor(item).wireless.length }}</div>
+                <div class="text-[10px] text-zinc-400">unit{{ rigFor(item).wireless.length !== 1 ? 's' : '' }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- backline -->
             <template v-else-if="stageView === 'backline'">
-              <div v-if="item.backline.needed" class="text-center">
-                <div class="text-[11px] text-zinc-300">{{ item.backline.category || 'needed' }}</div>
-                <div v-if="item.backline.specs" class="text-[10px] text-zinc-500 truncate w-full text-center">{{ item.backline.specs }}</div>
+              <div v-if="backlineNeeded(item)" class="text-center">
+                <div
+                  v-for="bl in rigFor(item).backline.filter(b => b.needed).slice(0, 2)"
+                  :key="bl.id"
+                  class="text-[10px] text-zinc-300 truncate w-full"
+                >{{ bl.name || bl.category }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- power -->
             <template v-else-if="stageView === 'power'">
-              <div v-if="(item.power.outlets_needed ?? 0) > 0" class="text-center">
-                <div class="text-sm font-bold text-white">{{ item.power.outlets_needed }}</div>
-                <div class="text-[10px] text-zinc-400">outlet{{ item.power.outlets_needed !== 1 ? 's' : '' }}</div>
+              <div v-if="rigFor(item).power.outlets_needed > 0" class="text-center">
+                <div class="text-sm font-bold text-white">{{ rigFor(item).power.outlets_needed }}</div>
+                <div class="text-[10px] text-zinc-400">outlet{{ rigFor(item).power.outlets_needed !== 1 ? 's' : '' }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- FOH notes -->
             <template v-else-if="stageView === 'foh'">
-              <div v-if="item.foh_notes?.trim()" class="text-[10px] text-zinc-300 text-center line-clamp-3 leading-snug">
-                {{ item.foh_notes.trim() }}
+              <div v-if="rigFor(item).foh_notes?.trim()" class="text-[10px] text-zinc-300 text-center line-clamp-3 leading-snug">
+                {{ rigFor(item).foh_notes.trim() }}
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>
@@ -663,14 +725,17 @@ function statusClass(item: StagePlotMemberItem): string {
     </Teleport>
 
     <!-- ── Member config modal ────────────────────────────────────────── -->
-    <StagePlotMemberModal
+    <PlacementModal
       v-if="modalItem"
-      :model-value="modalItem"
+      :placement="modalItem"
       :member="modalMember"
       :temp-musician="modalTemp"
       :member-setups="modalSetups"
+      :setups="setups"
+      :promoting="promoting"
       :open="!!modalItemId"
-      @update:model-value="onModalUpdate"
+      @update:placement="onModalUpdate"
+      @promote="emit('promote', $event)"
       @close="modalItemId = null"
     />
 

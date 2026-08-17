@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import InstrumentIcon from './InstrumentIcon.vue'
-import type { StagePlotItemType } from '@/types/techRider'
+import type { StagePlotItemType } from '@/types/instrumentType'
 import { INSTRUMENT_ICON_GROUPS, instrumentIcon, searchInstrumentIcons } from '@/utils/instrumentIcons'
 
 interface Props {

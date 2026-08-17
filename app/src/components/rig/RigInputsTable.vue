@@ -1,58 +1,51 @@
 <script setup lang="ts">
-import type { InputRow, MicDiChoice } from '@/types/techRider'
+import type { InputRow, MicDiChoice } from '@/types/rig'
+import { defaultInputRow } from '@/types/rig'
 
-interface Props { modelValue: InputRow[] }
-const props = defineProps<Props>()
-const emit  = defineEmits<{ 'update:modelValue': [value: InputRow[]] }>()
+interface Props {
+  modelValue: InputRow[]
+  /** Optional label for the empty state, e.g. "extra channel". */
+  noun?: string
+}
+const props = withDefaults(defineProps<Props>(), { noun: 'channel' })
+const emit = defineEmits<{ 'update:modelValue': [value: InputRow[]] }>()
 
 const MIC_DI_OPTIONS: MicDiChoice[] = ['Mic', 'DI', 'Mic+DI']
 const STAND_OPTIONS = ['Short boom', 'Tall boom', 'Straight', 'Low tom', 'Desk', 'None', 'Other']
 
-function uid() {
-  return `row-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-}
-
 function addRow() {
-  const next = props.modelValue.length + 1
-  emit('update:modelValue', [
-    ...props.modelValue,
-    { id: uid(), channel: next, instrument: '', mic_di: 'Mic', mic_model: '', stand_type: 'Tall boom', notes: '' },
-  ])
+  emit('update:modelValue', [...props.modelValue, defaultInputRow()])
 }
 
 function updateRow(id: string, field: keyof InputRow, value: unknown) {
-  emit('update:modelValue', props.modelValue.map(r => r.id === id ? { ...r, [field]: value } : r))
+  emit('update:modelValue', props.modelValue.map((r) => (r.id === id ? { ...r, [field]: value } : r)))
 }
 
 function removeRow(id: string) {
-  const filtered = props.modelValue.filter(r => r.id !== id)
-  // Re-number channels
-  emit('update:modelValue', filtered.map((r, i) => ({ ...r, channel: i + 1 })))
+  emit('update:modelValue', props.modelValue.filter((r) => r.id !== id))
 }
 
+// Order within a rig matters (kick before snare); the rider's overall channel
+// numbering is applied later, across every musician.
 function moveRow(id: string, dir: -1 | 1) {
-  const idx = props.modelValue.findIndex(r => r.id === id)
+  const idx = props.modelValue.findIndex((r) => r.id === id)
   if (idx < 0) return
   if (dir === -1 && idx === 0) return
-  if (dir === 1  && idx === props.modelValue.length - 1) return
+  if (dir === 1 && idx === props.modelValue.length - 1) return
   const rows = [...props.modelValue]
   ;[rows[idx], rows[idx + dir]] = [rows[idx + dir], rows[idx]]
-  emit('update:modelValue', rows.map((r, i) => ({ ...r, channel: i + 1 })))
+  emit('update:modelValue', rows)
 }
 </script>
 
 <template>
   <div class="inputs-section">
-    <div class="section-hint">
-      One row per microphone or DI channel. Channel numbers must match your stage plot labels.
-    </div>
-
     <div class="table-scroll">
       <table class="inputs-table">
         <thead>
           <tr>
             <th class="col-ch">#</th>
-            <th class="col-instr">Instrument / Source</th>
+            <th class="col-instr">Instrument / source</th>
             <th class="col-micdi">Mic / DI</th>
             <th class="col-model">Model</th>
             <th class="col-stand">Stand</th>
@@ -62,15 +55,15 @@ function moveRow(id: string, dir: -1 | 1) {
         </thead>
         <tbody>
           <tr v-if="modelValue.length === 0">
-            <td colspan="7" class="empty-row">No inputs yet — click "Add row" to start.</td>
+            <td colspan="7" class="empty-row">No {{ noun }}s yet — click "Add row" to start.</td>
           </tr>
-          <tr v-for="row in modelValue" :key="row.id" class="data-row">
+          <tr v-for="(row, idx) in modelValue" :key="row.id" class="data-row">
             <td class="col-ch">
               <div class="ch-cell">
-                <span class="ch-num">{{ row.channel }}</span>
+                <span class="ch-num">{{ idx + 1 }}</span>
                 <div class="move-btns">
-                  <button type="button" class="move-btn" title="Move up"   @click="moveRow(row.id, -1)">▲</button>
-                  <button type="button" class="move-btn" title="Move down" @click="moveRow(row.id,  1)">▼</button>
+                  <button type="button" class="move-btn" title="Move up" @click="moveRow(row.id, -1)">▲</button>
+                  <button type="button" class="move-btn" title="Move down" @click="moveRow(row.id, 1)">▼</button>
                 </div>
               </div>
             </td>
@@ -126,17 +119,13 @@ function moveRow(id: string, dir: -1 | 1) {
 
     <div class="table-footer">
       <button type="button" class="btn-add-row" @click="addRow">+ Add row</button>
-      <span class="row-count">{{ modelValue.length }} channel{{ modelValue.length === 1 ? '' : 's' }}</span>
+      <span class="row-count">{{ modelValue.length }} {{ noun }}{{ modelValue.length === 1 ? '' : 's' }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .inputs-section { display: flex; flex-direction: column; gap: 0.75rem; }
-.section-hint {
-  font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
-}
 .table-scroll { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #2a2a2a; }
 .inputs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .inputs-table thead th {
@@ -198,6 +187,6 @@ function moveRow(id: string, dir: -1 | 1) {
   cursor: pointer; background: #141414; border: 1px solid #2a2a2a; color: #c0c0c0;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add-row:hover { background: #12123a; border-color: #444444; }
+.btn-add-row:hover { background: #1a1a1a; border-color: #444444; }
 .row-count { font-size: 0.7rem; color: #334155; }
 </style>

@@ -5,8 +5,7 @@
  * signal chain type a band member can configure.
  */
 
-import type { SignalChainType } from '@/types/bandMemberSetup'
-import type { InputRow, MicDiChoice } from '@/types/techRider'
+import type { InputRow, MicDiChoice, SignalChainType } from '@/types/rig'
 
 // ── Labels & descriptions ─────────────────────────────────────────────────────
 
@@ -78,15 +77,16 @@ function uid(): string {
   return `row-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 }
 
+// No channel number: channels are numbered when the rider is resolved, so a
+// preset only describes what the input *is*.
 function makeRow(
-  channel: number,
   instrument: string,
   mic_di: MicDiChoice,
   mic_model: string,
   stand_type: string,
   notes = '',
 ): InputRow {
-  return { id: uid(), channel, instrument, mic_di, mic_model, stand_type, notes }
+  return { id: uid(), instrument, mic_di, mic_model, stand_type, notes }
 }
 
 /**
@@ -102,95 +102,93 @@ export function buildInputsFromChain(
 ): InputRow[] {
   const pfx = memberName ? `${memberName} — ` : ''
   const lbl = instrName || 'Instrument'
-  let ch = 1
-
   const rows: InputRow[] = []
 
   switch (chainType) {
     case 'modeler_mono':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (DI)`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} (DI)`, 'DI', '', 'None'))
       break
 
     case 'modeler_stereo':
-      rows.push(makeRow(ch++, `${pfx}${lbl} — L (DI)`, 'DI', '', 'None'))
-      rows.push(makeRow(ch++, `${pfx}${lbl} — R (DI)`, 'DI', '', 'None', 'Stereo pair'))
+      rows.push(makeRow(`${pfx}${lbl} — L (DI)`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} — R (DI)`, 'DI', '', 'None', 'Stereo pair'))
       break
 
     case 'amp_mic':
-      rows.push(makeRow(ch++, `${pfx}${lbl} amp`, 'Mic', 'SM57', 'Short boom'))
+      rows.push(makeRow(`${pfx}${lbl} amp`, 'Mic', 'SM57', 'Short boom'))
       break
 
     case 'amp_mic_di':
-      rows.push(makeRow(ch++, `${pfx}${lbl} amp (mic)`, 'Mic', 'SM57',   'Short boom'))
-      rows.push(makeRow(ch++, `${pfx}${lbl} amp (DI)`,  'DI',  '',       'None',       'Pre-amp out / parallel split'))
+      rows.push(makeRow(`${pfx}${lbl} amp (mic)`, 'Mic', 'SM57',   'Short boom'))
+      rows.push(makeRow(`${pfx}${lbl} amp (DI)`,  'DI',  '',       'None',       'Pre-amp out / parallel split'))
       break
 
     case 'amp_di':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (line out / cab-sim)`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} (line out / cab-sim)`, 'DI', '', 'None'))
       break
 
     case 'direct_mono':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (DI)`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} (DI)`, 'DI', '', 'None'))
       break
 
     case 'direct_stereo':
-      rows.push(makeRow(ch++, `${pfx}${lbl} — L`, 'DI', '', 'None'))
-      rows.push(makeRow(ch++, `${pfx}${lbl} — R`, 'DI', '', 'None', 'Stereo pair'))
+      rows.push(makeRow(`${pfx}${lbl} — L`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} — R`, 'DI', '', 'None', 'Stereo pair'))
       break
 
     case 'drum_acoustic':
-      rows.push(makeRow(ch++, `${pfx}Kick (in)`,     'Mic', 'AKG D112 / Beta 52A', 'Short boom'))
-      rows.push(makeRow(ch++, `${pfx}Kick (out)`,    'Mic', 'SM91 / Beta 91A',     'None',       'Boundary'))
-      rows.push(makeRow(ch++, `${pfx}Snare (top)`,   'Mic', 'SM57',                'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Snare (btm)`,   'Mic', 'SM57',                'Low tom',    'Phase flip'))
-      rows.push(makeRow(ch++, `${pfx}Hi-Hat`,         'Mic', 'SM81 / C451B',        'Short boom'))
-      rows.push(makeRow(ch++, `${pfx}Tom 1`,          'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Tom 2`,          'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Floor Tom`,      'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Overhead L`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
-      rows.push(makeRow(ch++, `${pfx}Overhead R`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
+      rows.push(makeRow(`${pfx}Kick (in)`,     'Mic', 'AKG D112 / Beta 52A', 'Short boom'))
+      rows.push(makeRow(`${pfx}Kick (out)`,    'Mic', 'SM91 / Beta 91A',     'None',       'Boundary'))
+      rows.push(makeRow(`${pfx}Snare (top)`,   'Mic', 'SM57',                'Low tom'))
+      rows.push(makeRow(`${pfx}Snare (btm)`,   'Mic', 'SM57',                'Low tom',    'Phase flip'))
+      rows.push(makeRow(`${pfx}Hi-Hat`,         'Mic', 'SM81 / C451B',        'Short boom'))
+      rows.push(makeRow(`${pfx}Tom 1`,          'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Tom 2`,          'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Floor Tom`,      'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Overhead L`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
+      rows.push(makeRow(`${pfx}Overhead R`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
       break
 
     case 'drum_electronic':
-      rows.push(makeRow(ch++, `${pfx}Drum module — L`, 'DI', '', 'None'))
-      rows.push(makeRow(ch++, `${pfx}Drum module — R`, 'DI', '', 'None', 'Stereo pair'))
+      rows.push(makeRow(`${pfx}Drum module — L`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}Drum module — R`, 'DI', '', 'None', 'Stereo pair'))
       break
 
     case 'drum_hybrid':
       // Acoustic channels
-      rows.push(makeRow(ch++, `${pfx}Kick (in)`,     'Mic', 'AKG D112 / Beta 52A', 'Short boom'))
-      rows.push(makeRow(ch++, `${pfx}Kick (out)`,    'Mic', 'SM91 / Beta 91A',     'None',       'Boundary'))
-      rows.push(makeRow(ch++, `${pfx}Snare (top)`,   'Mic', 'SM57',                'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Snare (btm)`,   'Mic', 'SM57',                'Low tom',    'Phase flip'))
-      rows.push(makeRow(ch++, `${pfx}Hi-Hat`,         'Mic', 'SM81 / C451B',        'Short boom'))
-      rows.push(makeRow(ch++, `${pfx}Tom 1`,          'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Tom 2`,          'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Floor Tom`,      'Mic', 'e604 / MD421',        'Low tom'))
-      rows.push(makeRow(ch++, `${pfx}Overhead L`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
-      rows.push(makeRow(ch++, `${pfx}Overhead R`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
+      rows.push(makeRow(`${pfx}Kick (in)`,     'Mic', 'AKG D112 / Beta 52A', 'Short boom'))
+      rows.push(makeRow(`${pfx}Kick (out)`,    'Mic', 'SM91 / Beta 91A',     'None',       'Boundary'))
+      rows.push(makeRow(`${pfx}Snare (top)`,   'Mic', 'SM57',                'Low tom'))
+      rows.push(makeRow(`${pfx}Snare (btm)`,   'Mic', 'SM57',                'Low tom',    'Phase flip'))
+      rows.push(makeRow(`${pfx}Hi-Hat`,         'Mic', 'SM81 / C451B',        'Short boom'))
+      rows.push(makeRow(`${pfx}Tom 1`,          'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Tom 2`,          'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Floor Tom`,      'Mic', 'e604 / MD421',        'Low tom'))
+      rows.push(makeRow(`${pfx}Overhead L`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
+      rows.push(makeRow(`${pfx}Overhead R`,     'Mic', 'SM81 / AKG C414',     'Tall boom'))
       // Trigger DI
-      rows.push(makeRow(ch++, `${pfx}Trigger / module`, 'DI', '', 'None', 'Electronic pads / triggers'))
+      rows.push(makeRow(`${pfx}Trigger / module`, 'DI', '', 'None', 'Electronic pads / triggers'))
       break
 
     case 'vocal_mic':
-      rows.push(makeRow(ch++, `${pfx}${lbl}`, 'Mic', 'SM58 / e945', 'Tall boom'))
+      rows.push(makeRow(`${pfx}${lbl}`, 'Mic', 'SM58 / e945', 'Tall boom'))
       break
 
     case 'vocal_wireless':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (wireless)`, 'Mic', 'Shure ULXD / Beta 87A', 'None', 'Wireless — see RF section'))
+      rows.push(makeRow(`${pfx}${lbl} (wireless)`, 'Mic', 'Shure ULXD / Beta 87A', 'None', 'Wireless — see RF section'))
       break
 
     case 'acoustic_di':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (DI)`, 'DI', '', 'None'))
+      rows.push(makeRow(`${pfx}${lbl} (DI)`, 'DI', '', 'None'))
       break
 
     case 'acoustic_mic':
-      rows.push(makeRow(ch++, `${pfx}${lbl}`, 'Mic', 'DPA 4099 / AKG C414', 'Tall boom', 'Clip-on preferred'))
+      rows.push(makeRow(`${pfx}${lbl}`, 'Mic', 'DPA 4099 / AKG C414', 'Tall boom', 'Clip-on preferred'))
       break
 
     case 'acoustic_mic_di':
-      rows.push(makeRow(ch++, `${pfx}${lbl} (mic)`, 'Mic', 'DPA 4099 / AKG C414', 'Tall boom', 'Clip-on preferred'))
-      rows.push(makeRow(ch++, `${pfx}${lbl} (DI)`,  'DI',  '',                    'None',       'From onboard pickup'))
+      rows.push(makeRow(`${pfx}${lbl} (mic)`, 'Mic', 'DPA 4099 / AKG C414', 'Tall boom', 'Clip-on preferred'))
+      rows.push(makeRow(`${pfx}${lbl} (DI)`,  'DI',  '',                    'None',       'From onboard pickup'))
       break
 
     case 'other':

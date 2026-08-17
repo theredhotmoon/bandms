@@ -11,9 +11,9 @@
  */
 
 import type { BandMember } from '@/types/bandMember'
-import type { StagePlotMemberItem } from '@/types/stagePlot'
+import type { StagePlacement } from '@/types/stagePlot'
 import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
-import type { StagePlotItemType } from '@/types/techRider'
+import type { StagePlotItemType } from '@/types/instrumentType'
 import { guessInstrumentType } from '@/utils/instrumentIcons'
 
 export interface DisplayInstrument {
@@ -32,11 +32,9 @@ export function memberMainInstrumentType(member: BandMember): StagePlotItemType 
 }
 
 export function resolveStageInstruments(
-  item: StagePlotMemberItem,
+  item: StagePlacement,
   members: BandMember[],
 ): DisplayInstrument[] {
-  // stage_plot_data is an unvalidated JSON column and older rows predate the
-  // instruments array, so never assume it is present.
   if (item.instruments?.length) {
     return item.instruments.map(i => ({
       id:       i.id,
@@ -81,7 +79,7 @@ export interface InstrumentBadge extends DisplayInstrument {
 
 /** Positioned instrument badges for one musician (max 3). */
 export function instrumentBadgesFor(
-  item: StagePlotMemberItem,
+  item: StagePlacement,
   members: BandMember[],
 ): InstrumentBadge[] {
   const list = resolveStageInstruments(item, members).slice(0, 3)

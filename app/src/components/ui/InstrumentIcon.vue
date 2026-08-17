@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { StagePlotItemType } from '@/types/techRider'
+import type { StagePlotItemType } from '@/types/instrumentType'
 import { instrumentIcon } from '@/utils/instrumentIcons'
 
 interface Props {
