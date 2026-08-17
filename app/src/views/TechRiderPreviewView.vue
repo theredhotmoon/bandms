@@ -9,6 +9,7 @@ import type { BandMember } from '@/types/bandMember'
 import type { BandProfile } from '@/types/bandProfile'
 import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
 import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
@@ -198,6 +199,28 @@ const PAD     = 40   // inner padding from edge
 function svgX(pct: number): number { return PAD + (pct / 100) * (SVG_W - PAD * 2) }
 function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2) }
 
+// Instrument icon badges around a musician's circle. Kept at least 2*BADGE_R
+// apart so they never overlap. Mirrors the public rider diagram.
+const BADGE_R = 14
+
+const BADGE_OFFSETS: [number, number][][] = [
+  [],
+  [[-25, -22]],
+  [[-25, -25], [-25, 25]],
+  [[-25, -27], [-40, 0], [-25, 27]],
+]
+
+function instrumentBadges(item: StagePlotMemberItem) {
+  const list = (item.instruments ?? []).slice(0, 3)
+  const offsets = BADGE_OFFSETS[list.length] ?? []
+  return list.map((inst, i) => ({
+    id:   inst.id,
+    type: inst.type,
+    dx:   offsets[i][0],
+    dy:   offsets[i][1],
+  }))
+}
+
 function printPage() { window.print() }
 </script>
 
@@ -312,6 +335,22 @@ function printPage() { window.print() }
                   text-anchor="middle"
                   class="svg-badge-text"
                 >{{ idx + 1 }}</text>
+                <!-- Instrument icon badges — one per instrument, up to 3 -->
+                <template v-for="badge in instrumentBadges(item)" :key="badge.id">
+                  <circle
+                    :cx="svgX(item.x) + badge.dx"
+                    :cy="svgY(item.y) + badge.dy"
+                    :r="BADGE_R"
+                    class="svg-instrument-badge"
+                  />
+                  <InstrumentIcon
+                    :type="badge.type"
+                    :size="20"
+                    :x="svgX(item.x) + badge.dx - 10"
+                    :y="svgY(item.y) + badge.dy - 10"
+                    class="svg-instrument-icon"
+                  />
+                </template>
                 <!-- Name -->
                 <text
                   :x="svgX(item.x)"
@@ -334,6 +373,13 @@ function printPage() { window.print() }
           <div class="stage-index">
             <div v-for="(item, idx) in stagePlot" :key="item.id" class="stage-index-item">
               <span class="stage-index-num">{{ idx + 1 }}</span>
+              <InstrumentIcon
+                v-for="inst in (item.instruments ?? []).slice(0, 3)"
+                :key="inst.id"
+                :type="inst.type"
+                :size="18"
+                class="stage-index-icon"
+              />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
               <span class="stage-index-role">{{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' · ') }}</span>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
@@ -658,6 +704,9 @@ function printPage() { window.print() }
 .svg-member-circle--guest { fill: #92400e; }
 .svg-member-initials { fill: #fff; font-size: 16px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-badge-circle { fill: #ef4444; }
+.svg-instrument-badge { fill: #1f2937; stroke: #4b5563; stroke-width: 1; }
+.svg-instrument-icon { color: #e5e7eb; }
+.stage-index-icon { color: #94a3b8; flex-shrink: 0; }
 .svg-badge-text { fill: #fff; font-size: 12px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-name { fill: #e2e8f0; font-size: 11px; font-weight: 600; font-family: ui-sans-serif, system-ui, sans-serif; }
 .svg-member-role { fill: #94a3b8; font-size: 9px; font-family: ui-sans-serif, system-ui, sans-serif; }
