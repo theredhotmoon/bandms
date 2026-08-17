@@ -483,8 +483,8 @@ function statusClass(item: StagePlotMemberItem): string {
                 :title="inst.inferred ? `${inst.label} — from profile, not configured yet` : inst.label"
                 :class="inst.inferred ? 'opacity-40' : ''"
               />
-              <span v-if="item.instruments.length > 3" class="text-[10px] text-zinc-400 self-end">
-                +{{ item.instruments.length - 3 }}
+              <span v-if="(item.instruments?.length ?? 0) > 3" class="text-[10px] text-zinc-400 self-end">
+                +{{ (item.instruments?.length ?? 0) - 3 }}
               </span>
             </div>
 

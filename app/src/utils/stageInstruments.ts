@@ -35,7 +35,9 @@ export function resolveStageInstruments(
   item: StagePlotMemberItem,
   members: BandMember[],
 ): DisplayInstrument[] {
-  if (item.instruments.length) {
+  // stage_plot_data is an unvalidated JSON column and older rows predate the
+  // instruments array, so never assume it is present.
+  if (item.instruments?.length) {
     return item.instruments.map(i => ({
       id:       i.id,
       type:     i.type,
@@ -56,4 +58,33 @@ export function resolveStageInstruments(
     label:    member.main_instrument?.name ?? member.role ?? INSTRUMENT_TYPE_LABELS[type],
     inferred: true,
   }]
+}
+
+// ── Rider diagram badge layout ────────────────────────────────────────────────
+
+/** Radius of the circle behind each instrument badge on the rider diagrams. */
+export const BADGE_R = 14
+
+// Offsets from the musician's circle, by badge count. Kept at least 2*BADGE_R
+// apart so badges never overlap each other.
+const BADGE_OFFSETS: [number, number][][] = [
+  [],
+  [[-25, -22]],
+  [[-25, -25], [-25, 25]],
+  [[-25, -27], [-40, 0], [-25, 27]],
+]
+
+export interface InstrumentBadge extends DisplayInstrument {
+  dx: number
+  dy: number
+}
+
+/** Positioned instrument badges for one musician (max 3). */
+export function instrumentBadgesFor(
+  item: StagePlotMemberItem,
+  members: BandMember[],
+): InstrumentBadge[] {
+  const list = resolveStageInstruments(item, members).slice(0, 3)
+  const offsets = BADGE_OFFSETS[list.length] ?? []
+  return list.map((inst, i) => ({ ...inst, dx: offsets[i][0], dy: offsets[i][1] }))
 }

@@ -18,6 +18,14 @@ import type {
   PowerPosition,
 } from '@/types/techRider'
 import type { StagePlotMemberItem } from '@/types/stagePlot'
+import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+
+/** First instrument's name, falling back to its icon label when unlabelled. */
+function instrumentLabel(item: StagePlotMemberItem): string {
+  const first = item.instruments?.[0]
+  if (!first) return ''
+  return first.label || INSTRUMENT_TYPE_LABELS[first.type] || ''
+}
 
 function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -328,7 +336,7 @@ export function suggestBacklineFromMembers(items: StagePlotMemberItem[]): Backli
     .map(i => ({
       id:               uid('bl'),
       category:         (i.backline.category as BacklineCategory) || 'other',
-      name:             i.instruments[0]?.label || 'Backline',
+      name:             instrumentLabel(i) || 'Backline',
       brand_preference: i.backline.brand_preference,
       specs:            i.backline.specs,
       notes:            i.backline.notes,
@@ -343,7 +351,7 @@ export function suggestPowerFromMembers(items: StagePlotMemberItem[]): PowerPosi
     .filter(i => (i.power?.outlets_needed ?? 0) > 0)
     .map(i => ({
       id:              uid('pwr'),
-      location:        i.instruments[0]?.label || 'Stage position',
+      location:        instrumentLabel(i) || 'Stage position',
       outlets_needed:  i.power.outlets_needed,
       notes:           i.power.notes,
     }))

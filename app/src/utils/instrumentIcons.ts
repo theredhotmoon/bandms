@@ -592,6 +592,9 @@ export function guessInstrumentType(name: string): StagePlotItemType | null {
   // Ordered most-specific first. Patterns match word stems, not whole words,
   // so player forms resolve too ("Trombonist", "Pianist", "Bassist", "Flutist").
   const rules: [RegExp, StagePlotItemType][] = [
+    [/laptop|playback|backing track|ableton|click/, 'laptop'],
+    [/guitar\s*amp|gtr\s*amp|combo|cabinet|cab/, 'guitar_amp'],
+    [/bass\s*amp|bass\s*(cab|rig)/,           'bass_amp'],
     [/backing|choir|harmony/,                 'backing_vocals'],
     [/vocal|singer|vox\b|\bvoc\b/,            'vocalist'],
     [/double\s*bass|contrabass|upright bass/, 'double_bass'],
@@ -616,7 +619,6 @@ export function guessInstrumentType(name: string): StagePlotItemType | null {
     [/drum|kit/,                              'drums'],
     [/perc|conga|bongo|timbale|shaker/,       'percussion'],
     [/turntable|\bdj\b|decks|vinyl/,          'dj_deck'],
-    [/laptop|playback|track|ableton|click/,   'laptop'],
   ]
 
   for (const [re, type] of rules) {

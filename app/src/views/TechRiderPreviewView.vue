@@ -9,7 +9,7 @@ import type { BandMember } from '@/types/bandMember'
 import type { BandProfile } from '@/types/bandProfile'
 import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
 import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
-import { resolveStageInstruments } from '@/utils/stageInstruments'
+import { resolveStageInstruments, instrumentBadgesFor, BADGE_R } from '@/utils/stageInstruments'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 // ── Data loading ──────────────────────────────────────────────────────────────
@@ -202,25 +202,14 @@ function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2
 
 // Instrument icon badges around a musician's circle. Kept at least 2*BADGE_R
 // apart so they never overlap. Mirrors the public rider diagram.
-const BADGE_R = 14
-
-const BADGE_OFFSETS: [number, number][][] = [
-  [],
-  [[-25, -22]],
-  [[-25, -25], [-25, 25]],
-  [[-25, -27], [-40, 0], [-25, 27]],
-]
-
 function instrumentBadges(item: StagePlotMemberItem) {
-  const list = resolveStageInstruments(item, members.value).slice(0, 3)
-  const offsets = BADGE_OFFSETS[list.length] ?? []
-  return list.map((inst, i) => ({
-    id:       inst.id,
-    type:     inst.type,
-    inferred: inst.inferred,
-    dx:       offsets[i][0],
-    dy:       offsets[i][1],
-  }))
+  return instrumentBadgesFor(item, members.value)
+}
+
+// True when nothing was configured on this position and we are showing the
+// member's profile instrument instead — the printed name is dimmed to match.
+function isInferred(item: StagePlotMemberItem): boolean {
+  return resolveStageInstruments(item, members.value).some(i => i.inferred)
 }
 
 // Instrument names printed under each musician, with the same profile fallback.
@@ -372,6 +361,7 @@ function printPage() { window.print() }
                   :y="svgY(item.y) + 55"
                   text-anchor="middle"
                   class="svg-member-role"
+                  :class="{ 'is-inferred': isInferred(item) }"
                 >{{ instrumentNames(item, " / ") }}</text>
               </g>
             </svg>
@@ -390,7 +380,7 @@ function printPage() { window.print() }
                 :class="{ 'is-inferred': inst.inferred }"
               />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
-              <span class="stage-index-role">{{ instrumentNames(item, " · ") }}</span>
+              <span class="stage-index-role" :class="{ 'is-inferred': isInferred(item) }">{{ instrumentNames(item, " · ") }}</span>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
             </div>
           </div>

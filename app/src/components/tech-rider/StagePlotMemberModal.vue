@@ -125,7 +125,7 @@ async function saveToProfile() {
   setupSaving.value = true
   try {
     const payload = {
-      name:              `Stage rig — ${local.instruments.map(i => i.label || i.type).join(' + ')}`,
+      name:              `Stage rig — ${local.instruments.map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(' + ')}`,
       signal_chain_type: local.signal_chain_type,
       inputs:            local.inputs,
       monitor:           local.monitors[0] ? monitorToPrefs(local.monitors[0]) : undefined,
@@ -320,13 +320,14 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
               <div
                 v-for="inst in local.instruments"
                 :key="inst.id"
-                class="rounded-lg border border-zinc-700 bg-zinc-800/30 overflow-hidden"
+                class="rounded-lg border border-zinc-700 bg-zinc-800/30"
               >
                 <div class="flex items-center gap-3 px-4 py-3">
                   <!-- Icon picker -->
                   <div class="w-44 flex-shrink-0">
                     <InstrumentIconPicker
                       :model-value="inst.type"
+                      :exclude-types="['monitor_wedge']"
                       @update:model-value="inst.type = $event ?? 'custom'"
                     />
                   </div>
@@ -352,7 +353,8 @@ const tabDone = computed<Record<Tab, boolean>>(() => ({
                 </div>
 
                 <!-- Setup links -->
-                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-zinc-700/40 bg-zinc-900/20">
+                <!-- rounded-b-lg replaces the row's overflow-hidden, which clipped the icon picker popover -->
+                <div v-if="memberSetups.length" class="px-4 pb-3 pt-2 border-t border-zinc-700/40 bg-zinc-900/20 rounded-b-lg">
                   <span class="text-[10px] text-zinc-500 mr-2">Link setup (imports inputs):</span>
                   <div class="flex flex-wrap gap-1.5 mt-1.5">
                     <button

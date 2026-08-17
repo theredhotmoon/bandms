@@ -12,25 +12,32 @@ interface Props {
   iconOnly?: boolean
   placeholder?: string
   disabled?: boolean
+  /** Types to hide, e.g. monitors that are configured on their own tab. */
+  excludeTypes?: StagePlotItemType[]
 }
 const props = withDefaults(defineProps<Props>(), {
   clearable:   false,
   iconOnly:    false,
-  placeholder: 'Pick an icon',
-  disabled:    false,
+  placeholder:  'Pick an icon',
+  disabled:     false,
+  excludeTypes: () => [],
 })
 
 const emit = defineEmits<{
   'update:modelValue': [StagePlotItemType | null]
 }>()
 
-const POPOVER_MAX_H = 320   // matches max-h-80 below
+const POPOVER_MAX_H = 320
+const POPOVER_MIN_H = 180   // below this the grid is unusable; let it scroll
+const POPOVER_W     = 288   // w-72
+const GAP           = 8
 
 const open      = ref(false)
-const dropUp    = ref(false)
 const search    = ref('')
 const rootRef   = ref<HTMLElement | null>(null)
+const popRef    = ref<HTMLElement | null>(null)
 const searchRef = ref<HTMLInputElement | null>(null)
+const popoverStyle = ref<Record<string, string>>({})
 
 const current = computed(() => (props.modelValue ? instrumentIcon(props.modelValue) : null))
 
@@ -38,20 +45,40 @@ const current = computed(() => (props.modelValue ? instrumentIcon(props.modelVal
 const groups = computed(() => {
   const matches = new Set(searchInstrumentIcons(search.value).map(d => d.type))
   return INSTRUMENT_ICON_GROUPS
-    .map(g => ({ group: g.group, icons: g.icons.filter(i => matches.has(i.type)) }))
+    .map(g => ({
+      group: g.group,
+      icons: g.icons.filter(i => matches.has(i.type) && !props.excludeTypes.includes(i.type)),
+    }))
     .filter(g => g.icons.length > 0)
 })
 
+// The popover is teleported to <body> and positioned fixed, so a scrollable
+// ancestor (the stage-plot modal body) can never clip it. Position is measured
+// from the trigger against the viewport.
+function positionPopover() {
+  const rect = rootRef.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const below = window.innerHeight - rect.bottom - GAP
+  const above = rect.top - GAP
+  const up    = below < POPOVER_MIN_H && above > below
+
+  const height = Math.round(Math.min(POPOVER_MAX_H, Math.max(POPOVER_MIN_H, up ? above : below)))
+  const left   = Math.min(Math.max(GAP, rect.left), window.innerWidth - POPOVER_W - GAP)
+
+  popoverStyle.value = {
+    position:  'fixed',
+    left:      `${Math.round(left)}px`,
+    top:       up ? '' : `${Math.round(rect.bottom + 4)}px`,
+    bottom:    up ? `${Math.round(window.innerHeight - rect.top + 4)}px` : '',
+    width:     `${POPOVER_W}px`,
+    maxHeight: `${height}px`,
+  }
+}
+
 function toggle() {
   if (props.disabled) return
-  if (!open.value) {
-    // Flip upwards when the popover would run past the bottom of the viewport
-    // (common inside the scrollable stage-plot modal).
-    const rect = rootRef.value?.getBoundingClientRect()
-    dropUp.value = !!rect &&
-      rect.bottom + POPOVER_MAX_H > window.innerHeight &&
-      rect.top > POPOVER_MAX_H
-  }
+  if (!open.value) positionPopover()
   open.value = !open.value
 }
 
@@ -61,7 +88,14 @@ function select(type: StagePlotItemType | null) {
 }
 
 function onDocumentPointerDown(e: PointerEvent) {
-  if (rootRef.value && !rootRef.value.contains(e.target as Node)) open.value = false
+  const target = e.target as Node
+  const inside = rootRef.value?.contains(target) || popRef.value?.contains(target)
+  if (!inside) open.value = false
+}
+
+// Fixed positioning would drift if anything scrolled underneath it.
+function onAncestorScroll() {
+  open.value = false
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -73,17 +107,23 @@ watch(open, async (isOpen) => {
     search.value = ''
     document.addEventListener('pointerdown', onDocumentPointerDown)
     document.addEventListener('keydown', onKeydown)
+    window.addEventListener('scroll', onAncestorScroll, true)
+    window.addEventListener('resize', onAncestorScroll)
     await nextTick()
     searchRef.value?.focus()
   } else {
     document.removeEventListener('pointerdown', onDocumentPointerDown)
     document.removeEventListener('keydown', onKeydown)
+    window.removeEventListener('scroll', onAncestorScroll, true)
+    window.removeEventListener('resize', onAncestorScroll)
   }
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', onAncestorScroll, true)
+  window.removeEventListener('resize', onAncestorScroll)
 })
 </script>
 
@@ -111,11 +151,13 @@ onBeforeUnmount(() => {
       </svg>
     </button>
 
-    <!-- Popover -->
+    <!-- Popover — teleported so a scrollable ancestor cannot clip it -->
+    <Teleport to="body">
     <div
       v-if="open"
-      class="absolute z-50 w-72 max-h-80 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl"
-      :class="dropUp ? 'bottom-full mb-1' : 'mt-1'"
+      ref="popRef"
+      class="z-[60] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl"
+      :style="popoverStyle"
       role="listbox"
     >
       <input
@@ -159,5 +201,6 @@ onBeforeUnmount(() => {
         No instrument matches "{{ search }}".
       </p>
     </div>
+    </Teleport>
   </div>
 </template>
