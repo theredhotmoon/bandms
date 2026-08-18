@@ -74,8 +74,16 @@ const activeTab = ref<Tab>('inputs')
 
 const isPlacement = computed(() => props.mode === 'placement')
 
+/**
+ * Whether there is a saved rig to compare against. Without one — a guest, or a
+ * one-off position — every value lives in `overrides` by construction, so
+ * "changed for this gig" would be true of everything and "revert" would empty
+ * the rig rather than restore it. Neither idea applies, so neither is offered.
+ */
+const hasBase = computed(() => props.baseName !== null)
+
 function tabOverridden(tab: Tab): boolean {
-  if (!isPlacement.value) return false
+  if (!isPlacement.value || !hasBase.value) return false
   const def = TABS.find((t) => t.key === tab)
   return !!def?.fields.some((f) => props.overridden.includes(f))
 }
@@ -111,15 +119,13 @@ function revertActive() {
     <div class="rig-body">
       <div v-if="isPlacement" class="inherit-bar" :class="{ 'inherit-bar--changed': activeOverridden }">
         <template v-if="activeOverridden">
-          <span class="inherit-text">
-            Changed for this gig{{ baseName ? ` — differs from “${baseName}”` : '' }}
-          </span>
+          <span class="inherit-text">Changed for this gig — differs from “{{ baseName }}”</span>
           <button type="button" class="btn-revert" @click="revertActive">
             Revert to saved rig
           </button>
         </template>
         <span v-else class="inherit-text">
-          {{ baseName ? `Inherited from “${baseName}”` : 'No saved rig linked — edits apply to this gig only' }}
+          {{ hasBase ? `Inherited from “${baseName}”` : 'No saved rig linked — edits apply to this gig only' }}
         </span>
       </div>
 

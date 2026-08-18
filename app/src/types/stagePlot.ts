@@ -31,13 +31,16 @@ export interface GigLineup {
 
 // ── Placements ───────────────────────────────────────────────────────────────
 
-/** A visual instrument slot — icon + label shown on the stage canvas. */
+/**
+ * A visual instrument slot — icon + label shown on the stage canvas.
+ *
+ * Deliberately carries no rig of its own: which rig a musician plays is a
+ * property of the placement, not of one icon on it.
+ */
 export interface PlacedInstrument {
   id: string
   type: StagePlotItemType
   label: string
-  /** The saved setup this instrument is played through, if any. */
-  setup_id: number | null
 }
 
 export interface StagePlacement {
@@ -62,7 +65,7 @@ export function defaultGigLineup(): GigLineup {
 }
 
 export function defaultPlacedInstrument(): PlacedInstrument {
-  return { id: uid('inst'), type: 'vocalist', label: '', setup_id: null }
+  return { id: uid('inst'), type: 'vocalist', label: '' }
 }
 
 export function defaultPlacement(

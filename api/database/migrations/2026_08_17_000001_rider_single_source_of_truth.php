@@ -208,10 +208,9 @@ return new class extends Migration
             'id'    => $this->str($i['id'] ?? null) ?: $this->uid('inst'),
             'type'  => $this->str($i['type'] ?? null) ?: 'vocalist',
             'label' => $this->str($i['label'] ?? null),
-            // Never read — resolution goes through the placement's setup_id — but
-            // still validated with `exists`, so a stale id here would make the
-            // whole rider unsavable. Dropped rather than carried forward.
-            'setup_id' => null,
+            // Legacy slots carried a `setup_id` of their own. Nothing ever read
+            // it — which rig a musician plays belongs to the placement, not to
+            // one icon on it — so it is dropped rather than carried forward.
         ], array_filter($raw, 'is_array')));
     }
 

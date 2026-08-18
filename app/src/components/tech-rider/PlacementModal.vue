@@ -88,6 +88,11 @@ function onReset(fields: RigField[]) {
 }
 
 function clearAllOverrides() {
+  // Only meaningful against a saved rig. With no rig linked every value *is* an
+  // override, so clearing would wipe the placement's whole setup rather than
+  // restore anything — and there would be no undo.
+  if (!props.placement || !linkedSetup.value) return
+  if (!confirm(`Discard this gig's changes and go back to “${linkedSetup.value.name}”?`)) return
   patch({ overrides: {} })
 }
 
@@ -248,18 +253,21 @@ function pickType(id: string, type: StagePlotItemType | null) {
       <!-- Footer -->
       <div class="modal-footer">
         <div class="footer-status">
-          <template v-if="overridden.length">
+          <template v-if="linkedSetup && overridden.length">
             <span class="status-dot" />
             {{ overridden.length }} section{{ overridden.length === 1 ? '' : 's' }} changed for this gig
           </template>
           <template v-else-if="linkedSetup">
             Matches “{{ linkedSetup.name }}” exactly
           </template>
+          <template v-else>
+            No saved rig linked — this setup applies to this gig only
+          </template>
         </div>
 
         <div class="footer-actions">
           <button
-            v-if="overridden.length"
+            v-if="overridden.length && linkedSetup"
             type="button"
             class="btn-ghost"
             @click="clearAllOverrides"
