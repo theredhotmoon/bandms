@@ -120,6 +120,17 @@ function openPreview() {
 
 // ── Publishing ────────────────────────────────────────────────────────────────
 
+/**
+ * Channels the publish gate counts.
+ *
+ * A row with no instrument is not a channel — it prints as a blank line and the
+ * backend rejects it (`inputs.*.instrument` is required), so counting it would
+ * unblock Publish only to fail on the save that publishing performs first.
+ */
+const publishableChannels = computed(
+  () => resolved.value.inputs.filter((row) => row.instrument.trim() !== '').length,
+)
+
 const showPublishModal = ref(false)
 const showVersionsModal = ref(false)
 
@@ -332,7 +343,7 @@ async function discardVersion(id: number) {
       :open="showPublishModal"
       :next-number="versions.nextNumber.value"
       :completeness="completeness"
-      :channel-count="resolved.inputs.length"
+      :channel-count="publishableChannels"
       :current="versions.published.value"
       :dirty="dirty"
       :publishing="versions.publish.isPending.value"

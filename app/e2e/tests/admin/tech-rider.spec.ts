@@ -66,11 +66,9 @@ test.describe('Tech Rider Admin', () => {
     }
   })
 
-  // Publishing is what makes a rider public at all: until a version exists the
-  // token link 404s, so this covers both the button and the promise it makes.
-  test('publish: Publish v1 → toast, chip reads "v1 published", public link renders', async ({
-    page,
-  }) => {
+  // A rider with no channels is a blank document, so publishing is locked until
+  // there is at least one. Everything else is only a warning.
+  test('publish is blocked while the rider has no channels', async ({ page }) => {
     await page.goto('/admin/tech-rider')
     await page.waitForLoadState('networkidle')
 
@@ -87,11 +85,50 @@ test.describe('Tech Rider Admin', () => {
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
+    await expect(modal.locator('.stop-title')).toContainText(/can't publish yet/i)
+    await expect(modal.getByRole('button', { name: /publish v1/i })).toBeDisabled()
+
+    await modal.getByRole('button', { name: /cancel/i }).click()
+    await expect(modal).not.toBeVisible()
+  })
+
+  // Publishing is what makes a rider public at all: until a version exists the
+  // token link 404s, so this covers both the button and the promise it makes.
+  test('publish: add a channel → Publish v1 → chip reads "v1 published", public link renders', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+
+    // One production extra is enough to make the sheet a real document.
+    await page.getByRole('button', { name: /channels/i }).click()
+    await page.getByRole('button', { name: /add row/i }).click()
+    await page.locator('input[placeholder*="Kick drum" i]').first().fill('Talkback')
+    await page.getByRole('button', { name: /save rider/i }).click()
+    // Filter rather than index: several toasts stack up in this flow, and the
+    // plain locator resolves to whichever arrived first.
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /rider saved/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    await page.getByRole('button', { name: /publish v1/i }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await expect(modal.locator('.stop-title')).toHaveCount(0)
     await modal.getByRole('button', { name: /publish v1/i }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText(/published v1/i, {
-      timeout: 8000,
-    })
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /published v1/i }),
+    ).toBeVisible({ timeout: 8000 })
     await expect(page.locator('.version-chip')).toContainText(/v1 published/i, { timeout: 8000 })
 
     // The rider's own token now resolves to the frozen copy.

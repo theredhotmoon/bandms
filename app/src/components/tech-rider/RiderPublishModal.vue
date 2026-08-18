@@ -34,31 +34,42 @@ const notes = ref('')
 watch(() => props.open, (open) => { if (open) notes.value = '' })
 
 /**
+ * The one condition that stops a publish outright.
+ *
+ * A rider with no channels is not an incomplete document, it is a blank one:
+ * the engineer receives an empty input sheet and has nothing to patch. There is
+ * no gig at which sending that is the right thing to do, so it is a lock rather
+ * than a warning.
+ */
+const fatal = computed<string[]>(() =>
+  props.channelCount
+    ? []
+    : ['The channel list is empty — the engineer would get a blank input sheet.'],
+)
+
+/**
  * What is not ready, in the promoter's terms rather than the data's.
  *
- * These are warnings, not a lock. A rider is routinely sent while one musician
- * is still confirming their rig, and an editor that refuses to publish in that
- * state just gets worked around — the useful thing is to name the gap so the
- * decision to send anyway is a deliberate one.
+ * These stay warnings on purpose. A rider is routinely sent while one musician
+ * is still confirming their rig, and an editor that refuses in that state just
+ * gets worked around — the useful thing is to name the gap so that sending
+ * anyway is a deliberate act rather than an oversight.
  */
-const blockers = computed<string[]>(() => {
+const warnings = computed<string[]>(() => {
   const out: string[] = []
-  const incomplete = props.completeness.statuses.filter((s) => !s.complete)
 
   if (!props.completeness.total) {
     out.push('No musicians are placed on the stage plot.')
   }
-  if (!props.channelCount) {
-    out.push('The channel list is empty — the engineer gets a blank input sheet.')
-  }
-  for (const status of incomplete) {
+  for (const status of props.completeness.statuses.filter((s) => !s.complete)) {
     out.push(`${status.name} has no ${status.missing.join(', ')}.`)
   }
 
   return out
 })
 
-const ready = computed(() => blockers.value.length === 0)
+const blocked = computed(() => fatal.value.length > 0)
+const ready = computed(() => !blocked.value && warnings.value.length === 0)
 </script>
 
 <template>
@@ -80,7 +91,7 @@ const ready = computed(() => blockers.value.length === 0)
           <span class="summary-label">musicians</span>
         </div>
         <div class="summary-item">
-          <span class="summary-value">{{ channelCount }}</span>
+          <span class="summary-value" :class="{ 'summary-value--stop': blocked }">{{ channelCount }}</span>
           <span class="summary-label">channels</span>
         </div>
         <div class="summary-item">
@@ -91,10 +102,20 @@ const ready = computed(() => blockers.value.length === 0)
         </div>
       </div>
 
-      <div v-if="!ready" class="warn">
-        <div class="warn-title">Publish anyway?</div>
+      <div v-if="blocked" class="stop">
+        <div class="stop-title">Can't publish yet</div>
+        <ul class="stop-list">
+          <li v-for="(reason, i) in fatal" :key="i">{{ reason }}</li>
+        </ul>
+        <p class="stop-hint">
+          Place a musician on the stage plot, or add an extra channel under Channels.
+        </p>
+      </div>
+
+      <div v-if="warnings.length" class="warn">
+        <div class="warn-title">{{ blocked ? 'Also missing' : 'Publish anyway?' }}</div>
         <ul class="warn-list">
-          <li v-for="(blocker, i) in blockers" :key="i">{{ blocker }}</li>
+          <li v-for="(warning, i) in warnings" :key="i">{{ warning }}</li>
         </ul>
       </div>
 
@@ -124,7 +145,8 @@ const ready = computed(() => blockers.value.length === 0)
         <button
           type="button"
           class="btn-primary"
-          :disabled="publishing"
+          :disabled="publishing || blocked"
+          :title="blocked ? fatal[0] : undefined"
           @click="emit('publish', notes.trim())"
         >
           {{ publishing ? 'Publishing…' : ready ? `Publish v${nextNumber}` : `Publish v${nextNumber} anyway` }}
@@ -148,7 +170,18 @@ const ready = computed(() => blockers.value.length === 0)
 .summary-item { display: flex; flex-direction: column; gap: 0.1rem; }
 .summary-value { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; line-height: 1; }
 .summary-value--warn { color: #fbbf24; }
+.summary-value--stop { color: #f87171; }
 .summary-label { font-size: 0.65rem; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* A stop, not a nag: this is the one thing that disables the button. */
+.stop {
+  border: 1px solid #991b1b; border-radius: 0.5rem;
+  background: #1c0a0a; padding: 0.7rem 0.9rem;
+}
+.stop-title { font-size: 0.75rem; font-weight: 700; color: #f87171; margin-bottom: 0.35rem; }
+.stop-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.stop-list li { font-size: 0.75rem; color: #e0a5a5; line-height: 1.5; }
+.stop-hint { font-size: 0.72rem; color: #9a6a6a; margin: 0.4rem 0 0; line-height: 1.5; }
 
 .warn {
   border: 1px solid #78350f; border-radius: 0.5rem;
