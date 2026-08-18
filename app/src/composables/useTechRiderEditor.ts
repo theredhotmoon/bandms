@@ -249,7 +249,6 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     saving,
     saved,
     save,
-    blockingProblem,
     promoting,
     promotePlacement,
   }

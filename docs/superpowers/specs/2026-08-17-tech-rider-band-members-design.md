@@ -403,12 +403,38 @@ page went from three requests to one and no longer touches live data at all.
 
 ### Editor
 
-`Publish v{n}` sits next to Preview in the topbar, as 3.2 asked. The confirm
-dialog names what is not ready — musicians with no inputs, an empty channel
-list — and then lets you publish anyway: a rider is routinely sent while one
-musician is still confirming their rig, and an editor that refuses in that state
-just gets worked around. A version chip beside the Active badge opens the
-history, where every version is a copyable permalink.
+`Publish v{n}` sits next to Preview in the topbar, as 3.2 asked. A version chip
+beside the Active badge opens the history, where every version is a copyable
+permalink.
+
+The confirm dialog splits what 3.2 described as one gate into two, because the
+gaps are not alike:
+
+- **A rider with no named channels cannot be published.** That is not an
+  incomplete document but a blank one — the engineer receives an input sheet
+  with nothing on it. The button is disabled.
+- **Everything else is a warning you can send past**: musicians not yet placed,
+  a musician with no inputs or no monitor. A rider is routinely sent while one
+  of them is still confirming their rig, and an editor that refuses in that
+  state just gets worked around.
+
+Only channels carrying an instrument name count toward the gate. A blank row
+would otherwise unblock Publish and then fail the save that publishing performs
+first — `inputs.*.instrument` is required — turning a lock into a stray 422.
+
+### The blank row that could not be saved
+
+Fixed here rather than left for later, because the publish gate sends people
+straight at it. `+ Add row` creates a channel with no instrument name, which the
+server requires, so the next save was refused as `Failed to save rider` with no
+indication of which row in a form with five tabs and a rig per musician.
+
+`app/src/utils/rigValidation.ts` holds that one rule for all three paths that
+can send a rig — the rider's extra channels, a placement's override, and a
+member's saved rigs. The row is marked where it is created, the save is refused
+before the request with a message naming the row and its section, and
+`saveErrorMessage()` unwraps `ApiValidationError` so a server rejection keeps
+its field path instead of becoming a generic toast.
 
 Publishing saves the draft first. Publishing freezes what is *stored*, so an
 unsaved form would otherwise freeze the wrong sheet, silently.
