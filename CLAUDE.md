@@ -153,6 +153,18 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 ---
 
+### Public rider link 404s until the rider is published
+
+**Symptom:** `GET /api/public/rider/{token}` (and `/rider/{token}` in the SPA) returns 404 for a rider that clearly exists and looks complete in the admin.
+
+**Root cause:** The public link serves a **published version**, never the live rider. A rider is derived from the musicians' saved rigs and changes whenever one of them does — correct while planning, wrong once a venue holds the link. Until someone presses **Publish v1** in the tech rider editor topbar, there is no frozen copy to serve.
+
+**Fix:** Open the rider in `/admin/tech-rider` and press **Publish**. After that the rider's own token always serves whichever version is currently published; each version also has its own permanent token in the version-history modal.
+
+**Note:** editing a published rider does *not* change what the link serves. That is the point — publish again to push the changes out.
+
+---
+
 ### `make fresh` kills Passport clients — must follow with `make passport`
 
 **Symptom:** All API calls that require a Bearer token return 401 after running `make fresh`.

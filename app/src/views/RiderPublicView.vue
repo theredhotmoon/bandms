@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchRiderByToken } from '@/api/techRiders'
-import { fetchBandMembers } from '@/api/bandMembers'
-import { fetchBandProfile } from '@/api/bandProfile'
+import { fetchPublishedRider } from '@/api/techRiders'
 import type { TechRider } from '@/types/techRider'
 import type { BandMember } from '@/types/bandMember'
-import type { BandProfile } from '@/types/bandProfile'
+import type { TechRiderVersion } from '@/types/techRiderVersion'
 import type { StagePlacement, GigTempMusician } from '@/types/stagePlot'
 import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
 import { placementStatus, resolveRider, resolveRig } from '@/utils/riderResolver'
@@ -14,11 +12,19 @@ import { resolveStageInstruments, instrumentBadgesFor, BADGE_R } from '@/utils/s
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 // ── Data loading ──────────────────────────────────────────────────────────────
+//
+// This page renders a *published version*, never the live rider — see
+// App\Services\TechRiderSnapshotBuilder. The snapshot carries everything the
+// sheet shows: the rider, the rigs its placements reference, the musicians
+// placed on it, and the band's logo as it was at the time. So one request is
+// enough, and nothing on the page can shift because someone edited a saved rig
+// after the link was sent.
 
 const route   = useRoute()
 const rider   = ref<TechRider | null>(null)
 const members = ref<BandMember[]>([])
-const profile = ref<BandProfile | null>(null)
+const version = ref<TechRiderVersion | null>(null)
+const logoUrl = ref<string | null>(null)
 const loading = ref(true)
 const error   = ref<string | null>(null)
 
@@ -30,27 +36,27 @@ onMounted(async () => {
     return
   }
   try {
-    const [riderData, membersData, profileData] = await Promise.all([
-      fetchRiderByToken(token),
-      fetchBandMembers().catch(() => [] as BandMember[]),
-      fetchBandProfile('en').catch(() => null),
-    ])
-    rider.value   = riderData
-    members.value = membersData
-    profile.value = profileData
+    const published = await fetchPublishedRider(token)
+    rider.value   = published.rider
+    members.value = published.members ?? []
+    version.value = published.version
+    logoUrl.value = published.profile?.logo_url ?? null
   } catch {
-    error.value = 'This rider link is invalid or no longer active.'
+    error.value = 'This rider link is invalid, or the rider has not been published yet.'
   } finally {
     loading.value = false
   }
 })
 
-const logoUrl = computed(() => {
-  if (profile.value?.tech_rider_logo_id && profile.value?.logos?.length) {
-    const pinned = profile.value.logos.find(l => l.id === profile.value!.tech_rider_logo_id)
-    if (pinned) return pinned.url
-  }
-  return profile.value?.logo_url ?? null
+/** Printed on the sheet so a venue can say which rider they are looking at. */
+const versionLabel = computed(() => {
+  if (!version.value) return ''
+  const date = version.value.published_at
+    ? new Date(version.value.published_at).toLocaleDateString(undefined, {
+        day: 'numeric', month: 'short', year: 'numeric',
+      })
+    : ''
+  return date ? `v${version.value.version_number} · ${date}` : `v${version.value.version_number}`
 })
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -215,6 +221,7 @@ function printPage() { window.print() }
             <span v-if="rider.concert" class="toolbar-concert">
               {{ rider.concert.date }} · {{ rider.concert.venue ?? '' }}
             </span>
+            <span v-if="versionLabel" class="toolbar-version">{{ versionLabel }}</span>
           </div>
         </div>
         <button type="button" class="toolbar-print-btn" @click="printPage">
@@ -465,7 +472,10 @@ function printPage() { window.print() }
 
         <!-- Footer -->
         <div class="doc-footer no-page-break">
-          <p>Technical Rider — <strong>{{ rider.name }}</strong></p>
+          <p>
+            Technical Rider — <strong>{{ rider.name }}</strong>
+            <span v-if="versionLabel"> · {{ versionLabel }}</span>
+          </p>
         </div>
 
       </div><!-- /document -->
@@ -475,6 +485,11 @@ function printPage() { window.print() }
 
 <style scoped>
 .preview-root { min-height: 100vh; background: #f8fafc; color: #0d0d0d; font-family: 'Georgia', serif; }
+
+/* Which frozen copy this is — the venue's way of quoting it back to you. */
+.toolbar-version {
+  font-size: 0.7rem; color: #94a3b8; font-family: system-ui, sans-serif;
+}
 .preview-loading, .preview-error { display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 1rem; color: #64748b; }
 .preview-error { color: #dc2626; }
 

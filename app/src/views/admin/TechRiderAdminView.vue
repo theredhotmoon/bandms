@@ -5,7 +5,9 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
+import RiderPublishModal from '@/components/tech-rider/RiderPublishModal.vue'
 import RiderRequirements from '@/components/tech-rider/RiderRequirements.vue'
+import RiderVersionHistory from '@/components/tech-rider/RiderVersionHistory.vue'
 import StagePlotMemberSelector from '@/components/tech-rider/StagePlotMemberSelector.vue'
 import TechRiderCompleteness from '@/components/tech-rider/TechRiderCompleteness.vue'
 import TechRiderCover from '@/components/tech-rider/TechRiderCover.vue'
@@ -16,6 +18,7 @@ import { useBandProfile } from '@/composables/useBandProfile'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTechRiderEditor } from '@/composables/useTechRiderEditor'
 import { useTechRiders } from '@/composables/useTechRiders'
+import { useTechRiderVersions } from '@/composables/useTechRiderVersions'
 
 type Section = 'stage' | 'channels' | 'requirements' | 'pafoh' | 'cover'
 
@@ -36,6 +39,8 @@ const { query: concertsQ } = useConcerts()
 
 const editor = useTechRiderEditor(openId)
 const { draft, dirty, patch, resolved, completeness, setups, members } = editor
+
+const versions = useTechRiderVersions(openId)
 
 const bandProfile = computed(() => profileQ.data.value)
 const concerts = computed(() => concertsQ.data.value ?? [])
@@ -112,6 +117,37 @@ async function setActive(id: number) {
 function openPreview() {
   if (openId.value) window.open(`/tech-rider/${openId.value}`, '_blank')
 }
+
+// ── Publishing ────────────────────────────────────────────────────────────────
+
+const showPublishModal = ref(false)
+const showVersionsModal = ref(false)
+
+/**
+ * Publishing freezes whatever is *stored*, so an unsaved draft has to land
+ * first. Doing it here rather than refusing to publish keeps the user out of a
+ * save-then-publish two-step whose only purpose would be to avoid this line.
+ */
+async function publish(notes: string) {
+  if (openId.value === null) return
+  try {
+    if (dirty.value) await editor.save()
+    const version = await versions.publish.mutateAsync(notes ? { notes } : {})
+    showPublishModal.value = false
+    toast.success(`Published v${version.version_number} — the rider link now serves it`)
+  } catch {
+    toast.error('Failed to publish this rider')
+  }
+}
+
+async function discardVersion(id: number) {
+  try {
+    await versions.discard.mutateAsync(id)
+    toast.success('Version deleted')
+  } catch {
+    toast.error('Could not delete that version')
+  }
+}
 </script>
 
 <template>
@@ -151,6 +187,12 @@ function openPreview() {
               <div class="topbar-meta">
                 <span v-if="draft.is_active" class="badge-active">Active</span>
                 <span v-else class="meta-dim">Not active</span>
+                <button type="button" class="version-chip" @click="showVersionsModal = true">
+                  <template v-if="versions.published.value">
+                    v{{ versions.published.value.version_number }} published
+                  </template>
+                  <template v-else>Never published</template>
+                </button>
                 <select
                   :value="draft.concert_id ?? ''"
                   class="concert-select"
@@ -167,6 +209,14 @@ function openPreview() {
             <div class="topbar-actions">
               <span v-if="dirty" class="dirty-hint">Unsaved changes</span>
               <button type="button" class="btn-ghost" @click="openPreview">Preview / PDF</button>
+              <button
+                type="button"
+                class="btn-publish"
+                :disabled="versions.publish.isPending.value"
+                @click="showPublishModal = true"
+              >
+                Publish v{{ versions.nextNumber.value }}
+              </button>
               <button
                 type="button"
                 class="btn-save"
@@ -278,6 +328,27 @@ function openPreview() {
       </main>
     </div>
 
+    <RiderPublishModal
+      :open="showPublishModal"
+      :next-number="versions.nextNumber.value"
+      :completeness="completeness"
+      :channel-count="resolved.inputs.length"
+      :current="versions.published.value"
+      :dirty="dirty"
+      :publishing="versions.publish.isPending.value"
+      @close="showPublishModal = false"
+      @publish="publish"
+    />
+
+    <RiderVersionHistory
+      :open="showVersionsModal"
+      :versions="versions.versions.value"
+      :loading="versions.query.isPending.value"
+      :discarding="versions.discard.isPending.value"
+      @close="showVersionsModal = false"
+      @discard="discardVersion"
+    />
+
     <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">
       <StagePlotMemberSelector
         :model-value="draft.gig_lineup"
@@ -367,6 +438,21 @@ function openPreview() {
 
 .topbar-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
 .dirty-hint { font-size: 0.7rem; color: #fbbf24; }
+
+/* The rider's published state, and the way into its history. */
+.version-chip {
+  font-size: 0.65rem; font-weight: 600; color: #64748b;
+  background: #141414; border: 1px solid #262626; border-radius: 999px;
+  padding: 0.1rem 0.5rem; cursor: pointer; font-family: inherit;
+}
+.version-chip:hover { color: #94a3b8; border-color: #3f3f3f; }
+
+.btn-publish {
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; background: transparent; border: 1px solid #166534; color: #4ade80;
+}
+.btn-publish:hover { background: #052e16; }
+.btn-publish:disabled { opacity: 0.5; cursor: default; }
 
 /* Tabs */
 .section-tabs {

@@ -1,7 +1,8 @@
 # Tech Riders & Band Member Setups — Analysis and Redesign Proposal
 
 **Date:** 2026-08-17
-**Status:** Part 3.1 implemented on `feature/rider-single-source-of-truth` — see [Implementation log](#implementation-log)
+**Status:** Part 3.1 implemented on `feature/rider-single-source-of-truth`; phase 3 (versioning) and the
+remainder of phase 4 implemented on `feature/rider-versioning` — see [Implementation log](#implementation-log)
 **Scope:** `api/` tech riders + band members + member setups, `app/` admin editors and rider preview. Public Astro site unaffected.
 
 ---
@@ -353,5 +354,72 @@ of `TechRiderRequest` validate identically. This replaces the
 - **No unit tests for the resolver.** `app/` has Playwright but no unit runner.
   `riderResolver.ts` is pure and is the highest-value thing in the change to
   test — adding Vitest is the obvious follow-up.
-- **Versioning not built.** A published rider is still mutable; the QR token
-  points at the live rider. Phase 3 of the plan above still applies.
+- ~~**Versioning not built.**~~ Built — see the phase 3 entry below.
+
+---
+
+**2026-08-18 — branch `feature/rider-versioning`.**
+Phase 3 (versioning) and the part of phase 4 that depended on it.
+
+### A rider is now frozen when it is sent
+
+`tech_rider_versions` follows `epk_versions` with two deliberate differences:
+versions belong to a rider rather than to the band, and there is no `pending`
+state. An EPK is drafted and then released; a rider is *sent*, and the sending
+is the thing worth recording — a `pending` step would only create versions
+nobody received. Publishing archives its predecessor, so exactly one version is
+`published` per rider at any time.
+
+### What a snapshot contains
+
+Not the printed sheet — what the sheet is derived *from*: the rider, the saved
+rigs its placements reference, the musicians it places, and the band's logo.
+
+The alternative was to re-implement `resolveRider()` in PHP and freeze the
+resolved channel list. That is finding F1 and F3 again in a new place: two
+implementations of one rule, free to drift, with nothing to catch it. The
+resolver is pure, so freezing its inputs freezes its output just as effectively,
+and `app/src/utils/riderResolver.ts` is still the only copy. A resolver *bugfix*
+then reaches old versions too — which is right for a rendering change and was
+never wanted for a data change.
+
+`App\Services\TechRiderSnapshotBuilder` builds it. Only the members a placement
+references are frozen, with display fields only: a snapshot is a public
+document, and `BandMemberResource` exposes `login_email` to authenticated staff.
+
+### Two kinds of public token
+
+- **The rider's token** — the one on the QR code. Follows the band forward and
+  always serves whichever version is published. Returns **404 until the rider
+  has been published at least once**, which is the intended behaviour and is
+  documented as a footgun in the root `CLAUDE.md`.
+- **A version's token** — pinned to that version for good. This is what makes
+  "re-send a corrected rider" a first-class action rather than an overwrite: the
+  promoter who got v1 in August still opens the August sheet.
+
+`GET /api/public/rider/{token}` now returns `{ format, taken_at, rider, members,
+profile, version }`. `RiderPublicView` reads all of it from the snapshot, so the
+page went from three requests to one and no longer touches live data at all.
+
+### Editor
+
+`Publish v{n}` sits next to Preview in the topbar, as 3.2 asked. The confirm
+dialog names what is not ready — musicians with no inputs, an empty channel
+list — and then lets you publish anyway: a rider is routinely sent while one
+musician is still confirming their rig, and an editor that refuses in that state
+just gets worked around. A version chip beside the Active badge opens the
+history, where every version is a copyable permalink.
+
+Publishing saves the draft first. Publishing freezes what is *stored*, so an
+unsaved form would otherwise freeze the wrong sheet, silently.
+
+### Known gaps
+
+- **No version diff.** Phase 5 item 4. Snapshots make it straightforward now:
+  resolve two of them and compare the channel lists.
+- **`/tech-rider` and `/tech-rider/:id` still render the live rider** and are
+  unauthenticated. They are the admin preview, not the shared link, but they
+  predate versioning and are worth revisiting.
+- **The Astro island at `web/src/components/PublicRider.vue`** expects a
+  `title` / `content_html` payload the API has never returned; it was already
+  non-functional before this change and is untouched by it.

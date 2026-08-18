@@ -61,6 +61,19 @@ class TechRiderResource extends JsonResource
                 'show_file_format'        => $this->pa_foh['show_file_format']        ?? '',
             ],
 
+            /**
+             * The frozen copy the public link currently serves, when there is
+             * one. Loaded explicitly rather than always: a snapshot embeds this
+             * same resource, and a version describing the version before it
+             * inside a version would be noise at best.
+             */
+            'published_version' => $this->whenLoaded(
+                'publishedVersion',
+                fn () => $this->publishedVersion
+                    ? (new TechRiderVersionResource($this->publishedVersion))->resolve($request)
+                    : null,
+            ),
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

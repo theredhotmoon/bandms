@@ -15,6 +15,13 @@ class TechRiderSummaryResource extends JsonResource
             'is_active'    => $this->is_active,
             'public_token' => $this->public_token,
             'concert_id'   => $this->concert_id,
+
+            // Enough for the sidebar to say whether a rider has ever been sent.
+            'published_version_number' => $this->whenLoaded(
+                'publishedVersion',
+                fn () => $this->publishedVersion?->version_number,
+            ),
+
             'updated_at'   => $this->updated_at,
         ];
     }

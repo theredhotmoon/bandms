@@ -66,6 +66,47 @@ test.describe('Tech Rider Admin', () => {
     }
   })
 
+  // Publishing is what makes a rider public at all: until a version exists the
+  // token link 404s, so this covers both the button and the promise it makes.
+  test('publish: Publish v1 → toast, chip reads "v1 published", public link renders', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+    await expect(page.locator('.version-chip')).toContainText(/never published/i)
+
+    await page.getByRole('button', { name: /publish v1/i }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await modal.getByRole('button', { name: /publish v1/i }).click()
+
+    await expect(page.locator('[data-sonner-toast]')).toContainText(/published v1/i, {
+      timeout: 8000,
+    })
+    await expect(page.locator('.version-chip')).toContainText(/v1 published/i, { timeout: 8000 })
+
+    // The rider's own token now resolves to the frozen copy.
+    const historyModal = page.locator('.modal-overlay')
+    await page.locator('.version-chip').click()
+    await expect(historyModal).toBeVisible()
+    await expect(historyModal.locator('.version-status')).toContainText(/live link/i)
+
+    const href = await historyModal.locator('a', { hasText: 'Open' }).first().getAttribute('href')
+    expect(href).toMatch(/\/rider\/[A-Za-z0-9]{32}$/)
+
+    await page.goto(href!)
+    await expect(page.locator('.cover-rider-name')).toContainText(UNIQUE_NAME, { timeout: 10000 })
+  })
+
   test('delete: click Delete → confirm modal → Delete → toast "Rider deleted"', async ({
     page,
   }) => {

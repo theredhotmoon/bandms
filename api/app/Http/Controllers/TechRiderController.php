@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TechRiderRequest;
 use App\Http\Resources\TechRiderResource;
 use App\Http\Resources\TechRiderSummaryResource;
+use App\Http\Resources\TechRiderVersionResource;
 use App\Models\BandProfile;
 use App\Models\TechRider;
+use App\Models\TechRiderVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -20,7 +22,8 @@ class TechRiderController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        $riders = TechRider::where('profile_id', $this->profileId())
+        $riders = TechRider::with('publishedVersion')
+            ->where('profile_id', $this->profileId())
             ->orderByDesc('is_active')
             ->orderByDesc('updated_at')
             ->get();
@@ -34,15 +37,38 @@ class TechRiderController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        return new TechRiderResource($rider->load('concert.venue'));
+        return new TechRiderResource($rider->load('concert.venue', 'publishedVersion'));
     }
 
-    /** Public endpoint — no auth required, accessed via QR code. */
-    public function showByToken(string $token): TechRiderResource
+    /**
+     * Public endpoint — no auth required, accessed via QR code.
+     *
+     * Serves a published *version*, never the live rider. A rider under edit
+     * changes every time a musician updates their saved rig; a promoter holding
+     * the link must keep seeing the sheet they were sent.
+     *
+     * Two kinds of token arrive here:
+     *  - the rider's own token, printed on QR codes, which follows the band
+     *    forward and always serves whichever version is currently published;
+     *  - a version's token, which serves that exact version for good, so a
+     *    corrected rider can be re-sent without breaking the earlier link.
+     */
+    public function showByToken(string $token): JsonResponse
     {
-        $rider = TechRider::with('concert.venue')->where('public_token', $token)->firstOrFail();
+        $version = TechRiderVersion::where('public_token', $token)->first();
 
-        return new TechRiderResource($rider);
+        if (! $version) {
+            $rider = TechRider::where('public_token', $token)->firstOrFail();
+            $version = $rider->publishedVersion;
+
+            abort_if($version === null, 404, 'This rider has not been published yet.');
+        }
+
+        return response()->json([
+            'data' => array_merge($version->snapshot ?? [], [
+                'version' => (new TechRiderVersionResource($version))->resolve(request()),
+            ]),
+        ]);
     }
 
     public function store(TechRiderRequest $request): TechRiderResource
@@ -57,12 +83,12 @@ class TechRiderController extends Controller
 
         $rider = TechRider::create($data);
 
-        return new TechRiderResource($rider->load('concert.venue'));
+        return new TechRiderResource($rider->load('concert.venue', 'publishedVersion'));
     }
 
     public function show(TechRider $techRider): TechRiderResource
     {
-        return new TechRiderResource($techRider->load('concert.venue'));
+        return new TechRiderResource($techRider->load('concert.venue', 'publishedVersion'));
     }
 
     public function update(TechRiderRequest $request, TechRider $techRider): TechRiderResource
@@ -75,7 +101,7 @@ class TechRiderController extends Controller
 
         $techRider->update($data);
 
-        return new TechRiderResource($techRider->fresh()->load('concert.venue'));
+        return new TechRiderResource($techRider->fresh()->load('concert.venue', 'publishedVersion'));
     }
 
     public function activate(TechRider $techRider): TechRiderResource
@@ -83,7 +109,7 @@ class TechRiderController extends Controller
         $this->deactivateOthers($techRider->id);
         $techRider->update(['is_active' => true]);
 
-        return new TechRiderResource($techRider->fresh()->load('concert.venue'));
+        return new TechRiderResource($techRider->fresh()->load('concert.venue', 'publishedVersion'));
     }
 
     public function destroy(TechRider $techRider): JsonResponse
