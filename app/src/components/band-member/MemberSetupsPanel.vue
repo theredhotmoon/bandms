@@ -31,11 +31,17 @@ const name = ref('')
 const instrumentId = ref<number | null>(null)
 const rig = ref<RigSpec>(defaultRigSpec())
 const dirty = ref(false)
+/** Which setup the draft was loaded from, so a refetch is not mistaken for a switch. */
+const loadedId = ref<number | null>(null)
 
 watch(
   () => setupQ.data.value,
   (setup) => {
     if (!setup) return
+    // Same guard as the rider editor: a background refetch (staleTime 0 +
+    // refetchOnWindowFocus) must not overwrite unsaved edits to the rig the
+    // user is already in. Opening a different setup still loads.
+    if (dirty.value && setup.id === loadedId.value) return
     name.value = setup.name
     instrumentId.value = setup.instrument_id
     rig.value = {
@@ -47,6 +53,7 @@ watch(
       wireless: setup.wireless ?? [],
       foh_notes: setup.foh_notes ?? '',
     }
+    loadedId.value = setup.id
     dirty.value = false
   },
   { immediate: true },

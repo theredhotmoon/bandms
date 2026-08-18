@@ -50,7 +50,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   change: [field: RigField, value: unknown]
-  reset: [field: RigField]
+  /**
+   * All fields of the active tab at once. One event, not one per field: the
+   * caller rebuilds the override patch from its props, and those do not flush
+   * between two synchronous emits — the second would be built from pre-first
+   * state and reinstate what the first just removed.
+   */
+  reset: [fields: RigField[]]
 }>()
 
 type Tab = 'inputs' | 'monitors' | 'backline' | 'power' | 'wireless' | 'foh'
@@ -81,7 +87,7 @@ const activeFields = computed<RigField[]>(
 const activeOverridden = computed(() => tabOverridden(activeTab.value))
 
 function revertActive() {
-  for (const field of activeFields.value) emit('reset', field)
+  emit('reset', [...activeFields.value])
 }
 </script>
 

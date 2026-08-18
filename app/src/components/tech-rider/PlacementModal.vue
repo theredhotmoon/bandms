@@ -80,10 +80,10 @@ function onChange(field: RigField, value: unknown) {
   patch({ overrides: { ...props.placement.overrides, [field]: value } })
 }
 
-function onReset(field: RigField) {
+function onReset(fields: RigField[]) {
   if (!props.placement) return
   const next = { ...props.placement.overrides }
-  delete next[field]
+  for (const field of fields) delete next[field]
   patch({ overrides: next })
 }
 
@@ -93,10 +93,16 @@ function clearAllOverrides() {
 
 // ── Which saved rig is being played ───────────────────────────────────────────
 
-function selectSetup(value: string) {
-  const id = value === '' ? null : Number(value)
+function selectSetup(event: Event) {
+  const el = event.target as HTMLSelectElement
+  const id = el.value === '' ? null : Number(el.value)
   if (!props.placement) return
-  if (overridden.value.length && !confirm('Switching rigs discards this gig\'s changes. Continue?')) return
+  if (overridden.value.length && !confirm("Switching rigs discards this gig's changes. Continue?")) {
+    // Cancelling changes nothing reactive, so Vue never re-renders the select
+    // and it would keep showing the rig that was *not* chosen.
+    el.value = String(props.placement.setup_id ?? '')
+    return
+  }
   patch({ setup_id: id, overrides: {} })
 }
 
@@ -158,7 +164,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
         <select
           :value="placement.setup_id ?? ''"
           class="field-input"
-          @change="selectSetup(($event.target as HTMLSelectElement).value)"
+          @change="selectSetup($event)"
         >
           <option value="">— No saved rig (this gig only) —</option>
           <option v-for="s in memberSetups" :key="s.id" :value="s.id">

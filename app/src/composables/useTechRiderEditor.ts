@@ -72,11 +72,19 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
 
   const draft = reactive<RiderDraft>(emptyDraft())
   const dirty = ref(false)
+  /** Which rider the draft was loaded from, so a refetch is not mistaken for a switch. */
+  const loadedId = ref<number | null>(null)
 
   watch(
     () => riderQ.data.value,
     (rider) => {
       if (!rider) return
+      // A refetch of the rider already being edited must not clobber unsaved
+      // work. staleTime is 0 and refetchOnWindowFocus is on by default, so
+      // alt-tabbing away and back would otherwise replace the draft and clear
+      // `dirty` with it — losing the edits *and* the warning about losing them.
+      // Switching to a different rider still loads; that path has its own confirm.
+      if (dirty.value && rider.id === loadedId.value) return
       Object.assign(draft, {
         name: rider.name,
         is_active: rider.is_active,
@@ -94,6 +102,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
         power_notes: { ...defaultPowerNotes(), ...(rider.power_notes ?? {}) },
         pa_foh: { ...defaultPaFoh(), ...(rider.pa_foh ?? {}) },
       })
+      loadedId.value = rider.id
       dirty.value = false
     },
     { immediate: true },
