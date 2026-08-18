@@ -93,10 +93,9 @@ trait ValidatesRig
         $p = rtrim($prefix, '.') . '.';
 
         return [
-            "{$p}id"       => ['required', 'string', 'max:64'],
-            "{$p}type"     => ['required', Rule::in(array_column(StagePlotType::cases(), 'value'))],
-            "{$p}label"    => ['present', 'nullable', 'string', 'max:255'],
-            "{$p}setup_id" => ['nullable', 'integer', 'exists:band_member_setups,id'],
+            "{$p}id"    => ['required', 'string', 'max:64'],
+            "{$p}type"  => ['required', Rule::in(array_column(StagePlotType::cases(), 'value'))],
+            "{$p}label" => ['present', 'nullable', 'string', 'max:255'],
         ];
     }
 }

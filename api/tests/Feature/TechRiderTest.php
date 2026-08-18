@@ -140,6 +140,28 @@ describe('POST /api/tech-riders', function () {
         ])->assertCreated();
     });
 
+    it('accepts an instrument slot that carries no rig of its own', function () {
+        $this->actingAsAdmin();
+
+        // Which rig a musician plays is a property of the placement. The slot is
+        // an icon on the stage canvas and nothing more, so it must validate
+        // without a setup reference of any kind.
+        $this->postJson('/api/tech-riders', [
+            'name'       => 'Slots',
+            'placements' => [[
+                'id'             => 'pos-1',
+                'band_member_id' => null,
+                'setup_id'       => null,
+                'x'              => 20,
+                'y'              => 30,
+                'instruments'    => [
+                    ['id' => 'inst-1', 'type' => 'saxophone', 'label' => 'Tenor'],
+                ],
+                'overrides'      => [],
+            ]],
+        ])->assertCreated();
+    });
+
     it('rejects a placement that is missing its coordinates', function () {
         $this->actingAsAdmin();
 
