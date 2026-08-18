@@ -2,7 +2,19 @@ import { test, expect, expectToast, confirmDelete, searchTable } from '../../fix
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
-test.describe('Admin Posts', () => {
+/**
+ * Serial, and every row this file touches is one it created itself.
+ *
+ * Nothing seeds `posts`, so the only rows that exist are the ones these tests
+ * make. Run in parallel against "the first row" — as this file used to — and
+ * create/edit/delete race each other over the same shared row: the delete can
+ * land between another test reading the row and submitting it, and once the
+ * table is empty the edit has nothing to click at all.
+ */
+test.describe.serial('Admin Posts', () => {
+  const postTitle = `E2E Post ${Date.now()}`
+  const updatedTitle = `${postTitle} Updated`
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/posts')
     await page.waitForLoadState('networkidle')
@@ -27,7 +39,7 @@ test.describe('Admin Posts', () => {
     await page.getByRole('button', { name: '+ Add post' }).click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
-    await page.locator('input[placeholder="Post title"]').fill('E2E Test Post')
+    await page.locator('input[placeholder="Post title"]').fill(postTitle)
     await page.locator('textarea[placeholder*="introductory"]').fill('Short intro text.')
 
     await page.getByRole('button', { name: 'Create' }).click()
@@ -37,23 +49,11 @@ test.describe('Admin Posts', () => {
   })
 
   test('filters posts by search query', async ({ page }) => {
-    // Ensure there is at least one row before searching
-    const rowsBefore = page.locator('tbody tr')
-    const countBefore = await rowsBefore.count()
-    test.skip(countBefore === 0, 'No posts to search — skipping search test')
+    await searchTable(page, postTitle)
 
-    const firstTitle = await rowsBefore.first().locator('td').first().textContent()
-    const searchTerm = (firstTitle ?? '').trim().slice(0, 6)
-
-    await searchTable(page, searchTerm)
-
-    // All visible rows must contain the search term (case-insensitive)
     const visibleRows = page.locator('tbody tr')
-    const count = await visibleRows.count()
-    for (let i = 0; i < count; i++) {
-      const text = await visibleRows.nth(i).textContent()
-      expect(text?.toLowerCase()).toContain(searchTerm.toLowerCase())
-    }
+    await expect(visibleRows).toHaveCount(1)
+    await expect(visibleRows.first()).toContainText(postTitle)
   })
 
   test('no posts match search shows empty-state message', async ({ page }) => {
@@ -62,16 +62,21 @@ test.describe('Admin Posts', () => {
   })
 
   test('edits a post and shows "Post updated" toast', async ({ page }) => {
-    const firstEditBtn = page.locator('tbody tr').first().getByRole('button', { name: 'Edit' })
-    await expect(firstEditBtn).toBeVisible()
-    await firstEditBtn.click()
+    await searchTable(page, postTitle)
+
+    const row = page.locator('tbody tr').filter({ hasText: postTitle })
+    await row.getByRole('button', { name: 'Edit' }).click()
 
     await expect(page.locator('.modal-overlay')).toBeVisible()
     await expect(page.getByText('Edit post')).toBeVisible()
 
+    // The form is populated from a second request. Waiting for the title to
+    // arrive stops the fill below from being overwritten when it resolves.
     const titleInput = page.locator('input[placeholder="Post title"]')
+    await expect(titleInput).toHaveValue(postTitle)
+
     await titleInput.clear()
-    await titleInput.fill('Updated Post Title E2E')
+    await titleInput.fill(updatedTitle)
 
     await page.getByRole('button', { name: 'Update' }).click()
 
@@ -80,13 +85,15 @@ test.describe('Admin Posts', () => {
   })
 
   test('deletes a post and shows "Post deleted" toast', async ({ page }) => {
-    const firstDeleteBtn = page.locator('tbody tr').first().getByRole('button', { name: 'Delete' })
-    await expect(firstDeleteBtn).toBeVisible()
-    await firstDeleteBtn.click()
+    await searchTable(page, updatedTitle)
+
+    const row = page.locator('tbody tr').filter({ hasText: updatedTitle })
+    await row.getByRole('button', { name: 'Delete' }).click()
 
     await confirmDelete(page)
 
     await expectToast(page, 'Post deleted')
+    await expect(page.locator('tbody tr').filter({ hasText: updatedTitle })).toHaveCount(0)
   })
 
   test('shows validation error when saving without a title', async ({ page }) => {
