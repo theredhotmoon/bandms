@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
+import { saveErrorMessage } from '@/api/client'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
 import RiderPublishModal from '@/components/tech-rider/RiderPublishModal.vue'
@@ -142,12 +143,15 @@ const showVersionsModal = ref(false)
 async function publish(notes: string) {
   if (openId.value === null) return
   try {
-    if (dirty.value) await editor.save()
+    // A refused save must stop the publish: `save()` reports its own reason
+    // (an unnamed channel, a rejected field), and freezing the rider anyway
+    // would publish the last saved state while the user reads about the draft.
+    if (dirty.value && !(await editor.save())) return
     const version = await versions.publish.mutateAsync(notes ? { notes } : {})
     showPublishModal.value = false
     toast.success(`Published v${version.version_number} — the rider link now serves it`)
-  } catch {
-    toast.error('Failed to publish this rider')
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to publish this rider'))
   }
 }
 

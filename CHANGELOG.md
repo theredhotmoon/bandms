@@ -38,6 +38,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Tech riders are the single source of truth for their own technical data** (merged in #20, previously undocumented here) — placements reference a `band_member_setups` row plus a sparse per-gig override, and the printed lists (channels, monitors, backline, power, RF) are derived at render time rather than stored. Removed the four "Build from stage plot" banners, the "Import from members" panel, and the `inputs`/`monitors`/`backline`/`power`/`rf_wireless` columns they wrote to.
 - Accent colour switched from hardcoded orange (`#E2702A`) to a CSS custom property (`--color-accent`, now teal `#1f8f7a`). All components reference the variable — future rebranding requires a single-line change in `style.css`.
 
+### Fixed
+- **Adding a blank channel row no longer fails with an unexplained "Failed to save"** — `+ Add row` in any rig editor creates a channel with no instrument name, which `inputs.*.instrument` requires, so the next save was rejected with a generic toast and no indication of which of five tabs held the offending row. The row is now marked where it is created (red border, `aria-invalid`, a count in the table footer), and the save is refused locally with a message naming the row and section. Applies to the tech rider's extra channels, a placement's per-gig override, and a member's saved rigs in both the admin panel and self-service My Setups.
+- **Save failures now say what the server rejected** — new `saveErrorMessage()` helper in `app/src/api/client.ts` unwraps `ApiValidationError` to the first field message and its path instead of discarding it. Used by the rig save paths; publishing a rider now aborts if the save it performs first is refused, rather than freezing the last saved state.
+
 ### Security
 - `POST /door-check` now requires a valid Bearer token (`auth:api` middleware); previously it was publicly accessible and returned customer name and order UUID for any guessed ticket code.
 

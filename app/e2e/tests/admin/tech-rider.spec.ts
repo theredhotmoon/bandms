@@ -92,6 +92,40 @@ test.describe('Tech Rider Admin', () => {
     await expect(modal).not.toBeVisible()
   })
 
+  // "Add row" creates a row the server requires a name for. The editor has to
+  // refuse it locally and say which row — a 422 on a five-tab form cannot.
+  test('a channel with no instrument name is refused with a specific message', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+
+    await page.getByRole('button', { name: /channels/i }).click()
+    await page.getByRole('button', { name: /add row/i }).click()
+
+    // Flagged where it is created, not only on save.
+    await expect(page.locator('.cell-input--invalid')).toBeVisible()
+    await expect(page.locator('.needs-name')).toContainText(/needs an instrument name/i)
+
+    await page.getByRole('button', { name: /save rider/i }).click()
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /needs an instrument name/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    // Naming it clears both the mark and the refusal.
+    await page.locator('input[placeholder*="Kick drum" i]').first().fill('Talkback')
+    await expect(page.locator('.cell-input--invalid')).toHaveCount(0)
+    await expect(page.locator('.needs-name')).toHaveCount(0)
+  })
+
   // Publishing is what makes a rider public at all: until a version exists the
   // token link 404s, so this covers both the button and the promise it makes.
   test('publish: add a channel → Publish v1 → chip reads "v1 published", public link renders', async ({

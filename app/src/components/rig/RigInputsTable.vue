@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { InputRow, MicDiChoice } from '@/types/rig'
 import { defaultInputRow } from '@/types/rig'
+import { unnamedChannels } from '@/utils/rigValidation'
 
 interface Props {
   modelValue: InputRow[]
@@ -9,6 +11,17 @@ interface Props {
 }
 const props = withDefaults(defineProps<Props>(), { noun: 'channel' })
 const emit = defineEmits<{ 'update:modelValue': [value: InputRow[]] }>()
+
+/**
+ * A new row starts nameless — only the user can say what the channel is — and
+ * the server requires a name. Marking it here means the gap is visible where it
+ * is created, instead of surfacing later as a refused save on another tab.
+ */
+const unnamedCount = computed(() => unnamedChannels(props.modelValue).length)
+
+function isUnnamed(row: InputRow): boolean {
+  return row.instrument.trim() === ''
+}
 
 const MIC_DI_OPTIONS: MicDiChoice[] = ['Mic', 'DI', 'Mic+DI']
 const STAND_OPTIONS = ['Short boom', 'Tall boom', 'Straight', 'Low tom', 'Desk', 'None', 'Other']
@@ -71,7 +84,10 @@ function moveRow(id: string, dir: -1 | 1) {
               <input
                 :value="row.instrument"
                 class="cell-input"
+                :class="{ 'cell-input--invalid': isUnnamed(row) }"
+                :aria-invalid="isUnnamed(row)"
                 placeholder="e.g. Kick drum (in)"
+                required
                 @input="updateRow(row.id, 'instrument', ($event.target as HTMLInputElement).value)"
               />
             </td>
@@ -120,12 +136,22 @@ function moveRow(id: string, dir: -1 | 1) {
     <div class="table-footer">
       <button type="button" class="btn-add-row" @click="addRow">+ Add row</button>
       <span class="row-count">{{ modelValue.length }} {{ noun }}{{ modelValue.length === 1 ? '' : 's' }}</span>
+      <span v-if="unnamedCount" class="needs-name" role="status">
+        {{ unnamedCount }} {{ unnamedCount === 1 ? 'row needs' : 'rows need' }} an instrument name
+        before this can be saved
+      </span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .inputs-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.cell-input--invalid {
+  border-color: #991b1b !important;
+  background: #1c0a0a !important;
+}
+.needs-name { font-size: 0.7rem; color: #f87171; }
 .table-scroll { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #2a2a2a; }
 .inputs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .inputs-table thead th {
