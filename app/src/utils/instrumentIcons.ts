@@ -9,7 +9,7 @@
  * stored — shapes are structured data, rendered by InstrumentIcon.vue.
  */
 
-import type { StagePlotItemType } from '@/types/techRider'
+import type { StagePlotItemType } from '@/types/instrumentType'
 
 export type IconShape =
   | { kind: 'path';    d: string; filled?: boolean }

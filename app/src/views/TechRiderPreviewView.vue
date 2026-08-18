@@ -7,8 +7,9 @@ import { fetchBandProfile } from '@/api/bandProfile'
 import type { TechRider } from '@/types/techRider'
 import type { BandMember } from '@/types/bandMember'
 import type { BandProfile } from '@/types/bandProfile'
-import type { StagePlotMemberItem, GigTempMusician } from '@/types/stagePlot'
-import { isMemberItemComplete, INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+import type { StagePlacement, GigTempMusician } from '@/types/stagePlot'
+import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
+import { placementStatus, resolveRider, resolveRig } from '@/utils/riderResolver'
 import { resolveStageInstruments, instrumentBadgesFor, BADGE_R } from '@/utils/stageInstruments'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
@@ -51,18 +52,47 @@ const logoUrl = computed(() => {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const stagePlot  = computed(() => rider.value?.stage_plot_data ?? [])
-const backline   = computed(() => rider.value?.backline ?? [])
-const power      = computed(() => rider.value?.power ?? null)
-const rfWireless = computed(() => rider.value?.rf_wireless ?? [])
-const paFoh      = computed(() => rider.value?.pa_foh ?? null)
+const stagePlot = computed<StagePlacement[]>(() => rider.value?.placements ?? [])
+const paFoh = computed(() => rider.value?.pa_foh ?? null)
+
+/**
+ * The setups the placements reference. Shipped with the rider by the API so
+ * this page resolves with exactly the same code as the admin editor.
+ */
+const setups = computed(() =>
+  Object.fromEntries(
+    Object.entries(rider.value?.referenced_setups ?? {}).map(([id, s]) => [Number(id), s]),
+  ),
+)
+
+/** Every printed list, derived once. */
+const resolved = computed(() => {
+  if (!rider.value) return null
+  return resolveRider(rider.value, setups.value, members.value)
+})
+
+function rigFor(item: StagePlacement) {
+  return resolveRig(item, setups.value)
+}
+
+function isComplete(item: StagePlacement): boolean {
+  return placementStatus(item, setups.value, members.value, rider.value?.gig_lineup?.temp_musicians ?? []).complete
+}
+
+/**
+ * Channel number for one of a musician's rows, taken from the master list so
+ * the per-musician detail and the input list can never disagree.
+ */
+function channelOf(item: StagePlacement, rowId: string): number | string {
+  return resolved.value?.inputs.find((r) => r.key === `${item.id}:${rowId}`)?.channel ?? '—'
+}
 
 function findMember(id: number | null): BandMember | null {
   if (!id) return null
   return members.value.find(m => m.id === id) ?? null
 }
 
-function memberDisplayName(item: StagePlotMemberItem): string {
+function memberDisplayName(item: StagePlacement): string {
   if (item.temp_id) {
     const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
     return t ? t.name : 'Guest'
@@ -72,7 +102,7 @@ function memberDisplayName(item: StagePlotMemberItem): string {
   return `Member #${item.band_member_id}`
 }
 
-function memberInitials(item: StagePlotMemberItem): string {
+function memberInitials(item: StagePlacement): string {
   if (item.temp_id) {
     const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
     return (t?.name?.[0] ?? '?').toUpperCase()
@@ -82,7 +112,7 @@ function memberInitials(item: StagePlotMemberItem): string {
   return '?'
 }
 
-function memberRole(item: StagePlotMemberItem): string {
+function memberRole(item: StagePlacement): string {
   if (item.temp_id) {
     const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
     return t?.role || 'Guest'
@@ -90,105 +120,53 @@ function memberRole(item: StagePlotMemberItem): string {
   return findMember(item.band_member_id)?.role ?? ''
 }
 
-// ── Consolidated inputs / monitors derived from stage plot ────────────────────
+// ── Printed lists ─────────────────────────────────────────────────────────────
+// All five come straight from the shared resolver, so this page cannot drift
+// from what the editor shows. The mapping below is presentation only.
 
-interface PreviewInput {
-  channel: number; instrument: string; mic_di: string; mic_model: string; stand_type: string; notes: string
-}
+const effectiveInputs = computed(() => resolved.value?.inputs ?? [])
 
-const effectiveInputs = computed<PreviewInput[]>(() => {
-  const saved = rider.value?.inputs ?? []
-  if (saved.length) return saved.map(r => ({ channel: r.channel, instrument: r.instrument, mic_di: r.mic_di, mic_model: r.mic_model, stand_type: r.stand_type, notes: r.notes }))
-  const rows: PreviewInput[] = []
-  let ch = 1
-  for (const item of stagePlot.value) {
-    for (const inp of (item.inputs ?? [])) {
-      rows.push({ channel: ch++, instrument: inp.instrument, mic_di: inp.mic_di, mic_model: inp.mic_model, stand_type: inp.stand_type, notes: inp.notes })
-    }
-  }
-  return rows
-})
+const effectiveMonitors = computed(() =>
+  (resolved.value?.monitors ?? []).map((m) => ({
+    label: m.source.kind === 'extra' ? m.label : `${m.source.name}${m.label ? ` — ${m.label}` : ''}`,
+    type: m.type === 'iem' ? 'IEM' : 'Wedge',
+    mix_description: m.mix_description,
+    iem: m.type === 'iem',
+    model: m.iem_transmitter_model,
+    freq: m.iem_frequency,
+  })),
+)
 
-interface PreviewMonitor { label: string; type: string; mix_description: string; iem: boolean; model: string; freq: string }
+const allWireless = computed(() =>
+  (resolved.value?.wireless ?? []).map((u) => ({
+    name: u.source.name,
+    type: u.type,
+    model: u.brand_model,
+    band: u.frequency_band,
+    own: u.own_unit,
+    notes: u.notes,
+  })),
+)
 
-const effectiveMonitors = computed<PreviewMonitor[]>(() => {
-  const saved = rider.value?.monitors ?? []
-  if (saved.length) {
-    return saved.map(m => ({
-      label: m.custom_name || memberDisplayName(stagePlot.value.find(i => i.band_member_id === m.band_member_id) ?? stagePlot.value[0]) || '',
-      type:  m.type === 'iem' ? 'IEM' : 'Wedge',
-      mix_description: m.mix_description,
-      iem:   m.type === 'iem',
-      model: m.transmitter_model,
-      freq:  m.frequency,
-    }))
-  }
-  const mixes: PreviewMonitor[] = []
-  for (const item of stagePlot.value) {
-    for (const mon of (item.monitors ?? [])) {
-      mixes.push({
-        label: `${memberDisplayName(item)}${mon.label ? ` — ${mon.label}` : ''}`,
-        type:  mon.type === 'iem' ? 'IEM' : 'Wedge',
-        mix_description: mon.mix_description,
-        iem:   mon.type === 'iem',
-        model: mon.iem_transmitter_model,
-        freq:  mon.iem_frequency,
-      })
-    }
-  }
-  return mixes
-})
+const allBackline = computed(() =>
+  (resolved.value?.backline ?? []).map((b) => ({
+    name: b.name || b.source.name,
+    category: b.category.replace(/_/g, ' '),
+    brand: b.brand_preference,
+    specs: b.specs,
+    notes: b.notes,
+  })),
+)
 
-// All wireless from all members + rider-level RF list
-const allWireless = computed(() => {
-  const rows: { name: string; type: string; model: string; band: string; own: boolean; notes: string }[] = []
-  for (const item of stagePlot.value) {
-    const name = memberDisplayName(item)
-    for (const u of (item.wireless ?? [])) {
-      rows.push({ name, type: u.type, model: u.brand_model, band: u.frequency_band, own: u.own_unit, notes: u.notes })
-    }
-  }
-  return rows
-})
+const allPowerPositions = computed(() =>
+  (resolved.value?.power.positions ?? []).map((p) => ({
+    location: p.location,
+    outlets: p.outlets_needed,
+    notes: p.notes,
+  })),
+)
 
-// All backline from all members (needed=true) + rider-level backline
-const allBackline = computed(() => {
-  const rows: { name: string; category: string; brand: string; specs: string; notes: string }[] = []
-  for (const item of stagePlot.value) {
-    if (item.backline?.needed) {
-      rows.push({
-        name:     memberDisplayName(item),
-        category: item.backline.category || '—',
-        brand:    item.backline.brand_preference,
-        specs:    item.backline.specs,
-        notes:    item.backline.notes,
-      })
-    }
-  }
-  // Rider-level backline (from admin)
-  for (const bl of backline.value) {
-    rows.push({ name: bl.name, category: bl.category.replace(/_/g, ' '), brand: bl.brand_preference, specs: bl.specs, notes: bl.notes })
-  }
-  return rows
-})
-
-// Power from all members + rider-level power positions
-const allPowerPositions = computed(() => {
-  const rows: { location: string; outlets: number; notes: string }[] = []
-  for (const item of stagePlot.value) {
-    if ((item.power?.outlets_needed ?? 0) > 0) {
-      rows.push({
-        location: `${memberDisplayName(item)} — stage position`,
-        outlets:  item.power.outlets_needed,
-        notes:    item.power.notes,
-      })
-    }
-  }
-  for (const pos of (power.value?.positions ?? [])) {
-    rows.push({ location: pos.location, outlets: pos.outlets_needed, notes: pos.notes })
-  }
-  return rows
-})
+const power = computed(() => resolved.value?.power ?? null)
 
 // ── Stage SVG ─────────────────────────────────────────────────────────────────
 
@@ -202,18 +180,18 @@ function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2
 
 // Instrument icon badges around a musician's circle. Kept at least 2*BADGE_R
 // apart so they never overlap. Mirrors the public rider diagram.
-function instrumentBadges(item: StagePlotMemberItem) {
+function instrumentBadges(item: StagePlacement) {
   return instrumentBadgesFor(item, members.value)
 }
 
 // True when nothing was configured on this position and we are showing the
 // member's profile instrument instead — the printed name is dimmed to match.
-function isInferred(item: StagePlotMemberItem): boolean {
+function isInferred(item: StagePlacement): boolean {
   return resolveStageInstruments(item, members.value).some(i => i.inferred)
 }
 
 // Instrument names printed under each musician, with the same profile fallback.
-function instrumentNames(item: StagePlotMemberItem, sep: string): string {
+function instrumentNames(item: StagePlacement, sep: string): string {
   return resolveStageInstruments(item, members.value).map(i => i.label).join(sep)
 }
 
@@ -408,24 +386,24 @@ function printPage() { window.print() }
                 </div>
               </div>
               <span v-if="item.temp_id" class="guest-badge">GUEST</span>
-              <span :class="isMemberItemComplete(item) ? 'status-complete' : 'status-incomplete'">
-                {{ isMemberItemComplete(item) ? '✓ Complete' : '⚠ Incomplete' }}
+              <span :class="isComplete(item) ? 'status-complete' : 'status-incomplete'">
+                {{ isComplete(item) ? '✓ Complete' : '⚠ Incomplete' }}
               </span>
             </div>
 
             <!-- Signal chain / Inputs -->
-            <div v-if="item.inputs?.length" class="detail-section">
+            <div v-if="rigFor(item).inputs.length" class="detail-section">
               <div class="detail-title">
                 Signal chain / Inputs
-                <span class="chain-badge">{{ item.signal_chain_type?.replace(/_/g, ' ') }}</span>
+                <span class="chain-badge">{{ rigFor(item).signal_chain_type.replace(/_/g, ' ') }}</span>
               </div>
               <table class="data-table">
                 <thead>
                   <tr><th>Ch</th><th>Instrument / Source</th><th>Mic / DI</th><th>Model</th><th>Stand</th><th>Notes</th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in item.inputs" :key="row.id">
-                    <td class="td-num">{{ row.channel }}</td>
+                  <tr v-for="row in rigFor(item).inputs" :key="row.id">
+                    <td class="td-num">{{ channelOf(item, row.id) }}</td>
                     <td>{{ row.instrument }}</td>
                     <td>{{ row.mic_di }}</td>
                     <td>{{ row.mic_model }}</td>
@@ -438,14 +416,14 @@ function printPage() { window.print() }
             <div v-else class="detail-section detail-empty">No inputs configured</div>
 
             <!-- Monitors -->
-            <div v-if="item.monitors?.length" class="detail-section">
+            <div v-if="rigFor(item).monitors.length" class="detail-section">
               <div class="detail-title">Monitor / IEM</div>
               <table class="data-table">
                 <thead>
                   <tr><th>Type</th><th>Label</th><th>Config</th><th>Mix description</th><th>IEM model</th><th>Frequency</th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="mon in item.monitors" :key="mon.id">
+                  <tr v-for="mon in rigFor(item).monitors" :key="mon.id">
                     <td>{{ mon.type === 'iem' ? 'IEM' : 'Wedge' }}</td>
                     <td>{{ mon.label }}</td>
                     <td>{{ mon.config }}</td>
@@ -459,14 +437,14 @@ function printPage() { window.print() }
             <div v-else class="detail-section detail-empty">No monitors configured</div>
 
             <!-- Wireless -->
-            <div v-if="item.wireless?.length" class="detail-section">
+            <div v-if="rigFor(item).wireless.length" class="detail-section">
               <div class="detail-title">Wireless</div>
               <table class="data-table">
                 <thead>
                   <tr><th>Type</th><th>Brand / Model</th><th>Freq. band</th><th>Own unit</th><th>Notes</th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(u, i) in item.wireless" :key="i">
+                  <tr v-for="(u, i) in rigFor(item).wireless" :key="i">
                     <td>{{ u.type }}</td>
                     <td>{{ u.brand_model || '—' }}</td>
                     <td>{{ u.frequency_band || '—' }}</td>
@@ -478,33 +456,37 @@ function printPage() { window.print() }
             </div>
 
             <!-- Backline -->
-            <div v-if="item.backline?.needed" class="detail-section">
+            <div v-if="rigFor(item).backline.some(b => b.needed)" class="detail-section">
               <div class="detail-title">Backline required</div>
-              <div class="kv-row">
-                <span class="kv-key">Category</span><span class="kv-val">{{ item.backline.category || '—' }}</span>
-                <span class="kv-key">Brand preference</span><span class="kv-val">{{ item.backline.brand_preference || '—' }}</span>
-                <span class="kv-key">Specs</span><span class="kv-val">{{ item.backline.specs || '—' }}</span>
-                <template v-if="item.backline.notes">
-                  <span class="kv-key">Notes</span><span class="kv-val">{{ item.backline.notes }}</span>
+              <div
+                v-for="bl in rigFor(item).backline.filter(b => b.needed)"
+                :key="bl.id"
+                class="kv-row"
+              >
+                <span class="kv-key">Item</span><span class="kv-val">{{ bl.name || bl.category.replace(/_/g, ' ') }}</span>
+                <span class="kv-key">Brand preference</span><span class="kv-val">{{ bl.brand_preference || '—' }}</span>
+                <span class="kv-key">Specs</span><span class="kv-val">{{ bl.specs || '—' }}</span>
+                <template v-if="bl.notes">
+                  <span class="kv-key">Notes</span><span class="kv-val">{{ bl.notes }}</span>
                 </template>
               </div>
             </div>
 
             <!-- Power -->
-            <div v-if="(item.power?.outlets_needed ?? 0) > 0" class="detail-section">
+            <div v-if="rigFor(item).power.outlets_needed > 0" class="detail-section">
               <div class="detail-title">Power</div>
               <div class="kv-row">
-                <span class="kv-key">Outlets needed</span><span class="kv-val">{{ item.power.outlets_needed }}</span>
-                <template v-if="item.power.notes">
-                  <span class="kv-key">Notes</span><span class="kv-val">{{ item.power.notes }}</span>
+                <span class="kv-key">Outlets needed</span><span class="kv-val">{{ rigFor(item).power.outlets_needed }}</span>
+                <template v-if="rigFor(item).power.notes">
+                  <span class="kv-key">Notes</span><span class="kv-val">{{ rigFor(item).power.notes }}</span>
                 </template>
               </div>
             </div>
 
             <!-- FOH notes -->
-            <div v-if="item.foh_notes" class="detail-section">
+            <div v-if="rigFor(item).foh_notes" class="detail-section">
               <div class="detail-title">FOH notes</div>
-              <p class="foh-notes">{{ item.foh_notes }}</p>
+              <p class="foh-notes">{{ rigFor(item).foh_notes }}</p>
             </div>
           </div>
         </section>
@@ -517,7 +499,7 @@ function printPage() { window.print() }
               <tr><th>Ch</th><th>Instrument / Source</th><th>Mic / DI</th><th>Model</th><th>Stand</th><th>Notes</th></tr>
             </thead>
             <tbody>
-              <tr v-for="row in effectiveInputs" :key="row.channel">
+              <tr v-for="row in effectiveInputs" :key="row.key">
                 <td class="td-num">{{ row.channel }}</td>
                 <td>{{ row.instrument }}</td>
                 <td>{{ row.mic_di }}</td>
@@ -549,7 +531,7 @@ function printPage() { window.print() }
         </section>
 
         <!-- ── Wireless Registry ──────────────────────────────── -->
-        <section v-if="allWireless.length || rfWireless.length" class="section">
+        <section v-if="allWireless.length" class="section">
           <h2 class="section-title">RF / Wireless Registry</h2>
           <table class="data-table">
             <thead>
@@ -563,15 +545,6 @@ function printPage() { window.print() }
                 <td>{{ u.band || '—' }}</td>
                 <td>{{ u.own ? 'Yes' : 'No' }}</td>
                 <td class="td-notes">{{ u.notes }}</td>
-              </tr>
-              <!-- Rider-level RF wireless -->
-              <tr v-for="unit in rfWireless" :key="unit.id">
-                <td>{{ unit.type }}</td>
-                <td>{{ unit.type }}</td>
-                <td>{{ unit.model }}</td>
-                <td>{{ unit.frequency_band }}</td>
-                <td>—</td>
-                <td>{{ unit.programmed_frequency }}{{ unit.notes ? ` · ${unit.notes}` : '' }}</td>
               </tr>
             </tbody>
           </table>

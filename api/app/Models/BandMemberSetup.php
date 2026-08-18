@@ -15,7 +15,7 @@ class BandMemberSetup extends Model
         'is_default',
         'signal_chain_type',
         'inputs',
-        'monitor',
+        'monitors',
         'backline',
         'power',
         'wireless',
@@ -25,7 +25,7 @@ class BandMemberSetup extends Model
     protected $casts = [
         'is_default' => 'boolean',
         'inputs'     => 'array',
-        'monitor'    => 'array',
+        'monitors'   => 'array',
         'backline'   => 'array',
         'power'      => 'array',
         'wireless'   => 'array',

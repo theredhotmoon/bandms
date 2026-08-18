@@ -1,105 +1,36 @@
-// ── Stage Plot ───────────────────────────────────────────────────────────────
+/**
+ * A tech rider.
+ *
+ * The rider stores placements (who plays what, where, through which saved rig)
+ * and the handful of requirements that belong to no single musician. The
+ * printed lists — channels, monitors, backline, power positions, RF — are
+ * derived from the placements by @/utils/riderResolver and are never stored.
+ */
 
-// Visual icon type for a stage-plot instrument slot.
-// Keep in sync with App\Enums\StagePlotType on the backend and with the icon
-// catalogue in @/utils/instrumentIcons.
-export type StagePlotItemType =
-  // vocals
-  | 'vocalist'
-  | 'backing_vocals'
-  // guitars & bass
-  | 'electric_guitar'
-  | 'acoustic_guitar'
-  | 'bass_guitar'
-  | 'banjo'
-  // keys
-  | 'keyboard'
-  | 'piano'
-  | 'synth'
-  | 'accordion'
-  // brass & wind
-  | 'trumpet'
-  | 'trombone'
-  | 'saxophone'
-  | 'flute'
-  | 'clarinet'
-  | 'harmonica'
-  | 'brass'
-  // strings
-  | 'violin'
-  | 'cello'
-  | 'double_bass'
-  // percussion
-  | 'drums'
-  | 'percussion'
-  | 'cajon'
-  // electronic
-  | 'dj_deck'
-  | 'laptop'
-  // stage gear
-  | 'guitar_amp'
-  | 'bass_amp'
-  | 'monitor_wedge'
-  | 'di_box'
-  | 'rack'
-  // fallback
-  | 'custom'
+import type { BandMemberSetup } from './bandMemberSetup'
+import type { GigLineup, StagePlacement } from './stagePlot'
+import type { BacklineSpec, InputRow, MonitorSpec, WirelessSpec } from './rig'
 
-// Legacy single-instrument item (kept for type reference only)
-export interface StagePlotItem {
-  id: string
-  type: StagePlotItemType
-  label: string
-  x: number
-  y: number
-  inputNumber?: number | null
-  band_member_id?: number | null
-  setup_id?: number | null
-}
+// Re-exported so existing imports of the rig vocabulary via this module keep
+// resolving to the single definition rather than tempting a second one.
+export type {
+  BacklineCategory,
+  BacklineSpec,
+  InputRow,
+  MicDiChoice,
+  MonitorConfig,
+  MonitorSpec,
+  MonitorType,
+  PowerSpec,
+  RigOverride,
+  RigSpec,
+  SignalChainType,
+  WirelessSpec,
+  WirelessType,
+} from './rig'
+export type { StagePlotItemType } from './instrumentType'
 
-// ── Inputs List ─────────────────────────────────────────────────────────────
-
-export type MicDiChoice = 'Mic' | 'DI' | 'Mic+DI'
-
-export interface InputRow {
-  id: string
-  channel: number
-  instrument: string
-  mic_di: MicDiChoice
-  mic_model: string
-  stand_type: string
-  notes: string
-}
-
-// ── Monitor / IEM ────────────────────────────────────────────────────────────
-
-export type MonitorType = 'wedge' | 'iem'
-
-export interface MonitorMix {
-  id: string
-  band_member_id: number | null
-  custom_name: string       // used when band_member_id is null
-  type: MonitorType
-  mix_description: string   // e.g. "guitar heavy + click"
-  iem_own_pack: boolean
-  transmitter_model: string
-  frequency: string
-}
-
-// ── Backline ─────────────────────────────────────────────────────────────────
-
-export type BacklineCategory = 'drum_kit' | 'guitar_amp' | 'bass_amp' | 'keyboard' | 'other'
-
-export interface BacklineItem {
-  id: string
-  category: BacklineCategory
-  name: string
-  brand_preference: string
-  specs: string
-  notes: string
-}
-
-// ── PA / FOH ─────────────────────────────────────────────────────────────────
+// ── PA / FOH — a production-level section, not a per-musician one ────────────
 
 export interface PaFohRequirements {
   room_coverage_notes: string
@@ -112,36 +43,15 @@ export interface PaFohRequirements {
   show_file_format: string
 }
 
-// ── Power ────────────────────────────────────────────────────────────────────
+// ── Power — stage-wide figures; per-position outlets come from placements ────
 
-export interface PowerPosition {
-  id: string
-  location: string
-  outlets_needed: number
-  notes: string
-}
-
-export interface PowerRequirements {
+export interface PowerNotes {
   total_wattage: number | null
   needs_clean_power: boolean
   general_notes: string
-  positions: PowerPosition[]
 }
 
-// ── RF / Wireless ─────────────────────────────────────────────────────────────
-
-export interface RfWirelessUnit {
-  id: string
-  model: string
-  type: string
-  frequency_band: string
-  programmed_frequency: string
-  notes: string
-}
-
-// ── Top-level TechRider ───────────────────────────────────────────────────────
-
-import type { GigLineup, StagePlotMemberItem } from './stagePlot'
+// ── Rider ────────────────────────────────────────────────────────────────────
 
 export interface TechRiderConcert {
   id: number
@@ -157,14 +67,29 @@ export interface TechRider {
   public_token: string
   concert_id: number | null
   concert?: TechRiderConcert | null
+
   gig_lineup: GigLineup
-  stage_plot_data: StagePlotMemberItem[]
-  inputs: InputRow[]
-  monitors: MonitorMix[]
-  backline: BacklineItem[]
+  placements: StagePlacement[]
+
+  /**
+   * Every setup the placements reference, sent with the rider so the public
+   * token view resolves them with the same code as the admin editor.
+   * Keyed by setup id (JSON object keys arrive as strings).
+   */
+  referenced_setups: Record<string, BandMemberSetup>
+
+  /** Requirements that belong to the production: talkback, playback, side fills. */
+  extra_inputs: InputRow[]
+  extra_monitors: MonitorSpec[]
+  extra_backline: BacklineSpec[]
+  extra_wireless: WirelessSpec[]
+
+  /** Engineer-chosen channel order, as resolved row keys. */
+  channel_order: string[]
+
+  power_notes: PowerNotes
   pa_foh: PaFohRequirements
-  power: PowerRequirements
-  rf_wireless: RfWirelessUnit[]
+
   created_at: string
   updated_at: string
 }
@@ -183,16 +108,17 @@ export interface TechRiderPayload {
   is_active?: boolean
   concert_id?: number | null
   gig_lineup?: GigLineup
-  stage_plot_data?: StagePlotMemberItem[]
-  inputs?: InputRow[]
-  monitors?: MonitorMix[]
-  backline?: BacklineItem[]
+  placements?: StagePlacement[]
+  extra_inputs?: InputRow[]
+  extra_monitors?: MonitorSpec[]
+  extra_backline?: BacklineSpec[]
+  extra_wireless?: WirelessSpec[]
+  channel_order?: string[]
+  power_notes?: PowerNotes
   pa_foh?: PaFohRequirements
-  power?: PowerRequirements
-  rf_wireless?: RfWirelessUnit[]
 }
 
-// ── Default factories ─────────────────────────────────────────────────────────
+// ── Defaults ─────────────────────────────────────────────────────────────────
 
 export function defaultPaFoh(): PaFohRequirements {
   return {
@@ -207,11 +133,6 @@ export function defaultPaFoh(): PaFohRequirements {
   }
 }
 
-export function defaultPower(): PowerRequirements {
-  return {
-    total_wattage: null,
-    needs_clean_power: false,
-    general_notes: '',
-    positions: [],
-  }
+export function defaultPowerNotes(): PowerNotes {
+  return { total_wattage: null, needs_clean_power: false, general_notes: '' }
 }

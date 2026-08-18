@@ -226,3 +226,82 @@ describe('GET /api/band-profile/member-setups', function () {
         expect(count($data[0]['setups']))->toBe(2);
     });
 });
+
+// ── Shared rig validation ─────────────────────────────────────────────────────
+//
+// A saved setup and a rider placement's override are the same shape and share
+// one set of rules (App\Http\Requests\Concerns\ValidatesRig). These cover the
+// parts of that shape a partial update must not trip over.
+
+describe('rig validation', function () {
+    function makeMemberWithSetup(): array
+    {
+        $member = BandMember::create([
+            'profile_id' => 1, 'first_name' => 'J', 'last_name' => 'D', 'can_login' => false,
+        ]);
+        $setup = BandMemberSetup::create([
+            'band_member_id' => $member->id, 'name' => 'Rig', 'signal_chain_type' => 'amp_mic',
+        ]);
+
+        return [$member, $setup];
+    }
+
+    it('accepts a partial update that sends only is_default', function () {
+        $this->actingAsAdmin();
+        [$member, $setup] = makeMemberWithSetup();
+
+        $this->putJson("/api/band-profile/members/{$member->id}/setups/{$setup->id}", ['is_default' => true])
+            ->assertSuccessful()
+            ->assertJsonPath('data.is_default', true);
+    });
+
+    it('stores multiple monitor sends without dropping any', function () {
+        $this->actingAsAdmin();
+        [$member, $setup] = makeMemberWithSetup();
+
+        $monitors = [
+            ['id' => 'm1', 'label' => 'Wedge', 'type' => 'wedge', 'config' => 'mono',
+             'mix_description' => 'vocals + kick', 'iem_own_pack' => false,
+             'iem_transmitter_model' => '', 'iem_frequency' => ''],
+            ['id' => 'm2', 'label' => 'IEM', 'type' => 'iem', 'config' => 'stereo',
+             'mix_description' => 'full mix', 'iem_own_pack' => true,
+             'iem_transmitter_model' => 'PSM300', 'iem_frequency' => '606.000'],
+        ];
+
+        $this->putJson("/api/band-profile/members/{$member->id}/setups/{$setup->id}", ['monitors' => $monitors])
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data.monitors')
+            ->assertJsonPath('data.monitors.1.iem_frequency', '606.000');
+    });
+
+    it('rejects a monitor with an unknown type', function () {
+        $this->actingAsAdmin();
+        [$member, $setup] = makeMemberWithSetup();
+
+        $this->putJson("/api/band-profile/members/{$member->id}/setups/{$setup->id}", [
+            'monitors' => [[
+                'id' => 'm1', 'label' => 'X', 'type' => 'headphones', 'config' => 'mono',
+                'mix_description' => '', 'iem_own_pack' => false,
+                'iem_transmitter_model' => '', 'iem_frequency' => '',
+            ]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['monitors.0.type']);
+    });
+
+    it('accepts a backline list rather than a single item', function () {
+        $this->actingAsAdmin();
+        [$member, $setup] = makeMemberWithSetup();
+
+        $this->putJson("/api/band-profile/members/{$member->id}/setups/{$setup->id}", [
+            'backline' => [
+                ['id' => 'b1', 'needed' => true, 'category' => 'drum_kit', 'name' => 'Kit',
+                 'brand_preference' => 'Pearl', 'specs' => '5-piece', 'notes' => ''],
+                ['id' => 'b2', 'needed' => false, 'category' => 'other', 'name' => 'Rug',
+                 'brand_preference' => '', 'specs' => '', 'notes' => 'brings own'],
+            ],
+        ])
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data.backline');
+    });
+});

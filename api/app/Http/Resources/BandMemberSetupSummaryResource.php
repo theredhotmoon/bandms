@@ -19,6 +19,7 @@ class BandMemberSetupSummaryResource extends JsonResource
             'is_default'        => (bool) $this->is_default,
             'signal_chain_type' => $this->signal_chain_type,
             'input_count'       => count($this->inputs ?? []),
+            'monitor_count'     => count($this->monitors ?? []),
             'updated_at'        => $this->updated_at,
         ];
     }

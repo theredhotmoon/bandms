@@ -14,7 +14,7 @@ test.describe('Tech Rider Admin', () => {
     await expect(page.locator('h1')).toContainText(/tech rider/i)
   })
 
-  test('create tech rider: fill name → save → toast "Rider template created", row appears', async ({
+  test('create tech rider: fill name → save → toast "Rider created", row appears', async ({
     page,
   }) => {
     await page.goto('/admin/tech-rider')
@@ -34,13 +34,13 @@ test.describe('Tech Rider Admin', () => {
 
     await modal.getByRole('button', { name: /create/i }).click()
 
-    await expect(page.locator('[data-sonner-toast]')).toContainText(/rider template created/i, {
+    await expect(page.locator('[data-sonner-toast]')).toContainText(/rider created/i, {
       timeout: 8000,
     })
     await expect(modal).not.toBeVisible()
 
     await expect(
-      page.locator('tr, [data-row], li, .template-item').filter({ hasText: UNIQUE_NAME }).first(),
+      page.locator('tr, [data-row], li, .rider-item').filter({ hasText: UNIQUE_NAME }).first(),
     ).toBeVisible({ timeout: 8000 })
   })
 
@@ -51,12 +51,12 @@ test.describe('Tech Rider Admin', () => {
     await page.waitForLoadState('networkidle')
 
     const row = page
-      .locator('tr, [data-row], li, .template-item')
+      .locator('tr, [data-row], li, .rider-item')
       .filter({ hasText: UNIQUE_NAME })
       .first()
 
-    // Activate button is .tpl-btn (not .tpl-btn--del) with text "✓"
-    const activateBtn = row.locator('button.tpl-btn:not(.tpl-btn--del)')
+    // Activate button is .act-btn (not .act-btn--del) with text "✓"
+    const activateBtn = row.locator('button.act-btn:not(.act-btn--del)')
     const hasBtnVisible = await activateBtn.isVisible().catch(() => false)
     if (hasBtnVisible) {
       await activateBtn.click()
@@ -73,12 +73,12 @@ test.describe('Tech Rider Admin', () => {
     await page.waitForLoadState('networkidle')
 
     const row = page
-      .locator('tr, [data-row], li, .template-item')
+      .locator('tr, [data-row], li, .rider-item')
       .filter({ hasText: UNIQUE_NAME })
       .first()
 
-    // Delete button is .tpl-btn--del with text "✕"
-    await row.locator('button.tpl-btn--del').click()
+    // Delete button is .act-btn--del with text "✕"
+    await row.locator('button.act-btn--del').click()
 
     const confirmDialog = page.locator('.modal-overlay')
     await expect(confirmDialog).toBeVisible({ timeout: 5000 })
@@ -90,7 +90,7 @@ test.describe('Tech Rider Admin', () => {
     })
 
     await expect(
-      page.locator('tr, [data-row], li, .template-item').filter({ hasText: UNIQUE_NAME }).first(),
+      page.locator('tr, [data-row], li, .rider-item').filter({ hasText: UNIQUE_NAME }).first(),
     ).not.toBeVisible({ timeout: 8000 })
   })
 
