@@ -1,8 +1,10 @@
 import type { TechRider, TechRiderSummary, TechRiderPayload } from '@/types/techRider'
+import type { PublishedRider } from '@/types/techRiderVersion'
 import { API_BASE, authHeaders, handleResponse } from './client'
 
 interface ListResponse    { data: TechRiderSummary[] }
 interface SingleResponse  { data: TechRider }
+interface PublishedResponse { data: PublishedRider }
 
 export async function fetchActiveTechRider(): Promise<TechRider> {
   const res = await fetch(`${API_BASE}/api/tech-riders/active`)
@@ -56,10 +58,19 @@ export async function activateTechRider(token: string, id: number): Promise<Tech
   return handleResponse<SingleResponse>(res).then((r) => r.data)
 }
 
-export async function fetchRiderByToken(token: string): Promise<TechRider> {
+/**
+ * The public rider link. Returns a *published version*, never the live rider —
+ * the sheet a promoter holds must not change under them when a musician edits
+ * their saved rig. The snapshot carries the members and band identity as well,
+ * so this page needs no further requests and no live data at all.
+ *
+ * The token is either the rider's own (follows the band forward to whichever
+ * version is published) or a version's (that exact version, permanently).
+ */
+export async function fetchPublishedRider(token: string): Promise<PublishedRider> {
   if (!token || !/^[A-Za-z0-9]{16,64}$/.test(token)) throw new Error('Invalid rider token')
   const res = await fetch(`${API_BASE}/api/public/rider/${encodeURIComponent(token)}`)
-  return handleResponse<SingleResponse>(res).then((r) => r.data)
+  return handleResponse<PublishedResponse>(res).then((r) => r.data)
 }
 
 export async function deleteTechRider(token: string, id: number): Promise<void> {

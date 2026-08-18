@@ -406,7 +406,10 @@ describe('referenced setups travel with the rider', function () {
             ->assertJsonCount(1, "data.referenced_setups.{$setup->id}.monitors");
     });
 
-    it('exposes them on the public token endpoint too', function () {
+    // The public token serves a published version, not the live rider — see
+    // TechRiderVersionTest for the frozen copy the promoter actually receives.
+    it('exposes them inside the published snapshot too', function () {
+        $this->actingAsAdmin();
         $member = \App\Models\BandMember::create([
             'profile_id' => 1, 'first_name' => 'Ola', 'last_name' => 'W', 'can_login' => false,
         ]);
@@ -416,10 +419,11 @@ describe('referenced setups travel with the rider', function () {
             'signal_chain_type' => 'modeler_stereo',
         ]);
         $rider = riderWithPlacement($setup->id);
+        $this->postJson("/api/tech-riders/{$rider->id}/versions")->assertCreated();
 
         $this->getJson("/api/public/rider/{$rider->public_token}")
             ->assertSuccessful()
-            ->assertJsonPath("data.referenced_setups.{$setup->id}.name", 'Helix rig');
+            ->assertJsonPath("data.rider.referenced_setups.{$setup->id}.name", 'Helix rig');
     });
 
     it('returns an empty map when no placement references a setup', function () {

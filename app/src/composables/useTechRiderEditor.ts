@@ -11,6 +11,7 @@ import type { Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { updateMemberSetup } from '@/api/bandMemberSetups'
+import { saveErrorMessage } from '@/api/client'
 import { useAuth } from './useAuth'
 import { useBandMembers } from './useBandMembers'
 import { useAllMemberSetups } from './useBandMemberSetups'
@@ -24,7 +25,10 @@ import { defaultGigLineup } from '@/types/stagePlot'
 import type { TechRiderPayload } from '@/types/techRider'
 import { defaultPaFoh, defaultPowerNotes } from '@/types/techRider'
 import { resolveRider, riderCompleteness } from '@/utils/riderResolver'
+import { unnamedChannelMessage } from '@/utils/rigValidation'
+import type { ChannelGroup } from '@/utils/rigValidation'
 import type { ResolvableRider } from '@/utils/riderResolver'
+import { placementName } from '@/utils/riderResolver'
 
 /** The editable rider. Everything printable is derived from it, not stored. */
 type RiderDraft = Required<Omit<TechRiderPayload, 'is_active'>> & { is_active: boolean }
@@ -135,8 +139,38 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
   const saving = ref(false)
   const saved = ref(false)
 
-  async function save() {
-    if (openId.value === null) return
+  /**
+   * Every channel this rider would send, and where it lives.
+   *
+   * A rig's only rule the UI can break is that a channel needs a name, so this
+   * is checked before the request rather than after: a 422 on a five-tab form
+   * tells the user nothing about which row to fix.
+   */
+  const channelGroups = computed<ChannelGroup[]>(() => {
+    const temps = draft.gig_lineup?.temp_musicians ?? []
+
+    return [
+      { label: 'Extra channels', inputs: draft.extra_inputs },
+      ...draft.placements
+        .filter((p) => p.overrides?.inputs !== undefined)
+        .map((p) => ({
+          label: `${placementName(p, members.value, temps)}'s channels`,
+          inputs: p.overrides?.inputs,
+        })),
+    ]
+  })
+
+  /** Blocks the save when a channel has no name; null when the rider is sendable. */
+  const blockingProblem = computed(() => unnamedChannelMessage(channelGroups.value))
+
+  async function save(): Promise<boolean> {
+    if (openId.value === null) return false
+
+    if (blockingProblem.value) {
+      toast.error(blockingProblem.value)
+      return false
+    }
+
     saving.value = true
     try {
       await riderMut.mutateAsync({ ...draft })
@@ -144,8 +178,10 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       saved.value = true
       setTimeout(() => { saved.value = false }, 2000)
       toast.success('Rider saved')
-    } catch {
-      toast.error('Failed to save rider')
+      return true
+    } catch (e) {
+      toast.error(saveErrorMessage(e, 'Failed to save rider'))
+      return false
     } finally {
       saving.value = false
     }
@@ -165,6 +201,15 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     const member = placement.band_member_id
     if (member == null) return
 
+    const temps = draft.gig_lineup?.temp_musicians ?? []
+    const problem = unnamedChannelMessage([
+      { label: `${placementName(placement, members.value, temps)}'s channels`, inputs: placement.overrides?.inputs },
+    ])
+    if (problem) {
+      toast.error(problem)
+      return
+    }
+
     promoting.value = true
     try {
       const rig: Partial<RigSpec> = {}
@@ -183,8 +228,8 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       await queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
       await queryClient.invalidateQueries({ queryKey: ['member-setups', member] })
       toast.success('Saved to the member\'s rig — remember to save the rider too')
-    } catch {
-      toast.error('Could not save to the saved rig')
+    } catch (e) {
+      toast.error(saveErrorMessage(e, 'Could not save to the saved rig'))
     } finally {
       promoting.value = false
     }

@@ -17,6 +17,7 @@ use App\Http\Controllers\EpkVersionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\TechRiderController;
+use App\Http\Controllers\TechRiderVersionController;
 use App\Http\Controllers\PressReleaseController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BandController;
@@ -380,5 +381,10 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/tech-riders/{techRider}', [TechRiderController::class, 'update'])->name('api.tech-riders.update');
         Route::post('/tech-riders/{techRider}/activate', [TechRiderController::class, 'activate'])->name('api.tech-riders.activate');
         Route::delete('/tech-riders/{techRider}', [TechRiderController::class, 'destroy'])->name('api.tech-riders.destroy');
+
+        // Published rider versions — the frozen copies the public link serves.
+        Route::get('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'index'])->name('api.tech-rider-versions.index');
+        Route::post('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'store'])->name('api.tech-rider-versions.store');
+        Route::delete('/tech-rider-versions/{version}', [TechRiderVersionController::class, 'destroy'])->name('api.tech-rider-versions.destroy');
     });
 });

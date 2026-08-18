@@ -5,6 +5,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { saveErrorMessage } from '@/api/client'
 import RigEditor from '@/components/rig/RigEditor.vue'
 import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 import { useMemberSetups, useMemberSetup } from '@/composables/useBandMemberSetups'
@@ -13,6 +14,7 @@ import type { Instrument } from '@/types/instrument'
 import type { RigField, RigSpec } from '@/types/rig'
 import { defaultRigSpec } from '@/types/rig'
 import { guessInstrumentType } from '@/utils/instrumentIcons'
+import { unnamedChannelMessage } from '@/utils/rigValidation'
 
 interface Props { member: BandMember }
 const props = defineProps<Props>()
@@ -74,8 +76,22 @@ const memberFullName = computed(() => `${props.member.first_name} ${props.member
 const saving = ref(false)
 const saved = ref(false)
 
+/**
+ * Why this rig cannot be saved yet, or null. A channel needs a name — checked
+ * here rather than left to the 422, which cannot say which row it meant.
+ */
+const blockingProblem = computed(() =>
+  unnamedChannelMessage([{ label: name.value || 'this rig', inputs: rig.value.inputs }]),
+)
+
 async function save() {
   if (openId.value === null) return
+
+  if (blockingProblem.value) {
+    toast.error(blockingProblem.value)
+    return
+  }
+
   saving.value = true
   try {
     await setupMut.mutateAsync({
@@ -87,8 +103,8 @@ async function save() {
     saved.value = true
     setTimeout(() => { saved.value = false }, 2000)
     toast.success('Setup saved')
-  } catch {
-    toast.error('Failed to save setup')
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to save setup'))
   } finally {
     saving.value = false
   }
