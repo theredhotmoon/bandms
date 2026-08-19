@@ -151,6 +151,19 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 **Do not change `try_files` back to `$uri/`.** The direct `$uri/index.html` lookup is strictly better for static SSG output.
 
+**Every `try_files` also needs a `=404` terminator.** Without one, the last
+parameter is a *fallback* — an internal redirect back into the same `location`,
+which loops until Nginx gives up with a 500 (`rewrite or internal redirection
+cycle`) whenever the target page was never built. This has bitten the token
+routes twice: `/rider/` (fixed in #23) and both `/newsletter/` blocks. The
+correct shape for a token route is:
+
+```nginx
+try_files $uri $uri/index.html /rider/index.html =404;
+```
+
+The shell page is then an ordinary file check and `=404` ends the chain.
+
 ---
 
 ### Public rider link 404s until the rider is published
