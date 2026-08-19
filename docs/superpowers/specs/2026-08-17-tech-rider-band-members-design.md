@@ -538,17 +538,30 @@ needing neither Docker nor a browser, so it fails in half a second rather than
 after a two-hundred-second image build. The script's exit code became a bitmask
 (1 backend, 2 E2E, 4 frontend). `make test-unit` runs it alone.
 
-### Note on the E2E suite
+### Note on the E2E suite — it is memory, not the suite
 
-The Playwright suite is flaky at its default four workers on a loaded machine.
-Across several runs in one session it failed two or three specs each time and a
-*different* set each time — `tech-rider` + `shop`, then `releases`, then
-`music-videos` + `photos` + `posts` — always as 30-second timeouts, sometimes
-alongside `GPU process launch failed` from Chromium. At `--workers=2` the same
-suite passed all 178.
+Across a dozen runs in one session the Playwright suite failed two or three
+specs most times and a **different set each time**: `tech-rider` + `shop`, then
+`releases`, then `music-videos` + `photos` + `posts`, then `auth`, then
+`tech-rider`'s "heading is visible" — a test that asserts one string and cannot
+regress. Always 30-second timeouts, often with Chromium `GPU process launch
+failed`, and twice the Vite dev server died outright with
+`FATAL ERROR: Zone Allocation failed - process out of memory`.
 
-Worth knowing before reading a red run as a regression: check whether the
-failing specs are related to the change at all, and re-run with fewer workers
-before investigating. Pinning the worker count in `playwright.config.ts` is the
-obvious fix and is deliberately not done here — it trades wall-clock time on
-every run for stability under a condition that may be local to one machine.
+That last message is the tell. It is the OS refusing an allocation, not V8
+hitting its heap cap — the cap was 4288 MB and the machine had **1.9 GB free of
+32 GB**, with Windows' Memory Compression alone holding 4.75 GB. Chrome, Slack
+and two Docker stacks were resident. The suite was not flaky; the machine was
+full.
+
+`workers` is pinned to 2 (from 4) because each worker costs a Chromium instance
+and a share of the dev server's heap, so it halves the peak — worth having, and
+it did stop the outright OOM. It did **not** make the suite green: at 2 workers
+with 1.9 GB free it still lost one or two specs a run.
+
+So, before reading a red E2E run as a regression:
+
+1. Check whether the failing specs have anything to do with the change. A
+   different set each run, or a spec the change cannot reach, means the machine.
+2. Check free RAM. Below a couple of GB, no worker count will save it.
+3. Only then investigate the specs.
