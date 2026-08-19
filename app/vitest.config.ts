@@ -9,6 +9,10 @@ import { fileURLToPath, URL } from 'node:url'
  * under test renders — these are the modules that decide what a venue is sent,
  * and they are pure functions precisely so they can be tested without a DOM,
  * a server, or a browser. Component and flow coverage stays in Playwright.
+ *
+ * Note: Vitest strips types rather than checking them, so a spec can pass here
+ * and still break `pnpm build`, which type-checks everything under src/. Run
+ * the build before trusting a green run on a new spec file.
  */
 export default defineConfig({
   resolve: {

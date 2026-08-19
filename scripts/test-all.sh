@@ -34,29 +34,10 @@ ok()     { echo -e "${GREEN}✅ $1${RESET}"; }
 fail()   { echo -e "${RED}❌ $1${RESET}"; }
 warn()   { echo -e "${YELLOW}⚠️  $1${RESET}"; }
 
-# ── Backend unit tests ────────────────────────────────────────────────────────
-if [ "$SKIP_UNIT" -eq 0 ]; then
-  banner "Backend unit tests (Pest)"
-  APP_KEY=$(grep '^APP_KEY=' .env 2>/dev/null | cut -d= -f2-)
-  if [ -z "$APP_KEY" ]; then
-    fail "APP_KEY not found in .env — run: cp .env.example .env && php artisan key:generate"
-    exit 1
-  fi
-  docker build --target test -t bandms_test ./api >/dev/null
-  if docker run --rm -e APP_ENV=testing -e APP_KEY="${APP_KEY}" bandms_test; then
-    ok "Backend tests passed"
-  else
-    fail "Backend tests FAILED"
-    UNIT_STATUS=1
-  fi
-else
-  warn "Backend tests skipped (--skip-unit)"
-  UNIT_SKIPPED=1
-fi
-
 # ── Frontend unit tests (Vitest) ──────────────────────────────────────────────
 # Pure logic only — the resolver, the diff and the rig contract. Sub-second and
-# dependency-free, so it runs before anything that needs Docker or a browser.
+# dependency-free — the only stage needing neither Docker nor a browser, so it
+# runs first and fails fastest.
 if [ "$SKIP_UNIT" -eq 0 ]; then
   banner "Frontend unit tests (Vitest)"
   if [ ! -f app/vitest.config.ts ]; then
@@ -75,6 +56,26 @@ if [ "$SKIP_UNIT" -eq 0 ]; then
 else
   warn "Frontend unit tests skipped (--skip-unit)"
   FE_UNIT_SKIPPED=1
+fi
+
+# ── Backend unit tests ────────────────────────────────────────────────────────
+if [ "$SKIP_UNIT" -eq 0 ]; then
+  banner "Backend unit tests (Pest)"
+  APP_KEY=$(grep '^APP_KEY=' .env 2>/dev/null | cut -d= -f2-)
+  if [ -z "$APP_KEY" ]; then
+    fail "APP_KEY not found in .env — run: cp .env.example .env && php artisan key:generate"
+    exit 1
+  fi
+  docker build --target test -t bandms_test ./api >/dev/null
+  if docker run --rm -e APP_ENV=testing -e APP_KEY="${APP_KEY}" bandms_test; then
+    ok "Backend tests passed"
+  else
+    fail "Backend tests FAILED"
+    UNIT_STATUS=1
+  fi
+else
+  warn "Backend tests skipped (--skip-unit)"
+  UNIT_SKIPPED=1
 fi
 
 # ── E2E tests (Playwright) ────────────────────────────────────────────────────

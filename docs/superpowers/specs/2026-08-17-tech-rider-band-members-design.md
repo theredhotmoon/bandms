@@ -533,13 +533,22 @@ refactor could silently break:
   the printed channel number, so dragging a row does not report twelve changes
   to a venue.
 
-`scripts/test-all.sh` gained a third stage between the backend suite and E2E,
-and its exit code became a bitmask (1 backend, 2 E2E, 4 frontend). `make test-unit`
-runs it alone.
+`scripts/test-all.sh` gained a third stage, placed first: it is the only one
+needing neither Docker nor a browser, so it fails in half a second rather than
+after a two-hundred-second image build. The script's exit code became a bitmask
+(1 backend, 2 E2E, 4 frontend). `make test-unit` runs it alone.
 
 ### Note on the E2E suite
 
-One full `test-all.sh` run failed two unrelated specs (`tech-rider`, `shop`)
-under combined Docker-build and four-worker load, then passed on three
-subsequent runs including the same command. Flaky under contention rather than
-broken — worth knowing before trusting a single red run.
+The Playwright suite is flaky at its default four workers on a loaded machine.
+Across several runs in one session it failed two or three specs each time and a
+*different* set each time — `tech-rider` + `shop`, then `releases`, then
+`music-videos` + `photos` + `posts` — always as 30-second timeouts, sometimes
+alongside `GPU process launch failed` from Chromium. At `--workers=2` the same
+suite passed all 178.
+
+Worth knowing before reading a red run as a regression: check whether the
+failing specs are related to the change at all, and re-run with fewer workers
+before investigating. Pinning the worker count in `playwright.config.ts` is the
+obvious fix and is deliberately not done here — it trades wall-clock time on
+every run for stability under a condition that may be local to one machine.

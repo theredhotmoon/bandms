@@ -163,7 +163,7 @@ describe('resolveRider', () => {
       setup_id: null,
       overrides: { inputs: [input()] },
       instruments: [
-        { id: 'i1', type: 'guitar', label: 'Guitar' },
+        { id: 'i1', type: 'electric_guitar', label: 'Guitar' },
         { id: 'i2', type: 'vocalist', label: 'Vocals' },
       ],
     })
