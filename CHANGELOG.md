@@ -49,11 +49,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The public site container no longer crash-loops after a local `pnpm` run** — pnpm 10+ writes an `allowBuilds`-only `pnpm-workspace.yaml` into `web/`, and the pnpm@9 pinned in the web image reads any such file as a workspace declaration and refuses to build without a `packages:` field. The stub is now ignored by git and kept out of the Docker build context, so a stray local file can no longer be baked into the image.
 - **Adding a blank channel row no longer fails with an unexplained "Failed to save"** — `+ Add row` in any rig editor creates a channel with no instrument name, which `inputs.*.instrument` requires, so the next save was rejected with a generic toast and no indication of which of five tabs held the offending row. The row is now marked where it is created (red border, `aria-invalid`, a count in the table footer), and the save is refused locally with a message naming the row and section. Applies to the tech rider's extra channels, a placement's per-gig override, and a member's saved rigs in both the admin panel and self-service My Setups.
 - **Save failures now say what the server rejected** — new `saveErrorMessage()` helper in `app/src/api/client.ts` unwraps `ApiValidationError` to the first field message and its path instead of discarding it. Used by the rig save paths; publishing a rider now aborts if the save it performs first is refused, rather than freezing the last saved state.
-
-### Security
-- `POST /door-check` now requires a valid Bearer token (`auth:api` middleware); previously it was publicly accessible and returned customer name and order UUID for any guessed ticket code.
-
-### Fixed
 - **Public site nav links redirect to wrong port after rebuild** — clicking `/concerts` (or any nav link) from the dev server on port 4322 no longer redirects to `http://localhost/concerts/` (port 80, the Vue SPA). Root cause: Nginx's `try_files $uri $uri/` issues a `301 Permanent` redirect whose `Location` is built from `$host` — stripping the port. Browsers then cache the broken redirect forever. Fixed by switching to `try_files $uri $uri/index.html $uri.html =404`; the SSG index file is now served directly with no redirect at all. Added `absolute_redirect off` as defence-in-depth and documented the footgun in `CLAUDE.md`.
 - **Astro Docker build** — pinned pnpm to v9 in the `web/` Dockerfile (pnpm v10 dropped `package.json` `pnpm` field support, blocking `esbuild`/`sharp` post-install scripts); stripped CRLF from `start.sh` so the Linux shebang resolves on Windows-built images; added `web/.gitattributes` to enforce LF line endings for `*.sh` going forward.
 - **Astro public pages** — guarded all API array properties with `?? []` before `.length`/`.map()` calls; the Laravel API returns `null` (not `[]`) for empty relationship arrays. Affected: EPK, release detail, post detail, concert detail, merch detail, photos index.
@@ -64,6 +59,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Admin sidebars: page titles in Band Members, Tech Rider, Setlists, and Users are now proper `<h1>` elements instead of styled `<div>` elements.
 - Admin setlists: inline delete confirmation card now has `role="dialog"` and `aria-modal`.
 - Tests: fixed a concurrency bug in the Playwright E2E suite where the Logout tests revoked the shared Passport token mid-run, causing up to 38 parallel tests to receive 401 responses and redirect to `/login`. Logout tests now mock the backend endpoint so only frontend behaviour (localStorage cleared, redirect) is verified. All 174 admin E2E tests now pass in parallel.
+
+### Security
+- `POST /door-check` now requires a valid Bearer token (`auth:api` middleware); previously it was publicly accessible and returned customer name and order UUID for any guessed ticket code.
 
 ## [0.6.0] - 2026-06-15
 
