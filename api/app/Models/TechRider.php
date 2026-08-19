@@ -78,6 +78,12 @@ class TechRider extends Model
         return $this->hasOne(TechRiderVersion::class)->where('status', 'published');
     }
 
+    /** Who has been asked to confirm their rig for this rider, and who has. */
+    public function confirmations(): HasMany
+    {
+        return $this->hasMany(TechRiderConfirmation::class);
+    }
+
     /**
      * The band_member_setups rows this rider's placements point at.
      *

@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchPublishedRider } from '@/api/techRiders'
 import type { TechRider } from '@/types/techRider'
-import type { BandMember } from '@/types/bandMember'
+import type { RiderMember } from '@/types/bandMember'
 import type { TechRiderVersion } from '@/types/techRiderVersion'
 import type { StagePlacement, GigTempMusician } from '@/types/stagePlot'
 import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
@@ -22,7 +22,7 @@ import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
 
 const route   = useRoute()
 const rider   = ref<TechRider | null>(null)
-const members = ref<BandMember[]>([])
+const members = ref<RiderMember[]>([])
 const version = ref<TechRiderVersion | null>(null)
 const logoUrl = ref<string | null>(null)
 const loading = ref(true)
@@ -96,7 +96,7 @@ function channelOf(item: StagePlacement, rowId: string): number | string {
   return resolved.value?.inputs.find((r) => r.key === `${item.id}:${rowId}`)?.channel ?? '—'
 }
 
-function findMember(id: number | null): BandMember | null {
+function findMember(id: number | null): RiderMember | null {
   if (!id) return null
   return members.value.find(m => m.id === id) ?? null
 }

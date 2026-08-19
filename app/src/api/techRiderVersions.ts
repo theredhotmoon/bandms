@@ -1,4 +1,5 @@
 import type {
+  PublishedRider,
   TechRiderVersion,
   TechRiderVersionPayload,
 } from '@/types/techRiderVersion'
@@ -6,6 +7,7 @@ import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface ListResponse   { data: TechRiderVersion[] }
 interface SingleResponse { data: TechRiderVersion }
+interface SnapshotResponse { data: PublishedRider }
 
 export async function fetchTechRiderVersions(
   token: string,
@@ -16,6 +18,20 @@ export async function fetchTechRiderVersions(
     headers: authHeaders(token),
   })
   return handleResponse<ListResponse>(res).then((r) => r.data)
+}
+
+/**
+ * One version with its snapshot — what the list omits because it is large.
+ * Comparing two versions resolves both here, with the same resolver that
+ * renders them, rather than asking the server for a diff it cannot compute
+ * without a second copy of the derivation rules.
+ */
+export async function fetchTechRiderVersion(token: string, id: number): Promise<PublishedRider> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/tech-rider-versions/${id}`, {
+    headers: authHeaders(token),
+  })
+  return handleResponse<SnapshotResponse>(res).then((r) => r.data)
 }
 
 /** Freezes the rider as it stands and points its public link at the new copy. */

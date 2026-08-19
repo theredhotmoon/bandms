@@ -1,8 +1,8 @@
 # Tech Riders & Band Member Setups — Analysis and Redesign Proposal
 
 **Date:** 2026-08-17
-**Status:** Part 3.1 implemented on `feature/rider-single-source-of-truth`; phase 3 (versioning) and the
-remainder of phase 4 implemented on `feature/rider-versioning` — see [Implementation log](#implementation-log)
+**Status:** fully implemented. Part 3.1 on `feature/rider-single-source-of-truth`, phases 3–4 on
+`feature/rider-versioning`, phase 5 on `feature/rider-phase-5` — see [Implementation log](#implementation-log)
 **Scope:** `api/` tech riders + band members + member setups, `app/` admin editors and rider preview. Public Astro site unaffected.
 
 ---
@@ -441,11 +441,65 @@ unsaved form would otherwise freeze the wrong sheet, silently.
 
 ### Known gaps
 
-- **No version diff.** Phase 5 item 4. Snapshots make it straightforward now:
-  resolve two of them and compare the channel lists.
+- ~~**No version diff.**~~ Built — see the phase 5 entry below.
 - **`/tech-rider` and `/tech-rider/:id` still render the live rider** and are
   unauthenticated. They are the admin preview, not the shared link, but they
   predate versioning and are worth revisiting.
 - **The Astro island at `web/src/components/PublicRider.vue`** expects a
   `title` / `content_html` payload the API has never returned; it was already
   non-functional before this change and is untouched by it.
+
+---
+
+**2026-08-19 — branch `feature/rider-phase-5`.**
+The four features Part 4 lists under phase 5. (§3.3's items 5 and 6 — stereo
+pairing and instrument references — are outside phase 5; item 6 is the F5
+schema question and deserves its own design.)
+
+### Version diff
+
+`app/src/utils/riderDiff.ts` resolves both snapshots and compares the *rendered*
+rider, not the stored one. A promoter does not care that a placement gained an
+override; they care that channel 11 became a DI.
+
+Rows match on the resolved `key` (`placementId:rowId`), which survives edits —
+that is what lets a row be reported as **changed** with a field-level detail
+(`mic_di: DI → Mic+DI`) instead of as one removal plus one unrelated addition.
+`GET /api/tech-rider-versions/{id}` serves a snapshot on demand; the list still
+omits them because nothing in a list needs them.
+
+### Duplicate
+
+`replicate()` minus the identity: new public token, inactive, no versions, and
+no `concert_id`. Copying the concert would silently give one gig two riders, and
+copying the version history would claim the copy had been sent.
+
+### Rider from a concert
+
+Everything inferable is inferred — name from venue and date, lineup from the
+current members, the concert link — so the user lands on the stage plot, which
+is the only part that cannot be. A second attempt returns 409 with the existing
+rider's id, and the admin treats that as a redirect rather than an error.
+
+### Confirm your rig
+
+`tech_rider_confirmations` is one row per musician per rider. Asking again
+clears the previous answer on purpose: confirming the rider as it stood two
+weeks ago is not confirming it now.
+
+The mail points at My Setups, behind the login the member already has, rather
+than carrying a magic token — a token that edits a rig is a credential in an
+inbox, and it is worth more than the confirmation it enables. Confirming is
+scoped to `auth()->user()->band_member_id` and takes no member id, because
+confirming on someone else's behalf is the thing the feature exists to prevent.
+
+A failed send is logged and reported per member rather than aborting the batch;
+the request is recorded either way, so the band can still chase it in person.
+
+### Known gaps
+
+- **Mail is sent synchronously.** `RigConfirmationRequest` is `Queueable` but
+  nothing runs a worker in this stack, so a slow SMTP server slows the request.
+  Fine for a band-sized lineup; wrong for a mailing list.
+- **No reminder.** Asking again is manual, and there is no nudge for a musician
+  who has not replied.

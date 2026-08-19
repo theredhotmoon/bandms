@@ -58,6 +58,29 @@ export async function activateTechRider(token: string, id: number): Promise<Tech
   return handleResponse<SingleResponse>(res).then((r) => r.data)
 }
 
+/** Copies a rider so a variant can start from a working one. */
+export async function duplicateTechRider(token: string, id: number): Promise<TechRider> {
+  if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid tech rider id')
+  const res = await fetch(`${API_BASE}/api/tech-riders/${id}/duplicate`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  return handleResponse<SingleResponse>(res).then((r) => r.data)
+}
+
+/**
+ * Starts a rider for a concert, pre-filled with the current lineup.
+ * 409 when the concert already has one — see `ApiError.status` at the call site.
+ */
+export async function createRiderForConcert(token: string, concertId: number): Promise<TechRider> {
+  if (!Number.isInteger(concertId) || concertId <= 0) throw new Error('Invalid concert id')
+  const res = await fetch(`${API_BASE}/api/concerts/${concertId}/tech-rider`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+  return handleResponse<SingleResponse>(res).then((r) => r.data)
+}
+
 /**
  * The public rider link. Returns a *published version*, never the live rider —
  * the sheet a promoter holds must not change under them when a musician edits
