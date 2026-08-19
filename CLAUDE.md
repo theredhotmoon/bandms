@@ -274,3 +274,33 @@ make test-all    # unit + E2E Playwright — run before shipping
 - Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.
 - If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
 - **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.
+
+### E2E: check free RAM before believing a red run
+
+The Playwright suite needs **~2 GB free RAM minimum**. Below that it fails
+specs regardless of the code, because each worker costs a Chromium instance
+plus a share of the Vite dev server heap. Measured on one commit, one config:
+
+| Free RAM | Result |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a **different set each run** |
+| 5.5 GB | **178 passed, 0 failed, 0 flaky** in 2.3 min |
+
+Triage order when E2E goes red:
+
+1. **Do the failing specs relate to the change?** A different set each run, or
+   a spec the change cannot reach, means the machine — not a regression.
+2. **Check free RAM.** `Zone Allocation failed` from the dev server is the OS
+   refusing an allocation, not V8 hitting its cap, so raising
+   `--max-old-space-size` makes it worse. Close browser windows instead.
+3. **Only then investigate the specs.**
+
+`workers` is pinned to 2 in `app/playwright.config.ts`; override with
+`pnpm test:e2e --workers=4` when there is room. Note ~15 tests skip by design
+(data-dependent guards), so "178 passed, 15 skipped" is a full green run.
+
+**`make` may not be available** — it is absent from the Windows dev setup, so
+the `make` targets above are shorthand. Use `bash scripts/test-all.sh
+[--skip-e2e|--skip-unit]` directly when `make: command not found`,
+which runs frontend unit → backend unit → E2E and returns a bitmask exit code
+(1 backend, 2 E2E, 4 frontend).

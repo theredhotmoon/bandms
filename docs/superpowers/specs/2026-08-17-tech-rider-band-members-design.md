@@ -565,3 +565,29 @@ So, before reading a red E2E run as a regression:
    different set each run, or a spec the change cannot reach, means the machine.
 2. Check free RAM. Below a couple of GB, no worker count will save it.
 3. Only then investigate the specs.
+
+#### Confirmed, 2026-08-19
+
+The diagnosis above was argued from failure *patterns*; it now has a controlled
+result behind it. Same commit, same 2-worker config, same specs — the only
+variable changed was free memory, by closing browser windows:
+
+| Free RAM | Result |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a different set each run |
+| **5.5 GB** | **178 passed, 15 skipped, 0 failed, 0 flaky — 2.3 min, exit 0** |
+
+So the threshold is crossable, and "this machine cannot run the suite" was too
+fatalistic a reading. The rule to take away is the ordering in the list above:
+check free RAM *before* investigating specs, because below a couple of GB the
+suite reports noise no matter what the code does.
+
+Two details worth keeping:
+
+- **The 15 skips are intentional**, not silent failures — data-dependent guards
+  in the specs themselves (`test.skip(count === 0, 'No albums — skipping edit
+  test')` in `photos.spec.ts`, similar in `newsletter.spec.ts`). Roughly 8% of
+  the suite asserts nothing on a default seed.
+- **A single anomalous result during an nginx `-s reload` is a worker race**,
+  not a failure. A request can be served by the outgoing worker for a moment
+  after the reload signal; retry before believing it.

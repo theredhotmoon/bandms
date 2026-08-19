@@ -120,6 +120,31 @@ pnpm test:e2e:report               # open last HTML report
 Playwright auto-starts the Vite dev server before running tests.
 Auth state is saved to `app/e2e/.auth/admin.json` and reused across tests.
 
+#### The suite needs free RAM, not just a passing machine
+
+**Below ~2 GB free the suite fails regardless of the code.** Each worker costs
+a Chromium instance plus a share of the Vite dev server heap, so a loaded
+machine starves it. Measured on the same commit, same 2-worker config:
+
+| Free RAM | Result |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a **different set each run** |
+| 5.5 GB | **178 passed, 0 failed, 0 flaky** in 2.3 min |
+
+Before reading a red run as a regression:
+
+1. **Do the failing specs relate to your change?** A different set each run, or
+   a spec your change cannot reach, means the machine.
+2. **Check free RAM.** Below a couple of GB, no worker count saves it — and
+   raising `--max-old-space-size` makes it worse, since the dev server dies on
+   `Zone Allocation failed`, which is the OS refusing an allocation rather than
+   V8 hitting its cap.
+3. **Only then investigate the specs.**
+
+Closing browser windows is usually enough. `workers` is pinned to 2 in
+`app/playwright.config.ts`; override with `pnpm test:e2e --workers=4` when
+there is room.
+
 ### Run both suites together
 
 ```bash
