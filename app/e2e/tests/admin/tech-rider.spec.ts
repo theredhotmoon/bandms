@@ -66,6 +66,193 @@ test.describe('Tech Rider Admin', () => {
     }
   })
 
+  // A rider with no channels is a blank document, so publishing is locked until
+  // there is at least one. Everything else is only a warning.
+  test('publish is blocked while the rider has no channels', async ({ page }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+    await expect(page.locator('.version-chip')).toContainText(/never published/i)
+
+    await page.getByRole('button', { name: /publish v1/i }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await expect(modal.locator('.stop-title')).toContainText(/can't publish yet/i)
+    await expect(modal.getByRole('button', { name: /publish v1/i })).toBeDisabled()
+
+    await modal.getByRole('button', { name: /cancel/i }).click()
+    await expect(modal).not.toBeVisible()
+  })
+
+  // "Add row" creates a row the server requires a name for. The editor has to
+  // refuse it locally and say which row — a 422 on a five-tab form cannot.
+  test('a channel with no instrument name is refused with a specific message', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+
+    await page.getByRole('button', { name: /channels/i }).click()
+    await page.getByRole('button', { name: /add row/i }).click()
+
+    // Flagged where it is created, not only on save.
+    await expect(page.locator('.cell-input--invalid')).toBeVisible()
+    await expect(page.locator('.needs-name')).toContainText(/needs an instrument name/i)
+
+    await page.getByRole('button', { name: /save rider/i }).click()
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /needs an instrument name/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    // Naming it clears both the mark and the refusal.
+    await page.locator('input[placeholder*="Kick drum" i]').first().fill('Talkback')
+    await expect(page.locator('.cell-input--invalid')).toHaveCount(0)
+    await expect(page.locator('.needs-name')).toHaveCount(0)
+  })
+
+  // Publishing is what makes a rider public at all: until a version exists the
+  // token link 404s, so this covers both the button and the promise it makes.
+  test('publish: add a channel → Publish v1 → chip reads "v1 published", public link renders', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('tr, [data-row], li, .rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .click()
+
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+
+    // One production extra is enough to make the sheet a real document.
+    await page.getByRole('button', { name: /channels/i }).click()
+    await page.getByRole('button', { name: /add row/i }).click()
+    await page.locator('input[placeholder*="Kick drum" i]').first().fill('Talkback')
+    await page.getByRole('button', { name: /save rider/i }).click()
+    // Filter rather than index: several toasts stack up in this flow, and the
+    // plain locator resolves to whichever arrived first.
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /rider saved/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    await page.getByRole('button', { name: /publish v1/i }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await expect(modal.locator('.stop-title')).toHaveCount(0)
+    await modal.getByRole('button', { name: /publish v1/i }).click()
+
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /published v1/i }),
+    ).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('.version-chip')).toContainText(/v1 published/i, { timeout: 8000 })
+
+    // The rider's own token now resolves to the frozen copy.
+    const historyModal = page.locator('.modal-overlay')
+    await page.locator('.version-chip').click()
+    await expect(historyModal).toBeVisible()
+    await expect(historyModal.locator('.version-status')).toContainText(/live link/i)
+
+    const href = await historyModal.locator('a', { hasText: 'Open' }).first().getAttribute('href')
+    expect(href).toMatch(/\/rider\/[A-Za-z0-9]{32}$/)
+
+    await page.goto(href!)
+    await expect(page.locator('.cover-rider-name')).toContainText(UNIQUE_NAME, { timeout: 10000 })
+  })
+
+  // Deriving a festival rider from a club one is the whole point — the copy has
+  // to carry the work and none of the identity.
+  test('duplicate: copy carries the channels but starts unpublished', async ({ page }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page
+      .locator('.rider-item')
+      .filter({ hasText: UNIQUE_NAME })
+      .first()
+      .locator('button[title="Duplicate this rider"]')
+      .click()
+
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /copied to/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    // The editor opens on the copy, which has never been sent.
+    await expect(page.locator('.title-input')).toHaveValue(`${UNIQUE_NAME} (copy)`, { timeout: 8000 })
+    await expect(page.locator('.version-chip')).toContainText(/never published/i)
+
+    await page.getByRole('button', { name: /channels/i }).click()
+    await expect(page.locator('.chan-table tbody tr.data-row')).toHaveCount(1)
+
+    // Clean up the copy so the delete test still targets one row.
+    await page
+      .locator('.rider-item')
+      .filter({ hasText: `${UNIQUE_NAME} (copy)` })
+      .first()
+      .locator('button.act-btn--del')
+      .click()
+    const dialog = page.locator('.modal-overlay')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /rider deleted/i }),
+    ).toBeVisible({ timeout: 8000 })
+  })
+
+  // Comparing v2 with v1 is what makes "we re-sent it" answerable.
+  test('version diff: publishing a change reports it against the previous version', async ({
+    page,
+  }) => {
+    await page.goto('/admin/tech-rider')
+    await page.waitForLoadState('networkidle')
+
+    await page.locator('.rider-item').filter({ hasText: UNIQUE_NAME }).first().click()
+    await expect(page.locator('.title-input')).toHaveValue(UNIQUE_NAME, { timeout: 8000 })
+
+    // Change something the printed sheet shows, then publish v2.
+    await page.getByRole('button', { name: /channels/i }).click()
+    await page.locator('input[placeholder*="Kick drum" i]').first().fill('Talkback mic')
+    await page.getByRole('button', { name: /save rider/i }).click()
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /rider saved/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    await page.getByRole('button', { name: /publish v2/i }).click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+    await modal.getByRole('button', { name: /publish v2/i }).click()
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /published v2/i }),
+    ).toBeVisible({ timeout: 8000 })
+
+    await page.locator('.version-chip').click()
+    const history = page.locator('.modal-overlay')
+    await expect(history).toBeVisible()
+
+    await history.getByRole('button', { name: /vs v1/i }).click()
+    await expect(history.locator('.diff-title')).toContainText('v1 → v2', { timeout: 8000 })
+    await expect(history.locator('.diff-section-title')).toContainText(/channels/i)
+    await expect(history.locator('.diff-changes')).toContainText(/instrument: Talkback → Talkback mic/i)
+  })
+
   test('delete: click Delete → confirm modal → Delete → toast "Rider deleted"', async ({
     page,
   }) => {

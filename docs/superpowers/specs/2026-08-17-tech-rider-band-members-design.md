@@ -1,7 +1,8 @@
 # Tech Riders & Band Member Setups — Analysis and Redesign Proposal
 
 **Date:** 2026-08-17
-**Status:** Part 3.1 implemented on `feature/rider-single-source-of-truth` — see [Implementation log](#implementation-log)
+**Status:** fully implemented. Part 3.1 on `feature/rider-single-source-of-truth`, phases 3–4 on
+`feature/rider-versioning`, phase 5 on `feature/rider-phase-5` — see [Implementation log](#implementation-log)
 **Scope:** `api/` tech riders + band members + member setups, `app/` admin editors and rider preview. Public Astro site unaffected.
 
 ---
@@ -350,8 +351,217 @@ of `TechRiderRequest` validate identically. This replaces the
 - **`shared_monitor_id`** is still on the model and the API but no longer has a
   UI. It never affected any rendered output — a rig's `monitors` list covers the
   case now. Worth dropping in a follow-up.
-- **No unit tests for the resolver.** `app/` has Playwright but no unit runner.
-  `riderResolver.ts` is pure and is the highest-value thing in the change to
-  test — adding Vitest is the obvious follow-up.
-- **Versioning not built.** A published rider is still mutable; the QR token
-  points at the live rider. Phase 3 of the plan above still applies.
+- ~~**No unit tests for the resolver.**~~ Done — Vitest and 57 tests, see the
+  final entry below.
+- ~~**Versioning not built.**~~ Built — see the phase 3 entry below.
+
+---
+
+**2026-08-18 — branch `feature/rider-versioning`.**
+Phase 3 (versioning) and the part of phase 4 that depended on it.
+
+### A rider is now frozen when it is sent
+
+`tech_rider_versions` follows `epk_versions` with two deliberate differences:
+versions belong to a rider rather than to the band, and there is no `pending`
+state. An EPK is drafted and then released; a rider is *sent*, and the sending
+is the thing worth recording — a `pending` step would only create versions
+nobody received. Publishing archives its predecessor, so exactly one version is
+`published` per rider at any time.
+
+### What a snapshot contains
+
+Not the printed sheet — what the sheet is derived *from*: the rider, the saved
+rigs its placements reference, the musicians it places, and the band's logo.
+
+The alternative was to re-implement `resolveRider()` in PHP and freeze the
+resolved channel list. That is finding F1 and F3 again in a new place: two
+implementations of one rule, free to drift, with nothing to catch it. The
+resolver is pure, so freezing its inputs freezes its output just as effectively,
+and `app/src/utils/riderResolver.ts` is still the only copy. A resolver *bugfix*
+then reaches old versions too — which is right for a rendering change and was
+never wanted for a data change.
+
+`App\Services\TechRiderSnapshotBuilder` builds it. Only the members a placement
+references are frozen, with display fields only: a snapshot is a public
+document, and `BandMemberResource` exposes `login_email` to authenticated staff.
+
+### Two kinds of public token
+
+- **The rider's token** — the one on the QR code. Follows the band forward and
+  always serves whichever version is published. Returns **404 until the rider
+  has been published at least once**, which is the intended behaviour and is
+  documented as a footgun in the root `CLAUDE.md`.
+- **A version's token** — pinned to that version for good. This is what makes
+  "re-send a corrected rider" a first-class action rather than an overwrite: the
+  promoter who got v1 in August still opens the August sheet.
+
+`GET /api/public/rider/{token}` now returns `{ format, taken_at, rider, members,
+profile, version }`. `RiderPublicView` reads all of it from the snapshot, so the
+page went from three requests to one and no longer touches live data at all.
+
+### Editor
+
+`Publish v{n}` sits next to Preview in the topbar, as 3.2 asked. A version chip
+beside the Active badge opens the history, where every version is a copyable
+permalink.
+
+The confirm dialog splits what 3.2 described as one gate into two, because the
+gaps are not alike:
+
+- **A rider with no named channels cannot be published.** That is not an
+  incomplete document but a blank one — the engineer receives an input sheet
+  with nothing on it. The button is disabled.
+- **Everything else is a warning you can send past**: musicians not yet placed,
+  a musician with no inputs or no monitor. A rider is routinely sent while one
+  of them is still confirming their rig, and an editor that refuses in that
+  state just gets worked around.
+
+Only channels carrying an instrument name count toward the gate. A blank row
+would otherwise unblock Publish and then fail the save that publishing performs
+first — `inputs.*.instrument` is required — turning a lock into a stray 422.
+
+### The blank row that could not be saved
+
+Fixed here rather than left for later, because the publish gate sends people
+straight at it. `+ Add row` creates a channel with no instrument name, which the
+server requires, so the next save was refused as `Failed to save rider` with no
+indication of which row in a form with five tabs and a rig per musician.
+
+`app/src/utils/rigValidation.ts` holds that one rule for all three paths that
+can send a rig — the rider's extra channels, a placement's override, and a
+member's saved rigs. The row is marked where it is created, the save is refused
+before the request with a message naming the row and its section, and
+`saveErrorMessage()` unwraps `ApiValidationError` so a server rejection keeps
+its field path instead of becoming a generic toast.
+
+Publishing saves the draft first. Publishing freezes what is *stored*, so an
+unsaved form would otherwise freeze the wrong sheet, silently.
+
+### Known gaps
+
+- ~~**No version diff.**~~ Built — see the phase 5 entry below.
+- **`/tech-rider` and `/tech-rider/:id` still render the live rider** and are
+  unauthenticated. They are the admin preview, not the shared link, but they
+  predate versioning and are worth revisiting.
+- **The Astro island at `web/src/components/PublicRider.vue`** expects a
+  `title` / `content_html` payload the API has never returned; it was already
+  non-functional before this change and is untouched by it.
+
+---
+
+**2026-08-19 — branch `feature/rider-phase-5`.**
+The four features Part 4 lists under phase 5. (§3.3's items 5 and 6 — stereo
+pairing and instrument references — are outside phase 5; item 6 is the F5
+schema question and deserves its own design.)
+
+### Version diff
+
+`app/src/utils/riderDiff.ts` resolves both snapshots and compares the *rendered*
+rider, not the stored one. A promoter does not care that a placement gained an
+override; they care that channel 11 became a DI.
+
+Rows match on the resolved `key` (`placementId:rowId`), which survives edits —
+that is what lets a row be reported as **changed** with a field-level detail
+(`mic_di: DI → Mic+DI`) instead of as one removal plus one unrelated addition.
+`GET /api/tech-rider-versions/{id}` serves a snapshot on demand; the list still
+omits them because nothing in a list needs them.
+
+### Duplicate
+
+`replicate()` minus the identity: new public token, inactive, no versions, and
+no `concert_id`. Copying the concert would silently give one gig two riders, and
+copying the version history would claim the copy had been sent.
+
+### Rider from a concert
+
+Everything inferable is inferred — name from venue and date, lineup from the
+current members, the concert link — so the user lands on the stage plot, which
+is the only part that cannot be. A second attempt returns 409 with the existing
+rider's id, and the admin treats that as a redirect rather than an error.
+
+### Confirm your rig
+
+`tech_rider_confirmations` is one row per musician per rider. Asking again
+clears the previous answer on purpose: confirming the rider as it stood two
+weeks ago is not confirming it now.
+
+The mail points at My Setups, behind the login the member already has, rather
+than carrying a magic token — a token that edits a rig is a credential in an
+inbox, and it is worth more than the confirmation it enables. Confirming is
+scoped to `auth()->user()->band_member_id` and takes no member id, because
+confirming on someone else's behalf is the thing the feature exists to prevent.
+
+A failed send is logged and reported per member rather than aborting the batch;
+the request is recorded either way, so the band can still chase it in person.
+
+### Known gaps
+
+- **Mail is sent synchronously.** `RigConfirmationRequest` is `Queueable` but
+  nothing runs a worker in this stack, so a slow SMTP server slows the request.
+  Fine for a band-sized lineup; wrong for a mailing list.
+- **No reminder.** Asking again is manual, and there is no nudge for a musician
+  who has not replied.
+
+---
+
+**2026-08-19 — branch `feature/rider-unit-tests`.**
+The follow-up this document has been asking for since the first entry.
+
+`app/` had Playwright and no unit runner, so the logic that decides what a venue
+receives was covered only by whichever path a browser test happened to walk.
+Vitest now covers the three pure modules that logic lives in:
+
+| Module | Why it is the one worth testing |
+|---|---|
+| `riderResolver.ts` | The single derivation point. The editor, the preview, the public page and the diff all call it, so one bug here is four wrong surfaces. |
+| `riderDiff.ts` | A missed change reads to a venue as a promise that nothing moved. |
+| `rigValidation.ts` | The rule that decides whether a save is allowed at all. |
+
+57 tests, 100% statement/line/function coverage on all three, and they run in
+under half a second because none of them needs a DOM, a server or a browser.
+The remaining uncovered branches are `?? []` and `|| '—'` fallbacks.
+
+Two behaviours are pinned down that nothing else was checking, and that a
+refactor could silently break:
+
+- **An empty override list is a removal, not an absence.** `overrides: { monitors: [] }`
+  means "no monitors tonight" and must beat the saved rig; `overrides: {}` must
+  inherit it. The two are distinguishable only because the resolver tests for
+  the key rather than for truthiness.
+- **Reordering channels is not a content change.** The diff compares fields, not
+  the printed channel number, so dragging a row does not report twelve changes
+  to a venue.
+
+`scripts/test-all.sh` gained a third stage, placed first: it is the only one
+needing neither Docker nor a browser, so it fails in half a second rather than
+after a two-hundred-second image build. The script's exit code became a bitmask
+(1 backend, 2 E2E, 4 frontend). `make test-unit` runs it alone.
+
+### Note on the E2E suite — it is memory, not the suite
+
+Across a dozen runs in one session the Playwright suite failed two or three
+specs most times and a **different set each time**: `tech-rider` + `shop`, then
+`releases`, then `music-videos` + `photos` + `posts`, then `auth`, then
+`tech-rider`'s "heading is visible" — a test that asserts one string and cannot
+regress. Always 30-second timeouts, often with Chromium `GPU process launch
+failed`, and twice the Vite dev server died outright with
+`FATAL ERROR: Zone Allocation failed - process out of memory`.
+
+That last message is the tell. It is the OS refusing an allocation, not V8
+hitting its heap cap — the cap was 4288 MB and the machine had **1.9 GB free of
+32 GB**, with Windows' Memory Compression alone holding 4.75 GB. Chrome, Slack
+and two Docker stacks were resident. The suite was not flaky; the machine was
+full.
+
+`workers` is pinned to 2 (from 4) because each worker costs a Chromium instance
+and a share of the dev server's heap, so it halves the peak — worth having, and
+it did stop the outright OOM. It did **not** make the suite green: at 2 workers
+with 1.9 GB free it still lost one or two specs a run.
+
+So, before reading a red E2E run as a regression:
+
+1. Check whether the failing specs have anything to do with the change. A
+   different set each run, or a spec the change cannot reach, means the machine.
+2. Check free RAM. Below a couple of GB, no worker count will save it.
+3. Only then investigate the specs.

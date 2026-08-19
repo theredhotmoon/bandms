@@ -3,9 +3,13 @@ import { computed, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
+import { saveErrorMessage } from '@/api/client'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
+import RiderConfirmations from '@/components/tech-rider/RiderConfirmations.vue'
+import RiderPublishModal from '@/components/tech-rider/RiderPublishModal.vue'
 import RiderRequirements from '@/components/tech-rider/RiderRequirements.vue'
+import RiderVersionHistory from '@/components/tech-rider/RiderVersionHistory.vue'
 import StagePlotMemberSelector from '@/components/tech-rider/StagePlotMemberSelector.vue'
 import TechRiderCompleteness from '@/components/tech-rider/TechRiderCompleteness.vue'
 import TechRiderCover from '@/components/tech-rider/TechRiderCover.vue'
@@ -16,6 +20,8 @@ import { useBandProfile } from '@/composables/useBandProfile'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTechRiderEditor } from '@/composables/useTechRiderEditor'
 import { useTechRiders } from '@/composables/useTechRiders'
+import { useTechRiderVersions } from '@/composables/useTechRiderVersions'
+import { useRiderConfirmations } from '@/composables/useRiderConfirmations'
 
 type Section = 'stage' | 'channels' | 'requirements' | 'pafoh' | 'cover'
 
@@ -30,12 +36,15 @@ const SECTIONS: { key: Section; label: string; icon: string }[] = [
 const openId = ref<number | null>(null)
 const activeSection = ref<Section>('stage')
 
-const { list, create, remove, activate } = useTechRiders()
+const { list, create, remove, activate, duplicate } = useTechRiders()
 const { query: profileQ } = useBandProfile()
 const { query: concertsQ } = useConcerts()
 
 const editor = useTechRiderEditor(openId)
 const { draft, dirty, patch, resolved, completeness, setups, members } = editor
+
+const versions = useTechRiderVersions(openId)
+const confirmations = useRiderConfirmations(openId)
 
 const bandProfile = computed(() => profileQ.data.value)
 const concerts = computed(() => concertsQ.data.value ?? [])
@@ -100,6 +109,18 @@ async function confirmDelete() {
   }
 }
 
+async function duplicateRider(id: number) {
+  if (!confirmDiscard()) return
+  try {
+    const copy = await duplicate.mutateAsync(id)
+    openId.value = copy.id
+    activeSection.value = 'stage'
+    toast.success(`Copied to "${copy.name}"`)
+  } catch {
+    toast.error('Failed to duplicate this rider')
+  }
+}
+
 async function setActive(id: number) {
   try {
     await activate.mutateAsync(id)
@@ -111,6 +132,80 @@ async function setActive(id: number) {
 
 function openPreview() {
   if (openId.value) window.open(`/tech-rider/${openId.value}`, '_blank')
+}
+
+// ── Publishing ────────────────────────────────────────────────────────────────
+
+/**
+ * Channels the publish gate counts.
+ *
+ * A row with no instrument is not a channel — it prints as a blank line and the
+ * backend rejects it (`inputs.*.instrument` is required), so counting it would
+ * unblock Publish only to fail on the save that publishing performs first.
+ */
+const publishableChannels = computed(
+  () => resolved.value.inputs.filter((row) => row.instrument.trim() !== '').length,
+)
+
+const showPublishModal = ref(false)
+const showVersionsModal = ref(false)
+
+/**
+ * Publishing freezes whatever is *stored*, so an unsaved draft has to land
+ * first. Doing it here rather than refusing to publish keeps the user out of a
+ * save-then-publish two-step whose only purpose would be to avoid this line.
+ */
+async function publish(notes: string) {
+  if (openId.value === null) return
+  try {
+    // A refused save must stop the publish: `save()` reports its own reason
+    // (an unnamed channel, a rejected field), and freezing the rider anyway
+    // would publish the last saved state while the user reads about the draft.
+    if (dirty.value && !(await editor.save())) return
+    const version = await versions.publish.mutateAsync(notes ? { notes } : {})
+    showPublishModal.value = false
+    toast.success(`Published v${version.version_number} — the rider link now serves it`)
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to publish this rider'))
+  }
+}
+
+async function compareVersions(olderId: number, newerId: number) {
+  try {
+    await versions.compare(olderId, newerId)
+  } catch {
+    toast.error('Could not load those versions to compare')
+  }
+}
+
+/** A stale diff must not greet the next rider opened. */
+function closeVersions() {
+  showVersionsModal.value = false
+  versions.clearDiff()
+}
+
+async function askForConfirmations() {
+  try {
+    const result = await confirmations.request.mutateAsync()
+    if (result.failed.length) {
+      // The requests are recorded either way, so say what happened rather than
+      // reporting a blanket failure the band can act on incorrectly.
+      toast.warning(`Asked ${result.requested}, but ${result.failed.length} email(s) could not be sent`)
+    } else {
+      toast.success(`Asked ${result.requested} musician${result.requested === 1 ? '' : 's'} to confirm`)
+    }
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Could not send the confirmation requests'))
+  }
+}
+
+async function discardVersion(id: number) {
+  try {
+    await versions.discard.mutateAsync(id)
+    toast.success('Version deleted')
+  } catch {
+    toast.error('Could not delete that version')
+  }
 }
 </script>
 
@@ -124,6 +219,7 @@ function openPreview() {
         :open-id="openId"
         @open="openRider"
         @activate="setActive"
+        @duplicate="duplicateRider"
         @delete="confirmDeleteId = $event"
         @new="showNewModal = true"
       />
@@ -151,6 +247,12 @@ function openPreview() {
               <div class="topbar-meta">
                 <span v-if="draft.is_active" class="badge-active">Active</span>
                 <span v-else class="meta-dim">Not active</span>
+                <button type="button" class="version-chip" @click="showVersionsModal = true">
+                  <template v-if="versions.published.value">
+                    v{{ versions.published.value.version_number }} published
+                  </template>
+                  <template v-else>Never published</template>
+                </button>
                 <select
                   :value="draft.concert_id ?? ''"
                   class="concert-select"
@@ -167,6 +269,14 @@ function openPreview() {
             <div class="topbar-actions">
               <span v-if="dirty" class="dirty-hint">Unsaved changes</span>
               <button type="button" class="btn-ghost" @click="openPreview">Preview / PDF</button>
+              <button
+                type="button"
+                class="btn-publish"
+                :disabled="versions.publish.isPending.value"
+                @click="showPublishModal = true"
+              >
+                Publish v{{ versions.nextNumber.value }}
+              </button>
               <button
                 type="button"
                 class="btn-save"
@@ -236,6 +346,15 @@ function openPreview() {
               </div>
 
               <TechRiderCompleteness :completeness="completeness" @open="openPlacement" />
+
+              <RiderConfirmations
+                :confirmations="confirmations.confirmations.value"
+                :confirmed="confirmations.confirmed.value"
+                :waiting="confirmations.waiting.value"
+                :never-asked="confirmations.neverAsked.value"
+                :requesting="confirmations.request.isPending.value"
+                @request="askForConfirmations"
+              />
             </template>
 
             <RiderChannelList
@@ -277,6 +396,31 @@ function openPreview() {
         </template>
       </main>
     </div>
+
+    <RiderPublishModal
+      :open="showPublishModal"
+      :next-number="versions.nextNumber.value"
+      :completeness="completeness"
+      :channel-count="publishableChannels"
+      :current="versions.published.value"
+      :dirty="dirty"
+      :publishing="versions.publish.isPending.value"
+      @close="showPublishModal = false"
+      @publish="publish"
+    />
+
+    <RiderVersionHistory
+      :open="showVersionsModal"
+      :versions="versions.versions.value"
+      :loading="versions.query.isPending.value"
+      :discarding="versions.discard.isPending.value"
+      :diff="versions.diff.value"
+      :diffing="versions.diffing.value"
+      @close="closeVersions"
+      @discard="discardVersion"
+      @compare="compareVersions"
+      @clear-diff="versions.clearDiff"
+    />
 
     <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">
       <StagePlotMemberSelector
@@ -367,6 +511,21 @@ function openPreview() {
 
 .topbar-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
 .dirty-hint { font-size: 0.7rem; color: #fbbf24; }
+
+/* The rider's published state, and the way into its history. */
+.version-chip {
+  font-size: 0.65rem; font-weight: 600; color: #64748b;
+  background: #141414; border: 1px solid #262626; border-radius: 999px;
+  padding: 0.1rem 0.5rem; cursor: pointer; font-family: inherit;
+}
+.version-chip:hover { color: #94a3b8; border-color: #3f3f3f; }
+
+.btn-publish {
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; background: transparent; border: 1px solid #166534; color: #4ade80;
+}
+.btn-publish:hover { background: #052e16; }
+.btn-publish:disabled { opacity: 0.5; cursor: default; }
 
 /* Tabs */
 .section-tabs {

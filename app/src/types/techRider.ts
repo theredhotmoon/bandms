@@ -8,6 +8,7 @@
  */
 
 import type { BandMemberSetup } from './bandMemberSetup'
+import type { TechRiderVersion } from './techRiderVersion'
 import type { GigLineup, StagePlacement } from './stagePlot'
 import type { BacklineSpec, InputRow, MonitorSpec, WirelessSpec } from './rig'
 
@@ -90,6 +91,13 @@ export interface TechRider {
   power_notes: PowerNotes
   pa_foh: PaFohRequirements
 
+  /**
+   * The frozen copy the public link currently serves, or null when this rider
+   * has never been sent. Absent from a snapshot's own rider — a version does
+   * not describe the version before it.
+   */
+  published_version?: TechRiderVersion | null
+
   created_at: string
   updated_at: string
 }
@@ -100,6 +108,8 @@ export interface TechRiderSummary {
   is_active: boolean
   public_token: string
   concert_id: number | null
+  /** null when the rider has never been published. */
+  published_version_number?: number | null
   updated_at: string
 }
 

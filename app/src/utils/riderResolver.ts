@@ -12,7 +12,7 @@
  * Pure functions only — no Vue, no fetching, no side effects.
  */
 
-import type { BandMember } from '@/types/bandMember'
+import type { RiderMember } from '@/types/bandMember'
 import type { SetupLookup } from '@/types/bandMemberSetup'
 import type {
   BacklineSpec,
@@ -161,7 +161,7 @@ export function overriddenFields(placement: StagePlacement): RigField[] {
 
 export function placementName(
   placement: StagePlacement,
-  members: BandMember[],
+  members: RiderMember[],
   temps: GigTempMusician[],
 ): string {
   if (placement.temp_id) {
@@ -175,7 +175,7 @@ export function placementName(
 
 function placementDetail(
   placement: StagePlacement,
-  members: BandMember[],
+  members: RiderMember[],
   setups: SetupLookup,
 ): string {
   const setup = placement.setup_id != null ? setups[placement.setup_id] : undefined
@@ -190,7 +190,7 @@ function placementDetail(
 function sourceFor(
   placement: StagePlacement,
   field: RigField,
-  members: BandMember[],
+  members: RiderMember[],
   temps: GigTempMusician[],
   setups: SetupLookup,
 ): RigSource {
@@ -221,7 +221,7 @@ function rowKey(placementId: string | null, rowId: string): string {
 export function resolveRider(
   rider: ResolvableRider,
   setups: SetupLookup,
-  members: BandMember[],
+  members: RiderMember[],
 ): ResolvedRider {
   const temps = rider.gig_lineup?.temp_musicians ?? []
   const placements = rider.placements ?? []
@@ -342,7 +342,7 @@ export interface PlacementStatus {
 export function placementStatus(
   placement: StagePlacement,
   setups: SetupLookup,
-  members: BandMember[],
+  members: RiderMember[],
   temps: GigTempMusician[],
 ): PlacementStatus {
   const rig = resolveRig(placement, setups)
@@ -371,7 +371,7 @@ export interface RiderCompleteness {
 export function riderCompleteness(
   rider: ResolvableRider,
   setups: SetupLookup,
-  members: BandMember[],
+  members: RiderMember[],
 ): RiderCompleteness {
   const temps = rider.gig_lineup?.temp_musicians ?? []
   const statuses = (rider.placements ?? []).map((p) => placementStatus(p, setups, members, temps))

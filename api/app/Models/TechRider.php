@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class TechRider extends Model
@@ -55,6 +57,31 @@ class TechRider extends Model
     public function concert(): BelongsTo
     {
         return $this->belongsTo(Concert::class);
+    }
+
+    /** Every frozen copy of this rider, newest first. */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(TechRiderVersion::class)->orderByDesc('version_number');
+    }
+
+    /**
+     * The version this rider's QR code resolves to.
+     *
+     * At most one version is `published` at a time: publishing a new one
+     * archives its predecessor, so the link printed on last month's stage plan
+     * keeps serving the sheet it was printed with while the QR code follows the
+     * band forward.
+     */
+    public function publishedVersion(): HasOne
+    {
+        return $this->hasOne(TechRiderVersion::class)->where('status', 'published');
+    }
+
+    /** Who has been asked to confirm their rig for this rider, and who has. */
+    public function confirmations(): HasMany
+    {
+        return $this->hasMany(TechRiderConfirmation::class);
     }
 
     /**

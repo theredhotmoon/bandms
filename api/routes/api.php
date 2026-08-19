@@ -16,7 +16,9 @@ use App\Http\Controllers\BandCalendarController;
 use App\Http\Controllers\EpkVersionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\TechRiderConfirmationController;
 use App\Http\Controllers\TechRiderController;
+use App\Http\Controllers\TechRiderVersionController;
 use App\Http\Controllers\PressReleaseController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BandController;
@@ -181,6 +183,15 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/band-profile/members/{member}/setups/{setup}', [BandMemberSetupController::class, 'destroy'])
         ->middleware('role:admin,member')
         ->name('api.member-setups.destroy');
+
+    // ── Member + Admin: confirming your own rig for a gig ──────────────────
+
+    Route::get('/my-rider-confirmations', [TechRiderConfirmationController::class, 'mine'])
+        ->middleware('role:admin,member')
+        ->name('api.rider-confirmations.mine');
+    Route::post('/tech-riders/{techRider}/confirm', [TechRiderConfirmationController::class, 'confirm'])
+        ->middleware('role:admin,member')
+        ->name('api.rider-confirmations.confirm');
 
     // ── Publisher + Admin: posts ────────────────────────────────────────────
 
@@ -379,6 +390,18 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/tech-riders/{techRider}', [TechRiderController::class, 'show'])->name('api.tech-riders.show');
         Route::put('/tech-riders/{techRider}', [TechRiderController::class, 'update'])->name('api.tech-riders.update');
         Route::post('/tech-riders/{techRider}/activate', [TechRiderController::class, 'activate'])->name('api.tech-riders.activate');
+        Route::post('/tech-riders/{techRider}/duplicate', [TechRiderController::class, 'duplicate'])->name('api.tech-riders.duplicate');
+        Route::post('/concerts/{concert}/tech-rider', [TechRiderController::class, 'storeForConcert'])->name('api.concerts.tech-rider.store');
         Route::delete('/tech-riders/{techRider}', [TechRiderController::class, 'destroy'])->name('api.tech-riders.destroy');
+
+        // Published rider versions — the frozen copies the public link serves.
+        Route::get('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'index'])->name('api.tech-rider-versions.index');
+        Route::post('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'store'])->name('api.tech-rider-versions.store');
+        // Asking the band to confirm their rigs.
+        Route::get('/tech-riders/{techRider}/confirmations', [TechRiderConfirmationController::class, 'index'])->name('api.rider-confirmations.index');
+        Route::post('/tech-riders/{techRider}/confirmations', [TechRiderConfirmationController::class, 'store'])->name('api.rider-confirmations.store');
+
+        Route::get('/tech-rider-versions/{version}', [TechRiderVersionController::class, 'show'])->name('api.tech-rider-versions.show');
+        Route::delete('/tech-rider-versions/{version}', [TechRiderVersionController::class, 'destroy'])->name('api.tech-rider-versions.destroy');
     });
 });

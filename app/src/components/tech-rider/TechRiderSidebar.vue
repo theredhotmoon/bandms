@@ -12,6 +12,7 @@ defineProps<Props>()
 defineEmits<{
   open: [id: number]
   activate: [id: number]
+  duplicate: [id: number]
   delete: [id: number]
   new: []
 }>()
@@ -39,6 +40,9 @@ defineEmits<{
           <span class="rider-name">{{ r.name }}</span>
           <div class="rider-badges">
             <span v-if="r.is_active" class="badge-active">Active</span>
+            <span v-if="r.published_version_number" class="badge-published">
+              v{{ r.published_version_number }}
+            </span>
             <span class="rider-date">{{ new Date(r.updated_at).toLocaleDateString() }}</span>
           </div>
         </div>
@@ -50,6 +54,12 @@ defineEmits<{
             title="Set as active rider"
             @click.stop="$emit('activate', r.id)"
           >✓</button>
+          <button
+            type="button"
+            class="act-btn"
+            title="Duplicate this rider"
+            @click.stop="$emit('duplicate', r.id)"
+          >⧉</button>
           <button
             type="button"
             class="act-btn act-btn--del"
@@ -117,4 +127,8 @@ defineEmits<{
 }
 .act-btn:hover { color: #c0c0c0; background: #2a2a2a; }
 .act-btn--del:hover { color: #f87171; background: #450a0a; }
+.badge-published {
+  font-size: 0.6rem; font-weight: 700; color: #94a3b8; background: #1a1a1a;
+  padding: 0.1rem 0.35rem; border-radius: 999px;
+}
 </style>

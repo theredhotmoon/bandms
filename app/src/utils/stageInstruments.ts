@@ -10,7 +10,7 @@
  * can mark it as assumed rather than configured.
  */
 
-import type { BandMember } from '@/types/bandMember'
+import type { RiderMember } from '@/types/bandMember'
 import type { StagePlacement } from '@/types/stagePlot'
 import { INSTRUMENT_TYPE_LABELS } from '@/types/stagePlot'
 import type { StagePlotItemType } from '@/types/instrumentType'
@@ -25,7 +25,7 @@ export interface DisplayInstrument {
 }
 
 /** Icon type for a member's main instrument, guessing from its name if unmapped. */
-export function memberMainInstrumentType(member: BandMember): StagePlotItemType | null {
+export function memberMainInstrumentType(member: RiderMember): StagePlotItemType | null {
   const inst = member.main_instrument
   if (!inst) return null
   return inst.stage_plot_type ?? guessInstrumentType(inst.name)
@@ -33,7 +33,7 @@ export function memberMainInstrumentType(member: BandMember): StagePlotItemType 
 
 export function resolveStageInstruments(
   item: StagePlacement,
-  members: BandMember[],
+  members: RiderMember[],
 ): DisplayInstrument[] {
   if (item.instruments?.length) {
     return item.instruments.map(i => ({
@@ -80,7 +80,7 @@ export interface InstrumentBadge extends DisplayInstrument {
 /** Positioned instrument badges for one musician (max 3). */
 export function instrumentBadgesFor(
   item: StagePlacement,
-  members: BandMember[],
+  members: RiderMember[],
 ): InstrumentBadge[] {
   const list = resolveStageInstruments(item, members).slice(0, 3)
   const offsets = BADGE_OFFSETS[list.length] ?? []
