@@ -11,7 +11,7 @@ _APP_KEY     := $(shell grep '^APP_KEY=' .env | cut -d= -f2-)
 _DB_USERNAME := $(shell grep '^DB_USERNAME=' .env | cut -d= -f2-)
 _DB_PASSWORD := $(shell grep '^DB_PASSWORD=' .env | cut -d= -f2-)
 
-.PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql logs-web \
+.PHONY: up down build rebuild reset logs logs-backend logs-frontend logs-mysql logs-web test-unit \
         shell migrate fresh seed passport test test-build test-all ship health \
         web-dev web-build
 
@@ -93,7 +93,11 @@ test: test-build
 		-e APP_KEY=$(_APP_KEY) \
 		bandms_test
 
-## Run all test suites (unit + E2E). Options: SKIP_E2E=1  SKIP_UNIT=1
+## Frontend unit tests (Vitest) — pure logic, no Docker, no browser
+test-unit:
+	cd app && pnpm test:unit
+
+## Run all test suites (backend unit + frontend unit + E2E). Options: SKIP_E2E=1  SKIP_UNIT=1
 test-all:
 	bash scripts/test-all.sh $(if $(SKIP_E2E),--skip-e2e) $(if $(SKIP_UNIT),--skip-unit)
 
