@@ -351,9 +351,8 @@ of `TechRiderRequest` validate identically. This replaces the
 - **`shared_monitor_id`** is still on the model and the API but no longer has a
   UI. It never affected any rendered output — a rig's `monitors` list covers the
   case now. Worth dropping in a follow-up.
-- **No unit tests for the resolver.** `app/` has Playwright but no unit runner.
-  `riderResolver.ts` is pure and is the highest-value thing in the change to
-  test — adding Vitest is the obvious follow-up.
+- ~~**No unit tests for the resolver.**~~ Done — Vitest and 57 tests, see the
+  final entry below.
 - ~~**Versioning not built.**~~ Built — see the phase 3 entry below.
 
 ---
@@ -503,3 +502,44 @@ the request is recorded either way, so the band can still chase it in person.
   Fine for a band-sized lineup; wrong for a mailing list.
 - **No reminder.** Asking again is manual, and there is no nudge for a musician
   who has not replied.
+
+---
+
+**2026-08-19 — branch `feature/rider-unit-tests`.**
+The follow-up this document has been asking for since the first entry.
+
+`app/` had Playwright and no unit runner, so the logic that decides what a venue
+receives was covered only by whichever path a browser test happened to walk.
+Vitest now covers the three pure modules that logic lives in:
+
+| Module | Why it is the one worth testing |
+|---|---|
+| `riderResolver.ts` | The single derivation point. The editor, the preview, the public page and the diff all call it, so one bug here is four wrong surfaces. |
+| `riderDiff.ts` | A missed change reads to a venue as a promise that nothing moved. |
+| `rigValidation.ts` | The rule that decides whether a save is allowed at all. |
+
+57 tests, 100% statement/line/function coverage on all three, and they run in
+under half a second because none of them needs a DOM, a server or a browser.
+The remaining uncovered branches are `?? []` and `|| '—'` fallbacks.
+
+Two behaviours are pinned down that nothing else was checking, and that a
+refactor could silently break:
+
+- **An empty override list is a removal, not an absence.** `overrides: { monitors: [] }`
+  means "no monitors tonight" and must beat the saved rig; `overrides: {}` must
+  inherit it. The two are distinguishable only because the resolver tests for
+  the key rather than for truthiness.
+- **Reordering channels is not a content change.** The diff compares fields, not
+  the printed channel number, so dragging a row does not report twelve changes
+  to a venue.
+
+`scripts/test-all.sh` gained a third stage between the backend suite and E2E,
+and its exit code became a bitmask (1 backend, 2 E2E, 4 frontend). `make test-unit`
+runs it alone.
+
+### Note on the E2E suite
+
+One full `test-all.sh` run failed two unrelated specs (`tech-rider`, `shop`)
+under combined Docker-build and four-worker load, then passed on three
+subsequent runs including the same command. Flaky under contention rather than
+broken — worth knowing before trusting a single red run.
