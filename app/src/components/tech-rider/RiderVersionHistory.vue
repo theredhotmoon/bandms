@@ -11,15 +11,34 @@ import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { TechRiderVersion } from '@/types/techRiderVersion'
+import type { RiderDiff } from '@/utils/riderDiff'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   versions: TechRiderVersion[]
   loading: boolean
   discarding: boolean
+  diff: RiderDiff | null
+  diffing: boolean
 }>()
 
-const emit = defineEmits<{ close: []; discard: [id: number] }>()
+const emit = defineEmits<{
+  close: []
+  discard: [id: number]
+  compare: [olderId: number, newerId: number]
+  clearDiff: []
+}>()
+
+/**
+ * The version published immediately before this one, if any.
+ *
+ * Versions arrive newest-first, so a row's predecessor is the next one down —
+ * which is the comparison anyone actually wants ("what changed since the copy
+ * the venue already has").
+ */
+function previousOf(index: number): TechRiderVersion | null {
+  return props.versions[index + 1] ?? null
+}
 
 const confirmId = ref<number | null>(null)
 
@@ -55,7 +74,7 @@ function formatDate(iso: string | null): string {
       </p>
 
       <ul v-else class="version-list">
-        <li v-for="version in versions" :key="version.id" class="version">
+        <li v-for="(version, i) in versions" :key="version.id" class="version">
           <div class="version-main">
             <div class="version-head">
               <span class="version-number">v{{ version.version_number }}</span>
@@ -71,6 +90,15 @@ function formatDate(iso: string | null): string {
           <div class="version-actions">
             <a :href="linkFor(version)" target="_blank" rel="noopener" class="btn-ghost btn-ghost--sm">Open</a>
             <button type="button" class="btn-ghost btn-ghost--sm" @click="copyLink(version)">Copy link</button>
+            <button
+              v-if="previousOf(i)"
+              type="button"
+              class="btn-ghost btn-ghost--sm"
+              :disabled="diffing"
+              @click="emit('compare', previousOf(i)!.id, version.id)"
+            >
+              vs v{{ previousOf(i)!.version_number }}
+            </button>
             <button
               v-if="version.status !== 'published'"
               type="button"
@@ -97,6 +125,39 @@ function formatDate(iso: string | null): string {
           </div>
         </li>
       </ul>
+
+      <div v-if="diffing" class="diff diff--loading">Comparing…</div>
+
+      <div v-else-if="diff" class="diff">
+        <div class="diff-head">
+          <span class="diff-title">v{{ diff.from }} → v{{ diff.to }}</span>
+          <span class="diff-summary">{{ diff.identical ? 'No changes' : diff.summary }}</span>
+          <button type="button" class="btn-ghost btn-ghost--sm" @click="emit('clearDiff')">Close</button>
+        </div>
+
+        <p v-if="diff.identical" class="diff-none">
+          These two versions render the same rider — the differences between them
+          are things the sheet does not print.
+        </p>
+
+        <div v-for="section in diff.sections" :key="section.title" class="diff-section">
+          <div class="diff-section-title">{{ section.title }}</div>
+          <ul class="diff-list">
+            <li v-for="(entry, j) in section.entries" :key="j" class="diff-entry">
+              <span class="diff-mark" :class="`diff-mark--${entry.kind}`">
+                {{ entry.kind === 'added' ? '+' : entry.kind === 'removed' ? '−' : '~' }}
+              </span>
+              <div class="diff-body">
+                <span class="diff-label">{{ entry.label }}</span>
+                <span class="diff-source">{{ entry.source }}</span>
+                <ul v-if="entry.changes.length" class="diff-changes">
+                  <li v-for="(change, k) in entry.changes" :key="k">{{ change }}</li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </AdminModal>
 </template>
@@ -140,6 +201,37 @@ function formatDate(iso: string | null): string {
 .btn-ghost--sm { padding: 0.2rem 0.5rem; }
 .btn-ghost--danger:hover { border-color: #991b1b; color: #fca5a5; }
 .btn-ghost:disabled { opacity: 0.45; cursor: default; }
+
+/* Diff */
+.diff {
+  border: 1px solid #1f1f1f; border-radius: 0.5rem; background: #0a0a0a;
+  padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.75rem;
+}
+.diff--loading { color: #64748b; font-size: 0.78rem; }
+.diff-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.diff-title { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; }
+.diff-summary { flex: 1; font-size: 0.72rem; color: #94a3b8; }
+.diff-none { font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.55; }
+
+.diff-section { display: flex; flex-direction: column; gap: 0.3rem; }
+.diff-section-title {
+  font-size: 0.62rem; font-weight: 700; color: #475569;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.diff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.diff-entry { display: flex; gap: 0.5rem; align-items: flex-start; }
+.diff-mark {
+  font-weight: 700; font-size: 0.8rem; line-height: 1.4; width: 0.9rem;
+  flex-shrink: 0; text-align: center;
+}
+.diff-mark--added { color: #4ade80; }
+.diff-mark--removed { color: #f87171; }
+.diff-mark--changed { color: #fbbf24; }
+.diff-body { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.diff-label { font-size: 0.76rem; color: #e2e8f0; }
+.diff-source { font-size: 0.66rem; color: #475569; }
+.diff-changes { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.diff-changes li { font-size: 0.7rem; color: #94a3b8; font-family: ui-monospace, monospace; }
 
 .btn-danger {
   padding: 0.2rem 0.6rem; border-radius: 0.375rem; font-size: 0.72rem; font-weight: 600;

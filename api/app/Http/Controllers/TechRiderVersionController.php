@@ -57,6 +57,24 @@ class TechRiderVersionController extends Controller
     }
 
     /**
+     * One version, snapshot included.
+     *
+     * The list deliberately omits snapshots — they are large and nothing in a
+     * list needs them. Comparing two versions does, so this serves them one at
+     * a time, and the diffing happens client-side with the same resolver that
+     * renders them. A server-side diff would need its own copy of the
+     * derivation rules to have anything to compare.
+     */
+    public function show(TechRiderVersion $version): JsonResponse
+    {
+        return response()->json([
+            'data' => array_merge($version->snapshot ?? [], [
+                'version' => (new TechRiderVersionResource($version))->resolve(request()),
+            ]),
+        ]);
+    }
+
+    /**
      * Versions are a record of what a venue was sent, so the one currently
      * being served is not deletable — correcting it means publishing a newer
      * one, which is the honest version of the same action.

@@ -6,6 +6,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { saveErrorMessage } from '@/api/client'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
+import RiderConfirmations from '@/components/tech-rider/RiderConfirmations.vue'
 import RiderPublishModal from '@/components/tech-rider/RiderPublishModal.vue'
 import RiderRequirements from '@/components/tech-rider/RiderRequirements.vue'
 import RiderVersionHistory from '@/components/tech-rider/RiderVersionHistory.vue'
@@ -20,6 +21,7 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useTechRiderEditor } from '@/composables/useTechRiderEditor'
 import { useTechRiders } from '@/composables/useTechRiders'
 import { useTechRiderVersions } from '@/composables/useTechRiderVersions'
+import { useRiderConfirmations } from '@/composables/useRiderConfirmations'
 
 type Section = 'stage' | 'channels' | 'requirements' | 'pafoh' | 'cover'
 
@@ -34,7 +36,7 @@ const SECTIONS: { key: Section; label: string; icon: string }[] = [
 const openId = ref<number | null>(null)
 const activeSection = ref<Section>('stage')
 
-const { list, create, remove, activate } = useTechRiders()
+const { list, create, remove, activate, duplicate } = useTechRiders()
 const { query: profileQ } = useBandProfile()
 const { query: concertsQ } = useConcerts()
 
@@ -42,6 +44,7 @@ const editor = useTechRiderEditor(openId)
 const { draft, dirty, patch, resolved, completeness, setups, members } = editor
 
 const versions = useTechRiderVersions(openId)
+const confirmations = useRiderConfirmations(openId)
 
 const bandProfile = computed(() => profileQ.data.value)
 const concerts = computed(() => concertsQ.data.value ?? [])
@@ -106,6 +109,18 @@ async function confirmDelete() {
   }
 }
 
+async function duplicateRider(id: number) {
+  if (!confirmDiscard()) return
+  try {
+    const copy = await duplicate.mutateAsync(id)
+    openId.value = copy.id
+    activeSection.value = 'stage'
+    toast.success(`Copied to "${copy.name}"`)
+  } catch {
+    toast.error('Failed to duplicate this rider')
+  }
+}
+
 async function setActive(id: number) {
   try {
     await activate.mutateAsync(id)
@@ -155,6 +170,35 @@ async function publish(notes: string) {
   }
 }
 
+async function compareVersions(olderId: number, newerId: number) {
+  try {
+    await versions.compare(olderId, newerId)
+  } catch {
+    toast.error('Could not load those versions to compare')
+  }
+}
+
+/** A stale diff must not greet the next rider opened. */
+function closeVersions() {
+  showVersionsModal.value = false
+  versions.clearDiff()
+}
+
+async function askForConfirmations() {
+  try {
+    const result = await confirmations.request.mutateAsync()
+    if (result.failed.length) {
+      // The requests are recorded either way, so say what happened rather than
+      // reporting a blanket failure the band can act on incorrectly.
+      toast.warning(`Asked ${result.requested}, but ${result.failed.length} email(s) could not be sent`)
+    } else {
+      toast.success(`Asked ${result.requested} musician${result.requested === 1 ? '' : 's'} to confirm`)
+    }
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Could not send the confirmation requests'))
+  }
+}
+
 async function discardVersion(id: number) {
   try {
     await versions.discard.mutateAsync(id)
@@ -175,6 +219,7 @@ async function discardVersion(id: number) {
         :open-id="openId"
         @open="openRider"
         @activate="setActive"
+        @duplicate="duplicateRider"
         @delete="confirmDeleteId = $event"
         @new="showNewModal = true"
       />
@@ -301,6 +346,15 @@ async function discardVersion(id: number) {
               </div>
 
               <TechRiderCompleteness :completeness="completeness" @open="openPlacement" />
+
+              <RiderConfirmations
+                :confirmations="confirmations.confirmations.value"
+                :confirmed="confirmations.confirmed.value"
+                :waiting="confirmations.waiting.value"
+                :never-asked="confirmations.neverAsked.value"
+                :requesting="confirmations.request.isPending.value"
+                @request="askForConfirmations"
+              />
             </template>
 
             <RiderChannelList
@@ -360,8 +414,12 @@ async function discardVersion(id: number) {
       :versions="versions.versions.value"
       :loading="versions.query.isPending.value"
       :discarding="versions.discard.isPending.value"
-      @close="showVersionsModal = false"
+      :diff="versions.diff.value"
+      :diffing="versions.diffing.value"
+      @close="closeVersions"
       @discard="discardVersion"
+      @compare="compareVersions"
+      @clear-diff="versions.clearDiff"
     />
 
     <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">

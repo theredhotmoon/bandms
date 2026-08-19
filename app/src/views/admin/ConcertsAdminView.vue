@@ -17,7 +17,9 @@ import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
 import { useTableControls } from '@/composables/useTableControls'
 import { uploadConcertPoster, deleteConcertPoster } from '@/api/concerts'
-import { ApiValidationError } from '@/api/client'
+import { createRiderForConcert } from '@/api/techRiders'
+import { ApiError, ApiValidationError } from '@/api/client'
+import { useRouter } from 'vue-router'
 import type { Concert, ConcertPayload } from '@/types/concert'
 
 const { query, create, update, remove } = useConcerts()
@@ -26,6 +28,36 @@ const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()
 const { token } = useAuth()
 const queryClient = useQueryClient()
+
+const router = useRouter()
+
+/**
+ * Start a tech rider for this gig.
+ *
+ * Everything inferable is inferred — the name from the venue and date, the
+ * lineup from the current members, the concert link — so the user lands in the
+ * editor on the one thing that cannot be: the stage plot. A 409 means the gig
+ * already has a rider, which is a redirect rather than an error.
+ */
+const creatingRiderFor = ref<number | null>(null)
+
+async function createRider(concert: Concert) {
+  creatingRiderFor.value = concert.id
+  try {
+    const rider = await createRiderForConcert(token.value!, concert.id)
+    toast.success(`Created "${rider.name}"`)
+    router.push('/admin/tech-rider')
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 409) {
+      toast.info('This concert already has a rider')
+      router.push('/admin/tech-rider')
+      return
+    }
+    toast.error('Could not create a rider for this concert')
+  } finally {
+    creatingRiderFor.value = null
+  }
+}
 
 const showModal = ref(false)
 const editing = ref<Concert | null>(null)
@@ -141,6 +173,12 @@ async function confirmDelete() {
                 </td>
                 <td class="td" style="color:#94a3b8;">{{ concert.venue?.name ?? '—' }}</td>
                 <td class="td text-right">
+                  <button
+                    class="btn-edit"
+                    :disabled="creatingRiderFor === concert.id"
+                    title="Create a tech rider for this gig"
+                    @click="createRider(concert)"
+                  >Rider</button>
                   <button @click="ticketsConcert = concert" class="btn-edit">Tickets</button>
                   <button @click="openEdit(concert)" class="btn-edit">Edit</button>
                   <button @click="confirmId = concert.id" class="btn-delete">Delete</button>
