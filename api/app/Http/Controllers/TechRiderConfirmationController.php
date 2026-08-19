@@ -115,6 +115,14 @@ class TechRiderConfirmationController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
+        // An admin without a linked band member has nothing waiting on them.
+        // Said explicitly: `where('band_member_id', null)` becomes `IS NULL` in
+        // the query builder, which would return the right answer for the wrong
+        // reason and quietly stop doing so if the column ever went nullable.
+        if (! $user->band_member_id) {
+            return TechRiderConfirmationResource::collection(collect());
+        }
+
         $pending = TechRiderConfirmation::with(['bandMember', 'techRider.concert.venue'])
             ->where('band_member_id', $user->band_member_id)
             ->whereNotNull('requested_at')

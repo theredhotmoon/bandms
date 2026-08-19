@@ -334,6 +334,22 @@ describe('a musician confirming their own rig', function () {
         $rider = phase5Rider();
         $this->postJson("/api/tech-riders/{$rider->id}/confirm")->assertUnauthorized();
     });
+
+    it('refuses to confirm for an account with no band member linked', function () {
+        $rider = phase5Rider();
+        $this->actingAsMember(null);
+
+        $this->postJson("/api/tech-riders/{$rider->id}/confirm")->assertStatus(422);
+        expect($rider->confirmations()->count())->toBe(0);
+    });
+
+    it('shows an empty waiting list to an account with no band member linked', function () {
+        $this->actingAsMember(null);
+
+        $this->getJson('/api/my-rider-confirmations')
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+    });
 });
 
 it('drops confirmations with the rider', function () {

@@ -8,7 +8,7 @@
  * derivation rules rather than one per surface.
  */
 
-import type { BandMember } from './bandMember'
+import type { RiderMember } from './bandMember'
 import type { TechRider } from './techRider'
 
 /** `published` is the one the rider's QR code serves; the rest are `archived`. */
@@ -45,8 +45,11 @@ export interface PublishedRider {
   format: number
   taken_at: string
   rider: TechRider
-  /** Only the musicians this rider places, with only what the sheet prints. */
-  members: BandMember[]
+  /**
+   * Only the musicians this rider places, with only what the sheet prints —
+   * never the admin-only fields a full `BandMember` carries.
+   */
+  members: RiderMember[]
   profile: SnapshotProfile
   version: TechRiderVersion
 }

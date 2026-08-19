@@ -17,7 +17,6 @@
  * Pure functions only — no Vue, no fetching.
  */
 
-import type { BandMember } from '@/types/bandMember'
 import type { SetupLookup } from '@/types/bandMemberSetup'
 import type { PublishedRider } from '@/types/techRiderVersion'
 import { resolveRider } from './riderResolver'
@@ -176,7 +175,7 @@ export function resolveSnapshot(snapshot: PublishedRider): ResolvedRider {
     Object.entries(snapshot.rider.referenced_setups ?? {}).map(([id, s]) => [Number(id), s]),
   )
 
-  return resolveRider(snapshot.rider, setups, (snapshot.members ?? []) as BandMember[])
+  return resolveRider(snapshot.rider, setups, snapshot.members ?? [])
 }
 
 // ── The diff ──────────────────────────────────────────────────────────────────
