@@ -23,3 +23,16 @@ e2e-test.log
 # web/ is a standalone package, not a workspace root. Scoped to /web/ because
 # app/pnpm-workspace.yaml is tracked and only ever read by the local pnpm.
 /web/pnpm-workspace.yaml
+
+# Playwright MCP scratch output (page snapshots, screenshots, console logs)
+/.playwright-mcp/
+
+# Never commit private keys. Note `.pub` here is a *private* key despite the
+# name: `ssh-keygen -f .pub` writes the private key to `.pub` and the public
+# one to `.pub.pub`. Keys belong in ~/.ssh — these rules are a backstop so a
+# stray `git add .` cannot publish one.
+/.pub
+/.pub.pub
+*.pem
+id_rsa
+id_ed25519
