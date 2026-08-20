@@ -275,29 +275,45 @@ make test-all    # unit + E2E Playwright — run before shipping
 - If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
 - **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.
 
-### E2E: check free RAM before believing a red run
+### E2E: a red run is often the machine — check the signature, not free RAM
 
-The Playwright suite needs **~2 GB free RAM minimum**. Below that it fails
-specs regardless of the code, because each worker costs a Chromium instance
-plus a share of the Vite dev server heap. Measured on one commit, one config:
+The suite fails for machine reasons when Chromium and the Vite dev server
+cannot get the memory they ask for. **Do not use a free-RAM threshold to
+decide this** — the same commit and config produced:
 
-| Free RAM | Result |
+| Reported free RAM | Result |
 |---|---|
-| 1.4–1.9 GB | 1–3 failures, a **different set each run** |
-| 5.5 GB | **178 passed, 0 failed, 0 flaky** in 2.3 min |
+| 1.4–1.9 GB | 1–3 failures, a different set each run |
+| 5.5 GB | 178 passed, 0 failed — 2.3 min |
+| **176 MB** | **178 passed, 0 failed — 2.4 min** |
+
+`FreePhysicalMemory` counts only unused pages, not reclaimable ones, so a low
+reading does not mean memory is unavailable. An earlier version of this file
+claimed a ~2 GB floor; the 176 MB row disproves it.
+
+**Machine-failure signatures** — suspect these before suspecting the code:
+
+- `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
+  server (the OS refusing an allocation, not V8 hitting its cap — so raising
+  `--max-old-space-size` makes it worse)
+- `GPU process launch failed` from Chromium
+- A different set of specs failing each run, or a spec the change cannot reach
+- 30-second timeouts rather than assertion mismatches
 
 Triage order when E2E goes red:
 
-1. **Do the failing specs relate to the change?** A different set each run, or
-   a spec the change cannot reach, means the machine — not a regression.
-2. **Check free RAM.** `Zone Allocation failed` from the dev server is the OS
-   refusing an allocation, not V8 hitting its cap, so raising
-   `--max-old-space-size` makes it worse. Close browser windows instead.
+1. **Do the failing specs relate to the change?** A different set each run
+   means the machine.
+2. **Look for the signatures above.**
 3. **Only then investigate the specs.**
 
-`workers` is pinned to 2 in `app/playwright.config.ts`; override with
-`pnpm test:e2e --workers=4` when there is room. Note ~15 tests skip by design
-(data-dependent guards), so "178 passed, 15 skipped" is a full green run.
+If it is the machine, close browser windows and re-run. `workers` is pinned to
+2 in `app/playwright.config.ts`; override with `pnpm test:e2e --workers=4`.
+~15 tests skip by design (data-dependent guards), so "178 passed, 15 skipped"
+is a full green run.
+
+**Do not skip E2E on a low memory reading alone.** Run it; if it fails, triage
+with the list above.
 
 **`make` may not be available** — it is absent from the Windows dev setup, so
 the `make` targets above are shorthand. Use `bash scripts/test-all.sh

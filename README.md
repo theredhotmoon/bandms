@@ -135,30 +135,48 @@ pnpm test:e2e:report               # open last HTML report
 Playwright auto-starts the Vite dev server before running tests.
 Auth state is saved to `app/e2e/.auth/admin.json` and reused across tests.
 
-#### The suite needs free RAM, not just a passing machine
+#### Reading a red E2E run: check the signature, not the free-RAM number
 
-**Below ~2 GB free the suite fails regardless of the code.** Each worker costs
-a Chromium instance plus a share of the Vite dev server heap, so a loaded
-machine starves it. Measured on the same commit, same 2-worker config:
+The suite can fail for reasons that have nothing to do with the code, when the
+machine cannot give Chromium and the Vite dev server the memory they ask for.
+When that happens it is unmistakable, and it is **not** identified by how much
+free RAM Task Manager reports:
 
-| Free RAM | Result |
+| Reported free RAM | Result, same commit, same 2-worker config |
 |---|---|
 | 1.4–1.9 GB | 1–3 failures, a **different set each run** |
-| 5.5 GB | **178 passed, 0 failed, 0 flaky** in 2.3 min |
+| 5.5 GB | 178 passed, 0 failed — 2.3 min |
+| **176 MB** | **178 passed, 0 failed — 2.4 min** |
 
-Before reading a red run as a regression:
+That last row is why free RAM is a weak hint rather than a threshold.
+`FreePhysicalMemory` counts only *unused* pages, not reclaimable ones —
+Windows can hand over compressed memory and pageable working sets on demand,
+so a machine reporting 176 MB free may have gigabytes available.
 
-1. **Do the failing specs relate to your change?** A different set each run, or
-   a spec your change cannot reach, means the machine.
-2. **Check free RAM.** Below a couple of GB, no worker count saves it — and
-   raising `--max-old-space-size` makes it worse, since the dev server dies on
-   `Zone Allocation failed`, which is the OS refusing an allocation rather than
-   V8 hitting its cap.
+**The reliable signal is the failure signature.** Suspect the machine when you
+see any of:
+
+- `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
+  server — the OS refusing an allocation, *not* V8 hitting its heap cap, so
+  raising `--max-old-space-size` makes it worse
+- `GPU process launch failed` from Chromium
+- A **different set of specs** failing each run, or a spec your change cannot
+  reach (a heading-visibility assertion cannot regress from a backend edit)
+- Failures arriving as 30-second timeouts rather than assertion mismatches
+
+Triage order:
+
+1. **Do the failing specs relate to your change?** A different set each run
+   means the machine, whatever the memory reading says.
+2. **Look for the signatures above** in the output.
 3. **Only then investigate the specs.**
 
-Closing browser windows is usually enough. `workers` is pinned to 2 in
-`app/playwright.config.ts`; override with `pnpm test:e2e --workers=4` when
-there is room.
+If it is the machine, closing browser windows is usually enough. `workers` is
+pinned to 2 in `app/playwright.config.ts`; override with
+`pnpm test:e2e --workers=4` when there is room.
+
+A full green run reports **178 passed, 15 skipped**. The 15 are intentional
+data-dependent guards in the specs, not silent failures.
 
 ### Run both suites together
 
