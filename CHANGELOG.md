@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-20
+
 ### Added
 - **Published tech rider versions** — a rider can now be *published*, which freezes it as an immutable version and points its public link at that frozen copy. New `tech_rider_versions` table, `POST /api/tech-riders/{id}/versions` to publish, `GET /api/tech-riders/{id}/versions` to list, `DELETE /api/tech-rider-versions/{id}` to remove an archived one. Publishing archives the previous version, and every version keeps its own permalink — so re-sending a corrected rider never breaks the link a venue already has. A "Publish v*n*" button and a version-history modal live in the tech rider editor topbar; unsaved editor changes are saved as part of publishing. Publishing is blocked outright while the rider has no named channels — a blank input sheet is not a document worth sending — while every other gap (unplaced musicians, a musician with no inputs or monitor) is named in the confirm dialog and can be published past.
 - **Rider snapshots freeze the resolver's inputs, not its output** (`App\Services\TechRiderSnapshotBuilder`) — a version stores the rider, the saved rigs its placements reference, the musicians it places, and the band logo, rather than a flattened channel list. `app/src/utils/riderResolver.ts` stays the only implementation of the derivation rules; a PHP copy would be a second one, free to drift. Snapshots carry display identity only and never the admin-only band-member fields.
