@@ -66,6 +66,21 @@ Run from the project root. Always prefer these over raw `docker compose` command
 | `make logs` | Tail all service logs |
 | `make health` | Hit `/api/health` |
 
+> **`make` is not installed on the Windows dev setup.** These targets are
+> shorthand — if you get `make: command not found`, run the underlying command
+> directly. The two you will want most often:
+>
+> ```bash
+> bash scripts/test-all.sh --skip-e2e   # backend + frontend unit suites
+> bash scripts/test-all.sh              # both, plus E2E (= `make test-all`)
+> ```
+>
+> Note `--skip-e2e` is wider than `make test`, which runs the backend suite
+> alone.
+> `scripts/test-all.sh` returns a bitmask exit code: 1 backend, 2 E2E,
+> 4 frontend. Everything else is a `docker compose` call — read `Makefile`
+> for the exact command behind a target.
+
 ---
 
 ## Rebuilding containers
