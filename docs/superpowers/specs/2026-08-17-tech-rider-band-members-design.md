@@ -564,6 +564,8 @@ So, before reading a red E2E run as a regression:
 1. Check whether the failing specs have anything to do with the change. A
    different set each run, or a spec the change cannot reach, means the machine.
 2. Check free RAM. Below a couple of GB, no worker count will save it.
+   *(Superseded — see "Correction, 2026-08-20" at the end of this file:*
+   *free RAM does not predict failure; triage on the signature instead.)*
 3. Only then investigate the specs.
 
 #### Confirmed, 2026-08-19
@@ -582,6 +584,9 @@ fatalistic a reading. The rule to take away is the ordering in the list above:
 check free RAM *before* investigating specs, because below a couple of GB the
 suite reports noise no matter what the code does.
 
+*(Superseded — the 176 MB run in "Correction, 2026-08-20" below disproves the*
+*threshold. The ordering still holds; the memory reading is not the test.)*
+
 Two details worth keeping:
 
 - **The 15 skips are intentional**, not silent failures — data-dependent guards
@@ -591,3 +596,38 @@ Two details worth keeping:
 - **A single anomalous result during an nginx `-s reload` is a worker race**,
   not a failure. A request can be served by the outgoing worker for a moment
   after the reload signal; retry before believing it.
+
+#### Correction, 2026-08-20 — the free-RAM threshold was wrong
+
+The section above concluded that below a couple of GB free "no worker count
+will save it," and README and CLAUDE.md were written to match, stating a ~2 GB
+floor. A third run disproves that. Same commit (`64254a1`), same 2-worker
+config:
+
+| Reported free RAM | Result |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a different set each run |
+| 5.5 GB | 178 passed, 0 failed — 2.3 min |
+| **176 MB** | **178 passed, 0 failed — 2.4 min** |
+
+The 176 MB run was expected to fail outright and did not. It finished in 2.4
+minutes, within noise of the 5.5 GB run.
+
+**Why the reasoning failed.** `FreePhysicalMemory` counts only *unused* pages,
+not reclaimable ones. Windows can surrender compressed memory and pageable
+working sets on demand, so a machine reporting 176 MB free may have gigabytes
+available. One number was being used as a proxy for a different quantity, and
+the two came apart as soon as a counter-example appeared.
+
+The original diagnosis still stands where it was actually grounded: the failing
+runs showed `Zone Allocation failed`, which is the OS refusing an allocation,
+and a different failing set each run. Those are real signatures of a starved
+machine. What did not follow was the inverse — that a low free-RAM reading
+predicts failure.
+
+**What replaces it.** Triage on the failure signature, not on a memory reading:
+`Zone Allocation failed`, `GPU process launch failed`, a different failing set
+each run, or 30-second timeouts instead of assertion mismatches. Free RAM is at
+most a weak hint. Concretely, this means *not* skipping an E2E run because the
+number looks low — a habit that, over six PRs and a release on 2026-08-19,
+substituted inference for evidence more often than it should have.
