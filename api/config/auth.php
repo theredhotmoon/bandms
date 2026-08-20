@@ -117,4 +117,22 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Login Rate Limit
+    |--------------------------------------------------------------------------
+    |
+    | Login attempts allowed per minute, per IP. Registered as the named
+    | "login" limiter in AppServiceProvider and applied to POST /api/auth/login.
+    |
+    | Keep this low in production — it is the control that makes credential
+    | stuffing expensive. Raise it locally when running the E2E suite: those
+    | specs log in repeatedly (including deliberate wrong-password cases) and
+    | share one IP across Playwright workers, so the production value is spent
+    | before the suite finishes and unrelated specs fail on a 429.
+    |
+    */
+
+    'login_max_attempts' => (int) env('LOGIN_RATE_LIMIT', 10),
+
 ];

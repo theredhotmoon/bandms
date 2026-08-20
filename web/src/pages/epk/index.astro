@@ -134,7 +134,7 @@ const stats = [
     )}
 
     <!-- Testimonials -->
-    {epk.testimonials.length > 0 && (
+    {(epk.testimonials?.length ?? 0) > 0 && (
       <section class="mb-12">
         <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">What people say</h2>
         <div class="space-y-5">

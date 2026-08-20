@@ -110,7 +110,10 @@ export interface EpkData {
   stat_facebook_followers: number | null
   logo_url: string | null
   social_links: EpkSocialLink[]
-  testimonials: EpkTestimonial[]
+  // Optional: EpkSnapshotBuilder does not emit testimonials, and published EPK
+  // versions store a frozen snapshot — so older snapshots will never carry the
+  // field even if the builder starts sending it. Consumers must guard.
+  testimonials?: EpkTestimonial[]
   music_videos: EpkMusicVideo[]
   featured_release: EpkRelease | null
   press_photos: EpkPhoto[]

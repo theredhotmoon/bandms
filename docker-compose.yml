@@ -47,6 +47,17 @@ services:
       CACHE_DRIVER:     file
       SESSION_DRIVER:   file
       QUEUE_CONNECTION: sync
+
+      # This service takes no env_file, so anything the app reads from the
+      # environment has to be listed here — setting it in the root .env alone
+      # does nothing. FRONTEND_URL drives CORS (config/cors.php) and the links
+      # in outgoing email (config/newsletter.php); it must match the port users
+      # actually browse on, which is the public site's 4322 in development.
+      FRONTEND_URL:     ${FRONTEND_URL:-http://localhost}
+
+      # Login attempts per minute, per IP. Keep low in production; raise it
+      # locally for the E2E suite, which logs in repeatedly from one IP.
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10}
     volumes:
       - backend_storage:/var/www/html/storage
     depends_on:
