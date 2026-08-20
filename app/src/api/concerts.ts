@@ -77,7 +77,7 @@ export async function deleteConcertPoster(token: string, id: number): Promise<Co
 
 export async function fetchConcertTickets(token: string, concertId: number): Promise<AdminTicket[]> {
   assertSafeId(concertId)
-  const res = await fetch(`${API_BASE}/api/concerts/${concertId}/tickets`, {
+  const res = await fetch(`${API_BASE}/api/admin/concerts/${concertId}/tickets`, {
     headers: authHeaders(token),
   })
   return handleResponse<AdminTicket[]>(res)

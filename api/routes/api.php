@@ -88,8 +88,6 @@ Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api
 Route::get('/concerts/{concert}/setlist', [SetlistController::class, 'showByConcert'])->name('api.concerts.setlist');
 Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'index'])->name('api.concerts.tickets.index');
 
-Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware(['throttle:60,1', 'auth:api'])->name('api.door-check');
-Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('auth:api')->name('api.door-check.scan');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -297,7 +295,10 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/concerts/{concert}', [ConcertController::class, 'destroy'])->name('api.concerts.destroy');
         Route::post('/concerts/{concert}/poster', [ConcertController::class, 'uploadPoster'])->name('api.concerts.poster.upload');
         Route::delete('/concerts/{concert}/poster', [ConcertController::class, 'destroyPoster'])->name('api.concerts.poster.destroy');
-        Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'adminTicketList'])->name('api.concerts.tickets.index');
+        // Issued tickets for a concert. Kept off /concerts/{concert}/tickets:
+        // that path is the public ticket-type listing the Astro build and the
+        // checkout both read unauthenticated, and two routes cannot share a URI.
+        Route::get('/admin/concerts/{concert}/tickets', [ConcertTicketController::class, 'adminTicketList'])->name('api.admin.concerts.tickets.index');
 
         // Ticket types
         Route::post('/concerts/{concert}/tickets', [ConcertTicketController::class, 'store'])->name('api.concerts.tickets.store');
@@ -416,9 +417,10 @@ Route::middleware('auth:api')->group(function () {
         // Fan accounts admin list
         Route::get('/fan-accounts', [FanAccountController::class, 'adminList'])->name('api.fan-accounts.index');
 
-        // Door check — QR scanning at venue entry
-        Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->name('api.door-check');
-        Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->name('api.door-check.scan');
+        // Door check — QR scanning at venue entry. Throttled: both endpoints
+        // take a code and report whether it is valid, so they are guessable.
+        Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware('throttle:60,1')->name('api.door-check');
+        Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('throttle:60,1')->name('api.door-check.scan');
 
         // Presale codes (admin CRUD)
         Route::get('/presale-codes', [PresaleCodeController::class, 'index'])->name('api.presale-codes.index');
