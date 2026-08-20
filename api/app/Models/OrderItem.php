@@ -14,13 +14,14 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id', 'shop_item_id', 'shop_item_variant_id',
         'concert_ticket_type_id', 'concert_ticket_price_tier_id',
-        'ticket_code', 'scanned_at',
         'name', 'variant_label', 'price', 'currency', 'quantity',
+        'ticket_code', 'scanned_at',
     ];
 
     protected $casts = [
-        'price'    => 'decimal:2',
-        'quantity' => 'integer',
+        'price'      => 'decimal:2',
+        'quantity'   => 'integer',
+        'scanned_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
@@ -36,6 +37,16 @@ class OrderItem extends Model
     public function shopItemVariant(): BelongsTo
     {
         return $this->belongsTo(ShopItemVariant::class);
+    }
+
+    public function concertTicketType(): BelongsTo
+    {
+        return $this->belongsTo(ConcertTicketType::class);
+    }
+
+    public function concertTicketPriceTier(): BelongsTo
+    {
+        return $this->belongsTo(ConcertTicketPriceTier::class);
     }
 
     public function tickets(): HasMany

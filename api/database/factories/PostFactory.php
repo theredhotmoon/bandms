@@ -13,7 +13,7 @@ class PostFactory extends Factory
 
         return [
             'title'        => rtrim($title, '.'),
-            'slug'         => Str::slug($title),
+            'slug_en'      => Str::slug($title),
             'content'      => fake()->paragraphs(3, true),
             'image'        => null,
             'published_at' => fake()->optional(0.8)->dateTimeBetween('-1 year', 'now'),

@@ -1,4 +1,8 @@
 ---
+import { getSiteConfig } from '@/lib/cms'
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules['tech-rider'] === false) return Astro.redirect('/404', 307)
+
 // Nginx serves this page for any sub-path of /rider/
 // e.g., /rider/TOKEN → this index.html is served
 // The PublicRider vue island fetches /api/public/rider/{token} client-side.

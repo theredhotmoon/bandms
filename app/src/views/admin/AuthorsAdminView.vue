@@ -33,9 +33,7 @@ const tc = useTableControls<AuthorSummary>({
   data: query.data,
   searchFn: (a, q) =>
     a.name.toLowerCase().includes(q) ||
-    (a.email ?? '').toLowerCase().includes(q) ||
-    (a.facebook ?? '').toLowerCase().includes(q) ||
-    (a.instagram ?? '').toLowerCase().includes(q),
+    (a.email ?? '').toLowerCase().includes(q),
   defaultSort: 'name',
 })
 
@@ -127,8 +125,6 @@ async function confirmDelete() {
                     <a v-if="author.email" :href="`mailto:${author.email}`" class="contact-chip contact-chip--email" :title="author.email">✉ Email</a>
                     <span v-if="author.phone" class="contact-chip contact-chip--phone" :title="author.phone">📞 Phone</span>
                     <span v-if="author.whatsapp" class="contact-chip contact-chip--whatsapp" :title="author.whatsapp">💬 WA</span>
-                    <span v-if="author.facebook" class="contact-chip contact-chip--fb" :title="author.facebook">FB</span>
-                    <span v-if="author.instagram" class="contact-chip contact-chip--ig" :title="author.instagram">IG</span>
                   </div>
                 </td>
                 <td class="td notes-cell">{{ author.notes ?? '—' }}</td>

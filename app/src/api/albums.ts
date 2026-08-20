@@ -69,11 +69,13 @@ export function batchCreateAlbum(
   return new Promise((resolve, reject) => {
     const body = new FormData()
     body.append('title', meta.title)
-    if (meta.description)    body.append('description', meta.description)
+    if (meta.slug_en)            body.append('slug_en', meta.slug_en)
+    if (meta.slug_pl)            body.append('slug_pl', meta.slug_pl)
+    if (meta.description)        body.append('description', meta.description)
     if (meta.venue_id != null)   body.append('venue_id', String(meta.venue_id))
     if (meta.concert_id != null) body.append('concert_id', String(meta.concert_id))
-    if (meta.taken_at)       body.append('taken_at', meta.taken_at)
-    if (meta.published_at)   body.append('published_at', meta.published_at)
+    if (meta.taken_at)           body.append('taken_at', meta.taken_at)
+    if (meta.published_at)       body.append('published_at', meta.published_at)
     meta.tag_ids?.forEach((id) => body.append('tag_ids[]', String(id)))
 
     files.forEach(({ file, caption }) => {

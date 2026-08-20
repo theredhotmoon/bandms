@@ -1,7 +1,7 @@
 {
   "name": "bandms-web",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.7.1",
   "private": true,
   "scripts": {
     "dev": "astro dev --port 4322",
@@ -15,6 +15,7 @@
     "@nanostores/vue": "^0.10.0",
     "@tailwindcss/postcss": "^4.0.0",
     "astro": "^5.0.0",
+    "leaflet": "^1.9.4",
     "nanostores": "^0.11.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^4.0.0",
@@ -23,5 +24,8 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
   }
 }

@@ -81,7 +81,7 @@ onMounted(async () => {
         </svg>
       </div>
       <p class="text-xl font-semibold text-white">{{ message }}</p>
-      <a href="/newsletter" class="text-accent hover:underline text-sm">Go to newsletter page</a>
+      <a href="/en/newsletter" class="text-accent hover:underline text-sm">Go to newsletter page</a>
     </div>
   </div>
 </template>

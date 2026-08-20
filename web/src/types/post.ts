@@ -27,7 +27,7 @@ export interface PostSummary {
   }
 }
 
-export interface PostConcert      { id: number; date: string; venue: { id: number; name: string } | null }
+export interface PostConcert      { id: number; slug_en: string; date: string; venue: { id: number; name: string } | null }
 export interface PostRelease      { id: number; title: string; type: string }
 export interface PostMusicVideo   { id: number; title: string; video_url: string }
 

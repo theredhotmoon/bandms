@@ -3,6 +3,7 @@ import {
   createProfileSocialLink,
   deleteProfileSocialLink,
   fetchProfileSocialLinks,
+  syncProfileSocialLinks,
   updateProfileSocialLink,
 } from '@/api/socialLinks'
 import type { SocialLink, SocialLinkPayload } from '@/types/socialLink'
@@ -31,5 +32,10 @@ export function useSocialLinks() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
   })
 
-  return { query, create, update, remove }
+  const sync = useMutation({
+    mutationFn: (links: SocialLinkPayload[]) => syncProfileSocialLinks(token.value!, links),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk }),
+  })
+
+  return { query, create, update, remove, sync }
 }

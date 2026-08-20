@@ -115,14 +115,99 @@ describe('POST /api/tech-riders', function () {
             ->assertJsonValidationErrors(['name']);
     });
 
-    it('accepts optional JSON section fields', function () {
+    it('accepts placements and production extras', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/tech-riders', [
-            'name'            => 'Full Rider',
-            'stage_plot_data' => [['id' => 'pos-1', 'x' => 50, 'y' => 50]],
-            'inputs'          => [['channel' => 1, 'instrument' => 'Kick']],
+            'name'       => 'Full Rider',
+            'placements' => [[
+                'id'             => 'pos-1',
+                'band_member_id' => null,
+                'setup_id'       => null,
+                'x'              => 50,
+                'y'              => 50,
+                'instruments'    => [],
+                'overrides'      => [],
+            ]],
+            'extra_inputs' => [[
+                'id'         => 'in-1',
+                'instrument' => 'Talkback',
+                'mic_di'     => 'Mic',
+                'mic_model'  => 'SM58',
+                'stand_type' => 'Desk',
+                'notes'      => '',
+            ]],
         ])->assertCreated();
+    });
+
+    it('accepts an instrument slot that carries no rig of its own', function () {
+        $this->actingAsAdmin();
+
+        // Which rig a musician plays is a property of the placement. The slot is
+        // an icon on the stage canvas and nothing more, so it must validate
+        // without a setup reference of any kind.
+        $this->postJson('/api/tech-riders', [
+            'name'       => 'Slots',
+            'placements' => [[
+                'id'             => 'pos-1',
+                'band_member_id' => null,
+                'setup_id'       => null,
+                'x'              => 20,
+                'y'              => 30,
+                'instruments'    => [
+                    ['id' => 'inst-1', 'type' => 'saxophone', 'label' => 'Tenor'],
+                ],
+                'overrides'      => [],
+            ]],
+        ])->assertCreated();
+    });
+
+    it('rejects a placement that is missing its coordinates', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/tech-riders', [
+            'name'       => 'Broken',
+            'placements' => [['id' => 'pos-1', 'band_member_id' => null, 'setup_id' => null, 'instruments' => [], 'overrides' => []]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['placements.0.x', 'placements.0.y']);
+    });
+
+    it('rejects an extra channel with an unknown mic/DI choice', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/tech-riders', [
+            'name'         => 'Broken',
+            'extra_inputs' => [[
+                'id'         => 'in-1',
+                'instrument' => 'Talkback',
+                'mic_di'     => 'Telepathy',
+                'mic_model'  => '',
+                'stand_type' => '',
+                'notes'      => '',
+            ]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['extra_inputs.0.mic_di']);
+    });
+
+    it('rejects a placement override with a bad signal chain type', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/tech-riders', [
+            'name'       => 'Broken',
+            'placements' => [[
+                'id'             => 'pos-1',
+                'band_member_id' => null,
+                'setup_id'       => null,
+                'x'              => 10,
+                'y'              => 10,
+                'instruments'    => [],
+                'overrides'      => ['signal_chain_type' => 'kazoo'],
+            ]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['placements.0.overrides.signal_chain_type']);
     });
 });
 
@@ -148,7 +233,12 @@ describe('GET /api/tech-riders/{techRider}', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.id', $rider->id)
             ->assertJsonPath('data.name', 'My Rider')
-            ->assertJsonStructure(['data' => ['id', 'name', 'is_active', 'stage_plot_data', 'inputs', 'gig_lineup']]);
+            ->assertJsonStructure([
+                'data' => [
+                    'id', 'name', 'is_active', 'placements', 'referenced_setups',
+                    'extra_inputs', 'channel_order', 'power_notes', 'pa_foh', 'gig_lineup',
+                ],
+            ]);
     });
 
     it('returns 404 for a non-existent rider', function () {
@@ -199,7 +289,7 @@ describe('PUT /api/tech-riders/{techRider}', function () {
         $this->actingAsAdmin();
         $rider = makeTechRider(['name' => 'Keep', 'is_active' => true]);
 
-        $this->putJson("/api/tech-riders/{$rider->id}", ['inputs' => []])
+        $this->putJson("/api/tech-riders/{$rider->id}", ['extra_inputs' => []])
             ->assertSuccessful()
             ->assertJsonPath('data.name', 'Keep')
             ->assertJsonPath('data.is_active', true);
@@ -269,5 +359,79 @@ describe('DELETE /api/tech-riders/{techRider}', function () {
     it('returns 404 for a non-existent rider', function () {
         $this->actingAsAdmin();
         $this->deleteJson('/api/tech-riders/99999')->assertNotFound();
+    });
+});
+
+// ── Referenced setups ─────────────────────────────────────────────────────────
+//
+// A placement stores only a reference plus a per-gig override. The API has to
+// ship the referenced setups with the rider, or the public token view has no
+// way to resolve them — that shipment is what keeps one resolver serving every
+// surface instead of a second implementation appearing on the server.
+
+describe('referenced setups travel with the rider', function () {
+    function riderWithPlacement(int $setupId): TechRider
+    {
+        return makeTechRider([
+            'placements' => [[
+                'id'             => 'pos-1',
+                'band_member_id' => null,
+                'setup_id'       => $setupId,
+                'x'              => 40,
+                'y'              => 60,
+                'instruments'    => [],
+                'overrides'      => [],
+            ]],
+        ]);
+    }
+
+    it('includes every setup the placements point at', function () {
+        $this->actingAsAdmin();
+        $member = \App\Models\BandMember::create([
+            'profile_id' => 1, 'first_name' => 'Marek', 'last_name' => 'K', 'can_login' => false,
+        ]);
+        $setup = \App\Models\BandMemberSetup::create([
+            'band_member_id'    => $member->id,
+            'name'              => 'Acoustic kit',
+            'signal_chain_type' => 'drum_acoustic',
+            'monitors'          => [['id' => 'm1', 'label' => 'Wedge', 'type' => 'wedge', 'config' => 'mono',
+                                     'mix_description' => '', 'iem_own_pack' => false,
+                                     'iem_transmitter_model' => '', 'iem_frequency' => '']],
+        ]);
+        $rider = riderWithPlacement($setup->id);
+
+        $this->getJson("/api/tech-riders/{$rider->id}")
+            ->assertSuccessful()
+            ->assertJsonPath("data.referenced_setups.{$setup->id}.name", 'Acoustic kit')
+            ->assertJsonCount(1, "data.referenced_setups.{$setup->id}.monitors");
+    });
+
+    // The public token serves a published version, not the live rider — see
+    // TechRiderVersionTest for the frozen copy the promoter actually receives.
+    it('exposes them inside the published snapshot too', function () {
+        $this->actingAsAdmin();
+        $member = \App\Models\BandMember::create([
+            'profile_id' => 1, 'first_name' => 'Ola', 'last_name' => 'W', 'can_login' => false,
+        ]);
+        $setup = \App\Models\BandMemberSetup::create([
+            'band_member_id'    => $member->id,
+            'name'              => 'Helix rig',
+            'signal_chain_type' => 'modeler_stereo',
+        ]);
+        $rider = riderWithPlacement($setup->id);
+        $this->postJson("/api/tech-riders/{$rider->id}/versions")->assertCreated();
+
+        $this->getJson("/api/public/rider/{$rider->public_token}")
+            ->assertSuccessful()
+            ->assertJsonPath("data.rider.referenced_setups.{$setup->id}.name", 'Helix rig');
+    });
+
+    it('returns an empty map when no placement references a setup', function () {
+        $this->actingAsAdmin();
+        $rider = makeTechRider();
+
+        $this->getJson("/api/tech-riders/{$rider->id}")
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data.referenced_setups');
     });
 });

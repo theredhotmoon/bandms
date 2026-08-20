@@ -3,6 +3,11 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
+// Where `pnpm dev` forwards /api and /storage. Defaults to the frontend
+// container's usual port; override when FRONTEND_PORT in the root .env differs
+// (e.g. API_PROXY_TARGET=http://localhost:80 pnpm dev).
+const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8081'
+
 export default defineConfig({
   plugins: [
     // @ts-ignore — FullCalendar types cause spurious overload mismatch
@@ -19,11 +24,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8081',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
       '/storage': {
-        target: 'http://localhost:8081',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },

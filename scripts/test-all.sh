@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Run all test suites: backend unit tests + E2E (Playwright).
+# Run all test suites: backend unit (Pest) + frontend unit (Vitest) + E2E (Playwright).
 # Usage: bash scripts/test-all.sh [--skip-e2e] [--skip-unit]
 #
-# Exit codes: 0 = all green, 1 = unit failures, 2 = E2E failures, 3 = both failed
+# Exit codes are a bitmask: 1 = backend unit, 2 = E2E, 4 = frontend unit.
+# 0 = all green; 5 = both unit suites failed, and so on.
 
 set -euo pipefail
 
@@ -10,8 +11,10 @@ SKIP_UNIT=0
 SKIP_E2E=0
 UNIT_STATUS=0
 E2E_STATUS=0
+FE_UNIT_STATUS=0
 UNIT_SKIPPED=0
 E2E_SKIPPED=0
+FE_UNIT_SKIPPED=0
 
 for arg in "$@"; do
   case $arg in
@@ -31,10 +34,40 @@ ok()     { echo -e "${GREEN}✅ $1${RESET}"; }
 fail()   { echo -e "${RED}❌ $1${RESET}"; }
 warn()   { echo -e "${YELLOW}⚠️  $1${RESET}"; }
 
+# ── Frontend unit tests (Vitest) ──────────────────────────────────────────────
+# Pure logic only — the resolver, the diff and the rig contract. Sub-second and
+# dependency-free — the only stage needing neither Docker nor a browser, so it
+# runs first and fails fastest.
+if [ "$SKIP_UNIT" -eq 0 ]; then
+  banner "Frontend unit tests (Vitest)"
+  if [ ! -f app/vitest.config.ts ]; then
+    warn "No app/vitest.config.ts found — skipping"
+    FE_UNIT_SKIPPED=1
+  else
+    cd app
+    if pnpm test:unit; then
+      ok "Frontend unit tests passed"
+    else
+      fail "Frontend unit tests FAILED"
+      FE_UNIT_STATUS=4
+    fi
+    cd ..
+  fi
+else
+  warn "Frontend unit tests skipped (--skip-unit)"
+  FE_UNIT_SKIPPED=1
+fi
+
 # ── Backend unit tests ────────────────────────────────────────────────────────
 if [ "$SKIP_UNIT" -eq 0 ]; then
   banner "Backend unit tests (Pest)"
-  if make test; then
+  APP_KEY=$(grep '^APP_KEY=' .env 2>/dev/null | cut -d= -f2-)
+  if [ -z "$APP_KEY" ]; then
+    fail "APP_KEY not found in .env — run: cp .env.example .env && php artisan key:generate"
+    exit 1
+  fi
+  docker build --target test -t bandms_test ./api >/dev/null
+  if docker run --rm -e APP_ENV=testing -e APP_KEY="${APP_KEY}" bandms_test; then
     ok "Backend tests passed"
   else
     fail "Backend tests FAILED"
@@ -70,9 +103,14 @@ fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 banner "Summary"
-if   [ "$UNIT_SKIPPED" -eq 1 ]; then warn "Unit tests  (skipped)"
-elif [ "$UNIT_STATUS"  -eq 0 ]; then ok   "Unit tests"
-else                                  fail "Unit tests"
+if   [ "$UNIT_SKIPPED" -eq 1 ]; then warn "Backend unit  (skipped)"
+elif [ "$UNIT_STATUS"  -eq 0 ]; then ok   "Backend unit"
+else                                  fail "Backend unit"
+fi
+
+if   [ "$FE_UNIT_SKIPPED" -eq 1 ]; then warn "Frontend unit (skipped)"
+elif [ "$FE_UNIT_STATUS"  -eq 0 ]; then ok   "Frontend unit"
+else                                     fail "Frontend unit"
 fi
 
 if   [ "$E2E_SKIPPED" -eq 1 ]; then warn "E2E tests   (skipped)"
@@ -80,5 +118,5 @@ elif [ "$E2E_STATUS"  -eq 0 ]; then ok   "E2E tests"
 else                                 fail "E2E tests"
 fi
 
-EXIT_CODE=$(( UNIT_STATUS | E2E_STATUS ))
+EXIT_CODE=$(( UNIT_STATUS | E2E_STATUS | FE_UNIT_STATUS ))
 exit $EXIT_CODE

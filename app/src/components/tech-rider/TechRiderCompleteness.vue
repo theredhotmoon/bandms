@@ -1,76 +1,59 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { StagePlotMemberItem } from '@/types/stagePlot'
-import { computeCompleteness, isMemberItemComplete, isMemberItemPartial } from '@/types/stagePlot'
+import type { RiderCompleteness } from '@/utils/riderResolver'
 
-interface Props {
-  items: StagePlotMemberItem[]
-}
-const props = defineProps<Props>()
+interface Props { completeness: RiderCompleteness }
+defineProps<Props>()
 
-const stats = computed(() => computeCompleteness(props.items))
-
-const barColor = computed(() => {
-  if (stats.value.pct === 100) return 'bg-emerald-500'
-  if (stats.value.pct >= 50)   return 'bg-amber-500'
-  return 'bg-red-500'
-})
-
-const label = computed(() => {
-  const { total, complete, pct } = stats.value
-  if (total === 0) return 'No musicians placed on stage yet'
-  if (pct === 100) return `All ${total} musicians fully configured — ready to generate`
-  return `${complete} of ${total} musicians fully configured`
-})
+defineEmits<{ open: [placementId: string] }>()
 </script>
 
 <template>
-  <div class="px-4 py-3 bg-zinc-900/80 border-t border-zinc-700/60">
-    <div class="flex items-center gap-3">
-      <!-- Label -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-zinc-300">Tech rider completeness</span>
-          <span class="text-xs font-semibold" :class="stats.pct === 100 ? 'text-emerald-400' : 'text-zinc-400'">
-            {{ stats.pct }}%
-          </span>
-        </div>
-        <!-- Progress bar -->
-        <div class="h-1.5 w-full bg-zinc-700 rounded-full overflow-hidden">
-          <div
-            class="h-full rounded-full transition-all duration-500"
-            :class="barColor"
-            :style="{ width: `${stats.pct}%` }"
-          />
-        </div>
-        <p class="text-[11px] text-zinc-500 mt-1">{{ label }}</p>
+  <div v-if="completeness.total" class="completeness">
+    <div class="bar-row">
+      <div class="bar-track">
+        <div class="bar-fill" :style="{ width: `${completeness.pct}%` }" />
       </div>
+      <span class="bar-label">
+        {{ completeness.complete }}/{{ completeness.total }} ready
+      </span>
+    </div>
 
-      <!-- Member dots -->
-      <div v-if="items.length > 0" class="flex gap-1 flex-shrink-0">
-        <div
-          v-for="item in items"
-          :key="item.id"
-          class="w-2 h-2 rounded-full"
-          :class="
-            isMemberItemComplete(item) ? 'bg-emerald-500' :
-            isMemberItemPartial(item)  ? 'bg-amber-500' :
-            'bg-red-500/60'
-          "
-          :title="
-            isMemberItemComplete(item) ? 'Complete' :
-            isMemberItemPartial(item)  ? 'Partial' :
-            'Not configured'
-          "
-        />
-      </div>
-
-      <!-- Ready badge -->
-      <div v-if="stats.pct === 100 && stats.total > 0" class="flex-shrink-0">
-        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
-          Ready
-        </span>
-      </div>
+    <div v-if="completeness.complete < completeness.total" class="gaps">
+      <button
+        v-for="status in completeness.statuses.filter(s => !s.complete)"
+        :key="status.placementId"
+        type="button"
+        class="gap-chip"
+        @click="$emit('open', status.placementId)"
+      >
+        <span class="gap-name">{{ status.name }}</span>
+        <span class="gap-missing">no {{ status.missing.join(', ') }}</span>
+      </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+.completeness { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
+
+.bar-row { display: flex; align-items: center; gap: 0.625rem; }
+.bar-track {
+  flex: 1; height: 0.3rem; border-radius: 999px; background: #1a1a1a; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: 999px; background: #4ade80;
+  transition: width 200ms ease;
+}
+.bar-label { font-size: 0.7rem; color: #64748b; white-space: nowrap; }
+
+.gaps { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.gap-chip {
+  display: flex; align-items: baseline; gap: 0.3rem;
+  padding: 0.15rem 0.45rem; border-radius: 0.3rem; cursor: pointer;
+  background: #1c1608; border: 1px solid #4d3c10; font-family: inherit;
+  transition: background 100ms;
+}
+.gap-chip:hover { background: #2a2008; }
+.gap-name { font-size: 0.68rem; font-weight: 600; color: #fbbf24; }
+.gap-missing { font-size: 0.65rem; color: #a16207; }
+</style>

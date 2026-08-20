@@ -1,0 +1,125 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import RigInputsTable from './RigInputsTable.vue'
+import type { InputRow, SignalChainType } from '@/types/rig'
+import type { Instrument } from '@/types/instrument'
+import {
+  CHAIN_META,
+  CHAIN_BY_CATEGORY,
+  guessChainCategory,
+  buildInputsFromChain,
+} from '@/utils/signalChainPresets'
+
+interface Props {
+  modelValue: InputRow[]
+  chainType: SignalChainType
+  instrument: Instrument | null
+  memberName: string
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  'update:modelValue': [value: InputRow[]]
+  'update:chainType': [value: SignalChainType]
+}>()
+
+const chainOptions = computed(() => {
+  const cat = props.instrument ? guessChainCategory(props.instrument.name) : 'other'
+  const primary = CHAIN_BY_CATEGORY[cat] ?? []
+  const all = Object.keys(CHAIN_META) as SignalChainType[]
+
+  const ordered = [
+    ...primary,
+    ...all.filter((k) => !primary.includes(k) && k !== 'other'),
+    'other' as SignalChainType,
+  ]
+
+  return ordered.map((k) => ({ value: k, ...CHAIN_META[k] }))
+})
+
+const selectedMeta = computed(() => CHAIN_META[props.chainType])
+
+function buildInputs() {
+  const instrName = props.instrument?.name ?? ''
+  emit('update:modelValue', buildInputsFromChain(props.chainType, props.memberName, instrName))
+}
+</script>
+
+<template>
+  <div class="rig-section">
+    <div class="chain-selector">
+      <label class="field-label">Signal chain / setup type</label>
+      <select
+        :value="chainType"
+        class="chain-select"
+        @change="emit('update:chainType', ($event.target as HTMLSelectElement).value as SignalChainType)"
+      >
+        <option v-for="opt in chainOptions" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
+      </select>
+      <p v-if="selectedMeta" class="field-hint">{{ selectedMeta.description }}</p>
+    </div>
+
+    <div v-if="chainType !== 'other'" class="build-banner">
+      <span class="build-icon">⚡</span>
+      <div class="build-body">
+        <span class="build-label">Auto-build channels from signal chain</span>
+        <span class="build-desc">
+          Generates {{ selectedMeta.channels }} channel{{ selectedMeta.channels === 1 ? '' : 's' }}
+          for "{{ selectedMeta.label }}"
+        </span>
+      </div>
+      <button
+        v-if="modelValue.length === 0"
+        type="button"
+        class="build-btn build-btn--go"
+        @click="buildInputs"
+      >Build →</button>
+      <template v-else>
+        <span class="build-warn">{{ modelValue.length }} existing rows</span>
+        <button type="button" class="build-btn build-btn--replace" @click="buildInputs">Replace</button>
+      </template>
+    </div>
+
+    <RigInputsTable
+      :model-value="modelValue"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
+  </div>
+</template>
+
+<style scoped src="./rig-form.css" />
+<style scoped>
+.chain-selector { display: flex; flex-direction: column; gap: 0.3rem; }
+.chain-select {
+  width: 100%; max-width: 28rem; padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem; border: 1px solid #2a2a2a;
+  background: #141414; color: #e2e8f0; font-size: 0.875rem;
+  outline: none; font-family: inherit; transition: border-color 150ms;
+}
+.chain-select:focus { border-color: #5154e5; }
+.chain-select option { background: #141414; }
+
+.build-banner {
+  display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
+  padding: 0.55rem 0.875rem;
+  background: #0a0c1e; border: 1px solid #2a2860; border-radius: 0.5rem;
+  border-left: 3px solid #888888;
+}
+.build-icon { font-size: 0.9rem; flex-shrink: 0; }
+.build-body { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.build-label { font-size: 0.72rem; font-weight: 700; color: #d0d0d0; }
+.build-desc { font-size: 0.68rem; color: #475569; }
+.build-warn { font-size: 0.72rem; color: #64748b; white-space: nowrap; }
+
+.build-btn {
+  padding: 0.28rem 0.65rem; border-radius: 0.35rem; font-size: 0.72rem;
+  font-weight: 600; cursor: pointer; border: 1px solid transparent;
+  white-space: nowrap; transition: background 120ms;
+}
+.build-btn--go { background: #2a2a2a; border-color: #444444; color: #d0d0d0; }
+.build-btn--go:hover { background: #333333; }
+.build-btn--replace { background: #e8e8e8; border-color: #e8e8e8; color: #111111; }
+.build-btn--replace:hover { background: #cccccc; }
+</style>

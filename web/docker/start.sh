@@ -15,5 +15,6 @@ API_BASE="${API_BASE}" pnpm build
 echo "📋  Copying build output…"
 cp -r /app/dist/* /usr/share/nginx/html/
 
-echo "🚀  Starting Nginx…"
+echo "🚀  Starting rebuild webhook and Nginx…"
+node /docker/rebuild-webhook.js &
 exec nginx -g "daemon off;"

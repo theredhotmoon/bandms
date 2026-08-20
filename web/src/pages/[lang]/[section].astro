@@ -1,0 +1,66 @@
+---
+import type { Locale } from '@/types/shared'
+import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getSiteConfig } from '@/lib/cms'
+
+import ConcertsSection   from '@/components/sections/ConcertsSection.astro'
+import ReleasesSection   from '@/components/sections/ReleasesSection.astro'
+import PostsSection      from '@/components/sections/PostsSection.astro'
+import PhotosSection     from '@/components/sections/PhotosSection.astro'
+import VideosSection     from '@/components/sections/VideosSection.astro'
+import PressSection      from '@/components/sections/PressSection.astro'
+import MerchSection      from '@/components/sections/MerchSection.astro'
+import EpkSection        from '@/components/sections/EpkSection.astro'
+import ContactSection    from '@/components/sections/ContactSection.astro'
+import NewsletterSection from '@/components/sections/NewsletterSection.astro'
+
+export async function getStaticPaths() {
+  const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
+  const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
+  const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
+  const ALWAYS_ON          = new Set(['contact', 'newsletter'])
+
+  const [slugMap, enCfg, plCfg] = await Promise.all([
+    getSlugMap(),
+    getSiteConfig('en'),
+    getSiteConfig('pl'),
+  ])
+
+  return LOCALES.flatMap(lang => {
+    const cfg = lang === 'en' ? enCfg : plCfg
+    const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
+    return ALL_SECTIONS
+      .filter(sectionType => ALWAYS_ON.has(sectionType) || cfg.modules[sectionType] !== false)
+      .map(sectionType => ({
+        params: {
+          lang,
+          section: slugMap[lang][sectionType] ?? sectionType,
+        },
+        props: {
+          sectionType,
+          lang,
+          alternateHref: `/${otherLang}/${slugMap[otherLang][sectionType] ?? sectionType}`,
+        },
+      }))
+  })
+}
+
+interface Props {
+  sectionType: string
+  lang: Locale
+  alternateHref: string
+}
+
+const { sectionType, lang, alternateHref } = Astro.props
+---
+
+{sectionType === 'concerts'   && <ConcertsSection   lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'releases'   && <ReleasesSection   lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'posts'      && <PostsSection      lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'photos'     && <PhotosSection     lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'videos'     && <VideosSection     lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'press'      && <PressSection      lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'merch'      && <MerchSection      lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'epk'        && <EpkSection        lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'contact'    && <ContactSection    lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'newsletter' && <NewsletterSection lang={lang} alternateHref={alternateHref} />}

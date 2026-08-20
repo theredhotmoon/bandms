@@ -2,6 +2,7 @@
 import { reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
+import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import type { Post, PostPayload, PostLinkType } from '@/types/post'
 import type { Tag } from '@/types/tag'
 import type { Concert } from '@/types/concert'
@@ -31,6 +32,8 @@ interface LinkRow { type: PostLinkType; url: string; label: string }
 const form = reactive({
   title_en: '',
   title_pl: '',
+  slug_en: '',
+  slug_pl: '',
   intro_en: '',
   intro_pl: '',
   content_en: '',
@@ -51,6 +54,8 @@ const form = reactive({
 watch(() => props.initial, (val) => {
   form.title_en = val?.translations?.title?.en ?? val?.title ?? ''
   form.title_pl = val?.translations?.title?.pl ?? ''
+  form.slug_en = val?.slug_en ?? ''
+  form.slug_pl = val?.slug_pl ?? ''
   form.intro_en = val?.translations?.intro?.en ?? val?.intro ?? ''
   form.intro_pl = val?.translations?.intro?.pl ?? ''
   form.content_en = val?.translations?.content?.en ?? val?.content ?? ''
@@ -76,6 +81,8 @@ const linkTypes: PostLinkType[] = ['normal', 'youtube', 'instagram', 'facebook']
 function submit() {
   emit('submit', {
     title: { en: form.title_en, pl: form.title_pl || undefined },
+    slug_en: form.slug_en || null,
+    slug_pl: form.slug_pl || null,
     intro: (form.intro_en || form.intro_pl) ? { en: form.intro_en || undefined, pl: form.intro_pl || undefined } : null,
     content: (form.content_en || form.content_pl) ? { en: form.content_en || undefined, pl: form.content_pl || undefined } : null,
     image: form.image || null,
@@ -108,6 +115,18 @@ function submit() {
         </div>
       </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
+    </div>
+    <div>
+      <label class="field-label">Slug URL</label>
+      <SlugInput
+        v-model="form.slug_en"
+        v-model:modelValuePl="form.slug_pl"
+        :sourceEn="form.title_en"
+        :sourcePl="form.title_pl"
+        :bilingual="true"
+      />
+      <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
+      <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
     <div>
       <label class="field-label">Intro</label>

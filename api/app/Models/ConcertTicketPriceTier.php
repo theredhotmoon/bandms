@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ConcertTicketPriceTier extends Model
 {
@@ -13,15 +14,34 @@ class ConcertTicketPriceTier extends Model
         'available_from', 'available_until', 'available_count', 'sort_order',
     ];
 
-    protected $casts = [
-        'available_from'  => 'date',
-        'available_until' => 'date',
-        'price'           => 'decimal:2',
-    ];
-
-    public function concertTicketType(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(ConcertTicketType::class);
+        return [
+            'price'           => 'decimal:2',
+            'available_from'  => 'date:Y-m-d',
+            'available_until' => 'date:Y-m-d',
+            'available_count' => 'integer',
+            'sort_order'      => 'integer',
+        ];
+    }
+
+    public function ticketType(): BelongsTo
+    {
+        return $this->belongsTo(ConcertTicketType::class, 'concert_ticket_type_id');
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public ?int $soldCountCache = null;
+
+    public function soldCount(): int
+    {
+        return $this->soldCountCache ??= (int) $this->orderItems()
+            ->whereHas('order', fn ($q) => $q->whereIn('status', ['paid', 'pending']))
+            ->sum('quantity');
     }
 
     public function presaleCodes(): BelongsToMany

@@ -1,0 +1,144 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\WebsiteModuleResource;
+use App\Models\SiteSetting;
+use App\Models\WebsiteModule;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class WebsiteModuleController extends Controller
+{
+    public function siteConfig(): JsonResponse
+    {
+        $locale       = app()->getLocale();
+        $all          = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
+
+        $modules      = $all->keyBy('slug')->map(fn ($m) => (bool) $m->enabled);
+        $module_order = $all->pluck('slug')->values();
+        $module_config = $all->keyBy('slug')->map(fn ($m) => [
+            'enabled'  => (bool) $m->enabled,
+            'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
+            'per_page' => $m->per_page,
+        ]);
+
+        return response()->json([
+            'modules'       => $modules,
+            'module_order'  => $module_order,
+            'module_config' => $module_config,
+        ]);
+    }
+
+    public function index(): JsonResponse
+    {
+        $modules     = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
+        $autoRebuild = SiteSetting::get('auto_rebuild', 'false') === 'true';
+
+        return response()->json([
+            'data'         => WebsiteModuleResource::collection($modules),
+            'auto_rebuild' => $autoRebuild,
+        ]);
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'slugs'   => ['required', 'array'],
+            'slugs.*' => ['required', 'string'],
+        ]);
+
+        foreach ($data['slugs'] as $index => $slug) {
+            WebsiteModule::where('slug', $slug)->update(['sort_order' => $index]);
+        }
+
+        $modules     = WebsiteModule::orderBy('sort_order')->orderBy('slug')->get();
+        $autoRebuild = SiteSetting::get('auto_rebuild', 'false') === 'true';
+
+        return response()->json([
+            'data'         => WebsiteModuleResource::collection($modules),
+            'auto_rebuild' => $autoRebuild,
+        ]);
+    }
+
+    public function update(Request $request, string $slug): JsonResponse
+    {
+        $module = WebsiteModule::where('slug', $slug)->firstOrFail();
+
+        $validated = $request->validate([
+            'enabled'        => ['sometimes', 'boolean'],
+            'custom_name.en' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'custom_name.pl' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'per_page'       => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
+        ]);
+
+        if (array_key_exists('enabled', $validated)) {
+            $module->enabled = $validated['enabled'];
+        }
+
+        if (array_key_exists('custom_name', $validated)) {
+            $module->setTranslations('custom_name', [
+                'en' => ($validated['custom_name']['en'] ?? null) ?: null,
+                'pl' => ($validated['custom_name']['pl'] ?? null) ?: null,
+            ]);
+        }
+
+        if (array_key_exists('per_page', $validated)) {
+            $module->per_page = $validated['per_page'];
+        }
+
+        $module->save();
+
+        if (SiteSetting::get('auto_rebuild', 'false') === 'true') {
+            $this->triggerRebuild();
+        }
+
+        return response()->json(['data' => new WebsiteModuleResource($module)]);
+    }
+
+    public function updateSettings(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['auto_rebuild' => 'required|boolean']);
+
+        SiteSetting::set('auto_rebuild', $validated['auto_rebuild'] ? 'true' : 'false');
+
+        return response()->json(['auto_rebuild' => $validated['auto_rebuild']]);
+    }
+
+    public function rebuild(): JsonResponse
+    {
+        $this->triggerRebuild();
+
+        return response()->json(['status' => 'rebuild_started']);
+    }
+
+    public function rebuildStatus(): JsonResponse
+    {
+        $fallback = ['status' => 'unknown', 'startedAt' => null, 'finishedAt' => null];
+
+        try {
+            $response = Http::timeout(5)->get('http://web:3001/status');
+            if (! $response->successful()) {
+                return response()->json($fallback);
+            }
+            $body = $response->json();
+            return response()->json([
+                'status'     => $body['status']     ?? 'unknown',
+                'startedAt'  => $body['startedAt']  ?? null,
+                'finishedAt' => $body['finishedAt'] ?? null,
+            ]);
+        } catch (\Exception) {
+            return response()->json($fallback);
+        }
+    }
+
+    private function triggerRebuild(): void
+    {
+        try {
+            Http::timeout(5)->post('http://web:3001/rebuild');
+        } catch (\Exception) {
+            // Fire-and-forget; webhook may be unavailable in tests or dev
+        }
+    }
+}

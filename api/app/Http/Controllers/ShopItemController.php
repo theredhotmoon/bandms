@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ShopItemController extends Controller
 {
@@ -36,7 +37,7 @@ class ShopItemController extends Controller
 
     public function showBySlug(string $slug): ShopItemResource
     {
-        $shopItem = ShopItem::where('slug', $slug)->firstOrFail();
+        $shopItem = ShopItem::where('slug_en', $slug)->orWhere('slug_pl', $slug)->firstOrFail();
         abort_if(! $shopItem->is_available, 404);
         $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants']);
         return new ShopItemResource($shopItem);
@@ -62,7 +63,8 @@ class ShopItemController extends Controller
         $this->validatePrices($request);
 
         $data['profile_id'] = BandProfile::value('id') ?? 1;
-        $data['slug']       = ShopItem::generateSlug($data['name']);
+        $data['slug_en']    = ($data['slug_en'] ?? null) ?: ShopItem::generateSlug($data['name'], null, 'slug_en');
+        $data['slug_pl']    = ($data['slug_pl'] ?? null) ?: null;
 
         $item = ShopItem::create($data);
 
@@ -81,13 +83,18 @@ class ShopItemController extends Controller
 
     public function update(Request $request, ShopItem $shopItem): ShopItemResource
     {
-        $data = $this->validated($request);
+        $data = $this->validated($request, $shopItem->id);
         $prices = $request->input('prices', []);
 
         $this->validatePrices($request);
 
-        if ($shopItem->name !== $data['name']) {
-            $data['slug'] = ShopItem::generateSlug($data['name'], $shopItem->id);
+        if (empty($data['slug_en'] ?? null)) {
+            $data['slug_en'] = $shopItem->name !== $data['name']
+                ? ShopItem::generateSlug($data['name'], $shopItem->id, 'slug_en')
+                : $shopItem->slug_en;
+        }
+        if (!array_key_exists('slug_pl', $data)) {
+            $data['slug_pl'] = $shopItem->slug_pl;
         }
 
         DB::transaction(function () use ($shopItem, $data, $prices) {
@@ -187,10 +194,12 @@ class ShopItemController extends Controller
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?int $ignoreId = null): array
     {
         return $request->validate([
             'name'             => 'required|string|max:255',
+            'slug_en'          => ['nullable', 'string', 'max:255', Rule::unique('shop_items', 'slug_en')->ignore($ignoreId)],
+            'slug_pl'          => ['nullable', 'string', 'max:255', Rule::unique('shop_items', 'slug_pl')->ignore($ignoreId)],
             'type'             => 'sometimes|in:record,apparel,accessory,ticket,bundle,other',
             'description'      => 'nullable|string',
             'is_available'     => 'boolean',

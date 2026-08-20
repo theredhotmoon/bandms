@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
+import { doorCheck, doorScan } from '@/api/tickets'
 import { useAuth } from '@/composables/useAuth'
-import { API_BASE, authHeaders, handleResponse } from '@/api/client'
-
-interface ScanResult {
-  valid: boolean
-  reason?: string
-  customer?: string
-  ticket_type?: string
-  concert?: string
-  already_used?: boolean
-}
+import type { DoorCheckResult } from '@/types/ticket'
 
 interface ScanLogEntry {
   ts: string
@@ -26,44 +18,77 @@ const isOnline = ref(navigator.onLine)
 const cameraSupported = ref(typeof BarcodeDetector !== 'undefined')
 const cameraError = ref('')
 const videoEl = ref<HTMLVideoElement | null>(null)
+
 const manualCode = ref('')
-const result = ref<ScanResult | null>(null)
+const currentCode = ref('')
+const result = ref<DoorCheckResult | null>(null)
 const loading = ref(false)
+const scanning = ref(false)
+const error = ref('')
 const scanLog = ref<ScanLogEntry[]>([])
 
 let stream: MediaStream | null = null
 let detector: BarcodeDetector | null = null
 let rafId = 0
-let scanning = false
+let busy = false
 
-function addLog(code: string, res: ScanResult) {
-  const entry: ScanLogEntry = {
-    ts: new Date().toLocaleTimeString(),
-    code,
-    valid: res.valid,
-    name: res.valid ? (res.customer ?? 'OK') : (res.reason ?? 'INVALID'),
-  }
-  scanLog.value = [entry, ...scanLog.value].slice(0, 20)
+function addLog(code: string, valid: boolean, name: string) {
+  scanLog.value = [
+    { ts: new Date().toLocaleTimeString(), code, valid, name },
+    ...scanLog.value,
+  ].slice(0, 20)
 }
 
-async function submitCode(code: string) {
-  if (loading.value || !code.trim()) return
+/**
+ * Read-only lookup. Detection never marks a ticket used — the operator
+ * confirms with `confirmScan()` after seeing who is at the door.
+ */
+async function check(code: string) {
+  const trimmed = code.trim()
+  if (loading.value || !trimmed) return
   loading.value = true
+  error.value = ''
+  result.value = null
   try {
-    const res = await fetch(`${API_BASE}/api/door-check/scan`, {
-      method: 'POST',
-      headers: authHeaders(token.value!),
-      body: JSON.stringify({ code: code.trim() }),
-    })
-    const data = await handleResponse<ScanResult>(res)
+    const data = await doorCheck(token.value!, trimmed)
+    currentCode.value = trimmed
     result.value = data
-    addLog(code, data)
+    addLog(trimmed, data.valid, data.valid ? (data.customer ?? 'OK') : (data.reason ?? 'INVALID'))
   } catch {
-    result.value = { valid: false, reason: 'Network error' }
+    error.value = 'Network error. Please try again.'
   } finally {
     loading.value = false
     manualCode.value = ''
   }
+}
+
+async function confirmScan() {
+  if (scanning.value || !currentCode.value) return
+  scanning.value = true
+  error.value = ''
+  try {
+    const data = await doorScan(token.value!, currentCode.value)
+    result.value = data
+    addLog(currentCode.value, data.valid, 'ENTERED')
+  } catch {
+    error.value = 'Network error. Please try again.'
+  } finally {
+    scanning.value = false
+  }
+}
+
+function reset() {
+  manualCode.value = ''
+  currentCode.value = ''
+  result.value = null
+  error.value = ''
+}
+
+function statusColor(): string {
+  if (!result.value) return ''
+  if (!result.value.valid) return '#ef4444'
+  if (result.value.scanned) return '#f59e0b'
+  return '#22c55e'
 }
 
 async function startCamera() {
@@ -79,16 +104,16 @@ async function startCamera() {
 
 function scanLoop() {
   rafId = requestAnimationFrame(async () => {
-    if (!detector || !videoEl.value || scanning) { scanLoop(); return }
+    // Hold detection while a result is on screen so the same badge is not
+    // re-read on every frame; the operator clears it with Reset.
+    if (!detector || !videoEl.value || busy || result.value) { scanLoop(); return }
     if (videoEl.value.readyState < 2) { scanLoop(); return }
-    scanning = true
+    busy = true
     try {
       const codes = await detector.detect(videoEl.value)
-      if (codes.length) {
-        await submitCode(codes[0].rawValue)
-      }
+      if (codes.length) await check(codes[0].rawValue)
     } catch { /* ignore frame errors */ }
-    scanning = false
+    busy = false
     scanLoop()
   })
 }
@@ -112,42 +137,87 @@ onUnmounted(() => {
 
 <template>
   <AdminLayout>
-    <div class="p-8 max-w-lg">
-      <h1 class="text-lg font-semibold mb-6" style="color:#e2e8f0;">Door Check</h1>
+    <div class="door-wrap">
+      <h1 class="door-title">Door Check</h1>
+      <p class="door-sub">Scan a ticket QR code, or paste a ticket UUID.</p>
 
       <p v-if="!isOnline" class="offline-warning">⚠ Offline — results may be stale</p>
 
-      <div v-if="cameraSupported" class="camera-section mb-6">
-        <video ref="videoEl" autoplay playsinline style="width:100%;max-width:300px;border-radius:0.5rem;background:#000;" />
-        <p v-if="cameraError" class="text-sm mt-2" style="color:#f87171;">{{ cameraError }}</p>
+      <div v-if="cameraSupported" class="camera-section">
+        <video ref="videoEl" autoplay playsinline />
+        <p v-if="cameraError" class="error-msg">{{ cameraError }}</p>
       </div>
 
-      <form @submit.prevent="submitCode(manualCode)" class="flex gap-2 mb-6">
+      <form class="input-row" @submit.prevent="check(manualCode)">
         <input
           v-model="manualCode"
-          type="text"
-          placeholder="Paste ticket UUID…"
           class="code-input"
+          placeholder="Paste ticket UUID…"
+          autocomplete="off"
+          spellcheck="false"
           :disabled="loading"
         />
-        <button type="submit" class="btn-scan" :disabled="loading || !manualCode.trim()">
+        <button type="submit" class="btn-check" :disabled="loading || !manualCode.trim()">
           {{ loading ? '…' : 'Check' }}
         </button>
+        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">Reset</button>
       </form>
 
-      <div v-if="result" class="result-card mb-6" :class="result.valid ? 'result-ok' : 'result-fail'">
-        <div class="result-title">{{ result.valid ? (result.already_used ? '⚠ Already Scanned' : '✓ Valid') : '✗ Invalid' }}</div>
-        <div v-if="result.valid" class="result-detail">
-          <div>{{ result.customer }}</div>
-          <div>{{ result.ticket_type }}</div>
-          <div>{{ result.concert }}</div>
+      <p v-if="error" class="error-msg">{{ error }}</p>
+
+      <div v-if="result" class="result-card" :style="{ borderColor: statusColor() }">
+        <div class="status-row">
+          <div class="status-dot" :style="{ background: statusColor() }"></div>
+          <div class="status-text" :style="{ color: statusColor() }">
+            <template v-if="!result.valid">INVALID TICKET</template>
+            <template v-else-if="result.scanned">ALREADY SCANNED</template>
+            <template v-else>VALID — ALLOW ENTRY</template>
+          </div>
         </div>
-        <div v-else class="result-detail">{{ result.reason }}</div>
+
+        <div v-if="result.valid" class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Type</span>
+            <span class="info-val">{{ result.ticket_type ?? '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Concert</span>
+            <span class="info-val">{{ result.concert ?? '—' }}</span>
+          </div>
+          <div class="info-row" v-if="result.concert_date">
+            <span class="info-label">Date</span>
+            <span class="info-val">{{ result.concert_date }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Customer</span>
+            <span class="info-val">{{ result.customer ?? '—' }}</span>
+          </div>
+          <div v-if="result.scanned && result.scanned_at" class="info-row">
+            <span class="info-label">Scanned at</span>
+            <span class="info-val" style="color:#f59e0b;">{{ new Date(result.scanned_at).toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <div v-if="result.reason" class="reason-text">{{ result.reason }}</div>
+
+        <button
+          v-if="result.valid && !result.scanned"
+          class="btn-scan"
+          :disabled="scanning"
+          @click="confirmScan"
+        >
+          {{ scanning ? 'Scanning…' : '✓ Mark as Scanned' }}
+        </button>
       </div>
 
       <div v-if="scanLog.length" class="scan-log">
         <div class="log-header">Recent scans</div>
-        <div v-for="entry in scanLog" :key="entry.ts + entry.code" class="log-entry" :class="entry.valid ? 'log-ok' : 'log-fail'">
+        <div
+          v-for="entry in scanLog"
+          :key="entry.ts + entry.code"
+          class="log-entry"
+          :class="entry.valid ? 'log-ok' : 'log-fail'"
+        >
           <span class="log-ts">{{ entry.ts }}</span>
           <span class="log-code">{{ entry.code.slice(0, 8) }}</span>
           <span class="log-name">{{ entry.valid ? entry.name : 'INVALID' }}</span>
@@ -158,37 +228,146 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.door-wrap {
+  max-width: 520px;
+  margin: 60px auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.door-title {
+  font: 700 24px/1 system-ui;
+  color: #e2e8f0;
+  margin: 0;
+}
+.door-sub {
+  font-size: 14px;
+  color: #64748b;
+  margin: -10px 0 0;
+}
+
 .offline-warning {
   background: #1c1107; color: #fbbf24; border: 1px solid #854d0e;
-  border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.8125rem; margin-bottom: 1rem;
+  border-radius: 6px; padding: 8px 12px; font-size: 13px; margin: 0;
 }
-.camera-section video { display: block; }
+
+.camera-section video {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 8px;
+  background: #000;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
 .code-input {
-  flex: 1; padding: 0.5rem 0.75rem; border-radius: 0.375rem;
-  border: 1px solid #252525; background: #0d0d0d;
-  color: #e2e8f0; font-size: 0.875rem; outline: none; font-family: monospace;
+  flex: 1;
+  min-width: 0;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 10px 14px;
+  font: 600 14px/1 'Courier New', monospace;
+  letter-spacing: .06em;
 }
-.code-input:focus { border-color: #334155; }
+.code-input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+.btn-check {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font: 600 14px/1 system-ui;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.btn-check:hover:not(:disabled) { background: #2563eb; }
+.btn-check:disabled { opacity: .5; cursor: default; }
+.btn-reset {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font: 600 13px/1 system-ui;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #2a2a2a;
+  cursor: pointer;
+}
+.btn-reset:hover { color: #e2e8f0; }
+
+.error-msg { color: #f87171; font-size: 13px; margin: 0; }
+
+.result-card {
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 20px;
+  background: #0d0d0d;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-text {
+  font: 800 18px/1 system-ui;
+  letter-spacing: .04em;
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #1a1a1a;
+}
+.info-row {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+}
+.info-label {
+  color: #64748b;
+  min-width: 80px;
+  font-weight: 500;
+}
+.info-val { color: #e2e8f0; }
+
+.reason-text { font-size: 13px; color: #94a3b8; }
+
 .btn-scan {
-  padding: 0.5rem 1.25rem; border-radius: 0.375rem;
-  background: #e8e8e8; color: #111; border: none;
-  font-size: 0.875rem; font-weight: 600; cursor: pointer;
-  transition: background 120ms;
+  padding: 12px 20px;
+  border-radius: 7px;
+  font: 700 15px/1 system-ui;
+  background: #14532d;
+  color: #4ade80;
+  border: 1px solid #166534;
+  cursor: pointer;
+  transition: background .12s;
 }
-.btn-scan:hover:not(:disabled) { background: #fff; }
-.btn-scan:disabled { opacity: 0.5; cursor: default; }
-.result-card { padding: 1rem 1.25rem; border-radius: 0.5rem; }
-.result-ok   { background: #052e16; border: 1px solid #15803d; }
-.result-fail { background: #2d0a0a; border: 1px solid #7f1d1d; }
-.result-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.375rem; }
-.result-ok .result-title   { color: #4ade80; }
-.result-fail .result-title { color: #f87171; }
-.result-detail { font-size: 0.8125rem; color: #94a3b8; display: flex; flex-direction: column; gap: 0.125rem; }
-.scan-log { border: 1px solid #1f1f1f; border-radius: 0.5rem; overflow: hidden; }
-.log-header { padding: 0.5rem 0.75rem; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #475569; background: #111; }
+.btn-scan:hover:not(:disabled) { background: #166534; }
+.btn-scan:disabled { opacity: .6; cursor: default; }
+
+.scan-log { border: 1px solid #1f1f1f; border-radius: 8px; overflow: hidden; }
+.log-header {
+  padding: 8px 12px; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #475569; background: #111;
+}
 .log-entry {
-  display: flex; gap: 0.75rem; padding: 0.4rem 0.75rem;
-  font-size: 0.78rem; border-top: 1px solid #1f1f1f;
+  display: flex; gap: 12px; padding: 6px 12px;
+  font-size: 12.5px; border-top: 1px solid #1f1f1f;
 }
 .log-ok   { background: #0a1a0a; }
 .log-fail { background: #1a0a0a; }

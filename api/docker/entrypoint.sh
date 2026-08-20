@@ -23,6 +23,23 @@ php artisan optimize
 # Run any pending migrations
 php artisan migrate --force
 
+# Seed default data (band profile, default admin, website modules) on a fresh DB.
+# The seeder is idempotent (insertOrIgnore), but we gate on an empty band_profiles
+# table so a normal restart doesn't re-run it. Without this, a fresh volume leaves
+# band_profiles empty -> GET /api/band-profile 404s -> the Astro web build fails.
+# NOTE: the seeder creates a default admin (admin@bandms.test / password) for local
+# use — remove it before going to production.
+PROFILE_COUNT=$(php -r "
+try {
+    \$pdo = new PDO('mysql:host=${DB_HOST:-mysql};port=${DB_PORT:-3306};dbname=${DB_DATABASE:-bandms}','${DB_USERNAME:-bandms}','${DB_PASSWORD:-secret}');
+    echo \$pdo->query('SELECT COUNT(*) FROM band_profiles')->fetchColumn();
+} catch(Exception \$e){ echo 0; }
+")
+if [ "$PROFILE_COUNT" = "0" ]; then
+    echo "[entrypoint] Seeding default data..."
+    php artisan db:seed --force || true
+fi
+
 # Generate Passport keys and default clients if not already present
 php artisan passport:keys --no-interaction 2>/dev/null || true
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onUnmounted } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
+import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import { guessInstrumentType } from '@/utils/instrumentIcons'
 import type { BandMember, BandMemberPayload } from '@/types/bandMember'
 import type { Instrument } from '@/types/instrument'
-import { SOCIAL_PLATFORMS } from '@/types/socialLink'
-import type { SocialPlatform } from '@/types/socialLink'
+import type { SocialLinkPayload } from '@/types/socialLink'
 
 const props = defineProps<{
   initial?: BandMember | null
@@ -14,12 +16,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
-
-const STAGE_PLOT_ICONS: Record<string, string> = {
-  drums: '🥁', guitar_amp: '🎸', bass_amp: '🎸', keyboard: '🎹',
-  vocalist: '🎤', acoustic_guitar: '🎸', violin: '🎻', brass: '🎺',
-  monitor_wedge: '🔊', di_box: '🔌', rack: '📦', custom: '⚙️',
-}
 
 const form = reactive({
   first_name: '',
@@ -65,10 +61,7 @@ function clearPhoto() {
 }
 onUnmounted(() => { if (photoPreview.value) URL.revokeObjectURL(photoPreview.value) })
 
-const linkUrls = reactive<Record<SocialPlatform, string>>({
-  spotify: '', instagram: '', facebook: '', youtube: '',
-  tiktok: '', bandcamp: '', soundcloud: '', twitter: '', website: '',
-})
+const socialLinks = ref<SocialLinkPayload[]>([])
 
 watch(
   () => props.initial,
@@ -91,8 +84,7 @@ watch(
     photoFile.value    = null
     photoPreview.value = ''
 
-    for (const p of SOCIAL_PLATFORMS) linkUrls[p.key] = ''
-    for (const l of val?.social_links ?? []) linkUrls[l.platform] = l.url
+    socialLinks.value = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
   },
   { immediate: true },
 )
@@ -134,9 +126,7 @@ function submit() {
     login_email:         form.login_email,
     instrument_ids:      form.instrument_ids,
     main_instrument_id:  form.main_instrument_id,
-    social_links:        SOCIAL_PLATFORMS
-      .filter((p) => linkUrls[p.key].trim())
-      .map((p) => ({ platform: p.key, url: linkUrls[p.key].trim() })),
+    social_links:        socialLinks.value,
   })
 }
 </script>
@@ -193,17 +183,7 @@ function submit() {
           <p v-if="errors?.bio" class="field-error">{{ errors.bio[0] }}</p>
         </div>
 
-        <!-- Social links -->
-        <div>
-          <div class="member-links-heading">Social links</div>
-          <div class="flex flex-col gap-2">
-            <div v-for="p in SOCIAL_PLATFORMS" :key="p.key" class="platform-row">
-              <span class="platform-dot" :style="`background:${p.color};`" />
-              <span class="platform-name">{{ p.label }}</span>
-              <input v-model="linkUrls[p.key]" class="field-input flex-1" :placeholder="`${p.label} URL…`" />
-            </div>
-          </div>
-        </div>
+        <SocialLinksEditor v-model="socialLinks" />
 
       </div>
 
@@ -292,9 +272,11 @@ function submit() {
               :class="{ 'main-inst-card--on': form.main_instrument_id === inst.id }"
               @click="selectMainInstrument(inst.id)"
             >
-              <span v-if="inst.stage_plot_type && STAGE_PLOT_ICONS[inst.stage_plot_type]" class="main-inst-emoji">
-                {{ STAGE_PLOT_ICONS[inst.stage_plot_type] }}
-              </span>
+              <InstrumentIcon
+                :type="inst.stage_plot_type ?? guessInstrumentType(inst.name)"
+                :size="18"
+                class="main-inst-icon"
+              />
               <span class="main-inst-name">{{ inst.name }}</span>
             </button>
           </div>
@@ -357,17 +339,6 @@ function submit() {
   min-width: 9rem;
 }
 
-/* ── Labels / platform row ──────────────────────────────────── */
-.member-links-heading {
-  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: #d0d0d0; margin-bottom: 0.5rem;
-}
-.platform-row { display: flex; align-items: center; gap: 0.625rem; }
-.platform-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
-.platform-name {
-  font-size: 0.75rem; font-weight: 500; color: #94a3b8;
-  width: 7rem; flex-shrink: 0;
-}
 .instruments-grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .instruments-hint {
   font-size: 0.65rem; color: #475569; margin-bottom: 0.375rem; margin-top: -0.25rem;
@@ -389,7 +360,7 @@ function submit() {
   background: #2a2a2a;
   box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
 }
-.main-inst-emoji { font-size: 1rem; line-height: 1; }
+.main-inst-icon { flex-shrink: 0; }
 .main-inst-name  { font-size: 0.68rem; }
 
 /* ── Also-plays checkboxes ──────────────────────────────────── */

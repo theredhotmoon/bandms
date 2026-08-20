@@ -30,8 +30,8 @@ function goToCheckout() { router.push('/checkout') }
             :items="cartStore.items"
             :currency="currency"
             :editable="true"
-            @remove="(id, vid) => cartStore.removeItem(id, vid)"
-            @update-qty="(id, vid, qty) => cartStore.updateQuantity(id, vid, qty)"
+            @remove="(key) => cartStore.removeByKey(key)"
+            @update-qty="(key, qty) => cartStore.updateQuantityByKey(key, qty)"
           />
         </div>
 

@@ -1,4 +1,5 @@
 ---
+import type { Locale } from '@/types/shared'
 import BaseHead from '@/components/BaseHead.astro'
 import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
@@ -13,6 +14,8 @@ export interface Props {
   noindex?: boolean
   structuredData?: object
   bandName?: string
+  lang?: Locale
+  alternateHref?: string
 }
 
 const {
@@ -23,13 +26,15 @@ const {
   noindex,
   structuredData,
   bandName = 'Skanking Storks',
+  lang = 'en',
+  alternateHref,
 } = Astro.props
 
 const pageTitle = title === bandName ? title : `${title} — ${bandName}`
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <BaseHead
       title={pageTitle}
@@ -39,13 +44,14 @@ const pageTitle = title === bandName ? title : `${title} — ${bandName}`
       noindex={noindex}
       structuredData={structuredData}
     />
+    <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
-    <Header />
+    <Header lang={lang} />
     <main class="flex-1">
       <slot />
     </main>
-    <Footer />
+    <Footer lang={lang} alternateHref={alternateHref} />
     <CartDrawer client:idle />
   </body>
 </html>

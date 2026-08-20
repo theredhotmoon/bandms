@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
+import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
 import type { Venue } from '@/types/venue'
@@ -63,14 +64,29 @@ function clearPoster() {
 
 // ── Form state ────────────────────────────────────────────────
 const form = reactive({
+  name_en:          '',
+  name_pl:          '',
   venue_id:         0,
   date:             '',
   doors_open:       '',
   sound_check_time: '',
   start_time:       '',
-  description:      '',
+  description_en:   '',
+  description_pl:   '',
+  slug_en:          '',
+  slug_pl:          '',
   tag_ids:          [] as number[],
 })
+
+// selectedVenue must be declared before slug sources that depend on it
+const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
+
+const slugSourceEn = computed(() =>
+  form.name_en || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
+)
+const slugSourcePl = computed(() =>
+  form.name_pl || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
+)
 
 interface LineupEntry {
   type: 'main' | 'band'
@@ -94,16 +110,19 @@ const links = ref<ConcertLinkPayload[]>([])
 const newLinkLabel = ref('')
 const newLinkUrl   = ref('')
 
-const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
-
 watch(() => props.initial, (concert) => {
   if (!concert) {
+    form.name_en          = ''
+    form.name_pl          = ''
     form.venue_id         = 0
     form.date             = ''
     form.doors_open       = ''
     form.sound_check_time = ''
     form.start_time       = ''
-    form.description      = ''
+    form.description_en   = ''
+    form.description_pl   = ''
+    form.slug_en          = ''
+    form.slug_pl          = ''
     form.tag_ids          = []
     links.value           = []
     lineup.value          = [{ type: 'main', play_time: '' }]
@@ -122,7 +141,12 @@ watch(() => props.initial, (concert) => {
   form.doors_open       = toHHMM(concert.doors_open)
   form.sound_check_time = toHHMM(concert.sound_check_time)
   form.start_time       = toHHMM(concert.start_time)
-  form.description = concert.description ?? ''
+  form.name_en        = concert.translations?.name?.en ?? concert.name ?? ''
+  form.name_pl        = concert.translations?.name?.pl ?? ''
+  form.description_en = concert.translations?.description?.en ?? concert.description ?? ''
+  form.description_pl = concert.translations?.description?.pl ?? ''
+  form.slug_en        = concert.slug_en ?? ''
+  form.slug_pl        = concert.slug_pl ?? ''
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
@@ -264,13 +288,20 @@ function submit() {
   })
 
   emit('submit', {
+    name: (form.name_en || form.name_pl)
+      ? { en: form.name_en || undefined, pl: form.name_pl || undefined }
+      : null,
+    description: (form.description_en || form.description_pl)
+      ? { en: form.description_en || undefined, pl: form.description_pl || undefined }
+      : null,
     venue_id:          form.venue_id,
     date:              form.date,
     doors_open:        form.doors_open       || null,
     sound_check_time:  form.sound_check_time || null,
     start_time:        form.start_time       || null,
     own_sort_order:    ownSortOrder,
-    description:       form.description || null,
+    slug_en:           form.slug_en || null,
+    slug_pl:           form.slug_pl || null,
     bands:             bandsPayload,
     tag_ids:           form.tag_ids,
     links:             links.value,
@@ -280,6 +311,23 @@ function submit() {
 
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-5">
+
+    <!-- Name -->
+    <div>
+      <label class="field-label">Event name</label>
+      <div class="trans-group">
+        <div class="trans-row">
+          <span class="lang-badge">EN</span>
+          <input v-model="form.name_en" type="text" class="field-input flex-1" placeholder="e.g. Summer Ska Festival 2026 (optional)" />
+        </div>
+        <div class="trans-row">
+          <span class="lang-badge lang-badge--pl">PL</span>
+          <input v-model="form.name_pl" type="text" class="field-input flex-1" placeholder="np. Letni Festiwal Ska 2026" />
+        </div>
+      </div>
+      <p v-if="errors?.['name.en']" class="field-error">{{ errors['name.en'][0] }}</p>
+      <p v-if="errors?.['name.pl']" class="field-error">{{ errors['name.pl'][0] }}</p>
+    </div>
 
     <!-- Venue -->
     <div>
@@ -330,7 +378,7 @@ function submit() {
         <p v-if="errors?.sound_check_time" class="field-error">{{ errors.sound_check_time[0] }}</p>
       </div>
       <div>
-        <label class="field-label">Band start time <span class="label-note">(our band)</span></label>
+        <label class="field-label">Show start time</label>
         <input v-model="form.start_time" type="time" class="field-input" />
         <p v-if="errors?.start_time" class="field-error">{{ errors.start_time[0] }}</p>
       </div>
@@ -423,8 +471,32 @@ function submit() {
     <!-- Description -->
     <div>
       <label class="field-label">Description</label>
-      <textarea v-model="form.description" class="field-input" rows="2" placeholder="Optional description…" />
-      <p v-if="errors?.description" class="field-error">{{ errors.description[0] }}</p>
+      <div class="trans-group">
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge">EN</span>
+          <textarea v-model="form.description_en" class="field-input flex-1" rows="2" placeholder="Optional description…" />
+        </div>
+        <div class="trans-row trans-row--top">
+          <span class="lang-badge lang-badge--pl">PL</span>
+          <textarea v-model="form.description_pl" class="field-input flex-1" rows="2" placeholder="Opcjonalny opis…" />
+        </div>
+      </div>
+      <p v-if="errors?.['description.en']" class="field-error">{{ errors['description.en'][0] }}</p>
+      <p v-if="errors?.['description.pl']" class="field-error">{{ errors['description.pl'][0] }}</p>
+    </div>
+
+    <!-- Slug URL -->
+    <div>
+      <label class="field-label">Slug URL</label>
+      <SlugInput
+        v-model="form.slug_en"
+        v-model:modelValuePl="form.slug_pl"
+        :sourceEn="slugSourceEn"
+        :sourcePl="slugSourcePl"
+        :bilingual="true"
+      />
+      <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
+      <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
 
     <!-- Tags -->
@@ -527,6 +599,17 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+/* ── Bilingual inputs ───────────────────────────────────────── */
+.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
+.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
+.trans-row--top { align-items: flex-start; }
+.lang-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
+  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
+}
+.lang-badge--pl { background: #3f1010; color: #f87171; }
+
 /* ── Venue card ─────────────────────────────────────────────── */
 .venue-card {
   margin-top: 0.625rem;

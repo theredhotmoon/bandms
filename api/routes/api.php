@@ -20,7 +20,9 @@ use App\Http\Controllers\BandCalendarController;
 use App\Http\Controllers\EpkVersionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\TechRiderConfirmationController;
 use App\Http\Controllers\TechRiderController;
+use App\Http\Controllers\TechRiderVersionController;
 use App\Http\Controllers\PressReleaseController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BandController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\SocialLinkController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\VenueController;
+use App\Http\Controllers\WebsiteModuleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +52,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/health', HealthCheckController::class)->name('api.health');
+Route::get('/site-config', [WebsiteModuleController::class, 'siteConfig'])->name('api.site-config');
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +86,10 @@ Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
 Route::get('/concerts/{concert}/setlist', [SetlistController::class, 'showByConcert'])->name('api.concerts.setlist');
+Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'index'])->name('api.concerts.tickets.index');
+
+Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware(['throttle:60,1', 'auth:api'])->name('api.door-check');
+Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('auth:api')->name('api.door-check.scan');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -212,6 +220,15 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('role:admin,member')
         ->name('api.member-setups.destroy');
 
+    // ── Member + Admin: confirming your own rig for a gig ──────────────────
+
+    Route::get('/my-rider-confirmations', [TechRiderConfirmationController::class, 'mine'])
+        ->middleware('role:admin,member')
+        ->name('api.rider-confirmations.mine');
+    Route::post('/tech-riders/{techRider}/confirm', [TechRiderConfirmationController::class, 'confirm'])
+        ->middleware('role:admin,member')
+        ->name('api.rider-confirmations.confirm');
+
     // ── Publisher + Admin: posts ────────────────────────────────────────────
 
     Route::post('/posts', [PostController::class, 'store'])
@@ -261,6 +278,7 @@ Route::middleware('auth:api')->group(function () {
             ->name('api.band-profile.logos.destroy');
 
         Route::post('/band-profile/social-links', [SocialLinkController::class, 'store'])->name('api.band-profile.social-links.store');
+        Route::put('/band-profile/social-links', [SocialLinkController::class, 'sync'])->name('api.band-profile.social-links.sync');
         Route::put('/band-profile/social-links/{link}', [SocialLinkController::class, 'update'])->name('api.band-profile.social-links.update');
         Route::delete('/band-profile/social-links/{link}', [SocialLinkController::class, 'destroy'])->name('api.band-profile.social-links.destroy');
 
@@ -280,6 +298,21 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/concerts/{concert}/poster', [ConcertController::class, 'uploadPoster'])->name('api.concerts.poster.upload');
         Route::delete('/concerts/{concert}/poster', [ConcertController::class, 'destroyPoster'])->name('api.concerts.poster.destroy');
         Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'adminTicketList'])->name('api.concerts.tickets.index');
+
+        // Ticket types
+        Route::post('/concerts/{concert}/tickets', [ConcertTicketController::class, 'store'])->name('api.concerts.tickets.store');
+        Route::put('/concerts/{concert}/tickets/{ticketType}', [ConcertTicketController::class, 'update'])->name('api.concerts.tickets.update');
+        Route::delete('/concerts/{concert}/tickets/{ticketType}', [ConcertTicketController::class, 'destroy'])->name('api.concerts.tickets.destroy');
+
+        // Price tiers
+        Route::post('/concerts/{concert}/tickets/{ticketType}/tiers', [ConcertTicketController::class, 'storeTier'])->name('api.concerts.tickets.tiers.store');
+        Route::put('/concerts/{concert}/tickets/{ticketType}/tiers/{tier}', [ConcertTicketController::class, 'updateTier'])->name('api.concerts.tickets.tiers.update');
+        Route::delete('/concerts/{concert}/tickets/{ticketType}/tiers/{tier}', [ConcertTicketController::class, 'destroyTier'])->name('api.concerts.tickets.tiers.destroy');
+
+        // Promo codes
+        Route::get('/promo-codes', [ConcertTicketController::class, 'promoCodes'])->name('api.promo-codes.index');
+        Route::post('/promo-codes', [ConcertTicketController::class, 'storePromoCode'])->name('api.promo-codes.store');
+        Route::delete('/promo-codes/{promoCode}', [ConcertTicketController::class, 'destroyPromoCode'])->name('api.promo-codes.destroy');
 
         Route::post('/tags', [TagController::class, 'store'])->name('api.tags.store');
         Route::put('/tags/{tag}', [TagController::class, 'update'])->name('api.tags.update');
@@ -407,6 +440,13 @@ Route::middleware('auth:api')->group(function () {
                 'scan_rate'     => $total > 0 ? round($scanned / $total * 100, 1) : 0,
             ]);
         })->name('api.admin.ticket-stats');
+        // Website modules
+        Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
+        Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
+        Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
+        Route::put('/admin/site/settings', [WebsiteModuleController::class, 'updateSettings'])->name('api.admin.site.settings');
+        Route::post('/admin/site/rebuild', [WebsiteModuleController::class, 'rebuild'])->name('api.admin.site.rebuild');
+        Route::get('/admin/site/rebuild/status', [WebsiteModuleController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
@@ -414,6 +454,18 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/tech-riders/{techRider}', [TechRiderController::class, 'show'])->name('api.tech-riders.show');
         Route::put('/tech-riders/{techRider}', [TechRiderController::class, 'update'])->name('api.tech-riders.update');
         Route::post('/tech-riders/{techRider}/activate', [TechRiderController::class, 'activate'])->name('api.tech-riders.activate');
+        Route::post('/tech-riders/{techRider}/duplicate', [TechRiderController::class, 'duplicate'])->name('api.tech-riders.duplicate');
+        Route::post('/concerts/{concert}/tech-rider', [TechRiderController::class, 'storeForConcert'])->name('api.concerts.tech-rider.store');
         Route::delete('/tech-riders/{techRider}', [TechRiderController::class, 'destroy'])->name('api.tech-riders.destroy');
+
+        // Published rider versions — the frozen copies the public link serves.
+        Route::get('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'index'])->name('api.tech-rider-versions.index');
+        Route::post('/tech-riders/{techRider}/versions', [TechRiderVersionController::class, 'store'])->name('api.tech-rider-versions.store');
+        // Asking the band to confirm their rigs.
+        Route::get('/tech-riders/{techRider}/confirmations', [TechRiderConfirmationController::class, 'index'])->name('api.rider-confirmations.index');
+        Route::post('/tech-riders/{techRider}/confirmations', [TechRiderConfirmationController::class, 'store'])->name('api.rider-confirmations.store');
+
+        Route::get('/tech-rider-versions/{version}', [TechRiderVersionController::class, 'show'])->name('api.tech-rider-versions.show');
+        Route::delete('/tech-rider-versions/{version}', [TechRiderVersionController::class, 'destroy'])->name('api.tech-rider-versions.destroy');
     });
 });

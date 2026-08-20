@@ -14,7 +14,8 @@ class AlbumResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug'         => $this->slug,
+            'slug_en'      => $this->slug_en,
+            'slug_pl'      => $this->slug_pl,
             'description'  => $this->description,
             'taken_at'     => $this->taken_at,
             'published_at' => $this->published_at,

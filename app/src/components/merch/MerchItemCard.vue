@@ -25,7 +25,7 @@ const isSoldOut = computed(() => {
 </script>
 
 <template>
-  <RouterLink :to="`/merch/${item.slug}`" class="merch-card">
+  <RouterLink :to="`/merch/${item.slug_en}`" class="merch-card">
     <div class="merch-thumb">
       <img v-if="item.cover_photo" :src="item.cover_photo" :alt="item.name" class="merch-img" />
       <div v-else class="merch-img-placeholder">🛍</div>

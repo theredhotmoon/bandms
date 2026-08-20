@@ -61,7 +61,7 @@ const upcoming = isUpcoming(concert.date)
 
   <!-- Arrow -->
   <a
-    href={`/concerts/${concert.id}`}
+    href={`/concerts/${concert.slug_en}`}
     class="flex-none self-center text-zinc-700 group-hover:text-accent transition-colors"
     aria-label={`Details for concert on ${fmtDate(concert.date, 'en')}`}
   >

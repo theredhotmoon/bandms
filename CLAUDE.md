@@ -120,6 +120,145 @@ The script writes a full log to `rebuild.log` in the project root.
 
 ---
 
+## Git workflow — always use a feature branch
+
+**At the start of every new conversation that will produce a commit, create a feature branch immediately.**
+Never commit directly to `main`.
+
+```bash
+git checkout main && git pull          # start from latest main
+git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
+```
+
+- Branch name: `feature/<kebab-description>` for features, `fix/<kebab-description>` for bug fixes.
+- Keep one branch per conversation / logical unit of work.
+- Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
+- Merge via GitHub PR — never `git merge` directly into main locally.
+
+---
+
+## Known footguns — read before touching Docker/Nginx
+
+### `web` container: nav links redirect to port 80 after rebuild
+
+**Symptom:** Clicking any nav link (e.g. `/concerts`) on `localhost:4322` redirects to `http://localhost/concerts/` (port 80, the Vue SPA).
+
+**Root cause:** `try_files $uri $uri/ ...` makes Nginx issue a **301 permanent redirect** to add a trailing slash (e.g. `/concerts` → `Location: /concerts/`). Nginx builds the Location with `$host` (no port), so `localhost:4322` becomes `localhost` — redirecting to port 80 (the Vue SPA). Worse, browsers cache 301s forever, so clearing Nginx config alone doesn't help once a browser has seen the bad redirect.
+
+**Fix (already applied):** `try_files $uri $uri/index.html $uri.html =404;` in `web/docker/nginx.conf`. This serves `concerts/index.html` directly for both `/concerts` and `/concerts/` — **no redirect is issued at all**, so there is nothing to cache. The `absolute_redirect off;` directive is kept as a defence-in-depth guard.
+
+**If the browser still redirects after rebuilding:** The old 301 is cached. Open an incognito window or clear site data for `localhost:4322` in DevTools → Application → Storage.
+
+**Do not change `try_files` back to `$uri/`.** The direct `$uri/index.html` lookup is strictly better for static SSG output.
+
+**Every `try_files` also needs a `=404` terminator.** Without one, the last
+parameter is a *fallback* — an internal redirect back into the same `location`,
+which loops until Nginx gives up with a 500 (`rewrite or internal redirection
+cycle`) whenever the target page was never built. This has bitten the token
+routes twice: `/rider/` (fixed in #23) and both `/newsletter/` blocks. The
+correct shape for a token route is:
+
+```nginx
+try_files $uri $uri/index.html /rider/index.html =404;
+```
+
+The shell page is then an ordinary file check and `=404` ends the chain.
+
+---
+
+### Public rider link 404s until the rider is published
+
+**Symptom:** `GET /api/public/rider/{token}` (and `/rider/{token}` in the SPA) returns 404 for a rider that clearly exists and looks complete in the admin.
+
+**Root cause:** The public link serves a **published version**, never the live rider. A rider is derived from the musicians' saved rigs and changes whenever one of them does — correct while planning, wrong once a venue holds the link. Until someone presses **Publish v1** in the tech rider editor topbar, there is no frozen copy to serve.
+
+**Fix:** Open the rider in `/admin/tech-rider` and press **Publish**. After that the rider's own token always serves whichever version is currently published; each version also has its own permanent token in the version-history modal.
+
+**Note:** editing a published rider does *not* change what the link serves. That is the point — publish again to push the changes out.
+
+---
+
+### `make fresh` kills Passport clients — must follow with `make passport`
+
+**Symptom:** All API calls that require a Bearer token return 401 after running `make fresh`.
+
+**Root cause:** `make fresh` runs `migrate:fresh --seed` which wipes the `oauth_clients` table. The backend container's entrypoint only creates Passport clients on first startup (when `CLIENT_COUNT = 0`). Reusing the already-running container means the entrypoint never re-runs.
+
+**Fix:** Always run `make passport` immediately after `make fresh`.
+`rebuild.sh --fresh-db` handles this automatically — only `make fresh` (direct) does not.
+
+---
+
+### Public site shows stale content after admin changes
+
+**Symptom:** You add/edit a concert, release, or post in the admin, but the public site (`localhost:4322`) still shows the old data.
+
+**Root cause:** The Astro SSG build runs once at container startup (`web/docker/start.sh`). It fetches all API data at that moment and bakes it into static HTML. The container does not watch for changes.
+
+**Fix:** `docker compose restart web` — this re-runs `start.sh`, re-fetches all data, and rebuilds the static site. No image rebuild needed.
+
+---
+
+### `docker compose build web` does NOT rebuild the Astro site
+
+**Symptom:** You run `docker compose build web` expecting the public site to reflect new content or source changes, but nothing changes.
+
+**Root cause:** The Astro SSG build happens inside `start.sh` at container *startup*, not at image build time. `docker compose build` only rebuilds the Node.js image layers. The site is only rebuilt when the container starts.
+
+**Fix:** Always follow a `build` with `docker compose up -d web` (which recreates and starts the container, triggering `start.sh`). Or just use `docker compose restart web` for content-only refreshes.
+
+---
+
+### `web` container hangs silently if backend never becomes healthy
+
+**Symptom:** `bandms_web` stays in a running state but the public site never loads; `docker logs bandms_web` shows the health-check loop still printing.
+
+**Root cause:** `start.sh` polls `/api/health` in an infinite loop with no timeout. If the backend is stuck (bad env var, failed migration, DB issue), the web container waits forever.
+
+**Fix:** Check the backend first: `docker logs bandms_backend`. Fix whatever is blocking it — the web container will unblock automatically once `/api/health` responds.
+
+---
+
+### Backend env var changes require a container restart
+
+**Symptom:** You update an env var in `docker-compose.yml` (e.g. `APP_URL`, `LOG_LEVEL`) but the backend behaves as if the old value is still set.
+
+**Root cause:** `entrypoint.sh` runs `php artisan optimize` at startup, baking env values into the config cache. The cache survives for the lifetime of the container — editing `docker-compose.yml` without recreating the container has no effect.
+
+**Fix:** `docker compose up -d backend` (recreates and restarts the container, re-running the entrypoint with the new env). Or manually: `docker exec bandms_backend php artisan optimize:clear && php artisan optimize`.
+
+---
+
+### `pnpm dev` in `app/` proxies API to port 8081 — must match `.env`
+
+**Symptom:** Running `pnpm dev` in `app/`, API calls (`/api/*`) return network errors or hit the wrong host.
+
+**Root cause:** `app/vite.config.ts` hardcodes `target: 'http://localhost:8081'`. The `frontend` Docker container is exposed on `${FRONTEND_PORT:-80}`. If `FRONTEND_PORT` is not set to `8081` in `.env`, nothing is listening on 8081 and all proxied API calls fail silently.
+
+**Fix:** Add `FRONTEND_PORT=8081` to your `.env` at the monorepo root, then `docker compose up -d frontend` to re-map the port. Vite's dev proxy will then reach the frontend Nginx (which itself proxies `/api/*` to the backend over Docker networking).
+
+---
+
+### Astro public site may build with incomplete data on first startup
+
+**Symptom:** Some public pages load but show missing/empty data (e.g. no concerts listed) immediately after a fresh stack start, even though the API is healthy.
+
+**Root cause:** `web/docker/start.sh` waits for `GET /api/health` to return 200 before building. Laravel's `/api/health` can return 200 while migrations or seeders are still running in the background. The Astro build then fetches data mid-migration and bakes the incomplete snapshot into the static HTML.
+
+**Fix:** If the public site looks empty right after first boot, wait 30–60 seconds for migrations/seeders to fully settle, then `docker compose restart web` to trigger a fresh build with complete data.
+
+---
+
+### `FRONTEND_URL` in `.env` must match the port users actually browse on
+
+**Symptom:** Newsletter confirmation emails (and any other email with a link) contain `http://localhost/newsletter/confirm/...` but clicking the link goes to the wrong port or host.
+
+**Root cause:** Laravel uses `FRONTEND_URL` from `.env` to generate links in outgoing emails (e.g. double opt-in confirmation). It defaults to `http://localhost` (port 80), but the public site runs on port 4322 in development. No validation catches the mismatch.
+
+**Fix:** Set `FRONTEND_URL=http://localhost:4322` in `.env` for local development. In production set it to the real public domain. Check this any time email link behaviour changes unexpectedly.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
@@ -135,3 +274,49 @@ make test-all    # unit + E2E Playwright — run before shipping
 - Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.
 - If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
 - **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.
+
+### E2E: a red run is often the machine — check the signature, not free RAM
+
+The suite fails for machine reasons when Chromium and the Vite dev server
+cannot get the memory they ask for. **Do not use a free-RAM threshold to
+decide this** — the same commit and config produced:
+
+| Reported free RAM | Result |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a different set each run |
+| 5.5 GB | 178 passed, 0 failed — 2.3 min |
+| **176 MB** | **178 passed, 0 failed — 2.4 min** |
+
+`FreePhysicalMemory` counts only unused pages, not reclaimable ones, so a low
+reading does not mean memory is unavailable. An earlier version of this file
+claimed a ~2 GB floor; the 176 MB row disproves it.
+
+**Machine-failure signatures** — suspect these before suspecting the code:
+
+- `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
+  server (the OS refusing an allocation, not V8 hitting its cap — so raising
+  `--max-old-space-size` makes it worse)
+- `GPU process launch failed` from Chromium
+- A different set of specs failing each run, or a spec the change cannot reach
+- 30-second timeouts rather than assertion mismatches
+
+Triage order when E2E goes red:
+
+1. **Do the failing specs relate to the change?** A different set each run
+   means the machine.
+2. **Look for the signatures above.**
+3. **Only then investigate the specs.**
+
+If it is the machine, close browser windows and re-run. `workers` is pinned to
+2 in `app/playwright.config.ts`; override with `pnpm test:e2e --workers=4`.
+~15 tests skip by design (data-dependent guards), so "178 passed, 15 skipped"
+is a full green run.
+
+**Do not skip E2E on a low memory reading alone.** Run it; if it fails, triage
+with the list above.
+
+**`make` may not be available** — it is absent from the Windows dev setup, so
+the `make` targets above are shorthand. Use `bash scripts/test-all.sh
+[--skip-e2e|--skip-unit]` directly when `make: command not found`,
+which runs frontend unit → backend unit → E2E and returns a bitmask exit code
+(1 backend, 2 E2E, 4 frontend).

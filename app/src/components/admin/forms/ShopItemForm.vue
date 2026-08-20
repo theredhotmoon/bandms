@@ -7,6 +7,7 @@ import type { Concert } from '@/types/concert'
 import type { PostSummary } from '@/types/post'
 import type { MusicVideo } from '@/types/musicVideo'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
+import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useShop } from '@/composables/useShop'
 
 const props = defineProps<{
@@ -30,6 +31,8 @@ const emit = defineEmits<{
 
 const form = reactive({
   name:              '',
+  slug_en:           '',
+  slug_pl:           '',
   description:       '' as string,
   is_available:      true,
   is_presale:        false,
@@ -67,6 +70,8 @@ watch(
   (item) => {
     if (!item) {
       form.name             = ''
+      form.slug_en          = ''
+      form.slug_pl          = ''
       form.description      = ''
       form.is_available     = true
       form.is_presale       = false
@@ -82,6 +87,8 @@ watch(
       form.category_ids     = []
     } else {
       form.name             = item.name
+      form.slug_en          = item.slug_en ?? ''
+      form.slug_pl          = item.slug_pl ?? ''
       form.description      = item.description ?? ''
       form.is_available     = item.is_available
       form.is_presale       = item.is_presale
@@ -175,6 +182,8 @@ function handleSubmit() {
 
   const payload: ShopItemPayload = {
     name:             form.name,
+    slug_en:          form.slug_en || null,
+    slug_pl:          form.slug_pl || null,
     description:      form.description || null,
     is_available:     form.is_available,
     is_presale:       form.is_presale,
@@ -203,6 +212,18 @@ function handleSubmit() {
       <label class="field-label">Name *</label>
       <input v-model="form.name" type="text" class="field-input" :class="{ 'field-input--error': err('name') }" placeholder="e.g. Debut LP — Limited Edition" />
       <span v-if="err('name')" class="field-error">{{ err('name') }}</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Slug URL</label>
+      <SlugInput
+        v-model="form.slug_en"
+        v-model:modelValuePl="form.slug_pl"
+        :sourceEn="form.name"
+        :bilingual="true"
+      />
+      <span v-if="err('slug_en')" class="field-error">{{ err('slug_en') }}</span>
+      <span v-if="err('slug_pl')" class="field-error">{{ err('slug_pl') }}</span>
     </div>
 
     <div class="field">

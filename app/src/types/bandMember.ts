@@ -67,6 +67,31 @@ export interface BandMember {
   updated_at: string
 }
 
+/**
+ * The only member fields a rider needs: enough to name a musician, draw them on
+ * the stage plot, and guess their instrument when the placement does not say.
+ *
+ * Published rider snapshots carry exactly this and no more — a snapshot is a
+ * public document, so it must not be typed as a full `BandMember`, which
+ * includes `login_email` and `can_login`. See App\Services\TechRiderSnapshotBuilder.
+ *
+ * A full `BandMember` satisfies it structurally, so the live admin surfaces
+ * keep passing their own data unchanged.
+ */
+export type RiderMember = Pick<
+  BandMember,
+  | 'id'
+  | 'first_name'
+  | 'last_name'
+  | 'nickname'
+  | 'role'
+  | 'photo'
+  | 'is_current'
+  | 'main_instrument_id'
+  | 'main_instrument'
+  | 'instruments'
+>
+
 export interface BandMemberPayload {
   first_name: string
   nickname?: string | null

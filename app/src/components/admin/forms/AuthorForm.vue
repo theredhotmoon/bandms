@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
+import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Author, AuthorPayload } from '@/types/author'
+import type { SocialLinkPayload } from '@/types/socialLink'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { Concert } from '@/types/concert'
 import type { TourSummary } from '@/types/tour'
@@ -20,14 +22,14 @@ const emit = defineEmits<{
 }>()
 
 const form = reactive({
-  name:      '',
-  email:     '',
-  facebook:  '',
-  instagram: '',
-  whatsapp:  '',
-  phone:     '',
-  notes:     '',
+  name:     '',
+  email:    '',
+  whatsapp: '',
+  phone:    '',
+  notes:    '',
 })
+
+const socialLinks = ref<SocialLinkPayload[]>([])
 
 const press_release_ids = ref<number[]>([])
 const concert_ids       = ref<number[]>([])
@@ -36,13 +38,12 @@ const tour_ids          = ref<number[]>([])
 watch(
   () => props.initial,
   (val) => {
-    form.name      = val?.name      ?? ''
-    form.email     = val?.email     ?? ''
-    form.facebook  = val?.facebook  ?? ''
-    form.instagram = val?.instagram ?? ''
-    form.whatsapp  = val?.whatsapp  ?? ''
-    form.phone     = val?.phone     ?? ''
-    form.notes     = val?.notes     ?? ''
+    form.name     = val?.name     ?? ''
+    form.email    = val?.email    ?? ''
+    form.whatsapp = val?.whatsapp ?? ''
+    form.phone    = val?.phone    ?? ''
+    form.notes    = val?.notes    ?? ''
+    socialLinks.value           = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
     press_release_ids.value = val?.press_releases?.map((p) => p.id) ?? []
     concert_ids.value       = val?.concerts?.map((c) => c.id)       ?? []
     tour_ids.value          = val?.tours?.map((t) => t.id)           ?? []
@@ -76,17 +77,16 @@ function concertLabel(c: Concert) {
 
 function submit() {
   emit('submit', {
-    name:               form.name,
-    email:              form.email     || null,
-    facebook:           form.facebook  || null,
-    instagram:          form.instagram || null,
-    whatsapp:           form.whatsapp  || null,
-    phone:              form.phone     || null,
-    notes:              form.notes     || null,
-    press_release_ids:  press_release_ids.value,
-    concert_ids:        concert_ids.value,
-    tour_ids:           tour_ids.value,
-    photo_ids:          [],
+    name:              form.name,
+    email:             form.email    || null,
+    whatsapp:          form.whatsapp || null,
+    phone:             form.phone    || null,
+    notes:             form.notes    || null,
+    social_links:      socialLinks.value,
+    press_release_ids: press_release_ids.value,
+    concert_ids:       concert_ids.value,
+    tour_ids:          tour_ids.value,
+    photo_ids:         [],
   })
 }
 </script>
@@ -113,18 +113,13 @@ function submit() {
         <input v-model="form.phone" class="field-input" placeholder="+48 123 456 789" />
       </div>
       <div>
-        <label class="field-label">Facebook</label>
-        <input v-model="form.facebook" class="field-input" placeholder="facebook.com/jane" />
-      </div>
-      <div>
-        <label class="field-label">Instagram</label>
-        <input v-model="form.instagram" class="field-input" placeholder="@jane or instagram.com/jane" />
-      </div>
-      <div>
         <label class="field-label">WhatsApp</label>
         <input v-model="form.whatsapp" class="field-input" placeholder="+48 123 456 789" />
       </div>
     </div>
+
+    <!-- Social links -->
+    <SocialLinksEditor v-model="socialLinks" />
 
     <!-- Notes -->
     <div>

@@ -1,137 +1,95 @@
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { computed, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
+import { saveErrorMessage } from '@/api/client'
 import AdminModal from '@/components/admin/AdminModal.vue'
-import TechRiderStagePlot from '@/components/tech-rider/TechRiderStagePlot.vue'
+import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
+import RiderConfirmations from '@/components/tech-rider/RiderConfirmations.vue'
+import RiderPublishModal from '@/components/tech-rider/RiderPublishModal.vue'
+import RiderRequirements from '@/components/tech-rider/RiderRequirements.vue'
+import RiderVersionHistory from '@/components/tech-rider/RiderVersionHistory.vue'
 import StagePlotMemberSelector from '@/components/tech-rider/StagePlotMemberSelector.vue'
 import TechRiderCompleteness from '@/components/tech-rider/TechRiderCompleteness.vue'
-import TechRiderInputsTable from '@/components/tech-rider/TechRiderInputsTable.vue'
-import TechRiderMonitors from '@/components/tech-rider/TechRiderMonitors.vue'
-import TechRiderBackline from '@/components/tech-rider/TechRiderBackline.vue'
+import TechRiderCover from '@/components/tech-rider/TechRiderCover.vue'
 import TechRiderPaFoh from '@/components/tech-rider/TechRiderPaFoh.vue'
-import TechRiderPower from '@/components/tech-rider/TechRiderPower.vue'
-import TechRiderRfWireless from '@/components/tech-rider/TechRiderRfWireless.vue'
-import TechRiderInputsDashboard from '@/components/tech-rider/TechRiderInputsDashboard.vue'
-import TechRiderImportPanel from '@/components/tech-rider/TechRiderImportPanel.vue'
-import { useTechRiders, useTechRider } from '@/composables/useTechRiders'
+import TechRiderSidebar from '@/components/tech-rider/TechRiderSidebar.vue'
+import TechRiderStagePlot from '@/components/tech-rider/TechRiderStagePlot.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
-import { useBandMembers } from '@/composables/useBandMembers'
-import { useAllMemberSetups } from '@/composables/useBandMemberSetups'
 import { useConcerts } from '@/composables/useConcerts'
-import type {
-  TechRiderPayload,
-  PaFohRequirements,
-  PowerRequirements,
-  InputRow,
-  MonitorMix,
-  BacklineItem,
-  PowerPosition,
-} from '@/types/techRider'
-import { defaultPaFoh, defaultPower } from '@/types/techRider'
-import type { GigLineup } from '@/types/stagePlot'
-import { defaultGigLineup } from '@/types/stagePlot'
-import {
-  suggestInputsFromMembers,
-  suggestMonitorsFromMembers,
-  suggestBacklineFromMembers,
-  suggestPowerFromMembers,
-} from '@/utils/stagePlotSuggestions'
+import { useTechRiderEditor } from '@/composables/useTechRiderEditor'
+import { useTechRiders } from '@/composables/useTechRiders'
+import { useTechRiderVersions } from '@/composables/useTechRiderVersions'
+import { useRiderConfirmations } from '@/composables/useRiderConfirmations'
 
-// ── Template list ─────────────────────────────────────────────────────────────
-const { list, create, remove: removeRider, activate } = useTechRiders()
-const { query: profileQ } = useBandProfile()
-const { query: membersQ } = useBandMembers()
-const allSetupsQ = useAllMemberSetups()
+type Section = 'stage' | 'channels' | 'requirements' | 'pafoh' | 'cover'
 
-const bandMembers = computed(() => membersQ.data.value ?? [])
-const allSetups   = computed(() => allSetupsQ.data.value ?? [])
-const { query: concertsQ } = useConcerts()
-const concerts    = computed(() => concertsQ.data.value ?? [])
+const SECTIONS: { key: Section; label: string; icon: string }[] = [
+  { key: 'stage',        label: 'Stage Plot',   icon: '🎭' },
+  { key: 'channels',     label: 'Channels',     icon: '🎙️' },
+  { key: 'requirements', label: 'Requirements', icon: '🔊' },
+  { key: 'pafoh',        label: 'PA / FOH',     icon: '🎛️' },
+  { key: 'cover',        label: 'Cover',        icon: '📋' },
+]
 
-// ── Currently open rider ──────────────────────────────────────────────────────
-// openId is a Ref — passed directly so useTechRider can be called ONCE at setup root
 const openId = ref<number | null>(null)
-const { query: riderQ, update: riderMut } = useTechRider(openId)
-
-// ── Local form state (synced from query) ──────────────────────────────────────
-type Section = 'cover' | 'stage' | 'inputs' | 'monitors' | 'backline' | 'pafoh' | 'power' | 'rf'
-
 const activeSection = ref<Section>('stage')
 
-const form = reactive<Required<TechRiderPayload>>({
-  name:            '',
-  is_active:       false,
-  concert_id:      null,
-  gig_lineup:      defaultGigLineup(),
-  stage_plot_data: [],
-  inputs:          [],
-  monitors:        [],
-  backline:        [],
-  pa_foh:          defaultPaFoh(),
-  power:           defaultPower(),
-  rf_wireless:     [],
-})
+const { list, create, remove, activate, duplicate } = useTechRiders()
+const { query: profileQ } = useBandProfile()
+const { query: concertsQ } = useConcerts()
 
-watch(
-  () => riderQ.data.value,
-  (rider) => {
-    if (!rider) return
-    form.name            = rider.name
-    form.is_active       = rider.is_active
-    form.concert_id      = rider.concert_id ?? null
-    form.gig_lineup      = {
-      regular_members: (rider.gig_lineup as GigLineup | null)?.regular_members ?? [],
-      temp_musicians:  (rider.gig_lineup as GigLineup | null)?.temp_musicians  ?? [],
-    }
-    form.stage_plot_data = rider.stage_plot_data ?? []
-    form.inputs          = rider.inputs          ?? []
-    form.monitors        = rider.monitors        ?? []
-    form.backline        = rider.backline        ?? []
-    form.pa_foh          = { ...defaultPaFoh(), ...(rider.pa_foh ?? {}) } as PaFohRequirements
-    form.power           = { ...defaultPower(), ...(rider.power ?? {}), positions: (rider.power as PowerRequirements)?.positions ?? [] }
-    form.rf_wireless     = rider.rf_wireless     ?? []
-  },
-  { immediate: true },
-)
+const editor = useTechRiderEditor(openId)
+const { draft, dirty, patch, resolved, completeness, setups, members } = editor
 
-// ── Save ──────────────────────────────────────────────────────────────────────
-const saving = ref(false)
-const saved  = ref(false)
+const versions = useTechRiderVersions(openId)
+const confirmations = useRiderConfirmations(openId)
 
-async function saveRider() {
-  if (openId.value === null) return
-  saving.value = true
-  try {
-    await riderMut.mutateAsync({ ...form })
-    saved.value = true
-    setTimeout(() => { saved.value = false }, 2000)
-    toast.success('Rider saved')
-  } catch {
-    toast.error('Failed to save rider')
-  } finally {
-    saving.value = false
-  }
+const bandProfile = computed(() => profileQ.data.value)
+const concerts = computed(() => concertsQ.data.value ?? [])
+
+// ── Navigation guards around unsaved work ─────────────────────────────────────
+
+function confirmDiscard(): boolean {
+  return !dirty.value || confirm('This rider has unsaved changes. Discard them?')
 }
 
-// ── Lineup modal ──────────────────────────────────────────────────────────────
+function openRider(id: number) {
+  if (!confirmDiscard()) return
+  openId.value = id
+  activeSection.value = 'stage'
+}
+
+onBeforeRouteLeave(() => confirmDiscard())
+
+// ── Jumping from a derived row back to its musician ───────────────────────────
+
+const focusPlacementId = ref<string | null>(null)
+
+function openPlacement(placementId: string) {
+  activeSection.value = 'stage'
+  focusPlacementId.value = placementId
+}
+
+// ── Rider lifecycle ───────────────────────────────────────────────────────────
+
 const showLineupModal = ref(false)
+const showNewModal = ref(false)
+const newName = ref('')
+const creating = ref(false)
+const confirmDeleteId = ref<number | null>(null)
 
-// ── New template modal ────────────────────────────────────────────────────────
-const showNewModal  = ref(false)
-const newName       = ref('')
-const creating      = ref(false)
-
-async function createTemplate() {
+async function createRider() {
   if (!newName.value.trim()) return
   creating.value = true
   try {
     const rider = await create.mutateAsync({ name: newName.value.trim(), is_active: false })
     showNewModal.value = false
-    newName.value      = ''
-    openId.value       = rider.id
-    activeSection.value = 'cover'
-    toast.success('Rider template created')
+    newName.value = ''
+    openId.value = rider.id
+    activeSection.value = 'stage'
+    toast.success('Rider created')
   } catch {
     toast.error('Failed to create rider')
   } finally {
@@ -139,13 +97,10 @@ async function createTemplate() {
   }
 }
 
-// ── Delete ────────────────────────────────────────────────────────────────────
-const confirmDeleteId = ref<number | null>(null)
-
 async function confirmDelete() {
   if (!confirmDeleteId.value) return
   try {
-    await removeRider.mutateAsync(confirmDeleteId.value)
+    await remove.mutateAsync(confirmDeleteId.value)
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
     toast.success('Rider deleted')
@@ -154,7 +109,18 @@ async function confirmDelete() {
   }
 }
 
-// ── Activate ──────────────────────────────────────────────────────────────────
+async function duplicateRider(id: number) {
+  if (!confirmDiscard()) return
+  try {
+    const copy = await duplicate.mutateAsync(id)
+    openId.value = copy.id
+    activeSection.value = 'stage'
+    toast.success(`Copied to "${copy.name}"`)
+  } catch {
+    toast.error('Failed to duplicate this rider')
+  }
+}
+
 async function setActive(id: number) {
   try {
     await activate.mutateAsync(id)
@@ -164,205 +130,161 @@ async function setActive(id: number) {
   }
 }
 
-// ── Print / preview ────────────────────────────────────────────────────────────
 function openPreview() {
-  if (openId.value) {
-    window.open(`/tech-rider/${openId.value}`, '_blank')
+  if (openId.value) window.open(`/tech-rider/${openId.value}`, '_blank')
+}
+
+// ── Publishing ────────────────────────────────────────────────────────────────
+
+/**
+ * Channels the publish gate counts.
+ *
+ * A row with no instrument is not a channel — it prints as a blank line and the
+ * backend rejects it (`inputs.*.instrument` is required), so counting it would
+ * unblock Publish only to fail on the save that publishing performs first.
+ */
+const publishableChannels = computed(
+  () => resolved.value.inputs.filter((row) => row.instrument.trim() !== '').length,
+)
+
+const showPublishModal = ref(false)
+const showVersionsModal = ref(false)
+
+/**
+ * Publishing freezes whatever is *stored*, so an unsaved draft has to land
+ * first. Doing it here rather than refusing to publish keeps the user out of a
+ * save-then-publish two-step whose only purpose would be to avoid this line.
+ */
+async function publish(notes: string) {
+  if (openId.value === null) return
+  try {
+    // A refused save must stop the publish: `save()` reports its own reason
+    // (an unnamed channel, a rejected field), and freezing the rider anyway
+    // would publish the last saved state while the user reads about the draft.
+    if (dirty.value && !(await editor.save())) return
+    const version = await versions.publish.mutateAsync(notes ? { notes } : {})
+    showPublishModal.value = false
+    toast.success(`Published v${version.version_number} — the rider link now serves it`)
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to publish this rider'))
   }
 }
 
-// ── Build from stage plot ─────────────────────────────────────────────────────
-
-type BuildSection = 'inputs' | 'monitors' | 'backline' | 'power'
-
-type PendingBuild =
-  | { section: 'inputs';   generated: InputRow[] }
-  | { section: 'monitors'; generated: MonitorMix[] }
-  | { section: 'backline'; generated: BacklineItem[] }
-  | { section: 'power';    generated: PowerPosition[] }
-
-const pendingBuild = ref<PendingBuild | null>(null)
-
-/** Computed preview counts so the banner can show what will be generated. */
-const buildCounts = computed(() => {
-  const items = form.stage_plot_data
-  return {
-    inputs:   suggestInputsFromMembers(items).length,
-    monitors: suggestMonitorsFromMembers(items).length,
-    backline: suggestBacklineFromMembers(items).length,
-    power:    suggestPowerFromMembers(items).length,
-  }
-})
-
-function currentSectionLength(section: BuildSection): number {
-  if (section === 'power') return form.power.positions.length
-  return (form[section] as unknown[]).length
-}
-
-function requestBuild(section: BuildSection) {
-  const items = form.stage_plot_data
-  let pending: PendingBuild
-
-  if (section === 'inputs') {
-    pending = { section, generated: suggestInputsFromMembers(items) }
-  } else if (section === 'monitors') {
-    pending = { section, generated: suggestMonitorsFromMembers(items) }
-  } else if (section === 'backline') {
-    pending = { section, generated: suggestBacklineFromMembers(items) }
-  } else {
-    pending = { section: 'power', generated: suggestPowerFromMembers(items) }
-  }
-
-  if (currentSectionLength(section) === 0) {
-    applyBuild(pending, 'replace')
-  } else {
-    pendingBuild.value = pending
+async function compareVersions(olderId: number, newerId: number) {
+  try {
+    await versions.compare(olderId, newerId)
+  } catch {
+    toast.error('Could not load those versions to compare')
   }
 }
 
-function applyBuild(build: PendingBuild, mode: 'replace' | 'append') {
-  if (build.section === 'inputs') {
-    if (mode === 'replace') {
-      form.inputs = build.generated
+/** A stale diff must not greet the next rider opened. */
+function closeVersions() {
+  showVersionsModal.value = false
+  versions.clearDiff()
+}
+
+async function askForConfirmations() {
+  try {
+    const result = await confirmations.request.mutateAsync()
+    if (result.failed.length) {
+      // The requests are recorded either way, so say what happened rather than
+      // reporting a blanket failure the band can act on incorrectly.
+      toast.warning(`Asked ${result.requested}, but ${result.failed.length} email(s) could not be sent`)
     } else {
-      const offset = form.inputs.length
-      form.inputs = [
-        ...form.inputs,
-        ...build.generated.map((r, i) => ({ ...r, channel: offset + i + 1 })),
-      ]
+      toast.success(`Asked ${result.requested} musician${result.requested === 1 ? '' : 's'} to confirm`)
     }
-  } else if (build.section === 'monitors') {
-    if (mode === 'replace') form.monitors = build.generated
-    else form.monitors = [...form.monitors, ...build.generated]
-  } else if (build.section === 'backline') {
-    if (mode === 'replace') form.backline = build.generated
-    else form.backline = [...form.backline, ...build.generated]
-  } else {
-    if (mode === 'replace') {
-      form.power = { ...form.power, positions: build.generated }
-    } else {
-      form.power = {
-        ...form.power,
-        positions: [...form.power.positions, ...build.generated],
-      }
-    }
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Could not send the confirmation requests'))
   }
-  pendingBuild.value = null
 }
 
-function cancelBuild() {
-  pendingBuild.value = null
+async function discardVersion(id: number) {
+  try {
+    await versions.discard.mutateAsync(id)
+    toast.success('Version deleted')
+  } catch {
+    toast.error('Could not delete that version')
+  }
 }
-
-// ── Import from members ───────────────────────────────────────────────────────
-
-const showImportPanel = ref(false)
-
-function handleMemberImport(rows: InputRow[]) {
-  if (!rows.length) return
-  const offset = form.inputs.length
-  const renumbered = rows.map((r, i) => ({ ...r, channel: offset + i + 1 }))
-  form.inputs = [...form.inputs, ...renumbered]
-  toast.success(`Imported ${rows.length} channel${rows.length === 1 ? '' : 's'}`)
-}
-
-
-// ── Section definitions ───────────────────────────────────────────────────────
-const SECTIONS: { key: Section; label: string; icon: string }[] = [
-  { key: 'stage',    label: 'Stage Plot',        icon: '🎭' },
-  { key: 'cover',    label: 'Contact',           icon: '📋' },
-  { key: 'inputs',   label: 'Inputs List',       icon: '🎙️' },
-  { key: 'monitors', label: 'Monitors / IEM',    icon: '🔊' },
-  { key: 'backline', label: 'Backline',           icon: '🥁' },
-  { key: 'pafoh',    label: 'PA / FOH',          icon: '🎛️' },
-  { key: 'power',    label: 'Power',             icon: '⚡' },
-  { key: 'rf',       label: 'RF / Wireless',     icon: '📡' },
-]
-
-const bandProfile = computed(() => profileQ.data.value)
 </script>
 
 <template>
   <AdminLayout>
     <div class="rider-shell">
+      <TechRiderSidebar
+        :riders="list.data.value ?? []"
+        :loading="list.isPending.value"
+        :error="list.isError.value"
+        :open-id="openId"
+        @open="openRider"
+        @activate="setActive"
+        @duplicate="duplicateRider"
+        @delete="confirmDeleteId = $event"
+        @new="showNewModal = true"
+      />
 
-      <!-- ── Template sidebar ────────────────────────────────────────────── -->
-      <aside class="template-sidebar">
-        <div class="sidebar-header">
-          <h1 class="sidebar-title">Tech Riders</h1>
-          <button type="button" class="btn-new" @click="showNewModal = true">+</button>
-        </div>
-
-        <div v-if="list.isPending.value" class="sidebar-loading">Loading…</div>
-        <div v-else-if="list.isError.value" class="sidebar-error">Failed to load</div>
-        <div v-else class="template-list">
-          <div
-            v-for="r in (list.data.value ?? [])"
-            :key="r.id"
-            class="template-item"
-            :class="{ 'template-item--open': openId === r.id }"
-            @click="openId = r.id; activeSection = 'stage'"
-          >
-            <div class="template-item-info">
-              <span class="template-name">{{ r.name }}</span>
-              <div class="template-badges">
-                <span v-if="r.is_active" class="badge-active">Active</span>
-                <span class="template-date">{{ new Date(r.updated_at).toLocaleDateString() }}</span>
-              </div>
-            </div>
-            <div class="template-actions">
-              <button
-                v-if="!r.is_active"
-                type="button"
-                class="tpl-btn"
-                title="Set as active rider"
-                @click.stop="setActive(r.id)"
-              >✓</button>
-              <button
-                type="button"
-                class="tpl-btn tpl-btn--del"
-                title="Delete"
-                @click.stop="confirmDeleteId = r.id"
-              >✕</button>
-            </div>
-          </div>
-          <div v-if="(list.data.value ?? []).length === 0" class="sidebar-empty">
-            No riders yet.<br>Click + to create one.
-          </div>
-        </div>
-      </aside>
-
-      <!-- ── Editor pane ─────────────────────────────────────────────────── -->
       <main class="editor-pane">
-        <!-- Nothing open -->
-        <div v-if="openId === null" class="no-rider">
-          <div class="no-rider-icon">🎛️</div>
-          <div class="no-rider-title">No rider open</div>
-          <p class="no-rider-hint">Select a template from the sidebar, or create a new one.</p>
+        <div v-if="openId === null" class="empty-state">
+          <div class="empty-icon">🎛️</div>
+          <div class="empty-title">No rider open</div>
+          <p class="empty-hint">Select a rider from the sidebar, or create a new one.</p>
           <button type="button" class="btn-primary-lg" @click="showNewModal = true">Create first rider</button>
         </div>
 
-        <!-- Loading -->
-        <div v-else-if="riderQ.isPending.value" class="loading-state">Loading rider…</div>
+        <div v-else-if="editor.riderQ.isPending.value" class="empty-state">Loading rider…</div>
 
-        <!-- Editor -->
-        <template v-else-if="riderQ.data.value">
+        <template v-else-if="editor.riderQ.data.value">
           <!-- Top bar -->
           <div class="editor-topbar">
-            <div>
-              <div class="editor-title">{{ form.name }}</div>
-              <div class="editor-subtitle">
-                <span v-if="form.is_active" class="badge-active">Active rider</span>
-                <span v-else class="editor-inactive">Not active</span>
+            <div class="topbar-left">
+              <input
+                :value="draft.name"
+                class="title-input"
+                placeholder="Rider name"
+                @input="patch('name', ($event.target as HTMLInputElement).value)"
+              />
+              <div class="topbar-meta">
+                <span v-if="draft.is_active" class="badge-active">Active</span>
+                <span v-else class="meta-dim">Not active</span>
+                <button type="button" class="version-chip" @click="showVersionsModal = true">
+                  <template v-if="versions.published.value">
+                    v{{ versions.published.value.version_number }} published
+                  </template>
+                  <template v-else>Never published</template>
+                </button>
+                <select
+                  :value="draft.concert_id ?? ''"
+                  class="concert-select"
+                  @change="patch('concert_id', Number(($event.target as HTMLSelectElement).value) || null)"
+                >
+                  <option value="">No concert linked</option>
+                  <option v-for="c in concerts" :key="c.id" :value="c.id">
+                    {{ c.date }} — {{ c.venue?.name ?? 'Unknown venue' }}
+                  </option>
+                </select>
               </div>
             </div>
+
             <div class="topbar-actions">
-              <button type="button" class="btn-print" title="Open public preview (PDF-ready)" @click="openPreview">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                Preview / PDF
+              <span v-if="dirty" class="dirty-hint">Unsaved changes</span>
+              <button type="button" class="btn-ghost" @click="openPreview">Preview / PDF</button>
+              <button
+                type="button"
+                class="btn-publish"
+                :disabled="versions.publish.isPending.value"
+                @click="showPublishModal = true"
+              >
+                Publish v{{ versions.nextNumber.value }}
               </button>
-              <button type="button" class="btn-save" :class="{ 'btn-save--ok': saved }" :disabled="saving" @click="saveRider">
-                {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save rider' }}
+              <button
+                type="button"
+                class="btn-save"
+                :class="{ 'btn-save--ok': editor.saved.value }"
+                :disabled="editor.saving.value"
+                @click="editor.save"
+              >
+                {{ editor.saved.value ? 'Saved ✓' : editor.saving.value ? 'Saving…' : 'Save rider' }}
               </button>
             </div>
           </div>
@@ -377,292 +299,162 @@ const bandProfile = computed(() => profileQ.data.value)
               :class="{ active: activeSection === s.key }"
               @click="activeSection = s.key"
             >
-              <span class="tab-icon">{{ s.icon }}</span>
-              {{ s.label }}
+              <span class="tab-icon">{{ s.icon }}</span>{{ s.label }}
+              <span v-if="s.key === 'channels'" class="tab-count">{{ resolved.inputs.length }}</span>
             </button>
           </div>
 
-          <!-- Section content -->
+          <!-- Sections -->
           <div class="section-content" :class="{ 'section-content--stage': activeSection === 'stage' }">
-
-            <!-- ── 1. Cover / Header ───────────────────────────────────── -->
-            <template v-if="activeSection === 'cover'">
-              <div class="cover-preview">
-                <div class="cover-band-name">{{ bandProfile?.name ?? '—' }}</div>
-                <div class="cover-rider-name">Technical Rider — {{ form.name }}</div>
-                <div class="cover-contacts">
-                  <span v-if="bandProfile?.tech_contact_email">
-                    📧 {{ bandProfile.tech_contact_email }}
-                  </span>
-                  <span v-if="bandProfile?.tech_contact_phone">
-                    📞 {{ bandProfile.tech_contact_phone }}
-                  </span>
-                </div>
-                <div v-if="bandProfile?.tech_rider_notes" class="cover-notes-preview">
-                  {{ bandProfile.tech_rider_notes }}
-                </div>
-              </div>
-              <div class="cover-info-box">
-                <div class="cover-info-title">Sound engineer description</div>
-                <p class="cover-info-desc">
-                  The tech contact fields and sound engineer description are managed in
-                  <RouterLink to="/admin/band-profile" class="cover-link">Band Profile → Contacts</RouterLink>.
-                  They appear in the cover header of every rider you generate.
-                </p>
-                <div class="cover-contact-fields">
-                  <div class="cover-field-row">
-                    <span class="cover-field-label">Tech contact email</span>
-                    <span class="cover-field-val">{{ bandProfile?.tech_contact_email || '—' }}</span>
-                  </div>
-                  <div class="cover-field-row">
-                    <span class="cover-field-label">Tech contact phone</span>
-                    <span class="cover-field-val">{{ bandProfile?.tech_contact_phone || '—' }}</span>
-                  </div>
-                  <div class="cover-field-row cover-field-row--wide">
-                    <span class="cover-field-label">Sound engineer description</span>
-                    <span class="cover-field-val">{{ bandProfile?.tech_rider_notes || '—' }}</span>
-                  </div>
-                </div>
-                <RouterLink to="/admin/band-profile" class="btn-go-profile">Edit in Band Profile →</RouterLink>
-              </div>
-            </template>
-
-            <!-- ── 2. Stage plot ───────────────────────────────────────── -->
             <template v-if="activeSection === 'stage'">
-              <!-- Rider name + lineup bar -->
-              <div class="stage-topbar">
-                <div class="field-group" style="flex:1; min-width:0; margin-bottom:0;">
-                  <input v-model="form.name" class="field-input" placeholder="Rider name (e.g. Festival rider, Club show)" />
-                </div>
-                <div class="lineup-bar">
-                  <div class="lineup-avatars">
-                    <template v-for="member in bandMembers.filter(m => m.is_current)" :key="member.id">
-                      <div
-                        v-if="(() => { const e = form.gig_lineup.regular_members.find(r => r.band_member_id === member.id); return e ? e.is_available : true })()"
-                        class="lineup-avatar"
-                        :title="member.nickname ?? `${member.first_name} ${member.last_name}`"
-                      >
-                        <img v-if="member.photo" :src="member.photo" class="w-full h-full object-cover" />
-                        <span v-else class="text-[10px] font-bold">{{ (member.first_name[0] ?? '') + (member.last_name[0] ?? '') }}</span>
-                      </div>
-                    </template>
-                    <template v-for="temp in form.gig_lineup.temp_musicians" :key="temp.id">
-                      <div class="lineup-avatar lineup-avatar--guest" :title="temp.name">
-                        {{ temp.name[0]?.toUpperCase() }}
-                      </div>
-                    </template>
+              <div class="stage-toolbar">
+                <div class="lineup-avatars">
+                  <div
+                    v-for="m in members.filter(m => m.is_current)"
+                    :key="m.id"
+                    class="lineup-avatar"
+                    :title="m.nickname ?? `${m.first_name} ${m.last_name}`"
+                  >
+                    <img v-if="m.photo" :src="m.photo" class="avatar-img" />
+                    <span v-else>{{ (m.first_name[0] ?? '') + (m.last_name[0] ?? '') }}</span>
                   </div>
-                  <button type="button" class="btn-lineup" @click="showLineupModal = true">
-                    ✏️ Edit lineup
-                  </button>
+                  <div
+                    v-for="t in draft.gig_lineup.temp_musicians"
+                    :key="t.id"
+                    class="lineup-avatar lineup-avatar--guest"
+                    :title="t.name"
+                  >{{ t.name[0]?.toUpperCase() }}</div>
                 </div>
-              </div>
-
-              <!-- Concert picker -->
-              <div class="field-group concert-picker-group">
-                <select
-                  v-model="form.concert_id"
-                  class="field-input concert-select"
-                  @change="saveRider"
-                >
-                  <option :value="null">No concert linked</option>
-                  <option
-                    v-for="c in concerts"
-                    :key="c.id"
-                    :value="c.id"
-                  >{{ c.date }} — {{ c.venue?.name ?? 'Unknown venue' }}</option>
-                </select>
-              </div>
-
-              <!-- Stage plot canvas -->
-              <div class="stage-plot-wrapper">
-                <TechRiderStagePlot
-                  v-model="form.stage_plot_data"
-                  :lineup="form.gig_lineup"
-                  :band-members="bandMembers"
-                  :all-setups="allSetups"
-                  :public-token="riderQ.data.value?.public_token"
-                />
-              </div>
-
-              <!-- Completeness bar -->
-              <TechRiderCompleteness :items="form.stage_plot_data" />
-            </template>
-
-            <!-- ── 3. Inputs list ──────────────────────────────────────── -->
-            <template v-if="activeSection === 'inputs'">
-              <div v-if="form.stage_plot_data.length > 0" class="build-banner">
-                <span class="build-banner-icon">🎭</span>
-                <div class="build-banner-body">
-                  <span class="build-banner-label">Build from stage plot</span>
-                  <span class="build-banner-desc">
-                    {{ buildCounts.inputs }} channel{{ buildCounts.inputs === 1 ? '' : 's' }} from
-                    {{ form.stage_plot_data.length }} stage item{{ form.stage_plot_data.length === 1 ? '' : 's' }}
-                  </span>
-                </div>
-                <template v-if="pendingBuild?.section === 'inputs'">
-                  <span class="build-confirm-text">{{ form.inputs.length }} existing rows —</span>
-                  <button type="button" class="build-btn build-btn--replace"
-                    @click="applyBuild(pendingBuild!, 'replace')">Replace</button>
-                  <button type="button" class="build-btn build-btn--append"
-                    @click="applyBuild(pendingBuild!, 'append')">Append</button>
-                  <button type="button" class="build-btn build-btn--cancel"
-                    @click="cancelBuild">Cancel</button>
-                </template>
-                <button v-else type="button" class="build-btn build-btn--go"
-                  @click="requestBuild('inputs')">Build →</button>
-              </div>
-
-              <!-- Import from members toolbar -->
-              <div class="inputs-toolbar">
-                <span class="inputs-toolbar-spacer" />
-                <button type="button" class="btn-import-members" @click="showImportPanel = true">
-                  👥 Import from members
+                <button type="button" class="btn-ghost btn-ghost--sm" @click="showLineupModal = true">
+                  ✏️ Edit lineup
                 </button>
               </div>
 
-              <!-- Dashboard (shown when there are rows) -->
-              <TechRiderInputsDashboard :model-value="form.inputs" />
-
-              <TechRiderInputsTable v-model="form.inputs" />
-            </template>
-
-            <!-- ── 4. Monitors / IEM ───────────────────────────────────── -->
-            <template v-if="activeSection === 'monitors'">
-              <div v-if="buildCounts.monitors > 0" class="build-banner">
-                <span class="build-banner-icon">🎭</span>
-                <div class="build-banner-body">
-                  <span class="build-banner-label">Build from stage plot</span>
-                  <span class="build-banner-desc">
-                    {{ buildCounts.monitors }} wedge mix{{ buildCounts.monitors === 1 ? '' : 'es' }} detected on stage plot
-                  </span>
-                </div>
-                <template v-if="pendingBuild?.section === 'monitors'">
-                  <span class="build-confirm-text">{{ form.monitors.length }} existing —</span>
-                  <button type="button" class="build-btn build-btn--replace"
-                    @click="applyBuild(pendingBuild!, 'replace')">Replace</button>
-                  <button type="button" class="build-btn build-btn--append"
-                    @click="applyBuild(pendingBuild!, 'append')">Append</button>
-                  <button type="button" class="build-btn build-btn--cancel"
-                    @click="cancelBuild">Cancel</button>
-                </template>
-                <button v-else type="button" class="build-btn build-btn--go"
-                  @click="requestBuild('monitors')">Build →</button>
+              <div class="stage-wrapper">
+                <TechRiderStagePlot
+                  :model-value="draft.placements"
+                  :lineup="draft.gig_lineup"
+                  :band-members="members"
+                  :setups="setups"
+                  :public-token="editor.riderQ.data.value?.public_token"
+                  :focus-id="focusPlacementId"
+                  :promoting="editor.promoting.value"
+                  @update:model-value="patch('placements', $event)"
+                  @promote="editor.promotePlacement"
+                  @focus-handled="focusPlacementId = null"
+                />
               </div>
-              <TechRiderMonitors v-model="form.monitors" :members="bandMembers" />
+
+              <TechRiderCompleteness :completeness="completeness" @open="openPlacement" />
+
+              <RiderConfirmations
+                :confirmations="confirmations.confirmations.value"
+                :confirmed="confirmations.confirmed.value"
+                :waiting="confirmations.waiting.value"
+                :never-asked="confirmations.neverAsked.value"
+                :requesting="confirmations.request.isPending.value"
+                @request="askForConfirmations"
+              />
             </template>
 
-            <!-- ── 5. Backline ────────────────────────────────────────── -->
-            <template v-if="activeSection === 'backline'">
-              <div v-if="buildCounts.backline > 0" class="build-banner">
-                <span class="build-banner-icon">🎭</span>
-                <div class="build-banner-body">
-                  <span class="build-banner-label">Build from stage plot</span>
-                  <span class="build-banner-desc">
-                    {{ buildCounts.backline }} backline item{{ buildCounts.backline === 1 ? '' : 's' }} detected on stage plot
-                  </span>
-                </div>
-                <template v-if="pendingBuild?.section === 'backline'">
-                  <span class="build-confirm-text">{{ form.backline.length }} existing —</span>
-                  <button type="button" class="build-btn build-btn--replace"
-                    @click="applyBuild(pendingBuild!, 'replace')">Replace</button>
-                  <button type="button" class="build-btn build-btn--append"
-                    @click="applyBuild(pendingBuild!, 'append')">Append</button>
-                  <button type="button" class="build-btn build-btn--cancel"
-                    @click="cancelBuild">Cancel</button>
-                </template>
-                <button v-else type="button" class="build-btn build-btn--go"
-                  @click="requestBuild('backline')">Build →</button>
-              </div>
-              <TechRiderBackline v-model="form.backline" />
-            </template>
+            <RiderChannelList
+              v-else-if="activeSection === 'channels'"
+              :rows="resolved.inputs"
+              :extras="draft.extra_inputs"
+              :channel-order="draft.channel_order"
+              @update:extras="patch('extra_inputs', $event)"
+              @update:channel-order="patch('channel_order', $event)"
+              @open="openPlacement"
+            />
 
-            <!-- ── 6. PA / FOH ────────────────────────────────────────── -->
-            <template v-if="activeSection === 'pafoh'">
-              <TechRiderPaFoh v-model="form.pa_foh" />
-            </template>
+            <RiderRequirements
+              v-else-if="activeSection === 'requirements'"
+              :resolved="resolved"
+              :extra-monitors="draft.extra_monitors"
+              :extra-backline="draft.extra_backline"
+              :extra-wireless="draft.extra_wireless"
+              :power-notes="draft.power_notes"
+              @update:extra-monitors="patch('extra_monitors', $event)"
+              @update:extra-backline="patch('extra_backline', $event)"
+              @update:extra-wireless="patch('extra_wireless', $event)"
+              @update:power-notes="patch('power_notes', $event)"
+              @open="openPlacement"
+            />
 
-            <!-- ── 7. Power ───────────────────────────────────────────── -->
-            <template v-if="activeSection === 'power'">
-              <div v-if="buildCounts.power > 0" class="build-banner">
-                <span class="build-banner-icon">🎭</span>
-                <div class="build-banner-body">
-                  <span class="build-banner-label">Build from stage plot</span>
-                  <span class="build-banner-desc">
-                    {{ buildCounts.power }} power position{{ buildCounts.power === 1 ? '' : 's' }} detected on stage plot
-                  </span>
-                </div>
-                <template v-if="pendingBuild?.section === 'power'">
-                  <span class="build-confirm-text">{{ form.power.positions.length }} existing —</span>
-                  <button type="button" class="build-btn build-btn--replace"
-                    @click="applyBuild(pendingBuild!, 'replace')">Replace</button>
-                  <button type="button" class="build-btn build-btn--append"
-                    @click="applyBuild(pendingBuild!, 'append')">Append</button>
-                  <button type="button" class="build-btn build-btn--cancel"
-                    @click="cancelBuild">Cancel</button>
-                </template>
-                <button v-else type="button" class="build-btn build-btn--go"
-                  @click="requestBuild('power')">Build →</button>
-              </div>
-              <TechRiderPower v-model="form.power" />
-            </template>
+            <TechRiderPaFoh
+              v-else-if="activeSection === 'pafoh'"
+              :model-value="draft.pa_foh"
+              @update:model-value="patch('pa_foh', $event)"
+            />
 
-            <!-- ── 8. RF / Wireless ───────────────────────────────────── -->
-            <template v-if="activeSection === 'rf'">
-              <TechRiderRfWireless v-model="form.rf_wireless" />
-            </template>
-
-          </div><!-- /section-content -->
-
-          <!-- Bottom save bar -->
-          <div class="bottom-bar">
-            <button type="button" class="btn-save" :class="{ 'btn-save--ok': saved }" :disabled="saving" @click="saveRider">
-              {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save rider' }}
-            </button>
+            <TechRiderCover
+              v-else-if="activeSection === 'cover'"
+              :profile="bandProfile ?? null"
+              :rider-name="draft.name"
+            />
           </div>
-
         </template>
       </main>
     </div>
 
-    <!-- Lineup modal -->
+    <RiderPublishModal
+      :open="showPublishModal"
+      :next-number="versions.nextNumber.value"
+      :completeness="completeness"
+      :channel-count="publishableChannels"
+      :current="versions.published.value"
+      :dirty="dirty"
+      :publishing="versions.publish.isPending.value"
+      @close="showPublishModal = false"
+      @publish="publish"
+    />
+
+    <RiderVersionHistory
+      :open="showVersionsModal"
+      :versions="versions.versions.value"
+      :loading="versions.query.isPending.value"
+      :discarding="versions.discard.isPending.value"
+      :diff="versions.diff.value"
+      :diffing="versions.diffing.value"
+      @close="closeVersions"
+      @discard="discardVersion"
+      @compare="compareVersions"
+      @clear-diff="versions.clearDiff"
+    />
+
     <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">
       <StagePlotMemberSelector
-        v-model="form.gig_lineup"
-        :band-members="bandMembers"
+        :model-value="draft.gig_lineup"
+        :band-members="members"
+        @update:model-value="patch('gig_lineup', $event)"
         @close="showLineupModal = false"
       />
     </AdminModal>
 
-    <!-- New template modal -->
-    <AdminModal :open="showNewModal" title="New Rider Template" max-width="28rem" @close="showNewModal = false">
-      <form @submit.prevent="createTemplate" class="modal-form">
+    <AdminModal :open="showNewModal" title="New Rider" max-width="28rem" @close="showNewModal = false">
+      <form class="modal-form" @submit.prevent="createRider">
         <div>
-          <label class="field-label">Template name</label>
-          <input v-model="newName" class="field-input" placeholder="e.g. Festival rider, Club show, Full production" autofocus />
-          <p class="field-hint">You can rename this later. Each rider template stores its own full configuration.</p>
+          <label class="field-label">Rider name</label>
+          <input v-model="newName" class="field-input" placeholder="e.g. Festival rider, Club show" autofocus />
+          <p class="field-hint">
+            Riders reference each musician's saved rig, so a new one is ready as soon
+            as you place people on the stage plot.
+          </p>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" @click="showNewModal = false">Cancel</button>
-          <button type="submit" :disabled="!newName.trim() || creating" class="btn-primary">
+          <button type="submit" class="btn-primary" :disabled="!newName.trim() || creating">
             {{ creating ? 'Creating…' : 'Create' }}
           </button>
         </div>
       </form>
     </AdminModal>
 
-    <!-- Import from members panel -->
-    <TechRiderImportPanel
-      :open="showImportPanel"
-      :existing-count="form.inputs.length"
-      @import="handleMemberImport"
-      @close="showImportPanel = false"
-    />
-
-    <!-- Confirm delete modal -->
     <AdminModal :open="confirmDeleteId !== null" title="Delete rider?" max-width="24rem" @close="confirmDeleteId = null">
-      <div class="confirm-delete">
-        <p class="confirm-text">This will permanently delete the rider template and all its data. This cannot be undone.</p>
+      <div class="modal-form">
+        <p class="confirm-text">
+          This deletes the rider and its stage plot. The musicians' saved rigs are not affected.
+        </p>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" @click="confirmDeleteId = null">Cancel</button>
           <button type="button" class="btn-danger" @click="confirmDelete">Delete</button>
@@ -675,100 +467,67 @@ const bandProfile = computed(() => profileQ.data.value)
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-/* ── Shell ───────────────────────────────────────────── */
-.rider-shell {
-  display: flex; height: calc(100vh - 0px); overflow: hidden;
-}
+.rider-shell { display: flex; height: 100vh; overflow: hidden; }
 
-/* ── Template sidebar ────────────────────────────────── */
-.template-sidebar {
-  width: 17rem; flex-shrink: 0;
-  border-right: 1px solid #1a1a1a;
-  background: #0a0a0a;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.sidebar-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1rem 0.625rem;
-  border-bottom: 1px solid #1a1a1a;
-}
-.sidebar-title { font-size: 0.8125rem; font-weight: 700; color: #94a3b8; }
-.btn-new {
-  width: 1.75rem; height: 1.75rem; border-radius: 0.375rem;
-  background: #2a2a2a; border: 1px solid #444444; color: #c0c0c0;
-  font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background 100ms;
-}
-.btn-new:hover { background: #333333; }
+.editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 
-.sidebar-loading, .sidebar-error, .sidebar-empty {
-  padding: 1.5rem 1rem; font-size: 0.8rem; color: #334155; text-align: center; line-height: 1.6;
-}
-.sidebar-error { color: #f87171; }
-
-.template-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
-.template-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.625rem 0.75rem; border-radius: 0.4rem; cursor: pointer;
-  border: 1px solid transparent; margin-bottom: 0.25rem;
-  transition: background 100ms, border-color 100ms;
-}
-.template-item:hover  { background: #181818; border-color: #2a2a2a; }
-.template-item--open  { background: #141414; border-color: #444444; }
-.template-item-info   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
-.template-name        { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.template-badges      { display: flex; align-items: center; gap: 0.4rem; }
-.badge-active         { font-size: 0.6rem; font-weight: 700; color: #4ade80; background: #052e16; padding: 0.1rem 0.4rem; border-radius: 999px; text-transform: uppercase; }
-.template-date        { font-size: 0.65rem; color: #334155; }
-.template-actions     { display: flex; gap: 0.25rem; flex-shrink: 0; }
-.tpl-btn {
-  background: none; border: none; cursor: pointer; color: #334155; font-size: 0.7rem;
-  padding: 0.2rem 0.35rem; border-radius: 3px; transition: color 100ms, background 100ms;
-}
-.tpl-btn:hover { color: #c0c0c0; background: #2a2a2a; }
-.tpl-btn--del:hover { color: #f87171; background: #450a0a; }
-
-/* ── Editor pane ─────────────────────────────────────── */
-.editor-pane {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden;
-}
-
-/* Empty / loading states */
-.no-rider, .loading-state {
+.empty-state {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0.75rem; text-align: center; padding: 2rem;
+  gap: 0.75rem; text-align: center; padding: 2rem; color: #475569; font-size: 0.875rem;
 }
-.no-rider-icon  { font-size: 3rem; }
-.no-rider-title { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; }
-.no-rider-hint  { font-size: 0.875rem; color: #475569; max-width: 28rem; }
-.loading-state  { color: #475569; font-size: 0.875rem; }
+.empty-icon { font-size: 3rem; }
+.empty-title { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; }
+.empty-hint { max-width: 28rem; }
 .btn-primary-lg {
   padding: 0.6rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
   cursor: pointer; background: #e8e8e8; border: none; color: #111111; margin-top: 0.5rem;
 }
-.btn-primary-lg:hover { background: #333333; }
 
 /* Top bar */
 .editor-topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.875rem 1.25rem; border-bottom: 1px solid #1a1a1a;
-  background: #0d0d0d; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid #1a1a1a; background: #0d0d0d; flex-shrink: 0;
 }
-.editor-title    { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
-.editor-subtitle { font-size: 0.75rem; margin-top: 0.1rem; }
-.editor-inactive { color: #334155; font-size: 0.7rem; }
-
-.topbar-actions { display: flex; gap: 0.5rem; align-items: center; }
-.btn-print {
-  display: flex; align-items: center; gap: 0.375rem;
-  padding: 0.4rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
-  transition: border-color 100ms, color 100ms;
+.topbar-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.title-input {
+  background: transparent; border: none; outline: none; padding: 0;
+  font-size: 1rem; font-weight: 700; color: #e2e8f0; font-family: inherit; width: 100%;
+  border-bottom: 1px solid transparent; transition: border-color 120ms;
 }
-.btn-print:hover { border-color: #334155; color: #94a3b8; }
+.title-input:focus { border-bottom-color: #444444; }
+.topbar-meta { display: flex; align-items: center; gap: 0.625rem; }
+.meta-dim { font-size: 0.7rem; color: #334155; }
+.badge-active {
+  font-size: 0.6rem; font-weight: 700; color: #4ade80; background: #052e16;
+  padding: 0.1rem 0.4rem; border-radius: 999px; text-transform: uppercase;
+}
+.concert-select {
+  height: 1.6rem; font-size: 0.72rem; padding: 0 0.4rem; max-width: 16rem;
+  background: #0d0d0d; border: 1px solid #2a2a2a; color: #94a3b8;
+  border-radius: 0.3rem; cursor: pointer; outline: none; font-family: inherit;
+}
+.concert-select:focus { border-color: #444444; }
+.concert-select option { background: #0d0d0d; }
 
-/* Section tabs */
+.topbar-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+.dirty-hint { font-size: 0.7rem; color: #fbbf24; }
+
+/* The rider's published state, and the way into its history. */
+.version-chip {
+  font-size: 0.65rem; font-weight: 600; color: #64748b;
+  background: #141414; border: 1px solid #262626; border-radius: 999px;
+  padding: 0.1rem 0.5rem; cursor: pointer; font-family: inherit;
+}
+.version-chip:hover { color: #94a3b8; border-color: #3f3f3f; }
+
+.btn-publish {
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; background: transparent; border: 1px solid #166534; color: #4ade80;
+}
+.btn-publish:hover { background: #052e16; }
+.btn-publish:disabled { opacity: 0.5; cursor: default; }
+
+/* Tabs */
 .section-tabs {
   display: flex; overflow-x: auto; border-bottom: 1px solid #1a1a1a;
   background: #0d0d0d; flex-shrink: 0; scrollbar-width: none;
@@ -778,190 +537,75 @@ const bandProfile = computed(() => profileQ.data.value)
   display: flex; align-items: center; gap: 0.35rem;
   padding: 0.5rem 0.875rem; font-size: 0.75rem; font-weight: 500; color: #475569;
   background: transparent; border: none; border-bottom: 2px solid transparent;
-  cursor: pointer; white-space: nowrap; transition: color 120ms, border-color 120ms;
-  margin-bottom: -1px;
+  cursor: pointer; white-space: nowrap; margin-bottom: -1px;
+  transition: color 120ms, border-color 120ms;
 }
-.section-tab:hover  { color: #64748b; }
+.section-tab:hover { color: #64748b; }
 .section-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
 .tab-icon { font-size: 0.85rem; }
+.tab-count {
+  font-size: 0.62rem; font-weight: 700; color: #94a3b8;
+  background: #1a1a1a; border-radius: 999px; padding: 0.05rem 0.35rem;
+}
 
-/* Section content */
+/* Content */
 .section-content {
   flex: 1; overflow-y: auto; padding: 1.25rem;
   display: flex; flex-direction: column; gap: 1rem;
 }
-/* Stage section needs no scroll — fills height */
-.section-content--stage {
-  overflow: hidden; padding: 0.75rem;
+.section-content--stage { overflow: hidden; padding: 0.75rem; }
+
+.stage-toolbar { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+.lineup-avatars { display: flex; }
+.lineup-avatar {
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  background: #3730a3; color: #fff; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700;
+  border: 2px solid #0a0b1a; margin-left: -0.5rem;
+}
+.lineup-avatar:first-child { margin-left: 0; }
+.lineup-avatar--guest { background: #92400e; color: #fde68a; }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+
+.stage-wrapper {
+  flex: 1; min-height: 360px; overflow: hidden; border-radius: 0.5rem;
+  border: 1px solid #2a2a2a; background: #0a0b1a;
 }
 
-/* Bottom bar */
-.bottom-bar {
-  border-top: 1px solid #1a1a1a; padding: 0.75rem 1.25rem;
-  display: flex; justify-content: flex-end; background: #0d0d0d; flex-shrink: 0;
-}
-
-/* ── Cover section ───────────────────────────────────── */
-.cover-preview {
-  background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 0.5rem;
-  padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
-  border-left: 3px solid #888888;
-}
-.cover-band-name { font-size: 1.5rem; font-weight: 800; color: #e2e8f0; letter-spacing: -.02em; }
-.cover-rider-name { font-size: 0.875rem; color: #c0c0c0; font-weight: 600; }
-.cover-contacts { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #64748b; }
-.cover-notes-preview { font-size: 0.8rem; color: #64748b; line-height: 1.6; border-top: 1px solid #222222; padding-top: 0.5rem; }
-
-.cover-info-box {
-  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem; padding: 1rem;
-  display: flex; flex-direction: column; gap: 0.625rem;
-}
-.cover-info-title { font-size: 0.8rem; font-weight: 600; color: #94a3b8; }
-.cover-info-desc  { font-size: 0.775rem; color: #475569; line-height: 1.5; }
-.cover-link       { color: #c0c0c0; text-decoration: none; }
-.cover-link:hover { color: #d0d0d0; }
-.cover-contact-fields { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.cover-field-row {
-  flex: 1; min-width: 12rem;
-  background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 0.375rem;
-  padding: 0.5rem 0.75rem; display: flex; flex-direction: column; gap: 0.15rem;
-}
-.cover-field-row--wide { flex-basis: 100%; }
-.cover-field-label { font-size: 0.65rem; font-weight: 600; color: #334155; text-transform: uppercase; letter-spacing: .05em; }
-.cover-field-val   { font-size: 0.8rem; color: #94a3b8; }
-.btn-go-profile {
-  align-self: flex-start; padding: 0.35rem 0.875rem; border-radius: 0.375rem;
-  font-size: 0.78rem; font-weight: 600; color: #c0c0c0; text-decoration: none;
-  background: #141414; border: 1px solid #2a2a2a; transition: background 100ms;
-}
-.btn-go-profile:hover { background: #1a1a1a; }
-
-/* ── Shared buttons ──────────────────────────────────── */
+/* Buttons */
 .btn-save {
-  padding: 0.45rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
-  transition: background 150ms; min-width: 7.5rem;
+  padding: 0.45rem 1.25rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; background: #e8e8e8; border: none; color: #111111; min-width: 7.5rem;
 }
-.btn-save:hover:not(:disabled) { background: #333333; }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
-.btn-save--ok { background: #166534 !important; }
+.btn-save--ok { background: #166534 !important; color: #dcfce7; }
 
 .btn-ghost {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid #2a2a2a; color: #64748b;
 }
-.btn-ghost:hover { background: #111111; }
+.btn-ghost:hover { border-color: #444444; color: #94a3b8; }
+.btn-ghost--sm { padding: 0.25rem 0.6rem; font-size: 0.72rem; }
+
 .btn-primary {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
   cursor: pointer; background: #e8e8e8; border: none; color: #111111;
 }
-.btn-primary:hover:not(:disabled) { background: #333333; }
 .btn-primary:disabled { opacity: 0.45; cursor: default; }
 .btn-danger {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
   cursor: pointer; background: #7f1d1d; border: 1px solid #991b1b; color: #fca5a5;
 }
-.btn-danger:hover { background: #450a0a; }
 
-/* Modal internals */
-.modal-form, .confirm-delete { display: flex; flex-direction: column; gap: 1rem; }
+.modal-form { display: flex; flex-direction: column; gap: 1rem; }
 .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
-.confirm-text  { font-size: 0.875rem; color: #94a3b8; line-height: 1.6; }
+.confirm-text { font-size: 0.875rem; color: #94a3b8; line-height: 1.6; }
 
-/* ── Build-from-stage-plot banner ────────────────────── */
-.build-banner {
-  display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
-  padding: 0.6rem 0.875rem;
-  background: #0a0c1e; border: 1px solid #3a3a3a; border-radius: 0.5rem;
-  border-left: 3px solid #888888;
-}
-.build-banner-icon { font-size: 1rem; flex-shrink: 0; }
-.build-banner-body {
-  display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0;
-}
-.build-banner-label {
-  font-size: 0.75rem; font-weight: 700; color: #d0d0d0;
-}
-.build-banner-desc {
-  font-size: 0.7rem; color: #475569;
-}
-.build-confirm-text {
-  font-size: 0.72rem; color: #64748b; white-space: nowrap;
-}
-.build-btn {
-  padding: 0.3rem 0.7rem; border-radius: 0.35rem; font-size: 0.75rem;
-  font-weight: 600; cursor: pointer; border: 1px solid transparent;
-  white-space: nowrap; transition: background 120ms, border-color 120ms;
-}
-.build-btn--go {
-  background: #2a2a2a; border-color: #444444; color: #d0d0d0;
-}
-.build-btn--go:hover { background: #333333; border-color: #888888; }
-
-.build-btn--replace {
-  background: #e8e8e8; border-color: #e8e8e8; color: #111111;
-}
-.build-btn--replace:hover { background: #333333; }
-
-.build-btn--append {
-  background: #0e2a1a; border-color: #14532d; color: #4ade80;
-}
-.build-btn--append:hover { background: #0d3d20; }
-
-.build-btn--cancel {
-  background: transparent; border-color: #2a2a2a; color: #475569;
-}
-.build-btn--cancel:hover { color: #64748b; border-color: #334155; }
-
-/* ── Stage section layout ────────────────────────────── */
-.stage-topbar {
-  display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap;
-}
-.concert-picker-group { margin-bottom: 0; flex-shrink: 0; }
-.concert-select {
-  height: 2.1rem; font-size: 0.78rem; padding: 0 0.75rem;
-  background: #0d0d0d; border: 1px solid #2a2a2a; color: #94a3b8;
-  border-radius: 0.375rem; cursor: pointer; max-width: 16rem;
-}
-.concert-select:focus { outline: none; border-color: #444444; }
-.concert-select option { background: #0d0d0d; }
-.lineup-bar {
-  display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
-}
-.lineup-avatars {
-  display: flex; gap: 0;
-}
-.lineup-avatar {
-  width: 1.75rem; height: 1.75rem; border-radius: 50%;
-  background: #3730a3; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.6rem; font-weight: 700; overflow: hidden;
-  border: 2px solid #0a0b1a;
-  margin-left: -0.5rem;
-}
-.lineup-avatar:first-child { margin-left: 0; }
-.lineup-avatar--guest {
-  background: #92400e; color: #fde68a; border-color: #0a0b1a;
-}
-.btn-lineup {
-  padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 600;
-  border-radius: 0.375rem; cursor: pointer;
-  background: #141414; border: 1px solid #2d3461; color: #c0c0c0;
-  white-space: nowrap; transition: background 100ms;
-}
-.btn-lineup:hover { background: #1a1a1a; }
-.stage-plot-wrapper {
-  flex: 1; min-height: 360px; overflow: hidden; border-radius: 0.5rem;
-  border: 1px solid #2a2a2a; background: #0a0b1a;
-}
-
-/* ── Print styles ────────────────────────────────────── */
 @media print {
-  .template-sidebar, .editor-topbar, .section-tabs, .bottom-bar { display: none !important; }
-  .build-banner { display: none !important; }
+  .editor-topbar, .section-tabs { display: none !important; }
   .rider-shell { height: auto; }
   .editor-pane { overflow: visible; }
   .section-content { overflow: visible; padding: 0; }
-  body { background: white; color: black; }
 }
 </style>

@@ -40,3 +40,12 @@ export async function deleteProfileSocialLink(token: string, linkId: number): Pr
   })
   return handleResponse<void>(res)
 }
+
+export async function syncProfileSocialLinks(token: string, links: SocialLinkPayload[]): Promise<SocialLink[]> {
+  const res = await fetch(`${API_BASE}/api/band-profile/social-links`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ links }),
+  })
+  return handleResponse<SocialLinkListResponse>(res).then((r) => r.data)
+}

@@ -33,6 +33,8 @@ async function handleBatchUpload(
   files: { file: File; caption: string }[],
   meta: {
     title: string
+    slug_en: string | null
+    slug_pl: string | null
     description: string | null
     venue_id: number | null
     concert_id: number | null

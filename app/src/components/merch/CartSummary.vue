@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CartItem } from '@/types/cart'
+import { itemKey } from '@/stores/cart'
 
 const props = defineProps<{
   items: CartItem[]
@@ -8,8 +9,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  remove: [shopItemId: number, variantId: number | null]
-  updateQty: [shopItemId: number, variantId: number | null, qty: number]
+  remove: [key: string]
+  updateQty: [key: string, qty: number]
 }>()
 
 function subtotal(): number {
@@ -23,9 +24,10 @@ function subtotal(): number {
   <div class="cart-summary">
     <div v-if="!items.length" class="cart-empty">Your cart is empty.</div>
     <template v-else>
-      <div v-for="item in items" :key="`${item.shop_item_id}:${item.variant_id}`" class="cart-line">
+      <div v-for="item in items" :key="itemKey(item)" class="cart-line">
+        <div v-if="item.type === 'ticket'" class="line-thumb line-thumb--ticket">🎟</div>
         <img
-          v-if="item.snapshot.cover_photo"
+          v-else-if="item.snapshot.cover_photo"
           :src="item.snapshot.cover_photo"
           :alt="item.snapshot.name"
           class="line-thumb"
@@ -34,18 +36,20 @@ function subtotal(): number {
 
         <div class="line-meta">
           <div class="line-name">{{ item.snapshot.name }}</div>
-          <div v-if="item.snapshot.variant_label" class="line-variant">{{ item.snapshot.variant_label }}</div>
+          <div v-if="item.type === 'ticket'" class="line-variant line-ticket-badge">Ticket</div>
+          <div v-else-if="item.snapshot.variant_label" class="line-variant">{{ item.snapshot.variant_label }}</div>
           <div class="line-unit-price">{{ item.snapshot.currency }} {{ Number(item.snapshot.price).toFixed(2) }}</div>
         </div>
 
         <div class="line-right">
           <template v-if="editable">
-            <div class="qty-control">
-              <button type="button" class="qty-btn" @click="emit('updateQty', item.shop_item_id, item.variant_id, item.quantity - 1)">−</button>
+            <div v-if="item.type !== 'ticket'" class="qty-control">
+              <button type="button" class="qty-btn" @click="emit('updateQty', itemKey(item), item.quantity - 1)">−</button>
               <span class="qty-val">{{ item.quantity }}</span>
-              <button type="button" class="qty-btn" @click="emit('updateQty', item.shop_item_id, item.variant_id, item.quantity + 1)">+</button>
+              <button type="button" class="qty-btn" @click="emit('updateQty', itemKey(item), item.quantity + 1)">+</button>
             </div>
-            <button type="button" class="remove-btn" @click="emit('remove', item.shop_item_id, item.variant_id)">Remove</button>
+            <span v-else class="qty-static">× {{ item.quantity }}</span>
+            <button type="button" class="remove-btn" @click="emit('remove', itemKey(item))">Remove</button>
           </template>
           <span v-else class="qty-static">× {{ item.quantity }}</span>
 
@@ -79,9 +83,20 @@ function subtotal(): number {
   display: flex; align-items: center; justify-content: center;
   background: #f5f5f5; font-size: 1.25rem; color: #ccc;
 }
+.line-thumb--ticket {
+  display: flex; align-items: center; justify-content: center;
+  background: #fef3c7; font-size: 1.5rem;
+  border: 1px solid #fde68a;
+}
 .line-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
 .line-name { font-size: 0.875rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .line-variant { font-size: 0.75rem; color: #888; }
+.line-ticket-badge {
+  display: inline-flex; align-items: center;
+  font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #92400e; background: #fef3c7; border: 1px solid #fde68a;
+  border-radius: 0.25rem; padding: 0 0.35rem; width: fit-content;
+}
 .line-unit-price { font-size: 0.78rem; color: #aaa; }
 
 .line-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.375rem; flex-shrink: 0; }

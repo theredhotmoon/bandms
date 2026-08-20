@@ -14,7 +14,7 @@ class ShopItemFactory extends Factory
         return [
             'profile_id'   => 1,
             'name'         => ucwords($name),
-            'slug'         => Str::slug($name),
+            'slug_en'      => Str::slug($name),
             'type'         => fake()->randomElement(['record', 'apparel', 'accessory', 'ticket', 'bundle', 'other']),
             'description'  => fake()->optional()->sentence(),
             'is_available' => true,

@@ -62,6 +62,9 @@ export const getConcert = (id: number) =>
 export const getConcertSetlist = (id: number) =>
   getOptional<PublicSetlist>(`/concerts/${id}/setlist`)
 
+export const getConcertTickets = (id: number) =>
+  get<{ id: number; is_on_sale: boolean }[]>(`/concerts/${id}/tickets`)
+
 // ── Releases ──────────────────────────────────────────────────────────────────
 
 export const getReleases = (lang: Locale = 'en') =>
@@ -112,3 +115,30 @@ export const getShopItem = (slug: string) =>
 
 export const getShopCategories = () =>
   get<ShopCategory[]>('/shop-categories')
+
+// ── Site config ───────────────────────────────────────────────────────────────
+
+export interface ModuleConfig {
+  enabled: boolean
+  label: string
+  per_page: number | null
+}
+
+export interface SiteConfig {
+  modules: Record<string, boolean>
+  module_order: string[]
+  module_config: Record<string, ModuleConfig>
+}
+
+export async function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
+  try {
+    const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return { modules: {}, module_order: [], module_config: {} }
+    return res.json() as Promise<SiteConfig>
+  } catch {
+    // Fail open: if API is unreachable during build, treat all modules as enabled
+    return { modules: {}, module_order: [], module_config: {} }
+  }
+}

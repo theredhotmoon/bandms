@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class AlbumController extends Controller
 {
@@ -32,6 +33,8 @@ class AlbumController extends Controller
     {
         $data = $request->validate([
             'title'        => 'required|string|max:255',
+            'slug_en'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_en')],
+            'slug_pl'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_pl')],
             'description'  => 'nullable|string',
             'venue_id'     => 'nullable|integer|exists:venues,id',
             'concert_id'   => 'nullable|integer|exists:concerts,id',
@@ -47,7 +50,8 @@ class AlbumController extends Controller
 
         $album = Album::create([
             'title'        => $data['title'],
-            'slug'         => Album::generateSlug($data['title']),
+            'slug_en'      => ($data['slug_en'] ?? null) ?: Album::generateSlug($data['title'], null, 'slug_en'),
+            'slug_pl'      => ($data['slug_pl'] ?? null) ?: null,
             'description'  => $data['description'] ?? null,
             'venue_id'     => $data['venue_id'] ?? null,
             'concert_id'   => $data['concert_id'] ?? null,
@@ -76,6 +80,8 @@ class AlbumController extends Controller
     {
         $data = $request->validate([
             'title'        => 'sometimes|required|string|max:255',
+            'slug_en'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_en')->ignore($album->id)],
+            'slug_pl'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_pl')->ignore($album->id)],
             'description'  => 'nullable|string',
             'venue_id'     => 'nullable|integer|exists:venues,id',
             'concert_id'   => 'nullable|integer|exists:concerts,id',

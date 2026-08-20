@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ReleaseController extends Controller
 {
@@ -34,6 +35,8 @@ class ReleaseController extends Controller
             'title'                           => 'required',
             'title.en'                        => 'nullable|string|max:255',
             'title.pl'                        => 'nullable|string|max:255',
+            'slug_en'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_en')],
+            'slug_pl'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_pl')],
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
             'description'                     => 'nullable',
@@ -64,6 +67,15 @@ class ReleaseController extends Controller
 
         $validated['profile_id'] = BandProfile::value('id') ?? 1;
 
+        $titleEn = is_array($validated['title']) ? ($validated['title']['en'] ?? reset($validated['title']) ?? 'release') : $validated['title'];
+        $titlePl = is_array($validated['title']) ? ($validated['title']['pl'] ?? null) : null;
+        if (empty($validated['slug_en'] ?? null)) {
+            $validated['slug_en'] = Release::generateSlug($titleEn, null, 'slug_en');
+        }
+        if (empty($validated['slug_pl'] ?? null) && $titlePl) {
+            $validated['slug_pl'] = Release::generateSlug($titlePl, null, 'slug_pl');
+        }
+
         $release = Release::create($validated);
 
         foreach ($request->input('links', []) as $link) {
@@ -90,6 +102,8 @@ class ReleaseController extends Controller
             'title'                           => 'required',
             'title.en'                        => 'nullable|string|max:255',
             'title.pl'                        => 'nullable|string|max:255',
+            'slug_en'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_en')->ignore($release->id)],
+            'slug_pl'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_pl')->ignore($release->id)],
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
             'description'                     => 'nullable',

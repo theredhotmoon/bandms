@@ -5,14 +5,15 @@ import { RELEASE_TYPE_LABELS } from '@/types/release'
 export interface Props {
   release: ReleaseSummary
   large?: boolean
+  href?: string
 }
 
-const { release, large = false } = Astro.props
+const { release, large = false, href = `/releases/${release.id}` } = Astro.props
 const year = release.release_date ? new Date(release.release_date).getFullYear() : null
 ---
 
 <a
-  href={`/releases/${release.id}`}
+  href={href}
   class:list={[
     'group block overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all hover:-translate-y-0.5',
   ]}

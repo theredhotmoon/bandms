@@ -8,7 +8,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist \
+    --prefer-source \
     --ignore-platform-req=ext-pcntl
 
 COPY . .
@@ -23,7 +23,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-dist \
+    --prefer-source \
     --ignore-platform-req=ext-pcntl
 
 COPY . .
@@ -39,12 +39,17 @@ RUN apk add --no-cache \
         libxml2-dev \
         oniguruma-dev \
         libzip-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo_mysql \
         bcmath \
         opcache \
         pcntl \
         zip \
+        gd \
     && rm -rf /var/cache/apk/*
 
 COPY docker/php.ini "$PHP_INI_DIR/conf.d/app.ini"
@@ -62,6 +67,7 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 
 COPY docker/nginx.conf       /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/www.conf         /usr/local/etc/php-fpm.d/zz-bandms.conf
 COPY docker/entrypoint.sh    /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
@@ -70,9 +76,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # ── Stage 4: test image (dev deps, php-cli entrypoint) ────────
 FROM app AS test
-RUN apk add --no-cache sqlite-dev libpng-dev libjpeg-turbo-dev freetype-dev $PHPIZE_DEPS \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd \
+RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS \
     && (pecl install pcov && docker-php-ext-enable pcov || echo "pcov unavailable, skipping coverage") \
     && apk del $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/pear

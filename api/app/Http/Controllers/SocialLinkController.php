@@ -17,7 +17,7 @@ class SocialLinkController extends Controller
 
     public function index(): ResourceCollection
     {
-        $links = $this->profile()->socialLinks()->orderBy('platform')->get();
+        $links = $this->profile()->socialLinks()->orderBy('position')->get();
 
         return SocialLinkResource::collection($links);
     }
@@ -51,5 +51,25 @@ class SocialLinkController extends Controller
         $link->delete();
 
         return response()->noContent();
+    }
+
+    public function sync(Request $request): ResourceCollection
+    {
+        $data = $request->validate([
+            'links'            => ['nullable', 'array'],
+            'links.*.platform' => ['required', 'in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website'],
+            'links.*.url'      => ['required', 'url', 'max:500'],
+        ]);
+
+        $profile = $this->profile();
+        $profile->socialLinks()->delete();
+
+        foreach ($data['links'] ?? [] as $index => $link) {
+            $profile->socialLinks()->create(array_merge($link, ['position' => $index]));
+        }
+
+        return SocialLinkResource::collection(
+            $profile->socialLinks()->orderBy('position')->get()
+        );
     }
 }

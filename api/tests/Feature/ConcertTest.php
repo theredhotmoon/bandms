@@ -176,7 +176,7 @@ describe('PUT /api/concerts/{concert}', function () {
         $this->putJson("/api/concerts/{$concert->id}", [
             'venue_id'    => $venue->id,
             'date'        => '2026-07-04',
-            'description' => 'Updated gig',
+            'description' => ['en' => 'Updated gig'],
         ])->assertSuccessful()
           ->assertJsonPath('data.date', '2026-07-04')
           ->assertJsonPath('data.description', 'Updated gig');

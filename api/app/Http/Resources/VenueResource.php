@@ -17,11 +17,16 @@ class VenueResource extends JsonResource
             'city'            => $this->city,
             'postcode'        => $this->postcode,
             'additional_info' => $this->additional_info,
+            'capacity'        => $this->capacity,
             'latitude'        => $this->latitude,
             'longitude'       => $this->longitude,
-            'tags'            => TagResource::collection($this->whenLoaded('tags')),
-            'created_at'      => $this->created_at,
-            'updated_at'      => $this->updated_at,
+            'tags'         => TagResource::collection($this->whenLoaded('tags')),
+            'social_links' => $this->whenLoaded('socialLinks', fn () => $this->socialLinks->map(fn ($l) => [
+                'platform' => $l->platform,
+                'url'      => $l->url,
+            ])),
+            'created_at'   => $this->created_at,
+            'updated_at'   => $this->updated_at,
         ];
     }
 }

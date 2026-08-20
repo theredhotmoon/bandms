@@ -8,6 +8,7 @@ import {
   updateTechRider,
   activateTechRider,
   deleteTechRider,
+  duplicateTechRider,
 } from '@/api/techRiders'
 import type { TechRider, TechRiderSummary, TechRiderPayload } from '@/types/techRider'
 import { useAuth } from './useAuth'
@@ -35,7 +36,12 @@ export function useTechRiders() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: LIST_QK }),
   })
 
-  return { list, create, remove, activate }
+  const duplicate = useMutation({
+    mutationFn: (id: number) => duplicateTechRider(token.value!, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: LIST_QK }),
+  })
+
+  return { list, create, remove, activate, duplicate }
 }
 
 /**

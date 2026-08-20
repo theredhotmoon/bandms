@@ -20,7 +20,7 @@ class AuthorController extends Controller
 
     public function show(Author $author): AuthorResource
     {
-        $author->load('pressReleases', 'concerts', 'tours', 'photos');
+        $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
         return new AuthorResource($author);
     }
@@ -31,7 +31,7 @@ class AuthorController extends Controller
         $author = Author::create($validated);
         $this->syncRelations($author, $request);
 
-        $author->load('pressReleases', 'concerts', 'tours', 'photos');
+        $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
         return new AuthorResource($author);
     }
@@ -42,7 +42,7 @@ class AuthorController extends Controller
         $author->update($validated);
         $this->syncRelations($author, $request);
 
-        $author->load('pressReleases', 'concerts', 'tours', 'photos');
+        $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
         return new AuthorResource($author);
     }
@@ -59,21 +59,22 @@ class AuthorController extends Controller
     private function validatePayload(Request $request): array
     {
         return $request->validate([
-            'name'               => 'required|string|max:255',
-            'email'              => 'nullable|email|max:255',
-            'facebook'           => 'nullable|string|max:255',
-            'instagram'          => 'nullable|string|max:255',
-            'whatsapp'           => 'nullable|string|max:50',
-            'phone'              => 'nullable|string|max:50',
-            'notes'              => 'nullable|string',
-            'press_release_ids'  => 'nullable|array',
-            'press_release_ids.*'=> 'integer|exists:press_releases,id',
-            'concert_ids'        => 'nullable|array',
-            'concert_ids.*'      => 'integer|exists:concerts,id',
-            'tour_ids'           => 'nullable|array',
-            'tour_ids.*'         => 'integer|exists:tours,id',
-            'photo_ids'          => 'nullable|array',
-            'photo_ids.*'        => 'integer|exists:photos,id',
+            'name'                    => 'required|string|max:255',
+            'email'                   => 'nullable|email|max:255',
+            'whatsapp'                => 'nullable|string|max:50',
+            'phone'                   => 'nullable|string|max:50',
+            'notes'                   => 'nullable|string',
+            'social_links'            => 'nullable|array',
+            'social_links.*.platform' => 'required|in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website',
+            'social_links.*.url'      => 'required|url|max:500',
+            'press_release_ids'       => 'nullable|array',
+            'press_release_ids.*'     => 'integer|exists:press_releases,id',
+            'concert_ids'             => 'nullable|array',
+            'concert_ids.*'           => 'integer|exists:concerts,id',
+            'tour_ids'                => 'nullable|array',
+            'tour_ids.*'              => 'integer|exists:tours,id',
+            'photo_ids'               => 'nullable|array',
+            'photo_ids.*'             => 'integer|exists:photos,id',
         ]);
     }
 
@@ -83,5 +84,10 @@ class AuthorController extends Controller
         $author->concerts()->sync($request->input('concert_ids', []));
         $author->tours()->sync($request->input('tour_ids', []));
         $author->photos()->sync($request->input('photo_ids', []));
+
+        $author->socialLinks()->delete();
+        foreach ($request->input('social_links', []) as $link) {
+            $author->socialLinks()->create($link);
+        }
     }
 }

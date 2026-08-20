@@ -28,7 +28,8 @@ export interface PostLinkPayload {
 export interface PostSummary {
   id: number
   title: string
-  slug: string
+  slug_en: string
+  slug_pl: string | null
   intro: string | null
   excerpt: string
   published_at: string | null
@@ -62,6 +63,8 @@ export interface Post extends PostSummary {
 
 export interface PostPayload {
   title: string | TranslationMap
+  slug_en?: string | null
+  slug_pl?: string | null
   intro?: string | TranslationMap | null
   content?: string | TranslationMap | null
   image?: string | null

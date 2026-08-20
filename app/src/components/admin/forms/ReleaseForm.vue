@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
+import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -106,6 +107,8 @@ function emptyTrack(sort_order = 0): TrackRow {
 const form = reactive({
   title_en:     '',
   title_pl:     '',
+  slug_en:      '',
+  slug_pl:      '',
   type:         'single' as ReleaseType,
   release_date: '',
   description_en: '',
@@ -124,6 +127,8 @@ watch(
     if (!val) {
       form.title_en       = ''
       form.title_pl       = ''
+      form.slug_en        = ''
+      form.slug_pl        = ''
       form.type           = 'single'
       form.release_date   = ''
       form.description_en = ''
@@ -140,6 +145,8 @@ watch(
     }
     form.title_en       = val.translations?.title?.en ?? val.title
     form.title_pl       = val.translations?.title?.pl ?? ''
+    form.slug_en        = val.slug_en ?? ''
+    form.slug_pl        = val.slug_pl ?? ''
     form.type           = val.type
     form.release_date   = val.release_date ?? ''
     form.description_en = val.translations?.description?.en ?? val.description ?? ''
@@ -190,6 +197,8 @@ function removeTrack(i: number) {
 function handleSubmit() {
   const payload: ReleasePayload = {
     title:       { en: form.title_en, pl: form.title_pl || undefined },
+    slug_en:     form.slug_en || null,
+    slug_pl:     form.slug_pl || null,
     type:         form.type,
     release_date: form.release_date || null,
     description: (form.description_en || form.description_pl)
@@ -260,6 +269,18 @@ function handleSubmit() {
             </div>
           </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
+        </div>
+        <div>
+          <label class="field-label">Slug URL</label>
+          <SlugInput
+            v-model="form.slug_en"
+            v-model:modelValuePl="form.slug_pl"
+            :sourceEn="form.title_en"
+            :sourcePl="form.title_pl"
+            :bilingual="true"
+          />
+          <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
+          <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>

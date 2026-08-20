@@ -39,7 +39,7 @@ App is then available at:
 
 | Field    | Value              |
 |---|---|
-| Email    | `test@example.com` |
+| Email    | `admin@bandms.test`|
 | Password | `password`         |
 
 ---
@@ -65,6 +65,21 @@ Run from the project root. Always prefer these over raw `docker compose` command
 | `make ship` | Full ship pipeline (see [Shipping](#shipping)) |
 | `make logs` | Tail all service logs |
 | `make health` | Hit `/api/health` |
+
+> **`make` is not installed on the Windows dev setup.** These targets are
+> shorthand — if you get `make: command not found`, run the underlying command
+> directly. The two you will want most often:
+>
+> ```bash
+> bash scripts/test-all.sh --skip-e2e   # backend + frontend unit suites
+> bash scripts/test-all.sh              # both, plus E2E (= `make test-all`)
+> ```
+>
+> Note `--skip-e2e` is wider than `make test`, which runs the backend suite
+> alone.
+> `scripts/test-all.sh` returns a bitmask exit code: 1 backend, 2 E2E,
+> 4 frontend. Everything else is a `docker compose` call — read `Makefile`
+> for the exact command behind a target.
 
 ---
 
@@ -119,6 +134,49 @@ pnpm test:e2e:report               # open last HTML report
 
 Playwright auto-starts the Vite dev server before running tests.
 Auth state is saved to `app/e2e/.auth/admin.json` and reused across tests.
+
+#### Reading a red E2E run: check the signature, not the free-RAM number
+
+The suite can fail for reasons that have nothing to do with the code, when the
+machine cannot give Chromium and the Vite dev server the memory they ask for.
+When that happens it is unmistakable, and it is **not** identified by how much
+free RAM Task Manager reports:
+
+| Reported free RAM | Result, same commit, same 2-worker config |
+|---|---|
+| 1.4–1.9 GB | 1–3 failures, a **different set each run** |
+| 5.5 GB | 178 passed, 0 failed — 2.3 min |
+| **176 MB** | **178 passed, 0 failed — 2.4 min** |
+
+That last row is why free RAM is a weak hint rather than a threshold.
+`FreePhysicalMemory` counts only *unused* pages, not reclaimable ones —
+Windows can hand over compressed memory and pageable working sets on demand,
+so a machine reporting 176 MB free may have gigabytes available.
+
+**The reliable signal is the failure signature.** Suspect the machine when you
+see any of:
+
+- `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
+  server — the OS refusing an allocation, *not* V8 hitting its heap cap, so
+  raising `--max-old-space-size` makes it worse
+- `GPU process launch failed` from Chromium
+- A **different set of specs** failing each run, or a spec your change cannot
+  reach (a heading-visibility assertion cannot regress from a backend edit)
+- Failures arriving as 30-second timeouts rather than assertion mismatches
+
+Triage order:
+
+1. **Do the failing specs relate to your change?** A different set each run
+   means the machine, whatever the memory reading says.
+2. **Look for the signatures above** in the output.
+3. **Only then investigate the specs.**
+
+If it is the machine, closing browser windows is usually enough. `workers` is
+pinned to 2 in `app/playwright.config.ts`; override with
+`pnpm test:e2e --workers=4` when there is room.
+
+A full green run reports **178 passed, 15 skipped**. The 15 are intentional
+data-dependent guards in the specs, not silent failures.
 
 ### Run both suites together
 

@@ -1,3 +1,5 @@
+export type CartItemType = 'shop' | 'ticket'
+
 export interface CartItemSnapshot {
   name: string
   variant_label: string | null
@@ -7,8 +9,11 @@ export interface CartItemSnapshot {
 }
 
 export interface CartItem {
-  shop_item_id: number
+  type: CartItemType
+  shop_item_id: number | null
   variant_id: number | null
+  ticket_type_id: number | null
+  ticket_price_tier_id: number | null
   quantity: number
   snapshot: CartItemSnapshot
 }

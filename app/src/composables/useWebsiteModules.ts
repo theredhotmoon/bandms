@@ -1,0 +1,67 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import {
+  fetchModules,
+  updateModule,
+  updateModuleSettings,
+  reorderModules,
+  updateSiteSettings,
+  triggerRebuild,
+  fetchRebuildStatus,
+} from '@/api/website-modules'
+import { useAuth } from './useAuth'
+
+export function useWebsiteModules() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  const query = useQuery({
+    queryKey: ['website-modules'],
+    queryFn: () => fetchModules(token.value!),
+    enabled: () => token.value !== null,
+  })
+
+  const rebuildStatusQuery = useQuery({
+    queryKey: ['rebuild-status'],
+    queryFn: () => fetchRebuildStatus(token.value!),
+    enabled: () => token.value !== null,
+    refetchInterval: (query) => query.state.data?.status === 'building' ? 2000 : false,
+    staleTime: 0,
+  })
+
+  const toggleModule = useMutation({
+    mutationFn: ({ slug, enabled }: { slug: string; enabled: boolean }) =>
+      updateModule(token.value!, slug, enabled),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
+  })
+
+  const updateSettings = useMutation({
+    mutationFn: ({
+      slug,
+      payload,
+    }: {
+      slug: string
+      payload: {
+        custom_name?: { en: string | null; pl: string | null }
+        per_page?: number | null
+      }
+    }) => updateModuleSettings(token.value!, slug, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
+  })
+
+  const setAutoRebuild = useMutation({
+    mutationFn: (autoRebuild: boolean) => updateSiteSettings(token.value!, autoRebuild),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
+  })
+
+  const reorder = useMutation({
+    mutationFn: (slugs: string[]) => reorderModules(token.value!, slugs),
+    onSuccess: (data) => queryClient.setQueryData(['website-modules'], data),
+  })
+
+  const rebuild = useMutation({
+    mutationFn: () => triggerRebuild(token.value!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rebuild-status'] }),
+  })
+
+  return { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild }
+}

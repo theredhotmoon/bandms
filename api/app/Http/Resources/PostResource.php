@@ -12,7 +12,8 @@ class PostResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug'         => $this->slug,
+            'slug_en'      => $this->slug_en,
+            'slug_pl'      => $this->slug_pl,
             'intro'        => $this->intro,
             'content'      => $this->content,
             'image'        => $this->image,
@@ -26,9 +27,10 @@ class PostResource extends JsonResource
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'links'        => PostLinkResource::collection($this->whenLoaded('links')),
             'concerts'     => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [
-                'id'    => $c->id,
-                'date'  => $c->date?->format('Y-m-d'),
-                'venue' => $c->venue ? ['id' => $c->venue->id, 'name' => $c->venue->name] : null,
+                'id'      => $c->id,
+                'slug_en' => $c->slug_en ?? 'concert-' . $c->id,
+                'date'    => $c->date?->format('Y-m-d'),
+                'venue'   => $c->venue ? ['id' => $c->venue->id, 'name' => $c->venue->name] : null,
             ])),
             'albums'       => $this->whenLoaded('albums', fn () => $this->albums->map(fn ($a) => [
                 'id' => $a->id, 'title' => $a->title,

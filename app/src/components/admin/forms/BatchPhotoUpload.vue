@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import ImageDropZone from './ImageDropZone.vue'
+import SlugInput from './SlugInput.vue'
 import type { Concert } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Tag } from '@/types/tag'
@@ -17,6 +18,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   upload: [files: { file: File; caption: string }[], meta: {
     title: string
+    slug_en: string | null
+    slug_pl: string | null
     description: string | null
     venue_id: number | null
     concert_id: number | null
@@ -31,6 +34,8 @@ const pendingFiles = ref<{ file: File; caption: string }[]>([])
 
 const meta = reactive({
   title:        '',
+  slug_en:      '',
+  slug_pl:      '',
   description:  '',
   venue_id:     '' as string,
   concert_id:   '' as string,
@@ -66,6 +71,8 @@ function submit() {
     pendingFiles.value,
     {
       title:        meta.title.trim(),
+      slug_en:      meta.slug_en || null,
+      slug_pl:      meta.slug_pl || null,
       description:  meta.description.trim() || null,
       venue_id:     meta.venue_id ? parseInt(meta.venue_id) : null,
       concert_id:   meta.concert_id ? parseInt(meta.concert_id) : null,
@@ -85,6 +92,15 @@ function submit() {
       <div class="meta-full">
         <label class="field-label">Album title <span style="color:#f87171;">*</span></label>
         <input v-model="meta.title" class="field-input" placeholder="e.g. Rudeboy 2026-05-08" />
+      </div>
+      <div class="meta-full">
+        <label class="field-label">Slug URL</label>
+        <SlugInput
+          v-model="meta.slug_en"
+          v-model:modelValuePl="meta.slug_pl"
+          :sourceEn="meta.title"
+          :bilingual="true"
+        />
       </div>
       <div class="meta-row">
         <div class="meta-field">

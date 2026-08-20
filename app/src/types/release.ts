@@ -42,6 +42,8 @@ export interface ReleaseSummary {
   id: number
   profile_id: number
   title: string
+  slug_en: string | null
+  slug_pl: string | null
   type: ReleaseType
   release_date: string | null
   cover_image: string | null
@@ -91,6 +93,8 @@ export interface ReleaseLinkPayload {
 
 export interface ReleasePayload {
   title: string | TranslationMap
+  slug_en?: string | null
+  slug_pl?: string | null
   type: ReleaseType
   release_date: string | null
   description: string | TranslationMap | null

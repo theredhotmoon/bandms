@@ -17,7 +17,7 @@ class Post extends Model
 
     public array $translatable = ['title', 'intro', 'content'];
 
-    protected $fillable = ['title', 'slug', 'intro', 'content', 'image', 'published_at', 'event_date'];
+    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'content', 'image', 'published_at', 'event_date'];
 
     protected function casts(): array
     {

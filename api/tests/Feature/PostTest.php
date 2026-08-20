@@ -108,7 +108,7 @@ describe('POST /api/posts', function () {
 
         $this->postJson('/api/posts', ['title' => 'Hello World Post'])
             ->assertCreated()
-            ->assertJsonPath('data.slug', 'hello-world-post');
+            ->assertJsonPath('data.slug_en', 'hello-world-post');
     });
 
     it('creates a draft when published_at is null', function () {

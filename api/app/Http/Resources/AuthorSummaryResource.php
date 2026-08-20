@@ -13,8 +13,6 @@ class AuthorSummaryResource extends JsonResource
             'id'         => $this->id,
             'name'       => $this->name,
             'email'      => $this->email,
-            'facebook'   => $this->facebook,
-            'instagram'  => $this->instagram,
             'whatsapp'   => $this->whatsapp,
             'phone'      => $this->phone,
             'notes'      => $this->notes,

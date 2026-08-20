@@ -202,7 +202,9 @@
       "Bash(python3 -c \"import sys; content=sys.stdin.read\\(\\); start=content.find\\('isolated'\\); print\\(content[max\\(0,start-200\\):start+500]\\) if start != -1 else print\\('not found'\\)\")",
       "Bash(bash rebuild.sh --skip-tests)",
       "Bash(bash rebuild.sh --help)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(xargs head -30)",
+      "PowerShell(git *)"
     ]
   }
 }
