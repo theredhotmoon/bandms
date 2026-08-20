@@ -7,6 +7,8 @@ export interface OrderItem {
   price: number
   currency: string
   quantity: number
+  concert_ticket_type_id: number | null
+  ticket_uuids?: string[]
 }
 
 export interface Order {

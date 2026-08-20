@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import { getBandProfile } from '@/lib/cms'
+
+const profile = await getBandProfile('en')
+---
+
+<BaseLayout
+  title={`Newsletter — ${profile.name}`}
+  description={`Subscribe to the ${profile.name} newsletter for news, shows, and exclusive updates.`}
+>
+  <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32 text-center">
+    <div class="accent-line mx-auto mb-6" />
+    <h1 class="text-3xl font-black text-white sm:text-4xl">Stay in the loop</h1>
+    <p class="mt-4 text-zinc-400 leading-relaxed">
+      New shows, releases, and behind-the-scenes from {profile.name} straight to your inbox.
+      No spam. Unsubscribe any time.
+    </p>
+    <div class="mt-8">
+      <NewsletterSignup client:load />
+    </div>
+  </div>
+</BaseLayout>

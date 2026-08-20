@@ -16,7 +16,10 @@ return new class extends Migration
             $table->unsignedInteger('max_uses')->nullable();
             $table->unsignedInteger('used_count')->default(0);
             $table->date('expires_at')->nullable();
-            $table->unsignedBigInteger('ticket_type_id')->nullable();
+            $table->foreignId('ticket_type_id')
+                ->nullable()
+                ->constrained('concert_ticket_types')
+                ->nullOnDelete();
             $table->timestamps();
         });
     }

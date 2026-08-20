@@ -1,0 +1,64 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ContactForm from '@/components/ContactForm.vue'
+import SocialLinks from '@/components/SocialLinks.astro'
+import { getBandProfile, getSocialLinks } from '@/lib/cms'
+
+const [profile, socialLinks] = await Promise.all([getBandProfile('en'), getSocialLinks()])
+---
+
+<BaseLayout
+  title={`Contact — ${profile.name}`}
+  description={`Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
+>
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
+    <div class="mb-12">
+      <div class="accent-line mb-4" />
+      <h1 class="text-4xl font-black text-white sm:text-5xl">Contact</h1>
+    </div>
+
+    <div class="grid gap-12 lg:grid-cols-[1fr_280px]">
+      <!-- Form -->
+      <div>
+        <p class="text-zinc-400 mb-8">
+          Have a booking inquiry, press request, or just want to say hello? Fill in the form and we'll get back to you.
+        </p>
+        <ContactForm client:visible />
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        {profile.booking_email && (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Booking</h3>
+            <a href={`mailto:${profile.booking_email}`} class="text-accent hover:underline">
+              {profile.booking_email}
+            </a>
+          </div>
+        )}
+        {profile.press_email && (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Press</h3>
+            <a href={`mailto:${profile.press_email}`} class="text-accent hover:underline">
+              {profile.press_email}
+            </a>
+          </div>
+        )}
+        {profile.contact_email && (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">General</h3>
+            <a href={`mailto:${profile.contact_email}`} class="text-accent hover:underline">
+              {profile.contact_email}
+            </a>
+          </div>
+        )}
+        {socialLinks.length > 0 && (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Socials</h3>
+            <SocialLinks links={socialLinks} size="sm" />
+          </div>
+        )}
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

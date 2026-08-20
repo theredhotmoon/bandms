@@ -77,4 +77,9 @@ class ConcertTicketType extends Model
 
         return $this->activeTier() !== null;
     }
+
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

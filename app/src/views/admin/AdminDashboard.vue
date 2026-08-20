@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
+import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import CareerLevelWidget from '@/components/admin/CareerLevelWidget.vue'
 import { useBands } from '@/composables/useBands'
@@ -16,11 +17,29 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { usePosts } from '@/composables/usePosts'
 import { useTechRiders } from '@/composables/useTechRiders'
+import { fetchTicketStats } from '@/api/admin'
 import type { EpkVersion } from '@/types/epkVersion'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { TechRiderSummary } from '@/types/techRider'
 
-const { user } = useAuth()
+const { user, token } = useAuth()
+
+const { data: ticketStats } = useQuery({
+  queryKey: ['ticket-stats'],
+  queryFn: () => fetchTicketStats(token.value!),
+  enabled: !!token.value,
+})
+
+const statCards = computed(() =>
+  ticketStats.value
+    ? [
+        { label: 'Total',       value: ticketStats.value.total },
+        { label: 'Active',      value: ticketStats.value.active },
+        { label: 'Transferred', value: ticketStats.value.transferred },
+        { label: 'Scanned',     value: ticketStats.value.scanned },
+      ]
+    : [],
+)
 const { query: epkVersionsQ, publish: publishEpk, discard: discardEpk } = useEpkVersions()
 
 const pendingVersion  = computed(() => epkVersionsQ.data.value?.find((v: EpkVersion) => v.status === 'pending') ?? null)
@@ -242,6 +261,16 @@ const avgEnhanceScore = computed(() => {
           <RouterLink to="/admin/music-videos" class="quick-btn">+ Video</RouterLink>
         </div>
       </div>
+
+      <section v-if="ticketStats" class="mt-8">
+        <h2 class="text-lg font-semibold mb-3" style="color:#e2e8f0;">Tickets</h2>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div v-for="s in statCards" :key="s.label" class="rounded border p-3 text-center" style="background:#141414;border-color:#222222;">
+            <div class="text-2xl font-bold" style="color:#e2e8f0;">{{ s.value }}</div>
+            <div class="text-xs mt-1" style="color:#64748b;">{{ s.label }}</div>
+          </div>
+        </div>
+      </section>
     </div>
   </AdminLayout>
 </template>

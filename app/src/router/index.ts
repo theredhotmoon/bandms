@@ -135,6 +135,18 @@ const router = createRouter({
     { path: '/news', redirect: { name: 'posts' } },
     { path: '/music', redirect: { name: 'releases' } },
 
+    // ── Fan account portal ────────────────────────────────────────────
+    {
+      path: '/account',
+      name: 'fan-account',
+      component: () => import('@/views/FanAccountView.vue'),
+    },
+    {
+      path: '/tickets/claim/:token',
+      name: 'ticket-claim',
+      component: () => import('@/views/TicketClaimView.vue'),
+    },
+
     // ── Admin panel (requires authentication) ──────────────────────────
     {
       path: '/admin',
@@ -333,6 +345,18 @@ const router = createRouter({
       meta: { requiresAuth: true, requiredRole: 'member' },
     },
     {
+      path: '/admin/concerts/:concertId/tickets',
+      name: 'admin-concert-tickets',
+      component: () => import('@/views/admin/ConcertTicketListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/fan-accounts',
+      name: 'admin-fan-accounts',
+      component: () => import('@/views/admin/FanAccountsAdminView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
       path: '/admin/door',
       name: 'admin-door',
       component: () => import('@/views/admin/DoorCheckView.vue'),
@@ -394,11 +418,16 @@ const ROUTE_TITLES: Record<string, string> = {
   cart: 'Cart — Skanking Storks',
   checkout: 'Checkout — Skanking Storks',
   login: 'Sign In — Skanking Storks',
+  'fan-account': 'My Account — Skanking Storks',
+  'ticket-claim': 'Claim Ticket — Skanking Storks',
   epk: 'EPK — Skanking Storks',
   'tech-rider-preview': 'Tech Rider — Skanking Storks',
   newsletter: 'Newsletter — Skanking Storks',
   videos: 'Videos — Skanking Storks',
   press: 'Press — Skanking Storks',
+  'admin-concert-tickets': 'Concert Tickets — Admin',
+  'admin-fan-accounts': 'Fan Accounts — Admin',
+  'admin-door': 'Door Check — Admin',
   'admin-website-modules': 'Website Modules — Admin',
 }
 

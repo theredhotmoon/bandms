@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PresaleCodeController;
+use App\Http\Controllers\TicketTransferController;
+use App\Http\Controllers\FanAccountController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
@@ -27,7 +31,6 @@ use App\Http\Controllers\BandMemberSetupController;
 use App\Http\Controllers\BandLogoController;
 use App\Http\Controllers\BandProfileController;
 use App\Http\Controllers\ConcertController;
-use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\MusicVideoController;
@@ -85,8 +88,6 @@ Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api
 Route::get('/concerts/{concert}/setlist', [SetlistController::class, 'showByConcert'])->name('api.concerts.setlist');
 Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'index'])->name('api.concerts.tickets.index');
 
-Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware(['throttle:60,1', 'auth:api'])->name('api.door-check');
-Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('auth:api')->name('api.door-check.scan');
 
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
@@ -123,7 +124,12 @@ Route::get('/shop-categories', [ShopCategoryController::class, 'index'])->name('
 
 Route::post('/checkout', [CheckoutController::class, 'checkout'])->middleware('throttle:20,1')->name('api.checkout');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'webhook'])->name('api.webhooks.stripe');
-Route::get('/orders/{uuid}', [OrderController::class, 'show'])->name('api.orders.show');
+Route::get('/orders/{uuid}', [OrderController::class, 'show'])->middleware('throttle:30,1')->name('api.orders.show');
+
+Route::get('/tickets/{uuid}/qr', [ConcertTicketController::class, 'qrCode'])->middleware('throttle:30,1')->name('api.tickets.qr');
+Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->middleware('throttle:30,1')->name('api.tickets.pdf');
+Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->middleware('throttle:30,1')->name('api.tickets.wallet.apple');
+Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->middleware('throttle:30,1')->name('api.tickets.wallet.google');
 
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
@@ -143,6 +149,34 @@ Route::get('/newsletter/unsubscribe/{token}', [NewsletterSubscriberController::c
 
 Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
 Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
+
+/*
+|--------------------------------------------------------------------------
+| Fan auth (public)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('fan/auth')->group(function () {
+    Route::post('magic-link', [FanAccountController::class, 'requestMagicLink'])
+        ->middleware('throttle:5,1');
+    Route::get('verify', [FanAccountController::class, 'verifyMagicLink'])
+        ->middleware('throttle:20,1');
+});
+
+// Fan portal (fan-auth protected)
+Route::prefix('fan')->middleware('fan.auth')->group(function () {
+    Route::get('me', [FanAccountController::class, 'me']);
+    Route::get('tickets', [FanAccountController::class, 'tickets']);
+    Route::get('orders', [FanAccountController::class, 'orders']);
+    Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate']);
+    Route::post('auth/logout', [FanAccountController::class, 'logout']);
+});
+
+// Ticket claim — public (recipient may not have an account)
+Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim'])->middleware('throttle:20,1');
+
+// Public presale code validation (BEFORE auth:api group — no auth required)
+Route::post('/presale-codes/validate', [PresaleCodeController::class, 'validate'])->middleware('throttle:30,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -261,6 +295,10 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/concerts/{concert}', [ConcertController::class, 'destroy'])->name('api.concerts.destroy');
         Route::post('/concerts/{concert}/poster', [ConcertController::class, 'uploadPoster'])->name('api.concerts.poster.upload');
         Route::delete('/concerts/{concert}/poster', [ConcertController::class, 'destroyPoster'])->name('api.concerts.poster.destroy');
+        // Issued tickets for a concert. Kept off /concerts/{concert}/tickets:
+        // that path is the public ticket-type listing the Astro build and the
+        // checkout both read unauthenticated, and two routes cannot share a URI.
+        Route::get('/admin/concerts/{concert}/tickets', [ConcertTicketController::class, 'adminTicketList'])->name('api.admin.concerts.tickets.index');
 
         // Ticket types
         Route::post('/concerts/{concert}/tickets', [ConcertTicketController::class, 'store'])->name('api.concerts.tickets.store');
@@ -376,6 +414,34 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'update'])->name('api.shop-categories.update');
         Route::delete('/shop-categories/{shopCategory}', [ShopCategoryController::class, 'destroy'])->name('api.shop-categories.destroy');
 
+        // Fan accounts admin list
+        Route::get('/fan-accounts', [FanAccountController::class, 'adminList'])->name('api.fan-accounts.index');
+
+        // Door check — QR scanning at venue entry. Throttled: both endpoints
+        // take a code and report whether it is valid, so they are guessable.
+        Route::post('/door-check', [ConcertTicketController::class, 'doorCheck'])->middleware('throttle:60,1')->name('api.door-check');
+        Route::post('/door-check/scan', [ConcertTicketController::class, 'doorScan'])->middleware('throttle:60,1')->name('api.door-check.scan');
+
+        // Presale codes (admin CRUD)
+        Route::get('/presale-codes', [PresaleCodeController::class, 'index'])->name('api.presale-codes.index');
+        Route::post('/presale-codes', [PresaleCodeController::class, 'store'])->name('api.presale-codes.store');
+        Route::delete('/presale-codes/{id}', [PresaleCodeController::class, 'destroy'])->name('api.presale-codes.destroy');
+
+        // Ticket analytics
+        Route::get('/admin/ticket-stats', function () {
+            $total       = \App\Models\Ticket::count();
+            $active      = \App\Models\Ticket::where('status', 'active')->count();
+            $transferred = \App\Models\Ticket::where('status', 'transferred')->count();
+            $scanned     = \App\Models\Ticket::where('status', 'scanned')->count();
+            return response()->json([
+                'total'         => $total,
+                'active'        => $active,
+                'transferred'   => $transferred,
+                'scanned'       => $scanned,
+                'transfer_rate' => $total > 0 ? round($transferred / $total * 100, 1) : 0,
+                'scan_rate'     => $total > 0 ? round($scanned / $total * 100, 1) : 0,
+            ]);
+        })->name('api.admin.ticket-stats');
         // Website modules
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');

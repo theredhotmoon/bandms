@@ -1,0 +1,47 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ReleaseCard from '@/components/ReleaseCard.astro'
+import { getReleases, getBandProfile } from '@/lib/cms'
+import { RELEASE_TYPE_LABELS } from '@/types/release'
+import type { ReleaseType } from '@/types/release'
+
+const [releases, profile] = await Promise.all([getReleases('en'), getBandProfile('en')])
+
+const grouped = releases.reduce<Record<string, typeof releases>>((acc, r) => {
+  const key = r.type
+  if (!acc[key]) acc[key] = []
+  acc[key]!.push(r)
+  return acc
+}, {})
+
+const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
+---
+
+<BaseLayout
+  title={`Music — ${profile.name}`}
+  description={`Discography of ${profile.name} — albums, EPs, singles, and compilations.`}
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
+    <div class="mb-12">
+      <div class="accent-line mb-4" />
+      <h1 class="text-4xl font-black text-white sm:text-5xl">Music</h1>
+    </div>
+
+    {releases.length === 0 && (
+      <p class="text-zinc-500">No releases yet — check back soon.</p>
+    )}
+
+    {typeOrder.filter(t => grouped[t]?.length).map(type => (
+      <section class="mb-14">
+        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-5">
+          {RELEASE_TYPE_LABELS[type]}s
+        </h2>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {grouped[type]!
+            .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
+            .map(r => <ReleaseCard release={r} />)}
+        </div>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

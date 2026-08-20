@@ -1,0 +1,177 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import SocialLinks from '@/components/SocialLinks.astro'
+import { getEpk, getBandProfile } from '@/lib/cms'
+import { formatNumber, fmtDate } from '@/lib/i18n'
+import { PLATFORM_LABELS } from '@/types/release'
+import type { SocialLink, SocialPlatform } from '@/types/socialLink'
+
+const [epk, profile] = await Promise.all([getEpk('en'), getBandProfile('en')])
+
+// Adapt EpkSocialLinks to SocialLink shape for the SocialLinks component
+const socialLinks: SocialLink[] = epk.social_links.map((l, i) => ({
+  id: i,
+  band_id: 0,
+  member_id: null,
+  platform: l.platform as SocialPlatform,
+  url: l.url,
+}))
+
+const stats = [
+  { label: 'Spotify Monthly Listeners', value: epk.stat_spotify_monthly },
+  { label: 'Instagram Followers',        value: epk.stat_instagram_followers },
+  { label: 'TikTok Followers',           value: epk.stat_tiktok_followers },
+  { label: 'YouTube Subscribers',        value: epk.stat_youtube_subscribers },
+  { label: 'Facebook Followers',         value: epk.stat_facebook_followers },
+].filter(s => s.value)
+---
+
+<BaseLayout
+  title={`Electronic Press Kit — ${epk.name}`}
+  description={`Official EPK for ${epk.name}. ${epk.bio_short ?? ''}`}
+  noindex={true}
+>
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
+    <!-- Header -->
+    <div class="mb-12 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        {epk.logo_url && <img src={epk.logo_url} alt={epk.name} class="mb-4 h-12 object-contain" />}
+        <h1 class="text-4xl font-black text-white">{epk.name}</h1>
+        {epk.genres && <p class="text-accent font-medium mt-1">{epk.genres}</p>}
+        {(epk.formation_year || epk.hometown) && (
+          <p class="text-zinc-500 text-sm mt-1">
+            {epk.formation_year && `Est. ${epk.formation_year}`}
+            {epk.formation_year && epk.hometown && ' · '}
+            {epk.hometown}
+          </p>
+        )}
+      </div>
+      {socialLinks.length > 0 && <SocialLinks links={socialLinks} />}
+    </div>
+
+    <!-- Bio -->
+    <section class="mb-12">
+      <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Biography</h2>
+      <div class="prose">
+        {(epk.bio_long ?? epk.bio_medium ?? epk.bio_short ?? '').split('\n\n').map(p => <p>{p}</p>)}
+      </div>
+    </section>
+
+    <!-- Stats -->
+    {stats.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Audience</h2>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {stats.map(s => (
+            <div class="rounded-xl border border-border bg-surface p-4 text-center">
+              <p class="text-2xl font-black text-accent">{formatNumber(s.value)}</p>
+              <p class="text-xs text-zinc-500 mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Featured Release -->
+    {epk.featured_release && (
+      <section class="mb-12">
+        <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Featured Release</h2>
+        <div class="flex gap-5 rounded-xl border border-border bg-surface p-5">
+          {epk.featured_release.cover_image && (
+            <img src={epk.featured_release.cover_image} alt={epk.featured_release.title} loading="lazy" class="w-28 h-28 rounded-lg object-cover flex-none" />
+          )}
+          <div>
+            <p class="text-xs text-zinc-500 uppercase tracking-wide">{epk.featured_release.type}</p>
+            <h3 class="font-bold text-white text-lg">{epk.featured_release.title}</h3>
+            {epk.featured_release.release_date && (
+              <p class="text-sm text-zinc-400">{fmtDate(epk.featured_release.release_date)}</p>
+            )}
+            {epk.featured_release.links.length > 0 && (
+              <div class="mt-2 flex flex-wrap gap-2">
+                {epk.featured_release.links.map(l => (
+                  <a href={l.url} target="_blank" rel="noopener noreferrer" class="text-xs text-accent hover:underline">
+                    {PLATFORM_LABELS[l.platform] ?? l.platform}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Upcoming Shows -->
+    {epk.upcoming_concerts.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Upcoming Shows</h2>
+        <div class="space-y-2">
+          {epk.upcoming_concerts.map(c => (
+            <div class="flex items-center justify-between border-b border-border pb-2 last:border-0">
+              <div>
+                <p class="font-medium text-white">{c.venue?.name ?? '—'}</p>
+                {c.venue?.city && <p class="text-xs text-zinc-500">{c.venue.city}</p>}
+              </div>
+              <time class="text-sm text-zinc-400">{fmtDate(c.date)}</time>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Press Photos -->
+    {epk.press_photos.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Press Photos</h2>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {epk.press_photos.map(p => p.image_url && (
+            <a href={p.image_url} target="_blank" rel="noopener noreferrer" class="overflow-hidden rounded-lg border border-border aspect-square bg-zinc-900">
+              <img src={p.image_url} alt={p.caption ?? 'Press photo'} loading="lazy" class="w-full h-full object-cover hover:opacity-80 transition-opacity" />
+            </a>
+          ))}
+        </div>
+        <p class="mt-2 text-xs text-zinc-600">Click to download full resolution.</p>
+      </section>
+    )}
+
+    <!-- Testimonials -->
+    {epk.testimonials.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">What people say</h2>
+        <div class="space-y-5">
+          {epk.testimonials.map(t => (
+            <blockquote class="border-l-4 border-accent pl-4">
+              <p class="text-zinc-300 italic leading-relaxed">"{t.quote}"</p>
+              <footer class="mt-2 text-sm">
+                <span class="font-medium text-white">{t.name}</span>
+                {(t.role || t.company) && (
+                  <span class="text-zinc-500"> — {[t.role, t.company].filter(Boolean).join(', ')}</span>
+                )}
+              </footer>
+            </blockquote>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Contact -->
+    {(epk.booking_email || epk.press_email) && (
+      <section class="rounded-xl border border-border bg-surface p-6">
+        <h2 class="font-bold text-white mb-4">Get in touch</h2>
+        <div class="space-y-3">
+          {epk.booking_email && (
+            <div>
+              <p class="text-xs text-zinc-500 uppercase tracking-wide">Booking</p>
+              <a href={`mailto:${epk.booking_email}`} class="text-accent hover:underline">{epk.booking_email}</a>
+            </div>
+          )}
+          {epk.press_email && (
+            <div>
+              <p class="text-xs text-zinc-500 uppercase tracking-wide">Press</p>
+              <a href={`mailto:${epk.press_email}`} class="text-accent hover:underline">{epk.press_email}</a>
+            </div>
+          )}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>

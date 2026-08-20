@@ -9,7 +9,7 @@ class OrderController extends Controller
 {
     public function show(string $uuid): OrderResource
     {
-        $order = Order::where('uuid', $uuid)->with('items')->firstOrFail();
+        $order = Order::where('uuid', $uuid)->with('items.tickets')->firstOrFail();
 
         return new OrderResource($order);
     }

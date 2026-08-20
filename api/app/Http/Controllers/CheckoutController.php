@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Jobs\SendTicketConfirmationEmail;
 use App\Models\ConcertTicketPriceTier;
 use App\Models\ConcertTicketType;
 use App\Models\Order;
@@ -10,6 +11,7 @@ use App\Models\OrderItem;
 use App\Models\PromoCode;
 use App\Models\ShopItem;
 use App\Models\ShopItemVariant;
+use App\Models\Ticket;
 use App\Services\StripeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -313,14 +315,14 @@ class CheckoutController extends Controller
                 return response()->json(['received' => true]);
             }
 
-            DB::transaction(function () use ($stripeSession, $orderUuid) {
+            $paidOrder = DB::transaction(function () use ($stripeSession, $orderUuid) {
                 $order = Order::where('uuid', $orderUuid)
                     ->lockForUpdate()
                     ->with('items.shopItem', 'items.shopItemVariant')
                     ->first();
 
                 if (! $order || $order->status !== OrderStatus::Pending) {
-                    return;
+                    return null;
                 }
 
                 $order->update([
@@ -338,18 +340,34 @@ class CheckoutController extends Controller
                             ?->decrement('stock_quantity', $item->quantity);
                     }
 
-                    // Generate unique ticket code for ticket items
-                    if ($item->concert_ticket_type_id !== null && $item->ticket_code === null) {
-                        $code = strtoupper(Str::random(12));
-                        $item->update(['ticket_code' => $code]);
+                    // Mint one Ticket row per unit for ticket-type order items.
+                    if ($item->concert_ticket_type_id !== null) {
+                        for ($i = 0; $i < $item->quantity; $i++) {
+                            Ticket::create([
+                                'uuid'                    => Str::uuid()->toString(),
+                                'order_item_id'           => $item->id,
+                                'concert_ticket_type_id'  => $item->concert_ticket_type_id,
+                                'status'                  => 'active',
+                                'holder_email'            => $order->email,
+                                'holder_name'             => $order->name,
+                                'fan_account_id'          => null,
+                            ]);
+                        }
                     }
                 }
 
-                // Increment promo code usage
-                if ($order->promo_code_id) {
-                    PromoCode::lockForUpdate()->find($order->promo_code_id)?->increment('used_count');
+                // Increment promo code usage now that payment is confirmed.
+                if ($order->promo_code_id !== null) {
+                    PromoCode::where('id', $order->promo_code_id)->increment('used_count');
                 }
+
+                return $order;
             });
+
+            // Dispatch confirmation email after the transaction commits.
+            if ($paidOrder !== null) {
+                SendTicketConfirmationEmail::dispatch($paidOrder);
+            }
         }
 
         return response()->json(['received' => true]);

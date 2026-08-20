@@ -1,5 +1,6 @@
 import type { Concert, ConcertPayload } from '@/types/concert'
 import type { PublicSetlist } from '@/types/setlist'
+import type { AdminTicket } from '@/types/ticket'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface ConcertListResponse {
@@ -72,6 +73,14 @@ export async function deleteConcertPoster(token: string, id: number): Promise<Co
     headers: authHeaders(token),
   })
   return handleResponse<ConcertResponse>(res).then((r) => r.data)
+}
+
+export async function fetchConcertTickets(token: string, concertId: number): Promise<AdminTicket[]> {
+  assertSafeId(concertId)
+  const res = await fetch(`${API_BASE}/api/admin/concerts/${concertId}/tickets`, {
+    headers: authHeaders(token),
+  })
+  return handleResponse<AdminTicket[]>(res)
 }
 
 export async function fetchConcertSetlist(id: number): Promise<PublicSetlist | null> {

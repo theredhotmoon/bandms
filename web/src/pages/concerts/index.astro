@@ -1,0 +1,54 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ConcertCard from '@/components/ConcertCard.astro'
+import { getConcerts, getBandProfile } from '@/lib/cms'
+import { isUpcoming } from '@/lib/i18n'
+
+const [concerts, profile] = await Promise.all([getConcerts(), getBandProfile('en')])
+
+const upcoming = concerts
+  .filter(c => isUpcoming(c.date))
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+const past = concerts
+  .filter(c => !isUpcoming(c.date))
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+---
+
+<BaseLayout
+  title={`Shows — ${profile.name}`}
+  description={`Live performances by ${profile.name}. Upcoming shows and past concerts.`}
+>
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
+    <div class="mb-12">
+      <div class="accent-line mb-4" />
+      <h1 class="text-4xl font-black text-white sm:text-5xl">Shows</h1>
+    </div>
+
+    {/* Upcoming */}
+    {upcoming.length > 0 ? (
+      <section class="mb-16">
+        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Upcoming</h2>
+        <div class="space-y-3">
+          {upcoming.map(c => <ConcertCard concert={c} />)}
+        </div>
+      </section>
+    ) : (
+      <div class="mb-16 rounded-xl border border-border bg-surface p-8 text-center text-zinc-500">
+        <p class="text-lg font-medium text-zinc-400">No upcoming shows announced yet.</p>
+        <p class="mt-1 text-sm">Subscribe to the newsletter to be the first to know.</p>
+        <a href="/newsletter" class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
+      </div>
+    )}
+
+    {/* Past */}
+    {past.length > 0 && (
+      <section>
+        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Past Shows</h2>
+        <div class="space-y-3">
+          {past.map(c => <ConcertCard concert={c} />)}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>

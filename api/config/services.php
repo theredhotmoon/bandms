@@ -49,6 +49,13 @@ return [
         'api_key' => env('SETLISTFM_API_KEY'),
     ],
 
+    'google_wallet' => [
+        'enabled'   => env('GOOGLE_WALLET_ENABLED', false),
+        'issuer_id' => env('GOOGLE_WALLET_ISSUER_ID', ''),
+        'sa_email'  => env('GOOGLE_WALLET_SA_EMAIL', ''),
+        'sa_key'    => env('GOOGLE_WALLET_SA_KEY', ''),
+    ],
+
     'stripe' => [
         'secret'       => env('STRIPE_SECRET_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

@@ -8,7 +8,8 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-source
+    --prefer-source \
+    --ignore-platform-req=ext-pcntl
 
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative
@@ -22,7 +23,8 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-source
+    --prefer-source \
+    --ignore-platform-req=ext-pcntl
 
 COPY . .
 RUN composer dump-autoload --optimize
@@ -36,11 +38,18 @@ RUN apk add --no-cache \
         curl \
         libxml2-dev \
         oniguruma-dev \
+        libzip-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo_mysql \
         bcmath \
         opcache \
         pcntl \
+        zip \
+        gd \
     && rm -rf /var/cache/apk/*
 
 COPY docker/php.ini "$PHP_INI_DIR/conf.d/app.ini"

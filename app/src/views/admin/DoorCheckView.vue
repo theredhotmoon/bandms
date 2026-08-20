@@ -1,40 +1,76 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { doorCheck, doorScan } from '@/api/tickets'
 import { useAuth } from '@/composables/useAuth'
 import type { DoorCheckResult } from '@/types/ticket'
 
+interface ScanLogEntry {
+  ts: string
+  code: string
+  valid: boolean
+  name: string
+}
+
 const { token } = useAuth()
 
-const code = ref('')
+const isOnline = ref(navigator.onLine)
+const cameraSupported = ref(typeof BarcodeDetector !== 'undefined')
+const cameraError = ref('')
+const videoEl = ref<HTMLVideoElement | null>(null)
+
+const manualCode = ref('')
+const currentCode = ref('')
 const result = ref<DoorCheckResult | null>(null)
 const loading = ref(false)
 const scanning = ref(false)
 const error = ref('')
+const scanLog = ref<ScanLogEntry[]>([])
 
-async function check() {
-  if (!code.value.trim()) return
+let stream: MediaStream | null = null
+let detector: BarcodeDetector | null = null
+let rafId = 0
+let busy = false
+
+function addLog(code: string, valid: boolean, name: string) {
+  scanLog.value = [
+    { ts: new Date().toLocaleTimeString(), code, valid, name },
+    ...scanLog.value,
+  ].slice(0, 20)
+}
+
+/**
+ * Read-only lookup. Detection never marks a ticket used — the operator
+ * confirms with `confirmScan()` after seeing who is at the door.
+ */
+async function check(code: string) {
+  const trimmed = code.trim()
+  if (loading.value || !trimmed) return
   loading.value = true
-  result.value = null
   error.value = ''
+  result.value = null
   try {
-    result.value = await doorCheck(token.value!, code.value.trim().toUpperCase())
-  } catch (e) {
+    const data = await doorCheck(token.value!, trimmed)
+    currentCode.value = trimmed
+    result.value = data
+    addLog(trimmed, data.valid, data.valid ? (data.customer ?? 'OK') : (data.reason ?? 'INVALID'))
+  } catch {
     error.value = 'Network error. Please try again.'
   } finally {
     loading.value = false
+    manualCode.value = ''
   }
 }
 
-async function scan() {
-  if (!code.value.trim()) return
+async function confirmScan() {
+  if (scanning.value || !currentCode.value) return
   scanning.value = true
-  result.value = null
   error.value = ''
   try {
-    result.value = await doorScan(token.value!, code.value.trim().toUpperCase())
-  } catch (e) {
+    const data = await doorScan(token.value!, currentCode.value)
+    result.value = data
+    addLog(currentCode.value, data.valid, 'ENTERED')
+  } catch {
     error.value = 'Network error. Please try again.'
   } finally {
     scanning.value = false
@@ -42,7 +78,8 @@ async function scan() {
 }
 
 function reset() {
-  code.value = ''
+  manualCode.value = ''
+  currentCode.value = ''
   result.value = null
   error.value = ''
 }
@@ -53,29 +90,78 @@ function statusColor(): string {
   if (result.value.scanned) return '#f59e0b'
   return '#22c55e'
 }
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    if (videoEl.value) videoEl.value.srcObject = stream
+    detector = new BarcodeDetector({ formats: ['qr_code'] })
+    scanLoop()
+  } catch {
+    cameraError.value = 'Camera access denied or unavailable.'
+  }
+}
+
+function scanLoop() {
+  rafId = requestAnimationFrame(async () => {
+    // Hold detection while a result is on screen so the same badge is not
+    // re-read on every frame; the operator clears it with Reset.
+    if (!detector || !videoEl.value || busy || result.value) { scanLoop(); return }
+    if (videoEl.value.readyState < 2) { scanLoop(); return }
+    busy = true
+    try {
+      const codes = await detector.detect(videoEl.value)
+      if (codes.length) await check(codes[0].rawValue)
+    } catch { /* ignore frame errors */ }
+    busy = false
+    scanLoop()
+  })
+}
+
+function handleOnline()  { isOnline.value = true }
+function handleOffline() { isOnline.value = false }
+
+onMounted(() => {
+  if (cameraSupported.value) startCamera()
+  window.addEventListener('online',  handleOnline)
+  window.addEventListener('offline', handleOffline)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online',  handleOnline)
+  window.removeEventListener('offline', handleOffline)
+  cancelAnimationFrame(rafId)
+  stream?.getTracks().forEach((t) => t.stop())
+})
 </script>
 
 <template>
   <AdminLayout>
     <div class="door-wrap">
       <h1 class="door-title">Door Check</h1>
-      <p class="door-sub">Enter a ticket code to validate entry.</p>
+      <p class="door-sub">Scan a ticket QR code, or paste a ticket UUID.</p>
 
-      <div class="input-row">
+      <p v-if="!isOnline" class="offline-warning">⚠ Offline — results may be stale</p>
+
+      <div v-if="cameraSupported" class="camera-section">
+        <video ref="videoEl" autoplay playsinline />
+        <p v-if="cameraError" class="error-msg">{{ cameraError }}</p>
+      </div>
+
+      <form class="input-row" @submit.prevent="check(manualCode)">
         <input
-          v-model="code"
+          v-model="manualCode"
           class="code-input"
-          placeholder="TICKET CODE"
-          @keydown.enter="check"
+          placeholder="Paste ticket UUID…"
           autocomplete="off"
           spellcheck="false"
-          style="text-transform:uppercase;"
+          :disabled="loading"
         />
-        <button class="btn-check" :disabled="loading || !code.trim()" @click="check">
+        <button type="submit" class="btn-check" :disabled="loading || !manualCode.trim()">
           {{ loading ? '…' : 'Check' }}
         </button>
-        <button v-if="result || code" class="btn-reset" @click="reset">Reset</button>
-      </div>
+        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">Reset</button>
+      </form>
 
       <p v-if="error" class="error-msg">{{ error }}</p>
 
@@ -118,10 +204,24 @@ function statusColor(): string {
           v-if="result.valid && !result.scanned"
           class="btn-scan"
           :disabled="scanning"
-          @click="scan"
+          @click="confirmScan"
         >
           {{ scanning ? 'Scanning…' : '✓ Mark as Scanned' }}
         </button>
+      </div>
+
+      <div v-if="scanLog.length" class="scan-log">
+        <div class="log-header">Recent scans</div>
+        <div
+          v-for="entry in scanLog"
+          :key="entry.ts + entry.code"
+          class="log-entry"
+          :class="entry.valid ? 'log-ok' : 'log-fail'"
+        >
+          <span class="log-ts">{{ entry.ts }}</span>
+          <span class="log-code">{{ entry.code.slice(0, 8) }}</span>
+          <span class="log-name">{{ entry.valid ? entry.name : 'INVALID' }}</span>
+        </div>
       </div>
     </div>
   </AdminLayout>
@@ -147,19 +247,33 @@ function statusColor(): string {
   margin: -10px 0 0;
 }
 
+.offline-warning {
+  background: #1c1107; color: #fbbf24; border: 1px solid #854d0e;
+  border-radius: 6px; padding: 8px 12px; font-size: 13px; margin: 0;
+}
+
+.camera-section video {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 8px;
+  background: #000;
+}
+
 .input-row {
   display: flex;
   gap: 8px;
 }
 .code-input {
   flex: 1;
+  min-width: 0;
   background: #111;
   border: 1px solid #2a2a2a;
   border-radius: 6px;
   color: #e2e8f0;
   padding: 10px 14px;
-  font: 600 16px/1 'Courier New', monospace;
-  letter-spacing: .1em;
+  font: 600 14px/1 'Courier New', monospace;
+  letter-spacing: .06em;
 }
 .code-input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
 .btn-check {
@@ -244,4 +358,21 @@ function statusColor(): string {
 }
 .btn-scan:hover:not(:disabled) { background: #166534; }
 .btn-scan:disabled { opacity: .6; cursor: default; }
+
+.scan-log { border: 1px solid #1f1f1f; border-radius: 8px; overflow: hidden; }
+.log-header {
+  padding: 8px 12px; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #475569; background: #111;
+}
+.log-entry {
+  display: flex; gap: 12px; padding: 6px 12px;
+  font-size: 12.5px; border-top: 1px solid #1f1f1f;
+}
+.log-ok   { background: #0a1a0a; }
+.log-fail { background: #1a0a0a; }
+.log-ts   { color: #475569; white-space: nowrap; }
+.log-code { font-family: monospace; color: #94a3b8; }
+.log-ok .log-name   { color: #4ade80; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-fail .log-name { color: #f87171; flex: 1; }
 </style>

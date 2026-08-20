@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ConcertTicketPriceTier extends Model
@@ -41,5 +42,15 @@ class ConcertTicketPriceTier extends Model
         return $this->soldCountCache ??= (int) $this->orderItems()
             ->whereHas('order', fn ($q) => $q->whereIn('status', ['paid', 'pending']))
             ->sum('quantity');
+    }
+
+    public function presaleCodes(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            PresaleCode::class,
+            'presale_code_tiers',
+            'concert_ticket_price_tier_id',
+            'presale_code_id'
+        );
     }
 }

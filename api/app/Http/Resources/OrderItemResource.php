@@ -18,6 +18,11 @@ class OrderItemResource extends JsonResource
             'price'                 => (float) $this->price,
             'currency'              => $this->currency,
             'quantity'              => $this->quantity,
+            'concert_ticket_type_id' => $this->concert_ticket_type_id,
+            'ticket_uuids' => $this->when(
+                $this->concert_ticket_type_id !== null,
+                fn() => $this->tickets->pluck('uuid')->all()
+            ),
         ];
     }
 }
