@@ -46,6 +46,16 @@ services:
       FACEBOOK_APP_ID: "${FACEBOOK_APP_ID:-}"
       FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET:-}"
       SETLISTFM_API_KEY: "${SETLISTFM_API_KEY:-}"
+
+      # Must be listed here to reach the app — this service takes no env_file.
+      # Drives CORS allowed_origins (config/cors.php), which otherwise falls
+      # back to http://localhost:5173, and the links in outgoing email
+      # (config/newsletter.php). Set it to the real public domain.
+      FRONTEND_URL: "${FRONTEND_URL:-${APP_URL}}"
+
+      # Login attempts per minute, per IP. This is the control that makes
+      # credential stuffing expensive — keep it low here.
+      LOGIN_RATE_LIMIT: "${LOGIN_RATE_LIMIT:-10}"
     depends_on:
       mysql:
         condition: service_healthy

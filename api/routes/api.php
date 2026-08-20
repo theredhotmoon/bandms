@@ -63,7 +63,7 @@ Route::get('/site-config', [WebsiteModuleController::class, 'siteConfig'])->name
 Route::prefix('auth')->name('api.auth.')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login'])
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:login')
         ->name('login');
 
     Route::post('/logout', [AuthController::class, 'logout'])

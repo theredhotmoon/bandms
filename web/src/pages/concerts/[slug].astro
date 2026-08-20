@@ -5,10 +5,21 @@ import { fmtDate, fmtTime, isUpcoming } from '@/lib/i18n'
 
 export async function getStaticPaths() {
   const concerts = await getConcerts()
-  return concerts.map(c => ({ params: { id: String(c.id) } }))
+
+  // This route is [slug], but this returned `id` — leaving params.slug
+  // undefined, which makes Astro's getParameter throw and aborts the entire
+  // build, not just this page. The container then exits and restarts forever.
+  //
+  // The id is passed through props because the API looks concerts up by id;
+  // falling back to it for the slug keeps a concert that has no slug yet
+  // reachable instead of dropping it from the site.
+  return concerts.map(c => ({
+    params: { slug: c.slug_en || String(c.id) },
+    props:  { id: c.id },
+  }))
 }
 
-const { id } = Astro.params
+const { id } = Astro.props
 const [concert, setlist, profile] = await Promise.all([
   getConcert(Number(id)),
   getConcertSetlist(Number(id)),

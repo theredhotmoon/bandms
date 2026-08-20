@@ -219,6 +219,37 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 
 ---
 
+### `web` container crash-loops when the Astro build fails — and takes the whole public site down
+
+**Symptom:** The public site is down. `docker ps` shows `bandms_web` as *running* with a low uptime that keeps resetting. `docker inspect bandms_web --format '{{.RestartCount}}'` is in the dozens or hundreds.
+
+**Root cause:** `start.sh` runs `astro build` at container startup. A build failure exits the container, `restart: unless-stopped` starts it again, and it fails again — roughly every 25 seconds, indefinitely. Nothing surfaces the error: the container looks healthy in `docker ps`, and `docker logs` may hang while it is mid-restart. This ran for **two months** undetected (RestartCount 103) after a single bad row appeared.
+
+**The build is all-or-nothing.** One page that throws aborts all 35 — a single unreachable record takes down the entire site, not just its own page.
+
+**Diagnose:**
+
+```bash
+docker inspect bandms_web --format 'RestartCount={{.RestartCount}}'
+timeout 20 docker logs bandms_web 2>&1 | grep -A5 ERROR
+docker compose stop web        # stop the churn before investigating
+```
+
+Reproduce the build directly against a live API — far faster than rebuilding the image each time:
+
+```bash
+cd web && API_BASE=http://localhost:8081 pnpm build
+```
+
+**Two failure modes seen so far, both invisible to `vue-tsc`:**
+
+1. **`getStaticPaths` returning the wrong param name.** `concerts/[slug].astro` was renamed from `[id].astro` but still returned `params: { id }`, leaving `params.slug` undefined; Astro's `getParameter` throws and the build dies. Note `null` does *not* throw — it silently builds a page at `/concerts/null` — so only `undefined` crashes.
+2. **Dereferencing a field the API does not send.** `epk.testimonials.length` where `EpkSnapshotBuilder` never emits `testimonials`.
+
+**Both slipped through because the types lie.** `slug_en` is typed `string` while the column is nullable, and `testimonials` was a required array the API never returns. When adding a field to `web/src/types/`, make it match what the API *actually* returns — and guard anything read from a published EPK version, whose frozen snapshots predate any field added later.
+
+---
+
 ### Backend env var changes require a container restart
 
 **Symptom:** You update an env var in `docker-compose.yml` (e.g. `APP_URL`, `LOG_LEVEL`) but the backend behaves as if the old value is still set.
@@ -249,13 +280,23 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 
 ---
 
-### `FRONTEND_URL` in `.env` must match the port users actually browse on
+### Setting a backend env var in `.env` alone does nothing — it must be in `docker-compose.yml` too
 
-**Symptom:** Newsletter confirmation emails (and any other email with a link) contain `http://localhost/newsletter/confirm/...` but clicking the link goes to the wrong port or host.
+**Symptom:** You set a variable in the root `.env`, restart, and the backend behaves as if it were never set. Newsletter confirmation emails contain `http://localhost/newsletter/confirm/...` despite `FRONTEND_URL=http://localhost:4322`; CORS rejects the origin you configured.
 
-**Root cause:** Laravel uses `FRONTEND_URL` from `.env` to generate links in outgoing emails (e.g. double opt-in confirmation). It defaults to `http://localhost` (port 80), but the public site runs on port 4322 in development. No validation catches the mismatch.
+**Root cause:** The `backend` service declares an explicit `environment:` map and takes **no `env_file`**. Root-`.env` values reach the container only where the compose file interpolates them (`APP_KEY: ${APP_KEY}`). Anything not listed there is simply absent, and Laravel silently falls back to the config default. `FRONTEND_URL` was missing for a long time, so `config/cors.php` was using its `http://localhost:5173` fallback and `config/newsletter.php` was falling back to `APP_URL`.
 
-**Fix:** Set `FRONTEND_URL=http://localhost:4322` in `.env` for local development. In production set it to the real public domain. Check this any time email link behaviour changes unexpectedly.
+**Verify before believing it works:**
+
+```bash
+docker exec bandms_backend printenv FRONTEND_URL LOGIN_RATE_LIMIT
+```
+
+Empty output means the variable never arrived, regardless of what `.env` says.
+
+**Fix:** Add the variable to the `backend` service's `environment:` block in **both** `docker-compose.yml` and `docker-compose.prod.yml`, then `docker compose up -d --no-deps backend` to recreate (a restart is not enough — see the env-cache footgun above).
+
+`FRONTEND_URL` drives CORS allowed origins and every link in outgoing email, so it must match the port users actually browse on: `http://localhost:4322` in development, the real domain in production.
 
 ---
 
@@ -293,12 +334,29 @@ claimed a ~2 GB floor; the 176 MB row disproves it.
 
 **Machine-failure signatures** — suspect these before suspecting the code:
 
+- `[vite] http proxy error: /api/...` followed by `Error: read ECONNRESET` —
+  **the most common one, and it is not memory.** The dev server's proxy could
+  not reach the backend. Downstream, a save succeeds or fails invisibly and the
+  spec times out waiting for a toast that never arrives, so the reported failure
+  looks like a UI bug. Count them first: `grep -c ECONNRESET` on the run log.
 - `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
   server (the OS refusing an allocation, not V8 hitting its cap — so raising
   `--max-old-space-size` makes it worse)
 - `GPU process launch failed` from Chromium
 - A different set of specs failing each run, or a spec the change cannot reach
 - 30-second timeouts rather than assertion mismatches
+
+**Do not assume memory.** Four consecutive runs on one commit failed
+`auth`×4, then `concerts`+`shop`, then `releases`+`setlists` — every spec passed
+in at least one run, and **no run produced an OOM or GPU signature**. What every
+run did produce was ~22 `ECONNRESET`s clustered in its opening minutes, spread
+across a dozen unrelated endpoints. An admin page fires 6–10 parallel API calls;
+times two Playwright workers plus setup traffic, that lands on
+`pm.max_children = 20` in `api/docker/www.conf`. Raising that pool is the
+suspected fix and is untested — it trades RAM for connection headroom.
+
+A single red spec that reproduces in isolation is a real failure. A different
+pair each run, with resets in the log, is the stack.
 
 Triage order when E2E goes red:
 
