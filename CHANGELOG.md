@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-20
+
+### Fixed
+- **Corrected the E2E triage guidance in `README.md`, `CLAUDE.md` and the tech-rider spec.** 0.7.0 documented a ~2 GB free-RAM floor below which the Playwright suite was said to fail regardless of the code. A run on `64254a1` with 176 MB reported free passed 178/178 in 2.4 minutes, disproving it: `FreePhysicalMemory` counts only unused pages, not reclaimable ones, so a low reading does not mean memory is unavailable. Triage now keys on the failure *signature* — `Zone Allocation failed`, `GPU process launch failed`, a different failing set each run, or 30-second timeouts instead of assertion mismatches — with free RAM as a weak hint at most. The docs no longer justify skipping an E2E run on a low memory reading alone.
+
 ## [0.7.0] - 2026-08-20
 
 ### Added
