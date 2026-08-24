@@ -148,6 +148,13 @@ jobs:
 
             # The Astro site rebuilds its static output at startup against the
             # freshly migrated API — this is what publishes new content.
+            #
+            # --force-recreate is deliberate. It costs 1-2 min of rebuild on
+            # every deploy, including backend-only ones that could not have
+            # changed the site. The alternative keeps the previous static HTML
+            # serving until someone republishes by hand, and a silently stale
+            # public site is the harder failure to notice. Chosen in #40 —
+            # don't drop it to shave the deploy time without revisiting that.
             docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
             docker compose -f docker-compose.prod.yml up -d --no-deps caddy
