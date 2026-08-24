@@ -1,0 +1,16 @@
+---
+// Stripe's success_url lands here (config/services.php → APP_FRONTEND_URL).
+// The order data has to be fetched client-side: this page is statically built,
+// long before the order it describes exists.
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import OrderConfirmation from '@/components/OrderConfirmation.vue'
+import { getBandProfile } from '@/lib/cms'
+
+const profile = await getBandProfile('en')
+---
+
+<BaseLayout title={`Order confirmed — ${profile.name}`} description="Your order has been received.">
+  <div class="mx-auto max-w-2xl px-4 sm:px-6 pt-16 pb-24">
+    <OrderConfirmation client:load />
+  </div>
+</BaseLayout>

@@ -58,6 +58,17 @@ services:
       # Login attempts per minute, per IP. Keep low in production; raise it
       # locally for the E2E suite, which logs in repeatedly from one IP.
       LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10}
+
+      # The seeder creates an admin only when these are set, so production is
+      # safe by default. The local stack declares them here to keep the fixed
+      # login the E2E suite expects (app/e2e/fixtures/auth.ts). Note that
+      # APP_ENV above is "production" even locally, so an environment check
+      # could not tell these two stacks apart — hence the explicit variables.
+      ADMIN_EMAIL:    ${ADMIN_EMAIL:-admin@bandms.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-password}
+
+      # Placeholder venue + concert. Handy locally, noise in production.
+      SEED_DEMO_DATA: "true"
     volumes:
       - backend_storage:/var/www/html/storage
     depends_on:

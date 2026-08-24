@@ -27,8 +27,10 @@ php artisan migrate --force
 # The seeder is idempotent (insertOrIgnore), but we gate on an empty band_profiles
 # table so a normal restart doesn't re-run it. Without this, a fresh volume leaves
 # band_profiles empty -> GET /api/band-profile 404s -> the Astro web build fails.
-# NOTE: the seeder creates a default admin (admin@bandms.test / password) for local
-# use — remove it before going to production.
+# NOTE: the seeder creates an admin only when ADMIN_EMAIL and ADMIN_PASSWORD are
+# set (docker-compose.yml sets them locally for the E2E suite). A production
+# stack that leaves them unset gets no user at all — create the first one with
+# `php artisan bandms:create-admin`.
 PROFILE_COUNT=$(php -r "
 try {
     \$pdo = new PDO('mysql:host=${DB_HOST:-mysql};port=${DB_PORT:-3306};dbname=${DB_DATABASE:-bandms}','${DB_USERNAME:-bandms}','${DB_PASSWORD:-secret}');
