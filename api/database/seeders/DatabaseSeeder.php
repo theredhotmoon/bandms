@@ -10,35 +10,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('users')->insertOrIgnore([[
-            'first_name' => 'Admin',
-            'last_name'  => 'User',
-            'email'      => 'admin@bandms.test',
-            'password'   => Hash::make('password'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]]);
+        $this->seedAdminUser();
+        $this->seedDemoData();
 
         DB::table('band_profiles')->insertOrIgnore([[
             'id'         => 1,
             'name'       => 'My Band',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]]);
-
-        DB::table('venues')->insertOrIgnore([[
-            'id'         => 1,
-            'name'       => 'Test Venue',
-            'city'       => 'Kraków',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]]);
-
-        DB::table('concerts')->insertOrIgnore([[
-            'id'         => 1,
-            'venue_id'   => 1,
-            'date'       => '2099-12-31',
-            'start_time' => '20:00:00',
             'created_at' => now(),
             'updated_at' => now(),
         ]]);
@@ -59,5 +36,72 @@ class DatabaseSeeder extends Seeder
         DB::table('site_settings')->insertOrIgnore([
             ['key' => 'auto_rebuild', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
         ]);
+    }
+
+    /**
+     * Create the initial admin, but only from credentials supplied by the
+     * environment.
+     *
+     * This used to hardcode admin@bandms.test / "password". The container
+     * entrypoint runs this seeder on any empty database, so a first production
+     * boot published a known-credential admin account on the public internet.
+     *
+     * Gating on APP_ENV would not help: docker-compose.yml sets
+     * APP_ENV=production for the local stack too. Requiring the credentials to
+     * be named explicitly makes production safe by default — nothing is
+     * created unless someone chose the values — while the dev stack and the
+     * E2E suite keep their fixed login by declaring it in compose.
+     */
+    private function seedAdminUser(): void
+    {
+        $email    = env('ADMIN_EMAIL');
+        $password = env('ADMIN_PASSWORD');
+
+        if (blank($email) || blank($password)) {
+            $this->command?->warn(
+                'No ADMIN_EMAIL / ADMIN_PASSWORD set — skipping admin user. '
+                .'Create one with: php artisan bandms:create-admin'
+            );
+
+            return;
+        }
+
+        DB::table('users')->insertOrIgnore([[
+            'first_name' => env('ADMIN_FIRST_NAME', 'Admin'),
+            'last_name'  => env('ADMIN_LAST_NAME', 'User'),
+            'email'      => $email,
+            'password'   => Hash::make($password),
+            'role'       => 'admin',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]]);
+    }
+
+    /**
+     * Placeholder venue and concert. Useful locally and for the E2E suite,
+     * noise in production — so it is opt-in via SEED_DEMO_DATA.
+     */
+    private function seedDemoData(): void
+    {
+        if (! filter_var(env('SEED_DEMO_DATA', false), FILTER_VALIDATE_BOOLEAN)) {
+            return;
+        }
+
+        DB::table('venues')->insertOrIgnore([[
+            'id'         => 1,
+            'name'       => 'Test Venue',
+            'city'       => 'Kraków',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]]);
+
+        DB::table('concerts')->insertOrIgnore([[
+            'id'         => 1,
+            'venue_id'   => 1,
+            'date'       => '2099-12-31',
+            'start_time' => '20:00:00',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]]);
     }
 }

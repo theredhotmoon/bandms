@@ -26,8 +26,14 @@ Every full run loses ~2 specs, a different pair each time, always downstream of 
 ### `--prefer-source` makes builds ~8× slower and fragile
 `api/Dockerfile` uses `composer install --prefer-source`, which git-clones every package instead of downloading zips. Observed: one composer step took **51 minutes** and then died on a single DNS blip. `--prefer-dist` would fix both. It was introduced in PR #10; worth checking whether whatever prompted it still applies.
 
-### `FRONTEND_URL` needs a real value in production
-The variable is now passed through both compose files, but production needs it set to the actual domain. It drives CORS allowed origins (`config/cors.php`, which otherwise falls back to `http://localhost:5173`) and every link in outgoing email (`config/newsletter.php`).
+### Production deployment — wired, not yet run
+`docs/deployment.md` is the Hetzner runbook — also published as a shareable page with a progress-saving verification checklist: [BandMS Deploy Runbook](https://claude.ai/code/artifact/1573a8d4-01c1-4518-bf57-10e09edecf3b). The audit that produced it fixed: the missing `web` service (the Astro site was absent from prod entirely), Caddy TLS via `SITE_ADDRESS`, MySQL never starting on a first deploy, the seeded `admin@bandms.test` / `password` account, missing `trustProxies` (which collapsed the per-IP login throttle into one global bucket), Passport keys not surviving a deploy, unconfigured mail, and `APP_FRONTEND_URL` — a variable distinct from `FRONTEND_URL`, read only by `config/services.php`, that sent every Stripe redirect to `localhost:5173`.
+
+**Still open:**
+- **No E2E in CI.** The workflow runs backend + frontend unit tests only. E2E needs a full stack in the runner.
+- **The rebuild webhook (`web:3001`) has no auth.** Unreachable from the internet — not published, not proxied by Caddy — but any container on the `bandms` network can trigger unlimited rebuilds.
+- **`docker-compose.yml` sets `APP_ENV: production` for the local stack.** Harmless today but it means no `app()->environment()` check can distinguish dev from prod; the seeder gates on explicit env vars for exactly this reason.
+- **No automated database backups.** The runbook gives the `mysqldump` command; nothing schedules it.
 
 ### Admin routes return 500 instead of 401
 Any admin route without an `Accept: application/json` header returns 500, not 401 — Laravel's auth middleware trying to redirect to a `login` named route that does not exist in an API-only app. Verified across five endpoints. Needs an exception-handler fix.

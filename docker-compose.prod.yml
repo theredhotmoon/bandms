@@ -7,6 +7,12 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+    environment:
+      # The Caddy site address. ":80" serves plain HTTP on the bare server IP.
+      # Set SITE_ADDRESS to a hostname (e.g. "skanking-storks.com") in
+      # /opt/bandms/.env and Caddy provisions a Let's Encrypt certificate
+      # automatically — no other change needed.
+      SITE_ADDRESS: "${SITE_ADDRESS:-:80}"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -14,8 +20,26 @@ services:
     networks:
       - bandms
     depends_on:
+      - web
       - frontend
 
+  # ─── Astro public site — the thing visitors actually see ──────────────────
+  # Builds the static site at container startup (it needs a live API to fetch
+  # from), so a restart is how you republish content. See CLAUDE.md.
+  web:
+    image: ghcr.io/theredhotmoon/bandms/web:${APP_VERSION:-latest}
+    container_name: bandms-web
+    restart: unless-stopped
+    environment:
+      API_BASE: "http://backend"
+      SITE_URL: "${SITE_URL:-${APP_URL}}"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bandms
+
+  # ─── Vue SPA — admin panel, login, fan accounts, ticket claim ─────────────
   frontend:
     image: ghcr.io/theredhotmoon/bandms/frontend:${APP_VERSION:-latest}
     container_name: bandms-frontend
@@ -33,6 +57,13 @@ services:
       APP_KEY: "${APP_KEY}"
       APP_DEBUG: "false"
       APP_URL: "${APP_URL}"
+
+      # Logs to stdout so `docker logs bandms-backend` works. Without this the
+      # default stack driver writes into the container filesystem, which is
+      # discarded on every deploy.
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: "${LOG_LEVEL:-warning}"
+
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
@@ -53,6 +84,29 @@ services:
       # (config/newsletter.php). Set it to the real public domain.
       FRONTEND_URL: "${FRONTEND_URL:-${APP_URL}}"
 
+      # A SEPARATE variable read only by config/services.php, which builds the
+      # Stripe success_url / cancel_url. Its fallback is http://localhost:5173,
+      # so leaving it unset sends every paying customer to a dead host.
+      APP_FRONTEND_URL: "${APP_FRONTEND_URL:-${FRONTEND_URL:-${APP_URL}}}"
+
+      # ── Mail ──────────────────────────────────────────────────────────────
+      # MAIL_MAILER defaults to "log", which silently drops newsletter
+      # confirmations, contact-form mail and rig confirmation requests.
+      MAIL_MAILER: "${MAIL_MAILER:-log}"
+      MAIL_HOST: "${MAIL_HOST:-}"
+      MAIL_PORT: "${MAIL_PORT:-587}"
+      MAIL_SCHEME: "${MAIL_SCHEME:-}"
+      MAIL_USERNAME: "${MAIL_USERNAME:-}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+      MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS:-}"
+      MAIL_FROM_NAME: "${MAIL_FROM_NAME:-${APP_NAME:-BandMS}}"
+      CONTACT_EMAIL: "${CONTACT_EMAIL:-}"
+      NEWSLETTER_VERIFY_MX: "${NEWSLETTER_VERIFY_MX:-true}"
+
+      # ── Stripe ────────────────────────────────────────────────────────────
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET:-}"
+
       # Login attempts per minute, per IP. This is the control that makes
       # credential stuffing expensive — keep it low here.
       LOGIN_RATE_LIMIT: "${LOGIN_RATE_LIMIT:-10}"
@@ -60,7 +114,11 @@ services:
       mysql:
         condition: service_healthy
     volumes:
-      - bandms-storage:/var/www/html/storage/app/public
+      # The WHOLE storage dir, not just app/public. Passport's oauth-*.key
+      # lives in storage/ — mounting only app/public means every deploy gets a
+      # fresh container, regenerates the keys, and invalidates every token
+      # already issued, logging out every user.
+      - bandms-storage:/var/www/html/storage
     networks:
       - bandms
     healthcheck:
@@ -76,7 +134,6 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: "${DB_DATABASE}"
       MYSQL_USER: "${DB_USERNAME}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"

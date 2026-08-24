@@ -4,13 +4,20 @@ on:
   push:
     branches: [main]
 
+# Two pushes in quick succession would otherwise race each other onto the
+# server, and the loser could land its images after the winner's migrations.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 env:
   BACKEND_IMAGE: ghcr.io/theredhotmoon/bandms/backend
   FRONTEND_IMAGE: ghcr.io/theredhotmoon/bandms/frontend
+  WEB_IMAGE: ghcr.io/theredhotmoon/bandms/web
 
 jobs:
   test:
-    name: Backend tests
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,11 +25,21 @@ jobs:
       - name: Build test image
         run: docker build --target test -t bandms-test ./api
 
-      - name: Run tests
+      - name: Run backend tests
         run: |
           docker run --rm \
             -e APP_ENV=testing \
             bandms-test
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run frontend unit tests
+        working-directory: ./app
+        run: |
+          npm install
+          npm run test:unit
 
   build-and-push:
     name: Build & push images
@@ -69,6 +86,20 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
+      # The Astro site runs `astro build` at container startup, not here — the
+      # build needs a live API to fetch from. This image is source + node_modules.
+      - name: Build and push web (Astro public site)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          target: app
+          push: true
+          tags: |
+            ${{ env.WEB_IMAGE }}:latest
+            ${{ env.WEB_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
   deploy:
     name: Deploy to Hetzner
     needs: build-and-push
@@ -96,17 +127,35 @@ jobs:
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
           envs: GHCR_TOKEN,GITHUB_ACTOR
+          command_timeout: 15m
           script: |
             set -e
             cd /opt/bandms
 
             # Authenticate and pull new images
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            docker compose -f docker-compose.prod.yml pull backend frontend
+            docker compose -f docker-compose.prod.yml pull backend frontend web
 
-            # Rolling restart: backend first (runs migrations via entrypoint),
-            # wait for healthcheck, then update frontend and caddy
+            # MySQL is not part of the rolling restart, but it must be running
+            # before the backend starts — every command below uses --no-deps, so
+            # nothing else would bring it up on a first deploy.
+            docker compose -f docker-compose.prod.yml up -d mysql
+
+            # Backend first: its entrypoint runs the migrations. --wait blocks
+            # until the healthcheck passes, so the frontends never come up
+            # against a half-migrated schema.
             docker compose -f docker-compose.prod.yml up -d --no-deps --wait backend
+
+            # The Astro site rebuilds its static output at startup against the
+            # freshly migrated API — this is what publishes new content.
+            #
+            # --force-recreate is deliberate. It costs 1-2 min of rebuild on
+            # every deploy, including backend-only ones that could not have
+            # changed the site. The alternative keeps the previous static HTML
+            # serving until someone republishes by hand, and a silently stale
+            # public site is the harder failure to notice. Chosen in #40 —
+            # don't drop it to shave the deploy time without revisiting that.
+            docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
             docker compose -f docker-compose.prod.yml up -d --no-deps caddy
 

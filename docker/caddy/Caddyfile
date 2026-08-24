@@ -1,38 +1,38 @@
 # Production Caddy config.
 #
-# Replace ":80" with your domain name to enable automatic HTTPS:
-#   yourdomain.com {
-#       ...
-#   }
+# The site address comes from SITE_ADDRESS in /opt/bandms/.env:
+#   SITE_ADDRESS=:80                  → plain HTTP on the bare server IP
+#   SITE_ADDRESS=skanking-storks.com  → automatic HTTPS via Let's Encrypt
 #
-# Routing:
-#   /api/*         → Laravel backend
-#   /storage/*     → Laravel backend (uploaded files)
-#   /admin*        → Vue SPA (admin panel)
-#   /login         → Vue SPA
-#   /*             → Astro public site
+# Switching to the domain form requires nothing else: point an A record at the
+# server, set the variable, and `docker compose up -d caddy`. Caddy provisions
+# and renews the certificate itself.
 
-:80 {
-    # ── Backend API ──────────────────────────────────────────────────────────
-    handle /api/* {
-        reverse_proxy backend:80
-    }
+{$SITE_ADDRESS} {
+	encode zstd gzip
 
-    # ── Storage (uploaded media served by Laravel) ───────────────────────────
-    handle /storage/* {
-        reverse_proxy backend:80
-    }
+	# ── Backend API ──────────────────────────────────────────────────────────
+	handle /api/* {
+		reverse_proxy backend:80
+	}
 
-    # ── Vue SPA — admin panel and login ──────────────────────────────────────
-    handle /admin* {
-        reverse_proxy frontend:80
-    }
-    handle /login {
-        reverse_proxy frontend:80
-    }
+	# ── Storage (uploaded media served by Laravel) ───────────────────────────
+	handle /storage/* {
+		reverse_proxy backend:80
+	}
 
-    # ── Astro public site — everything else ───────────────────────────────────
-    handle {
-        reverse_proxy web:80
-    }
+	# ── Vue SPA ──────────────────────────────────────────────────────────────
+	# Only the paths the SPA actually owns. Anything listed here that the Astro
+	# site also builds would shadow the public page, and anything NOT listed
+	# here falls through to Astro and 404s if Astro has no such page — so this
+	# list must track app/src/router/index.ts.
+	@spa path /admin* /login /account* /tickets/* /tech-rider* /cart /checkout
+	handle @spa {
+		reverse_proxy frontend:80
+	}
+
+	# ── Astro public site — everything else ──────────────────────────────────
+	handle {
+		reverse_proxy web:80
+	}
 }
