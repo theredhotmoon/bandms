@@ -251,10 +251,12 @@ chmod 600 /opt/bandms/.env
 > somewhere else. The cap is ~500 recipients/day, which the contact form will
 > never reach and a growing newsletter eventually will.
 >
-> **`MAIL_SCHEME` must be empty for port 587.** Laravel 11 passes it straight
-> into the Symfony mailer DSN, which accepts only `smtp`, `smtps` or empty.
-> `tls` is what most tutorials show and it throws `UnsupportedSchemeException`
-> on the first send — long after the deploy looked successful.
+> **`MAIL_SCHEME` must be empty for port 587.** Laravel maps an empty value to
+> `smtp` (or `smtps` on port 465) before building the DSN; anything you do set
+> is passed through untouched to Symfony's `EsmtpTransportFactory`, which
+> supports exactly `smtp` and `smtps`. `tls` is what most tutorials show, and it
+> throws `UnsupportedSchemeException` on the first send — long after the deploy
+> looked successful.
 
 ---
 
