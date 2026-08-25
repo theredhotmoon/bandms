@@ -239,6 +239,22 @@ chmod 600 /opt/bandms/.env
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history
 > that direct-from-VM delivery lands in junk folders regardless. Use a provider
 > (Mailgun, Postmark, Resend, Fastmail) over port 587.
+>
+> **Before you have a domain**, Gmail is the practical option — Postmark, Mailgun
+> and Resend all want SPF/DKIM records on a domain you control. Use
+> `smtp.gmail.com:587`, the full address as `MAIL_USERNAME`, and an **App
+> Password** from
+> [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+> — not the account password, and it requires 2-Step Verification to be on. Set
+> `MAIL_FROM_ADDRESS` to the same address: Gmail rewrites `From:` to the
+> authenticating account, so a mismatch sends mail that appears to come from
+> somewhere else. The cap is ~500 recipients/day, which the contact form will
+> never reach and a growing newsletter eventually will.
+>
+> **`MAIL_SCHEME` must be empty for port 587.** Laravel 11 passes it straight
+> into the Symfony mailer DSN, which accepts only `smtp`, `smtps` or empty.
+> `tls` is what most tutorials show and it throws `UnsupportedSchemeException`
+> on the first send — long after the deploy looked successful.
 
 ---
 
