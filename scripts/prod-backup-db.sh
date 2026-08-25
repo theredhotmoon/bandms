@@ -72,6 +72,10 @@ mkdir -p "$BACKUP_DIR"
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
 TARGET="${BACKUP_DIR}/${DATABASE}-${STAMP}.sql.gz"
 TMP="${TARGET}.partial"
+# mktemp, not a fixed /tmp path: a fixed name written by root once leaves the
+# file un-writable by the deploy user forever after, and the redirect failing
+# would abort a deploy for no real reason.
+ERRLOG="$(mktemp)"
 
 # MYSQL_PWD rather than -p"$PW" keeps the password off the process list inside
 # the container. --single-transaction gives a consistent snapshot of InnoDB
@@ -84,10 +88,12 @@ if ! docker exec -e MYSQL_PWD="$ROOT_PW" "$CONTAINER" \
             --triggers \
             --events \
             --no-tablespaces \
-            "$DATABASE" 2>/tmp/mysqldump.err | gzip -9 > "$TMP"; then
-    rm -f "$TMP"
-    die "mysqldump failed: $(tail -3 /tmp/mysqldump.err 2>/dev/null || echo 'no output')"
+            "$DATABASE" 2>"$ERRLOG" | gzip -9 > "$TMP"; then
+    err="$(tail -3 "$ERRLOG" 2>/dev/null || echo 'no output')"
+    rm -f "$TMP" "$ERRLOG"
+    die "mysqldump failed: $err"
 fi
+rm -f "$ERRLOG"
 
 # ── Verify before trusting it ────────────────────────────────────────────────
 # A dump that dies halfway still produces a perfectly valid gzip file. Checking
@@ -96,10 +102,18 @@ fi
 # its last line; that is what actually proves the dump ran to the end.
 gzip -t "$TMP" 2>/dev/null || { rm -f "$TMP"; die "backup is not a valid gzip archive"; }
 
-if ! gzip -dc "$TMP" | tail -5 | grep -q "Dump completed"; then
-    rm -f "$TMP"
-    die "dump is truncated — no completion marker. Refusing to keep a partial backup."
-fi
+# Materialise the tail, then match it with `case` — no pipe involved. Piping
+# into `grep -q` lets grep exit on first match and SIGPIPE `tail`, which under
+# `set -o pipefail` fails the pipeline, discarding a perfectly good backup
+# because the check succeeded too quickly.
+TAIL_OUT="$(gzip -dc "$TMP" | tail -5)"
+case "$TAIL_OUT" in
+    *"Dump completed"*) ;;
+    *)
+        rm -f "$TMP"
+        die "dump is truncated — no completion marker. Refusing to keep a partial backup."
+        ;;
+esac
 
 mv "$TMP" "$TARGET"
 SIZE="$(du -h "$TARGET" | cut -f1)"

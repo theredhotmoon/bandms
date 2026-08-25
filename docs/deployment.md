@@ -421,10 +421,10 @@ one:
 PW=$(docker exec bandms-mysql printenv MYSQL_ROOT_PASSWORD)
 BACKUP=/opt/bandms/backups/bandms-YYYYMMDD-HHMMSS.sql.gz
 
-docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root   -e "DROP DATABASE IF EXISTS restore_test; CREATE DATABASE restore_test;"
+docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root -e "DROP DATABASE IF EXISTS restore_test; CREATE DATABASE restore_test;"
 gzip -dc "$BACKUP" | docker exec -i -e MYSQL_PWD="$PW" bandms-mysql mysql -u root restore_test
 
-docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root -e   "SELECT COUNT(*) FROM restore_test.users; SELECT COUNT(*) FROM restore_test.migrations;"
+docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root -e "SELECT COUNT(*) FROM restore_test.users; SELECT COUNT(*) FROM restore_test.migrations;"
 ```
 
 Once satisfied, restore over the real database. Stop the backend first so
@@ -448,7 +448,7 @@ touches it — which is why it is out of scope above, and why it still needs its
 own periodic backup:
 
 ```bash
-docker run --rm -v bandms-storage:/data -v ~:/backup alpine   tar czf /backup/bandms-storage-$(date +%F).tar.gz -C /data .
+docker run --rm -v bandms-storage:/data -v ~:/backup alpine tar czf /backup/bandms-storage-$(date +%F).tar.gz -C /data .
 ```
 
 Dumps also sit on the same disk as the database they protect, so they survive a
