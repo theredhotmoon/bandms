@@ -79,14 +79,69 @@ mkdir -p /opt/bandms
 chown deploy:deploy /opt/bandms
 ```
 
-Then harden SSH — in `/etc/ssh/sshd_config` set:
+### Harden SSH — but not yet
 
-```
+Do this **after** step 3, once you have confirmed both `root` and `deploy` can
+log in with keys. Turning off password authentication while a password is still
+your only working credential locks you out, and the only way back is Hetzner's
+rescue console.
+
+When you get there, do **not** edit `/etc/ssh/sshd_config` directly. Ubuntu
+cloud images ship `/etc/ssh/sshd_config.d/50-cloud-init.conf` containing
+`PasswordAuthentication yes`, and `sshd` keeps the **first** value it finds for
+a keyword — the opposite of most config systems. `Include` sits at line 12 of
+`sshd_config`, so that drop-in beats anything written further down the main
+file. Appending `PasswordAuthentication no` to the bottom leaves password auth
+**enabled** while looking like it worked.
+
+Write a drop-in that sorts *before* cloud-init's instead:
+
+```bash
+cat > /etc/ssh/sshd_config.d/10-hardening.conf <<'EOF'
+# 10- so sshd reads this before 50-cloud-init.conf; first value wins.
 PermitRootLogin prohibit-password
 PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+EOF
+
+chmod 600 /etc/ssh/sshd_config.d/10-hardening.conf
 ```
 
-and `systemctl restart ssh`.
+Check the syntax and the resulting values **before** restarting — a config error
+plus a restart on a key-only box means the rescue console:
+
+```bash
+sshd -t && echo "config valid"
+sshd -T | grep -iE '^(permitrootlogin|passwordauthentication|pubkeyauthentication)'
+```
+
+You want `permitrootlogin without-password` and `passwordauthentication no`. If
+you see `passwordauthentication yes`, the drop-in is not winning — check its
+filename sorts before `50-cloud-init.conf`. Only then:
+
+```bash
+systemctl restart ssh
+```
+
+Verify from your own machine, in a **new** terminal, keeping the current session
+open as a safety net:
+
+```bash
+ssh -i ~/.ssh/bandms_admin  root@YOUR_SERVER_IP   "whoami"   # root
+ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "whoami"   # deploy
+ssh -o PubkeyAuthentication=no root@YOUR_SERVER_IP           # must be refused
+```
+
+The third must fail with `Permission denied (publickey)`. If it prompts for a
+password, hardening did not take effect.
+
+To undo, delete the file you added — `sshd_config` itself was never modified,
+so there is nothing to restore:
+
+```bash
+rm /etc/ssh/sshd_config.d/10-hardening.conf && systemctl restart ssh
+```
 
 ---
 
@@ -118,6 +173,11 @@ message that does not say "wrong key":
 ```bash
 ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "docker ps"
 ```
+
+Both key logins are now proven, which is the precondition for hardening SSH.
+Go back and do that now — see **Harden SSH** at the end of step 2. Leaving it
+until later means running a publicly reachable server with password
+authentication enabled.
 
 ---
 
