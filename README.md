@@ -54,9 +54,8 @@ so a fresh deployment has nothing to log in with until you create it yourself:
 docker exec -it bandms-backend php artisan bandms:create-admin
 ```
 
-It prompts for the password rather than taking it as an argument, keeping it out
-of your shell history, and requires at least 12 characters with letters and
-numbers. Store the result in a password manager — **never commit production
+Run without `--password` and it prompts for one, so the value stays out of your
+shell history. It requires at least 12 characters with letters and numbers. Store the result in a password manager — **never commit production
 credentials to this repository, which is public.**
 
 ---
