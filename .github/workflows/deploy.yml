@@ -3,6 +3,16 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Documentation-only changes must not deploy. A deploy force-recreates the
+    # `web` container, which costs ~20-60s of 502s on the public site while
+    # Astro rebuilds — an outage with nothing to show for it when only prose
+    # changed. Note paths-ignore skips the whole workflow, tests included; that
+    # is correct here because none of these paths can affect a test outcome.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENSE'
 
 # Two pushes in quick succession would otherwise race each other onto the
 # server, and the loser could land its images after the winner's migrations.
