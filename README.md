@@ -35,12 +35,28 @@ App is then available at:
 - **Frontend (Vite):** http://localhost:5173
 - **Backend API:** http://localhost/api
 
-### Default login (after seeding)
+### Default login — local development only
+
+The seeder creates this account because `docker-compose.yml` sets `ADMIN_EMAIL`
+and `ADMIN_PASSWORD` for the local stack. The E2E suite logs in with it, so
+don't change it without updating `app/e2e/fixtures/auth.ts` too.
 
 | Field    | Value              |
 |---|---|
 | Email    | `admin@bandms.test`|
 | Password | `password`         |
+
+**Production gets no default account.** The seeder creates an admin only when
+both variables are set, and `.env.prod.example` leaves them deliberately blank —
+so a fresh deployment has nothing to log in with until you create it yourself:
+
+```bash
+docker exec -it bandms-backend php artisan bandms:create-admin
+```
+
+Run without `--password` and it prompts for one, so the value stays out of your
+shell history. It requires at least 12 characters with letters and numbers. Store the result in a password manager — **never commit production
+credentials to this repository, which is public.**
 
 ---
 
