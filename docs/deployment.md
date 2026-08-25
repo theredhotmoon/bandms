@@ -97,8 +97,6 @@ file. Appending `PasswordAuthentication no` to the bottom leaves password auth
 Write a drop-in that sorts *before* cloud-init's instead:
 
 ```bash
-cp /etc/ssh/sshd_config /root/sshd_config.bak.$(date +%F)
-
 cat > /etc/ssh/sshd_config.d/10-hardening.conf <<'EOF'
 # 10- so sshd reads this before 50-cloud-init.conf; first value wins.
 PermitRootLogin prohibit-password
@@ -138,6 +136,13 @@ ssh -o PubkeyAuthentication=no root@YOUR_SERVER_IP           # must be refused
 The third must fail with `Permission denied (publickey)`. If it prompts for a
 password, hardening did not take effect.
 
+To undo, delete the file you added — `sshd_config` itself was never modified,
+so there is nothing to restore:
+
+```bash
+rm /etc/ssh/sshd_config.d/10-hardening.conf && systemctl restart ssh
+```
+
 ---
 
 ## 3. Give CI an SSH key
@@ -168,6 +173,11 @@ message that does not say "wrong key":
 ```bash
 ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "docker ps"
 ```
+
+Both key logins are now proven, which is the precondition for hardening SSH.
+Go back and do that now — see **Harden SSH** at the end of step 2. Leaving it
+until later means running a publicly reachable server with password
+authentication enabled.
 
 ---
 
