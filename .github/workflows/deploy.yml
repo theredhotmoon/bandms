@@ -124,7 +124,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker/caddy/Caddyfile"
+          source: "docker-compose.prod.yml,docker/caddy/Caddyfile,scripts/prod-backup-db.sh"
           target: /opt/bandms/
 
       - name: Deploy via SSH
@@ -151,7 +151,15 @@ jobs:
             # nothing else would bring it up on a first deploy.
             docker compose -f docker-compose.prod.yml up -d mysql
 
-            # Backend first: its entrypoint runs the migrations. --wait blocks
+            # Dump the database BEFORE the backend starts, because starting it
+            # runs the migrations. Everything else about a deploy is reversible
+            # by retagging an image; a migration that drops a column is not.
+            # A non-zero exit here aborts the deploy (set -e) — which is the
+            # point: no verified backup, no schema change.
+            chmod +x scripts/prod-backup-db.sh
+            ./scripts/prod-backup-db.sh
+
+            # Backend next: its entrypoint runs the migrations. --wait blocks
             # until the healthcheck passes, so the frontends never come up
             # against a half-migrated schema.
             docker compose -f docker-compose.prod.yml up -d --no-deps --wait backend

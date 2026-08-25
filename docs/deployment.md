@@ -393,24 +393,68 @@ docker logs -f bandms-web          # Astro build output
 docker logs -f bandms-caddy        # access log, TLS issuance
 ```
 
-**Back up the database** — nothing does this for you yet:
+### Database backups
+
+**Every deploy takes one automatically**, immediately before the backend starts
+— which is when migrations run. Everything else about a deploy is reversible by
+retagging an image; a migration that drops a column is not. If the backup
+cannot be written and verified, the deploy aborts rather than migrating.
+
+Dumps land in `/opt/bandms/backups`, newest 20 retained:
 
 ```bash
-docker exec bandms-mysql mysqldump -u root -p"$DB_ROOT_PASSWORD" \
-  --single-transaction bandms | gzip > ~/bandms-$(date +%F).sql.gz
+ssh deploy@YOUR_SERVER_IP "ls -lh /opt/bandms/backups"
 ```
 
-Put that in a cron job and copy the output off the machine. Also enable
-Hetzner's automated backups (+20% of server cost) for whole-disk snapshots — the
-two protect against different failures and neither replaces the other.
-
-The `bandms-storage` volume holds every uploaded poster and photo *and*
-Passport's signing keys. Back it up too:
+Run one by hand any time:
 
 ```bash
-docker run --rm -v bandms-storage:/data -v ~:/backup alpine \
-  tar czf /backup/bandms-storage-$(date +%F).tar.gz -C /data .
+ssh deploy@YOUR_SERVER_IP "cd /opt/bandms && ./scripts/prod-backup-db.sh"
 ```
+
+#### Restoring
+
+Restore into a scratch database first, so a bad backup cannot destroy a working
+one:
+
+```bash
+PW=$(docker exec bandms-mysql printenv MYSQL_ROOT_PASSWORD)
+BACKUP=/opt/bandms/backups/bandms-YYYYMMDD-HHMMSS.sql.gz
+
+docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root -e "DROP DATABASE IF EXISTS restore_test; CREATE DATABASE restore_test;"
+gzip -dc "$BACKUP" | docker exec -i -e MYSQL_PWD="$PW" bandms-mysql mysql -u root restore_test
+
+docker exec -e MYSQL_PWD="$PW" bandms-mysql mysql -u root -e "SELECT COUNT(*) FROM restore_test.users; SELECT COUNT(*) FROM restore_test.migrations;"
+```
+
+Once satisfied, restore over the real database. Stop the backend first so
+nothing writes mid-restore:
+
+```bash
+cd /opt/bandms
+docker compose -f docker-compose.prod.yml stop backend
+
+gzip -dc "$BACKUP" | docker exec -i -e MYSQL_PWD="$PW" bandms-mysql mysql -u root bandms
+
+docker compose -f docker-compose.prod.yml start backend
+docker compose -f docker-compose.prod.yml restart web   # republish the public site
+```
+
+#### What this does not cover
+
+The pre-deploy dump is the **database only**. The `bandms-storage` volume holds
+every uploaded poster and photo *and* Passport's signing keys. A deploy never
+touches it — which is why it is out of scope above, and why it still needs its
+own periodic backup:
+
+```bash
+docker run --rm -v bandms-storage:/data -v ~:/backup alpine tar czf /backup/bandms-storage-$(date +%F).tar.gz -C /data .
+```
+
+Dumps also sit on the same disk as the database they protect, so they survive a
+bad migration but not a dead server. Copy them off the machine on a schedule,
+and enable Hetzner's automated backups (+20% of server cost) for whole-disk
+snapshots — the three cover different failures and none replaces the others.
 
 ---
 
