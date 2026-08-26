@@ -16,10 +16,12 @@ export async function getStaticPaths() {
   // first product through the admin would have taken the public site down.
   // Identical bug and identical blast radius to concerts/[slug].astro.
   //
-  // slug_en is typed `string` but the column is nullable, so an item saved
-  // without one would put us straight back into the crash above. No filter on
-  // availability is needed: GET /api/shop already returns only is_available
-  // items, so everything here is fetchable by GET /api/shop/by-slug.
+  // shop_items.slug_en is NOT NULL UNIQUE, so the filter is not strictly
+  // needed today — it is one line of insurance against the payload shape
+  // changing, because the cost of a missing param here is the whole site
+  // rather than one page. No filter on availability is needed either: GET
+  // /api/shop already returns only is_available items, so everything listed
+  // here is fetchable by GET /api/shop/by-slug.
   return items
     .filter(i => i.slug_en)
     .map(i => ({ params: { slug: i.slug_en } }))
@@ -31,8 +33,12 @@ const [item, profile] = await Promise.all([
   getBandProfile('en'),
 ])
 
-const images = [...(item.photos ?? [])].sort((a, b) => a.sort_order - b.sort_order)
-const mainImage = images[0]?.url ?? item.cover_photo
+// Normalised here rather than guarded at each use: a field the API stops
+// sending must degrade to an empty list, never abort the build.
+const images     = [...(item.photos ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+const categories = item.categories ?? []
+const tags       = item.tags ?? []
+const mainImage  = images[0]?.url ?? item.cover_photo
 ---
 
 <BaseLayout
@@ -77,9 +83,9 @@ const mainImage = images[0]?.url ?? item.cover_photo
         <p class="text-xs text-zinc-500 uppercase tracking-wider mb-1">{item.type}</p>
         <h1 class="text-3xl font-black text-white leading-tight">{item.name}</h1>
 
-        {(item.categories?.length ?? 0) > 0 && (
+        {categories.length > 0 && (
           <div class="flex flex-wrap gap-2 mt-2">
-            {item.categories!.map(c => (
+            {categories.map(c => (
               <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-zinc-500">{c.name}</span>
             ))}
           </div>
@@ -95,9 +101,9 @@ const mainImage = images[0]?.url ?? item.cover_photo
           </div>
         )}
 
-        {(item.tags?.length ?? 0) > 0 && (
+        {tags.length > 0 && (
           <div class="mt-6 flex flex-wrap gap-2">
-            {item.tags!.map(t => (
+            {tags.map(t => (
               <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-zinc-500">#{t.name}</span>
             ))}
           </div>
