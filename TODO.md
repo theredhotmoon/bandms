@@ -35,6 +35,11 @@ Every full run loses ~2 specs, a different pair each time, always downstream of 
 - **`docker-compose.yml` sets `APP_ENV: production` for the local stack.** Harmless today but it means no `app()->environment()` check can distinguish dev from prod; the seeder gates on explicit env vars for exactly this reason.
 - **No automated database backups.** The runbook gives the `mysqldump` command; nothing schedules it.
 
+### Pre-sale items are invisible on the public shop
+`GET /api/shop` filters `where('is_available', true)`, so a presale-only item (`is_available = false`, `is_presale = true`) never reaches the public site. `merch/index.astro` filters `is_available || is_presale` and renders a "presale" badge — code that can never fire — and `GET /api/shop/by-slug/{slug}` 404s the same items, so a shared link to one is dead.
+
+Found while fixing the merch build crash. Deliberately **not** fixed there: making presale items public is a product decision, not a bug fix, and it changes what a live public site displays. The three layers currently disagree about what presale means; pick one and make them agree.
+
 ### Admin routes return 500 instead of 401
 Any admin route without an `Accept: application/json` header returns 500, not 401 — Laravel's auth middleware trying to redirect to a `login` named route that does not exist in an API-only app. Verified across five endpoints. Needs an exception-handler fix.
 
