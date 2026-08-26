@@ -26,7 +26,17 @@
 	# site also builds would shadow the public page, and anything NOT listed
 	# here falls through to Astro and 404s if Astro has no such page — so this
 	# list must track app/src/router/index.ts.
-	@spa path /admin* /login /account* /tickets/* /tech-rider* /cart /checkout
+	#
+	# The last two entries are NOT routes — they are the SPA's build output, and
+	# leaving them out is what took /admin down in #47. Vite builds app/ with
+	# base "/" and the default assetsDir, so the served index.html asks for
+	# /assets/index-<hash>.js and .css at the ROOT. Those fell through to Astro,
+	# which emits its own assets under /_astro/ and has no /assets/ — two 404s,
+	# no JS, and a Vue SPA with no JS renders a blank white page. /vite.svg is
+	# the favicon, shipped in app/public/ and unreachable for the same reason.
+	# There is no collision with Astro: it uses /_astro/, and web/public/ holds
+	# only robots.txt. Adding anything to app/public/ means adding it here too.
+	@spa path /admin* /login /account* /tickets/* /tech-rider* /cart /checkout /assets/* /vite.svg
 	handle @spa {
 		reverse_proxy frontend:80
 	}

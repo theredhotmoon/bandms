@@ -175,6 +175,16 @@ jobs:
             # don't drop it to shave the deploy time without revisiting that.
             docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
-            docker compose -f docker-compose.prod.yml up -d --no-deps caddy
+
+            # --force-recreate is required, not cosmetic. The Caddyfile is a
+            # bind mount, so its CONTENTS are not part of the service config
+            # hash compose diffs against — a plain `up -d` reports the container
+            # up-to-date and skips it, and Caddy (which parses its config once
+            # at startup) keeps serving the previous routing table forever. The
+            # scp above also replaces the file's inode, which a single-file bind
+            # mount does not follow. Recreating is the only thing that reliably
+            # applies a routing change. Dropping this silently reverts every
+            # future Caddyfile edit.
+            docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
 
             docker image prune -f
