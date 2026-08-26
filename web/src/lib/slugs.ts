@@ -5,24 +5,12 @@ export type SlugMap = { en: Record<string, string>; pl: Record<string, string> }
 
 export const LOCALES: Locale[] = ['en', 'pl']
 
-// Sections not managed by the CMS module system — slugs are hardcoded per locale.
+// Last-resort fallbacks for a site-config that has no row for these modules —
+// an API that has not run the slug migrations yet. Both are ordinary modules
+// now, so a live API always overwrites these.
 const STATIC_SLUGS: SlugMap = {
   en: { contact: 'contact', newsletter: 'newsletter' },
   pl: { contact: 'kontakt', newsletter: 'newsletter' },
-}
-
-/**
- * Converts a display name to a URL-safe slug.
- * Handles Polish diacritics (ą→a, ę→e, ó→o, ł→l, etc.).
- */
-export function slugify(str: string): string {
-  return str
-    .replace(/ł/gi, 'l')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')  // strip combining diacritics (ą→a, ę→e, ó→o, ź→z, etc.)
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
 }
 
 let _cache: SlugMap | null = null
@@ -58,11 +46,12 @@ export async function getSlugMap(): Promise<SlugMap> {
     pl: { ...STATIC_SLUGS.pl },
   }
 
+  // Slugs are stored per locale on the module, not derived from its label —
+  // renaming "Shop" to "Merch store" must not move /en/shop. The API resolves
+  // an empty slug to the module key before it gets here.
   for (const moduleSlug of Object.keys(enCfg.module_config)) {
-    const enLabel = enCfg.module_config[moduleSlug]?.label ?? moduleSlug
-    const plLabel = plCfg.module_config[moduleSlug]?.label ?? enLabel
-    map.en[moduleSlug] = slugify(enLabel) || moduleSlug
-    map.pl[moduleSlug] = slugify(plLabel) || moduleSlug
+    map.en[moduleSlug] = enCfg.module_config[moduleSlug]?.slug || moduleSlug
+    map.pl[moduleSlug] = plCfg.module_config[moduleSlug]?.slug || moduleSlug
   }
 
   _cache = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }

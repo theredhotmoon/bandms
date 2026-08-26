@@ -121,6 +121,8 @@ export const getShopCategories = () =>
 export interface ModuleConfig {
   enabled: boolean
   label: string
+  /** URL segment for this locale. The API already resolves the fallback to the module key. */
+  slug: string
   per_page: number | null
 }
 

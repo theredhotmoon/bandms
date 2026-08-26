@@ -21,6 +21,10 @@ class WebsiteModuleController extends Controller
         $module_config = $all->keyBy('slug')->map(fn ($m) => [
             'enabled'  => (bool) $m->enabled,
             'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
+            // The URL segment this module is served under, per locale. Empty
+            // falls back to the module key, so the public site never has to
+            // derive a slug from the label.
+            'slug'     => $m->getTranslation('custom_slug', $locale, false) ?: $m->slug,
             'per_page' => $m->per_page,
         ]);
 
@@ -70,6 +74,8 @@ class WebsiteModuleController extends Controller
             'enabled'        => ['sometimes', 'boolean'],
             'custom_name.en' => ['sometimes', 'nullable', 'string', 'max:80'],
             'custom_name.pl' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'custom_slug.en' => $this->slugRules($module, 'en'),
+            'custom_slug.pl' => $this->slugRules($module, 'pl'),
             'per_page'       => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
         ]);
 
@@ -84,6 +90,25 @@ class WebsiteModuleController extends Controller
             ]);
         }
 
+        if (array_key_exists('custom_slug', $validated)) {
+            // Only touch locales the request actually names. custom_name above
+            // overwrites both — harmless for a label, but a slug controls a live
+            // URL, so a payload of {"en": "shop"} must not silently clear the
+            // Polish slug and move /pl/sklep. An explicit null still clears.
+            // setTranslations() MERGES rather than replaces, so a cleared locale
+            // has to be forgotten explicitly — dropping it from the array would
+            // silently leave the old slug in place.
+            foreach (['en', 'pl'] as $locale) {
+                if (! array_key_exists($locale, $validated['custom_slug'])) {
+                    continue;
+                }
+
+                filled($validated['custom_slug'][$locale])
+                    ? $module->setTranslation('custom_slug', $locale, $validated['custom_slug'][$locale])
+                    : $module->forgetTranslation('custom_slug', $locale);
+            }
+        }
+
         if (array_key_exists('per_page', $validated)) {
             $module->per_page = $validated['per_page'];
         }
@@ -95,6 +120,38 @@ class WebsiteModuleController extends Controller
         }
 
         return response()->json(['data' => new WebsiteModuleResource($module)]);
+    }
+
+    /**
+     * Validation for one locale's URL slug.
+     *
+     * Uniqueness is checked against every other module's *effective* slug, not
+     * just its stored one: a module with an empty slug is served under its key,
+     * so claiming "merch" collides with the merch module even though that row
+     * has no custom_slug of its own. The table holds a dozen rows, so scanning
+     * the collection beats a JSON query for clarity.
+     */
+    private function slugRules(WebsiteModule $module, string $locale): array
+    {
+        return [
+            'sometimes',
+            'nullable',
+            'string',
+            'max:60',
+            'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+            function (string $attribute, mixed $value, \Closure $fail) use ($module, $locale) {
+                if (blank($value)) {
+                    return;
+                }
+
+                $conflict = WebsiteModule::where('id', '!=', $module->id)->get()
+                    ->first(fn ($m) => ($m->getTranslation('custom_slug', $locale, false) ?: $m->slug) === $value);
+
+                if ($conflict) {
+                    $fail("The {$locale} slug \"{$value}\" is already used by the {$conflict->display_name} module.");
+                }
+            },
+        ];
     }
 
     public function updateSettings(Request $request): JsonResponse

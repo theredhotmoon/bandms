@@ -2,6 +2,8 @@ export interface WebsiteModule {
   slug: string
   display_name: string
   custom_name: { en: string | null; pl: string | null }
+  /** Per-locale URL segment. null means "serve under `slug`". */
+  custom_slug: { en: string | null; pl: string | null }
   enabled: boolean
   sort_order: number
   per_page: number | null

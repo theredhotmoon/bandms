@@ -62,6 +62,7 @@ export async function updateModuleSettings(
   slug: string,
   payload: {
     custom_name?: { en: string | null; pl: string | null }
+    custom_slug?: { en: string | null; pl: string | null }
     per_page?: number | null
   },
 ): Promise<{ data: WebsiteModule }> {

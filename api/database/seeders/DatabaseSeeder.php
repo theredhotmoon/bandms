@@ -27,10 +27,11 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'photos',     'display_name' => 'Photos',     'enabled' => true, 'sort_order' => 4,  'created_at' => now(), 'updated_at' => now()],
             ['slug' => 'press',      'display_name' => 'Press',      'enabled' => true, 'sort_order' => 5,  'created_at' => now(), 'updated_at' => now()],
             ['slug' => 'videos',     'display_name' => 'Videos',     'enabled' => true, 'sort_order' => 6,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'merch',      'display_name' => 'Shop',       'enabled' => true, 'sort_order' => 7,  'created_at' => now(), 'updated_at' => now()],
+            ['slug' => 'merch',      'display_name' => 'Shop',       'enabled' => true, 'sort_order' => 7,  'created_at' => now(), 'updated_at' => now(), 'custom_slug' => json_encode(['en' => 'shop', 'pl' => 'shop'])],
             ['slug' => 'epk',        'display_name' => 'EPK',        'enabled' => true, 'sort_order' => 8,  'created_at' => now(), 'updated_at' => now()],
             ['slug' => 'tech-rider', 'display_name' => 'Tech Rider', 'enabled' => true, 'sort_order' => 9,  'created_at' => now(), 'updated_at' => now()],
             ['slug' => 'newsletter', 'display_name' => 'Newsletter', 'enabled' => true, 'sort_order' => 10, 'created_at' => now(), 'updated_at' => now()],
+            ['slug' => 'contact',    'display_name' => 'Contact',    'enabled' => true, 'sort_order' => 11, 'created_at' => now(), 'updated_at' => now(), 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
         ]);
 
         DB::table('site_settings')->insertOrIgnore([

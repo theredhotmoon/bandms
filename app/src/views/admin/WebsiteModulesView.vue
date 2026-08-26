@@ -2,6 +2,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule } from '@/types/website-module'
 
 const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
@@ -97,33 +98,53 @@ const PER_PAGE_OPTIONS = [6, 9, 10, 12, 15, 20, 24] as const
 const editingSlug  = ref<string | null>(null)
 const draftNameEn  = ref('')
 const draftNamePl  = ref('')
+const draftSlugEn  = ref('')
+const draftSlugPl  = ref('')
 const draftPerPage = ref<number | null>(null)
+const fieldErrors  = ref<Record<string, string[]>>({})
 
 function startEdit(mod: WebsiteModule) {
   editingSlug.value  = mod.slug
   draftNameEn.value  = mod.custom_name?.en ?? ''
   draftNamePl.value  = mod.custom_name?.pl ?? ''
+  draftSlugEn.value  = mod.custom_slug?.en ?? ''
+  draftSlugPl.value  = mod.custom_slug?.pl ?? ''
   draftPerPage.value = mod.per_page ?? null
+  fieldErrors.value  = {}
 }
 
 function cancelEdit() {
   editingSlug.value = null
+  fieldErrors.value = {}
 }
 
-function saveEdit(slug: string) {
-  updateSettings.mutate(
-    {
+// The path shown under each slug input. Mirrors the API fallback exactly: an
+// empty field is served under the module key, so the hint must never go blank.
+function previewPath(mod: WebsiteModule, lang: 'en' | 'pl', draft: string) {
+  return `/${lang}/${draft.trim() || mod.slug}`
+}
+
+async function saveEdit(slug: string) {
+  fieldErrors.value = {}
+  try {
+    await updateSettings.mutateAsync({
       slug,
       payload: {
         custom_name: {
           en: draftNameEn.value.trim() || null,
           pl: draftNamePl.value.trim() || null,
         },
+        custom_slug: {
+          en: draftSlugEn.value.trim() || null,
+          pl: draftSlugPl.value.trim() || null,
+        },
         per_page: draftPerPage.value,
       },
-    },
-    { onSuccess: () => { editingSlug.value = null } },
-  )
+    })
+    editingSlug.value = null
+  } catch (e) {
+    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
+  }
 }
 </script>
 
@@ -232,7 +253,7 @@ function saveEdit(slug: string) {
               :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
             >{{ mod.custom_name?.en || mod.display_name }}</span>
             <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
-            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : mod.slug }}</span>
+            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : (mod.custom_slug?.en || mod.slug) }}</span>
           </div>
 
           <!-- Status badge -->
@@ -297,6 +318,55 @@ function saveEdit(slug: string) {
                 />
               </div>
             </div>
+          </div>
+
+          <!-- URL slug inputs.
+               Deliberately not SlugInput.vue: that component derives the slug
+               from a source title and offers a regenerate button, which is the
+               label→URL coupling this field exists to break. With no source to
+               regenerate from it would emit '' and move a live page. These also
+               need a per-locale error and a path preview, which it has no slot
+               for. -->
+          <div class="flex flex-col gap-1.5">
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
+            <div class="flex gap-3">
+              <div class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-zinc-600">EN</span>
+                <input
+                  v-model="draftSlugEn"
+                  type="text"
+                  maxlength="60"
+                  :placeholder="mod.slug"
+                  :aria-invalid="Boolean(fieldErrors['custom_slug.en'])"
+                  class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                  :class="fieldErrors['custom_slug.en'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                />
+                <span v-if="fieldErrors['custom_slug.en']" class="text-xs text-red-400">
+                  {{ fieldErrors['custom_slug.en'][0] }}
+                </span>
+                <span v-else class="text-xs text-zinc-600 font-mono">{{ previewPath(mod, 'en', draftSlugEn) }}</span>
+              </div>
+              <div class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-zinc-600">PL</span>
+                <input
+                  v-model="draftSlugPl"
+                  type="text"
+                  maxlength="60"
+                  :placeholder="mod.slug"
+                  :aria-invalid="Boolean(fieldErrors['custom_slug.pl'])"
+                  class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                  :class="fieldErrors['custom_slug.pl'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                />
+                <span v-if="fieldErrors['custom_slug.pl']" class="text-xs text-red-400">
+                  {{ fieldErrors['custom_slug.pl'][0] }}
+                </span>
+                <span v-else class="text-xs text-zinc-600 font-mono">{{ previewPath(mod, 'pl', draftSlugPl) }}</span>
+              </div>
+            </div>
+            <span class="text-xs text-zinc-600">
+              Lowercase letters, numbers and dashes. Leave empty to serve under
+              <code class="text-zinc-500">/{{ mod.slug }}</code>. Changing this moves the page — old links stop working.
+            </span>
           </div>
 
           <!-- Per-page select (list modules only) -->
