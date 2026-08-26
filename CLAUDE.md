@@ -300,6 +300,90 @@ Empty output means the variable never arrived, regardless of what `.env` says.
 
 ---
 
+### Public `/admin` is a blank page — the Caddy `@spa` matcher must list assets, not just routes
+
+**Symptom:** `/admin` on the server returns **200 with correct HTML**, but renders
+blank white. The console shows only:
+
+```
+GET /assets/index-<hash>.js  404 (Not Found)
+GET /assets/index-<hash>.css 404 (Not Found)
+```
+
+**Root cause:** `docker/caddy/Caddyfile` routes by an explicit path list — `@spa`
+goes to the `frontend` container, everything else falls through to Astro. But the
+SPA's *build output* also lives at the root: Vite builds `app/` with `base: '/'`
+and the default `assetsDir`, so the served `index.html` asks for
+`/assets/index-<hash>.js`. With `/assets/*` missing from `@spa`, those requests
+fell through to the `web` container, which emits its own assets under `/_astro/`
+and has no `/assets/` at all. No JS runs, and a Vue SPA with no JS renders an
+empty `<div id="app">`. The HTML returning 200 is what makes this look mysterious.
+
+**Fix (already applied in #47):** `/assets/*` and `/vite.svg` are in the matcher.
+
+**The matcher holds two different kinds of thing.** Page routes, which track
+`app/src/router/index.ts`, *and* the SPA's static output. **Adding a file to
+`app/public/` means adding it to the matcher too**, or it 404s in production while
+working fine in dev — `pnpm dev` and the dev `frontend` container both serve the
+whole SPA from one origin, so no local setup can reproduce this.
+
+**Diagnose from outside** — the question is always *which container answered*:
+
+```bash
+curl -o /dev/null -w '%{http_code}\n' http://SERVER/robots.txt  # 200 = web (Astro) is the fallthrough
+curl -o /dev/null -w '%{http_code}\n' http://SERVER/vite.svg    # 404 = SPA static is NOT routed
+```
+
+**Beware a false green when probing asset paths.** The SPA's nginx ends in
+`try_files $uri $uri/ /index.html`, and its long-cache block only matches real
+extensions — so a *mistyped* asset name (`App-abc123js`, dot lost) misses the
+asset block, hits the SPA fallback, and returns **200 with `index.html`**. Always
+check `content_type`, and confirm a genuinely absent file 404s before trusting a
+row of 200s.
+
+---
+
+### A changed `Caddyfile` does nothing until the container is **recreated**
+
+**Symptom:** You edit `docker/caddy/Caddyfile`, deploy or run
+`docker compose up -d caddy`, and routing behaves exactly as before. The new file
+is definitely on the server — `cat` proves it.
+
+**Root cause:** The Caddyfile is a bind mount. Compose decides whether to recreate
+a container by hashing the **service definition** — image, env, volume
+*declarations* — and a mounted file's *contents* are not part of that hash. The
+container is reported up-to-date and skipped, and Caddy parses its config once at
+startup. `scp` also replaces the file's inode, which a single-file bind mount does
+not follow.
+
+**The tell is in `docker ps`:** after a deploy, `bandms-caddy` shows an uptime far
+older than everything around it — `Up 22 hours` sitting next to `Up 2 minutes`.
+That is how #47 was spotted.
+
+**Fix (already applied to `.github/workflows/deploy.yml` in #47):**
+`--force-recreate`, the same treatment `web` already gets. A manual edit on the
+server needs it too — a plain restart is not enough:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+```
+
+**Validate before recreating.** A malformed Caddyfile takes down the *whole* site,
+not just the route being changed:
+
+```bash
+docker run --rm -e SITE_ADDRESS=":80" \
+  -v /opt/bandms/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+  caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+```
+
+**A manual server-side edit is a hotfix, not a fix.** The deploy `scp`s
+`docker/caddy/Caddyfile` from `main` over whatever is there, so an unmerged change
+is silently reverted on the next push — and with Caddy now force-recreated, it
+takes effect immediately. Land the same edit in the repo.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
