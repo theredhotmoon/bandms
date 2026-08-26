@@ -48,10 +48,17 @@ export async function getSlugMap(): Promise<SlugMap> {
 
   // Slugs are stored per locale on the module, not derived from its label —
   // renaming "Shop" to "Merch store" must not move /en/shop. The API resolves
-  // an empty slug to the module key before it gets here.
+  // an empty slug to the module key before it gets here; the fallback covers an
+  // API old enough not to send the field at all.
+  //
+  // Tested for empty rather than with `||`, which would discard the legal slug
+  // "0" the same way PHP's `?:` does.
+  const resolve = (slug: string | undefined, moduleSlug: string) =>
+    slug === undefined || slug === '' ? moduleSlug : slug
+
   for (const moduleSlug of Object.keys(enCfg.module_config)) {
-    map.en[moduleSlug] = enCfg.module_config[moduleSlug]?.slug || moduleSlug
-    map.pl[moduleSlug] = plCfg.module_config[moduleSlug]?.slug || moduleSlug
+    map.en[moduleSlug] = resolve(enCfg.module_config[moduleSlug]?.slug, moduleSlug)
+    map.pl[moduleSlug] = resolve(plCfg.module_config[moduleSlug]?.slug, moduleSlug)
   }
 
   _cache = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }

@@ -9,6 +9,7 @@ import {
   fetchRebuildStatus,
 } from '@/api/website-modules'
 import { useAuth } from './useAuth'
+import type { WebsiteModuleSettingsPayload } from '@/types/website-module'
 
 export function useWebsiteModules() {
   const { token } = useAuth()
@@ -40,11 +41,7 @@ export function useWebsiteModules() {
       payload,
     }: {
       slug: string
-      payload: {
-        custom_name?: { en: string | null; pl: string | null }
-        custom_slug?: { en: string | null; pl: string | null }
-        per_page?: number | null
-      }
+      payload: WebsiteModuleSettingsPayload
     }) => updateModuleSettings(token.value!, slug, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
   })

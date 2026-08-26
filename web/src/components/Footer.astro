@@ -19,7 +19,9 @@ const [siteConfig, slugMap] = await Promise.all([
 const year = new Date().getFullYear()
 
 // CMS-module nav links, ordered by module_order, filtered to enabled only.
-// newsletter is always shown (its label/slug are not module-driven).
+// newsletter is listed unconditionally: [section].astro keeps its page in
+// ALWAYS_ON, so the link is never dead, and its footer label is hardcoded.
+// Its slug still comes from the module like every other one.
 const MODULE_LINK_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'contact'] as const
 
 const orderedSlugs = siteConfig.module_order.length > 0

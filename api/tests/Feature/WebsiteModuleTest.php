@@ -589,3 +589,31 @@ it('clears one locale when that locale is explicitly null', function () {
 
     $this->getJson('/api/site-config')->assertJsonPath('module_config.merch.slug', 'merch');
 });
+
+it('honours "0" as a slug rather than treating it as empty', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 1]);
+
+    // "0" passes the regex, so it must not be swallowed by a PHP falsiness
+    // check and silently fall back to the module key.
+    $this->putJson('/api/admin/modules/videos', ['custom_slug' => ['en' => '0']])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', '0');
+
+    $this->getJson('/api/site-config')->assertJsonPath('module_config.videos.slug', '0');
+});
+
+it('rejects a slug colliding with another module whose stored slug is "0"', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $videos = WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 1]);
+    $videos->setTranslation('custom_slug', 'en', '0');
+    $videos->save();
+
+    WebsiteModule::create(['slug' => 'press', 'display_name' => 'Press', 'enabled' => true, 'sort_order' => 2]);
+
+    $this->putJson('/api/admin/modules/press', ['custom_slug' => ['en' => '0']])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('custom_slug.en');
+});

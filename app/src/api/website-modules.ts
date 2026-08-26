@@ -1,4 +1,4 @@
-import type { WebsiteModule, WebsiteModulesResponse, SiteSettings, RebuildStatus } from '@/types/website-module'
+import type { WebsiteModule, WebsiteModuleSettingsPayload, WebsiteModulesResponse, SiteSettings, RebuildStatus } from '@/types/website-module'
 import { API_BASE, authHeaders, handleResponse, assertSafeSlug } from './client'
 
 const REBUILD_STATUSES = ['idle', 'building', 'done', 'error', 'unknown'] as const
@@ -60,11 +60,7 @@ export async function fetchRebuildStatus(token: string): Promise<RebuildStatus> 
 export async function updateModuleSettings(
   token: string,
   slug: string,
-  payload: {
-    custom_name?: { en: string | null; pl: string | null }
-    custom_slug?: { en: string | null; pl: string | null }
-    per_page?: number | null
-  },
+  payload: WebsiteModuleSettingsPayload,
 ): Promise<{ data: WebsiteModule }> {
   assertSafeSlug(slug)
   const res = await fetch(`${API_BASE}/api/admin/modules/${encodeURIComponent(slug)}`, {

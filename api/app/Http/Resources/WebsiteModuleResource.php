@@ -20,10 +20,12 @@ class WebsiteModuleResource extends JsonResource
                 'pl' => ($translations['pl'] ?? null) ?: null,
             ],
             // Empty means "fall back to the module key" — the admin renders the
-            // key as the input's placeholder to make that visible.
+            // key as the input's placeholder to make that visible. Compared
+            // against '' rather than via ?:, which would report the legal slug
+            // "0" as absent and make the admin field appear to have not saved.
             'custom_slug'  => [
-                'en' => ($slugs['en'] ?? null) ?: null,
-                'pl' => ($slugs['pl'] ?? null) ?: null,
+                'en' => ($slugs['en'] ?? '') === '' ? null : $slugs['en'],
+                'pl' => ($slugs['pl'] ?? '') === '' ? null : $slugs['pl'],
             ],
             'per_page'     => $this->per_page,
             'enabled'      => (bool) $this->enabled,

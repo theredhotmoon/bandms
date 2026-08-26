@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
+import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
@@ -118,10 +119,18 @@ function cancelEdit() {
   fieldErrors.value = {}
 }
 
-// The path shown under each slug input. Mirrors the API fallback exactly: an
-// empty field is served under the module key, so the hint must never go blank.
+// Mirrors the API fallback exactly: an empty slug is served under the module
+// key. Tested for empty rather than with `||`, which would treat the legal slug
+// "0" as absent — the same trap PHP's `?:` sets on the server.
+function effectiveSlug(stored: string | null | undefined, moduleKey: string) {
+  const trimmed = stored?.trim() ?? ''
+  return trimmed === '' ? moduleKey : trimmed
+}
+
+// The path shown under each slug input; never blank, so the hint always shows
+// where the page will actually live.
 function previewPath(mod: WebsiteModule, lang: 'en' | 'pl', draft: string) {
-  return `/${lang}/${draft.trim() || mod.slug}`
+  return `/${lang}/${effectiveSlug(draft, mod.slug)}`
 }
 
 async function saveEdit(slug: string) {
@@ -143,7 +152,10 @@ async function saveEdit(slug: string) {
     })
     editingSlug.value = null
   } catch (e) {
+    // Field-level errors render inline next to the offending input; anything
+    // else would otherwise vanish, leaving the form looking like it saved.
     if (e instanceof ApiValidationError) fieldErrors.value = e.errors
+    else toast.error('Could not save the module')
   }
 }
 </script>
@@ -253,7 +265,7 @@ async function saveEdit(slug: string) {
               :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
             >{{ mod.custom_name?.en || mod.display_name }}</span>
             <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
-            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : (mod.custom_slug?.en || mod.slug) }}</span>
+            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
           </div>
 
           <!-- Status badge -->

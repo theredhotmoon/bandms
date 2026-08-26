@@ -121,8 +121,12 @@ export const getShopCategories = () =>
 export interface ModuleConfig {
   enabled: boolean
   label: string
-  /** URL segment for this locale. The API already resolves the fallback to the module key. */
-  slug: string
+  /**
+    * URL segment for this locale, with the module-key fallback already resolved
+    * by the API. Optional because an API that predates the slug migration omits
+    * it entirely — see the fallback in slugs.ts.
+    */
+  slug?: string
   per_page: number | null
 }
 

@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\DB;
  * Registering it here makes it behave like every other section: toggleable,
  * renameable per locale, and reorderable from /admin/website-modules.
  *
- * The PL custom name is seeded so the existing /pl/kontakt URL keeps working —
- * the public slug is derived from the label, and without it the Polish page
- * would silently move to /pl/contact.
+ * The PL custom name is seeded so the existing /pl/kontakt URL keeps working.
+ * At the point this migration runs the public slug is still derived from the
+ * label, so without it the Polish page would move to /pl/contact. The very
+ * next migration stores slugs explicitly and ends that coupling — by then this
+ * row already carries the right label for the backfill to read.
  */
 return new class extends Migration
 {

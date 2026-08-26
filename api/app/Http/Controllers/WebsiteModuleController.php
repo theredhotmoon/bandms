@@ -18,15 +18,20 @@ class WebsiteModuleController extends Controller
 
         $modules      = $all->keyBy('slug')->map(fn ($m) => (bool) $m->enabled);
         $module_order = $all->pluck('slug')->values();
-        $module_config = $all->keyBy('slug')->map(fn ($m) => [
-            'enabled'  => (bool) $m->enabled,
-            'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
+        $module_config = $all->keyBy('slug')->map(function ($m) use ($locale) {
             // The URL segment this module is served under, per locale. Empty
             // falls back to the module key, so the public site never has to
-            // derive a slug from the label.
-            'slug'     => $m->getTranslation('custom_slug', $locale, false) ?: $m->slug,
-            'per_page' => $m->per_page,
-        ]);
+            // derive a slug from the label. Compared against '' rather than
+            // via ?:, which would treat the legal slug "0" as absent.
+            $slug = $m->getTranslation('custom_slug', $locale, false);
+
+            return [
+                'enabled'  => (bool) $m->enabled,
+                'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
+                'slug'     => $slug === '' || $slug === null ? $m->slug : $slug,
+                'per_page' => $m->per_page,
+            ];
+        });
 
         return response()->json([
             'modules'       => $modules,
@@ -145,7 +150,11 @@ class WebsiteModuleController extends Controller
                 }
 
                 $conflict = WebsiteModule::where('id', '!=', $module->id)->get()
-                    ->first(fn ($m) => ($m->getTranslation('custom_slug', $locale, false) ?: $m->slug) === $value);
+                    ->first(function ($m) use ($locale, $value) {
+                        $slug = $m->getTranslation('custom_slug', $locale, false);
+
+                        return ($slug === '' || $slug === null ? $m->slug : $slug) === $value;
+                    });
 
                 if ($conflict) {
                     $fail("The {$locale} slug \"{$value}\" is already used by the {$conflict->display_name} module.");
