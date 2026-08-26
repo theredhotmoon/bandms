@@ -30,6 +30,7 @@ class WebsiteModuleController extends Controller
                 'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
                 'slug'     => $slug === '' || $slug === null ? $m->slug : $slug,
                 'per_page' => $m->per_page,
+                'settings' => self::resolveSettings($m->settings, $locale),
             ];
         });
 
@@ -38,6 +39,40 @@ class WebsiteModuleController extends Controller
             'module_order'  => $module_order,
             'module_config' => $module_config,
         ]);
+    }
+
+    /**
+     * Flatten {"field": {"en": ..., "pl": ...}} to {"field": "..."} for one locale.
+     *
+     * Falls back to the other locale rather than emitting null, on the same
+     * reasoning as FaqSummaryResource: the Astro build bakes whatever it gets,
+     * and a null here renders an empty hero with a green build.
+     *
+     * Returns an object, never null — the public site does
+     * `settings.kicker ?? ''` and an absent bag would throw at build time,
+     * which takes down all 35 pages rather than one.
+     */
+    private static function resolveSettings(?array $settings, string $locale): array
+    {
+        $out = [];
+
+        foreach ($settings ?? [] as $field => $value) {
+            if (! is_array($value)) {
+                $out[$field] = $value;
+                continue;
+            }
+
+            foreach ([$locale, 'en', 'pl'] as $candidate) {
+                if (filled($value[$candidate] ?? null)) {
+                    $out[$field] = $value[$candidate];
+                    break;
+                }
+            }
+
+            $out[$field] ??= '';
+        }
+
+        return $out;
     }
 
     public function index(): JsonResponse
@@ -82,6 +117,10 @@ class WebsiteModuleController extends Controller
             'custom_slug.en' => $this->slugRules($module, 'en'),
             'custom_slug.pl' => $this->slugRules($module, 'pl'),
             'per_page'       => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
+            'settings'       => ['sometimes', 'array'],
+            'settings.*'     => ['array'],
+            'settings.*.en'  => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'settings.*.pl'  => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         if (array_key_exists('enabled', $validated)) {
@@ -116,6 +155,33 @@ class WebsiteModuleController extends Controller
 
         if (array_key_exists('per_page', $validated)) {
             $module->per_page = $validated['per_page'];
+        }
+
+        if (array_key_exists('settings', $validated)) {
+            // Merged per field and per locale, for the same reason custom_slug
+            // is: a payload naming only the English kicker must not silently
+            // blank the Polish one. An explicit null clears just that locale.
+            $current = $module->settings ?? [];
+
+            foreach ($validated['settings'] as $field => $value) {
+                foreach (['en', 'pl'] as $locale) {
+                    if (! array_key_exists($locale, $value)) {
+                        continue;
+                    }
+
+                    if (filled($value[$locale])) {
+                        $current[$field][$locale] = $value[$locale];
+                    } else {
+                        unset($current[$field][$locale]);
+                    }
+                }
+
+                if (empty($current[$field])) {
+                    unset($current[$field]);
+                }
+            }
+
+            $module->settings = $current;
         }
 
         $module->save();

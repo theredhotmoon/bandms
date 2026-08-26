@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BandMember;
+use App\Models\Concert;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -12,6 +13,8 @@ use Sabre\VObject\Reader;
 
 class BandCalendarController extends Controller
 {
+    private const MAX_RANGE_DAYS = 92;
+
     private array $colors = [
         '#6366f1', '#f59e0b', '#10b981', '#f43f5e',
         '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
@@ -40,7 +43,15 @@ class BandCalendarController extends Controller
         return response()->json(['data' => $events]);
     }
 
-    /** Public: availability check for a single date. */
+    /**
+     * Public: availability check for a single date.
+     *
+     * This endpoint is unauthenticated. It used to return `busy_members` with
+     * each member's full name and role, which let anyone enumerate which
+     * musician was unavailable on which day — a private-calendar leak dressed
+     * as a booking convenience. It now reports only the aggregate, which is all
+     * a promoter ever needed.
+     */
     public function availability(Request $request): JsonResponse
     {
         $data = $request->validate(['date' => 'required|date']);
@@ -50,29 +61,100 @@ class BandCalendarController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $dayEnd      = date('Y-m-d', strtotime($data['date'] . ' +1 day'));
-        $busyMembers = [];
+        $dayEnd    = date('Y-m-d', strtotime($data['date'] . ' +1 day'));
+        $busyCount = 0;
 
         foreach ($members as $member) {
-            $events = $this->parseMemberCalendar($member, $data['date'], $dayEnd);
-            if (!empty($events)) {
-                $busyMembers[] = [
-                    'id'   => $member->id,
-                    'name' => $member->first_name . ' ' . $member->last_name,
-                    'role' => $member->role,
-                ];
+            if (!empty($this->parseMemberCalendar($member, $data['date'], $dayEnd))) {
+                $busyCount++;
             }
         }
 
         return response()->json([
             'data' => [
                 'date'          => $data['date'],
-                'available'     => empty($busyMembers),
+                'available'     => $busyCount === 0,
                 'total_members' => $members->count(),
-                'busy_count'    => count($busyMembers),
-                'busy_members'  => $busyMembers,
+                'busy_count'    => $busyCount,
             ],
         ]);
+    }
+
+    /**
+     * Public: day-by-day availability across a range, for the booking calendar.
+     *
+     * The single-date endpoint above cannot back a month grid: it would take 30
+     * requests, each re-parsing every member's remote iCal feed. This walks all
+     * members once for the whole window instead.
+     *
+     * Statuses are deliberately coarse — `booked` (a concert is on the books),
+     * `held` (at least one member is busy) and `open`. Nothing identifies WHICH
+     * member is busy, or how many; see the note on availability() above.
+     */
+    public function availabilityRange(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'start' => ['required', 'date'],
+            'end'   => ['required', 'date', 'after:start'],
+        ]);
+
+        $start = new \DateTimeImmutable($data['start']);
+        $end   = new \DateTimeImmutable($data['end']);
+
+        // A calendar UI never needs more than a few months, and each extra day
+        // is remote iCal parsing. Cap rather than let a crafted range hang the
+        // request.
+        if ($start->diff($end)->days > self::MAX_RANGE_DAYS) {
+            return response()->json([
+                'message' => 'Range may not exceed ' . self::MAX_RANGE_DAYS . ' days.',
+            ], 422);
+        }
+
+        $startStr = $start->format('Y-m-d');
+        $endStr   = $end->format('Y-m-d');
+
+        $payload = Cache::remember(
+            "availability_range_{$startStr}_{$endStr}",
+            300,
+            function () use ($start, $end, $startStr, $endStr) {
+                $busy = [];
+                $members = BandMember::where('is_current', true)
+                    ->whereNotNull('calendar_url')
+                    ->get();
+
+                foreach ($members as $member) {
+                    foreach ($this->parseMemberCalendar($member, $startStr, $endStr) as $event) {
+                        // Events carry either a date or a full timestamp; the
+                        // first 10 chars are the day in both shapes.
+                        $busy[substr((string) $event['start'], 0, 10)] = true;
+                    }
+                }
+
+                $booked = Concert::whereBetween('date', [$startStr, $endStr])
+                    ->pluck('date')
+                    ->map(fn ($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : substr((string) $d, 0, 10))
+                    ->flip()
+                    ->all();
+
+                $days = [];
+                for ($d = $start; $d <= $end; $d = $d->modify('+1 day')) {
+                    $key = $d->format('Y-m-d');
+
+                    $days[] = [
+                        'date'   => $key,
+                        'status' => match (true) {
+                            isset($booked[$key]) => 'booked',
+                            isset($busy[$key])   => 'held',
+                            default              => 'open',
+                        },
+                    ];
+                }
+
+                return $days;
+            }
+        );
+
+        return response()->json(['data' => $payload]);
     }
 
     /**
