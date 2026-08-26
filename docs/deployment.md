@@ -413,6 +413,10 @@ docker logs -f bandms-caddy        # access log, TLS issuance
 
 ### Database backups
 
+> Full detail — verification, restore procedure, rollback caveats and known
+> gaps — lives in **[database-backup-and-recovery.md](database-backup-and-recovery.md)**.
+> This section is the summary.
+
 **Every deploy takes one automatically**, immediately before the backend starts
 — which is when migrations run. Everything else about a deploy is reversible by
 retagging an image; a migration that drops a column is not. If the backup
