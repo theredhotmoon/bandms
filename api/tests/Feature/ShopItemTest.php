@@ -591,3 +591,55 @@ describe('PUT /api/shop-currencies', function () {
             ->assertJsonValidationErrors(['currencies']);
     });
 });
+
+describe('GET /api/shop/by-slug/{slug}', function () {
+    it('serves an available item by its English slug', function () {
+        ShopItem::factory()->create([
+            'slug_en'      => 'tour-tee',
+            'is_available' => true,
+            'is_presale'   => false,
+        ]);
+
+        $this->getJson('/api/shop/by-slug/tour-tee')
+            ->assertOk()
+            ->assertJsonPath('data.slug_en', 'tour-tee');
+    });
+
+    it('serves an item by its Polish slug', function () {
+        ShopItem::factory()->create([
+            'slug_en'      => 'tour-tee',
+            'slug_pl'      => 'koszulka-trasowa',
+            'is_available' => true,
+        ]);
+
+        $this->getJson('/api/shop/by-slug/koszulka-trasowa')->assertOk();
+    });
+
+    // Documents current behaviour rather than endorsing it: GET /api/shop also
+    // filters on is_available, so a presale-only item is invisible on the
+    // public shop entirely. merch/index.astro has a presale badge and filters
+    // is_available || is_presale, which cannot fire. See TODO.md.
+    it('404s a presale item that is not yet available', function () {
+        ShopItem::factory()->create([
+            'slug_en'      => 'upcoming-vinyl',
+            'is_available' => false,
+            'is_presale'   => true,
+        ]);
+
+        $this->getJson('/api/shop/by-slug/upcoming-vinyl')->assertNotFound();
+    });
+
+    it('404s an item that is neither available nor presale', function () {
+        ShopItem::factory()->create([
+            'slug_en'      => 'retired-hoodie',
+            'is_available' => false,
+            'is_presale'   => false,
+        ]);
+
+        $this->getJson('/api/shop/by-slug/retired-hoodie')->assertNotFound();
+    });
+
+    it('404s an unknown slug', function () {
+        $this->getJson('/api/shop/by-slug/does-not-exist')->assertNotFound();
+    });
+});

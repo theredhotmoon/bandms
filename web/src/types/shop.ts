@@ -52,6 +52,10 @@ export interface ShopItem extends ShopItemSummary {
   description: string | null
   photos: ShopItemPhoto[]
   tags: { id: number; name: string; slug: string }[]
+  // Optional on purpose: responses produced before this field was added do not
+  // carry it, and the Astro build dies on the whole site if a page dereferences
+  // something absent. Read it with `?.` — see CLAUDE.md.
+  categories?: { id: number; name: string; slug: string }[]
 }
 
 export interface CartItem {

@@ -43,6 +43,14 @@ class ShopItemResource extends JsonResource
             'post_ids'         => $this->posts->pluck('id')->values(),
             'video_ids'        => $this->videos->pluck('id')->values(),
             'category_ids'     => $this->categories->pluck('id')->values(),
+            // The public shop detail page renders category names. It only ever
+            // received ids, so `item.categories` was undefined and reading
+            // .length off it aborted the whole Astro build.
+            'categories'       => $this->categories->map(fn ($c) => [
+                'id'   => $c->id,
+                'name' => $c->name,
+                'slug' => $c->slug,
+            ])->values(),
             'variants'         => ShopItemVariantResource::collection($this->whenLoaded('variants')),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
