@@ -38,12 +38,25 @@ make logs        # Tail all service logs
 make logs-backend / logs-frontend / logs-mysql
 ```
 
-Run a single test from inside the container:
+Run a single test:
 
 ```bash
-docker exec bandms_backend php artisan test --filter TestClassName
-docker exec bandms_backend php artisan test --filter TestClassName::test_method
+docker build --target test -t bandms_test ./api
+APP_KEY=$(grep '^APP_KEY=' .env | cut -d= -f2-)
+docker run --rm -e APP_ENV=testing -e APP_KEY="$APP_KEY" bandms_test --filter WebsiteModuleTest
 ```
+
+Everything after the image name is passed through to `artisan test`, so
+`--filter` takes a class name or any substring of a Pest `it(...)` description:
+`--filter 'honours "0" as a slug'`.
+
+**Not `docker exec bandms_backend php artisan test`.** The running backend image
+is built `--no-dev` with `APP_ENV=production`, so Pest and PHPUnit are not in its
+`vendor/bin` and the command dies with `Command "test" is not defined`. Tests run
+in the separate `--target test` stage (`api/Dockerfile`), which layers the dev
+dependencies on top and swaps in a php-cli entrypoint. That stage also builds its
+own `.env` and runs against **SQLite in-memory**, so it needs neither MySQL nor a
+running stack.
 
 ### Frontend dev server (`app/`)
 
@@ -137,7 +150,7 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 ---
 
-## Known footguns — read before touching Docker/Nginx
+## Known footguns
 
 ### `web` container: nav links redirect to port 80 after rebuild
 
@@ -247,6 +260,98 @@ cd web && API_BASE=http://localhost:8081 pnpm build
 2. **Dereferencing a field the API does not send.** `epk.testimonials.length` where `EpkSnapshotBuilder` never emits `testimonials`.
 
 **Both slipped through because the types lie.** `slug_en` is typed `string` while the column is nullable, and `testimonials` was a required array the API never returns. When adding a field to `web/src/types/`, make it match what the API *actually* returns — and guard anything read from a published EPK version, whose frozen snapshots predate any field added later.
+
+---
+
+### A disabled module unbuilds its pages — every link to it must be gated
+
+**Symptom:** A public page 404s from a link on another public page. Nothing fails
+at build time: `astro build` is green, `vue-tsc` is green, and the linking page
+renders perfectly.
+
+**Root cause:** `[lang]/[section].astro` and `[lang]/[section]/[slug].astro` both
+skip a module whose `modules.<slug>` is `false`, so switching a module off in
+`/admin/website-modules` **deletes its routes**. Any page that links to those
+routes without consulting the same map now points at nothing.
+`web/src/pages/[lang]/index.astro` did exactly that: its hero CTAs were ungated,
+and its Upcoming shows / Music / News sections were gated on `data.length > 0` —
+a *content* check standing in for a *routing* check. The two agree right up until
+content exists while its module is off, which is why it survived so long.
+
+**Fix:** gate on the module map, not on the data.
+
+```astro
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+```
+
+Use `!== false`, never `=== true`. `getSiteConfig` fails open to `{}` when the API
+is unreachable mid-build (`web/src/lib/cms.ts`), so an absent key has to mean
+*enabled* — otherwise one build-time blip ships a homepage with no content at all.
+
+**Verify against the built output, not by reading the page.** Resolve every href
+in `dist/` and check both directions — an inverted gate looks entirely plausible
+when you only test with the module switched off:
+
+```bash
+for h in $(grep -o 'href="/en/[a-z0-9/-]*"' dist/en/index.html | sed 's/href="//;s/"//' | sort -u); do
+  p="dist${h%/}/index.html"; [ -f "$p" ] && echo "OK   $h" || echo "DEAD $h"
+done
+```
+
+---
+
+### Module URL slugs are stored per locale — never derive them from the label
+
+**The rule:** `website_modules.custom_slug` holds `{"en": "shop", "pl": "sklep"}`.
+`GET /api/site-config?lang=xx` serves it as `module_config.<key>.slug` with the
+fallback **already resolved**, so `web/src/lib/slugs.ts` just reads it. There is
+no `slugify()` in the public site any more — do not reintroduce one.
+
+**Empty slug means the module key**, not the label. `videos` with no stored slug
+serves `/en/videos` however it is labelled.
+
+**Which field moves a page:**
+
+| Change | Effect on the URL |
+|---|---|
+| Custom name (label) | none — nav text only |
+| Custom slug | **moves the page**; old links 404 |
+
+This split is the entire point of the field. Slugs used to be `slugify(label)`,
+so renaming "Shop" to "Merch store" silently moved `/en/shop` and broke every
+inbound link.
+
+**Uniqueness is checked against *effective* slugs** — stored value **or** module
+key. Claiming `"epk"` is rejected even though the EPK module stores no slug of
+its own, because it is served there by fallback. A plain
+`WHERE custom_slug = ?` check would miss that and shadow a live page.
+
+**A partial update must not clear the other locale.** `{"en": "shop"}` leaves the
+PL slug alone; only an explicit `{"en": null}` clears one. `custom_name`
+overwrites both, which is fine for a label and wrong for a URL.
+
+---
+
+### `setTranslations()` merges — clearing one locale needs `forgetTranslation()`
+
+**Symptom:** you clear a translated field for one locale, get a 200 back, and the
+old value is still there.
+
+**Root cause:** Spatie's `setTranslations($key, $array)` **merges** the array into
+the existing translations rather than replacing them, so omitting a locale (or
+filtering it out) leaves its old value untouched. An *empty* array takes a
+different branch and does clear everything — which is why a "clears both" test
+can pass while "clears one" fails.
+
+**Fix:** decide per locale and forget explicitly.
+
+```php
+filled($value)
+    ? $module->setTranslation($key, $locale, $value)
+    : $module->forgetTranslation($key, $locale);
+```
+
+Applies to every `$translatable` field, not just module slugs.
 
 ---
 

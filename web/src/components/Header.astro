@@ -15,7 +15,7 @@ const [siteConfig, slugMap] = await Promise.all([
   getSlugMap(),
 ])
 
-const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk'] as const
+const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'contact'] as const
 
 const orderedSlugs = siteConfig.module_order.length > 0
   ? siteConfig.module_order
@@ -29,10 +29,7 @@ const moduleLinks = orderedSlugs
     module: s,
   }))
 
-const links = [
-  ...moduleLinks,
-  { href: `/${lang}/${slugMap[lang].contact}`, label: lang === 'pl' ? 'Kontakt' : 'Contact', module: null },
-]
+const links = moduleLinks
 
 const current = Astro.url.pathname
 ---

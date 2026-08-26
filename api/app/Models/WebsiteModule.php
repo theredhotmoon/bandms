@@ -9,9 +9,9 @@ class WebsiteModule extends Model
 {
     use HasTranslations;
 
-    public array $translatable = ['custom_name'];
+    public array $translatable = ['custom_name', 'custom_slug'];
 
-    protected $fillable = ['slug', 'display_name', 'custom_name', 'enabled', 'sort_order', 'per_page'];
+    protected $fillable = ['slug', 'display_name', 'custom_name', 'custom_slug', 'enabled', 'sort_order', 'per_page'];
 
     protected $casts = [
         'enabled'    => 'boolean',

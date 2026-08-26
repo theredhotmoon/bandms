@@ -32,10 +32,40 @@ it('returns module_order sorted by sort_order on site-config', function () {
         ->assertJsonPath('module_order.2', 'news');
 });
 
-it('returns empty modules map when no modules seeded', function () {
+// `contact` is registered by 2026_08_26_000001_add_contact_website_module, so it
+// is present in every freshly migrated database — including this test one. Tests
+// below that count rows have to account for that baseline.
+it('returns only the baseline contact module when nothing else is registered', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
-        ->assertJsonPath('modules', []);
+        ->assertJsonPath('modules', ['contact' => true]);
+});
+
+it('registers contact as a configurable module with a Polish name', function () {
+    $contact = WebsiteModule::where('slug', 'contact')->first();
+
+    expect($contact)->not->toBeNull();
+    expect($contact->display_name)->toBe('Contact');
+    expect($contact->enabled)->toBeTrue();
+    expect($contact->getTranslation('custom_name', 'pl'))->toBe('Kontakt');
+});
+
+it('reports contact as disabled on site-config once it is switched off', function () {
+    WebsiteModule::where('slug', 'contact')->update(['enabled' => false]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('modules.contact', false);
+});
+
+it('exposes the contact label on site-config so the public slug can follow it', function () {
+    $contact = WebsiteModule::where('slug', 'contact')->first();
+    $contact->setTranslations('custom_name', ['en' => 'Get in touch', 'pl' => 'Kontakt']);
+    $contact->save();
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.label', 'Get in touch');
 });
 
 // ── admin/modules (auth required) ─────────────────────────────────────────────
@@ -53,7 +83,9 @@ it('returns all modules and auto_rebuild for admin', function () {
 
     $this->getJson('/api/admin/modules')
         ->assertOk()
-        ->assertJsonCount(1, 'data')
+        ->assertJsonCount(2, 'data')          // concerts + the baseline contact module
+        ->assertJsonPath('data.0.slug', 'concerts')
+        ->assertJsonPath('data.1.slug', 'contact')
         ->assertJsonPath('auto_rebuild', false);
 });
 
@@ -388,4 +420,200 @@ it('returns per_page in module_config', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
         ->assertJsonPath('module_config.news.per_page', 12);
+});
+
+// ── custom_slug (per-locale URL slugs) ───────────────────────────────────────
+
+it('backfills a module slug from its label so no existing URL moves', function () {
+    // Only migration-created rows exist here — seeder modules like merch are
+    // absent — so contact carries this test. It is the right one to carry it:
+    // its PL label "Kontakt" derives to "kontakt", which is what the live site
+    // serves, and writing the module key instead would move /pl/kontakt.
+    $contact = WebsiteModule::where('slug', 'contact')->first();
+
+    expect($contact->getTranslation('custom_slug', 'en'))->toBe('contact');
+    expect($contact->getTranslation('custom_slug', 'pl'))->toBe('kontakt');
+});
+
+it('exposes the per-locale slug on site-config', function () {
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.slug', 'contact');
+
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.slug', 'kontakt');
+});
+
+it('falls back to the module key when no slug is stored', function () {
+    WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Clips', 'enabled' => true, 'sort_order' => 3]);
+
+    // Label is "Clips" but the slug must stay /videos — renaming no longer moves it.
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.videos.label', 'Clips')
+        ->assertJsonPath('module_config.videos.slug', 'videos');
+});
+
+it('returns custom_slug in the admin module list', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->getJson('/api/admin/modules')
+        ->assertOk()
+        ->assertJsonPath('data.0.custom_slug.en', 'contact')
+        ->assertJsonPath('data.0.custom_slug.pl', 'kontakt');
+});
+
+it('saves per-locale slugs', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/merch', [
+        'custom_slug' => ['en' => 'store', 'pl' => 'sklep'],
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', 'store')
+        ->assertJsonPath('data.custom_slug.pl', 'sklep');
+
+    $module = WebsiteModule::where('slug', 'merch')->first();
+    expect($module->getTranslation('custom_slug', 'pl'))->toBe('sklep');
+});
+
+it('clears a slug back to the module key when null is sent', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $module = WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $module->setTranslations('custom_slug', ['en' => 'store', 'pl' => 'sklep']);
+    $module->save();
+
+    $this->putJson('/api/admin/modules/merch', ['custom_slug' => ['en' => null, 'pl' => null]])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', null);
+
+    $this->getJson('/api/site-config')->assertJsonPath('module_config.merch.slug', 'merch');
+});
+
+it('rejects a slug that is not URL-safe', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+
+    foreach (['Sklep', 'na sklep', 'sklep/', '-sklep', 'sklep-', 'skl--ep', 'sklép'] as $bad) {
+        $this->putJson('/api/admin/modules/merch', ['custom_slug' => ['en' => $bad]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('custom_slug.en');
+    }
+});
+
+it('rejects a slug already used by another module in the same locale', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $releases = WebsiteModule::create(['slug' => 'releases', 'display_name' => 'Releases', 'enabled' => true, 'sort_order' => 1]);
+    $releases->setTranslations('custom_slug', ['en' => 'music']);
+    $releases->save();
+
+    WebsiteModule::create(['slug' => 'press', 'display_name' => 'Press', 'enabled' => true, 'sort_order' => 2]);
+
+    $this->putJson('/api/admin/modules/press', ['custom_slug' => ['en' => 'music']])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('custom_slug.en');
+});
+
+it('rejects a slug colliding with another module key that has no slug of its own', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    // videos stores no slug, so it is served at /videos by fallback. Claiming
+    // "videos" from another module would shadow it with nothing to warn you.
+    WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 1]);
+    WebsiteModule::create(['slug' => 'press',  'display_name' => 'Press',  'enabled' => true, 'sort_order' => 2]);
+
+    $this->putJson('/api/admin/modules/press', ['custom_slug' => ['en' => 'videos']])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('custom_slug.en');
+});
+
+it('allows the same slug in different locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $releases = WebsiteModule::create(['slug' => 'releases', 'display_name' => 'Releases', 'enabled' => true, 'sort_order' => 1]);
+    $releases->setTranslations('custom_slug', ['en' => 'music']);
+    $releases->save();
+
+    WebsiteModule::create(['slug' => 'press', 'display_name' => 'Press', 'enabled' => true, 'sort_order' => 2]);
+
+    // "music" is taken in EN but free in PL.
+    $this->putJson('/api/admin/modules/press', ['custom_slug' => ['pl' => 'music']])->assertOk();
+});
+
+it('lets a module keep its own slug on an unrelated update', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $merch = WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $merch->setTranslations('custom_slug', ['en' => 'shop']);
+    $merch->save();
+
+    // Re-sending its own slug must not trip the uniqueness rule against itself.
+    $payload = ['custom_slug' => ['en' => 'shop'], 'enabled' => false];
+
+    $this->putJson('/api/admin/modules/merch', $payload)
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', 'shop');
+});
+
+it('leaves the other locale alone when only one slug is sent', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $merch = WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $merch->setTranslations('custom_slug', ['en' => 'shop', 'pl' => 'sklep']);
+    $merch->save();
+
+    // A slug controls a live URL — an unmentioned locale must survive.
+    $this->putJson('/api/admin/modules/merch', ['custom_slug' => ['en' => 'store']])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', 'store')
+        ->assertJsonPath('data.custom_slug.pl', 'sklep');
+});
+
+it('clears one locale when that locale is explicitly null', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $merch = WebsiteModule::create(['slug' => 'merch', 'display_name' => 'Shop', 'enabled' => true, 'sort_order' => 1]);
+    $merch->setTranslations('custom_slug', ['en' => 'shop', 'pl' => 'sklep']);
+    $merch->save();
+
+    $this->putJson('/api/admin/modules/merch', ['custom_slug' => ['en' => null]])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', null)
+        ->assertJsonPath('data.custom_slug.pl', 'sklep');
+
+    $this->getJson('/api/site-config')->assertJsonPath('module_config.merch.slug', 'merch');
+});
+
+it('honours "0" as a slug rather than treating it as empty', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 1]);
+
+    // "0" passes the regex, so it must not be swallowed by a PHP falsiness
+    // check and silently fall back to the module key.
+    $this->putJson('/api/admin/modules/videos', ['custom_slug' => ['en' => '0']])
+        ->assertOk()
+        ->assertJsonPath('data.custom_slug.en', '0');
+
+    $this->getJson('/api/site-config')->assertJsonPath('module_config.videos.slug', '0');
+});
+
+it('rejects a slug colliding with another module whose stored slug is "0"', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $videos = WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 1]);
+    $videos->setTranslation('custom_slug', 'en', '0');
+    $videos->save();
+
+    WebsiteModule::create(['slug' => 'press', 'display_name' => 'Press', 'enabled' => true, 'sort_order' => 2]);
+
+    $this->putJson('/api/admin/modules/press', ['custom_slug' => ['en' => '0']])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('custom_slug.en');
 });

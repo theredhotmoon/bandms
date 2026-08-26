@@ -18,7 +18,7 @@ export async function getStaticPaths() {
   const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
   const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
   const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
-  const ALWAYS_ON          = new Set(['contact', 'newsletter'])
+  const ALWAYS_ON          = new Set(['newsletter'])
 
   const [slugMap, enCfg, plCfg] = await Promise.all([
     getSlugMap(),

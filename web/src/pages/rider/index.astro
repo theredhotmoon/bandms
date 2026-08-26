@@ -1,7 +1,11 @@
 ---
 import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules['tech-rider'] === false) return Astro.redirect('/404', 307)
+
+const slugMap = await getSlugMap()
+const contactHref = siteConfig.modules.contact === false ? null : `/en/${slugMap.en.contact}`
 
 // Nginx serves this page for any sub-path of /rider/
 // e.g., /rider/TOKEN → this index.html is served
@@ -16,6 +20,6 @@ import PublicRider from '@/components/PublicRider.vue'
   noindex={true}
 >
   <div class="mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-24">
-    <PublicRider client:load />
+    <PublicRider contactHref={contactHref} client:load />
   </div>
 </BaseLayout>

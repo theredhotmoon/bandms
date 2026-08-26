@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
+// Resolved by the Astro page from the CMS slug map — the contact module can be
+// renamed (changing its slug) or switched off entirely, so this cannot be a
+// hardcoded /en/contact any more. `null` means the module is off: no link.
+const { contactHref = null } = defineProps<{ contactHref?: string | null }>()
+
 const status  = ref<'loading' | 'ready' | 'error'>('loading')
 const content = ref('')
 const title   = ref('')
@@ -42,7 +47,7 @@ onMounted(async () => {
 
     <div v-else-if="status === 'error'" class="text-center py-20 text-zinc-400">
       <p class="text-lg">{{ error }}</p>
-      <a href="/en/contact" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
+      <a v-if="contactHref" :href="contactHref" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
     </div>
 
     <div v-else>

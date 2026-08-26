@@ -3,7 +3,7 @@ import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks } from '@/lib/cms'
+import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, fmtTime } from '@/lib/i18n'
 
 export async function getStaticPaths() {
@@ -15,13 +15,27 @@ const slugMap = await getSlugMap()
 const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
 const alternateHref = `/${otherLang}`
 
-const [profile, concerts, releases, { data: posts }, socialLinks] = await Promise.all([
+const [profile, concerts, releases, { data: posts }, socialLinks, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getConcerts(),
   getReleases(lang),
   getPosts(lang, 1),
   getSocialLinks(),
+  getSiteConfig(lang),
 ])
+
+// Any module can be switched off in /admin/website-modules, and both
+// [lang]/[section].astro and [lang]/[section]/[slug].astro then stop building
+// its pages. This page is the only one that links to those routes without
+// consulting the module map, so every link out of here has to be gated or it
+// becomes a 404. Absent key === enabled (getSiteConfig fails open to `{}` when
+// the API is unreachable at build time).
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+
+const concertsEnabled = enabled('concerts')
+const releasesEnabled = enabled('releases')
+const postsEnabled    = enabled('posts')
+const contactEnabled  = enabled('contact')
 
 const upcoming  = concerts.filter(c => isUpcoming(c.date)).slice(0, 4)
 const latestReleases = releases.slice(0, 4)
@@ -82,18 +96,24 @@ const structuredData = {
         {profile.bio_short && (
           <p class="hero-bio">{profile.bio_short}</p>
         )}
-        <div class="hero-ctas">
-          <a class="cta-primary" href={`/${lang}/${slugMap[lang].concerts}`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-              <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
-            </svg>
-            See shows
-          </a>
-          <a class="cta-secondary" href={`/${lang}/${slugMap[lang].releases}`}>Our music</a>
-          {profile.booking_email && (
-            <a class="cta-secondary" href={`/${lang}/${slugMap[lang].contact}`}>Book us</a>
-          )}
-        </div>
+        {(concertsEnabled || releasesEnabled || (contactEnabled && profile.booking_email)) && (
+          <div class="hero-ctas">
+            {concertsEnabled && (
+              <a class="cta-primary" href={`/${lang}/${slugMap[lang].concerts}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                  <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
+                </svg>
+                See shows
+              </a>
+            )}
+            {releasesEnabled && (
+              <a class="cta-secondary" href={`/${lang}/${slugMap[lang].releases}`}>Our music</a>
+            )}
+            {contactEnabled && profile.booking_email && (
+              <a class="cta-secondary" href={`/${lang}/${slugMap[lang].contact}`}>Book us</a>
+            )}
+          </div>
+        )}
         {socialLinks.length > 0 && (
           <div class="hero-social">
             {socialLinks.map(l => (
@@ -110,7 +130,7 @@ const structuredData = {
     <div class="checker-strip" aria-hidden="true"></div>
 
     <!-- ── UPCOMING SHOWS ────────────────────────────────────────── -->
-    {upcoming.length > 0 && (
+    {concertsEnabled && upcoming.length > 0 && (
       <section class="sec">
         <div class="sec-head-row">
           <div class="sec-head">
@@ -150,7 +170,7 @@ const structuredData = {
     <div class="checker-strip" aria-hidden="true"></div>
 
     <!-- ── LATEST MUSIC ──────────────────────────────────────────── -->
-    {latestReleases.length > 0 && (
+    {releasesEnabled && latestReleases.length > 0 && (
       <section class="sec sec-dark">
         <div class="sec-head-row">
           <div class="sec-head">
@@ -187,7 +207,7 @@ const structuredData = {
     <div class="checker-strip checker-acc" aria-hidden="true"></div>
 
     <!-- ── LATEST NEWS ───────────────────────────────────────────── -->
-    {latestPosts.length > 0 && (
+    {postsEnabled && latestPosts.length > 0 && (
       <section class="sec">
         <div class="sec-head-row">
           <div class="sec-head">

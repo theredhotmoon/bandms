@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Contact is a configurable website module.** It used to be hardcoded into the public site — always rendered, always in the nav, its label and per-locale slug fixed in `web/src`. It now appears in `/admin/website-modules` alongside every other section and can be switched off, renamed per locale, and dragged into any nav position. Disabling it removes the nav link, the footer link, the homepage "Book us" call-to-action, the `/rider` fallback link, and both the localised and legacy `/contact` pages, leaving no dead links behind.
+- **Every website module has its own URL slug, per language.** New EN and PL slug fields in the module editor, each showing the path it produces (`/en/shop`) and validated for URL safety and uniqueness. Leaving a slug empty serves the module under its key, so `videos` stays at `/en/videos` however it is labelled.
+
+### Changed
+- **Renaming a module no longer moves its page.** Public slugs were previously derived from the module's label on every build, so changing "Shop" to "Merch store" silently moved `/en/shop` to `/en/merch-store` and broke every link anyone had saved. Label and URL are now independent: the label controls nav text only, and the URL changes when — and only when — the slug field is edited. Existing slugs were carried over unchanged, so no live URL moved on upgrade.
+- **A slug is only cleared when explicitly set to null.** Sending one locale's slug leaves the other untouched, so a partial update cannot silently move the Polish page.
+
+### Fixed
+- **The homepage no longer links to pages that a disabled module never builds.** Its hero buttons and its Upcoming shows / Music / News sections were gated on whether *content* existed rather than on whether the module was enabled — the two agree until content exists while its module is switched off. With Releases disabled but releases still in the database, the homepage advertised `/en/releases` and every individual release, all of them 404s.
+
 ## [0.7.1] - 2026-08-20
 
 ### Fixed
