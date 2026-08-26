@@ -38,12 +38,25 @@ make logs        # Tail all service logs
 make logs-backend / logs-frontend / logs-mysql
 ```
 
-Run a single test from inside the container:
+Run a single test:
 
 ```bash
-docker exec bandms_backend php artisan test --filter TestClassName
-docker exec bandms_backend php artisan test --filter TestClassName::test_method
+docker build --target test -t bandms_test ./api
+APP_KEY=$(grep '^APP_KEY=' .env | cut -d= -f2-)
+docker run --rm -e APP_ENV=testing -e APP_KEY="$APP_KEY" bandms_test --filter WebsiteModuleTest
 ```
+
+Everything after the image name is passed through to `artisan test`, so
+`--filter` takes a class name or any substring of a Pest `it(...)` description:
+`--filter 'honours "0" as a slug'`.
+
+**Not `docker exec bandms_backend php artisan test`.** The running backend image
+is built `--no-dev` with `APP_ENV=production`, so Pest and PHPUnit are not in its
+`vendor/bin` and the command dies with `Command "test" is not defined`. Tests run
+in the separate `--target test` stage (`api/Dockerfile`), which layers the dev
+dependencies on top and swaps in a php-cli entrypoint. That stage also builds its
+own `.env` and runs against **SQLite in-memory**, so it needs neither MySQL nor a
+running stack.
 
 ### Frontend dev server (`app/`)
 
