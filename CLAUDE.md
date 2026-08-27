@@ -575,6 +575,38 @@ Editors live at **`/admin/website-modules`** (page copy, per module) and
 
 ---
 
+## Astro islands cannot share props — use a nanostore
+
+Two islands on the same page are two separate Vue apps. The availability
+calendar and the contact form talk through `web/src/stores/booking.ts`, the same
+way the cart icon and drawer share `cartItems`. That pattern is proven in this
+build; do not assume an Astro `<script>` tag can import the same store instance.
+
+**Island props are serialised to JSON**, so a function prop throws at build time.
+`ContactForm` takes `bookingSubject` as a `'… {date}'` template string and does
+the interpolation itself for exactly this reason.
+
+**A modal island needs `client:idle`, not `client:visible`.** It renders nothing
+until opened, so a visibility trigger never fires and its document-level click
+listener never attaches. Triggers elsewhere on the page carry
+`data-open-availability` and are picked up by delegation from `document`, which
+avoids passing a handler across the island boundary.
+
+---
+
+## Availability is cached for 5 minutes
+
+`GET /api/band-profile/calendar/availability-range` caches per month-range, so a
+concert added in the admin can take up to five minutes to show as `booked` on
+the public calendar. That is deliberate — every uncached day means re-parsing
+each member's remote iCal feed — but it makes "I added a gig and the calendar
+still says open" a non-bug. `php artisan cache:clear` forces it.
+
+It also makes the endpoint look broken when testing: querying a range, changing
+data, then querying the same range returns the first answer.
+
+---
+
 ## E2E fixture names need more than a timestamp
 
 `SeedE2eTicket` built its fixture names from `now()->format('YmdHis')` against

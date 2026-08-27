@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { bookingRequest, clearBookingRequest } from '@/stores/booking'
 
 /**
  * Copy is passed in from Astro rather than held here, so the island ships one
@@ -24,6 +25,16 @@ export interface ContactFormCopy {
   sendAnother: string
   error: string
   replyNote: string
+  /**
+   * Subject pre-filled when a date is picked in the availability calendar.
+   * `{date}` is replaced with the formatted date.
+   *
+   * A template string rather than a formatter function: Astro serialises island
+   * props to JSON, so a function prop throws at build time.
+   */
+  bookingSubject: string
+  /** BCP-47 tag used to format that date. */
+  locale: string
 }
 
 type Reason = 'general' | 'booking' | 'press' | 'other'
@@ -80,6 +91,55 @@ async function submit() {
     errorMsg.value = e instanceof Error ? e.message : props.copy.error
   }
 }
+
+// ── Availability calendar handoff ─────────────────────────────────────────────
+
+let unsubscribe: (() => void) | null = null
+
+/**
+ * The calendar is a separate island, so it hands the picked date over through a
+ * nanostore rather than a prop. Picking a date pre-fills this form instead of
+ * submitting anything: the calendar collects no name or email, and a one-click
+ * anonymous enquiry would be unanswerable and trivially spammable.
+ */
+function formatDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  try {
+    return new Intl.DateTimeFormat(props.copy.locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(y, m - 1, d))
+  } catch {
+    // An unknown locale tag throws rather than falling back; the ISO date is
+    // still a perfectly readable subject line.
+    return iso
+  }
+}
+
+function applyBooking(date: string | null) {
+  if (!date) return
+
+  reason.value = 'booking'
+  form.subject = props.copy.bookingSubject.replace('{date}', formatDate(date))
+  // Consume it, so picking the same date twice fires again.
+  clearBookingRequest()
+
+  if (status.value === 'sent') status.value = 'idle'
+
+  void nextTick(() => {
+    const name = document.getElementById('cf-name') as HTMLInputElement | null
+    name?.focus({ preventScroll: true })
+  })
+}
+
+onMounted(() => {
+  unsubscribe = bookingRequest.subscribe(applyBooking)
+})
+
+onUnmounted(() => {
+  unsubscribe?.()
+})
 
 function reset() {
   form.name = ''

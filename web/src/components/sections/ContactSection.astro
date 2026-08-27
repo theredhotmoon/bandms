@@ -2,6 +2,7 @@
 import type { Locale } from '@/types/shared'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ContactForm from '@/components/ContactForm.vue'
+import AvailabilityModal from '@/components/AvailabilityModal.vue'
 import SocialLinks from '@/components/SocialLinks.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
@@ -51,10 +52,23 @@ const COPY = {
     follow: 'Or find us on',
     promoTitle: 'Promoters & press',
     promoSub: 'Everything you need to put us on your stage — or your page.',
-    bookTitle: 'Book us', bookSub: 'Check open dates and send a request.', bookCta: 'See shows',
+    bookTitle: 'Book us', bookSub: 'Check open dates and send a request.', bookCta: 'Check availability',
     epkTitle: 'Press kit (EPK)', epkSub: 'Bio, hi-res photos, logos & stats in one pack.', epkCta: 'Open EPK',
     riderTitle: 'Tech rider', riderSub: 'Stage plan, input list, monitors & hospitality.', riderCta: 'View rider',
     photosTitle: 'Press photos', photosSub: 'Hi-res, print-ready shots in the gallery.', photosCta: 'Open gallery',
+    bookingSubject: 'Booking request — {date}',
+    cal: {
+      title: 'Check our availability',
+      subtitle: "Pick an open date and send a request — we'll reply within 48h.",
+      open: 'Open', booked: 'Booked', held: 'On hold',
+      request: 'Request this date',
+      pickPrompt: 'Select an open date',
+      close: 'Close',
+      loadError: "We couldn't load the calendar just now — pick a date anyway and we'll confirm by email.",
+      months: ['January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December'],
+      weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+    },
   },
   pl: {
     title: 'Kontakt',
@@ -79,10 +93,23 @@ const COPY = {
     follow: 'Albo znajdź nas na',
     promoTitle: 'Organizatorzy i prasa',
     promoSub: 'Wszystko, czego potrzebujesz, by zaprosić nas na scenę — lub na łamy.',
-    bookTitle: 'Zarezerwuj nas', bookSub: 'Sprawdź wolne terminy i wyślij zapytanie.', bookCta: 'Zobacz koncerty',
+    bookTitle: 'Zarezerwuj nas', bookSub: 'Sprawdź wolne terminy i wyślij zapytanie.', bookCta: 'Sprawdź dostępność',
     epkTitle: 'Press kit (EPK)', epkSub: 'Bio, zdjęcia hi-res, loga i statystyki w jednej paczce.', epkCta: 'Otwórz EPK',
     riderTitle: 'Rider techniczny', riderSub: 'Plan sceny, lista wejść, monitory i hospitality.', riderCta: 'Podgląd ridera',
     photosTitle: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku — w galerii.', photosCta: 'Otwórz galerię',
+    bookingSubject: 'Zapytanie o termin — {date}',
+    cal: {
+      title: 'Sprawdź dostępność',
+      subtitle: 'Wybierz wolny termin i wyślij zapytanie — odpowiemy w 48h.',
+      open: 'Wolne', booked: 'Zajęte', held: 'Rezerwacja',
+      request: 'Zapytaj o ten termin',
+      pickPrompt: 'Wybierz wolny termin',
+      close: 'Zamknij',
+      loadError: 'Nie udało się wczytać kalendarza — wybierz termin, a potwierdzimy mailem.',
+      months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+               'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
+      weekdays: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
+    },
   },
 } as const
 
@@ -101,8 +128,10 @@ const channels = [
   { key: 'general', icon: 'mail',     label: t.general, email: profile.contact_email, note: s.general_note },
 ].filter(c => c.email)
 
+// The booking card opens the calendar rather than navigating, so unlike the
+// others it needs no module gate — there is no route for it to point at.
 const promo = [
-  { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: href('concerts'), show: enabled('concerts') },
+  { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: null,             show: true },
   { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: href('epk'),      show: enabled('epk') },
   { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: '/rider',         show: Boolean(profile.tech_rider_url) },
   { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos') },
@@ -127,11 +156,9 @@ const promo = [
         <a href="#contact-form" class="ct-btn ct-btn--fill">
           <Icon name="mail" size={20} color="currentColor" />{t.formTitle}
         </a>
-        {enabled('concerts') && (
-          <a href={href('concerts')} class="ct-btn ct-btn--ghost">
-            <Icon name="calendar" size={20} color="var(--color-accent)" />{t.bookTitle}
-          </a>
-        )}
+        <button type="button" class="ct-btn ct-btn--ghost" data-open-availability>
+          <Icon name="calendar" size={20} color="var(--color-accent)" />{t.bookTitle}
+        </button>
       </div>
 
       <div class="ct-pills">
@@ -162,6 +189,8 @@ const promo = [
           send: t.send, sending: t.sending, sent: t.sent,
           sendAnother: t.sendAnother, error: t.error,
           replyNote: s.reply_time_label ?? '',
+          bookingSubject: t.bookingSubject,
+          locale: lang === 'pl' ? 'pl-PL' : 'en-GB',
         }}
       />
 
@@ -202,22 +231,35 @@ const promo = [
         </div>
         <p class="ct-promo-sub">{t.promoSub}</p>
         <div class="ct-promo-grid" style={`--promo-cols:${promo.length}`}>
-          {promo.map(p => (
-            <a href={p.href} class="ct-card">
-              <Icon name={p.icon} size={30} color="var(--color-accent)" />
-              <span class="ct-card-body">
-                <span class="ct-card-title">{p.title}</span>
-                <span class="ct-card-sub">{p.sub}</span>
-              </span>
-              <span class="ct-card-cta">{p.cta}<Icon name="chevron" size={16} color="var(--color-accent)" /></span>
-            </a>
-          ))}
+          {promo.map(p => {
+            const Tag = p.href ? 'a' : 'button'
+            return (
+              <Tag
+                class="ct-card"
+                href={p.href ?? undefined}
+                type={p.href ? undefined : 'button'}
+                data-open-availability={p.href ? undefined : true}
+              >
+                <Icon name={p.icon} size={30} color="var(--color-accent)" />
+                <span class="ct-card-body">
+                  <span class="ct-card-title">{p.title}</span>
+                  <span class="ct-card-sub">{p.sub}</span>
+                </span>
+                <span class="ct-card-cta">{p.cta}<Icon name="chevron" size={16} color="var(--color-accent)" /></span>
+              </Tag>
+            )
+          })}
         </div>
       </section>
     </>
   )}
 
   <FaqSection module="contact" lang={lang} />
+
+  <!-- client:idle, not client:visible: the modal renders nothing until opened,
+       so a visibility trigger would never fire and its document-level click
+       listener would never attach. -->
+  <AvailabilityModal client:idle copy={t.cal} />
 </BaseLayout>
 
 <style>
@@ -370,6 +412,15 @@ const promo = [
     color: var(--color-body);
     text-decoration: none;
   }
+  /* The booking card is a <button>, which brings its own font, background and
+     alignment. Normalising here keeps both tags visually identical. */
+  button.ct-card {
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+  }
+
   .ct-card-body { flex: 1; }
   .ct-card-title {
     display: block;
