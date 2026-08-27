@@ -617,3 +617,102 @@ it('rejects a slug colliding with another module whose stored slug is "0"', func
         ->assertStatus(422)
         ->assertJsonValidationErrors('custom_slug.en');
 });
+
+// ── module settings (editable page copy) ─────────────────────────────────────
+
+it('serves module settings on site-config with the locale resolved', function () {
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.settings.kicker', 'SKONTAKTUJ SIĘ');
+});
+
+it('falls back to the other locale rather than emitting an empty setting', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $module = WebsiteModule::where('slug', 'contact')->first();
+    $module->settings = ['kicker' => ['en' => 'ENGLISH ONLY']];
+    $module->save();
+
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertJsonPath('module_config.contact.settings.kicker', 'ENGLISH ONLY');
+});
+
+it('returns an object, never null, when a module has no settings', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+    WebsiteModule::create(['slug' => 'press', 'display_name' => 'Press', 'enabled' => true, 'sort_order' => 9]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.press.settings', []);
+});
+
+it('saves settings for both locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['kicker' => ['en' => 'HELLO', 'pl' => 'CZEŚĆ']],
+    ])->assertOk()
+      ->assertJsonPath('data.settings.kicker.en', 'HELLO')
+      ->assertJsonPath('data.settings.kicker.pl', 'CZEŚĆ');
+});
+
+// The bag merges per field and per locale, for the same reason custom_slug
+// does: a payload naming only English must not blank the Polish copy.
+it('leaves the other locale alone on a partial settings update', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['kicker' => ['en' => 'ONLY ENGLISH']],
+    ])->assertOk()
+      ->assertJsonPath('data.settings.kicker.en', 'ONLY ENGLISH')
+      ->assertJsonPath('data.settings.kicker.pl', 'SKONTAKTUJ SIĘ');
+});
+
+it('leaves untouched fields alone when one field is updated', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['kicker' => ['en' => 'CHANGED']],
+    ])->assertOk()
+      ->assertJsonPath('data.settings.reply_time_label.en', 'Replies within 48h');
+});
+
+it('clears one locale of one field when explicitly sent null', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['kicker' => ['pl' => null]],
+    ])->assertOk()
+      ->assertJsonPath('data.settings.kicker.en', 'GET IN TOUCH');
+
+    expect(WebsiteModule::where('slug', 'contact')->first()->settings['kicker'])
+        ->not->toHaveKey('pl');
+});
+
+it('drops a field entirely once both locales are cleared', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['kicker' => ['en' => null, 'pl' => null]],
+    ])->assertOk();
+
+    expect(WebsiteModule::where('slug', 'contact')->first()->settings)
+        ->not->toHaveKey('kicker');
+});
+
+it('rejects a setting value over the length limit', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', [
+        'settings' => ['lead' => ['en' => str_repeat('a', 2001)]],
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('settings.lead.en');
+});
+
+it('leaves settings untouched when the payload omits them', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', ['custom_name' => ['en' => 'Say hi', 'pl' => null]])
+        ->assertOk()
+        ->assertJsonPath('data.settings.kicker.en', 'GET IN TOUCH');
+});

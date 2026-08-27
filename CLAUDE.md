@@ -562,6 +562,17 @@ Read it as `siteConfig.module_config?.<key>?.settings ?? {}` and then
 `settings.field ?? ''`. An API predating the migration omits the bag entirely,
 and a bare access throws at build time — which kills all 35 pages, not one.
 
+**Which fields a module has is a client-side decision.** The server validates
+the shape (`{field: {en, pl}}`) and the 2000-char limit, nothing more. The admin
+form is generated from `app/src/config/moduleSettings.ts`, so adding a field is:
+add it there, then read it in the Astro section. No migration.
+
+A module absent from that map simply shows no copy fields, which is why adding
+one is additive and safe.
+
+Editors live at **`/admin/website-modules`** (page copy, per module) and
+**`/admin/faqs`** (questions, grouped by subpage).
+
 ---
 
 ## E2E fixture names need more than a timestamp

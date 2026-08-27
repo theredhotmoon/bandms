@@ -21,7 +21,7 @@ const groupRoutes: Record<GroupId, string[]> = {
   content:    ['/admin/posts', '/admin/press-releases', '/admin/pitch', '/admin/newsletter', '/admin/authors'],
   shows:      ['/admin/concerts', '/admin/tours', '/admin/venues', '/admin/door'],
   more:       ['/admin/shop', '/admin/bands', '/admin/tags', '/admin/instruments', '/admin/users'],
-  pageconfig: ['/admin/website-modules'],
+  pageconfig: ['/admin/website-modules', '/admin/faqs'],
 }
 
 function groupForRoute(path: string): GroupId | null {
@@ -259,6 +259,10 @@ watch(() => route.path, (path) => {
             <RouterLink to="/admin/website-modules" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="4" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="3" y="10" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="4" rx="1"/><rect x="3" y="17" width="7" height="4" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/></svg>
               Website Modules
+            </RouterLink>
+            <RouterLink to="/admin/faqs" class="nav-item" active-class="nav-item--active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              FAQ
             </RouterLink>
           </div>
         </template>
