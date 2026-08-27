@@ -269,3 +269,51 @@ describe('DELETE /api/posts/{post}', function () {
         $this->deleteJson('/api/posts/9999')->assertNotFound();
     });
 });
+
+// ── press coverage on a post (added 2026-08-27) ──────────────────────────────
+
+it('exposes the publication name alongside each press release', function () {
+    $profile = \App\Models\BandProfile::factory()->create();
+    $post    = \App\Models\Post::factory()->create(['published_at' => now()->subDay()]);
+
+    $press = \App\Models\PressRelease::create([
+        'profile_id'    => $profile->id,
+        'url'           => 'https://gazeta-ska.example/review',
+        'og_title'      => 'The most exciting brass on the scene',
+        'og_site_name'  => 'Gazeta Ska',
+    ]);
+    $post->pressReleases()->attach($press->id);
+
+    $this->getJson("/api/posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('data.press_releases.0.site', 'Gazeta Ska')
+        ->assertJsonPath('data.press_releases.0.title', 'The most exciting brass on the scene')
+        ->assertJsonPath('data.press_releases.0.url', 'https://gazeta-ska.example/review');
+});
+
+// A pull quote with no attribution reads as the band quoting itself, so the host
+// stands in when the scrape found no og:site_name.
+it('falls back to the url host when no site name was scraped', function () {
+    $profile = \App\Models\BandProfile::factory()->create();
+    $post    = \App\Models\Post::factory()->create(['published_at' => now()->subDay()]);
+
+    $press = \App\Models\PressRelease::create([
+        'profile_id' => $profile->id,
+        'url'        => 'https://brassbass.example/analog-revival',
+        'og_title'   => 'An all-analog revival',
+    ]);
+    $post->pressReleases()->attach($press->id);
+
+    $this->getJson("/api/posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('data.press_releases.0.site', 'brassbass.example');
+});
+
+it('omits press releases for a post with no coverage', function () {
+    $profile = \App\Models\BandProfile::factory()->create();
+    $post    = \App\Models\Post::factory()->create(['published_at' => now()->subDay()]);
+
+    $this->getJson("/api/posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('data.press_releases', []);
+});

@@ -49,6 +49,19 @@ const nextId = idx < summaries.length - 1 ? summaries[idx + 1].id : null
 // More: up to 3 other posts
 const more = summaries.filter((_, i) => i !== idx).slice(0, 3)
 
+// Coverage of this story. Optional on the resource — it is only present when the
+// relation is loaded — so read through ?? rather than bare.
+const press = post.press_releases ?? []
+
+// This page was hardcoded in English while being served under /pl/ too. Only the
+// strings it actually renders are collected here; a full i18n pass over the
+// article view is its own change.
+const COPY = {
+  en: { related: 'Related', inPress: 'In the press', more: 'More from the blog' },
+  pl: { related: 'Powiązane', inPress: 'W mediach', more: 'Więcej z bloga' },
+} as const
+const copy = COPY[lang] ?? COPY.en
+
 function moShort(iso: string): string {
   const dd = new Date(iso + 'T00:00:00')
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -156,12 +169,24 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
       {post.content && (
         <div class="art-prose" set:html={post.content} />
       )}
+
+      {/* The first piece of coverage doubles as the story's pull quote — the
+          design shows press as context inside an article, never as an index. */}
+      {press.length > 0 && (
+        <blockquote class="art-pull">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill={ACCENT} aria-hidden="true">
+            <path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z" />
+          </svg>
+          <p class="art-pull-quote">{press[0].title}</p>
+          {press[0].site && <cite class="art-pull-cite">— {press[0].site}</cite>}
+        </blockquote>
+      )}
     </article>
 
     <!-- ── RELATED ───────────────────────────────────────────── -->
     {(post.releases.length > 0 || post.concerts.length > 0 || post.music_videos.length > 0) && (
       <section class="ar-col art-related">
-        <h3 class="art-related-title">Related</h3>
+        <h3 class="art-related-title">{copy.related}</h3>
         <div class="art-related-links">
           {post.releases.map(r => (
             <a href={`/${lang}/${releasesSection}/${r.id}`} class="art-rel-link">
@@ -185,6 +210,27 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
                 <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
               </svg>
               {c.venue ? `${c.venue.name}` : c.date}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── IN THE PRESS ──────────────────────────────────────── -->
+    {press.length > 0 && (
+      <section class="ar-col art-press-sec">
+        <h3 class="art-related-title">{copy.inPress}</h3>
+        <div class="art-press-list">
+          {press.map(item => (
+            <a class="art-press" href={item.url} target="_blank" rel="noopener">
+              <span>
+                {item.site && <span class="art-press-site">{item.site}</span>}
+                <span class="art-press-title">{item.title}</span>
+              </span>
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 4h6v6" /><path d="M20 4l-9 9" />
+                <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+              </svg>
             </a>
           ))}
         </div>
@@ -252,7 +298,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         <!-- strip: teal + ink (reversed) -->
         <div class="checker-strip-ta" aria-hidden="true"></div>
         <div class="ar-col art-more-inner">
-          <h3 class="art-more-title">More from the blog</h3>
+          <h3 class="art-more-title">{copy.more}</h3>
           <div class="art-more-grid">
             {more.map(p => (
               <a href={`/${lang}/${postsSection}/${p.id}`} class="art-more-card">
@@ -500,6 +546,61 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 
   /* ── ARTICLE BODY ────────────────────── */
   .art-body { padding-top: 44px; padding-bottom: 8px; }
+  /* Pull quote — the first press headline, set as display type. */
+  .art-pull {
+    margin: 12px 0 30px;
+    border-left: 6px solid var(--color-accent);
+    padding-left: 26px;
+  }
+  .art-pull-quote {
+    margin: 8px 0 12px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 30px;
+    line-height: 1.12;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+    color: var(--color-body);
+  }
+  .art-pull-cite {
+    font: 800 12px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-style: normal;
+  }
+
+  /* In the press — ink rows, one per outlet. */
+  .art-press-sec { padding-top: 26px; }
+  .art-press-list { display: flex; flex-direction: column; gap: 10px; }
+  .art-press {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding: 16px 20px;
+    text-decoration: none;
+  }
+  .art-press-site {
+    display: block;
+    font: 800 10px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .art-press-title {
+    display: block;
+    margin-top: 7px;
+    font: 600 16px/1.4 var(--font-body);
+  }
+
+  @media (max-width: 700px) {
+    .art-pull-quote { font-size: 22px; }
+    .art-pull { padding-left: 16px; }
+  }
+
   .art-prose {
     font: 500 18.5px/1.72 var(--font-body);
     color: var(--color-body);

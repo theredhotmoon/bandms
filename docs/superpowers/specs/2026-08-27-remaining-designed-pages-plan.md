@@ -146,8 +146,21 @@ reordered or switched off. The design's nav includes it. So:
 
 ### 3.5 News — finish
 
-Only "In the press" is missing: `GET /press-releases` rendered as a strip on the
-News page. Everything else is done.
+**Corrected 2026-08-27.** This section originally said "In the press" was a
+`GET /press-releases` strip on the News index. Reading `variants/news_shared.jsx`
+proved otherwise — its header states press coverage appears *only* as context
+inside a post, never as a standalone index. So the work landed on the **Article**
+page, not the News list:
+
+- a pull quote in the article body, built from the post's first piece of coverage
+- an "In the press" list of ink rows after Related
+
+`PostResource.press_releases` gained `site` (the publication name, falling back
+to the URL host), which the design renders above each headline and as the
+quote's attribution. Both blocks are absent when a post has no coverage.
+
+The News index itself needed nothing: search, featured and tag filtering were
+already in `NewsFilter.vue`.
 
 ---
 
