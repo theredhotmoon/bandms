@@ -489,6 +489,96 @@ takes effect immediately. Land the same edit in the repo.
 
 ---
 
+## The public site is themeable — never hardcode a colour, font or radius
+
+`web/src/` is split into a **base** (structure + a plain black-and-white look)
+and **themes** that override it. Skanking Storks' 2-Tone design is one theme;
+the base is what a new band gets before theming.
+
+**The contract:** components may reference only the semantic tokens in
+`web/src/styles/tokens.css` — `text-muted`, `bg-surface`, `border-border`,
+`rounded-card`, `shadow-card`, `var(--font-display)`, `var(--page-gutter)`.
+A raw value (`text-zinc-400`, `#121212`, `rounded-xl`, `'Anton'`,
+`rgba(239,231,214,.7)`) is invisible in review, passes `astro build`, and
+silently makes that element untheme-able.
+
+`pnpm build` runs `scripts/check-tokens.mjs`, which fails on all of the above.
+For a genuinely fixed value, append `token-lint-ignore` on that line.
+
+Primitives (`--ss-ink`, `--ss-teal`) belong **only** in
+`web/src/styles/themes/*.css`. Nothing else may reference them.
+
+**Which theme renders** is `PUBLIC_THEME`, set in the `web` service of both
+compose files and threaded through `web/docker/start.sh`. It becomes
+`<html data-theme="…">`. Unset means the base theme — that is why a build with
+no env shows a plain black-and-white site rather than a broken one.
+
+**Ornament that tokens cannot express** (checker strips, grain, the hero
+backdrop) goes through `<ThemeSlot name="…" />`. The base renders nothing; a
+theme registers a component in `web/src/themes/<name>/slots.ts`.
+
+**Slots take props, never children.** A slot accepting children is a component
+override in disguise, and overrides are deliberately not supported: each one is
+a fork that stops receiving base improvements. If a design needs something no
+slot can express, add the element to the *base layout* — unstyled, where every
+band gets it — rather than widening the slot contract.
+
+### `text-white` cannot be find-and-replaced
+
+There were 93 of them and they all sat on dark ground, because the site used to
+be dark. Under a cream theme most sit on light. The blanket conversion made them
+`text-body`; genuinely inverse surfaces (lightboxes, media scrims, the ink nav,
+ink contact cards) were given `text-on-inverse` by hand. When adding markup, ask
+which ground the element sits on — the answer is no longer "always dark".
+
+---
+
+## FAQ entries are per subpage
+
+`faqs.module_slug` mirrors `website_modules.slug`, so FAQ categories track the
+site's sections instead of being a second taxonomy. `<FaqSection module="…" />`
+is already in all nine section components and renders nothing when that page has
+no published questions.
+
+That is a *content* check, and deliberately so: the "gate on the module map, not
+on the data" rule above is about links that can 404, and this section links
+nowhere. An empty accordion is worse than an absent one.
+
+`module_slug` is validated against live `website_modules` rows, so adding a
+module makes it an FAQ category with no code change. Disabled modules are still
+valid targets — switching a section off must not make its questions unsavable.
+
+---
+
+## Editable page copy lives in `website_modules.settings`
+
+A generic bag shaped `{"field": {"en": "...", "pl": "..."}}`, not named columns —
+six Contact fields as columns would put one module's fields on every module's
+row. `GET /api/site-config?lang=xx` serves it as `module_config.<key>.settings`
+with the locale already resolved, falling back to the other locale rather than
+emitting null.
+
+Read it as `siteConfig.module_config?.<key>?.settings ?? {}` and then
+`settings.field ?? ''`. An API predating the migration omits the bag entirely,
+and a bare access throws at build time — which kills all 35 pages, not one.
+
+---
+
+## E2E fixture names need more than a timestamp
+
+`SeedE2eTicket` built its fixture names from `now()->format('YmdHis')` against
+`venues.name_unique`. Playwright runs specs in parallel, so two seeds in the same
+second collided — and it surfaced as `fan-accounts.spec.ts` failing with a
+duplicate-key stack, which reproduces in the full suite but passes in isolation.
+That combination looks exactly like the machine-flake pattern below and is not.
+The stamp now carries a random suffix.
+
+**Triage note:** "passes in isolation, fails in the suite, *same spec every
+time*" is a real ordering or contention bug. The machine-flake signature is a
+*different* set of specs each run.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
