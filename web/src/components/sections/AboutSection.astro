@@ -1,0 +1,494 @@
+---
+import type { Locale } from '@/types/shared'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+import MemberGrid from '@/components/MemberGrid.vue'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import { getBandProfile, getMembers, getConcerts, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { formatNumber } from '@/lib/i18n'
+
+interface Props {
+  lang: Locale
+  alternateHref?: string
+}
+const { lang, alternateHref } = Astro.props
+
+const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
+  getBandProfile(lang),
+  getMembers().catch(() => []),
+  getConcerts().catch(() => []),
+  getSiteConfig(lang),
+  getSlugMap(),
+])
+
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'About',
+    lead: 'Six players, one upbeat. The story behind the band — and the people who make the room move.',
+    formed: 'Formed', based: 'Based in',
+    forFans: 'For fans of',
+    stats: 'By the numbers',
+    statMonthly: 'Monthly listeners', statInsta: 'Instagram', statYoutube: 'YouTube',
+    statShows: 'Shows played', statYears: 'Years on stage',
+    members: 'The line-up', membersSub: 'Tap a player to read their story.',
+    former: 'Past members', plays: 'Plays', view: 'View', close: 'Close',
+    membersEmpty: 'Line-up coming soon.',
+    press: 'Press & booking', pressSub: 'Everything press and promoters need — in one place.',
+    epk: 'Press kit (EPK)', epkSub: 'Bio, photos, stats & logos',
+    photos: 'Press photos', photosSub: 'Hi-res, print-ready',
+    rider: 'Tech rider', riderSub: 'Stage plan & input list (PDF)',
+    stagePlot: 'Stage plot', stagePlotSub: 'Backline & positions',
+    open: 'Open', download: 'Download',
+    booking: 'Booking', pressLabel: 'Press',
+    noBio: 'Biography coming soon.',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'O nas',
+    lead: 'Sześciu muzyków, jeden upbeat. Historia zespołu — i ludzie, którzy rozruszają każdą salę.',
+    formed: 'Powstali', based: 'Z miasta',
+    forFans: 'Dla fanów',
+    stats: 'W liczbach',
+    statMonthly: 'Słuchaczy mies.', statInsta: 'Instagram', statYoutube: 'YouTube',
+    statShows: 'Zagranych koncertów', statYears: 'Lat na scenie',
+    members: 'Skład', membersSub: 'Kliknij muzyka, by poznać jego historię.',
+    former: 'Byli członkowie', plays: 'Gra na', view: 'Zobacz', close: 'Zamknij',
+    membersEmpty: 'Skład wkrótce.',
+    press: 'Prasa i booking', pressSub: 'Wszystko, czego potrzebuje prasa i organizatorzy — w jednym miejscu.',
+    epk: 'Press kit (EPK)', epkSub: 'Bio, zdjęcia, statystyki i loga',
+    photos: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku',
+    rider: 'Rider techniczny', riderSub: 'Plan sceny i lista wejść (PDF)',
+    stagePlot: 'Plan sceny', stagePlotSub: 'Backline i pozycje',
+    open: 'Otwórz', download: 'Pobierz',
+    booking: 'Booking', pressLabel: 'Prasa',
+    noBio: 'Biografia wkrótce.',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+// The design exposes bio length as a tweaks-panel knob, not a control on the
+// page, so one length ships. Medium is the design's default; it falls back
+// rather than rendering an empty column when only another length is filled in.
+const bio = profile.bio_medium || profile.bio_long || profile.bio_short || ''
+const bioParagraphs = bio
+  .replace(/\r\n/g, '\n')
+  .split(/\n\s*\n/)
+  .map(p => p.trim())
+  .filter(Boolean)
+
+// `genres` and `comparable_artists` are free-text comma-separated fields, not
+// relations. Split defensively: a trailing comma is common and would otherwise
+// render an empty chip.
+const splitList = (value: string | null) =>
+  (value ?? '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+
+const genres = splitList(profile.genres)
+const comparable = splitList(profile.comparable_artists)
+
+const thisYear = new Date(profile.updated_at).getFullYear()
+const playedCount = concerts.filter(c => c.date && c.date <= profile.updated_at.slice(0, 10)).length
+
+// Only stats the band has actually filled in. An empty grid of zeroes reads as
+// a band with no audience rather than a band that has not entered numbers.
+const stats = [
+  { key: 'monthly', icon: 'spotify', label: t.statMonthly, value: profile.stat_spotify_monthly },
+  { key: 'insta', icon: 'instagram', label: t.statInsta, value: profile.stat_instagram_followers },
+  { key: 'youtube', icon: 'youtube', label: t.statYoutube, value: profile.stat_youtube_subscribers },
+  { key: 'shows', icon: 'calendar', label: t.statShows, value: playedCount > 0 ? playedCount : null },
+  {
+    key: 'years',
+    icon: 'star',
+    label: t.statYears,
+    value: profile.formation_year ? Math.max(thisYear - profile.formation_year, 1) : null,
+  },
+].filter((s): s is typeof s & { value: number } => typeof s.value === 'number' && s.value > 0)
+
+const gridMembers = [...members]
+  .sort((a, b) => a.sort_order - b.sort_order)
+  .map(m => ({
+    id: m.id,
+    // Nickname sits between the names the way a stage name does.
+    name: [m.first_name, m.nickname ? `“${m.nickname}”` : null, m.last_name].filter(Boolean).join(' '),
+    role: m.role ?? '',
+    bio: m.bio,
+    photoUrl: m.photo,
+    isCurrent: m.is_current,
+    instruments: (m.instruments ?? []).map(i => i.name),
+    socials: (m.social_links ?? []).map(s => ({ platform: s.platform, url: s.url })),
+  }))
+
+// Press cards, each present only when its target exists. EPK and photos are
+// module routes and disappear with the module; the rider and stage plot are
+// storage files and do not.
+const pressCards = [
+  { icon: 'star', title: t.epk, sub: t.epkSub, href: href('epk'), cta: t.open, isFile: false, show: enabled('epk') },
+  { icon: 'camera', title: t.photos, sub: t.photosSub, href: href('photos'), cta: t.open, isFile: false, show: enabled('photos') },
+  { icon: 'filter', title: t.rider, sub: t.riderSub, href: profile.tech_rider_url ?? '', cta: t.download, isFile: true, show: Boolean(profile.tech_rider_url) },
+  { icon: 'pin', title: t.stagePlot, sub: t.stagePlotSub, href: profile.stage_plot_url ?? '', cta: t.download, isFile: true, show: Boolean(profile.stage_plot_url) },
+].filter(c => c.show)
+
+const contacts = [
+  { label: t.booking, email: profile.booking_email },
+  { label: t.pressLabel, email: profile.press_email },
+].filter(c => c.email)
+---
+
+<BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
+  title={`${t.title} — ${profile.name}`}
+  description={bioParagraphs[0] ?? t.lead}
+>
+  <!-- HERO -->
+  <section class="ab-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="ab-hero-in">
+      <span class="ab-kicker">{t.kicker}</span>
+      <h1 class="ab-h1">{t.title}</h1>
+      <p class="ab-lead">{t.lead}</p>
+
+      <div class="ab-pills">
+        {profile.formation_year && (
+          <span class="ab-pill">
+            <Icon name="calendar" size={18} color="var(--color-accent)" />{t.formed} {profile.formation_year}
+          </span>
+        )}
+        {profile.hometown && (
+          <span class="ab-pill">
+            <Icon name="pin" size={18} color="var(--color-accent)" />{t.based} {profile.hometown}
+          </span>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <!-- BIO -->
+  <section class="ab-sec page-x">
+    <div class="ab-bio-grid">
+      <div>
+        {bioParagraphs.length > 0
+          ? bioParagraphs.map((paragraph, i) => (
+              <p class={i === 0 ? 'ab-bio ab-bio--lead' : 'ab-bio'}>{paragraph}</p>
+            ))
+          : <p class="ab-bio">{t.noBio}</p>}
+
+        {genres.length > 0 && (
+          <div class="ab-genres">
+            {genres.map(genre => <span class="ab-genre">{genre}</span>)}
+          </div>
+        )}
+      </div>
+
+      {comparable.length > 0 && (
+        <aside class="ab-aside">
+          <h3 class="ab-aside-h">{t.forFans}</h3>
+          <ul class="ab-comparable">
+            {comparable.map(name => (
+              <li><span class="ab-dot" aria-hidden="true" />{name}</li>
+            ))}
+          </ul>
+        </aside>
+      )}
+    </div>
+  </section>
+
+  <!-- STATS -->
+  {stats.length > 0 && (
+    <section class="ab-stats page-x">
+      <h2 class="ab-stats-h">{t.stats}</h2>
+      <div class="ab-stats-grid" style={`--stat-cols:${stats.length}`}>
+        {stats.map(stat => (
+          <div class="ab-stat">
+            <Icon name={stat.icon} size={26} color="var(--color-accent)" />
+            <span class="ab-stat-value">{formatNumber(stat.value)}</span>
+            <span class="ab-stat-label">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- MEMBERS -->
+  <section class="ab-sec page-x">
+    <div class="ab-head">
+      <Icon name="star" size={24} color="var(--color-accent)" />
+      <h2 class="ab-h2">{t.members}</h2>
+    </div>
+    <p class="ab-sub">{t.membersSub}</p>
+
+    {gridMembers.length === 0 ? (
+      <p class="ab-bio">{t.membersEmpty}</p>
+    ) : (
+      <MemberGrid
+        client:visible
+        members={gridMembers}
+        copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view }}
+      />
+    )}
+  </section>
+
+  <!-- PRESS & BOOKING -->
+  {(pressCards.length > 0 || contacts.length > 0) && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="ab-sec page-x">
+        <div class="ab-head">
+          <Icon name="download" size={24} color="var(--color-accent)" />
+          <h2 class="ab-h2">{t.press}</h2>
+        </div>
+        <p class="ab-sub">{t.pressSub}</p>
+
+        {pressCards.length > 0 && (
+          <div class="ab-press-grid" style={`--press-cols:${pressCards.length}`}>
+            {pressCards.map(card => (
+              <a
+                class="ab-press-card"
+                href={card.href}
+                target={card.isFile ? '_blank' : undefined}
+                rel={card.isFile ? 'noopener' : undefined}
+              >
+                <Icon name={card.icon} size={30} color="var(--color-accent)" />
+                <span class="ab-press-body">
+                  <span class="ab-press-title">{card.title}</span>
+                  <span class="ab-press-sub">{card.sub}</span>
+                </span>
+                <span class="ab-press-cta">
+                  <Icon name={card.isFile ? 'download' : 'chevron'} size={16} color="var(--color-accent)" />
+                  {card.cta}
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {contacts.length > 0 && (
+          <div class="ab-contacts">
+            {contacts.map(contact => (
+              <a class="ab-contact" href={`mailto:${contact.email}`}>
+                <span>
+                  <span class="ab-contact-label">{contact.label}</span>
+                  <span class="ab-contact-email">{contact.email}</span>
+                </span>
+                <Icon name="mail" size={28} color="var(--color-accent)" />
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  )}
+
+  <FaqSection module="about" lang={lang} />
+</BaseLayout>
+
+<style>
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .ab-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 54px 58px;
+  }
+  .ab-hero-in { position: relative; }
+
+  .ab-kicker {
+    display: block;
+    font: 800 14px/1 var(--font-body);
+    letter-spacing: .34em;
+    color: var(--color-accent);
+  }
+  .ab-h1 { margin: 16px 0 0; font-size: 140px; line-height: .82; }
+  .ab-lead {
+    margin: 22px 0 0;
+    max-width: 680px;
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  .ab-pills { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 26px; }
+  .ab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font: 700 14px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-on-inverse) 70%, transparent);
+  }
+
+  /* ── Shared ────────────────────────────────────────────────────────────── */
+  .ab-sec { padding-block: 56px 50px; position: relative; }
+  .ab-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .ab-h2 { margin: 0; font-size: 56px; line-height: .96; }
+  .ab-sub {
+    margin: 14px 0 26px;
+    max-width: 620px;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+
+  /* ── Bio ───────────────────────────────────────────────────────────────── */
+  .ab-bio-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .ab-bio {
+    margin: 0 0 18px;
+    font: 500 19px/1.6 var(--font-body);
+    color: var(--color-body);
+    text-wrap: pretty;
+  }
+  /* The opening paragraph carries the page, so it is set larger. */
+  .ab-bio--lead { font-size: 22px; }
+
+  .ab-genres { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+  .ab-genre {
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    font: 800 12px/1 var(--font-body);
+    letter-spacing: .1em;
+    padding: 9px 13px;
+    white-space: nowrap;
+  }
+
+  .ab-aside {
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    padding: 20px 22px;
+  }
+  .ab-aside-h { margin: 0 0 14px; font-size: 22px; line-height: 1; }
+  .ab-comparable { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .ab-comparable li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 600 16px/1.3 var(--font-body);
+    color: var(--color-body);
+  }
+  .ab-dot { width: 8px; height: 8px; flex: none; background: var(--color-accent); }
+
+  /* ── Stats ─────────────────────────────────────────────────────────────── */
+  .ab-stats {
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 44px;
+  }
+  .ab-stats-h { margin: 0 0 26px; font-size: 34px; line-height: 1; }
+  .ab-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--stat-cols, 5), 1fr);
+    gap: 18px;
+  }
+  .ab-stat {
+    border: var(--border-width-card) solid var(--color-on-inverse);
+    padding: 20px 18px;
+    text-align: center;
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+  }
+  .ab-stat-value {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 46px;
+    line-height: .9;
+    letter-spacing: var(--display-tracking);
+  }
+  .ab-stat-label {
+    font: 800 10px/1.3 var(--font-body);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-on-inverse) 70%, transparent);
+  }
+
+  /* ── Press & booking ───────────────────────────────────────────────────── */
+  .ab-press-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--press-cols, 4), 1fr);
+    gap: 22px;
+  }
+  .ab-press-card {
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-body);
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: var(--shadow-card);
+  }
+  .ab-press-body { flex: 1; }
+  .ab-press-title {
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 23px;
+    line-height: 1.02;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+  .ab-press-sub { display: block; font: 500 13px/1.45 var(--font-body); color: var(--color-muted); }
+  .ab-press-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 800 12px/1 var(--font-body);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  .ab-contacts { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; }
+  .ab-contact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding: 20px 24px;
+  }
+  .ab-contact-label {
+    display: block;
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .ab-contact-email { display: block; margin-top: 8px; font: 700 18px/1.2 var(--font-body); word-break: break-word; }
+
+  /* ── Responsive ────────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .ab-h1 { font-size: 96px; }
+    .ab-bio-grid { grid-template-columns: 1fr; gap: 28px; }
+    .ab-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .ab-press-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .ab-h1 { font-size: 56px; }
+    .ab-lead, .ab-bio--lead { font-size: 16px; }
+    .ab-bio { font-size: 16px; }
+    .ab-h2 { font-size: 34px; }
+    .ab-stats-grid { grid-template-columns: 1fr; }
+    .ab-press-grid { grid-template-columns: 1fr; }
+    .ab-contacts { grid-template-columns: 1fr; }
+    .ab-sec { padding-block: 36px; }
+  }
+</style>

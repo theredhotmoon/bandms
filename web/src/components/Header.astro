@@ -15,7 +15,7 @@ const [siteConfig, slugMap] = await Promise.all([
   getSlugMap(),
 ])
 
-const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'contact'] as const
+const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'about', 'contact'] as const
 
 const orderedSlugs = siteConfig.module_order.length > 0
   ? siteConfig.module_order

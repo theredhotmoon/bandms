@@ -34,11 +34,13 @@ it('returns module_order sorted by sort_order on site-config', function () {
 
 // `contact` is registered by 2026_08_26_000001_add_contact_website_module, so it
 // is present in every freshly migrated database — including this test one. Tests
-// below that count rows have to account for that baseline.
-it('returns only the baseline contact module when nothing else is registered', function () {
+// below that count rows have to account for that baseline, which as of
+// 2026-08-27 is two rows: contact and about, both added by migration.
+it('returns the baseline modules when nothing else is registered', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
-        ->assertJsonPath('modules', ['contact' => true]);
+        // Keyed in sort_order, so contact (11) comes before about (12).
+        ->assertJsonPath('modules', ['contact' => true, 'about' => true]);
 });
 
 it('registers contact as a configurable module with a Polish name', function () {
@@ -81,11 +83,14 @@ it('returns all modules and auto_rebuild for admin', function () {
     WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
+    // concerts, then the two migrated baseline modules in sort_order:
+    // contact (11) before about (12).
     $this->getJson('/api/admin/modules')
         ->assertOk()
-        ->assertJsonCount(2, 'data')          // concerts + the baseline contact module
+        ->assertJsonCount(3, 'data')
         ->assertJsonPath('data.0.slug', 'concerts')
         ->assertJsonPath('data.1.slug', 'contact')
+        ->assertJsonPath('data.2.slug', 'about')
         ->assertJsonPath('auto_rebuild', false);
 });
 
@@ -715,4 +720,68 @@ it('leaves settings untouched when the payload omits them', function () {
     $this->putJson('/api/admin/modules/contact', ['custom_name' => ['en' => 'Say hi', 'pl' => null]])
         ->assertOk()
         ->assertJsonPath('data.settings.kicker.en', 'GET IN TOUCH');
+});
+
+// ── about module (added 2026-08-27) ──────────────────────────────────────────
+
+it('registers about as a module the migration created', function () {
+    $about = WebsiteModule::where('slug', 'about')->first();
+
+    expect($about)->not->toBeNull()
+        ->and($about->display_name)->toBe('About')
+        ->and((bool) $about->enabled)->toBeTrue();
+});
+
+it('serves about under its own slug in each locale', function () {
+    $this->getJson('/api/site-config?lang=en')
+        ->assertOk()
+        ->assertJsonPath('module_config.about.slug', 'about')
+        ->assertJsonPath('module_config.about.label', 'About');
+
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertOk()
+        ->assertJsonPath('module_config.about.slug', 'o-nas')
+        ->assertJsonPath('module_config.about.label', 'O nas');
+});
+
+it('includes about in the module order', function () {
+    $order = $this->getJson('/api/site-config')->assertOk()->json('module_order');
+
+    expect($order)->toContain('about');
+});
+
+// The whole risk of adding a module row is claiming a slug another module is
+// already served under, which would shadow a live page.
+it('does not collide with any existing module slug', function () {
+    $effective = WebsiteModule::all()
+        ->flatMap(function ($module) {
+            return collect(['en', 'pl'])->map(function ($locale) use ($module) {
+                $slug = $module->getTranslation('custom_slug', $locale, false);
+
+                return $locale . ':' . ($slug === '' || $slug === null ? $module->slug : $slug);
+            });
+        })
+        ->all();
+
+    expect($effective)->toHaveCount(count(array_unique($effective)));
+});
+
+it('lets about be switched off like any other module', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', ['enabled' => false])->assertOk();
+
+    $this->getJson('/api/site-config')->assertJsonPath('modules.about', false);
+});
+
+it('accepts an faq assigned to the about module', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'about',
+        'question'    => ['en' => 'Who is in the band?'],
+        'answer'      => ['en' => 'Six players and a sound tech.'],
+    ])->assertCreated();
+
+    $this->getJson('/api/faqs?module=about')->assertJsonCount(1, 'data');
 });
