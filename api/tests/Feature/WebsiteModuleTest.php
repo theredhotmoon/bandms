@@ -35,12 +35,15 @@ it('returns module_order sorted by sort_order on site-config', function () {
 // `contact` is registered by 2026_08_26_000001_add_contact_website_module, so it
 // is present in every freshly migrated database — including this test one. Tests
 // below that count rows have to account for that baseline, which as of
-// 2026-08-27 is two rows: contact and about, both added by migration.
+// 2026-08-27 is three rows added by migration: contact, about and footer.
+// `footer` is chrome rather than a page — it has no route and no slug that
+// matters — but it is a website_modules row so its copy is editable and it can
+// be switched off.
 it('returns the baseline modules when nothing else is registered', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
-        // Keyed in sort_order, so contact (11) comes before about (12).
-        ->assertJsonPath('modules', ['contact' => true, 'about' => true]);
+        // Keyed in sort_order: contact (11), about (12), footer (90).
+        ->assertJsonPath('modules', ['contact' => true, 'about' => true, 'footer' => true]);
 });
 
 it('registers contact as a configurable module with a Polish name', function () {
@@ -83,14 +86,15 @@ it('returns all modules and auto_rebuild for admin', function () {
     WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
-    // concerts, then the two migrated baseline modules in sort_order:
-    // contact (11) before about (12).
+    // concerts, then the migrated baseline modules in sort_order:
+    // contact (11), about (12), footer (90).
     $this->getJson('/api/admin/modules')
         ->assertOk()
-        ->assertJsonCount(3, 'data')
+        ->assertJsonCount(4, 'data')
         ->assertJsonPath('data.0.slug', 'concerts')
         ->assertJsonPath('data.1.slug', 'contact')
         ->assertJsonPath('data.2.slug', 'about')
+        ->assertJsonPath('data.3.slug', 'footer')
         ->assertJsonPath('auto_rebuild', false);
 });
 
@@ -784,4 +788,59 @@ it('accepts an faq assigned to the about module', function () {
     ])->assertCreated();
 
     $this->getJson('/api/faqs?module=about')->assertJsonCount(1, 'data');
+});
+
+// ── footer module (added 2026-08-27) ─────────────────────────────────────────
+
+it('registers the footer as a module with editable copy', function () {
+    $footer = WebsiteModule::where('slug', 'footer')->first();
+
+    expect($footer)->not->toBeNull()
+        ->and($footer->display_name)->toBe('Footer')
+        ->and((bool) $footer->enabled)->toBeTrue()
+        ->and($footer->settings)->toHaveKeys(['tagline', 'booking_title', 'booking_text', 'follow_title', 'rights']);
+});
+
+it('serves footer copy per locale', function () {
+    $this->getJson('/api/site-config?lang=en')
+        ->assertOk()
+        ->assertJsonPath('module_config.footer.settings.booking_title', 'Booking & contact');
+
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertOk()
+        ->assertJsonPath('module_config.footer.settings.booking_title', 'Booking i kontakt');
+});
+
+// Switching it off is the whole reason it is a module rather than a settings bag.
+it('can be switched off like any other module', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/footer', ['enabled' => false])->assertOk();
+
+    $this->getJson('/api/site-config')->assertJsonPath('modules.footer', false);
+});
+
+it('accepts an edit to its copy', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/footer', [
+        'settings' => ['rights' => ['en' => 'No rights reserved.']],
+    ])->assertOk()
+      ->assertJsonPath('data.settings.rights.en', 'No rights reserved.');
+
+    // The other locale is untouched, as everywhere else.
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertJsonPath('module_config.footer.settings.rights', 'Wszelkie prawa zastrzeżone.');
+});
+
+// It has no route, so nothing should ever be served under /footer. The public
+// site's link lists are explicit allowlists that exclude it; this pins the
+// expectation that its slug is inert.
+it('is not a page module', function () {
+    $footer = WebsiteModule::where('slug', 'footer')->first();
+
+    // No stored slug at all — the migration deliberately omits it, so this is
+    // null rather than the empty string a cleared slug leaves behind.
+    expect($footer->getTranslation('custom_slug', 'en', false))->toBeEmpty()
+        ->and($footer->per_page)->toBeNull();
 });

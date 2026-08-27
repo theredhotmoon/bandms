@@ -587,6 +587,14 @@ add it there, then read it in the Astro section. No migration.
 A module absent from that map simply shows no copy fields, which is why adding
 one is additive and safe.
 
+**A module need not be a page.** `footer` is a `website_modules` row with no
+route and no meaningful slug — it exists so its copy is editable and so it can be
+switched off. `app/src/config/moduleSettings.ts` lists such modules in
+`NON_PAGE_MODULES`, and the admin hides the URL-slug and per-page inputs for
+them rather than offering controls that change nothing. Neither `Header.astro`'s
+`MODULE_SLUGS` nor `[lang]/[section].astro`'s section lists include it, so no nav
+entry or route can appear by accident.
+
 Editors live at **`/admin/website-modules`** (page copy, per module) and
 **`/admin/faqs`** (questions, grouped by subpage).
 

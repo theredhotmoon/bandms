@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule, ModuleSettings } from '@/types/website-module'
-import { settingsFieldsFor } from '@/config/moduleSettings'
+import { settingsFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
 
 const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
@@ -113,6 +113,13 @@ const settingsFields = computed(() =>
   editingSlug.value ? settingsFieldsFor(editingSlug.value) : [],
 )
 
+// Chrome modules (the footer) have no route, so a URL slug and a per-page count
+// would be inputs that change nothing. `enabled` still means something: off
+// hides the footer.
+const isPageModule = computed(() =>
+  editingSlug.value ? !NON_PAGE_MODULES.has(editingSlug.value) : true,
+)
+
 function startEdit(mod: WebsiteModule) {
   editingSlug.value  = mod.slug
   draftNameEn.value  = mod.custom_name?.en ?? ''
@@ -178,10 +185,16 @@ async function saveEdit(slug: string) {
           en: draftNameEn.value.trim() || null,
           pl: draftNamePl.value.trim() || null,
         },
-        custom_slug: {
-          en: draftSlugEn.value.trim() || null,
-          pl: draftSlugPl.value.trim() || null,
-        },
+        // Omitted entirely for a chrome module: sending nulls would clear the
+        // column, and the API treats an explicit null as "clear this locale".
+        ...(isPageModule.value
+          ? {
+              custom_slug: {
+                en: draftSlugEn.value.trim() || null,
+                pl: draftSlugPl.value.trim() || null,
+              },
+            }
+          : {}),
         per_page: draftPerPage.value,
         ...(settingsFields.value.length > 0 ? { settings: collectSettings(slug) } : {}),
       },
@@ -375,7 +388,12 @@ async function saveEdit(slug: string) {
                regenerate from it would emit '' and move a live page. These also
                need a per-locale error and a path preview, which it has no slot
                for. -->
-          <div class="flex flex-col gap-1.5">
+          <p v-if="!isPageModule" class="text-xs text-zinc-500">
+            This module is site chrome, not a page — it has no URL. Switching it off
+            hides it from the public site.
+          </p>
+
+          <div v-if="isPageModule" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
             <div class="flex gap-3">
               <div class="flex flex-col gap-1 flex-1">
@@ -467,7 +485,7 @@ async function saveEdit(slug: string) {
           </div>
 
           <!-- Per-page select (list modules only) -->
-          <div v-if="LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
+          <div v-if="isPageModule && LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Items per page</span>
             <select
               v-model="draftPerPage"

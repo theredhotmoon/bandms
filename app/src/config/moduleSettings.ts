@@ -25,6 +25,14 @@ export interface ModuleSettingField {
   placeholder?: string
 }
 
+/**
+ * Modules that are chrome rather than a page.
+ *
+ * They have no route, so a URL slug and a per-page count would be inputs that
+ * do nothing. The admin hides those fields for these.
+ */
+export const NON_PAGE_MODULES = new Set(['footer'])
+
 export const MODULE_SETTINGS_SCHEMA: Record<string, ModuleSettingField[]> = {
   contact: [
     {
@@ -70,6 +78,45 @@ export const MODULE_SETTINGS_SCHEMA: Record<string, ModuleSettingField[]> = {
       type: 'text',
       maxLength: 120,
       help: 'Caption under the general contact email.',
+    },
+  ],
+  footer: [
+    {
+      key: 'tagline',
+      label: 'Tagline',
+      type: 'text',
+      maxLength: 120,
+      help: 'Sits under the band name in the footer’s first column.',
+      placeholder: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    },
+    {
+      key: 'booking_title',
+      label: 'Booking column heading',
+      type: 'text',
+      maxLength: 60,
+      placeholder: 'Booking & contact',
+    },
+    {
+      key: 'booking_text',
+      label: 'Booking blurb',
+      type: 'textarea',
+      maxLength: 300,
+      help: 'Shown above the booking email, which comes from the band profile.',
+    },
+    {
+      key: 'follow_title',
+      label: 'Links column heading',
+      type: 'text',
+      maxLength: 60,
+      placeholder: 'Follow',
+    },
+    {
+      key: 'rights',
+      label: 'Rights line',
+      type: 'text',
+      maxLength: 120,
+      help: 'Right-hand side of the bottom bar. The copyright and year are automatic.',
+      placeholder: 'All rights reserved.',
     },
   ],
 }

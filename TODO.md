@@ -18,30 +18,9 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
-## Public site — the footer and Shop are left
+## Public site — only Shop is left
 
-The 2-Tone design has been ported page by page (Contact, Music, Gallery, About,
-Article press, ReleaseDetail, and the four undesigned sections). What is left is
-the site footer and Shop.
-
-### `Footer.astro` was never ported — do this first
-
-**Status:** not started. Small, but it shows on every page.
-
-`web/src/components/Footer.astro` is still the pre-theme footer: `border-t
-border-border mt-24 py-12`, a `font-black` brand link, no scoped styles. Every
-other piece of chrome is 2-Tone, so an ink header now bookends a plain footer on
-all 25 pages.
-
-The design's footer (`SiteFooter` in `variants/shared.jsx`) is: ink ground, a
-checker strip pinned to the top edge, a `1.3fr 1fr 1fr` grid of brand+socials /
-booking / nav, accent column headings at Anton 26px, brand at Anton 30px, and a
-bottom bar at `600 13px/1`.
-
-Found while testing ReleaseDetail — its "no pre-theme classes" assertion caught
-the footer and had to be scoped to `<main>` so it judged the page rather than
-someone else's file. Widen that assertion back to the whole document once the
-footer is ported.
+Every page and both pieces of chrome are now ported. Shop is the only thing left.
 
 ### Shop — designed, not built
 
