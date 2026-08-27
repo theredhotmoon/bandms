@@ -80,7 +80,12 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 
 Route::get('/band-profile', [BandProfileController::class, 'show'])->name('api.band-profile.show');
 Route::get('/band-profile/calendar/availability', [BandCalendarController::class, 'availability'])->name('api.calendar.availability');
-Route::get('/band-profile/calendar/availability-range', [BandCalendarController::class, 'availabilityRange'])->name('api.calendar.availability-range');
+// Throttled: unauthenticated, and each uncached call expands up to 92 days of
+// iCal for every member. The 5-minute cache is keyed on the exact range, so
+// shifting it by a day sidesteps it — cheap CPU amplification otherwise.
+Route::get('/band-profile/calendar/availability-range', [BandCalendarController::class, 'availabilityRange'])
+    ->middleware('throttle:30,1')
+    ->name('api.calendar.availability-range');
 Route::get('/band-profile/epk', [BandProfileController::class, 'showEpk'])->name('api.band-profile.epk');
 Route::get('/band-profile/members', [BandMemberController::class, 'index'])->name('api.band-profile.members.index');
 Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])->name('api.band-profile.social-links.index');

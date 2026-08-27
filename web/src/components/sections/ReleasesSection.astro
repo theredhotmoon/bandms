@@ -62,7 +62,7 @@ const COPY = {
     videos: 'Music videos',
     lyrics: 'Lyrics', lyricsSub: 'Sing along.',
     lyricsEmpty: 'No lyrics published yet.',
-    buy: 'Buy physical', buySub: 'Wax, plastic and tape for the collectors.',
+    buy: 'Buy physical', buySub: 'Wax, plastic and tape for the collectors.', buyCta: 'View',
     tracks: 'tracks', viewLyrics: 'Lyrics', detail: 'Release page',
     outNow: 'Out now', presave: 'Pre-save', listen: 'Listen',
     close: 'Close', watch: 'Watch on YouTube',
@@ -80,7 +80,7 @@ const COPY = {
     videos: 'Teledyski',
     lyrics: 'Teksty', lyricsSub: 'Śpiewaj z nami.',
     lyricsEmpty: 'Brak opublikowanych tekstów.',
-    buy: 'Kup fizycznie', buySub: 'Winyl, plastik i taśma dla kolekcjonerów.',
+    buy: 'Kup fizycznie', buySub: 'Winyl, plastik i taśma dla kolekcjonerów.', buyCta: 'Zobacz',
     tracks: 'utworów', viewLyrics: 'Tekst', detail: 'Strona wydawnictwa',
     outNow: 'Już dostępne', presave: 'Pre-save', listen: 'Posłuchaj',
     close: 'Zamknij', watch: 'Zobacz na YouTube',
@@ -157,7 +157,11 @@ const galleryVideos = videos.map(v => ({
 // those routes are unbuilt and every card here would be a dead link.
 const shopItems = enabled('merch') ? await getShopItems().catch(() => []) : []
 const releaseIds = new Set(releases.map(r => r.id))
-const physical = shopItems.filter(item => (item.release_ids ?? []).some(id => releaseIds.has(id)))
+// Merch routes are generated from slug_en, so an item without one has no page
+// to link to — including it would emit a 404.
+const physical = shopItems.filter(
+  item => item.slug_en && (item.release_ids ?? []).some(id => releaseIds.has(id)),
+)
 
 const priceOf = (item: (typeof physical)[number]) => {
   const price = item.prices?.[0]
@@ -182,7 +186,7 @@ const priceOf = (item: (typeof physical)[number]) => {
         <p class="mu-lead">{t.lead}</p>
       </div>
       {socialLinks.length > 0 && (
-        <div class="mu-hero-social"><SocialLinks links={socialLinks} size="lg" /></div>
+        <div class="mu-hero-social"><SocialLinks links={socialLinks} size="md" /></div>
       )}
     </div>
   </section>
@@ -338,7 +342,7 @@ const priceOf = (item: (typeof physical)[number]) => {
         <p class="mu-sub">{t.buySub}</p>
         <div class="mu-merch">
           {physical.map(item => (
-            <a class="mu-merch-card" href={`${href('merch')}/${item.slug_en ?? item.id}`}>
+            <a class="mu-merch-card" href={`${href('merch')}/${item.slug_en}`}>
               <span class="mu-merch-art">
                 {item.photos?.[0]?.url
                   ? <img src={item.photos[0].url} alt={item.name} loading="lazy" />
@@ -348,7 +352,7 @@ const priceOf = (item: (typeof physical)[number]) => {
                 <span class="mu-merch-name">{item.name}</span>
                 <span class="mu-merch-foot">
                   <span class="mu-merch-price">{priceOf(item)}</span>
-                  <span class="mu-merch-cta">{item.is_available ? t.listen : ''}</span>
+                  <span class="mu-merch-cta">{item.is_available ? t.buyCta : ''}</span>
                 </span>
               </span>
             </a>

@@ -91,6 +91,18 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
   document.body.style.overflow = ''
 })
+
+/**
+ * Astro server-renders this island, and @astrojs/vue's renderToString discards
+ * teleported content — leaving a hydration anchor with no target, which Vue then
+ * fails to patch ("Cannot read properties of null"). Survivable while this is the
+ * only teleporting island on its page; fatal the moment a second one lands. Same
+ * gate as ModalShell.
+ */
+const mounted = ref(false)
+onMounted(() => {
+  mounted.value = true
+})
 </script>
 
 <template>
@@ -154,7 +166,7 @@ onUnmounted(() => {
     </div>
 
     <!-- LIGHTBOX -->
-    <Teleport to="body">
+    <Teleport v-if="mounted" to="body">
       <div
         v-if="openAlbum && photo"
         class="gb-scrim"

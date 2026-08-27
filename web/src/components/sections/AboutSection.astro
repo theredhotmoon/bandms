@@ -95,8 +95,13 @@ const splitList = (value: string | null) =>
 const genres = splitList(profile.genres)
 const comparable = splitList(profile.comparable_artists)
 
-const thisYear = new Date(profile.updated_at).getFullYear()
-const playedCount = concerts.filter(c => c.date && c.date <= profile.updated_at.slice(0, 10)).length
+// The build clock, not profile.updated_at. Using the profile's timestamp meant
+// "years on stage" and "shows played" froze at whenever the profile was last
+// saved — and editing an unrelated field silently moved both numbers.
+const today = new Date()
+const todayIso = today.toISOString().slice(0, 10)
+const thisYear = today.getFullYear()
+const playedCount = concerts.filter(c => c.date && c.date <= todayIso).length
 
 // Only stats the band has actually filled in. An empty grid of zeroes reads as
 // a band with no audience rather than a band that has not entered numbers.

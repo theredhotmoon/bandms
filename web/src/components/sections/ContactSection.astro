@@ -238,10 +238,14 @@ const epkAssets = [
 // The booking card opens the calendar rather than navigating, so unlike the
 // others it needs no module gate — there is no route for it to point at.
 const promo = [
-  { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: null,             show: true },
-  { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: null,             show: enabled('epk') || epkAssets.length > 0 },
-  { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: '/rider',         show: Boolean(profile.tech_rider_url) },
-  { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos') },
+  { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: null,             show: true, isFile: false },
+  { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: null,             show: enabled('epk') || epkAssets.length > 0, isFile: false },
+  // Links the file, not /rider. That route is the token shell — PublicRider
+  // reads the last path segment, sees "rider", and renders "Invalid rider link."
+  // Every other consumer of this field (the About press card, the EPK asset row)
+  // already links the file directly.
+  { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: profile.tech_rider_url ?? '', show: Boolean(profile.tech_rider_url), isFile: true },
+  { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos'), isFile: false },
 ].filter(p => p.show)
 ---
 
@@ -344,6 +348,8 @@ const promo = [
               <Tag
                 class="ct-card"
                 href={p.href ?? undefined}
+                target={p.isFile ? '_blank' : undefined}
+                rel={p.isFile ? 'noopener' : undefined}
                 type={p.href ? undefined : 'button'}
                 data-open-availability={p.href || p.icon !== 'calendar' ? undefined : true}
                 data-open-epk={p.href || p.icon !== 'star' ? undefined : true}

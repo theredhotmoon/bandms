@@ -52,6 +52,7 @@ class FaqController extends Controller
         $faq = new Faq();
         $faq->module_slug = $data['module_slug'];
         $this->fill($faq, $data);
+        $this->assertHasQuestion($faq);
 
         // New rows land at the end of THEIR subpage rather than colliding on 0,
         // which would make their order depend on the id tiebreaker instead of
@@ -73,6 +74,7 @@ class FaqController extends Controller
         }
 
         $this->fill($faq, $data);
+        $this->assertHasQuestion($faq);
 
         if (array_key_exists('sort_order', $data)) {
             $faq->sort_order = $data['sort_order'];
@@ -130,6 +132,13 @@ class FaqController extends Controller
     {
         return [
             'module_slug'  => [$creating ? 'required' : 'sometimes', 'string', 'max:60', Rule::in(WebsiteModule::pluck('slug'))],
+            // `question` must be present when creating — both columns are NOT
+            // NULL with no default, so omitting it died with a database error
+            // where a 422 belongs. Which locales are filled is checked after the
+            // merge instead of here: on update, clearing one locale is legal as
+            // long as the other already holds a value, and a payload-only rule
+            // like required_without cannot see the stored one.
+            'question'     => [$creating ? 'required' : 'sometimes', 'array'],
             'question.en'  => ['sometimes', 'nullable', 'string', 'max:300'],
             'question.pl'  => ['sometimes', 'nullable', 'string', 'max:300'],
             'answer.en'    => ['sometimes', 'nullable', 'string', 'max:4000'],
@@ -137,6 +146,25 @@ class FaqController extends Controller
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * A question must survive in at least one locale.
+     *
+     * Checked on the merged model rather than on the payload, so clearing one
+     * locale stays legal while the other holds a value. A row with both blank
+     * renders an empty heading in the public accordion — the outcome
+     * FaqSummaryResource's locale fallback exists to prevent.
+     */
+    private function assertHasQuestion(Faq $faq): void
+    {
+        $filled = collect($faq->getTranslations('question'))->filter(fn ($v) => filled($v));
+
+        if ($filled->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'question' => ['A question is required in at least one language.'],
+            ]);
+        }
     }
 
     /**
