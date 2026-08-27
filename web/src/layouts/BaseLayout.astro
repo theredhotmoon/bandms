@@ -5,6 +5,7 @@ import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
+import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
 
 export interface Props {
@@ -67,5 +68,6 @@ const fontHref = THEME_FONTS[theme]
     </main>
     <Footer lang={lang} alternateHref={alternateHref} />
     <CartDrawer client:idle />
+    <ThemeSlot name="page-grain" />
   </body>
 </html>

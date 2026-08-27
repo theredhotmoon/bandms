@@ -1,6 +1,7 @@
 import CheckerStrip from './CheckerStrip.astro'
 import CheckerOverlay from './CheckerOverlay.astro'
 import CheckerSquare from './CheckerSquare.astro'
+import PageGrain from './PageGrain.astro'
 
 /**
  * Ornament this theme fills into the base layout's slots.
@@ -15,4 +16,5 @@ export const slots = {
   'section-divider': CheckerStrip,
   'hero-backdrop': CheckerOverlay,
   'card-mark': CheckerSquare,
+  'page-grain': PageGrain,
 } as const
