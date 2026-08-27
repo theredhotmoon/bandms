@@ -1,8 +1,13 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getRelease, getBandProfile } from '@/lib/cms'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import SectionHead from '@/components/SectionHead.astro'
+import Icon from '@/components/Icon.astro'
+import TrackList from '@/components/TrackList.vue'
+import LyricsViewer from '@/components/LyricsViewer.vue'
+import { getRelease, getBandProfile, getSiteConfig, getShopItems } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
 import { fmtDate } from '@/lib/i18n'
 
@@ -11,16 +16,72 @@ interface Props {
   alternateHref: string
   itemId: number
 }
-
 const { lang, alternateHref, itemId } = Astro.props
-const slugMap = await getSlugMap()
 
-const [release, profile] = await Promise.all([
+const [release, profile, siteConfig, slugMap] = await Promise.all([
   getRelease(itemId, lang),
   getBandProfile(lang),
+  getSiteConfig(lang),
+  getSlugMap(),
 ])
 
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+
+const COPY = {
+  en: {
+    music: 'Music', tracklist: 'Tracklist', photos: 'Photos', lyrics: 'Lyrics',
+    lyricsEmpty: 'No lyrics published yet.',
+    viewLyrics: 'Lyrics', buy: 'Buy physical',
+    outNow: 'Out now', presave: 'Pre-save', listen: 'Listen',
+  },
+  pl: {
+    music: 'Muzyka', tracklist: 'Lista utworów', photos: 'Zdjęcia', lyrics: 'Teksty',
+    lyricsEmpty: 'Brak opublikowanych tekstów.',
+    viewLyrics: 'Tekst', buy: 'Kup fizycznie',
+    outNow: 'Już dostępne', presave: 'Pre-save', listen: 'Posłuchaj',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
 const year = release.release_date ? new Date(release.release_date).getFullYear() : null
+
+const metaLine = [
+  RELEASE_TYPE_LABELS[release.type] ?? release.type,
+  year ? String(year) : null,
+  release.label_name,
+]
+  .filter(Boolean)
+  .join(' · ')
+
+const tracks = [...(release.tracks ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+
+const trackRows = tracks.map((track, i) => ({
+  id: track.id,
+  n: i + 1,
+  title: track.title,
+  duration: track.duration,
+  hasLyrics: Boolean(track.lyrics?.trim()),
+}))
+
+// Only this release's lyrics, so the sheet on a detail page never offers songs
+// from another record.
+const songs = tracks
+  .filter(track => track.lyrics?.trim())
+  .map(track => ({
+    id: track.id,
+    title: track.title,
+    releaseTitle: release.title,
+    lyrics: track.lyrics as string,
+  }))
+
+const photos = (release.photos ?? []).filter(p => p.image_url)
+
+// Physical formats for this release, gated on the merch module: with it off
+// those routes are unbuilt and the card would be a dead link.
+const shopItems = enabled('merch') ? await getShopItems().catch(() => []) : []
+const physical = shopItems.filter(item => (item.release_ids ?? []).includes(release.id))
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -30,123 +91,333 @@ const structuredData = {
   datePublished: release.release_date ?? undefined,
   image: release.cover_image ?? undefined,
   url: Astro.url.href,
-  numTracks: (release.tracks ?? []).length > 0 ? (release.tracks ?? []).length : undefined,
+  numTracks: tracks.length > 0 ? tracks.length : undefined,
 }
 ---
 
 <BaseLayout
+  lang={lang}
+  alternateHref={alternateHref}
   title={`${release.title} — ${profile.name}`}
   description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
   image={release.cover_image}
   structuredData={structuredData}
-  lang={lang}
-  alternateHref={alternateHref}
 >
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
-    <nav class="mb-8 text-sm text-subtle">
-      <a href={`/${lang}/${slugMap[lang].releases ?? 'releases'}`} class="hover:text-muted transition-colors">Music</a>
-      <span class="mx-2">›</span>
-      <span class="text-muted">{release.title}</span>
-    </nav>
+  <!-- HERO -->
+  <section class="rd-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="rd-hero-in">
+      <nav class="rd-crumb" aria-label="Breadcrumb">
+        <a href={href('releases')}>{t.music}</a>
+        <span class="rd-crumb-sep" aria-hidden="true">→</span>
+        <span class="rd-crumb-cur">{release.title}</span>
+      </nav>
 
-    <div class="grid gap-10 md:grid-cols-[220px_1fr]">
-      <!-- Cover -->
-      <div class="flex flex-col gap-4">
-        <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square">
-          {release.cover_image ? (
-            <img src={release.cover_image} alt={release.title} loading="eager" class="w-full h-full object-cover" />
-          ) : (
-            <div class="flex h-full items-center justify-center text-subtle">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-            </div>
-          )}
+      {metaLine && <span class="rd-kicker">{metaLine}</span>}
+      <h1 class="rd-h1">{release.title}</h1>
+      <p class="rd-artist">{profile.name}</p>
+
+      {release.release_date && (
+        <p class="rd-date">{fmtDate(release.release_date, lang)}</p>
+      )}
+
+      <div class="rd-actions">
+        {release.is_upcoming && release.presave_url && (
+          <a class="rd-cta" href={release.presave_url} target="_blank" rel="noopener">
+            <Icon name="star" size={18} color="var(--color-on-accent)" />{t.presave}
+          </a>
+        )}
+        {!release.is_upcoming && release.links?.[0] && (
+          <a class="rd-cta" href={release.links[0].url} target="_blank" rel="noopener">
+            <Icon name="play" size={18} color="var(--color-on-accent)" />{t.listen}
+          </a>
+        )}
+        {(release.links ?? []).map(link => (
+          <a
+            class="rd-plat"
+            href={link.url}
+            target="_blank"
+            rel="noopener"
+            title={PLATFORM_LABELS[link.platform] ?? link.platform}
+            aria-label={PLATFORM_LABELS[link.platform] ?? link.platform}
+          >
+            <Icon name={link.platform === 'apple_music' ? 'apple' : link.platform} size={20} color="currentColor" />
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <!-- COVER + TRACKLIST -->
+  <section class="rd-sec page-x">
+    <div class="rd-grid">
+      <div class="rd-cover-col">
+        <div class="rd-cover">
+          {release.cover_image
+            ? <img src={release.cover_image} alt={release.title} loading="eager" />
+            : <span class="rd-fallback" aria-hidden="true" />}
+          <span class="rd-stamp">{release.is_upcoming ? t.presave : t.outNow}</span>
         </div>
 
-        {/* Streaming Links */}
-        {(release.links ?? []).length > 0 && (
-          <div class="space-y-2">
-            {(release.links ?? []).map(link => (
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex w-full items-center justify-center gap-2 rounded-card border border-border bg-surface px-4 py-2.5 text-sm font-medium text-body hover:border-border hover:text-body transition-colors"
-              >
-                {PLATFORM_LABELS[link.platform] ?? link.platform}
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
+        {physical.length > 0 && (
+          <div class="rd-physical">
+            <span class="rd-physical-label">{t.buy}</span>
+            {physical.map(item => (
+              <a class="rd-physical-link" href={`${href('merch')}/${item.slug_en ?? item.id}`}>
+                <Icon name="cart" size={17} color="var(--color-accent)" />{item.name}
               </a>
             ))}
           </div>
         )}
-
-        {release.presave_url && (
-          <a
-            href={release.presave_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex w-full items-center justify-center rounded-card bg-accent py-2.5 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors"
-          >
-            Pre-save →
-          </a>
-        )}
       </div>
 
-      <!-- Details -->
       <div>
-        <p class="text-sm text-muted uppercase tracking-wider mb-1">
-          {RELEASE_TYPE_LABELS[release.type]}{year ? ` · ${year}` : ''}
-          {release.label_name ? ` · ${release.label_name}` : ''}
-        </p>
-        <h1 class="text-3xl font-black text-body sm:text-4xl leading-tight">{release.title}</h1>
-        <p class="mt-1 text-muted font-medium">{profile.name}</p>
-
-        {release.release_date && (
-          <p class="mt-1 text-sm text-subtle">{fmtDate(release.release_date, lang)}</p>
-        )}
-
         {release.description && (
-          <div class="prose mt-6">
-            {release.description.split('\n\n').map(p => <p>{p}</p>)}
+          <div class="rd-desc">
+            {release.description.split(/\n\s*\n/).filter(Boolean).map(p => <p>{p}</p>)}
           </div>
         )}
 
-        {/* Tracklist */}
-        {(release.tracks ?? []).length > 0 && (
-          <div class="mt-8">
-            <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-3">Tracklist</h2>
-            <ol class="space-y-1">
-              {(release.tracks ?? [])
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .map((track, i) => (
-                  <li class="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-                    <span class="text-xs text-subtle w-5 text-right tabular-nums">{i + 1}</span>
-                    <span class="flex-1 text-body">{track.title}</span>
-                    {track.explicit && <span class="text-[10px] border border-border text-subtle px-1 rounded">E</span>}
-                    {track.duration && <span class="text-xs text-subtle tabular-nums">{track.duration}</span>}
-                  </li>
-                ))}
-            </ol>
-          </div>
-        )}
-
-        {/* Photos */}
-        {(release.photos ?? []).length > 0 && (
-          <div class="mt-8">
-            <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-3">Photos</h2>
-            <div class="grid grid-cols-3 gap-2">
-              {(release.photos ?? []).map(p => p.image_url && (
-                <div class="overflow-hidden rounded-card aspect-square bg-surface-2">
-                  <img src={p.image_url} alt={p.caption ?? ''} loading="lazy" class="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
+        {trackRows.length > 0 && (
+          <>
+            <p class="rd-sub-label">{t.tracklist}</p>
+            <TrackList
+              client:visible
+              tracks={trackRows}
+              lyricsLabel={t.viewLyrics}
+              lyricsEnabled={songs.length > 0}
+            />
+          </>
         )}
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- PHOTOS -->
+  {photos.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="rd-sec page-x">
+        <SectionHead icon="camera" title={t.photos} size="sm" />
+        <div class="rd-photos">
+          {photos.map(photo => (
+            <a class="rd-photo" href={photo.image_url!} target="_blank" rel="noopener">
+              <img src={photo.image_url!} alt={photo.caption ?? ''} loading="lazy" />
+            </a>
+          ))}
+        </div>
+      </section>
+    </>
+  )}
+
+  <!-- LYRICS -->
+  {songs.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="accent" />
+      <section id="lyrics" class="rd-sec page-x">
+        <SectionHead icon="quote" title={t.lyrics} size="sm" />
+        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} />
+      </section>
+    </>
+  )}
 </BaseLayout>
+
+<style>
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .rd-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 26px 50px;
+  }
+  .rd-hero-in { position: relative; }
+
+  .rd-crumb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+    font: 700 12px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-on-inverse) 60%, transparent);
+  }
+  .rd-crumb a { color: inherit; }
+  .rd-crumb a:hover { color: var(--color-on-inverse); }
+  .rd-crumb-sep { color: var(--color-accent); }
+  .rd-crumb-cur { color: var(--color-on-inverse); }
+
+  .rd-kicker {
+    display: block;
+    font: 800 13px/1 var(--font-body);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  .rd-h1 {
+    margin: 14px 0 0;
+    font-size: 84px;
+    line-height: .86;
+    text-wrap: balance;
+  }
+
+  .rd-artist {
+    margin: 14px 0 0;
+    font: 700 18px/1.2 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  .rd-date {
+    margin: 8px 0 0;
+    font: 700 13px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-on-inverse) 62%, transparent);
+  }
+
+  .rd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 26px;
+  }
+  .rd-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 17px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+    padding: 14px 22px;
+    box-shadow: 5px 5px 0 var(--color-on-inverse);
+  }
+  .rd-plat {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: var(--border-width-card) solid var(--color-on-inverse);
+    color: var(--color-on-inverse);
+  }
+
+  /* ── Body ──────────────────────────────────────────────────────────────── */
+  .rd-sec { padding-block: 48px 44px; position: relative; }
+
+  .rd-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 44px;
+    align-items: start;
+  }
+
+  .rd-cover-col { display: flex; flex-direction: column; gap: 22px; }
+
+  .rd-cover {
+    position: relative;
+    border: var(--border-width-emphasis) solid var(--color-border);
+    box-shadow: 12px 12px 0 var(--color-accent);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  .rd-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .rd-fallback {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--color-page) 92%, black) 0 9px,
+      color-mix(in oklab, var(--color-page) 97%, black) 9px 18px
+    );
+  }
+
+  .rd-stamp {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    transform: rotate(-3deg);
+    background: var(--color-page);
+    border: 3px solid var(--color-accent);
+    color: var(--color-accent);
+    font: 800 12px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 7px 11px;
+    white-space: nowrap;
+  }
+
+  .rd-physical { display: flex; flex-direction: column; gap: 10px; }
+  .rd-physical-label {
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+  .rd-physical-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-body);
+    font: 700 14px/1.3 var(--font-body);
+    padding: 12px 15px;
+  }
+
+  .rd-desc { max-width: 66ch; margin-bottom: 28px; }
+  .rd-desc p {
+    margin: 0 0 16px;
+    font: 500 17px/1.65 var(--font-body);
+    color: var(--color-body);
+    text-wrap: pretty;
+  }
+
+  .rd-sub-label {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+
+  /* ── Photos ────────────────────────────────────────────────────────────── */
+  .rd-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .rd-photo {
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-inverse);
+  }
+  .rd-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ── Responsive ────────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .rd-h1 { font-size: 60px; }
+    .rd-grid { grid-template-columns: 260px 1fr; gap: 28px; }
+    .rd-photos { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .rd-hero { padding-block: 20px 34px; }
+    .rd-h1 { font-size: 38px; }
+    .rd-artist { font-size: 16px; }
+    .rd-grid { grid-template-columns: 1fr; }
+    .rd-cover { max-width: 320px; }
+    .rd-photos { grid-template-columns: repeat(2, 1fr); }
+    .rd-sec { padding-block: 32px; }
+  }
+</style>

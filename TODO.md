@@ -18,26 +18,30 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
-## Public site — two pages left on the old layout
+## Public site — the footer and Shop are left
 
 The 2-Tone design has been ported page by page (Contact, Music, Gallery, About,
-Article press, and the four undesigned sections). Two pages were not, and both
-are reachable by a single click from a ported one.
+Article press, ReleaseDetail, and the four undesigned sections). What is left is
+the site footer and Shop.
 
-### `ReleaseDetail` was missed — do this first
+### `Footer.astro` was never ported — do this first
 
-**Status:** not started. Small.
+**Status:** not started. Small, but it shows on every page.
 
-`web/src/components/detail/ReleaseDetail.astro`, the release detail page at
-`/[lang]/{releases-slug}/{id}`, is still on the pre-theme Tailwind layout
-(`max-w-4xl`, `text-3xl font-black`). The Music PR ported the *list* page and its
-discography links straight here, so a visitor crosses from a 2-Tone page to an
-unported one in one click. It has no design file of its own — `Music.html` covers
-the list — so restyle by extension.
+`web/src/components/Footer.astro` is still the pre-theme footer: `border-t
+border-border mt-24 py-12`, a `font-black` brand link, no scoped styles. Every
+other piece of chrome is 2-Tone, so an ink header now bookends a plain footer on
+all 25 pages.
 
-**Reuse:** `PageHero`, the featured-release layout already in
-`ReleasesSection.astro`, `TrackList.vue` for the tracklist, `LyricsViewer.vue`
-for lyrics.
+The design's footer (`SiteFooter` in `variants/shared.jsx`) is: ink ground, a
+checker strip pinned to the top edge, a `1.3fr 1fr 1fr` grid of brand+socials /
+booking / nav, accent column headings at Anton 26px, brand at Anton 30px, and a
+bottom bar at `600 13px/1`.
+
+Found while testing ReleaseDetail — its "no pre-theme classes" assertion caught
+the footer and had to be scoped to `<main>` so it judged the page rather than
+someone else's file. Widen that assertion back to the whole document once the
+footer is ported.
 
 ### Shop — designed, not built
 
