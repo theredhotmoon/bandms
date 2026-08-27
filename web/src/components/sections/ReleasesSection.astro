@@ -1,66 +1,604 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Release, ReleasePlatform } from '@/types/release'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+import TrackList from '@/components/TrackList.vue'
+import DiscographyList from '@/components/DiscographyList.vue'
+import LyricsViewer from '@/components/LyricsViewer.vue'
+import VideoGallery from '@/components/VideoGallery.vue'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import SocialLinks from '@/components/SocialLinks.astro'
+import { getReleases, getRelease, getBandProfile, getMusicVideos, getShopItems, getSiteConfig, getSocialLinks } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
+import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
+import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternateHref?: string
 }
 const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
 
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import ReleaseCard from '@/components/ReleaseCard.astro'
-import { getReleases, getBandProfile } from '@/lib/cms'
-import { RELEASE_TYPE_LABELS } from '@/types/release'
-import type { ReleaseType } from '@/types/release'
-import FaqSection from '@/components/sections/FaqSection.astro'
+const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Promise.all([
+  getReleases(lang),
+  getBandProfile(lang),
+  getMusicVideos().catch(() => []),
+  getSiteConfig(lang),
+  getSlugMap(),
+  getSocialLinks().catch(() => []),
+])
 
-const [releases, profile] = await Promise.all([getReleases(lang), getBandProfile(lang)])
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
 
-const grouped = releases.reduce<Record<string, typeof releases>>((acc, r) => {
-  const key = r.type
-  if (!acc[key]) acc[key] = []
-  acc[key]!.push(r)
-  return acc
-}, {})
+// Tracklists and lyrics live on the detail resource, not the list one, so each
+// release is fetched individually. This is a build-time cost paid once, not a
+// per-visitor one — and a single failure must not lose the whole page, hence the
+// per-release catch rather than one around Promise.all.
+const releases: Release[] = (
+  await Promise.all(summaries.map(r => getRelease(r.id, lang).catch(() => null)))
+).filter((r): r is Release => r !== null)
 
-const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
+// Newest first. `release_date` is nullable, and an undated release is either
+// unannounced or a data gap — either way it belongs at the top with the upcoming.
+const sorted = [...releases].sort((a, b) => (b.release_date ?? '9999').localeCompare(a.release_date ?? '9999'))
+
+const featured = sorted[0] ?? null
+const rest = sorted.slice(1)
+
+const year = (r: Release) => (r.release_date ? r.release_date.slice(0, 4) : '')
+
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Music',
+    lead: 'Brass-fuelled skank, dub-soaked rocksteady and ska-jazz heat — every release, every video, in one place.',
+    featured: 'Featured release', tracklist: 'Tracklist',
+    disco: 'Discography',
+    discoSub: 'Singles, EPs and the records that built the skank. Open a release to see its tracklist.',
+    where: 'Where to listen', whereSub: "Pick your poison — we're on every platform that spins.",
+    videos: 'Music videos',
+    lyrics: 'Lyrics', lyricsSub: 'Sing along.',
+    lyricsEmpty: 'No lyrics published yet.',
+    buy: 'Buy physical', buySub: 'Wax, plastic and tape for the collectors.',
+    tracks: 'tracks', viewLyrics: 'Lyrics', detail: 'Release page',
+    outNow: 'Out now', presave: 'Pre-save', listen: 'Listen',
+    close: 'Close', watch: 'Watch on YouTube',
+    empty: 'No releases yet — watch this space.',
+    views: 'views',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Muzyka',
+    lead: 'Dęciaki na full, dubowe rocksteady i ska-jazzowy żar — wszystkie wydawnictwa i teledyski w jednym miejscu.',
+    featured: 'Wyróżnione wydawnictwo', tracklist: 'Lista utworów',
+    disco: 'Dyskografia',
+    discoSub: 'Single, EP-ki i płyty, które zbudowały skank. Kliknij wydawnictwo, by zobaczyć listę utworów.',
+    where: 'Gdzie słuchać', whereSub: 'Wybierz swoje — jesteśmy na każdej platformie, która gra.',
+    videos: 'Teledyski',
+    lyrics: 'Teksty', lyricsSub: 'Śpiewaj z nami.',
+    lyricsEmpty: 'Brak opublikowanych tekstów.',
+    buy: 'Kup fizycznie', buySub: 'Winyl, plastik i taśma dla kolekcjonerów.',
+    tracks: 'utworów', viewLyrics: 'Tekst', detail: 'Strona wydawnictwa',
+    outNow: 'Już dostępne', presave: 'Pre-save', listen: 'Posłuchaj',
+    close: 'Zamknij', watch: 'Zobacz na YouTube',
+    empty: 'Brak wydawnictw — wkrótce.',
+    views: 'wyświetleń',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+const typeLabel = (r: Release) => RELEASE_TYPE_LABELS[r.type] ?? r.type
+const statusLabel = (r: Release) => (r.is_upcoming ? t.presave : t.outNow)
+
+const trackRows = (r: Release) =>
+  [...r.tracks]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((track, i) => ({
+      id: track.id,
+      n: i + 1,
+      title: track.title,
+      duration: track.duration,
+      hasLyrics: Boolean(track.lyrics?.trim()),
+    }))
+
+const platformLinks = (r: Release) =>
+  r.links.map(l => ({
+    platform: l.platform as string,
+    label: PLATFORM_LABELS[l.platform] ?? l.platform,
+    url: l.url,
+  }))
+
+// One pill per platform across the whole catalogue, first URL wins. Releases
+// repeat platforms by design, and a wall of six Spotify buttons is not a menu.
+const platforms = Object.values(
+  releases
+    .flatMap(r => r.links)
+    .reduce<Record<string, { platform: ReleasePlatform; label: string; url: string }>>((acc, l) => {
+      acc[l.platform] ??= { platform: l.platform, label: PLATFORM_LABELS[l.platform] ?? l.platform, url: l.url }
+      return acc
+    }, {}),
+)
+
+// Every track that actually has lyrics, labelled with its release so the picker
+// is unambiguous when two records share a title.
+const songs = releases.flatMap(r =>
+  [...r.tracks]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .filter(track => track.lyrics?.trim())
+    .map(track => ({
+      id: track.id,
+      title: track.title,
+      releaseTitle: r.title,
+      lyrics: track.lyrics as string,
+    })),
+)
+
+const galleryVideos = videos.map(v => ({
+  id: v.id,
+  title: v.og_title ?? v.title,
+  kind: v.channel_name ?? '',
+  embedUrl: youtubeEmbedUrl(v.video_url),
+  watchUrl: v.video_url,
+  thumb: v.og_image ?? youtubeThumbnail(v.video_url),
+  duration: v.duration,
+  meta: [
+    v.view_count ? `${formatNumber(v.view_count)} ${t.views}` : null,
+    v.published_at ? v.published_at.slice(0, 4) : null,
+  ]
+    .filter(Boolean)
+    .join(' · '),
+}))
+
+// Physical formats tied to a release. Gated on the merch module: with it off
+// those routes are unbuilt and every card here would be a dead link.
+const shopItems = enabled('merch') ? await getShopItems().catch(() => []) : []
+const releaseIds = new Set(releases.map(r => r.id))
+const physical = shopItems.filter(item => (item.release_ids ?? []).some(id => releaseIds.has(id)))
+
+const priceOf = (item: (typeof physical)[number]) => {
+  const price = item.prices?.[0]
+  if (!price) return ''
+  return `${(price.amount / 100).toFixed(2)} ${price.currency.toUpperCase()}`
+}
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Music — ${profile.name}`}
-  description={`Discography of ${profile.name} — albums, EPs, singles, and compilations.`}
+  title={`${t.title} — ${profile.name}`}
+  description={t.lead}
 >
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">Music</h1>
+  <!-- HERO -->
+  <section class="mu-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="mu-hero-in">
+      <div>
+        <span class="mu-kicker">{t.kicker}</span>
+        <h1 class="mu-h1">{t.title}</h1>
+        <p class="mu-lead">{t.lead}</p>
+      </div>
+      {socialLinks.length > 0 && (
+        <div class="mu-hero-social"><SocialLinks links={socialLinks} size="lg" /></div>
+      )}
     </div>
+  </section>
 
-    {releases.length === 0 && (
-      <p class="text-muted">No releases yet — check back soon.</p>
-    )}
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-    {typeOrder.filter(t => grouped[t]?.length).map(type => (
-      <section class="mb-14">
-        <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-5">
-          {RELEASE_TYPE_LABELS[type]}s
-        </h2>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {grouped[type]!
-            .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
-            .map(r => (
-              <ReleaseCard
-                release={r}
-                href={`/${lang}/${slugMap[lang].releases}/${r.id}`}
-              />
-            ))}
+  {featured === null ? (
+    <section class="mu-sec page-x"><p class="mu-empty">{t.empty}</p></section>
+  ) : (
+    <>
+      <!-- FEATURED RELEASE -->
+      <section class="mu-sec page-x">
+        <div class="mu-head">
+          <Icon name="star" size={24} color="var(--color-accent)" />
+          <h2 class="mu-h2 mu-h2--sm">{t.featured}</h2>
+        </div>
+
+        <div class="mu-featured">
+          <div class="mu-cover">
+            {featured.cover_image
+              ? <img src={featured.cover_image} alt={featured.title} />
+              : <span class="mu-cover-fallback" aria-hidden="true" />}
+            <span class="mu-stamp">{statusLabel(featured)}</span>
+          </div>
+
+          <div>
+            <p class="mu-meta">{typeLabel(featured)}{year(featured) && ` · ${year(featured)}`}</p>
+            <h3 class="mu-featured-title">{featured.title}</h3>
+            {featured.release_date && (
+              <p class="mu-out">{fmtDate(featured.release_date, lang)}</p>
+            )}
+            {featured.description && <p class="mu-desc">{featured.description}</p>}
+
+            {featured.tracks.length > 0 && (
+              <>
+                <p class="mu-tracklist-label">{t.tracklist}</p>
+                <TrackList
+                  client:visible
+                  tracks={trackRows(featured)}
+                  lyricsLabel={t.viewLyrics}
+                  lyricsEnabled={songs.length > 0}
+                />
+              </>
+            )}
+
+            <div class="mu-featured-actions">
+              {(featured.is_upcoming ? featured.presave_url : featured.links[0]?.url) && (
+                <a
+                  class="mu-cta"
+                  href={featured.is_upcoming ? featured.presave_url! : featured.links[0]!.url}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <Icon name={featured.is_upcoming ? 'star' : 'play'} size={18} color="var(--color-on-accent)" />
+                  {featured.is_upcoming ? t.presave : t.listen}
+                </a>
+              )}
+              {featured.links.map(link => (
+                <a class="mu-plat" href={link.url} target="_blank" rel="noopener" title={PLATFORM_LABELS[link.platform] ?? link.platform}>
+                  <Icon name={link.platform === 'apple_music' ? 'apple' : link.platform} size={22} color="currentColor" />
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
-    ))}
-  </div>
+
+      <!-- WHERE TO LISTEN -->
+      {platforms.length > 0 && (
+        <section class="mu-where page-x">
+          <div>
+            <h2 class="mu-h2 mu-h2--sm mu-h2--inverse">{t.where}</h2>
+            <p class="mu-where-sub">{t.whereSub}</p>
+          </div>
+          <div class="mu-where-list">
+            {platforms.map(p => (
+              <a class="mu-where-pill" href={p.url} target="_blank" rel="noopener">
+                <Icon name={p.platform === 'apple_music' ? 'apple' : p.platform} size={22} color="var(--color-accent)" />
+                {p.label}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- DISCOGRAPHY -->
+      {rest.length > 0 && (
+        <section class="mu-sec page-x">
+          <h2 class="mu-h2">{t.disco}</h2>
+          <p class="mu-sub">{t.discoSub}</p>
+          <DiscographyList
+            client:visible
+            tracksLabel={t.tracks}
+            lyricsLabel={t.viewLyrics}
+            lyricsEnabled={songs.length > 0}
+            detailLabel={t.detail}
+            releases={rest.map(r => ({
+              id: r.id,
+              title: r.title,
+              typeLabel: typeLabel(r),
+              year: year(r),
+              statusLabel: statusLabel(r),
+              isUpcoming: r.is_upcoming,
+              coverUrl: r.cover_image,
+              href: `${href('releases')}/${r.id}`,
+              tracks: trackRows(r),
+              links: platformLinks(r),
+            }))}
+          />
+        </section>
+      )}
+    </>
+  )}
+
+  <!-- MUSIC VIDEOS -->
+  {galleryVideos.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="mu-sec page-x">
+        <div class="mu-head">
+          <Icon name="youtube" size={26} color="var(--color-accent)" />
+          <h2 class="mu-h2">{t.videos}</h2>
+        </div>
+        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} />
+      </section>
+    </>
+  )}
+
+  <!-- LYRICS -->
+  {songs.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="accent" />
+      <section id="lyrics" class="mu-sec page-x">
+        <div class="mu-head">
+          <Icon name="quote" size={24} color="var(--color-accent)" />
+          <h2 class="mu-h2">{t.lyrics}</h2>
+        </div>
+        <p class="mu-sub">{t.lyricsSub}</p>
+        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} />
+      </section>
+    </>
+  )}
+
+  <!-- BUY PHYSICAL -->
+  {physical.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="mu-sec page-x">
+        <div class="mu-head">
+          <Icon name="cart" size={26} color="var(--color-accent)" />
+          <h2 class="mu-h2">{t.buy}</h2>
+        </div>
+        <p class="mu-sub">{t.buySub}</p>
+        <div class="mu-merch">
+          {physical.map(item => (
+            <a class="mu-merch-card" href={`${href('merch')}/${item.slug_en ?? item.id}`}>
+              <span class="mu-merch-art">
+                {item.photos?.[0]?.url
+                  ? <img src={item.photos[0].url} alt={item.name} loading="lazy" />
+                  : <Icon name="disc" size={72} color="var(--color-accent)" />}
+              </span>
+              <span class="mu-merch-body">
+                <span class="mu-merch-name">{item.name}</span>
+                <span class="mu-merch-foot">
+                  <span class="mu-merch-price">{priceOf(item)}</span>
+                  <span class="mu-merch-cta">{item.is_available ? t.listen : ''}</span>
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </>
+  )}
+
   <FaqSection module="releases" lang={lang} />
 </BaseLayout>
+
+<style>
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .mu-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 54px 60px;
+  }
+  .mu-hero-in {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+  }
+  .mu-kicker {
+    display: block;
+    font: 800 14px/1 var(--font-body);
+    letter-spacing: .34em;
+    color: var(--color-accent);
+  }
+  .mu-h1 { margin: 16px 0 0; font-size: 150px; line-height: .82; }
+  .mu-lead {
+    margin: 22px 0 0;
+    max-width: 640px;
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  /* ── Shared section furniture ──────────────────────────────────────────── */
+  .mu-sec { padding-block: 56px 52px; position: relative; }
+  .mu-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .mu-h2 { margin: 0; font-size: 56px; line-height: .96; }
+  .mu-h2--sm { font-size: 40px; line-height: 1; }
+  .mu-h2--inverse { color: var(--color-on-inverse); }
+  .mu-sub {
+    margin: 14px 0 28px;
+    max-width: 620px;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+  .mu-empty { margin: 0; font: 500 17px/1.5 var(--font-body); color: var(--color-muted); }
+
+  /* ── Featured ──────────────────────────────────────────────────────────── */
+  .mu-featured {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 44px;
+    align-items: start;
+    margin-top: 26px;
+  }
+  .mu-cover {
+    position: relative;
+    border: var(--border-width-emphasis) solid var(--color-border);
+    box-shadow: 12px 12px 0 var(--color-accent);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  .mu-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mu-cover-fallback {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--color-page) 92%, black) 0 9px,
+      color-mix(in oklab, var(--color-page) 97%, black) 9px 18px
+    );
+  }
+  .mu-stamp {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    transform: rotate(-3deg);
+    background: var(--color-page);
+    border: 3px solid var(--color-accent);
+    color: var(--color-accent);
+    font: 800 13px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    white-space: nowrap;
+  }
+
+  .mu-meta {
+    margin: 0;
+    font: 800 13px/1 var(--font-body);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+  .mu-featured-title {
+    margin: 10px 0 6px;
+    font-size: 72px;
+    line-height: .86;
+  }
+  .mu-out {
+    margin: 0 0 18px;
+    font: 700 14px/1 var(--font-body);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .mu-desc {
+    margin: 0 0 22px;
+    max-width: 60ch;
+    font: 500 16px/1.6 var(--font-body);
+    color: var(--color-muted);
+  }
+  .mu-tracklist-label {
+    margin: 8px 0;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+
+  .mu-featured-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .mu-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 17px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+    padding: 14px 22px;
+    box-shadow: 5px 5px 0 var(--color-ink);
+  }
+  .mu-plat {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border: var(--border-width-card) solid var(--color-border);
+    color: var(--color-body);
+  }
+
+  /* ── Where to listen ───────────────────────────────────────────────────── */
+  .mu-where {
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 44px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .mu-where-sub {
+    margin: 14px 0 0;
+    font: 500 15px/1.5 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 70%, transparent);
+  }
+  .mu-where-list { display: flex; flex-wrap: wrap; gap: 12px; }
+  .mu-where-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    border: 2px solid color-mix(in oklab, var(--color-on-inverse) 40%, transparent);
+    color: var(--color-on-inverse);
+    font: 700 15px/1 var(--font-body);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 13px 18px;
+  }
+
+  /* ── Buy physical ──────────────────────────────────────────────────────── */
+  .mu-merch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .mu-merch-card {
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-body);
+    display: flex;
+    flex-direction: column;
+  }
+  .mu-merch-art {
+    position: relative;
+    height: 200px;
+    display: grid;
+    place-items: center;
+    background: var(--color-inverse);
+    border-bottom: var(--border-width-card) solid var(--color-border);
+    overflow: hidden;
+  }
+  .mu-merch-art img { width: 100%; height: 100%; object-fit: cover; }
+  .mu-merch-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .mu-merch-name {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 24px;
+    line-height: 1.02;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+  .mu-merch-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: auto; }
+  .mu-merch-price {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+  }
+  .mu-merch-cta {
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  /* ── Responsive ────────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .mu-h1 { font-size: 96px; }
+    .mu-featured { grid-template-columns: 1fr; gap: 28px; }
+    .mu-featured-title { font-size: 52px; }
+    .mu-where { grid-template-columns: 1fr; gap: 22px; }
+    .mu-merch { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .mu-hero-in { grid-template-columns: 1fr; align-items: start; }
+    .mu-h1 { font-size: 56px; }
+    .mu-lead { font-size: 16px; }
+    .mu-h2 { font-size: 34px; }
+    .mu-h2--sm { font-size: 28px; }
+    .mu-featured-title { font-size: 36px; }
+    .mu-merch { grid-template-columns: 1fr; }
+    .mu-sec { padding-block: 36px; }
+  }
+</style>
