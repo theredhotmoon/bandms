@@ -1,7 +1,7 @@
 # Remaining designed pages — plan
 
 **Date:** 2026-08-27
-**Status:** awaiting approval
+**Status:** approved 2026-08-27
 **Scope:** public Astro site (`web/`) only. The `app/` SPA public views are
 unreachable in production and stay untouched.
 
@@ -172,15 +172,16 @@ removes their routes and every link to them.
 
 ---
 
-## 5. Decisions I need from you
+## 5. Decisions — settled
 
-1. **Music videos** — the design puts a videos section on the Music page, while
-   we have a separate `videos` module. Fold videos into Music (and retire the
-   module), show them in both places, or leave the module standalone?
-2. **About as a module** — add the migration so it is localised, toggleable and
-   in the nav (my recommendation), or leave it at `/about`?
-3. **Undesigned pages** — option 1, 2 or 3 from §4.
-4. **Sequencing** — one PR per page (5–6 PRs, reviewable) or one large PR?
+1. **Music videos** — shown on the Music page *and* kept as a standalone module.
+   Both read `GET /music-videos`, so there is no duplicated data; a band that
+   wants videos only on Music switches the module off.
+2. **About becomes a module** — migration, per-locale slugs, nav entry,
+   `sections/AboutSection.astro`, with `/about` delegating to it.
+3. **Undesigned pages** — restyled by extension (option 2), reusing the ported
+   pages' patterns rather than inventing layouts.
+4. **Sequencing** — one PR per page.
 
 ---
 
