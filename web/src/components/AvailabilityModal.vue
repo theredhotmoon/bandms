@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { computed, ref, watch } from 'vue'
+import ModalShell from '@/components/ModalShell.vue'
+import { useModalTrigger } from '@/composables/useModalTrigger'
 import { requestBookingFor } from '@/stores/booking'
 
 export interface AvailabilityCopy {
@@ -23,7 +25,8 @@ type Status = 'open' | 'held' | 'booked'
 
 const MAX_AHEAD = props.maxMonthsAhead ?? 5
 
-const isOpen = ref(false)
+const { isOpen, close } = useModalTrigger('data-open-availability')
+
 const monthOffset = ref(0)
 const picked = ref<string | null>(null)
 const loading = ref(false)
@@ -31,8 +34,6 @@ const failed = ref(false)
 
 /** `YYYY-MM` → per-day status. Cached so re-visiting a month costs nothing. */
 const cache = ref<Record<string, Record<string, Status>>>({})
-
-const panel = ref<HTMLElement | null>(null)
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -111,46 +112,6 @@ watch([isOpen, monthKey], () => {
   if (isOpen.value) void load()
 })
 
-// ── Open / close ──────────────────────────────────────────────────────────────
-
-/**
- * Opened by any element carrying `data-open-availability`, wherever it sits in
- * the page. Delegating from document avoids passing a handler across the island
- * boundary — the triggers are static Astro markup, not Vue.
- */
-function onDocumentClick(event: MouseEvent) {
-  const trigger = (event.target as HTMLElement | null)?.closest('[data-open-availability]')
-  if (!trigger) return
-  event.preventDefault()
-  open()
-}
-
-function open() {
-  isOpen.value = true
-  document.body.style.overflow = 'hidden'
-  void nextTick(() => panel.value?.focus())
-}
-
-function close() {
-  isOpen.value = false
-  document.body.style.overflow = ''
-}
-
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && isOpen.value) close()
-}
-
-onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-  document.addEventListener('keydown', onKeydown)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', onDocumentClick)
-  document.removeEventListener('keydown', onKeydown)
-  document.body.style.overflow = ''
-})
-
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 function pick(day: number) {
@@ -167,142 +128,76 @@ function submit() {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="isOpen"
-      class="am-scrim"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="copy.title"
-      @click.self="close"
-    >
-      <div ref="panel" class="am-panel" tabindex="-1">
-        <div class="am-head">
-          <span class="am-title">{{ copy.title }}</span>
-          <button type="button" class="am-close" :aria-label="copy.close" @click="close">✕</button>
-        </div>
+  <ModalShell
+    :open="isOpen"
+    :title="copy.title"
+    :close-label="copy.close"
+    :width="560"
+    @close="close"
+  >
+    <p class="am-sub">{{ copy.subtitle }}</p>
 
-        <div class="am-body">
-          <p class="am-sub">{{ copy.subtitle }}</p>
+    <p v-if="failed" class="am-warn" role="status">{{ copy.loadError }}</p>
 
-          <p v-if="failed" class="am-warn" role="status">{{ copy.loadError }}</p>
-
-          <div class="am-nav">
-            <button
-              type="button"
-              class="am-arrow"
-              :disabled="monthOffset <= 0"
-              aria-label="Previous month"
-              @click="monthOffset--"
-            >‹</button>
-            <span class="am-month" aria-live="polite">
-              {{ copy.months[shown.month] }} {{ shown.year }}
-            </span>
-            <button
-              type="button"
-              class="am-arrow"
-              :disabled="monthOffset >= MAX_AHEAD"
-              aria-label="Next month"
-              @click="monthOffset++"
-            >›</button>
-          </div>
-
-          <div class="am-weekdays" aria-hidden="true">
-            <span v-for="w in copy.weekdays" :key="w">{{ w }}</span>
-          </div>
-
-          <div class="am-grid" :class="{ 'is-loading': loading }">
-            <span v-for="n in leadingBlanks" :key="`b${n}`" />
-            <button
-              v-for="d in daysInMonth"
-              :key="d"
-              type="button"
-              class="am-day"
-              :class="[`is-${statusFor(d)}`, { 'is-picked': picked === iso(shown.year, shown.month, d) }]"
-              :disabled="statusFor(d) !== 'open'"
-              :aria-pressed="picked === iso(shown.year, shown.month, d)"
-              @click="pick(d)"
-            >{{ d }}</button>
-          </div>
-
-          <div class="am-legend">
-            <span><i class="am-key am-key--open" />{{ copy.open }}</span>
-            <span><i class="am-key am-key--held" />{{ copy.held }}</span>
-            <span><i class="am-key am-key--booked" />{{ copy.booked }}</span>
-          </div>
-
-          <div class="am-foot">
-            <span class="am-picked" :class="{ 'is-empty': !picked }">
-              {{ picked ? pickedLabel : copy.pickPrompt }}
-            </span>
-            <button type="button" class="am-request" :disabled="!picked" @click="submit">
-              {{ copy.request }} →
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="am-nav">
+      <button
+        type="button"
+        class="am-arrow"
+        :disabled="monthOffset <= 0"
+        aria-label="Previous month"
+        @click="monthOffset--"
+      >‹</button>
+      <span class="am-month" aria-live="polite">
+        {{ copy.months[shown.month] }} {{ shown.year }}
+      </span>
+      <button
+        type="button"
+        class="am-arrow"
+        :disabled="monthOffset >= MAX_AHEAD"
+        aria-label="Next month"
+        @click="monthOffset++"
+      >›</button>
     </div>
-  </Teleport>
+
+    <div class="am-weekdays" aria-hidden="true">
+      <span v-for="w in copy.weekdays" :key="w">{{ w }}</span>
+    </div>
+
+    <div class="am-grid" :class="{ 'is-loading': loading }">
+      <span v-for="n in leadingBlanks" :key="`b${n}`" />
+      <button
+        v-for="d in daysInMonth"
+        :key="d"
+        type="button"
+        class="am-day"
+        :class="[`is-${statusFor(d)}`, { 'is-picked': picked === iso(shown.year, shown.month, d) }]"
+        :disabled="statusFor(d) !== 'open'"
+        :aria-pressed="picked === iso(shown.year, shown.month, d)"
+        @click="pick(d)"
+      >{{ d }}</button>
+    </div>
+
+    <div class="am-legend">
+      <span><i class="am-key am-key--open" />{{ copy.open }}</span>
+      <span><i class="am-key am-key--held" />{{ copy.held }}</span>
+      <span><i class="am-key am-key--booked" />{{ copy.booked }}</span>
+    </div>
+
+    <div class="am-foot">
+      <span class="am-picked" :class="{ 'is-empty': !picked }">
+        {{ picked ? pickedLabel : copy.pickPrompt }}
+      </span>
+      <button type="button" class="am-request" :disabled="!picked" @click="submit">
+        {{ copy.request }} →
+      </button>
+    </div>
+  </ModalShell>
 </template>
 
 <style scoped>
-.am-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 220;
-  background: color-mix(in oklab, var(--color-ink) 74%, transparent);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
-}
 
-.am-panel {
-  width: 560px;
-  max-width: 100%;
-  max-height: 90vh;
-  overflow: auto;
-  background: var(--color-page);
-  border: 5px solid var(--color-border);
-  box-shadow: 14px 14px 0 var(--color-accent);
-  outline: none;
-}
 
-.am-head {
-  position: sticky;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: var(--color-inverse);
-  color: var(--color-on-inverse);
-  padding: 16px 24px;
-}
-.am-title {
-  font: var(--display-weight) 26px/1 var(--font-display);
-  letter-spacing: var(--display-tracking);
-  text-transform: var(--display-transform);
-}
-.am-close {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  border: 2px solid var(--color-on-inverse);
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-on-inverse);
-  font-size: 16px;
-  cursor: pointer;
-}
 
-.am-body { padding: 22px 26px 26px; }
-
-.am-sub {
-  margin: 0 0 18px;
-  font: 500 15px/1.5 var(--font-body);
-  color: var(--color-muted);
-}
 
 .am-warn {
   margin: 0 0 16px;
@@ -443,10 +338,7 @@ function submit() {
 }
 
 @media (max-width: 600px) {
-  .am-scrim { padding: 16px 10px; }
-  .am-title { font-size: 20px; }
   .am-month { font-size: 22px; }
-  .am-body { padding: 16px; }
   .am-day { height: 38px; font-size: 13px; }
 }
 </style>

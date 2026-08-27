@@ -7,6 +7,34 @@ const KICKER = `E2E KICKER ${Date.now()}`
 test.describe('Website Modules Admin', () => {
   test.describe.configure({ mode: 'serial' })
 
+  // These tests write real copy into a shared dev database, and the public site
+  // bakes whatever is there at container start — so a run that does not clean up
+  // leaves "E2E KICKER 17878…" on the live contact page. Capture and restore.
+  let originalKicker: string | null = null
+
+  test.beforeAll(async ({ browser }) => {
+    const ctx = await browser.newContext({ storageState: 'e2e/.auth/admin.json' })
+    const page = await ctx.newPage()
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Contact settings' }).click()
+    originalKicker = await page.locator('#set-kicker-en').inputValue()
+    await ctx.close()
+  })
+
+  test.afterAll(async ({ browser }) => {
+    if (originalKicker === null) return
+    const ctx = await browser.newContext({ storageState: 'e2e/.auth/admin.json' })
+    const page = await ctx.newPage()
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Contact settings' }).click()
+    await page.locator('#set-kicker-en').fill(originalKicker)
+    await page.getByRole('button', { name: /^Save$/ }).click()
+    await page.locator('#set-kicker-en').waitFor({ state: 'hidden', timeout: 8000 })
+    await ctx.close()
+  })
+
   test('page loads and lists modules', async ({ page }) => {
     await page.goto('/admin/website-modules')
     await page.waitForLoadState('networkidle')

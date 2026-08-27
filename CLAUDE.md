@@ -594,6 +594,57 @@ avoids passing a handler across the island boundary.
 
 ---
 
+## `Teleport` in an Astro island must be gated on mount
+
+**Symptom:** two modals on one page, and the second one never opens. Its trigger
+is in the DOM, its click handler is written correctly, and nothing looks wrong.
+The console holds the answer:
+
+```
+Hydration completed but contains mismatches.
+TypeError: Cannot read properties of null (reading 'insertBefore')
+```
+
+**Root cause:** Astro server-renders Vue islands. A `<Teleport>` rendered on the
+server leaves behind a hydration anchor that is not in the emitted HTML, so Vue
+throws while patching it. With a single modal the failure is survivable — the
+dialog still works. With two, the second teleport's anchor resolves to `null`,
+that component never finishes mounting, and the `document` click listener it
+attaches in `onMounted` is never registered. The dialog is simply inert.
+
+**Fix (in `web/src/components/ModalShell.vue`):** render nothing until mounted,
+so the teleport is client-only.
+
+```vue
+const mounted = ref(false)
+onMounted(() => { mounted.value = true })
+
+<Teleport v-if="mounted" to="body">
+```
+
+**Why it is worth knowing:** the first symptom is a *silent* failure in an
+unrelated component, and neither `astro build` nor the token lint nor `vue-tsc`
+says a word. Only a browser console does — which is why the public-site specs
+capture `pageerror`.
+
+---
+
+## E2E specs that write to the dev database must restore it
+
+`website-modules.spec.ts` edits real page copy, and the public site bakes
+whatever is in the database when its container starts — so a run that does not
+clean up leaves `E2E KICKER 17878…` on the live contact page until someone
+notices. That spec now captures the original value in `beforeAll` and writes it
+back in `afterAll`.
+
+Anything else that mutates shared dev content needs the same treatment. Note
+that restoring the row is not enough on its own: the public container still
+holds the stale build, and a **`docker compose restart web`** is what re-fetches
+and rebuilds. `docker compose up -d web` will report "Running" and change
+nothing.
+
+---
+
 ## Availability is cached for 5 minutes
 
 `GET /api/band-profile/calendar/availability-range` caches per month-range, so a

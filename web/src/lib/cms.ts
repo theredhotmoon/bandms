@@ -45,6 +45,21 @@ export const getBandProfile = (lang: Locale = 'en') =>
 export const getEpk = (lang: Locale = 'en') =>
   get<EpkData>('/band-profile/epk', { lang })
 
+/**
+ * EPK data, or null if it cannot be fetched.
+ *
+ * `getEpk` throws on a non-2xx, and the Astro build is all-or-nothing — one page
+ * that throws kills all of them. Use this anywhere the EPK is supplementary to a
+ * page rather than the point of it.
+ */
+export async function getEpkOptional(lang: Locale = 'en'): Promise<EpkData | null> {
+  try {
+    return await getEpk(lang)
+  } catch {
+    return null
+  }
+}
+
 export const getMembers = () =>
   get<BandMember[]>('/band-profile/members')
 

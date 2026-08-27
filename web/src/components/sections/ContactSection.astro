@@ -3,11 +3,12 @@ import type { Locale } from '@/types/shared'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ContactForm from '@/components/ContactForm.vue'
 import AvailabilityModal from '@/components/AvailabilityModal.vue'
+import EpkModal from '@/components/EpkModal.vue'
 import SocialLinks from '@/components/SocialLinks.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
-import { getBandProfile, getSocialLinks, getSiteConfig } from '@/lib/cms'
+import { getBandProfile, getSocialLinks, getSiteConfig, getEpkOptional } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 
 interface Props {
@@ -16,11 +17,14 @@ interface Props {
 }
 const { lang = 'en', alternateHref } = Astro.props
 
-const [profile, socialLinks, siteConfig, slugMap] = await Promise.all([
+const [profile, socialLinks, siteConfig, slugMap, epk] = await Promise.all([
   getBandProfile(lang),
   getSocialLinks(),
   getSiteConfig(lang),
   getSlugMap(),
+  // Fails open: the press kit is supplementary to this page, and a throw here
+  // would take down all 35 pages rather than one modal.
+  getEpkOptional(lang),
 ])
 
 // Band-editable copy. `settings` is optional because an API predating the
@@ -57,6 +61,21 @@ const COPY = {
     riderTitle: 'Tech rider', riderSub: 'Stage plan, input list, monitors & hospitality.', riderCta: 'View rider',
     photosTitle: 'Press photos', photosSub: 'Hi-res, print-ready shots in the gallery.', photosCta: 'Open gallery',
     bookingSubject: 'Booking request — {date}',
+    epk: {
+      title: 'Press kit (EPK)',
+      subtitle: 'Everything press and promoters need, in one place.',
+      contents: "What's inside",
+      allLabel: 'Open the full press kit',
+      close: 'Close',
+      empty: "The press kit is still being put together — email us and we'll send what you need.",
+      bio: 'Band bio', bioMeta: 'Short, medium and long',
+      photos: 'Press photos', photosMeta: '{n} hi-res shots',
+      logo: 'Logo', logoMeta: 'Full-colour, web and print',
+      streaming: 'Streaming & stats', streamingMeta: '{n} platforms',
+      monthlyMeta: '{n} monthly listeners',
+      rider: 'Tech rider', riderMeta: 'Stage plan & input list · PDF',
+      stagePlot: 'Stage plot', stagePlotMeta: 'Backline & positions · PDF',
+    },
     cal: {
       title: 'Check our availability',
       subtitle: "Pick an open date and send a request — we'll reply within 48h.",
@@ -98,6 +117,21 @@ const COPY = {
     riderTitle: 'Rider techniczny', riderSub: 'Plan sceny, lista wejść, monitory i hospitality.', riderCta: 'Podgląd ridera',
     photosTitle: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku — w galerii.', photosCta: 'Otwórz galerię',
     bookingSubject: 'Zapytanie o termin — {date}',
+    epk: {
+      title: 'Press kit (EPK)',
+      subtitle: 'Wszystko, czego potrzebuje prasa i organizatorzy — w jednym miejscu.',
+      contents: 'Co w środku',
+      allLabel: 'Otwórz pełny press kit',
+      close: 'Zamknij',
+      empty: 'Press kit jest w przygotowaniu — napisz do nas, a wyślemy, co potrzebujesz.',
+      bio: 'Bio zespołu', bioMeta: 'Krótkie, średnie i długie',
+      photos: 'Zdjęcia prasowe', photosMeta: '{n} zdjęć hi-res',
+      logo: 'Logo', logoMeta: 'Pełny kolor, web i druk',
+      streaming: 'Streaming i statystyki', streamingMeta: '{n} platform',
+      monthlyMeta: '{n} słuchaczy miesięcznie',
+      rider: 'Rider techniczny', riderMeta: 'Plan sceny i lista wejść · PDF',
+      stagePlot: 'Plan sceny', stagePlotMeta: 'Backline i pozycje · PDF',
+    },
     cal: {
       title: 'Sprawdź dostępność',
       subtitle: 'Wybierz wolny termin i wyślij zapytanie — odpowiemy w 48h.',
@@ -128,11 +162,84 @@ const channels = [
   { key: 'general', icon: 'mail',     label: t.general, email: profile.contact_email, note: s.general_note },
 ].filter(c => c.email)
 
+// ── Press kit contents ────────────────────────────────────────────────────────
+//
+// Assembled from what the API actually holds, so a band with no stage plot has
+// no stage-plot row. Every field is read defensively: a published EPK version is
+// a frozen snapshot that predates any field added later.
+
+const epkPageHref = href('epk')
+const photosHref = enabled('photos') ? href('photos') : epkPageHref
+const photoCount = epk?.press_photos?.length ?? 0
+const platformCount = socialLinks.length
+const monthly = profile.stat_spotify_monthly ?? 0
+
+const n = (value: number) => value.toLocaleString(lang === 'pl' ? 'pl-PL' : 'en-GB')
+
+const epkAssets = [
+  {
+    icon: 'quote',
+    title: t.epk.bio,
+    meta: t.epk.bioMeta,
+    href: epkPageHref,
+    isFile: false,
+    show: Boolean(profile.bio_short || profile.bio_medium || profile.bio_long),
+  },
+  {
+    icon: 'camera',
+    title: t.epk.photos,
+    meta: t.epk.photosMeta.replace('{n}', n(photoCount)),
+    href: photosHref,
+    isFile: false,
+    show: photoCount > 0,
+  },
+  {
+    icon: 'star',
+    title: t.epk.logo,
+    meta: t.epk.logoMeta,
+    href: profile.logo_url ?? '',
+    isFile: true,
+    show: Boolean(profile.logo_url),
+  },
+  {
+    icon: 'spotify',
+    title: t.epk.streaming,
+    // Monthly listeners are the number promoters ask for; platform count is the
+    // fallback when the stat is not filled in.
+    meta: monthly > 0
+      ? t.epk.monthlyMeta.replace('{n}', n(monthly))
+      : t.epk.streamingMeta.replace('{n}', n(platformCount)),
+    href: epkPageHref,
+    isFile: false,
+    show: platformCount > 0 || monthly > 0,
+  },
+  {
+    icon: 'filter',
+    title: t.epk.rider,
+    meta: t.epk.riderMeta,
+    href: profile.tech_rider_url ?? '',
+    isFile: true,
+    show: Boolean(profile.tech_rider_url),
+  },
+  {
+    icon: 'pin',
+    title: t.epk.stagePlot,
+    meta: t.epk.stagePlotMeta,
+    href: profile.stage_plot_url ?? '',
+    isFile: true,
+    show: Boolean(profile.stage_plot_url),
+  },
+]
+  // Rows that point at the EPK page disappear with the module, for the same
+  // reason the promo cards do — a disabled module unbuilds its route.
+  .filter(a => a.show && (a.isFile || a.href !== epkPageHref || enabled('epk')))
+  .map(({ show: _show, ...asset }) => asset)
+
 // The booking card opens the calendar rather than navigating, so unlike the
 // others it needs no module gate — there is no route for it to point at.
 const promo = [
   { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: null,             show: true },
-  { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: href('epk'),      show: enabled('epk') },
+  { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: null,             show: enabled('epk') || epkAssets.length > 0 },
   { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: '/rider',         show: Boolean(profile.tech_rider_url) },
   { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos') },
 ].filter(p => p.show)
@@ -238,7 +345,8 @@ const promo = [
                 class="ct-card"
                 href={p.href ?? undefined}
                 type={p.href ? undefined : 'button'}
-                data-open-availability={p.href ? undefined : true}
+                data-open-availability={p.href || p.icon !== 'calendar' ? undefined : true}
+                data-open-epk={p.href || p.icon !== 'star' ? undefined : true}
               >
                 <Icon name={p.icon} size={30} color="var(--color-accent)" />
                 <span class="ct-card-body">
@@ -260,6 +368,12 @@ const promo = [
        so a visibility trigger would never fire and its document-level click
        listener would never attach. -->
   <AvailabilityModal client:idle copy={t.cal} />
+  <EpkModal
+    client:idle
+    copy={t.epk}
+    assets={epkAssets}
+    allHref={enabled('epk') ? epkPageHref : null}
+  />
 </BaseLayout>
 
 <style>
