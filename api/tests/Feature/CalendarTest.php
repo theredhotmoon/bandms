@@ -142,3 +142,45 @@ describe('GET /api/band-profile/calendar/availability-range', function () {
         }
     });
 });
+
+// ── availability-range window and multi-day coverage (fixed 2026-08-27) ──────
+
+describe('availability-range day coverage', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    // The expand window ran to midnight *at the start* of the last day, so
+    // nothing happening on it was ever seen and it always reported `open`.
+    it('includes the final day of the range', function () {
+        $this->getJson('/api/band-profile/calendar/availability-range?start=2025-06-01&end=2025-06-30')
+            ->assertSuccessful()
+            ->assertJsonPath('data.29.date', '2025-06-30')
+            ->assertJsonPath('data.29.status', 'open');
+    });
+
+    it('marks a concert on the final day as booked', function () {
+        $venue = \App\Models\Venue::factory()->create();
+        \App\Models\Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2025-06-30']);
+
+        $this->getJson('/api/band-profile/calendar/availability-range?start=2025-06-01&end=2025-06-30')
+            ->assertSuccessful()
+            ->assertJsonPath('data.29.status', 'booked');
+    });
+
+    it('marks a concert on the first day as booked', function () {
+        $venue = \App\Models\Venue::factory()->create();
+        \App\Models\Concert::factory()->create(['venue_id' => $venue->id, 'date' => '2025-06-01']);
+
+        $this->getJson('/api/band-profile/calendar/availability-range?start=2025-06-01&end=2025-06-30')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.status', 'booked');
+    });
+
+    it('is rate limited', function () {
+        // Unauthenticated and expensive: each uncached call expands up to 92 days
+        // of iCal per member, and the cache key is the exact range.
+        $route = collect(app('router')->getRoutes())
+            ->first(fn ($r) => $r->getName() === 'api.calendar.availability-range');
+
+        expect($route->gatherMiddleware())->toContain('throttle:30,1');
+    });
+});

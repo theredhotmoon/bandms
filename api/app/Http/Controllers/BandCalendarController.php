@@ -122,11 +122,22 @@ class BandCalendarController extends Controller
                     ->whereNotNull('calendar_url')
                     ->get();
 
+                // The expand window runs to midnight *after* the last day, or
+                // nothing happening on that day is ever seen — the same reason
+                // availability() above passes `date + 1 day`. Without it the last
+                // day of every month reported `open` regardless.
+                $expandEnd = $end->modify('+1 day')->format('Y-m-d');
+
                 foreach ($members as $member) {
-                    foreach ($this->parseMemberCalendar($member, $startStr, $endStr) as $event) {
-                        // Events carry either a date or a full timestamp; the
-                        // first 10 chars are the day in both shapes.
-                        $busy[substr((string) $event['start'], 0, 10)] = true;
+                    foreach ($this->parseMemberCalendar($member, $startStr, $expandEnd) as $event) {
+                        // Mark every day the event covers, not just the day it
+                        // starts: a member away 10-15 June is busy for all six,
+                        // and Sabre's expand() does not clip DTSTART to the
+                        // window, so an event that began earlier would otherwise
+                        // key a day outside the range and be dropped entirely.
+                        foreach ($this->daysCovered($event, $startStr, $endStr) as $day) {
+                            $busy[$day] = true;
+                        }
                     }
                 }
 
@@ -188,6 +199,44 @@ class BandCalendarController extends Controller
         }
 
         return $url;
+    }
+
+    /**
+     * Every day in [$from, $to] that an expanded event covers.
+     *
+     * `start`/`end` are either `Y-m-d` (all-day) or a full timestamp. An all-day
+     * event's DTEND is exclusive, so the last day is walked back by one; a timed
+     * event ending at 00:00 is treated the same way. A missing end means a
+     * single day.
+     */
+    private function daysCovered(array $event, string $from, string $to): array
+    {
+        $startDay = substr((string) $event['start'], 0, 10);
+        $endRaw   = $event['end'] ?? null;
+
+        if (!$endRaw) {
+            return ($startDay >= $from && $startDay <= $to) ? [$startDay] : [];
+        }
+
+        $endDay = substr((string) $endRaw, 0, 10);
+
+        // Exclusive end: an all-day event 10->11 covers only the 10th, and a
+        // timed event finishing at midnight belongs to the previous day.
+        $endsAtMidnight = $event['allDay'] ?? false ? true : str_contains((string) $endRaw, 'T00:00:00');
+        if (($endsAtMidnight || $endDay !== $startDay) && $endDay > $startDay) {
+            $endDay = (new \DateTimeImmutable($endDay))->modify('-1 day')->format('Y-m-d');
+        }
+
+        $days = [];
+        $cursor = new \DateTimeImmutable(max($startDay, $from));
+        $last   = min($endDay, $to);
+
+        while ($cursor->format('Y-m-d') <= $last) {
+            $days[] = $cursor->format('Y-m-d');
+            $cursor = $cursor->modify('+1 day');
+        }
+
+        return $days;
     }
 
     private function parseMemberCalendar(

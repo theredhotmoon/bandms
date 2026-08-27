@@ -55,6 +55,18 @@ const SOCIAL_PATHS: Record<string, string> = {
   spotify: 'M8 10.4c2.6-.7 5.6-.4 7.8.9M8.4 13.2c2-.5 4.3-.3 6 .8M9 15.7c1.4-.4 2.9-.2 4.1.6',
   bandcamp: 'M8 14.5l2.4-5h5.6l-2.4 5z',
 }
+
+/**
+ * Astro server-renders this island, and @astrojs/vue's renderToString discards
+ * teleported content — leaving a hydration anchor with no target, which Vue then
+ * fails to patch ("Cannot read properties of null"). Survivable while this is the
+ * only teleporting island on its page; fatal the moment a second one lands. Same
+ * gate as ModalShell.
+ */
+const mounted = ref(false)
+onMounted(() => {
+  mounted.value = true
+})
 </script>
 
 <template>
@@ -93,7 +105,7 @@ const SOCIAL_PATHS: Record<string, string> = {
     </div>
 
     <!-- MEMBER MODAL -->
-    <Teleport to="body">
+    <Teleport v-if="mounted" to="body">
       <div
         v-if="open"
         class="mg-scrim"

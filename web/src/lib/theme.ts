@@ -11,6 +11,11 @@ import type { Locale } from '@/types/shared'
  * Falls back to `base`, never to a specific band. A missing or misspelt theme
  * must yield the plain black-and-white site rather than a broken one — the
  * unstyled page is legible, a half-applied theme is not.
+ *
+ * The `lang` argument only selects which locale's site-config to read. A theme is
+ * a site-wide choice, so every locale reports the same one and callers that have
+ * no locale to hand (ThemeSlot) may leave it at the default. getSiteConfig is
+ * memoised per locale, so resolving this once per ornament costs nothing.
  */
 export async function getTheme(lang: Locale = 'en'): Promise<string> {
   const config = await getSiteConfig(lang)

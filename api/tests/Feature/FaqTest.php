@@ -201,3 +201,36 @@ it('deletes a faq', function () {
     $this->deleteJson("/api/admin/faqs/{$faq->id}")->assertNoContent();
     expect(Faq::find($faq->id))->toBeNull();
 });
+
+// ── question is required (fixed 2026-08-27) ──────────────────────────────────
+
+// Both columns are NOT NULL with no default, so omitting them died with a
+// database error where a 422 belongs.
+it('rejects a faq with no question rather than failing at the database', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', ['module_slug' => 'contact'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('question');
+});
+
+// A row with both locales blank renders an empty heading in the public
+// accordion — the outcome the locale fallback exists to prevent.
+it('rejects a faq whose question is blank in both locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => null, 'pl' => null],
+    ])->assertStatus(422);
+});
+
+it('accepts a question in one locale only', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['pl' => 'Tylko po polsku'],
+        'answer'      => ['pl' => 'Odpowiedz.'],
+    ])->assertCreated();
+});

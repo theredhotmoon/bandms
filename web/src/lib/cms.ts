@@ -162,7 +162,25 @@ export interface SiteConfig {
   theme?: string
 }
 
-export async function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
+/**
+ * Memoised per locale for the life of the build.
+ *
+ * Every <ThemeSlot> resolves the active theme, which reads this — so an
+ * unmemoised call meant one /api/site-config request per ornament on every page,
+ * hundreds of round trips across a build. The config cannot change mid-build.
+ */
+const _siteConfigCache = new Map<Locale, Promise<SiteConfig>>()
+
+export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
+  const hit = _siteConfigCache.get(lang)
+  if (hit) return hit
+
+  const pending = fetchSiteConfig(lang)
+  _siteConfigCache.set(lang, pending)
+  return pending
+}
+
+async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
   try {
     const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
       headers: { Accept: 'application/json' },
