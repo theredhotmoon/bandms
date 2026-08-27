@@ -18,6 +18,52 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
+## Public site — two pages left on the old layout
+
+The 2-Tone design has been ported page by page (Contact, Music, Gallery, About,
+Article press, and the four undesigned sections). Two pages were not, and both
+are reachable by a single click from a ported one.
+
+### `ReleaseDetail` was missed — do this first
+
+**Status:** not started. Small.
+
+`web/src/components/detail/ReleaseDetail.astro`, the release detail page at
+`/[lang]/{releases-slug}/{id}`, is still on the pre-theme Tailwind layout
+(`max-w-4xl`, `text-3xl font-black`). The Music PR ported the *list* page and its
+discography links straight here, so a visitor crosses from a 2-Tone page to an
+unported one in one click. It has no design file of its own — `Music.html` covers
+the list — so restyle by extension.
+
+**Reuse:** `PageHero`, the featured-release layout already in
+`ReleasesSection.astro`, `TrackList.vue` for the tracklist, `LyricsViewer.vue`
+for lyrics.
+
+### Shop — designed, not built
+
+**Status:** planned, not started. Plan: [`docs/superpowers/specs/2026-08-27-shop-page-plan.md`](docs/superpowers/specs/2026-08-27-shop-page-plan.md)
+
+`MerchSection.astro` and `MerchItemDetail.astro`. Deferred to last on purpose:
+Shop is the only remaining page wired to Stripe, so postponing it postpones the
+only real regression risk. **Restyle only** — no changes to cart logic, totals or
+the checkout call, and the existing shop E2E specs are the gate.
+
+All the data already exists (variants with per-variant stock, multi-currency
+prices, presale and ship dates, `purchase_url`, photos), so no backend work is
+expected. **One question to settle first:** the design carries a PLN/EUR currency
+switcher — confirm the cart and `CheckoutController` actually support choosing a
+currency. If they assume one, the switcher is cosmetic and must be dropped rather
+than shipped as a control that changes a label but not the charge.
+
+### Follow-up: four pages still hold their own hero
+
+`PageHero.astro` was extracted while restyling the undesigned pages, but Contact,
+Music, Gallery and About still carry inline copies of the same ink header. A
+scripted migration silently dropped Contact's hero buttons and pills, so it was
+reverted — this wants a reviewed diff per file, not a regex.
+
+---
+
 ## Other open items
 
 ### E2E flakiness is connection resets, not memory
