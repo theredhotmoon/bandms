@@ -594,6 +594,30 @@ avoids passing a handler across the island boundary.
 
 ---
 
+## Disabling a module used to leave its page served
+
+**Symptom:** switch a module off in `/admin/website-modules`, restart `web`, and
+its page still loads — with stale content. `astro build` correctly omits the
+route (`[lang]/[section].astro` filters on `cfg.modules[section] !== false`), and
+the API correctly reports the module as disabled.
+
+**Root cause:** `web/docker/start.sh` published the build with
+`cp -r /app/dist/* /usr/share/nginx/html/`, which **merges**. A page absent from
+the new build kept the copy from the previous one. `docker compose restart`
+reuses the container filesystem, so the directory accumulated across every run;
+only `up -d --force-recreate` ever started clean. That silently inverted the
+guarantee the module system rests on.
+
+**Fix (applied):** `rm -rf /usr/share/nginx/html/*` before the copy.
+
+**Why it hid for so long:** the two commands disagreed. Anyone who happened to
+force-recreate saw correct behaviour, and anyone who restarted saw a page that
+"should not exist" and assumed a caching quirk. If you are ever unsure whether
+you are looking at a fresh build, compare a page against the database rather
+than against the build log — a card for a record you just deleted is the tell.
+
+---
+
 ## `Teleport` in an Astro island must be gated on mount
 
 **Symptom:** two modals on one page, and the second one never opens. Its trigger
