@@ -220,10 +220,15 @@ class BandCalendarController extends Controller
 
         $endDay = substr((string) $endRaw, 0, 10);
 
-        // Exclusive end: an all-day event 10->11 covers only the 10th, and a
-        // timed event finishing at midnight belongs to the previous day.
-        $endsAtMidnight = $event['allDay'] ?? false ? true : str_contains((string) $endRaw, 'T00:00:00');
-        if (($endsAtMidnight || $endDay !== $startDay) && $endDay > $startDay) {
+        // Only an *exclusive* end is walked back: an all-day event 10->12 covers
+        // the 10th and 11th, and a timed event finishing at 00:00 belongs to the
+        // previous day. A timed event 10T09:00 -> 12T18:00 genuinely covers the
+        // 12th — the earlier `|| $endDay !== $startDay` clause fired for every
+        // multi-day event and silently dropped its last day, which is the bug
+        // this whole helper was written to fix.
+        $endsAtMidnight = ($event['allDay'] ?? false) || str_contains((string) $endRaw, 'T00:00:00');
+
+        if ($endsAtMidnight && $endDay > $startDay) {
             $endDay = (new \DateTimeImmutable($endDay))->modify('-1 day')->format('Y-m-d');
         }
 

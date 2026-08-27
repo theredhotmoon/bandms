@@ -141,6 +141,11 @@ class FaqController extends Controller
             'question'     => [$creating ? 'required' : 'sometimes', 'array'],
             'question.en'  => ['sometimes', 'nullable', 'string', 'max:300'],
             'question.pl'  => ['sometimes', 'nullable', 'string', 'max:300'],
+            // `answer` is NOT NULL with no default too, so omitting the key
+            // entirely left the column out of the INSERT and produced a database
+            // error. Required as an array on create; its locales may be blank,
+            // since an answer can legitimately be written later.
+            'answer'       => [$creating ? 'required' : 'sometimes', 'array'],
             'answer.en'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'answer.pl'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
@@ -161,8 +166,15 @@ class FaqController extends Controller
         $filled = collect($faq->getTranslations('question'))->filter(fn ($v) => filled($v));
 
         if ($filled->isEmpty()) {
+            // Keyed per locale, not on `question`. FaqEditor renders
+            // errors['question.en'] and errors['question.pl'] and nothing for a
+            // bare `question`, so a message on that key was invisible — the save
+            // looked like a silent no-op.
+            $message = 'A question is required in at least one language.';
+
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'question' => ['A question is required in at least one language.'],
+                'question.en' => [$message],
+                'question.pl' => [$message],
             ]);
         }
     }

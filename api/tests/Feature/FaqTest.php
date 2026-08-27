@@ -234,3 +234,46 @@ it('accepts a question in one locale only', function () {
         'answer'      => ['pl' => 'Odpowiedz.'],
     ])->assertCreated();
 });
+
+// ── answer column and error keys (fixed 2026-08-27, round two) ──────────────
+
+// `faqs.answer` is NOT NULL with no default too, so omitting the key left the
+// column out of the INSERT — a database error where a 422 belongs. The admin UI
+// always sends it, which is why this was invisible from the editor.
+it('rejects a faq with no answer key rather than failing at the database', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'Where are the drums?'],
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('answer');
+});
+
+it('accepts an answer that is blank in both locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    // An answer can legitimately be written later; a question cannot.
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'Where are the drums?'],
+        'answer'      => ['en' => null, 'pl' => null],
+    ])->assertCreated();
+});
+
+// The editor renders errors['question.en'|'question.pl'] and nothing for a bare
+// `question`, so a message keyed there was invisible and the save looked like a
+// silent no-op.
+it('keys the missing-question error where the editor renders it', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $faq = Faq::create([
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'English', 'pl' => 'Polski'],
+        'answer'      => ['en' => 'A', 'pl' => 'O'],
+    ]);
+
+    $this->putJson("/api/admin/faqs/{$faq->id}", ['question' => ['en' => null, 'pl' => null]])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['question.en', 'question.pl']);
+});

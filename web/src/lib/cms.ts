@@ -175,7 +175,16 @@ export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   const hit = _siteConfigCache.get(lang)
   if (hit) return hit
 
-  const pending = fetchSiteConfig(lang)
+  // Evicted on rejection. Caching the promise itself meant one transient blip
+  // was baked into the whole build: every later page got the same failure or the
+  // same fail-open {}, so Header and Footer lost every label and slugs fell back
+  // to module keys — /pl/shop instead of /pl/sklep. That is the "one build-time
+  // blip" failure CLAUDE.md warns about, widened from one page to all of them.
+  const pending = fetchSiteConfig(lang).catch(error => {
+    _siteConfigCache.delete(lang)
+    throw error
+  })
+
   _siteConfigCache.set(lang, pending)
   return pending
 }
@@ -186,7 +195,10 @@ async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) return { modules: {}, module_order: [], module_config: {} }
-    return res.json() as Promise<SiteConfig>
+    // `await`, not a bare return: returning a promise from inside try hands its
+    // rejection to the caller rather than to this catch, so a truncated body
+    // escaped the fail-open path entirely.
+    return (await res.json()) as SiteConfig
   } catch {
     // Fail open: if API is unreachable during build, treat all modules as enabled
     return { modules: {}, module_order: [], module_config: {} }
