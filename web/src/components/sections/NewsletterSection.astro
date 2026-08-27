@@ -1,38 +1,122 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import { getBandProfile } from '@/lib/cms'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternateHref?: string
 }
 const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
-
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import { getBandProfile } from '@/lib/cms'
-import FaqSection from '@/components/sections/FaqSection.astro'
 
 const profile = await getBandProfile(lang)
+
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Newsletter',
+    lead: 'Tour dates, new tunes and where to catch us live — straight to your inbox.',
+    panelTitle: 'Never miss a skank',
+    panelSub: 'New shows, releases and behind-the-scenes. No spam, unsubscribe any time.',
+    placeholder: 'your@email.com',
+    submit: 'Join the list',
+    sending: 'Subscribing…',
+    done: "You're on the list!",
+    error: 'Something went wrong. Please try again.',
+    confirmNote: 'We send a confirmation link first — check your inbox to finish signing up.',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Newsletter',
+    lead: 'Daty tras, nowe kawałki i gdzie nas złapać na żywo — prosto na maila.',
+    panelTitle: 'Nie przegap żadnego skanku',
+    panelSub: 'Nowe koncerty, wydawnictwa i kulisy. Bez spamu, wypisz się kiedy chcesz.',
+    placeholder: 'twoj@email.com',
+    submit: 'Dołącz do listy',
+    sending: 'Zapisywanie…',
+    done: 'Jesteś na liście!',
+    error: 'Coś poszło nie tak. Spróbuj ponownie.',
+    confirmNote: 'Najpierw wysyłamy link potwierdzający — sprawdź skrzynkę, by dokończyć zapis.',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Newsletter — ${profile.name}`}
-  description={`Subscribe to the ${profile.name} newsletter for news, shows, and exclusive updates.`}
+  title={`${t.title} — ${profile.name}`}
+  description={t.lead}
 >
-  <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32 text-center">
-    <div class="accent-line mx-auto mb-6" />
-    <h1 class="text-3xl font-black text-body sm:text-4xl">Stay in the loop</h1>
-    <p class="mt-4 text-muted leading-relaxed">
-      New shows, releases, and behind-the-scenes from {profile.name} straight to your inbox.
-      No spam. Unsubscribe any time.
-    </p>
-    <div class="mt-8">
-      <NewsletterSignup client:load />
+  <PageHero kicker={t.kicker} title={t.title} lead={t.lead} leadWidth={620} />
+
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <section class="nl-sec page-x">
+    <!-- The design frames the signup in a dashed panel rather than a solid card,
+         which is what marks it as an invitation rather than content. -->
+    <div class="nl-panel">
+      <div>
+        <h2 class="nl-title">{t.panelTitle}</h2>
+        <p class="nl-sub">{t.panelSub}</p>
+        <p class="nl-note">{t.confirmNote}</p>
+      </div>
+
+      <NewsletterSignup
+        client:load
+        placeholder={t.placeholder}
+        submitLabel={t.submit}
+        sendingLabel={t.sending}
+        doneLabel={t.done}
+        errorLabel={t.error}
+      />
     </div>
-  </div>
+  </section>
+
   <FaqSection module="newsletter" lang={lang} />
 </BaseLayout>
+
+<style>
+  .nl-sec { padding-block: 52px 56px; position: relative; }
+
+  .nl-panel {
+    position: relative;
+    border: var(--border-width-emphasis) dashed var(--color-border);
+    background: var(--color-surface);
+    padding: 40px 48px;
+    display: grid;
+    grid-template-columns: 1fr 460px;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .nl-title { margin: 0 0 10px; font-size: 50px; line-height: .92; }
+
+  .nl-sub {
+    margin: 0;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+
+  .nl-note {
+    margin: 14px 0 0;
+    font: 600 13px/1.4 var(--font-body);
+    color: var(--color-subtle);
+  }
+
+  @media (max-width: 1100px) {
+    .nl-panel { grid-template-columns: 1fr; gap: 28px; padding: 30px 28px; }
+    .nl-title { font-size: 34px; }
+  }
+  @media (max-width: 700px) {
+    .nl-sec { padding-block: 32px 40px; }
+    .nl-panel { padding: 24px 20px; }
+    .nl-title { font-size: 28px; }
+    .nl-sub { font-size: 15px; }
+  }
+</style>

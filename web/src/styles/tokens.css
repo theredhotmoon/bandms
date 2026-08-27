@@ -28,6 +28,8 @@
 
   --color-accent: #000000;
   --color-on-accent: #ffffff;
+  /* Hover/pressed state for accent-filled controls. */
+  --color-accent-dark: #333333;
 
   --color-border: #000000;
 

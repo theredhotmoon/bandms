@@ -17,7 +17,7 @@ const { post } = Astro.props
         {fmtDateShort(post.published_at ?? post.created_at)}
       </time>
       {post.tags.slice(0, 2).map(tag => (
-        <span class="rounded-pill bg-surface-3 px-2 py-0.5 text-xs text-muted">
+        <span class="rounded-pill bg-surface-2 px-2 py-0.5 text-xs text-muted">
           {tag.name}
         </span>
       ))}

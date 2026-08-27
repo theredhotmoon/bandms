@@ -32,6 +32,8 @@
 
   --color-accent: var(--ss-teal);
   --color-on-accent: var(--ss-white);
+  /* Derived so it tracks whatever accent the theme sets. */
+  --color-accent-dark: color-mix(in oklab, var(--ss-teal) 82%, black);
 
   --color-border: var(--ss-ink);
 

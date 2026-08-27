@@ -523,6 +523,23 @@ a fork that stops receiving base improvements. If a design needs something no
 slot can express, add the element to the *base layout* — unstyled, where every
 band gets it — rather than widening the slot contract.
 
+### An *undefined* token is worse than a raw one
+
+A raw value is loud: `text-zinc-400` is obviously wrong. An undefined token is
+silent — `hover:bg-accent-dark` when no such token exists reads as correct,
+Tailwind emits nothing for it, and the style simply never applies. Seven dead
+hover states and one dead background (`bg-surface-3`) shipped that way, both
+introduced by the token migration dropping `--color-accent-dark` and
+`--color-surface-3` without converting the call sites.
+
+`scripts/check-tokens.mjs` now fails on any utility whose suffix begins with one
+of *our* namespaces but is not declared in `tokens.css`. Tailwind's own keywords
+(`bg-transparent`, `text-sm`, `border-none`) are never judged, because only our
+namespaces are checked.
+
+**So: removing a token is a breaking change.** Grep for its utility before
+deleting it from the contract.
+
 ### `text-white` cannot be find-and-replaced
 
 There were 93 of them and they all sat on dark ground, because the site used to

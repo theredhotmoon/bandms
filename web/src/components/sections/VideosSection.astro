@@ -1,82 +1,100 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionHead from '@/components/SectionHead.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import VideoGallery from '@/components/VideoGallery.vue'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import { getMusicVideos, getBandProfile } from '@/lib/cms'
+import { youtubeEmbedUrl, youtubeThumbnail, formatNumber } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternateHref?: string
 }
 const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
 
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getMusicVideos, getBandProfile } from '@/lib/cms'
-import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, fmtDateShort } from '@/lib/i18n'
-import FaqSection from '@/components/sections/FaqSection.astro'
+const [videos, profile] = await Promise.all([
+  getMusicVideos().catch(() => []),
+  getBandProfile(lang),
+])
 
-const [videos, profile] = await Promise.all([getMusicVideos(), getBandProfile(lang)])
-const sorted = [...videos].sort((a, b) => a.sort_order - b.sort_order)
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Videos',
+    lead: 'Live sets, official videos and clips from the road.',
+    heading: 'Music videos',
+    empty: 'No videos yet — check back soon.',
+    views: 'views',
+    close: 'Close',
+    watch: 'Watch on YouTube',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Teledyski',
+    lead: 'Koncerty, oficjalne teledyski i klipy z trasy.',
+    heading: 'Teledyski',
+    empty: 'Brak teledysków — wkrótce.',
+    views: 'wyświetleń',
+    close: 'Zamknij',
+    watch: 'Zobacz na YouTube',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+// Same shape the Music page builds, so both pages share one gallery island
+// rather than each rendering videos its own way.
+const galleryVideos = [...videos]
+  .sort((a, b) => a.sort_order - b.sort_order)
+  .map(v => ({
+    id: v.id,
+    title: v.og_title ?? v.title,
+    kind: v.channel_name ?? '',
+    embedUrl: youtubeEmbedUrl(v.video_url),
+    watchUrl: v.video_url,
+    thumb: v.og_image ?? youtubeThumbnail(v.video_url),
+    duration: v.duration,
+    meta: [
+      v.view_count ? `${formatNumber(v.view_count)} ${t.views}` : null,
+      v.published_at ? v.published_at.slice(0, 4) : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  }))
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Videos — ${profile.name}`}
-  description={`Music videos by ${profile.name}. Watch on YouTube.`}
+  title={`${t.title} — ${profile.name}`}
+  description={t.lead}
 >
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">Videos</h1>
-    </div>
+  <PageHero kicker={t.kicker} title={t.title} lead={t.lead} leadWidth={660} />
 
-    {sorted.length === 0 && (
-      <p class="text-muted">No videos yet — check back soon.</p>
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <section class="vs-sec page-x">
+    {galleryVideos.length === 0 ? (
+      <p class="vs-empty">{t.empty}</p>
+    ) : (
+      <>
+        <SectionHead icon="youtube" title={t.heading} />
+        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} />
+      </>
     )}
+  </section>
 
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {sorted.map(video => {
-        const embedUrl = youtubeEmbedUrl(video.video_url)
-        const thumb = video.og_image ?? youtubeThumbnail(video.video_url)
-        return (
-          <article class="overflow-hidden rounded-card border border-border bg-surface">
-            {embedUrl ? (
-              <div class="relative aspect-video">
-                <iframe
-                  src={embedUrl}
-                  title={video.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                  loading="lazy"
-                  class="absolute inset-0 h-full w-full"
-                />
-              </div>
-            ) : thumb ? (
-              <a href={video.video_url} target="_blank" rel="noopener noreferrer" class="relative block aspect-video overflow-hidden bg-surface-2">
-                <img src={thumb} alt={video.title} loading="lazy" class="h-full w-full object-cover" />
-                <div class="absolute inset-0 flex items-center justify-center bg-inverse/40 text-on-inverse">
-                  <div class="flex h-14 w-14 items-center justify-center rounded-pill bg-accent">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="black">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                  </div>
-                </div>
-              </a>
-            ) : null}
-
-            <div class="p-4">
-              <h3 class="font-semibold text-body text-sm leading-snug">{video.title}</h3>
-              <div class="mt-1 flex items-center gap-3 text-xs text-subtle">
-                {video.published_at && <time datetime={video.published_at}>{fmtDateShort(video.published_at)}</time>}
-                {video.view_count && <span>{formatNumber(video.view_count)} views</span>}
-                {video.duration && <span>{video.duration}</span>}
-              </div>
-              {video.channel_name && <p class="mt-1 text-xs text-subtle">{video.channel_name}</p>}
-            </div>
-          </article>
-        )
-      })}
-    </div>
-  </div>
   <FaqSection module="videos" lang={lang} />
 </BaseLayout>
+
+<style>
+  .vs-sec { padding-block: 56px 52px; position: relative; }
+  .vs-empty { margin: 0; font: 500 17px/1.5 var(--font-body); color: var(--color-muted); }
+
+  @media (max-width: 700px) {
+    .vs-sec { padding-block: 36px; }
+  }
+</style>

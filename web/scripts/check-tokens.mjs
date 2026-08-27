@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 /**
- * Fails the build on raw palette values in markup.
+ * Guards the base/theme split.
  *
- * The base/theme split only holds while components reference the semantic
- * contract in src/styles/tokens.css and nothing else. A single `text-zinc-400`
- * is invisible in review, passes vue-tsc and astro build, and silently makes
- * that element untheme-able — so it is caught here instead.
+ * Two failure modes, both invisible to `astro build` and `vue-tsc`:
+ *
+ * 1. A **raw value** — `text-zinc-400`, `#121212`, `rounded-xl`, `'Anton'`,
+ *    `rgba(239,231,214,.7)`. Loud once you know to look, and it makes that
+ *    element permanently untheme-able.
+ * 2. An **undefined token** — `hover:bg-accent-dark` when no such token exists.
+ *    This one is silent: it reads as correct, Tailwind emits nothing, and the
+ *    style simply never applies. Seven dead hover states shipped this way.
  *
  * Theme files are exempt: holding brand primitives is their whole job.
  */
@@ -29,7 +33,6 @@ const PATTERNS = [
     what: 'black/white utility',
   },
   {
-    // Hex literals inside scoped <style> blocks and inline styles.
     re: /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g,
     what: 'hex colour',
   },
@@ -37,7 +40,48 @@ const PATTERNS = [
     re: /\brounded-(?:sm|md|lg|xl|2xl|3xl|full)\b/g,
     what: 'hardcoded radius',
   },
+  {
+    // The design's faces. Naming one pins a band's typography into markup just
+    // as surely as a hex pins its colour.
+    re: /'(?:Anton|Archivo|Bungee|Barlow|Oswald|Work Sans|Bebas Neue)'/g,
+    what: 'hardcoded font family',
+  },
+  {
+    // Brand-tinted overlays: paper-on-ink and ink-on-paper.
+    re: /rgba\(\s*(?:239,\s*231,\s*214|18,\s*18,\s*18)\s*,[^)]*\)/g,
+    what: 'brand rgba',
+  },
 ]
+
+/**
+ * Token namespaces we own. Only suffixes beginning with one of these are judged,
+ * so Tailwind's own keywords (`bg-transparent`, `text-center`, `border-none`,
+ * `text-sm`) are never mistaken for tokens.
+ */
+const OUR_NAMESPACES = [
+  'accent', 'surface', 'inverse', 'muted', 'subtle', 'body', 'page', 'ink',
+  'danger', 'success', 'border', 'card', 'pill', 'emphasis',
+]
+
+// Any stack of Tailwind variants may precede the utility: hover:, focus-visible:,
+// sm:, group-hover: and so on.
+const UTILITY_RE =
+  /\b(?:[a-z][a-z0-9-]*:)*(?:text|bg|border|placeholder|shadow|rounded|ring|divide|decoration|from|to|via)-([a-z][a-z0-9-]*)\b/g
+
+const tokenSource = readFileSync(join(SRC, 'styles', 'tokens.css'), 'utf8')
+const declared = new Set(
+  [...tokenSource.matchAll(/--(?:color|radius|shadow|font)-([a-z0-9-]+)\s*:/g)].map(m => m[1]),
+)
+
+function undefinedTokens(line) {
+  const hits = []
+  for (const match of line.matchAll(UTILITY_RE)) {
+    const suffix = match[1]
+    const isOurs = OUR_NAMESPACES.some(ns => suffix === ns || suffix.startsWith(`${ns}-`))
+    if (isOurs && !declared.has(suffix)) hits.push(match[0])
+  }
+  return hits
+}
 
 function walk(dir) {
   const out = []
@@ -55,38 +99,44 @@ for (const file of walk(SRC)) {
   if (file.includes(EXEMPT_DIR)) continue
   if (EXEMPT_FILES.includes(file.split(sep).pop())) continue
 
-  const source = readFileSync(file, 'utf8')
-  source.split('\n').forEach((line, i) => {
-    // An eslint-style escape hatch, for the rare genuinely-fixed colour.
-    if (line.includes('token-lint-ignore')) return
+  readFileSync(file, 'utf8')
+    .split('\n')
+    .forEach((line, i) => {
+      // An eslint-style escape hatch, for the rare genuinely-fixed value.
+      if (line.includes('token-lint-ignore')) return
 
-    for (const { re, what } of PATTERNS) {
-      re.lastIndex = 0
-      const hits = line.match(re)
-      if (hits) {
+      const record = (what, hits) =>
         violations.push({
           file: relative(ROOT, file),
           line: i + 1,
           what,
           hits: [...new Set(hits)].join(', '),
         })
+
+      const undef = undefinedTokens(line)
+      if (undef.length) record('undefined token', undef)
+
+      for (const { re, what } of PATTERNS) {
+        re.lastIndex = 0
+        const hits = line.match(re)
+        if (hits) record(what, hits)
       }
-    }
-  })
+    })
 }
 
 if (violations.length === 0) {
-  console.log('✓ tokens: no raw palette values in src/')
+  console.log(`✓ tokens: ${declared.size} declared, no raw or undefined values in src/`)
   process.exit(0)
 }
 
-console.error(`\n✗ tokens: ${violations.length} raw value(s) that no theme can override\n`)
+console.error(`\n✗ tokens: ${violations.length} value(s) that no theme can override\n`)
 for (const v of violations) {
   console.error(`  ${v.file}:${v.line}  ${v.what}: ${v.hits}`)
 }
 console.error(`
-Use the semantic tokens in src/styles/tokens.css instead — text-muted,
-bg-surface, border-border, rounded-card, shadow-card and friends. If a value is
-genuinely fixed (a brand SVG fill, say), append a token-lint-ignore comment.
+Use the semantic tokens in src/styles/tokens.css — text-muted, bg-surface,
+border-border, rounded-card, shadow-card and friends. An "undefined token" means
+the utility looks right but no such token exists, so it silently does nothing.
+If a value is genuinely fixed (a brand SVG fill, say), append token-lint-ignore.
 `)
 process.exit(1)

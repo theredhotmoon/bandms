@@ -1,122 +1,246 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionHead from '@/components/SectionHead.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import { getPressReleases, getBandProfile } from '@/lib/cms'
+import { fmtDateShort } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternateHref?: string
 }
 const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
 
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getPressReleases, getBandProfile } from '@/lib/cms'
-import { fmtDateShort } from '@/lib/i18n'
-import FaqSection from '@/components/sections/FaqSection.astro'
+const [press, profile] = await Promise.all([
+  getPressReleases().catch(() => []),
+  getBandProfile(lang),
+])
 
-const [press, profile] = await Promise.all([getPressReleases(), getBandProfile(lang)])
-const sorted = [...press].sort((a, b) => (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at))
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Press',
+    lead: 'What the papers, blogs and radio have said about us.',
+    featured: 'Featured', coverage: 'Coverage',
+    empty: 'No press coverage yet.',
+    read: 'Read',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Prasa',
+    lead: 'Co pisały o nas gazety, blogi i radio.',
+    featured: 'Wyróżnione', coverage: 'Publikacje',
+    empty: 'Brak publikacji prasowych.',
+    read: 'Czytaj',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+const sorted = [...press].sort((a, b) =>
+  (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at),
+)
 const featured = sorted.filter(p => p.featured)
-const rest     = sorted.filter(p => !p.featured)
+const rest = sorted.filter(p => !p.featured)
+
+// The publication name is the most useful label; the URL host stands in when no
+// og:site_name was scraped, so a row is never nameless.
+const siteOf = (item: (typeof sorted)[number]) => {
+  if (item.og_site_name) return item.og_site_name
+  try {
+    return new URL(item.url).host.replace(/^www\./, '')
+  } catch {
+    return ''
+  }
+}
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Press — ${profile.name}`}
-  description={`Media coverage and press releases for ${profile.name}.`}
+  title={`${t.title} — ${profile.name}`}
+  description={t.lead}
 >
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">Press</h1>
-    </div>
+  <PageHero kicker={t.kicker} title={t.title} lead={t.lead} leadWidth={620} />
 
-    {press.length === 0 && (
-      <p class="text-muted">No press coverage yet.</p>
-    )}
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-    {/* Featured */}
+  <section class="pr-sec page-x">
+    {sorted.length === 0 && <p class="pr-empty">{t.empty}</p>}
+
     {featured.length > 0 && (
-      <section class="mb-10">
-        <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-4">Featured</h2>
-        <div class="space-y-4">
+      <>
+        <SectionHead icon="star" title={t.featured} size="sm" />
+        <div class="pr-featured">
           {featured.map(item => (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group flex gap-4 rounded-card border border-border bg-surface hover:border-border p-4 transition-colors"
-            >
+            <a class="pr-card" href={item.url} target="_blank" rel="noopener">
               {item.og_image && (
-                <img
-                  src={item.og_image}
-                  alt={item.og_title ?? ''}
-                  loading="lazy"
-                  class="w-24 h-16 rounded-card object-cover flex-none bg-surface-2"
-                />
+                <span class="pr-card-img">
+                  <img src={item.og_image} alt={item.og_title ?? ''} loading="lazy" />
+                </span>
               )}
-              <div class="min-w-0">
-                <p class="font-semibold text-body group-hover:text-accent transition-colors line-clamp-2 leading-snug">
-                  {item.og_title ?? item.url}
-                </p>
-                {item.og_site_name && <p class="text-xs text-accent mt-0.5">{item.og_site_name}</p>}
-                {item.og_description && (
-                  <p class="text-sm text-muted mt-1 line-clamp-2">{item.og_description}</p>
-                )}
-                {item.published_at && (
-                  <time class="text-xs text-subtle mt-1 block" datetime={item.published_at}>
-                    {fmtDateShort(item.published_at)}
-                  </time>
-                )}
-              </div>
+              <span class="pr-card-body">
+                <span class="pr-site">{siteOf(item)}</span>
+                <span class="pr-card-title">{item.og_title ?? item.url}</span>
+                {item.og_description && <span class="pr-card-desc">{item.og_description}</span>}
+                <span class="pr-card-foot">
+                  {item.published_at && <span>{fmtDateShort(item.published_at, lang)}</span>}
+                  <span class="pr-read">{t.read} →</span>
+                </span>
+              </span>
             </a>
           ))}
         </div>
-      </section>
+      </>
     )}
 
-    {/* All */}
     {rest.length > 0 && (
-      <section>
-        {featured.length > 0 && (
-          <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-4">All coverage</h2>
-        )}
-        <div class="space-y-3">
+      <div class="pr-rest">
+        <SectionHead icon="quote" title={t.coverage} size="sm" />
+        <ul class="pr-list">
           {rest.map(item => (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group flex items-start justify-between gap-4 py-3 border-b border-border hover:border-border transition-colors"
-            >
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-body group-hover:text-body transition-colors line-clamp-1">
-                  {item.og_title ?? item.url}
-                </p>
-                {item.og_site_name && <p class="text-xs text-subtle">{item.og_site_name}</p>}
-              </div>
-              {item.published_at && (
-                <time class="text-xs text-subtle shrink-0" datetime={item.published_at}>
-                  {fmtDateShort(item.published_at)}
-                </time>
-              )}
-            </a>
+            <li>
+              <a class="pr-row" href={item.url} target="_blank" rel="noopener">
+                <span>
+                  <span class="pr-site pr-site--row">{siteOf(item)}</span>
+                  <span class="pr-row-title">{item.og_title ?? item.url}</span>
+                </span>
+                <span class="pr-row-meta">
+                  {item.published_at && <span>{fmtDateShort(item.published_at, lang)}</span>}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)"
+                       stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 4h6v6" /><path d="M20 4l-9 9" />
+                    <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+                  </svg>
+                </span>
+              </a>
+            </li>
           ))}
-        </div>
-      </section>
-    )}
-
-    {/* Contacts */}
-    {profile.press_email && (
-      <div class="mt-12 rounded-card border border-border bg-surface p-6">
-        <h2 class="font-bold text-body mb-1">Press inquiries</h2>
-        <p class="text-sm text-muted">
-          For press materials, interviews, and photo requests:
-          <a href={`mailto:${profile.press_email}`} class="ml-1 text-accent hover:underline">{profile.press_email}</a>
-        </p>
+        </ul>
       </div>
     )}
-  </div>
+  </section>
+
   <FaqSection module="press" lang={lang} />
 </BaseLayout>
+
+<style>
+  .pr-sec { padding-block: 56px 52px; position: relative; }
+  .pr-empty { margin: 0; font: 500 17px/1.5 var(--font-body); color: var(--color-muted); }
+
+  /* Shared: the publication name, always in accent. */
+  .pr-site {
+    display: block;
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  /* ── Featured cards ────────────────────────────────────────────────────── */
+  .pr-featured { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+
+  .pr-card {
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-body);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pr-card-img {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-bottom: var(--border-width-card) solid var(--color-border);
+    background: var(--color-inverse);
+  }
+  .pr-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .pr-card-body { display: block; padding: 18px 20px 20px; }
+
+  .pr-card-title {
+    display: block;
+    margin: 9px 0 10px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 24px;
+    line-height: 1.04;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+
+  .pr-card-desc {
+    display: block;
+    margin-bottom: 14px;
+    font: 500 14px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+
+  .pr-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font: 700 12px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+  .pr-read { color: var(--color-accent); }
+
+  /* ── Coverage list ─────────────────────────────────────────────────────── */
+  .pr-rest { margin-top: 40px; }
+
+  .pr-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width-card) solid var(--color-border);
+  }
+  .pr-list li { border-bottom: var(--border-width-card) solid var(--color-border); }
+
+  .pr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 4px;
+    color: var(--color-body);
+  }
+  .pr-site--row { margin-bottom: 7px; }
+
+  .pr-row-title {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 24px;
+    line-height: 1.04;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+
+  .pr-row-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    flex: none;
+    font: 700 12px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  @media (max-width: 900px) {
+    .pr-featured { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .pr-sec { padding-block: 36px; }
+    .pr-card-title, .pr-row-title { font-size: 19px; }
+    .pr-row-meta { gap: 10px; }
+  }
+</style>

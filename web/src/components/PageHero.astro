@@ -1,0 +1,95 @@
+---
+import ThemeSlot from '@/components/ThemeSlot.astro'
+
+/**
+ * The ink page header every 2-Tone subpage opens with.
+ *
+ * Contact, Music, Gallery and About each grew their own copy of this — identical
+ * but for the title size and lead width — so it is factored out here before a
+ * fifth appeared. Page-specific extras (hero pills, a socials column) come in
+ * through the `meta` and `aside` slots and keep their own page's scoped styles,
+ * since Astro scopes by the file the markup is written in.
+ */
+interface Props {
+  /** Small tracked line above the title. Omit to hide it. */
+  kicker?: string | null
+  title: string
+  lead?: string | null
+  /**
+   * Display size for the h1. The design uses 140 on most pages and 150 on
+   * Music; both collapse on narrow screens.
+   */
+  titleSize?: number
+  /** Max width of the lead paragraph in px. */
+  leadWidth?: number
+}
+
+const { kicker, title, lead, titleSize = 140, leadWidth = 680 } = Astro.props
+
+const hasAside = Astro.slots.has('aside')
+---
+
+<section class="ph page-x" style={`--ph-title:${titleSize}px; --ph-lead:${leadWidth}px`}>
+  <ThemeSlot name="hero-backdrop" />
+
+  <div class="ph-in" class:list={[{ 'ph-in--split': hasAside }]}>
+    <div>
+      {kicker && <span class="ph-kicker">{kicker}</span>}
+      <h1 class="ph-title">{title}</h1>
+      {lead && <p class="ph-lead">{lead}</p>}
+      <slot name="meta" />
+    </div>
+
+    {hasAside && <div class="ph-aside"><slot name="aside" /></div>}
+  </div>
+</section>
+
+<style>
+  .ph {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 54px 58px;
+  }
+
+  .ph-in { position: relative; }
+
+  /* Music puts its platform links to the right of the title block. */
+  .ph-in--split {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+  }
+
+  .ph-kicker {
+    display: block;
+    font: 800 14px/1 var(--font-body);
+    letter-spacing: .34em;
+    color: var(--color-accent);
+  }
+
+  .ph-title {
+    margin: 16px 0 0;
+    font-size: var(--ph-title, 140px);
+    line-height: .82;
+  }
+
+  .ph-lead {
+    margin: 22px 0 0;
+    max-width: var(--ph-lead, 680px);
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  @media (max-width: 1100px) {
+    .ph-title { font-size: min(var(--ph-title, 140px), 96px); }
+  }
+  @media (max-width: 700px) {
+    .ph { padding-block: 36px 40px; }
+    .ph-in--split { grid-template-columns: 1fr; align-items: start; }
+    .ph-title { font-size: min(var(--ph-title, 140px), 56px); }
+    .ph-lead { font-size: 16px; }
+  }
+</style>
