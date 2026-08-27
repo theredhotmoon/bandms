@@ -52,16 +52,16 @@ function add() {
 <template>
   <div class="space-y-4">
     <!-- Price -->
-    <div v-if="price" class="text-2xl font-black text-white">
+    <div v-if="price" class="text-2xl font-black text-body">
       {{ formatPrice(price) }}
-      <span v-if="item.is_presale" class="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-sm font-medium text-accent">
+      <span v-if="item.is_presale" class="ml-2 rounded-pill bg-accent/10 px-2 py-0.5 text-sm font-medium text-accent">
         Pre-sale
       </span>
     </div>
 
     <!-- Variants -->
     <div v-if="item.variants.length > 0">
-      <p class="text-sm font-medium text-zinc-400 mb-2">
+      <p class="text-sm font-medium text-muted mb-2">
         {{ item.variants[0]?.name ?? 'Option' }}
       </p>
       <div class="flex flex-wrap gap-2">
@@ -71,10 +71,10 @@ function add() {
           type="button"
           :disabled="v.stock_quantity === 0"
           :class="[
-            'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+            'rounded-card border px-3 py-1.5 text-sm font-medium transition-colors',
             selectedVariantId === v.id
               ? 'border-accent bg-accent/10 text-accent'
-              : 'border-border bg-surface-2 text-zinc-300 hover:border-zinc-600',
+              : 'border-border bg-surface-2 text-body hover:border-border',
             v.stock_quantity === 0 && 'opacity-40 cursor-not-allowed line-through',
           ]"
           @click="selectedVariantId = v.id"
@@ -90,7 +90,7 @@ function add() {
         :href="item.purchase_url"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex w-full items-center justify-center rounded-lg bg-accent py-3 font-bold text-black hover:bg-accent-dark transition-colors"
+        class="inline-flex w-full items-center justify-center rounded-card bg-accent py-3 font-bold text-on-accent hover:bg-accent-dark transition-colors"
       >
         Buy Now
       </a>
@@ -100,13 +100,13 @@ function add() {
       v-else
       type="button"
       :disabled="!inStock || needsVariant || !price"
-      class="w-full rounded-lg py-3 font-bold transition-colors"
+      class="w-full rounded-card py-3 font-bold transition-colors"
       :class="[
         added
-          ? 'bg-green-700 text-white'
+          ? 'bg-success-subtle text-body'
           : inStock && !needsVariant
-            ? 'bg-accent text-black hover:bg-accent-dark'
-            : 'bg-surface-2 text-zinc-600 cursor-not-allowed',
+            ? 'bg-accent text-on-accent hover:bg-accent-dark'
+            : 'bg-surface-2 text-subtle cursor-not-allowed',
       ]"
       @click="add"
     >
@@ -116,7 +116,7 @@ function add() {
       <span v-else>Add to Cart</span>
     </button>
 
-    <p v-if="item.is_presale && presaleShipsAt" class="text-xs text-zinc-500">
+    <p v-if="item.is_presale && presaleShipsAt" class="text-xs text-muted">
       Ships {{ presaleShipsAt }}
     </p>
   </div>

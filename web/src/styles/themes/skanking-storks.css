@@ -1,0 +1,81 @@
+/* ── Skanking Storks — 2-Tone ──────────────────────────────────────────────────
+ *
+ * Ported from the Claude Design project (variants/shared.jsx) at the tweak state
+ * saved in Contact.html: accent #1F8F7A, Anton/Archivo, 32px checker, grain on.
+ *
+ * Only the primitives below carry brand values. Everything else maps them onto
+ * the semantic contract, which is the only thing markup ever sees. Tailwind's
+ * @theme cannot be nested inside a selector, so overrides are plain custom
+ * property declarations — Tailwind already emitted the utilities from
+ * tokens.css, and they resolve through var() at paint time.
+ */
+
+[data-theme='skanking-storks'] {
+  /* Primitives — theme-private. Never referenced outside this file. */
+  --ss-ink: #121212;
+  --ss-paper: #efe7d6;
+  --ss-teal: #1f8f7a;
+  --ss-white: #ffffff;
+  --ss-rust: #c23a2b;
+
+  /* Colour ------------------------------------------------------------------ */
+  --color-page: var(--ss-paper);
+  --color-ink: var(--ss-ink);
+  --color-surface: var(--ss-white);
+  --color-surface-2: var(--ss-paper);
+  --color-inverse: var(--ss-ink);
+
+  --color-body: var(--ss-ink);
+  --color-muted: #7a7468;
+  --color-subtle: #8a8475;
+  --color-on-inverse: var(--ss-paper);
+
+  --color-accent: var(--ss-teal);
+  --color-on-accent: var(--ss-white);
+
+  --color-border: var(--ss-ink);
+
+  --color-danger: var(--ss-rust);
+  --color-danger-subtle: rgb(194 58 43 / 0.08);
+  --color-success: var(--ss-teal);
+  --color-success-subtle: rgb(31 143 122 / 0.08);
+
+  /* Type -------------------------------------------------------------------- */
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-body: 'Archivo', system-ui, sans-serif;
+
+  /* Anton ships at a single weight and is already condensed and tall, so it is
+   * set at 400 with tight leading rather than bolded. */
+  --display-weight: 400;
+  --display-tracking: 0em;
+  --display-transform: uppercase;
+  --display-leading: 0.9;
+
+  /* Shape ------------------------------------------------------------------- */
+  --radius-card: 0px;
+  --radius-pill: 9999px;
+
+  --border-width-card: 3px;
+  --border-width-emphasis: 4px;
+
+  /* Elevation — hard offset blocks, no blur. The offset is the whole look. */
+  --shadow-card: 6px 6px 0 var(--ss-ink);
+  --shadow-card-accent: 6px 6px 0 var(--ss-teal);
+  --shadow-emphasis: 10px 10px 0 var(--ss-ink);
+
+  /* Ornament ---------------------------------------------------------------- */
+  --checker-cell: 32px;
+  --grain-opacity: 0.06;
+
+  --page-gutter: 90px;
+}
+
+/* The design lays out to a 90px inset, which is wider than most phones. Ornament
+ * scale follows the gutter down so checker strips do not read as one giant
+ * square on a narrow screen. */
+@media (max-width: 900px) {
+  [data-theme='skanking-storks'] {
+    --page-gutter: 24px;
+    --checker-cell: 22px;
+  }
+}

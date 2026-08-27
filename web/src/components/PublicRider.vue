@@ -42,16 +42,16 @@ onMounted(async () => {
 <template>
   <div>
     <div v-if="status === 'loading'" class="flex justify-center py-20">
-      <div class="w-10 h-10 rounded-full border-2 border-zinc-700 border-t-accent animate-spin" />
+      <div class="w-10 h-10 rounded-pill border-2 border-border border-t-accent animate-spin" />
     </div>
 
-    <div v-else-if="status === 'error'" class="text-center py-20 text-zinc-400">
+    <div v-else-if="status === 'error'" class="text-center py-20 text-muted">
       <p class="text-lg">{{ error }}</p>
       <a v-if="contactHref" :href="contactHref" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
     </div>
 
     <div v-else>
-      <h1 class="text-3xl font-black text-white mb-8">{{ title }}</h1>
+      <h1 class="text-3xl font-black text-body mb-8">{{ title }}</h1>
       <!-- eslint-disable-next-line vue/no-v-html -- content comes from trusted CMS backend -->
       <div class="prose max-w-none" v-html="content" />
     </div>

@@ -8,7 +8,7 @@ const count = useStore(cartCount)
 <template>
   <button
     type="button"
-    class="relative flex items-center justify-center w-9 h-9 rounded-lg text-zinc-400 hover:text-white hover:bg-surface-2 transition-colors"
+    class="relative flex items-center justify-center w-9 h-9 rounded-card text-muted hover:text-body hover:bg-surface-2 transition-colors"
     aria-label="Open cart"
     @click="cartOpen.set(true)"
   >
@@ -17,7 +17,7 @@ const count = useStore(cartCount)
     </svg>
     <span
       v-if="count > 0"
-      class="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-accent text-black text-[10px] font-bold flex items-center justify-center px-0.5"
+      class="absolute -top-1 -right-1 min-w-4 h-4 rounded-pill bg-accent text-on-accent text-[10px] font-bold flex items-center justify-center px-0.5"
     >
       {{ count }}
     </span>

@@ -43,20 +43,20 @@ const structuredData = {
   alternateHref={alternateHref}
 >
   <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
-    <nav class="mb-8 text-sm text-zinc-600">
-      <a href={`/${lang}/${slugMap[lang].releases ?? 'releases'}`} class="hover:text-zinc-400 transition-colors">Music</a>
+    <nav class="mb-8 text-sm text-subtle">
+      <a href={`/${lang}/${slugMap[lang].releases ?? 'releases'}`} class="hover:text-muted transition-colors">Music</a>
       <span class="mx-2">›</span>
-      <span class="text-zinc-400">{release.title}</span>
+      <span class="text-muted">{release.title}</span>
     </nav>
 
     <div class="grid gap-10 md:grid-cols-[220px_1fr]">
       <!-- Cover -->
       <div class="flex flex-col gap-4">
-        <div class="overflow-hidden rounded-xl border border-border bg-zinc-900 aspect-square">
+        <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square">
           {release.cover_image ? (
             <img src={release.cover_image} alt={release.title} loading="eager" class="w-full h-full object-cover" />
           ) : (
-            <div class="flex h-full items-center justify-center text-zinc-700">
+            <div class="flex h-full items-center justify-center text-subtle">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
               </svg>
@@ -72,7 +72,7 @@ const structuredData = {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-zinc-300 hover:border-zinc-600 hover:text-white transition-colors"
+                class="flex w-full items-center justify-center gap-2 rounded-card border border-border bg-surface px-4 py-2.5 text-sm font-medium text-body hover:border-border hover:text-body transition-colors"
               >
                 {PLATFORM_LABELS[link.platform] ?? link.platform}
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -88,7 +88,7 @@ const structuredData = {
             href={release.presave_url}
             target="_blank"
             rel="noopener noreferrer"
-            class="flex w-full items-center justify-center rounded-lg bg-accent py-2.5 text-sm font-bold text-black hover:bg-accent-dark transition-colors"
+            class="flex w-full items-center justify-center rounded-card bg-accent py-2.5 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors"
           >
             Pre-save →
           </a>
@@ -97,15 +97,15 @@ const structuredData = {
 
       <!-- Details -->
       <div>
-        <p class="text-sm text-zinc-500 uppercase tracking-wider mb-1">
+        <p class="text-sm text-muted uppercase tracking-wider mb-1">
           {RELEASE_TYPE_LABELS[release.type]}{year ? ` · ${year}` : ''}
           {release.label_name ? ` · ${release.label_name}` : ''}
         </p>
-        <h1 class="text-3xl font-black text-white sm:text-4xl leading-tight">{release.title}</h1>
-        <p class="mt-1 text-zinc-400 font-medium">{profile.name}</p>
+        <h1 class="text-3xl font-black text-body sm:text-4xl leading-tight">{release.title}</h1>
+        <p class="mt-1 text-muted font-medium">{profile.name}</p>
 
         {release.release_date && (
-          <p class="mt-1 text-sm text-zinc-600">{fmtDate(release.release_date, lang)}</p>
+          <p class="mt-1 text-sm text-subtle">{fmtDate(release.release_date, lang)}</p>
         )}
 
         {release.description && (
@@ -117,16 +117,16 @@ const structuredData = {
         {/* Tracklist */}
         {(release.tracks ?? []).length > 0 && (
           <div class="mt-8">
-            <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Tracklist</h2>
+            <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-3">Tracklist</h2>
             <ol class="space-y-1">
               {(release.tracks ?? [])
                 .sort((a, b) => a.sort_order - b.sort_order)
                 .map((track, i) => (
                   <li class="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-                    <span class="text-xs text-zinc-600 w-5 text-right tabular-nums">{i + 1}</span>
-                    <span class="flex-1 text-white">{track.title}</span>
-                    {track.explicit && <span class="text-[10px] border border-zinc-700 text-zinc-600 px-1 rounded">E</span>}
-                    {track.duration && <span class="text-xs text-zinc-600 tabular-nums">{track.duration}</span>}
+                    <span class="text-xs text-subtle w-5 text-right tabular-nums">{i + 1}</span>
+                    <span class="flex-1 text-body">{track.title}</span>
+                    {track.explicit && <span class="text-[10px] border border-border text-subtle px-1 rounded">E</span>}
+                    {track.duration && <span class="text-xs text-subtle tabular-nums">{track.duration}</span>}
                   </li>
                 ))}
             </ol>
@@ -136,10 +136,10 @@ const structuredData = {
         {/* Photos */}
         {(release.photos ?? []).length > 0 && (
           <div class="mt-8">
-            <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Photos</h2>
+            <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-3">Photos</h2>
             <div class="grid grid-cols-3 gap-2">
               {(release.photos ?? []).map(p => p.image_url && (
-                <div class="overflow-hidden rounded-lg aspect-square bg-zinc-900">
+                <div class="overflow-hidden rounded-card aspect-square bg-surface-2">
                   <img src={p.image_url} alt={p.caption ?? ''} loading="lazy" class="w-full h-full object-cover" />
                 </div>
               ))}

@@ -12,6 +12,7 @@ const slugMap = await getSlugMap()
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getBandProfile } from '@/lib/cms'
+import FaqSection from '@/components/sections/FaqSection.astro'
 
 const profile = await getBandProfile(lang)
 ---
@@ -24,8 +25,8 @@ const profile = await getBandProfile(lang)
 >
   <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32 text-center">
     <div class="accent-line mx-auto mb-6" />
-    <h1 class="text-3xl font-black text-white sm:text-4xl">Stay in the loop</h1>
-    <p class="mt-4 text-zinc-400 leading-relaxed">
+    <h1 class="text-3xl font-black text-body sm:text-4xl">Stay in the loop</h1>
+    <p class="mt-4 text-muted leading-relaxed">
       New shows, releases, and behind-the-scenes from {profile.name} straight to your inbox.
       No spam. Unsubscribe any time.
     </p>
@@ -33,4 +34,5 @@ const profile = await getBandProfile(lang)
       <NewsletterSignup client:load />
     </div>
   </div>
+  <FaqSection module="newsletter" lang={lang} />
 </BaseLayout>

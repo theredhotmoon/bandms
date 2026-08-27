@@ -10,7 +10,9 @@ done
 echo "✅  API is ready."
 
 echo "🔨  Building Astro site…"
-API_BASE="${API_BASE}" pnpm build
+# PUBLIC_THEME selects the theme baked into this build. Astro only exposes
+# PUBLIC_-prefixed vars to import.meta.env, so the name matters.
+API_BASE="${API_BASE}" PUBLIC_THEME="${PUBLIC_THEME:-}" pnpm build
 
 echo "📋  Copying build output…"
 cp -r /app/dist/* /usr/share/nginx/html/

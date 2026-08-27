@@ -1,76 +1,410 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
-
-interface Props {
-  lang: Locale
-  alternateHref: string
-}
-const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
-
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ContactForm from '@/components/ContactForm.vue'
 import SocialLinks from '@/components/SocialLinks.astro'
-import { getBandProfile, getSocialLinks } from '@/lib/cms'
+import FaqSection from '@/components/sections/FaqSection.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+import { getBandProfile, getSocialLinks, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 
-const [profile, socialLinks] = await Promise.all([getBandProfile(lang), getSocialLinks()])
+interface Props {
+  lang?: Locale
+  alternateHref?: string
+}
+const { lang = 'en', alternateHref } = Astro.props
+
+const [profile, socialLinks, siteConfig, slugMap] = await Promise.all([
+  getBandProfile(lang),
+  getSocialLinks(),
+  getSiteConfig(lang),
+  getSlugMap(),
+])
+
+// Band-editable copy. `settings` is optional because an API predating the
+// migration omits it, so every read goes through ?? — a bare access would throw
+// at build time and the Astro build is all-or-nothing.
+const s = siteConfig.module_config?.contact?.settings ?? {}
+
+const COPY = {
+  en: {
+    title: 'Contact',
+    formTitle: 'Send a message', formSub: 'Fill in the form and hit send — it lands straight in our inbox.',
+    reasonLabel: "What's this about?",
+    reasons: [
+      { value: 'general' as const, label: 'Say hello' },
+      { value: 'booking' as const, label: 'Booking' },
+      { value: 'press' as const, label: 'Press' },
+      { value: 'other' as const, label: 'Other' },
+    ],
+    name: 'Your name', namePh: 'Jane Skankowska',
+    email: 'Email', emailPh: 'you@email.com',
+    subject: 'Subject', subjectPh: "What's on your mind?",
+    message: 'Message', messagePh: 'Tell us everything — dates, venue, capacity, the lot.',
+    send: 'Send message', sending: 'Sending…',
+    sent: "Message sent — we'll be in touch within 48h. BIG UP!",
+    sendAnother: 'Send another',
+    error: 'Please add your name, a valid email and a message.',
+    directTitle: 'Reach us directly',
+    booking: 'Booking', press: 'Press', general: 'General',
+    follow: 'Or find us on',
+    promoTitle: 'Promoters & press',
+    promoSub: 'Everything you need to put us on your stage — or your page.',
+    bookTitle: 'Book us', bookSub: 'Check open dates and send a request.', bookCta: 'See shows',
+    epkTitle: 'Press kit (EPK)', epkSub: 'Bio, hi-res photos, logos & stats in one pack.', epkCta: 'Open EPK',
+    riderTitle: 'Tech rider', riderSub: 'Stage plan, input list, monitors & hospitality.', riderCta: 'View rider',
+    photosTitle: 'Press photos', photosSub: 'Hi-res, print-ready shots in the gallery.', photosCta: 'Open gallery',
+  },
+  pl: {
+    title: 'Kontakt',
+    formTitle: 'Napisz do nas', formSub: 'Wypełnij formularz i wyślij — trafi prosto na naszą skrzynkę.',
+    reasonLabel: 'W jakiej sprawie?',
+    reasons: [
+      { value: 'general' as const, label: 'Przywitaj się' },
+      { value: 'booking' as const, label: 'Booking' },
+      { value: 'press' as const, label: 'Prasa' },
+      { value: 'other' as const, label: 'Inne' },
+    ],
+    name: 'Imię i nazwisko', namePh: 'Jan Skankowski',
+    email: 'Email', emailPh: 'ty@email.com',
+    subject: 'Temat', subjectPh: 'O czym chcesz napisać?',
+    message: 'Wiadomość', messagePh: 'Napisz wszystko — daty, miejsce, pojemność sali, całość.',
+    send: 'Wyślij wiadomość', sending: 'Wysyłanie…',
+    sent: 'Wiadomość wysłana — odezwiemy się w 48h. BIG UP!',
+    sendAnother: 'Wyślij kolejną',
+    error: 'Podaj imię, poprawny email i treść wiadomości.',
+    directTitle: 'Napisz bezpośrednio',
+    booking: 'Booking', press: 'Prasa', general: 'Ogólny',
+    follow: 'Albo znajdź nas na',
+    promoTitle: 'Organizatorzy i prasa',
+    promoSub: 'Wszystko, czego potrzebujesz, by zaprosić nas na scenę — lub na łamy.',
+    bookTitle: 'Zarezerwuj nas', bookSub: 'Sprawdź wolne terminy i wyślij zapytanie.', bookCta: 'Zobacz koncerty',
+    epkTitle: 'Press kit (EPK)', epkSub: 'Bio, zdjęcia hi-res, loga i statystyki w jednej paczce.', epkCta: 'Otwórz EPK',
+    riderTitle: 'Rider techniczny', riderSub: 'Plan sceny, lista wejść, monitory i hospitality.', riderCta: 'Podgląd ridera',
+    photosTitle: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku — w galerii.', photosCta: 'Otwórz galerię',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+// Gate on the module map, never on `=== true` and never on whether content
+// exists: getSiteConfig fails open to {} when the API is unreachable mid-build,
+// so an absent key has to mean enabled. A disabled module unbuilds its routes,
+// so an ungated card here is a dead link the build reports as green.
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+
+const channels = [
+  { key: 'booking', icon: 'calendar', label: t.booking, email: profile.booking_email, note: s.booking_note },
+  { key: 'press',   icon: 'quote',    label: t.press,   email: profile.press_email,   note: s.press_note },
+  { key: 'general', icon: 'mail',     label: t.general, email: profile.contact_email, note: s.general_note },
+].filter(c => c.email)
+
+const promo = [
+  { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: href('concerts'), show: enabled('concerts') },
+  { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: href('epk'),      show: enabled('epk') },
+  { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: '/rider',         show: Boolean(profile.tech_rider_url) },
+  { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos') },
+].filter(p => p.show)
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Contact — ${profile.name}`}
-  description={`Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
+  title={`${t.title} — ${profile.name}`}
+  description={s.lead || `Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
 >
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-white sm:text-5xl">Contact</h1>
-    </div>
+  <!-- HERO -->
+  <section class="ct-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="ct-hero-in">
+      {s.kicker && <span class="ct-kicker">{s.kicker}</span>}
+      <h1 class="ct-h1">{t.title}</h1>
+      {s.lead && <p class="ct-lead">{s.lead}</p>}
 
-    <div class="grid gap-12 lg:grid-cols-[1fr_280px]">
-      <!-- Form -->
-      <div>
-        <p class="text-zinc-400 mb-8">
-          Have a booking inquiry, press request, or just want to say hello? Fill in the form and we'll get back to you.
-        </p>
-        <ContactForm client:visible />
+      <div class="ct-actions">
+        <a href="#contact-form" class="ct-btn ct-btn--fill">
+          <Icon name="mail" size={20} color="currentColor" />{t.formTitle}
+        </a>
+        {enabled('concerts') && (
+          <a href={href('concerts')} class="ct-btn ct-btn--ghost">
+            <Icon name="calendar" size={20} color="var(--color-accent)" />{t.bookTitle}
+          </a>
+        )}
       </div>
 
-      <!-- Sidebar -->
-      <aside class="space-y-6">
-        {profile.booking_email && (
-          <div class="rounded-xl border border-border bg-surface p-5">
-            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Booking</h3>
-            <a href={`mailto:${profile.booking_email}`} class="text-accent hover:underline">
-              {profile.booking_email}
-            </a>
-          </div>
+      <div class="ct-pills">
+        {s.reply_time_label && (
+          <span class="ct-pill"><Icon name="mail" size={18} color="var(--color-accent)" />{s.reply_time_label}</span>
         )}
-        {profile.press_email && (
-          <div class="rounded-xl border border-border bg-surface p-5">
-            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Press</h3>
-            <a href={`mailto:${profile.press_email}`} class="text-accent hover:underline">
-              {profile.press_email}
-            </a>
-          </div>
+        {profile.hometown && (
+          <span class="ct-pill"><Icon name="pin" size={18} color="var(--color-accent)" />{profile.hometown}</span>
         )}
-        {profile.contact_email && (
-          <div class="rounded-xl border border-border bg-surface p-5">
-            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">General</h3>
-            <a href={`mailto:${profile.contact_email}`} class="text-accent hover:underline">
-              {profile.contact_email}
-            </a>
-          </div>
-        )}
+      </div>
+    </div>
+  </section>
+
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <!-- FORM + DIRECT CONTACTS -->
+  <section class="ct-main page-x" id="contact-form">
+    <div class="ct-grid">
+      <ContactForm
+        client:visible
+        copy={{
+          title: t.formTitle, subtitle: t.formSub,
+          reasonLabel: t.reasonLabel, reasons: t.reasons,
+          name: t.name, namePlaceholder: t.namePh,
+          email: t.email, emailPlaceholder: t.emailPh,
+          subject: t.subject, subjectPlaceholder: t.subjectPh,
+          message: t.message, messagePlaceholder: t.messagePh,
+          send: t.send, sending: t.sending, sent: t.sent,
+          sendAnother: t.sendAnother, error: t.error,
+          replyNote: s.reply_time_label ?? '',
+        }}
+      />
+
+      <aside class="ct-aside">
+        <div class="ct-aside-head">
+          <Icon name="arrow" size={22} color="var(--color-accent)" />
+          <h2 class="ct-aside-title">{t.directTitle}</h2>
+        </div>
+
+        {channels.map(c => (
+          <a href={`mailto:${c.email}`} class="ct-channel">
+            <span class="ct-channel-top">
+              <Icon name={c.icon} size={20} color="var(--color-accent)" />
+              <span class="ct-channel-label">{c.label}</span>
+            </span>
+            <span class="ct-channel-mail">{c.email}</span>
+            {c.note && <span class="ct-channel-note">{c.note}</span>}
+          </a>
+        ))}
+
         {socialLinks.length > 0 && (
-          <div class="rounded-xl border border-border bg-surface p-5">
-            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Socials</h3>
+          <div class="ct-socials">
+            <span class="ct-socials-label">{t.follow}</span>
             <SocialLinks links={socialLinks} size="sm" />
           </div>
         )}
       </aside>
     </div>
-  </div>
+  </section>
+
+  {promo.length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="ct-promo page-x">
+        <div class="ct-promo-head">
+          <Icon name="download" size={24} color="var(--color-accent)" />
+          <h2 class="ct-promo-title">{t.promoTitle}</h2>
+        </div>
+        <p class="ct-promo-sub">{t.promoSub}</p>
+        <div class="ct-promo-grid" style={`--promo-cols:${promo.length}`}>
+          {promo.map(p => (
+            <a href={p.href} class="ct-card">
+              <Icon name={p.icon} size={30} color="var(--color-accent)" />
+              <span class="ct-card-body">
+                <span class="ct-card-title">{p.title}</span>
+                <span class="ct-card-sub">{p.sub}</span>
+              </span>
+              <span class="ct-card-cta">{p.cta}<Icon name="chevron" size={16} color="var(--color-accent)" /></span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </>
+  )}
+
+  <FaqSection module="contact" lang={lang} />
 </BaseLayout>
+
+<style>
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .ct-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 54px 58px;
+  }
+  .ct-hero-in { position: relative; }
+
+  .ct-kicker {
+    display: block;
+    font: 800 14px/1 var(--font-body);
+    letter-spacing: .34em;
+    color: var(--color-accent);
+  }
+
+  .ct-h1 {
+    margin: 16px 0 0;
+    font-size: 140px;
+    line-height: .82;
+  }
+
+  .ct-lead {
+    margin: 22px 0 0;
+    max-width: 680px;
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  .ct-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
+
+  .ct-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 24px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+    cursor: pointer;
+  }
+  .ct-btn--fill {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    box-shadow: 5px 5px 0 var(--color-on-inverse);
+  }
+  .ct-btn--ghost {
+    background: transparent;
+    color: var(--color-on-inverse);
+    border: var(--border-width-card) solid var(--color-on-inverse);
+  }
+
+  .ct-pills { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 26px; }
+  .ct-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font: 700 14px/1 var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-on-inverse) 70%, transparent);
+  }
+
+  /* ── Form + contacts ───────────────────────────────────────────────────── */
+  .ct-main { padding-block: 56px 54px; }
+  .ct-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .ct-aside { display: flex; flex-direction: column; gap: 16px; }
+  .ct-aside-head { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+  .ct-aside-title { margin: 0; font-size: 30px; line-height: 1; }
+
+  .ct-channel {
+    display: block;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding: 18px 20px;
+    text-decoration: none;
+    box-shadow: var(--shadow-card-accent);
+  }
+  .ct-channel-top { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+  .ct-channel-label {
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .ct-channel-mail {
+    display: block;
+    font: 700 17px/1.2 var(--font-body);
+    word-break: break-word;
+  }
+  .ct-channel-note {
+    display: block;
+    margin-top: 7px;
+    font: 500 13px/1.4 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 60%, transparent);
+  }
+
+  .ct-socials {
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    padding: 18px 20px;
+  }
+  .ct-socials-label {
+    display: block;
+    margin-bottom: 14px;
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  /* ── Promoters & press ─────────────────────────────────────────────────── */
+  .ct-promo { padding-block: 56px; }
+  .ct-promo-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .ct-promo-title { margin: 0; font-size: 56px; line-height: .96; }
+  .ct-promo-sub {
+    margin: 14px 0 28px;
+    max-width: 620px;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+
+  .ct-promo-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--promo-cols, 4), 1fr);
+    gap: 22px;
+  }
+
+  .ct-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px 20px;
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    color: var(--color-body);
+    text-decoration: none;
+  }
+  .ct-card-body { flex: 1; }
+  .ct-card-title {
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 23px;
+    line-height: 1.02;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+  .ct-card-sub { display: block; font: 500 13px/1.45 var(--font-body); color: var(--color-muted); }
+  .ct-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 800 12px/1 var(--font-body);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  /* ── Responsive ────────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .ct-h1 { font-size: 96px; }
+    .ct-grid { grid-template-columns: 1fr; gap: 32px; }
+    .ct-promo-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .ct-h1 { font-size: 56px; }
+    .ct-lead { font-size: 16px; }
+    .ct-promo-title { font-size: 34px; }
+    .ct-promo-grid { grid-template-columns: 1fr; }
+    .ct-hero { padding-block: 36px 40px; }
+    .ct-main { padding-block: 36px; }
+    .ct-promo { padding-block: 36px; }
+  }
+</style>

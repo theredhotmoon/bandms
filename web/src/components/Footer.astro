@@ -42,19 +42,19 @@ const staticLinks = [
 const links = [...moduleLinks, ...staticLinks]
 ---
 
-<footer class="border-t border-border mt-24 py-12 text-zinc-500 text-sm">
+<footer class="border-t border-border mt-24 py-12 text-muted text-sm">
   <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <!-- Brand -->
       <div>
-        <a href={`/${lang}`} class="text-lg font-black text-white tracking-tight">Skanking Storks</a>
+        <a href={`/${lang}`} class="text-lg font-black text-body tracking-tight">Skanking Storks</a>
         <p class="mt-1 text-xs">Ska · Reggae · Good Vibes</p>
       </div>
 
       <!-- Nav -->
       <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer navigation">
         {links.map(({ href, label }) => (
-          <a href={href} class="hover:text-white transition-colors">{label}</a>
+          <a href={href} class="hover:text-body transition-colors">{label}</a>
         ))}
       </nav>
     </div>
@@ -65,7 +65,7 @@ const links = [...moduleLinks, ...staticLinks]
         {alternateHref && (
           <LanguageSelector lang={lang} alternateHref={alternateHref} />
         )}
-        <a href="/admin" class="hover:text-white transition-colors">Admin</a>
+        <a href="/admin" class="hover:text-body transition-colors">Admin</a>
       </div>
     </div>
   </div>

@@ -29,9 +29,9 @@ async function submit() {
 
 <template>
   <div>
-    <div v-if="status === 'sent'" class="rounded-xl border border-green-800 bg-green-900/20 p-4 text-center">
-      <p class="font-semibold text-green-400">You're in! 🎉</p>
-      <p class="mt-1 text-sm text-zinc-400">Check your inbox to confirm your subscription.</p>
+    <div v-if="status === 'sent'" class="rounded-card border border-success bg-success-subtle p-4 text-center">
+      <p class="font-semibold text-success">You're in! 🎉</p>
+      <p class="mt-1 text-sm text-muted">Check your inbox to confirm your subscription.</p>
     </div>
 
     <form v-else @submit.prevent="submit" class="flex gap-2 flex-col sm:flex-row">
@@ -41,18 +41,18 @@ async function submit() {
         required
         autocomplete="email"
         placeholder="your@email.com"
-        class="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:border-accent focus:outline-none transition-colors"
+        class="flex-1 rounded-card border border-border bg-surface-2 px-3 py-2.5 text-sm text-body placeholder-subtle focus:border-accent focus:outline-none transition-colors"
       />
       <button
         type="submit"
         :disabled="status === 'sending'"
-        class="rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-black hover:bg-accent-dark disabled:opacity-60 transition-colors whitespace-nowrap"
+        class="rounded-card bg-accent px-5 py-2.5 text-sm font-bold text-on-accent hover:bg-accent-dark disabled:opacity-60 transition-colors whitespace-nowrap"
       >
         {{ status === 'sending' ? 'Subscribing…' : 'Subscribe' }}
       </button>
     </form>
 
-    <p v-if="status === 'error'" class="mt-2 text-sm text-red-400">
+    <p v-if="status === 'error'" class="mt-2 text-sm text-danger">
       {{ errorMsg || 'Something went wrong. Please try again.' }}
     </p>
   </div>

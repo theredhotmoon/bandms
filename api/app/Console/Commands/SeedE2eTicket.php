@@ -46,7 +46,11 @@ class SeedE2eTicket extends Command
             return self::FAILURE;
         }
 
-        $stamp = now()->format('YmdHis');
+        // Second resolution is not enough: Playwright runs specs in parallel, and
+        // two seeds landing in the same second collide on venues.name_unique —
+        // which surfaces as an unrelated spec failing with a duplicate-key stack.
+        // The random suffix makes each seed's fixtures unique regardless of timing.
+        $stamp = now()->format('YmdHis') . '-' . Str::lower(Str::random(6));
         $count = max(1, (int) $this->option('tickets'));
 
         $payload = DB::transaction(function () use ($stamp, $count) {

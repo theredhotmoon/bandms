@@ -1,0 +1,89 @@
+/* ── Base look ─────────────────────────────────────────────────────────────────
+ *
+ * Element defaults for the unthemed site. Everything here reads from the
+ * semantic contract in tokens.css, so a theme restyles the whole document
+ * without this file changing.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-body);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+/* Display type is a theme decision — weight, tracking, case and leading all
+ * differ between a plain sans heading and Anton set in caps. Headings read the
+ * tokens rather than hardcoding any of it. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-transform);
+  line-height: var(--display-leading);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────────── */
+
+/* The page gutter as a class, so sections do not each re-declare it. */
+.page-x {
+  padding-inline: var(--page-gutter);
+}
+
+.accent-line {
+  width: 3rem;
+  height: 3px;
+  background: var(--color-accent);
+}
+
+/* ── Prose (post and release bodies) ───────────────────────────────────────── */
+
+.prose {
+  max-width: 68ch;
+  line-height: 1.75;
+  color: var(--color-body);
+}
+
+.prose h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 0.75rem; }
+.prose h3 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.prose p  { margin-bottom: 1.25rem; }
+.prose a  { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.prose ul, .prose ol { margin-bottom: 1.25rem; padding-left: 1.5rem; }
+.prose li { margin-bottom: 0.4rem; }
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+  margin: 1.5rem 0;
+}
+.prose img { border-radius: var(--radius-card); max-width: 100%; }
+.prose hr  { border-color: var(--color-border); margin: 2rem 0; }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-page); }
+::-webkit-scrollbar-thumb { background: var(--color-muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-body); }
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}

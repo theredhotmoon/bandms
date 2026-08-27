@@ -14,6 +14,7 @@ import ReleaseCard from '@/components/ReleaseCard.astro'
 import { getReleases, getBandProfile } from '@/lib/cms'
 import { RELEASE_TYPE_LABELS } from '@/types/release'
 import type { ReleaseType } from '@/types/release'
+import FaqSection from '@/components/sections/FaqSection.astro'
 
 const [releases, profile] = await Promise.all([getReleases(lang), getBandProfile(lang)])
 
@@ -36,16 +37,16 @@ const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
   <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
     <div class="mb-12">
       <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-white sm:text-5xl">Music</h1>
+      <h1 class="text-4xl font-black text-body sm:text-5xl">Music</h1>
     </div>
 
     {releases.length === 0 && (
-      <p class="text-zinc-500">No releases yet — check back soon.</p>
+      <p class="text-muted">No releases yet — check back soon.</p>
     )}
 
     {typeOrder.filter(t => grouped[t]?.length).map(type => (
       <section class="mb-14">
-        <h2 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-5">
+        <h2 class="text-sm font-bold text-muted uppercase tracking-wider mb-5">
           {RELEASE_TYPE_LABELS[type]}s
         </h2>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -61,4 +62,5 @@ const typeOrder: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
       </section>
     ))}
   </div>
+  <FaqSection module="releases" lang={lang} />
 </BaseLayout>

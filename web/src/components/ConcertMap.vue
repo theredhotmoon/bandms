@@ -13,8 +13,8 @@ const props = defineProps<{
 const mapEl = ref<HTMLDivElement>()
 let map: any
 
-const INK = '#121212'
-const PAPER = '#EFE7D6'
+const INK = 'var(--color-ink)'
+const PAPER = 'var(--color-page)'
 
 onMounted(async () => {
   if (!mapEl.value) return
@@ -30,14 +30,14 @@ onMounted(async () => {
   styleEl.textContent = `
     .ss-cmap .leaflet-container { background:${PAPER} !important; }
     .ss-cmap .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
-    .ss-cmap .leaflet-bar a { background:${INK};color:${PAPER};border-bottom-color:#3a3a3a;width:28px;height:28px;line-height:28px;font-weight:700; }
+    .ss-cmap .leaflet-bar a { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:28px;height:28px;line-height:28px;font-weight:700; }
     .ss-cmap .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:3px 3px 0 rgba(0,0,0,.3); }
     .ss-cmap .leaflet-bar a:first-child,.ss-cmap .leaflet-bar a:last-child { border-radius:0; }
     .ss-cmap .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:6px 6px 0 ${props.accent}; }
     .ss-cmap .leaflet-popup-tip { background:${INK}; }
     .ss-cmap .leaflet-popup-content { margin:12px 14px; }
     .ss-cmap .leaflet-popup-close-button { color:${INK} !important; }
-    .ss-cmap .leaflet-control-attribution { background:rgba(239,231,214,.8) !important;font-size:9px; }
+    .ss-cmap .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
     .ss-cpin { position:relative;width:30px;height:30px;display:grid;place-items:center; }
     .ss-cpin .ring { position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;z-index:1; }
     @keyframes cmpulse { 0%{transform:scale(.6);opacity:.7;} 100%{transform:scale(2.4);opacity:0;} }
@@ -73,7 +73,7 @@ onMounted(async () => {
     .bindPopup(
       `<div style="font-family:Archivo,sans-serif;min-width:140px;">
         <div style="font:400 20px/0.95 Anton,sans-serif;text-transform:uppercase;color:${INK};">${props.city ?? ''}</div>
-        <div style="font:600 13px/1.3 Archivo,sans-serif;color:#333;margin-top:4px;">${props.venueName}</div>
+        <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${props.venueName}</div>
       </div>`
     )
 
@@ -84,5 +84,5 @@ onUnmounted(() => { map?.remove() })
 </script>
 
 <template>
-  <div class="ss-cmap" ref="mapEl" style="height:340px;width:100%;background:#EFE7D6;"></div>
+  <div class="ss-cmap" ref="mapEl" style="height:340px;width:100%;background:var(--color-page);"></div>
 </template>

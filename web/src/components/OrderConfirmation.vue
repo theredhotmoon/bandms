@@ -62,28 +62,28 @@ function money(amount: number, currency: string): string {
 </script>
 
 <template>
-  <div class="rounded-xl border border-border bg-surface p-8 sm:p-10">
-    <p v-if="status === 'loading'" class="text-zinc-400">Confirming your order…</p>
+  <div class="rounded-card border border-border bg-surface p-8 sm:p-10">
+    <p v-if="status === 'loading'" class="text-muted">Confirming your order…</p>
 
     <template v-else>
       <div class="mb-6 flex items-center gap-3">
         <span
-          class="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-xl text-accent"
+          class="flex h-10 w-10 items-center justify-center rounded-pill bg-accent/15 text-xl text-accent"
           aria-hidden="true"
         >✓</span>
-        <h1 class="text-2xl font-black text-white sm:text-3xl">Payment confirmed</h1>
+        <h1 class="text-2xl font-black text-body sm:text-3xl">Payment confirmed</h1>
       </div>
 
-      <p v-if="status !== 'found'" class="text-zinc-400">
+      <p v-if="status !== 'found'" class="text-muted">
         If your payment went through you'll receive a confirmation email shortly.
         Nothing has been charged twice.
       </p>
 
       <template v-else-if="order">
-        <p class="text-zinc-400">Thanks for your order — we'll email you when it ships.</p>
+        <p class="text-muted">Thanks for your order — we'll email you when it ships.</p>
 
-        <p class="mt-6 text-sm text-zinc-500">
-          Order <span class="font-mono text-zinc-300">{{ order.uuid }}</span>
+        <p class="mt-6 text-sm text-muted">
+          Order <span class="font-mono text-body">{{ order.uuid }}</span>
         </p>
 
         <ul v-if="order.items?.length" class="mt-4 divide-y divide-border border-t border-border">
@@ -92,11 +92,11 @@ function money(amount: number, currency: string): string {
             :key="item.id"
             class="flex flex-wrap items-baseline gap-x-3 py-3 text-sm"
           >
-            <span class="flex-1 text-zinc-200">
+            <span class="flex-1 text-body">
               {{ item.name }}<template v-if="item.variant_label"> — {{ item.variant_label }}</template>
             </span>
-            <span class="text-zinc-500">× {{ item.quantity }}</span>
-            <span class="text-zinc-300">{{ money(item.price * item.quantity, item.currency) }}</span>
+            <span class="text-muted">× {{ item.quantity }}</span>
+            <span class="text-body">{{ money(item.price * item.quantity, item.currency) }}</span>
 
             <!-- Tickets are downloadable straight away; merch is not. -->
             <span v-if="item.ticket_uuids?.length" class="w-full pt-2">
@@ -110,7 +110,7 @@ function money(amount: number, currency: string): string {
           </li>
         </ul>
 
-        <p class="mt-4 border-t border-border pt-4 text-right text-sm text-white">
+        <p class="mt-4 border-t border-border pt-4 text-right text-sm text-body">
           Total <span class="font-bold">{{ money(order.total, order.currency) }}</span>
         </p>
       </template>

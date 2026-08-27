@@ -58,29 +58,29 @@ onMounted(async () => {
   <div class="text-center py-16 px-4">
     <!-- Loading -->
     <div v-if="status === 'loading'" class="flex flex-col items-center gap-4">
-      <div class="w-10 h-10 rounded-full border-2 border-zinc-700 border-t-accent animate-spin" />
-      <p class="text-zinc-400">Please wait…</p>
+      <div class="w-10 h-10 rounded-pill border-2 border-border border-t-accent animate-spin" />
+      <p class="text-muted">Please wait…</p>
     </div>
 
     <!-- Success -->
     <div v-else-if="status === 'success'" class="flex flex-col items-center gap-4">
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-900/30 text-green-400">
+      <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-success-subtle text-success">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       </div>
-      <p class="text-xl font-semibold text-white">{{ message }}</p>
+      <p class="text-xl font-semibold text-body">{{ message }}</p>
       <a href="/" class="text-accent hover:underline text-sm">← Back to home</a>
     </div>
 
     <!-- Error -->
     <div v-else class="flex flex-col items-center gap-4">
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-red-900/30 text-red-400">
+      <div class="flex h-16 w-16 items-center justify-center rounded-pill bg-danger-subtle text-danger">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
       </div>
-      <p class="text-xl font-semibold text-white">{{ message }}</p>
+      <p class="text-xl font-semibold text-body">{{ message }}</p>
       <a href="/en/newsletter" class="text-accent hover:underline text-sm">Go to newsletter page</a>
     </div>
   </div>

@@ -1,0 +1,74 @@
+/* ── Semantic token contract ───────────────────────────────────────────────────
+ *
+ * This file is THE contract between markup and themes. Components may reference
+ * only what is declared here; a raw palette value in a component (text-zinc-400,
+ * #fff, rounded-xl) is a bug, because no theme can override it. The lint script
+ * at web/scripts/check-tokens.mjs fails the build on those.
+ *
+ * Values below are the BASE look: deliberately plain black and white. It is what
+ * a band sees on day one, before theming. A theme redefines these under a
+ * [data-theme="…"] selector — see themes/.
+ *
+ * Primitive values (a brand's actual palette) never appear here. They live
+ * inside a theme file and are referenced only by that theme's own tokens.
+ */
+
+@theme {
+  /* Colour ------------------------------------------------------------------ */
+  --color-page: #ffffff;
+  --color-ink: #000000;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f4;
+  --color-inverse: #000000;
+
+  --color-body: #000000;
+  --color-muted: #555555;
+  --color-subtle: #767676;
+  --color-on-inverse: #ffffff;
+
+  --color-accent: #000000;
+  --color-on-accent: #ffffff;
+
+  --color-border: #000000;
+
+  --color-danger: #000000;
+  --color-danger-subtle: #f4f4f4;
+  --color-success: #000000;
+  --color-success-subtle: #f4f4f4;
+
+  /* Type -------------------------------------------------------------------- */
+  --font-display: system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+
+  /* Shape ------------------------------------------------------------------- */
+  --radius-card: 0px;
+  --radius-pill: 0px;
+
+  /* Elevation --------------------------------------------------------------- */
+  --shadow-card: none;
+  --shadow-card-accent: none;
+  --shadow-emphasis: none;
+}
+
+/* Tokens consumed inside components and theme slots rather than applied ad hoc
+ * as utilities. Declared on :root instead of @theme because Tailwind would
+ * otherwise generate a utility class for each, and there is nothing sensible to
+ * name them. */
+:root {
+  --display-weight: 700;
+  --display-tracking: 0em;
+  --display-transform: none;
+  --display-leading: 1.1;
+
+  --border-width-card: 1px;
+  --border-width-emphasis: 1px;
+
+  /* Ornament knobs. A theme with no ornament leaves these at zero and the slot
+   * components collapse to nothing. */
+  --checker-cell: 0px;
+  --grain-opacity: 0;
+
+  /* Horizontal page gutter. The design works to a 90px inset at desktop; the
+   * base is tighter because a plain layout has no ornament to breathe around. */
+  --page-gutter: 24px;
+}

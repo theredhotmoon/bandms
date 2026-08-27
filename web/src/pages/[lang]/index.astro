@@ -71,10 +71,7 @@ const structuredData = {
   structuredData={structuredData}
 >
   <Fragment slot="head">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  </Fragment>
+</Fragment>
 
   <div class="hp">
     <div class="grain" aria-hidden="true"></div>
@@ -258,13 +255,13 @@ const structuredData = {
 <style>
   /* ── Tokens ────────────────────────── */
   .hp {
-    --paper: #EFE7D6;
-    --ink:   #121212;
-    --acc:   #1F8F7A;
-    --warm:  #8a8175;
+    --paper: var(--color-page);
+    --ink:   var(--color-ink);
+    --acc:   var(--color-accent);
+    --warm:  var(--color-subtle);
     background: var(--paper);
     color: var(--ink);
-    font-family: 'Archivo', system-ui, sans-serif;
+    font-family: var(--font-body);
     position: relative;
   }
 
@@ -287,12 +284,12 @@ const structuredData = {
     min-height: 90vh;
     display: flex;
     align-items: flex-end;
-    padding: 80px 90px 60px;
+    padding: 80px var(--page-gutter) 60px;
   }
   .hero-checker {
     position: absolute;
     inset: 0;
-    background-image: repeating-conic-gradient(rgba(239,231,214,.04) 0% 25%, transparent 0% 50%);
+    background-image: repeating-conic-gradient(color-mix(in oklab, var(--color-on-inverse) 4%, transparent) 0% 25%, transparent 0% 50%);
     background-size: 40px 40px;
     pointer-events: none;
   }
@@ -307,14 +304,14 @@ const structuredData = {
     display: block;
   }
   .hero-kicker {
-    font: 800 13px/1 'Archivo', sans-serif;
+    font: 800 13px/1 var(--font-body);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--acc);
     margin-bottom: 12px;
   }
   .hero-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(64px, 13vw, 130px);
     line-height: .86;
     letter-spacing: .01em;
@@ -324,14 +321,14 @@ const structuredData = {
     color: var(--paper);
   }
   .hero-origin {
-    font: 600 14px/1.4 'Archivo', sans-serif;
+    font: 600 14px/1.4 var(--font-body);
     letter-spacing: .04em;
-    color: rgba(239,231,214,.5);
+    color: color-mix(in oklab, var(--color-on-inverse) 50%, transparent);
     margin-bottom: 18px;
   }
   .hero-bio {
-    font: 500 20px/1.65 'Archivo', sans-serif;
-    color: rgba(239,231,214,.75);
+    font: 500 20px/1.65 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 75%, transparent);
     max-width: 600px;
     margin-bottom: 30px;
   }
@@ -346,9 +343,9 @@ const structuredData = {
     align-items: center;
     gap: 10px;
     background: var(--acc);
-    color: #fff;
+    color: var(--color-on-accent);
     border: 3px solid var(--acc);
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 18px;
     letter-spacing: .01em;
     text-transform: uppercase;
@@ -357,15 +354,15 @@ const structuredData = {
     box-shadow: 6px 6px 0 var(--paper);
     transition: background .15s;
   }
-  .cta-primary:hover { background: #167a62; }
+  .cta-primary:hover { background: color-mix(in oklab, var(--color-accent) 85%, black); }
   .cta-secondary {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     background: transparent;
     color: var(--paper);
-    border: 3px solid rgba(239,231,214,.4);
-    font: 800 14px/1 'Archivo', sans-serif;
+    border: 3px solid color-mix(in oklab, var(--color-on-inverse) 40%, transparent);
+    font: 800 14px/1 var(--font-body);
     letter-spacing: .08em;
     text-transform: uppercase;
     padding: 12px 18px;
@@ -379,9 +376,9 @@ const structuredData = {
     gap: 8px;
   }
   .social-chip {
-    border: 2px solid rgba(239,231,214,.25);
-    color: rgba(239,231,214,.55);
-    font: 700 10px/1 'Archivo', sans-serif;
+    border: 2px solid color-mix(in oklab, var(--color-on-inverse) 25%, transparent);
+    color: color-mix(in oklab, var(--color-on-inverse) 55%, transparent);
+    font: 700 10px/1 var(--font-body);
     letter-spacing: .14em;
     text-transform: uppercase;
     padding: 7px 12px;
@@ -404,7 +401,7 @@ const structuredData = {
   /* ── Shared section ────────────────────── */
   .sec {
     background: var(--paper);
-    padding: 52px 90px 48px;
+    padding: 52px var(--page-gutter) 48px;
   }
   .sec-dark {
     background: var(--ink);
@@ -424,7 +421,7 @@ const structuredData = {
     gap: 12px;
   }
   .sec-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(32px, 4vw, 48px);
     line-height: .95;
     letter-spacing: .01em;
@@ -432,7 +429,7 @@ const structuredData = {
     margin: 0;
   }
   .see-all {
-    font: 800 12px/1 'Archivo', sans-serif;
+    font: 800 12px/1 var(--font-body);
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--acc);
@@ -452,23 +449,23 @@ const structuredData = {
     align-items: center;
     gap: 20px;
     padding: 16px 4px;
-    border-bottom: 2px solid rgba(18,18,18,.15);
+    border-bottom: 2px solid color-mix(in oklab, var(--color-ink) 15%, transparent);
     text-decoration: none;
     color: var(--ink);
     transition: background .1s;
   }
-  .gig-row:hover { background: rgba(18,18,18,.04); }
+  .gig-row:hover { background: color-mix(in oklab, var(--color-ink) 4%, transparent); }
   .gig-date { text-align: center; }
   .gig-day {
     display: block;
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 36px;
     line-height: .86;
     color: var(--acc);
   }
   .gig-mo {
     display: block;
-    font: 800 10px/1.4 'Archivo', sans-serif;
+    font: 800 10px/1.4 var(--font-body);
     letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--warm);
@@ -476,18 +473,18 @@ const structuredData = {
   }
   .gig-info { display: flex; flex-direction: column; gap: 3px; }
   .gig-city {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 24px;
     line-height: 1;
     letter-spacing: .01em;
     text-transform: uppercase;
   }
   .gig-venue {
-    font: 600 13px/1.2 'Archivo', sans-serif;
+    font: 600 13px/1.2 var(--font-body);
     color: var(--warm);
   }
   .gig-time {
-    font: 800 14px/1 'Archivo', sans-serif;
+    font: 800 14px/1 var(--font-body);
     color: var(--warm);
     letter-spacing: .04em;
     justify-self: end;
@@ -516,10 +513,10 @@ const structuredData = {
   .release-card:hover { transform: translateY(-3px); }
   .release-cover {
     aspect-ratio: 1;
-    border: 3px solid rgba(239,231,214,.15);
+    border: 3px solid color-mix(in oklab, var(--color-on-inverse) 15%, transparent);
     box-shadow: 8px 8px 0 var(--acc);
     overflow: hidden;
-    background: #222;
+    background: var(--color-body);
   }
   .release-cover img {
     width: 100%;
@@ -530,18 +527,18 @@ const structuredData = {
   .release-cover-placeholder {
     width: 100%;
     height: 100%;
-    background-image: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%);
+    background-image: repeating-conic-gradient(var(--color-ink) 0% 25%, var(--color-body) 0% 50%);
     background-size: 20px 20px;
   }
   .release-meta { display: flex; flex-direction: column; gap: 3px; }
   .release-type {
-    font: 800 10px/1 'Archivo', sans-serif;
+    font: 800 10px/1 var(--font-body);
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--acc);
   }
   .release-name {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 20px;
     line-height: .95;
     letter-spacing: .01em;
@@ -549,8 +546,8 @@ const structuredData = {
     color: var(--paper);
   }
   .release-year {
-    font: 600 12px/1 'Archivo', sans-serif;
-    color: rgba(239,231,214,.45);
+    font: 600 12px/1 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 45%, transparent);
   }
 
   /* ── Posts list ────────────────────────── */
@@ -563,23 +560,23 @@ const structuredData = {
     align-items: center;
     gap: 20px;
     padding: 18px 4px;
-    border-bottom: 2px solid rgba(18,18,18,.15);
+    border-bottom: 2px solid color-mix(in oklab, var(--color-ink) 15%, transparent);
     text-decoration: none;
     color: var(--ink);
     transition: background .1s;
   }
-  .post-row:hover { background: rgba(18,18,18,.04); }
+  .post-row:hover { background: color-mix(in oklab, var(--color-ink) 4%, transparent); }
   .post-date { text-align: center; }
   .post-day {
     display: block;
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 32px;
     line-height: .86;
     color: var(--ink);
   }
   .post-mo {
     display: block;
-    font: 800 10px/1.4 'Archivo', sans-serif;
+    font: 800 10px/1.4 var(--font-body);
     letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--warm);
@@ -587,7 +584,7 @@ const structuredData = {
   }
   .post-info { display: flex; flex-direction: column; gap: 4px; }
   .post-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 22px;
     line-height: 1;
     letter-spacing: .01em;
@@ -595,7 +592,7 @@ const structuredData = {
     color: var(--ink);
   }
   .post-excerpt {
-    font: 500 14px/1.4 'Archivo', sans-serif;
+    font: 500 14px/1.4 var(--font-body);
     color: var(--warm);
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -612,7 +609,7 @@ const structuredData = {
   /* ── Newsletter ────────────────────────── */
   .nl-section {
     background: var(--paper);
-    padding: 52px 90px 56px;
+    padding: 52px var(--page-gutter) 56px;
   }
   .nl-inner {
     max-width: 540px;
@@ -620,14 +617,14 @@ const structuredData = {
     text-align: center;
   }
   .nl-kicker {
-    font: 800 11px/1 'Archivo', sans-serif;
+    font: 800 11px/1 var(--font-body);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--acc);
     margin-bottom: 10px;
   }
   .nl-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(32px, 4vw, 52px);
     line-height: .9;
     letter-spacing: .01em;
@@ -636,7 +633,7 @@ const structuredData = {
     color: var(--ink);
   }
   .nl-sub {
-    font: 500 17px/1.6 'Archivo', sans-serif;
+    font: 500 17px/1.6 var(--font-body);
     color: var(--warm);
     margin-bottom: 28px;
   }
@@ -644,7 +641,7 @@ const structuredData = {
     border: 3px solid var(--ink);
     box-shadow: 6px 6px 0 var(--acc);
     padding: 20px;
-    background: #fff;
+    background: var(--color-surface);
   }
 
   /* ── Responsive ────────────────────────── */

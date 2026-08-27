@@ -1,0 +1,20 @@
+---
+import { slotsFor } from '@/themes/registry'
+import { getTheme } from '@/lib/theme'
+
+/**
+ * Renders whatever ornament the active theme has registered under `name`.
+ *
+ * The base theme registers nothing, so every slot collapses to nothing and the
+ * layout stands on its own. All other props are forwarded to the slot component.
+ */
+interface Props {
+  name: string
+  [key: string]: unknown
+}
+
+const { name, ...rest } = Astro.props
+const Ornament = slotsFor(await getTheme())[name] as never
+---
+
+{Ornament ? <Ornament {...rest} /> : null}

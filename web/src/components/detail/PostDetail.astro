@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile } from '@/lib/cms'
 import type { PostSummary } from '@/types/post'
 
-const ACCENT = '#1F8F7A'
+const ACCENT = 'var(--color-accent)'
 
 interface Props {
   lang: Locale
@@ -81,10 +81,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   alternateHref={alternateHref}
 >
   <Fragment slot="head">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  </Fragment>
+</Fragment>
 
   <div class="ss">
     <div class="grain" aria-hidden="true"></div>
@@ -292,14 +289,14 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
       document.body.removeChild(ta)
     }
     if (!btn || !label || !icon) return
-    btn.style.background = '#1F8F7A'
-    btn.style.borderColor = '#1F8F7A'
-    icon.setAttribute('stroke', '#fff')
+    btn.style.background = 'var(--color-accent)'
+    btn.style.borderColor = 'var(--color-accent)'
+    icon.setAttribute('stroke', 'var(--color-on-accent)')
     label.textContent = 'Copied'
     setTimeout(() => {
       btn.style.background = ''
       btn.style.borderColor = ''
-      icon.setAttribute('stroke', '#1F8F7A')
+      icon.setAttribute('stroke', 'var(--color-accent)')
       label.textContent = 'Share'
     }, 1800)
   })
@@ -308,12 +305,12 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 <style>
   /* ── Tokens ─────────────────────────── */
   .ss {
-    --paper: #EFE7D6;
-    --ink:   #121212;
-    --acc:   #1F8F7A;
+    --paper: var(--color-page);
+    --ink:   var(--color-ink);
+    --acc:   var(--color-accent);
     background: var(--paper);
     color: var(--ink);
-    font-family: 'Archivo', system-ui, sans-serif;
+    font-family: var(--font-body);
     position: relative;
   }
 
@@ -371,10 +368,10 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     inset: 0;
     background: repeating-linear-gradient(
       45deg,
-      #1b1b1b,
-      #1b1b1b 9px,
-      #222 9px,
-      #222 18px
+      var(--color-ink),
+      var(--color-ink) 9px,
+      var(--color-body) 9px,
+      var(--color-body) 18px
     );
   }
   .art-hero-checker {
@@ -388,9 +385,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     position: absolute;
     inset: 0;
     background: linear-gradient(180deg,
-      rgba(18,18,18,.62) 0%,
-      rgba(18,18,18,.74) 52%,
-      rgba(18,18,18,.93) 100%
+      color-mix(in oklab, var(--color-ink) 62%, transparent) 0%,
+      color-mix(in oklab, var(--color-ink) 74%, transparent) 52%,
+      color-mix(in oklab, var(--color-ink) 93%, transparent) 100%
     );
   }
   .art-hero-content {
@@ -404,15 +401,15 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     display: flex;
     align-items: center;
     gap: 9px;
-    font: 700 12px/1 'Archivo', sans-serif;
+    font: 700 12px/1 var(--font-body);
     letter-spacing: .06em;
     text-transform: uppercase;
-    color: rgba(239,231,214,.6);
+    color: color-mix(in oklab, var(--color-on-inverse) 60%, transparent);
     flex-wrap: wrap;
     margin-bottom: 26px;
   }
   .art-crumb-link {
-    color: rgba(239,231,214,.6);
+    color: color-mix(in oklab, var(--color-on-inverse) 60%, transparent);
     text-decoration: none;
     transition: color .12s;
   }
@@ -429,9 +426,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   }
   .art-stamp {
     background: var(--acc);
-    color: #fff;
+    color: var(--color-on-accent);
     border: 2px solid var(--acc);
-    font: 800 11px/1 'Archivo', sans-serif;
+    font: 800 11px/1 var(--font-body);
     letter-spacing: .12em;
     text-transform: uppercase;
     padding: 6px 10px;
@@ -440,7 +437,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 
   /* Title */
   .art-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(36px, 6vw, 64px);
     line-height: .96;
     letter-spacing: .01em;
@@ -452,8 +449,8 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 
   /* Standfirst / intro */
   .art-intro {
-    font: 600 22px/1.5 'Archivo', sans-serif;
-    color: rgba(239,231,214,.86);
+    font: 600 22px/1.5 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 86%, transparent);
     margin: 0;
     text-wrap: pretty;
   }
@@ -465,17 +462,17 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     gap: 16px;
     margin-top: 24px;
     padding-top: 18px;
-    border-top: 2px solid rgba(239,231,214,.22);
+    border-top: 2px solid color-mix(in oklab, var(--color-on-inverse) 22%, transparent);
     flex-wrap: wrap;
   }
   .art-meta-date {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font: 700 13px/1 'Archivo', sans-serif;
+    font: 700 13px/1 var(--font-body);
     letter-spacing: .06em;
     text-transform: uppercase;
-    color: rgba(239,231,214,.72);
+    color: color-mix(in oklab, var(--color-on-inverse) 72%, transparent);
   }
   .art-meta-diamond {
     width: 5px;
@@ -492,25 +489,25 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     background: transparent;
     color: var(--paper);
     border: 2px solid var(--paper);
-    font: 800 12px/1 'Archivo', sans-serif;
+    font: 800 12px/1 var(--font-body);
     letter-spacing: .08em;
     text-transform: uppercase;
     padding: 8px 13px;
     cursor: pointer;
     transition: background .15s, border-color .15s;
   }
-  .art-share-btn:hover { background: rgba(239,231,214,.12); }
+  .art-share-btn:hover { background: color-mix(in oklab, var(--color-on-inverse) 12%, transparent); }
 
   /* ── ARTICLE BODY ────────────────────── */
   .art-body { padding-top: 44px; padding-bottom: 8px; }
   .art-prose {
-    font: 500 18.5px/1.72 'Archivo', sans-serif;
-    color: #222;
+    font: 500 18.5px/1.72 var(--font-body);
+    color: var(--color-body);
   }
   /* Drop cap on first paragraph's first letter */
   .art-prose > p:first-of-type::first-letter {
     float: left;
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 96px;
     line-height: .74;
     color: var(--acc);
@@ -521,7 +518,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   .art-prose > p:last-child { margin-bottom: 0; }
   .art-prose > h2,
   .art-prose > h3 {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     text-transform: uppercase;
     margin: 32px 0 12px;
     color: var(--ink);
@@ -536,7 +533,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   /* ── RELATED ─────────────────────────── */
   .art-related { padding-top: 14px; padding-bottom: 8px; }
   .art-related-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 22px;
     line-height: 1.05;
     letter-spacing: .01em;
@@ -555,12 +552,12 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     gap: 8px;
     border: 3px solid var(--ink);
     padding: 11px 15px;
-    font: 700 14px/1 'Archivo', sans-serif;
+    font: 700 14px/1 var(--font-body);
     text-transform: uppercase;
     letter-spacing: .04em;
     color: var(--ink);
     text-decoration: none;
-    background: #fff;
+    background: var(--color-surface);
     transition: background .12s, color .12s;
   }
   .art-rel-link:hover { background: var(--ink); color: var(--paper); }
@@ -576,11 +573,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     color: var(--paper);
     padding: 16px 20px;
     text-decoration: none;
-    font: 600 15px/1.4 'Archivo', sans-serif;
+    font: 600 15px/1.4 var(--font-body);
     margin-bottom: 10px;
   }
   .art-ext-link:last-child { margin-bottom: 0; }
-  .art-ext-link:hover { background: #333; }
+  .art-ext-link:hover { background: var(--color-body); }
 
   /* ── BACK ────────────────────────────── */
   .art-back { padding-top: 30px; padding-bottom: 8px; }
@@ -591,7 +588,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     background: transparent;
     border: 3px solid var(--ink);
     color: var(--ink);
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 15px;
     letter-spacing: .01em;
     text-transform: uppercase;
@@ -613,7 +610,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     flex-direction: column;
     gap: 8px;
     border: 3px solid var(--ink);
-    background: #fff;
+    background: var(--color-surface);
     padding: 18px 20px;
     box-sizing: border-box;
     flex: 1;
@@ -628,13 +625,13 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font: 800 11px/1 'Archivo', sans-serif;
+    font: 800 11px/1 var(--font-body);
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--acc);
   }
   .art-pn-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 22px;
     line-height: 1.02;
     letter-spacing: .01em;
@@ -652,7 +649,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     padding-bottom: 60px;
   }
   .art-more-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(26px, 3vw, 34px);
     line-height: 1;
     letter-spacing: .01em;
@@ -666,8 +663,8 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     gap: 20px;
   }
   .art-more-card {
-    border: 3px solid rgba(239,231,214,.25);
-    background: rgba(239,231,214,.06);
+    border: 3px solid color-mix(in oklab, var(--color-on-inverse) 25%, transparent);
+    background: color-mix(in oklab, var(--color-on-inverse) 6%, transparent);
     display: flex;
     flex-direction: column;
     text-decoration: none;
@@ -677,13 +674,13 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   .art-more-card:hover { border-color: var(--acc); }
   .art-more-img {
     height: 132px;
-    border-bottom: 3px solid rgba(239,231,214,.25);
+    border-bottom: 3px solid color-mix(in oklab, var(--color-on-inverse) 25%, transparent);
     background: repeating-linear-gradient(
       45deg,
-      #1b1b1b,
-      #1b1b1b 9px,
-      #222 9px,
-      #222 18px
+      var(--color-ink),
+      var(--color-ink) 9px,
+      var(--color-body) 9px,
+      var(--color-body) 18px
     );
     flex-shrink: 0;
   }
@@ -694,14 +691,14 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     flex: 1;
   }
   .art-more-tag {
-    font: 800 10px/1 'Archivo', sans-serif;
+    font: 800 10px/1 var(--font-body);
     letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--acc);
     margin-bottom: 9px;
   }
   .art-more-card-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: 20px;
     line-height: 1.04;
     letter-spacing: .01em;
@@ -711,10 +708,10 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   }
   .art-more-date {
     margin-top: auto;
-    font: 700 11px/1 'Archivo', sans-serif;
+    font: 700 11px/1 var(--font-body);
     letter-spacing: .06em;
     text-transform: uppercase;
-    color: rgba(239,231,214,.5);
+    color: color-mix(in oklab, var(--color-on-inverse) 50%, transparent);
   }
 
   /* ── Responsive ─────────────────────── */

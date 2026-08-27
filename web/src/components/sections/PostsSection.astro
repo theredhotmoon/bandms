@@ -12,8 +12,9 @@ const slugMap = await getSlugMap()
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsFilter from '@/components/NewsFilter.vue'
 import { getPosts, getBandProfile } from '@/lib/cms'
+import FaqSection from '@/components/sections/FaqSection.astro'
 
-const ACCENT = '#1F8F7A'
+const ACCENT = 'var(--color-accent)'
 
 const [firstPage, profile] = await Promise.all([
   getPosts(lang, 1),
@@ -59,16 +60,17 @@ if (firstPage.meta.last_page > 1) {
       client:idle
     />
   </div>
+  <FaqSection module="posts" lang={lang} />
 </BaseLayout>
 
 <style>
   .ss {
-    --paper: #EFE7D6;
-    --ink:   #121212;
-    --acc:   #1F8F7A;
+    --paper: var(--color-page);
+    --ink:   var(--color-ink);
+    --acc:   var(--color-accent);
     background: var(--paper);
     color: var(--ink);
-    font-family: 'Archivo', system-ui, sans-serif;
+    font-family: var(--font-body);
     position: relative;
   }
 
@@ -87,7 +89,7 @@ if (firstPage.meta.last_page > 1) {
     position: relative;
     background: var(--ink);
     color: var(--paper);
-    padding: 54px 90px 58px;
+    padding: 54px var(--page-gutter) 58px;
     overflow: hidden;
   }
   .hero-checker {
@@ -99,14 +101,14 @@ if (firstPage.meta.last_page > 1) {
   .hero-content { position: relative; }
   .hero-kicker {
     display: block;
-    font: 800 14px/1 'Archivo', sans-serif;
+    font: 800 14px/1 var(--font-body);
     letter-spacing: .34em;
     text-transform: uppercase;
     color: var(--acc);
     margin-bottom: 16px;
   }
   .hero-title {
-    font-family: 'Anton', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(64px, 12vw, 140px);
     line-height: .82;
     text-transform: uppercase;
@@ -114,8 +116,8 @@ if (firstPage.meta.last_page > 1) {
     color: var(--paper);
   }
   .hero-lead {
-    font: 500 20px/1.55 'Archivo', sans-serif;
-    color: rgba(239,231,214,.82);
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
     max-width: 640px;
     margin: 22px 0 0;
   }

@@ -98,7 +98,7 @@ function showOnMap(id: number) {
 
 <style scoped>
 .archive-wrap {
-  padding: 56px 90px 52px;
+  padding: 56px var(--page-gutter) 52px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -118,13 +118,13 @@ function showOnMap(id: number) {
   gap: 12px;
 }
 .archive-title {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(36px, 5vw, 56px);
   line-height: .96;
   letter-spacing: .01em;
   text-transform: uppercase;
   margin: 0;
-  color: #121212;
+  color: var(--color-ink);
 }
 .year-filters {
   display: flex;
@@ -133,9 +133,9 @@ function showOnMap(id: number) {
 }
 .year-btn {
   background: transparent;
-  color: #121212;
-  border: 3px solid #121212;
-  font-family: 'Anton', sans-serif;
+  color: var(--color-ink);
+  border: 3px solid var(--color-ink);
+  font-family: var(--font-display);
   font-size: 16px;
   letter-spacing: .01em;
   text-transform: uppercase;
@@ -145,16 +145,16 @@ function showOnMap(id: number) {
 }
 .year-btn.active,
 .year-btn:hover {
-  background: #121212;
-  color: #EFE7D6;
+  background: var(--color-ink);
+  color: var(--color-page);
 }
 .archive-sub {
-  font: 500 17px/1.5 'Archivo', sans-serif;
-  color: #444;
+  font: 500 17px/1.5 var(--font-body);
+  color: var(--color-muted);
   margin: 14px 0 26px;
 }
 .archive-list {
-  border-top: 3px solid rgba(18,18,18,.2);
+  border-top: 3px solid color-mix(in oklab, var(--color-ink) 20%, transparent);
 }
 .archive-row {
   display: grid;
@@ -162,7 +162,7 @@ function showOnMap(id: number) {
   align-items: center;
   gap: 22px;
   padding: 15px 4px;
-  border-bottom: 2px solid rgba(18,18,18,.14);
+  border-bottom: 2px solid color-mix(in oklab, var(--color-ink) 14%, transparent);
 }
 .arc-date-block {
   text-align: center;
@@ -173,18 +173,18 @@ function showOnMap(id: number) {
 }
 .arc-day {
   display: block;
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: 36px;
   line-height: .86;
   letter-spacing: .01em;
-  color: #121212;
+  color: var(--color-ink);
 }
 .arc-mo {
   display: block;
-  font: 800 11px/1.2 'Archivo', sans-serif;
+  font: 800 11px/1.2 var(--font-body);
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: #777;
+  color: var(--color-subtle);
   margin-top: 4px;
 }
 .arc-main {
@@ -195,23 +195,23 @@ function showOnMap(id: number) {
   color: inherit;
 }
 .arc-city {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: 26px;
   line-height: .95;
   letter-spacing: .01em;
   text-transform: uppercase;
-  color: #2a2a2a;
+  color: var(--color-body);
 }
 .arc-venue {
-  font: 600 14px/1 'Archivo', sans-serif;
-  color: #777;
+  font: 600 14px/1 var(--font-body);
+  color: var(--color-subtle);
 }
 .arc-type {
-  font: 800 10px/1 'Archivo', sans-serif;
+  font: 800 10px/1 var(--font-body);
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #888;
-  border: 2px solid #bbb;
+  color: var(--color-subtle);
+  border: 2px solid var(--color-subtle);
   padding: 4px 7px;
   white-space: nowrap;
 }
@@ -222,7 +222,7 @@ function showOnMap(id: number) {
   background: transparent;
   border: none;
   cursor: pointer;
-  font: 700 12px/1 'Archivo', sans-serif;
+  font: 700 12px/1 var(--font-body);
   letter-spacing: .04em;
   text-transform: uppercase;
   color: v-bind(accent);
@@ -233,8 +233,8 @@ function showOnMap(id: number) {
 .archive-empty {
   padding: 32px;
   text-align: center;
-  font: 500 16px/1.5 'Archivo', sans-serif;
-  color: #777;
+  font: 500 16px/1.5 var(--font-body);
+  color: var(--color-subtle);
 }
 
 @media (max-width: 768px) {
