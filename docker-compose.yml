@@ -86,6 +86,9 @@ services:
     restart: unless-stopped
     environment:
       API_BASE:  "http://backend"
+      # Which theme the public site renders under. Empty falls back to the
+      # plain black-and-white base — see web/src/styles/themes/.
+      PUBLIC_THEME: "${PUBLIC_THEME:-skanking-storks}"
       SITE_URL:  "${SITE_URL:-https://skanking-storks.com}"
     ports:
       - "${WEB_PORT:-4322}:80"

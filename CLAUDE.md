@@ -489,6 +489,239 @@ takes effect immediately. Land the same edit in the repo.
 
 ---
 
+## The public site is themeable — never hardcode a colour, font or radius
+
+`web/src/` is split into a **base** (structure + a plain black-and-white look)
+and **themes** that override it. Skanking Storks' 2-Tone design is one theme;
+the base is what a new band gets before theming.
+
+**The contract:** components may reference only the semantic tokens in
+`web/src/styles/tokens.css` — `text-muted`, `bg-surface`, `border-border`,
+`rounded-card`, `shadow-card`, `var(--font-display)`, `var(--page-gutter)`.
+A raw value (`text-zinc-400`, `#121212`, `rounded-xl`, `'Anton'`,
+`rgba(239,231,214,.7)`) is invisible in review, passes `astro build`, and
+silently makes that element untheme-able.
+
+`pnpm build` runs `scripts/check-tokens.mjs`, which fails on all of the above.
+For a genuinely fixed value, append `token-lint-ignore` on that line.
+
+Primitives (`--ss-ink`, `--ss-teal`) belong **only** in
+`web/src/styles/themes/*.css`. Nothing else may reference them.
+
+**Which theme renders** is `PUBLIC_THEME`, set in the `web` service of both
+compose files and threaded through `web/docker/start.sh`. It becomes
+`<html data-theme="…">`. Unset means the base theme — that is why a build with
+no env shows a plain black-and-white site rather than a broken one.
+
+**Ornament that tokens cannot express** (checker strips, grain, the hero
+backdrop) goes through `<ThemeSlot name="…" />`. The base renders nothing; a
+theme registers a component in `web/src/themes/<name>/slots.ts`.
+
+**Slots take props, never children.** A slot accepting children is a component
+override in disguise, and overrides are deliberately not supported: each one is
+a fork that stops receiving base improvements. If a design needs something no
+slot can express, add the element to the *base layout* — unstyled, where every
+band gets it — rather than widening the slot contract.
+
+### An *undefined* token is worse than a raw one
+
+A raw value is loud: `text-zinc-400` is obviously wrong. An undefined token is
+silent — `hover:bg-accent-dark` when no such token exists reads as correct,
+Tailwind emits nothing for it, and the style simply never applies. Seven dead
+hover states and one dead background (`bg-surface-3`) shipped that way, both
+introduced by the token migration dropping `--color-accent-dark` and
+`--color-surface-3` without converting the call sites.
+
+`scripts/check-tokens.mjs` now fails on any utility whose suffix begins with one
+of *our* namespaces but is not declared in `tokens.css`. Tailwind's own keywords
+(`bg-transparent`, `text-sm`, `border-none`) are never judged, because only our
+namespaces are checked.
+
+**So: removing a token is a breaking change.** Grep for its utility before
+deleting it from the contract.
+
+### `text-white` cannot be find-and-replaced
+
+There were 93 of them and they all sat on dark ground, because the site used to
+be dark. Under a cream theme most sit on light. The blanket conversion made them
+`text-body`; genuinely inverse surfaces (lightboxes, media scrims, the ink nav,
+ink contact cards) were given `text-on-inverse` by hand. When adding markup, ask
+which ground the element sits on — the answer is no longer "always dark".
+
+---
+
+## FAQ entries are per subpage
+
+`faqs.module_slug` mirrors `website_modules.slug`, so FAQ categories track the
+site's sections instead of being a second taxonomy. `<FaqSection module="…" />`
+is already in all nine section components and renders nothing when that page has
+no published questions.
+
+That is a *content* check, and deliberately so: the "gate on the module map, not
+on the data" rule above is about links that can 404, and this section links
+nowhere. An empty accordion is worse than an absent one.
+
+`module_slug` is validated against live `website_modules` rows, so adding a
+module makes it an FAQ category with no code change. Disabled modules are still
+valid targets — switching a section off must not make its questions unsavable.
+
+---
+
+## Editable page copy lives in `website_modules.settings`
+
+A generic bag shaped `{"field": {"en": "...", "pl": "..."}}`, not named columns —
+six Contact fields as columns would put one module's fields on every module's
+row. `GET /api/site-config?lang=xx` serves it as `module_config.<key>.settings`
+with the locale already resolved, falling back to the other locale rather than
+emitting null.
+
+Read it as `siteConfig.module_config?.<key>?.settings ?? {}` and then
+`settings.field ?? ''`. An API predating the migration omits the bag entirely,
+and a bare access throws at build time — which kills all 35 pages, not one.
+
+**Which fields a module has is a client-side decision.** The server validates
+the shape (`{field: {en, pl}}`) and the 2000-char limit, nothing more. The admin
+form is generated from `app/src/config/moduleSettings.ts`, so adding a field is:
+add it there, then read it in the Astro section. No migration.
+
+A module absent from that map simply shows no copy fields, which is why adding
+one is additive and safe.
+
+**A module need not be a page.** `footer` is a `website_modules` row with no
+route and no meaningful slug — it exists so its copy is editable and so it can be
+switched off. `app/src/config/moduleSettings.ts` lists such modules in
+`NON_PAGE_MODULES`, and the admin hides the URL-slug and per-page inputs for
+them rather than offering controls that change nothing. Neither `Header.astro`'s
+`MODULE_SLUGS` nor `[lang]/[section].astro`'s section lists include it, so no nav
+entry or route can appear by accident.
+
+Editors live at **`/admin/website-modules`** (page copy, per module) and
+**`/admin/faqs`** (questions, grouped by subpage).
+
+---
+
+## Astro islands cannot share props — use a nanostore
+
+Two islands on the same page are two separate Vue apps. The availability
+calendar and the contact form talk through `web/src/stores/booking.ts`, the same
+way the cart icon and drawer share `cartItems`. That pattern is proven in this
+build; do not assume an Astro `<script>` tag can import the same store instance.
+
+**Island props are serialised to JSON**, so a function prop throws at build time.
+`ContactForm` takes `bookingSubject` as a `'… {date}'` template string and does
+the interpolation itself for exactly this reason.
+
+**A modal island needs `client:idle`, not `client:visible`.** It renders nothing
+until opened, so a visibility trigger never fires and its document-level click
+listener never attaches. Triggers elsewhere on the page carry
+`data-open-availability` and are picked up by delegation from `document`, which
+avoids passing a handler across the island boundary.
+
+---
+
+## Disabling a module used to leave its page served
+
+**Symptom:** switch a module off in `/admin/website-modules`, restart `web`, and
+its page still loads — with stale content. `astro build` correctly omits the
+route (`[lang]/[section].astro` filters on `cfg.modules[section] !== false`), and
+the API correctly reports the module as disabled.
+
+**Root cause:** `web/docker/start.sh` published the build with
+`cp -r /app/dist/* /usr/share/nginx/html/`, which **merges**. A page absent from
+the new build kept the copy from the previous one. `docker compose restart`
+reuses the container filesystem, so the directory accumulated across every run;
+only `up -d --force-recreate` ever started clean. That silently inverted the
+guarantee the module system rests on.
+
+**Fix (applied):** `rm -rf /usr/share/nginx/html/*` before the copy.
+
+**Why it hid for so long:** the two commands disagreed. Anyone who happened to
+force-recreate saw correct behaviour, and anyone who restarted saw a page that
+"should not exist" and assumed a caching quirk. If you are ever unsure whether
+you are looking at a fresh build, compare a page against the database rather
+than against the build log — a card for a record you just deleted is the tell.
+
+---
+
+## `Teleport` in an Astro island must be gated on mount
+
+**Symptom:** two modals on one page, and the second one never opens. Its trigger
+is in the DOM, its click handler is written correctly, and nothing looks wrong.
+The console holds the answer:
+
+```
+Hydration completed but contains mismatches.
+TypeError: Cannot read properties of null (reading 'insertBefore')
+```
+
+**Root cause:** Astro server-renders Vue islands. A `<Teleport>` rendered on the
+server leaves behind a hydration anchor that is not in the emitted HTML, so Vue
+throws while patching it. With a single modal the failure is survivable — the
+dialog still works. With two, the second teleport's anchor resolves to `null`,
+that component never finishes mounting, and the `document` click listener it
+attaches in `onMounted` is never registered. The dialog is simply inert.
+
+**Fix (in `web/src/components/ModalShell.vue`):** render nothing until mounted,
+so the teleport is client-only.
+
+```vue
+const mounted = ref(false)
+onMounted(() => { mounted.value = true })
+
+<Teleport v-if="mounted" to="body">
+```
+
+**Why it is worth knowing:** the first symptom is a *silent* failure in an
+unrelated component, and neither `astro build` nor the token lint nor `vue-tsc`
+says a word. Only a browser console does — which is why the public-site specs
+capture `pageerror`.
+
+---
+
+## E2E specs that write to the dev database must restore it
+
+`website-modules.spec.ts` edits real page copy, and the public site bakes
+whatever is in the database when its container starts — so a run that does not
+clean up leaves `E2E KICKER 17878…` on the live contact page until someone
+notices. That spec now captures the original value in `beforeAll` and writes it
+back in `afterAll`.
+
+Anything else that mutates shared dev content needs the same treatment. Note
+that restoring the row is not enough on its own: the public container still
+holds the stale build, and a **`docker compose restart web`** is what re-fetches
+and rebuilds. `docker compose up -d web` will report "Running" and change
+nothing.
+
+---
+
+## Availability is cached for 5 minutes
+
+`GET /api/band-profile/calendar/availability-range` caches per month-range, so a
+concert added in the admin can take up to five minutes to show as `booked` on
+the public calendar. That is deliberate — every uncached day means re-parsing
+each member's remote iCal feed — but it makes "I added a gig and the calendar
+still says open" a non-bug. `php artisan cache:clear` forces it.
+
+It also makes the endpoint look broken when testing: querying a range, changing
+data, then querying the same range returns the first answer.
+
+---
+
+## E2E fixture names need more than a timestamp
+
+`SeedE2eTicket` built its fixture names from `now()->format('YmdHis')` against
+`venues.name_unique`. Playwright runs specs in parallel, so two seeds in the same
+second collided — and it surfaced as `fan-accounts.spec.ts` failing with a
+duplicate-key stack, which reproduces in the full suite but passes in isolation.
+That combination looks exactly like the machine-flake pattern below and is not.
+The stamp now carries a random suffix.
+
+**Triage note:** "passes in isolation, fails in the suite, *same spec every
+time*" is a real ordering or contention bug. The machine-flake signature is a
+*different* set of specs each run.
+
+---
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**

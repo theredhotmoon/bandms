@@ -168,7 +168,7 @@ function postDate(p: PostSummary): string {
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  padding: 40px 90px 8px;
+  padding: 40px var(--page-gutter) 8px;
 }
 .nf-tags {
   display: flex;
@@ -178,9 +178,9 @@ function postDate(p: PostSummary): string {
 }
 .nf-tag-btn {
   background: transparent;
-  color: #121212;
-  border: 3px solid #121212;
-  font-family: 'Anton', sans-serif;
+  color: var(--color-ink);
+  border: 3px solid var(--color-ink);
+  font-family: var(--font-display);
   font-size: 16px;
   line-height: 1;
   text-transform: uppercase;
@@ -190,8 +190,8 @@ function postDate(p: PostSummary): string {
 }
 .nf-tag-btn.active,
 .nf-tag-btn:hover {
-  background: #121212;
-  color: #EFE7D6;
+  background: var(--color-ink);
+  color: var(--color-page);
 }
 .nf-search-wrap {
   position: relative;
@@ -207,38 +207,38 @@ function postDate(p: PostSummary): string {
 .nf-search {
   width: 100%;
   box-sizing: border-box;
-  border: 3px solid #121212;
+  border: 3px solid var(--color-ink);
   padding: 13px 16px 13px 44px;
-  font: 600 15px/1 'Archivo', sans-serif;
+  font: 600 15px/1 var(--font-body);
   outline: none;
-  background: #fff;
-  color: #121212;
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 .nf-search::-webkit-search-cancel-button { cursor: pointer; }
 
 /* EMPTY */
 .nf-empty {
   margin: 28px 90px 56px;
-  border: 3px dashed #121212;
+  border: 3px dashed var(--color-ink);
   padding: 60px 30px;
   text-align: center;
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(20px, 3vw, 28px);
   text-transform: uppercase;
-  color: #888;
+  color: var(--color-subtle);
 }
 
 /* FEATURED */
 .nf-featured-wrap {
-  padding: 28px 90px 16px;
+  padding: 28px var(--page-gutter) 16px;
 }
 .nf-featured {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  border: 3px solid #121212;
-  background: #fff;
+  border: 3px solid var(--color-ink);
+  background: var(--color-surface);
   text-decoration: none;
-  color: #121212;
+  color: var(--color-ink);
   box-shadow: v-bind("'10px 10px 0 ' + accent");
   transition: box-shadow .15s;
 }
@@ -247,7 +247,7 @@ function postDate(p: PostSummary): string {
 }
 .nf-feat-img {
   position: relative;
-  border-right: 3px solid #121212;
+  border-right: 3px solid var(--color-ink);
   min-height: 320px;
   overflow: hidden;
 }
@@ -258,27 +258,27 @@ function postDate(p: PostSummary): string {
 .nf-placeholder--dark {
   background: repeating-linear-gradient(
     45deg,
-    #1b1b1b,
-    #1b1b1b 9px,
-    #222 9px,
-    #222 18px
+    var(--color-ink),
+    var(--color-ink) 9px,
+    var(--color-body) 9px,
+    var(--color-body) 18px
   );
 }
 .nf-placeholder--light {
   background: repeating-linear-gradient(
     45deg,
-    #dcd3c0,
-    #dcd3c0 9px,
-    #e6ddca 9px,
-    #e6ddca 18px
+    color-mix(in oklab, var(--color-page) 92%, black),
+    color-mix(in oklab, var(--color-page) 92%, black) 9px,
+    color-mix(in oklab, var(--color-page) 97%, black) 9px,
+    color-mix(in oklab, var(--color-page) 97%, black) 18px
   );
 }
 .nf-feat-badge {
   position: absolute;
   top: 16px;
   left: 16px;
-  color: #fff;
-  font: 800 11px/1 'Archivo', sans-serif;
+  color: var(--color-on-accent);
+  font: 800 11px/1 var(--font-body);
   letter-spacing: .12em;
   text-transform: uppercase;
   padding: 7px 11px;
@@ -296,7 +296,7 @@ function postDate(p: PostSummary): string {
   margin-bottom: 16px;
 }
 .nf-chip {
-  font: 800 10px/1 'Archivo', sans-serif;
+  font: 800 10px/1 var(--font-body);
   letter-spacing: .1em;
   text-transform: uppercase;
   border: 2px solid;
@@ -304,18 +304,18 @@ function postDate(p: PostSummary): string {
   white-space: nowrap;
 }
 .nf-feat-title {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(32px, 4vw, 46px);
   line-height: .95;
   letter-spacing: .01em;
   text-transform: uppercase;
   margin: 0 0 16px;
-  color: #121212;
+  color: var(--color-ink);
   text-wrap: balance;
 }
 .nf-feat-intro {
-  font: 500 18px/1.55 'Archivo', sans-serif;
-  color: #333;
+  font: 500 18px/1.55 var(--font-body);
+  color: var(--color-body);
   margin: 0 0 20px;
   flex: 1;
 }
@@ -326,23 +326,23 @@ function postDate(p: PostSummary): string {
   flex-wrap: wrap;
 }
 .nf-meta-date {
-  font: 700 13px/1 'Archivo', sans-serif;
+  font: 700 13px/1 var(--font-body);
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: #888;
+  color: var(--color-subtle);
 }
 .nf-read-full {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: 16px;
   text-transform: uppercase;
 }
 
 /* GRID */
 .nf-grid-wrap {
-  padding: 20px 90px 56px;
+  padding: 20px var(--page-gutter) 56px;
 }
 .nf-grid {
   display: grid;
@@ -350,13 +350,13 @@ function postDate(p: PostSummary): string {
   gap: 24px;
 }
 .nf-card {
-  border: 3px solid #121212;
-  background: #fff;
+  border: 3px solid var(--color-ink);
+  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   text-decoration: none;
-  color: #121212;
+  color: var(--color-ink);
   transition: box-shadow .14s;
 }
 .nf-card:hover {
@@ -364,7 +364,7 @@ function postDate(p: PostSummary): string {
 }
 .nf-card-img {
   position: relative;
-  border-bottom: 3px solid #121212;
+  border-bottom: 3px solid var(--color-ink);
   height: 180px;
   overflow: hidden;
   flex-shrink: 0;
@@ -376,17 +376,17 @@ function postDate(p: PostSummary): string {
   flex: 1;
 }
 .nf-card-title {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(20px, 2.5vw, 25px);
   line-height: 1.02;
   letter-spacing: .01em;
   text-transform: uppercase;
   margin: 0 0 10px;
-  color: #121212;
+  color: var(--color-ink);
 }
 .nf-card-intro {
-  font: 500 14px/1.5 'Archivo', sans-serif;
-  color: #555;
+  font: 500 14px/1.5 var(--font-body);
+  color: var(--color-muted);
   margin: 0 0 16px;
   flex: 1;
   display: -webkit-box;
@@ -395,10 +395,10 @@ function postDate(p: PostSummary): string {
   overflow: hidden;
 }
 .nf-card-date {
-  font: 700 12px/1 'Archivo', sans-serif;
+  font: 700 12px/1 var(--font-body);
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: #999;
+  color: var(--color-subtle);
   margin-top: auto;
 }
 
@@ -415,7 +415,7 @@ function postDate(p: PostSummary): string {
   .nf-empty { margin: 24px 24px 40px; }
   .nf-featured-wrap { padding: 24px 24px 16px; }
   .nf-featured { grid-template-columns: 1fr; }
-  .nf-feat-img { min-height: 220px; border-right: none; border-bottom: 3px solid #121212; }
+  .nf-feat-img { min-height: 220px; border-right: none; border-bottom: 3px solid var(--color-ink); }
   .nf-feat-body { padding: 22px 22px; }
   .nf-grid-wrap { padding: 16px 24px 40px; }
   .nf-grid { grid-template-columns: 1fr 1fr; }

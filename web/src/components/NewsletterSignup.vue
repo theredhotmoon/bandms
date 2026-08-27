@@ -1,6 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+/**
+ * Copy comes from the caller, as it does for ContactForm, so the island ships one
+ * language rather than both. Defaults keep the four existing call sites working
+ * without each having to pass every string.
+ */
+withDefaults(
+  defineProps<{
+    placeholder?: string
+    submitLabel?: string
+    sendingLabel?: string
+    doneLabel?: string
+    errorLabel?: string
+  }>(),
+  {
+    placeholder: 'your@email.com',
+    submitLabel: 'Join the list',
+    sendingLabel: 'Subscribing…',
+    doneLabel: "You're on the list!",
+    errorLabel: 'Something went wrong. Please try again.',
+  },
+)
+
 const email  = ref('')
 const status = ref<'idle' | 'sending' | 'sent' | 'error'>('idle')
 const errorMsg = ref('')
@@ -29,31 +51,90 @@ async function submit() {
 
 <template>
   <div>
-    <div v-if="status === 'sent'" class="rounded-xl border border-green-800 bg-green-900/20 p-4 text-center">
-      <p class="font-semibold text-green-400">You're in! 🎉</p>
-      <p class="mt-1 text-sm text-zinc-400">Check your inbox to confirm your subscription.</p>
-    </div>
+    <p v-if="status === 'sent'" class="ns-done" role="status">
+      <span class="ns-done-mark" aria-hidden="true">✦</span>{{ doneLabel }}
+    </p>
 
-    <form v-else @submit.prevent="submit" class="flex gap-2 flex-col sm:flex-row">
+    <form v-else class="ns-form" @submit.prevent="submit">
       <input
         v-model="email"
         type="email"
         required
         autocomplete="email"
-        placeholder="your@email.com"
-        class="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:border-accent focus:outline-none transition-colors"
+        :placeholder="placeholder"
+        class="ns-input"
       />
-      <button
-        type="submit"
-        :disabled="status === 'sending'"
-        class="rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-black hover:bg-accent-dark disabled:opacity-60 transition-colors whitespace-nowrap"
-      >
-        {{ status === 'sending' ? 'Subscribing…' : 'Subscribe' }}
+      <button type="submit" class="ns-btn" :disabled="status === 'sending'">
+        {{ status === 'sending' ? sendingLabel : submitLabel }} →
       </button>
     </form>
 
-    <p v-if="status === 'error'" class="mt-2 text-sm text-red-400">
-      {{ errorMsg || 'Something went wrong. Please try again.' }}
+    <p v-if="status === 'error'" class="ns-error" role="alert">
+      {{ errorMsg || errorLabel }}
     </p>
   </div>
 </template>
+
+<style scoped>
+/* The design's newsletter form: a heavy bordered field with an ink button that
+   carries the accent as a hard offset shadow. */
+.ns-form { display: flex; flex-direction: column; gap: 12px; }
+
+.ns-input {
+  border: var(--border-width-card) solid var(--color-border);
+  background: var(--color-surface-2);
+  padding: 16px 18px;
+  font: 600 17px/1 var(--font-body);
+  color: var(--color-body);
+  outline: none;
+  border-radius: var(--radius-card);
+}
+.ns-input::placeholder { color: var(--color-subtle); }
+.ns-input:focus-visible { box-shadow: 0 0 0 3px var(--color-accent); }
+
+.ns-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--color-inverse);
+  color: var(--color-on-inverse);
+  border: none;
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-transform);
+  padding: 16px 26px;
+  cursor: pointer;
+  box-shadow: 6px 6px 0 var(--color-accent);
+}
+.ns-btn:disabled { opacity: .6; cursor: default; }
+
+.ns-done {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-transform);
+  color: var(--color-accent);
+}
+.ns-done-mark { font-size: 22px; }
+
+.ns-error {
+  margin: 10px 0 0;
+  font: 600 14px/1.4 var(--font-body);
+  color: var(--color-danger);
+}
+
+@media (max-width: 700px) {
+  .ns-done { font-size: 20px; }
+  .ns-btn { font-size: 16px; padding: 14px 20px; }
+}
+</style>

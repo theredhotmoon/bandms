@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\PresaleCodeController;
 use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
@@ -79,6 +80,7 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 
 Route::get('/band-profile', [BandProfileController::class, 'show'])->name('api.band-profile.show');
 Route::get('/band-profile/calendar/availability', [BandCalendarController::class, 'availability'])->name('api.calendar.availability');
+Route::get('/band-profile/calendar/availability-range', [BandCalendarController::class, 'availabilityRange'])->name('api.calendar.availability-range');
 Route::get('/band-profile/epk', [BandProfileController::class, 'showEpk'])->name('api.band-profile.epk');
 Route::get('/band-profile/members', [BandMemberController::class, 'index'])->name('api.band-profile.members.index');
 Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])->name('api.band-profile.social-links.index');
@@ -130,6 +132,8 @@ Route::get('/tickets/{uuid}/qr', [ConcertTicketController::class, 'qrCode'])->mi
 Route::get('/tickets/{uuid}/pdf', [ConcertTicketController::class, 'pdf'])->middleware('throttle:30,1')->name('api.tickets.pdf');
 Route::get('/tickets/{uuid}/wallet/apple', [ConcertTicketController::class, 'walletApple'])->middleware('throttle:30,1')->name('api.tickets.wallet.apple');
 Route::get('/tickets/{uuid}/wallet/google', [ConcertTicketController::class, 'walletGoogle'])->middleware('throttle:30,1')->name('api.tickets.wallet.google');
+
+Route::get('/faqs', [FaqController::class, 'index'])->name('api.faqs.index');
 
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:5,1')
@@ -443,6 +447,12 @@ Route::middleware('auth:api')->group(function () {
             ]);
         })->name('api.admin.ticket-stats');
         // Website modules
+        Route::get('/admin/faqs', [FaqController::class, 'adminIndex'])->name('api.admin.faqs.index');
+        Route::post('/admin/faqs', [FaqController::class, 'store'])->name('api.admin.faqs.store');
+        Route::put('/admin/faqs/reorder', [FaqController::class, 'reorder'])->name('api.admin.faqs.reorder');
+        Route::put('/admin/faqs/{faq}', [FaqController::class, 'update'])->name('api.admin.faqs.update');
+        Route::delete('/admin/faqs/{faq}', [FaqController::class, 'destroy'])->name('api.admin.faqs.destroy');
+
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
         Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');

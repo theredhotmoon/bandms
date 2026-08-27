@@ -4,7 +4,8 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
-import type { WebsiteModule } from '@/types/website-module'
+import type { WebsiteModule, ModuleSettings } from '@/types/website-module'
+import { settingsFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
 
 const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
@@ -104,6 +105,21 @@ const draftSlugPl  = ref('')
 const draftPerPage = ref<number | null>(null)
 const fieldErrors  = ref<Record<string, string[]>>({})
 
+// Editable page copy, keyed `<field>.<locale>` so one flat ref backs a form
+// whose shape comes from the schema rather than from named refs.
+const draftSettings = ref<Record<string, string>>({})
+
+const settingsFields = computed(() =>
+  editingSlug.value ? settingsFieldsFor(editingSlug.value) : [],
+)
+
+// Chrome modules (the footer) have no route, so a URL slug and a per-page count
+// would be inputs that change nothing. `enabled` still means something: off
+// hides the footer.
+const isPageModule = computed(() =>
+  editingSlug.value ? !NON_PAGE_MODULES.has(editingSlug.value) : true,
+)
+
 function startEdit(mod: WebsiteModule) {
   editingSlug.value  = mod.slug
   draftNameEn.value  = mod.custom_name?.en ?? ''
@@ -112,6 +128,14 @@ function startEdit(mod: WebsiteModule) {
   draftSlugPl.value  = mod.custom_slug?.pl ?? ''
   draftPerPage.value = mod.per_page ?? null
   fieldErrors.value  = {}
+
+  const next: Record<string, string> = {}
+  for (const field of settingsFieldsFor(mod.slug)) {
+    for (const locale of ['en', 'pl'] as const) {
+      next[`${field.key}.${locale}`] = mod.settings?.[field.key]?.[locale] ?? ''
+    }
+  }
+  draftSettings.value = next
 }
 
 function cancelEdit() {
@@ -133,6 +157,24 @@ function previewPath(mod: WebsiteModule, lang: 'en' | 'pl', draft: string) {
   return `/${lang}/${effectiveSlug(draft, mod.slug)}`
 }
 
+/**
+ * Fold the flat draft back into `{field: {en, pl}}`.
+ *
+ * Empty becomes null rather than being dropped: the API merges per locale and
+ * treats an absent locale as "leave alone", so omitting a cleared field would
+ * silently keep the old copy — the same trap the slug fields set.
+ */
+function collectSettings(slug: string): ModuleSettings {
+  const out: ModuleSettings = {}
+  for (const field of settingsFieldsFor(slug)) {
+    out[field.key] = {
+      en: draftSettings.value[`${field.key}.en`]?.trim() || null,
+      pl: draftSettings.value[`${field.key}.pl`]?.trim() || null,
+    }
+  }
+  return out
+}
+
 async function saveEdit(slug: string) {
   fieldErrors.value = {}
   try {
@@ -143,11 +185,18 @@ async function saveEdit(slug: string) {
           en: draftNameEn.value.trim() || null,
           pl: draftNamePl.value.trim() || null,
         },
-        custom_slug: {
-          en: draftSlugEn.value.trim() || null,
-          pl: draftSlugPl.value.trim() || null,
-        },
+        // Omitted entirely for a chrome module: sending nulls would clear the
+        // column, and the API treats an explicit null as "clear this locale".
+        ...(isPageModule.value
+          ? {
+              custom_slug: {
+                en: draftSlugEn.value.trim() || null,
+                pl: draftSlugPl.value.trim() || null,
+              },
+            }
+          : {}),
         per_page: draftPerPage.value,
+        ...(settingsFields.value.length > 0 ? { settings: collectSettings(slug) } : {}),
       },
     })
     editingSlug.value = null
@@ -339,7 +388,12 @@ async function saveEdit(slug: string) {
                regenerate from it would emit '' and move a live page. These also
                need a per-locale error and a path preview, which it has no slot
                for. -->
-          <div class="flex flex-col gap-1.5">
+          <p v-if="!isPageModule" class="text-xs text-zinc-500">
+            This module is site chrome, not a page — it has no URL. Switching it off
+            hides it from the public site.
+          </p>
+
+          <div v-if="isPageModule" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
             <div class="flex gap-3">
               <div class="flex flex-col gap-1 flex-1">
@@ -381,8 +435,57 @@ async function saveEdit(slug: string) {
             </span>
           </div>
 
+          <!-- Page copy. Which fields appear comes from MODULE_SETTINGS_SCHEMA,
+               not from the server: settings is a free-form bag, so a module
+               gains a field here without a migration. -->
+          <div v-if="settingsFields.length > 0" class="flex flex-col gap-3">
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Page copy</span>
+
+            <div v-for="field in settingsFields" :key="field.key" class="flex flex-col gap-1">
+              <span class="text-xs text-zinc-400">{{ field.label }}</span>
+              <div class="flex gap-3" :class="field.type === 'textarea' ? 'flex-col sm:flex-row' : ''">
+                <div v-for="locale in (['en', 'pl'] as const)" :key="locale" class="flex flex-col gap-1 flex-1">
+                  <label class="text-xs text-zinc-600" :for="`set-${field.key}-${locale}`">
+                    {{ locale.toUpperCase() }}
+                  </label>
+                  <textarea
+                    v-if="field.type === 'textarea'"
+                    :id="`set-${field.key}-${locale}`"
+                    v-model="draftSettings[`${field.key}.${locale}`]"
+                    rows="3"
+                    :maxlength="field.maxLength"
+                    :placeholder="field.placeholder"
+                    :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
+                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-y"
+                    :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                  />
+                  <input
+                    v-else
+                    :id="`set-${field.key}-${locale}`"
+                    v-model="draftSettings[`${field.key}.${locale}`]"
+                    type="text"
+                    :maxlength="field.maxLength"
+                    :placeholder="field.placeholder"
+                    :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
+                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                    :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                  />
+                  <span v-if="fieldErrors[`settings.${field.key}.${locale}`]" class="text-xs text-red-400">
+                    {{ fieldErrors[`settings.${field.key}.${locale}`][0] }}
+                  </span>
+                </div>
+              </div>
+              <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
+            </div>
+
+            <span class="text-xs text-zinc-600">
+              Copy changes appear on the public site after a rebuild. Leaving a locale
+              empty clears it for that language only.
+            </span>
+          </div>
+
           <!-- Per-page select (list modules only) -->
-          <div v-if="LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
+          <div v-if="isPageModule && LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Items per page</span>
             <select
               v-model="draftPerPage"

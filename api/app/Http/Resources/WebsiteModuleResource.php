@@ -28,6 +28,7 @@ class WebsiteModuleResource extends JsonResource
                 'pl' => ($slugs['pl'] ?? '') === '' ? null : $slugs['pl'],
             ],
             'per_page'     => $this->per_page,
+            'settings'     => $this->settings ?? new \stdClass(),
             'enabled'      => (bool) $this->enabled,
             'sort_order'   => $this->sort_order,
             'updated_at'   => $this->updated_at,

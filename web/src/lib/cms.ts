@@ -45,6 +45,21 @@ export const getBandProfile = (lang: Locale = 'en') =>
 export const getEpk = (lang: Locale = 'en') =>
   get<EpkData>('/band-profile/epk', { lang })
 
+/**
+ * EPK data, or null if it cannot be fetched.
+ *
+ * `getEpk` throws on a non-2xx, and the Astro build is all-or-nothing — one page
+ * that throws kills all of them. Use this anywhere the EPK is supplementary to a
+ * page rather than the point of it.
+ */
+export async function getEpkOptional(lang: Locale = 'en'): Promise<EpkData | null> {
+  try {
+    return await getEpk(lang)
+  } catch {
+    return null
+  }
+}
+
 export const getMembers = () =>
   get<BandMember[]>('/band-profile/members')
 
@@ -128,12 +143,23 @@ export interface ModuleConfig {
     */
   slug?: string
   per_page: number | null
+  /**
+   * Editable copy for this module, with the locale already resolved by the API.
+   * Optional because an API predating the settings migration omits it — read
+   * through `settings?.field ?? ''`, never bare.
+   */
+  settings?: Record<string, string>
 }
 
 export interface SiteConfig {
   modules: Record<string, boolean>
   module_order: string[]
   module_config: Record<string, ModuleConfig>
+  /**
+   * Active theme name. Reserved — the API does not serve this yet, so it is
+   * always undefined today and `getTheme()` falls through to the env var.
+   */
+  theme?: string
 }
 
 export async function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
@@ -146,5 +172,34 @@ export async function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   } catch {
     // Fail open: if API is unreachable during build, treat all modules as enabled
     return { modules: {}, module_order: [], module_config: {} }
+  }
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+
+export interface Faq {
+  id: number
+  module_slug: string
+  question: string
+  answer: string
+}
+
+/**
+ * Published questions for one subpage.
+ *
+ * Fails open to an empty list rather than throwing: an FAQ block is
+ * supplementary, and the Astro build is all-or-nothing — letting this reject
+ * would take down all 35 pages over a section that is allowed to be absent.
+ */
+export async function getFaqs(module: string, lang: Locale = 'en'): Promise<Faq[]> {
+  try {
+    const res = await fetch(`${BASE}/api/faqs?module=${encodeURIComponent(module)}&lang=${lang}`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as { data?: Faq[] }
+    return json.data ?? []
+  } catch {
+    return []
   }
 }

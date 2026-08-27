@@ -15,11 +15,11 @@ const year = release.release_date ? new Date(release.release_date).getFullYear()
 <a
   href={href}
   class:list={[
-    'group block overflow-hidden rounded-xl border border-border bg-surface hover:border-zinc-700 transition-all hover:-translate-y-0.5',
+    'group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5',
   ]}
 >
   <!-- Cover -->
-  <div class:list={['relative overflow-hidden bg-zinc-900', large ? 'aspect-square' : 'aspect-square']}>
+  <div class:list={['relative overflow-hidden bg-surface-2', large ? 'aspect-square' : 'aspect-square']}>
     {release.cover_image ? (
       <img
         src={release.cover_image}
@@ -28,14 +28,14 @@ const year = release.release_date ? new Date(release.release_date).getFullYear()
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
     ) : (
-      <div class="flex h-full items-center justify-center text-zinc-700">
+      <div class="flex h-full items-center justify-center text-subtle">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
           <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
         </svg>
       </div>
     )}
     {release.is_upcoming && (
-      <span class="absolute top-2 right-2 rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-black">
+      <span class="absolute top-2 right-2 rounded-pill bg-accent px-2 py-0.5 text-xs font-bold text-on-accent">
         PRE-SAVE
       </span>
     )}
@@ -43,14 +43,14 @@ const year = release.release_date ? new Date(release.release_date).getFullYear()
 
   <!-- Info -->
   <div class="p-3">
-    <p class="text-xs text-zinc-500 uppercase tracking-wider mb-0.5">
+    <p class="text-xs text-muted uppercase tracking-wider mb-0.5">
       {RELEASE_TYPE_LABELS[release.type]}{year ? ` · ${year}` : ''}
     </p>
-    <p class="font-semibold text-white text-sm leading-tight group-hover:text-accent transition-colors line-clamp-2">
+    <p class="font-semibold text-body text-sm leading-tight group-hover:text-accent transition-colors line-clamp-2">
       {release.title}
     </p>
     {release.label_name && (
-      <p class="mt-1 text-xs text-zinc-600">{release.label_name}</p>
+      <p class="mt-1 text-xs text-subtle">{release.label_name}</p>
     )}
   </div>
 </a>

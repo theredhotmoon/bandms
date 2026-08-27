@@ -15,7 +15,7 @@ const [siteConfig, slugMap] = await Promise.all([
   getSlugMap(),
 ])
 
-const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'contact'] as const
+const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'about', 'contact'] as const
 
 const orderedSlugs = siteConfig.module_order.length > 0
   ? siteConfig.module_order
@@ -58,35 +58,38 @@ const current = Astro.url.pathname
     position: sticky;
     top: 0;
     z-index: 40;
-    background: #121212;
-    color: #EFE7D6;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
   }
   .ss-header-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    padding: 20px 90px;
+    padding: 20px var(--page-gutter);
     flex-wrap: nowrap;
   }
 
   .ss-logo {
-    font-family: 'Anton', 'Impact', sans-serif;
+    font-family: var(--font-display);
     font-size: 22px;
+    font-weight: var(--display-weight);
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
     line-height: 1;
-    color: #EFE7D6;
+    color: var(--color-on-inverse);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
     transition: color .12s;
   }
-  .ss-logo:hover { color: #1F8F7A; }
+  .ss-logo:hover { color: var(--color-accent); }
 
   .ss-desktop-nav {
     display: none;
     align-items: center;
     gap: 20px;
-    font-family: 'Archivo', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-weight: 700;
     font-size: 14px;
     line-height: 1;
@@ -100,14 +103,14 @@ const current = Astro.url.pathname
   }
 
   .ss-nav-link {
-    color: #EFE7D6;
+    color: var(--color-on-inverse);
     text-decoration: none;
     white-space: nowrap;
     transition: color .12s;
     cursor: pointer;
   }
-  a.ss-nav-link:hover { color: rgba(239,231,214,.55); }
-  span.ss-nav-link.is-active { color: #1F8F7A; }
+  a.ss-nav-link:hover { color: color-mix(in oklab, var(--color-on-inverse) 55%, transparent); }
+  span.ss-nav-link.is-active { color: var(--color-accent); }
 
   .ss-header-right {
     display: flex;
@@ -117,10 +120,10 @@ const current = Astro.url.pathname
   }
 
   @media (max-width: 1100px) {
-    .ss-header-inner { padding: 20px 40px; }
+    .ss-header-inner { padding: 20px calc(var(--page-gutter) * 0.45); }
   }
   @media (max-width: 600px) {
-    .ss-header-inner { padding: 18px 20px; }
+    .ss-header-inner { padding: 18px calc(var(--page-gutter) * 0.25); }
     .ss-logo { font-size: 18px; }
   }
 </style>

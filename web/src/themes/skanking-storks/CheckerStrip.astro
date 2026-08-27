@@ -1,0 +1,32 @@
+---
+/**
+ * A single row of checkerboard, used as a section divider.
+ *
+ * Mirrors CheckerStrip in the design's variants/shared.jsx: a
+ * repeating-conic-gradient sized so one cell is `size` wide and the strip's full
+ * height tall, giving one row of squares rather than a tiled field.
+ */
+interface Props {
+  /** Strip height in px. */
+  height?: number
+  /** Cell width in px. Defaults to the theme's checker scale. */
+  size?: number
+  /** Which token paints the dark squares. */
+  tone?: 'accent' | 'ink'
+}
+
+const { height = 14, size, tone = 'ink' } = Astro.props
+
+const dark = tone === 'accent' ? 'var(--color-accent)' : 'var(--color-ink)'
+// Falls back to the theme's --checker-cell so a strip tracks the responsive
+// ornament scale unless a caller pins it deliberately.
+const cell = size ? `${size}px` : 'var(--checker-cell)'
+---
+
+<div
+  aria-hidden="true"
+  class="w-full shrink-0"
+  style={`height:${height}px;
+          background-image: repeating-conic-gradient(${dark} 0% 25%, var(--color-page) 0% 50%);
+          background-size: ${cell} ${height}px;`}
+></div>

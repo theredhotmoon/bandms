@@ -1,0 +1,30 @@
+---
+/**
+ * Fine noise laid over the whole page, from the design's `grain` tweak.
+ *
+ * The turbulence is an inline SVG data URI rather than an asset so it costs no
+ * request, and multiply blending keeps it reading as paper texture instead of a
+ * grey wash. Opacity comes from the theme, so a theme that wants no grain sets
+ * --grain-opacity to 0 and this renders an invisible, inert layer.
+ */
+---
+
+<div class="page-grain" aria-hidden="true"></div>
+
+<style>
+  .page-grain {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: var(--grain-opacity, 0);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Respect a reduced-transparency preference: the texture is decorative and
+     some users find full-page noise overlays uncomfortable. */
+  @media (prefers-reduced-transparency: reduce) {
+    .page-grain { display: none; }
+  }
+</style>

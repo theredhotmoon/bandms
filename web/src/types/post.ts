@@ -31,6 +31,15 @@ export interface PostConcert      { id: number; slug_en: string; date: string; v
 export interface PostRelease      { id: number; title: string; type: string }
 export interface PostMusicVideo   { id: number; title: string; video_url: string }
 
+export interface PostPressRelease {
+  id: number
+  /** Headline, falling back to the raw URL when no og:title was scraped. */
+  title: string
+  url: string
+  /** Publication name, falling back to the URL host. */
+  site: string | null
+}
+
 export interface Post extends PostSummary {
   content: string | null
   image: string | null
@@ -38,6 +47,14 @@ export interface Post extends PostSummary {
   concerts: PostConcert[]
   releases: PostRelease[]
   music_videos: PostMusicVideo[]
+  /**
+   * Coverage of this post. The design shows press only as context inside a
+   * story, never as a standalone index — the first entry doubles as the
+   * article's pull quote.
+   *
+   * Optional because the API only includes it when the relation is loaded.
+   */
+  press_releases?: PostPressRelease[]
   translations?: {
     title:   { en?: string | null; pl?: string | null }
     intro:   { en?: string | null; pl?: string | null }

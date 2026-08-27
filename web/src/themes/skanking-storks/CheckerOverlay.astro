@@ -1,0 +1,22 @@
+---
+/**
+ * Faint checkerboard laid over a dark panel — the hero backdrop.
+ *
+ * The design draws this as a 5%-white checker on ink. Both stops are rgba over
+ * the panel rather than opaque colours, so the same overlay works on any dark
+ * ground without knowing what is underneath.
+ */
+interface Props {
+  size?: number
+}
+
+const { size } = Astro.props
+const cell = size ? `${size}px` : 'var(--checker-cell)'
+---
+
+<div
+  aria-hidden="true"
+  class="pointer-events-none absolute inset-0"
+  style={`background-image: repeating-conic-gradient(rgba(255,255,255,.05) 0% 25%, rgba(0,0,0,0) 0% 50%);
+          background-size: ${cell} ${cell};`}
+></div>

@@ -71,25 +71,25 @@ function close()  { open.value = false }
   width: 38px;
   height: 38px;
   background: transparent;
-  border: 2px solid rgba(239,231,214,.45);
-  color: #EFE7D6;
+  border: 2px solid color-mix(in oklab, var(--color-on-inverse) 45%, transparent);
+  color: var(--color-page);
   cursor: pointer;
   transition: border-color .12s, background .12s;
 }
-.mob-toggle:hover { border-color: #EFE7D6; background: rgba(239,231,214,.08); }
+.mob-toggle:hover { border-color: var(--color-page); background: color-mix(in oklab, var(--color-on-inverse) 8%, transparent); }
 
 .mob-overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(18,18,18,.5);
+  background: color-mix(in oklab, var(--color-ink) 50%, transparent);
   display: flex;
 }
 .mob-panel {
   width: min(380px, 90vw);
-  background: #EFE7D6;
-  border-right: 3px solid #121212;
-  box-shadow: 6px 0 0 #121212;
+  background: var(--color-page);
+  border-right: 3px solid var(--color-ink);
+  box-shadow: 6px 0 0 var(--color-ink);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -99,15 +99,15 @@ function close()  { open.value = false }
   align-items: center;
   justify-content: space-between;
   padding: 18px 22px;
-  border-bottom: 3px solid #121212;
+  border-bottom: 3px solid var(--color-ink);
   flex-shrink: 0;
 }
 .mob-brand {
-  font-family: 'Anton', 'Impact', sans-serif;
+  font-family: var(--font-display);
   font-size: 17px;
   letter-spacing: .04em;
   text-transform: uppercase;
-  color: #121212;
+  color: var(--color-ink);
 }
 .mob-close {
   display: flex;
@@ -116,12 +116,12 @@ function close()  { open.value = false }
   width: 34px;
   height: 34px;
   background: transparent;
-  border: 2px solid #121212;
-  color: #121212;
+  border: 2px solid var(--color-ink);
+  color: var(--color-ink);
   cursor: pointer;
   transition: background .12s, color .12s;
 }
-.mob-close:hover { background: #121212; color: #EFE7D6; }
+.mob-close:hover { background: var(--color-ink); color: var(--color-page); }
 
 .mob-links {
   display: flex;
@@ -129,19 +129,19 @@ function close()  { open.value = false }
   flex: 1;
 }
 .mob-link {
-  font-family: 'Anton', 'Impact', sans-serif;
+  font-family: var(--font-display);
   font-size: 30px;
   letter-spacing: .01em;
   text-transform: uppercase;
-  color: #121212;
+  color: var(--color-ink);
   text-decoration: none;
   padding: 14px 22px;
-  border-bottom: 2px solid rgba(18,18,18,.12);
+  border-bottom: 2px solid color-mix(in oklab, var(--color-ink) 12%, transparent);
   transition: background .12s, color .12s, padding-left .12s;
   display: block;
 }
 .mob-link:last-child { border-bottom: none; }
-.mob-link:hover { background: #121212; color: #EFE7D6; padding-left: 30px; }
+.mob-link:hover { background: var(--color-ink); color: var(--color-page); padding-left: 30px; }
 
 .mob-fade-enter-active,
 .mob-fade-leave-active { transition: opacity 0.18s ease; }

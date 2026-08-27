@@ -33,6 +33,9 @@ services:
     environment:
       API_BASE: "http://backend"
       SITE_URL: "${SITE_URL:-${APP_URL}}"
+      # Which theme the public site renders under. Empty falls back to the
+      # plain black-and-white base — see web/src/styles/themes/.
+      PUBLIC_THEME: "${PUBLIC_THEME:-skanking-storks}"
     depends_on:
       backend:
         condition: service_healthy

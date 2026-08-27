@@ -1,61 +1,172 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap } from '@/lib/slugs'
-
-interface Props {
-  lang: Locale
-  alternateHref: string
-}
-const { lang, alternateHref } = Astro.props
-const slugMap = await getSlugMap()
-
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import PhotoLightbox from '@/components/PhotoLightbox.vue'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import GalleryBrowser from '@/components/GalleryBrowser.vue'
+import FaqSection from '@/components/sections/FaqSection.astro'
 import { getAlbums, getBandProfile } from '@/lib/cms'
 import { fmtDateShort } from '@/lib/i18n'
 
+interface Props {
+  lang: Locale
+  alternateHref?: string
+}
+const { lang, alternateHref } = Astro.props
+
 const [albums, profile] = await Promise.all([getAlbums(), getBandProfile(lang)])
 
-// Only published albums with at least one photo
-const visible = albums.filter(a => a.published_at && a.photo_count > 0)
+const COPY = {
+  en: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Gallery',
+    lead: 'Brass in the air, feet off the floor. Live shots, backstage moments and studio days.',
+    all: 'All',
+    photos: 'photos',
+    pressReady: 'Press-ready',
+    shotAt: 'Shot at',
+    close: 'Close', prev: 'Previous photo', next: 'Next photo',
+    empty: 'Nothing in this category yet.',
+    none: 'No photos yet — check back soon.',
+  },
+  pl: {
+    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
+    title: 'Galeria',
+    lead: 'Dęciaki w powietrzu, stopy w górze. Zdjęcia z koncertów, backstage’u i studia.',
+    all: 'Wszystkie',
+    photos: 'zdjęć',
+    pressReady: 'Do prasy',
+    shotAt: 'Zdjęcia z',
+    close: 'Zamknij', prev: 'Poprzednie zdjęcie', next: 'Następne zdjęcie',
+    empty: 'Brak zdjęć w tej kategorii.',
+    none: 'Brak zdjęć — wkrótce.',
+  },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+
+// Unpublished albums and empty ones are both invisible: a gallery card that
+// opens an empty lightbox is worse than an absent card.
+const visible = albums.filter(a => a.published_at && (a.photos?.length ?? 0) > 0)
+
+const galleryAlbums = visible.map(album => {
+  const shotAt = album.venue?.name ?? ''
+  const when = album.taken_at ? fmtDateShort(album.taken_at, lang) : ''
+  // The design's meta line is "category · date". With no tags it collapses to
+  // just the date rather than leaving a dangling separator.
+  const category = album.tags?.[0]?.name ?? ''
+
+  return {
+    id: album.id,
+    title: album.title,
+    categories: (album.tags ?? []).map(tag => tag.slug),
+    metaLine: [category, when].filter(Boolean).join(' · '),
+    shotAt,
+    coverUrl: album.cover_url ?? album.photos?.[0]?.image_url ?? null,
+    photos: [...(album.photos ?? [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      // A photo with no URL cannot be shown; it would open a broken lightbox.
+      .filter(photo => photo.image_url)
+      .map(photo => ({
+        id: photo.id,
+        src: photo.image_url as string,
+        caption: photo.caption,
+        isPressReady: photo.epk_featured ?? false,
+      })),
+  }
+})
+
+// Filter chips come from the tags actually in use, deduped, so switching to a
+// category can never yield an empty grid.
+const categories = Object.values(
+  visible
+    .flatMap(a => a.tags ?? [])
+    .reduce<Record<string, { slug: string; label: string }>>((acc, tag) => {
+      acc[tag.slug] ??= { slug: tag.slug, label: tag.name }
+      return acc
+    }, {}),
+)
 ---
 
 <BaseLayout
   lang={lang}
   alternateHref={alternateHref}
-  title={`Photos — ${profile.name}`}
-  description={`Photo gallery of ${profile.name} — concerts, behind the scenes, and more.`}
+  title={`${t.title} — ${profile.name}`}
+  description={t.lead}
 >
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-white sm:text-5xl">Photos</h1>
+  <!-- HERO -->
+  <section class="gl-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="gl-hero-in">
+      <span class="gl-kicker">{t.kicker}</span>
+      <h1 class="gl-h1">{t.title}</h1>
+      <p class="gl-lead">{t.lead}</p>
     </div>
+  </section>
 
-    {visible.length === 0 && (
-      <p class="text-zinc-500">No photos yet — check back soon.</p>
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <section class="gl-sec page-x">
+    {galleryAlbums.length === 0 ? (
+      <p class="gl-none">{t.none}</p>
+    ) : (
+      <GalleryBrowser
+        client:visible
+        albums={galleryAlbums}
+        categories={categories}
+        copy={{
+          all: t.all,
+          photos: t.photos,
+          pressReady: t.pressReady,
+          shotAt: t.shotAt,
+          close: t.close,
+          prev: t.prev,
+          next: t.next,
+          empty: t.empty,
+        }}
+      />
     )}
+  </section>
 
-    {visible.map(album => (
-      <section class="mb-14">
-        <div class="flex items-baseline justify-between mb-4">
-          <div>
-            <h2 class="text-xl font-bold text-white">{album.title}</h2>
-            {album.taken_at && (
-              <p class="text-sm text-zinc-500 mt-0.5">{fmtDateShort(album.taken_at, 'en')}</p>
-            )}
-            {album.description && (
-              <p class="text-sm text-zinc-400 mt-1">{album.description}</p>
-            )}
-          </div>
-          <span class="text-xs text-zinc-600">{album.photo_count} photos</span>
-        </div>
-
-        <PhotoLightbox
-          client:visible
-          photos={(album.photos ?? []).map(p => ({ src: p.image_url ?? '', caption: p.caption }))}
-        />
-      </section>
-    ))}
-  </div>
+  <FaqSection module="photos" lang={lang} />
 </BaseLayout>
+
+<style>
+  .gl-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 54px 58px;
+  }
+  .gl-hero-in { position: relative; }
+
+  .gl-kicker {
+    display: block;
+    font: 800 14px/1 var(--font-body);
+    letter-spacing: .34em;
+    color: var(--color-accent);
+  }
+
+  .gl-h1 { margin: 16px 0 0; font-size: 140px; line-height: .82; }
+
+  .gl-lead {
+    margin: 22px 0 0;
+    max-width: 660px;
+    font: 500 20px/1.55 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
+  }
+
+  .gl-sec { padding-block: 40px 56px; position: relative; }
+
+  .gl-none { margin: 0; font: 500 17px/1.5 var(--font-body); color: var(--color-muted); }
+
+  @media (max-width: 1100px) {
+    .gl-h1 { font-size: 96px; }
+  }
+  @media (max-width: 700px) {
+    .gl-h1 { font-size: 56px; }
+    .gl-lead { font-size: 16px; }
+    .gl-hero { padding-block: 36px 40px; }
+    .gl-sec { padding-block: 28px 36px; }
+  }
+</style>

@@ -1,72 +1,222 @@
 ---
 import type { Locale } from '@/types/shared'
 import LanguageSelector from '@/components/LanguageSelector.astro'
-import { getSiteConfig } from '@/lib/cms'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+import { getSiteConfig, getBandProfile, getSocialLinks } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 
 interface Props {
   lang?: Locale
   alternateHref?: string
 }
-
 const { lang = 'en', alternateHref } = Astro.props
 
-const [siteConfig, slugMap] = await Promise.all([
+const [siteConfig, slugMap, profile, socialLinks] = await Promise.all([
   getSiteConfig(lang),
   getSlugMap(),
+  getBandProfile(lang).catch(() => null),
+  getSocialLinks().catch(() => []),
 ])
+
+// The footer is a module too, so it can be switched off and its copy edited.
+// `!== false` rather than `=== true`: getSiteConfig fails open to {} when the API
+// is unreachable mid-build, and an absent key has to mean enabled.
+const footerEnabled = siteConfig.modules.footer !== false
+const s = siteConfig.module_config?.footer?.settings ?? {}
 
 const year = new Date().getFullYear()
 
 // CMS-module nav links, ordered by module_order, filtered to enabled only.
 // newsletter is listed unconditionally: [section].astro keeps its page in
-// ALWAYS_ON, so the link is never dead, and its footer label is hardcoded.
-// Its slug still comes from the module like every other one.
-const MODULE_LINK_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'contact'] as const
+// ALWAYS_ON, so the link is never dead. `footer` is deliberately absent — it is
+// chrome, with no route to link to.
+const MODULE_LINK_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'about', 'contact'] as const
 
 const orderedSlugs = siteConfig.module_order.length > 0
   ? siteConfig.module_order
   : MODULE_LINK_SLUGS.slice()
 
 const moduleLinks = orderedSlugs
-  .filter(s => MODULE_LINK_SLUGS.includes(s as typeof MODULE_LINK_SLUGS[number]) && siteConfig.modules[s] !== false)
-  .map(s => ({
-    href: `/${lang}/${slugMap[lang][s] ?? s}`,
-    label: siteConfig.module_config[s]?.label ?? s,
+  .filter(slug => MODULE_LINK_SLUGS.includes(slug as typeof MODULE_LINK_SLUGS[number]) && siteConfig.modules[slug] !== false)
+  .map(slug => ({
+    href: `/${lang}/${slugMap[lang][slug] ?? slug}`,
+    label: siteConfig.module_config[slug]?.label ?? slug,
   }))
 
-const staticLinks = [
-  { href: `/${lang}/${slugMap[lang].newsletter}`, label: 'Newsletter' },
+const links = [
+  ...moduleLinks,
+  { href: `/${lang}/${slugMap[lang].newsletter}`, label: lang === 'pl' ? 'Newsletter' : 'Newsletter' },
 ]
 
-const links = [...moduleLinks, ...staticLinks]
+const bandName = profile?.name ?? 'Skanking Storks'
+const adminLabel = lang === 'pl' ? 'Panel' : 'Admin'
 ---
 
-<footer class="border-t border-border mt-24 py-12 text-zinc-500 text-sm">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6">
-    <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-      <!-- Brand -->
+{footerEnabled && (
+  <footer class="ft page-x">
+    <!-- The strip sits on the top edge, so it reads as the seam between the page
+         and the footer rather than as decoration inside it. -->
+    <div class="ft-strip">
+      <ThemeSlot name="section-divider" height={14} tone="accent" />
+    </div>
+
+    <div class="ft-cols">
       <div>
-        <a href={`/${lang}`} class="text-lg font-black text-white tracking-tight">Skanking Storks</a>
-        <p class="mt-1 text-xs">Ska · Reggae · Good Vibes</p>
-      </div>
+        <a href={`/${lang}`} class="ft-brand">{bandName}</a>
+        {s.tagline && <p class="ft-tagline">{s.tagline}</p>}
 
-      <!-- Nav -->
-      <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer navigation">
-        {links.map(({ href, label }) => (
-          <a href={href} class="hover:text-white transition-colors">{label}</a>
-        ))}
-      </nav>
-    </div>
-
-    <div class="mt-8 border-t border-border pt-6 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-      <p>&copy; {year} Skanking Storks. All rights reserved.</p>
-      <div class="flex items-center gap-6">
-        {alternateHref && (
-          <LanguageSelector lang={lang} alternateHref={alternateHref} />
+        {socialLinks.length > 0 && (
+          <div class="ft-socials">
+            {socialLinks.map(social => (
+              <a
+                class="ft-social"
+                href={social.url}
+                target="_blank"
+                rel="noopener"
+                aria-label={social.label ?? social.platform}
+              >
+                <Icon name={social.platform} size={20} color="currentColor" />
+              </a>
+            ))}
+          </div>
         )}
-        <a href="/admin" class="hover:text-white transition-colors">Admin</a>
+      </div>
+
+      {(s.booking_title || profile?.booking_email) && (
+        <div>
+          {s.booking_title && <h2 class="ft-col-title">{s.booking_title}</h2>}
+          {s.booking_text && <p class="ft-col-text">{s.booking_text}</p>}
+          {profile?.booking_email && (
+            <a class="ft-mail" href={`mailto:${profile.booking_email}`}>
+              <Icon name="mail" size={20} color="var(--color-accent)" />{profile.booking_email}
+            </a>
+          )}
+        </div>
+      )}
+
+      <div>
+        {s.follow_title && <h2 class="ft-col-title">{s.follow_title}</h2>}
+        <nav class="ft-nav" aria-label="Footer navigation">
+          {links.map(({ href, label }) => <a href={href}>{label}</a>)}
+        </nav>
       </div>
     </div>
-  </div>
-</footer>
+
+    <div class="ft-bottom">
+      <span>&copy; {year} {bandName}</span>
+      <span class="ft-bottom-right">
+        {s.rights && <span>{s.rights}</span>}
+        {alternateHref && <LanguageSelector lang={lang} alternateHref={alternateHref} />}
+        <a href="/admin">{adminLabel}</a>
+      </span>
+    </div>
+  </footer>
+)}
+
+<style>
+  .ft {
+    position: relative;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    padding-block: 48px 40px;
+  }
+
+  .ft-strip { position: absolute; top: 0; left: 0; right: 0; }
+
+  .ft-cols {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 40px;
+    margin-top: 8px;
+    padding-bottom: 32px;
+    border-bottom: 2px solid color-mix(in oklab, var(--color-on-inverse) 20%, transparent);
+  }
+
+  .ft-brand {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+    color: var(--color-on-inverse);
+  }
+
+  .ft-tagline {
+    margin: 16px 0 0;
+    max-width: 280px;
+    font: 500 15px/1.5 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 60%, transparent);
+  }
+
+  .ft-socials { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+  .ft-social {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--color-on-inverse);
+    border-radius: var(--radius-pill);
+    color: var(--color-on-inverse);
+  }
+
+  .ft-col-title {
+    margin: 0 0 14px;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--color-accent);
+  }
+
+  .ft-col-text {
+    margin: 0 0 12px;
+    font: 500 15px/1.5 var(--font-body);
+    color: color-mix(in oklab, var(--color-on-inverse) 75%, transparent);
+  }
+
+  .ft-mail {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 16px/1.2 var(--font-body);
+    color: var(--color-on-inverse);
+    word-break: break-word;
+  }
+
+  .ft-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font: 700 15px/1 var(--font-body);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .ft-nav a { color: color-mix(in oklab, var(--color-on-inverse) 80%, transparent); }
+  .ft-nav a:hover { color: var(--color-on-inverse); }
+
+  .ft-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 18px;
+    font: 600 13px/1 var(--font-body);
+    letter-spacing: .06em;
+    color: color-mix(in oklab, var(--color-on-inverse) 50%, transparent);
+  }
+  .ft-bottom-right { display: inline-flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .ft-bottom a { color: inherit; }
+  .ft-bottom a:hover { color: var(--color-on-inverse); }
+
+  @media (max-width: 900px) {
+    .ft-cols { grid-template-columns: 1fr; gap: 28px; }
+    .ft-brand { font-size: 24px; }
+    .ft-col-title { font-size: 20px; }
+  }
+  @media (max-width: 700px) {
+    .ft { padding-block: 34px 28px; }
+    .ft-bottom { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>

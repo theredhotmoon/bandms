@@ -1,0 +1,83 @@
+---
+import type { Locale } from '@/types/shared'
+import { getFaqs } from '@/lib/cms'
+import FaqAccordion from '@/components/FaqAccordion.vue'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+
+/**
+ * The FAQ block, shown on any subpage that has questions assigned to it.
+ *
+ * Questions are categorised by module slug in the CMS, so this component is
+ * dropped into a page with that page's slug and shows only its own.
+ *
+ * Renders nothing when the module has no published questions. That is a
+ * *content* check, and deliberately so — CLAUDE.md's rule about gating on the
+ * module map rather than on data applies to links that could 404, and this
+ * section links nowhere. An empty accordion would be worse than an absent one.
+ */
+interface Props {
+  /** Module slug this page represents, e.g. 'contact', 'concerts'. */
+  module: string
+  lang?: Locale
+  /** Divider above the section. Off for a page that already ends in one. */
+  divider?: boolean
+}
+
+const { module, lang = 'en', divider = true } = Astro.props
+
+const faqs = await getFaqs(module, lang)
+
+const COPY = {
+  en: { title: 'Quick answers', sub: 'The things promoters and fans ask us most.' },
+  pl: { title: 'Szybkie odpowiedzi', sub: 'To, o co najczęściej pytają organizatorzy i fani.' },
+} as const
+
+const t = COPY[lang] ?? COPY.en
+---
+
+{faqs.length > 0 && (
+  <>
+    {divider && <ThemeSlot name="section-divider" height={14} tone="accent" />}
+    <section class="faq-section page-x">
+      <div class="faq-head">
+        <Icon name="quote" size={24} color="var(--color-accent)" />
+        <h2 class="faq-title">{t.title}</h2>
+      </div>
+      <p class="faq-sub">{t.sub}</p>
+      <FaqAccordion items={faqs} client:visible />
+    </section>
+  </>
+)}
+
+<style>
+  .faq-section {
+    padding-block: 54px 60px;
+  }
+
+  .faq-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .faq-title {
+    margin: 0;
+    font-size: 56px;
+    line-height: 0.96;
+  }
+
+  .faq-sub {
+    margin: 14px 0 26px;
+    max-width: 620px;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+
+  @media (max-width: 700px) {
+    .faq-title { font-size: 34px; }
+    .faq-sub { font-size: 15px; }
+    .faq-section { padding-block: 36px 42px; }
+  }
+</style>

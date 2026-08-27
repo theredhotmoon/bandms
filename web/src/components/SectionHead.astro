@@ -1,0 +1,63 @@
+---
+import Icon from '@/components/Icon.astro'
+
+/**
+ * An accent icon beside a display heading, with an optional standfirst.
+ *
+ * Repeated on every ported page — Music has five of them, About four — so the
+ * spacing and sizes live here rather than being restated per page.
+ */
+interface Props {
+  /** Icon name from Icon.astro. Omit for a heading with no mark. */
+  icon?: string
+  title: string
+  sub?: string | null
+  /**
+   * `lg` is the design's section heading (56px); `sm` is the smaller 40px form
+   * it uses for a subsection such as "Featured release".
+   */
+  size?: 'lg' | 'sm'
+  /** Renders light, for a heading sitting on an ink band. */
+  inverse?: boolean
+}
+
+const { icon, title, sub, size = 'lg', inverse = false } = Astro.props
+---
+
+<div class="sh-wrap">
+  <div class="sh">
+    {icon && <Icon name={icon} size={size === 'lg' ? 24 : 22} color="var(--color-accent)" />}
+    <h2 class:list={['sh-title', `sh-title--${size}`, { 'sh-title--inverse': inverse }]}>{title}</h2>
+  </div>
+  {sub && <p class:list={['sh-sub', { 'sh-sub--inverse': inverse }]}>{sub}</p>}
+</div>
+
+<style>
+  .sh-wrap { position: relative; }
+
+  .sh {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .sh-title { margin: 0; }
+  .sh-title--lg { font-size: 56px; line-height: .96; }
+  .sh-title--sm { font-size: 40px; line-height: 1; }
+  .sh-title--inverse { color: var(--color-on-inverse); }
+
+  .sh-sub {
+    margin: 14px 0 26px;
+    max-width: 620px;
+    font: 500 17px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+  .sh-sub--inverse { color: color-mix(in oklab, var(--color-on-inverse) 70%, transparent); }
+
+  @media (max-width: 700px) {
+    .sh-title--lg { font-size: 34px; }
+    .sh-title--sm { font-size: 28px; }
+    .sh-sub { font-size: 15px; }
+  }
+</style>

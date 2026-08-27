@@ -12,10 +12,11 @@ import PressSection      from '@/components/sections/PressSection.astro'
 import MerchSection      from '@/components/sections/MerchSection.astro'
 import EpkSection        from '@/components/sections/EpkSection.astro'
 import ContactSection    from '@/components/sections/ContactSection.astro'
+import AboutSection      from '@/components/sections/AboutSection.astro'
 import NewsletterSection from '@/components/sections/NewsletterSection.astro'
 
 export async function getStaticPaths() {
-  const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter'] as const
+  const LIST_ONLY_SECTIONS = ['photos', 'videos', 'press', 'epk', 'contact', 'newsletter', 'about'] as const
   const DETAIL_SECTIONS    = ['concerts', 'releases', 'posts', 'merch'] as const
   const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
   const ALWAYS_ON          = new Set(['newsletter'])
@@ -63,4 +64,5 @@ const { sectionType, lang, alternateHref } = Astro.props
 {sectionType === 'merch'      && <MerchSection      lang={lang} alternateHref={alternateHref} />}
 {sectionType === 'epk'        && <EpkSection        lang={lang} alternateHref={alternateHref} />}
 {sectionType === 'contact'    && <ContactSection    lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'about'      && <AboutSection      lang={lang} alternateHref={alternateHref} />}
 {sectionType === 'newsletter' && <NewsletterSection lang={lang} alternateHref={alternateHref} />}

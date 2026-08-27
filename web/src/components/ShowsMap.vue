@@ -21,8 +21,8 @@ const mapEl = ref<HTMLDivElement>()
 let map: any
 let markerById: Record<number, any> = {}
 
-const INK = '#121212'
-const PAPER = '#EFE7D6'
+const INK = 'var(--color-ink)'
+const PAPER = 'var(--color-page)'
 
 function pinHTML(upcoming: boolean, accent: string) {
   if (upcoming) {
@@ -51,15 +51,15 @@ function formatDate(dateStr: string) {
 
 function popupHTML(c: Pin, accent: string) {
   const badge = c.upcoming
-    ? `<span style="background:${accent};color:#fff;font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">Upcoming</span>`
+    ? `<span style="background:${accent};color:var(--color-surface);font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">Upcoming</span>`
     : `<span style="background:${INK};color:${PAPER};font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">Played</span>`
   return `<div style="min-width:180px;font-family:Archivo,sans-serif;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       ${badge}
-      <span style="font:700 11px/1 Archivo,sans-serif;color:#666;letter-spacing:.04em;">${formatDate(c.date)}</span>
+      <span style="font:700 11px/1 Archivo,sans-serif;color:var(--color-muted);letter-spacing:.04em;">${formatDate(c.date)}</span>
     </div>
     <div style="font:400 22px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:.01em;color:${INK};">${c.city ?? ''}</div>
-    <div style="font:600 13px/1.3 Archivo,sans-serif;color:#333;margin-top:4px;">${c.venue}</div>
+    <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${c.venue}</div>
     <a href="${escapedHref(c.href)}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">View details →</a>
   </div>`
 }
@@ -83,14 +83,14 @@ onMounted(async () => {
     .ss-pin.up .ss-ring { animation:sspulse 1.8s ease-out infinite; }
     .leaflet-container { background:${PAPER} !important;font-family:Archivo,sans-serif; }
     .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
-    .leaflet-bar a,.leaflet-bar a:hover { background:${INK};color:${PAPER};border-bottom-color:#3a3a3a;width:30px;height:30px;line-height:30px;font-weight:700; }
+    .leaflet-bar a,.leaflet-bar a:hover { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:30px;height:30px;line-height:30px;font-weight:700; }
     .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:4px 4px 0 rgba(0,0,0,.3); }
     .leaflet-bar a:first-child,.leaflet-bar a:last-child { border-radius:0; }
     .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:8px 8px 0 ${props.accent}; }
     .leaflet-popup-tip { background:${INK}; }
     .leaflet-popup-content { margin:13px 15px; }
     .leaflet-popup-close-button { color:${INK} !important;font-size:19px !important;padding:5px 7px 0 0 !important; }
-    .leaflet-control-attribution { background:rgba(239,231,214,.8) !important;font-size:9px; }
+    .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
   `
   document.head.appendChild(styleEl)
 
@@ -145,14 +145,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="mapEl" style="height:520px;width:100%;background:#EFE7D6;position:relative;">
+  <div ref="mapEl" style="height:520px;width:100%;background:var(--color-page);position:relative;">
     <!-- legend -->
-    <div style="position:absolute;top:14px;right:14px;z-index:500;background:#EFE7D6;border:3px solid #121212;box-shadow:5px 5px 0 v-bind(accent);padding:12px 14px;display:flex;flex-direction:column;gap:9px;">
-      <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#121212;">
-        <span :style="`width:16px;height:16px;border-radius:50%;background:${accent};border:2px solid #121212;display:inline-block;`"></span>Upcoming
+    <div style="position:absolute;top:14px;right:14px;z-index:500;background:var(--color-page);border:3px solid var(--color-ink);box-shadow:5px 5px 0 v-bind(accent);padding:12px 14px;display:flex;flex-direction:column;gap:9px;">
+      <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink);">
+        <span :style="`width:16px;height:16px;border-radius:50%;background:${accent};border:2px solid var(--color-ink);display:inline-block;`"></span>Upcoming
       </span>
-      <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#121212;">
-        <span style="width:14px;height:14px;border-radius:50%;background:#121212;border:2px solid #EFE7D6;outline:1px solid #121212;display:inline-block;"></span>Played
+      <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink);">
+        <span style="width:14px;height:14px;border-radius:50%;background:var(--color-ink);border:2px solid var(--color-page);outline:1px solid var(--color-ink);display:inline-block;"></span>Played
       </span>
     </div>
   </div>

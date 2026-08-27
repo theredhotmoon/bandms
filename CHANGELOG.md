@@ -7,14 +7,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **The public site is themeable.** Its look is split into a deliberately plain black-and-white base and a theme that overrides colour, type, shape, elevation and ornament. The band's 2-Tone design ships as the first theme; a second band can be served by adding a stylesheet rather than forking templates. Which theme renders is an attribute on the page, so it can be driven from the CMS later without a rebuild.
+- **The whole public site is redesigned.** Contact, Music, Gallery, About, the article view, the release detail page and the site footer now carry the 2-Tone design, and Videos, Press, EPK and Newsletter were restyled to match it.
+- **Contact page.** A booking form with a reason picker, direct contact cards, promoter and press links, and an FAQ. Its hero copy, reply-time badge and per-channel notes are editable per language.
+- **Availability calendar.** Promoters can browse open, on-hold and booked dates month by month and pick one; the date pre-fills the booking form rather than sending an anonymous enquiry nobody can answer.
+- **Press kit modal.** Lists what the band actually has — bio, press photos, logo, streaming stats, tech rider, stage plot — with each row appearing only when its file or page exists.
+- **Music page.** Featured release with tracklist, an expandable discography, a "where to listen" band, the music-video gallery with a lightbox, published lyrics, and physical formats tied to a release.
+- **Gallery page.** Album cards with photo counts and a press-ready badge, a category filter, and a full lightbox with keyboard control. The press-ready flag has been in the CMS for a long time with nothing showing it.
+- **About page, now a website module.** It was an English-only page, absent from the nav and impossible to rename, reorder or switch off. It now has a Polish URL (`/pl/o-nas`) and behaves like every other section.
+- **FAQ entries, grouped by subpage.** Questions are assigned to a page in `/admin/faqs` and appear in an FAQ block at the bottom of it. A page with no questions shows no block.
+- **Editable page copy per module.** `/admin/website-modules` gained a Page copy panel, so hero lines, badges and captions are edited in the admin instead of in code.
+- **The footer is a configurable module.** Its tagline, column headings, booking blurb and rights line are editable per language, and it can be switched off entirely.
+- **Press coverage on articles.** A story's coverage now appears as a pull quote in the body and an "In the press" list, each entry naming the publication.
 - **Contact is a configurable website module.** It used to be hardcoded into the public site — always rendered, always in the nav, its label and per-locale slug fixed in `web/src`. It now appears in `/admin/website-modules` alongside every other section and can be switched off, renamed per locale, and dragged into any nav position. Disabling it removes the nav link, the footer link, the homepage "Book us" call-to-action, the `/rider` fallback link, and both the localised and legacy `/contact` pages, leaving no dead links behind.
 - **Every website module has its own URL slug, per language.** New EN and PL slug fields in the module editor, each showing the path it produces (`/en/shop`) and validated for URL safety and uniqueness. Leaving a slug empty serves the module under its key, so `videos` stays at `/en/videos` however it is labelled.
 
 ### Changed
+- **Music videos appear on the Music page as well as their own page.** Both read the same source, so nothing is duplicated; a band that wants videos only on Music can switch the standalone module off.
 - **Renaming a module no longer moves its page.** Public slugs were previously derived from the module's label on every build, so changing "Shop" to "Merch store" silently moved `/en/shop` to `/en/merch-store` and broke every link anyone had saved. Label and URL are now independent: the label controls nav text only, and the URL changes when — and only when — the slug field is edited. Existing slugs were carried over unchanged, so no live URL moved on upgrade.
 - **A slug is only cleared when explicitly set to null.** Sending one locale's slug leaves the other untouched, so a partial update cannot silently move the Polish page.
 
 ### Fixed
+- **The public contact form never worked.** It posted four fields to an endpoint that requires a fifth, so every message sent from the website was rejected. Nothing surfaced it: the form reported the failure as a generic error.
+- **The public availability endpoint exposed band members' movements.** It needed no login and returned each musician's full name and role for any date, so anyone could work out who was busy when. It now reports only whether the band is free.
+- **Switching a module off left its page online.** The page was correctly dropped from the build, but the published site kept the previous copy, so a section could be disabled and still be served — with stale content — until the container was recreated.
+- **A second dialog on the same page did nothing.** Opening the press kit after the availability calendar left an inert button with no visible cause.
+- **Several styles silently did nothing.** Seven hover states and one background referenced colours that no longer existed, so they never applied. The build now fails on that rather than shipping it.
+- **Member instruments, album locations and press links never appeared** on the public site, despite being filled in, because the site's own type definitions omitted the fields the API was sending.
 - **The homepage no longer links to pages that a disabled module never builds.** Its hero buttons and its Upcoming shows / Music / News sections were gated on whether *content* existed rather than on whether the module was enabled — the two agree until content exists while its module is switched off. With Releases disabled but releases still in the database, the homepage advertised `/en/releases` and every individual release, all of them 404s.
 
 ## [0.7.1] - 2026-08-20

@@ -1,0 +1,24 @@
+---
+/**
+ * Small checkered block used as a mark inside dark header bars.
+ *
+ * Its cell is a fraction of the block rather than the page checker scale — at
+ * 30px wide with a 10px cell it reads as a 3x3 tile, which is the design's
+ * intent. Tying it to --checker-cell would make it a single square.
+ */
+interface Props {
+  size?: number
+  cell?: number
+}
+
+const { size = 30, cell = 10 } = Astro.props
+---
+
+<div
+  aria-hidden="true"
+  class="shrink-0"
+  style={`width:${size}px; height:${size}px;
+          border: 2px solid var(--color-on-inverse);
+          background-image: repeating-conic-gradient(var(--color-accent) 0% 25%, var(--color-on-inverse) 0% 50%);
+          background-size: ${cell}px ${cell}px;`}
+></div>
