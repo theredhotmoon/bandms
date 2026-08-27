@@ -193,13 +193,17 @@ Assuming per-page PRs, ordered by value and by how much each teaches the next:
 |---|---|---|
 | 1 | Music (list + detail + lyrics island) | Largest, most new UI, sets the pattern for detail pages |
 | 2 | Gallery | Small; exercises the lightbox restyle |
-| 3 | Shop (list + detail) | Touches the cart, so worth doing after the pattern is settled |
+| ~~3~~ | ~~Shop (list + detail)~~ | **Deferred to last on 2026-08-27** — not needed yet |
 | 4 | About (+ `about` module) | Only PR with backend work |
 | 5 | News "In the press" | Tiny; could ride along with any of the above |
 | 6 | Undesigned pages, if option 2 | Cleanup pass once every pattern exists |
 
 Each page's exact values come from its `variants/*_page.jsx` in the design
 project, fetched when that page is built rather than up front.
+
+**Revised order (2026-08-27):** Music ✓ → Gallery ✓ → About → News → undesigned
+pages → Shop. Shop moved to the end at the band's request; it is the only page
+that touches checkout, so deferring it also defers the only real regression risk.
 
 ---
 
