@@ -282,6 +282,10 @@ bandms/
 │   └── e2e/                # Playwright E2E tests
 │       ├── fixtures/       # Auth setup + shared helpers
 │       └── tests/admin/    # 20 admin panel spec files (179 tests)
+├── web/                    # Astro 5 public site (static, built at container start)
+│   ├── src/lib/            # cms.ts, slugs.ts — what gets built and where links point
+│   ├── src/themes/         # Per-band theme overrides of the base look
+│   └── src/styles/         # tokens.css = the semantic contract themes may override
 ├── scripts/
 │   ├── ship.sh             # Full ship pipeline
 │   └── test-all.sh         # Run unit + E2E suites
@@ -289,6 +293,51 @@ bandms/
 ├── Makefile                # All dev shortcuts
 └── CHANGELOG.md            # Auto-updated by ship.sh
 ```
+
+---
+
+## Public site URLs come from the CMS
+
+Every website module carries its own URL slug **per locale**, stored in the CMS
+and served by `GET /api/site-config?lang=xx`. The public site reads them in
+`web/src/lib/slugs.ts` — it never derives a URL from a module's label.
+
+| Change in `/admin/website-modules` | Effect on the URL |
+|---|---|
+| Custom name (label) | none — nav text only |
+| Custom slug | **moves the page**; old links 404 |
+
+That split is the point: slugs used to be derived from the label, so renaming
+"Shop" to "Merch store" silently moved `/en/shop` and broke every inbound link.
+An empty slug serves the module under its key — `videos` stays at `/en/videos`
+however it is labelled.
+
+### If the Polish URLs look wrong after a deploy
+
+The slug map is resolved **once per build** and shared by everything that uses
+it — the routes Astro generates, and the links the header and footer emit. If
+the API is unreachable it retries; if all three attempts fail, the build falls
+back to module keys for the **whole site** (`/pl/shop` instead of `/pl/sklep`)
+and logs a warning:
+
+```bash
+docker logs bandms_web 2>&1 | grep '\[slugs\]'
+# [slugs] site-config unreachable after 3 attempts — falling back to module keys for every URL.
+```
+
+**That line means the build could not reach the API — it does not mean anyone
+changed a slug.** Don't go looking in the CMS; once the API is healthy, rebuild
+the site:
+
+```bash
+docker compose restart web        # content/config refresh only — no source changes
+```
+
+Shipping consistent-but-wrong URLs is deliberate. The alternatives are worse: a
+build that fails takes the entire public site down (`start.sh` exits, the
+container crash-loops), and a map that changes mid-build would generate routes
+at one path while every nav link points at another — dead links on a build that
+reports success.
 
 ---
 
