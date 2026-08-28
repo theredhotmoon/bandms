@@ -578,6 +578,59 @@ docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
 A manual server-side edit is a **hotfix, not a fix** — the next deploy `scp`s the
 repo's copy over it. Land the same change in the repo.
 
+### Pointing a domain at the server
+
+`SITE_ADDRESS` in `/opt/bandms/.env` is the whole switch. `:80` serves plain
+HTTP on the bare server IP; a hostname makes Caddy provision and renew a Let's
+Encrypt certificate on its own.
+
+```bash
+SITE_ADDRESS=yourband.example, www.yourband.example
+APP_URL=https://yourband.example
+```
+
+`SITE_URL` and `FRONTEND_URL` both fall back to `APP_URL`, so those two lines
+are usually all it takes. `FRONTEND_URL` is the one that matters beyond routing:
+it drives the CORS allowed origin **and every link in outgoing email**.
+
+**Both hostnames need a DNS A record pointing at the server**, including `www`.
+The Caddyfile redirects `www` to the apex, but a redirect can only happen once
+the request reaches this server — without the record the browser reports a
+connection failure instead. Caddy issues one certificate per hostname listed,
+and answers only for hostnames it is told about.
+
+**Point DNS before setting `SITE_ADDRESS`.** Caddy attempts the ACME challenge
+the moment it starts with a hostname, and Let's Encrypt rate-limits *failed*
+validations (5 per hostname per hour). Verify resolution first:
+
+```bash
+nslookup yourband.example
+nslookup www.yourband.example
+```
+
+Ports **80 and 443** must be open — in the host firewall and in any cloud
+firewall. The HTTP-01 challenge needs port 80 specifically, even though the site
+ends up on 443.
+
+Then recreate in this order — backend first (its entrypoint bakes `APP_URL` into
+the config cache), web next (it rebuilds the Astro site with the new `SITE_URL`
+for the sitemap and canonical tags), Caddy last (it triggers issuance):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+
+docker logs bandms-caddy 2>&1 | tail -30      # "certificate obtained successfully"
+```
+
+Certificates live in the `caddy-data` named volume, so they survive recreates —
+recreating Caddy does not re-issue and cannot burn rate limit.
+
+**The bare IP stops working** once `SITE_ADDRESS` is a hostname. Caddy only
+answers for the names it is given, so `http://SERVER_IP/` no longer serves the
+site. That is correct, not a fault.
+
 
 ---
 

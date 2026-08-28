@@ -3,13 +3,47 @@
 # The site address comes from SITE_ADDRESS in /opt/bandms/.env:
 #   SITE_ADDRESS=:80                  → plain HTTP on the bare server IP
 #   SITE_ADDRESS=skanking-storks.com  → automatic HTTPS via Let's Encrypt
+#   SITE_ADDRESS=skanking-storks.com, www.skanking-storks.com
+#                                     → both, with www redirected to the apex
 #
 # Switching to the domain form requires nothing else: point an A record at the
 # server, set the variable, and `docker compose up -d caddy`. Caddy provisions
-# and renews the certificate itself.
+# and renews the certificate itself — one per hostname listed.
+#
+# Listing www is what makes the redirect below reachable. Caddy only answers for
+# hostnames it is told about, so without it a request to www never arrives here
+# at all and the browser reports a connection failure rather than a redirect.
+# The DNS record for www is still required for the same reason: the request has
+# to reach this server before anything can redirect it.
 
 {$SITE_ADDRESS} {
 	encode zstd gzip
+
+	# ── www → apex ───────────────────────────────────────────────────────────
+	# Serving identical content on two hostnames splits search ranking between
+	# them, so www is canonicalised onto the apex rather than served.
+	#
+	# Matched by regexp on the Host header rather than by naming the domain, so
+	# this file stays domain-agnostic: it is driven entirely by SITE_ADDRESS and
+	# needs no edit when the domain changes.
+	#
+	# That also leaves the bare-IP deployment alone. With SITE_ADDRESS=:80 you
+	# reach the server by IP, and an IP Host cannot match ^www\. — verified for
+	# IP and localhost hosts. Note the matcher keys on the Host header and not
+	# on SITE_ADDRESS, so pointing a www name at a :80 server would still
+	# redirect it; that is the behaviour you would want there anyway.
+	#
+	# First in source order deliberately: handle blocks are mutually exclusive
+	# and evaluated in the order written, so this short-circuits before any
+	# proxy runs. Moving it below them would send www traffic to the app.
+	#
+	# 301 is correct for canonicalisation, but note browsers cache it hard. If
+	# www ever needs to become the canonical host, expect every browser that has
+	# seen this to keep redirecting until its cache is cleared.
+	@www header_regexp apex Host ^www\.(.+)$
+	handle @www {
+		redir https://{re.apex.1}{uri} permanent
+	}
 
 	# ── Backend API ──────────────────────────────────────────────────────────
 	handle /api/* {
