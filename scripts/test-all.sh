@@ -46,12 +46,28 @@ if [ "$SKIP_UNIT" -eq 0 ]; then
   else
     cd app
     if pnpm test:unit; then
-      ok "Frontend unit tests passed"
+      ok "Admin SPA unit tests passed"
     else
-      fail "Frontend unit tests FAILED"
+      fail "Admin SPA unit tests FAILED"
       FE_UNIT_STATUS=4
     fi
     cd ..
+
+    # The public site's lib layer — cms.ts and slugs.ts — decides which routes
+    # get built and which hrefs the nav emits. Both are plain TypeScript and both
+    # have shipped bugs no other stage could see: an Astro build is green either
+    # way, and E2E only ever exercises whichever config the API happened to
+    # serve. Same bitmask bit as the SPA: both are frontend unit tests.
+    if [ -f web/vitest.config.ts ]; then
+      cd web
+      if pnpm test:unit; then
+        ok "Public site unit tests passed"
+      else
+        fail "Public site unit tests FAILED"
+        FE_UNIT_STATUS=4
+      fi
+      cd ..
+    fi
   fi
 else
   warn "Frontend unit tests skipped (--skip-unit)"

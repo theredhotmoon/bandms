@@ -88,5 +88,17 @@ Any admin route without an `Accept: application/json` header returns 500, not 40
 - `PresaleUnlockWidget` label is not programmatically associated with its input (missing `for`/`id`). Accessibility.
 - Some ticket tests call `ConcertTicketType::create()` directly rather than using a factory.
 
-### No E2E coverage of the public site
-Every spec targets the admin SPA on `:5173`. The Astro site on `:4322` — including the public ticket purchase flow — has none, and covering it needs a second Playwright project.
+### The public site has no type-check gate
+`app/` is gated by `vue-tsc` on every build; `web/` is not. `astro check` needs
+`@astrojs/check`, which is not installed, and `pnpm build` only runs the token
+lint plus the Astro build — neither of which reads a type annotation. This is the
+mechanism behind the "types lie" footgun in `CLAUDE.md`: four `web/src/types`
+interfaces claimed fields the API never sent, and one of them crash-looped the
+container for two months. Installing `@astrojs/check` and adding it to `build`
+would close it; expect a first run to surface a backlog.
+
+### Public-site E2E is thin, not absent
+Eight specs now cover the public Astro site on `:4322` (contact, availability,
+music, gallery, about, release detail, footer, the restyled pages). The **public
+ticket purchase flow still has none** — the one path on that site that takes
+money. Everything else on `:5173` targets the admin SPA.

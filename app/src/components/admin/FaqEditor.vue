@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
 
@@ -65,10 +65,31 @@ function inputClass(key: string) {
     ? `${INPUT_BASE} border-red-500`
     : `${INPUT_BASE} border-zinc-700 focus:border-teal-500`
 }
+
+// Every key this form renders inline. Anything else — a bare `question` or
+// `answer` from a rule attached to the array rather than to a locale — used to
+// be dropped on the floor, so a 422 looked like a silent no-op. Whatever the API
+// rejects now gets said out loud somewhere.
+const SHOWN_KEYS = ['module_slug', 'question.en', 'question.pl', 'answer.en', 'answer.pl']
+
+const otherErrors = computed(() =>
+  Object.entries(props.errors)
+    .filter(([key]) => !SHOWN_KEYS.includes(key))
+    .flatMap(([, messages]) => messages),
+)
 </script>
 
 <template>
   <form class="flex flex-col gap-3 border-t border-zinc-800 px-4 py-3" @submit.prevent="submit">
+    <p
+      v-for="message in otherErrors"
+      :key="message"
+      class="text-xs text-red-400"
+      role="alert"
+    >
+      {{ message }}
+    </p>
+
     <div class="flex flex-wrap items-end gap-3">
       <div class="flex flex-col gap-1">
         <label class="text-xs text-zinc-600" for="faq-module">Subpage</label>

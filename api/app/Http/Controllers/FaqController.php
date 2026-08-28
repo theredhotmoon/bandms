@@ -175,6 +175,10 @@ class FaqController extends Controller
             $unknown = array_diff(array_keys($value), ['en', 'pl']);
 
             if ($unknown !== []) {
+                // Keyed on the bare attribute, which no field in FaqEditor owns.
+                // That is deliberate — the locale it objects to has no input to
+                // attach to — and safe because the editor now renders any error
+                // key it does not place inline as a banner above the form.
                 $fail("The {$attribute} field only accepts the locales en and pl.");
             }
         };

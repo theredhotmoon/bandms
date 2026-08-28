@@ -159,4 +159,63 @@ test.describe('Availability calendar — failed fetch', () => {
     await expect(dialog.locator('.am-day.is-open')).toHaveCount(0)
     expect(await dialog.locator('.am-day.is-booked').count()).toBeGreaterThan(0)
   })
+
+  // Two requests for the *same* month, which needs no timing luck: Next fires
+  // one, Prev returns early from the cache, Next fires another because the month
+  // still has no cache entry. If the second succeeds and the first then fails,
+  // the failure flag lands on a month that already holds good data — and
+  // `load()` returns early from then on, so it stays unknown and unselectable
+  // for the rest of the session. Same regression the per-month flag was added to
+  // fix, reached from the other side.
+  //
+  // The two states look identical at first (banner, all days unknown); what
+  // separates them is whether the month can recover. Without a cache entry the
+  // next visit re-fetches and succeeds. With one, nothing ever tries again.
+  test('a month wedged by overlapping requests can still recover', async ({ page }) => {
+    const dialog = await openCalendar(page)
+    await expect(dialog.locator('.am-day.is-open').first()).toBeVisible({ timeout: 8000 })
+
+    let calls = 0
+
+    await page.route(RANGE, async (route) => {
+      const first = calls++ === 0
+
+      if (first) {
+        // Slow *and* failing: it has to land after the second answer.
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        await route.fulfill({ status: 429, body: '{}' })
+        return
+      }
+
+      const start = new URL(route.request().url()).searchParams.get('start') ?? ''
+      const month = start.slice(0, 7)
+      const [year, monthNo] = start.split('-').map(Number)
+      const dayCount = new Date(year, monthNo, 0).getDate()
+      const data = Array.from({ length: dayCount }, (_, i) => ({
+        date: `${month}-${String(i + 1).padStart(2, '0')}`,
+        status: 'booked',
+      }))
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data }),
+      })
+    })
+
+    // Provoke the second request for the same month while the first is in flight.
+    await dialog.getByRole('button', { name: 'Next month' }).click()
+    await dialog.getByRole('button', { name: 'Previous month' }).click()
+    await dialog.getByRole('button', { name: 'Next month' }).click()
+
+    // Let the slow failure land.
+    await page.waitForTimeout(2500)
+
+    // Leave and come back: the month must get another chance.
+    await dialog.getByRole('button', { name: 'Previous month' }).click()
+    await dialog.getByRole('button', { name: 'Next month' }).click()
+
+    await expect(dialog.locator('.am-day.is-booked').first()).toBeVisible({ timeout: 8000 })
+    await expect(dialog.locator('.am-warn')).toHaveCount(0)
+  })
 })

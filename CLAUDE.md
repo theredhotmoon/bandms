@@ -222,6 +222,39 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 
 ---
 
+### `docker compose restart web` runs the **image's** source, not yours
+
+**Symptom:** you edit a file under `web/src`, `docker compose restart web`, watch
+the Astro build run to completion in the logs — and the site serves the old
+behaviour. Nothing errors. Editing again and restarting again changes nothing.
+
+**Root cause:** the `web` service has **no bind mount**; `web/` is copied into the
+image at build time. `start.sh` does re-run `astro build` on every start, which is
+what makes this convincing — but it builds the *baked* copy. A restart can only
+ever rebuild the source the image already holds.
+
+**This is the more dangerous half of the `build`-doesn't-rebuild footgun above.**
+That one leaves you with stale *content*; this one leaves you verifying stale
+*code* — including reverting a fix, restarting, seeing a test still pass, and
+concluding the fix was unnecessary. Both directions of a fail/pass check can be
+wrong at once.
+
+**Fix:** rebuild the image, then recreate:
+
+```bash
+docker compose build web && docker compose up -d web
+```
+
+**Confirm the new code is actually being served** before trusting a result — the
+asset hash changes when the source does:
+
+```bash
+curl -s http://localhost:4322/en/contact | grep -o 'AvailabilityModal[^"]*' | head -1
+# AvailabilityModal.CywzBdN-.js  ← must differ after an edit to that component
+```
+
+Content-only refreshes still need nothing more than `restart`.
+
 ### `web` container hangs silently if backend never becomes healthy
 
 **Symptom:** `bandms_web` stays in a running state but the public site never loads; `docker logs bandms_web` shows the health-check loop still printing.
@@ -731,6 +764,15 @@ Quality over speed: a feature that breaks existing tests is not done, even if it
 make test        # backend unit tests (Pest, ~15 s) — run after every backend change
 make test-all    # unit + E2E Playwright — run before shipping
 ```
+
+**Three unit suites, not two.** `app/` covers the admin SPA and `web/` covers the
+public site's `src/lib` — `cms.ts` and `slugs.ts`, which decide what gets built
+and where the nav points. That layer had no tests until two bugs in it shipped:
+`astro build` is green whichever slug map it resolves, and E2E only ever sees
+whichever config the API happened to serve, so neither stage can see the
+difference. Anything in `web/src/lib` with a cache, a retry or a fallback belongs
+in `web/src/lib/*.test.ts` (`cd web && pnpm test:unit`); `scripts/test-all.sh`
+runs it under the same bitmask bit as the SPA suite.
 
 - Run `make test` automatically after any backend change (models, controllers, migrations, resources).
 - Run `make test-all` before every `/ship` or PR.
