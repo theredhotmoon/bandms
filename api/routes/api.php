@@ -79,7 +79,12 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 */
 
 Route::get('/band-profile', [BandProfileController::class, 'show'])->name('api.band-profile.show');
-Route::get('/band-profile/calendar/availability', [BandCalendarController::class, 'availability'])->name('api.calendar.availability');
+// Throttled for the same reason as the range endpoint below, and more so: this
+// one caches nothing but the raw feed body, so every call re-runs Reader::read()
+// and expand() for every member.
+Route::get('/band-profile/calendar/availability', [BandCalendarController::class, 'availability'])
+    ->middleware('throttle:30,1')
+    ->name('api.calendar.availability');
 // Throttled: unauthenticated, and each uncached call expands up to 92 days of
 // iCal for every member. The 5-minute cache is keyed on the exact range, so
 // shifting it by a day sidesteps it — cheap CPU amplification otherwise.

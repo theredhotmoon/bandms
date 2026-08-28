@@ -65,9 +65,13 @@ const leadingBlanks = computed(
 
 const statuses = computed(() => cache.value[monthKey.value] ?? {})
 
-function statusFor(day: number): Status | 'past' {
+function statusFor(day: number): Status | 'past' | 'unknown' {
   const date = new Date(shown.value.year, shown.value.month, day)
   if (date < today) return 'past'
+  // A failed fetch must not read as "free". Presenting every day as open and
+  // letting it be picked is the same defect as the endpoint reporting dates it
+  // never checked — the banner explains, and the grid stays unselectable.
+  if (failed.value) return 'unknown'
   return statuses.value[iso(shown.value.year, shown.value.month, day)] ?? 'open'
 }
 
@@ -279,6 +283,8 @@ function submit() {
   color: color-mix(in oklab, var(--color-ink) 55%, transparent);
 }
 .am-day.is-past { color: color-mix(in oklab, var(--color-ink) 20%, transparent); }
+/* Availability could not be fetched — legible, but plainly not selectable. */
+.am-day.is-unknown { color: color-mix(in oklab, var(--color-ink) 30%, transparent); }
 
 .am-legend {
   display: flex;
