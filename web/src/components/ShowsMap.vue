@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/lib/basemap'
 
 interface Pin {
   id: number
@@ -98,10 +99,10 @@ onMounted(async () => {
 
   map = L.map(mapEl.value, { scrollWheelZoom: false, zoomControl: true })
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer(basemapTileUrl(import.meta.env.PUBLIC_CARTO_KEY), {
     maxZoom: 12,
     subdomains: 'abcd',
-    attribution: '© OpenStreetMap © CARTO',
+    attribution: BASEMAP_ATTRIBUTION,
   }).addTo(map)
 
   markerById = {}

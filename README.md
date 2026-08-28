@@ -194,6 +194,45 @@ pinned to 2 in `app/playwright.config.ts`; override with
 A full green run reports **178 passed, 15 skipped**. The 15 are intentional
 data-dependent guards in the specs, not silent failures.
 
+#### E2E fixtures clean up after themselves
+
+`seedTicket` shells out to `php artisan e2e:seed-ticket`, which inserts a venue,
+concert, ticket type, price tier, fan account, order and ticket. That command
+only ever inserts — deliberately, so a stray run adds recognisable junk rather
+than destroying anything — and for a long time nothing removed what it added.
+The dev database reached **133 "Testville" venues against one real one**, and
+because the public site bakes whatever is in the database when its container
+starts, every one of them was listed on the public concerts page.
+
+Two guards now close that, and both are needed:
+
+- A Playwright **teardown project** (`e2e/tests/setup/fixtures.teardown.ts`)
+  runs `e2e:purge` once the suite finishes. It cannot be an `afterAll` hook —
+  `seedTicket` is called from several specs across parallel workers, so the only
+  safe moment to clear the fixtures is after all of them are done.
+- `e2e:seed-ticket` **sweeps fixtures older than six hours** when it runs, for
+  the case the suite is killed and never reaches the teardown. The age cut is
+  what makes it safe: nothing from the current run is hours old, so it can never
+  delete a fixture another worker is mid-spec with.
+
+To clear leftovers by hand:
+
+```bash
+docker exec bandms_backend php artisan e2e:purge --dry-run   # what would go
+docker exec bandms_backend php artisan e2e:purge --force     # remove it
+```
+
+Deletion order matters and the command encodes it: `concerts` cascade from
+`venues`, but `tickets` and `order_items` reference ticket types with
+`ON DELETE SET NULL`, so removing venues first would strand orders and tickets
+as orphans instead of deleting them.
+
+**Any other spec that writes to shared dev content needs the same treatment.**
+`website-modules.spec.ts` captures the original value in `beforeAll` and writes
+it back in `afterAll` for exactly this reason. Restoring the row is not enough
+on its own — the public container still holds the stale build, and only
+`docker compose restart web` re-fetches and rebuilds.
+
 ### Run both suites together
 
 ```bash
@@ -341,6 +380,89 @@ reports success.
 
 ---
 
+## Maps: venue coordinates and the CARTO basemap key
+
+The concert map needs **two independent things** to be true. Miss either and you
+get a different, equally confusing symptom.
+
+| Missing | Symptom |
+|---|---|
+| Venue coordinates | The map section is **absent** — no empty box, no error |
+| `PUBLIC_CARTO_KEY` | The map draws, but every tile reads **"API KEY REQUIRED"** |
+
+### The key
+
+CARTO gated their raster basemaps. An unkeyed tile request still returns
+`200 OK` with a valid PNG — it is simply watermarked across the middle. Nothing
+else can see that: the network tab is green, Leaflet raises nothing, and both
+`astro build` and `vue-tsc` pass. **The only symptom is visual**, which is why
+this reads as a broken map rather than a missing credential.
+
+Request a key at <https://carto.com/basemaps/apikey> — email, the domain you
+will serve from, and a line on what you are building. It is emailed straight
+back with no approval queue and no CARTO account, free to 5M tile requests a
+month. Put it in the root `.env`:
+
+```bash
+PUBLIC_CARTO_KEY=<the key CARTO emails you>
+```
+
+One variable, two consumers: the public site reads it as `PUBLIC_CARTO_KEY`
+(Astro only exposes `PUBLIC_`-prefixed vars to island code), and the admin SPA
+takes it as a `VITE_CARTO_KEY` **build arg**, wired in `docker-compose.yml`.
+
+It is **inlined into client JavaScript at build time**, so changing it needs a
+rebuild — a restart will not do:
+
+```bash
+docker compose build web frontend && docker compose up -d web frontend
+```
+
+The key is public by design. It travels in the tile URL and ships in the bundle;
+a basemap key is a domain-scoped credential, not a secret — do not add a proxy
+to hide it.
+
+With no key set the site still requests CARTO tiles rather than silently falling
+back to another provider. That keeps the watermark visible on purpose: a deploy
+missing the key should *look* wrong rather than quietly render a different
+basemap than production does.
+
+### Venue coordinates
+
+`ConcertsSection.astro` filters on `concertsWithCoords`, so a venue with no
+`latitude`/`longitude` is not merely a missing pin — if *no* venue has
+coordinates the entire map section is omitted from the build. That is why an
+un-geocoded database shows no map at all rather than an empty one.
+
+Two ways to fill them in:
+
+- **One venue** — `/admin/venues`, open the venue, use the place search or click
+  the map to drop a pin. Address fields are auto-filled from the search result.
+- **In bulk** — for rows imported or seeded before anyone thought about the map:
+
+```bash
+docker exec bandms_backend php artisan venues:geocode --dry-run   # preview
+docker exec bandms_backend php artisan venues:geocode --force     # write
+```
+
+It geocodes from the address, never the venue name: a name helps for a landmark
+and actively hurts for anything generic ("Klub Studio"), and a confident pin in
+the wrong city is worse than no pin — nobody thinks to double-check it. Review
+the `--dry-run` table before committing.
+
+Queries are memoised per address, so venues sharing a city cost one request
+between them, and lookups are spaced a second apart per Nominatim's usage
+policy. `--force` skips the production confirmation; the local backend container
+runs with `APP_ENV=production`, so you need it there too.
+
+After writing coordinates, rebuild the public site so the new pins are baked in:
+
+```bash
+docker compose restart web        # content-only refresh
+```
+
+---
+
 ## Environment variables
 
 Copy `.env.example` to `.env` and fill in:
@@ -353,6 +475,109 @@ Copy `.env.example` to `.env` and fill in:
 | `E2E_ADMIN_EMAIL` | Admin email used by Playwright tests |
 | `E2E_ADMIN_PASSWORD` | Admin password used by Playwright tests |
 | `E2E_BASE_URL` | Override Playwright base URL (default: `http://localhost:5173`) |
+| `PUBLIC_CARTO_KEY` | CARTO basemap key for the concert maps — see [Maps](#maps-venue-coordinates-and-the-carto-basemap-key) |
+
+### Changing an environment variable on the server
+
+**The deploy never writes `/opt/bandms/.env`.** `.github/workflows/deploy.yml`
+copies only `docker-compose.prod.yml`, `docker/caddy/Caddyfile` and
+`scripts/prod-backup-db.sh`; the server's `.env` is persistent state you edit by
+hand. Adding a variable to `.env.example` therefore changes nothing in
+production until you also add it there.
+
+**A variable set only in `.env` does nothing either.** The `backend` and `web`
+services declare explicit `environment:` maps and take no `env_file`, so a value
+reaches a container only where the compose file interpolates it. If it is not
+listed in `docker-compose.prod.yml`, it is simply absent and the app falls back
+to a config default — silently.
+
+So a variable needs **both**: a line in the server's `.env`, and a line in the
+service's `environment:` block (which ships from the repo).
+
+#### 1. Work out which kind of variable it is
+
+| Kind | Examples | Where it is consumed | To apply |
+|---|---|---|---|
+| Backend runtime | `FRONTEND_URL`, `LOGIN_RATE_LIMIT`, `CONTACT_EMAIL` | Laravel config, cached by `php artisan optimize` at container start | Recreate `backend` |
+| Public-site build | `PUBLIC_THEME`, `PUBLIC_CARTO_KEY` | `web/docker/start.sh`, passed to `astro build` when the container starts | Recreate `web` |
+| Admin SPA build | `VITE_*` | Baked into the image by CI at `docker build` time | **Cannot be set on the server** — needs a CI change |
+
+That last row is a real limit, not an oversight. The `frontend` image is pulled
+prebuilt from GHCR with no build args, so `VITE_CARTO_KEY` has no effect in
+production. It does not need one: Caddy's `@spa` matcher does not route
+`/concerts` to the SPA, so the SPA's map never reaches a visitor.
+
+#### 2. Edit the server's `.env`
+
+```bash
+ssh deploy@YOUR_SERVER
+cd /opt/bandms
+cp .env .env.bak.$(date +%F)          # cheap insurance
+nano .env                             # add or change the line
+grep PUBLIC_CARTO_KEY .env            # confirm it is there
+```
+
+#### 3. Recreate the affected container — a restart is not enough
+
+`entrypoint.sh` runs `php artisan optimize`, which bakes env values into the
+config cache for the container's lifetime; `start.sh` reads its env once at
+startup. `docker compose restart` reuses the existing container **with its old
+environment**, so it reports success and changes nothing.
+
+```bash
+# public site (rebuilds the Astro site on start — takes 1–2 min)
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
+
+# backend
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
+```
+
+#### 4. Verify the value actually arrived
+
+Do not trust `.env`. Ask the container:
+
+```bash
+docker exec bandms-backend printenv FRONTEND_URL LOGIN_RATE_LIMIT
+docker exec bandms-web printenv PUBLIC_CARTO_KEY PUBLIC_THEME
+```
+
+Empty output means the variable never arrived — almost always a missing line in
+the service's `environment:` block, not a typo in `.env`.
+
+For `PUBLIC_CARTO_KEY` specifically, the value is compiled into the site's
+JavaScript, so the real check is the served bundle:
+
+```bash
+# which map island the page actually loads
+curl -s https://YOUR_DOMAIN/en/concerts | grep -o '/_astro/ShowsMap[^"]*\.js' | head -1
+
+# 1 = the key is baked into that bundle, 0 = it is not
+curl -s https://YOUR_DOMAIN/_astro/ShowsMap.<hash>.js | grep -c 'key='
+```
+
+Then load the page and *look at it* — an unkeyed tile still returns `200 OK`, so
+only your eyes can confirm the watermark is gone.
+
+#### A note on the Caddyfile
+
+`docker/caddy/Caddyfile` is a bind mount, and Compose hashes the *service
+definition* — not a mounted file's contents — when deciding whether to recreate.
+A changed Caddyfile is reported up-to-date and skipped, and Caddy parses its
+config only at startup. The tell is `docker ps` showing `bandms-caddy` with a far
+older uptime than everything around it. Validate before recreating, because a
+malformed file takes down the whole site:
+
+```bash
+docker run --rm -e SITE_ADDRESS=":80" \
+  -v /opt/bandms/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+  caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+```
+
+A manual server-side edit is a **hotfix, not a fix** — the next deploy `scp`s the
+repo's copy over it. Land the same change in the repo.
+
 
 ---
 

@@ -40,11 +40,36 @@ class SeedE2eTicket extends Command
 
     protected $description = 'Create a paid order with issued tickets for the E2E suite, and print the identifiers as JSON';
 
+    /**
+     * How old a fixture must be before a seed run will clear it away.
+     *
+     * Comfortably longer than any suite run (minutes) and short enough that
+     * yesterday's crashed run does not survive into today's database.
+     */
+    private const STALE_FIXTURE_HOURS = 6;
+
     public function handle(): int
     {
         if (! $this->confirmToProceed()) {
             return self::FAILURE;
         }
+
+        // Sweep stale fixtures before adding another. The Playwright teardown
+        // project purges the whole run's fixtures when it finishes, but it does
+        // not run if the suite is killed or the machine gives up mid-run — and
+        // months of exactly that is how 133 "Testville" venues accumulated.
+        //
+        // The age cut is what makes this safe under parallelism: specs run
+        // concurrently across workers, so purging *everything* here could
+        // delete a fixture another worker is mid-spec with. Nothing from the
+        // current run is hours old, so nothing live is ever in range.
+        //
+        // callSilently, not call: stdout is this command's transport back to
+        // Playwright and must stay exactly one line of JSON.
+        $this->callSilently('e2e:purge', [
+            '--older-than' => self::STALE_FIXTURE_HOURS,
+            '--force' => true,
+        ]);
 
         // Second resolution is not enough: Playwright runs specs in parallel, and
         // two seeds landing in the same second collide on venues.name_unique —

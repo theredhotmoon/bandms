@@ -61,3 +61,29 @@ export function seedTicket(count = 1): SeededTicket {
 
   return JSON.parse(line) as SeededTicket
 }
+
+/**
+ * Delete every fixture `seedTicket` has created.
+ *
+ * Called from the teardown project once the suite finishes. Failure is reported
+ * but not thrown: leftover fixtures are a housekeeping problem, and failing the
+ * run over them would turn a tidy-up into a red build that says nothing about
+ * the code under test.
+ */
+export function purgeSeededFixtures(): void {
+  try {
+    const out = execFileSync(
+      'docker',
+      ['exec', CONTAINER, 'php', 'artisan', 'e2e:purge', '--force'],
+      { encoding: 'utf-8', timeout: 60_000 },
+    )
+    console.log(out.trim())
+  } catch (e) {
+    const err = e as { stdout?: string; stderr?: string; message: string }
+    console.warn(
+      `[teardown] e2e:purge failed — fixtures were left in the database.
+` +
+        `${err.stderr ?? ''}${err.stdout ?? ''}${err.message}`,
+    )
+  }
+}
