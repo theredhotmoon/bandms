@@ -108,4 +108,55 @@ test.describe('Availability calendar — failed fetch', () => {
     await dialog.locator('.am-day.is-open').first().click()
     await expect(dialog.getByRole('button', { name: /Request this date/i })).toBeEnabled()
   })
+
+  // Month results used to be filed under `monthKey` read *after* the await, so a
+  // slow response for one month could land while a later month was on screen and
+  // be stored under its key.
+  //
+  // The symptom is subtle: the poisoned entry holds the *other* month's dates, so
+  // every lookup for the visible month misses and falls back to `open`. A booked
+  // day therefore disappears rather than appearing where it should not — which is
+  // why the fixture makes the *final* month fully booked and the delayed one
+  // fully open. Asserting "no unexpected booked days" would pass either way.
+  test('a slow response cannot overwrite a later month', async ({ page }) => {
+    const dialog = await openCalendar(page)
+    await expect(dialog.locator('.am-day.is-open').first()).toBeVisible({ timeout: 8000 })
+
+    const requested: string[] = []
+
+    await page.route(RANGE, async (route) => {
+      const start = new URL(route.request().url()).searchParams.get('start') ?? ''
+      const month = start.slice(0, 7)
+      const [year, monthNo] = start.split('-').map(Number)
+      const dayCount = new Date(year, monthNo, 0).getDate()
+
+      const isFirstRouted = requested.length === 0
+      requested.push(month)
+
+      // Delayed month: all open. Final month: all booked.
+      const status = isFirstRouted ? 'open' : 'booked'
+      const data = Array.from({ length: dayCount }, (_, i) => ({
+        date: `${month}-${String(i + 1).padStart(2, '0')}`,
+        status,
+      }))
+
+      if (isFirstRouted) await new Promise((resolve) => setTimeout(resolve, 1500))
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) })
+    })
+
+    // Two clicks in quick succession: the first month's answer is still in
+    // flight when the second is requested.
+    await dialog.getByRole('button', { name: 'Next month' }).click()
+    await dialog.getByRole('button', { name: 'Next month' }).click()
+
+    // Long enough for the delayed answer to land after the fast one.
+    await page.waitForTimeout(2500)
+
+    expect(requested.length).toBeGreaterThanOrEqual(2)
+
+    // The visible month was served all-booked. If the delayed answer overwrote
+    // its entry, those days silently revert to open.
+    await expect(dialog.locator('.am-day.is-open')).toHaveCount(0)
+    expect(await dialog.locator('.am-day.is-booked').count()).toBeGreaterThan(0)
+  })
 })
