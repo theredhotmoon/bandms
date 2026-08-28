@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * How the availability calendar behaves when the API will not answer.
@@ -47,11 +48,10 @@ async function openCalendar(page: import('@playwright/test').Page) {
 }
 
 test.describe('Availability calendar — failed fetch', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(!(await contactIsUp(request)), `${WEB}/en/contact unavailable`)
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('a failed month offers no selectable days', async ({ page }) => {

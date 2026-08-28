@@ -281,22 +281,38 @@ it('keys the missing-question error where the editor renders it', function () {
 // A payload whose locale keys we ignore leaves the attribute unset, so the
 // INSERT omits a NOT NULL column — `required|array` validates presence, not that
 // anything will be written.
-it('does not 500 when answer carries only unsupported locales', function () {
+// Previously a 500 (the column was never written); then a 201 that silently
+// discarded the text. A 422 is the honest answer.
+it('rejects an answer carrying only unsupported locales', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
 
     $this->postJson('/api/admin/faqs', [
         'module_slug' => 'contact',
         'question'    => ['en' => 'Where are the drums?'],
         'answer'      => ['de' => 'Hinten.'],
-    ])->assertCreated();
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('answer');
 });
 
-it('does not 500 when answer is a list rather than a locale map', function () {
+it('rejects an answer sent as a list rather than a locale map', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
 
     $this->postJson('/api/admin/faqs', [
         'module_slug' => 'contact',
         'question'    => ['en' => 'Where are the drums?'],
         'answer'      => ['Behind you.'],
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('answer');
+});
+
+// The column still has to be populated for a payload that validates but writes
+// nothing — blank in both locales is legal.
+it('stores a row when answer is blank in both locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'Where are the drums?'],
+        'answer'      => ['en' => null, 'pl' => null],
     ])->assertCreated();
 });

@@ -1,5 +1,5 @@
 import type { Locale } from '@/types/shared'
-import { getSiteConfig } from './cms'
+import { getSiteConfig, isFailOpenConfig } from './cms'
 
 export type SlugMap = { en: Record<string, string>; pl: Record<string, string> }
 
@@ -61,6 +61,16 @@ export async function getSlugMap(): Promise<SlugMap> {
     map.pl[moduleSlug] = resolve(plCfg.module_config[moduleSlug]?.slug, moduleSlug)
   }
 
-  _cache = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
+  const built = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
+
+  // Only a map built from a config we actually fetched is cached. getSiteConfig
+  // retries a blip, but this cache is permanent for the build — so caching a
+  // fail-open map here would lock every page, Header and Footer included, to
+  // module keys (/pl/shop instead of /pl/sklep) even after the API recovered.
+  // That is the failure getSiteConfig's own eviction exists to prevent, and it
+  // was still reachable through this second cache.
+  if (isFailOpenConfig(enCfg) || isFailOpenConfig(plCfg)) return built
+
+  _cache = built
   return _cache
 }

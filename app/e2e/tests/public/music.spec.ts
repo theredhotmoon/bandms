@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * The Music page on the public Astro site.
@@ -53,17 +54,14 @@ async function hydrated(page: import('@playwright/test').Page, selector: string)
 }
 
 test.describe('Music page', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(
       !(await musicPageIsUp(request)),
       `${WEB}/en/releases unavailable — site down, or the releases module is off`,
     )
 
-    // A hydration error in one island silently breaks another — the Teleport bug
-    // proved that — so every test here fails on a page error.
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('renders the hero and a featured release', async ({ page }) => {

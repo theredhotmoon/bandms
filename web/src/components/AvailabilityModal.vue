@@ -90,7 +90,13 @@ const pickedLabel = computed(() => {
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 async function load() {
-  if (cache.value[monthKey.value]) return
+  // Captured before the await. Both writes below used to read monthKey at
+  // resolve time, so two in-flight requests — trivially produced by clicking an
+  // arrow twice — filed the earlier month's answer under the later month's key.
+  // That month then rendered every day open and clickable, and never reloaded,
+  // because the cache check above now found an entry for it.
+  const key = monthKey.value
+  if (cache.value[key]) return
 
   loading.value = true
 
@@ -107,10 +113,10 @@ async function load() {
     const json = (await res.json()) as { data?: { date: string; status: Status }[] }
     const map: Record<string, Status> = {}
     for (const day of json.data ?? []) map[day.date] = day.status
-    cache.value = { ...cache.value, [monthKey.value]: map }
-    failedMonths.value = { ...failedMonths.value, [monthKey.value]: false }
+    cache.value = { ...cache.value, [key]: map }
+    failedMonths.value = { ...failedMonths.value, [key]: false }
   } catch {
-    failedMonths.value = { ...failedMonths.value, [monthKey.value]: true }
+    failedMonths.value = { ...failedMonths.value, [key]: true }
   } finally {
     loading.value = false
   }

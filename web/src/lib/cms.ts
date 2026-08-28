@@ -169,35 +169,56 @@ export interface SiteConfig {
  * unmemoised call meant one /api/site-config request per ornament on every page,
  * hundreds of round trips across a build. The config cannot change mid-build.
  */
+/**
+ * The value every failed lookup returns, as a single shared instance.
+ *
+ * Identity is the signal: `isFailOpenConfig` compares against this object, so a
+ * caller can tell "the API said the CMS is empty" from "we could not ask". A
+ * genuinely empty config is indistinguishable by shape alone.
+ */
+export const FAIL_OPEN_SITE_CONFIG: SiteConfig = Object.freeze({
+  modules: {},
+  module_order: [],
+  module_config: {},
+}) as SiteConfig
+
+export function isFailOpenConfig(config: SiteConfig): boolean {
+  return config === FAIL_OPEN_SITE_CONFIG
+}
+
 const _siteConfigCache = new Map<Locale, Promise<SiteConfig>>()
+const _siteConfigAttempts = new Map<Locale, number>()
+
+/**
+ * How many times a locale may be re-fetched after a failure before the fail-open
+ * value is cached for good.
+ *
+ * Evicting on every failure sounds right and is not: `getTheme` reads this for
+ * every ThemeSlot, so against a wedged backend — the `pm.max_children`
+ * saturation CLAUDE.md documents — each of the several ornaments on each of ~35
+ * pages would issue its own slow, failing request, and the build would stall
+ * rather than finish fail-open. A couple of retries absorbs a blip; beyond that
+ * the API is down, not flickering.
+ */
+const SITE_CONFIG_MAX_ATTEMPTS = 3
 
 export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   const hit = _siteConfigCache.get(lang)
   if (hit) return hit
 
-  // Only a *successful* config is cached. The fail-open value is returned but
-  // the entry is evicted, so the next page retries instead of inheriting one
-  // blip for the whole build — which would leave Header and Footer with no
-  // labels and slugs falling back to module keys (/pl/shop, not /pl/sklep).
-  //
-  // An earlier attempt evicted on rejection, which never fired: fetchSiteConfig
-  // caught its own failures and *resolved* with the fallback, so the fallback
-  // was cached exactly as before. Failure has to leave this function as a
-  // rejection for the distinction to exist at all.
+  const attempt = (_siteConfigAttempts.get(lang) ?? 0) + 1
+  _siteConfigAttempts.set(lang, attempt)
+
   const pending = fetchSiteConfig(lang).catch(() => {
-    _siteConfigCache.delete(lang)
-    return { modules: {}, module_order: [], module_config: {} } as SiteConfig
+    // Retry a blip; stop hammering a backend that is genuinely down.
+    if (attempt < SITE_CONFIG_MAX_ATTEMPTS) _siteConfigCache.delete(lang)
+    return FAIL_OPEN_SITE_CONFIG
   })
 
   _siteConfigCache.set(lang, pending)
   return pending
 }
 
-/**
- * Throws on any failure. Deliberately: `getSiteConfig` owns both the fail-open
- * value and the decision not to cache it, and it can only tell success from
- * failure if failure arrives as a rejection.
- */
 async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
   const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
     headers: { Accept: 'application/json' },

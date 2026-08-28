@@ -140,19 +140,44 @@ class FaqController extends Controller
             // merge instead of here: on update, clearing one locale is legal as
             // long as the other already holds a value, and a payload-only rule
             // like required_without cannot see the stored one.
-            'question'     => [$creating ? 'required' : 'sometimes', 'array'],
+            'question'     => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
             'question.en'  => ['sometimes', 'nullable', 'string', 'max:300'],
             'question.pl'  => ['sometimes', 'nullable', 'string', 'max:300'],
             // `answer` is NOT NULL with no default too, so omitting the key
             // entirely left the column out of the INSERT and produced a database
             // error. Required as an array on create; its locales may be blank,
             // since an answer can legitimately be written later.
-            'answer'       => [$creating ? 'required' : 'sometimes', 'array'],
+            // Keys are restricted so an unsupported locale is a 422 rather than
+            // a silent discard: fill() only reads en/pl, so `{"de": "..."}` used
+            // to save with an empty answer and no word to the client.
+            'answer'       => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
             'answer.en'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'answer.pl'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Rejects a translatable payload carrying keys that are not locales.
+     *
+     * Without it a value under an unsupported key passes validation, is dropped
+     * by fill(), and the row saves empty — a 201 that quietly threw the
+     * submitted text away.
+     */
+    private function localeKeysOnly(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if (!is_array($value)) {
+                return;
+            }
+
+            $unknown = array_diff(array_keys($value), ['en', 'pl']);
+
+            if ($unknown !== []) {
+                $fail("The {$attribute} field only accepts the locales en and pl.");
+            }
+        };
     }
 
     /**

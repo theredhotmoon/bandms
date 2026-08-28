@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * The Gallery page on the public Astro site.
@@ -43,15 +44,14 @@ async function hydrated(page: import('@playwright/test').Page, selector: string)
 }
 
 test.describe('Gallery page', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(
       !(await galleryIsUp(request)),
       `${WEB}/en/photos unavailable — site down, or the photos module is off`,
     )
 
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('renders the hero and album cards', async ({ page }) => {

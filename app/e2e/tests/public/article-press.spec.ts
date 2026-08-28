@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * Press coverage on the Article page.
@@ -40,15 +41,14 @@ async function newsIsUp(request: import('@playwright/test').APIRequestContext) {
 }
 
 test.describe('Article — press coverage', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(
       !(await newsIsUp(request)),
       `${WEB}/en/news unavailable — site down, or the posts module is off`,
     )
 
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('the first piece of coverage becomes the pull quote', async ({ page, request }) => {
