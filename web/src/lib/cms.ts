@@ -175,34 +175,37 @@ export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   const hit = _siteConfigCache.get(lang)
   if (hit) return hit
 
-  // Evicted on rejection. Caching the promise itself meant one transient blip
-  // was baked into the whole build: every later page got the same failure or the
-  // same fail-open {}, so Header and Footer lost every label and slugs fell back
-  // to module keys — /pl/shop instead of /pl/sklep. That is the "one build-time
-  // blip" failure CLAUDE.md warns about, widened from one page to all of them.
-  const pending = fetchSiteConfig(lang).catch(error => {
+  // Only a *successful* config is cached. The fail-open value is returned but
+  // the entry is evicted, so the next page retries instead of inheriting one
+  // blip for the whole build — which would leave Header and Footer with no
+  // labels and slugs falling back to module keys (/pl/shop, not /pl/sklep).
+  //
+  // An earlier attempt evicted on rejection, which never fired: fetchSiteConfig
+  // caught its own failures and *resolved* with the fallback, so the fallback
+  // was cached exactly as before. Failure has to leave this function as a
+  // rejection for the distinction to exist at all.
+  const pending = fetchSiteConfig(lang).catch(() => {
     _siteConfigCache.delete(lang)
-    throw error
+    return { modules: {}, module_order: [], module_config: {} } as SiteConfig
   })
 
   _siteConfigCache.set(lang, pending)
   return pending
 }
 
+/**
+ * Throws on any failure. Deliberately: `getSiteConfig` owns both the fail-open
+ * value and the decision not to cache it, and it can only tell success from
+ * failure if failure arrives as a rejection.
+ */
 async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
-  try {
-    const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
-      headers: { Accept: 'application/json' },
-    })
-    if (!res.ok) return { modules: {}, module_order: [], module_config: {} }
-    // `await`, not a bare return: returning a promise from inside try hands its
-    // rejection to the caller rather than to this catch, so a truncated body
-    // escaped the fail-open path entirely.
-    return (await res.json()) as SiteConfig
-  } catch {
-    // Fail open: if API is unreachable during build, treat all modules as enabled
-    return { modules: {}, module_order: [], module_config: {} }
-  }
+  const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!res.ok) throw new Error(`site-config ${res.status}`)
+
+  return (await res.json()) as SiteConfig
 }
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────

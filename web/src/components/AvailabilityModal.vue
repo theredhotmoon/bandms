@@ -30,7 +30,13 @@ const { isOpen, close } = useModalTrigger('data-open-availability')
 const monthOffset = ref(0)
 const picked = ref<string | null>(null)
 const loading = ref(false)
-const failed = ref(false)
+
+// Keyed by month, like `cache`. A single global flag meant one failed month left
+// every *cached* month rendering as unknown and unselectable for the rest of the
+// session: load() returns early for a cached month, before it could reset the
+// flag. Deriving it from the month under view removes the ordering hazard entirely.
+const failedMonths = ref<Record<string, boolean>>({})
+const failed = computed(() => failedMonths.value[monthKey.value] === true)
 
 /** `YYYY-MM` → per-day status. Cached so re-visiting a month costs nothing. */
 const cache = ref<Record<string, Record<string, Status>>>({})
@@ -87,7 +93,6 @@ async function load() {
   if (cache.value[monthKey.value]) return
 
   loading.value = true
-  failed.value = false
 
   const start = iso(shown.value.year, shown.value.month, 1)
   const end = iso(shown.value.year, shown.value.month, daysInMonth.value)
@@ -103,10 +108,9 @@ async function load() {
     const map: Record<string, Status> = {}
     for (const day of json.data ?? []) map[day.date] = day.status
     cache.value = { ...cache.value, [monthKey.value]: map }
+    failedMonths.value = { ...failedMonths.value, [monthKey.value]: false }
   } catch {
-    // The grid still renders — every day falls back to `open`, which is the
-    // honest default when we cannot say otherwise. The banner says so.
-    failed.value = true
+    failedMonths.value = { ...failedMonths.value, [monthKey.value]: true }
   } finally {
     loading.value = false
   }

@@ -53,6 +53,7 @@ class FaqController extends Controller
         $faq->module_slug = $data['module_slug'];
         $this->fill($faq, $data);
         $this->assertHasQuestion($faq);
+        $this->ensureTranslatableColumns($faq);
 
         // New rows land at the end of THEIR subpage rather than colliding on 0,
         // which would make their order depend on the id tiebreaker instead of
@@ -75,6 +76,7 @@ class FaqController extends Controller
 
         $this->fill($faq, $data);
         $this->assertHasQuestion($faq);
+        $this->ensureTranslatableColumns($faq);
 
         if (array_key_exists('sort_order', $data)) {
             $faq->sort_order = $data['sort_order'];
@@ -151,6 +153,25 @@ class FaqController extends Controller
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Give every translatable column a value before the row is written.
+     *
+     * `question` and `answer` are both NOT NULL with no default, and Spatie only
+     * touches a column via set/forgetTranslation. fill() ignores locales outside
+     * en/pl, so a payload like `answer: {"de": "..."}` — or a plain list — passes
+     * `required|array`, writes nothing, and the INSERT omits the column. Validating
+     * that the key is *present* was never enough: what matters is that something
+     * is written.
+     */
+    private function ensureTranslatableColumns(Faq $faq): void
+    {
+        foreach (['question', 'answer'] as $field) {
+            if (!array_key_exists($field, $faq->getAttributes())) {
+                $faq->setTranslations($field, []);
+            }
+        }
     }
 
     /**

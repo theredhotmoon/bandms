@@ -277,3 +277,26 @@ it('keys the missing-question error where the editor renders it', function () {
         ->assertStatus(422)
         ->assertJsonValidationErrors(['question.en', 'question.pl']);
 });
+
+// A payload whose locale keys we ignore leaves the attribute unset, so the
+// INSERT omits a NOT NULL column — `required|array` validates presence, not that
+// anything will be written.
+it('does not 500 when answer carries only unsupported locales', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'Where are the drums?'],
+        'answer'      => ['de' => 'Hinten.'],
+    ])->assertCreated();
+});
+
+it('does not 500 when answer is a list rather than a locale map', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question'    => ['en' => 'Where are the drums?'],
+        'answer'      => ['Behind you.'],
+    ])->assertCreated();
+});
