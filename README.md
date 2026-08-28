@@ -194,6 +194,45 @@ pinned to 2 in `app/playwright.config.ts`; override with
 A full green run reports **178 passed, 15 skipped**. The 15 are intentional
 data-dependent guards in the specs, not silent failures.
 
+#### E2E fixtures clean up after themselves
+
+`seedTicket` shells out to `php artisan e2e:seed-ticket`, which inserts a venue,
+concert, ticket type, price tier, fan account, order and ticket. That command
+only ever inserts — deliberately, so a stray run adds recognisable junk rather
+than destroying anything — and for a long time nothing removed what it added.
+The dev database reached **133 "Testville" venues against one real one**, and
+because the public site bakes whatever is in the database when its container
+starts, every one of them was listed on the public concerts page.
+
+Two guards now close that, and both are needed:
+
+- A Playwright **teardown project** (`e2e/tests/setup/fixtures.teardown.ts`)
+  runs `e2e:purge` once the suite finishes. It cannot be an `afterAll` hook —
+  `seedTicket` is called from several specs across parallel workers, so the only
+  safe moment to clear the fixtures is after all of them are done.
+- `e2e:seed-ticket` **sweeps fixtures older than six hours** when it runs, for
+  the case the suite is killed and never reaches the teardown. The age cut is
+  what makes it safe: nothing from the current run is hours old, so it can never
+  delete a fixture another worker is mid-spec with.
+
+To clear leftovers by hand:
+
+```bash
+docker exec bandms_backend php artisan e2e:purge --dry-run   # what would go
+docker exec bandms_backend php artisan e2e:purge --force     # remove it
+```
+
+Deletion order matters and the command encodes it: `concerts` cascade from
+`venues`, but `tickets` and `order_items` reference ticket types with
+`ON DELETE SET NULL`, so removing venues first would strand orders and tickets
+as orphans instead of deleting them.
+
+**Any other spec that writes to shared dev content needs the same treatment.**
+`website-modules.spec.ts` captures the original value in `beforeAll` and writes
+it back in `afterAll` for exactly this reason. Restoring the row is not enough
+on its own — the public container still holds the stale build, and only
+`docker compose restart web` re-fetches and rebuilds.
+
 ### Run both suites together
 
 ```bash

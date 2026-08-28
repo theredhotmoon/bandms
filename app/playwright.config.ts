@@ -34,6 +34,14 @@ export default defineConfig({
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
       use: { storageState: undefined },
+      // Runs once every project depending on 'setup' has finished — the only
+      // safe moment to clear fixtures that are shared across parallel workers.
+      teardown: 'cleanup',
+    },
+    {
+      name: 'cleanup',
+      testMatch: /.*\.teardown\.ts/,
+      use: { storageState: undefined },
     },
     {
       name: 'chromium',
