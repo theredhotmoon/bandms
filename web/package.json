@@ -8,7 +8,8 @@
     "build": "node scripts/check-tokens.mjs && astro build",
     "check:tokens": "node scripts/check-tokens.mjs",
     "preview": "astro preview --port 4322",
-    "check": "astro check"
+    "check": "astro check",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.2.1",
@@ -24,9 +25,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.7"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }

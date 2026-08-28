@@ -53,6 +53,7 @@ class FaqController extends Controller
         $faq->module_slug = $data['module_slug'];
         $this->fill($faq, $data);
         $this->assertHasQuestion($faq);
+        $this->ensureTranslatableColumns($faq);
 
         // New rows land at the end of THEIR subpage rather than colliding on 0,
         // which would make their order depend on the id tiebreaker instead of
@@ -75,6 +76,7 @@ class FaqController extends Controller
 
         $this->fill($faq, $data);
         $this->assertHasQuestion($faq);
+        $this->ensureTranslatableColumns($faq);
 
         if (array_key_exists('sort_order', $data)) {
             $faq->sort_order = $data['sort_order'];
@@ -138,19 +140,67 @@ class FaqController extends Controller
             // merge instead of here: on update, clearing one locale is legal as
             // long as the other already holds a value, and a payload-only rule
             // like required_without cannot see the stored one.
-            'question'     => [$creating ? 'required' : 'sometimes', 'array'],
+            'question'     => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
             'question.en'  => ['sometimes', 'nullable', 'string', 'max:300'],
             'question.pl'  => ['sometimes', 'nullable', 'string', 'max:300'],
             // `answer` is NOT NULL with no default too, so omitting the key
             // entirely left the column out of the INSERT and produced a database
             // error. Required as an array on create; its locales may be blank,
             // since an answer can legitimately be written later.
-            'answer'       => [$creating ? 'required' : 'sometimes', 'array'],
+            // Keys are restricted so an unsupported locale is a 422 rather than
+            // a silent discard: fill() only reads en/pl, so `{"de": "..."}` used
+            // to save with an empty answer and no word to the client.
+            'answer'       => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
             'answer.en'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'answer.pl'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Rejects a translatable payload carrying keys that are not locales.
+     *
+     * Without it a value under an unsupported key passes validation, is dropped
+     * by fill(), and the row saves empty — a 201 that quietly threw the
+     * submitted text away.
+     */
+    private function localeKeysOnly(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if (!is_array($value)) {
+                return;
+            }
+
+            $unknown = array_diff(array_keys($value), ['en', 'pl']);
+
+            if ($unknown !== []) {
+                // Keyed on the bare attribute, which no field in FaqEditor owns.
+                // That is deliberate — the locale it objects to has no input to
+                // attach to — and safe because the editor now renders any error
+                // key it does not place inline as a banner above the form.
+                $fail("The {$attribute} field only accepts the locales en and pl.");
+            }
+        };
+    }
+
+    /**
+     * Give every translatable column a value before the row is written.
+     *
+     * `question` and `answer` are both NOT NULL with no default, and Spatie only
+     * touches a column via set/forgetTranslation. fill() ignores locales outside
+     * en/pl, so a payload like `answer: {"de": "..."}` — or a plain list — passes
+     * `required|array`, writes nothing, and the INSERT omits the column. Validating
+     * that the key is *present* was never enough: what matters is that something
+     * is written.
+     */
+    private function ensureTranslatableColumns(Faq $faq): void
+    {
+        foreach (['question', 'answer'] as $field) {
+            if (!array_key_exists($field, $faq->getAttributes())) {
+                $faq->setTranslations($field, []);
+            }
+        }
     }
 
     /**

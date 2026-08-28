@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * Videos, Press, EPK and Newsletter.
@@ -30,6 +31,8 @@ async function pageIsUp(request: import('@playwright/test').APIRequestContext, s
 }
 
 test.describe('Undesigned pages — shared 2-Tone shell', () => {
+  failOnPageError()
+
   for (const { slug, module } of PAGES) {
     test.describe(slug, () => {
       test.beforeEach(async ({ request, page }) => {
@@ -37,9 +40,6 @@ test.describe('Undesigned pages — shared 2-Tone shell', () => {
           !(await pageIsUp(request, slug)),
           `${WEB}/en/${slug} unavailable — site down, or the ${module} module is off`,
         )
-        page.on('pageerror', (e) => {
-          throw new Error(`page error: ${e.message}`)
-        })
       })
 
       test('opens with the shared page hero', async ({ page }) => {

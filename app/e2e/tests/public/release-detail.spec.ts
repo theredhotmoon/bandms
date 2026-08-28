@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * The release detail page.
@@ -46,14 +47,13 @@ async function hydrated(page: import('@playwright/test').Page, selector: string)
 }
 
 test.describe('Release detail page', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(
       !(await musicPageIsUp(request)),
       `${WEB}/en/releases unavailable — site down, or the releases module is off`,
     )
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('renders the hero with breadcrumb, meta and title', async ({ request, page }) => {

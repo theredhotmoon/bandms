@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * The site footer.
@@ -22,11 +23,10 @@ async function siteIsUp(request: import('@playwright/test').APIRequestContext) {
 }
 
 test.describe('Site footer', () => {
+  failOnPageError()
+
   test.beforeEach(async ({ request, page }) => {
     test.skip(!(await siteIsUp(request)), `${WEB}/en unavailable`)
-    page.on('pageerror', (e) => {
-      throw new Error(`page error: ${e.message}`)
-    })
   })
 
   test('renders on the ink ground with its checker seam', async ({ page }) => {

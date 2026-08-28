@@ -169,20 +169,50 @@ export interface SiteConfig {
  * unmemoised call meant one /api/site-config request per ornament on every page,
  * hundreds of round trips across a build. The config cannot change mid-build.
  */
+/**
+ * The value every failed lookup returns, as a single shared instance.
+ *
+ * Identity is the signal: `isFailOpenConfig` compares against this object, so a
+ * caller can tell "the API said the CMS is empty" from "we could not ask". A
+ * genuinely empty config is indistinguishable by shape alone.
+ */
+export const FAIL_OPEN_SITE_CONFIG: SiteConfig = Object.freeze({
+  modules: {},
+  module_order: [],
+  module_config: {},
+}) as SiteConfig
+
+export function isFailOpenConfig(config: SiteConfig): boolean {
+  return config === FAIL_OPEN_SITE_CONFIG
+}
+
 const _siteConfigCache = new Map<Locale, Promise<SiteConfig>>()
+const _siteConfigAttempts = new Map<Locale, number>()
+
+/**
+ * How many times a locale may be re-fetched after a failure before the fail-open
+ * value is cached for good.
+ *
+ * Evicting on every failure sounds right and is not: `getTheme` reads this for
+ * every ThemeSlot, so against a wedged backend — the `pm.max_children`
+ * saturation CLAUDE.md documents — each of the several ornaments on each of ~35
+ * pages would issue its own slow, failing request, and the build would stall
+ * rather than finish fail-open. A couple of retries absorbs a blip; beyond that
+ * the API is down, not flickering.
+ */
+const SITE_CONFIG_MAX_ATTEMPTS = 3
 
 export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
   const hit = _siteConfigCache.get(lang)
   if (hit) return hit
 
-  // Evicted on rejection. Caching the promise itself meant one transient blip
-  // was baked into the whole build: every later page got the same failure or the
-  // same fail-open {}, so Header and Footer lost every label and slugs fell back
-  // to module keys — /pl/shop instead of /pl/sklep. That is the "one build-time
-  // blip" failure CLAUDE.md warns about, widened from one page to all of them.
-  const pending = fetchSiteConfig(lang).catch(error => {
-    _siteConfigCache.delete(lang)
-    throw error
+  const attempt = (_siteConfigAttempts.get(lang) ?? 0) + 1
+  _siteConfigAttempts.set(lang, attempt)
+
+  const pending = fetchSiteConfig(lang).catch(() => {
+    // Retry a blip; stop hammering a backend that is genuinely down.
+    if (attempt < SITE_CONFIG_MAX_ATTEMPTS) _siteConfigCache.delete(lang)
+    return FAIL_OPEN_SITE_CONFIG
   })
 
   _siteConfigCache.set(lang, pending)
@@ -190,19 +220,13 @@ export function getSiteConfig(lang: Locale = 'en'): Promise<SiteConfig> {
 }
 
 async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
-  try {
-    const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
-      headers: { Accept: 'application/json' },
-    })
-    if (!res.ok) return { modules: {}, module_order: [], module_config: {} }
-    // `await`, not a bare return: returning a promise from inside try hands its
-    // rejection to the caller rather than to this catch, so a truncated body
-    // escaped the fail-open path entirely.
-    return (await res.json()) as SiteConfig
-  } catch {
-    // Fail open: if API is unreachable during build, treat all modules as enabled
-    return { modules: {}, module_order: [], module_config: {} }
-  }
+  const res = await fetch(`${BASE}/api/site-config?lang=${lang}`, {
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!res.ok) throw new Error(`site-config ${res.status}`)
+
+  return (await res.json()) as SiteConfig
 }
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────

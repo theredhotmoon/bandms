@@ -29,8 +29,22 @@ const { isOpen, close } = useModalTrigger('data-open-availability')
 
 const monthOffset = ref(0)
 const picked = ref<string | null>(null)
-const loading = ref(false)
-const failed = ref(false)
+
+// Months with a request in flight. Without this the *same* month can be fetched
+// twice — Next fires for month+1, Prev returns early from the cache, Next fires
+// again because month+1 still has no cache entry — and if the second answer
+// arrives first, the first one's failure marks a month that already holds good
+// data as failed. `load()` then returns early forever, so that month renders
+// every day unknown and unselectable for the rest of the session: the exact
+// regression the per-month flag was added to fix, reached from the other side.
+const inFlight = ref<Set<string>>(new Set())
+
+// Keyed by month, like `cache`. A single global flag meant one failed month left
+// every *cached* month rendering as unknown and unselectable for the rest of the
+// session: load() returns early for a cached month, before it could reset the
+// flag. Deriving it from the month under view fixes that; `inFlight` above closes
+// the remaining hazard, two overlapping requests for one month.
+const failedMonths = ref<Record<string, boolean>>({})
 
 /** `YYYY-MM` → per-day status. Cached so re-visiting a month costs nothing. */
 const cache = ref<Record<string, Record<string, Status>>>({})
@@ -49,6 +63,15 @@ const shown = computed(() => {
 const monthKey = computed(
   () => `${shown.value.year}-${String(shown.value.month + 1).padStart(2, '0')}`,
 )
+
+// Both read monthKey, so they are declared after it rather than relying on a
+// computed getter being lazy enough to reach a `const` further down the file.
+const failed = computed(() => failedMonths.value[monthKey.value] === true)
+
+// Busy state is per month for the same reason as `failed`. A single boolean was
+// cleared by whichever of two overlapping requests finished first, so the grid
+// stopped looking busy while a fetch was still outstanding.
+const loading = computed(() => inFlight.value.has(monthKey.value))
 
 function iso(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -84,10 +107,15 @@ const pickedLabel = computed(() => {
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 async function load() {
-  if (cache.value[monthKey.value]) return
+  // Captured before the await. Both writes below used to read monthKey at
+  // resolve time, so two in-flight requests — trivially produced by clicking an
+  // arrow twice — filed the earlier month's answer under the later month's key.
+  // That month then rendered every day open and clickable, and never reloaded,
+  // because the cache check above now found an entry for it.
+  const key = monthKey.value
+  if (cache.value[key] || inFlight.value.has(key)) return
 
-  loading.value = true
-  failed.value = false
+  inFlight.value.add(key)
 
   const start = iso(shown.value.year, shown.value.month, 1)
   const end = iso(shown.value.year, shown.value.month, daysInMonth.value)
@@ -102,13 +130,12 @@ async function load() {
     const json = (await res.json()) as { data?: { date: string; status: Status }[] }
     const map: Record<string, Status> = {}
     for (const day of json.data ?? []) map[day.date] = day.status
-    cache.value = { ...cache.value, [monthKey.value]: map }
+    cache.value = { ...cache.value, [key]: map }
+    failedMonths.value = { ...failedMonths.value, [key]: false }
   } catch {
-    // The grid still renders — every day falls back to `open`, which is the
-    // honest default when we cannot say otherwise. The banner says so.
-    failed.value = true
+    failedMonths.value = { ...failedMonths.value, [key]: true }
   } finally {
-    loading.value = false
+    inFlight.value.delete(key)
   }
 }
 

@@ -1,5 +1,5 @@
 import type { Locale } from '@/types/shared'
-import { getSiteConfig } from './cms'
+import { getSiteConfig, isFailOpenConfig, type SiteConfig } from './cms'
 
 export type SlugMap = { en: Record<string, string>; pl: Record<string, string> }
 
@@ -13,7 +13,12 @@ const STATIC_SLUGS: SlugMap = {
   pl: { contact: 'kontakt', newsletter: 'newsletter' },
 }
 
-let _cache: SlugMap | null = null
+// One resolution per build, shared by every caller — see getSlugMap.
+let _pending: Promise<SlugMap> | null = null
+
+// getSiteConfig gives up after its own 3 attempts and caches the fail-open value,
+// so there is no point looping past that.
+const MAX_ATTEMPTS = 3
 
 function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
   const seen = new Set<string>()
@@ -31,16 +36,50 @@ function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
 
 /**
  * Returns the full slug map for all modules + hardcoded sections.
- * Fetches /api/site-config for both locales in parallel; result is cached.
+ *
+ * Resolved exactly once per build. This matters more than it looks: the map
+ * decides both which routes `getStaticPaths` generates and which hrefs the
+ * Header and Footer emit, and those two are computed by separate callers. An
+ * earlier version returned an uncached map whenever the config came back
+ * fail-open, so a mid-build blip could hand the section list `/pl/shop` and —
+ * after the retry succeeded — hand the detail routes and every nav link
+ * `/pl/sklep`. Links pointing at a page that was never generated, on a build
+ * `astro build` reports as green.
+ *
+ * A single shared promise makes divergence impossible, and the retries inside
+ * absorb a blip. If the API is still unreachable after those, the build ships
+ * module keys for the whole site: wrong URLs, but consistent ones, and no dead
+ * links. Throwing instead would be worse — a failed Astro build crash-loops the
+ * `web` container and takes the public site down entirely.
  */
-export async function getSlugMap(): Promise<SlugMap> {
-  if (_cache) return _cache
+export function getSlugMap(): Promise<SlugMap> {
+  _pending ??= resolveSlugMap()
+  return _pending
+}
 
-  const [enCfg, plCfg] = await Promise.all([
-    getSiteConfig('en'),
-    getSiteConfig('pl'),
-  ])
+async function resolveSlugMap(): Promise<SlugMap> {
+  for (let attempt = 1; ; attempt++) {
+    const [enCfg, plCfg] = await Promise.all([
+      getSiteConfig('en'),
+      getSiteConfig('pl'),
+    ])
 
+    const built = buildSlugMap(enCfg, plCfg)
+    const failOpen = isFailOpenConfig(enCfg) || isFailOpenConfig(plCfg)
+
+    if (!failOpen) return built
+
+    if (attempt >= MAX_ATTEMPTS) {
+      console.warn(
+        '[slugs] site-config unreachable after ' +
+          `${MAX_ATTEMPTS} attempts — falling back to module keys for every URL.`,
+      )
+      return built
+    }
+  }
+}
+
+function buildSlugMap(enCfg: SiteConfig, plCfg: SiteConfig): SlugMap {
   const map: SlugMap = {
     en: { ...STATIC_SLUGS.en },
     pl: { ...STATIC_SLUGS.pl },
@@ -61,6 +100,5 @@ export async function getSlugMap(): Promise<SlugMap> {
     map.pl[moduleSlug] = resolve(plCfg.module_config[moduleSlug]?.slug, moduleSlug)
   }
 
-  _cache = { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
-  return _cache
+  return { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
 }
