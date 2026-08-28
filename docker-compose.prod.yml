@@ -36,6 +36,9 @@ services:
       # Which theme the public site renders under. Empty falls back to the
       # plain black-and-white base — see web/src/styles/themes/.
       PUBLIC_THEME: "${PUBLIC_THEME:-skanking-storks}"
+      # CARTO basemap key for the concert maps. Unset renders tiles watermarked
+      # "API KEY REQUIRED" — see web/src/lib/basemap.ts.
+      PUBLIC_CARTO_KEY: "${PUBLIC_CARTO_KEY:-}"
     depends_on:
       backend:
         condition: service_healthy

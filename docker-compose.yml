@@ -89,6 +89,9 @@ services:
       # Which theme the public site renders under. Empty falls back to the
       # plain black-and-white base — see web/src/styles/themes/.
       PUBLIC_THEME: "${PUBLIC_THEME:-skanking-storks}"
+      # CARTO basemap key for the concert maps. Unset renders tiles watermarked
+      # "API KEY REQUIRED" — see web/src/lib/basemap.ts.
+      PUBLIC_CARTO_KEY: "${PUBLIC_CARTO_KEY:-}"
       SITE_URL:  "${SITE_URL:-https://skanking-storks.com}"
     ports:
       - "${WEB_PORT:-4322}:80"
@@ -102,6 +105,10 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
+      args:
+        # Same key as the public site — one variable, two consumers. Baked in at
+        # image build time, so changing it needs `docker compose build frontend`.
+        VITE_CARTO_KEY: "${PUBLIC_CARTO_KEY:-}"
     container_name: bandms_frontend
     restart: unless-stopped
     ports:

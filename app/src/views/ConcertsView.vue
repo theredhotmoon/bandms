@@ -52,7 +52,11 @@ onMounted(async () => {
     const L = (await import('leaflet')).default
     await import('leaflet/dist/leaflet.css')
     map = L.map(mapEl.value, { zoomControl: true, scrollWheelZoom: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+    // CARTO gates these tiles behind a key. Unkeyed requests still return 200
+    // with a valid PNG — watermarked "API KEY REQUIRED" — so the only symptom
+    // is visual. Set PUBLIC_CARTO_KEY in the root .env, then rebuild this image.
+    const cartoKey = import.meta.env.VITE_CARTO_KEY as string | undefined
+    L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png${cartoKey ? `?key=${encodeURIComponent(cartoKey)}` : ''}`, {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
       maxZoom: 19,
     }).addTo(map)
