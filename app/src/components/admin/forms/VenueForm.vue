@@ -39,6 +39,7 @@ const searchQuery   = ref('')
 const searching     = ref(false)
 const searchResults = ref<{ label: string; lat: string; lon: string }[]>([])
 const showResults   = ref(false)
+const searchError   = ref('')
 
 const DEFAULT_LAT = 50.0647
 const DEFAULT_LNG = 19.9450
@@ -91,10 +92,12 @@ async function searchPlace() {
   const q = searchQuery.value.trim()
   if (!q) return
   searching.value = true
+  searchError.value = ''
   searchResults.value = []
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`
     const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } })
+    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`)
     const data = await res.json() as {
       lat: string
       lon: string
@@ -115,8 +118,13 @@ async function searchPlace() {
       addr:  r.address,
     })) as typeof searchResults.value
     showResults.value = searchResults.value.length > 0
+    if (searchResults.value.length === 0) searchError.value = 'No matching places found.'
   } catch {
-    // silently fail
+    // Never swallow this. The failure mode here is a blocked request — CSP
+    // (connect-src must list nominatim.openstreetmap.org) or the network — and
+    // an empty result list is indistinguishable from "no such place", which is
+    // exactly how a dead search button went unnoticed. Say so instead.
+    searchError.value = 'Could not reach the place search. Check your connection, or pin the location by clicking the map.'
   } finally {
     searching.value = false
   }
@@ -257,6 +265,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
           {{ searching ? '…' : 'Search' }}
         </button>
       </div>
+      <p v-if="searchError" class="field-error">{{ searchError }}</p>
       <div v-if="showResults" class="search-results">
         <button
           v-for="r in searchResults"
