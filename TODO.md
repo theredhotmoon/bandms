@@ -4,6 +4,161 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
+## Point the domain at the server — `skankingstorks.band`
+
+**Status:** domain registered at GoDaddy, nothing configured. The server still
+runs on `SITE_ADDRESS=:80`, reachable only by bare IP. Everything in the repo is
+ready — the Caddyfile handles TLS and the www redirect (#56), and
+`PUBLIC_CARTO_KEY` is wired (#55). What is left is DNS plus a `.env` edit.
+
+Do the `PUBLIC_CARTO_KEY` line in the same sitting: it lives in the same file and
+needs the same `web` recreate, so splitting it means doing the server work twice.
+Until it is set, the concert maps render but every tile reads "API KEY REQUIRED".
+
+**Prerequisite:** the server's public IPv4, from the Hetzner Cloud console (same
+value as the `SERVER_HOST` GitHub secret). Ports **80 and 443** must be open in
+the Hetzner Cloud Firewall and in any `ufw` on the box — the ACME HTTP-01
+challenge needs port 80 specifically, even though the site ends up on 443.
+
+### 1. DNS at GoDaddy
+
+Sign in → avatar → **My Products** → `skankingstorks.band` → **DNS**. That is the
+**DNS Management** records table. Avoid the "Connect to a service" / Domain
+Connect shortcuts — they are for hosted platforms and write records you do not
+want.
+
+A fresh GoDaddy domain ships with parked records that must be replaced, not
+added to:
+
+| Type | Name | Ships as | Do |
+|---|---|---|---|
+| A | `@` | a GoDaddy parking IP (`76.223.x.x` / `13.248.x.x`) | **edit** → server IPv4 |
+| CNAME | `www` | `@` or a GoDaddy host | **delete**, add an A record instead |
+| CNAME | `_domainconnect` | `_domainconnect.gd.domaincontrol.com` | leave |
+| NS / SOA | | GoDaddy nameservers | leave |
+
+Target state — TTL 600 while setting up (GoDaddy's TTL dropdown has a **Custom**
+option), raised to an hour once stable:
+
+| Type | Name | Value | TTL |
+|---|---|---|---|
+| A | `@` | `SERVER_IPV4` | 600 |
+| A | `www` | `SERVER_IPV4` | 600 |
+
+**Edit the existing `@` record rather than adding a second one.** Two A records
+on `@` round-robin, so roughly half of all visitors land on the parking page —
+an intermittent failure that is genuinely nasty to diagnose.
+
+**`www` needs a real DNS record even though it only ever redirects.** The
+redirect happens in Caddy, on this server, so the request has to arrive here
+first. Without the record the browser fails to connect and never sees a
+redirect at all.
+
+Only add an `AAAA` record if the server genuinely serves on IPv6. A wrong AAAA
+is worse than none: browsers prefer IPv6 and will hard-fail rather than fall
+back to the working IPv4.
+
+**Do not enable GoDaddy Forwarding, Website Builder or Parking.** Forwarding
+intercepts at GoDaddy's edge and breaks both the ACME challenge and HTTPS; the
+other two re-point `@` back at GoDaddy. Ignore any "your domain isn't connected"
+prompt — it wants to overwrite these records.
+
+### 2. Verify DNS before touching the server
+
+```bash
+nslookup skankingstorks.band
+nslookup www.skankingstorks.band
+```
+
+Both must return the server IP. GoDaddy usually propagates in 5–30 minutes.
+
+**Wait for this.** Caddy attempts ACME the instant it starts with a hostname,
+and Let's Encrypt rate-limits *failed* validations at 5 per hostname per hour —
+a premature attempt can lock you out for an hour.
+
+### 3. Server `.env`
+
+```bash
+ssh deploy@SERVER && cd /opt/bandms
+cp .env .env.bak.$(date +%F)
+nano .env
+```
+
+```bash
+SITE_ADDRESS=skankingstorks.band, www.skankingstorks.band
+APP_URL=https://skankingstorks.band
+PUBLIC_CARTO_KEY=<key from https://carto.com/basemaps/apikey>
+```
+
+`SITE_URL` and `FRONTEND_URL` both fall back to `APP_URL`, so those two lines are
+enough. `FRONTEND_URL` matters beyond routing: it is the CORS allowed origin and
+every link in outgoing email.
+
+The deploy never writes `/opt/bandms/.env` — it copies only
+`docker-compose.prod.yml`, the Caddyfile and `scripts/prod-backup-db.sh`. This
+file is persistent server state, so the edit survives deploys and has to be made
+by hand.
+
+### 4. Recreate, in this order
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate web
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+```
+
+Backend first: its entrypoint runs `php artisan optimize`, baking `APP_URL` into
+the config cache for the container's lifetime. Web next: it rebuilds the Astro
+site at startup, picking up `SITE_URL` for the sitemap and canonical tags and
+`PUBLIC_CARTO_KEY` for the maps. Caddy last: it triggers certificate issuance.
+
+**A restart is not enough for any of them** — it reuses the container with its
+old environment and reports success. Caddy additionally needs `--force-recreate`
+because its Caddyfile is a bind mount, and a mounted file's *contents* are not
+part of the service-definition hash Compose diffs against.
+
+### 5. Verify
+
+```bash
+docker logs bandms-caddy 2>&1 | tail -30     # "certificate obtained successfully"
+
+curl -I https://skankingstorks.band/
+curl -sI https://www.skankingstorks.band/ | head -3          # expect 301 → apex
+curl -s  https://skankingstorks.band/api/health
+curl -o /dev/null -w '%{http_code}\n' https://skankingstorks.band/admin
+```
+
+Check `/admin` specifically — it exercises the `@spa` matcher and its
+`/assets/*` entry, the route that broke in #47.
+
+For the CARTO key, `printenv` only proves it reached the container; the value is
+compiled into the site's JavaScript, so check the served bundle and then look at
+the page:
+
+```bash
+docker exec bandms-web printenv PUBLIC_CARTO_KEY
+curl -s https://skankingstorks.band/en/concerts | grep -o '/_astro/ShowsMap[^"]*\.js' | head -1
+curl -s https://skankingstorks.band/_astro/ShowsMap.<hash>.js | grep -c 'key='   # 1 = baked in
+```
+
+An unkeyed tile still returns `200 OK` with a valid PNG — it is simply
+watermarked — so no status check can confirm this. Only your eyes can.
+
+### Expect these, they are not faults
+
+- **The bare IP stops working.** Caddy answers only for hostnames it is given,
+  so `http://SERVER_IP/` no longer serves the site.
+- **A deploy takes the site down for ~20–60s** while `web` force-recreates and
+  Astro rebuilds.
+- Certificates live in the `caddy-data` named volume, so they survive recreates.
+  Recreating Caddy does not re-issue and cannot burn rate limit.
+
+Fuller version in `README.md` → *Pointing a domain at the server* and *Changing
+an environment variable on the server*. Related: the Hetzner runbook under
+*Production deployment* below.
+
+---
+
 ## Pre-sale early access — designed, not built
 
 **Status:** design approved, no implementation. Spec: [`docs/superpowers/specs/2026-08-23-presale-early-access-design.md`](docs/superpowers/specs/2026-08-23-presale-early-access-design.md)
