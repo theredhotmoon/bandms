@@ -108,6 +108,29 @@ it('creates a faq against a real module', function () {
       ->assertJsonPath('data.question.pl', 'Nowe pytanie');
 });
 
+// The per-locale length rules are generated from the registry rather than
+// listed by hand. Nothing else in this suite would notice if that generation
+// produced an empty set -- every rule is `sometimes|nullable`, so their absence
+// looks exactly like a green run. This asserts they actually bite, on a
+// non-default locale, which is the case a hardcoded 'en' would have missed.
+it('applies the generated length rules to every registered locale', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    foreach (\App\Support\Locales::codes() as $locale) {
+        $this->postJson('/api/admin/faqs', [
+            'module_slug' => 'contact',
+            'question'    => [$locale => str_repeat('q', 301)],
+            'answer'      => [$locale => 'ok'],
+        ])->assertStatus(422)->assertJsonValidationErrors("question.{$locale}");
+
+        $this->postJson('/api/admin/faqs', [
+            'module_slug' => 'contact',
+            'question'    => [$locale => 'ok'],
+            'answer'      => [$locale => str_repeat('a', 4001)],
+        ])->assertStatus(422)->assertJsonValidationErrors("answer.{$locale}");
+    }
+});
+
 it('rejects a module_slug that is not a real module', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
 
