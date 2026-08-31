@@ -631,6 +631,11 @@ literal anywhere outside them is a bug waiting for the third language.
 | `web/src/lib/locales.ts` | public-site mirror; `Locale` is **derived** from it |
 | `app/src/locales.ts` | admin mirror (tab labels, empty draft bags) |
 
+`web/astro.config.mjs` **imports** `LOCALES`/`DEFAULT_LOCALE` from the mirror
+rather than repeating them — Astro's own `i18n.locales` is otherwise a fourth
+list, and a route emitted for a locale Astro does not know leaves
+`Astro.currentLocale` undefined on that page.
+
 Server-side code reads the registry through `App\Support\Locales` (`codes`,
 `default`, `chain`, `resolve`, `unsupportedKeys`, `all`) — never
 `config('locales.*')` directly. `GET /api/site-config` serves the list as
@@ -683,9 +688,20 @@ page, well-formed markup, green build. `LanguageSelector` had the twin bug — a
 hardcoded EN/PL pair with both options pointing at one href.
 
 **A locale with no path is skipped, not guessed** — a wrong alternate is worse
-for a crawler than a missing one, which is why the legacy unlocalised routes
-(`/epk`, `/releases`) emit only `en` + `x-default`. And `x-default` points at the
-**default locale**, not the current page.
+for a crawler than a missing one, which is why the legacy unlocalised `/epk`
+emits only `en` + `x-default`. And `x-default` points at the **default locale**,
+not the current page.
+
+**Every href is normalised to Astro's directory form** (trailing slash).
+`build.format` defaults to `'directory'`, so `Astro.url.href` — which `BaseHead`
+uses as the canonical — always ends in `/`. A self-referential alternate that
+differs from the canonical by one slash is a broken hreflang cluster, and it is
+invisible unless you diff `canonical` against `hreflang` in `dist/` on the same
+page. `hreflangLinks()` owns that normalisation so the two cannot drift.
+
+**A hardcoded path in an `alternates` map is now a wrong hreflang**, not merely a
+wrong footer link — the legacy `/releases/{id}` route resolves its Polish twin
+through `getSlugMap()` for exactly this reason.
 
 The alternates prop threads through 15 section/detail components that never read
 it. That pass-through is why the bug survived: the plumbing looked load-bearing,

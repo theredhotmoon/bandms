@@ -7,9 +7,13 @@
  *
  * Why a mirror rather than reading /api/site-config: `Locale` is a compile-time
  * union that decides which routes `getStaticPaths` emits, and TypeScript cannot
- * widen a union from data fetched at build time. The API's `locales` block is
- * still the authority for anything rendered (switcher labels), and
- * `assertRegistryMatches` reports drift between the two during the build.
+ * widen a union from data fetched at build time.
+ *
+ * This file is the authority for everything the public site renders --
+ * `LanguageSelector` reads `nativeName()`/`flag()` from here, not from the API,
+ * so changing `native_name` in api/config/locales.php alone has no visible
+ * effect. The API's `locales` block is consumed only by
+ * `assertRegistryMatches`, which warns when the two drift.
  */
 
 type LocaleMeta = {
@@ -163,7 +167,17 @@ export function hreflangLinks(
   opts: { site: string; currentLocale: Locale; currentPath: string },
 ): Array<{ hreflang: string; href: string }> {
   const base = opts.site.replace(/\/$/, '')
-  const abs = (path: string) => base + (path.startsWith('/') ? path : '/' + path)
+
+  // Astro's default build.format is 'directory', so Astro.url.href -- which
+  // BaseHead uses as the canonical -- always ends in '/'. A self-referential
+  // alternate differing from the canonical by one slash is a broken hreflang
+  // cluster, so every row is normalised to the same directory form. A path with
+  // a file extension is left alone.
+  const abs = (path: string) => {
+    const p = path.startsWith('/') ? path : '/' + path
+    const isFile = /\.[^/]+$/.test(p)
+    return base + (p.endsWith('/') || isFile ? p : p + '/')
+  }
 
   // A locale with no path is skipped rather than guessed at — a wrong alternate
   // is worse for a crawler than a missing one.

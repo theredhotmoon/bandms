@@ -8,6 +8,7 @@
  * route was ported, which is exactly what delegation prevents.
  */
 import { getReleases, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 import ReleaseDetail from '@/components/detail/ReleaseDetail.astro'
 
 export async function getStaticPaths() {
@@ -19,10 +20,14 @@ const { id } = Astro.params
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.releases === false) return Astro.redirect('/404', 307)
+
+// The Polish equivalent of THIS page, not the Polish list page, and resolved via
+// the slug map rather than a literal '/pl/releases' -- which 404s the moment the
+// Polish releases module carries a custom slug. `alternates` now feeds the real
+// <link rel="alternate">, so a wrong entry here is a wrong hreflang, not merely
+// a wrong footer link. The English row defaults to this page's own URL.
+const slugMap = await getSlugMap()
+const alternates = { pl: `/pl/${slugMap.pl.releases ?? 'releases'}/${id}` }
 ---
 
-<!--
-  Only the Polish path is named: the English alternate defaults to this page's
-  own URL, which is what this legacy unlocalised route is.
--->
-<ReleaseDetail lang="en" alternates={{ pl: '/pl/releases' }} itemId={Number(id)} />
+<ReleaseDetail lang="en" alternates={alternates} itemId={Number(id)} />

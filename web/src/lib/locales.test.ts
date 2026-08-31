@@ -102,7 +102,7 @@ describe('hreflangLinks', () => {
       { en: '/en/o-nas', pl: '/pl/o-nas' },
       { site, currentLocale: 'pl', currentPath: '/pl/o-nas' },
     )
-    expect(links.at(-1)).toEqual({ hreflang: 'x-default', href: 'https://example.com/en/o-nas' })
+    expect(links.at(-1)).toEqual({ hreflang: 'x-default', href: 'https://example.com/en/o-nas/' })
   })
 
   // The regression itself, stated as an assertion: the Polish alternate is the
@@ -114,12 +114,35 @@ describe('hreflangLinks', () => {
 
   it('falls back to the current path for the current locale when unlisted', () => {
     const links = hreflangLinks({ pl: '/pl/releases' }, { ...opts, currentPath: '/releases/7' })
-    expect(links).toContainEqual({ hreflang: 'en', href: 'https://example.com/releases/7' })
+    expect(links).toContainEqual({ hreflang: 'en', href: 'https://example.com/releases/7/' })
   })
 
   it('skips a locale with no path rather than emitting a broken href', () => {
     const links = hreflangLinks({ en: '/en/' }, { ...opts, currentLocale: 'en' })
     expect(links.map(l => l.hreflang)).toEqual(['en', 'x-default'])
+  })
+
+  // Astro's default build.format is 'directory', so Astro.url.href -- and thus
+  // BaseHead's canonical -- always ends in '/'. A self-referential alternate
+  // that differs from the canonical by a slash is a broken hreflang cluster, so
+  // every row is normalised to the same directory form.
+  it('matches the canonical directory form by keeping a trailing slash', () => {
+    const links = hreflangLinks({ en: '/en/contact', pl: '/pl/kontakt' }, opts)
+    expect(links.map(l => l.href)).toEqual([
+      'https://example.com/en/contact/',
+      'https://example.com/pl/kontakt/',
+      'https://example.com/en/contact/',
+    ])
+  })
+
+  it('does not add a second slash to a path that already has one', () => {
+    const links = hreflangLinks({ en: '/en/' }, opts)
+    expect(links[0].href).toBe('https://example.com/en/')
+  })
+
+  it('does not append a slash to a path with a file extension', () => {
+    const links = hreflangLinks({ en: '/feed.xml' }, opts)
+    expect(links[0].href).toBe('https://example.com/feed.xml')
   })
 
   it('does not double the slash between site and path', () => {

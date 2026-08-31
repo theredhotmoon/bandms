@@ -10,10 +10,29 @@ namespace App\Support;
  */
 final class Locales
 {
-    /** Registered locale codes, in declaration order. */
+    /**
+     * Registered locale codes, in declaration order.
+     *
+     * Throws rather than degrading to []. An empty registry is silent and
+     * expensive: WebsiteModuleController::update() generates its per-locale
+     * rules from this list, so validate() would strip every custom_name,
+     * custom_slug and settings key and each admin save would return 200 having
+     * written nothing. Given the config-cache footgun in CLAUDE.md -- a stale
+     * cache is exactly how this file goes missing at runtime -- a loud failure
+     * is the safer default.
+     */
     public static function codes(): array
     {
-        return array_keys(config('locales.supported', []));
+        $codes = array_keys(config('locales.supported', []));
+
+        if ($codes === []) {
+            throw new \LogicException(
+                'No locales registered. config/locales.php is missing or empty '
+                . '-- if it was just added, the container needs a rebuild, not a restart.',
+            );
+        }
+
+        return $codes;
     }
 
     public static function default(): string
@@ -36,10 +55,18 @@ final class Locales
     {
         $start = self::isSupported($locale) ? $locale : self::default();
 
-        return array_values(array_unique(array_merge(
-            [$start],
+        // Fallbacks are filtered to registered locales, matching the TypeScript
+        // mirror. A locale removed from `supported` but left behind in another
+        // locale's `fallbacks` (or a typo) would otherwise resolve text stored
+        // under that dead key -- exactly the "German visitor sees Polish" case
+        // the declared chain exists to prevent -- and the two sides of the
+        // mirror would then disagree about a half-translated field.
+        $fallbacks = array_filter(
             config("locales.supported.{$start}.fallbacks", []),
-        )));
+            self::isSupported(...),
+        );
+
+        return array_values(array_unique(array_merge([$start], $fallbacks)));
     }
 
     /**
