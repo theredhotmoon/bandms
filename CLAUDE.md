@@ -312,8 +312,90 @@ wsl --shutdown
 Optimize-VHD -Path "$env:LOCALAPPDATA\Docker\wsl\data\ext4.vhdx" -Mode Full
 ```
 
-`wsl --manage docker-desktop --set-sparse true` is the newer equivalent, but it
-needs WSL 2.0+; `wsl --version` erroring means the build here is older than that.
+**Neither compaction route works on this machine** — checked, and worth not
+rediscovering:
+
+| Route | Why it fails here |
+|---|---|
+| `Optimize-VHD` | needs the Hyper-V PowerShell module, which is not installed |
+| `wsl --manage … --set-sparse true` | needs WSL 2.0+; `wsl --version` is rejected outright |
+| `diskpart` → `compact vdisk` | works without Hyper-V, but needs an **elevated** shell |
+
+So on this box the only way to give space back to Windows is to move the file to
+a drive that has room — see below.
+
+---
+
+### Moving Docker's disk to another drive
+
+Done once, in Aug 2026: `C:` was at 0.3 GB free, which is what drove the
+read-only failure above. The 236.7 GB VHDX now lives on `F:`, and `C:` went from
+23.9 GB to 260.6 GB free.
+
+**The registry `BasePath` is the only thing that controls placement.** Every
+guide tells you to edit `dataFolder` in `%APPDATA%\Docker\settings.json`. That
+key is a **Hyper-V-backend leftover and is inert on a WSL2 backend** — it reads
+`C:\ProgramData\DockerDesktop\vm-data` here, which is not even where the disk
+is. Editing it appears to work and moves nothing. The real key, under `HKCU`
+(so no elevation needed):
+
+```
+HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\{guid}\BasePath
+```
+
+Pick the child key whose `DistributionName` is `docker-desktop-data` — that is
+the volumes and images. `docker-desktop` is the tiny runtime distro; leave it.
+
+**The value must keep its `\\?\` prefix**, matching the sibling entry's shape.
+Getting this wrong is the worst failure available here: WSL cannot resolve the
+path, and Docker's response is to initialise a **fresh empty** distro — which
+looks like a clean start while silently orphaning `bandms_mysql_data` and every
+other project's volumes. Verify by character codes rather than by re-typing the
+string; a bash heredoc silently collapsed `\\?\` to `\?\` when this was first
+attempted, and the check that "confirmed" it compared against the same corrupted
+literal, so it passed.
+
+**Sequence** — the order matters, and nothing is deleted until the end:
+
+1. Quit Docker Desktop, kill `com.docker.*`, then `wsl --shutdown`
+2. Confirm the VHDX is unlocked before copying (open it `ReadWrite`/`None`)
+3. Copy with `robocopy <src> <dst> ext4.vhdx /J` — **`/E`, not `/MOVE`**, so the
+   source survives until the copy is proven
+4. Verify (below), *then* set `BasePath`, *then* start Docker
+5. Confirm volumes and data, and only then delete the source
+
+**Run the copy detached, not as a session-owned background task.** The first
+attempt used the agent's background shell; the session ended, the task was torn
+down, and robocopy died about a quarter of the way in — leaving a file that
+looked complete. `Start-Process robocopy … -WindowStyle Hidden` survives.
+Expect ~10 min at ~445 MB/s for 236 GB.
+
+**Size and mtime cannot tell you whether the copy finished.** `/J` (unbuffered
+I/O) **pre-allocates the destination**, so it reaches the full 254 GB in seconds
+and Explorer shows two identical files. The killed first attempt even carried a
+*newer* mtime than the source, which reads as "finished later". Both signals are
+structurally incapable of reporting progress.
+
+- **Progress while it runs:** the destination is exclusively locked, so it
+  cannot be read. Use the copier's own counter —
+  `(Get-CimInstance Win32_Process -Filter "ProcessId=<pid>").WriteTransferCount`.
+- **Integrity when it ends:** compare MD5 of blocks read at *identical offsets*
+  in both files (96 × 8 MB spanning the file is enough, and takes seconds). A
+  truncated copy shows up as a repeating all-zero hash past the frontier.
+  Robocopy's own "Bytes: 236.706 g copied / FAILED 0" summary is not
+  independent evidence — it reported exactly that for the run that had already
+  been proven truncated.
+
+**Confirm which disk is actually in use** before trusting anything: after Docker
+starts, the *new* VHDX must be **locked** by WSL and the old one **unlocked**.
+That single check distinguishes "running from F:" from "running from a fresh
+empty distro".
+
+Then verify the data, not just that containers came up — `docker volume ls`
+against a known baseline, plus real row counts (`concerts`,
+`tech_rider_versions`, `website_modules`). ext4 will happily mount an image
+whose later blocks are zeros; the damage only surfaces when InnoDB reads a page
+that is not there, so counts force those reads.
 
 ---
 
