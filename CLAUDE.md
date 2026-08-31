@@ -294,6 +294,40 @@ cd web && API_BASE=http://localhost:8081 pnpm build
 
 **Both slipped through because the types lie.** `slug_en` is typed `string` while the column is nullable, and `testimonials` was a required array the API never returns. When adding a field to `web/src/types/`, make it match what the API *actually* returns — and guard anything read from a published EPK version, whose frozen snapshots predate any field added later.
 
+### Verifying the public build when the API (or Docker) is down — stub it
+
+`web/src/lib/cms.ts` funnels every request through one `get()` helper hitting
+`${API_BASE}/api/…`, so a ~40-line Node server on a spare port builds the whole
+site with the stack down:
+
+```bash
+cd web && API_BASE=http://localhost:8098 pnpm build
+```
+
+**Give the stub different slugs per locale** (`contact`/`kontakt`,
+`about`/`o-nas`). Identical slugs make a wrong per-locale URL look correct — that
+is exactly how the hreflang bug below survived. Then assert against `dist/`,
+never by reading the source.
+
+Two stub gotchas: return `{"data": {...}}`, because `get()` unwraps `data`; and
+give `/band-profile/epk` a *full* object — `[]` reproduces the documented
+"dereferencing a field the API does not send" crash and takes the build down.
+
+### Type-checking `web/`
+
+`pnpm build` is the token lint plus `astro build`, which is transpile-only — it
+will not catch a type error. **Do not run `astro check` in an agent shell:** it
+prompts to install `@astrojs/check` and hangs. Use:
+
+```bash
+cd web && npx tsc --noEmit -p tsconfig.json
+```
+
+It reports **two pre-existing errors** — `themes/skanking-storks/slots.ts` cannot
+resolve `.astro` imports, and `types/shop.ts` has a `ShopItem`/`ShopItemSummary`
+variance mismatch. Filter those two; anything else is yours. Note `tsc` does not
+check `.astro` files at all, so wiring bugs inside them surface only in `dist/`.
+
 ---
 
 ### A disabled module unbuilds its pages — every link to it must be gated
@@ -334,6 +368,9 @@ done
 ---
 
 ### Module URL slugs are stored per locale — never derive them from the label
+
+**Which locales exist at all is the registry's job** — see *Adding a language*
+below. This section is about how a slug is *stored and resolved* within them.
 
 **The rule:** `website_modules.custom_slug` holds `{"en": "shop", "pl": "sklep"}`.
 `GET /api/site-config?lang=xx` serves it as `module_config.<key>.slug` with the
@@ -583,6 +620,95 @@ which ground the element sits on — the answer is no longer "always dark".
 
 ---
 
+## Adding a language — the locale registry
+
+**Three files declare the locales, and nothing else may.** An `'en'` or `'pl'`
+literal anywhere outside them is a bug waiting for the third language.
+
+| File | Owns |
+|---|---|
+| `api/config/locales.php` | server registry + fallback chains |
+| `web/src/lib/locales.ts` | public-site mirror; `Locale` is **derived** from it |
+| `app/src/locales.ts` | admin mirror (tab labels, empty draft bags) |
+
+`web/astro.config.mjs` **imports** `LOCALES`/`DEFAULT_LOCALE` from the mirror
+rather than repeating them — Astro's own `i18n.locales` is otherwise a fourth
+list, and a route emitted for a locale Astro does not know leaves
+`Astro.currentLocale` undefined on that page.
+
+Server-side code reads the registry through `App\Support\Locales` (`codes`,
+`default`, `chain`, `resolve`, `unsupportedKeys`, `all`) — never
+`config('locales.*')` directly. `GET /api/site-config` serves the list as
+`locales`, plus the resolved `locale` of the response itself; `web` mirrors
+rather than consumes it because `Locale` is a compile-time union that decides
+which routes `getStaticPaths` emits, and `cms.ts` warns (never throws) on drift.
+
+**Adding `de` is one entry per file, plus `STATIC_SLUGS`.** That last one is
+deliberate: `web/src/lib/slugs.ts` types `SlugMap` as `Record<Locale, …>`, so a
+new locale is a *compile error* at the one place needing a human-chosen value.
+To confirm the registry is still load-bearing, add a throwaway locale and run
+`cd web && npx tsc --noEmit -p tsconfig.json` — it should report **exactly one**
+new error, at `STATIC_SLUGS`. More than one means something drifted back to a
+hardcoded pair. (Two unrelated errors are pre-existing; see *Type-checking
+`web/`*.)
+
+Two things are deliberately still per-locale columns and **not** registry-driven:
+`slug_en`/`slug_pl` on concerts/releases/posts/albums/shop_items (a third locale
+needs a migration — this is why `PostController` and `ReleaseController` still
+name `'pl'`), and the ~23 inline `T = { en: …, pl: … }` UI-string dicts.
+
+### The fallback policy is *declared*, never scanned
+
+Each locale gets an ordered `fallbacks` list; resolution walks
+`[locale, ...fallbacks]` and stops at the first non-empty value. There is
+deliberately **no "then try every other locale" tail** — invisible with two
+locales, but at three it starts showing a German visitor Polish text. The old
+`foreach ([$locale, 'en', 'pl'] …)` in `FaqSummaryResource` and
+`WebsiteModuleController` was exactly that tail.
+
+`en` and `pl` fall back to each other, which is a choice for *this pair* — a
+half-translated FAQ should show the language it has rather than render an empty
+accordion row in a green build — and is **not** a template. A third locale
+should normally declare `['en']` alone.
+
+`Locales::resolve()` returns `null`, not `''`, so the caller coerces and the
+choice stays visible where a static build would bake it.
+
+### Never derive one locale's URL from another
+
+Routes build `alternates: Partial<Record<Locale, string>>` — a path per locale —
+and hand it to the layout, which passes it to `BaseHead` and `LanguageSelector`.
+Only the route knows the other locale's section slug (`/en/contact` vs
+`/pl/kontakt`), so only the route can build it.
+
+`BaseHead` used to compute `hreflang="pl"` as `${site}/pl${Astro.url.pathname}`,
+describing a "/en is unprefixed" scheme the site had already stopped using: `/en/`
+advertised `/pl/en/`, and `/pl/` claimed to *be* the English page. Wrong on every
+page, well-formed markup, green build. `LanguageSelector` had the twin bug — a
+hardcoded EN/PL pair with both options pointing at one href.
+
+**A locale with no path is skipped, not guessed** — a wrong alternate is worse
+for a crawler than a missing one, which is why the legacy unlocalised `/epk`
+emits only `en` + `x-default`. And `x-default` points at the **default locale**,
+not the current page.
+
+**Every href is normalised to Astro's directory form** (trailing slash).
+`build.format` defaults to `'directory'`, so `Astro.url.href` — which `BaseHead`
+uses as the canonical — always ends in `/`. A self-referential alternate that
+differs from the canonical by one slash is a broken hreflang cluster, and it is
+invisible unless you diff `canonical` against `hreflang` in `dist/` on the same
+page. `hreflangLinks()` owns that normalisation so the two cannot drift.
+
+**A hardcoded path in an `alternates` map is now a wrong hreflang**, not merely a
+wrong footer link — the legacy `/releases/{id}` route resolves its Polish twin
+through `getSlugMap()` for exactly this reason.
+
+The alternates prop threads through 15 section/detail components that never read
+it. That pass-through is why the bug survived: the plumbing looked load-bearing,
+so nobody questioned that the *value* was structurally incapable of being right.
+
+---
+
 ## FAQ entries are per subpage
 
 `faqs.module_slug` mirrors `website_modules.slug`, so FAQ categories track the
@@ -806,6 +932,11 @@ claimed a ~2 GB floor; the 176 MB row disproves it.
 - `FATAL ERROR: Zone Allocation failed - process out of memory` from the dev
   server (the OS refusing an allocation, not V8 hitting its cap — so raising
   `--max-old-space-size` makes it worse)
+- `failed to create lease: write /var/lib/docker/buildkit/containerdmeta.db:
+  read-only file system`, or `docker exec` returning **nothing at all** — Docker
+  Desktop's VM disk has gone read-only. Every image build fails *and* the already
+  running backend starts returning 500 because it cannot write. Nothing in the
+  code is wrong; restart Docker Desktop.
 - `GPU process launch failed` from Chromium
 - A different set of specs failing each run, or a spec the change cannot reach
 - 30-second timeouts rather than assertion mismatches

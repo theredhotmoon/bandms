@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile } from '@/lib/cms'
@@ -9,11 +10,11 @@ const ACCENT = 'var(--color-accent)'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
   itemId: number
 }
 
-const { lang, alternateHref, itemId } = Astro.props
+const { lang, alternates, itemId } = Astro.props
 const slugMap = await getSlugMap()
 
 // Fetch all pages to build summaries for prev/next navigation
@@ -91,7 +92,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   image={post.image}
   structuredData={structuredData}
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
 >
   <Fragment slot="head">
 </Fragment>

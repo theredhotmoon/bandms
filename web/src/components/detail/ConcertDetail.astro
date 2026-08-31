@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
@@ -8,11 +9,11 @@ import { fmtTime, isUpcoming } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
   itemId: number
 }
 
-const { lang, alternateHref, itemId } = Astro.props
+const { lang, alternates, itemId } = Astro.props
 const slugMap = await getSlugMap()
 
 const ACCENT = 'var(--color-accent)'
@@ -116,7 +117,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   image={concert.poster_url}
   structuredData={structuredData}
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
 >
   <Fragment slot="head">
 </Fragment>

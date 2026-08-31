@@ -7,6 +7,7 @@ use App\Http\Resources\FaqSummaryResource;
 use App\Models\Faq;
 use App\Models\WebsiteModule;
 use Illuminate\Http\JsonResponse;
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -132,7 +133,7 @@ class FaqController extends Controller
      */
     private function rules(bool $creating = true): array
     {
-        return [
+        $rules = [
             'module_slug'  => [$creating ? 'required' : 'sometimes', 'string', 'max:60', Rule::in(WebsiteModule::pluck('slug'))],
             // `question` must be present when creating — both columns are NOT
             // NULL with no default, so omitting it died with a database error
@@ -141,21 +142,29 @@ class FaqController extends Controller
             // long as the other already holds a value, and a payload-only rule
             // like required_without cannot see the stored one.
             'question'     => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
-            'question.en'  => ['sometimes', 'nullable', 'string', 'max:300'],
-            'question.pl'  => ['sometimes', 'nullable', 'string', 'max:300'],
             // `answer` is NOT NULL with no default too, so omitting the key
             // entirely left the column out of the INSERT and produced a database
             // error. Required as an array on create; its locales may be blank,
             // since an answer can legitimately be written later.
-            // Keys are restricted so an unsupported locale is a 422 rather than
-            // a silent discard: fill() only reads en/pl, so `{"de": "..."}` used
-            // to save with an empty answer and no word to the client.
+            // Keys are restricted so an unregistered locale is a 422 rather than
+            // a silent discard: fill() only writes registered locales, so an
+            // unknown key used to save with an empty answer and no word to the
+            // client.
             'answer'       => [$creating ? 'required' : 'sometimes', 'array', $this->localeKeysOnly()],
-            'answer.en'    => ['sometimes', 'nullable', 'string', 'max:4000'],
-            'answer.pl'    => ['sometimes', 'nullable', 'string', 'max:4000'],
             'sort_order'   => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
         ];
+
+        // Per-locale rules are generated from the registry. Listing them by hand
+        // meant localeKeysOnly() would accept a newly registered locale that had
+        // no string/max rule behind it, so `{"question": {"de": <100k chars>}}`
+        // reached setTranslation() and died in the database where a 422 belongs.
+        foreach (Locales::codes() as $code) {
+            $rules["question.{$code}"] = ['sometimes', 'nullable', 'string', 'max:300'];
+            $rules["answer.{$code}"]   = ['sometimes', 'nullable', 'string', 'max:4000'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -172,14 +181,15 @@ class FaqController extends Controller
                 return;
             }
 
-            $unknown = array_diff(array_keys($value), ['en', 'pl']);
+            $unknown = Locales::unsupportedKeys($value);
 
             if ($unknown !== []) {
                 // Keyed on the bare attribute, which no field in FaqEditor owns.
                 // That is deliberate — the locale it objects to has no input to
                 // attach to — and safe because the editor now renders any error
                 // key it does not place inline as a banner above the form.
-                $fail("The {$attribute} field only accepts the locales en and pl.");
+                $fail("The {$attribute} field only accepts the locales "
+                    . implode(' and ', Locales::codes()) . '.');
             }
         };
     }
@@ -222,10 +232,13 @@ class FaqController extends Controller
             // looked like a silent no-op.
             $message = 'A question is required in at least one language.';
 
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'question.en' => [$message],
-                'question.pl' => [$message],
-            ]);
+            // Keyed per registered locale so the message lands under an input
+            // the form actually renders.
+            throw \Illuminate\Validation\ValidationException::withMessages(
+                collect(Locales::codes())
+                    ->mapWithKeys(fn (string $code) => ["question.{$code}" => [$message]])
+                    ->all(),
+            );
         }
     }
 
@@ -245,7 +258,7 @@ class FaqController extends Controller
                 continue;
             }
 
-            foreach (['en', 'pl'] as $locale) {
+            foreach (Locales::codes() as $locale) {
                 if (! array_key_exists($locale, $data[$field])) {
                     continue;
                 }

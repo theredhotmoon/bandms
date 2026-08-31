@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import LanguageSelector from '@/components/LanguageSelector.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
@@ -8,9 +9,9 @@ import { getSlugMap } from '@/lib/slugs'
 
 interface Props {
   lang?: Locale
-  alternateHref?: string
+  alternates?: Alternates
 }
-const { lang = 'en', alternateHref } = Astro.props
+const { lang = 'en', alternates = {} } = Astro.props
 
 const [siteConfig, slugMap, profile, socialLinks] = await Promise.all([
   getSiteConfig(lang),
@@ -107,7 +108,7 @@ const adminLabel = lang === 'pl' ? 'Panel' : 'Admin'
       <span>&copy; {year} {bandName}</span>
       <span class="ft-bottom-right">
         {s.rights && <span>{s.rights}</span>}
-        {alternateHref && <LanguageSelector lang={lang} alternateHref={alternateHref} />}
+        <LanguageSelector lang={lang} alternates={alternates} />
         <a href="/admin">{adminLabel}</a>
       </span>
     </div>

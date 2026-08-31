@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import type { Release, ReleasePlatform } from '@/types/release'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
@@ -17,9 +18,9 @@ import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail } from '@/lib/
 
 interface Props {
   lang: Locale
-  alternateHref?: string
+  alternates?: Alternates
 }
-const { lang, alternateHref } = Astro.props
+const { lang, alternates } = Astro.props
 
 const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Promise.all([
   getReleases(lang),
@@ -172,7 +173,7 @@ const priceOf = (item: (typeof physical)[number]) => {
 
 <BaseLayout
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >

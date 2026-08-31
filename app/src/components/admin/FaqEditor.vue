@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
+import { LOCALES, emptyBag, type Lang as Locale } from '@/locales'
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -17,14 +18,11 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ save: [FaqPayload]; cancel: [] }>()
 
-const LOCALES = ['en', 'pl'] as const
-type Locale = (typeof LOCALES)[number]
-
 // Nested by field then locale so the template can bind `draft.question[l]` —
 // v-model needs an assignable expression, which a ternary is not.
 const draft = reactive({
-  question: { en: '', pl: '' } as Record<Locale, string>,
-  answer: { en: '', pl: '' } as Record<Locale, string>,
+  question: emptyBag(),
+  answer: emptyBag(),
 })
 
 const draftModule = ref(props.moduleSlug)
@@ -45,14 +43,24 @@ watch(
   { immediate: true },
 )
 
+/** Trimmed draft for one field, one key per registered locale, '' becoming null. */
+function bagFrom(field: 'question' | 'answer'): Record<Locale, string | null> {
+  return Object.fromEntries(
+    LOCALES.map(l => [l, draft[field][l].trim() || null]),
+  ) as Record<Locale, string | null>
+}
+
 function submit() {
   emit('save', {
     module_slug: draftModule.value,
     // Empty becomes null rather than being omitted: the API merges per locale
     // and treats an absent locale as "leave alone", so dropping a cleared field
     // would silently keep the old text.
-    question: { en: draft.question.en.trim() || null, pl: draft.question.pl.trim() || null },
-    answer: { en: draft.answer.en.trim() || null, pl: draft.answer.pl.trim() || null },
+    // Built from LOCALES, not a literal pair: the template already renders an
+    // input per registered locale, so a hardcoded {en, pl} here would show a
+    // working field whose text is dropped on save.
+    question: bagFrom('question'),
+    answer: bagFrom('answer'),
     is_published: published.value,
   })
 }
@@ -70,7 +78,10 @@ function inputClass(key: string) {
 // `answer` from a rule attached to the array rather than to a locale — used to
 // be dropped on the floor, so a 422 looked like a silent no-op. Whatever the API
 // rejects now gets said out loud somewhere.
-const SHOWN_KEYS = ['module_slug', 'question.en', 'question.pl', 'answer.en', 'answer.pl']
+const SHOWN_KEYS = [
+  'module_slug',
+  ...LOCALES.flatMap(l => [`question.${l}`, `answer.${l}`]),
+]
 
 const otherErrors = computed(() =>
   Object.entries(props.errors)

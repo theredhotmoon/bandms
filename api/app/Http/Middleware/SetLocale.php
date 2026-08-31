@@ -2,21 +2,26 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Locales;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
 {
-    private const SUPPORTED = ['en', 'pl'];
-
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->query('lang')
-            ?? $request->getPreferredLanguage(self::SUPPORTED)
-            ?? 'en';
+        $supported = Locales::codes();
+        $default   = Locales::default();
 
-        app()->setLocale(in_array($locale, self::SUPPORTED, true) ? $locale : 'en');
+        $locale = $request->query('lang')
+            ?? $request->getPreferredLanguage($supported)
+            ?? $default;
+
+        // An unregistered ?lang= degrades to the default rather than 404ing:
+        // the Astro build fetches with a locale in the URL and a hard failure
+        // there takes down every page, not one.
+        app()->setLocale(is_string($locale) && Locales::isSupported($locale) ? $locale : $default);
 
         return $next($request);
     }

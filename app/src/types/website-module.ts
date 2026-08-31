@@ -1,5 +1,7 @@
-/** A value carried per supported locale. */
-export type Localized = { en: string | null; pl: string | null }
+import type { Lang } from '@/locales'
+
+/** A value carried per supported locale — keys follow the registry. */
+export type Localized = Record<Lang, string | null>
 
 /**
  * Editable page copy, keyed by field then locale.

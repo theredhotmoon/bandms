@@ -75,6 +75,19 @@ defineEmits<{
 - No reactive state in views (that belongs in a composable or child component).
 - No template longer than ~50 lines.
 
+### Locales come from `src/locales.ts`
+
+`Lang` is **derived** from the registry there — never redeclare `'en' | 'pl'`,
+and never write `const LOCALES = ['en', 'pl']` in a component. Editors build
+their per-locale tab strips from `LOCALES` and their blank drafts from
+`emptyBag()`, so a new language reaches every form with no edit to any of them.
+`useLang()` narrows whatever `localStorage` holds through `isLocale()`.
+
+Unlike the API and the public site, the admin registry has **no fallback chain**:
+it edits raw translation bags, so an untranslated locale must render an empty
+input, not the other language's text. See the root `CLAUDE.md` for the full
+three-file picture.
+
 ### Composables
 - Named `use*`, placed in `src/composables/`.
 - One composable = one logical concern.

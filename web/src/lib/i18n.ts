@@ -1,9 +1,19 @@
-import type { Locale } from '@/types/shared'
+import { dateLocale, type Locale, type TranslationBag } from './locales'
 
 export type { Locale }
 
+/**
+ * Pick one locale out of a translation bag, else the caller's fallback.
+ *
+ * Deliberately does NOT walk the locale chain: `fallback` is normally the
+ * already-resolved field from the API, which the server chained through
+ * config/locales.php. Chaining again here would prefer a raw bag entry over the
+ * value the server chose, so the two sides would disagree on a half-translated
+ * field. Use resolveTranslation() from ./locales when there is no server-side
+ * resolved value to fall back to.
+ */
 export function t(
-  translations: { en?: string | null; pl?: string | null } | null | undefined,
+  translations: TranslationBag | null | undefined,
   fallback: string | null | undefined,
   lang: Locale,
 ): string | null {
@@ -17,7 +27,7 @@ export function t(
 export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en'): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-GB', {
+  return d.toLocaleDateString(dateLocale(lang), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -27,7 +37,7 @@ export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en')
 export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 'en'): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-GB', {
+  return d.toLocaleDateString(dateLocale(lang), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

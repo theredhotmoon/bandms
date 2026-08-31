@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\WebsiteModuleResource;
 use App\Models\SiteSetting;
 use App\Models\WebsiteModule;
+use App\Support\Locales;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -35,6 +36,11 @@ class WebsiteModuleController extends Controller
         });
 
         return response()->json([
+            // The locale this response was resolved in, and every locale the
+            // site has. The public site builds its language switcher and
+            // hreflang alternates from these rather than hardcoding a pair.
+            'locale'        => $locale,
+            'locales'       => Locales::all(),
             'modules'       => $modules,
             'module_order'  => $module_order,
             'module_config' => $module_config,
@@ -44,9 +50,10 @@ class WebsiteModuleController extends Controller
     /**
      * Flatten {"field": {"en": ..., "pl": ...}} to {"field": "..."} for one locale.
      *
-     * Falls back to the other locale rather than emitting null, on the same
-     * reasoning as FaqSummaryResource: the Astro build bakes whatever it gets,
-     * and a null here renders an empty hero with a green build.
+     * Falls back down the locale's declared chain (config/locales.php) rather
+     * than emitting null, on the same reasoning as FaqSummaryResource: the Astro
+     * build bakes whatever it gets, and a null here renders an empty hero with a
+     * green build.
      *
      * Returns an object, never null — the public site does
      * `settings.kicker ?? ''` and an absent bag would throw at build time,
@@ -62,14 +69,7 @@ class WebsiteModuleController extends Controller
                 continue;
             }
 
-            foreach ([$locale, 'en', 'pl'] as $candidate) {
-                if (filled($value[$candidate] ?? null)) {
-                    $out[$field] = $value[$candidate];
-                    break;
-                }
-            }
-
-            $out[$field] ??= '';
+            $out[$field] = Locales::resolve($value, $locale) ?? '';
         }
 
         return $out;
@@ -110,28 +110,35 @@ class WebsiteModuleController extends Controller
     {
         $module = WebsiteModule::where('slug', $slug)->firstOrFail();
 
-        $validated = $request->validate([
-            'enabled'        => ['sometimes', 'boolean'],
-            'custom_name.en' => ['sometimes', 'nullable', 'string', 'max:80'],
-            'custom_name.pl' => ['sometimes', 'nullable', 'string', 'max:80'],
-            'custom_slug.en' => $this->slugRules($module, 'en'),
-            'custom_slug.pl' => $this->slugRules($module, 'pl'),
-            'per_page'       => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
-            'settings'       => ['sometimes', 'array'],
-            'settings.*'     => ['array'],
-            'settings.*.en'  => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'settings.*.pl'  => ['sometimes', 'nullable', 'string', 'max:2000'],
-        ]);
+        // Per-locale rules are generated from the registry: a locale added to
+        // config/locales.php is accepted here with no edit, and one that is not
+        // registered is silently dropped by validate() rather than stored where
+        // nothing will ever read it.
+        $rules = [
+            'enabled'    => ['sometimes', 'boolean'],
+            'per_page'   => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
+            'settings'   => ['sometimes', 'array'],
+            'settings.*' => ['array'],
+        ];
+
+        foreach (Locales::codes() as $code) {
+            $rules["custom_name.{$code}"] = ['sometimes', 'nullable', 'string', 'max:80'];
+            $rules["custom_slug.{$code}"] = $this->slugRules($module, $code);
+            $rules["settings.*.{$code}"]  = ['sometimes', 'nullable', 'string', 'max:2000'];
+        }
+
+        $validated = $request->validate($rules);
 
         if (array_key_exists('enabled', $validated)) {
             $module->enabled = $validated['enabled'];
         }
 
         if (array_key_exists('custom_name', $validated)) {
-            $module->setTranslations('custom_name', [
-                'en' => ($validated['custom_name']['en'] ?? null) ?: null,
-                'pl' => ($validated['custom_name']['pl'] ?? null) ?: null,
-            ]);
+            $module->setTranslations('custom_name', collect(Locales::codes())
+                ->mapWithKeys(fn (string $code) => [
+                    $code => ($validated['custom_name'][$code] ?? null) ?: null,
+                ])
+                ->all());
         }
 
         if (array_key_exists('custom_slug', $validated)) {
@@ -142,7 +149,7 @@ class WebsiteModuleController extends Controller
             // setTranslations() MERGES rather than replaces, so a cleared locale
             // has to be forgotten explicitly — dropping it from the array would
             // silently leave the old slug in place.
-            foreach (['en', 'pl'] as $locale) {
+            foreach (Locales::codes() as $locale) {
                 if (! array_key_exists($locale, $validated['custom_slug'])) {
                     continue;
                 }
@@ -164,7 +171,7 @@ class WebsiteModuleController extends Controller
             $current = $module->settings ?? [];
 
             foreach ($validated['settings'] as $field => $value) {
-                foreach (['en', 'pl'] as $locale) {
+                foreach (Locales::codes() as $locale) {
                     if (! array_key_exists($locale, $value)) {
                         continue;
                     }

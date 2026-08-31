@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
@@ -7,11 +8,11 @@ import { getShopItem, getBandProfile } from '@/lib/cms'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
   itemSlug: string
 }
 
-const { lang, alternateHref, itemSlug } = Astro.props
+const { lang, alternates, itemSlug } = Astro.props
 const slugMap = await getSlugMap()
 
 const [item, profile] = await Promise.all([
@@ -28,7 +29,7 @@ const mainImage = images[0]?.url ?? item.cover_photo
   description={item.description ?? `${item.name} — official merch from ${profile.name}`}
   image={mainImage}
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-24">
     <nav class="mb-8 text-sm text-subtle">
