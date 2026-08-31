@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import PageHero from '@/components/PageHero.astro'
 import SectionHead from '@/components/SectionHead.astro'
@@ -10,9 +11,9 @@ import { fmtDateShort } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref?: string
+  alternates?: Alternates
 }
-const { lang, alternateHref } = Astro.props
+const { lang, alternates } = Astro.props
 
 const [press, profile] = await Promise.all([
   getPressReleases().catch(() => []),
@@ -60,7 +61,7 @@ const siteOf = (item: (typeof sorted)[number]) => {
 
 <BaseLayout
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >

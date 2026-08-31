@@ -1,5 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import SectionHead from '@/components/SectionHead.astro'
@@ -13,10 +14,10 @@ import { fmtDate } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
   itemId: number
 }
-const { lang, alternateHref, itemId } = Astro.props
+const { lang, alternates, itemId } = Astro.props
 
 const [release, profile, siteConfig, slugMap] = await Promise.all([
   getRelease(itemId, lang),
@@ -100,7 +101,7 @@ const structuredData = {
 
 <BaseLayout
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
   title={`${release.title} — ${profile.name}`}
   description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
   image={release.cover_image}

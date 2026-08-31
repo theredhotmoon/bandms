@@ -21,4 +21,8 @@ const siteConfig = await getSiteConfig()
 if (siteConfig.modules.releases === false) return Astro.redirect('/404', 307)
 ---
 
-<ReleaseDetail lang="en" alternateHref="/pl/releases" itemId={Number(id)} />
+<!--
+  Only the Polish path is named: the English alternate defaults to this page's
+  own URL, which is what this legacy unlocalised route is.
+-->
+<ReleaseDetail lang="en" alternates={{ pl: '/pl/releases' }} itemId={Number(id)} />

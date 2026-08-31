@@ -7,6 +7,7 @@ use App\Http\Resources\FaqSummaryResource;
 use App\Models\Faq;
 use App\Models\WebsiteModule;
 use Illuminate\Http\JsonResponse;
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -172,14 +173,15 @@ class FaqController extends Controller
                 return;
             }
 
-            $unknown = array_diff(array_keys($value), ['en', 'pl']);
+            $unknown = Locales::unsupportedKeys($value);
 
             if ($unknown !== []) {
                 // Keyed on the bare attribute, which no field in FaqEditor owns.
                 // That is deliberate — the locale it objects to has no input to
                 // attach to — and safe because the editor now renders any error
                 // key it does not place inline as a banner above the form.
-                $fail("The {$attribute} field only accepts the locales en and pl.");
+                $fail("The {$attribute} field only accepts the locales "
+                    . implode(' and ', Locales::codes()) . '.');
             }
         };
     }
@@ -245,7 +247,7 @@ class FaqController extends Controller
                 continue;
             }
 
-            foreach (['en', 'pl'] as $locale) {
+            foreach (Locales::codes() as $locale) {
                 if (! array_key_exists($locale, $data[$field])) {
                     continue;
                 }

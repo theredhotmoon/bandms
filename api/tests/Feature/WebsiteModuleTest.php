@@ -844,3 +844,34 @@ it('is not a page module', function () {
     expect($footer->getTranslation('custom_slug', 'en', false))->toBeEmpty()
         ->and($footer->per_page)->toBeNull();
 });
+
+// ── locale registry ───────────────────────────────────────────────────────────
+
+// The public site builds its language switcher and its hreflang alternates from
+// this block. Hardcoding the pair in web/ is what makes a third locale a
+// find-and-replace job across 21 files instead of a config edit.
+it('serves the locale registry on site-config', function () {
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('locales.0.code', 'en')
+        ->assertJsonPath('locales.0.native_name', 'English')
+        ->assertJsonPath('locales.0.is_default', true)
+        ->assertJsonPath('locales.1.code', 'pl')
+        ->assertJsonPath('locales.1.native_name', 'Polski')
+        ->assertJsonPath('locales.1.date_locale', 'pl-PL')
+        ->assertJsonPath('locales.1.is_default', false);
+});
+
+// The registry describes the site, not the request — a switcher rendered on the
+// Polish page still has to offer every other language.
+it('serves the same locale registry whatever lang is requested', function () {
+    $en = $this->getJson('/api/site-config?lang=en')->json('locales');
+    $pl = $this->getJson('/api/site-config?lang=pl')->json('locales');
+
+    expect($pl)->toBe($en)->toHaveCount(2);
+});
+
+it('reports the resolved locale of the response itself', function () {
+    $this->getJson('/api/site-config?lang=pl')->assertJsonPath('locale', 'pl');
+    $this->getJson('/api/site-config?lang=de')->assertJsonPath('locale', 'en');
+});

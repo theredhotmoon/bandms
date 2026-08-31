@@ -1,9 +1,11 @@
-import type { Locale } from '@/types/shared'
 import { getSiteConfig, isFailOpenConfig, type SiteConfig } from './cms'
+import { DEFAULT_LOCALE, LOCALES, type Locale } from './locales'
 
-export type SlugMap = { en: Record<string, string>; pl: Record<string, string> }
+// Keyed by the registry rather than a literal pair, so a new locale is a
+// missing-key type error here instead of a silently half-built slug map.
+export type SlugMap = Record<Locale, Record<string, string>>
 
-export const LOCALES: Locale[] = ['en', 'pl']
+export { LOCALES }
 
 // Last-resort fallbacks for a site-config that has no row for these modules —
 // an API that has not run the slug migrations yet. Both are ordinary modules
@@ -59,13 +61,13 @@ export function getSlugMap(): Promise<SlugMap> {
 
 async function resolveSlugMap(): Promise<SlugMap> {
   for (let attempt = 1; ; attempt++) {
-    const [enCfg, plCfg] = await Promise.all([
-      getSiteConfig('en'),
-      getSiteConfig('pl'),
-    ])
+    const entries = await Promise.all(
+      LOCALES.map(async l => [l, await getSiteConfig(l)] as const),
+    )
+    const configs = Object.fromEntries(entries) as Record<Locale, SiteConfig>
 
-    const built = buildSlugMap(enCfg, plCfg)
-    const failOpen = isFailOpenConfig(enCfg) || isFailOpenConfig(plCfg)
+    const built = buildSlugMap(configs)
+    const failOpen = LOCALES.some(l => isFailOpenConfig(configs[l]))
 
     if (!failOpen) return built
 
@@ -79,11 +81,10 @@ async function resolveSlugMap(): Promise<SlugMap> {
   }
 }
 
-function buildSlugMap(enCfg: SiteConfig, plCfg: SiteConfig): SlugMap {
-  const map: SlugMap = {
-    en: { ...STATIC_SLUGS.en },
-    pl: { ...STATIC_SLUGS.pl },
-  }
+function buildSlugMap(configs: Record<Locale, SiteConfig>): SlugMap {
+  const map = Object.fromEntries(
+    LOCALES.map(l => [l, { ...STATIC_SLUGS[l] }]),
+  ) as SlugMap
 
   // Slugs are stored per locale on the module, not derived from its label —
   // renaming "Shop" to "Merch store" must not move /en/shop. The API resolves
@@ -95,10 +96,16 @@ function buildSlugMap(enCfg: SiteConfig, plCfg: SiteConfig): SlugMap {
   const resolve = (slug: string | undefined, moduleSlug: string) =>
     slug === undefined || slug === '' ? moduleSlug : slug
 
-  for (const moduleSlug of Object.keys(enCfg.module_config)) {
-    map.en[moduleSlug] = resolve(enCfg.module_config[moduleSlug]?.slug, moduleSlug)
-    map.pl[moduleSlug] = resolve(plCfg.module_config[moduleSlug]?.slug, moduleSlug)
+  // The module list comes from the default locale: every locale serves the same
+  // set, and reading it from a locale whose config happened to fail open would
+  // silently shrink the map for all of them.
+  for (const moduleSlug of Object.keys(configs[DEFAULT_LOCALE].module_config)) {
+    for (const l of LOCALES) {
+      map[l][moduleSlug] = resolve(configs[l]?.module_config[moduleSlug]?.slug, moduleSlug)
+    }
   }
 
-  return { en: dedupeSlugMap(map.en), pl: dedupeSlugMap(map.pl) }
+  return Object.fromEntries(
+    LOCALES.map(l => [l, dedupeSlugMap(map[l])]),
+  ) as SlugMap
 }

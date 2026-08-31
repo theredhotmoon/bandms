@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { getConcerts, getPosts, getReleases, getShopItems, getSiteConfig } from '@/lib/cms'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
@@ -9,10 +10,12 @@ import ReleaseDetail   from '@/components/detail/ReleaseDetail.astro'
 import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 
 export async function getStaticPaths() {
-  const [slugMap, enCfg, plCfg, concerts, posts, releases, shopItems] = await Promise.all([
+  // One config, not one per locale: `modules` is the enabled map, which the API
+  // builds without consulting ?lang=. Fetching it per locale was two requests
+  // for the same answer.
+  const [slugMap, cfg, concerts, posts, releases, shopItems] = await Promise.all([
     getSlugMap(),
-    getSiteConfig('en'),
-    getSiteConfig('pl'),
+    getSiteConfig(DEFAULT_LOCALE),
     getConcerts(),
     getPosts('en').then(r => r.data),
     getReleases('en'),
@@ -21,16 +24,22 @@ export async function getStaticPaths() {
 
   const paths: object[] = []
 
+  // Every locale's path for one item. The item slug is deliberately the same in
+  // each locale: detail pages are keyed on slug_en (there is no slug_pl on the
+  // public routes), so only the section segment differs.
+  const alternatesFor = (section: string, slug: string | number) =>
+    Object.fromEntries(
+      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${slug}`]),
+    ) as Alternates
+
   for (const lang of LOCALES) {
-    const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
-    const cfg = lang === 'en' ? enCfg : plCfg
 
     if (cfg.modules.concerts !== false) {
       for (const c of concerts) {
         paths.push({
           params: { lang, section: slugMap[lang].concerts ?? 'concerts', slug: c.slug_en },
           props: { sectionType: 'concerts', lang, itemId: c.id, itemSlug: c.slug_en,
-            alternateHref: `/${otherLang}/${slugMap[otherLang].concerts ?? 'concerts'}/${c.slug_en}` },
+            alternates: alternatesFor('concerts', c.slug_en) },
         })
       }
     }
@@ -40,7 +49,7 @@ export async function getStaticPaths() {
         paths.push({
           params: { lang, section: slugMap[lang].posts ?? 'posts', slug: String(p.id) },
           props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: '',
-            alternateHref: `/${otherLang}/${slugMap[otherLang].posts ?? 'posts'}/${p.id}` },
+            alternates: alternatesFor('posts', p.id) },
         })
       }
     }
@@ -50,7 +59,7 @@ export async function getStaticPaths() {
         paths.push({
           params: { lang, section: slugMap[lang].releases ?? 'releases', slug: String(r.id) },
           props: { sectionType: 'releases', lang, itemId: r.id, itemSlug: '',
-            alternateHref: `/${otherLang}/${slugMap[otherLang].releases ?? 'releases'}/${r.id}` },
+            alternates: alternatesFor('releases', r.id) },
         })
       }
     }
@@ -60,7 +69,7 @@ export async function getStaticPaths() {
         paths.push({
           params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug_en },
           props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug_en,
-            alternateHref: `/${otherLang}/${slugMap[otherLang].merch ?? 'merch'}/${item.slug_en}` },
+            alternates: alternatesFor('merch', item.slug_en) },
         })
       }
     }
@@ -72,15 +81,15 @@ export async function getStaticPaths() {
 interface Props {
   sectionType: string
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
   itemId: number
   itemSlug: string
 }
 
-const { sectionType, lang, alternateHref, itemId, itemSlug } = Astro.props
+const { sectionType, lang, alternates, itemId, itemSlug } = Astro.props
 ---
 
-{sectionType === 'concerts'  && <ConcertDetail   lang={lang} alternateHref={alternateHref} itemId={itemId} />}
-{sectionType === 'posts'     && <PostDetail      lang={lang} alternateHref={alternateHref} itemId={itemId} />}
-{sectionType === 'releases'  && <ReleaseDetail   lang={lang} alternateHref={alternateHref} itemId={itemId} />}
-{sectionType === 'merch'     && <MerchItemDetail lang={lang} alternateHref={alternateHref} itemSlug={itemSlug} />}
+{sectionType === 'concerts'  && <ConcertDetail   lang={lang} alternates={alternates} itemId={itemId} />}
+{sectionType === 'posts'     && <PostDetail      lang={lang} alternates={alternates} itemId={itemId} />}
+{sectionType === 'releases'  && <ReleaseDetail   lang={lang} alternates={alternates} itemId={itemId} />}
+{sectionType === 'merch'     && <MerchItemDetail lang={lang} alternates={alternates} itemSlug={itemSlug} />}

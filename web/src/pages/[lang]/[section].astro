@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { getSiteConfig } from '@/lib/cms'
 
 import ConcertsSection   from '@/components/sections/ConcertsSection.astro'
@@ -21,15 +22,23 @@ export async function getStaticPaths() {
   const ALL_SECTIONS       = [...LIST_ONLY_SECTIONS, ...DETAIL_SECTIONS] as const
   const ALWAYS_ON          = new Set(['newsletter'])
 
-  const [slugMap, enCfg, plCfg] = await Promise.all([
+  // One config, not one per locale: `modules` is the enabled map, which the API
+  // builds without consulting ?lang=. Fetching it per locale was two requests
+  // for the same answer.
+  const [slugMap, cfg] = await Promise.all([
     getSlugMap(),
-    getSiteConfig('en'),
-    getSiteConfig('pl'),
+    getSiteConfig(DEFAULT_LOCALE),
   ])
 
+  // Every locale's path for one section, keyed by locale. Built once per
+  // section rather than per (locale, section) pair: the map is the same
+  // whichever locale is being rendered.
+  const alternatesFor = (section: string) =>
+    Object.fromEntries(
+      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}`]),
+    ) as Alternates
+
   return LOCALES.flatMap(lang => {
-    const cfg = lang === 'en' ? enCfg : plCfg
-    const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
     return ALL_SECTIONS
       .filter(sectionType => ALWAYS_ON.has(sectionType) || cfg.modules[sectionType] !== false)
       .map(sectionType => ({
@@ -40,7 +49,7 @@ export async function getStaticPaths() {
         props: {
           sectionType,
           lang,
-          alternateHref: `/${otherLang}/${slugMap[otherLang][sectionType] ?? sectionType}`,
+          alternates: alternatesFor(sectionType),
         },
       }))
   })
@@ -49,20 +58,20 @@ export async function getStaticPaths() {
 interface Props {
   sectionType: string
   lang: Locale
-  alternateHref: string
+  alternates: Alternates
 }
 
-const { sectionType, lang, alternateHref } = Astro.props
+const { sectionType, lang, alternates } = Astro.props
 ---
 
-{sectionType === 'concerts'   && <ConcertsSection   lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'releases'   && <ReleasesSection   lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'posts'      && <PostsSection      lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'photos'     && <PhotosSection     lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'videos'     && <VideosSection     lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'press'      && <PressSection      lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'merch'      && <MerchSection      lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'epk'        && <EpkSection        lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'contact'    && <ContactSection    lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'about'      && <AboutSection      lang={lang} alternateHref={alternateHref} />}
-{sectionType === 'newsletter' && <NewsletterSection lang={lang} alternateHref={alternateHref} />}
+{sectionType === 'concerts'   && <ConcertsSection   lang={lang} alternates={alternates} />}
+{sectionType === 'releases'   && <ReleasesSection   lang={lang} alternates={alternates} />}
+{sectionType === 'posts'      && <PostsSection      lang={lang} alternates={alternates} />}
+{sectionType === 'photos'     && <PhotosSection     lang={lang} alternates={alternates} />}
+{sectionType === 'videos'     && <VideosSection     lang={lang} alternates={alternates} />}
+{sectionType === 'press'      && <PressSection      lang={lang} alternates={alternates} />}
+{sectionType === 'merch'      && <MerchSection      lang={lang} alternates={alternates} />}
+{sectionType === 'epk'        && <EpkSection        lang={lang} alternates={alternates} />}
+{sectionType === 'contact'    && <ContactSection    lang={lang} alternates={alternates} />}
+{sectionType === 'about'      && <AboutSection      lang={lang} alternates={alternates} />}
+{sectionType === 'newsletter' && <NewsletterSection lang={lang} alternates={alternates} />}

@@ -1,4 +1,6 @@
 ---
+import { dateLocale } from '@/lib/locales'
+import type { Alternates } from '@/lib/locales'
 import type { Locale } from '@/types/shared'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ContactForm from '@/components/ContactForm.vue'
@@ -13,9 +15,9 @@ import { getSlugMap } from '@/lib/slugs'
 
 interface Props {
   lang?: Locale
-  alternateHref?: string
+  alternates?: Alternates
 }
-const { lang = 'en', alternateHref } = Astro.props
+const { lang = 'en', alternates } = Astro.props
 
 const [profile, socialLinks, siteConfig, slugMap, epk] = await Promise.all([
   getBandProfile(lang),
@@ -174,7 +176,7 @@ const photoCount = epk?.press_photos?.length ?? 0
 const platformCount = socialLinks.length
 const monthly = profile.stat_spotify_monthly ?? 0
 
-const n = (value: number) => value.toLocaleString(lang === 'pl' ? 'pl-PL' : 'en-GB')
+const n = (value: number) => value.toLocaleString(dateLocale(lang))
 
 const epkAssets = [
   {
@@ -251,7 +253,7 @@ const promo = [
 
 <BaseLayout
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
   title={`${t.title} — ${profile.name}`}
   description={s.lead || `Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
 >
@@ -301,7 +303,7 @@ const promo = [
           sendAnother: t.sendAnother, error: t.error,
           replyNote: s.reply_time_label ?? '',
           bookingSubject: t.bookingSubject,
-          locale: lang === 'pl' ? 'pl-PL' : 'en-GB',
+          locale: dateLocale(lang),
         }}
       />
 

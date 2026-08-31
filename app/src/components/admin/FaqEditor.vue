@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
+import { LOCALES, type Lang as Locale } from '@/locales'
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -16,9 +17,6 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{ save: [FaqPayload]; cancel: [] }>()
-
-const LOCALES = ['en', 'pl'] as const
-type Locale = (typeof LOCALES)[number]
 
 // Nested by field then locale so the template can bind `draft.question[l]` —
 // v-model needs an assignable expression, which a ternary is not.

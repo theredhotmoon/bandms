@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
+import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
@@ -12,8 +13,9 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Locale }
 const slugMap = await getSlugMap()
-const otherLang: Locale = lang === 'en' ? 'pl' : 'en'
-const alternateHref = `/${otherLang}`
+// Every locale's path for this page, not just "the other one" — the head emits
+// a row per locale and the switcher an option per locale.
+const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}`])) as Alternates
 
 const [profile, concerts, releases, { data: posts }, socialLinks, siteConfig] = await Promise.all([
   getBandProfile(lang),
@@ -65,7 +67,7 @@ const structuredData = {
 
 <BaseLayout
   lang={lang}
-  alternateHref={alternateHref}
+  alternates={alternates}
   title={profile.name}
   description={profile.bio_short ?? `${profile.name} — ${profile.genres ?? 'Ska & Reggae'} band`}
   structuredData={structuredData}

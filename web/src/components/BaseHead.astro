@@ -1,4 +1,7 @@
 ---
+import type { Locale } from '@/types/shared'
+import { hreflangLinks, type Alternates } from '@/lib/locales'
+
 export interface Props {
   title: string
   description: string
@@ -6,9 +9,15 @@ export interface Props {
   canonical?: string
   noindex?: boolean
   structuredData?: object
+  lang?: Locale
+  /** Path per locale for this page, from the route. */
+  alternates?: Alternates
 }
 
-const { title, description, image, canonical, noindex = false, structuredData } = Astro.props
+const {
+  title, description, image, canonical, noindex = false, structuredData,
+  lang = 'en', alternates = {},
+} = Astro.props
 const site = Astro.site?.toString().replace(/\/$/, '') ?? ''
 const ogImage = image ? (image.startsWith('http') ? image : `${site}${image}`) : `${site}/og-default.png`
 const canonicalUrl = canonical ?? Astro.url.href
@@ -42,10 +51,18 @@ const canonicalUrl = canonical ?? Astro.url.href
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image"       content={ogImage} />
 
-<!-- Hreflang (EN = default, no prefix) -->
-<link rel="alternate" hreflang="en"       href={Astro.url.href} />
-<link rel="alternate" hreflang="pl"       href={`${site}/pl${Astro.url.pathname}`} />
-<link rel="alternate" hreflang="x-default" href={Astro.url.href} />
+<!--
+  Hreflang, one row per registered locale plus x-default.
+
+  Every href comes from the route's own alternates map. This used to be derived
+  from Astro.url alone -- hreflang="pl" was `${site}/pl${pathname}` -- which
+  described a "/en is unprefixed" URL scheme the site had already stopped using.
+  On /en/ it emitted /pl/en/, and on /pl/ it labelled /pl/ as the English page.
+  Well-formed markup, green build, wrong on every page.
+-->
+{hreflangLinks(alternates, { site, currentLocale: lang, currentPath: Astro.url.pathname }).map(
+  ({ hreflang, href }) => <link rel="alternate" hreflang={hreflang} href={href} />
+)}
 
 <!-- Structured data -->
 {structuredData && (

@@ -9,6 +9,7 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/pressRelease'
 import type { ShopItem, ShopItemSummary, ShopCategory } from '@/types/shop'
 import type { PublicSetlist } from '@/types/setlist'
+import { assertRegistryMatches } from './locales'
 import type { Locale } from '@/types/shared'
 
 const BASE = (import.meta.env.API_BASE ?? '').replace(/\/$/, '')
@@ -151,10 +152,28 @@ export interface ModuleConfig {
   settings?: Record<string, string>
 }
 
+/** One entry of the API's locale registry — mirrors api/config/locales.php. */
+export interface ApiLocale {
+  code: string
+  name: string
+  native_name: string
+  html_lang: string
+  date_locale: string
+  is_default: boolean
+}
+
 export interface SiteConfig {
   modules: Record<string, boolean>
   module_order: string[]
   module_config: Record<string, ModuleConfig>
+  /** The locale this response was resolved in. */
+  locale?: string
+  /**
+   * Every locale the site has, for switcher labels and hreflang alternates.
+   * Optional because an API predating the registry omits it, and a bare access
+   * would throw at build time — which kills all 35 pages, not one.
+   */
+  locales?: ApiLocale[]
   /**
    * Active theme name. Reserved — the API does not serve this yet, so it is
    * always undefined today and `getTheme()` falls through to the env var.
@@ -226,7 +245,14 @@ async function fetchSiteConfig(lang: Locale): Promise<SiteConfig> {
 
   if (!res.ok) throw new Error(`site-config ${res.status}`)
 
-  return (await res.json()) as SiteConfig
+  const config = (await res.json()) as SiteConfig
+
+  // Warns, never throws: a locale added server-side first must not take down
+  // the whole build. It simply will not be routed until web/src/lib/locales.ts
+  // declares it too.
+  assertRegistryMatches(config.locales)
+
+  return config
 }
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
