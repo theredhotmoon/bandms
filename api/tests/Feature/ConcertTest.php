@@ -86,6 +86,28 @@ describe('POST /api/concerts', function () {
         $this->assertDatabaseHas('concerts', ['venue_id' => $venue->id, 'date' => '2026-09-20']);
     });
 
+    it('refuses to create a concert when no venue exists', function () {
+        $this->actingAsAdmin();
+        expect(Venue::count())->toBe(0);
+
+        $this->postJson('/api/concerts', ['venue_id' => 1, 'date' => '2026-09-20'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'venue_id' => 'Add at least one venue before creating a concert.',
+            ]);
+
+        $this->assertDatabaseCount('concerts', 0);
+    });
+
+    it('reports a readable message when the venue is not chosen', function () {
+        $this->actingAsAdmin();
+        Venue::factory()->create();
+
+        $this->postJson('/api/concerts', ['date' => '2026-09-20'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['venue_id' => 'Please select a venue.']);
+    });
+
     it('creates a concert with bands', function () {
         $this->actingAsAdmin();
         $venue = Venue::factory()->create();
