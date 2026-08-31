@@ -255,6 +255,68 @@ curl -s http://localhost:4322/en/contact | grep -o 'AvailabilityModal[^"]*' | he
 
 Content-only refreshes still need nothing more than `restart`.
 
+### Docker goes read-only — `wsl --shutdown`, not Docker Desktop's Restart
+
+**Symptom:** every build dies with `read-only file system` (on
+`buildkit/containerdmeta.db`, `overlay2/…`, or a `COPY` step). `docker exec`
+returns nothing at all. The stack looks fine in `docker ps` and `/api/health`
+still answers 200 — because that is a read path. Anything that writes 500s.
+
+**Confirm it in one command** — the container's own filesystem is the tell:
+
+```bash
+docker exec bandms_backend sh -c 'touch /tmp/probe && echo WRITE_OK'
+# touch: /tmp/probe: Read-only file system
+```
+
+**Root cause is almost always the Windows host disk being full.** The WSL VM's
+`ext4.vhdx` cannot grow, writes fail with I/O errors, and ext4 does what ext4
+does on an I/O error: it remounts itself read-only to protect the data. Check
+`C:` free space first, before anything else.
+
+**Two things that look like fixes and are not:**
+
+- **Docker Desktop → Restart.** It restarts the daemon *inside the same VM*, so
+  the read-only mount survives. This is the one that wastes the most time,
+  because it is the obvious thing to try and it reports success.
+- **Freeing host disk space alone.** Once ext4 has latched read-only it stays
+  that way for the life of that VM, however much room appears underneath it.
+
+**The fix is to take the VM down so it remounts clean:**
+
+```bash
+wsl --shutdown        # then start Docker Desktop again
+```
+
+**Then reclaim, because the disk will fill again.** `rebuild.sh` builds
+`--no-cache`, so every run adds several GB of buildkit cache, and a VHDX never
+shrinks on its own. One `docker builder prune -a` returned **227 GB** here.
+
+```bash
+docker builder prune -a          # build cache only — safe
+```
+
+**Do not reach for `docker system prune -a --volumes`.** After a WSL shutdown the
+containers are stopped, so *every* volume counts as unused — including
+`bandms_mysql_data` (the dev database, with published riders and EPK versions
+that no seeder restores) and the unrelated `workflow-manager_*` and
+`backend_sail-pgsql` volumes from other projects on this machine. Prune the build
+cache, which is where the bloat actually is.
+
+**Pruning frees space inside the VHDX, not on `C:`.** The file stays fully
+allocated — 236 GB here while nearly empty inside. Returning it to Windows needs
+a compact, with WSL shut down:
+
+```powershell
+wsl --shutdown
+Optimize-VHD -Path "$env:LOCALAPPDATA\Docker\wsl\data\ext4.vhdx" -Mode Full
+```
+
+`wsl --manage docker-desktop --set-sparse true` is the newer equivalent, but it
+needs WSL 2.0+; `wsl --version` erroring means the build here is older than that.
+
+---
+
 ### `web` container hangs silently if backend never becomes healthy
 
 **Symptom:** `bandms_web` stays in a running state but the public site never loads; `docker logs bandms_web` shows the health-check loop still printing.
@@ -936,7 +998,8 @@ claimed a ~2 GB floor; the 176 MB row disproves it.
   read-only file system`, or `docker exec` returning **nothing at all** — Docker
   Desktop's VM disk has gone read-only. Every image build fails *and* the already
   running backend starts returning 500 because it cannot write. Nothing in the
-  code is wrong; restart Docker Desktop.
+  code is wrong — see *Docker goes read-only* below, and note that Docker
+  Desktop's own Restart button does **not** fix it.
 - `GPU process launch failed` from Chromium
 - A different set of specs failing each run, or a spec the change cannot reach
 - 30-second timeouts rather than assertion mismatches
