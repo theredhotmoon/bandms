@@ -328,7 +328,7 @@ a drive that has room — see below.
 
 ### Moving Docker's disk to another drive
 
-Done once, in Aug 2026: `C:` was at 0.3 GB free, which is what drove the
+Done once, in Aug 2026: `C:` had hit 0 GB free, which is what drove the
 read-only failure above. The 236.7 GB VHDX now lives on `F:`, and `C:` went from
 23.9 GB to 260.6 GB free.
 
@@ -359,7 +359,7 @@ literal, so it passed.
 
 1. Quit Docker Desktop, kill `com.docker.*`, then `wsl --shutdown`
 2. Confirm the VHDX is unlocked before copying (open it `ReadWrite`/`None`)
-3. Copy with `robocopy <src> <dst> ext4.vhdx /J` — **`/E`, not `/MOVE`**, so the
+3. Copy with `robocopy <src> <dst> ext4.vhdx /J` — **without `/MOVE`**, so the
    source survives until the copy is proven
 4. Verify (below), *then* set `BasePath`, *then* start Docker
 5. Confirm volumes and data, and only then delete the source
@@ -371,8 +371,8 @@ looked complete. `Start-Process robocopy … -WindowStyle Hidden` survives.
 Expect ~10 min at ~445 MB/s for 236 GB.
 
 **Size and mtime cannot tell you whether the copy finished.** `/J` (unbuffered
-I/O) **pre-allocates the destination**, so it reaches the full 254 GB in seconds
-and Explorer shows two identical files. The killed first attempt even carried a
+I/O) **pre-allocates the destination**, so it reaches its full final size in
+seconds and Explorer shows two identical files. The killed first attempt carried a
 *newer* mtime than the source, which reads as "finished later". Both signals are
 structurally incapable of reporting progress.
 
@@ -382,9 +382,11 @@ structurally incapable of reporting progress.
 - **Integrity when it ends:** compare MD5 of blocks read at *identical offsets*
   in both files (96 × 8 MB spanning the file is enough, and takes seconds). A
   truncated copy shows up as a repeating all-zero hash past the frontier.
-  Robocopy's own "Bytes: 236.706 g copied / FAILED 0" summary is not
-  independent evidence — it reported exactly that for the run that had already
-  been proven truncated.
+  Robocopy's `Bytes: … copied / FAILED 0` summary is the tool grading its own
+  work, and it is written only if the run finishes — the killed attempt left an
+  **empty log**, so there was no failure to notice, just a full-size file and
+  silence. Absence of a summary is easy to miss; the block comparison is what
+  actually settles it.
 
 **Confirm which disk is actually in use** before trusting anything: after Docker
 starts, the *new* VHDX must be **locked** by WSL and the old one **unlocked**.
