@@ -295,3 +295,60 @@ test.describe('Admin Concerts — form validation', () => {
     await modal.locator('button[aria-label="Close"]').click()
   })
 })
+
+// ---------------------------------------------------------------------------
+// Venue gate — the template wiring behind src/utils/venueGate.ts
+//
+// The gate logic itself is unit-tested; what only a browser can prove is that
+// the button and the notice are actually bound to it. Every state here is
+// produced by stubbing the response, so nothing touches the dev database.
+//
+// Match the API path exactly: a glob like **/api/venues* also captures Vite's
+// dev-server request for /src/api/venues.ts and breaks the module graph.
+// ---------------------------------------------------------------------------
+
+test.describe('Admin Concerts — venue gate', () => {
+  const VENUES = (url: URL) => url.pathname === '/api/venues'
+  const ADD = { name: '+ Add concert' }
+  const EMPTY_NOTICE = 'You need at least one venue before you can add a concert.'
+
+  test('no venues: create is blocked and explained', async ({ page }) => {
+    await page.route(VENUES, r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: '{"data":[]}' }),
+    )
+    await page.goto('/admin/concerts')
+
+    await expect(page.getByRole('button', ADD)).toBeDisabled()
+    await expect(page.getByText(EMPTY_NOTICE)).toBeVisible()
+    await expect(page.getByRole('link', { name: /Go to Venues/ })).toHaveAttribute(
+      'href',
+      '/admin/venues',
+    )
+  })
+
+  test('failed venues fetch: create stays available, error is named', async ({ page }) => {
+    await page.route(VENUES, r =>
+      r.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"boom"}' }),
+    )
+    await page.goto('/admin/concerts')
+
+    // TanStack defaults to retry:3 with backoff, so isError settles ~7s in.
+    await expect(page.getByText('Could not load venues')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+
+    // The regression guard: a failed fetch must not be reported as "no venues",
+    // nor leave the user with a dead button and no way forward.
+    const addBtn = page.getByRole('button', ADD)
+    await expect(addBtn).toBeEnabled()
+    await expect(addBtn).not.toHaveAttribute('title', /Add a venue/)
+    await expect(page.getByText(EMPTY_NOTICE)).toHaveCount(0)
+  })
+
+  test('venues present: no notice, create is available', async ({ page }) => {
+    await page.goto('/admin/concerts')
+
+    await expect(page.getByRole('button', ADD)).toBeEnabled()
+    await expect(page.getByText(EMPTY_NOTICE)).toHaveCount(0)
+    await expect(page.getByText('Could not load venues')).toHaveCount(0)
+  })
+})

@@ -17,6 +17,7 @@ import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
 import { useTableControls } from '@/composables/useTableControls'
 import { uploadConcertPoster, deleteConcertPoster } from '@/api/concerts'
+import { venueGate } from '@/utils/venueGate'
 import { createRiderForConcert } from '@/api/techRiders'
 import { ApiError, ApiValidationError } from '@/api/client'
 import { useRouter } from 'vue-router'
@@ -29,13 +30,15 @@ const { query: tagsQ } = useTags()
 const { token } = useAuth()
 const queryClient = useQueryClient()
 
-// A concert requires a venue, so with none defined the form is a dead end.
-// Only a *settled* query proves that: disabling on any non-success state would
-// blame a missing venue for what is really a failed fetch, and leave no way
-// forward. On error the button stays live and the server-side guard backstops.
-const hasVenues     = computed(() => (venuesQ.data.value ?? []).length > 0)
-const noVenues      = computed(() => venuesQ.isSuccess.value && !hasVenues.value)
-const venuesFailed  = computed(() => venuesQ.isError.value)
+// Button state and notice both come from one gate so they cannot drift apart.
+// See src/utils/venueGate.ts for why a failed fetch must not read as "empty".
+const gate = computed(() => venueGate({
+  isSuccess: venuesQ.isSuccess.value,
+  isError:   venuesQ.isError.value,
+  data:      venuesQ.data.value,
+}))
+const noVenues     = computed(() => gate.value.noVenues)
+const venuesFailed = computed(() => gate.value.venuesFailed)
 
 const router = useRouter()
 

@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config'
 import { fileURLToPath, URL } from 'node:url'
 
 /**
- * Unit tests for the pure logic the tech rider stands on: resolution, diffing
- * and the rig contract.
+ * Unit tests for the pure logic the admin stands on: tech rider resolution,
+ * diffing and the rig contract, plus the venue gate behind concert creation.
  *
  * Deliberately separate from vite.config.ts and carrying no plugins. Nothing
  * under test renders — these are the modules that decide what a venue is sent,
@@ -25,7 +25,12 @@ export default defineConfig({
     include: ['src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/utils/riderResolver.ts', 'src/utils/riderDiff.ts', 'src/utils/rigValidation.ts'],
+      include: [
+        'src/utils/riderResolver.ts',
+        'src/utils/riderDiff.ts',
+        'src/utils/rigValidation.ts',
+        'src/utils/venueGate.ts',
+      ],
     },
   },
 })
