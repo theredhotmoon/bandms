@@ -73,9 +73,17 @@ class BandProfile extends Model
         return $this->hasMany(Release::class, 'profile_id');
     }
 
+    /**
+     * The band's own links. A social link has exactly one owner, so anything
+     * belonging to a member, author or venue is excluded — otherwise a
+     * journalist's Instagram would surface in the band's public links.
+     */
     public function socialLinks(): HasMany
     {
-        return $this->hasMany(SocialLink::class, 'profile_id')->whereNull('member_id');
+        return $this->hasMany(SocialLink::class, 'profile_id')
+            ->whereNull('member_id')
+            ->whereNull('author_id')
+            ->whereNull('venue_id');
     }
 
     public function testimonials(): HasMany

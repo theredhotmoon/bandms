@@ -8,6 +8,7 @@ use App\Models\Author;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class AuthorController extends Controller
 {
@@ -28,8 +29,13 @@ class AuthorController extends Controller
     public function store(Request $request): AuthorResource
     {
         $validated = $this->validatePayload($request);
-        $author = Author::create($validated);
-        $this->syncRelations($author, $request);
+
+        $author = DB::transaction(function () use ($validated, $request) {
+            $author = Author::create($validated);
+            $this->syncRelations($author, $request);
+
+            return $author;
+        });
 
         $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
@@ -39,8 +45,11 @@ class AuthorController extends Controller
     public function update(Request $request, Author $author): AuthorResource
     {
         $validated = $this->validatePayload($request);
-        $author->update($validated);
-        $this->syncRelations($author, $request);
+
+        DB::transaction(function () use ($validated, $request, $author) {
+            $author->update($validated);
+            $this->syncRelations($author, $request);
+        });
 
         $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 

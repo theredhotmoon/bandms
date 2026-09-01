@@ -158,3 +158,74 @@ describe('DELETE /api/authors/{author}', function () {
         $this->deleteJson('/api/authors/9999')->assertNotFound();
     });
 });
+
+// ── Social links ──────────────────────────────────────────────────────────────
+
+describe('author social links', function () {
+    it('stores social links sent with a new author', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', [
+            'name'         => 'Linked Author',
+            'social_links' => [
+                ['platform' => 'instagram', 'url' => 'https://instagram.com/linked'],
+                ['platform' => 'twitter',   'url' => 'https://twitter.com/linked'],
+            ],
+        ])->assertCreated()
+          ->assertJsonCount(2, 'data.social_links')
+          ->assertJsonPath('data.social_links.0.url', 'https://instagram.com/linked');
+
+        $author = Author::where('name', 'Linked Author')->firstOrFail();
+
+        $this->assertDatabaseHas('social_links', [
+            'author_id' => $author->id,
+            'platform'  => 'instagram',
+            'url'       => 'https://instagram.com/linked',
+        ]);
+    });
+
+    it('returns the stored social links when the author is fetched', function () {
+        $this->actingAsAdmin();
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Fetch Me',
+            'social_links' => [['platform' => 'facebook', 'url' => 'https://facebook.com/fetchme']],
+        ])->json('data.id');
+
+        $this->getJson("/api/authors/{$id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.social_links.0.platform', 'facebook')
+            ->assertJsonPath('data.social_links.0.url', 'https://facebook.com/fetchme');
+    });
+
+    it('replaces social links on update', function () {
+        $this->actingAsAdmin();
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Swap Links',
+            'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/old']],
+        ])->json('data.id');
+
+        $this->putJson("/api/authors/{$id}", [
+            'name'         => 'Swap Links',
+            'social_links' => [['platform' => 'website', 'url' => 'https://swap.example.com']],
+        ])->assertSuccessful()
+          ->assertJsonCount(1, 'data.social_links')
+          ->assertJsonPath('data.social_links.0.url', 'https://swap.example.com');
+
+        $this->assertDatabaseMissing('social_links', ['url' => 'https://instagram.com/old']);
+    });
+
+    it('keeps author links out of the band profile social links', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', [
+            'name'         => 'Not The Band',
+            'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/journalist']],
+        ])->assertCreated();
+
+        $urls = collect($this->getJson('/api/band-profile/social-links')->json('data'))->pluck('url');
+
+        expect($urls)->not->toContain('https://instagram.com/journalist');
+    });
+});
