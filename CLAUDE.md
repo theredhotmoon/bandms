@@ -288,20 +288,46 @@ does on an I/O error: it remounts itself read-only to protect the data. Check
 wsl --shutdown        # then start Docker Desktop again
 ```
 
+**A full VM disk does not always present as read-only.** In Sep 2026 builds died
+with `failed to copy files: copy file range failed: no space left on device`
+while `C:` had **259 GB free** and the write probe above returned `WRITE_OK`. The
+VHDX was full, the host was not, and ext4 had never latched read-only — so no
+`wsl --shutdown` was needed and pruning alone fixed it. Run the probe before
+reaching for the VM restart; the two failures share a cause but not a remedy.
+
 **Then reclaim, because the disk will fill again.** `rebuild.sh` builds
-`--no-cache`, so every run adds several GB of buildkit cache, and a VHDX never
-shrinks on its own. One `docker builder prune -a` returned **227 GB** here.
+`--no-cache`, so every run adds several GB of buildkit cache *and* leaves the
+previous image untagged. A VHDX never shrinks on its own.
+
+**Prune both — dangling images are usually the bigger half.** An earlier version
+of this file said the build cache is "where the bloat actually is". That held in
+Aug 2026 and was wrong the next time it mattered: in Sep 2026 the cache returned
+24 GB and dangling images returned **227 GB**.
 
 ```bash
-docker builder prune -a          # build cache only — safe
+docker builder prune -af         # build cache — safe
+docker image prune -f            # untagged images only — safe
 ```
+
+**Keep `image prune` at `-f`, never `-a`.** Without `-a` it removes only
+*dangling* (untagged) images, so everything a compose file references survives.
+`-a` removes every image not currently used by a *running* container, which takes
+out the rest of the stack the moment anything is stopped.
+
+**`docker builder prune` returns `0B` while a build is running** — the in-flight
+build holds the cache mount. That reads as "nothing to reclaim" and is the wrong
+conclusion. Re-run it once the build finishes.
+
+**`docker system df` can fail outright in this state**
+(`error getting build cache usage: … too many levels of symbolic links`), so the
+obvious "what is using space?" command is unavailable exactly when it is needed.
+Prune first, measure after.
 
 **Do not reach for `docker system prune -a --volumes`.** After a WSL shutdown the
 containers are stopped, so *every* volume counts as unused — including
 `bandms_mysql_data` (the dev database, with published riders and EPK versions
 that no seeder restores) and the unrelated `workflow-manager_*` and
-`backend_sail-pgsql` volumes from other projects on this machine. Prune the build
-cache, which is where the bloat actually is.
+`backend_sail-pgsql` volumes from other projects on this machine.
 
 **Pruning frees space inside the VHDX, not on `C:`.** The file stays fully
 allocated — 236 GB here while nearly empty inside. Returning it to Windows needs
@@ -547,6 +573,41 @@ PL slug alone; only an explicit `{"en": null}` clears one. `custom_name`
 overwrites both, which is fine for a label and wrong for a URL.
 
 ---
+
+### A social link has exactly one owner — and the owner columns are a whitelist
+
+`social_links` carries four owner FKs: `profile_id` (the band's own links),
+`member_id`, `author_id`, `venue_id`. **Exactly one is set.** All four are
+nullable; `profile_id` was `NOT NULL` until Sep 2026, which is what broke authors
+and venues.
+
+**The bug this caused, because the shape recurs.** `author_id`/`venue_id` were
+added in `2026_06_28_000001` without relaxing `profile_id`, so every author- and
+venue-owned insert died with `ERROR 1364: Field 'profile_id' doesn't have a
+default value` — *after* `AuthorController::store()` had already committed the
+author. The save both failed and succeeded: a 500 toast over a saved record, and
+links that never persisted. No author or venue link had ever saved.
+
+**Do not fix a missing owner by backfilling `profile_id`.** It satisfies the
+constraint and silently publishes the row. `BandProfile::socialLinks()` filtered
+on `whereNull('member_id')` — excluding member links *by name* rather than "links
+owned by someone else" — so an author link, whose `member_id` is null, would have
+surfaced in the band's public links, the EPK snapshot and `BandProfileResource`.
+The insert error was loud; that leak would not have been. The relation now
+excludes all three foreign owners, and **adding a fifth owner column means adding
+it there too.**
+
+**Ordering is explicit, not incidental.** Every write site sets `position` from
+the payload index, and all four relations `orderBy('position')`. This used to
+work by accident: `syncRelations()` deletes every link and recreates them in
+array order, so auto-increment `id` happened to match. Anything that stops
+recreating from scratch — a partial update, an upsert — silently scrambles the
+editor's drag order. `AuthorTest` pins this by inverting `position` against `id`
+and asserting the read follows `position`.
+
+**Writes that touch a parent plus its links belong in a transaction.**
+`AuthorController` wraps `store`/`update` in `DB::transaction`, so a failure in
+the link loop cannot leave a half-saved parent behind.
 
 ### `setTranslations()` merges — clearing one locale needs `forgetTranslation()`
 

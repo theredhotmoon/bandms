@@ -8,6 +8,7 @@ use App\Models\Author;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class AuthorController extends Controller
 {
@@ -28,8 +29,13 @@ class AuthorController extends Controller
     public function store(Request $request): AuthorResource
     {
         $validated = $this->validatePayload($request);
-        $author = Author::create($validated);
-        $this->syncRelations($author, $request);
+
+        $author = DB::transaction(function () use ($validated, $request) {
+            $author = Author::create($validated);
+            $this->syncRelations($author, $request);
+
+            return $author;
+        });
 
         $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
@@ -39,8 +45,11 @@ class AuthorController extends Controller
     public function update(Request $request, Author $author): AuthorResource
     {
         $validated = $this->validatePayload($request);
-        $author->update($validated);
-        $this->syncRelations($author, $request);
+
+        DB::transaction(function () use ($validated, $request, $author) {
+            $author->update($validated);
+            $this->syncRelations($author, $request);
+        });
 
         $author->load('pressReleases', 'concerts', 'tours', 'photos', 'socialLinks');
 
@@ -85,9 +94,16 @@ class AuthorController extends Controller
         $author->tours()->sync($request->input('tour_ids', []));
         $author->photos()->sync($request->input('photo_ids', []));
 
+        // Only ever the validated fields: SocialLink::$fillable includes every
+        // owner FK, so spreading raw request input here lets a caller attach the
+        // link to a member, venue or the band profile as well.
         $author->socialLinks()->delete();
-        foreach ($request->input('social_links', []) as $link) {
-            $author->socialLinks()->create($link);
+        foreach (array_values($request->input('social_links', [])) as $index => $link) {
+            $author->socialLinks()->create([
+                'platform' => $link['platform'],
+                'url'      => $link['url'],
+                'position' => $index,
+            ]);
         }
     }
 }

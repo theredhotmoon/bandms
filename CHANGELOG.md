@@ -34,7 +34,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A second dialog on the same page did nothing.** Opening the press kit after the availability calendar left an inert button with no visible cause.
 - **Several styles silently did nothing.** Seven hover states and one background referenced colours that no longer existed, so they never applied. The build now fails on that rather than shipping it.
 - **Member instruments, album locations and press links never appeared** on the public site, despite being filled in, because the site's own type definitions omitted the fields the API was sending.
+- **Saving a person in Authors & Contacts failed with an error yet saved them anyway, and never kept their social links.** Social links could only ever belong to the band or a member, so links owned by an author or a venue were rejected by the database — after the person had already been written. The save both failed and succeeded, and no author or venue social link had ever been stored since the feature shipped. Both now save, and a failure part-way through no longer leaves a half-saved record behind.
+- **A contact's social links could show up as the band's own.** The band's public links, its press-kit snapshot and its API response selected everything not belonging to a member, which would have swept in links owned by an author or a venue.
+- **Social link order is now kept deliberately.** Dragging links into an order in the editor happened to survive only because every save rewrote the whole list; the order was never actually recorded. It is now stored, so it holds however the links are edited.
 - **The homepage no longer links to pages that a disabled module never builds.** Its hero buttons and its Upcoming shows / Music / News sections were gated on whether *content* existed rather than on whether the module was enabled — the two agree until content exists while its module is switched off. With Releases disabled but releases still in the database, the homepage advertised `/en/releases` and every individual release, all of them 404s.
+
+### Security
+- **The authors endpoint let a social link be attached to someone else.** Extra fields sent alongside a link's platform and URL were passed straight through to the database, so a link saved against a contact could be attached to a band member as well and would then appear on that member's public profile. Only the platform, URL and position are accepted now. Requires an admin session; the venue and member endpoints were never affected.
 
 ## [0.7.1] - 2026-08-20
 

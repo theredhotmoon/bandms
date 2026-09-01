@@ -198,3 +198,53 @@ describe('DELETE /api/venues/{venue}', function () {
         $this->deleteJson('/api/venues/9999')->assertNotFound();
     });
 });
+
+// ── Social links ──────────────────────────────────────────────────────────────
+
+describe('venue social links', function () {
+    it('stores social links sent with a new venue', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', [
+            'name'         => 'Linked Hall',
+            'social_links' => [['platform' => 'website', 'url' => 'https://linkedhall.example.com']],
+        ])->assertCreated()
+          ->assertJsonCount(1, 'data.social_links')
+          ->assertJsonPath('data.social_links.0.url', 'https://linkedhall.example.com');
+
+        $this->assertDatabaseHas('social_links', [
+            'venue_id' => Venue::where('name', 'Linked Hall')->firstOrFail()->id,
+            'url'      => 'https://linkedhall.example.com',
+        ]);
+    });
+
+    it('keeps venue links out of the band profile social links', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', [
+            'name'         => 'Not The Band Venue',
+            'social_links' => [['platform' => 'facebook', 'url' => 'https://facebook.com/thevenue']],
+        ])->assertCreated();
+
+        $urls = collect($this->getJson('/api/band-profile/social-links')->json('data'))->pluck('url');
+
+        expect($urls)->not->toContain('https://facebook.com/thevenue');
+    });
+
+    it('stores an explicit position for each social link', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', [
+            'name'         => 'Ordered Hall',
+            'social_links' => [
+                ['platform' => 'website',   'url' => 'https://hall.example.com'],
+                ['platform' => 'instagram', 'url' => 'https://instagram.com/hall'],
+            ],
+        ])->assertCreated();
+
+        $id = Venue::where('name', 'Ordered Hall')->firstOrFail()->id;
+
+        $this->assertDatabaseHas('social_links', ['venue_id' => $id, 'url' => 'https://hall.example.com',      'position' => 0]);
+        $this->assertDatabaseHas('social_links', ['venue_id' => $id, 'url' => 'https://instagram.com/hall',    'position' => 1]);
+    });
+});
