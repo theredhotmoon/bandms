@@ -83,7 +83,8 @@ class BandProfile extends Model
         return $this->hasMany(SocialLink::class, 'profile_id')
             ->whereNull('member_id')
             ->whereNull('author_id')
-            ->whereNull('venue_id');
+            ->whereNull('venue_id')
+            ->orderBy('position');
     }
 
     public function testimonials(): HasMany

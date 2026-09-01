@@ -2,6 +2,7 @@
 
 use App\Models\Author;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Laravel\Passport\Passport;
 
 // ── GET /api/authors ──────────────────────────────────────────────────────────
@@ -227,5 +228,69 @@ describe('author social links', function () {
         $urls = collect($this->getJson('/api/band-profile/social-links')->json('data'))->pluck('url');
 
         expect($urls)->not->toContain('https://instagram.com/journalist');
+    });
+
+    it('stores an explicit position for each social link', function () {
+        $this->actingAsAdmin();
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Ordered Author',
+            'social_links' => [
+                ['platform' => 'website',   'url' => 'https://first.example.com'],
+                ['platform' => 'instagram', 'url' => 'https://instagram.com/second'],
+                ['platform' => 'twitter',   'url' => 'https://twitter.com/third'],
+            ],
+        ])->json('data.id');
+
+        // Position must come from the payload order, not default to 0 for all.
+        $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://first.example.com',    'position' => 0]);
+        $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://instagram.com/second', 'position' => 1]);
+        $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://twitter.com/third',    'position' => 2]);
+    });
+
+    it('reads links back in position order even when it disagrees with id order', function () {
+        $this->actingAsAdmin();
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Shuffled Author',
+            'social_links' => [
+                ['platform' => 'website',   'url' => 'https://a.example.com'],
+                ['platform' => 'instagram', 'url' => 'https://b.example.com'],
+            ],
+        ])->json('data.id');
+
+        // Invert position without touching id, so id order and position order
+        // disagree. Ordering that merely rode on auto-increment breaks here.
+        DB::table('social_links')->where('author_id', $id)->where('url', 'https://a.example.com')->update(['position' => 1]);
+        DB::table('social_links')->where('author_id', $id)->where('url', 'https://b.example.com')->update(['position' => 0]);
+
+        $this->getJson("/api/authors/{$id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.social_links.0.url', 'https://b.example.com')
+            ->assertJsonPath('data.social_links.1.url', 'https://a.example.com');
+    });
+
+    it('renumbers positions when links are reordered on update', function () {
+        $this->actingAsAdmin();
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Reorder Me',
+            'social_links' => [
+                ['platform' => 'website',   'url' => 'https://one.example.com'],
+                ['platform' => 'instagram', 'url' => 'https://two.example.com'],
+            ],
+        ])->json('data.id');
+
+        $this->putJson("/api/authors/{$id}", [
+            'name'         => 'Reorder Me',
+            'social_links' => [
+                ['platform' => 'instagram', 'url' => 'https://two.example.com'],
+                ['platform' => 'website',   'url' => 'https://one.example.com'],
+            ],
+        ])->assertSuccessful()
+          ->assertJsonPath('data.social_links.0.url', 'https://two.example.com');
+
+        $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://two.example.com', 'position' => 0]);
+        $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://one.example.com', 'position' => 1]);
     });
 });

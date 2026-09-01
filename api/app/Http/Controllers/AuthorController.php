@@ -95,8 +95,8 @@ class AuthorController extends Controller
         $author->photos()->sync($request->input('photo_ids', []));
 
         $author->socialLinks()->delete();
-        foreach ($request->input('social_links', []) as $link) {
-            $author->socialLinks()->create($link);
+        foreach (array_values($request->input('social_links', [])) as $index => $link) {
+            $author->socialLinks()->create(array_merge($link, ['position' => $index]));
         }
     }
 }

@@ -34,6 +34,6 @@ class Author extends Model
 
     public function socialLinks(): HasMany
     {
-        return $this->hasMany(SocialLink::class, 'author_id');
+        return $this->hasMany(SocialLink::class, 'author_id')->orderBy('position');
     }
 }

@@ -58,11 +58,12 @@ class BandMemberController extends Controller
         $profile = $this->profile();
         $member = $profile->members()->create($data);
 
-        foreach ($request->input('social_links', []) as $link) {
+        foreach (array_values($request->input('social_links', [])) as $index => $link) {
             $member->socialLinks()->create([
                 'profile_id' => $profile->id,
                 'platform'   => $link['platform'],
                 'url'        => $link['url'],
+                'position'   => $index,
             ]);
         }
 
@@ -108,11 +109,12 @@ class BandMemberController extends Controller
         $member->update($data);
 
         $member->socialLinks()->delete();
-        foreach ($request->input('social_links', []) as $link) {
+        foreach (array_values($request->input('social_links', [])) as $index => $link) {
             $member->socialLinks()->create([
                 'profile_id' => $member->profile_id,
                 'platform'   => $link['platform'],
                 'url'        => $link['url'],
+                'position'   => $index,
             ]);
         }
 

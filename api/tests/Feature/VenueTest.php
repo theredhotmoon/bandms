@@ -230,4 +230,21 @@ describe('venue social links', function () {
 
         expect($urls)->not->toContain('https://facebook.com/thevenue');
     });
+
+    it('stores an explicit position for each social link', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', [
+            'name'         => 'Ordered Hall',
+            'social_links' => [
+                ['platform' => 'website',   'url' => 'https://hall.example.com'],
+                ['platform' => 'instagram', 'url' => 'https://instagram.com/hall'],
+            ],
+        ])->assertCreated();
+
+        $id = Venue::where('name', 'Ordered Hall')->firstOrFail()->id;
+
+        $this->assertDatabaseHas('social_links', ['venue_id' => $id, 'url' => 'https://hall.example.com',      'position' => 0]);
+        $this->assertDatabaseHas('social_links', ['venue_id' => $id, 'url' => 'https://instagram.com/hall',    'position' => 1]);
+    });
 });

@@ -34,8 +34,8 @@ class VenueController extends Controller
             $venue->tags()->sync($data['tag_ids'] ?? []);
         }
 
-        foreach ($data['social_links'] ?? [] as $link) {
-            $venue->socialLinks()->create($link);
+        foreach (array_values($data['social_links'] ?? []) as $index => $link) {
+            $venue->socialLinks()->create(array_merge($link, ['position' => $index]));
         }
 
         return new VenueResource($venue->load('tags', 'socialLinks'));
@@ -66,8 +66,8 @@ class VenueController extends Controller
 
         if (array_key_exists('social_links', $data)) {
             $venue->socialLinks()->delete();
-            foreach ($data['social_links'] as $link) {
-                $venue->socialLinks()->create($link);
+            foreach (array_values($data['social_links']) as $index => $link) {
+                $venue->socialLinks()->create(array_merge($link, ['position' => $index]));
             }
         }
 

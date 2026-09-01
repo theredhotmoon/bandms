@@ -40,6 +40,6 @@ class Venue extends Model
 
     public function socialLinks(): HasMany
     {
-        return $this->hasMany(SocialLink::class, 'venue_id');
+        return $this->hasMany(SocialLink::class, 'venue_id')->orderBy('position');
     }
 }

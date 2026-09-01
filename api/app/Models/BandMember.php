@@ -47,7 +47,7 @@ class BandMember extends Model
 
     public function socialLinks(): HasMany
     {
-        return $this->hasMany(SocialLink::class, 'member_id');
+        return $this->hasMany(SocialLink::class, 'member_id')->orderBy('position');
     }
 
     public function mainInstrument(): BelongsTo
