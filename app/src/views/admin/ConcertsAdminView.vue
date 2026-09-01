@@ -30,10 +30,12 @@ const { token } = useAuth()
 const queryClient = useQueryClient()
 
 // A concert requires a venue, so with none defined the form is a dead end.
-// `data` is undefined while loading, which correctly keeps the button disabled;
-// the notice waits for a settled query so it never flashes during the fetch.
-const hasVenues = computed(() => (venuesQ.data.value ?? []).length > 0)
-const showVenueNotice = computed(() => venuesQ.isSuccess.value && !hasVenues.value)
+// Only a *settled* query proves that: disabling on any non-success state would
+// blame a missing venue for what is really a failed fetch, and leave no way
+// forward. On error the button stays live and the server-side guard backstops.
+const hasVenues     = computed(() => (venuesQ.data.value ?? []).length > 0)
+const noVenues      = computed(() => venuesQ.isSuccess.value && !hasVenues.value)
+const venuesFailed  = computed(() => venuesQ.isError.value)
 
 const router = useRouter()
 
@@ -139,14 +141,18 @@ async function confirmDelete() {
         <button
           @click="openCreate"
           class="btn-add-primary"
-          :disabled="!hasVenues"
-          :title="hasVenues ? undefined : 'Add a venue before creating a concert'"
+          :disabled="noVenues"
+          :title="noVenues ? 'Add a venue before creating a concert' : undefined"
         >+ Add concert</button>
       </div>
 
-      <div v-if="showVenueNotice" class="venue-notice">
+      <div v-if="noVenues" class="venue-notice">
         <span>You need at least one venue before you can add a concert.</span>
         <RouterLink to="/admin/venues" class="venue-notice-link">Go to Venues &rarr;</RouterLink>
+      </div>
+      <div v-else-if="venuesFailed" class="venue-notice">
+        <span>Could not load venues — saving a concert may fail until this resolves.</span>
+        <button type="button" class="venue-notice-link" @click="venuesQ.refetch()">Retry</button>
       </div>
 
       <div class="table-card">
@@ -260,6 +266,11 @@ async function confirmDelete() {
   font-weight: 600;
   color: #fcd34d;
   text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
 }
 .venue-notice-link:hover { color: #fef3c7; }
 </style>
