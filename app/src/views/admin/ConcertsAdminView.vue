@@ -29,6 +29,14 @@ const { query: tagsQ } = useTags()
 const { token } = useAuth()
 const queryClient = useQueryClient()
 
+// A concert requires a venue, so with none defined the form is a dead end.
+// Only a *settled* query proves that: disabling on any non-success state would
+// blame a missing venue for what is really a failed fetch, and leave no way
+// forward. On error the button stays live and the server-side guard backstops.
+const hasVenues     = computed(() => (venuesQ.data.value ?? []).length > 0)
+const noVenues      = computed(() => venuesQ.isSuccess.value && !hasVenues.value)
+const venuesFailed  = computed(() => venuesQ.isError.value)
+
 const router = useRouter()
 
 /**
@@ -130,7 +138,21 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Concerts</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add concert</button>
+        <button
+          @click="openCreate"
+          class="btn-add-primary"
+          :disabled="noVenues"
+          :title="noVenues ? 'Add a venue before creating a concert' : undefined"
+        >+ Add concert</button>
+      </div>
+
+      <div v-if="noVenues" class="venue-notice">
+        <span>You need at least one venue before you can add a concert.</span>
+        <RouterLink to="/admin/venues" class="venue-notice-link">Go to Venues &rarr;</RouterLink>
+      </div>
+      <div v-else-if="venuesFailed" class="venue-notice">
+        <span>Could not load venues — saving a concert may fail until this resolves.</span>
+        <button type="button" class="venue-notice-link" @click="venuesQ.refetch()">Retry</button>
       </div>
 
       <div class="table-card">
@@ -223,3 +245,32 @@ async function confirmDelete() {
 </template>
 
 <style scoped src="./admin-table.css" />
+
+<style scoped>
+.venue-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #3f3213;
+  border-radius: 0.5rem;
+  background: #1c1608;
+  color: #fbbf24;
+  font-size: 0.8125rem;
+}
+.venue-notice-link {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #fcd34d;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+}
+.venue-notice-link:hover { color: #fef3c7; }
+</style>

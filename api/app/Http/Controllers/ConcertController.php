@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ConcertController extends Controller
 {
@@ -26,7 +27,16 @@ class ConcertController extends Controller
 
     public function store(Request $request): ConcertResource
     {
-        $data = $request->validate($this->rules());
+        // A concert cannot exist without a venue, so an empty venues table is a
+        // dead end rather than a bad field. Say so plainly — `exists:venues,id`
+        // cannot tell "you picked a missing venue" from "there are none yet".
+        if (Venue::count() === 0) {
+            throw ValidationException::withMessages([
+                'venue_id' => 'Add at least one venue before creating a concert.',
+            ]);
+        }
+
+        $data = $request->validate($this->rules(), $this->messages());
 
         if (empty($data['slug_en'] ?? null)) {
             $source = $data['name']['en'] ?? null;
@@ -53,7 +63,7 @@ class ConcertController extends Controller
 
     public function update(Request $request, Concert $concert): ConcertResource
     {
-        $data = $request->validate($this->rules(update: true, concertId: $concert->id));
+        $data = $request->validate($this->rules(update: true, concertId: $concert->id), $this->messages());
 
         $concert->update(Arr::except($data, ['bands', 'tag_ids', 'links']));
 
@@ -96,6 +106,14 @@ class ConcertController extends Controller
         }
 
         return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+    }
+
+    private function messages(): array
+    {
+        return [
+            'venue_id.required' => 'Please select a venue.',
+            'venue_id.exists'   => 'Please select a venue.',
+        ];
     }
 
     private function rules(bool $update = false, ?int $concertId = null): array

@@ -10,6 +10,12 @@
   transition: background 120ms;
 }
 .btn-add-primary:hover { background: #ffffff; }
+.btn-add-primary:disabled {
+  cursor: not-allowed;
+  background: #2a2a2a;
+  color: #6b6b6b;
+}
+.btn-add-primary:disabled:hover { background: #2a2a2a; }
 
 .table-card {
   border-radius: 0.75rem;

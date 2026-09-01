@@ -86,6 +86,28 @@ describe('POST /api/concerts', function () {
         $this->assertDatabaseHas('concerts', ['venue_id' => $venue->id, 'date' => '2026-09-20']);
     });
 
+    it('refuses to create a concert when no venue exists', function () {
+        $this->actingAsAdmin();
+        expect(Venue::count())->toBe(0);
+
+        $this->postJson('/api/concerts', ['venue_id' => 1, 'date' => '2026-09-20'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'venue_id' => 'Add at least one venue before creating a concert.',
+            ]);
+
+        $this->assertDatabaseCount('concerts', 0);
+    });
+
+    it('reports a readable message when the venue is not chosen', function () {
+        $this->actingAsAdmin();
+        Venue::factory()->create();
+
+        $this->postJson('/api/concerts', ['date' => '2026-09-20'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['venue_id' => 'Please select a venue.']);
+    });
+
     it('creates a concert with bands', function () {
         $this->actingAsAdmin();
         $venue = Venue::factory()->create();
@@ -115,20 +137,36 @@ describe('POST /api/concerts', function () {
           ->assertJsonPath('data.start_time', '20:00');
     });
 
+    // Both of these need a venue in the table, or the empty-venues guard in
+    // store() short-circuits first and they stop exercising the rule they name.
     it('validates venue_id is required', function () {
         $this->actingAsAdmin();
+        Venue::factory()->create();
 
         $this->postJson('/api/concerts', ['date' => '2026-09-01'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['venue_id']);
+            ->assertJsonValidationErrors(['venue_id' => 'Please select a venue.']);
     });
 
     it('validates venue must exist', function () {
         $this->actingAsAdmin();
+        Venue::factory()->create();
 
         $this->postJson('/api/concerts', ['venue_id' => 9999, 'date' => '2026-09-01'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['venue_id']);
+            ->assertJsonValidationErrors(['venue_id' => 'Please select a venue.']);
+    });
+
+    // The admin form seeds venue_id with the literal 0 of its placeholder
+    // option, so `exists` — not `required` — is the rule that fires when a user
+    // simply forgets to choose one. This is the common path.
+    it('rejects the unselected placeholder venue with a readable message', function () {
+        $this->actingAsAdmin();
+        Venue::factory()->create();
+
+        $this->postJson('/api/concerts', ['venue_id' => 0, 'date' => '2026-09-01'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['venue_id' => 'Please select a venue.']);
     });
 
     it('validates date is required', function () {
