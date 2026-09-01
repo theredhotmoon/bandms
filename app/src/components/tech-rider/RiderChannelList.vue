@@ -11,8 +11,8 @@
 import { computed } from 'vue'
 import RigInputsTable from '@/components/rig/RigInputsTable.vue'
 import RiderSourceBadge from './RiderSourceBadge.vue'
-import type { InputRow } from '@/types/rig'
-import type { ResolvedInput } from '@/utils/riderResolver'
+import type { InputRow } from '@bandms/rider-core'
+import type { ResolvedInput } from '@bandms/rider-core'
 
 interface Props {
   /** Every channel on the rider, already numbered and ordered. */

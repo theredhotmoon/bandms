@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RiderCompleteness } from '@/utils/riderResolver'
+import type { RiderCompleteness } from '@bandms/rider-core'
 
 interface Props { completeness: RiderCompleteness }
 defineProps<Props>()

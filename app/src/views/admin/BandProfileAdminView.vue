@@ -9,7 +9,7 @@ import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { useSocialLinks } from '@/composables/useSocialLinks'
-import type { SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 import { ApiValidationError } from '@/api/client'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 

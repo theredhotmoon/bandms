@@ -10,7 +10,7 @@ import MemberDefaultGear from '@/components/band-member/MemberDefaultGear.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { ApiValidationError } from '@/api/client'
-import type { BandMember, BandMemberPayload } from '@/types/bandMember'
+import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 
 const { query, create, update, remove, uploadPhoto, reorder } = useBandMembers()
 const { query: instrumentsQuery } = useInstruments()

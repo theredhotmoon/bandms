@@ -4,7 +4,7 @@ import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
-import type { SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 
 const props = defineProps<{
   initial?: Venue | null

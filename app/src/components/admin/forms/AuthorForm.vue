@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Author, AuthorPayload } from '@/types/author'
-import type { SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { Concert } from '@/types/concert'
 import type { TourSummary } from '@/types/tour'

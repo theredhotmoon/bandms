@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { BacklineCategory, BacklineSpec } from '@/types/rig'
-import { defaultBacklineSpec } from '@/types/rig'
+import type { BacklineCategory, BacklineSpec } from '@bandms/rider-core'
+import { defaultBacklineSpec } from '@bandms/rider-core'
 
 interface Props { modelValue: BacklineSpec[] }
 const props = defineProps<Props>()

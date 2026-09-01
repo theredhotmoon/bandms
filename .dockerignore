@@ -1,0 +1,40 @@
+# Build context for the two frontend images is the REPO ROOT (see the `web` and
+# `frontend` services in docker-compose.yml), so this file — not app/.dockerignore
+# or web/.dockerignore — is what Docker consults for them. Those two were deleted
+# when the contexts widened; a .dockerignore is only ever read from the context
+# root, so leaving them would have been dead files that still looked load-bearing.
+#
+# The backend still builds with `context: ./api` and is unaffected by this file.
+
+# ── Never ship dependency trees or build output ──────────────────────────────
+# Both images run their own `pnpm install`; a host node_modules is the wrong
+# platform's binaries (esbuild and sharp ship native code) and is enormous.
+node_modules/
+**/node_modules/
+app/dist/
+web/dist/
+web/.astro/
+
+# ── Not needed by a frontend build ───────────────────────────────────────────
+# The Laravel app builds from its own context. api/vendor alone is several
+# hundred MB, and rebuild.sh builds --no-cache, so this is paid on every run.
+api/
+docs/
+.github/
+
+# ── Local state, secrets and noise ───────────────────────────────────────────
+.git/
+.env
+.env.*
+!.env.example
+*.log
+.worktrees/
+.claude/
+.playwright-mcp/
+app/test-results/
+app/playwright-report/
+
+# NOTE: pnpm-workspace.yaml, pnpm-lock.yaml and packages/ are deliberately NOT
+# ignored — both Dockerfiles copy them to install the workspace. web/ used to
+# ignore pnpm-workspace.yaml because it pinned pnpm@9, which rejected the file;
+# it now pins pnpm@11 and requires it.

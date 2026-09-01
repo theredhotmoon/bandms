@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { hasUnnamedChannels, unnamedChannelMessage, unnamedChannels } from './rigValidation'
-import { input } from './__fixtures__/rider'
+import { input } from '@bandms/rider-core/testing'
 
 describe('unnamedChannels', () => {
   it('finds nothing when every channel is named', () => {

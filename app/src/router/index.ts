@@ -12,128 +12,10 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: () => import('@/views/HomeView.vue'),
-    },
-    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
     },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('@/views/AboutView.vue'),
-    },
-    {
-      path: '/videos',
-      name: 'videos',
-      component: () => import('@/views/MusicVideosView.vue'),
-    },
-    {
-      path: '/contact',
-      name: 'contact',
-      component: () => import('@/views/ContactView.vue'),
-    },
-    {
-      path: '/booking',
-      redirect: { name: 'contact' },
-    },
-    {
-      path: '/concerts',
-      name: 'concerts',
-      component: () => import('@/views/ConcertsView.vue'),
-    },
-    {
-      path: '/concerts/:id',
-      name: 'concert-detail',
-      component: () => import('@/views/ConcertDetailView.vue'),
-    },
-    {
-      path: '/releases',
-      name: 'releases',
-      component: () => import('@/views/ReleasesView.vue'),
-    },
-    {
-      path: '/posts',
-      name: 'posts',
-      component: () => import('@/views/PostsView.vue'),
-    },
-    {
-      path: '/posts/new',
-      name: 'post-create',
-      component: () => import('@/views/PostFormView.vue'),
-    },
-    {
-      path: '/posts/:id',
-      name: 'post-detail',
-      component: () => import('@/views/PostDetailView.vue'),
-    },
-    {
-      path: '/posts/:id/edit',
-      name: 'post-edit',
-      component: () => import('@/views/PostFormView.vue'),
-    },
-    {
-      path: '/photos',
-      name: 'photos',
-      component: () => import('@/views/PhotosView.vue'),
-    },
-    {
-      path: '/photos/:id',
-      name: 'photo-detail',
-      component: () => import('@/views/PhotoDetailView.vue'),
-    },
-    {
-      path: '/photos/:id/edit',
-      redirect: () => ({ name: 'photos' }),
-    },
-
-    // ── Merch / shop ──────────────────────────────────────────────────
-    {
-      path: '/merch',
-      name: 'merch',
-      component: () => import('@/views/MerchView.vue'),
-    },
-    {
-      path: '/merch/success',
-      name: 'merch-success',
-      component: () => import('@/views/MerchSuccessView.vue'),
-    },
-    {
-      path: '/merch/cancel',
-      name: 'merch-cancel',
-      component: () => import('@/views/MerchCancelView.vue'),
-    },
-    {
-      path: '/merch/:slug',
-      name: 'merch-item',
-      component: () => import('@/views/MerchItemView.vue'),
-    },
-    {
-      path: '/cart',
-      name: 'cart',
-      component: () => import('@/views/CartView.vue'),
-    },
-    {
-      path: '/checkout',
-      name: 'checkout',
-      component: () => import('@/views/CheckoutView.vue'),
-    },
-    {
-      path: '/shop',
-      redirect: { name: 'merch' },
-    },
-    {
-      path: '/shop/:slug',
-      redirect: (to) => ({ name: 'merch-item', params: { slug: to.params.slug } }),
-    },
-    // Alias routes for redesigned public pages
-    { path: '/shows', redirect: { name: 'concerts' } },
-    { path: '/gallery', redirect: { name: 'photos' } },
-    { path: '/news', redirect: { name: 'posts' } },
-    { path: '/music', redirect: { name: 'releases' } },
 
     // ── Fan account portal ────────────────────────────────────────────
     {
@@ -227,26 +109,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/press',
-      name: 'press',
-      component: () => import('@/views/PressReleasesView.vue'),
-    },
-    {
-      path: '/epk',
-      name: 'epk',
-      component: () => import('@/views/EpkView.vue'),
-    },
-    {
-      path: '/links',
-      name: 'links',
-      component: () => import('@/views/LinksView.vue'),
-    },
-    {
-      path: '/one-sheet',
-      name: 'one-sheet',
-      component: () => import('@/views/OnesheetView.vue'),
-    },
-    {
       path: '/tech-rider',
       name: 'tech-rider-preview',
       component: () => import('@/views/TechRiderPreviewView.vue'),
@@ -255,11 +117,6 @@ const router = createRouter({
       path: '/tech-rider/:id',
       name: 'tech-rider-preview-id',
       component: () => import('@/views/TechRiderPreviewView.vue'),
-    },
-    {
-      path: '/rider/:token',
-      name: 'rider-public',
-      component: () => import('@/views/RiderPublicView.vue'),
     },
     {
       path: '/admin/music-videos',
@@ -296,23 +153,6 @@ const router = createRouter({
       name: 'admin-tech-rider',
       component: () => import('@/views/admin/TechRiderAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
-    },
-    {
-      path: '/newsletter',
-      name: 'newsletter',
-      component: () => import('@/views/NewsletterView.vue'),
-    },
-    {
-      path: '/newsletter/confirm/:token',
-      name: 'newsletter-confirm',
-      component: () => import('@/views/NewsletterActionView.vue'),
-      props: { action: 'confirm' },
-    },
-    {
-      path: '/newsletter/unsubscribe/:token',
-      name: 'newsletter-unsubscribe',
-      component: () => import('@/views/NewsletterActionView.vue'),
-      props: { action: 'unsubscribe' },
     },
     {
       path: '/admin/newsletter',
@@ -385,7 +225,11 @@ router.beforeEach((to) => {
     const raw = Array.isArray(value) ? value.join('/') : value
     if (TRAVERSAL_RE.test(raw)) {
       console.warn(`[router] Blocked suspicious param "${key}": ${raw}`)
-      return { name: 'home' }
+      // 'admin', not 'home': the SPA no longer serves a public home page, and a
+      // name vue-router cannot resolve throws instead of blocking. 'admin' also
+      // degrades correctly — the requiresAuth check below bounces a signed-out
+      // visitor on to 'login'.
+      return { name: 'admin' }
     }
   }
 
@@ -407,30 +251,11 @@ router.beforeEach((to) => {
 
 // Per-page <title> updates (WCAG 2.4.2)
 const ROUTE_TITLES: Record<string, string> = {
-  home: 'Skanking Storks',
-  about: 'About — Skanking Storks',
-  contact: 'Contact — Skanking Storks',
-  concerts: 'Shows — Skanking Storks',
-  'concert-detail': 'Concert — Skanking Storks',
-  releases: 'Music — Skanking Storks',
-  posts: 'News — Skanking Storks',
-  'post-detail': 'Post — Skanking Storks',
-  photos: 'Gallery — Skanking Storks',
-  'photo-detail': 'Photo — Skanking Storks',
-  merch: 'Shop — Skanking Storks',
-  'merch-item': 'Item — Skanking Storks',
-  'merch-success': 'Order confirmed — Skanking Storks',
-  'merch-cancel': 'Order cancelled — Skanking Storks',
-  cart: 'Cart — Skanking Storks',
-  checkout: 'Checkout — Skanking Storks',
   login: 'Sign In — Skanking Storks',
   'fan-account': 'My Account — Skanking Storks',
   'ticket-claim': 'Claim Ticket — Skanking Storks',
-  epk: 'EPK — Skanking Storks',
   'tech-rider-preview': 'Tech Rider — Skanking Storks',
-  newsletter: 'Newsletter — Skanking Storks',
-  videos: 'Videos — Skanking Storks',
-  press: 'Press — Skanking Storks',
+  'tech-rider-preview-id': 'Tech Rider — Skanking Storks',
   'admin-concert-tickets': 'Concert Tickets — Admin',
   'admin-fan-accounts': 'Fan Accounts — Admin',
   'admin-door': 'Door Check — Admin',

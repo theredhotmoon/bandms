@@ -9,7 +9,7 @@ import {
   deleteMemberSetup,
   fetchAllMemberSetups,
 } from '@/api/bandMemberSetups'
-import type { BandMemberSetup, BandMemberSetupSummary, BandMemberSetupPayload, MemberSetupGroup } from '@/types/bandMemberSetup'
+import type { BandMemberSetup, BandMemberSetupSummary, BandMemberSetupPayload, MemberSetupGroup } from '@bandms/rider-core'
 import { useAuth } from './useAuth'
 
 /** List of setups (summaries) for a single member. */

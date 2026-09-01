@@ -11,7 +11,7 @@ import type { EventSourceFuncArg } from '@fullcalendar/core'
 import { useAuth } from '@/composables/useAuth'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { API_BASE, authHeaders } from '@/api/client'
-import type { BandMember } from '@/types/bandMember'
+import type { BandMember } from '@bandms/rider-core'
 
 const { token } = useAuth()
 const { query: membersQuery } = useBandMembers()

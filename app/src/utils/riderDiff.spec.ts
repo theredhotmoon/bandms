@@ -16,7 +16,7 @@ import {
   setup,
   snapshot,
   wireless,
-} from './__fixtures__/rider'
+} from '@bandms/rider-core/testing'
 
 /** Two versions of a rider whose single musician plays the given channels. */
 function versions(before: ReturnType<typeof setup>, after: ReturnType<typeof setup>) {

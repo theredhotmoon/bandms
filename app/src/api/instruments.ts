@@ -1,4 +1,4 @@
-import type { Instrument, InstrumentPayload } from '@/types/instrument'
+import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 
 const BASE = '/api/instruments'
 

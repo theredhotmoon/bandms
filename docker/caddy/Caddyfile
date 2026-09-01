@@ -61,6 +61,10 @@
 	# here falls through to Astro and 404s if Astro has no such page — so this
 	# list must track app/src/router/index.ts.
 	#
+	# /cart and /checkout were removed here when the SPA's shop views were deleted:
+	# the Astro site carries its own cart drawer, POSTs /api/checkout directly, and
+	# Stripe's success_url/cancel_url return to /merch/*, which Astro serves.
+	#
 	# The last two entries are NOT routes — they are the SPA's build output, and
 	# leaving them out is what took /admin down in #47. Vite builds app/ with
 	# base "/" and the default assetsDir, so the served index.html asks for
@@ -70,7 +74,7 @@
 	# the favicon, shipped in app/public/ and unreachable for the same reason.
 	# There is no collision with Astro: it uses /_astro/, and web/public/ holds
 	# only robots.txt. Adding anything to app/public/ means adding it here too.
-	@spa path /admin* /login /account* /tickets/* /tech-rider* /cart /checkout /assets/* /vite.svg
+	@spa path /admin* /login /account* /tickets/* /tech-rider* /assets/* /vite.svg
 	handle @spa {
 		reverse_proxy frontend:80
 	}

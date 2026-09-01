@@ -17,7 +17,7 @@
  * Pure functions only — no Vue, no fetching.
  */
 
-import type { InputRow } from '@/types/rig'
+import type { InputRow } from '@bandms/rider-core'
 
 /** One place channels are edited: a musician's rig, or the rider's extras. */
 export interface ChannelGroup {

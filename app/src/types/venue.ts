@@ -1,5 +1,5 @@
 import type { Tag } from './tag'
-import type { SocialLinkPayload } from './socialLink'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 
 export interface Venue {
   id: number

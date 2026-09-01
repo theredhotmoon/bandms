@@ -80,8 +80,10 @@ services:
   # ─── Astro public site (SSG built at container start, served by Nginx) ───
   web:
     build:
-      context: ./web
-      dockerfile: Dockerfile
+      # Repo root, not ./web — the site imports @bandms/rider-core from
+      # packages/, which a web-scoped context cannot see.
+      context: .
+      dockerfile: web/Dockerfile
     container_name: bandms_web
     restart: unless-stopped
     environment:
@@ -103,8 +105,9 @@ services:
   # ─── Vue 3 SPA (Nginx, proxies /api/* → backend) ─────────────────────────
   frontend:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      # Repo root, not ./app — see the web service above.
+      context: .
+      dockerfile: app/Dockerfile
       args:
         # Same key as the public site — one variable, two consumers. Baked in at
         # image build time, so changing it needs `docker compose build frontend`.

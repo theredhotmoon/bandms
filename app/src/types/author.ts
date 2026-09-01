@@ -1,4 +1,4 @@
-import type { SocialLinkPayload } from './socialLink'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 
 export interface AuthorSummary {
   id: number

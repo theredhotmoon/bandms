@@ -9,6 +9,11 @@ until wget -qO- "${API_BASE}/api/health" > /dev/null 2>&1; do
 done
 echo "✅  API is ready."
 
+# The image is the whole workspace (/repo), not just the site: the Astro build
+# imports @bandms/rider-core from /repo/packages and resolves it through the
+# root node_modules link. Build from the member directory, not the root.
+cd /repo/web
+
 echo "🔨  Building Astro site…"
 # PUBLIC_THEME selects the theme baked into this build, PUBLIC_CARTO_KEY
 # unlocks the map tiles. Astro only exposes PUBLIC_-prefixed vars to
@@ -26,7 +31,7 @@ echo "📋  Copying build output…"
 # compose restart` reuses the container filesystem, so this directory
 # accumulates across runs; only a force-recreate started clean.
 rm -rf /usr/share/nginx/html/*
-cp -r /app/dist/* /usr/share/nginx/html/
+cp -r /repo/web/dist/* /usr/share/nginx/html/
 
 echo "🚀  Starting rebuild webhook and Nginx…"
 node /docker/rebuild-webhook.js &

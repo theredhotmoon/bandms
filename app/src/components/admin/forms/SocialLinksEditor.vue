@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import { SOCIAL_PLATFORMS } from '@/types/socialLink'
-import type { SocialPlatform, SocialLinkPayload } from '@/types/socialLink'
+import { SOCIAL_PLATFORMS } from '@bandms/rider-core'
+import type { SocialPlatform, SocialLinkPayload } from '@bandms/rider-core'
 
 interface Props {
   modelValue: SocialLinkPayload[]

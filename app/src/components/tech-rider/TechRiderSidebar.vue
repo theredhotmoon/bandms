@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TechRiderSummary } from '@/types/techRider'
+import type { TechRiderSummary } from '@bandms/rider-core'
 
 interface Props {
   riders: TechRiderSummary[]

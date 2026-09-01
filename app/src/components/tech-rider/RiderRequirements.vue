@@ -11,9 +11,9 @@ import RigMonitors from '@/components/rig/RigMonitors.vue'
 import RigBackline from '@/components/rig/RigBackline.vue'
 import RigWireless from '@/components/rig/RigWireless.vue'
 import RiderSourceBadge from './RiderSourceBadge.vue'
-import type { BacklineSpec, MonitorSpec, WirelessSpec } from '@/types/rig'
-import type { PowerNotes } from '@/types/techRider'
-import type { ResolvedRider } from '@/utils/riderResolver'
+import type { BacklineSpec, MonitorSpec, WirelessSpec } from '@bandms/rider-core'
+import type { PowerNotes } from '@bandms/rider-core'
+import type { ResolvedRider } from '@bandms/rider-core'
 
 interface Props {
   resolved: ResolvedRider

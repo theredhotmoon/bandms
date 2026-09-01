@@ -1,5 +1,5 @@
-import type { BandMember } from './bandMember'
-import type { SocialLink } from './socialLink'
+import type { BandMember } from '@bandms/rider-core'
+import type { SocialLink } from '@bandms/rider-core'
 import type { ReleaseType, ReleasePlatform } from './release'
 import type { BandLogo } from './bandLogo'
 import type { TranslationMap } from './shared'

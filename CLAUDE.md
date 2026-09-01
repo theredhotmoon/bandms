@@ -11,7 +11,20 @@ This is a monorepo with two applications:
 | Directory | Role |
 |---|---|
 | `api/` | Laravel 11 REST API (backend) |
-| `app/` | Vue 3 + TypeScript SPA (frontend) |
+| `app/` | Vue 3 + TypeScript SPA (**admin only** — see below) |
+| `web/` | Astro SSG public site — everything a visitor sees |
+| `packages/rider-core/` | Tech-rider domain code shared by `app/` and `web/` |
+
+`app/`, `web/` and `packages/*` are one **pnpm workspace** (`pnpm-workspace.yaml`)
+with a single root lockfile. Install from the repo root: a `pnpm install` inside
+`app/` or `web/` alone will not link `@bandms/rider-core`.
+
+**Both frontend images build from the repo root**, not from their own directory
+— `docker-compose.yml` and `.github/workflows/deploy.yml` set `context: .` with
+`file: app/Dockerfile` / `web/Dockerfile`. A context scoped to `app/` or `web/`
+cannot see `packages/`, which is where their shared dependency lives. The root
+`.dockerignore` is what keeps that context small; the member `.dockerignore`
+files were deleted, because Docker only ever reads one from the context root.
 
 Frontend-specific conventions live in `app/CLAUDE.md`.
 
@@ -186,6 +199,20 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 **Root cause:** The public link serves a **published version**, never the live rider. A rider is derived from the musicians' saved rigs and changes whenever one of them does — correct while planning, wrong once a venue holds the link. Until someone presses **Publish v1** in the tech rider editor topbar, there is no frozen copy to serve.
 
 **Fix:** Open the rider in `/admin/tech-rider` and press **Publish**. After that the rider's own token always serves whichever version is currently published; each version also has its own permanent token in the version-history modal.
+
+**The link is served by Astro, not the SPA.** `/rider/*` is absent from Caddy's
+`@spa` matcher, so `web` answers it — and the page also 404s when the
+`tech-rider` module is switched off in `/admin/website-modules`, because a
+disabled module unbuilds its routes. Two different causes, one symptom.
+
+**It rendered an empty page for a long time.** `web/src/components/PublicRider.vue`
+read `title` and `content_html`; `GET /api/public/rider/{token}` returns a
+`{format, taken_at, rider, members, profile, version}` snapshot and has never
+sent either field, so every venue link showed a bare "Technical Rider" heading
+over nothing. It now renders `<RiderSheet>` from `@bandms/rider-core` — the same
+component and resolver the admin previews with. **When adding a field to the
+sheet, add it to the snapshot builder too**, and remember the frozen snapshots
+of already-published versions predate anything you add.
 
 **Note:** editing a published rider does *not* change what the link serves. That is the point — publish again to push the changes out.
 
@@ -1087,6 +1114,50 @@ time*" is a real ordering or contention bug. The machine-flake signature is a
 *different* set of specs each run.
 
 ---
+
+## The SPA is the admin panel — public pages live in `web/`
+
+`app/` once carried the public site too. It no longer does: Caddy routes only
+`/admin*`, `/login`, `/account*`, `/tickets/*`, `/tech-rider*`, `/assets/*` and
+`/vite.svg` to the SPA, and everything else falls through to Astro. 27 public
+views (home, about, concerts, releases, posts, photos, merch, cart, checkout,
+press, EPK, newsletter, the public rider…) were deleted along with their routes
+and the redirect aliases that fed them; the surviving non-admin views are
+`LoginView`, `FanAccountView`, `TicketClaimView` and `TechRiderPreviewView`.
+
+**So a public page is built in `web/`, never in `app/src/views/`.** A route added
+to the SPA that is not in the `@spa` matcher is unreachable in production while
+working perfectly under `pnpm dev` — the dev server serves the whole SPA from one
+origin and applies no allowlist. That divergence is why the broken public rider
+survived: its E2E spec exercised the SPA's working copy while production served
+Astro's stub.
+
+**The `@spa` matcher and `app/src/router/index.ts` must be edited together.**
+
+## Rider rendering is shared — `@bandms/rider-core`
+
+The sheet a venue prints and the sheet the band previews are one component,
+`RiderSheet.vue`, fed by one resolver. They were nearly duplicated instead, and
+the failure mode that argued against it is specific: if two copies of the
+resolver disagreed on channel numbering, the band would rehearse against one
+patch list while the venue patched from another.
+
+The package ships **TypeScript and SFC source, not a build** — both consumers
+run Vite. That has two consequences worth knowing:
+
+- `web/astro.config.mjs` sets `vite.ssr.noExternal: ['@bandms/rider-core']`.
+  Without it Astro externalises the dependency and Node is handed a `.vue` file
+  it cannot parse, failing the SSR pass with an error that names `astro build`
+  rather than the component.
+- The sheet is styled with **fixed values, deliberately**. It is a document a
+  venue prints and must come out black-on-white whatever theme the site wears,
+  so it lives in the package rather than in `web/src`, where the token lint
+  (correctly) rejects raw colours. `scripts/check-tokens.mjs` walks `web/src`
+  only — the lint boundary and the architecture boundary are the same line.
+
+Its specs run under the admin's vitest (`app/vitest.config.ts` includes
+`../packages/*/src/**/*.spec.ts`), so there is still one command and one bitmask
+bit in `scripts/test-all.sh`.
 
 ## Quality standard — tests run by default
 

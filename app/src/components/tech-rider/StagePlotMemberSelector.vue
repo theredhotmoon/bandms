@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { BandMember } from '@/types/bandMember'
-import type { GigLineup, GigRegularMember, GigTempMusician } from '@/types/stagePlot'
+import type { BandMember } from '@bandms/rider-core'
+import type { GigLineup, GigRegularMember, GigTempMusician } from '@bandms/rider-core'
 
 interface Props {
   modelValue: GigLineup

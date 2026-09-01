@@ -10,7 +10,7 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminModal from '@/components/admin/AdminModal.vue'
-import type { TechRiderVersion } from '@/types/techRiderVersion'
+import type { TechRiderVersion } from '@bandms/rider-core'
 import type { RiderDiff } from '@/utils/riderDiff'
 
 const props = defineProps<{

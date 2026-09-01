@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import type { BandMember, DefaultGearItem, DefaultGearItemType } from '@/types/bandMember'
+import type { BandMember, DefaultGearItem, DefaultGearItemType } from '@bandms/rider-core'
 import { useBandMembers } from '@/composables/useBandMembers'
 
 const props = defineProps<{ member: BandMember }>()

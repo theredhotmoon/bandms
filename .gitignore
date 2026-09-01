@@ -16,13 +16,19 @@ e2e-test.log
 /web/dist
 /web/.astro
 /web/dev.err
-# pnpm 10+ writes an `allowBuilds`-only pnpm-workspace.yaml when it asks about
-# build scripts. The web image pins pnpm@9, which treats any pnpm-workspace.yaml
-# as declaring a workspace and refuses to run without a `packages:` field
-# ("packages field missing or empty") — crash-looping the web container.
-# web/ is a standalone package, not a workspace root. Scoped to /web/ because
-# app/pnpm-workspace.yaml is tracked and only ever read by the local pnpm.
+# The repo is a pnpm workspace (see /pnpm-workspace.yaml): app/, web/ and
+# packages/* install together from one root lockfile. A *nested*
+# pnpm-workspace.yaml inside a member is what pnpm 10+ leaves behind when it
+# asks about build scripts, and it makes that member look like its own
+# workspace root — so keep both members free of one. The `allowBuilds` answers
+# belong in the root file instead.
+/app/pnpm-workspace.yaml
 /web/pnpm-workspace.yaml
+
+# Workspace installs hoist to a root node_modules; members and packages keep
+# their own for anything unhoistable.
+/node_modules
+/packages/*/node_modules
 
 # Playwright MCP scratch output (page snapshots, screenshots, console logs)
 /.playwright-mcp/

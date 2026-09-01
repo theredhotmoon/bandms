@@ -6,7 +6,7 @@ import {
   updateInstrument,
   deleteInstrument,
 } from '@/api/instruments'
-import type { Instrument, InstrumentPayload } from '@/types/instrument'
+import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 
 export function useInstruments() {
   const { token } = useAuth()

@@ -2,7 +2,7 @@ import type {
   PublishedRider,
   TechRiderVersion,
   TechRiderVersionPayload,
-} from '@/types/techRiderVersion'
+} from '@bandms/rider-core'
 import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface ListResponse   { data: TechRiderVersion[] }

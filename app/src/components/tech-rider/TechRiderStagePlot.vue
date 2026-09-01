@@ -9,14 +9,14 @@
 import { computed, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import PlacementModal from './PlacementModal.vue'
-import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
-import type { BandMember } from '@/types/bandMember'
-import type { BandMemberSetup, SetupLookup } from '@/types/bandMemberSetup'
-import type { RigSpec } from '@/types/rig'
-import type { GigLineup, GigTempMusician, StagePlacement } from '@/types/stagePlot'
-import { defaultPlacement, defaultPlacedInstrument } from '@/types/stagePlot'
-import { placementStatus, resolveRig, overriddenFields } from '@/utils/riderResolver'
-import { memberMainInstrumentType, resolveStageInstruments } from '@/utils/stageInstruments'
+import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
+import type { BandMember } from '@bandms/rider-core'
+import type { BandMemberSetup, SetupLookup } from '@bandms/rider-core'
+import type { RigSpec } from '@bandms/rider-core'
+import type { GigLineup, GigTempMusician, StagePlacement } from '@bandms/rider-core'
+import { defaultPlacement, defaultPlacedInstrument } from '@bandms/rider-core'
+import { placementStatus, resolveRig, overriddenFields } from '@bandms/rider-core'
+import { memberMainInstrumentType, resolveStageInstruments } from '@bandms/rider-core'
 
 interface Props {
   modelValue: StagePlacement[]

@@ -5,7 +5,7 @@
  * signal chain type a band member can configure.
  */
 
-import type { InputRow, MicDiChoice, SignalChainType } from '@/types/rig'
+import type { InputRow, MicDiChoice, SignalChainType } from '@bandms/rider-core'
 
 // ── Labels & descriptions ─────────────────────────────────────────────────────
 

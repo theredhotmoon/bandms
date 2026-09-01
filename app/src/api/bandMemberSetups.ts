@@ -3,7 +3,7 @@ import type {
   BandMemberSetupSummary,
   BandMemberSetupPayload,
   MemberSetupGroup,
-} from '@/types/bandMemberSetup'
+} from '@bandms/rider-core'
 import { API_BASE, authHeaders, handleResponse } from './client'
 
 interface SummaryListResponse { data: BandMemberSetupSummary[] }

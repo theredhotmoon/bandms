@@ -3,7 +3,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@bandms/rider-core": [
+        "../packages/rider-core/src/index.ts"
+      ],
+      "@bandms/rider-core/*": [
+        "../packages/rider-core/src/*"
+      ]
     }
   }
 }
