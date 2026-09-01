@@ -94,9 +94,16 @@ class AuthorController extends Controller
         $author->tours()->sync($request->input('tour_ids', []));
         $author->photos()->sync($request->input('photo_ids', []));
 
+        // Only ever the validated fields: SocialLink::$fillable includes every
+        // owner FK, so spreading raw request input here lets a caller attach the
+        // link to a member, venue or the band profile as well.
         $author->socialLinks()->delete();
         foreach (array_values($request->input('social_links', [])) as $index => $link) {
-            $author->socialLinks()->create(array_merge($link, ['position' => $index]));
+            $author->socialLinks()->create([
+                'platform' => $link['platform'],
+                'url'      => $link['url'],
+                'position' => $index,
+            ]);
         }
     }
 }

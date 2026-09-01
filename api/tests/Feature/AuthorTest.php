@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Author;
+use App\Models\BandMember;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\Passport;
@@ -292,5 +293,36 @@ describe('author social links', function () {
 
         $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://two.example.com', 'position' => 0]);
         $this->assertDatabaseHas('social_links', ['author_id' => $id, 'url' => 'https://one.example.com', 'position' => 1]);
+    });
+
+    it('ignores owner foreign keys smuggled into a social link', function () {
+        $this->actingAsAdmin();
+
+        $profile = $this->createProfile();
+        $member  = BandMember::create([
+            'profile_id' => $profile->id, 'first_name' => 'Target', 'last_name' => 'Member',
+            'is_current' => true, 'sort_order' => 0, 'can_login' => false,
+        ]);
+
+        $id = $this->postJson('/api/authors', [
+            'name'         => 'Smuggler',
+            'social_links' => [[
+                'platform'   => 'instagram',
+                'url'        => 'https://instagram.com/smuggled',
+                'member_id'  => $member->id,
+                'profile_id' => $profile->id,
+                'venue_id'   => 999,
+            ]],
+        ])->assertCreated()->json('data.id');
+
+        // SocialLink::$fillable carries every owner FK, so an unfiltered spread
+        // would attach this link to the member's public profile as well.
+        $this->assertDatabaseHas('social_links', [
+            'author_id'  => $id,
+            'url'        => 'https://instagram.com/smuggled',
+            'member_id'  => null,
+            'profile_id' => null,
+            'venue_id'   => null,
+        ]);
     });
 });
