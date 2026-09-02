@@ -88,6 +88,16 @@ const leadingBlanks = computed(
 
 const statuses = computed(() => cache.value[monthKey.value] ?? {})
 
+/**
+ * Whether this month's statuses have actually arrived.
+ *
+ * Deliberately keyed on the cache rather than on `loading`: a month is also
+ * unloaded in the window *before* `load()` puts it in `inFlight`, and on the
+ * very first render. `loading` answers "is a request outstanding", which is a
+ * narrower question than "do we know anything about these days".
+ */
+const loaded = computed(() => monthKey.value in cache.value)
+
 function statusFor(day: number): Status | 'past' | 'unknown' {
   const date = new Date(shown.value.year, shown.value.month, day)
   if (date < today) return 'past'
@@ -95,6 +105,15 @@ function statusFor(day: number): Status | 'past' | 'unknown' {
   // letting it be picked is the same defect as the endpoint reporting dates it
   // never checked — the banner explains, and the grid stays unselectable.
   if (failed.value) return 'unknown'
+
+  // Nor may a month that has not answered *yet*. Same rule as the line above,
+  // the other half of the window: until the statuses arrive we know nothing
+  // about these days, and `?? 'open'` below would present all of them as free
+  // and selectable — so a promoter on a slow connection could pick a date that
+  // was already booked. `?? 'open'` is only correct for a day the API omitted
+  // from a month it *did* answer for.
+  if (!loaded.value) return 'unknown'
+
   return statuses.value[iso(shown.value.year, shown.value.month, day)] ?? 'open'
 }
 
