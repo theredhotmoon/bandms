@@ -1,0 +1,21 @@
+# The two frontends and the code they share.
+#
+# `app/` (admin SPA) and `web/` (public Astro site) were independent projects
+# until the tech-rider sheet needed to render in both: the admin previews it,
+# and the venue opens it from a public token link. Duplicating the resolver
+# would let the two disagree on channel numbering — the band would rehearse
+# against one patch list and the venue would patch from another — so the
+# resolver, its types and the sheet itself live in packages/rider-core.
+packages:
+  - 'app'
+  - 'web'
+  - 'packages/*'
+
+# esbuild (Vite's transform engine), sharp (Astro's image pipeline) and vue-demi
+# ship platform binaries via a postinstall script. pnpm blocks build scripts by
+# default; without these three, `vite build` and `astro build` fail at startup
+# rather than at install time, so the failure surfaces far from its cause.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  vue-demi: true

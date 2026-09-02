@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import RigInputsTable from './RigInputsTable.vue'
-import type { InputRow, SignalChainType } from '@/types/rig'
-import type { Instrument } from '@/types/instrument'
+import type { InputRow, SignalChainType } from '@bandms/rider-core'
+import type { Instrument } from '@bandms/rider-core'
 import {
   CHAIN_META,
   CHAIN_BY_CATEGORY,

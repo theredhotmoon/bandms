@@ -15,7 +15,7 @@ import {
   fetchTechRiderVersions,
   publishTechRiderVersion,
 } from '@/api/techRiderVersions'
-import type { TechRiderVersion, TechRiderVersionPayload } from '@/types/techRiderVersion'
+import type { TechRiderVersion, TechRiderVersionPayload } from '@bandms/rider-core'
 import { diffRiders } from '@/utils/riderDiff'
 import type { RiderDiff } from '@/utils/riderDiff'
 import { useAuth } from './useAuth'

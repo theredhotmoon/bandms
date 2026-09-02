@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WirelessSpec, WirelessType } from '@/types/rig'
-import { defaultWirelessSpec } from '@/types/rig'
+import type { WirelessSpec, WirelessType } from '@bandms/rider-core'
+import { defaultWirelessSpec } from '@bandms/rider-core'
 
 interface Props { modelValue: WirelessSpec[] }
 const props = defineProps<Props>()

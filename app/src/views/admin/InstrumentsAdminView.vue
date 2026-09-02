@@ -9,10 +9,10 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useInstruments } from '@/composables/useInstruments'
 import { useTableControls } from '@/composables/useTableControls'
-import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
+import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
-import type { Instrument, InstrumentPayload } from '@/types/instrument'
-import { guessInstrumentType } from '@/utils/instrumentIcons'
+import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
+import { guessInstrumentType } from '@bandms/rider-core'
 
 const { query, create, update, remove } = useInstruments()
 

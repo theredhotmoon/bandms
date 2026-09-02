@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PaFohRequirements } from '@/types/techRider'
+import type { PaFohRequirements } from '@bandms/rider-core'
 
 interface Props { modelValue: PaFohRequirements }
 const props = defineProps<Props>()

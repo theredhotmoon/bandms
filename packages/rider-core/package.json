@@ -1,0 +1,16 @@
+{
+  "name": "@bandms/rider-core",
+  "version": "0.7.1",
+  "private": true,
+  "type": "module",
+  "//": "Ships TypeScript and SFC source, not a build. Both consumers already run Vite with the Vue plugin, so a build step here would only add a stale-artifact failure mode. Consumers must mark this package as non-external for SSR (see web/astro.config.mjs).",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components/InstrumentIcon.vue": "./src/components/InstrumentIcon.vue",
+    "./components/RiderSheet.vue": "./src/components/RiderSheet.vue",
+    "./testing": "./src/__fixtures__/rider.ts"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}

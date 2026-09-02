@@ -10,7 +10,7 @@ import {
   deleteTechRider,
   duplicateTechRider,
 } from '@/api/techRiders'
-import type { TechRider, TechRiderSummary, TechRiderPayload } from '@/types/techRider'
+import type { TechRider, TechRiderSummary, TechRiderPayload } from '@bandms/rider-core'
 import { useAuth } from './useAuth'
 
 const LIST_QK = ['tech-riders']

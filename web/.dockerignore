@@ -1,9 +1,0 @@
-node_modules
-dist
-.astro
-# Keep any stray pnpm-workspace.yaml out of the build context. The Dockerfile
-# does `COPY . .`, so a locally generated stub gets baked into the image, and
-# the pnpm@9 pinned here rejects it ("packages field missing or empty"),
-# failing `pnpm build` in start.sh and crash-looping the container.
-# web/ is a standalone package and never needs a workspace manifest.
-pnpm-workspace.yaml

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PowerSpec } from '@/types/rig'
+import type { PowerSpec } from '@bandms/rider-core'
 
 interface Props { modelValue: PowerSpec }
 const props = defineProps<Props>()

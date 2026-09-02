@@ -9,8 +9,8 @@
  */
 import { computed, ref, watch } from 'vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
-import type { RiderCompleteness } from '@/utils/riderResolver'
-import type { TechRiderVersion } from '@/types/techRiderVersion'
+import type { RiderCompleteness } from '@bandms/rider-core'
+import type { TechRiderVersion } from '@bandms/rider-core'
 
 const props = defineProps<{
   open: boolean

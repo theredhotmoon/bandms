@@ -2,11 +2,11 @@
 import { reactive, ref, watch, onUnmounted } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
-import InstrumentIcon from '@/components/ui/InstrumentIcon.vue'
-import { guessInstrumentType } from '@/utils/instrumentIcons'
-import type { BandMember, BandMemberPayload } from '@/types/bandMember'
-import type { Instrument } from '@/types/instrument'
-import type { SocialLinkPayload } from '@/types/socialLink'
+import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
+import { guessInstrumentType } from '@bandms/rider-core'
+import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
+import type { Instrument } from '@bandms/rider-core'
+import type { SocialLinkPayload } from '@bandms/rider-core'
 
 const props = defineProps<{
   initial?: BandMember | null

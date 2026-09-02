@@ -7,7 +7,7 @@ import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { useAuth } from '@/composables/useAuth'
 import { ApiValidationError } from '@/api/client'
-import type { BandMember, BandMemberPayload } from '@/types/bandMember'
+import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 
 const { user } = useAuth()
 const { query, update } = useBandMembers()

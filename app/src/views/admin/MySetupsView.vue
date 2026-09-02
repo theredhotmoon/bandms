@@ -5,7 +5,7 @@ import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAuth } from '@/composables/useAuth'
 import { useMyRiderConfirmations } from '@/composables/useRiderConfirmations'
-import type { BandMember } from '@/types/bandMember'
+import type { BandMember } from '@bandms/rider-core'
 import { toast } from 'vue-sonner'
 
 const { user } = useAuth()

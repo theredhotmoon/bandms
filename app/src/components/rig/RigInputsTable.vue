@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { InputRow, MicDiChoice } from '@/types/rig'
-import { defaultInputRow } from '@/types/rig'
+import type { InputRow, MicDiChoice } from '@bandms/rider-core'
+import { defaultInputRow } from '@bandms/rider-core'
 import { unnamedChannels } from '@/utils/rigValidation'
 
 interface Props {

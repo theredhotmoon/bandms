@@ -6,7 +6,7 @@
  * Diffing happens on the *resolved* rider, not on the stored one. A promoter
  * does not care that a placement gained an override; they care that channel 11
  * became a DI and that monitor 3 turned into an IEM. Resolving both snapshots
- * first — with the same @/utils/riderResolver every other surface uses — means
+ * first — with the same @bandms/rider-core resolver every other surface uses — means
  * this reads the same document the venue reads.
  *
  * Rows are matched by their resolved `key` (`placementId:rowId`), which is
@@ -17,10 +17,10 @@
  * Pure functions only — no Vue, no fetching.
  */
 
-import type { SetupLookup } from '@/types/bandMemberSetup'
-import type { PublishedRider } from '@/types/techRiderVersion'
-import { resolveRider } from './riderResolver'
-import type { ResolvedRider } from './riderResolver'
+import type { SetupLookup } from '@bandms/rider-core'
+import type { PublishedRider } from '@bandms/rider-core'
+import { resolveRider } from '@bandms/rider-core'
+import type { ResolvedRider } from '@bandms/rider-core'
 
 export type ChangeKind = 'added' | 'removed' | 'changed'
 

@@ -22,11 +22,15 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.spec.ts'],
+    // The shared package's specs run here too. @bandms/rider-core ships source
+    // rather than a build and has no test runner of its own, so folding it into
+    // the admin's suite keeps one command — and one bitmask bit in
+    // scripts/test-all.sh — covering every pure-logic module either app stands on.
+    include: ['src/**/*.spec.ts', '../packages/*/src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
       include: [
-        'src/utils/riderResolver.ts',
+        '../packages/rider-core/src/riderResolver.ts',
         'src/utils/riderDiff.ts',
         'src/utils/rigValidation.ts',
         'src/utils/venueGate.ts',

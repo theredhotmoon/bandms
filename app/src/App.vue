@@ -11,15 +11,13 @@ const { lang } = useLang()
 // Keep <html lang> in sync with the active locale (WCAG 3.1.1)
 watch(lang, (l) => { document.documentElement.lang = l }, { immediate: true })
 
-// Public redesigned routes embed their own SiteNav — hide the old AppNavbar for them
-const PUBLIC_ROUTES = new Set([
-  'home', 'concerts', 'photos', 'posts', 'merch', 'about', 'contact', 'releases',
-])
-
+// AppNavbar is the chrome for the handful of non-admin pages the SPA still owns:
+// the fan portal, ticket claim and the tech-rider preview. Admin views carry
+// their own layout, and the sign-in page is deliberately bare. Everything the
+// public browses is served by the Astro site and never reaches this router.
 const showNavbar = computed(() => {
   if (route.path.startsWith('/admin')) return false
-  if (route.name === 'login' || route.name === 'register') return false
-  if (PUBLIC_ROUTES.has(route.name as string)) return false
+  if (route.name === 'login') return false
   return true
 })
 

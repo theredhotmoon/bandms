@@ -1,4 +1,4 @@
-import type { SocialLink, SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLink, SocialLinkPayload } from '@bandms/rider-core'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface SocialLinkListResponse { data: SocialLink[] }

@@ -4,6 +4,26 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
 
 const UNIQUE_NAME = `e2e-tech-rider-${Date.now()}`
 
+/**
+ * The public rider link is served by the Astro site, not the SPA.
+ *
+ * `/rider/*` is absent from Caddy's @spa matcher, so in production that URL has
+ * always gone to `web`. This spec used to open it on the SPA's own origin,
+ * where the dev server happily served a route production never routed there —
+ * which is how a broken public renderer stayed green for so long. Asserting
+ * against the real origin is the point.
+ */
+const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
+
+/** The page is unbuilt when the tech-rider module is switched off. */
+async function riderPageIsUp(request: import('@playwright/test').APIRequestContext) {
+  try {
+    return (await request.get(`${WEB}/rider/`, { timeout: 5000 })).ok()
+  } catch {
+    return false
+  }
+}
+
 test.describe('Tech Rider Admin', () => {
   test.describe.configure({ mode: 'serial' })
 
@@ -174,8 +194,19 @@ test.describe('Tech Rider Admin', () => {
     const href = await historyModal.locator('a', { hasText: 'Open' }).first().getAttribute('href')
     expect(href).toMatch(/\/rider\/[A-Za-z0-9]{32}$/)
 
-    await page.goto(href!)
-    await expect(page.locator('.cover-rider-name')).toContainText(UNIQUE_NAME, { timeout: 10000 })
+    // The link is absolute (window.location.origin + /rider/<token>), and the
+    // admin is not the origin that serves it — take just the path.
+    const path = new URL(href!, WEB).pathname
+
+    if (!(await riderPageIsUp(page.request))) {
+      test.skip(true, 'tech-rider module is disabled — the public page is not built')
+    }
+
+    await page.goto(`${WEB}${path}`)
+    await expect(page.locator('.cover-rider-name')).toContainText(UNIQUE_NAME, { timeout: 15000 })
+    // The sheet is the real document, not a heading over an empty body: the
+    // channel list and the stage plot both have to be there.
+    await expect(page.locator('.preview-root svg').first()).toBeVisible()
   })
 
   // Deriving a festival rider from a club one is the whole point — the copy has

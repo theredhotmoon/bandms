@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { MonitorSpec } from '@/types/rig'
-import { defaultMonitorSpec } from '@/types/rig'
+import type { MonitorSpec } from '@bandms/rider-core'
+import { defaultMonitorSpec } from '@bandms/rider-core'
 
 interface Props { modelValue: MonitorSpec[] }
 const props = defineProps<Props>()

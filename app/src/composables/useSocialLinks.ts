@@ -6,7 +6,7 @@ import {
   syncProfileSocialLinks,
   updateProfileSocialLink,
 } from '@/api/socialLinks'
-import type { SocialLink, SocialLinkPayload } from '@/types/socialLink'
+import type { SocialLink, SocialLinkPayload } from '@bandms/rider-core'
 import { useAuth } from './useAuth'
 
 export function useSocialLinks() {

@@ -1,4 +1,4 @@
-import type { BandMember, BandMemberPayload } from '@/types/bandMember'
+import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface BandMemberListResponse { data: BandMember[] }

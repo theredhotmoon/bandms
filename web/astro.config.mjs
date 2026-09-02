@@ -26,5 +26,13 @@ export default defineConfig({
         '/storage': { target: API_PROXY, changeOrigin: true },
       },
     },
+    ssr: {
+      // @bandms/rider-core ships TypeScript and .vue source rather than a
+      // build, so Vite has to transform it. Without this Astro externalises
+      // the workspace dependency and Node is handed a .vue file it cannot
+      // parse — which fails during the SSR pass, not in the browser, so the
+      // error names astro build rather than the component.
+      noExternal: ['@bandms/rider-core'],
+    },
   },
 })

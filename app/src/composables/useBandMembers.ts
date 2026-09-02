@@ -7,7 +7,7 @@ import {
   updateBandMember,
   uploadMemberPhoto,
 } from '@/api/bandMembers'
-import type { BandMember, BandMemberPayload } from '@/types/bandMember'
+import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 import { useAuth } from './useAuth'
 
 export function useBandMembers() {

@@ -15,7 +15,7 @@ import RigMonitors from './RigMonitors.vue'
 import RigBackline from './RigBackline.vue'
 import RigPower from './RigPower.vue'
 import RigWireless from './RigWireless.vue'
-import type { Instrument } from '@/types/instrument'
+import type { Instrument } from '@bandms/rider-core'
 import type {
   BacklineSpec,
   InputRow,
@@ -25,7 +25,7 @@ import type {
   RigSpec,
   SignalChainType,
   WirelessSpec,
-} from '@/types/rig'
+} from '@bandms/rider-core'
 
 interface Props {
   /** The rig as it currently resolves — inherited values already merged in. */

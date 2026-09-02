@@ -4,7 +4,7 @@
  * the placements, so each row can always name its musician — that attribution is
  * what makes a derived list trustworthy instead of mysterious.
  */
-import type { RigSource } from '@/utils/riderResolver'
+import type { RigSource } from '@bandms/rider-core'
 
 interface Props {
   source: RigSource

@@ -37,7 +37,10 @@ src/
 │
 ├── views/            # THIN orchestrators only — compose components, nothing else.
 │                     # No business logic, no inline data arrays, template ≤ ~50 lines.
-│                     # HomeView.vue, LoginView.vue
+│                     # Admin views live in views/admin/. The only non-admin views
+│                     # left are LoginView, FanAccountView, TicketClaimView and
+│                     # TechRiderPreviewView — public pages are served by web/
+│                     # (Astro), never from here. See the root CLAUDE.md.
 │
 └── router/
     └── index.ts      # Route definitions + global navigation guards.
@@ -111,7 +114,9 @@ Update this policy whenever a new external domain (CDN, API) is added.
 
 ### Router navigation guards (`src/router/index.ts`)
 - A global `beforeEach` guard blocks params containing path-traversal sequences
-  (`..`, `//`, backslash, URL-encoded variants) and redirects to home.
+  (`..`, `//`, backslash, URL-encoded variants) and redirects to `admin`. It must
+  name a route that exists — vue-router throws on an unresolvable name, which
+  would crash the guard instead of blocking the navigation.
 
 ### `autocomplete` on auth forms
 - Password inputs carry `autocomplete="current-password"` or `autocomplete="new-password"`.

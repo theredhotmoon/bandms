@@ -20,7 +20,7 @@ import { useTechRiders } from '@/composables/useTechRiders'
 import { fetchTicketStats } from '@/api/admin'
 import type { EpkVersion } from '@/types/epkVersion'
 import type { PressReleaseSummary } from '@/types/press-release'
-import type { TechRiderSummary } from '@/types/techRider'
+import type { TechRiderSummary } from '@bandms/rider-core'
 
 const { user, token } = useAuth()
 

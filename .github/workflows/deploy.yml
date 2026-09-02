@@ -87,7 +87,8 @@ jobs:
       - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
-          context: ./app
+          context: .
+          file: app/Dockerfile
           target: app
           push: true
           tags: |
@@ -101,7 +102,8 @@ jobs:
       - name: Build and push web (Astro public site)
         uses: docker/build-push-action@v6
         with:
-          context: ./web
+          context: .
+          file: web/Dockerfile
           target: app
           push: true
           tags: |

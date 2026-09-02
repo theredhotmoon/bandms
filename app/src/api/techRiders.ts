@@ -1,5 +1,5 @@
-import type { TechRider, TechRiderSummary, TechRiderPayload } from '@/types/techRider'
-import type { PublishedRider } from '@/types/techRiderVersion'
+import type { TechRider, TechRiderSummary, TechRiderPayload } from '@bandms/rider-core'
+import type { PublishedRider } from '@bandms/rider-core'
 import { API_BASE, authHeaders, handleResponse } from './client'
 
 interface ListResponse    { data: TechRiderSummary[] }
