@@ -11,6 +11,18 @@ declare module 'vue-router' {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // The SPA has no public home page — Caddy sends "/" to Astro, so this
+    // route is unreachable in production and exists purely for dev, where
+    // the admin container is browsed directly on :8081. Without it the root
+    // renders an empty shell with only a "Sign in" link, which reads as a
+    // site that has lost its content rather than an admin panel with no
+    // front door. 'admin' degrades correctly: the guard below bounces a
+    // signed-out visitor on to 'login'.
+    {
+      path: '/',
+      redirect: '/admin',
+    },
+
     {
       path: '/login',
       name: 'login',
