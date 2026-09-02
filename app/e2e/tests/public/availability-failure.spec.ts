@@ -72,6 +72,48 @@ test.describe('Availability calendar — failed fetch', () => {
     await expect(dialog.getByRole('button', { name: /Request this date/i })).toBeDisabled()
   })
 
+  test('a month that has not answered yet offers no selectable days', async ({ page }) => {
+    // Hold the response open so the in-flight window can be observed. This is
+    // the other half of the rule the failed-fetch test pins: a month we have
+    // not heard back about is not known to be free, and used to render every
+    // day as open and clickable for the whole time the request was in flight.
+    let release!: () => void
+    const held = new Promise<void>((resolve) => { release = resolve })
+    await page.route(RANGE, async (route) => {
+      await held
+      await route.continue()
+    })
+
+    const dialog = await openCalendar(page)
+
+    // `finally`, so a failure in any assertion below still releases the held
+    // request. Left pending it would keep the page busy until the test timed
+    // out, and Playwright would report the route handler rather than the
+    // assertion that actually failed — hiding a real regression behind a
+    // timeout.
+    try {
+      // No banner — nothing has failed; it simply has not answered yet.
+      await expect(dialog.locator('.am-warn')).toHaveCount(0)
+      await expect(dialog.locator('.am-day.is-open')).toHaveCount(0)
+
+      // The grid must say it is working, or a month of grey unselectable days
+      // is indistinguishable from a month with nothing free.
+      await expect(dialog.locator('.am-note')).toBeVisible()
+      await expect(dialog.locator('.am-grid')).toHaveAttribute('aria-busy', 'true')
+
+      const unknown = dialog.locator('.am-day.is-unknown')
+      expect(await unknown.count()).toBeGreaterThan(0)
+      await expect(unknown.first()).toBeDisabled()
+    } finally {
+      release()
+    }
+
+    // Once it answers, the month resolves and days become selectable.
+    await expect(dialog.locator('.am-day.is-open').first()).toBeVisible({ timeout: 8000 })
+    await expect(dialog.locator('.am-day.is-unknown')).toHaveCount(0)
+    await expect(dialog.locator('.am-note')).toHaveCount(0)
+  })
+
   test('a month that loaded stays usable after a later month fails', async ({ page }) => {
     const dialog = await openCalendar(page)
 
