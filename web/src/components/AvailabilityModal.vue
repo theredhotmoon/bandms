@@ -14,6 +14,8 @@ export interface AvailabilityCopy {
   pickPrompt: string
   close: string
   loadError: string
+  /** Shown while a month's availability is still being fetched. */
+  loading: string
   // readonly, because Astro passes these straight from an `as const` object.
   months: readonly string[]
   weekdays: readonly string[]
@@ -188,6 +190,12 @@ function submit() {
     <p class="am-sub">{{ copy.subtitle }}</p>
 
     <p v-if="failed" class="am-warn" role="status">{{ copy.loadError }}</p>
+    <!--
+      Loading renders exactly like failure — grey, unselectable — so without a
+      cue a month that is merely still fetching reads as "no dates available".
+      Only one of the two can show at a time, and neither is a day status.
+    -->
+    <p v-else-if="!loaded" class="am-note" role="status">{{ copy.loading }}</p>
 
     <div class="am-nav">
       <button
@@ -213,7 +221,7 @@ function submit() {
       <span v-for="w in copy.weekdays" :key="w">{{ w }}</span>
     </div>
 
-    <div class="am-grid" :class="{ 'is-loading': loading }">
+    <div class="am-grid" :class="{ 'is-loading': loading }" :aria-busy="!loaded && !failed">
       <span v-for="n in leadingBlanks" :key="`b${n}`" />
       <button
         v-for="d in daysInMonth"
@@ -300,6 +308,14 @@ function submit() {
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--color-subtle);
+}
+
+.am-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 2px solid var(--color-border);
+  font: 600 13px/1.4 var(--font-body);
+  color: var(--color-muted);
 }
 
 .am-grid.is-loading { opacity: .5; }
