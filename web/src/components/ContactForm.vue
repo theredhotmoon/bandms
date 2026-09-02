@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { bookingRequest, clearBookingRequest } from '@/stores/booking'
+import { bookingRequest, clearBookingRequest, type BookingRequest } from '@/stores/booking'
 
 /**
  * Copy is passed in from Astro rather than held here, so the island ships one
@@ -33,6 +33,12 @@ export interface ContactFormCopy {
    * props to JSON, so a function prop throws at build time.
    */
   bookingSubject: string
+  /**
+   * Used instead of `bookingSubject` when the visitor confirmed a date the
+   * calendar had marked booked or held, so the clash is visible in the band's
+   * inbox without opening the message.
+   */
+  bookingSubjectUnavailable: string
   /** BCP-47 tag used to format that date. */
   locale: string
 }
@@ -117,11 +123,15 @@ function formatDate(iso: string): string {
   }
 }
 
-function applyBooking(date: string | null) {
-  if (!date) return
+function applyBooking(request: BookingRequest | null) {
+  if (!request) return
+  const { date, unavailable } = request
 
   reason.value = 'booking'
-  form.subject = props.copy.bookingSubject.replace('{date}', formatDate(date))
+  const template = unavailable
+    ? props.copy.bookingSubjectUnavailable
+    : props.copy.bookingSubject
+  form.subject = template.replace('{date}', formatDate(date))
   // Consume it, so picking the same date twice fires again.
   clearBookingRequest()
 

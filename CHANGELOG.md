@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **You can now ask about a date the band is already busy on.** Booked and on-hold dates used to be unclickable, so a promoter whose venue only had that one night had no way through — the enquiry was simply lost. Those dates can now be picked; doing so shows a warning naming the date and asks a second time before anything is handed to the contact form, so nobody requests a taken date by accident. The date stays visibly marked as taken throughout, available dates still take a single click, and the enquiry arrives with the clash noted in its subject so the band can spot it without checking their own calendar.
 - **The public site is themeable.** Its look is split into a deliberately plain black-and-white base and a theme that overrides colour, type, shape, elevation and ornament. The band's 2-Tone design ships as the first theme; a second band can be served by adding a stylesheet rather than forking templates. Which theme renders is an attribute on the page, so it can be driven from the CMS later without a rebuild.
 - **The whole public site is redesigned.** Contact, Music, Gallery, About, the article view, the release detail page and the site footer now carry the 2-Tone design, and Videos, Press, EPK and Newsletter were restyled to match it.
 - **Contact page.** A booking form with a reason picker, direct contact cards, promoter and press links, and an FAQ. Its hero copy, reply-time badge and per-channel notes are editable per language.

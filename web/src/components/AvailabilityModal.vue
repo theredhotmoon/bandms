@@ -16,6 +16,11 @@ export interface AvailabilityCopy {
   loadError: string
   /** Shown while a month's availability is still being fetched. */
   loading: string
+  /** Confirmation shown when the picked day is booked or held. */
+  confirmTitle: string
+  confirmBody: string
+  confirmYes: string
+  confirmNo: string
   // readonly, because Astro passes these straight from an `as const` object.
   months: readonly string[]
   weekdays: readonly string[]
@@ -31,6 +36,9 @@ const { isOpen, close } = useModalTrigger('data-open-availability')
 
 const monthOffset = ref(0)
 const picked = ref<string | null>(null)
+
+// Holds the request between "Request this date" and the visitor confirming it.
+const confirming = ref(false)
 
 // Months with a request in flight. Without this the *same* month can be fetched
 // twice — Next fires for month+1, Prev returns early from the cache, Next fires
@@ -162,20 +170,63 @@ async function load() {
 
 watch([isOpen, monthKey], () => {
   if (isOpen.value) void load()
+  else confirming.value = false
 })
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
+/**
+ * A day the visitor may choose. `booked` and `held` are included: the band
+ * would rather hear about a clashing date than lose the enquiry, so those are
+ * selectable but routed through a confirmation. `past` and `unknown` are not —
+ * a past date is meaningless, and `unknown` means the calendar could not find
+ * out, so it cannot warn about anything truthfully.
+ */
+function isSelectable(status: ReturnType<typeof statusFor>): boolean {
+  return status === 'open' || status === 'booked' || status === 'held'
+}
+
+/**
+ * Whether the picked day is one the band is already busy on.
+ *
+ * Resolved from the cache by the picked date's own `YYYY-MM` key, never via
+ * `statusFor(day)` — that reads the *shown* month, so paging to another month
+ * after picking would re-read the day number against the wrong one.
+ */
+const pickedUnavailable = computed(() => {
+  if (!picked.value) return false
+  const status = cache.value[picked.value.slice(0, 7)]?.[picked.value]
+  return status === 'booked' || status === 'held'
+})
+
 function pick(day: number) {
-  if (statusFor(day) !== 'open') return
+  if (!isSelectable(statusFor(day))) return
   picked.value = iso(shown.value.year, shown.value.month, day)
+  // A warning raised for a previous choice must not carry over to this one.
+  confirming.value = false
 }
 
 function submit() {
   if (!picked.value) return
-  requestBookingFor(picked.value)
+  // An unavailable date asks twice; an available one keeps its single click.
+  if (pickedUnavailable.value && !confirming.value) {
+    confirming.value = true
+    return
+  }
+  handOff()
+}
+
+function handOff() {
+  if (!picked.value) return
+  requestBookingFor(picked.value, pickedUnavailable.value)
+  confirming.value = false
   close()
   document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function chooseAnother() {
+  confirming.value = false
+  picked.value = null
 }
 </script>
 
@@ -229,7 +280,7 @@ function submit() {
         type="button"
         class="am-day"
         :class="[`is-${statusFor(d)}`, { 'is-picked': picked === iso(shown.year, shown.month, d) }]"
-        :disabled="statusFor(d) !== 'open'"
+        :disabled="!isSelectable(statusFor(d))"
         :aria-pressed="picked === iso(shown.year, shown.month, d)"
         @click="pick(d)"
       >{{ d }}</button>
@@ -241,7 +292,25 @@ function submit() {
       <span><i class="am-key am-key--booked" />{{ copy.booked }}</span>
     </div>
 
-    <div class="am-foot">
+    <!--
+      The second ask, shown only for a booked or held date. It replaces the
+      footer rather than sitting beside it, so the confirming choice is the
+      only thing on offer and "Request this date" cannot be pressed twice.
+    -->
+    <div v-if="confirming" class="am-confirm" role="alert">
+      <p class="am-confirm-title">{{ copy.confirmTitle }}</p>
+      <p class="am-confirm-body">{{ copy.confirmBody.replace('{date}', pickedLabel) }}</p>
+      <div class="am-confirm-actions">
+        <button type="button" class="am-confirm-no" @click="chooseAnother">
+          {{ copy.confirmNo }}
+        </button>
+        <button type="button" class="am-confirm-yes" @click="handOff">
+          {{ copy.confirmYes }}
+        </button>
+      </div>
+    </div>
+
+    <div v-else class="am-foot">
       <span class="am-picked" :class="{ 'is-empty': !picked }">
         {{ picked ? pickedLabel : copy.pickPrompt }}
       </span>
@@ -316,6 +385,49 @@ function submit() {
   border: 2px solid var(--color-border);
   font: 600 13px/1.4 var(--font-body);
   color: var(--color-muted);
+}
+
+.am-confirm {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 2px solid var(--color-accent);
+  background: var(--color-surface-2);
+}
+
+.am-confirm-title {
+  margin: 0 0 6px;
+  font: 700 15px/1.3 var(--font-display);
+  color: var(--color-ink);
+}
+
+.am-confirm-body {
+  margin: 0 0 14px;
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--color-muted);
+}
+
+.am-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.am-confirm-no,
+.am-confirm-yes {
+  padding: 9px 16px;
+  font: 700 13px/1 var(--font-body);
+  cursor: pointer;
+  border: 2px solid var(--color-ink);
+}
+
+.am-confirm-no {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.am-confirm-yes {
+  background: var(--color-ink);
+  color: var(--color-on-inverse);
 }
 
 .am-grid.is-loading { opacity: .5; }

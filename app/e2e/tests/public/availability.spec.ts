@@ -114,34 +114,105 @@ test.describe('Availability calendar — public contact page', () => {
     await expect(dialog).toBeHidden({ timeout: 8000 })
   })
 
-  test('booked and held days cannot be picked', async ({ page }) => {
+  /**
+   * Opens the calendar and walks forward until a day in `state` turns up,
+   * because whether one exists at all depends entirely on the seeded data —
+   * a check that quietly finds nothing is not a check.
+   *
+   * Returns the dialog and the located day, or null when the bookable window
+   * holds no such day.
+   */
+  async function findDay(page: import('@playwright/test').Page, state: string) {
     await page.goto(`${WEB}/en/contact`)
     await page.getByRole('button', { name: /Book us/i }).first().click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 8000 })
 
-    // Walk forward until an unavailable day turns up, rather than only checking
-    // the current month — whether one exists depends entirely on the data, and
-    // a check that quietly finds nothing is not a check.
-    let found = false
-    for (let i = 0; i <= 5 && !found; i++) {
-      for (const state of ['is-booked', 'is-held']) {
-        const cells = dialog.locator(`.am-day.${state}`)
-        if (await cells.count()) {
-          await expect(cells.first()).toBeDisabled()
-          found = true
-        }
-      }
-      if (!found) {
-        const next = dialog.getByRole('button', { name: 'Next month' })
-        if (await next.isDisabled()) break
-        await next.click()
-        await expect(dialog.locator('.am-grid')).not.toHaveClass(/is-loading/, { timeout: 8000 })
-      }
-    }
+    for (let i = 0; i <= 5; i++) {
+      const cells = dialog.locator(`.am-day.${state}`)
+      if (await cells.count()) return { dialog, day: cells.first() }
 
-    test.skip(!found, 'No booked or held day within the bookable window')
+      const next = dialog.getByRole('button', { name: 'Next month' })
+      if (await next.isDisabled()) break
+      await next.click()
+      await expect(dialog.locator('.am-grid')).not.toHaveClass(/is-loading/, { timeout: 8000 })
+    }
+    return null
+  }
+
+  test('a booked day can be picked, and warns before handing off', async ({ page }) => {
+    const found = await findDay(page, 'is-booked')
+    test.skip(!found, 'No booked day within the bookable window')
+    const { dialog, day } = found!
+
+    // The day stays visibly taken — selectable is not the same as available.
+    await expect(day).toBeEnabled()
+    await day.click()
+    await expect(day).toHaveClass(/is-picked/)
+
+    // No warning until the request is actually made.
+    await expect(dialog.locator('.am-confirm')).toHaveCount(0)
+
+    await dialog.getByRole('button', { name: /Request this date/i }).click()
+
+    // Second confirmation: the request is held, not sent onward.
+    await expect(dialog.locator('.am-confirm')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /Ask anyway/i })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /Choose another/i })).toBeVisible()
+    await expect(dialog).toBeVisible()
+  })
+
+  test('choosing another date dismisses the warning without handing off', async ({ page }) => {
+    const found = await findDay(page, 'is-booked')
+    test.skip(!found, 'No booked day within the bookable window')
+    const { dialog, day } = found!
+
+    await day.click()
+    await dialog.getByRole('button', { name: /Request this date/i }).click()
+    await expect(dialog.locator('.am-confirm')).toBeVisible()
+
+    await dialog.getByRole('button', { name: /Choose another/i }).click()
+
+    // Back to the grid, selection cleared, calendar still open and usable.
+    await expect(dialog.locator('.am-confirm')).toHaveCount(0)
+    await expect(dialog).toBeVisible()
+    await expect(dialog.locator('.am-day.is-picked')).toHaveCount(0)
+  })
+
+  test('asking anyway pre-fills a subject that flags the clash', async ({ page }) => {
+    const found = await findDay(page, 'is-booked')
+    test.skip(!found, 'No booked day within the bookable window')
+    const { dialog, day } = found!
+
+    await day.click()
+    await dialog.getByRole('button', { name: /Request this date/i }).click()
+    await dialog.getByRole('button', { name: /Ask anyway/i }).click()
+
+    await expect(dialog).toBeHidden()
+
+    // The band must be able to tell from the enquiry itself that this date
+    // was already spoken for, without cross-checking their own calendar.
+    const subject = page.locator('#cf-subject')
+    await expect(subject).toHaveValue(/booking/i)
+    await expect(subject).toHaveValue(/busy|booked/i)
+  })
+
+  test('an open day hands off with no confirmation step', async ({ page }) => {
+    const found = await findDay(page, 'is-open')
+    test.skip(!found, 'No open day within the bookable window')
+    const { dialog, day } = found!
+
+    await day.click()
+    await dialog.getByRole('button', { name: /Request this date/i }).click()
+
+    // Straight through — the extra friction is for unavailable dates only.
+    await expect(dialog.locator('.am-confirm')).toHaveCount(0)
+    await expect(dialog).toBeHidden()
+
+    const subject = page.locator('#cf-subject')
+    await expect(subject).toHaveValue(/booking/i)
+    await expect(subject).not.toHaveValue(/busy|booked/i)
   })
 
   test('past days in the current month are never selectable', async ({ page }) => {
