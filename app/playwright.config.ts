@@ -22,6 +22,24 @@ export default defineConfig({
    * Override per run when there is room: `pnpm test:e2e --workers=4`.
    */
   workers: process.env.CI ? 1 : 2,
+
+  /**
+   * Stop early locally, so a dead browser reads as a dead browser.
+   *
+   * When Chromium cannot start — Windows STATUS_DLL_INIT_FAILED, code
+   * 3221225794, seen with ~7 GB of Chrome resident and under 2 GB physical
+   * free — the first worker dies and every remaining spec is reported as
+   * "worker process exited unexpectedly". A run in Sep 2026 produced 129 of
+   * those in 60 seconds with 145 specs never started: a wall of red that looks
+   * like 129 broken tests and is actually one broken process launch.
+   *
+   * Aborting at five keeps that signal legible. It costs nothing real: past
+   * five genuine failures you are debugging, not gathering a full report.
+   *
+   * CI keeps 0 (unlimited) — there the complete list is the point, and CI is
+   * not sharing a desktop with a browser.
+   */
+  maxFailures: process.env.CI ? 0 : 5,
   reporter: 'html',
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',

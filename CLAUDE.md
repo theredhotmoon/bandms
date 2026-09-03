@@ -123,6 +123,80 @@ Copy `.env.example` to `.env` at the monorepo root before first run. After `make
 
 ---
 
+## The front door: one port in dev, same as production
+
+**`http://localhost:8081` is the whole site.** Caddy sits in front of everything
+in *both* environments and mounts the same `docker/caddy/Caddyfile`:
+
+| URL | Container |
+|---|---|
+| `localhost:8081/` | `web` — Astro public site |
+| `localhost:8081/admin` | `frontend` — Vue admin SPA |
+| `localhost:8081/api/*` | `backend` — Laravel |
+
+`frontend` (8082) and `web` (4322) still publish their own ports so a single
+container can be debugged in isolation. **Production does not do that** — there,
+only Caddy is reachable.
+
+**Dev had no Caddy until Sep 2026, and that cost real time.** The two containers
+sat on naked ports, so no local URL behaved the way the deployed site does.
+After #65 deleted the SPA's public views, `:8081` — the *admin* container —
+served an empty shell with a lone "Sign in" link, and that read as the public
+site having been destroyed. Nothing was wrong; the port was.
+
+**So: when a page looks blank or empty, establish which container answered
+before touching code.** `curl -s localhost:8081/ | head` and
+`docker compose ps` settle it in seconds.
+
+### Moving the admin panel — `ADMIN_PATH`
+
+The **entire** admin surface sits behind one configurable segment, default
+`admin`, which reproduces the historical URLs exactly. Setting
+`ADMIN_PATH=backstage` moves every admin route, and `/admin` then 404s through
+Astro like any other page that was never built.
+
+**There is no `/login` route.** The panel root renders the sign-in form when
+signed out and the dashboard when signed in — `app/src/views/admin/AdminEntry.vue`.
+A dedicated login URL is the thing a scanner looks for, and it announces that an
+admin exists even when the panel has been moved, so it was removed rather than
+renamed. `LoginView.vue` is gone; don't reintroduce it.
+
+**Three consumers must agree, and they load the value at different times:**
+
+| Consumer | Reads | Changing it needs |
+|---|---|---|
+| `docker/caddy/Caddyfile` | `{$ADMIN_PATH:admin}` at container start | `up -d --force-recreate caddy` |
+| Vue SPA | `VITE_ADMIN_PATH`, **baked at image build** | `docker compose build frontend` |
+| `app/src/config/admin.ts` | normalises both | — |
+
+**A restart is not enough for the SPA half.** Caddy picking up a new prefix while
+the frontend image still holds the old one routes the URL to a bundle that knows
+nothing about it: the panel renders *nothing*, with no error anywhere. In
+production the frontend is a prebuilt GHCR image, so moving the admin path there
+means rebuilding through CI — set the `ADMIN_PATH` repository **variable**, which
+`deploy.yml` passes as the `VITE_ADMIN_PATH` build arg.
+
+**Never build an admin URL by hand.** `adminUrl()` from `@/config/admin` is the
+only correct source; a literal `/admin/...` string is a link that breaks the
+moment anyone sets the variable. The router, `AdminLayout`'s nav groups,
+`App.vue`'s chrome check and the 401 handler in `api/client.ts` all go through it.
+
+**Pick a segment no public page uses.** `ADMIN_PATH` shares a URL namespace
+with the Astro section slugs, and Caddy matches it *first* — setting it to
+`shop` or `kontakt` silently shadows that public page for every visitor. The
+module-slug uniqueness check in the admin does not know about this value, so
+nothing warns you.
+
+**This is obscurity, not access control.** It cuts automated scanning of
+`/login`. The auth guard and the rate limit on `/api/auth/login` are what
+actually stop anyone getting in — neither changed.
+
+**The public footer no longer links to the admin.** It did, on every page, which
+published the URL site-wide and made the whole feature worthless. If you re-add
+a link there, you are opting the band out of this.
+
+---
+
 ## Docker image rebuilds
 
 **Always use `rebuild.sh` — never run raw `docker compose build/up` commands directly.**
@@ -669,15 +743,23 @@ Applies to every `$translatable` field, not just module slugs.
 
 ---
 
-### `pnpm dev` in `app/` proxies API to port 8081 — must match `.env`
+### `pnpm dev` in `app/` proxies API to port 8081 — which is now Caddy
 
-**Symptom:** Running `pnpm dev` in `app/`, API calls (`/api/*`) return network errors or hit the wrong host.
+**Symptom:** Running `pnpm dev` in `app/`, API calls (`/api/*`) return network
+errors or hit the wrong host.
 
-**Root cause:** `app/vite.config.ts` hardcodes `target: 'http://localhost:8081'`. The `frontend` Docker container is exposed on `${FRONTEND_PORT:-80}`. If `FRONTEND_PORT` is not set to `8081` in `.env`, nothing is listening on 8081 and all proxied API calls fail silently.
+**Root cause:** `app/vite.config.ts` targets `http://localhost:8081`. That used
+to be the `frontend` container and is now **Caddy**, which proxies `/api/*` and
+`/storage/*` to the backend itself — so the default still works, and works for
+one more reason than before. It breaks only if nothing is listening on 8081,
+i.e. the stack is down or `SITE_PORT` was changed.
 
-**Fix:** Add `FRONTEND_PORT=8081` to your `.env` at the monorepo root, then `docker compose up -d frontend` to re-map the port. Vite's dev proxy will then reach the frontend Nginx (which itself proxies `/api/*` to the backend over Docker networking).
+**Fix:** keep `SITE_PORT=8081` in the root `.env` and `docker compose up -d caddy`.
+Override the target explicitly when you need a different one:
+`API_PROXY_TARGET=http://localhost:8082 pnpm dev`.
 
----
+**Do not set `FRONTEND_PORT=8081`.** Caddy owns that port now; the SPA container
+publishes **8082**, and pointing both at 8081 fails the bind on `up`.
 
 ### Astro public site may build with incomplete data on first startup
 
@@ -705,7 +787,7 @@ Empty output means the variable never arrived, regardless of what `.env` says.
 
 **Fix:** Add the variable to the `backend` service's `environment:` block in **both** `docker-compose.yml` and `docker-compose.prod.yml`, then `docker compose up -d --no-deps backend` to recreate (a restart is not enough — see the env-cache footgun above).
 
-`FRONTEND_URL` drives CORS allowed origins and every link in outgoing email, so it must match the port users actually browse on: `http://localhost:4322` in development, the real domain in production.
+`FRONTEND_URL` drives CORS allowed origins and every link in outgoing email, so it must match the port users actually browse on: `http://localhost:8081` in development — Caddy's port, the front door — and the real domain in production. It was `4322` before Caddy was added to dev; that still resolves, but it is the web container direct rather than the site.
 
 ---
 
@@ -1118,12 +1200,16 @@ time*" is a real ordering or contention bug. The machine-flake signature is a
 ## The SPA is the admin panel — public pages live in `web/`
 
 `app/` once carried the public site too. It no longer does: Caddy routes only
-`/admin*`, `/login`, `/account*`, `/tickets/*`, `/tech-rider*`, `/assets/*` and
-`/vite.svg` to the SPA, and everything else falls through to Astro. 27 public
+`/{$ADMIN_PATH:admin}*`, `/account*`, `/tickets/*`, `/tech-rider*`, `/assets/*`
+and `/vite.svg` to the SPA, and everything else falls through to Astro. 27 public
 views (home, about, concerts, releases, posts, photos, merch, cart, checkout,
 press, EPK, newsletter, the public rider…) were deleted along with their routes
 and the redirect aliases that fed them; the surviving non-admin views are
-`LoginView`, `FanAccountView`, `TicketClaimView` and `TechRiderPreviewView`.
+`FanAccountView`, `TicketClaimView` and `TechRiderPreviewView`.
+
+`/login` is absent from that list because the route no longer exists — see *The
+front door* above. The admin prefix is a variable, so a hardcoded `/admin*` in
+the matcher would silently strand a relocated panel.
 
 **So a public page is built in `web/`, never in `app/src/views/`.** A route added
 to the SPA that is not in the `@spa` matcher is unreachable in production while

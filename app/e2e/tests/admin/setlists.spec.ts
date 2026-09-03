@@ -102,7 +102,7 @@ test.describe('Admin Setlists — role guard', () => {
   test('non-admin (member) role is redirected to /admin when accessing /admin/setlists', async ({
     page,
   }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await page.evaluate(([token, user]) => {
       localStorage.setItem('auth_token', token)
       localStorage.setItem('auth_user', user)

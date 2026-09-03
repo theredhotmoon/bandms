@@ -77,6 +77,40 @@ services:
     networks:
       - bandms
 
+  # ─── Caddy — the single front door, same as production ───────────────────
+  #
+  # Dev used to expose the SPA and the Astro site on two naked ports with
+  # nothing in front, so no local URL behaved the way the deployed site does.
+  # That is how a blank :8081 got mistaken for the public site having been
+  # deleted: :8081 was the admin container, which owns no public pages.
+  #
+  # This mounts the SAME docker/caddy/Caddyfile production uses, so there is one
+  # routing config and dev cannot drift from prod. `frontend` and `web` still
+  # publish their own ports (8082 / 4322) for debugging a single container in
+  # isolation, which production does not do.
+  #
+  # The Caddyfile is a bind mount, and compose hashes the service definition
+  # rather than the file's contents — so editing it needs
+  # `up -d --force-recreate caddy`, never a plain restart.
+  caddy:
+    image: caddy:2-alpine
+    container_name: bandms_caddy
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ":80"
+      # Must match VITE_ADMIN_PATH baked into the frontend image. Caddy defaults
+      # this itself via {$ADMIN_PATH:admin}, so leaving it unset is fine.
+      ADMIN_PATH: "${ADMIN_PATH:-admin}"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${SITE_PORT:-8081}:80"
+    depends_on:
+      - backend
+      - web
+      - frontend
+    networks:
+      - bandms
   # ─── Astro public site (SSG built at container start, served by Nginx) ───
   web:
     build:
@@ -112,10 +146,17 @@ services:
         # Same key as the public site — one variable, two consumers. Baked in at
         # image build time, so changing it needs `docker compose build frontend`.
         VITE_CARTO_KEY: "${PUBLIC_CARTO_KEY:-}"
+        # Where the admin panel lives. Baked in at BUILD time, so changing it
+        # needs `docker compose build frontend` — a restart will not do it. Must
+        # match ADMIN_PATH on the caddy service, or Caddy routes the prefix here
+        # and the SPA, which knows a different one, renders nothing.
+        VITE_ADMIN_PATH: "${ADMIN_PATH:-admin}"
     container_name: bandms_frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      # 8082, not 8081: caddy owns 8081 now. Still published so a single
+      # container can be debugged in isolation.
+      - "${FRONTEND_PORT:-8082}:80"
     depends_on:
       - backend
     networks:

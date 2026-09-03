@@ -17,20 +17,36 @@ async function fillAndSubmit(page: Page, email: string, password: string) {
 
 // ─── redirect guards (no auth required for these assertions) ──────────────────
 
-test.describe('Unauthenticated redirect guard', () => {
-  test('visiting /admin redirects to /login', async ({ page }) => {
+// There is no /login route any more: a dedicated login URL is the thing a
+// scanner looks for, and it announces that an admin panel exists even when the
+// panel has been moved off /admin. The panel root renders the form instead, so
+// these assert on what is RENDERED rather than on a redirect target.
+test.describe('Unauthenticated guard', () => {
+  test('the panel root renders the sign-in form, not a redirect', async ({ page }) => {
     await page.goto('/admin')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
+    // The URL must not move — a redirect anywhere would be a second URL to find.
+    await expect(page).toHaveURL(/\/admin\/?$/)
   })
 
-  test('visiting /admin/concerts redirects to /login', async ({ page }) => {
+  test('a deep admin route bounces to the panel root and shows the form', async ({ page }) => {
     await page.goto('/admin/concerts')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
   })
 
-  test('visiting /admin/users redirects to /login', async ({ page }) => {
+  test('a role-guarded route does the same', async ({ page }) => {
     await page.goto('/admin/users')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
+  })
+
+  test('the retired /login path no longer serves the form', async ({ page }) => {
+    await page.goto('/login')
+    // Behind Caddy this falls through to Astro and 404s. The dev server has no
+    // allowlist and serves the SPA shell, which then matches no route — so
+    // assert the one thing true in both: it is not the sign-in form.
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeHidden()
   })
 })
 
@@ -38,7 +54,7 @@ test.describe('Unauthenticated redirect guard', () => {
 
 test.describe('Login page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
   })
 
@@ -74,7 +90,7 @@ test.describe('Login page', () => {
 
 test.describe('Successful login', () => {
   test('shows "Welcome back" toast after valid credentials', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
     await expect(
@@ -83,10 +99,10 @@ test.describe('Successful login', () => {
   })
 
   test('stores auth_token in localStorage after login', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
+    await expect(page.locator('h1')).toContainText('Welcome back', { timeout: 20_000 })
 
     const token = await page.evaluate(() => localStorage.getItem('auth_token'))
     expect(token).not.toBeNull()
@@ -94,10 +110,10 @@ test.describe('Successful login', () => {
   })
 
   test('stores auth_user JSON in localStorage after login', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
+    await expect(page.locator('h1')).toContainText('Welcome back', { timeout: 20_000 })
 
     const raw = await page.evaluate(() => localStorage.getItem('auth_user'))
     expect(raw).not.toBeNull()
@@ -105,18 +121,22 @@ test.describe('Successful login', () => {
     expect(user).toHaveProperty('role')
   })
 
-  test('redirects away from /login after successful login', async ({ page }) => {
-    await page.goto('/login')
+  // Signing in does not navigate — same address, different state. That is what
+  // removes the login URL from existence rather than merely moving it.
+  test('replaces the form with the dashboard without navigating', async ({ page }) => {
+    await page.goto('/admin')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 })
+    await expect(page.locator('h1')).toContainText('Welcome back', { timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeHidden()
+    await expect(page).toHaveURL(/\/admin\/?$/)
   })
 
   test('navigating to /admin after login shows the dashboard', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await fillAndSubmit(page, EMAIL, PASSWORD)
 
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 })
+    await expect(page.locator('h1')).toContainText('Welcome back', { timeout: 20_000 })
 
     await page.goto('/admin')
     await page.waitForLoadState('networkidle')
@@ -128,7 +148,7 @@ test.describe('Successful login', () => {
 
 test.describe('Failed login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
   })
 
   test('wrong password shows a credentials error message', async ({ page }) => {
@@ -149,11 +169,11 @@ test.describe('Failed login', () => {
     expect(token).toBeNull()
   })
 
-  test('wrong password keeps the user on /login', async ({ page }) => {
+  test('wrong password leaves the sign-in form in place', async ({ page }) => {
     await fillAndSubmit(page, EMAIL, 'wrong-password-xyz')
 
     await page.waitForTimeout(2_000)
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
   })
 
   test('missing email shows browser/field validation', async ({ page }) => {
@@ -188,7 +208,7 @@ test.describe('Role guard', () => {
   }) => {
     // Set localStorage with a member role token so the auth guard passes
     // but the role guard blocks /admin/users (admin-only).
-    await page.goto('/login')
+    await page.goto('/admin')
     await page.evaluate(([token, user]) => {
       localStorage.setItem('auth_token', token)
       localStorage.setItem('auth_user', user)
@@ -208,11 +228,11 @@ test.describe('Role guard', () => {
 // Logout tests use the shared admin storageState but mock the backend logout endpoint
 // so the shared token (used by all concurrent tests) is NOT revoked on the server.
 // Without this mock, the logout call would revoke the shared Passport token, causing
-// all other parallel tests to receive 401 responses and redirect to /login.
+// all other parallel tests to receive 401 responses and be bounced to the form.
 test.describe('Logout', () => {
   test.use({ storageState: 'e2e/.auth/admin.json' })
 
-  test('clicking "Sign out" in the sidebar clears localStorage and redirects', async ({
+  test('clicking "Sign out" in the sidebar clears localStorage and shows the form', async ({
     page,
   }) => {
     // Mock the logout endpoint — verify frontend behaviour without revoking the shared token
@@ -226,8 +246,8 @@ test.describe('Logout', () => {
     // Click the "Sign out" button in the sidebar footer
     await page.getByRole('button', { name: /sign out/i }).click()
 
-    // Should redirect away from /admin (to /login)
-    await expect(page).toHaveURL(/\/login/, { timeout: 8_000 })
+    // Back to the sign-in form, at the same URL — there is nowhere else to go.
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 8_000 })
 
     // localStorage auth keys must be cleared
     const token = await page.evaluate(() => localStorage.getItem('auth_token'))
@@ -236,7 +256,7 @@ test.describe('Logout', () => {
     expect(user).toBeNull()
   })
 
-  test('after logout, navigating to /admin redirects back to /login', async ({ page }) => {
+  test('after logout, revisiting the panel shows the form again', async ({ page }) => {
     await page.route('**/api/auth/logout', async (route) => {
       await route.fulfill({ status: 200, body: '{}', contentType: 'application/json' })
     })
@@ -246,10 +266,10 @@ test.describe('Logout', () => {
 
     // Logout
     await page.getByRole('button', { name: /sign out/i }).click()
-    await expect(page).toHaveURL(/\/login/, { timeout: 8_000 })
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 8_000 })
 
     // Try to revisit admin
     await page.goto('/admin')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
   })
 })

@@ -108,7 +108,10 @@ test.describe('FAQ Admin', () => {
     const page = await ctx.newPage()
 
     await page.goto('/admin/faqs')
-    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+    // Bounced to the panel root, which renders the sign-in form — there is no
+    // /login route to land on any more.
+    await expect(page).toHaveURL(/\/admin\/?$/, { timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
 
     await ctx.close()
   })

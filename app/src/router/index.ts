@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import type { UserRole } from '@/types/auth'
 
 declare module 'vue-router' {
@@ -11,10 +12,13 @@ declare module 'vue-router' {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // The SPA has no public home page — Caddy sends "/" to Astro, so this route
+    // is unreachable through the real site. It exists for dev, where the admin
+    // container can be browsed directly on :8082, and resolves through
+    // adminUrl() so it follows the panel wherever it is configured to live.
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/views/LoginView.vue'),
+      path: '/',
+      redirect: adminUrl(),
     },
 
     // ── Fan account portal ────────────────────────────────────────────
@@ -29,81 +33,85 @@ const router = createRouter({
       component: () => import('@/views/TicketClaimView.vue'),
     },
 
-    // ── Admin panel (requires authentication) ──────────────────────────
+    // ── Admin panel ────────────────────────────────────────────────────
+    //
+    // The panel root carries NO requiresAuth, and that is the whole point: it
+    // renders the sign-in form when signed out and the dashboard when signed
+    // in, so there is no separate /login URL for a scanner to find. Everything
+    // below it is guarded normally and bounces here, which shows the form.
     {
-      path: '/admin',
+      path: adminUrl(),
       name: 'admin',
-      component: () => import('@/views/admin/AdminDashboard.vue'),
-      meta: { requiresAuth: true },
+      component: () => import('@/views/admin/AdminEntry.vue'),
     },
     {
-      path: '/admin/band-profile',
+      path: adminUrl('band-profile'),
       name: 'admin-band-profile',
       component: () => import('@/views/admin/BandProfileAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/band-members',
+      path: adminUrl('band-members'),
       name: 'admin-band-members',
       component: () => import('@/views/admin/BandMembersAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/bands',
+      path: adminUrl('bands'),
       name: 'admin-bands',
       component: () => import('@/views/admin/BandsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/venues',
+      path: adminUrl('venues'),
       name: 'admin-venues',
       component: () => import('@/views/admin/VenuesAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/concerts',
+      path: adminUrl('concerts'),
       name: 'admin-concerts',
       component: () => import('@/views/admin/ConcertsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/posts',
+      path: adminUrl('posts'),
       name: 'admin-posts',
       component: () => import('@/views/admin/PostsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/tags',
+      path: adminUrl('tags'),
       name: 'admin-tags',
       component: () => import('@/views/admin/TagsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/photos',
+      path: adminUrl('photos'),
       name: 'admin-photos',
       component: () => import('@/views/admin/PhotosAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/releases',
+      path: adminUrl('releases'),
       name: 'admin-releases',
       component: () => import('@/views/admin/ReleasesAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/tours',
+      path: adminUrl('tours'),
       name: 'admin-tours',
       component: () => import('@/views/admin/ToursAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/press-releases',
+      path: adminUrl('press-releases'),
       name: 'admin-press-releases',
       component: () => import('@/views/admin/PressReleasesAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/shop',
+      path: adminUrl('shop'),
       name: 'admin-shop',
       component: () => import('@/views/admin/ShopAdminView.vue'),
       meta: { requiresAuth: true },
@@ -119,97 +127,97 @@ const router = createRouter({
       component: () => import('@/views/TechRiderPreviewView.vue'),
     },
     {
-      path: '/admin/music-videos',
+      path: adminUrl('music-videos'),
       name: 'admin-music-videos',
       component: () => import('@/views/admin/MusicVideosAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/instruments',
+      path: adminUrl('instruments'),
       name: 'admin-instruments',
       component: () => import('@/views/admin/InstrumentsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/pitch',
+      path: adminUrl('pitch'),
       name: 'admin-pitch',
       component: () => import('@/views/admin/PitchGeneratorView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/authors',
+      path: adminUrl('authors'),
       name: 'admin-authors',
       component: () => import('@/views/admin/AuthorsAdminView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/band-calendar',
+      path: adminUrl('band-calendar'),
       name: 'admin-band-calendar',
       component: () => import('@/views/admin/BandCalendarView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/tech-rider',
+      path: adminUrl('tech-rider'),
       name: 'admin-tech-rider',
       component: () => import('@/views/admin/TechRiderAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/newsletter',
+      path: adminUrl('newsletter'),
       name: 'admin-newsletter',
       component: () => import('@/views/admin/NewsletterAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/users',
+      path: adminUrl('users'),
       name: 'admin-users',
       component: () => import('@/views/admin/UsersAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/setlists',
+      path: adminUrl('setlists'),
       name: 'admin-setlists',
       component: () => import('@/views/admin/SetlistsAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/my-profile',
+      path: adminUrl('my-profile'),
       name: 'admin-my-profile',
       component: () => import('@/views/admin/MyProfileView.vue'),
       meta: { requiresAuth: true, requiredRole: 'member' },
     },
     {
-      path: '/admin/my-setups',
+      path: adminUrl('my-setups'),
       name: 'admin-my-setups',
       component: () => import('@/views/admin/MySetupsView.vue'),
       meta: { requiresAuth: true, requiredRole: 'member' },
     },
     {
-      path: '/admin/concerts/:concertId/tickets',
+      path: adminUrl('concerts/:concertId/tickets'),
       name: 'admin-concert-tickets',
       component: () => import('@/views/admin/ConcertTicketListView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/fan-accounts',
+      path: adminUrl('fan-accounts'),
       name: 'admin-fan-accounts',
       component: () => import('@/views/admin/FanAccountsAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/door',
+      path: adminUrl('door'),
       name: 'admin-door',
       component: () => import('@/views/admin/DoorCheckView.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/website-modules',
+      path: adminUrl('website-modules'),
       name: 'admin-website-modules',
       component: () => import('@/views/admin/WebsiteModulesView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
-      path: '/admin/faqs',
+      path: adminUrl('faqs'),
       name: 'admin-faqs',
       component: () => import('@/views/admin/FaqsAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
@@ -227,14 +235,15 @@ router.beforeEach((to) => {
       console.warn(`[router] Blocked suspicious param "${key}": ${raw}`)
       // 'admin', not 'home': the SPA no longer serves a public home page, and a
       // name vue-router cannot resolve throws instead of blocking. 'admin' also
-      // degrades correctly — the requiresAuth check below bounces a signed-out
-      // visitor on to 'login'.
+      // degrades correctly — it renders the sign-in form when signed out.
       return { name: 'admin' }
     }
   }
 
+  // 'admin' is the panel root, which renders the sign-in form for a signed-out
+  // visitor. There is no dedicated login route to send them to any more.
   if (to.meta.requiresAuth && !localStorage.getItem('auth_token')) {
-    return { name: 'login' }
+    return { name: 'admin' }
   }
 
   if (to.meta.requiredRole) {
@@ -251,7 +260,6 @@ router.beforeEach((to) => {
 
 // Per-page <title> updates (WCAG 2.4.2)
 const ROUTE_TITLES: Record<string, string> = {
-  login: 'Sign In — Skanking Storks',
   'fan-account': 'My Account — Skanking Storks',
   'ticket-claim': 'Claim Ticket — Skanking Storks',
   'tech-rider-preview': 'Tech Rider — Skanking Storks',
