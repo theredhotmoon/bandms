@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -57,11 +58,11 @@ async function createRider(concert: Concert) {
   try {
     const rider = await createRiderForConcert(token.value!, concert.id)
     toast.success(`Created "${rider.name}"`)
-    router.push('/admin/tech-rider')
+    router.push(adminUrl('tech-rider'))
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
       toast.info('This concert already has a rider')
-      router.push('/admin/tech-rider')
+      router.push(adminUrl('tech-rider'))
       return
     }
     toast.error('Could not create a rider for this concert')
@@ -151,7 +152,7 @@ async function confirmDelete() {
 
       <div v-if="noVenues" class="venue-notice">
         <span>You need at least one venue before you can add a concert.</span>
-        <RouterLink to="/admin/venues" class="venue-notice-link">Go to Venues &rarr;</RouterLink>
+        <RouterLink :to="adminUrl('venues')" class="venue-notice-link">Go to Venues &rarr;</RouterLink>
       </div>
       <div v-else-if="venuesFailed" class="venue-notice">
         <span>Could not load venues — saving a concert may fail until this resolves.</span>

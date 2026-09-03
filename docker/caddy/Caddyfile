@@ -74,7 +74,18 @@
 	# the favicon, shipped in app/public/ and unreachable for the same reason.
 	# There is no collision with Astro: it uses /_astro/, and web/public/ holds
 	# only robots.txt. Adding anything to app/public/ means adding it here too.
-	@spa path /admin* /login /account* /tickets/* /tech-rider* /assets/* /vite.svg
+	# The admin prefix is configurable so a band can move the panel off the
+	# guessable /admin. Caddy resolves its own default here, which is why an unset
+	# ADMIN_PATH is correct rather than merely tolerated — but the SPA bakes
+	# VITE_ADMIN_PATH in at BUILD time, so the two agree only if you rebuild the
+	# frontend image when you change it. Disagreeing means a panel that is routed
+	# here and then renders nothing.
+	#
+	# /login is deliberately absent: there is no login route any more. The panel
+	# root renders the sign-in form when signed out, so no URL announces that an
+	# admin exists. A wrong guess falls through to Astro and 404s like any other
+	# page that was never built.
+	@spa path /{$ADMIN_PATH:admin}* /account* /tickets/* /tech-rider* /assets/* /vite.svg
 	handle @spa {
 		reverse_proxy frontend:80
 	}

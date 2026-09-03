@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useQuery } from '@tanstack/vue-query'
@@ -77,12 +78,12 @@ async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
 }
 
 const stats = computed(() => [
-  { label: 'Bands', count: bandsQ.data.value?.length, link: '/admin/bands', color: '#c0c0c0' },
-  { label: 'Releases', count: releasesQ.data.value?.length, link: '/admin/releases', color: '#f472b6' },
-  { label: 'Tours',    count: toursQ.data.value?.length,   link: '/admin/tours',    color: '#fbbf24' },
-  { label: 'Venues', count: venuesQ.data.value?.length, link: '/admin/venues', color: '#34d399' },
-  { label: 'Concerts', count: concertsQ.data.value?.length, link: '/admin/concerts', color: '#fb923c' },
-  { label: 'Tags', count: tagsQ.data.value?.length, link: '/admin/tags', color: '#22d3ee' },
+  { label: 'Bands', count: bandsQ.data.value?.length, link: adminUrl('bands'), color: '#c0c0c0' },
+  { label: 'Releases', count: releasesQ.data.value?.length, link: adminUrl('releases'), color: '#f472b6' },
+  { label: 'Tours',    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: '#fbbf24' },
+  { label: 'Venues', count: venuesQ.data.value?.length, link: adminUrl('venues'), color: '#34d399' },
+  { label: 'Concerts', count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: '#fb923c' },
+  { label: 'Tags', count: tagsQ.data.value?.length, link: adminUrl('tags'), color: '#22d3ee' },
 ])
 
 
@@ -157,7 +158,7 @@ const avgEnhanceScore = computed(() => {
               <span v-else style="color:#f87171;">No published version — EPK shows live data</span>
             </div>
           </div>
-          <RouterLink to="/admin/band-profile" class="epk-create-link">Create snapshot →</RouterLink>
+          <RouterLink :to="adminUrl('band-profile')" class="epk-create-link">Create snapshot →</RouterLink>
         </div>
 
         <div v-if="pendingVersion" class="epk-pending">
@@ -181,7 +182,7 @@ const avgEnhanceScore = computed(() => {
           </div>
         </div>
         <div v-else class="epk-no-pending">
-          No pending snapshot. Go to <RouterLink to="/admin/band-profile" style="color:#c0c0c0;">Band Profile → EPK</RouterLink> to create one.
+          No pending snapshot. Go to <RouterLink :to="adminUrl('band-profile')" style="color:#c0c0c0;">Band Profile → EPK</RouterLink> to create one.
         </div>
       </div>
 
@@ -233,7 +234,7 @@ const avgEnhanceScore = computed(() => {
           <RouterLink
             v-for="{ pr, score: s } in enhancedPressItems"
             :key="pr.id"
-            to="/admin/press-releases"
+            :to="adminUrl('press-releases')"
             class="enhance-item"
           >
             <div class="enhance-bar-wrap">
@@ -251,14 +252,14 @@ const avgEnhanceScore = computed(() => {
       <div class="mt-8">
         <h2 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#475569;">Quick actions</h2>
         <div class="flex flex-wrap gap-2">
-          <RouterLink to="/admin/bands" class="quick-btn">+ Band</RouterLink>
-          <RouterLink to="/admin/venues" class="quick-btn">+ Venue</RouterLink>
-          <RouterLink to="/admin/concerts" class="quick-btn">+ Concert</RouterLink>
-          <RouterLink to="/admin/posts" class="quick-btn">+ Post</RouterLink>
-          <RouterLink to="/admin/releases" class="quick-btn">+ Release</RouterLink>
-          <RouterLink to="/admin/tours" class="quick-btn">+ Tour</RouterLink>
-          <RouterLink to="/admin/photos" class="quick-btn">+ Photo</RouterLink>
-          <RouterLink to="/admin/music-videos" class="quick-btn">+ Video</RouterLink>
+          <RouterLink :to="adminUrl('bands')" class="quick-btn">+ Band</RouterLink>
+          <RouterLink :to="adminUrl('venues')" class="quick-btn">+ Venue</RouterLink>
+          <RouterLink :to="adminUrl('concerts')" class="quick-btn">+ Concert</RouterLink>
+          <RouterLink :to="adminUrl('posts')" class="quick-btn">+ Post</RouterLink>
+          <RouterLink :to="adminUrl('releases')" class="quick-btn">+ Release</RouterLink>
+          <RouterLink :to="adminUrl('tours')" class="quick-btn">+ Tour</RouterLink>
+          <RouterLink :to="adminUrl('photos')" class="quick-btn">+ Photo</RouterLink>
+          <RouterLink :to="adminUrl('music-videos')" class="quick-btn">+ Video</RouterLink>
         </div>
       </div>
 

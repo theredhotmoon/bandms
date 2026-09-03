@@ -7,7 +7,7 @@ setup('authenticate as admin', async ({ page }) => {
   const email = process.env.E2E_ADMIN_EMAIL ?? 'admin@bandms.test'
   const password = process.env.E2E_ADMIN_PASSWORD ?? 'password'
 
-  await page.goto('/login')
+  await page.goto('/admin')
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign In' }).click()

@@ -13,6 +13,14 @@ services:
       # /opt/bandms/.env and Caddy provisions a Let's Encrypt certificate
       # automatically — no other change needed.
       SITE_ADDRESS: "${SITE_ADDRESS:-:80}"
+      # The path segment the admin panel sits behind, default 'admin'.
+      #
+      # Caddy picks this up on recreate, but the SPA bundle has it baked in at
+      # image BUILD time — and production runs a prebuilt GHCR image. So
+      # changing this on the server alone routes the new prefix to a frontend
+      # that still expects the old one, and the panel renders nothing. Moving
+      # the admin path in production means rebuilding the image through CI.
+      ADMIN_PATH: "${ADMIN_PATH:-admin}"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

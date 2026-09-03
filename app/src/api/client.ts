@@ -1,3 +1,4 @@
+import { adminUrl } from '@/config/admin'
 import type { ValidationErrors } from '@/types/auth'
 
 const API_BASE = import.meta.env.VITE_API_URL as string
@@ -27,7 +28,7 @@ export async function handleResponse<T>(response: Response): Promise<T> {
 
   if (response.status === 401) {
     localStorage.removeItem('auth_token')
-    window.location.href = '/login'
+    window.location.href = adminUrl()
     return new Promise(() => {}) as Promise<T>
   }
 

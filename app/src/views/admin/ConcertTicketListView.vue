@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
@@ -39,7 +40,7 @@ const filtered = computed<AdminTicket[]>(() => {
         <h1 class="text-lg font-semibold" style="color:#e2e8f0;">
           Concert Tickets <span class="text-sm font-normal" style="color:#475569;">#{{ concertId }}</span>
         </h1>
-        <RouterLink to="/admin/concerts" class="text-sm" style="color:#64748b;">← Concerts</RouterLink>
+        <RouterLink :to="adminUrl('concerts')" class="text-sm" style="color:#64748b;">← Concerts</RouterLink>
       </div>
 
       <div class="flex gap-3 mb-4 flex-wrap">

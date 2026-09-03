@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Toaster } from 'vue-sonner'
@@ -12,14 +13,13 @@ const { lang } = useLang()
 watch(lang, (l) => { document.documentElement.lang = l }, { immediate: true })
 
 // AppNavbar is the chrome for the handful of non-admin pages the SPA still owns:
-// the fan portal, ticket claim and the tech-rider preview. Admin views carry
-// their own layout, and the sign-in page is deliberately bare. Everything the
-// public browses is served by the Astro site and never reaches this router.
-const showNavbar = computed(() => {
-  if (route.path.startsWith('/admin')) return false
-  if (route.name === 'login') return false
-  return true
-})
+// the fan portal, ticket claim and the tech-rider preview. Everything the public
+// browses is served by the Astro site and never reaches this router.
+//
+// One check covers the whole panel: admin views carry their own layout, and the
+// sign-in form now renders at the panel root rather than a /login route of its
+// own, so it is already inside this prefix and stays deliberately bare.
+const showNavbar = computed(() => !route.path.startsWith(adminUrl()))
 
 // Route-change focus management: move focus to main content on navigation (WCAG 2.4.3)
 const mainContent = ref<HTMLElement>()

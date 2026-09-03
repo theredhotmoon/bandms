@@ -36,6 +36,17 @@ ENV VITE_API_URL=${VITE_API_URL}
 ARG VITE_CARTO_KEY=""
 ENV VITE_CARTO_KEY=${VITE_CARTO_KEY}
 
+# The path segment the whole admin panel sits behind. Empty falls back to
+# 'admin' in app/src/config/admin.ts, which reproduces the historical URLs
+# exactly — so an unset value is the safe default, not a broken build.
+#
+# This is baked into the bundle here, at image build time. Changing the admin
+# path in .env therefore needs `docker compose build frontend`; recreating the
+# container is not enough. Caddy reads the same value at runtime, so the two
+# only agree after a rebuild.
+ARG VITE_ADMIN_PATH=""
+ENV VITE_ADMIN_PATH=${VITE_ADMIN_PATH}
+
 RUN pnpm build
 
 # ── Stage 2: serve ────────────────────────────────────────────

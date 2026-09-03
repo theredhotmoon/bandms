@@ -58,7 +58,7 @@ test.describe('Newsletter Admin', () => {
   })
 
   test('non-admin user is redirected to /admin', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/admin')
     await page.evaluate(([token, user]) => {
       localStorage.setItem('auth_token', token)
       localStorage.setItem('auth_user', user)

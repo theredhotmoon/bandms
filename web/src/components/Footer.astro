@@ -51,7 +51,6 @@ const links = [
 ]
 
 const bandName = profile?.name ?? 'Skanking Storks'
-const adminLabel = lang === 'pl' ? 'Panel' : 'Admin'
 ---
 
 {footerEnabled && (
@@ -109,7 +108,6 @@ const adminLabel = lang === 'pl' ? 'Panel' : 'Admin'
       <span class="ft-bottom-right">
         {s.rights && <span>{s.rights}</span>}
         <LanguageSelector lang={lang} alternates={alternates} />
-        <a href="/admin">{adminLabel}</a>
       </span>
     </div>
   </footer>

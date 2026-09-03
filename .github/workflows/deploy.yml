@@ -90,6 +90,14 @@ jobs:
           context: .
           file: app/Dockerfile
           target: app
+          # Both are baked into the bundle at build time, so they can only be
+          # set here — not on the server. ADMIN_PATH must match what the caddy
+          # service resolves at runtime, or Caddy routes the prefix to a
+          # frontend that expects a different one and the panel renders nothing.
+          # Unset is safe: the SPA falls back to 'admin' and so does Caddy.
+          build-args: |
+            VITE_ADMIN_PATH=${{ vars.ADMIN_PATH }}
+            VITE_CARTO_KEY=${{ secrets.PUBLIC_CARTO_KEY }}
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest

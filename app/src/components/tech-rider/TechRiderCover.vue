@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import type { BandProfile } from '@/types/bandProfile'
 
 interface Props {
@@ -24,7 +25,7 @@ defineProps<Props>()
       <div class="info-title">Where these come from</div>
       <p class="info-desc">
         The tech contact fields and the sound-engineer description are managed in
-        <RouterLink to="/admin/band-profile" class="info-link">Band Profile → Contacts</RouterLink>
+        <RouterLink :to="adminUrl('band-profile')" class="info-link">Band Profile → Contacts</RouterLink>
         and appear on every rider.
       </p>
       <div class="info-fields">
@@ -41,7 +42,7 @@ defineProps<Props>()
           <span class="info-val">{{ profile?.tech_rider_notes || '—' }}</span>
         </div>
       </div>
-      <RouterLink to="/admin/band-profile" class="btn-go">Edit in Band Profile →</RouterLink>
+      <RouterLink :to="adminUrl('band-profile')" class="btn-go">Edit in Band Profile →</RouterLink>
     </div>
   </div>
 </template>

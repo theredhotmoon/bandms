@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminUrl } from '@/config/admin'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -22,7 +23,7 @@ const bandLogoUrl = computed(() => {
 
 async function handleLogout() {
   await logout()
-  router.push('/login')
+  router.push(adminUrl())
 }
 </script>
 
@@ -59,7 +60,7 @@ async function handleLogout() {
     <div class="nav-spacer" />
 
     <div class="right-actions">
-      <RouterLink v-if="isLoggedIn" to="/admin" class="btn-admin">
+      <RouterLink v-if="isLoggedIn" :to="adminUrl()" class="btn-admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
@@ -71,7 +72,7 @@ async function handleLogout() {
         </svg>
         Sign out
       </button>
-      <RouterLink v-else to="/login" class="btn-signin">Sign in</RouterLink>
+      <RouterLink v-else :to="adminUrl()" class="btn-signin">Sign in</RouterLink>
     </div>
   </nav>
 </template>
