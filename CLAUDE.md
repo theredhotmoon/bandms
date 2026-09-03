@@ -787,7 +787,7 @@ Empty output means the variable never arrived, regardless of what `.env` says.
 
 **Fix:** Add the variable to the `backend` service's `environment:` block in **both** `docker-compose.yml` and `docker-compose.prod.yml`, then `docker compose up -d --no-deps backend` to recreate (a restart is not enough — see the env-cache footgun above).
 
-`FRONTEND_URL` drives CORS allowed origins and every link in outgoing email, so it must match the port users actually browse on: `http://localhost:4322` in development, the real domain in production.
+`FRONTEND_URL` drives CORS allowed origins and every link in outgoing email, so it must match the port users actually browse on: `http://localhost:8081` in development — Caddy's port, the front door — and the real domain in production. It was `4322` before Caddy was added to dev; that still resolves, but it is the web container direct rather than the site.
 
 ---
 
