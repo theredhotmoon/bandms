@@ -453,6 +453,78 @@ a drive that has room — see below.
 
 ---
 
+### Builds die with `no active session` — BuildKit is wedged, and it is *not* the read-only failure
+
+**Symptom:** every `docker compose build` fails with
+`no active session for <id>: context deadline exceeded`, wrapped in
+`failed to solve: rpc error`. It dies at a **different stage each run** — `load
+build definition` once, `load build context` the next — which reads like a
+flaky Dockerfile and is not.
+
+**Everything else works, which is what makes this confusing.** `docker version`,
+`docker run`, `docker ps` and `docker compose up` are all fine; containers start
+and serve traffic normally. Only the build API is dead.
+
+**Tell it apart from the read-only failure above in two commands.** They present
+similarly — builds fail — and have completely different remedies:
+
+```bash
+docker run --rm alpine sh -c 'touch /tmp/probe && echo WRITE_OK'
+# WRITE_OK        → not read-only; keep reading
+docker buildx ls
+# "driver not connecting" on desktop-linux AND default → BuildKit is wedged
+```
+
+A healthy `buildx ls` lists `running` against each node with its platform list.
+
+**It silently degrades container networking too, and that is the trap.** In
+Sep 2026 a build's `pnpm install` took ~900 s and filled the log with
+`ECONNRESET` and `EAI_AGAIN` against every npm host, while the *host* fetched
+`registry.npmjs.org` in 0.19 s. After the fix the same step took **10.8 s**. The
+registry errors are a symptom; reading them as "npm is slow today" sends you
+tuning retries instead of fixing the daemon.
+
+**Two fixes, cheapest first:**
+
+1. **Bypass BuildKit** — no restart, nothing else disturbed:
+
+   ```bash
+   DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose build frontend web
+   ```
+
+   The legacy builder is unaffected. This is enough to unblock a rebuild.
+
+2. **`wsl --shutdown`, then relaunch Docker Desktop.** Verified 2026-09-03:
+   `buildx ls` went from `driver not connecting` to `running`, and a full
+   `--no-cache` `rebuild.sh` that had never once completed finished in 232 s
+   with all eight steps green.
+
+`com.docker.service` refuses `Stop-Process` without elevation. That is harmless
+— it holds no VM state, and `wsl --shutdown` still stops both distros.
+
+**Check restart policies before you cycle Docker.** Everything in
+`docker-compose.yml` is `unless-stopped` and comes back on its own; other
+projects on this machine may not be. `epr_core_postgres` is `restart: no` and
+needs `docker start epr_core_postgres` by hand afterwards — easy to leave down
+without noticing.
+
+**Verify the data, not just that containers came up.** Same rule as the disk
+move below: record `docker volume ls` and real row counts first, and diff them
+after. ext4 mounts a damaged image happily, so the damage only surfaces when
+InnoDB reads a page that is not there.
+
+```bash
+docker exec bandms_mysql sh -c 'mysql -ubandms -psecret bandms -N -e \
+  "SELECT \"concerts\", COUNT(*) FROM concerts UNION ALL \
+   SELECT \"website_modules\", COUNT(*) FROM website_modules;"'
+```
+
+**Do not reach for `docker system prune -a --volumes`.** After a WSL shutdown
+every volume counts as unused, including `bandms_mysql_data` — see the warning
+under *Docker goes read-only* above.
+
+---
+
 ### Moving Docker's disk to another drive
 
 Done once, in Aug 2026: `C:` had hit 0 GB free, which is what drove the
