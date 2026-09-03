@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed } from 'vue'
+import { adminUrl } from '@/config/admin'
 import { toast } from 'vue-sonner'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'

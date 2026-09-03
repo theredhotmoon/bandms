@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()

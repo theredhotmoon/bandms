@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import TicketStatusBadge from '@/components/admin/TicketStatusBadge.vue'

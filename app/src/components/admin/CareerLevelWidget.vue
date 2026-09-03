@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed } from 'vue'
+import { adminUrl } from '@/config/admin'
 import type { BandProfile } from '@/types/bandProfile'
 import type { Concert } from '@/types/concert'
 import type { ReleaseSummary } from '@/types/release'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
 import { useBandProfile } from '@/composables/useBandProfile'
 
@@ -59,6 +59,14 @@ async function handleLogout() {
 
     <div class="nav-spacer" />
 
+    <!--
+      No signed-out "Sign in" link here, deliberately. This navbar renders on the
+      fan- and venue-facing routes (/account, /tickets/claim/:token, /tech-rider*),
+      so a link to adminUrl() would publish the admin path to exactly the audience
+      ADMIN_PATH exists to hide it from — the same reason the Astro footer's
+      /admin link was removed. The button below is fine: that viewer is already
+      signed in. Fans sign in through FanLoginForm on the account page itself.
+    -->
     <div class="right-actions">
       <RouterLink v-if="isLoggedIn" :to="adminUrl()" class="btn-admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
@@ -72,7 +80,6 @@ async function handleLogout() {
         </svg>
         Sign out
       </button>
-      <RouterLink v-else :to="adminUrl()" class="btn-signin">Sign in</RouterLink>
     </div>
   </nav>
 </template>

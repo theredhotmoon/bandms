@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import { Toaster } from 'vue-sonner'
 import AppNavbar from '@/components/AppNavbar.vue'
 import { useLang } from '@/composables/useLang'
@@ -19,7 +19,14 @@ watch(lang, (l) => { document.documentElement.lang = l }, { immediate: true })
 // One check covers the whole panel: admin views carry their own layout, and the
 // sign-in form now renders at the panel root rather than a /login route of its
 // own, so it is already inside this prefix and stays deliberately bare.
-const showNavbar = computed(() => !route.path.startsWith(adminUrl()))
+// Compared on a segment boundary, not as a raw string prefix. adminUrl() is
+// user-configurable, so ADMIN_PATH=a would make '/account'.startsWith('/a') true
+// and silently strip the navbar from the fan portal. Only some values misfire,
+// which is what would make it hard to find.
+const showNavbar = computed(() => {
+  const root = adminUrl()
+  return !(route.path === root || route.path.startsWith(root + '/'))
+})
 
 // Route-change focus management: move focus to main content on navigation (WCAG 2.4.3)
 const mainContent = ref<HTMLElement>()

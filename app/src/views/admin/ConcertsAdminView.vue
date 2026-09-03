@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { adminUrl } from '@/config/admin'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -22,6 +21,7 @@ import { venueGate } from '@/utils/venueGate'
 import { createRiderForConcert } from '@/api/techRiders'
 import { ApiError, ApiValidationError } from '@/api/client'
 import { useRouter } from 'vue-router'
+import { adminUrl } from '@/config/admin'
 import type { Concert, ConcertPayload } from '@/types/concert'
 
 const { query, create, update, remove } = useConcerts()
