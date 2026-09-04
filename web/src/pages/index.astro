@@ -1,3 +1,16 @@
 ---
-return Astro.redirect('/en', 301)
+// Production never reaches this page — web/docker/nginx.conf answers the
+// bare / with a locale-aware 302 before try_files can serve this static
+// output (see "Root → visitor's locale" there). This is only a fallback
+// for `pnpm dev`/`pnpm preview`, which run without nginx in front.
+//
+// It cannot mirror nginx's Accept-Language check: this route is prerendered
+// (output: 'static', no adapter configured), and a prerendered page gets no
+// live request headers even under `astro dev` — confirmed by logging
+// Astro.request.headers here, which came back empty regardless of what the
+// client sent. Making it dynamic would need output: 'server'/'hybrid' plus
+// an adapter, which this site doesn't have. So: always English here, and
+// don't use `pnpm dev`/`pnpm preview` to check the redirect's language
+// behaviour — use the Dockerized `web` container (nginx in front) for that.
+return Astro.redirect('/en/', 302)
 ---

@@ -1045,6 +1045,21 @@ Two things are deliberately still per-locale columns and **not** registry-driven
 needs a migration — this is why `PostController` and `ReleaseController` still
 name `'pl'`), and the ~23 inline `T = { en: …, pl: … }` UI-string dicts.
 
+**A fifth place, outside all of this, also names a locale: `web/docker/nginx.conf`'s
+`map $http_accept_language $preferred_locale`**, which picks the language for the
+root-path redirect (see *Root → visitor's locale* below). Nginx can't read the
+TypeScript/PHP registries, so it hardcodes `pl` directly — adding a third locale
+means adding a line there too, or that locale's visitors silently land on `/en/`
+from the homepage forever with no compiler or test to catch the omission.
+
+`web/src/pages/index.astro` does **not** carry the same check, deliberately: it's
+a prerendered page (`output: 'static'`, no adapter), and a prerendered route gets
+no live request headers even under `astro dev` — confirmed by logging
+`Astro.request.headers` there, which came back empty regardless of what the
+client sent. It always redirects to `/en/`, is unreachable in production (nginx
+answers `/` first), and exists only as a `pnpm dev`/`pnpm preview` fallback — not
+something to check the redirect's language behaviour against.
+
 ### The fallback policy is *declared*, never scanned
 
 Each locale gets an ordered `fallbacks` list; resolution walks
