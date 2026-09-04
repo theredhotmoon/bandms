@@ -13,12 +13,26 @@ on:
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
       - 'LICENSE'
+  # PRs only ever run the `test` job — build-and-push and deploy are gated to
+  # push events below, so a PR from a fork (no access to GHCR/SSH secrets)
+  # still gets a pass/fail check instead of silently reporting nothing.
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENSE'
 
-# Two pushes in quick succession would otherwise race each other onto the
-# server, and the loser could land its images after the winner's migrations.
+# Two pushes to main in quick succession would otherwise race each other onto
+# the server, and the loser could land its images after the winner's
+# migrations — so pushes share one non-cancelling group. PR runs use their own
+# per-branch group instead: unrelated PRs must not queue behind each other or
+# behind production, and a superseded push to the same PR should cancel the
+# stale run rather than pile up.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'deploy-production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BACKEND_IMAGE: ghcr.io/theredhotmoon/bandms/backend
@@ -41,19 +55,34 @@ jobs:
             -e APP_ENV=testing \
             bandms-test
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'pnpm'
+
+      # app/ depends on @bandms/rider-core via a `workspace:*` protocol, which
+      # only pnpm understands — npm fails with EUNSUPPORTEDPROTOCOL. And per
+      # the root CLAUDE.md, install must run from the repo root: `pnpm install`
+      # inside app/ alone won't link the workspace package.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run frontend unit tests
         working-directory: ./app
-        run: |
-          npm install
-          npm run test:unit
+        run: pnpm test:unit
 
   build-and-push:
     name: Build & push images
     needs: test
+    # GHCR pushes and the deploy below have no business running against a PR
+    # — no secrets a fork PR could use anyway, and nothing should reach the
+    # server before landing on main.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -123,6 +152,9 @@ jobs:
   deploy:
     name: Deploy to Hetzner
     needs: build-and-push
+    # Redundant with build-and-push's own `if` (a skipped dependency skips
+    # this job anyway) — kept explicit so the constraint is visible here too.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
