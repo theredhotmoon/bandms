@@ -234,6 +234,7 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 - Keep one branch per conversation / logical unit of work.
 - Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
 - Merge via GitHub PR — never `git merge` directly into main locally.
+- **Every PR goes through a skill before merging — never merge on raw `git`/`gh` commands alone.** Use `/ship` (or the `git-feature-workflow` skill for the full branch → review → test → merge pipeline) so the review step actually happens, rather than assembling the same steps by hand and skipping it. If a skill wasn't used, run `/code-review` on the branch before merging — don't merge un-reviewed work just because tests are green.
 
 ---
 
