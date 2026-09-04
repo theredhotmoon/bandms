@@ -234,6 +234,7 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 - Keep one branch per conversation / logical unit of work.
 - Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
 - Merge via GitHub PR — never `git merge` directly into main locally.
+- **Every PR gets an explicit `/code-review` pass before merging — never merge on raw `git`/`gh` commands, and don't assume another skill covered it.** `/ship`'s pipeline (rebuild → test → changelog → branch → commit → PR) has no review step at all. `git-feature-workflow`'s review step only runs `vue3-review`, and only when the commit touches `.vue`/composable `.ts` files — it silently skips review for an `api/`-only (Laravel/PHP) change, which is most backend work in this repo. So run `/code-review` yourself regardless of which shipping skill you used — don't merge un-reviewed work just because tests are green.
 
 ---
 
