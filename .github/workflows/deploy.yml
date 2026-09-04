@@ -41,15 +41,26 @@ jobs:
             -e APP_ENV=testing \
             bandms-test
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'pnpm'
+
+      # app/ depends on @bandms/rider-core via a `workspace:*` protocol, which
+      # only pnpm understands — npm fails with EUNSUPPORTEDPROTOCOL. And per
+      # the root CLAUDE.md, install must run from the repo root: `pnpm install`
+      # inside app/ alone won't link the workspace package.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run frontend unit tests
         working-directory: ./app
-        run: |
-          npm install
-          npm run test:unit
+        run: pnpm test:unit
 
   build-and-push:
     name: Build & push images
