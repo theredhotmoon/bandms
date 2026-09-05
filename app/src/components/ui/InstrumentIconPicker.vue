@@ -93,8 +93,12 @@ function onDocumentPointerDown(e: PointerEvent) {
   if (!inside) open.value = false
 }
 
-// Fixed positioning would drift if anything scrolled underneath it.
-function onAncestorScroll() {
+// Fixed positioning would drift if anything scrolled underneath it — but the
+// popover's own icon grid is itself scrollable, and a capture-phase listener
+// on window sees that scroll too. Ignore scrolls that originate inside the
+// popover so scrolling the grid doesn't close it.
+function onAncestorScroll(e: Event) {
+  if (popRef.value && e.target instanceof Node && popRef.value.contains(e.target)) return
   open.value = false
 }
 
