@@ -14,12 +14,13 @@ class TagController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        // Ordered by the default locale's JSON path — sorting by the raw
-        // `name` column would sort by its JSON-encoded text, which stops
-        // matching alphabetical order for any tag with no value in the
-        // first-declared locale.
+        // Ordered by the request's own locale's JSON path, matching what
+        // TagResource actually resolves and displays for this response —
+        // sorting by the raw `name` column would sort by its JSON-encoded
+        // text, which stops matching alphabetical order for any tag with no
+        // value in whichever locale happens to serialise first.
         return TagResource::collection(
-            Tag::orderBy('name->' . Locales::default())->get()
+            Tag::orderBy('name->' . app()->getLocale())->get()
         );
     }
 
@@ -30,7 +31,6 @@ class TagController extends Controller
         $tag = new Tag();
         $this->fill($tag, $data);
         $this->assertHasName($tag);
-        $this->ensureTranslatableColumns($tag);
         $this->applySlugs($tag, $data);
         $tag->save();
 
@@ -48,7 +48,6 @@ class TagController extends Controller
 
         $this->fill($tag, $data);
         $this->assertHasName($tag);
-        $this->ensureTranslatableColumns($tag);
         $this->applySlugs($tag, $data);
         $tag->save();
 
@@ -104,19 +103,6 @@ class TagController extends Controller
                     . implode(' and ', Locales::codes()) . '.');
             }
         };
-    }
-
-    /**
-     * Give the translatable column a value before the row is written. `name`
-     * is NOT NULL with no default, and Spatie only touches it via
-     * set/forgetTranslation, so a brand-new Tag would otherwise omit the
-     * column from the INSERT entirely.
-     */
-    private function ensureTranslatableColumns(Tag $tag): void
-    {
-        if (!array_key_exists('name', $tag->getAttributes())) {
-            $tag->setTranslations('name', []);
-        }
     }
 
     /**

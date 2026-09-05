@@ -29,14 +29,28 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Nullable first: a tag saved with only a Polish name (supported since
+        // this migration's up()) has no `$.en` key, so the unwrap below can
+        // produce NULL. Restoring NOT NULL happens only after every row has a
+        // real value — doing it up front would fail the ALTER outright, and
+        // MySQL DDL isn't transactional, so a failure here would otherwise
+        // leave the column NOT NULL with a JSON string still inside it.
         Schema::table('tags', function (Blueprint $table) {
-            $table->string('name')->change();
+            $table->string('name')->nullable()->change();
         });
 
-        // Unwrap JSON back to the English string value.
-        DB::statement("UPDATE tags SET name = JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) WHERE name IS NOT NULL");
+        // Unwrap JSON back to a plain string, preferring English, falling
+        // back to Polish, and finally a literal placeholder for the
+        // (untested) case of a row with neither. Each step is guarded by
+        // `LIKE '{%'` — once a row is unwrapped it's a plain string, not
+        // valid JSON, so a later step's own JSON_EXTRACT on that same row
+        // would fail outright rather than simply finding nothing.
+        DB::statement("UPDATE tags SET name = JSON_UNQUOTE(JSON_EXTRACT(name, '$.en')) WHERE name LIKE '{%' AND JSON_EXTRACT(name, '$.en') IS NOT NULL");
+        DB::statement("UPDATE tags SET name = JSON_UNQUOTE(JSON_EXTRACT(name, '$.pl')) WHERE name LIKE '{%' AND JSON_EXTRACT(name, '$.pl') IS NOT NULL");
+        DB::statement("UPDATE tags SET name = 'tag' WHERE name LIKE '{%'");
 
         Schema::table('tags', function (Blueprint $table) {
+            $table->string('name')->nullable(false)->change();
             $table->unique('name');
         });
     }
