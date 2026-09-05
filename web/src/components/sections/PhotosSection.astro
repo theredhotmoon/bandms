@@ -60,7 +60,7 @@ const galleryAlbums = visible.map(album => {
   return {
     id: album.id,
     title: album.title,
-    categories: (album.tags ?? []).map(tag => tag.slug),
+    categories: (album.tags ?? []).map(tag => tag.slug_en),
     metaLine: [category, when].filter(Boolean).join(' · '),
     shotAt,
     coverUrl: album.cover_url ?? album.photos?.[0]?.image_url ?? null,
@@ -83,7 +83,7 @@ const categories = Object.values(
   visible
     .flatMap(a => a.tags ?? [])
     .reduce<Record<string, { slug: string; label: string }>>((acc, tag) => {
-      acc[tag.slug] ??= { slug: tag.slug, label: tag.name }
+      acc[tag.slug_en] ??= { slug: tag.slug_en, label: tag.name }
       return acc
     }, {}),
 )

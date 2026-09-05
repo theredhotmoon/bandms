@@ -12,8 +12,8 @@ class TagFactory extends Factory
         $name = fake()->unique()->word();
 
         return [
-            'name' => ucfirst($name),
-            'slug' => Str::slug($name),
+            'name'    => ['en' => ucfirst($name)],
+            'slug_en' => Str::slug($name),
         ];
     }
 }

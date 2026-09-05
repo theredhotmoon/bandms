@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-interface Tag { id: number; name: string; slug: string }
+interface Tag { id: number; name: string; slug_en: string }
 
 interface PostSummary {
   id: number
@@ -26,12 +26,12 @@ const tag = ref('all')
 
 const allTags = computed(() => {
   const seen = new Map<string, string>()
-  props.posts.forEach(p => p.tags.forEach(t => seen.set(t.slug, t.name)))
+  props.posts.forEach(p => p.tags.forEach(t => seen.set(t.slug_en, t.name)))
   return [...seen.entries()].map(([slug, name]) => ({ slug, name }))
 })
 
 const matched = computed(() => props.posts.filter(p => {
-  const okTag = tag.value === 'all' || p.tags.some(t => t.slug === tag.value)
+  const okTag = tag.value === 'all' || p.tags.some(t => t.slug_en === tag.value)
   const hay = ((p.title ?? '') + ' ' + (p.intro ?? '')).toLowerCase()
   const okQ  = !q.value.trim() || hay.includes(q.value.trim().toLowerCase())
   return okTag && okQ

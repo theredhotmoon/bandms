@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Http\Resources\ShopItemVariantResource;
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -34,9 +35,9 @@ class ShopItemResource extends JsonResource
                 'sort_order'=> $p->sort_order,
             ])->values(),
             'tags'             => $this->tags->map(fn ($t) => [
-                'id'   => $t->id,
-                'name' => $t->name,
-                'slug' => $t->slug,
+                'id'      => $t->id,
+                'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
+                'slug_en' => $t->slug_en,
             ])->values(),
             'release_ids'      => $this->releases->pluck('id')->values(),
             'concert_ids'      => $this->concerts->pluck('id')->values(),
