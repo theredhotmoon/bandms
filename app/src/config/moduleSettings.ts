@@ -34,20 +34,27 @@ export interface ModuleSettingField {
 export const NON_PAGE_MODULES = new Set(['footer'])
 
 /**
+ * Every page module gets an H1 field for its page header.
+ */
+function pageTitleField(placeholder: string): ModuleSettingField {
+  return {
+    key: 'title',
+    label: 'Page title',
+    type: 'text',
+    maxLength: 60,
+    help: 'Shown as the H1 at the top of the page header.',
+    placeholder,
+  }
+}
+
+/**
  * Every page module gets these two — the H1 in the page's header and the
  * wording shown below it. Prepended to a module's own fields so the header
  * inputs always come first in the form.
  */
 function pageHeaderFields(titlePlaceholder: string): ModuleSettingField[] {
   return [
-    {
-      key: 'title',
-      label: 'Page title',
-      type: 'text',
-      maxLength: 60,
-      help: 'Shown as the H1 at the top of the page header.',
-      placeholder: titlePlaceholder,
-    },
+    pageTitleField(titlePlaceholder),
     {
       key: 'lead',
       label: 'Wording below title',
@@ -70,14 +77,7 @@ export const MODULE_SETTINGS_SCHEMA: Record<string, ModuleSettingField[]> = {
   epk: pageHeaderFields('EPK'),
   newsletter: pageHeaderFields('Newsletter'),
   contact: [
-    {
-      key: 'title',
-      label: 'Page title',
-      type: 'text',
-      maxLength: 60,
-      help: 'Shown as the H1 at the top of the page header.',
-      placeholder: 'Contact',
-    },
+    pageTitleField('Contact'),
     {
       key: 'kicker',
       label: 'Kicker',
