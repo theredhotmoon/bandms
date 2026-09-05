@@ -274,7 +274,7 @@ const promo = [
     <ThemeSlot name="hero-backdrop" />
     <div class="ct-hero-in">
       {s.kicker && <span class="ct-kicker">{s.kicker}</span>}
-      <h1 class="ct-h1">{t.title}</h1>
+      <h1 class="ct-h1">{s.title || t.title}</h1>
       {s.lead && <p class="ct-lead">{s.lead}</p>}
 
       <div class="ct-actions">

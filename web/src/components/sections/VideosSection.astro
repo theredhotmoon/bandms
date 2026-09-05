@@ -7,7 +7,7 @@ import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import VideoGallery from '@/components/VideoGallery.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getMusicVideos, getBandProfile } from '@/lib/cms'
+import { getMusicVideos, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { youtubeEmbedUrl, youtubeThumbnail, formatNumber } from '@/lib/i18n'
 
 interface Props {
@@ -16,10 +16,12 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const [videos, profile] = await Promise.all([
+const [videos, profile, siteConfig] = await Promise.all([
   getMusicVideos().catch(() => []),
   getBandProfile(lang),
+  getSiteConfig(lang),
 ])
+const s = siteConfig.module_config?.videos?.settings ?? {}
 
 const COPY = {
   en: {
@@ -73,7 +75,7 @@ const galleryVideos = [...videos]
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >
-  <PageHero kicker={t.kicker} title={t.title} lead={t.lead} leadWidth={660} />
+  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={660} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

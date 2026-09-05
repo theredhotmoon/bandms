@@ -26,6 +26,7 @@ const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
 
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+const s = siteConfig.module_config?.about?.settings ?? {}
 
 const COPY = {
   en: {
@@ -160,8 +161,8 @@ const contacts = [
     <ThemeSlot name="hero-backdrop" />
     <div class="ab-hero-in">
       <span class="ab-kicker">{t.kicker}</span>
-      <h1 class="ab-h1">{t.title}</h1>
-      <p class="ab-lead">{t.lead}</p>
+      <h1 class="ab-h1">{s.title || t.title}</h1>
+      <p class="ab-lead">{s.lead || t.lead}</p>
 
       <div class="ab-pills">
         {profile.formation_year && (

@@ -7,7 +7,7 @@ import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getEpk, getBandProfile } from '@/lib/cms'
+import { getEpk, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDate, formatNumber } from '@/lib/i18n'
 
 interface Props {
@@ -16,7 +16,8 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const [epk, profile] = await Promise.all([getEpk(lang), getBandProfile(lang)])
+const [epk, profile, siteConfig] = await Promise.all([getEpk(lang), getBandProfile(lang), getSiteConfig(lang)])
+const s = siteConfig.module_config?.epk?.settings ?? {}
 
 const COPY = {
   en: {
@@ -87,7 +88,7 @@ const contacts = [
   description={t.lead}
   noindex
 >
-  <PageHero kicker={t.kicker} title={epk.name} lead={t.lead} titleSize={110} leadWidth={640}>
+  <PageHero kicker={t.kicker} title={s.title || epk.name} lead={s.lead || t.lead} titleSize={110} leadWidth={640}>
     <div slot="meta" class="epk-facts">
       {facts.map(fact => (
         <span class="epk-fact">

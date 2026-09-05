@@ -12,15 +12,17 @@ const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsFilter from '@/components/NewsFilter.vue'
-import { getPosts, getBandProfile } from '@/lib/cms'
+import { getPosts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import FaqSection from '@/components/sections/FaqSection.astro'
 
 const ACCENT = 'var(--color-accent)'
 
-const [firstPage, profile] = await Promise.all([
+const [firstPage, profile, siteConfig] = await Promise.all([
   getPosts(lang, 1),
   getBandProfile(lang),
+  getSiteConfig(lang),
 ])
+const s = siteConfig.module_config?.posts?.settings ?? {}
 
 let allPosts = [...firstPage.data]
 if (firstPage.meta.last_page > 1) {
@@ -44,8 +46,8 @@ if (firstPage.meta.last_page > 1) {
       <div class="hero-checker" aria-hidden="true"></div>
       <div class="hero-content">
         <span class="hero-kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
-        <h1 class="hero-title">News</h1>
-        <p class="hero-lead">Studio updates, fresh dates and stories from the road.</p>
+        <h1 class="hero-title">{s.title || 'News'}</h1>
+        <p class="hero-lead">{s.lead || 'Studio updates, fresh dates and stories from the road.'}</p>
       </div>
     </section>
 
