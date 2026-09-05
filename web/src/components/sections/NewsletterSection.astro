@@ -6,7 +6,7 @@ import PageHero from '@/components/PageHero.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getBandProfile } from '@/lib/cms'
+import { getBandProfile, getSiteConfig } from '@/lib/cms'
 
 interface Props {
   lang: Locale
@@ -14,7 +14,8 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const profile = await getBandProfile(lang)
+const [profile, siteConfig] = await Promise.all([getBandProfile(lang), getSiteConfig(lang)])
+const s = siteConfig.module_config?.newsletter?.settings ?? {}
 
 const COPY = {
   en: {
@@ -54,7 +55,7 @@ const t = COPY[lang] ?? COPY.en
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >
-  <PageHero kicker={t.kicker} title={t.title} lead={t.lead} leadWidth={620} />
+  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

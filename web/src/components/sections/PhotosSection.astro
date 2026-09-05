@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import GalleryBrowser from '@/components/GalleryBrowser.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getAlbums, getBandProfile } from '@/lib/cms'
+import { getAlbums, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDateShort } from '@/lib/i18n'
 
 interface Props {
@@ -14,7 +14,8 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const [albums, profile] = await Promise.all([getAlbums(), getBandProfile(lang)])
+const [albums, profile, siteConfig] = await Promise.all([getAlbums(), getBandProfile(lang), getSiteConfig(lang)])
+const s = siteConfig.module_config?.photos?.settings ?? {}
 
 const COPY = {
   en: {
@@ -99,8 +100,8 @@ const categories = Object.values(
     <ThemeSlot name="hero-backdrop" />
     <div class="gl-hero-in">
       <span class="gl-kicker">{t.kicker}</span>
-      <h1 class="gl-h1">{t.title}</h1>
-      <p class="gl-lead">{t.lead}</p>
+      <h1 class="gl-h1">{s.title || t.title}</h1>
+      <p class="gl-lead">{s.lead || t.lead}</p>
     </div>
   </section>
 

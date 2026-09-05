@@ -33,6 +33,7 @@ const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Pro
 
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+const s = siteConfig.module_config?.releases?.settings ?? {}
 
 // Tracklists and lyrics live on the detail resource, not the list one, so each
 // release is fetched individually. This is a build-time cost paid once, not a
@@ -183,8 +184,8 @@ const priceOf = (item: (typeof physical)[number]) => {
     <div class="mu-hero-in">
       <div>
         <span class="mu-kicker">{t.kicker}</span>
-        <h1 class="mu-h1">{t.title}</h1>
-        <p class="mu-lead">{t.lead}</p>
+        <h1 class="mu-h1">{s.title || t.title}</h1>
+        <p class="mu-lead">{s.lead || t.lead}</p>
       </div>
       {socialLinks.length > 0 && (
         <div class="mu-hero-social"><SocialLinks links={socialLinks} size="md" /></div>

@@ -11,15 +11,17 @@ const { lang, alternates } = Astro.props
 const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getShopItems, getShopCategories, getBandProfile } from '@/lib/cms'
+import { getShopItems, getShopCategories, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { formatPrice, preferredPrice } from '@/stores/cart'
 import FaqSection from '@/components/sections/FaqSection.astro'
 
-const [items, categories, profile] = await Promise.all([
+const [items, categories, profile, siteConfig] = await Promise.all([
   getShopItems(),
   getShopCategories(),
   getBandProfile(lang),
+  getSiteConfig(lang),
 ])
+const s = siteConfig.module_config?.merch?.settings ?? {}
 
 const available = items.filter(i => i.is_available || i.is_presale)
 ---
@@ -33,7 +35,8 @@ const available = items.filter(i => i.is_available || i.is_presale)
   <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
     <div class="mb-12">
       <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">Merch</h1>
+      <h1 class="text-4xl font-black text-body sm:text-5xl">{s.title || 'Merch'}</h1>
+      {s.lead && <p class="mt-2 text-muted">{s.lead}</p>}
     </div>
 
     {available.length === 0 ? (

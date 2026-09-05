@@ -14,14 +14,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ShowsMap from '@/components/ShowsMap.vue'
 import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import { getConcerts, getBandProfile } from '@/lib/cms'
+import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { isUpcoming } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
 
 const ACCENT = 'var(--color-accent)'
 
-const [concerts, profile] = await Promise.all([getConcerts(), getBandProfile(lang)])
+const [concerts, profile, siteConfig] = await Promise.all([getConcerts(), getBandProfile(lang), getSiteConfig(lang)])
+const s = siteConfig.module_config?.concerts?.settings ?? {}
 
 const upcoming = concerts
   .filter(c => isUpcoming(c.date))
@@ -76,10 +77,9 @@ function getTypeLabel(concert: Concert) {
       <div class="hero-inner">
         <div class="hero-text">
           <span class="kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
-          <h1 class="page-title">Shows</h1>
+          <h1 class="page-title">{s.title || 'Shows'}</h1>
           <p class="lead">
-            Brass, bass and the upbeat — live. Every date we're playing next,
-            and every floor we've already moved.
+            {s.lead || "Brass, bass and the upbeat — live. Every date we're playing next, and every floor we've already moved."}
           </p>
         </div>
         <div class="stats">
