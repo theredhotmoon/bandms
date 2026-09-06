@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,9 +21,9 @@ class PressReleaseSummaryResource extends JsonResource
             'published_at'   => $this->published_at?->toIso8601String(),
             'featured'        => (bool) $this->featured,
             'tags'            => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($t) => [
-                'id'   => $t->id,
-                'name' => $t->name,
-                'slug' => $t->slug,
+                'id'      => $t->id,
+                'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
+                'slug_en' => $t->slug_en,
             ])),
             'concerts_count'  => $this->concerts_count ?? 0,
             'posts_count'     => $this->posts_count ?? 0,

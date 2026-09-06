@@ -78,7 +78,7 @@ describe('POST /api/press-releases', function () {
 
     it('creates a press release with tags', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Review', 'slug' => 'review']);
+        $tag = Tag::factory()->create(['name' => 'Review', 'slug_en' => 'review']);
 
         $this->postJson('/api/press-releases', [
             'url'     => 'https://example.com',

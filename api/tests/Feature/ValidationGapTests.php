@@ -99,37 +99,46 @@ describe('PUT /api/posts/{post} — validation', function () {
 // Append this describe block to api/tests/Feature/TagTest.php
 
 describe('PUT /api/tags/{tag} — validation', function () {
-    it('rejects a name exceeding 100 characters', function () {
+    it('rejects a name.en exceeding 100 characters', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
 
-        $this->putJson("/api/tags/{$tag->id}", ['name' => str_repeat('a', 101)])
+        $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => str_repeat('a', 101)]])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name.en']);
     });
 
-    it('accepts a name of exactly 100 characters', function () {
+    it('accepts a name.en of exactly 100 characters', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
 
-        $this->putJson("/api/tags/{$tag->id}", ['name' => str_repeat('a', 100)])
+        $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => str_repeat('a', 100)]])
             ->assertSuccessful();
     });
 
-    it('rejects an empty name string', function () {
+    it('rejects an empty name object (no locale filled)', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
 
-        $this->putJson("/api/tags/{$tag->id}", ['name' => ''])
+        $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => '', 'pl' => '']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name.en', 'name.pl']);
     });
 
     it('rejects omitting name entirely (name is required on update)', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
 
         $this->putJson("/api/tags/{$tag->id}", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
+
+    it('rejects a name payload with an unregistered locale key', function () {
+        $this->actingAsAdmin();
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+
+        $this->putJson("/api/tags/{$tag->id}", ['name' => ['de' => 'Rock']])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
     });

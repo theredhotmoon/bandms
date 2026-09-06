@@ -6,6 +6,7 @@ use App\Models\BandProfile;
 use App\Models\Concert;
 use App\Models\Photo;
 use App\Models\PressRelease;
+use App\Support\Locales;
 
 class EpkSnapshotBuilder
 {
@@ -94,7 +95,10 @@ class EpkSnapshotBuilder
                 'og_image'       => $pr->og_image,
                 'og_site_name'   => $pr->og_site_name,
                 'published_at'   => $pr->published_at?->toIso8601String(),
-                'tags'           => $pr->tags->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])->values()->all(),
+                'tags'           => $pr->tags->map(fn ($t) => [
+                    'id'   => $t->id,
+                    'name' => Locales::resolve($t->getTranslations('name')) ?? '',
+                ])->values()->all(),
             ])->values()->all(),
             'upcoming_concerts' => $upcomingConcerts->map(fn ($c) => [
                 'id'         => $c->id,

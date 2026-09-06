@@ -52,7 +52,7 @@ function getTicketLink(concert: Concert) {
   return concert.links?.find(l => /ticket|buy|bilet/i.test(l.label))?.url ?? null
 }
 function getTypeLabel(concert: Concert) {
-  const slug = concert.tags?.find(t => ['festival','support','club'].includes(t.slug))?.slug
+  const slug = concert.tags?.find(t => ['festival','support','club'].includes(t.slug_en))?.slug_en
   if (slug === 'festival') return 'Festival'
   if (slug === 'support') return 'Support'
   return null

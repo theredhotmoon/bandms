@@ -116,11 +116,11 @@ test.describe('Tags Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
+    // Neither locale input carries `required` — a Polish-only name is valid
+    // — so the empty-name case is enforced server-side and surfaces as a
+    // field error under the name inputs, keyed per locale (name.en/name.pl).
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    // input[required] with empty value — browser HTML5 validation fires
-    const nameInput = modal.locator('input[required]').first()
-    const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid)
-    expect(isInvalid).toBe(true)
+    await expect(modal.locator('.field-error').first()).toBeVisible({ timeout: 8000 })
   })
 })
