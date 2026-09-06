@@ -646,12 +646,16 @@ const TYPE_COLOURS: Record<string, string> = {
 .currency-chip-rm:hover { color: #f87171; }
 .currency-empty { font-size: 0.78rem; color: #334155; }
 .currency-add-row { display: flex; gap: 0.5rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field-label { font-size: 0.78rem; font-weight: 500; color: #94a3b8; }
 .field-input {
   background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
   color: #e2e8f0; font-size: 0.8125rem; padding: 0.4375rem 0.625rem;
-  outline: none; transition: border-color 120ms;
+  outline: none; transition: border-color 120ms; width: 100%;
 }
 .field-input:focus { border-color: #555555; }
+.field-input--error { border-color: #f87171 !important; }
+.field-error { font-size: 0.72rem; color: #f87171; }
 .currency-input { width: 5rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .btn-add-currency {
   padding: 0.4rem 0.75rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
