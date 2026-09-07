@@ -157,6 +157,14 @@ async function confirmDelete() {
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="40rem" @close="closeModal">
       <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">Loading…</div>
+      <!--
+        Without this branch a failed fetch renders an empty form that is still
+        an *update*: saving it would wipe the contact's details and every
+        relation, including the bands just assigned to them.
+      -->
+      <div v-else-if="!isCreating && !fullRecord.data.value" class="py-8 text-center text-sm" style="color:#f87171;">
+        Could not load this contact. Close and try again.
+      </div>
       <AuthorForm
         v-else
         :initial="isCreating ? null : (fullRecord.data.value ?? null)"

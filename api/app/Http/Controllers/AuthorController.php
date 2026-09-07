@@ -95,7 +95,14 @@ class AuthorController extends Controller
         $author->concerts()->sync($request->input('concert_ids', []));
         $author->tours()->sync($request->input('tour_ids', []));
         $author->photos()->sync($request->input('photo_ids', []));
-        $author->bands()->sync($request->input('band_ids', []));
+
+        // `author_bands` is the one pivot with two owning editors — the band
+        // form writes it too. Absent ids must therefore mean "leave alone",
+        // matching BandController::syncContacts, or whichever side omits them
+        // wins and silently detaches the other's work.
+        if ($request->has('band_ids')) {
+            $author->bands()->sync($request->input('band_ids', []));
+        }
 
         // Only ever the validated fields: SocialLink::$fillable includes every
         // owner FK, so spreading raw request input here lets a caller attach the

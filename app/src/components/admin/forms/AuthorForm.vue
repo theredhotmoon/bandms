@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Author, AuthorPayload } from '@/types/author'
 import type { SocialLinkPayload } from '@bandms/rider-core'
@@ -60,6 +60,13 @@ const expandedSections = reactive({
   concerts:      false,
   tours:         false,
   bands:         false,
+})
+
+/** Laravel keys a bad id as `band_ids.0`; a plain lookup renders nothing. */
+const bandsError = computed(() => {
+  const errs = props.errors ?? {}
+  const key = Object.keys(errs).find((k) => k === 'band_ids' || k.startsWith('band_ids.'))
+  return key ? errs[key]?.[0] ?? null : null
 })
 
 function toggle(arr: number[], id: number) {
@@ -188,6 +195,7 @@ function submit() {
         </label>
       </div>
     </div>
+    <p v-if="bandsError" class="field-error">{{ bandsError }}</p>
 
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" class="btn-ghost" @click="emit('cancel')">Cancel</button>

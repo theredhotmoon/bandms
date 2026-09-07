@@ -13,20 +13,27 @@ export function useBands() {
     enabled: () => !!token.value,
   })
 
+  // Band writes touch `author_bands`, so cached authors (and any open author
+  // detail) are stale afterwards — a stale detail would re-submit old band_ids.
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['bands'] })
+    queryClient.invalidateQueries({ queryKey: ['authors'] })
+  }
+
   const create = useMutation({
     mutationFn: (payload: BandPayload) => createBand(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bands'] }),
+    onSuccess: invalidate,
   })
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: BandPayload }) =>
       updateBand(token.value!, id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bands'] }),
+    onSuccess: invalidate,
   })
 
   const remove = useMutation({
     mutationFn: (id: number) => deleteBand(token.value!, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bands'] }),
+    onSuccess: invalidate,
   })
 
   return { query, create, update, remove }

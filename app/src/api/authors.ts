@@ -1,17 +1,17 @@
 import type { Author, AuthorPayload, AuthorSummary } from '@/types/author'
-import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface AuthorListResponse { data: AuthorSummary[] }
 interface AuthorResponse     { data: Author }
 
-export async function fetchAuthors(): Promise<AuthorSummary[]> {
-  const res = await fetch(`${API_BASE}/api/authors`, { headers: jsonHeaders })
+export async function fetchAuthors(token: string): Promise<AuthorSummary[]> {
+  const res = await fetch(`${API_BASE}/api/authors`, { headers: authHeaders(token) })
   return handleResponse<AuthorListResponse>(res).then((r) => r.data)
 }
 
-export async function fetchAuthor(id: number): Promise<Author> {
+export async function fetchAuthor(token: string, id: number): Promise<Author> {
   assertSafeId(id)
-  const res = await fetch(`${API_BASE}/api/authors/${id}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/authors/${id}`, { headers: authHeaders(token) })
   return handleResponse<AuthorResponse>(res).then((r) => r.data)
 }
 

@@ -9,11 +9,20 @@ use Laravel\Passport\Passport;
 // ── GET /api/authors ──────────────────────────────────────────────────────────
 
 describe('GET /api/authors', function () {
-    it('is publicly accessible', function () {
-        $this->getJson('/api/authors')->assertSuccessful();
+    // Authors hold personal contact data and the bands each person handles,
+    // so the reads sit behind the same admin gate as the writes.
+    it('returns 401 without authentication', function () {
+        $this->getJson('/api/authors')->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin roles', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'member']));
+
+        $this->getJson('/api/authors')->assertForbidden();
     });
 
     it('returns authors ordered by name', function () {
+        $this->actingAsAdmin();
         Author::create(['name' => 'Zara Jones']);
         Author::create(['name' => 'Alice Smith']);
 
@@ -26,7 +35,14 @@ describe('GET /api/authors', function () {
 // ── GET /api/authors/{author} ─────────────────────────────────────────────────
 
 describe('GET /api/authors/{author}', function () {
+    it('returns 401 without authentication', function () {
+        $author = Author::create(['name' => 'Private Person']);
+
+        $this->getJson("/api/authors/{$author->id}")->assertUnauthorized();
+    });
+
     it('returns the author', function () {
+        $this->actingAsAdmin();
         $author = Author::create(['name' => 'Bob Brown', 'email' => 'bob@music.com']);
 
         $this->getJson("/api/authors/{$author->id}")
@@ -36,6 +52,8 @@ describe('GET /api/authors/{author}', function () {
     });
 
     it('returns 404 for a non-existent author', function () {
+        $this->actingAsAdmin();
+
         $this->getJson('/api/authors/9999')->assertNotFound();
     });
 });
@@ -363,6 +381,19 @@ describe('author bands', function () {
         $this->postJson('/api/authors', ['name' => 'Bad Bands', 'band_ids' => [9999]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['band_ids.0']);
+    });
+
+    it('keeps bands when band_ids is omitted entirely', function () {
+        $this->actingAsAdmin();
+        $band = \App\Models\Band::create(['name' => 'Kept Band']);
+        $author = Author::create(['name' => 'Renamed Contact']);
+        $author->bands()->attach($band);
+
+        $this->putJson("/api/authors/{$author->id}", ['name' => 'Renamed Contact 2'])
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.bands');
+
+        $this->assertDatabaseHas('author_bands', ['author_id' => $author->id, 'band_id' => $band->id]);
     });
 
     it('detaches the pivot row when a band is deleted', function () {

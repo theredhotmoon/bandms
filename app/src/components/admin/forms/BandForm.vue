@@ -50,6 +50,16 @@ const selectedAuthors = computed(() =>
   props.authors.filter((a) => authorIds.value.includes(a.id)),
 )
 
+/**
+ * Laravel reports a bad id as `author_ids.0`, not `author_ids`, so a plain
+ * lookup renders nothing and the 422 is silent — the modal just sits there.
+ */
+const contactError = computed(() => {
+  const errs = props.errors ?? {}
+  const key = Object.keys(errs).find((k) => k === 'author_ids' || k.startsWith('author_ids.'))
+  return key ? errs[key]?.[0] ?? null : null
+})
+
 function toggleAuthor(id: number) {
   const i = authorIds.value.indexOf(id)
   if (i === -1) authorIds.value.push(id)
@@ -107,7 +117,7 @@ function submit() {
         <input
           v-if="showContactSearch"
           v-model="contactSearch"
-          type="search"
+          type="text"
           class="field-input contact-search"
           placeholder="Search contacts…"
         />
@@ -127,7 +137,7 @@ function submit() {
         </div>
       </template>
 
-      <p v-if="errors?.author_ids" class="field-error">{{ errors.author_ids[0] }}</p>
+      <p v-if="contactError" class="field-error">{{ contactError }}</p>
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
