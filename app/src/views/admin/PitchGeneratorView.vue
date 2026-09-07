@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAuthors } from '@/composables/useAuthors'
+import { useBands } from '@/composables/useBands'
+import { bandMention, defaultContact } from '@/utils/pitchRecipient'
 import type { AuthorSummary } from '@/types/author'
 
 const { query: profileQ } = useBandProfile()
 const { query: releasesQ } = useReleases()
 const { query: concertsQ } = useConcerts()
 const { query: authorsQ } = useAuthors()
+const { query: bandsQ } = useBands()
 
 const VALID_TYPES = ['venue', 'blog', 'playlist', 'sync', 'festival', 'band'] as const
 type PitchType = typeof VALID_TYPES[number]
@@ -24,10 +27,50 @@ function isValidType(v: unknown): v is PitchType {
 
 const qType = route.query.type
 const selectedType = ref<PitchType>(isValidType(qType) ? qType : 'venue')
-const recipientName = ref(typeof route.query.band === 'string' ? route.query.band : '')
+const bandName = ref(typeof route.query.band === 'string' ? route.query.band : '')
+const recipientName = ref(bandName.value)
 const bandLastGig = ref<string>(typeof route.query.lastGig === 'string' ? route.query.lastGig : '')
 const customNote = ref('')
 const copied = ref(false)
+
+// ── The band's assigned contact people ────────────────────────────────────
+
+const qBandId = Number(route.query.bandId)
+const bandId = Number.isSafeInteger(qBandId) && qBandId > 0 ? qBandId : null
+
+const bandContacts = computed(() =>
+  bandId === null ? [] : bandsQ.data.value?.find((b) => b.id === bandId)?.contacts ?? [],
+)
+
+const selectedContactId = ref<number | null>(null)
+
+/**
+ * Address the pitch to the assigned person rather than to the band. The bands
+ * query resolves after mount, so this runs when it lands — once, and only
+ * while the recipient is still the band name it was seeded with, so it can
+ * never overwrite something typed in the meantime.
+ */
+watch(
+  bandContacts,
+  (contacts) => {
+    if (selectedContactId.value !== null) return
+    if (recipientName.value.trim() !== bandName.value.trim()) return
+
+    const contact = defaultContact(contacts)
+    if (!contact) return
+
+    selectedContactId.value = contact.id
+    recipientName.value = contact.name
+  },
+  { immediate: true },
+)
+
+function chooseContact(id: number) {
+  const contact = bandContacts.value.find((c) => c.id === id)
+  if (!contact) return
+  selectedContactId.value = id
+  recipientName.value = contact.name
+}
 
 const matchedAuthor = computed(() => {
   const q = recipientName.value.trim().toLowerCase()
@@ -135,9 +178,10 @@ const pitch = computed((): string => {
       const lastGigText = bandLastGig.value
         ? `since ${fmtDate(bandLastGig.value)}`
         : 'in a while'
+      const withBand = bandMention(bandName.value, recipientName.value)
       return (
         to +
-        `We haven't played a gig together ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` +
+        `We haven't played a gig together${withBand} ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` +
         note + epk + contact + sign
       )
     }
@@ -197,6 +241,19 @@ async function copyPitch() {
                 <span class="contact-hint">Not in your contacts yet.</span>
               </template>
             </div>
+          </div>
+
+          <div v-if="bandContacts.length > 1" class="control-group">
+            <label class="control-label">Contact at {{ bandName }}</label>
+            <select
+              class="ctrl-input"
+              :value="selectedContactId ?? ''"
+              @change="chooseContact(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="c in bandContacts" :key="c.id" :value="c.id">
+                {{ c.name }}{{ c.email ? ` — ${c.email}` : '' }}
+              </option>
+            </select>
           </div>
 
           <div v-if="selectedType === 'band'" class="control-group">

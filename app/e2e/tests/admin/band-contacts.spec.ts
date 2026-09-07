@@ -94,6 +94,41 @@ test.describe.serial('Admin Bands — contact people', () => {
     await expect(modal).not.toBeVisible()
   })
 
+  test('Message addresses the pitch to the assigned person, not the band', async ({ page }) => {
+    await page.goto('/admin/bands')
+    await page.waitForLoadState('networkidle')
+    await searchTable(page, BAND_NAME)
+
+    await page.locator('tr').filter({ hasText: BAND_NAME }).getByRole('button', { name: 'Message' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Pitch Generator' })).toBeVisible()
+
+    // The recipient field is seeded with the band name and swapped for the
+    // contact once the bands query lands.
+    const recipient = page.locator('input[placeholder="Jane, John, The team…"]')
+    await expect(recipient).toHaveValue(CONTACT_NAME)
+
+    // The greeting names the person; the body still names the band.
+    const pitch = page.locator('.pitch-text')
+    await expect(pitch).toContainText(`Hi ${CONTACT_NAME},`)
+    await expect(pitch).toContainText(`with ${BAND_NAME}`)
+  })
+
+  test('a typed recipient is not overwritten when the bands query lands', async ({ page }) => {
+    await page.goto('/admin/bands')
+    await page.waitForLoadState('networkidle')
+    await searchTable(page, BAND_NAME)
+
+    await page.locator('tr').filter({ hasText: BAND_NAME }).getByRole('button', { name: 'Message' }).click()
+    await expect(page.getByRole('heading', { name: 'Pitch Generator' })).toBeVisible()
+
+    const recipient = page.locator('input[placeholder="Jane, John, The team…"]')
+    await recipient.fill('Someone Else')
+
+    await expect(recipient).toHaveValue('Someone Else')
+    await expect(page.locator('.pitch-text')).toContainText('Hi Someone Else,')
+  })
+
   test('unassigning the contact clears the table cell', async ({ page }) => {
     await page.goto('/admin/bands')
     await page.waitForLoadState('networkidle')

@@ -25,6 +25,9 @@ function sendMessage(band: Band) {
     query: {
       type: 'band',
       band: band.name,
+      // The pitch generator reads the band's assigned contacts from this id,
+      // so it can address a person instead of greeting the band by name.
+      bandId: String(band.id),
       ...(band.last_gig_at ? { lastGig: band.last_gig_at } : {}),
     },
   })
