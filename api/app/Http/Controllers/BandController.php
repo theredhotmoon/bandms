@@ -7,6 +7,7 @@ use App\Models\Band;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -34,12 +35,12 @@ class BandController extends Controller
             return $band;
         });
 
-        return new BandResource($band->load('authors'));
+        return new BandResource($this->withAggregates($band));
     }
 
     public function show(Band $band): BandResource
     {
-        return new BandResource($band->load('authors'));
+        return new BandResource($this->withAggregates($band));
     }
 
     public function update(Request $request, Band $band): BandResource
@@ -51,7 +52,7 @@ class BandController extends Controller
             $this->syncContacts($band, $request);
         });
 
-        return new BandResource($band->load('authors'));
+        return new BandResource($this->withAggregates($band));
     }
 
     public function destroy(Band $band): JsonResponse
@@ -78,7 +79,20 @@ class BandController extends Controller
 
         // `author_ids` lives in a pivot, not on the model — passing it to
         // create()/update() would blow up on an unknown column.
-        return array_diff_key($validated, ['author_ids' => null]);
+        return Arr::except($validated, 'author_ids');
+    }
+
+    /**
+     * `index` reports a gig count and a last-gig date off aggregates. Without
+     * these the single-band responses answer 0 and null for a band that has
+     * played a dozen times — the resource reads the same properties whichever
+     * endpoint built it.
+     */
+    private function withAggregates(Band $band): Band
+    {
+        return $band->load('authors')
+            ->loadCount('concerts')
+            ->loadMax('concerts', 'date');
     }
 
     /**

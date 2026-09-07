@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Author;
+use App\Models\Band;
 use App\Models\BandMember;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -350,7 +351,7 @@ describe('author social links', function () {
 describe('author bands', function () {
     it('attaches bands to an author on create', function () {
         $this->actingAsAdmin();
-        $band = \App\Models\Band::create(['name' => 'Linked Band']);
+        $band = Band::create(['name' => 'Linked Band']);
 
         $this->postJson('/api/authors', ['name' => 'Band Contact', 'band_ids' => [$band->id]])
             ->assertCreated()
@@ -362,8 +363,8 @@ describe('author bands', function () {
 
     it('syncs bands on update', function () {
         $this->actingAsAdmin();
-        $old = \App\Models\Band::create(['name' => 'Dropped Band']);
-        $new = \App\Models\Band::create(['name' => 'Added Band']);
+        $old = Band::create(['name' => 'Dropped Band']);
+        $new = Band::create(['name' => 'Added Band']);
         $author = Author::create(['name' => 'Switching Contact']);
         $author->bands()->attach($old);
 
@@ -385,7 +386,7 @@ describe('author bands', function () {
 
     it('keeps bands when band_ids is omitted entirely', function () {
         $this->actingAsAdmin();
-        $band = \App\Models\Band::create(['name' => 'Kept Band']);
+        $band = Band::create(['name' => 'Kept Band']);
         $author = Author::create(['name' => 'Renamed Contact']);
         $author->bands()->attach($band);
 
@@ -398,7 +399,7 @@ describe('author bands', function () {
 
     it('detaches the pivot row when a band is deleted', function () {
         $this->actingAsAdmin();
-        $band = \App\Models\Band::create(['name' => 'Doomed Band']);
+        $band = Band::create(['name' => 'Doomed Band']);
         $author = Author::create(['name' => 'Surviving Contact']);
         $author->bands()->attach($band);
 

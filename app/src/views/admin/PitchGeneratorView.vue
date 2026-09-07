@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAuthors } from '@/composables/useAuthors'
-import { useBands } from '@/composables/useBands'
-import { bandMention, defaultContact } from '@/utils/pitchRecipient'
+import { useBandContactPrefill } from '@/composables/useBandContactPrefill'
+import { bandMention } from '@/utils/pitchRecipient'
 import type { AuthorSummary } from '@/types/author'
 
 const { query: profileQ } = useBandProfile()
 const { query: releasesQ } = useReleases()
 const { query: concertsQ } = useConcerts()
 const { query: authorsQ } = useAuthors()
-const { query: bandsQ } = useBands()
 
 const VALID_TYPES = ['venue', 'blog', 'playlist', 'sync', 'festival', 'band'] as const
 type PitchType = typeof VALID_TYPES[number]
@@ -38,39 +37,11 @@ const copied = ref(false)
 const qBandId = Number(route.query.bandId)
 const bandId = Number.isSafeInteger(qBandId) && qBandId > 0 ? qBandId : null
 
-const bandContacts = computed(() =>
-  bandId === null ? [] : bandsQ.data.value?.find((b) => b.id === bandId)?.contacts ?? [],
-)
-
-const selectedContactId = ref<number | null>(null)
-
-/**
- * Address the pitch to the assigned person rather than to the band. The bands
- * query resolves after mount, so this runs when it lands — once, and only
- * while the recipient is still the band name it was seeded with, so it can
- * never overwrite something typed in the meantime.
- */
-watch(
-  bandContacts,
-  (contacts) => {
-    if (selectedContactId.value !== null) return
-    if (recipientName.value.trim() !== bandName.value.trim()) return
-
-    const contact = defaultContact(contacts)
-    if (!contact) return
-
-    selectedContactId.value = contact.id
-    recipientName.value = contact.name
-  },
-  { immediate: true },
-)
-
-function chooseContact(id: number) {
-  const contact = bandContacts.value.find((c) => c.id === id)
-  if (!contact) return
-  selectedContactId.value = id
-  recipientName.value = contact.name
-}
+const {
+  contacts: bandContacts,
+  selectedContactId,
+  chooseContact,
+} = useBandContactPrefill(bandId, bandName.value, recipientName)
 
 const matchedAuthor = computed(() => {
   const q = recipientName.value.trim().toLowerCase()

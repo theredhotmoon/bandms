@@ -286,6 +286,25 @@ describe('band contact people', function () {
         $this->assertDatabaseHas('author_bands', ['author_id' => $author->id, 'band_id' => $band->id]);
     });
 
+    it('reports the gig count and last gig on a single-band response', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Aggregate Band']);
+        $venue = \App\Models\Venue::factory()->create();
+        $band->concerts()->attach(
+            \App\Models\Concert::factory()->create(['date' => '2025-03-12', 'venue_id' => $venue->id])
+        );
+
+        // index has always supplied these; show/store/update answered 0 and null.
+        $this->getJson("/api/bands/{$band->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.gigs_count', 1)
+            ->assertJsonPath('data.last_gig_at', '2025-03-12');
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'Aggregate Band'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.gigs_count', 1);
+    });
+
     it('validates that every author id exists', function () {
         $this->actingAsAdmin();
 
