@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -102,13 +103,32 @@ class AlbumController extends Controller
 
     public function destroy(Album $album): JsonResponse
     {
-        foreach ($album->photos as $photo) {
-            if ($photo->image) {
-                Storage::disk('public')->delete($photo->image);
-            }
-        }
+        // Delete the rows, not just the files.
+        //
+        // photos.album_id is nullOnDelete, so dropping the album used to leave
+        // orphan rows whose `image` still named a file that had just been
+        // deleted. Nothing lists those rows — /api/albums only reaches photos
+        // through an album — but hero_images.photo_id still pointed at them, so
+        // a deleted album could leave every public page requesting a 404 as its
+        // hero backdrop, with no way to see or clear it in the admin.
+        //
+        // Deleting the photo cascades to hero_images, photo_tag and photo_post.
+        $paths = $album->photos->pluck('image')->filter()->all();
 
-        $album->delete();
+        // Rows first, in one transaction; files only once it has committed.
+        // Storage is not transactional, so the orders are not equivalent:
+        // deleting files first means a failure part-way leaves rows pointing at
+        // files that are gone — reintroducing the exact bug above. This way a
+        // failure leaves the album intact, and the worst case is an orphaned
+        // file taking up disk.
+        DB::transaction(function () use ($album) {
+            $album->photos->each->delete();
+            $album->delete();
+        });
+
+        foreach ($paths as $path) {
+            Storage::disk('public')->delete($path);
+        }
 
         return response()->json(null, 204);
     }

@@ -4,6 +4,8 @@ import type { Alternates } from '@/lib/locales'
 import type { Release, ReleasePlatform } from '@/types/release'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import Icon from '@/components/Icon.astro'
 import TrackList from '@/components/TrackList.vue'
 import DiscographyList from '@/components/DiscographyList.vue'
@@ -179,19 +181,28 @@ const priceOf = (item: (typeof physical)[number]) => {
   description={t.lead}
 >
   <!-- HERO -->
-  <section class="mu-hero page-x">
-    <ThemeSlot name="hero-backdrop" />
-    <div class="mu-hero-in">
-      <div>
-        <span class="mu-kicker">{t.kicker}</span>
-        <h1 class="mu-h1">{s.title || t.title}</h1>
-        <p class="mu-lead">{s.lead || t.lead}</p>
-      </div>
+  <PageHero
+    kicker={t.kicker}
+    title={s.title || t.title}
+    lead={s.lead || t.lead}
+    titleSize={150}
+    heroImages={resolveHeroImages(siteConfig, 'releases')}
+  >
+    <Fragment slot="aside">
+      {/*
+        The condition sits INSIDE the Fragment, not around it.
+
+        Astro hoists a named slot into the slots object unconditionally, so
+        `{cond && <Fragment slot="aside">…}` still makes Astro.slots.has('aside')
+        true when cond is false — PageHero then switches to its split grid and
+        renders an empty 40px column. Verified in dist/ by forcing the condition
+        false: .ph-in--split and .ph-aside were both still emitted.
+      */}
       {socialLinks.length > 0 && (
         <div class="mu-hero-social"><SocialLinks links={socialLinks} size="md" /></div>
       )}
-    </div>
-  </section>
+    </Fragment>
+  </PageHero>
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
@@ -369,33 +380,6 @@ const priceOf = (item: (typeof physical)[number]) => {
 
 <style>
   /* ── Hero ──────────────────────────────────────────────────────────────── */
-  .mu-hero {
-    position: relative;
-    overflow: hidden;
-    background: var(--color-inverse);
-    color: var(--color-on-inverse);
-    padding-block: 54px 60px;
-  }
-  .mu-hero-in {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 40px;
-    align-items: end;
-  }
-  .mu-kicker {
-    display: block;
-    font: 800 14px/1 var(--font-body);
-    letter-spacing: .34em;
-    color: var(--color-accent);
-  }
-  .mu-h1 { margin: 16px 0 0; font-size: 150px; line-height: .82; }
-  .mu-lead {
-    margin: 22px 0 0;
-    max-width: 640px;
-    font: 500 20px/1.55 var(--font-body);
-    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
-  }
 
   /* ── Shared section furniture ──────────────────────────────────────────── */
   .mu-sec { padding-block: 56px 52px; position: relative; }
@@ -591,16 +575,12 @@ const priceOf = (item: (typeof physical)[number]) => {
 
   /* ── Responsive ────────────────────────────────────────────────────────── */
   @media (max-width: 1100px) {
-    .mu-h1 { font-size: 96px; }
     .mu-featured { grid-template-columns: 1fr; gap: 28px; }
     .mu-featured-title { font-size: 52px; }
     .mu-where { grid-template-columns: 1fr; gap: 22px; }
     .mu-merch { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 700px) {
-    .mu-hero-in { grid-template-columns: 1fr; align-items: start; }
-    .mu-h1 { font-size: 56px; }
-    .mu-lead { font-size: 16px; }
     .mu-h2 { font-size: 34px; }
     .mu-h2--sm { font-size: 28px; }
     .mu-featured-title { font-size: 36px; }

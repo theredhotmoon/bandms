@@ -3,6 +3,8 @@ import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import Icon from '@/components/Icon.astro'
 import MemberGrid from '@/components/MemberGrid.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
@@ -157,13 +159,13 @@ const contacts = [
   description={bioParagraphs[0] ?? t.lead}
 >
   <!-- HERO -->
-  <section class="ab-hero page-x">
-    <ThemeSlot name="hero-backdrop" />
-    <div class="ab-hero-in">
-      <span class="ab-kicker">{t.kicker}</span>
-      <h1 class="ab-h1">{s.title || t.title}</h1>
-      <p class="ab-lead">{s.lead || t.lead}</p>
-
+  <PageHero
+    kicker={t.kicker}
+    title={s.title || t.title}
+    lead={s.lead || t.lead}
+    heroImages={resolveHeroImages(siteConfig, 'about')}
+  >
+    <Fragment slot="meta">
       <div class="ab-pills">
         {profile.formation_year && (
           <span class="ab-pill">
@@ -176,8 +178,8 @@ const contacts = [
           </span>
         )}
       </div>
-    </div>
-  </section>
+    </Fragment>
+  </PageHero>
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
@@ -302,28 +304,7 @@ const contacts = [
 
 <style>
   /* ── Hero ──────────────────────────────────────────────────────────────── */
-  .ab-hero {
-    position: relative;
-    overflow: hidden;
-    background: var(--color-inverse);
-    color: var(--color-on-inverse);
-    padding-block: 54px 58px;
-  }
-  .ab-hero-in { position: relative; }
 
-  .ab-kicker {
-    display: block;
-    font: 800 14px/1 var(--font-body);
-    letter-spacing: .34em;
-    color: var(--color-accent);
-  }
-  .ab-h1 { margin: 16px 0 0; font-size: 140px; line-height: .82; }
-  .ab-lead {
-    margin: 22px 0 0;
-    max-width: 680px;
-    font: 500 20px/1.55 var(--font-body);
-    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
-  }
 
   .ab-pills { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 26px; }
   .ab-pill {
@@ -483,14 +464,12 @@ const contacts = [
 
   /* ── Responsive ────────────────────────────────────────────────────────── */
   @media (max-width: 1100px) {
-    .ab-h1 { font-size: 96px; }
     .ab-bio-grid { grid-template-columns: 1fr; gap: 28px; }
     .ab-stats-grid { grid-template-columns: repeat(2, 1fr); }
     .ab-press-grid { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 700px) {
-    .ab-h1 { font-size: 56px; }
-    .ab-lead, .ab-bio--lead { font-size: 16px; }
+    .ab-bio--lead { font-size: 16px; }
     .ab-bio { font-size: 16px; }
     .ab-h2 { font-size: 34px; }
     .ab-stats-grid { grid-template-columns: 1fr; }

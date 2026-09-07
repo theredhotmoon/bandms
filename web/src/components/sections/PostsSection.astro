@@ -11,6 +11,8 @@ const { lang, alternates } = Astro.props
 const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import NewsFilter from '@/components/NewsFilter.vue'
 import { getPosts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import FaqSection from '@/components/sections/FaqSection.astro'
@@ -42,14 +44,12 @@ if (firstPage.meta.last_page > 1) {
   <div class="ss">
 
     <!-- ── HERO ──────────────────────────────────────────────── -->
-    <section class="hero">
-      <div class="hero-checker" aria-hidden="true"></div>
-      <div class="hero-content">
-        <span class="hero-kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
-        <h1 class="hero-title">{s.title || 'News'}</h1>
-        <p class="hero-lead">{s.lead || 'Studio updates, fresh dates and stories from the road.'}</p>
-      </div>
-    </section>
+    <PageHero
+      kicker="SKA · SKA-JAZZ · ROCKSTEADY"
+      title={s.title || 'News'}
+      lead={s.lead || 'Studio updates, fresh dates and stories from the road.'}
+      heroImages={resolveHeroImages(siteConfig, 'posts')}
+    />
 
     <!-- checker strip divider -->
     <div class="checker-strip" aria-hidden="true"></div>
@@ -78,44 +78,6 @@ if (firstPage.meta.last_page > 1) {
 
   /* Grain overlay */
 
-  /* ── HERO ──────────────────────────── */
-  .hero {
-    position: relative;
-    background: var(--ink);
-    color: var(--paper);
-    padding: 54px var(--page-gutter) 58px;
-    overflow: hidden;
-  }
-  .hero-checker {
-    position: absolute;
-    inset: 0;
-    background-image: repeating-conic-gradient(rgba(0,0,0,0) 0% 25%, rgba(255,255,255,.05) 0% 50%);
-    background-size: 46px 46px;
-  }
-  .hero-content { position: relative; }
-  .hero-kicker {
-    display: block;
-    font: 800 14px/1 var(--font-body);
-    letter-spacing: .34em;
-    text-transform: uppercase;
-    color: var(--acc);
-    margin-bottom: 16px;
-  }
-  .hero-title {
-    font-family: var(--font-display);
-    font-size: clamp(64px, 12vw, 140px);
-    line-height: .82;
-    text-transform: uppercase;
-    margin: 0;
-    color: var(--paper);
-  }
-  .hero-lead {
-    font: 500 20px/1.55 var(--font-body);
-    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
-    max-width: 640px;
-    margin: 22px 0 0;
-  }
-
   /* checker strip */
   .checker-strip {
     height: 16px;
@@ -123,12 +85,4 @@ if (firstPage.meta.last_page > 1) {
     background-size: 31px 16px;
   }
 
-  /* ── Responsive ──────────────────── */
-  @media (max-width: 1100px) {
-    .hero { padding: 44px 40px 50px; }
-  }
-  @media (max-width: 768px) {
-    .hero { padding: 36px 24px 40px; }
-    .hero-kicker { letter-spacing: .18em; }
-  }
 </style>

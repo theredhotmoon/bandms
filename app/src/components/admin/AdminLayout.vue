@@ -22,7 +22,7 @@ const groupRoutes: Record<GroupId, string[]> = {
   content:    [adminUrl('posts'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
   shows:      [adminUrl('concerts'), adminUrl('tours'), adminUrl('venues'), adminUrl('door')],
   more:       [adminUrl('shop'), adminUrl('bands'), adminUrl('tags'), adminUrl('instruments'), adminUrl('users')],
-  pageconfig: [adminUrl('website-modules'), adminUrl('faqs')],
+  pageconfig: [adminUrl('website-modules'), adminUrl('faqs'), adminUrl('hero-images')],
 }
 
 function groupForRoute(path: string): GroupId | null {
@@ -264,6 +264,10 @@ watch(() => route.path, (path) => {
             <RouterLink :to="adminUrl('faqs')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               FAQ
+            </RouterLink>
+            <RouterLink :to="adminUrl('hero-images')" class="nav-item" active-class="nav-item--active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Hero Images
             </RouterLink>
           </div>
         </template>

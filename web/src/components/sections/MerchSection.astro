@@ -11,6 +11,8 @@ const { lang, alternates } = Astro.props
 const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import { getShopItems, getShopCategories, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { formatPrice, preferredPrice } from '@/stores/cart'
 import FaqSection from '@/components/sections/FaqSection.astro'
@@ -32,12 +34,13 @@ const available = items.filter(i => i.is_available || i.is_presale)
   title={`Merch — ${profile.name}`}
   description={`Official merchandise from ${profile.name}. Records, apparel, and more.`}
 >
+  <PageHero
+    title={s.title || 'Merch'}
+    lead={s.lead}
+    heroImages={resolveHeroImages(siteConfig, 'merch')}
+  />
+
   <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">{s.title || 'Merch'}</h1>
-      {s.lead && <p class="mt-2 text-muted">{s.lead}</p>}
-    </div>
 
     {available.length === 0 ? (
       <div class="rounded-card border border-border bg-surface p-10 text-center">

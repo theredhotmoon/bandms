@@ -713,6 +713,42 @@ done
 
 ---
 
+### Hero images are served *beside* `module_config`, never inside it
+
+`GET /api/site-config` carries a top-level `hero_images` object keyed by scope —
+`main`, `home`, or a `website_modules.slug`. Hanging it off
+`module_config.<slug>.hero_images` is the obvious design and it is wrong.
+
+**`web/src/lib/slugs.ts` builds the site's slug map by iterating
+`Object.keys(module_config)`.** Two of the three scope kinds are not modules, so
+a `home` key there becomes a phantom `home` module in `slugMap` for **every**
+locale. No route is emitted — `[lang]/[section].astro` filters against an
+explicit section list — so `astro build` stays green and nothing visibly breaks.
+It just quietly seeds a page that does not exist into the map that decides where
+the nav points. `web/src/lib/slugs.test.ts` pins this; don't delete that test.
+
+**Read it through `resolveHeroImages()` (`web/src/lib/heroImages.ts`), never
+directly.** A page's own set *replaces* the main set, and an empty set counts as
+no override — `app/src/utils/heroImageScopes.ts` repeats that rule for the admin,
+and the two must agree or the editor lies about what visitors will see.
+
+**`url` is non-nullable on the public side**, because the API drops rows whose
+photo has no file. Keep that filter: a null reaching a CSS `url()` renders as the
+literal string `null`.
+
+**Anything the public site bakes must call `SiteRebuild::requestIfAuto()`.** It
+lives in `api/app/Support/SiteRebuild.php` because it used to be a *private*
+method on `WebsiteModuleController`, so hero images shipped without it: with
+auto-rebuild on, the admin hides its manual rebuild button, and a save then had
+no way whatsoever to reach the public site. Adding a new write that changes
+baked content means adding that call.
+
+**A scope is only worth offering if the page renders a hero.** `footer` is
+excluded by `NON_PAGE_MODULES`; `tech-rider` is excluded separately in
+`HeroImagesAdminView.vue`, because it *does* have a route and a slug (so it does
+not belong in `NON_PAGE_MODULES`) but its page is the token-gated rider document,
+which prints black-on-white and carries no backdrop.
+
 ### Module URL slugs are stored per locale — never derive them from the label
 
 **Which locales exist at all is the registry's job** — see *Adding a language*
@@ -1206,6 +1242,43 @@ than against the build log — a card for a record you just deleted is the tell.
 
 ---
 
+## A conditional around a named slot does nothing — Astro hoists it
+
+**Symptom:** a component branches on `Astro.slots.has('x')`, and the branch is
+taken even when the caller's condition was false. In `PageHero` that meant a
+band with no social links got the split grid and an empty 40px column.
+
+```astro
+{socialLinks.length > 0 && (
+  <Fragment slot="aside">…</Fragment>   <!-- ← registered either way -->
+)}
+```
+
+**Root cause:** Astro collects named slots into the slots object at compile
+time, so the key exists regardless of the runtime condition;
+`Astro.slots.has('aside')` is `true` whatever `socialLinks` holds.
+
+**Fix — test for *content*, not presence:**
+
+```astro
+const asideHtml = Astro.slots.has('aside') ? await Astro.slots.render('aside') : ''
+const hasAside  = asideHtml.trim() !== ''
+…
+{hasAside && <div class="ph-aside" set:html={asideHtml} />}
+```
+
+Putting the condition *inside* the Fragment is still right — it stops the
+content rendering — but on its own it does not collapse the layout, because the
+slot is registered either way. Both halves are needed.
+
+**Verify in `dist/`, forcing the condition false**, since the wrong behaviour is
+invisible in source and in a green build:
+
+```bash
+sed -i 's/{cond \&\& (/{false \&\& (/' web/src/components/sections/X.astro
+cd web && pnpm build && grep -c 'ph-aside' dist/en/x/index.html   # must be 0
+```
+
 ## `Teleport` in an Astro island must be gated on mount
 
 **Symptom:** two modals on one page, and the second one never opens. Its trigger
@@ -1352,11 +1425,75 @@ difference. Anything in `web/src/lib` with a cache, a retry or a fallback belong
 in `web/src/lib/*.test.ts` (`cd web && pnpm test:unit`); `scripts/test-all.sh`
 runs it under the same bitmask bit as the SPA suite.
 
+### Every new or changed feature ships with tests — E2E included
+
+**A feature is not done until a test exercises it the way a person would.** Unit
+tests prove a function is right; they cannot tell you the button is wired to it,
+the route exists, or the page renders. Before calling anything done, name the
+test that would fail if the feature were reverted. If there isn't one, write it.
+
+**Cover both halves.** Anything with an admin editor and a public result needs a
+spec for each — they fail independently, and the public half is the one the band
+actually cares about. Hero images shipped with five admin specs and *none* for
+the public backdrop: a regression that stopped every page rendering a picture
+would have passed the whole suite. `e2e/tests/public/hero-backdrop.spec.ts` is
+that missing half, and the shape to copy.
+
+| Change | Needs |
+|---|---|
+| New endpoint | Pest feature test — happy path, auth, validation |
+| New admin screen | Playwright spec under `e2e/tests/admin/` |
+| Anything a visitor sees | Playwright spec under `e2e/tests/public/` |
+| Pure logic (resolvers, fallbacks, diffing) | Vitest beside the module |
+| Bug fix | A test that fails before the fix — write it first |
+
+**A permanently-skipped test proves nothing.** Data-dependent guards
+(`test.skip(count === 0, …)`) are legitimate, but seed the data once by hand and
+confirm the assertion actually passes before trusting it — otherwise a spec that
+can never run reads as coverage while asserting nothing.
+
+**Assert the shared thing, not the generic one.** `expect(h1)` passes whether or
+not the page still uses `PageHero`; `expect('.ph-title')` is what catches a page
+regressing to its own header and silently losing the backdrop.
+
 - Run `make test` automatically after any backend change (models, controllers, migrations, resources).
 - Run `make test-all` before every `/ship` or PR.
 - Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.
 - If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
 - **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.
+
+**The two frontend suites disagree on the filename, and the wrong one runs
+nothing.** `app/vitest.config.ts` sets `include: ['src/**/*.spec.ts', …]`, so a
+`*.test.ts` file under `app/src` is **silently ignored** — the suite goes green
+having collected nothing, which looks exactly like a passing test. `web/` uses
+vitest's default include and takes `*.test.ts`. So: `app/` → `.spec.ts`,
+`web/` → `.test.ts`. After adding the first spec to a new area, check the test
+*count* went up, not just that the run was green.
+
+**Anything in `app/` that must be unit-testable belongs in `src/utils/`, not in
+a composable.** The admin's vitest environment is `node`, and `useAuth` reads
+`localStorage` at module load — so importing any composable that pulls it in
+dies with `localStorage.getItem is not a function`. `riderDiff`, `venueGate` and
+`heroImageScopes` are utils for exactly this reason.
+
+### E2E: a Playwright `storageState` does not carry this app's auth token
+
+`test.use({ storageState })` works for **page** tests, because the SPA reads its
+token from `localStorage` and Playwright restores that into the page. But
+`request.newContext({ storageState })` replays **cookies only** — and
+`e2e/.auth/admin.json` holds zero cookies. An API context built that way is
+anonymous, and every admin call 401s.
+
+That is quiet in the worst way: a `beforeAll` that reads state to restore later
+gets a 401, records "there was nothing there", and the `afterAll` either does
+nothing or *clears* what it was meant to protect. `hero-images.spec.ts` hit both
+halves. The fix is to read `auth_token` out of the storage-state file and send
+it as an explicit `Authorization: Bearer` header — and to make the read **throw**
+rather than return an empty result, so a failed capture cannot become a
+destructive restore. Assert the restore's response too.
+
+Note also that these spec files are **ESM**: `__dirname` is not defined. Use a
+path relative to the Playwright cwd (`app/`), the way `test.use()` already does.
 
 ### E2E: a red run is often the machine — check the signature, not free RAM
 

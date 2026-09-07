@@ -3,6 +3,7 @@
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HeroImageController;
 use App\Http\Controllers\PresaleCodeController;
 use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
@@ -462,6 +463,12 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/admin/faqs/reorder', [FaqController::class, 'reorder'])->name('api.admin.faqs.reorder');
         Route::put('/admin/faqs/{faq}', [FaqController::class, 'update'])->name('api.admin.faqs.update');
         Route::delete('/admin/faqs/{faq}', [FaqController::class, 'destroy'])->name('api.admin.faqs.destroy');
+
+        // ── Hero background images ────────────────────────────────────────────
+        Route::get('/admin/hero-images', [HeroImageController::class, 'index'])
+            ->name('api.admin.hero-images.index');
+        Route::put('/admin/hero-images/{scope}', [HeroImageController::class, 'update'])
+            ->name('api.admin.hero-images.update');
 
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');

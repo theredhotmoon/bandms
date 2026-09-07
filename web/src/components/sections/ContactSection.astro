@@ -9,6 +9,8 @@ import EpkModal from '@/components/EpkModal.vue'
 import SocialLinks from '@/components/SocialLinks.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import Icon from '@/components/Icon.astro'
 import { getBandProfile, getSocialLinks, getSiteConfig, getEpkOptional } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
@@ -270,13 +272,13 @@ const promo = [
   description={s.lead || `Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
 >
   <!-- HERO -->
-  <section class="ct-hero page-x">
-    <ThemeSlot name="hero-backdrop" />
-    <div class="ct-hero-in">
-      {s.kicker && <span class="ct-kicker">{s.kicker}</span>}
-      <h1 class="ct-h1">{s.title || t.title}</h1>
-      {s.lead && <p class="ct-lead">{s.lead}</p>}
-
+  <PageHero
+    kicker={s.kicker}
+    title={s.title || t.title}
+    lead={s.lead}
+    heroImages={resolveHeroImages(siteConfig, 'contact')}
+  >
+    <Fragment slot="meta">
       <div class="ct-actions">
         <a href="#contact-form" class="ct-btn ct-btn--fill">
           <Icon name="mail" size={20} color="currentColor" />{t.formTitle}
@@ -294,8 +296,8 @@ const promo = [
           <span class="ct-pill"><Icon name="pin" size={18} color="var(--color-accent)" />{profile.hometown}</span>
         )}
       </div>
-    </div>
-  </section>
+    </Fragment>
+  </PageHero>
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
@@ -399,34 +401,9 @@ const promo = [
 
 <style>
   /* ── Hero ──────────────────────────────────────────────────────────────── */
-  .ct-hero {
-    position: relative;
-    overflow: hidden;
-    background: var(--color-inverse);
-    color: var(--color-on-inverse);
-    padding-block: 54px 58px;
-  }
-  .ct-hero-in { position: relative; }
 
-  .ct-kicker {
-    display: block;
-    font: 800 14px/1 var(--font-body);
-    letter-spacing: .34em;
-    color: var(--color-accent);
-  }
 
-  .ct-h1 {
-    margin: 16px 0 0;
-    font-size: 140px;
-    line-height: .82;
-  }
 
-  .ct-lead {
-    margin: 22px 0 0;
-    max-width: 680px;
-    font: 500 20px/1.55 var(--font-body);
-    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
-  }
 
   .ct-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
 
@@ -580,16 +557,12 @@ const promo = [
 
   /* ── Responsive ────────────────────────────────────────────────────────── */
   @media (max-width: 1100px) {
-    .ct-h1 { font-size: 96px; }
     .ct-grid { grid-template-columns: 1fr; gap: 32px; }
     .ct-promo-grid { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 700px) {
-    .ct-h1 { font-size: 56px; }
-    .ct-lead { font-size: 16px; }
     .ct-promo-title { font-size: 34px; }
     .ct-promo-grid { grid-template-columns: 1fr; }
-    .ct-hero { padding-block: 36px 40px; }
     .ct-main { padding-block: 36px; }
     .ct-promo { padding-block: 36px; }
   }

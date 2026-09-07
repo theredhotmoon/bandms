@@ -3,6 +3,7 @@ import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
@@ -67,7 +68,7 @@ const siteOf = (item: (typeof sorted)[number]) => {
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >
-  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} />
+  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'press')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
