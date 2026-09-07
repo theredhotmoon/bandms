@@ -265,3 +265,14 @@ it('clears hero entries when the album holding the photo is deleted', function (
     expect(App\Models\Photo::count())->toBe(0)
         ->and(HeroImage::count())->toBe(0);
 });
+
+it('rejects an unbounded photo_ids array', function () {
+    // Each id is its own INSERT inside a transaction; AlbumController bounds its
+    // photo arrays at 100 for the same reason.
+    heroAdmin();
+    $a = heroPhoto();
+
+    $this->putJson('/api/admin/hero-images/main', [
+        'photo_ids' => array_fill(0, 101, $a->id),
+    ])->assertStatus(422);
+});

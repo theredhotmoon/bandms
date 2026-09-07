@@ -25,3 +25,18 @@ export function scopeSet(sets: HeroImageSets | undefined, scope: string): HeroIm
 export function hasOwnSet(sets: HeroImageSets | undefined, scope: string): boolean {
   return scopeSet(sets, scope).length > 0
 }
+
+/**
+ * Whether a background refetch may overwrite the editor's working copy.
+ *
+ * `sets` changes identity on every refetch, and TanStack refetches on window
+ * focus by default — so a watcher that re-seeds unconditionally throws away
+ * unsaved selections when the band alt-tabs away to find another picture and
+ * comes back. Switching scope still re-seeds: that is a deliberate action.
+ */
+export function shouldReseedDraft(
+  scopeChanged: boolean,
+  isDirty: boolean,
+): boolean {
+  return scopeChanged || !isDirty
+}

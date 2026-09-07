@@ -1425,6 +1425,37 @@ difference. Anything in `web/src/lib` with a cache, a retry or a fallback belong
 in `web/src/lib/*.test.ts` (`cd web && pnpm test:unit`); `scripts/test-all.sh`
 runs it under the same bitmask bit as the SPA suite.
 
+### Every new or changed feature ships with tests — E2E included
+
+**A feature is not done until a test exercises it the way a person would.** Unit
+tests prove a function is right; they cannot tell you the button is wired to it,
+the route exists, or the page renders. Before calling anything done, name the
+test that would fail if the feature were reverted. If there isn't one, write it.
+
+**Cover both halves.** Anything with an admin editor and a public result needs a
+spec for each — they fail independently, and the public half is the one the band
+actually cares about. Hero images shipped with five admin specs and *none* for
+the public backdrop: a regression that stopped every page rendering a picture
+would have passed the whole suite. `e2e/tests/public/hero-backdrop.spec.ts` is
+that missing half, and the shape to copy.
+
+| Change | Needs |
+|---|---|
+| New endpoint | Pest feature test — happy path, auth, validation |
+| New admin screen | Playwright spec under `e2e/tests/admin/` |
+| Anything a visitor sees | Playwright spec under `e2e/tests/public/` |
+| Pure logic (resolvers, fallbacks, diffing) | Vitest beside the module |
+| Bug fix | A test that fails before the fix — write it first |
+
+**A permanently-skipped test proves nothing.** Data-dependent guards
+(`test.skip(count === 0, …)`) are legitimate, but seed the data once by hand and
+confirm the assertion actually passes before trusting it — otherwise a spec that
+can never run reads as coverage while asserting nothing.
+
+**Assert the shared thing, not the generic one.** `expect(h1)` passes whether or
+not the page still uses `PageHero`; `expect('.ph-title')` is what catches a page
+regressing to its own header and silently losing the backdrop.
+
 - Run `make test` automatically after any backend change (models, controllers, migrations, resources).
 - Run `make test-all` before every `/ship` or PR.
 - Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.

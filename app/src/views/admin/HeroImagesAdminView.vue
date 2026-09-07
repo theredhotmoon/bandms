@@ -6,7 +6,7 @@ import AdminModal from '@/components/admin/AdminModal.vue'
 import { useHeroImages } from '@/composables/useHeroImages'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useAlbums } from '@/composables/useAlbums'
-import { scopeSet, hasOwnSet } from '@/utils/heroImageScopes'
+import { scopeSet, hasOwnSet, shouldReseedDraft } from '@/utils/heroImageScopes'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import type { AlbumPhoto } from '@/types/album'
 
@@ -81,18 +81,34 @@ interface DraftPhoto {
 /** The working copy. Only written back to the server on Save. */
 const draft = ref<DraftPhoto[]>([])
 
-/** Re-seed the draft whenever the scope changes or fresh data lands. */
+/** What the server currently holds for the selected scope, in order. */
+const storedIds = computed(() => scopeSet(sets.value, selected.value).map(h => h.photo_id))
+
+const dirty = computed(() =>
+  JSON.stringify(draft.value.map(p => p.id)) !== JSON.stringify(storedIds.value),
+)
+
+/** The scope the draft was last seeded from — re-seeding is keyed on this. */
+const seededScope = ref<string | null>(null)
+
+/**
+ * Re-seed the draft when the scope changes, or when fresh data lands on a draft
+ * with nothing unsaved in it.
+ *
+ * The dirty guard is the point. `sets` changes identity on every refetch, and
+ * TanStack refetches on window focus by default (VueQueryPlugin is registered
+ * with no options in main.ts) — so without it, alt-tabbing away to find another
+ * picture and coming back silently discarded every unsaved selection.
+ */
 watch([selected, sets], () => {
+  if (!shouldReseedDraft(seededScope.value !== selected.value, dirty.value)) return
+
   draft.value = scopeSet(sets.value, selected.value)
     .map(h => ({ id: h.photo_id, url: h.url, caption: h.caption }))
+  seededScope.value = selected.value
 }, { immediate: true })
 
 const chosenIds = computed(() => new Set(draft.value.map(p => p.id)))
-
-const dirty = computed(() =>
-  JSON.stringify(draft.value.map(p => p.id))
-    !== JSON.stringify(scopeSet(sets.value, selected.value).map(h => h.photo_id)),
-)
 
 const showPicker = ref(false)
 

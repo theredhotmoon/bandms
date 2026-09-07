@@ -34,7 +34,10 @@ class HeroImageController extends Controller
 
         $data = $request->validate([
             'scope'       => ['required', 'string', Rule::in(HeroImage::allowedScopes())],
-            'photo_ids'   => ['present', 'array'],
+            // Bounded at 100, matching AlbumController's photo arrays. Each id
+            // becomes its own INSERT inside the transaction below, so an
+            // unbounded array is an unbounded write held open by one request.
+            'photo_ids'   => ['present', 'array', 'max:100'],
             'photo_ids.*' => ['integer', 'exists:photos,id'],
         ]);
 
