@@ -16,4 +16,13 @@ class Band extends Model
     {
         return $this->belongsToMany(Concert::class, 'concert_band');
     }
+
+    /**
+     * People to contact about this band — managers, bookers, the drummer who
+     * answers their email. Shares the `authors` table with press contacts.
+     */
+    public function authors(): BelongsToMany
+    {
+        return $this->belongsToMany(Author::class, 'author_bands')->orderBy('authors.name');
+    }
 }

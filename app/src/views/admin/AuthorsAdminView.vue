@@ -12,6 +12,7 @@ import { useAuthors, useAuthor } from '@/composables/useAuthors'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTours } from '@/composables/useTours'
+import { useBands } from '@/composables/useBands'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
 import type { AuthorSummary, AuthorPayload } from '@/types/author'
@@ -20,6 +21,7 @@ const { query, create, update, remove } = useAuthors()
 const { query: pressReleasesQ } = usePressReleases()
 const { query: concertsQ } = useConcerts()
 const { query: toursQ } = useTours()
+const { query: bandsQ } = useBands()
 
 const showModal   = ref(false)
 const isCreating  = ref(false)
@@ -155,6 +157,14 @@ async function confirmDelete() {
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="40rem" @close="closeModal">
       <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">Loading…</div>
+      <!--
+        Without this branch a failed fetch renders an empty form that is still
+        an *update*: saving it would wipe the contact's details and every
+        relation, including the bands just assigned to them.
+      -->
+      <div v-else-if="!isCreating && !fullRecord.data.value" class="py-8 text-center text-sm" style="color:#f87171;">
+        Could not load this contact. Close and try again.
+      </div>
       <AuthorForm
         v-else
         :initial="isCreating ? null : (fullRecord.data.value ?? null)"
@@ -163,6 +173,7 @@ async function confirmDelete() {
         :press-releases="pressReleasesQ.data.value ?? []"
         :concerts="concertsQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"
+        :bands="bandsQ.data.value ?? []"
         @submit="handleSubmit"
         @cancel="closeModal"
       />

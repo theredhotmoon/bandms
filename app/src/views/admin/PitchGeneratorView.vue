@@ -6,6 +6,8 @@ import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAuthors } from '@/composables/useAuthors'
+import { useBandContactPrefill } from '@/composables/useBandContactPrefill'
+import { bandMention } from '@/utils/pitchRecipient'
 import type { AuthorSummary } from '@/types/author'
 
 const { query: profileQ } = useBandProfile()
@@ -24,10 +26,22 @@ function isValidType(v: unknown): v is PitchType {
 
 const qType = route.query.type
 const selectedType = ref<PitchType>(isValidType(qType) ? qType : 'venue')
-const recipientName = ref(typeof route.query.band === 'string' ? route.query.band : '')
+const bandName = ref(typeof route.query.band === 'string' ? route.query.band : '')
+const recipientName = ref(bandName.value)
 const bandLastGig = ref<string>(typeof route.query.lastGig === 'string' ? route.query.lastGig : '')
 const customNote = ref('')
 const copied = ref(false)
+
+// ── The band's assigned contact people ────────────────────────────────────
+
+const qBandId = Number(route.query.bandId)
+const bandId = Number.isSafeInteger(qBandId) && qBandId > 0 ? qBandId : null
+
+const {
+  contacts: bandContacts,
+  selectedContactId,
+  chooseContact,
+} = useBandContactPrefill(bandId, bandName.value, recipientName)
 
 const matchedAuthor = computed(() => {
   const q = recipientName.value.trim().toLowerCase()
@@ -135,9 +149,10 @@ const pitch = computed((): string => {
       const lastGigText = bandLastGig.value
         ? `since ${fmtDate(bandLastGig.value)}`
         : 'in a while'
+      const withBand = bandMention(bandName.value, recipientName.value)
       return (
         to +
-        `We haven't played a gig together ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` +
+        `We haven't played a gig together${withBand} ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` +
         note + epk + contact + sign
       )
     }
@@ -197,6 +212,19 @@ async function copyPitch() {
                 <span class="contact-hint">Not in your contacts yet.</span>
               </template>
             </div>
+          </div>
+
+          <div v-if="bandContacts.length > 1" class="control-group">
+            <label class="control-label">Contact at {{ bandName }}</label>
+            <select
+              class="ctrl-input"
+              :value="selectedContactId ?? ''"
+              @change="chooseContact(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="c in bandContacts" :key="c.id" :value="c.id">
+                {{ c.name }}{{ c.email ? ` — ${c.email}` : '' }}
+              </option>
+            </select>
           </div>
 
           <div v-if="selectedType === 'band'" class="control-group">

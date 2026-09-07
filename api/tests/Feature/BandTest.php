@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Author;
 use App\Models\Band;
 use App\Models\User;
 use Laravel\Passport\Passport;
@@ -201,5 +202,136 @@ describe('DELETE /api/bands/{band}', function () {
         $this->actingAsAdmin();
 
         $this->deleteJson('/api/bands/9999')->assertNotFound();
+    });
+});
+
+// ── Contact people (authors) ──────────────────────────────────────────────────
+
+describe('band contact people', function () {
+    it('creates a band with contact people attached', function () {
+        $this->actingAsAdmin();
+        $manager = Author::create(['name' => 'Mia Manager', 'email' => 'mia@mgmt.com']);
+        $booker  = Author::create(['name' => 'Bob Booker', 'phone' => '+48 111 222 333']);
+
+        $this->postJson('/api/bands', [
+            'name'       => 'Contactable Band',
+            'author_ids' => [$manager->id, $booker->id],
+        ])->assertCreated()
+          ->assertJsonCount(2, 'data.contacts');
+
+        $this->assertDatabaseHas('author_bands', ['author_id' => $manager->id]);
+        $this->assertDatabaseHas('author_bands', ['author_id' => $booker->id]);
+    });
+
+    it('exposes contact details on the band listing', function () {
+        $this->actingAsAdmin();
+        $author = Author::create([
+            'name'     => 'Cara Contact',
+            'email'    => 'cara@example.com',
+            'phone'    => '+48 500 600 700',
+            'whatsapp' => '+48 500 600 700',
+        ]);
+        $band = Band::create(['name' => 'Listed Band']);
+        $band->authors()->attach($author);
+
+        $this->getJson('/api/bands')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.contacts.0.name', 'Cara Contact')
+            ->assertJsonPath('data.0.contacts.0.email', 'cara@example.com')
+            ->assertJsonPath('data.0.contacts.0.phone', '+48 500 600 700')
+            ->assertJsonPath('data.0.contacts.0.whatsapp', '+48 500 600 700');
+    });
+
+    it('replaces contact people on update', function () {
+        $this->actingAsAdmin();
+        $old = Author::create(['name' => 'Old Contact']);
+        $new = Author::create(['name' => 'New Contact']);
+        $band = Band::create(['name' => 'Switching Band']);
+        $band->authors()->attach($old);
+
+        $this->putJson("/api/bands/{$band->id}", [
+            'name'       => 'Switching Band',
+            'author_ids' => [$new->id],
+        ])->assertSuccessful()
+          ->assertJsonCount(1, 'data.contacts')
+          ->assertJsonPath('data.contacts.0.name', 'New Contact');
+
+        $this->assertDatabaseMissing('author_bands', ['author_id' => $old->id, 'band_id' => $band->id]);
+        $this->assertDatabaseHas('author_bands', ['author_id' => $new->id, 'band_id' => $band->id]);
+    });
+
+    it('clears contact people when an empty array is sent', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['name' => 'Doomed Contact']);
+        $band = Band::create(['name' => 'Clearing Band']);
+        $band->authors()->attach($author);
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'Clearing Band', 'author_ids' => []])
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data.contacts');
+
+        $this->assertDatabaseMissing('author_bands', ['band_id' => $band->id]);
+    });
+
+    it('keeps contact people when author_ids is omitted entirely', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['name' => 'Sticky Contact']);
+        $band = Band::create(['name' => 'Renamed Band']);
+        $band->authors()->attach($author);
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'Renamed Band 2'])
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.contacts');
+
+        $this->assertDatabaseHas('author_bands', ['author_id' => $author->id, 'band_id' => $band->id]);
+    });
+
+    it('reports the gig count and last gig on a single-band response', function () {
+        $this->actingAsAdmin();
+        $band = Band::create(['name' => 'Aggregate Band']);
+        $venue = \App\Models\Venue::factory()->create();
+        $band->concerts()->attach(
+            \App\Models\Concert::factory()->create(['date' => '2025-03-12', 'venue_id' => $venue->id])
+        );
+
+        // index has always supplied these; show/store/update answered 0 and null.
+        $this->getJson("/api/bands/{$band->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.gigs_count', 1)
+            ->assertJsonPath('data.last_gig_at', '2025-03-12');
+
+        $this->putJson("/api/bands/{$band->id}", ['name' => 'Aggregate Band'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.gigs_count', 1);
+    });
+
+    it('validates that every author id exists', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/bands', ['name' => 'Bad Contacts', 'author_ids' => [9999]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['author_ids.0']);
+    });
+
+    it('detaches the pivot row when a contact is deleted', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['name' => 'Temporary Contact']);
+        $band = Band::create(['name' => 'Orphaned Band']);
+        $band->authors()->attach($author);
+
+        $author->delete();
+
+        $this->assertDatabaseMissing('author_bands', ['band_id' => $band->id]);
+    });
+
+    it('does not attach the same contact twice', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['name' => 'Once Only']);
+
+        $this->postJson('/api/bands', [
+            'name'       => 'Dedupe Band',
+            'author_ids' => [$author->id, $author->id],
+        ])->assertCreated()
+          ->assertJsonCount(1, 'data.contacts');
     });
 });

@@ -7,6 +7,8 @@ use App\Models\Band;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class BandController extends Controller
@@ -14,7 +16,8 @@ class BandController extends Controller
     public function index(): AnonymousResourceCollection
     {
         return BandResource::collection(
-            Band::withCount('concerts')
+            Band::with('authors')
+                ->withCount('concerts')
                 ->withMax('concerts', 'date')
                 ->orderBy('name')
                 ->get()
@@ -23,29 +26,33 @@ class BandController extends Controller
 
     public function store(Request $request): BandResource
     {
-        $data = $request->validate([
-            'name'    => ['required', 'string', 'max:255', Rule::unique('bands')],
-            'website' => ['nullable', 'url', 'max:500'],
-        ]);
+        $data = $this->validatePayload($request);
 
-        return new BandResource(Band::create($data));
+        $band = DB::transaction(function () use ($data, $request) {
+            $band = Band::create($data);
+            $this->syncContacts($band, $request);
+
+            return $band;
+        });
+
+        return new BandResource($this->withAggregates($band));
     }
 
     public function show(Band $band): BandResource
     {
-        return new BandResource($band);
+        return new BandResource($this->withAggregates($band));
     }
 
     public function update(Request $request, Band $band): BandResource
     {
-        $data = $request->validate([
-            'name'    => ['sometimes', 'required', 'string', 'max:255', Rule::unique('bands')->ignore($band)],
-            'website' => ['nullable', 'url', 'max:500'],
-        ]);
+        $data = $this->validatePayload($request, $band);
 
-        $band->update($data);
+        DB::transaction(function () use ($data, $request, $band) {
+            $band->update($data);
+            $this->syncContacts($band, $request);
+        });
 
-        return new BandResource($band);
+        return new BandResource($this->withAggregates($band));
     }
 
     public function destroy(Band $band): JsonResponse
@@ -53,5 +60,51 @@ class BandController extends Controller
         $band->delete();
 
         return response()->json(null, 204);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function validatePayload(Request $request, ?Band $band = null): array
+    {
+        $name = $band
+            ? ['sometimes', 'required', 'string', 'max:255', Rule::unique('bands')->ignore($band)]
+            : ['required', 'string', 'max:255', Rule::unique('bands')];
+
+        $validated = $request->validate([
+            'name'         => $name,
+            'website'      => ['nullable', 'url', 'max:500'],
+            'author_ids'   => ['nullable', 'array'],
+            'author_ids.*' => ['integer', 'exists:authors,id'],
+        ]);
+
+        // `author_ids` lives in a pivot, not on the model — passing it to
+        // create()/update() would blow up on an unknown column.
+        return Arr::except($validated, 'author_ids');
+    }
+
+    /**
+     * `index` reports a gig count and a last-gig date off aggregates. Without
+     * these the single-band responses answer 0 and null for a band that has
+     * played a dozen times — the resource reads the same properties whichever
+     * endpoint built it.
+     */
+    private function withAggregates(Band $band): Band
+    {
+        return $band->load('authors')
+            ->loadCount('concerts')
+            ->loadMax('concerts', 'date');
+    }
+
+    /**
+     * Absent `author_ids` leaves the existing contacts alone; an explicit empty
+     * array clears them. A partial update must not silently drop the links.
+     */
+    private function syncContacts(Band $band, Request $request): void
+    {
+        if (! $request->has('author_ids')) {
+            return;
+        }
+
+        $band->authors()->sync($request->input('author_ids', []));
     }
 }

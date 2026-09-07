@@ -162,9 +162,6 @@ Route::get('/newsletter/unsubscribe/{token}', [NewsletterSubscriberController::c
     ->middleware('throttle:20,1')
     ->name('api.newsletter.unsubscribe');
 
-Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
-Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
-
 /*
 |--------------------------------------------------------------------------
 | Fan auth (public)
@@ -373,6 +370,11 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/instruments/{instrument}', [InstrumentController::class, 'update'])->name('api.instruments.update');
         Route::delete('/instruments/{instrument}', [InstrumentController::class, 'destroy'])->name('api.instruments.destroy');
 
+        // Authors carry personal contact data — email, phone, WhatsApp and
+        // private notes — plus the bands each person handles. Admin-only,
+        // including the reads; the public site does not consume them.
+        Route::get('/authors', [AuthorController::class, 'index'])->name('api.authors.index');
+        Route::get('/authors/{author}', [AuthorController::class, 'show'])->name('api.authors.show');
         Route::post('/authors', [AuthorController::class, 'store'])->name('api.authors.store');
         Route::put('/authors/{author}', [AuthorController::class, 'update'])->name('api.authors.update');
         Route::delete('/authors/{author}', [AuthorController::class, 'destroy'])->name('api.authors.destroy');

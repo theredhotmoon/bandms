@@ -27,6 +27,11 @@ export interface AuthorTour {
   name: string
 }
 
+export interface AuthorBand {
+  id: number
+  name: string
+}
+
 export interface AuthorPhoto {
   id: number
   filename: string
@@ -38,6 +43,7 @@ export interface Author extends AuthorSummary {
   concerts: AuthorConcert[]
   tours: AuthorTour[]
   photos: AuthorPhoto[]
+  bands: AuthorBand[]
 }
 
 export interface AuthorPayload {
@@ -51,4 +57,5 @@ export interface AuthorPayload {
   concert_ids: number[]
   tour_ids: number[]
   photo_ids: number[]
+  band_ids: number[]
 }

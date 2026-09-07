@@ -30,6 +30,10 @@ class AuthorResource extends AuthorSummaryResource
                 'id'       => $p->id,
                 'filename' => $p->filename,
             ])),
+            'bands' => $this->whenLoaded('bands', fn () => $this->bands->map(fn ($b) => [
+                'id'   => $b->id,
+                'name' => $b->name,
+            ])),
         ]);
     }
 }
