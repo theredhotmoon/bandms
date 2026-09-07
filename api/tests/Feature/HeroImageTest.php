@@ -217,3 +217,51 @@ it('serves an empty admin payload as an object, not an array', function () {
     expect($this->getJson('/api/admin/hero-images')->content())
         ->toContain('"data":{}');
 });
+
+// ── publishing ────────────────────────────────────────────────────────────────
+
+it('asks the public site to rebuild when auto-rebuild is on', function () {
+    // Without this the admin hides its manual rebuild button (it does so
+    // whenever auto-rebuild is on) and the save reaches nothing a visitor sees.
+    Illuminate\Support\Facades\Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'true');
+
+    heroAdmin();
+    $a = heroPhoto();
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$a->id]])->assertOk();
+
+    Illuminate\Support\Facades\Http::assertSent(
+        fn ($request) => str_contains($request->url(), '/rebuild')
+    );
+});
+
+it('does not rebuild when auto-rebuild is off', function () {
+    Illuminate\Support\Facades\Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'false');
+
+    heroAdmin();
+    $a = heroPhoto();
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$a->id]])->assertOk();
+
+    Illuminate\Support\Facades\Http::assertNothingSent();
+});
+
+it('clears hero entries when the album holding the photo is deleted', function () {
+    // photos.album_id is nullOnDelete, so deleting an album used to leave an
+    // orphan row whose file had just been deleted — and a hero pointing at it.
+    heroAdmin();
+    $album = App\Models\Album::create(['title' => 'Gone', 'slug_en' => 'gone']);
+    $photo = App\Models\Photo::create([
+        'album_id'   => $album->id,
+        'image'      => 'photos/gone.jpg',
+        'sort_order' => 0,
+    ]);
+    HeroImage::create(['photo_id' => $photo->id, 'scope' => 'main', 'position' => 0]);
+
+    $this->deleteJson("/api/albums/{$album->id}")->assertNoContent();
+
+    expect(App\Models\Photo::count())->toBe(0)
+        ->and(HeroImage::count())->toBe(0);
+});

@@ -35,7 +35,18 @@ interface Props {
 
 const { kicker, title, lead, titleSize = 140, leadWidth = 680, heroImages = [] } = Astro.props
 
-const hasAside = Astro.slots.has('aside')
+/**
+ * Whether the aside slot renders anything, not merely whether it was passed.
+ *
+ * `Astro.slots.has()` is the obvious check and it is not enough: Astro hoists a
+ * named slot into the slots object unconditionally, so a caller writing
+ * `{cond && <Fragment slot="aside">…}` still reports `has('aside') === true`
+ * when cond is false. The split grid would then open a 40px column around
+ * nothing. Rendering it and testing for content is what actually answers the
+ * question the layout is asking.
+ */
+const asideHtml = Astro.slots.has('aside') ? await Astro.slots.render('aside') : ''
+const hasAside  = asideHtml.trim() !== ''
 ---
 
 <section class="ph page-x" style={`--ph-title:${titleSize}px; --ph-lead:${leadWidth}px`}>
@@ -50,7 +61,7 @@ const hasAside = Astro.slots.has('aside')
       <slot name="meta" />
     </div>
 
-    {hasAside && <div class="ph-aside"><slot name="aside" /></div>}
+    {hasAside && <div class="ph-aside" set:html={asideHtml} />}
   </div>
 </section>
 

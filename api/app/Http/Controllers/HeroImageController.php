@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\HeroImageResource;
 use App\Models\HeroImage;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,12 @@ class HeroImageController extends Controller
                 ]);
             }
         });
+
+        // The public site bakes these, so a save that does not rebuild leaves
+        // the band looking at an unchanged page. The admin hides its manual
+        // rebuild button when auto-rebuild is on, so without this there would be
+        // no way at all to publish a hero change from that state.
+        SiteRebuild::requestIfAuto();
 
         // Cast so an empty result encodes as {} rather than [] — the payload is
         // a map keyed by scope, and PHP's empty array would otherwise arrive as

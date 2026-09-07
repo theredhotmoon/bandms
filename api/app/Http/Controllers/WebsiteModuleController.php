@@ -7,6 +7,7 @@ use App\Models\HeroImage;
 use App\Models\SiteSetting;
 use App\Models\WebsiteModule;
 use App\Support\Locales;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -223,9 +224,7 @@ class WebsiteModuleController extends Controller
 
         $module->save();
 
-        if (SiteSetting::get('auto_rebuild', 'false') === 'true') {
-            $this->triggerRebuild();
-        }
+        SiteRebuild::requestIfAuto();
 
         return response()->json(['data' => new WebsiteModuleResource($module)]);
     }
@@ -277,7 +276,7 @@ class WebsiteModuleController extends Controller
 
     public function rebuild(): JsonResponse
     {
-        $this->triggerRebuild();
+        SiteRebuild::request();
 
         return response()->json(['status' => 'rebuild_started']);
     }
@@ -302,12 +301,4 @@ class WebsiteModuleController extends Controller
         }
     }
 
-    private function triggerRebuild(): void
-    {
-        try {
-            Http::timeout(5)->post('http://web:3001/rebuild');
-        } catch (\Exception) {
-            // Fire-and-forget; webhook may be unavailable in tests or dev
-        }
-    }
 }

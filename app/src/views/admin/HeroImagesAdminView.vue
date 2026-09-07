@@ -57,14 +57,34 @@ const scopes = computed(() => [
 
 const selected = ref('main')
 
+/**
+ * One thumbnail in the working copy: a gallery photo's id and enough to draw it.
+ *
+ * Deliberately NOT an AlbumPhoto. Seeding the draft by looking each stored
+ * photo_id up in the albums list silently dropped any it could not find, and
+ * `dirty` then went true with no user input — so one click on Save deleted them.
+ * Two ways to reach that: the albums query resolving after the hero query (the
+ * grid renders empty and Save is live), and photos orphaned by album deletion,
+ * which /api/albums never returns at all.
+ *
+ * The API already sends `url` and `caption` with each hero entry, so the draft
+ * needs no join and can render every stored picture whatever happened to its
+ * album.
+ */
+interface DraftPhoto {
+  /** The gallery photo's id — what gets saved. */
+  id: number
+  url: string | null
+  caption: string | null
+}
+
 /** The working copy. Only written back to the server on Save. */
-const draft = ref<AlbumPhoto[]>([])
+const draft = ref<DraftPhoto[]>([])
 
 /** Re-seed the draft whenever the scope changes or fresh data lands. */
-watch([selected, sets, allPhotos], () => {
+watch([selected, sets], () => {
   draft.value = scopeSet(sets.value, selected.value)
-    .map(h => allPhotos.value.find(p => p.id === h.photo_id))
-    .filter((p): p is AlbumPhoto => p !== undefined)
+    .map(h => ({ id: h.photo_id, url: h.url, caption: h.caption }))
 }, { immediate: true })
 
 const chosenIds = computed(() => new Set(draft.value.map(p => p.id)))
@@ -78,7 +98,7 @@ const showPicker = ref(false)
 
 function addPhoto(photo: AlbumPhoto) {
   if (chosenIds.value.has(photo.id)) return
-  draft.value = [...draft.value, photo]
+  draft.value = [...draft.value, { id: photo.id, url: photo.image_url, caption: photo.caption }]
 }
 
 function removeAt(index: number) {
@@ -173,8 +193,8 @@ const autoRebuild = computed(() => modulesQ.data.value?.auto_rebuild ?? false)
           <ul v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
             <li v-for="(photo, i) in draft" :key="photo.id" class="rounded-lg overflow-hidden bg-zinc-800">
               <img
-                v-if="photo.image_url"
-                :src="photo.image_url"
+                v-if="photo.url"
+                :src="photo.url"
                 :alt="photo.caption ?? ''"
                 class="w-full h-28 object-cover"
               />

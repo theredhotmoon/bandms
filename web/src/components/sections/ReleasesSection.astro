@@ -188,11 +188,20 @@ const priceOf = (item: (typeof physical)[number]) => {
     titleSize={150}
     heroImages={resolveHeroImages(siteConfig, 'releases')}
   >
-    {socialLinks.length > 0 && (
-      <Fragment slot="aside">
+    <Fragment slot="aside">
+      {/*
+        The condition sits INSIDE the Fragment, not around it.
+
+        Astro hoists a named slot into the slots object unconditionally, so
+        `{cond && <Fragment slot="aside">…}` still makes Astro.slots.has('aside')
+        true when cond is false — PageHero then switches to its split grid and
+        renders an empty 40px column. Verified in dist/ by forcing the condition
+        false: .ph-in--split and .ph-aside were both still emitted.
+      */}
+      {socialLinks.length > 0 && (
         <div class="mu-hero-social"><SocialLinks links={socialLinks} size="md" /></div>
-      </Fragment>
-    )}
+      )}
+    </Fragment>
   </PageHero>
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
