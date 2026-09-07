@@ -736,6 +736,13 @@ and the two must agree or the editor lies about what visitors will see.
 photo has no file. Keep that filter: a null reaching a CSS `url()` renders as the
 literal string `null`.
 
+**Anything the public site bakes must call `SiteRebuild::requestIfAuto()`.** It
+lives in `api/app/Support/SiteRebuild.php` because it used to be a *private*
+method on `WebsiteModuleController`, so hero images shipped without it: with
+auto-rebuild on, the admin hides its manual rebuild button, and a save then had
+no way whatsoever to reach the public site. Adding a new write that changes
+baked content means adding that call.
+
 **A scope is only worth offering if the page renders a hero.** `footer` is
 excluded by `NON_PAGE_MODULES`; `tech-rider` is excluded separately in
 `HeroImagesAdminView.vue`, because it *does* have a route and a slug (so it does
@@ -1234,6 +1241,43 @@ you are looking at a fresh build, compare a page against the database rather
 than against the build log — a card for a record you just deleted is the tell.
 
 ---
+
+## A conditional around a named slot does nothing — Astro hoists it
+
+**Symptom:** a component branches on `Astro.slots.has('x')`, and the branch is
+taken even when the caller's condition was false. In `PageHero` that meant a
+band with no social links got the split grid and an empty 40px column.
+
+```astro
+{socialLinks.length > 0 && (
+  <Fragment slot="aside">…</Fragment>   <!-- ← registered either way -->
+)}
+```
+
+**Root cause:** Astro collects named slots into the slots object at compile
+time, so the key exists regardless of the runtime condition;
+`Astro.slots.has('aside')` is `true` whatever `socialLinks` holds.
+
+**Fix — test for *content*, not presence:**
+
+```astro
+const asideHtml = Astro.slots.has('aside') ? await Astro.slots.render('aside') : ''
+const hasAside  = asideHtml.trim() !== ''
+…
+{hasAside && <div class="ph-aside" set:html={asideHtml} />}
+```
+
+Putting the condition *inside* the Fragment is still right — it stops the
+content rendering — but on its own it does not collapse the layout, because the
+slot is registered either way. Both halves are needed.
+
+**Verify in `dist/`, forcing the condition false**, since the wrong behaviour is
+invisible in source and in a green build:
+
+```bash
+sed -i 's/{cond \&\& (/{false \&\& (/' web/src/components/sections/X.astro
+cd web && pnpm build && grep -c 'ph-aside' dist/en/x/index.html   # must be 0
+```
 
 ## `Teleport` in an Astro island must be gated on mount
 
