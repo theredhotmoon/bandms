@@ -17,11 +17,16 @@ const CONFIG = {
     modules: { shop: true, videos: true },
     module_order: ['shop', 'videos'],
     module_config: { shop: { slug: 'shop' }, videos: { slug: '' } },
+    // Hero scopes include 'main' and 'home', which are not modules. They ride
+    // alongside module_config precisely so they cannot reach the slug map —
+    // see the regression test at the bottom of this file.
+    hero_images: { main: [], home: [], shop: [] },
   },
   pl: {
     modules: { shop: true, videos: true },
     module_order: ['shop', 'videos'],
     module_config: { shop: { slug: 'sklep' }, videos: { slug: '' } },
+    hero_images: { main: [], home: [], shop: [] },
   },
 }
 
@@ -115,5 +120,26 @@ describe('getSlugMap', () => {
     // No module_config to read, so only the static fallbacks survive.
     expect(first.pl.contact).toBe('kontakt')
     expect(first.pl.shop).toBeUndefined()
+  })
+})
+
+describe('hero image scopes', () => {
+  it('never reaches the slug map', async () => {
+    // Regression guard. The obvious place for hero images was
+    // module_config.<slug>.hero_images — but this map is built by iterating
+    // Object.keys(module_config), and two of the three scope kinds ('main',
+    // 'home') are not modules. They would become entries for pages that do not
+    // exist, in the map that decides where the nav points, on a green build.
+    vi.stubGlobal('fetch', stubFetch(0))
+    const { getSlugMap } = await freshModule()
+
+    const map = await getSlugMap()
+
+    expect(map.en.main).toBeUndefined()
+    expect(map.en.home).toBeUndefined()
+    expect(map.pl.main).toBeUndefined()
+    expect(map.pl.home).toBeUndefined()
+    // The real module is still there, so this is not passing by accident.
+    expect(map.en.shop).toBe('shop')
   })
 })

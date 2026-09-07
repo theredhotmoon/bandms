@@ -179,6 +179,18 @@ export interface SiteConfig {
    * always undefined today and `getTheme()` falls through to the env var.
    */
   theme?: string
+  /**
+   * Hero backdrop candidates keyed by scope ('main', 'home', or a module slug).
+   *
+   * Optional because an API predating the feature omits it, and a bare access
+   * would throw at build time — which kills all 35 pages, not one. Read it
+   * through resolveHeroImages(), never directly.
+   *
+   * Deliberately a sibling of module_config rather than a field inside it:
+   * slugs.ts derives the site's slug map from module_config's keys, and the
+   * non-module scopes would show up there as modules that do not exist.
+   */
+  hero_images?: Record<string, import('./heroImages').HeroImage[]>
 }
 
 /**
