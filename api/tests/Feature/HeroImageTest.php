@@ -2,11 +2,18 @@
 
 use App\Models\HeroImage;
 use App\Models\Photo;
+use App\Models\User;
 use App\Models\WebsiteModule;
+use Laravel\Passport\Passport;
 
 function heroPhoto(string $image = 'photos/a.jpg'): Photo
 {
     return Photo::create(['image' => $image, 'sort_order' => 0]);
+}
+
+function heroAdmin(): void
+{
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
 }
 
 it('orders a scope by position, not by id', function () {
@@ -63,4 +70,96 @@ it('keeps a disabled module as a valid scope', function () {
     ]);
 
     expect(HeroImage::allowedScopes())->toContain('photos');
+});
+
+// ── admin endpoints ───────────────────────────────────────────────────────────
+
+it('rejects hero image reads without auth', function () {
+    $this->getJson('/api/admin/hero-images')->assertUnauthorized();
+});
+
+it('replaces a scope rather than appending to it', function () {
+    heroAdmin();
+    $a = heroPhoto('photos/a.jpg');
+    $b = heroPhoto('photos/b.jpg');
+    $c = heroPhoto('photos/c.jpg');
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$a->id, $b->id]])
+        ->assertOk()
+        ->assertJsonCount(2, 'data.main');
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$c->id]])
+        ->assertOk()
+        ->assertJsonCount(1, 'data.main')
+        ->assertJsonPath('data.main.0.photo_id', $c->id);
+
+    expect(HeroImage::where('scope', 'main')->count())->toBe(1);
+});
+
+it('writes position from the payload order', function () {
+    heroAdmin();
+    $a = heroPhoto('photos/a.jpg');
+    $b = heroPhoto('photos/b.jpg');
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$b->id, $a->id]])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.photo_id', $b->id)
+        ->assertJsonPath('data.main.0.position', 0)
+        ->assertJsonPath('data.main.1.photo_id', $a->id)
+        ->assertJsonPath('data.main.1.position', 1);
+});
+
+it('clears a scope when given an empty list', function () {
+    heroAdmin();
+    $a = heroPhoto();
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$a->id]])->assertOk();
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => []])
+        ->assertOk()
+        ->assertJsonMissingPath('data.main');
+
+    expect(HeroImage::where('scope', 'main')->count())->toBe(0);
+});
+
+it('leaves other scopes untouched when one is saved', function () {
+    heroAdmin();
+    $a = heroPhoto('photos/a.jpg');
+    $b = heroPhoto('photos/b.jpg');
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [$a->id]])->assertOk();
+    $this->putJson('/api/admin/hero-images/contact', ['photo_ids' => [$b->id]])->assertOk();
+
+    $this->getJson('/api/admin/hero-images')
+        ->assertOk()
+        ->assertJsonCount(1, 'data.main')
+        ->assertJsonCount(1, 'data.contact');
+});
+
+it('rejects an unknown scope', function () {
+    heroAdmin();
+    $a = heroPhoto();
+
+    $this->putJson('/api/admin/hero-images/not-a-page', ['photo_ids' => [$a->id]])
+        ->assertStatus(422);
+});
+
+it('accepts a disabled module as a scope', function () {
+    heroAdmin();
+    WebsiteModule::create([
+        'slug'         => 'photos',
+        'display_name' => 'Gallery',
+        'enabled'      => false,
+    ]);
+    $a = heroPhoto();
+
+    $this->putJson('/api/admin/hero-images/photos', ['photo_ids' => [$a->id]])
+        ->assertOk()
+        ->assertJsonCount(1, 'data.photos');
+});
+
+it('rejects a photo id that does not exist', function () {
+    heroAdmin();
+
+    $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [999999]])
+        ->assertStatus(422);
 });
