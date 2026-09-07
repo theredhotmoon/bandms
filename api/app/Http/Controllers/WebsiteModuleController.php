@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\WebsiteModuleResource;
+use App\Models\HeroImage;
 use App\Models\SiteSetting;
 use App\Models\WebsiteModule;
 use App\Support\Locales;
@@ -35,6 +36,32 @@ class WebsiteModuleController extends Controller
             ];
         });
 
+        // Hero backdrops, keyed by scope ('main', 'home', or a module slug).
+        //
+        // Deliberately NOT inside module_config: slugs.ts builds the site's
+        // slug map from that object's keys, so the non-module scopes would
+        // appear there as phantom modules — green build, wrong nav map.
+        $hero_images = HeroImage::with('photo')
+            ->orderBy('scope')
+            ->orderBy('position')
+            ->get()
+            ->groupBy('scope')
+            ->map(fn ($rows) => $rows
+                // A row whose photo has no file cannot be a backdrop. Dropping
+                // it here keeps `url` non-nullable for the public site, which
+                // would otherwise need a null guard in the one place a null
+                // renders as the string "null" inside a CSS url().
+                ->filter(fn ($h) => filled($h->photo?->image))
+                ->map(fn ($h) => [
+                    'id'      => $h->photo_id,
+                    'url'     => '/storage/' . $h->photo->image,
+                    'caption' => $h->photo->caption,
+                ])->values()->all())
+            // A scope left empty by that filter is dropped too, so "present but
+            // unusable" never reaches the resolver as a non-empty override.
+            ->filter(fn ($rows) => count($rows) > 0)
+            ->all();
+
         return response()->json([
             // The locale this response was resolved in, and every locale the
             // site has. The public site builds its language switcher and
@@ -44,6 +71,9 @@ class WebsiteModuleController extends Controller
             'modules'       => $modules,
             'module_order'  => $module_order,
             'module_config' => $module_config,
+            // Always an object, never null — the Astro build bakes whatever it
+            // gets, and a null would throw at build time.
+            'hero_images'   => (object) $hero_images,
         ]);
     }
 

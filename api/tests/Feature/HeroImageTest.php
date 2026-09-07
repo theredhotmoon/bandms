@@ -163,3 +163,44 @@ it('rejects a photo id that does not exist', function () {
     $this->putJson('/api/admin/hero-images/main', ['photo_ids' => [999999]])
         ->assertStatus(422);
 });
+
+// ── site-config ───────────────────────────────────────────────────────────────
+
+it('serves hero images from site-config without auth', function () {
+    $a = heroPhoto('photos/a.jpg');
+    HeroImage::create(['photo_id' => $a->id, 'scope' => 'main', 'position' => 0]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonCount(1, 'hero_images.main')
+        ->assertJsonPath('hero_images.main.0.id', $a->id)
+        ->assertJsonPath('hero_images.main.0.url', '/storage/photos/a.jpg');
+});
+
+it('omits a hero row whose photo has no file', function () {
+    // `url` is non-nullable on the public side; a null would render as the
+    // literal string "null" inside a CSS url(). Filtered at the source instead.
+    $broken = Photo::create(['image' => null, 'sort_order' => 0]);
+    HeroImage::create(['photo_id' => $broken->id, 'scope' => 'main', 'position' => 0]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonMissingPath('hero_images.main');
+});
+
+it('serves an empty hero_images object rather than null when none are set', function () {
+    // A null here throws during astro build, which takes down all 35 pages.
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('hero_images', []);
+});
+
+it('keeps hero images out of module_config so the slug map is unaffected', function () {
+    $a = heroPhoto();
+    HeroImage::create(['photo_id' => $a->id, 'scope' => 'home', 'position' => 0]);
+
+    $response = $this->getJson('/api/site-config')->assertOk();
+
+    expect(array_keys($response->json('module_config')))->not->toContain('home');
+    expect($response->json('hero_images.home'))->toHaveCount(1);
+});
