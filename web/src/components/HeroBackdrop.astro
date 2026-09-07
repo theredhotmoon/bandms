@@ -1,0 +1,69 @@
+---
+import type { HeroImage } from '@/lib/heroImages'
+
+/**
+ * A randomly chosen backdrop for a hero section.
+ *
+ * All candidates ship in the markup and an inline script picks one per page
+ * load. A build-time pick would be simpler, but the site is static: the same
+ * picture would then sit there until someone restarted the web container,
+ * which is not what "random" means to anyone looking at it.
+ *
+ * The script is `is:inline` and sits immediately after the element so it runs
+ * synchronously, before first paint — otherwise the page would show the bare
+ * ink background and then snap to an image.
+ *
+ * Only the chosen image is ever fetched. The trade-off is that a JS-set
+ * background cannot be preloaded, so LCP lands slightly later than a hardcoded
+ * <img> would. Accepted: this is decoration behind a dark veil, not content.
+ */
+interface Props {
+  images: HeroImage[]
+}
+
+const { images } = Astro.props
+const urls = images.map(i => i.url).filter(Boolean)
+---
+
+{urls.length > 0 && (
+  <Fragment>
+    <div class="hero-backdrop" data-hero-urls={JSON.stringify(urls)} aria-hidden="true"></div>
+    <div class="hero-backdrop-veil" aria-hidden="true"></div>
+    <script is:inline>
+      document.querySelectorAll('.hero-backdrop[data-hero-urls]').forEach((el) => {
+        try {
+          const urls = JSON.parse(el.getAttribute('data-hero-urls') || '[]')
+          if (!urls.length) return
+          const pick = urls[Math.floor(Math.random() * urls.length)]
+          el.style.backgroundImage = 'url("' + pick + '")'
+        } catch (e) {
+          /* A malformed attribute leaves the plain background — never a blank page. */
+        }
+      })
+    </script>
+  </Fragment>
+)}
+
+<style>
+  /*
+   * The veil is a sibling rather than a ::after, because `filter` applies to an
+   * element's pseudo-elements too — tinting through the same grayscale and
+   * brightness pass would wash the veil out along with the photo.
+   */
+  .hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: grayscale(1) contrast(1.25) brightness(.6);
+    pointer-events: none;
+  }
+
+  .hero-backdrop-veil {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklab, var(--color-inverse) 56%, transparent);
+    pointer-events: none;
+  }
+</style>

@@ -4,6 +4,8 @@ import { getSlugMap, LOCALES } from '@/lib/slugs'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import HeroBackdrop from '@/components/HeroBackdrop.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, fmtTime } from '@/lib/i18n'
 
@@ -33,6 +35,10 @@ const [profile, concerts, releases, { data: posts }, socialLinks, siteConfig] = 
 // becomes a 404. Absent key === enabled (getSiteConfig fails open to `{}` when
 // the API is unreachable at build time).
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
+
+// The homepage is not a website_modules row, so its hero scope is the reserved
+// 'home' name. Falls back to the main set when the band has set none of its own.
+const heroImages = resolveHeroImages(siteConfig, 'home')
 
 const concertsEnabled = enabled('concerts')
 const releasesEnabled = enabled('releases')
@@ -79,6 +85,7 @@ const structuredData = {
 
     <!-- ── HERO ──────────────────────────────────────────────────── -->
     <section class="hero">
+      <HeroBackdrop images={heroImages} />
       <div class="hero-checker" aria-hidden="true"></div>
       <div class="hero-inner">
         {profile.logo_url && (
