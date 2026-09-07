@@ -14,7 +14,10 @@ class HeroImageController extends Controller
     /** Every populated scope in one response — the editor shows them all at once. */
     public function index(): JsonResponse
     {
-        return response()->json(['data' => $this->allScopes()]);
+        // Cast so an empty result encodes as {} rather than [] — the payload is
+        // a map keyed by scope, and PHP's empty array would otherwise arrive as
+        // a JSON array and contradict the client's Record<string, …> type.
+        return response()->json(['data' => (object) $this->allScopes()]);
     }
 
     /**
@@ -46,7 +49,10 @@ class HeroImageController extends Controller
             }
         });
 
-        return response()->json(['data' => $this->allScopes()]);
+        // Cast so an empty result encodes as {} rather than [] — the payload is
+        // a map keyed by scope, and PHP's empty array would otherwise arrive as
+        // a JSON array and contradict the client's Record<string, …> type.
+        return response()->json(['data' => (object) $this->allScopes()]);
     }
 
     /**

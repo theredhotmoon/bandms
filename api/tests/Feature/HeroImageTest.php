@@ -204,3 +204,16 @@ it('keeps hero images out of module_config so the slug map is unaffected', funct
     expect(array_keys($response->json('module_config')))->not->toContain('home');
     expect($response->json('hero_images.home'))->toHaveCount(1);
 });
+
+it('serves an empty admin payload as an object, not an array', function () {
+    // The payload is a map keyed by scope. PHP's empty array encodes as [],
+    // which contradicts the client's Record<string, HeroImage[]> type.
+    heroAdmin();
+
+    $this->getJson('/api/admin/hero-images')
+        ->assertOk()
+        ->assertJsonPath('data', []);
+
+    expect($this->getJson('/api/admin/hero-images')->content())
+        ->toContain('"data":{}');
+});
