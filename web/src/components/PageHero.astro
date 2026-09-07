@@ -1,5 +1,7 @@
 ---
 import ThemeSlot from '@/components/ThemeSlot.astro'
+import HeroBackdrop from '@/components/HeroBackdrop.astro'
+import type { HeroImage } from '@/lib/heroImages'
 
 /**
  * The ink page header every 2-Tone subpage opens with.
@@ -22,14 +24,22 @@ interface Props {
   titleSize?: number
   /** Max width of the lead paragraph in px. */
   leadWidth?: number
+  /**
+   * Backdrop candidates for this page, already resolved by the caller.
+   *
+   * Resolved by the section rather than here: only the section knows its own
+   * scope name, and it already holds the site config it would come from.
+   */
+  heroImages?: HeroImage[]
 }
 
-const { kicker, title, lead, titleSize = 140, leadWidth = 680 } = Astro.props
+const { kicker, title, lead, titleSize = 140, leadWidth = 680, heroImages = [] } = Astro.props
 
 const hasAside = Astro.slots.has('aside')
 ---
 
 <section class="ph page-x" style={`--ph-title:${titleSize}px; --ph-lead:${leadWidth}px`}>
+  <HeroBackdrop images={heroImages} />
   <ThemeSlot name="hero-backdrop" />
 
   <div class="ph-in" class:list={[{ 'ph-in--split': hasAside }]}>
