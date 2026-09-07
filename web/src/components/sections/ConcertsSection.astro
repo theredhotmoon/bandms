@@ -11,6 +11,8 @@ const { lang, alternates } = Astro.props
 const slugMap = await getSlugMap()
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import PageHero from '@/components/PageHero.astro'
+import { resolveHeroImages } from '@/lib/heroImages'
 import ShowsMap from '@/components/ShowsMap.vue'
 import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
@@ -72,16 +74,15 @@ function getTypeLabel(concert: Concert) {
     <!-- Grain overlay -->
 
     <!-- ── HERO ──────────────────────────────────────────────────── -->
-    <section class="hero">
-      <div class="checker-bg" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <div class="hero-text">
-          <span class="kicker">SKA · SKA-JAZZ · ROCKSTEADY</span>
-          <h1 class="page-title">{s.title || 'Shows'}</h1>
-          <p class="lead">
-            {s.lead || "Brass, bass and the upbeat — live. Every date we're playing next, and every floor we've already moved."}
-          </p>
-        </div>
+    <PageHero
+      kicker="SKA · SKA-JAZZ · ROCKSTEADY"
+      title={s.title || 'Shows'}
+      lead={s.lead || "Brass, bass and the upbeat — live. Every date we're playing next, and every floor we've already moved."}
+      titleSize={150}
+      leadWidth={640}
+      heroImages={resolveHeroImages(siteConfig, 'concerts')}
+    >
+      <Fragment slot="aside">
         <div class="stats">
           <div class="stat stat-accent">
             <span class="stat-n">{upcoming.length}</span>
@@ -96,8 +97,8 @@ function getTypeLabel(concert: Concert) {
             <span class="stat-l">cities</span>
           </div>
         </div>
-      </div>
-    </section>
+      </Fragment>
+    </PageHero>
 
     <!-- ── MAP ───────────────────────────────────────────────────── -->
     {concertsWithCoords.length > 0 && (
@@ -285,54 +286,6 @@ function getTypeLabel(concert: Concert) {
   /* Grain */
 
   /* ── HERO ─────────────────────── */
-  .hero {
-    background: var(--ink);
-    color: var(--paper);
-    padding: 54px var(--page-gutter) 58px;
-    position: relative;
-    overflow: hidden;
-  }
-  .checker-bg {
-    position: absolute;
-    inset: 0;
-    background-image: repeating-conic-gradient(
-      rgba(0,0,0,0) 0% 25%,
-      rgba(255,255,255,.04) 0% 50%
-    );
-    background-size: 46px 46px;
-    pointer-events: none;
-  }
-  .hero-inner {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 40px;
-    align-items: flex-end;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  .kicker {
-    display: block;
-    font: 800 14px/1 var(--font-body);
-    letter-spacing: .34em;
-    color: var(--acc);
-    margin-bottom: 18px;
-  }
-  .page-title {
-    font-family: var(--font-display);
-    font-size: clamp(72px, 12vw, 150px);
-    line-height: .82;
-    letter-spacing: .01em;
-    text-transform: uppercase;
-    margin: 0;
-    color: var(--paper);
-  }
-  .lead {
-    font: 500 20px/1.55 var(--font-body);
-    color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent);
-    max-width: 640px;
-    margin: 22px 0 0;
-  }
   .stats {
     display: flex;
     gap: 14px;
@@ -652,14 +605,11 @@ function getTypeLabel(concert: Concert) {
 
   /* ── Responsive ─────────────────── */
   @media (max-width: 1100px) {
-    .hero { padding: 48px 40px 52px; }
     .map-intro { padding: 40px 40px 18px; }
     .sec { padding: 48px 40px; }
     .nl-sec { padding: 48px 40px; }
   }
   @media (max-width: 800px) {
-    .hero { padding: 36px 24px 40px; }
-    .hero-inner { grid-template-columns: 1fr; gap: 28px; align-items: flex-start; }
     .stats { flex-wrap: wrap; gap: 10px; }
     .map-intro { padding: 32px 24px 16px; }
     .sec { padding: 40px 24px; }
