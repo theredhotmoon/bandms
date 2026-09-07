@@ -713,6 +713,35 @@ done
 
 ---
 
+### Hero images are served *beside* `module_config`, never inside it
+
+`GET /api/site-config` carries a top-level `hero_images` object keyed by scope —
+`main`, `home`, or a `website_modules.slug`. Hanging it off
+`module_config.<slug>.hero_images` is the obvious design and it is wrong.
+
+**`web/src/lib/slugs.ts` builds the site's slug map by iterating
+`Object.keys(module_config)`.** Two of the three scope kinds are not modules, so
+a `home` key there becomes a phantom `home` module in `slugMap` for **every**
+locale. No route is emitted — `[lang]/[section].astro` filters against an
+explicit section list — so `astro build` stays green and nothing visibly breaks.
+It just quietly seeds a page that does not exist into the map that decides where
+the nav points. `web/src/lib/slugs.test.ts` pins this; don't delete that test.
+
+**Read it through `resolveHeroImages()` (`web/src/lib/heroImages.ts`), never
+directly.** A page's own set *replaces* the main set, and an empty set counts as
+no override — `app/src/utils/heroImageScopes.ts` repeats that rule for the admin,
+and the two must agree or the editor lies about what visitors will see.
+
+**`url` is non-nullable on the public side**, because the API drops rows whose
+photo has no file. Keep that filter: a null reaching a CSS `url()` renders as the
+literal string `null`.
+
+**A scope is only worth offering if the page renders a hero.** `footer` is
+excluded by `NON_PAGE_MODULES`; `tech-rider` is excluded separately in
+`HeroImagesAdminView.vue`, because it *does* have a route and a slug (so it does
+not belong in `NON_PAGE_MODULES`) but its page is the token-gated rider document,
+which prints black-on-white and carries no backdrop.
+
 ### Module URL slugs are stored per locale — never derive them from the label
 
 **Which locales exist at all is the registry's job** — see *Adding a language*
@@ -1357,6 +1386,39 @@ runs it under the same bitmask bit as the SPA suite.
 - Skip only when explicitly told to ("don't run tests" / "quick change") — and say so in the response.
 - If tests fail after your change: fix them before reporting done. Distinguish between a **code bug** (fix the source) and a **test bug** (test is outdated — fix the test and explain why).
 - **Rebuilds run tests by default.** Use `--skip-tests` to skip them when you're mid-feature and the suite is intentionally broken.
+
+**The two frontend suites disagree on the filename, and the wrong one runs
+nothing.** `app/vitest.config.ts` sets `include: ['src/**/*.spec.ts', …]`, so a
+`*.test.ts` file under `app/src` is **silently ignored** — the suite goes green
+having collected nothing, which looks exactly like a passing test. `web/` uses
+vitest's default include and takes `*.test.ts`. So: `app/` → `.spec.ts`,
+`web/` → `.test.ts`. After adding the first spec to a new area, check the test
+*count* went up, not just that the run was green.
+
+**Anything in `app/` that must be unit-testable belongs in `src/utils/`, not in
+a composable.** The admin's vitest environment is `node`, and `useAuth` reads
+`localStorage` at module load — so importing any composable that pulls it in
+dies with `localStorage.getItem is not a function`. `riderDiff`, `venueGate` and
+`heroImageScopes` are utils for exactly this reason.
+
+### E2E: a Playwright `storageState` does not carry this app's auth token
+
+`test.use({ storageState })` works for **page** tests, because the SPA reads its
+token from `localStorage` and Playwright restores that into the page. But
+`request.newContext({ storageState })` replays **cookies only** — and
+`e2e/.auth/admin.json` holds zero cookies. An API context built that way is
+anonymous, and every admin call 401s.
+
+That is quiet in the worst way: a `beforeAll` that reads state to restore later
+gets a 401, records "there was nothing there", and the `afterAll` either does
+nothing or *clears* what it was meant to protect. `hero-images.spec.ts` hit both
+halves. The fix is to read `auth_token` out of the storage-state file and send
+it as an explicit `Authorization: Bearer` header — and to make the read **throw**
+rather than return an empty result, so a failed capture cannot become a
+destructive restore. Assert the restore's response too.
+
+Note also that these spec files are **ESM**: `__dirname` is not defined. Use a
+path relative to the Playwright cwd (`app/`), the way `test.use()` already does.
 
 ### E2E: a red run is often the machine — check the signature, not free RAM
 
