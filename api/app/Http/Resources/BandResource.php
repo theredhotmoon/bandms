@@ -15,6 +15,13 @@ class BandResource extends JsonResource
             'website'      => $this->website,
             'gigs_count'   => $this->concerts_count ?? 0,
             'last_gig_at'  => $this->concerts_max_date,
+            'contacts'     => $this->whenLoaded('authors', fn () => $this->authors->map(fn ($a) => [
+                'id'       => $a->id,
+                'name'     => $a->name,
+                'email'    => $a->email,
+                'phone'    => $a->phone,
+                'whatsapp' => $a->whatsapp,
+            ])->values()),
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];

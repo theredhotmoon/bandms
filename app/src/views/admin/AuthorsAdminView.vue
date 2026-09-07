@@ -12,6 +12,7 @@ import { useAuthors, useAuthor } from '@/composables/useAuthors'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTours } from '@/composables/useTours'
+import { useBands } from '@/composables/useBands'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
 import type { AuthorSummary, AuthorPayload } from '@/types/author'
@@ -20,6 +21,7 @@ const { query, create, update, remove } = useAuthors()
 const { query: pressReleasesQ } = usePressReleases()
 const { query: concertsQ } = useConcerts()
 const { query: toursQ } = useTours()
+const { query: bandsQ } = useBands()
 
 const showModal   = ref(false)
 const isCreating  = ref(false)
@@ -163,6 +165,7 @@ async function confirmDelete() {
         :press-releases="pressReleasesQ.data.value ?? []"
         :concerts="concertsQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"
+        :bands="bandsQ.data.value ?? []"
         @submit="handleSubmit"
         @cancel="closeModal"
       />

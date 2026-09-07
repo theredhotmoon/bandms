@@ -32,6 +32,11 @@ class Author extends Model
         return $this->belongsToMany(Photo::class, 'author_photos');
     }
 
+    public function bands(): BelongsToMany
+    {
+        return $this->belongsToMany(Band::class, 'author_bands')->orderBy('name');
+    }
+
     public function socialLinks(): HasMany
     {
         return $this->hasMany(SocialLink::class, 'author_id')->orderBy('position');

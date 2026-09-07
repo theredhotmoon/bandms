@@ -10,11 +10,13 @@ import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useBands } from '@/composables/useBands'
+import { useAuthors } from '@/composables/useAuthors'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
 import type { Band, BandPayload } from '@/types/band'
 
 const { query, create, update, remove } = useBands()
+const { query: authorsQuery } = useAuthors()
 const router = useRouter()
 
 function sendMessage(band: Band) {
@@ -35,7 +37,12 @@ const confirmId = ref<number | null>(null)
 
 const tc = useTableControls<Band>({
   data: query.data,
-  searchFn: (b, q) => b.name.toLowerCase().includes(q) || (b.website ?? '').toLowerCase().includes(q),
+  searchFn: (b, q) =>
+    b.name.toLowerCase().includes(q) ||
+    (b.website ?? '').toLowerCase().includes(q) ||
+    (b.contacts ?? []).some(
+      (c) => c.name.toLowerCase().includes(q) || (c.email ?? '').toLowerCase().includes(q),
+    ),
   defaultSort: 'name',
 })
 
@@ -96,6 +103,7 @@ async function confirmDelete() {
               <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">Website</th>
+                <th class="th">Contact</th>
                 <SortHeader label="Gigs" sort-key="gigs_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="7rem" @sort="tc.toggleSort" />
                 <SortHeader label="Last gig" sort-key="last_gig_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="9rem" @sort="tc.toggleSort" />
                 <th class="th text-right">Actions</th>
@@ -107,6 +115,16 @@ async function confirmDelete() {
                 <td class="td">
                   <a v-if="band.website" :href="band.website" target="_blank" rel="noopener"
                      class="text-xs" style="color:#9ca3af;">{{ band.website }}</a>
+                  <span v-else style="color:#475569;">—</span>
+                </td>
+                <td class="td">
+                  <div v-if="band.contacts?.length" class="contact-cell">
+                    <span v-for="c in band.contacts" :key="c.id" class="contact-pill">
+                      <span class="contact-pill-name">{{ c.name }}</span>
+                      <a v-if="c.email" :href="`mailto:${c.email}`" class="contact-action" :title="c.email">Email</a>
+                      <a v-else-if="c.phone" :href="`tel:${c.phone}`" class="contact-action" :title="c.phone">Call</a>
+                    </span>
+                  </div>
                   <span v-else style="color:#475569;">—</span>
                 </td>
                 <td class="td">
@@ -138,7 +156,14 @@ async function confirmDelete() {
     </div>
 
     <AdminModal :open="showModal" :title="editing ? 'Edit band' : 'New band'" @close="closeModal">
-      <BandForm :initial="editing" :loading="create.isPending.value || update.isPending.value" :errors="fieldErrors" @submit="handleSubmit" @cancel="closeModal" />
+      <BandForm
+        :initial="editing"
+        :authors="authorsQuery.data.value ?? []"
+        :loading="create.isPending.value || update.isPending.value"
+        :errors="fieldErrors"
+        @submit="handleSubmit"
+        @cancel="closeModal"
+      />
     </AdminModal>
 
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
@@ -153,6 +178,15 @@ async function confirmDelete() {
   border-radius: 9999px; font-size: 0.7rem; font-weight: 700;
   background: #2a2a2a; color: #c0c0c0;
 }
+.contact-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.contact-pill {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.1rem 0.4rem; border-radius: 0.25rem;
+  background: #161616; border: 1px solid #262626;
+}
+.contact-pill-name { font-size: 0.72rem; color: #cbd5e1; }
+.contact-action { font-size: 0.65rem; font-weight: 600; color: #34d399; text-decoration: none; }
+.contact-action:hover { text-decoration: underline; }
 .btn-message {
   padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;
   background: #0f2a1e; border: 1px solid #166534; color: #34d399; cursor: pointer;

@@ -326,3 +326,54 @@ describe('author social links', function () {
         ]);
     });
 });
+
+// ── Author ↔ bands ────────────────────────────────────────────────────────────
+
+describe('author bands', function () {
+    it('attaches bands to an author on create', function () {
+        $this->actingAsAdmin();
+        $band = \App\Models\Band::create(['name' => 'Linked Band']);
+
+        $this->postJson('/api/authors', ['name' => 'Band Contact', 'band_ids' => [$band->id]])
+            ->assertCreated()
+            ->assertJsonCount(1, 'data.bands')
+            ->assertJsonPath('data.bands.0.name', 'Linked Band');
+
+        $this->assertDatabaseHas('author_bands', ['band_id' => $band->id]);
+    });
+
+    it('syncs bands on update', function () {
+        $this->actingAsAdmin();
+        $old = \App\Models\Band::create(['name' => 'Dropped Band']);
+        $new = \App\Models\Band::create(['name' => 'Added Band']);
+        $author = Author::create(['name' => 'Switching Contact']);
+        $author->bands()->attach($old);
+
+        $this->putJson("/api/authors/{$author->id}", ['name' => 'Switching Contact', 'band_ids' => [$new->id]])
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.bands')
+            ->assertJsonPath('data.bands.0.name', 'Added Band');
+
+        $this->assertDatabaseMissing('author_bands', ['band_id' => $old->id]);
+    });
+
+    it('validates that every band id exists', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', ['name' => 'Bad Bands', 'band_ids' => [9999]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['band_ids.0']);
+    });
+
+    it('detaches the pivot row when a band is deleted', function () {
+        $this->actingAsAdmin();
+        $band = \App\Models\Band::create(['name' => 'Doomed Band']);
+        $author = Author::create(['name' => 'Surviving Contact']);
+        $author->bands()->attach($band);
+
+        $band->delete();
+
+        $this->assertDatabaseMissing('author_bands', ['author_id' => $author->id]);
+        $this->assertDatabaseHas('authors', ['id' => $author->id]);
+    });
+});

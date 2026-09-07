@@ -6,6 +6,7 @@ import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { Concert } from '@/types/concert'
 import type { TourSummary } from '@/types/tour'
+import type { Band } from '@/types/band'
 
 const props = defineProps<{
   initial?: Author | null
@@ -14,6 +15,7 @@ const props = defineProps<{
   pressReleases: PressReleaseSummary[]
   concerts: Concert[]
   tours: TourSummary[]
+  bands: Band[]
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +36,7 @@ const socialLinks = ref<SocialLinkPayload[]>([])
 const press_release_ids = ref<number[]>([])
 const concert_ids       = ref<number[]>([])
 const tour_ids          = ref<number[]>([])
+const band_ids          = ref<number[]>([])
 
 watch(
   () => props.initial,
@@ -47,6 +50,7 @@ watch(
     press_release_ids.value = val?.press_releases?.map((p) => p.id) ?? []
     concert_ids.value       = val?.concerts?.map((c) => c.id)       ?? []
     tour_ids.value          = val?.tours?.map((t) => t.id)           ?? []
+    band_ids.value          = val?.bands?.map((b) => b.id)           ?? []
   },
   { immediate: true },
 )
@@ -55,6 +59,7 @@ const expandedSections = reactive({
   pressReleases: false,
   concerts:      false,
   tours:         false,
+  bands:         false,
 })
 
 function toggle(arr: number[], id: number) {
@@ -86,6 +91,7 @@ function submit() {
     press_release_ids: press_release_ids.value,
     concert_ids:       concert_ids.value,
     tour_ids:          tour_ids.value,
+    band_ids:          band_ids.value,
     photo_ids:         [],
   })
 }
@@ -165,6 +171,20 @@ function submit() {
         <label v-for="t in tours" :key="t.id" class="assoc-item">
           <input type="checkbox" :checked="tour_ids.includes(t.id)" @change="toggle(tour_ids, t.id)" class="assoc-check" />
           <span class="assoc-text">{{ t.name }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Bands -->
+    <div v-if="bands.length" class="assoc-section">
+      <button type="button" class="assoc-toggle" @click="expandedSections.bands = !expandedSections.bands">
+        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.bands }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        {{ sectionLabel('Bands', band_ids.length) }}
+      </button>
+      <div v-if="expandedSections.bands" class="assoc-list">
+        <label v-for="b in bands" :key="b.id" class="assoc-item">
+          <input type="checkbox" :checked="band_ids.includes(b.id)" @change="toggle(band_ids, b.id)" class="assoc-check" />
+          <span class="assoc-text">{{ b.name }}</span>
         </label>
       </div>
     </div>
