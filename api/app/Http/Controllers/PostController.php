@@ -49,6 +49,10 @@ class PostController extends Controller
     {
         $data = $request->validated();
 
+        // Retries on a MySQL deadlock (SQLSTATE 40001), which InnoDB can raise
+        // between two unrelated concurrent inserts into post_blocks — this
+        // transaction is exactly the shape that provokes it, and Laravel's
+        // built-in retry is the standard fix rather than surfacing it as a 500.
         $post = DB::transaction(function () use ($data) {
             $titleEn = is_array($data['title']) ? ($data['title']['en'] ?? reset($data['title']) ?? 'post') : $data['title'];
             $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
@@ -70,7 +74,7 @@ class PostController extends Controller
             PostBlockSync::sync($post, $data['blocks'] ?? []);
 
             return $post;
-        });
+        }, 3);
 
         // Posts are baked into the static site. PostController never called this
         // — with auto-rebuild on, the admin hides its manual button, so a save
@@ -99,7 +103,7 @@ class PostController extends Controller
             if (array_key_exists('blocks', $data)) {
                 PostBlockSync::sync($post, $data['blocks'] ?? []);
             }
-        });
+        }, 3);
 
         SiteRebuild::requestIfAuto();
 
