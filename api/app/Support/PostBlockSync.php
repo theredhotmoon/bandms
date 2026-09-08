@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Post;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -22,12 +23,24 @@ final class PostBlockSync
 
         $post->blocks()->delete();
 
-        foreach ($blocks as $i => $block) {
-            $post->blocks()->create([
-                'position' => $i,
-                'type'     => $block['type'],
-                'payload'  => $block['payload'],
-            ]);
+        // Bulk insert, not one create() call per block: this transaction is
+        // already the one PostController retries on a MySQL deadlock between
+        // two concurrent post_blocks writers, and N individual INSERTs widen
+        // the lock-holding window for no benefit — nothing here needs the
+        // per-row model events an Eloquent create() would fire.
+        if ($blocks !== []) {
+            $now = now();
+            // A plain query-builder insert() — unlike create(), a HasMany
+            // relation's insert() does not auto-apply the foreign key, so
+            // post_id is set on every row explicitly.
+            DB::table('post_blocks')->insert(array_map(fn ($block, $i) => [
+                'post_id'    => $post->id,
+                'position'   => $i,
+                'type'       => $block['type'],
+                'payload'    => json_encode($block['payload'], JSON_UNESCAPED_UNICODE),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $blocks, array_keys($blocks)));
         }
 
         $newPaths = array_column(

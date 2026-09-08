@@ -24,7 +24,9 @@ function remove(i: number) {
 }
 
 function setPayload(i: number, payload: Record<string, unknown>) {
-  emit('update:modelValue', props.modelValue.map((b, idx) => (idx === i ? { ...b, payload } : b)))
+  // Clears any dangling-ref warning too: once the admin edits the block
+  // (e.g. picks a replacement item), the flag no longer applies.
+  emit('update:modelValue', props.modelValue.map((b, idx) => (idx === i ? { ...b, payload, dangling: false } : b)))
 }
 
 // Native HTML5 drag, matching SocialLinksEditor — no library.
@@ -67,6 +69,10 @@ function onDrop(to: number) {
           <button type="button" class="btn-remove" @click="remove(i)" title="Remove block">✕</button>
         </div>
 
+        <p v-if="block.dangling" class="block-dangling">
+          ⚠ The item this block referenced was deleted. Pick a new one or remove this block.
+        </p>
+
         <TextBlockEditor  v-if="block.type === 'text'"  :payload="block.payload" @update:payload="setPayload(i, $event)" />
         <ImageBlockEditor v-else-if="block.type === 'image'" :payload="block.payload" @update:payload="setPayload(i, $event)" />
         <EmbedBlockEditor v-else-if="block.type === 'embed'" :payload="block.payload" @update:payload="setPayload(i, $event)" />
@@ -85,4 +91,8 @@ function onDrop(to: number) {
 .block-type { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #a1a1aa; }
 .block-pos { margin-left: auto; font-size: 0.7rem; color: #71717a; }
 .empty-hint { font-size: 0.8rem; color: #71717a; padding: 0.75rem 0; }
+.block-dangling {
+  font-size: 0.75rem; color: #f87171; background: #3f1212;
+  border-radius: 0.375rem; padding: 0.4rem 0.6rem; margin-bottom: 0.5rem;
+}
 </style>

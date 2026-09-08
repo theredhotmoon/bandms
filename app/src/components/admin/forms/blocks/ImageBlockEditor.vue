@@ -40,7 +40,7 @@ async function onFile(e: Event) {
   <div class="flex flex-col gap-2">
     <div v-if="payload.url || payload.path" class="img-preview">
       <img :src="(payload.url as string) ?? `/storage/${payload.path}`" alt="" class="img-preview-el" />
-      <button type="button" class="btn-remove" @click="set('path', '')" title="Remove image">✕</button>
+      <button type="button" class="btn-remove" @click="emit('update:payload', { ...payload, path: '', url: '' })" title="Remove image">✕</button>
     </div>
     <div v-else class="siu-drop" @click="fileInput?.click()">
       <span class="siu-label">{{ uploading ? 'Uploading…' : 'Click to upload an image' }}</span>

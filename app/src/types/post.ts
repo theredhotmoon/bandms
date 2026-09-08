@@ -45,6 +45,14 @@ export type PostBlock = TextBlock | ImageBlock | EmbedBlock | RefBlock
 export interface PostBlockDraft {
   type: PostBlockType
   payload: Record<string, unknown>
+  /**
+   * UI-only, never submitted (PostForm's submit() rebuilds {type, payload}
+   * from scratch). Set during hydration when a ref block's target entity was
+   * deleted, so the editor can warn rather than silently defaulting to id 0
+   * — indistinguishable, otherwise, from a freshly-added block nobody has
+   * configured yet.
+   */
+  dangling?: boolean
 }
 
 /** Returned in list responses — no image, content replaced by excerpt. */

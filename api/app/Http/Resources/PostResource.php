@@ -22,8 +22,15 @@ class PostResource extends JsonResource
                 'title'   => $this->getTranslations('title'),
                 'intro'   => $this->getTranslations('intro'),
             ],
-            'blocks' => $this->whenLoaded('blocks', fn () => PostBlockResource::collection($this->blocks)
-                ->each(fn ($r) => $r->withResolved(\App\Support\PostBlockResolver::resolve($this->blocks)))),
+            // resolve() is batched deliberately (one query per ref entity type,
+            // not per block) — it must be called once for the whole post, not
+            // once per block inside each(), or the batching is defeated.
+            'blocks' => $this->whenLoaded('blocks', function () {
+                $resolved = \App\Support\PostBlockResolver::resolve($this->blocks);
+
+                return PostBlockResource::collection($this->blocks)
+                    ->each(fn ($r) => $r->withResolved($resolved));
+            }),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             // `site` is the publication name, which the Article page renders above
             // each headline and as the attribution on the pull quote. It falls

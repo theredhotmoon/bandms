@@ -36,10 +36,17 @@ function setEntity(value: RefEntity) {
             class="field-input" style="width:11rem; flex-shrink:0;">
       <option v-for="(label, key) in ENTITY_LABELS" :key="key" :value="key">{{ label }}</option>
     </select>
-    <select :value="payload.id ?? 0"
-            @change="emit('update:payload', { ...payload, id: Number(($event.target as HTMLSelectElement).value) })"
+    <!-- The placeholder's value must be "" — the HTML spec only treats an
+         option with no value (or an empty one) as a select's "placeholder
+         label option", which is what makes a required select actually block
+         submission while it's the selected one. A non-empty placeholder value
+         (id 0, say) is a normal option as far as the browser is concerned,
+         so `required` never engages and an incomplete block reaches the
+         server with no client-side warning at all. -->
+    <select :value="(payload.id as number) ? String(payload.id) : ''"
+            @change="emit('update:payload', { ...payload, id: Number(($event.target as HTMLSelectElement).value) || 0 })"
             class="field-input flex-1" required>
-      <option :value="0" disabled>Choose an item…</option>
+      <option value="" disabled>Choose an item…</option>
       <option v-for="i in items" :key="i.id" :value="i.id">{{ i.label }}</option>
     </select>
   </div>

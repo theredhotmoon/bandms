@@ -16,7 +16,6 @@ import { useAlbums } from '@/composables/useAlbums'
 import { useTours } from '@/composables/useTours'
 import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
-import { usePosts } from '@/composables/usePosts'
 import { ApiValidationError } from '@/api/client'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 
@@ -38,7 +37,6 @@ const { query: albumsQ }    = useAlbums()
 const { query: toursQ }     = useTours()
 const { query: tagsQ }      = useTags()
 const { query: releasesQ }  = useReleases()
-const { query: postsQ }     = usePosts()
 
 const showModal   = ref(false)
 const isCreating  = ref(false)
@@ -194,7 +192,6 @@ function hostname(url: string): string {
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         :concerts="concertsQ.data.value ?? []"
-        :posts="postsQ.data.value?.data ?? []"
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"

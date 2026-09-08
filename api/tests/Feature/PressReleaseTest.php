@@ -139,6 +139,24 @@ describe('PUT /api/press-releases/{pressRelease}', function () {
 
         $this->putJson('/api/press-releases/9999', ['url' => 'https://example.com'])->assertNotFound();
     });
+
+    // Post coverage is now owned by ref blocks on the post itself, so the
+    // admin's "linked posts" picker was removed and the client no longer
+    // sends post_ids. syncRelations() still defaults every *other* key to []
+    // when absent — post_ids must not follow that pattern, or an unrelated
+    // edit (e.g. just fixing a typo) would silently wipe existing
+    // press_release_posts rows.
+    it('leaves existing post links alone when post_ids is omitted', function () {
+        $this->actingAsAdmin();
+        $pr   = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com']);
+        $post = \App\Models\Post::factory()->create();
+        $pr->posts()->attach($post->id);
+
+        $this->putJson("/api/press-releases/{$pr->id}", ['url' => 'https://example.com', 'og_title' => 'Fixed typo'])
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('press_release_posts', ['press_release_id' => $pr->id, 'post_id' => $post->id]);
+    });
 });
 
 // ── DELETE /api/press-releases/{pressRelease} ─────────────────────────────────

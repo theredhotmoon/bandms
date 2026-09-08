@@ -81,7 +81,7 @@ class PostController extends Controller
         // had no way at all to reach the public site.
         SiteRebuild::requestIfAuto();
 
-        return new PostResource($post->load(['tags', 'blocks']));
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function show(Post $post): PostResource
