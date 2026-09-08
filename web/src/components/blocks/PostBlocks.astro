@@ -1,0 +1,46 @@
+---
+import type { PostBlock } from '@/types/post'
+import type { Locale } from '@/types/shared'
+import type { SlugMap } from '@/lib/slugs'
+import TextBlock  from './TextBlock.astro'
+import ImageBlock from './ImageBlock.astro'
+import EmbedBlock from './EmbedBlock.astro'
+import RefBlock   from './RefBlock.astro'
+
+interface Props {
+  blocks: PostBlock[]
+  lang: Locale
+  slugMap: SlugMap
+  modules: Record<string, boolean>
+}
+const { blocks, lang, slugMap, modules } = Astro.props
+
+const KNOWN = new Set(['text', 'image', 'embed', 'ref'])
+
+/**
+ * Two filters, deliberately here rather than in each block component, so no
+ * per-type component can forget them:
+ *
+ *  - a ref whose entity was deleted (data === null) is dropped. The Astro build
+ *    is all-or-nothing: one page that throws aborts all 35 and leaves the web
+ *    container crash-looping. This has happened twice, once undetected for two
+ *    months at RestartCount 103.
+ *  - an unknown type is dropped rather than thrown on. Stored content can
+ *    predate a renderer.
+ */
+const renderable = (blocks ?? []).filter(
+  b => KNOWN.has(b.type) && !(b.type === 'ref' && b.data === null),
+)
+
+// The first press reference doubles as the article's pull quote — the design
+// shows press as context inside a story, never as an index.
+const firstPressId = renderable.find(b => b.type === 'ref' && b.entity === 'press_release')?.id
+---
+
+{renderable.map(block => (
+  block.type === 'text'  ? <TextBlock  block={block} />
+: block.type === 'image' ? <ImageBlock block={block} />
+: block.type === 'embed' ? <EmbedBlock block={block} />
+: <RefBlock block={block} lang={lang} slugMap={slugMap} modules={modules}
+            isFirstPress={block.id === firstPressId} />
+))}

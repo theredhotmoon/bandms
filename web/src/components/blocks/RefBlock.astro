@@ -1,0 +1,95 @@
+---
+import type { RefBlock } from '@/types/post'
+import type { Locale } from '@/types/shared'
+import type { SlugMap } from '@/lib/slugs'
+import { refHref } from '@/lib/refHref'
+
+interface Props {
+  block: RefBlock
+  lang: Locale
+  slugMap: SlugMap
+  modules: Record<string, boolean>
+  /** Press coverage renders as the pull quote when it is the first one. */
+  isFirstPress?: boolean
+}
+const { block, lang, slugMap, modules, isFirstPress = false } = Astro.props
+
+// data is never null here — PostBlocks filters those out before rendering.
+const data = block.data!
+const link = refHref(block.entity, data, lang, slugMap, modules)
+
+const label =
+  block.entity === 'concert'  ? (data.venue?.name ?? data.date ?? 'Concert')
+: block.entity === 'shop_item' ? data.name
+: block.entity === 'album'      ? data.title
+: data.title
+---
+
+{block.entity === 'press_release' && isFirstPress ? (
+  <blockquote class="art-pull">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--color-accent)" aria-hidden="true">
+      <path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z" />
+    </svg>
+    <p class="art-pull-quote">{data.title}</p>
+    {data.site && <cite class="art-pull-cite">— {data.site}</cite>}
+  </blockquote>
+) : block.entity === 'press_release' ? (
+  <a class="art-press" href={data.url} target="_blank" rel="noopener">
+    <span>
+      {data.site && <span class="art-press-site">{data.site}</span>}
+      <span class="art-press-title">{data.title}</span>
+    </span>
+  </a>
+) : link ? (
+  <a href={link.href} class="art-rel-link"
+     {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+    {label}
+  </a>
+) : (
+  // The module is off or the route was never built — the label still belongs
+  // on the page, just not as a link that 404s.
+  <span class="art-rel-link art-rel-link--dead">{label}</span>
+)}
+
+<style>
+  .art-rel-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 3px solid var(--color-ink); padding: 11px 15px;
+    font: 700 14px/1 var(--font-body); text-transform: uppercase; letter-spacing: .04em;
+    color: var(--color-ink); text-decoration: none;
+    background: var(--color-surface); margin: 0 8px 10px 0;
+    transition: background .12s, color .12s;
+  }
+  .art-rel-link:hover { background: var(--color-ink); color: var(--color-page); }
+  .art-rel-link--dead { opacity: .6; cursor: default; }
+  .art-rel-link--dead:hover { background: var(--color-surface); color: var(--color-ink); }
+
+  .art-pull { margin: 12px 0 30px; border-left: 6px solid var(--color-accent); padding-left: 26px; }
+  .art-pull-quote {
+    margin: 8px 0 12px;
+    font-family: var(--font-display); font-weight: var(--display-weight);
+    font-size: 30px; line-height: 1.12;
+    letter-spacing: var(--display-tracking); text-transform: var(--display-transform);
+    color: var(--color-body);
+  }
+  .art-pull-cite {
+    font: 800 12px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--color-accent); font-style: normal;
+  }
+
+  .art-press {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    background: var(--color-inverse); color: var(--color-on-inverse);
+    padding: 16px 20px; text-decoration: none; margin-bottom: 10px;
+  }
+  .art-press-site {
+    display: block; font: 800 10px/1 var(--font-body);
+    letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent);
+  }
+  .art-press-title { display: block; margin-top: 7px; font: 600 16px/1.4 var(--font-body); }
+
+  @media (max-width: 700px) {
+    .art-pull-quote { font-size: 22px; }
+    .art-pull { padding-left: 16px; }
+  }
+</style>
