@@ -32,6 +32,11 @@ class Post extends Model
         return $this->belongsToMany(Tag::class, 'post_tag');
     }
 
+    public function blocks(): HasMany
+    {
+        return $this->hasMany(PostBlock::class)->orderBy('position')->orderBy('id');
+    }
+
     public function links(): HasMany
     {
         return $this->hasMany(PostLink::class)->orderBy('sort_order')->orderBy('id');
