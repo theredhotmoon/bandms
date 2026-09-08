@@ -368,7 +368,7 @@ What each entity contributes, and how `RefBlock.astro` turns it into a link:
 |---|---|---|---|
 | `concert` | `id`, `slug_en`, `date`, `venue: {id, name}` | `/{lang}/{concerts}/{slug_en}` | `concerts` |
 | `release` | `id`, `title`, `type` | `/{lang}/{releases}/{id}` | `releases` |
-| `shop_item` | `id`, `title`, `slug_en` | `/{lang}/{merch}/{slug_en}` | `merch` |
+| `shop_item` | `id`, `name`, `slug_en` | `/{lang}/{merch}/{slug_en}` | `merch` |
 | `album` | `id`, `title` | `/{lang}/{photos}` — **listing, not a detail page** | `photos` |
 | `music_video` | `id`, `title`, `video_url` | external `video_url` | — |
 | `press_release` | `id`, `title`, `url`, `site` | external `url` | — |
