@@ -24,10 +24,13 @@ class PostController extends Controller
             ->with(['tags', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
+                // Matches any block's payload, not just type=text: an embed's
+                // label/url and an image's alt/caption are plain text in the
+                // payload JSON too, and the old `content` column this search
+                // replaced covered the whole article body regardless of shape.
                 fn ($q) => $q->where(fn ($q) => $q
                     ->where('title', 'like', '%' . $request->search . '%')
                     ->orWhereHas('blocks', fn ($b) => $b
-                        ->where('type', 'text')
                         ->where('payload', 'like', '%' . $request->search . '%'))
                 )
             )

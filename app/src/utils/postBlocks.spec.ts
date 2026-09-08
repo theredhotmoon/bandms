@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { defaultPayload, move, providerLabel } from './postBlocks'
+import { defaultPayload, move, providerLabel, detectProvider } from './postBlocks'
 
 describe('move', () => {
   it('moves an item down', () => {
@@ -55,5 +55,36 @@ describe('providerLabel', () => {
     expect(providerLabel('instagram')).toBe('Instagram')
     expect(providerLabel('tiktok')).toBe('TikTok')
     expect(providerLabel('link')).toBe('Link')
+  })
+})
+
+describe('detectProvider', () => {
+  it('detects youtube from both hosts', () => {
+    expect(detectProvider('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('youtube')
+    expect(detectProvider('https://youtu.be/dQw4w9WgXcQ')).toBe('youtube')
+  })
+
+  it('detects vimeo, instagram and tiktok', () => {
+    expect(detectProvider('https://vimeo.com/76979871')).toBe('vimeo')
+    expect(detectProvider('https://www.instagram.com/p/CxYzAbC1234/')).toBe('instagram')
+    expect(detectProvider('https://www.tiktok.com/@band/video/7234567890123456789')).toBe('tiktok')
+  })
+
+  it('falls back to link for any other host', () => {
+    expect(detectProvider('https://www.facebook.com/band/posts/123')).toBe('link')
+    expect(detectProvider('https://example.com/news')).toBe('link')
+  })
+
+  it('falls back to link rather than throwing on an unparseable url', () => {
+    expect(detectProvider('not a url at all')).toBe('link')
+    expect(detectProvider('')).toBe('link')
+  })
+
+  // A whole-string substring match would badge this YouTube — 'youtube.com'
+  // appears in the URL, just not as the host — while the server's host-based
+  // EmbedProvider::detect() correctly resolves it to 'link'. Matching that
+  // is the entire point of this helper: the two must agree.
+  it('matches by host, not by substring anywhere in the url', () => {
+    expect(detectProvider('https://example.com/share?ref=https://youtube.com/x')).toBe('link')
   })
 })

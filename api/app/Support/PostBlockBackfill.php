@@ -71,26 +71,36 @@ final class PostBlockBackfill
      *
      * Uses the DB facade, not Eloquent: by the time anyone reads this, the
      * models will have moved on and Post will no longer declare these relations.
+     *
+     * Six queries per chunk, not per post: each pivot table (and post_links)
+     * is fetched once for the whole chunk via whereIn and grouped in PHP,
+     * rather than once per post via pivotIds() in a loop. A chunk of 100
+     * posts previously issued up to 600 queries for this step alone.
      */
     public static function run(): void
     {
         DB::table('posts')->orderBy('id')->chunkById(100, function ($posts) {
+            $ids = $posts->pluck('id')->all();
+
+            $pressReleaseIds = self::pivotIdsForMany('press_release_posts', 'press_release_id', $ids);
+            $releaseIds      = self::pivotIdsForMany('post_releases', 'release_id', $ids);
+            $musicVideoIds   = self::pivotIdsForMany('post_music_videos', 'music_video_id', $ids);
+            $concertIds      = self::pivotIdsForMany('post_concerts', 'concert_id', $ids);
+            $albumIds        = self::pivotIdsForMany('post_albums', 'album_id', $ids);
+            $links           = self::linksForMany($ids);
+
             $rows = [];
             $now  = now();
 
             foreach ($posts as $post) {
                 $blocks = self::blocksFor([
                     'content'           => $post->content,
-                    'press_release_ids' => self::pivotIds('press_release_posts', 'press_release_id', $post->id),
-                    'release_ids'       => self::pivotIds('post_releases', 'release_id', $post->id),
-                    'music_video_ids'   => self::pivotIds('post_music_videos', 'music_video_id', $post->id),
-                    'concert_ids'       => self::pivotIds('post_concerts', 'concert_id', $post->id),
-                    'album_ids'         => self::pivotIds('post_albums', 'album_id', $post->id),
-                    'links'             => DB::table('post_links')
-                        ->where('post_id', $post->id)
-                        ->orderBy('sort_order')->orderBy('id')
-                        ->get(['type', 'url', 'label'])
-                        ->map(fn ($l) => (array) $l)->all(),
+                    'press_release_ids' => $pressReleaseIds[$post->id] ?? [],
+                    'release_ids'       => $releaseIds[$post->id] ?? [],
+                    'music_video_ids'   => $musicVideoIds[$post->id] ?? [],
+                    'concert_ids'       => $concertIds[$post->id] ?? [],
+                    'album_ids'         => $albumIds[$post->id] ?? [],
+                    'links'             => $links[$post->id] ?? [],
                 ]);
 
                 foreach ($blocks as $block) {
@@ -111,10 +121,68 @@ final class PostBlockBackfill
         });
     }
 
-    /** @return int[] */
-    private static function pivotIds(string $table, string $column, int $postId): array
+    /**
+     * Every row of a post↔entity pivot table for a batch of posts, in one
+     * query, grouped by post_id and ordered the same way pivotIds() (the
+     * per-post version this replaced) ordered its single post's rows.
+     *
+     * @param  int[]  $postIds
+     * @return array<int, int[]> post_id => ordered list of related ids
+     */
+    private static function pivotIdsForMany(string $table, string $column, array $postIds): array
     {
-        return DB::table($table)->where('post_id', $postId)->orderBy($column)->pluck($column)->all();
+        $rows = DB::table($table)
+            ->whereIn('post_id', $postIds)
+            ->orderBy('post_id')->orderBy($column)
+            ->get(['post_id', $column]);
+
+        return array_map(
+            fn ($group) => array_map(fn ($r) => $r->$column, $group),
+            self::groupByPostId($rows),
+        );
+    }
+
+    /**
+     * Every post_links row for a batch of posts, in one query, grouped and
+     * ordered the same way the per-post query this replaced was ordered.
+     *
+     * @param  int[]  $postIds
+     * @return array<int, list<array{type: string, url: string, label: ?string}>>
+     */
+    private static function linksForMany(array $postIds): array
+    {
+        $rows = DB::table('post_links')
+            ->whereIn('post_id', $postIds)
+            ->orderBy('post_id')->orderBy('sort_order')->orderBy('id')
+            ->get(['post_id', 'type', 'url', 'label']);
+
+        return array_map(
+            fn ($group) => array_map(fn ($r) => (array) $r, $group),
+            self::groupByPostId($rows),
+        );
+    }
+
+    /**
+     * Groups already-fetched rows by post_id, preserving each group's
+     * incoming order. Pure — takes any iterable of objects/arrays carrying a
+     * post_id field, no DB — so it can be tested directly with plain arrays.
+     * pivotIdsForMany()/linksForMany() themselves cannot be: by the time a
+     * test runs, the drop migration has already removed both the tables they
+     * query and the columns run() reads from posts (same reason blocksFor()
+     * is pure and tested separately from run()).
+     *
+     * @param  iterable<object|array>  $rows
+     * @return array<int, list<object|array>>
+     */
+    public static function groupByPostId(iterable $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            $postId = is_array($row) ? $row['post_id'] : $row->post_id;
+            $out[$postId][] = $row;
+        }
+
+        return $out;
     }
 
     /**

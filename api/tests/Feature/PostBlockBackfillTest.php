@@ -98,3 +98,51 @@ it('preserves the incoming link order', function () {
 it('emits nothing at all for an empty post', function () {
     expect(PostBlockBackfill::blocksFor(oldPost()))->toBe([]);
 });
+
+// groupByPostId() is the part of run()'s chunk-batching that replaced one
+// query per post with one query per pivot table per chunk. It is tested here,
+// separately from run() itself, for the same reason blocksFor() is tested
+// separately: by the time any test runs, the drop migration has already
+// removed both the source columns on posts and the pivot tables run() reads —
+// there is nothing left in the schema to seed a real end-to-end run() test
+// against.
+describe('PostBlockBackfill::groupByPostId', function () {
+    it('groups rows by post_id, preserving each group\'s order', function () {
+        $rows = [
+            (object) ['post_id' => 1, 'release_id' => 10],
+            (object) ['post_id' => 2, 'release_id' => 20],
+            (object) ['post_id' => 1, 'release_id' => 11],
+        ];
+
+        expect(PostBlockBackfill::groupByPostId($rows))->toBe([
+            1 => [$rows[0], $rows[2]],
+            2 => [$rows[1]],
+        ]);
+    });
+
+    // The real bug class here: two posts' rows landing in the wrong group,
+    // silently attaching one post's references to another.
+    it('never mixes rows belonging to different posts', function () {
+        $rows = [
+            (object) ['post_id' => 5, 'release_id' => 50],
+            (object) ['post_id' => 7, 'release_id' => 70],
+        ];
+
+        $grouped = PostBlockBackfill::groupByPostId($rows);
+
+        expect($grouped[5])->toHaveCount(1);
+        expect($grouped[7])->toHaveCount(1);
+        expect($grouped[5][0]->release_id)->toBe(50);
+        expect($grouped[7][0]->release_id)->toBe(70);
+    });
+
+    it('returns an empty array for no rows', function () {
+        expect(PostBlockBackfill::groupByPostId([]))->toBe([]);
+    });
+
+    it('accepts plain arrays as well as objects', function () {
+        $rows = [['post_id' => 3, 'url' => 'https://example.com']];
+
+        expect(PostBlockBackfill::groupByPostId($rows))->toBe([3 => $rows]);
+    });
+});

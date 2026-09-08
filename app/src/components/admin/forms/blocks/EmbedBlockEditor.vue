@@ -1,26 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { providerLabel } from '@/utils/postBlocks'
-import type { EmbedProviderName } from '@/types/post'
+import { providerLabel, detectProvider } from '@/utils/postBlocks'
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 
 const url = computed(() => (props.payload.url as string) ?? '')
 
-/**
- * Preview only. The server detects and stores the provider on save — this
- * mirrors the same host list so the editor sees what it will get, and the two
- * cannot disagree about the stored value because the client never sends one.
- */
-const detected = computed<EmbedProviderName>(() => {
-  const u = url.value.toLowerCase()
-  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube'
-  if (u.includes('vimeo.com')) return 'vimeo'
-  if (u.includes('instagram.com')) return 'instagram'
-  if (u.includes('tiktok.com')) return 'tiktok'
-  return 'link'
-})
+// Preview only — the server re-detects and stores the provider on save.
+const detected = computed(() => detectProvider(url.value))
 
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })

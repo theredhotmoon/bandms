@@ -45,6 +45,30 @@ describe('GET /api/posts', function () {
             ->assertJsonCount(1, 'data');
     });
 
+    // Search covers any block's payload, not just text bodies — the old
+    // `content` column this replaced searched the whole article regardless
+    // of shape, and an embed's label or an image's caption is plain text too.
+    it('filters by search term in an embed block label', function () {
+        $a = Post::factory()->create(['title' => 'Post A']);
+        PostBlock::factory()->for($a)->embed('https://vimeo.com/1', 'vimeo', 'Backstage soundcheck footage')->create();
+        Post::factory()->create(['title' => 'Post B']);
+
+        $this->getJson('/api/posts?search=soundcheck')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
+
+    it('filters by search term in an image block caption', function () {
+        $a = Post::factory()->create(['title' => 'Post A']);
+        $block = PostBlock::factory()->for($a)->image('post-blocks/x.webp')->create();
+        $block->update(['payload' => [...$block->payload, 'caption' => ['en' => 'Recording the new single', 'pl' => null]]]);
+        Post::factory()->create(['title' => 'Post B']);
+
+        $this->getJson('/api/posts?search=recording')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
+
     it('filters by tag_id', function () {
         $tag  = Tag::factory()->create(['name' => 'Live', 'slug_en' => 'live']);
         $post = Post::factory()->create(['title' => 'Live Show']);
