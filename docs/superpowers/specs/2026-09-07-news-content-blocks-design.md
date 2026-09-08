@@ -40,8 +40,11 @@ of four types:
 | `embed` | a pasted URL; the provider is detected server-side |
 | `ref` | a reference to another record in the CMS |
 
-`ref` targets: `concert`, `album`, `release`, `tour`, `music_video`,
-`press_release`, `shop_item`.
+`ref` targets: `concert`, `album`, `release`, `music_video`, `press_release`,
+`shop_item`.
+
+`tour` is deliberately **not** a ref target: tours have no public page of any
+kind, so a tour reference could only ever link somewhere it isn't.
 
 `embed` providers: `youtube`, `vimeo`, `instagram`, `tiktok`, and `link` as the
 fallback for any other host.
@@ -75,11 +78,18 @@ a later reader does not re-litigate it.
 Rejected: keeping both, which leaves two places to write body text and no rule
 for which wins.
 
-### Blocks replace the five post-owned pivots, not all seven
+### Blocks replace four post-owned pivots
 
-`post_concerts`, `post_albums`, `post_releases`, `post_tours` and
-`post_music_videos` are written **only** by `PostController`. They are dropped
-and become `ref` blocks.
+`post_concerts`, `post_albums`, `post_releases` and `post_music_videos` are
+written **only** by `PostController`. They are dropped and become `ref` blocks.
+
+**`post_tours` is left in the database, untouched and unread.** With `tour`
+dropped as a ref target there is nowhere to backfill it to, and dropping the
+table would destroy the only record of every post↔tour association. Those rows
+are not rendered anywhere today — `web/src/types/post.ts` does not even declare
+`tours` on the `Post` interface — so nothing visible is lost either way, but one
+direction is reversible and the other is not. The post editor stops writing it;
+removing the table is a separate, explicit decision.
 
 `press_release_posts`, `shop_item_post` and `photo_post` are **not** dropped —
 they have reverse-side writers that this change does not touch:
@@ -189,7 +199,7 @@ blocks in the order that reproduces today's rendered page exactly:
 0      text   ← posts.content            (all translations preserved)
 1..a   ref    ← press_release_posts
 a..b   ref    ← post_releases, post_music_videos, post_concerts,
-                post_albums, post_tours
+                post_albums          (post_tours is NOT backfilled)
 b..n   embed  ← post_links               (sort_order preserved, label kept)
 ```
 
@@ -202,7 +212,7 @@ repairs rows whose `type` was set wrong by hand. A facebook.com URL resolves to
 presentation.
 
 **2. Drop.** `posts.content`, `post_concerts`, `post_albums`, `post_releases`,
-`post_tours`, `post_music_videos`, `post_links`.
+`post_music_videos`, `post_links`. **Not** `post_tours` — see above.
 
 ### Knock-on: `excerpt`
 
@@ -354,15 +364,14 @@ CLAUDE.md: never derive one locale's URL from another.
 
 What each entity contributes, and how `RefBlock.astro` turns it into a link:
 
-| entity | `data` fields | href |
-|---|---|---|
-| `concert` | `id`, `slug_en`, `date`, `venue: {id, name}` | `/{lang}/{concerts}/{slug_en}` |
-| `release` | `id`, `title`, `type` | `/{lang}/{releases}/{id}` |
-| `album` | `id`, `title` | `/{lang}/{gallery}/{id}` |
-| `tour` | `id`, `name` | `/{lang}/{concerts}` |
-| `music_video` | `id`, `title`, `video_url` | external `video_url` |
-| `press_release` | `id`, `title`, `url`, `site` | external `url` |
-| `shop_item` | `id`, `title`, `slug_en` | `/{lang}/{shop}/{slug_en}` |
+| entity | `data` fields | href | module gate |
+|---|---|---|---|
+| `concert` | `id`, `slug_en`, `date`, `venue: {id, name}` | `/{lang}/{concerts}/{slug_en}` | `concerts` |
+| `release` | `id`, `title`, `type` | `/{lang}/{releases}/{id}` | `releases` |
+| `shop_item` | `id`, `title`, `slug_en` | `/{lang}/{merch}/{slug_en}` | `merch` |
+| `album` | `id`, `title` | `/{lang}/{photos}` — **listing, not a detail page** | `photos` |
+| `music_video` | `id`, `title`, `video_url` | external `video_url` | — |
+| `press_release` | `id`, `title`, `url`, `site` | external `url` | — |
 
 The `title`/`site` fallbacks that `PostResource` already applies are preserved —
 `og_title ?? url` for press and music videos, and `og_site_name` falling back to
@@ -370,9 +379,12 @@ the URL host. CLAUDE.md is explicit about why the latter matters: *"a quote with
 no source reads as the band quoting itself"*, and `article-press.spec.ts`
 asserts it.
 
-`tour` has no detail route of its own today, so it links to the concerts
-section — matching how `PostDetail.astro` currently handles music videos by
-pointing them at the releases section.
+**Only four sections have detail routes.** `web/src/pages/[lang]/[section]/[slug].astro`
+builds paths for `concerts`, `releases`, `posts` and `merch` and nothing else
+(`DETAIL_SECTIONS` in `[section].astro`). So an `album` ref links to the
+**photos listing**, not to a per-album page — there is no such page. Note also
+that the shop's section key is `merch`, not `shop`; `/{lang}/{shop}/…` is never
+built.
 
 ---
 
@@ -435,19 +447,32 @@ replaced by a single `<PostBlocks>` call. The legacy
 
 `web/src/types/post.ts` gains a `PostBlock` discriminated union on `type`.
 
-### Three rules the dispatcher owns structurally
+### Four rules the dispatcher owns structurally
 
 Placed in the dispatcher, not in each block component, so no per-type component
 can forget them:
 
-1. **`data === null` skips the block.** This is the all-or-nothing-build hazard.
+1. **An internal ref whose module is disabled renders as plain text, not a
+   link.** Switching a module off in `/admin/website-modules` **unbuilds its
+   routes**, so a `ref` to a concert with the concerts module off is a link to a
+   page that no longer exists. CLAUDE.md documents this exact failure on the
+   homepage, where hero CTAs were ungated and the content sections gated on
+   `data.length > 0` — a *content* check standing in for a *routing* check.
+
+   The gate is `siteConfig.modules[section] !== false`, never `=== true`:
+   `getSiteConfig` fails open to `{}` when the API is unreachable mid-build, so
+   an absent key must mean *enabled*, or one build-time blip ships an article
+   with every reference stripped. The `music_video` and `press_release` targets
+   are exempt — they link externally and no module can unbuild them.
+
+2. **`data === null` skips the block.** This is the all-or-nothing-build hazard.
    CLAUDE.md: *"One page that throws aborts all 35 — a single unreachable record
    takes down the entire site."* It documents two prior outages of this exact
    shape, one of which ran undetected for two months at `RestartCount 103`.
    Skipping must be the structural default, not a `try/catch` someone remembers.
-2. **Unknown `type` skips, does not throw.** Stored content can predate a
+3. **Unknown `type` skips, does not throw.** Stored content can predate a
    renderer.
-3. **Press refs keep the existing contract.** The first `press_release` ref
+4. **Press refs keep the existing contract.** The first `press_release` ref
    renders as `.art-pull` (the pull quote); the rest render as `.art-press`
    rows. This is why `article-press.spec.ts` needs only its *seeding* changed,
    not its assertions.
@@ -490,6 +515,8 @@ rendering a picture would have passed the whole suite.
 | Vitest (`app/`) | `utils/postBlocks.spec.ts` | move/reorder; default payload per type |
 | Playwright admin | `posts.spec.ts` (extended) | add each of the four types; reorder; save; reload; assert stored order |
 | Playwright public | `post-blocks.spec.ts` **(new)** | blocks render in stored order; dangling ref absent; each provider's iframe present |
+| Vitest (`web/`) | `lib/refHref.test.ts` | href per entity; `merch` not `shop`; album resolves to the listing; module gate uses `!== false` so an absent key still links |
+| `dist/` assertion | manual, in the plan | every internal href a post block emits resolves to a built page — the `for h in $(grep -o 'href=…')` loop CLAUDE.md prescribes, run against an article with one ref of each kind |
 | Playwright public | `article-press.spec.ts` | reseeded to create a press ref block; assertions unchanged |
 
 **The public spec asserts order, not just presence.** `expect(blocks.nth(2))` is
