@@ -1,27 +1,50 @@
 import type { Tag } from './tag'
 import type { TranslationMap } from './shared'
 
-export interface PostConcert      { id: number; date: string; venue: { id: number; name: string } | null }
-export interface PostAlbum        { id: number; title: string }
-export interface PostRelease      { id: number; title: string; type: string }
-export interface PostTour         { id: number; name: string }
-export interface PostMusicVideo   { id: number; title: string; video_url: string }
-export interface PostPressRelease { id: number; title: string; url: string }
+export type PostBlockType     = 'text' | 'image' | 'embed' | 'ref'
+export type EmbedProviderName = 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'link'
+export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item'
 
-export type PostLinkType = 'youtube' | 'instagram' | 'facebook' | 'normal'
+interface BlockBase { id: number; position: number }
+type Bag = { en?: string | null; pl?: string | null }
 
-export interface PostLink {
-  id: number
-  type: PostLinkType
-  url: string
-  label: string | null
-  sort_order: number
+export interface TextBlock extends BlockBase {
+  type: 'text'
+  body: string | null
+  translations: { body: Bag }
 }
 
-export interface PostLinkPayload {
-  type: PostLinkType
-  url: string
-  label?: string | null
+export interface ImageBlock extends BlockBase {
+  type: 'image'
+  path: string | null
+  url: string | null
+  alt: string | null
+  caption: string | null
+  translations: { alt: Bag; caption: Bag }
+}
+
+export interface EmbedBlock extends BlockBase {
+  type: 'embed'
+  provider: EmbedProviderName
+  url: string | null
+  label: string | null
+  /** null when the URL names no single item — render as a link, not an iframe. */
+  embed_id: string | null
+}
+
+export interface RefBlock extends BlockBase {
+  type: 'ref'
+  entity: RefEntity
+  /** null when the referenced record was deleted. */
+  data: Record<string, unknown> | null
+}
+
+export type PostBlock = TextBlock | ImageBlock | EmbedBlock | RefBlock
+
+/** What the editor holds and submits — no id, no server-derived fields. */
+export interface PostBlockDraft {
+  type: PostBlockType
+  payload: Record<string, unknown>
 }
 
 /** Returned in list responses — no image, content replaced by excerpt. */
@@ -43,21 +66,16 @@ export interface PostSummary {
   }
 }
 
-/** Returned in detail response — includes image, full content, links, and linked entities. */
+export interface PostPressRelease { id: number; title: string; url: string; site: string | null }
+
+/** Returned in detail response — includes image and ordered content blocks. */
 export interface Post extends PostSummary {
-  content: string | null
   image: string | null
-  links: PostLink[]
-  concerts: PostConcert[]
-  albums: PostAlbum[]
-  releases: PostRelease[]
-  tours: PostTour[]
-  music_videos: PostMusicVideo[]
+  blocks: PostBlock[]
   press_releases: PostPressRelease[]
   translations?: {
-    title:   { en?: string | null; pl?: string | null }
-    intro:   { en?: string | null; pl?: string | null }
-    content: { en?: string | null; pl?: string | null }
+    title: { en?: string | null; pl?: string | null }
+    intro: { en?: string | null; pl?: string | null }
   }
 }
 
@@ -66,16 +84,9 @@ export interface PostPayload {
   slug_en?: string | null
   slug_pl?: string | null
   intro?: string | TranslationMap | null
-  content?: string | TranslationMap | null
   image?: string | null
   published_at?: string | null
   event_date?: string | null
   tag_ids?: number[]
-  concert_ids?: number[]
-  album_ids?: number[]
-  release_ids?: number[]
-  tour_ids?: number[]
-  music_video_ids?: number[]
-  press_release_ids?: number[]
-  links?: PostLinkPayload[]
+  blocks?: PostBlockDraft[]
 }
