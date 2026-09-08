@@ -1,7 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getPosts, getPost, getBandProfile } from '@/lib/cms'
+import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 import { fmtDate } from '@/lib/i18n'
+import PostBlocks from '@/components/blocks/PostBlocks.astro'
 
 export async function getStaticPaths() {
   const { data: posts } = await getPosts('en', 1)
@@ -9,9 +11,11 @@ export async function getStaticPaths() {
 }
 
 const { id } = Astro.params
-const [post, profile] = await Promise.all([
+const [post, profile, slugMap, siteConfig] = await Promise.all([
   getPost(Number(id), 'en'),
   getBandProfile('en'),
+  getSlugMap(),
+  getSiteConfig('en'),
 ])
 
 const structuredData = {
@@ -66,54 +70,14 @@ const structuredData = {
       </div>
     )}
 
-    {/* Content */}
-    {post.content && (
-      <div class="prose mt-8" set:html={post.content} />
-    )}
-
-    {/* Links */}
-    {post.links.length > 0 && (
-      <div class="mt-8 space-y-2">
-        <p class="text-sm font-bold text-muted uppercase tracking-wider">Links</p>
-        {post.links.map(link => (
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-2 text-accent hover:underline text-sm"
-          >
-            {link.label ?? link.url}
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-        ))}
-      </div>
-    )}
-
-    {/* Related */}
-    {post.releases.length > 0 && (
-      <div class="mt-8 rounded-card border border-border bg-surface p-5">
-        <p class="text-xs text-muted uppercase tracking-wide mb-2">Related releases</p>
-        <div class="flex flex-wrap gap-3">
-          {post.releases.map(r => (
-            <a href={`/releases/${r.id}`} class="text-sm text-accent hover:underline">{r.title}</a>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {post.concerts.length > 0 && (
-      <div class="mt-4 rounded-card border border-border bg-surface p-5">
-        <p class="text-xs text-muted uppercase tracking-wide mb-2">Related shows</p>
-        <div class="flex flex-wrap gap-3">
-          {post.concerts.map(c => (
-            <a href={`/concerts/${c.id}`} class="text-sm text-accent hover:underline">
-              {fmtDate(c.date, 'en')}{c.venue ? ` @ ${c.venue.name}` : ''}
-            </a>
-          ))}
-        </div>
-      </div>
-    )}
+    {/* Content blocks */}
+    <div class="mt-8">
+      <PostBlocks
+        blocks={post.blocks ?? []}
+        lang="en"
+        slugMap={slugMap}
+        modules={siteConfig.modules ?? {}}
+      />
+    </div>
   </div>
 </BaseLayout>
