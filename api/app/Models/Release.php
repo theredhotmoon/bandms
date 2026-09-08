@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasSlug;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Release extends Model
 {
-    use HasSlug, HasTranslations;
+    use HasFactory, HasSlug, HasTranslations;
 
     public array $translatable = ['title', 'description'];
 
