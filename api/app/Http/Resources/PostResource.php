@@ -22,6 +22,8 @@ class PostResource extends JsonResource
                 'title'   => $this->getTranslations('title'),
                 'intro'   => $this->getTranslations('intro'),
             ],
+            'blocks' => $this->whenLoaded('blocks', fn () => PostBlockResource::collection($this->blocks)
+                ->each(fn ($r) => $r->withResolved(\App\Support\PostBlockResolver::resolve($this->blocks)))),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             // `site` is the publication name, which the Article page renders above
             // each headline and as the attribution on the pull quote. It falls

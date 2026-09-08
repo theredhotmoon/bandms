@@ -15,13 +15,15 @@ class PostController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'content', 'published_at', 'event_date', 'created_at', 'updated_at'])
-            ->with(['tags'])
+        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date', 'created_at', 'updated_at'])
+            ->with(['tags', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
                 fn ($q) => $q->where(fn ($q) => $q
                     ->where('title', 'like', '%' . $request->search . '%')
-                    ->orWhere('content', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('blocks', fn ($b) => $b
+                        ->where('type', 'text')
+                        ->where('payload', 'like', '%' . $request->search . '%'))
                 )
             )
             ->when(
@@ -103,12 +105,12 @@ class PostController extends Controller
             );
         }
 
-        return new PostResource($post->load(['tags', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function show(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function update(Request $request, Post $post): PostResource
@@ -167,7 +169,7 @@ class PostController extends Controller
             }
         }
 
-        return new PostResource($post->load(['tags', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function destroy(Post $post): JsonResponse
