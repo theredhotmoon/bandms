@@ -72,7 +72,8 @@ export interface PressReleasePayload {
   published_at: string | null
   featured?: boolean
   concert_ids: number[]
-  post_ids: number[]
+  /** No admin UI sends this any more — post coverage is owned by ref blocks on the post. Backend still accepts it and leaves existing links alone when omitted. */
+  post_ids?: number[]
   album_ids: number[]
   release_ids: number[]
   tour_ids: number[]

@@ -146,3 +146,30 @@ textarea.field-input {
   transition: color 120ms;
 }
 .btn-add:hover { color: #d0d0d0; }
+
+.btn-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: #3f1212;
+  color: #f87171;
+  transition: background 120ms;
+}
+.btn-remove:hover { background: #5a1a1a; }
+
+/* ── Bilingual field rows — shared by every EN/PL pair, incl. block editors ── */
+.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
+.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
+.trans-row--top { align-items: flex-start; }
+.lang-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
+  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
+}
+.lang-badge--pl { background: #3f1010; color: #f87171; }

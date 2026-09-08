@@ -115,7 +115,18 @@ class PressReleaseController extends Controller
     private function syncRelations(PressRelease $pr, Request $request): void
     {
         $pr->concerts()->sync($request->input('concert_ids', []));
-        $pr->posts()->sync($request->input('post_ids', []));
+
+        // Guarded, unlike the others: the admin's "linked posts" picker was
+        // removed once post coverage moved to reference blocks owned by the
+        // post itself (see PostBlockResolver/PostBlockBackfill), so the client
+        // no longer sends this key at all. Syncing unconditionally would wipe
+        // every existing press_release_posts row — including rows the
+        // one-time block backfill still needs to have existed — on the next
+        // unrelated edit to any press release.
+        if ($request->has('post_ids')) {
+            $pr->posts()->sync($request->input('post_ids', []));
+        }
+
         $pr->albums()->sync($request->input('album_ids', []));
         $pr->releases()->sync($request->input('release_ids', []));
         $pr->tours()->sync($request->input('tour_ids', []));

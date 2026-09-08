@@ -2,26 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\PostSummaryResource;
 use App\Models\Post;
+use App\Support\PostBlockSync;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'content', 'published_at', 'event_date', 'created_at', 'updated_at'])
-            ->with(['tags'])
+        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date', 'created_at', 'updated_at'])
+            ->with(['tags', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
+                // Matches any block's payload, not just type=text: an embed's
+                // label/url and an image's alt/caption are plain text in the
+                // payload JSON too, and the old `content` column this search
+                // replaced covered the whole article body regardless of shape.
                 fn ($q) => $q->where(fn ($q) => $q
                     ->where('title', 'like', '%' . $request->search . '%')
-                    ->orWhere('content', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('blocks', fn ($b) => $b
+                        ->where('payload', 'like', '%' . $request->search . '%'))
                 )
             )
             ->when(
@@ -38,142 +48,95 @@ class PostController extends Controller
         return PostSummaryResource::collection($posts);
     }
 
-    public function store(Request $request): PostResource
+    public function store(StorePostRequest $request): PostResource
     {
-        $data = $request->validate([
-            'title'               => 'required',
-            'title.en'            => 'nullable|string|max:255',
-            'title.pl'            => 'nullable|string|max:255',
-            'slug_en'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_en')],
-            'slug_pl'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_pl')],
-            'intro'               => 'nullable',
-            'intro.en'            => 'nullable|string|max:1000',
-            'intro.pl'            => 'nullable|string|max:1000',
-            'content'             => 'nullable',
-            'content.en'          => 'nullable|string',
-            'content.pl'          => 'nullable|string',
-            'image'               => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
-            'published_at'        => 'nullable|date',
-            'event_date'          => 'nullable|date',
-            'tag_ids'             => 'nullable|array',
-            'tag_ids.*'           => 'integer|exists:tags,id',
-            'concert_ids'         => 'nullable|array',
-            'concert_ids.*'       => 'integer|exists:concerts,id',
-            'album_ids'           => 'nullable|array',
-            'album_ids.*'         => 'integer|exists:albums,id',
-            'release_ids'         => 'nullable|array',
-            'release_ids.*'       => 'integer|exists:releases,id',
-            'tour_ids'            => 'nullable|array',
-            'tour_ids.*'          => 'integer|exists:tours,id',
-            'music_video_ids'     => 'nullable|array',
-            'music_video_ids.*'   => 'integer|exists:music_videos,id',
-            'press_release_ids'   => 'nullable|array',
-            'press_release_ids.*' => 'integer|exists:press_releases,id',
-            'links'               => 'nullable|array',
-            'links.*.type'        => ['required', 'string', 'in:youtube,instagram,facebook,normal'],
-            'links.*.url'         => 'required|string|url|max:2048',
-            'links.*.label'       => 'nullable|string|max:255',
-        ]);
+        $data = $request->validated();
 
-        $titleEn = is_array($data['title']) ? ($data['title']['en'] ?? reset($data['title']) ?? 'post') : $data['title'];
-        $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
+        // Retries on a MySQL deadlock (SQLSTATE 40001), which InnoDB can raise
+        // between two unrelated concurrent inserts into post_blocks — this
+        // transaction is exactly the shape that provokes it, and Laravel's
+        // built-in retry is the standard fix rather than surfacing it as a 500.
+        $post = DB::transaction(function () use ($data) {
+            $titleEn = is_array($data['title']) ? ($data['title']['en'] ?? reset($data['title']) ?? 'post') : $data['title'];
+            $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
 
-        $post = Post::create([
-            'title'        => $data['title'],
-            'slug_en'      => ($data['slug_en'] ?? null) ?: Post::generateSlug($titleEn, null, 'slug_en'),
-            'slug_pl'      => ($data['slug_pl'] ?? null) ?: ($titlePl ? Post::generateSlug($titlePl, null, 'slug_pl') : null),
-            'intro'        => $data['intro'] ?? null,
-            'content'      => $data['content'] ?? null,
-            'image'        => $data['image'] ?? null,
-            'published_at' => $data['published_at'] ?? null,
-            'event_date'   => $data['event_date'] ?? null,
-        ]);
+            $post = Post::create([
+                'title'        => $data['title'],
+                'slug_en'      => ($data['slug_en'] ?? null) ?: Post::generateSlug($titleEn, null, 'slug_en'),
+                'slug_pl'      => ($data['slug_pl'] ?? null) ?: ($titlePl ? Post::generateSlug($titlePl, null, 'slug_pl') : null),
+                'intro'        => $data['intro'] ?? null,
+                'image'        => $data['image'] ?? null,
+                'published_at' => $data['published_at'] ?? null,
+                'event_date'   => $data['event_date'] ?? null,
+            ]);
 
-        if (!empty($data['tag_ids']))            $post->tags()->sync($data['tag_ids']);
-        if (!empty($data['concert_ids']))        $post->concerts()->sync($data['concert_ids']);
-        if (!empty($data['album_ids']))          $post->albums()->sync($data['album_ids']);
-        if (!empty($data['release_ids']))        $post->releases()->sync($data['release_ids']);
-        if (!empty($data['tour_ids']))           $post->tours()->sync($data['tour_ids']);
-        if (!empty($data['music_video_ids']))    $post->musicVideos()->sync($data['music_video_ids']);
-        if (!empty($data['press_release_ids'])) $post->pressReleases()->sync($data['press_release_ids']);
+            if (! empty($data['tag_ids'])) {
+                $post->tags()->sync($data['tag_ids']);
+            }
 
-        if (!empty($data['links'])) {
-            $post->links()->createMany(
-                array_map(fn ($link, $i) => [...$link, 'sort_order' => $i], $data['links'], array_keys($data['links']))
-            );
-        }
+            PostBlockSync::sync($post, $data['blocks'] ?? []);
 
-        return new PostResource($post->load(['tags', 'links', 'concerts', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+            return $post;
+        }, 3);
+
+        // Posts are baked into the static site. PostController never called this
+        // — with auto-rebuild on, the admin hides its manual button, so a save
+        // had no way at all to reach the public site.
+        SiteRebuild::requestIfAuto();
+
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function show(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
-    public function update(Request $request, Post $post): PostResource
+    public function update(UpdatePostRequest $request, Post $post): PostResource
     {
-        $data = $request->validate([
-            'title'               => 'sometimes|required',
-            'title.en'            => 'nullable|string|max:255',
-            'title.pl'            => 'nullable|string|max:255',
-            'slug_en'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_en')->ignore($post->id)],
-            'slug_pl'             => ['nullable', 'string', 'max:255', Rule::unique('posts', 'slug_pl')->ignore($post->id)],
-            'intro'               => 'nullable',
-            'intro.en'            => 'nullable|string|max:1000',
-            'intro.pl'            => 'nullable|string|max:1000',
-            'content'             => 'nullable',
-            'content.en'          => 'nullable|string',
-            'content.pl'          => 'nullable|string',
-            'image'               => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
-            'published_at'        => 'nullable|date',
-            'event_date'          => 'nullable|date',
-            'tag_ids'             => 'nullable|array',
-            'tag_ids.*'           => 'integer|exists:tags,id',
-            'concert_ids'         => 'nullable|array',
-            'concert_ids.*'       => 'integer|exists:concerts,id',
-            'album_ids'           => 'nullable|array',
-            'album_ids.*'         => 'integer|exists:albums,id',
-            'release_ids'         => 'nullable|array',
-            'release_ids.*'       => 'integer|exists:releases,id',
-            'tour_ids'            => 'nullable|array',
-            'tour_ids.*'          => 'integer|exists:tours,id',
-            'music_video_ids'     => 'nullable|array',
-            'music_video_ids.*'   => 'integer|exists:music_videos,id',
-            'press_release_ids'   => 'nullable|array',
-            'press_release_ids.*' => 'integer|exists:press_releases,id',
-            'links'               => 'nullable|array',
-            'links.*.type'        => ['required', 'string', 'in:youtube,instagram,facebook,normal'],
-            'links.*.url'         => 'required|string|url|max:2048',
-            'links.*.label'       => 'nullable|string|max:255',
-        ]);
+        $data = $request->validated();
 
-        $post->update(Arr::except($data, ['tag_ids', 'concert_ids', 'album_ids', 'release_ids', 'tour_ids', 'music_video_ids', 'press_release_ids', 'links']));
+        DB::transaction(function () use ($data, $post) {
+            $post->update(Arr::except($data, ['tag_ids', 'blocks']));
 
-        if (array_key_exists('tag_ids', $data))           $post->tags()->sync($data['tag_ids'] ?? []);
-        if (array_key_exists('concert_ids', $data))       $post->concerts()->sync($data['concert_ids'] ?? []);
-        if (array_key_exists('album_ids', $data))         $post->albums()->sync($data['album_ids'] ?? []);
-        if (array_key_exists('release_ids', $data))       $post->releases()->sync($data['release_ids'] ?? []);
-        if (array_key_exists('tour_ids', $data))          $post->tours()->sync($data['tour_ids'] ?? []);
-        if (array_key_exists('music_video_ids', $data))   $post->musicVideos()->sync($data['music_video_ids'] ?? []);
-        if (array_key_exists('press_release_ids', $data)) $post->pressReleases()->sync($data['press_release_ids'] ?? []);
-
-        if (array_key_exists('links', $data)) {
-            $post->links()->delete();
-            if (!empty($data['links'])) {
-                $post->links()->createMany(
-                    array_map(fn ($link, $i) => [...$link, 'sort_order' => $i], $data['links'], array_keys($data['links']))
-                );
+            if (array_key_exists('tag_ids', $data)) {
+                $post->tags()->sync($data['tag_ids'] ?? []);
             }
-        }
 
-        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+            if (array_key_exists('blocks', $data)) {
+                PostBlockSync::sync($post, $data['blocks'] ?? []);
+            }
+        }, 3);
+
+        SiteRebuild::requestIfAuto();
+
+        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
     }
 
     public function destroy(Post $post): JsonResponse
     {
+        foreach (PostBlockSync::imagePaths($post->blocks()->get()->all()) as $path) {
+            Storage::disk('public')->delete($path);
+        }
+
         $post->delete();
 
+        SiteRebuild::requestIfAuto();
+
         return response()->json(null, 204);
+    }
+
+    /**
+     * Standalone rather than per-post: a picture block can be added to a post
+     * that does not exist yet, so the upload has to happen before there is an
+     * id to hang it on.
+     */
+    public function uploadBlockImage(Request $request): JsonResponse
+    {
+        $request->validate(['image' => 'required|image|max:4096']);
+
+        $path = $request->file('image')->store('post-blocks', 'public');
+
+        return response()->json(['path' => $path, 'url' => Storage::url($path)], 201);
     }
 }

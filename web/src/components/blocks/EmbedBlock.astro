@@ -1,0 +1,52 @@
+---
+import type { EmbedBlock } from '@/types/post'
+
+interface Props { block: EmbedBlock }
+const { block } = Astro.props
+
+/**
+ * Every provider is an iframe — no third-party JavaScript anywhere.
+ * Instagram and TikTok also publish blockquote-plus-script embeds, but the
+ * public specs run failOnPageError(), so a third-party script that throws
+ * would fail specs that have nothing to do with this page.
+ */
+const SRC: Record<string, (id: string) => string> = {
+  youtube:   id => `https://www.youtube-nocookie.com/embed/${id}`,
+  vimeo:     id => `https://player.vimeo.com/video/${id}`,
+  instagram: id => `https://www.instagram.com/p/${id}/embed`,
+  tiktok:    id => `https://www.tiktok.com/embed/v2/${id}`,
+}
+
+// A provider with no extractable id falls back to a link row rather than an
+// iframe with a broken src.
+const src = block.embed_id && SRC[block.provider] ? SRC[block.provider](block.embed_id) : null
+---
+
+{src ? (
+  <div class="pb-embed">
+    <iframe src={src} title={block.label ?? 'Embedded media'} loading="lazy"
+            allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+            allowfullscreen frameborder="0"></iframe>
+  </div>
+) : block.url ? (
+  <a href={block.url} target="_blank" rel="noopener noreferrer" class="art-ext-link">
+    <span>{block.label ?? block.url}</span>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)"
+         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+      <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+    </svg>
+  </a>
+) : null}
+
+<style>
+  .pb-embed { position: relative; padding-top: 56.25%; margin: 0 0 28px; }
+  .pb-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .art-ext-link {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    background: var(--color-ink); color: var(--color-on-inverse);
+    padding: 16px 20px; text-decoration: none;
+    font: 600 15px/1.4 var(--font-body); margin-bottom: 10px;
+  }
+  .art-ext-link:hover { background: var(--color-body); }
+</style>

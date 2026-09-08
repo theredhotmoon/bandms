@@ -7,7 +7,6 @@ import type { Concert } from '@/types/concert'
 import type { Tag } from '@/types/tag'
 import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
-import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
 import type { PressRelease, PressReleaseMeta, PressReleasePayload } from '@/types/press-release'
 
@@ -16,7 +15,6 @@ const props = defineProps<{
   loading?: boolean
   errors?: Record<string, string[]>
   concerts: Concert[]
-  posts: PostSummary[]
   albums: Album[]
   releases: ReleaseSummary[]
   tours: TourSummary[]
@@ -42,7 +40,6 @@ const form = reactive({
 })
 
 const concert_ids  = ref<number[]>([])
-const post_ids     = ref<number[]>([])
 const album_ids    = ref<number[]>([])
 const release_ids  = ref<number[]>([])
 const tour_ids     = ref<number[]>([])
@@ -65,7 +62,6 @@ watch(
     form.published_at   = val?.published_at ? val.published_at.slice(0, 16) : ''
     form.featured       = val?.featured ?? false
     concert_ids.value   = val?.concerts?.map((c) => c.id) ?? []
-    post_ids.value      = val?.posts?.map((p) => p.id) ?? []
     album_ids.value     = val?.albums?.map((a) => a.id) ?? []
     release_ids.value   = val?.releases?.map((r) => r.id) ?? []
     tour_ids.value      = val?.tours?.map((t) => t.id) ?? []
@@ -107,7 +103,6 @@ function submit() {
     published_at:   form.published_at || null,
     featured:       form.featured,
     concert_ids:    concert_ids.value,
-    post_ids:       post_ids.value,
     album_ids:      album_ids.value,
     release_ids:    release_ids.value,
     tour_ids:       tour_ids.value,
@@ -186,15 +181,16 @@ function submit() {
     </div>
 
     <!-- Associations + Tags -->
+    <!-- No "linked posts" picker: a post's press coverage is now owned by a
+         reference block on the post itself (added from the Post editor), not
+         by a pivot set from this side. -->
     <EntityRelationsPanel
       :concerts="concerts"
-      :posts="posts"
       :albums="albums"
       :releases="releases"
       :tours="tours"
       :tags="tags"
       v-model:concertIds="concert_ids"
-      v-model:postIds="post_ids"
       v-model:albumIds="album_ids"
       v-model:releaseIds="release_ids"
       v-model:tourIds="tour_ids"

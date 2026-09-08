@@ -1,0 +1,21 @@
+---
+import type { ImageBlock } from '@/types/post'
+interface Props { block: ImageBlock }
+const { block } = Astro.props
+---
+{block.url && (
+  <figure class="pb-figure">
+    <img src={block.url} alt={block.alt ?? ''} loading="lazy" class="pb-img" />
+    {block.caption && <figcaption class="pb-caption">{block.caption}</figcaption>}
+  </figure>
+)}
+
+<style>
+  .pb-figure { margin: 0 0 28px; }
+  .pb-img { width: 100%; height: auto; display: block; }
+  .pb-caption {
+    margin-top: 8px;
+    font: 500 13px/1.5 var(--font-body);
+    color: var(--color-muted);
+  }
+</style>

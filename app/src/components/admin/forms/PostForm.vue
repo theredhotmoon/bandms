@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
-import type { Post, PostPayload, PostLinkType } from '@/types/post'
+import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
+import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
+import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
 import type { Concert } from '@/types/concert'
 import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
-import type { TourSummary } from '@/types/tour'
 import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
+import type { ShopItemSummary } from '@/types/shop'
 
 const props = defineProps<{
   initial?: Post | null
@@ -18,16 +20,14 @@ const props = defineProps<{
   concerts: Concert[]
   albums: Album[]
   releases: ReleaseSummary[]
-  tours: TourSummary[]
   musicVideos: MusicVideo[]
   pressReleases: PressReleaseSummary[]
+  shopItems: ShopItemSummary[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
 
 const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
-
-interface LinkRow { type: PostLinkType; url: string; label: string }
 
 const form = reactive({
   title_en: '',
@@ -36,20 +36,21 @@ const form = reactive({
   slug_pl: '',
   intro_en: '',
   intro_pl: '',
-  content_en: '',
-  content_pl: '',
   image: null as string | null,
   published_at: '',
   event_date: '',
   tag_ids: [] as number[],
-  concert_ids: [] as number[],
-  album_ids: [] as number[],
-  release_ids: [] as number[],
-  tour_ids: [] as number[],
-  music_video_ids: [] as number[],
-  press_release_ids: [] as number[],
-  links: [] as LinkRow[],
+  blocks: [] as PostBlockDraft[],
 })
+
+const entityLists = computed<RefEntityLists>(() => ({
+  concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? 'TBA'}` })),
+  album:         props.albums.map(a => ({ id: a.id, label: a.title })),
+  release:       props.releases.map(r => ({ id: r.id, label: r.title })),
+  music_video:   props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
+  press_release: props.pressReleases.map(p => ({ id: p.id, label: p.og_title ?? p.url })),
+  shop_item:     props.shopItems.map(s => ({ id: s.id, label: s.name })),
+}))
 
 watch(() => props.initial, (val) => {
   form.title_en = val?.translations?.title?.en ?? val?.title ?? ''
@@ -58,25 +59,20 @@ watch(() => props.initial, (val) => {
   form.slug_pl = val?.slug_pl ?? ''
   form.intro_en = val?.translations?.intro?.en ?? val?.intro ?? ''
   form.intro_pl = val?.translations?.intro?.pl ?? ''
-  form.content_en = val?.translations?.content?.en ?? val?.content ?? ''
-  form.content_pl = val?.translations?.content?.pl ?? ''
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   form.event_date = val?.event_date ?? ''
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
-  form.concert_ids = val?.concerts?.map(c => c.id) ?? []
-  form.album_ids = val?.albums?.map(a => a.id) ?? []
-  form.release_ids = val?.releases?.map(r => r.id) ?? []
-  form.tour_ids = val?.tours?.map(t => t.id) ?? []
-  form.music_video_ids = val?.music_videos?.map(v => v.id) ?? []
-  form.press_release_ids = val?.press_releases?.map(pr => pr.id) ?? []
-  form.links = val?.links?.map(l => ({ type: l.type, url: l.url, label: l.label ?? '' })) ?? []
+  form.blocks = (val?.blocks ?? []).map(b => {
+    if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
+    if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
+    if (b.type === 'embed') return { type: 'embed', payload: { url: b.url, label: b.label } }
+    // data is null when the referenced entity was deleted — flagged rather
+    // than silently defaulted to id 0, which is otherwise indistinguishable
+    // from a freshly-added, never-configured block.
+    return { type: 'ref', payload: { entity: b.entity, id: (b.data?.id as number) ?? 0 }, dangling: b.data === null }
+  })
 }, { immediate: true })
-
-function addLink() { form.links.push({ type: 'normal', url: '', label: '' }) }
-function removeLink(i: number) { form.links.splice(i, 1) }
-
-const linkTypes: PostLinkType[] = ['normal', 'youtube', 'instagram', 'facebook']
 
 function submit() {
   emit('submit', {
@@ -84,18 +80,15 @@ function submit() {
     slug_en: form.slug_en || null,
     slug_pl: form.slug_pl || null,
     intro: (form.intro_en || form.intro_pl) ? { en: form.intro_en || undefined, pl: form.intro_pl || undefined } : null,
-    content: (form.content_en || form.content_pl) ? { en: form.content_en || undefined, pl: form.content_pl || undefined } : null,
     image: form.image || null,
     published_at: form.published_at || null,
     event_date: form.event_date || null,
     tag_ids: form.tag_ids,
-    concert_ids: form.concert_ids,
-    album_ids: form.album_ids,
-    release_ids: form.release_ids,
-    tour_ids: form.tour_ids,
-    music_video_ids: form.music_video_ids,
-    press_release_ids: form.press_release_ids,
-    links: form.links.map((l) => ({ type: l.type, url: l.url, label: l.label || null })),
+    // `url` is a preview-only field on image drafts; strip it before sending.
+    blocks: form.blocks.map(b => ({
+      type: b.type,
+      payload: b.type === 'image' ? { ...b.payload, url: undefined } : b.payload,
+    })),
   })
 }
 </script>
@@ -143,20 +136,6 @@ function submit() {
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Content</label>
-      <div class="trans-group">
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge">EN</span>
-          <textarea v-model="form.content_en" class="field-input flex-1" rows="5" placeholder="Post content…" />
-        </div>
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl">PL</span>
-          <textarea v-model="form.content_pl" class="field-input flex-1" rows="5" placeholder="Treść posta…" />
-        </div>
-      </div>
-      <p v-if="errors?.content" class="field-error">{{ errors.content[0] }}</p>
-    </div>
-    <div>
       <label class="field-label">Image</label>
       <SingleImageUpload v-model="form.image" />
       <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
@@ -174,41 +153,10 @@ function submit() {
       </div>
     </div>
 
-    <EntityRelationsPanel
-      :concerts="concerts"
-      :albums="albums"
-      :releases="releases"
-      :tours="tours"
-      :tags="tags"
-      v-model:concertIds="form.concert_ids"
-      v-model:albumIds="form.album_ids"
-      v-model:releaseIds="form.release_ids"
-      v-model:tourIds="form.tour_ids"
-      v-model:tagIds="form.tag_ids"
-      :musicVideos="musicVideos"
-      :pressReleases="pressReleases"
-      v-model:musicVideoIds="form.music_video_ids"
-      v-model:pressReleaseIds="form.press_release_ids"
-    />
+    <EntityRelationsPanel :tags="tags" v-model:tagIds="form.tag_ids" />
 
-    <div>
-      <div class="flex items-center justify-between mb-1">
-        <label class="field-label mb-0">Links</label>
-        <button type="button" @click="addLink" class="btn-add">+ Add link</button>
-      </div>
-      <div class="flex flex-col gap-2">
-        <div v-for="(link, i) in form.links" :key="i" class="link-row">
-          <select v-model="link.type" class="field-input" style="width:110px; flex-shrink:0;">
-            <option v-for="t in linkTypes" :key="t" :value="t">{{ t }}</option>
-          </select>
-          <input v-model="link.url" class="field-input flex-1" placeholder="URL" required />
-          <input v-model="link.label" class="field-input" style="width:120px; flex-shrink:0;" placeholder="Label" />
-          <button type="button" @click="removeLink(i)" class="btn-remove" title="Remove">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-      </div>
-    </div>
+    <PostBlockEditor v-model="form.blocks" :entities="entityLists" />
+    <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
 
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
@@ -220,22 +168,3 @@ function submit() {
 </template>
 
 <style scoped src="../form-styles.css" />
-<style scoped>
-.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
-.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
-.trans-row--top { align-items: flex-start; }
-.lang-badge {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
-  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
-  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
-}
-.lang-badge--pl { background: #3f1010; color: #f87171; }
-.link-row { display: flex; align-items: center; gap: 0.5rem; }
-.btn-remove {
-  display:flex; align-items:center; justify-content:center;
-  width:1.75rem; height:1.75rem; border-radius:0.375rem; border:none;
-  cursor:pointer; flex-shrink:0; background:#3f1212; color:#f87171;
-  transition: background 120ms;
-}
-.btn-remove:hover { background:#5a1a1a; }
-</style>

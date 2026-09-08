@@ -13,9 +13,9 @@ import { useTags } from '@/composables/useTags'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAlbums } from '@/composables/useAlbums'
 import { useReleases } from '@/composables/useReleases'
-import { useTours } from '@/composables/useTours'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { usePressReleases } from '@/composables/usePressReleases'
+import { useShop } from '@/composables/useShop'
 import { useTableControls } from '@/composables/useTableControls'
 import { ApiValidationError } from '@/api/client'
 import type { PostSummary, PostPayload } from '@/types/post'
@@ -25,9 +25,9 @@ const { query: tagsQ }       = useTags()
 const { query: concertsQ }   = useConcerts()
 const { query: albumsQ }     = useAlbums()
 const { query: releasesQ }   = useReleases()
-const { query: toursQ }         = useTours()
 const { query: musicVideosQ }   = useMusicVideos()
 const { query: pressReleasesQ } = usePressReleases()
+const { query: shopItemsQ }     = useShop()
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
@@ -170,9 +170,9 @@ async function confirmDelete() {
         :concerts="concertsQ.data.value ?? []"
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
-        :tours="toursQ.data.value ?? []"
         :musicVideos="musicVideosQ.data.value ?? []"
         :pressReleases="pressReleasesQ.data.value ?? []"
+        :shopItems="shopItemsQ.data.value ?? []"
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"

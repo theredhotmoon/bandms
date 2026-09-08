@@ -1,0 +1,41 @@
+---
+import type { TextBlock } from '@/types/post'
+interface Props { block: TextBlock }
+const { block } = Astro.props
+---
+{block.body && <div class="art-prose" set:html={block.body} />}
+
+<style>
+  /* Duplicated from PostDetail.astro's former inline prose styling — Astro
+     scopes a <style> block to elements the file itself renders, not to
+     children rendered by other components, so PostDetail's rules cannot
+     reach markup emitted here. */
+  .art-prose {
+    font: 500 18.5px/1.72 var(--font-body);
+    color: var(--color-body);
+  }
+  .art-prose > p:first-of-type::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: 96px;
+    line-height: .74;
+    color: var(--color-accent);
+    margin-right: 14px;
+    margin-top: 6px;
+  }
+  .art-prose > p { margin: 0 0 24px; text-wrap: pretty; }
+  .art-prose > p:last-child { margin-bottom: 0; }
+  .art-prose > h2,
+  .art-prose > h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    margin: 32px 0 12px;
+    color: var(--color-ink);
+  }
+  .art-prose a { color: var(--color-accent); text-underline-offset: 3px; }
+  .art-prose blockquote {
+    margin: 12px 0 30px;
+    border-left: 6px solid var(--color-accent);
+    padding-left: 26px;
+  }
+</style>

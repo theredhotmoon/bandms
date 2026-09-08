@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Post;
+use App\Models\PostBlock;
 use App\Models\Tag;
 use App\Models\User;
 use Laravel\Passport\Passport;
@@ -34,11 +35,36 @@ describe('GET /api/posts', function () {
             ->assertJsonPath('data.0.title', 'Guitar Lessons Review');
     });
 
-    it('filters by search term in content', function () {
-        Post::factory()->create(['title' => 'Post A', 'content' => 'We talked about amplifiers']);
-        Post::factory()->create(['title' => 'Post B', 'content' => 'Nothing interesting here']);
+    it('filters by search term in a text block', function () {
+        $a = Post::factory()->create(['title' => 'Post A']);
+        PostBlock::factory()->for($a)->text('We talked about amplifiers')->create();
+        Post::factory()->create(['title' => 'Post B']);
 
         $this->getJson('/api/posts?search=amplifiers')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
+
+    // Search covers any block's payload, not just text bodies — the old
+    // `content` column this replaced searched the whole article regardless
+    // of shape, and an embed's label or an image's caption is plain text too.
+    it('filters by search term in an embed block label', function () {
+        $a = Post::factory()->create(['title' => 'Post A']);
+        PostBlock::factory()->for($a)->embed('https://vimeo.com/1', 'vimeo', 'Backstage soundcheck footage')->create();
+        Post::factory()->create(['title' => 'Post B']);
+
+        $this->getJson('/api/posts?search=soundcheck')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
+
+    it('filters by search term in an image block caption', function () {
+        $a = Post::factory()->create(['title' => 'Post A']);
+        $block = PostBlock::factory()->for($a)->image('post-blocks/x.webp')->create();
+        $block->update(['payload' => [...$block->payload, 'caption' => ['en' => 'Recording the new single', 'pl' => null]]]);
+        Post::factory()->create(['title' => 'Post B']);
+
+        $this->getJson('/api/posts?search=recording')
             ->assertSuccessful()
             ->assertJsonCount(1, 'data');
     });
@@ -128,19 +154,6 @@ describe('POST /api/posts', function () {
             ->assertJsonPath('data.tags.0.name', 'Live');
     });
 
-    it('creates a post with links', function () {
-        $this->actingAsAdmin();
-
-        $this->postJson('/api/posts', [
-            'title' => 'Post With Links',
-            'links' => [
-                ['type' => 'youtube', 'url' => 'https://youtube.com/watch?v=abc123'],
-                ['type' => 'normal',  'url' => 'https://example.com', 'label' => 'Website'],
-            ],
-        ])->assertCreated()
-          ->assertJsonPath('data.links.0.type', 'youtube');
-    });
-
     it('validates title is required', function () {
         $this->actingAsAdmin();
 
@@ -157,34 +170,6 @@ describe('POST /api/posts', function () {
             ->assertJsonValidationErrors(['image']);
     });
 
-    it('validates link type must be a known value', function () {
-        $this->actingAsAdmin();
-
-        $this->postJson('/api/posts', [
-            'title' => 'Post',
-            'links' => [['type' => 'twitter', 'url' => 'https://twitter.com/x']],
-        ])->assertUnprocessable()
-          ->assertJsonValidationErrors(['links.0.type']);
-    });
-
-    it('validates link url must be a valid URL', function () {
-        $this->actingAsAdmin();
-
-        $this->postJson('/api/posts', [
-            'title' => 'Post',
-            'links' => [['type' => 'normal', 'url' => 'not-a-url']],
-        ])->assertUnprocessable()
-          ->assertJsonValidationErrors(['links.0.url']);
-    });
-
-    it('accepts all known link types', function (string $type) {
-        $this->actingAsAdmin();
-
-        $this->postJson('/api/posts', [
-            'title' => 'Post',
-            'links' => [['type' => $type, 'url' => 'https://example.com']],
-        ])->assertCreated();
-    })->with(['youtube', 'instagram', 'facebook', 'normal']);
 });
 
 // ── PUT /api/posts/{post} ─────────────────────────────────────────────────────
@@ -200,22 +185,9 @@ describe('PUT /api/posts/{post}', function () {
         $this->actingAsAdmin();
         $post = Post::factory()->create(['title' => 'Old Title']);
 
-        $this->putJson("/api/posts/{$post->id}", ['title' => 'New Title', 'content' => 'New content'])
+        $this->putJson("/api/posts/{$post->id}", ['title' => 'New Title'])
             ->assertSuccessful()
             ->assertJsonPath('data.title', 'New Title');
-    });
-
-    it('replaces links on update', function () {
-        $this->actingAsAdmin();
-        $post = Post::factory()->create();
-        $post->links()->create(['type' => 'youtube', 'url' => 'https://youtube.com/old', 'sort_order' => 0]);
-
-        $this->putJson("/api/posts/{$post->id}", [
-            'links' => [['type' => 'instagram', 'url' => 'https://instagram.com/band']],
-        ])->assertSuccessful();
-
-        $this->assertDatabaseMissing('post_links', ['post_id' => $post->id, 'type' => 'youtube']);
-        $this->assertDatabaseHas('post_links', ['post_id' => $post->id, 'type' => 'instagram']);
     });
 
     it('syncs tags on update', function () {
