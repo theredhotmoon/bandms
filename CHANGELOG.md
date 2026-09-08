@@ -38,6 +38,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Renaming a module no longer moves its page.** Public slugs were previously derived from the module's label on every build, so changing "Shop" to "Merch store" silently moved `/en/shop` to `/en/merch-store` and broke every link anyone had saved. Label and URL are now independent: the label controls nav text only, and the URL changes when — and only when — the slug field is edited. Existing slugs were carried over unchanged, so no live URL moved on upgrade.
 - **A slug is only cleared when explicitly set to null.** Sending one locale's slug leaves the other untouched, so a partial update cannot silently move the Polish page.
 - **The public website is now the only thing that serves public pages.** The admin application still carried its own copy of 27 public pages — home, concerts, releases, news, galleries, merch, cart and checkout, press, the EPK, newsletter and the public rider — left over from before the public site existed. None of them had been reachable by a visitor for some time, so they were quietly rotting: edits made to them changed nothing anyone could see, while looking for all the world like the page being fixed. They are gone, and the admin now carries only sign-in, the fan portal, ticket claim and the band's own rider preview.
+- **News posts are now composed from ordered content blocks.** A post's body is a sequence of text, image, embed and reference blocks that the editor arranges; the article page renders them in that order instead of a fixed template order. Existing posts were migrated: content became the first text block, links became embeds, and related items became references, all in the order the page previously rendered them.
+- **Post saves now trigger a public-site rebuild.** They never did, so with auto-rebuild enabled a published post could not reach the public site at all.
+
+### Removed
+- **The post editor's "Link to…" panel**, replaced by reference blocks. Tours are no longer linkable from a post — they have no public page. The `post_tours` table is retained.
 
 ### Fixed
 - **The admin address showed an empty page with only a "Sign in" link.** It now opens the panel, and the site's own address opens the site.
