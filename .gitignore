@@ -42,3 +42,6 @@ e2e-test.log
 *.pem
 id_rsa
 id_ed25519
+
+# Stray Pest run captures — never commit these
+test-output.txt
