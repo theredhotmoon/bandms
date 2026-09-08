@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * Converts a post's pre-blocks shape into ordered block rows.
  *
@@ -62,6 +64,57 @@ final class PostBlockBackfill
         }
 
         return $blocks;
+    }
+
+    /**
+     * Read every post's old shape and insert its blocks.
+     *
+     * Uses the DB facade, not Eloquent: by the time anyone reads this, the
+     * models will have moved on and Post will no longer declare these relations.
+     */
+    public static function run(): void
+    {
+        DB::table('posts')->orderBy('id')->chunkById(100, function ($posts) {
+            $rows = [];
+            $now  = now();
+
+            foreach ($posts as $post) {
+                $blocks = self::blocksFor([
+                    'content'           => $post->content,
+                    'press_release_ids' => self::pivotIds('press_release_posts', 'press_release_id', $post->id),
+                    'release_ids'       => self::pivotIds('post_releases', 'release_id', $post->id),
+                    'music_video_ids'   => self::pivotIds('post_music_videos', 'music_video_id', $post->id),
+                    'concert_ids'       => self::pivotIds('post_concerts', 'concert_id', $post->id),
+                    'album_ids'         => self::pivotIds('post_albums', 'album_id', $post->id),
+                    'links'             => DB::table('post_links')
+                        ->where('post_id', $post->id)
+                        ->orderBy('sort_order')->orderBy('id')
+                        ->get(['type', 'url', 'label'])
+                        ->map(fn ($l) => (array) $l)->all(),
+                ]);
+
+                foreach ($blocks as $block) {
+                    $rows[] = [
+                        'post_id'    => $post->id,
+                        'position'   => $block['position'],
+                        'type'       => $block['type'],
+                        'payload'    => json_encode($block['payload'], JSON_UNESCAPED_UNICODE),
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+
+            if ($rows !== []) {
+                DB::table('post_blocks')->insert($rows);
+            }
+        });
+    }
+
+    /** @return int[] */
+    private static function pivotIds(string $table, string $column, int $postId): array
+    {
+        return DB::table($table)->where('post_id', $postId)->orderBy($column)->pluck($column)->all();
     }
 
     /**

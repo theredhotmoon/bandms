@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\PostBlockBackfill;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,6 +19,8 @@ return new class extends Migration
 
             $table->index(['post_id', 'position']);
         });
+
+        PostBlockBackfill::run();
     }
 
     public function down(): void

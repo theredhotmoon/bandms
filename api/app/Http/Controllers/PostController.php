@@ -103,12 +103,12 @@ class PostController extends Controller
             );
         }
 
-        return new PostResource($post->load(['tags', 'links', 'concerts', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases']));
     }
 
     public function show(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases']));
     }
 
     public function update(Request $request, Post $post): PostResource
@@ -167,7 +167,7 @@ class PostController extends Controller
             }
         }
 
-        return new PostResource($post->load(['tags', 'links', 'concerts.venue', 'albums', 'releases', 'tours', 'musicVideos', 'pressReleases']));
+        return new PostResource($post->load(['tags', 'pressReleases']));
     }
 
     public function destroy(Post $post): JsonResponse

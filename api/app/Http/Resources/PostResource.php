@@ -25,25 +25,6 @@ class PostResource extends JsonResource
                 'content' => $this->getTranslations('content'),
             ],
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
-            'links'        => PostLinkResource::collection($this->whenLoaded('links')),
-            'concerts'     => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [
-                'id'      => $c->id,
-                'slug_en' => $c->slug_en ?? 'concert-' . $c->id,
-                'date'    => $c->date?->format('Y-m-d'),
-                'venue'   => $c->venue ? ['id' => $c->venue->id, 'name' => $c->venue->name] : null,
-            ])),
-            'albums'       => $this->whenLoaded('albums', fn () => $this->albums->map(fn ($a) => [
-                'id' => $a->id, 'title' => $a->title,
-            ])),
-            'releases'     => $this->whenLoaded('releases', fn () => $this->releases->map(fn ($r) => [
-                'id' => $r->id, 'title' => $r->title, 'type' => $r->type,
-            ])),
-            'tours'          => $this->whenLoaded('tours', fn () => $this->tours->map(fn ($t) => [
-                'id' => $t->id, 'name' => $t->name,
-            ])),
-            'music_videos'   => $this->whenLoaded('musicVideos', fn () => $this->musicVideos->map(fn ($v) => [
-                'id' => $v->id, 'title' => $v->og_title ?? $v->title, 'video_url' => $v->video_url,
-            ])),
             // `site` is the publication name, which the Article page renders above
             // each headline and as the attribution on the pull quote. It falls
             // back to the URL's host rather than being omitted: a quote with no
