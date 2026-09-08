@@ -15,14 +15,12 @@ class PostResource extends JsonResource
             'slug_en'      => $this->slug_en,
             'slug_pl'      => $this->slug_pl,
             'intro'        => $this->intro,
-            'content'      => $this->content,
             'image'        => $this->image,
             'published_at' => $this->published_at,
             'event_date'   => $this->event_date?->format('Y-m-d'),
             'translations' => [
                 'title'   => $this->getTranslations('title'),
                 'intro'   => $this->getTranslations('intro'),
-                'content' => $this->getTranslations('content'),
             ],
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             // `site` is the publication name, which the Article page renders above
