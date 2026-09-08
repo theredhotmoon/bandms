@@ -58,7 +58,7 @@ it('orders content, then press, then related, then links', function () {
     expect(array_column($blocks, 'position'))->toBe([0, 1, 2, 3, 4, 5, 6]);
     expect(array_column($blocks, 'type'))->toBe(['text', 'ref', 'ref', 'ref', 'ref', 'ref', 'embed']);
     expect(array_column(array_column($blocks, 'payload'), 'entity'))
-        ->toBe([null, 'press_release', 'release', 'music_video', 'concert', 'album', null]);
+        ->toBe(['press_release', 'release', 'music_video', 'concert', 'album']);
 });
 
 it('keeps link labels rather than discarding them', function () {
