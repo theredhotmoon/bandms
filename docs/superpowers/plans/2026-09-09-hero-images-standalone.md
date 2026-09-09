@@ -1619,8 +1619,10 @@ Expected: PASS — this resolves the failure noted at the end of Task 9.
 
 - [ ] **Step 3: Manually verify in the browser**
 
+This is a Vue admin SPA change, not a backend one — its Docker image bakes `pnpm build` output at *image build time* (unlike the Astro `web` container, which rebuilds at container *start*), so the frontend image must actually be rebuilt for this change to appear. `--backend-only` only rebuilds the `backend` image (`docker compose build --no-cache backend`) and would leave the running admin panel on the old code with no error of any kind. Use the full rebuild, which builds every service including `frontend`:
+
 ```bash
-bash rebuild.sh --backend-only
+bash rebuild.sh
 ```
 
 Then in the admin (`http://localhost:8081/admin/hero-images`): upload a picture, edit its caption, toggle it inactive (thumbnail dims), reorder with the arrows, remove it. Confirm no console errors.
