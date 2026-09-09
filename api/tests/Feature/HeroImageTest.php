@@ -47,6 +47,8 @@ it('defaults a new row to active', function () {
         'position' => 0,
     ]);
 
+    $row->refresh();
+
     expect($row->active)->toBeTrue();
 });
 
