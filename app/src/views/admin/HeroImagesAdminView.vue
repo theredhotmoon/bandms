@@ -1,30 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import AdminModal from '@/components/admin/AdminModal.vue'
 import { useHeroImages } from '@/composables/useHeroImages'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
-import { useAlbums } from '@/composables/useAlbums'
-import { scopeSet, hasOwnSet, shouldReseedDraft } from '@/utils/heroImageScopes'
+import { scopeSet, hasOwnSet } from '@/utils/heroImageScopes'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
-import type { AlbumPhoto } from '@/types/album'
+import type { HeroImage } from '@/types/heroImage'
 
-const { query, save } = useHeroImages()
+const { query, upload, update, reorder, remove } = useHeroImages()
 const { query: modulesQ, rebuild, rebuildStatusQuery } = useWebsiteModules()
-const { query: albumsQ } = useAlbums()
 
 const sets = computed(() => query.data.value?.data)
-
-/**
- * Every gallery photo, flattened out of its album.
- *
- * useAlbums returns the array directly rather than a `{data}` envelope, unlike
- * useWebsiteModules — the two composables differ here.
- */
-const allPhotos = computed<AlbumPhoto[]>(() =>
-  (albumsQ.data.value ?? []).flatMap(a => a.photos ?? []),
-)
 
 /**
  * Modules whose public page renders no hero, so a picture here would do nothing.
@@ -57,97 +44,89 @@ const scopes = computed(() => [
 
 const selected = ref('main')
 
-/**
- * One thumbnail in the working copy: a gallery photo's id and enough to draw it.
- *
- * Deliberately NOT an AlbumPhoto. Seeding the draft by looking each stored
- * photo_id up in the albums list silently dropped any it could not find, and
- * `dirty` then went true with no user input — so one click on Save deleted them.
- * Two ways to reach that: the albums query resolving after the hero query (the
- * grid renders empty and Save is live), and photos orphaned by album deletion,
- * which /api/albums never returns at all.
- *
- * The API already sends `url` and `caption` with each hero entry, so the draft
- * needs no join and can render every stored picture whatever happened to its
- * album.
- */
-interface DraftPhoto {
-  /** The gallery photo's id — what gets saved. */
-  id: number
-  url: string | null
-  caption: string | null
-}
+/** The selected scope's rows, in server order — includes inactive rows. */
+const current = computed<HeroImage[]>(() => scopeSet(sets.value, selected.value))
 
-/** The working copy. Only written back to the server on Save. */
-const draft = ref<DraftPhoto[]>([])
+const fileInput = ref<HTMLInputElement | null>(null)
 
-/** What the server currently holds for the selected scope, in order. */
-const storedIds = computed(() => scopeSet(sets.value, selected.value).map(h => h.photo_id))
+async function onFilesChosen(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  if (files.length === 0) return
 
-const dirty = computed(() =>
-  JSON.stringify(draft.value.map(p => p.id)) !== JSON.stringify(storedIds.value),
-)
-
-/** The scope the draft was last seeded from — re-seeding is keyed on this. */
-const seededScope = ref<string | null>(null)
-
-/**
- * Re-seed the draft when the scope changes, or when fresh data lands on a draft
- * with nothing unsaved in it.
- *
- * The dirty guard is the point. `sets` changes identity on every refetch, and
- * TanStack refetches on window focus by default (VueQueryPlugin is registered
- * with no options in main.ts) — so without it, alt-tabbing away to find another
- * picture and coming back silently discarded every unsaved selection.
- */
-watch([selected, sets], () => {
-  if (!shouldReseedDraft(seededScope.value !== selected.value, dirty.value)) return
-
-  draft.value = scopeSet(sets.value, selected.value)
-    .map(h => ({ id: h.photo_id, url: h.url, caption: h.caption }))
-  seededScope.value = selected.value
-}, { immediate: true })
-
-const chosenIds = computed(() => new Set(draft.value.map(p => p.id)))
-
-const showPicker = ref(false)
-
-function addPhoto(photo: AlbumPhoto) {
-  if (chosenIds.value.has(photo.id)) return
-  draft.value = [...draft.value, { id: photo.id, url: photo.image_url, caption: photo.caption }]
-}
-
-function removeAt(index: number) {
-  draft.value = draft.value.filter((_, i) => i !== index)
-}
-
-/**
- * Up/down rather than drag: the admin has no shared drag utility, and adding a
- * library for a list that is usually three items long is not a trade worth
- * making. Order matters only as the order the random pick draws from.
- */
-function move(index: number, delta: number) {
-  const next = index + delta
-  if (next < 0 || next >= draft.value.length) return
-  const copy = [...draft.value]
-  const [moved] = copy.splice(index, 1)
-  copy.splice(next, 0, moved)
-  draft.value = copy
-}
-
-async function onSave() {
   try {
-    await save.mutateAsync({ scope: selected.value, photoIds: draft.value.map(p => p.id) })
-    toast.success('Hero images saved')
+    await upload.mutateAsync({
+      scope: selected.value,
+      files: files.map(file => ({ file, caption: '' })),
+    })
+    toast.success(files.length === 1 ? 'Picture uploaded' : `${files.length} pictures uploaded`)
   } catch {
-    toast.error('Could not save hero images')
+    toast.error('Upload failed')
+  } finally {
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+/**
+ * Captions are edited inline, after upload, rather than in a pre-upload form —
+ * an optional field doesn't earn a second form. Keyed by image id so a pending
+ * edit in one thumbnail survives a cache update to another.
+ */
+const captionDrafts = ref<Record<number, string>>({})
+
+function captionFor(image: HeroImage): string {
+  return captionDrafts.value[image.id] ?? image.caption ?? ''
+}
+
+async function saveCaption(image: HeroImage, value: string) {
+  delete captionDrafts.value[image.id]
+  if (value === (image.caption ?? '')) return
+  try {
+    await update.mutateAsync({ id: image.id, payload: { caption: value || null } })
+  } catch {
+    toast.error('Could not save caption')
+  }
+}
+
+async function toggleActive(image: HeroImage) {
+  try {
+    await update.mutateAsync({ id: image.id, payload: { active: !image.active } })
+  } catch {
+    toast.error('Could not update')
+  }
+}
+
+/**
+ * Fires the reorder call immediately per click — no separate "Save order" bar.
+ * These lists are a handful of pictures, not a full photo album, so a
+ * dirty-tracked batch save isn't worth the extra state.
+ */
+async function move(index: number, delta: number) {
+  const next = index + delta
+  if (next < 0 || next >= current.value.length) return
+  const order = current.value.map(h => h.id)
+  const [moved] = order.splice(index, 1)
+  order.splice(next, 0, moved)
+  try {
+    await reorder.mutateAsync({ scope: selected.value, order })
+  } catch {
+    toast.error('Could not reorder')
+  }
+}
+
+async function removeImage(image: HeroImage) {
+  try {
+    await remove.mutateAsync(image.id)
+    toast.success('Picture removed')
+  } catch {
+    toast.error('Could not remove picture')
   }
 }
 
 /** Count shown beside each scope, or the inheritance note. */
 function scopeSummary(key: string): string {
   if (!hasOwnSet(sets.value, key)) return key === 'main' ? 'none set' : 'inherits Main'
-  const n = scopeSet(sets.value, key).length
+  const n = scopeSet(sets.value, key).filter(h => h.active).length
   return n === 1 ? '1 picture' : `${n} pictures`
 }
 
@@ -162,8 +141,9 @@ const autoRebuild = computed(() => modulesQ.data.value?.auto_rebuild ?? false)
         <div>
           <h1 class="text-2xl font-bold text-white">Hero Images</h1>
           <p class="text-sm text-zinc-500 mt-1">
-            Pictures shown behind a page's title. With more than one, a random picture
-            is chosen on each visit. A page with none of its own uses Main.
+            Pictures shown behind a page's title. With more than one active picture, one
+            is chosen at random on each visit. A page with none of its own uses Main.
+            Uploaded here directly — never from the photo gallery.
           </p>
         </div>
 
@@ -199,84 +179,76 @@ const autoRebuild = computed(() => modulesQ.data.value?.auto_rebuild ?? false)
           </li>
         </ul>
 
-        <!-- Selected set -->
+        <!-- Selected scope -->
         <div>
-          <p v-if="draft.length === 0" class="text-sm text-zinc-500 mb-4">
+          <p v-if="current.length === 0" class="text-sm text-zinc-500 mb-4">
             No pictures yet.
             <template v-if="selected !== 'main'">This page uses the Main set.</template>
           </p>
 
           <ul v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
-            <li v-for="(photo, i) in draft" :key="photo.id" class="rounded-lg overflow-hidden bg-zinc-800">
+            <li
+              v-for="(image, i) in current" :key="image.id"
+              class="rounded-lg overflow-hidden bg-zinc-800"
+              :class="{ 'opacity-40': !image.active }"
+            >
               <img
-                v-if="photo.url"
-                :src="photo.url"
-                :alt="photo.caption ?? ''"
+                v-if="image.url"
+                :src="image.url"
+                :alt="image.caption ?? ''"
                 class="w-full h-28 object-cover"
               />
               <div v-else class="w-full h-28 grid place-items-center text-xs text-zinc-500">no file</div>
+
+              <input
+                :value="captionFor(image)"
+                placeholder="Caption (optional)"
+                class="w-full bg-transparent border-0 border-b border-zinc-700 text-xs text-zinc-300 px-2 py-1 focus:outline-none focus:border-teal-500"
+                @input="captionDrafts[image.id] = ($event.target as HTMLInputElement).value"
+                @blur="saveCaption(image, captionFor(image))"
+              />
+
               <div class="flex items-center gap-1 p-2 text-xs">
                 <button
                   type="button" class="px-2 py-1 rounded bg-zinc-700 disabled:opacity-40 text-white"
-                  :disabled="i === 0" aria-label="Move earlier" @click="move(i, -1)"
+                  :disabled="i === 0 || reorder.isPending.value" aria-label="Move earlier" @click="move(i, -1)"
                 >←</button>
                 <button
                   type="button" class="px-2 py-1 rounded bg-zinc-700 disabled:opacity-40 text-white"
-                  :disabled="i === draft.length - 1" aria-label="Move later" @click="move(i, 1)"
+                  :disabled="i === current.length - 1 || reorder.isPending.value" aria-label="Move later" @click="move(i, 1)"
                 >→</button>
+                <label class="ml-auto flex items-center gap-1 cursor-pointer select-none text-zinc-400">
+                  <input type="checkbox" :checked="image.active" @change="toggleActive(image)" />
+                  Active
+                </label>
+              </div>
+              <div class="p-2 pt-0">
                 <button
-                  type="button" class="ml-auto px-2 py-1 rounded text-red-400 hover:bg-zinc-700"
-                  @click="removeAt(i)"
+                  type="button" class="w-full px-2 py-1 rounded text-red-400 hover:bg-zinc-700"
+                  :disabled="remove.isPending.value"
+                  @click="removeImage(image)"
                 >Remove</button>
               </div>
             </li>
           </ul>
 
-          <div class="flex gap-2 flex-wrap">
-            <button
-              type="button"
-              class="px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-semibold"
-              @click="showPicker = true"
-            >Add from gallery</button>
-            <button
-              type="button"
-              class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold"
-              :disabled="!dirty || save.isPending.value"
-              @click="onSave"
-            >{{ save.isPending.value ? 'Saving…' : 'Save' }}</button>
-          </div>
+          <label
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-semibold cursor-pointer"
+            :class="{ 'opacity-50 cursor-not-allowed': upload.isPending.value }"
+          >
+            {{ upload.isPending.value ? 'Uploading…' : '+ Upload pictures' }}
+            <input
+              ref="fileInput" type="file" accept="image/*" multiple class="hidden"
+              :disabled="upload.isPending.value"
+              @change="onFilesChosen"
+            />
+          </label>
 
           <p v-if="!autoRebuild" class="text-xs text-zinc-500 mt-3">
             The public site is static — hero changes appear after a rebuild.
           </p>
         </div>
       </div>
-
-      <AdminModal :open="showPicker" title="Choose photos" max-width="52rem" @close="showPicker = false">
-        <p v-if="allPhotos.length === 0" class="text-sm text-zinc-400">
-          No photos in the gallery yet — upload some under Photos first.
-        </p>
-        <ul v-else class="grid grid-cols-3 gap-3 sm:grid-cols-5">
-          <li v-for="photo in allPhotos" :key="photo.id">
-            <button
-              type="button"
-              class="block w-full rounded overflow-hidden"
-              :class="chosenIds.has(photo.id) ? 'opacity-40 cursor-not-allowed' : 'hover:ring-2 hover:ring-teal-500'"
-              :disabled="chosenIds.has(photo.id)"
-              :title="chosenIds.has(photo.id) ? 'Already chosen' : 'Add'"
-              @click="addPhoto(photo)"
-            >
-              <img
-                v-if="photo.image_url"
-                :src="photo.image_url"
-                :alt="photo.caption ?? ''"
-                class="w-full h-24 object-cover"
-              />
-              <div v-else class="w-full h-24 grid place-items-center text-xs text-zinc-500 bg-zinc-800">no file</div>
-            </button>
-          </li>
-        </ul>
-      </AdminModal>
     </div>
   </AdminLayout>
 </template>
