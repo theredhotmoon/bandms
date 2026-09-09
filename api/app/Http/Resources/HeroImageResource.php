@@ -11,12 +11,10 @@ class HeroImageResource extends JsonResource
     {
         return [
             'id'       => $this->id,
-            'photo_id' => $this->photo_id,
-            // Mirrors PhotoResource::image_url so the admin can render the same
-            // thumbnail it shows in the gallery.
-            'url'      => $this->photo?->image ? '/storage/' . $this->photo->image : null,
-            'caption'  => $this->photo?->caption,
+            'url'      => $this->image ? '/storage/' . $this->image : null,
+            'caption'  => $this->caption,
             'position' => $this->position,
+            'active'   => $this->active,
         ];
     }
 }
