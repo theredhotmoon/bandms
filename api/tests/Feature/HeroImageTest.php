@@ -272,3 +272,39 @@ it('does not rebuild when auto-rebuild is off', function () {
 
     Http::assertNothingSent();
 });
+
+// ── site-config ───────────────────────────────────────────────────────────────
+
+it('serves hero images from site-config without auth', function () {
+    $row = heroRow(['image' => 'hero-images/a.jpg']);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonCount(1, 'hero_images.main')
+        ->assertJsonPath('hero_images.main.0.id', $row->id)
+        ->assertJsonPath('hero_images.main.0.url', '/storage/hero-images/a.jpg');
+});
+
+it('omits inactive rows from site-config', function () {
+    heroRow(['active' => false]);
+
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonMissingPath('hero_images.main');
+});
+
+it('serves an empty hero_images object rather than null when none are active', function () {
+    // A null here throws during astro build, which takes down all 35 pages.
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('hero_images', []);
+});
+
+it('keeps hero images out of module_config so the slug map is unaffected', function () {
+    heroRow(['scope' => 'home']);
+
+    $response = $this->getJson('/api/site-config')->assertOk();
+
+    expect(array_keys($response->json('module_config')))->not->toContain('home');
+    expect($response->json('hero_images.home'))->toHaveCount(1);
+});
