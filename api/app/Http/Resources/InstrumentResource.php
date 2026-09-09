@@ -21,8 +21,11 @@ class InstrumentResource extends JsonResource
             'stage_plot_type' => $this->stage_plot_type,
             // Raw bag, one key per registered locale, for the admin editor.
             'translations'    => [
+                // `?? null`, not `?: null` — a legitimately-saved "0" is
+                // filled() and must survive round to the admin editor rather
+                // than reading as cleared.
                 'name' => collect(Locales::codes())
-                    ->mapWithKeys(fn (string $code) => [$code => ($names[$code] ?? null) ?: null])
+                    ->mapWithKeys(fn (string $code) => [$code => $names[$code] ?? null])
                     ->all(),
             ],
             'created_at' => $this->created_at,

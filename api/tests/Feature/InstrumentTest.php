@@ -70,7 +70,7 @@ describe('POST /api/instruments', function () {
             ->assertJsonPath('data.name', 'Bass Guitar')
             ->assertJsonPath('data.category', 'Strings');
 
-        $this->assertDatabaseHas('instruments', ['id' => Instrument::first()->id]);
+        $this->assertDatabaseHas('instruments', ['name->en' => 'Bass Guitar']);
     });
 
     it('creates an instrument without a category', function () {

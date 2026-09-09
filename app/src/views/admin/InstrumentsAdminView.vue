@@ -14,7 +14,7 @@ import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
 import { ApiValidationError } from '@/api/client'
-import { LOCALES, emptyBag } from '@/locales'
+import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
 
 const { query, create, update, remove } = useInstruments()
 
@@ -29,9 +29,10 @@ const filterCategory = ref('')
 
 const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other']
 
-// Icon suggestion derived from the English name — guessInstrumentType's
-// keyword catalogue only matches English terms.
-const suggestedType = computed(() => guessInstrumentType(form.name.en ?? ''))
+// Icon suggestion derived from the registry's default-locale name —
+// guessInstrumentType's keyword catalogue only matches English terms, and
+// DEFAULT_LOCALE is 'en' today, but the literal must not be hardcoded here.
+const suggestedType = computed(() => guessInstrumentType(form.name[DEFAULT_LOCALE] ?? ''))
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
@@ -210,7 +211,7 @@ async function confirmDelete() {
             @click="form.stage_plot_type = suggestedType"
           >
             <InstrumentIcon :type="suggestedType" :size="16" />
-            Use suggested icon for "{{ form.name.en.trim() }}"
+            Use suggested icon for "{{ form.name[DEFAULT_LOCALE].trim() }}"
           </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">
