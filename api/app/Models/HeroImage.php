@@ -3,15 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class HeroImage extends Model
 {
-    protected $fillable = ['photo_id', 'scope', 'position'];
+    protected $fillable = ['scope', 'image', 'caption', 'position', 'active'];
 
     protected $casts = [
-        'photo_id' => 'integer',
         'position' => 'integer',
+        'active'   => 'boolean',
     ];
 
     /**
@@ -22,11 +21,6 @@ class HeroImage extends Model
      * better than one null with two meanings.
      */
     public const RESERVED_SCOPES = ['main', 'home'];
-
-    public function photo(): BelongsTo
-    {
-        return $this->belongsTo(Photo::class);
-    }
 
     /**
      * Every scope a hero set may be saved under, resolved against live modules.
