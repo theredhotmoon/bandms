@@ -13,12 +13,15 @@ import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
+import { ApiValidationError } from '@/api/client'
+import { LOCALES, emptyBag } from '@/locales'
 
 const { query, create, update, remove } = useInstruments()
 
 const showModal = ref(false)
 const editing   = ref<Instrument | null>(null)
-const form = reactive<InstrumentPayload>({ name: '', category: null, stage_plot_type: null })
+const form = reactive({ name: emptyBag(), category: null as string | null, stage_plot_type: null as InstrumentPayload['stage_plot_type'] })
+const fieldErrors    = ref<Record<string, string[]>>({})
 const confirmOpen    = ref(false)
 const confirmId      = ref<number | null>(null)
 const confirmLoading = ref(false)
@@ -26,8 +29,9 @@ const filterCategory = ref('')
 
 const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other']
 
-// Icon suggestion derived from the instrument name, offered while none is set.
-const suggestedType = computed(() => guessInstrumentType(form.name ?? ''))
+// Icon suggestion derived from the English name — guessInstrumentType's
+// keyword catalogue only matches English terms.
+const suggestedType = computed(() => guessInstrumentType(form.name.en ?? ''))
 
 const filteredData = computed(() => {
   const rows = query.data.value ?? []
@@ -46,7 +50,8 @@ const tc = useTableControls<Instrument>({
 
 function openCreate() {
   editing.value        = null
-  form.name            = ''
+  fieldErrors.value    = {}
+  form.name            = emptyBag()
   form.category        = null
   form.stage_plot_type = null
   showModal.value      = true
@@ -54,7 +59,8 @@ function openCreate() {
 
 function openEdit(i: Instrument) {
   editing.value        = i
-  form.name            = i.name
+  fieldErrors.value    = {}
+  for (const l of LOCALES) form.name[l] = i.translations?.name[l] ?? ''
   form.category        = i.category
   form.stage_plot_type = i.stage_plot_type ?? null
   showModal.value      = true
@@ -63,8 +69,9 @@ function openEdit(i: Instrument) {
 function closeModal() { showModal.value = false; editing.value = null }
 
 async function submit() {
+  fieldErrors.value = {}
   const payload: InstrumentPayload = {
-    name:            form.name.trim(),
+    name:            Object.fromEntries(LOCALES.map(l => [l, form.name[l].trim() || null])),
     category:        form.category?.trim() || null,
     stage_plot_type: form.stage_plot_type || null,
   }
@@ -77,7 +84,10 @@ async function submit() {
       toast.success('Instrument added')
     }
     closeModal()
-  } catch { toast.error('Failed to save instrument') }
+  } catch (e) {
+    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
+    else toast.error('Failed to save instrument')
+  }
 }
 
 function requestDelete(id: number) { confirmId.value = id; confirmOpen.value = true }
@@ -167,7 +177,16 @@ async function confirmDelete() {
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
           <label class="field-label">Name <span class="field-req">*</span></label>
-          <input v-model="form.name" required class="field-input" placeholder="Guitar, Bass, Drums…" />
+          <div class="trans-group">
+            <div v-for="l in LOCALES" :key="l" class="trans-row">
+              <span class="lang-badge">{{ l.toUpperCase() }}</span>
+              <input v-model="form.name[l]" class="field-input flex-1" placeholder="Guitar, Bass, Drums…" />
+            </div>
+          </div>
+          <template v-for="l in LOCALES" :key="`name-err-${l}`">
+            <p v-if="fieldErrors[`name.${l}`]" class="field-error">{{ fieldErrors[`name.${l}`][0] }}</p>
+          </template>
+          <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name[0] }}</p>
         </div>
         <div>
           <label class="field-label">Category</label>
@@ -191,7 +210,7 @@ async function confirmDelete() {
             @click="form.stage_plot_type = suggestedType"
           >
             <InstrumentIcon :type="suggestedType" :size="16" />
-            Use suggested icon for "{{ form.name.trim() }}"
+            Use suggested icon for "{{ form.name.en.trim() }}"
           </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">

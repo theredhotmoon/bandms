@@ -24,7 +24,8 @@ test.describe('Instruments Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.locator('input[placeholder*="Guitar" i]').first().fill(UNIQUE_INSTRUMENT)
+    // First .trans-row input is the EN name — the row order follows LOCALES.
+    await modal.locator('.trans-row input').first().fill(UNIQUE_INSTRUMENT)
 
     const categoryField = modal.locator('input[placeholder*="Strings" i]').first()
     const categoryVisible = await categoryField.isVisible().catch(() => false)
@@ -63,7 +64,7 @@ test.describe('Instruments Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    const nameInput = modal.locator('input[placeholder*="Guitar" i]').first()
+    const nameInput = modal.locator('.trans-row input').first()
     await nameInput.clear()
     await nameInput.fill(editedInstrumentName)
 
@@ -115,12 +116,12 @@ test.describe('Instruments Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
+    // Neither locale input carries `required` — a Polish-only name is valid
+    // — so the empty-name case is enforced server-side and surfaces as a
+    // field error under the name inputs, keyed per locale (name.en/name.pl).
     await modal.getByRole('button', { name: /save|create/i }).click()
 
-    // name input has required — browser HTML5 validation fires, not a DOM error element
-    const nameInput = modal.locator('input[required]').first()
-    const isInvalid = await nameInput.evaluate((el: HTMLInputElement) => !el.validity.valid)
-    expect(isInvalid).toBe(true)
+    await expect(modal.locator('.field-error').first()).toBeVisible({ timeout: 8000 })
   })
 })
 

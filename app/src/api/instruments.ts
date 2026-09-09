@@ -1,45 +1,38 @@
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
+import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
-const BASE = '/api/instruments'
-
-function assertSafeId(id: unknown): number {
-  const n = Number(id)
-  if (!Number.isInteger(n) || n <= 0) throw new Error('Invalid id')
-  return n
-}
+interface InstrumentListResponse { data: Instrument[] }
+interface InstrumentResponse { data: Instrument }
 
 export async function fetchInstruments(): Promise<Instrument[]> {
-  const res = await fetch(BASE)
-  if (!res.ok) throw new Error('Failed to fetch instruments')
-  return res.json() as Promise<Instrument[]>
+  const res = await fetch(`${API_BASE}/api/instruments`, { headers: jsonHeaders })
+  return handleResponse<InstrumentListResponse>(res).then((r) => r.data)
 }
 
 export async function createInstrument(token: string, payload: InstrumentPayload): Promise<Instrument> {
-  const res = await fetch(BASE, {
+  const res = await fetch(`${API_BASE}/api/instruments`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     body: JSON.stringify(payload),
   })
-  if (!res.ok) throw new Error('Failed to create instrument')
-  return res.json() as Promise<Instrument>
+  return handleResponse<InstrumentResponse>(res).then((r) => r.data)
 }
 
 export async function updateInstrument(token: string, id: number, payload: Partial<InstrumentPayload>): Promise<Instrument> {
-  const safeId = assertSafeId(id)
-  const res = await fetch(`${BASE}/${safeId}`, {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/instruments/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     body: JSON.stringify(payload),
   })
-  if (!res.ok) throw new Error('Failed to update instrument')
-  return res.json() as Promise<Instrument>
+  return handleResponse<InstrumentResponse>(res).then((r) => r.data)
 }
 
 export async function deleteInstrument(token: string, id: number): Promise<void> {
-  const safeId = assertSafeId(id)
-  const res = await fetch(`${BASE}/${safeId}`, {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/instruments/${id}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
   })
-  if (!res.ok) throw new Error('Failed to delete instrument')
+  return handleResponse<void>(res)
 }

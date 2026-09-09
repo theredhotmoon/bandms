@@ -61,8 +61,8 @@ export async function getEpkOptional(lang: Locale = 'en'): Promise<EpkData | nul
   }
 }
 
-export const getMembers = () =>
-  get<BandMember[]>('/band-profile/members')
+export const getMembers = (lang: Locale = 'en') =>
+  get<BandMember[]>('/band-profile/members', { lang })
 
 export const getSocialLinks = () =>
   get<SocialLink[]>('/band-profile/social-links')
