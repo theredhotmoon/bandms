@@ -41,7 +41,13 @@ it('orders a scope by position, not by id', function () {
 });
 
 it('defaults a new row to active', function () {
-    expect(heroRow()->active)->toBeTrue();
+    $row = HeroImage::create([
+        'scope'    => 'main',
+        'image'    => 'hero-images/a.jpg',
+        'position' => 0,
+    ]);
+
+    expect($row->active)->toBeTrue();
 });
 
 it('treats every live module slug plus main and home as a valid scope', function () {
