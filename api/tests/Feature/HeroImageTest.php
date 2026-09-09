@@ -200,3 +200,34 @@ it('asks the public site to rebuild after a patch, when auto-rebuild is on', fun
 
     Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
 });
+
+// ── PUT /admin/hero-images/{scope}/order ────────────────────────────────────────
+
+it('writes position from the given order', function () {
+    heroAdmin();
+    $a = heroRow(['image' => 'hero-images/a.jpg', 'position' => 0]);
+    $b = heroRow(['image' => 'hero-images/b.jpg', 'position' => 1]);
+
+    $this->putJson('/api/admin/hero-images/main/order', ['order' => [$b->id, $a->id]])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.id', $b->id)
+        ->assertJsonPath('data.main.0.position', 0)
+        ->assertJsonPath('data.main.1.id', $a->id)
+        ->assertJsonPath('data.main.1.position', 1);
+});
+
+it('rejects an id that belongs to a different scope', function () {
+    heroAdmin();
+    $other = heroRow(['scope' => 'contact']);
+
+    $this->putJson('/api/admin/hero-images/main/order', ['order' => [$other->id]])
+        ->assertStatus(422);
+});
+
+it('rejects reordering into an unknown scope', function () {
+    heroAdmin();
+    $a = heroRow();
+
+    $this->putJson('/api/admin/hero-images/not-a-page/order', ['order' => [$a->id]])
+        ->assertStatus(422);
+});

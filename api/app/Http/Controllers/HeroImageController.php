@@ -76,6 +76,31 @@ class HeroImageController extends Controller
     }
 
     /**
+     * Reorder every row already in one scope. Every id in `order` must
+     * already belong to that scope — Rule::exists's `where` clause rejects
+     * anything else with a 422 rather than silently ignoring it, so a
+     * mis-scoped id cannot leave the set half-reordered.
+     */
+    public function reorder(Request $request, string $scope): JsonResponse
+    {
+        $request->merge(['scope' => $scope]);
+
+        $data = $request->validate([
+            'scope'   => ['required', 'string', Rule::in(HeroImage::allowedScopes())],
+            'order'   => 'required|array',
+            'order.*' => ['integer', Rule::exists('hero_images', 'id')->where('scope', $scope)],
+        ]);
+
+        foreach ($data['order'] as $position => $id) {
+            HeroImage::where('id', $id)->where('scope', $data['scope'])->update(['position' => $position]);
+        }
+
+        SiteRebuild::requestIfAuto();
+
+        return response()->json(['data' => (object) $this->allScopes()]);
+    }
+
+    /**
      * Replace one scope's set, in payload order.
      *
      * Delete-and-recreate rather than a diff: it is the shape social links

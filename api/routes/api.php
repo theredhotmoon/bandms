@@ -477,6 +477,8 @@ Route::middleware('auth:api')->group(function () {
             ->name('api.admin.hero-images.store');
         Route::patch('/admin/hero-images/{heroImage}', [HeroImageController::class, 'patch'])
             ->name('api.admin.hero-images.patch');
+        Route::put('/admin/hero-images/{scope}/order', [HeroImageController::class, 'reorder'])
+            ->name('api.admin.hero-images.reorder');
 
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
