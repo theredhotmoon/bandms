@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { fetchHeroImages, saveHeroImageScope } from '@/api/heroImages'
+import {
+  fetchHeroImages,
+  uploadHeroImages,
+  updateHeroImage,
+  reorderHeroImages,
+  deleteHeroImage,
+} from '@/api/heroImages'
 import { useAuth } from './useAuth'
 import type { HeroImagesResponse } from '@/types/heroImage'
 
@@ -15,14 +21,35 @@ export function useHeroImages() {
     enabled: () => token.value !== null,
   })
 
-  const save = useMutation({
-    mutationFn: ({ scope, photoIds }: { scope: string; photoIds: number[] }) =>
-      saveHeroImageScope(token.value!, scope, photoIds),
-    // The endpoint returns every scope already ordered, so seeding the cache
-    // avoids a refetch that would briefly snap thumbnails back to their old
-    // order — the same reason useFaqs seeds after a reorder.
-    onSuccess: (data: HeroImagesResponse) => queryClient.setQueryData(HERO_IMAGES_KEY, data),
+  // Upload/update/reorder all return the full map already ordered, so seeding
+  // the cache from the response avoids a refetch that would briefly snap
+  // thumbnails back to their pre-mutation order.
+  const onMapResponse = (data: HeroImagesResponse) => queryClient.setQueryData(HERO_IMAGES_KEY, data)
+
+  const upload = useMutation({
+    mutationFn: ({ scope, files }: { scope: string; files: { file: File; caption: string }[] }) =>
+      uploadHeroImages(token.value!, scope, files),
+    onSuccess: onMapResponse,
   })
 
-  return { query, save }
+  const update = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: { caption?: string | null; active?: boolean } }) =>
+      updateHeroImage(token.value!, id, payload),
+    onSuccess: onMapResponse,
+  })
+
+  const reorder = useMutation({
+    mutationFn: ({ scope, order }: { scope: string; order: number[] }) =>
+      reorderHeroImages(token.value!, scope, order),
+    onSuccess: onMapResponse,
+  })
+
+  // DELETE returns 204, not the map — invalidate and refetch instead, the
+  // same handling PhotosAdminView already uses for removeAlbumPhoto.
+  const remove = useMutation({
+    mutationFn: (id: number) => deleteHeroImage(token.value!, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: HERO_IMAGES_KEY }),
+  })
+
+  return { query, upload, update, reorder, remove }
 }
