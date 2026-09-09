@@ -95,3 +95,68 @@ it('serves an empty admin payload as an object, not an array', function () {
     expect($this->getJson('/api/admin/hero-images')->content())
         ->toContain('"data":{}');
 });
+
+// ── POST /admin/hero-images/{scope} ─────────────────────────────────────────────
+
+it('uploads one or more pictures into a scope', function () {
+    heroAdmin();
+    $file = UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg');
+
+    $this->postJson('/api/admin/hero-images/main', [
+        'files'      => [$file],
+        'captions'   => ['A caption'],
+    ])
+        ->assertOk()
+        ->assertJsonCount(1, 'data.main')
+        ->assertJsonPath('data.main.0.caption', 'A caption')
+        ->assertJsonPath('data.main.0.active', true);
+
+    $stored = HeroImage::first();
+    Storage::disk('public')->assertExists($stored->image);
+    expect($stored->image)->toStartWith('hero-images/');
+});
+
+it('appends uploads after the current max position', function () {
+    heroAdmin();
+    heroRow(['position' => 0]);
+    $file = UploadedFile::fake()->create('b.jpg', 100, 'image/jpeg');
+
+    $this->postJson('/api/admin/hero-images/main', ['files' => [$file]])
+        ->assertOk()
+        ->assertJsonPath('data.main.1.position', 1);
+});
+
+it('rejects an unknown scope on upload', function () {
+    heroAdmin();
+    $file = UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg');
+
+    $this->postJson('/api/admin/hero-images/not-a-page', ['files' => [$file]])
+        ->assertStatus(422);
+});
+
+it('rejects a non-image upload', function () {
+    heroAdmin();
+    $file = UploadedFile::fake()->create('notes.txt', 10, 'text/plain');
+
+    $this->postJson('/api/admin/hero-images/main', ['files' => [$file]])
+        ->assertStatus(422);
+});
+
+it('rejects an unbounded files array', function () {
+    heroAdmin();
+    $files = array_map(fn () => UploadedFile::fake()->create('a.jpg', 10, 'image/jpeg'), range(1, 101));
+
+    $this->postJson('/api/admin/hero-images/main', ['files' => $files])
+        ->assertStatus(422);
+});
+
+it('asks the public site to rebuild after an upload, when auto-rebuild is on', function () {
+    Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'true');
+    heroAdmin();
+    $file = UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg');
+
+    $this->postJson('/api/admin/hero-images/main', ['files' => [$file]])->assertOk();
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
+});

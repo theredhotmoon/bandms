@@ -22,6 +22,45 @@ class HeroImageController extends Controller
     }
 
     /**
+     * Upload one or more new pictures into a scope, appended after whatever
+     * is already there.
+     */
+    public function store(Request $request, string $scope): JsonResponse
+    {
+        $request->merge(['scope' => $scope]);
+
+        $data = $request->validate([
+            'scope'      => ['required', 'string', Rule::in(HeroImage::allowedScopes())],
+            // Same bound as AlbumController::addPhotos — each file becomes its
+            // own INSERT inside this request, so an unbounded array is an
+            // unbounded write.
+            'files'      => 'required|array|min:1|max:100',
+            'files.*'    => 'required|image|max:20480',
+            'captions'   => 'nullable|array',
+            'captions.*' => 'nullable|string|max:255',
+        ]);
+
+        $maxPosition  = HeroImage::where('scope', $data['scope'])->max('position');
+        $nextPosition = $maxPosition === null ? 0 : $maxPosition + 1;
+
+        foreach (array_values($data['files']) as $index => $file) {
+            $path = $file->store('hero-images', 'public');
+            HeroImage::create([
+                'scope'    => $data['scope'],
+                'image'    => $path,
+                'caption'  => $data['captions'][$index] ?? null,
+                'position' => $nextPosition + $index,
+            ]);
+        }
+
+        // The public site bakes these, so a save that does not rebuild leaves
+        // the band looking at an unchanged page.
+        SiteRebuild::requestIfAuto();
+
+        return response()->json(['data' => (object) $this->allScopes()]);
+    }
+
+    /**
      * Replace one scope's set, in payload order.
      *
      * Delete-and-recreate rather than a diff: it is the shape social links

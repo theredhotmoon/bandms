@@ -473,8 +473,8 @@ Route::middleware('auth:api')->group(function () {
         // ── Hero background images ────────────────────────────────────────────
         Route::get('/admin/hero-images', [HeroImageController::class, 'index'])
             ->name('api.admin.hero-images.index');
-        Route::put('/admin/hero-images/{scope}', [HeroImageController::class, 'update'])
-            ->name('api.admin.hero-images.update');
+        Route::post('/admin/hero-images/{scope}', [HeroImageController::class, 'store'])
+            ->name('api.admin.hero-images.store');
 
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
