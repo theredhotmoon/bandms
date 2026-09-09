@@ -231,3 +231,44 @@ it('rejects reordering into an unknown scope', function () {
     $this->putJson('/api/admin/hero-images/not-a-page/order', ['order' => [$a->id]])
         ->assertStatus(422);
 });
+
+// ── DELETE /admin/hero-images/{heroImage} ───────────────────────────────────────
+
+it('deletes the file and the row', function () {
+    heroAdmin();
+    Storage::disk('public')->put('hero-images/gone.jpg', 'x');
+    $row = heroRow(['image' => 'hero-images/gone.jpg']);
+
+    $this->deleteJson("/api/admin/hero-images/{$row->id}")->assertNoContent();
+
+    Storage::disk('public')->assertMissing('hero-images/gone.jpg');
+    expect(HeroImage::count())->toBe(0);
+});
+
+it('404s deleting an id that no longer exists', function () {
+    heroAdmin();
+
+    $this->deleteJson('/api/admin/hero-images/999999')->assertNotFound();
+});
+
+it('asks the public site to rebuild after a delete, when auto-rebuild is on', function () {
+    Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'true');
+    heroAdmin();
+    $row = heroRow();
+
+    $this->deleteJson("/api/admin/hero-images/{$row->id}")->assertNoContent();
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
+});
+
+it('does not rebuild when auto-rebuild is off', function () {
+    Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'false');
+    heroAdmin();
+    $row = heroRow();
+
+    $this->deleteJson("/api/admin/hero-images/{$row->id}")->assertNoContent();
+
+    Http::assertNothingSent();
+});

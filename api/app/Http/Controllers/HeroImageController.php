@@ -7,7 +7,7 @@ use App\Models\HeroImage;
 use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class HeroImageController extends Controller
@@ -100,48 +100,18 @@ class HeroImageController extends Controller
         return response()->json(['data' => (object) $this->allScopes()]);
     }
 
-    /**
-     * Replace one scope's set, in payload order.
-     *
-     * Delete-and-recreate rather than a diff: it is the shape social links
-     * already use, and it makes "the payload is the truth" literally so. The
-     * transaction is what stops a failure part-way leaving a half-saved set.
-     */
-    public function update(Request $request, string $scope): JsonResponse
+    /** Delete one picture and its file. */
+    public function destroy(HeroImage $heroImage): JsonResponse
     {
-        $request->merge(['scope' => $scope]);
+        if ($heroImage->image) {
+            Storage::disk('public')->delete($heroImage->image);
+        }
 
-        $data = $request->validate([
-            'scope'       => ['required', 'string', Rule::in(HeroImage::allowedScopes())],
-            // Bounded at 100, matching AlbumController's photo arrays. Each id
-            // becomes its own INSERT inside the transaction below, so an
-            // unbounded array is an unbounded write held open by one request.
-            'photo_ids'   => ['present', 'array', 'max:100'],
-            'photo_ids.*' => ['integer', 'exists:photos,id'],
-        ]);
+        $heroImage->delete();
 
-        DB::transaction(function () use ($data) {
-            HeroImage::where('scope', $data['scope'])->delete();
-
-            foreach ($data['photo_ids'] as $position => $photoId) {
-                HeroImage::create([
-                    'photo_id' => $photoId,
-                    'scope'    => $data['scope'],
-                    'position' => $position,
-                ]);
-            }
-        });
-
-        // The public site bakes these, so a save that does not rebuild leaves
-        // the band looking at an unchanged page. The admin hides its manual
-        // rebuild button when auto-rebuild is on, so without this there would be
-        // no way at all to publish a hero change from that state.
         SiteRebuild::requestIfAuto();
 
-        // Cast so an empty result encodes as {} rather than [] — the payload is
-        // a map keyed by scope, and PHP's empty array would otherwise arrive as
-        // a JSON array and contradict the client's Record<string, …> type.
-        return response()->json(['data' => (object) $this->allScopes()]);
+        return response()->json(null, 204);
     }
 
     /**
