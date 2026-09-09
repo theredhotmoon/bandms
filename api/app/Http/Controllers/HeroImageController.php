@@ -68,16 +68,15 @@ class HeroImageController extends Controller
     /**
      * All hero sets keyed by scope, each ordered by position.
      *
-     * Empty scopes are simply absent rather than present-and-empty: the public
-     * resolver treats "no override" and "an empty override" identically, so
-     * emitting both shapes would be two ways of saying one thing.
+     * Includes inactive rows — the admin needs to see and re-enable them,
+     * unlike the public site-config payload, which filters to active only.
+     * A scope with zero rows is simply absent rather than present-and-empty.
      *
      * @return array<string, array<int, array<string, mixed>>>
      */
     private function allScopes(): array
     {
-        return HeroImage::with('photo')
-            ->orderBy('scope')
+        return HeroImage::orderBy('scope')
             ->orderBy('position')
             ->get()
             ->groupBy('scope')

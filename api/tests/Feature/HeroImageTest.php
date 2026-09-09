@@ -64,3 +64,32 @@ it('keeps a disabled module as a valid scope', function () {
 
     expect(HeroImage::allowedScopes())->toContain('photos');
 });
+
+// ── GET /admin/hero-images ──────────────────────────────────────────────────────
+
+it('rejects hero image reads without auth', function () {
+    $this->getJson('/api/admin/hero-images')->assertUnauthorized();
+});
+
+it('includes inactive rows for the admin, unlike the public payload', function () {
+    heroAdmin();
+    heroRow(['image' => 'hero-images/off.jpg', 'active' => false]);
+
+    $this->getJson('/api/admin/hero-images')
+        ->assertOk()
+        ->assertJsonCount(1, 'data.main')
+        ->assertJsonPath('data.main.0.active', false);
+});
+
+it('serves an empty admin payload as an object, not an array', function () {
+    // The payload is a map keyed by scope. PHP's empty array encodes as [],
+    // which contradicts the client's Record<string, HeroImage[]> type.
+    heroAdmin();
+
+    $this->getJson('/api/admin/hero-images')
+        ->assertOk()
+        ->assertJsonPath('data', []);
+
+    expect($this->getJson('/api/admin/hero-images')->content())
+        ->toContain('"data":{}');
+});
