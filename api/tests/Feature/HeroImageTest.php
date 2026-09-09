@@ -160,3 +160,43 @@ it('asks the public site to rebuild after an upload, when auto-rebuild is on', f
 
     Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
 });
+
+// ── PATCH /admin/hero-images/{heroImage} ────────────────────────────────────────
+
+it('updates a caption alone', function () {
+    heroAdmin();
+    $row = heroRow(['caption' => 'old']);
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['caption' => 'new'])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.caption', 'new')
+        ->assertJsonPath('data.main.0.active', true);
+});
+
+it('toggles active alone', function () {
+    heroAdmin();
+    $row = heroRow(['active' => true]);
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['active' => false])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.active', false)
+        ->assertJsonPath('data.main.0.caption', null);
+});
+
+it('rejects an unknown hero image id on patch', function () {
+    heroAdmin();
+
+    $this->patchJson('/api/admin/hero-images/999999', ['active' => false])
+        ->assertNotFound();
+});
+
+it('asks the public site to rebuild after a patch, when auto-rebuild is on', function () {
+    Http::fake();
+    App\Models\SiteSetting::set('auto_rebuild', 'true');
+    heroAdmin();
+    $row = heroRow();
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['active' => false])->assertOk();
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
+});

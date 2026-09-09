@@ -60,6 +60,21 @@ class HeroImageController extends Controller
         return response()->json(['data' => (object) $this->allScopes()]);
     }
 
+    /** Partial update of one row — caption and/or active. */
+    public function patch(Request $request, HeroImage $heroImage): JsonResponse
+    {
+        $data = $request->validate([
+            'caption' => 'sometimes|nullable|string|max:255',
+            'active'  => 'sometimes|boolean',
+        ]);
+
+        $heroImage->update($data);
+
+        SiteRebuild::requestIfAuto();
+
+        return response()->json(['data' => (object) $this->allScopes()]);
+    }
+
     /**
      * Replace one scope's set, in payload order.
      *
