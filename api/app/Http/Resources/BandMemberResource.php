@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,13 +29,13 @@ class BandMemberResource extends JsonResource
             'main_instrument_id' => $this->main_instrument_id,
             'main_instrument'    => $this->mainInstrument ? [
                 'id'             => $this->mainInstrument->id,
-                'name'           => $this->mainInstrument->name,
+                'name'           => Locales::resolve($this->mainInstrument->getTranslations('name')) ?? '',
                 'category'       => $this->mainInstrument->category,
                 'stage_plot_type'=> $this->mainInstrument->stage_plot_type,
             ] : null,
             'instruments'  => $this->instruments->map(fn ($i) => [
                 'id'             => $i->id,
-                'name'           => $i->name,
+                'name'           => Locales::resolve($i->getTranslations('name')) ?? '',
                 'category'       => $i->category,
                 'stage_plot_type'=> $i->stage_plot_type,
             ]),

@@ -8,6 +8,7 @@ use App\Http\Resources\TechRiderResource;
 use App\Models\BandMember;
 use App\Models\BandProfile;
 use App\Models\TechRider;
+use App\Support\Locales;
 use Illuminate\Http\Request;
 
 /**
@@ -87,12 +88,19 @@ class TechRiderSnapshotBuilder
             ->all();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The rider is a fixed print document, not locale-differentiated (see
+     * CLAUDE.md), so its frozen instrument names are pinned to the default
+     * locale rather than whichever ?lang= happened to be active when the
+     * admin clicked Publish.
+     *
+     * @return array<string, mixed>
+     */
     private static function instrument(object $instrument): array
     {
         return [
             'id'              => $instrument->id,
-            'name'            => $instrument->name,
+            'name'            => Locales::resolve($instrument->getTranslations('name'), Locales::default()) ?? '',
             'category'        => $instrument->category,
             'stage_plot_type' => $instrument->stage_plot_type,
         ];

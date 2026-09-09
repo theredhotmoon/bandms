@@ -17,7 +17,7 @@ describe('GET /api/instruments', function () {
         Instrument::create(['name' => 'Accordion', 'category' => 'Keys']);
         Instrument::create(['name' => 'Trombone', 'category' => 'Brass']);
 
-        $data = $this->getJson('/api/instruments')->assertSuccessful()->json();
+        $data = $this->getJson('/api/instruments')->assertSuccessful()->json('data');
 
         // Brass items come before Keys
         $names = array_column($data, 'name');
@@ -25,38 +25,69 @@ describe('GET /api/instruments', function () {
         expect($names[1])->toBe('Trumpet');
         expect($names[2])->toBe('Accordion');
     });
+
+    it('resolves the name for the requested locale, falling back when untranslated', function () {
+        Instrument::create(['name' => ['en' => 'Guitar', 'pl' => 'Gitara']]);
+
+        // Only 'en' was ever set for this one — 'pl' falls back rather than
+        // rendering an empty row on the public site.
+        Instrument::create(['name' => 'Drums']);
+
+        $data = $this->getJson('/api/instruments?lang=pl')->assertSuccessful()->json('data');
+        $names = array_column($data, 'name');
+
+        expect($names)->toContain('Gitara');
+        expect($names)->toContain('Drums');
+    });
+
+    it('includes the raw per-locale translations bag for the admin editor', function () {
+        Instrument::create(['name' => ['en' => 'Guitar', 'pl' => 'Gitara']]);
+
+        $data = $this->getJson('/api/instruments')->assertSuccessful()->json('data');
+
+        expect($data[0]['translations']['name'])->toBe(['en' => 'Guitar', 'pl' => 'Gitara']);
+    });
 });
 
 // ── POST /api/instruments ─────────────────────────────────────────────────────
 
 describe('POST /api/instruments', function () {
     it('returns 401 without authentication', function () {
-        $this->postJson('/api/instruments', ['name' => 'Guitar'])->assertUnauthorized();
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Guitar']])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-        $this->postJson('/api/instruments', ['name' => 'Guitar'])->assertForbidden();
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Guitar']])->assertForbidden();
     });
 
     it('creates an instrument', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/instruments', ['name' => 'Bass Guitar', 'category' => 'Strings'])
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Bass Guitar'], 'category' => 'Strings'])
             ->assertCreated()
-            ->assertJsonPath('name', 'Bass Guitar')
-            ->assertJsonPath('category', 'Strings');
+            ->assertJsonPath('data.name', 'Bass Guitar')
+            ->assertJsonPath('data.category', 'Strings');
 
-        $this->assertDatabaseHas('instruments', ['name' => 'Bass Guitar']);
+        $this->assertDatabaseHas('instruments', ['name->en' => 'Bass Guitar']);
     });
 
     it('creates an instrument without a category', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/instruments', ['name' => 'Theremin'])
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Theremin']])
             ->assertCreated()
-            ->assertJsonPath('category', null);
+            ->assertJsonPath('data.category', null);
+    });
+
+    it('creates a Polish-only instrument', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => ['pl' => 'Fujarka']])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Fujarka')
+            ->assertJsonPath('data.translations.name.en', null);
     });
 
     it('validates name is required', function () {
@@ -67,19 +98,43 @@ describe('POST /api/instruments', function () {
             ->assertJsonValidationErrors(['name']);
     });
 
-    it('validates name must be unique', function () {
+    it('validates a name must be filled in at least one language', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => ['en' => '', 'pl' => '']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name.en', 'name.pl']);
+    });
+
+    it('validates name.en must be unique per locale', function () {
         $this->actingAsAdmin();
         Instrument::create(['name' => 'Guitar']);
 
-        $this->postJson('/api/instruments', ['name' => 'Guitar'])
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Guitar']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name.en']);
+    });
+
+    it('allows the same word in different locales across two instruments', function () {
+        $this->actingAsAdmin();
+        Instrument::create(['name' => ['en' => 'Live', 'pl' => 'Na żywo']]);
+
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Na żywo']])
+            ->assertCreated();
     });
 
     it('validates name max length', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/instruments', ['name' => str_repeat('a', 101)])
+        $this->postJson('/api/instruments', ['name' => ['en' => str_repeat('a', 101)]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name.en']);
+    });
+
+    it('rejects a name payload with an unregistered locale key', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Guitar', 'de' => 'Gitarre']])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
     });
@@ -88,16 +143,16 @@ describe('POST /api/instruments', function () {
         $this->actingAsAdmin();
 
         foreach (StagePlotType::values() as $i => $type) {
-            $this->postJson('/api/instruments', ['name' => "Instrument {$i}", 'stage_plot_type' => $type])
+            $this->postJson('/api/instruments', ['name' => ['en' => "Instrument {$i}"], 'stage_plot_type' => $type])
                 ->assertCreated()
-                ->assertJsonPath('stage_plot_type', $type);
+                ->assertJsonPath('data.stage_plot_type', $type);
         }
     });
 
     it('rejects an unknown stage plot type', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/instruments', ['name' => 'Kazoo', 'stage_plot_type' => 'kazoo'])
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Kazoo'], 'stage_plot_type' => 'kazoo'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['stage_plot_type']);
     });
@@ -105,9 +160,9 @@ describe('POST /api/instruments', function () {
     it('allows a null stage plot type', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/instruments', ['name' => 'Theremin', 'stage_plot_type' => null])
+        $this->postJson('/api/instruments', ['name' => ['en' => 'Theremin'], 'stage_plot_type' => null])
             ->assertCreated()
-            ->assertJsonPath('stage_plot_type', null);
+            ->assertJsonPath('data.stage_plot_type', null);
     });
 });
 
@@ -117,39 +172,58 @@ describe('PUT /api/instruments/{instrument}', function () {
     it('returns 401 without authentication', function () {
         $instrument = Instrument::create(['name' => 'Flute']);
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Piccolo'])->assertUnauthorized();
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Piccolo']])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
         $instrument = Instrument::create(['name' => 'Flute']);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Piccolo'])->assertForbidden();
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Piccolo']])->assertForbidden();
     });
 
     it('updates an instrument', function () {
         $this->actingAsAdmin();
         $instrument = Instrument::create(['name' => 'Flute', 'category' => 'Woodwind']);
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Piccolo', 'category' => 'Woodwind'])
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Piccolo'], 'category' => 'Woodwind'])
             ->assertSuccessful()
-            ->assertJsonPath('name', 'Piccolo');
+            ->assertJsonPath('data.name', 'Piccolo');
     });
 
     it('allows keeping the same name on update', function () {
         $this->actingAsAdmin();
         $instrument = Instrument::create(['name' => 'Drums']);
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Drums'])->assertSuccessful();
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Drums']])->assertSuccessful();
     });
 
-    it('validates name must not be empty when provided', function () {
+    it('updates only the given locale, leaving the other untouched', function () {
+        $this->actingAsAdmin();
+        $instrument = Instrument::create(['name' => ['en' => 'Guitar', 'pl' => 'Gitara']]);
+
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Electric Guitar']])
+            ->assertSuccessful()
+            ->assertJsonPath('data.translations.name.en', 'Electric Guitar')
+            ->assertJsonPath('data.translations.name.pl', 'Gitara');
+    });
+
+    it('clears one locale via an explicit empty string without wiping the other', function () {
+        $this->actingAsAdmin();
+        $instrument = Instrument::create(['name' => ['en' => 'Guitar', 'pl' => 'Gitara']]);
+
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Guitar', 'pl' => '']])
+            ->assertSuccessful()
+            ->assertJsonPath('data.translations.name.pl', null);
+    });
+
+    it('validates name must not be empty in every language when provided', function () {
         $this->actingAsAdmin();
         $instrument = Instrument::create(['name' => 'Flute']);
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ''])
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => '']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name.en']);
     });
 
     it('validates name must be unique across other instruments on update', function () {
@@ -157,15 +231,15 @@ describe('PUT /api/instruments/{instrument}', function () {
         Instrument::create(['name' => 'Piano']);
         $instrument = Instrument::create(['name' => 'Violin']);
 
-        $this->putJson("/api/instruments/{$instrument->id}", ['name' => 'Piano'])
+        $this->putJson("/api/instruments/{$instrument->id}", ['name' => ['en' => 'Piano']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name.en']);
     });
 
     it('returns 404 for a non-existent instrument', function () {
         $this->actingAsAdmin();
 
-        $this->putJson('/api/instruments/9999', ['name' => 'X'])->assertNotFound();
+        $this->putJson('/api/instruments/9999', ['name' => ['en' => 'X']])->assertNotFound();
     });
 });
 
