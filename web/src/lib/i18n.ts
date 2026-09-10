@@ -24,6 +24,16 @@ export function t(
   return fallback ?? null
 }
 
+/**
+ * Resolves a post's per-locale URL slug. slug_en/slug_pl are plain DB columns
+ * (not a translation bag), and slug_pl is null whenever the post has no Polish
+ * title — generateSlug() only produces it from a Polish title on save. Falling
+ * back to slug_en keeps every post reachable under /pl/ even half-translated.
+ */
+export function postSlug(post: { slug_en: string; slug_pl?: string | null }, lang: Locale): string {
+  return lang === 'pl' ? (post.slug_pl || post.slug_en) : post.slug_en
+}
+
 export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en'): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)

@@ -2,6 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
+import { postSlug } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
@@ -30,6 +31,7 @@ while (true) {
 }
 const summaries = allPosts.map(p => ({
   id: p.id,
+  slug: postSlug(p, lang),
   title: p.title,
   date: p.published_at ?? p.created_at,
   tags: p.tags,
@@ -46,8 +48,8 @@ const mo = ['January','February','March','April','May','June','July','August','S
 const dateStr = `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear()}`
 
 // Prev (newer) / next (older) — posts are newest-first
-const prevId = idx > 0                   ? summaries[idx - 1].id : null
-const nextId = idx < summaries.length - 1 ? summaries[idx + 1].id : null
+const prevSlug = idx > 0                   ? summaries[idx - 1].slug : null
+const nextSlug = idx < summaries.length - 1 ? summaries[idx + 1].slug : null
 
 // More: up to 3 other posts
 const more = summaries.filter((_, i) => i !== idx).slice(0, 3)
@@ -181,11 +183,11 @@ const postsSection = slugMap[lang].posts ?? 'posts'
     </div>
 
     <!-- ── PREV / NEXT ────────────────────────────────────────── -->
-    {(prevId || nextId) && (
+    {(prevSlug || nextSlug) && (
       <section class="ar-col art-prevnext">
         <div class="art-pn-row">
-          {prevId ? (
-            <a class="art-pn-btn art-pn-prev" href={`/${lang}/${postsSection}/${prevId}`}>
+          {prevSlug ? (
+            <a class="art-pn-btn art-pn-prev" href={`/${lang}/${postsSection}/${prevSlug}`}>
               <span class="art-pn-dir">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
@@ -195,8 +197,8 @@ const postsSection = slugMap[lang].posts ?? 'posts'
               <span class="art-pn-title">{summaries[idx - 1]?.title}</span>
             </a>
           ) : <div />}
-          {nextId ? (
-            <a class="art-pn-btn art-pn-next" href={`/${lang}/${postsSection}/${nextId}`}>
+          {nextSlug ? (
+            <a class="art-pn-btn art-pn-next" href={`/${lang}/${postsSection}/${nextSlug}`}>
               <span class="art-pn-dir">
                 Older post
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -219,7 +221,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
           <h3 class="art-more-title">{copy.more}</h3>
           <div class="art-more-grid">
             {more.map(p => (
-              <a href={`/${lang}/${postsSection}/${p.id}`} class="art-more-card">
+              <a href={`/${lang}/${postsSection}/${p.slug}`} class="art-more-card">
                 <div class="art-more-img" aria-hidden="true"></div>
                 <div class="art-more-body">
                   {p.tags.length > 0 && (

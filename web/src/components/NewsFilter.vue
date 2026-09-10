@@ -5,6 +5,7 @@ interface Tag { id: number; name: string; slug_en: string }
 
 interface PostSummary {
   id: number
+  slug: string
   title: string
   intro: string | null
   excerpt: string
@@ -93,7 +94,7 @@ function postDate(p: PostSummary): string {
 
     <!-- FEATURED POST -->
     <section v-if="featured" class="nf-featured-wrap">
-      <a :href="`${resolvedPostHrefBase}/${featured.id}`" class="nf-featured">
+      <a :href="`${resolvedPostHrefBase}/${featured.slug}`" class="nf-featured">
         <div class="nf-feat-img">
           <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           <span class="nf-feat-badge" :style="{ background: accent }">Featured</span>
@@ -128,7 +129,7 @@ function postDate(p: PostSummary): string {
         <a
           v-for="p in rest"
           :key="p.id"
-          :href="`${resolvedPostHrefBase}/${p.id}`"
+          :href="`${resolvedPostHrefBase}/${p.slug}`"
           class="nf-card"
         >
           <div class="nf-card-img">
