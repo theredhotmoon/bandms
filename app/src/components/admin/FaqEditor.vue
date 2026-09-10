@@ -2,7 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
-import { LOCALES, emptyBag, type Lang as Locale } from '@/locales'
+import { LOCALES, DEFAULT_LOCALE, emptyBag, type Lang as Locale } from '@/locales'
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -126,7 +126,7 @@ const otherErrors = computed(() =>
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Question</span>
       <div class="flex flex-col gap-2">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
-          <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': l === 'pl' }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
+          <label class="lang-tag" :class="{ 'lang-tag--pl': l !== DEFAULT_LOCALE }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
           <input
             :id="`faq-q-${l}`"
             v-model="draft.question[l]"
@@ -146,7 +146,7 @@ const otherErrors = computed(() =>
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Answer</span>
       <div class="flex flex-col gap-2">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
-          <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': l === 'pl' }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
+          <label class="lang-tag" :class="{ 'lang-tag--pl': l !== DEFAULT_LOCALE }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
           <textarea
             :id="`faq-a-${l}`"
             v-model="draft.answer[l]"
@@ -187,21 +187,22 @@ const otherErrors = computed(() =>
 </template>
 
 <style scoped>
-/* Same locale-badge convention as WebsiteModulesView.vue's .lang-tag — this
-   editor is Tailwind-styled rather than importing form-styles.css, so the
-   badge is duplicated here at the same size/colours rather than pulling in
-   the whole dark-form stylesheet for one element. */
+/* Pixel-identical to the shared .lang-badge in form-styles.css (same
+   convention as WebsiteModulesView.vue's .lang-tag) — this editor is
+   Tailwind-styled rather than importing that stylesheet, so the badge is
+   duplicated here rather than pulling in the whole dark-form CSS for one
+   element. Keep the values in sync by hand if .lang-badge ever changes. */
 .lang-tag {
   display: inline-block;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 0.15rem 0.4rem;
+  padding: 0.2rem 0.45rem;
   border-radius: 0.25rem;
   flex-shrink: 0;
   background: #1e3a5f;
   color: #60a5fa;
-  width: 1.75rem;
+  width: 2rem;
   text-align: center;
 }
 .lang-tag--pl { background: #3f1010; color: #f87171; }

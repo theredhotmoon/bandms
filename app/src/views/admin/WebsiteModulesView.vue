@@ -6,6 +6,7 @@ import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
+import { DEFAULT_LOCALE } from '@/locales'
 
 const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
@@ -474,7 +475,7 @@ async function saveEdit(slug: string) {
               <span class="text-xs text-zinc-400">{{ field.label }}</span>
               <div class="flex flex-col gap-2">
                 <div v-for="locale in (['en', 'pl'] as const)" :key="locale" class="flex flex-col gap-1">
-                  <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': locale === 'pl' }" :for="`set-${field.key}-${locale}`">
+                  <label class="lang-tag" :class="{ 'lang-tag--pl': locale !== DEFAULT_LOCALE }" :for="`set-${field.key}-${locale}`">
                     {{ locale.toUpperCase() }}
                   </label>
                   <textarea
@@ -579,21 +580,21 @@ async function saveEdit(slug: string) {
 </template>
 
 <style scoped>
-/* Locale badge for this view's stacked EN/PL rows — same colour convention as
-   the shared .lang-badge in form-styles.css, sized for Tailwind's text-xs
-   inputs rather than pulling the whole dark-form stylesheet into a
-   Tailwind-styled view. */
+/* Pixel-identical to the shared .lang-badge in form-styles.css — this view is
+   Tailwind-styled rather than importing that stylesheet, so the badge is
+   duplicated here rather than pulling in the whole dark-form CSS for one
+   element. Keep the values in sync by hand if .lang-badge ever changes. */
 .lang-tag {
   display: inline-block;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 0.15rem 0.4rem;
+  padding: 0.2rem 0.45rem;
   border-radius: 0.25rem;
   flex-shrink: 0;
   background: #1e3a5f;
   color: #60a5fa;
-  width: 1.75rem;
+  width: 2rem;
   text-align: center;
 }
 .lang-tag--pl { background: #3f1010; color: #f87171; }
