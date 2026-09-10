@@ -177,3 +177,72 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('.modal-overlay')).toBeVisible()
   })
 })
+
+/**
+ * Serial and self-contained for the same reason as the suite above: this
+ * creates its own post so it isn't racing the shared row other tests use.
+ */
+test.describe.serial('Admin Posts — content blocks scrolling', () => {
+  const postTitle = `E2E Scroll Post ${Date.now()}`
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/admin/posts')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('a post with many content blocks stays scrollable to the submit button', async ({ page }) => {
+    await page.getByRole('button', { name: '+ Add post' }).click()
+    await expect(page.locator('.modal-overlay')).toBeVisible()
+    await page.locator('input[placeholder="Post title"]').fill(postTitle)
+
+    // Enough blocks to push the modal well past the viewport — this is the
+    // state that used to make the content area unscrollable (see
+    // PostBlockEditor.vue's touch-action comment).
+    for (let i = 0; i < 15; i++) {
+      await page.getByRole('button', { name: '+ Text' }).click()
+    }
+    await expect(page.locator('.block-row')).toHaveCount(15)
+
+    const overlay = page.locator('.modal-overlay')
+    await expect.poll(() => overlay.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
+
+    // Scroll with the mouse wheel, the way a sighted mouse user reaches the
+    // submit button once the block list overflows the modal.
+    await page.mouse.move(400, 300)
+    await page.mouse.wheel(0, 10000)
+    await expect(page.getByRole('button', { name: 'Create' })).toBeInViewport()
+
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expectToast(page, 'Post created')
+  })
+
+  test('block rows allow touch scrolling instead of only native drag', async ({ page }) => {
+    // A real device confirms the user-visible symptom: a touch swipe starting
+    // on a draggable row got captured as a native HTML5 drag instead of
+    // scrolling, and once blocks filled the whole modal there was no
+    // non-draggable spot left to scroll from at all. Chromium's headless CDP
+    // touch emulation doesn't reproduce that drag-vs-scroll disambiguation
+    // reliably (verified: a synthetic touch swipe scrolled the modal even
+    // with the fix reverted), so a gesture-based e2e assertion here would be
+    // a flaky false-positive. Assert the actual mechanism instead: every
+    // block row must declare `touch-action: pan-y` so the browser prioritises
+    // vertical panning over starting a drag from touch input, whatever the
+    // block count. See the touch-action comment on `.block-row` in
+    // PostBlockEditor.vue.
+    await page.getByRole('button', { name: '+ Add post' }).click()
+    await expect(page.locator('.modal-overlay')).toBeVisible()
+
+    await page.getByRole('button', { name: '+ Text' }).click()
+    await expect(page.locator('.block-row')).toHaveCount(1)
+
+    await expect(page.locator('.block-row').first()).toHaveCSS('touch-action', 'pan-y')
+  })
+
+  test('deletes the scroll test post', async ({ page }) => {
+    await searchTable(page, postTitle)
+    const row = page.locator('tbody tr').filter({ hasText: postTitle })
+    await row.getByRole('button', { name: 'Delete' }).click()
+    await confirmDelete(page)
+    await expectToast(page, 'Post deleted')
+  })
+})
