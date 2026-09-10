@@ -382,9 +382,9 @@ async function saveEdit(slug: string) {
           <!-- Custom name inputs -->
           <div class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Custom name</span>
-            <div class="flex gap-3">
-              <div class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-zinc-600">EN</span>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <span class="lang-tag">EN</span>
                 <input
                   v-model="draftNameEn"
                   type="text"
@@ -393,8 +393,8 @@ async function saveEdit(slug: string) {
                   class="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 transition-colors"
                 />
               </div>
-              <div class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-zinc-600">PL</span>
+              <div class="flex items-center gap-2">
+                <span class="lang-tag lang-tag--pl">PL</span>
                 <input
                   v-model="draftNamePl"
                   type="text"
@@ -420,38 +420,42 @@ async function saveEdit(slug: string) {
 
           <div v-if="isPageModule" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
-            <div class="flex gap-3">
-              <div class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-zinc-600">EN</span>
-                <input
-                  v-model="draftSlugEn"
-                  type="text"
-                  maxlength="60"
-                  :placeholder="mod.slug"
-                  :aria-invalid="Boolean(fieldErrors['custom_slug.en'])"
-                  class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                  :class="fieldErrors['custom_slug.en'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                />
-                <span v-if="fieldErrors['custom_slug.en']" class="text-xs text-red-400">
+            <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <span class="lang-tag">EN</span>
+                  <input
+                    v-model="draftSlugEn"
+                    type="text"
+                    maxlength="60"
+                    :placeholder="mod.slug"
+                    :aria-invalid="Boolean(fieldErrors['custom_slug.en'])"
+                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                    :class="fieldErrors['custom_slug.en'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                  />
+                </div>
+                <span v-if="fieldErrors['custom_slug.en']" class="text-xs text-red-400 pl-9">
                   {{ fieldErrors['custom_slug.en'][0] }}
                 </span>
-                <span v-else class="text-xs text-zinc-600 font-mono">{{ previewPath(mod, 'en', draftSlugEn) }}</span>
+                <span v-else class="text-xs text-zinc-600 font-mono pl-9">{{ previewPath(mod, 'en', draftSlugEn) }}</span>
               </div>
-              <div class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-zinc-600">PL</span>
-                <input
-                  v-model="draftSlugPl"
-                  type="text"
-                  maxlength="60"
-                  :placeholder="mod.slug"
-                  :aria-invalid="Boolean(fieldErrors['custom_slug.pl'])"
-                  class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                  :class="fieldErrors['custom_slug.pl'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                />
-                <span v-if="fieldErrors['custom_slug.pl']" class="text-xs text-red-400">
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <span class="lang-tag lang-tag--pl">PL</span>
+                  <input
+                    v-model="draftSlugPl"
+                    type="text"
+                    maxlength="60"
+                    :placeholder="mod.slug"
+                    :aria-invalid="Boolean(fieldErrors['custom_slug.pl'])"
+                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                    :class="fieldErrors['custom_slug.pl'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                  />
+                </div>
+                <span v-if="fieldErrors['custom_slug.pl']" class="text-xs text-red-400 pl-9">
                   {{ fieldErrors['custom_slug.pl'][0] }}
                 </span>
-                <span v-else class="text-xs text-zinc-600 font-mono">{{ previewPath(mod, 'pl', draftSlugPl) }}</span>
+                <span v-else class="text-xs text-zinc-600 font-mono pl-9">{{ previewPath(mod, 'pl', draftSlugPl) }}</span>
               </div>
             </div>
             <span class="text-xs text-zinc-600">
@@ -468,9 +472,9 @@ async function saveEdit(slug: string) {
 
             <div v-for="field in settingsFields" :key="field.key" class="flex flex-col gap-1">
               <span class="text-xs text-zinc-400">{{ field.label }}</span>
-              <div class="flex gap-3" :class="field.type === 'textarea' ? 'flex-col sm:flex-row' : ''">
-                <div v-for="locale in (['en', 'pl'] as const)" :key="locale" class="flex flex-col gap-1 flex-1">
-                  <label class="text-xs text-zinc-600" :for="`set-${field.key}-${locale}`">
+              <div class="flex flex-col gap-2">
+                <div v-for="locale in (['en', 'pl'] as const)" :key="locale" class="flex flex-col gap-1">
+                  <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': locale === 'pl' }" :for="`set-${field.key}-${locale}`">
                     {{ locale.toUpperCase() }}
                   </label>
                   <textarea
@@ -573,3 +577,24 @@ async function saveEdit(slug: string) {
   </div>
   </AdminLayout>
 </template>
+
+<style scoped>
+/* Locale badge for this view's stacked EN/PL rows — same colour convention as
+   the shared .lang-badge in form-styles.css, sized for Tailwind's text-xs
+   inputs rather than pulling the whole dark-form stylesheet into a
+   Tailwind-styled view. */
+.lang-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+  background: #1e3a5f;
+  color: #60a5fa;
+  width: 1.75rem;
+  text-align: center;
+}
+.lang-tag--pl { background: #3f1010; color: #f87171; }
+</style>

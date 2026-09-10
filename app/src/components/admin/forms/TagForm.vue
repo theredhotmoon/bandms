@@ -41,7 +41,7 @@ function submit() {
       <label class="field-label">Name <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="trans-row">
-          <span class="lang-badge">{{ l.toUpperCase() }}</span>
+          <span class="lang-badge" :class="{ 'lang-badge--pl': l === 'pl' }">{{ l.toUpperCase() }}</span>
           <input v-model="form.name[l]" class="field-input flex-1" placeholder="Tag name" />
         </div>
       </div>

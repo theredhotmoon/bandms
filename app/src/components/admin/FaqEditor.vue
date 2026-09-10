@@ -124,9 +124,9 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Question</span>
-      <div class="flex gap-3">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-zinc-600" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
+      <div class="flex flex-col gap-2">
+        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+          <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': l === 'pl' }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
           <input
             :id="`faq-q-${l}`"
             v-model="draft.question[l]"
@@ -144,9 +144,9 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Answer</span>
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-zinc-600" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
+      <div class="flex flex-col gap-2">
+        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+          <label class="lang-tag w-fit" :class="{ 'lang-tag--pl': l === 'pl' }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
           <textarea
             :id="`faq-a-${l}`"
             v-model="draft.answer[l]"
@@ -185,3 +185,24 @@ const otherErrors = computed(() =>
     </div>
   </form>
 </template>
+
+<style scoped>
+/* Same locale-badge convention as WebsiteModulesView.vue's .lang-tag — this
+   editor is Tailwind-styled rather than importing form-styles.css, so the
+   badge is duplicated here at the same size/colours rather than pulling in
+   the whole dark-form stylesheet for one element. */
+.lang-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+  background: #1e3a5f;
+  color: #60a5fa;
+  width: 1.75rem;
+  text-align: center;
+}
+.lang-tag--pl { background: #3f1010; color: #f87171; }
+</style>

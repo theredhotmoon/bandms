@@ -180,7 +180,7 @@ async function confirmDelete() {
           <label class="field-label">Name <span class="field-req">*</span></label>
           <div class="trans-group">
             <div v-for="l in LOCALES" :key="l" class="trans-row">
-              <span class="lang-badge">{{ l.toUpperCase() }}</span>
+              <span class="lang-badge" :class="{ 'lang-badge--pl': l === 'pl' }">{{ l.toUpperCase() }}</span>
               <input v-model="form.name[l]" class="field-input flex-1" placeholder="Guitar, Bass, Drums…" />
             </div>
           </div>
