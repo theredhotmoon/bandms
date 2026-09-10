@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
@@ -115,5 +116,127 @@ test.describe('Public hero backdrop', () => {
 
     const chosen = applied.replace(/^url\(["']?/, '').replace(/["']?\)$/, '')
     expect(candidates).toContain(chosen)
+  })
+})
+
+const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
+
+/** A 1×1 transparent PNG — small enough to embed, real enough for Laravel's `image` rule. */
+const TEST_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+
+/**
+ * storageState replays cookies only, and e2e/.auth/admin.json holds none — an
+ * API context built from it is anonymous. Path is relative to the Playwright
+ * cwd (app/): these spec files are ESM, so __dirname does not exist.
+ */
+function adminToken(): string {
+  const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
+  const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
+  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed hero images')
+  return entry.value
+}
+
+async function authedFetch(request: import('@playwright/test').APIRequestContext, method: 'post' | 'delete', path: string, data?: unknown) {
+  const res = await request[method](`${API}${path}`, {
+    headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
+    ...(data ? { multipart: data as Record<string, string | { name: string; mimeType: string; buffer: Buffer }> } : {}),
+  })
+  return res
+}
+
+/**
+ * `web` bakes the site once at container start; a hero image created via the
+ * API never appears until something rebuilds it. Triggers the same rebuild
+ * the admin's manual button uses and polls its status rather than sleeping a
+ * fixed duration.
+ */
+async function rebuildAndWait(request: import('@playwright/test').APIRequestContext, since: number) {
+  const deadline = Date.now() + 180_000
+
+  while (Date.now() < deadline) {
+    const trigger = await request.post(`${API}/api/admin/site/rebuild`, {
+      headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
+    })
+    if (!trigger.ok() && trigger.status() !== 409) {
+      throw new Error(`POST /api/admin/site/rebuild → ${trigger.status()}`)
+    }
+
+    while (Date.now() < deadline) {
+      const res = await request.get(`${API}/api/admin/site/rebuild/status`, {
+        headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
+      })
+      const body = await res.json()
+      if (body.status === 'error') throw new Error('Public site rebuild failed')
+      if (body.status === 'done') {
+        if ((body.startedAt ?? 0) >= since) return
+        break // stale build finished before our seed — trigger another
+      }
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+  }
+  throw new Error('Public site rebuild timed out')
+}
+
+// Serial: this spec seeds hero_images.contact via the admin API and rebuilds
+// the public site, the same reason article-press.spec.ts's block is serial —
+// a concurrent worker rebuilding at the same time races this one's `since` check.
+test.describe.serial('Public hero backdrop — active filter', () => {
+  let activeId: number | undefined
+  let inactiveId: number | undefined
+  // Laravel's `UploadedFile::store()` writes under a randomised filename —
+  // 'active.png'/'inactive.png' never survive into the served URL, whether
+  // the row is active or not. Matching by original filename would therefore
+  // always fail regardless of whether the active filter works, so identity
+  // is tracked instead through the actual generated `url` the upload
+  // response returns.
+  let activeUrl: string | undefined
+  let inactiveUrl: string | undefined
+
+  test.beforeAll(async ({ request }) => {
+    test.setTimeout(180_000)
+
+    const uploaded = await authedFetch(request, 'post', '/api/admin/hero-images/contact', {
+      'files[]': { name: 'active.png', mimeType: 'image/png', buffer: Buffer.from(TEST_PNG_BASE64, 'base64') },
+    })
+    const activeBody = await uploaded.json()
+    const activeRow = activeBody.data.contact.at(-1)
+    activeId = activeRow.id
+    activeUrl = activeRow.url
+
+    const uploadedOff = await authedFetch(request, 'post', '/api/admin/hero-images/contact', {
+      'files[]': { name: 'inactive.png', mimeType: 'image/png', buffer: Buffer.from(TEST_PNG_BASE64, 'base64') },
+    })
+    const offBody = await uploadedOff.json()
+    const inactiveRow = offBody.data.contact.at(-1)
+    inactiveId = inactiveRow.id
+    inactiveUrl = inactiveRow.url
+
+    await request.patch(`${API}/api/admin/hero-images/${inactiveId}`, {
+      headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
+      data: { active: false },
+    })
+
+    await rebuildAndWait(request, Date.now())
+  })
+
+  test.afterAll(async ({ request }) => {
+    if (activeId) await authedFetch(request, 'delete', `/api/admin/hero-images/${activeId}`)
+    if (inactiveId) await authedFetch(request, 'delete', `/api/admin/hero-images/${inactiveId}`)
+  })
+
+  test('an inactive picture never reaches the public candidate list', async ({ request, page }) => {
+    test.skip(!(await pageIsUp(request, '/en/contact')), `${WEB}/en/contact unavailable`)
+
+    await page.goto(`${WEB}/en/contact`)
+
+    const backdrop = page.locator('.hero-backdrop[data-hero-urls]').first()
+    await expect(backdrop).toHaveCount(1)
+
+    const raw = await backdrop.getAttribute('data-hero-urls')
+    const candidates: string[] = JSON.parse(raw ?? '[]')
+
+    expect(candidates).toContain(activeUrl)
+    expect(candidates).not.toContain(inactiveUrl)
   })
 })
