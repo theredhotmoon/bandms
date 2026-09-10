@@ -2,6 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
+import { postSlug } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -33,6 +34,7 @@ if (firstPage.meta.last_page > 1) {
   )
   extra.forEach(r => allPosts.push(...r.data))
 }
+const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
 ---
 
 <BaseLayout
@@ -56,7 +58,7 @@ if (firstPage.meta.last_page > 1) {
 
     <!-- ── FILTER + POSTS (Vue island) ───────────────────────── -->
     <NewsFilter
-      posts={allPosts}
+      posts={postsWithSlug}
       accent={ACCENT}
       postHrefBase={`/${lang}/${slugMap[lang].posts}`}
       client:idle

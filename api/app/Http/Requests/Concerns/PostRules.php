@@ -2,12 +2,42 @@
 
 namespace App\Http\Requests\Concerns;
 
+use App\Models\Post;
 use App\Support\EmbedProvider;
 use App\Support\PostBlockType;
+use Closure;
 use Illuminate\Validation\Rule;
 
 trait PostRules
 {
+    /**
+     * slug_en and slug_pl each have their own DB-level unique index, but
+     * postSlug() on the public site blends them into one effective namespace
+     * per locale — /pl/ serves slug_pl, falling back to slug_en for a post
+     * with no Polish title. Two independent per-column uniqueness checks miss
+     * a slug_pl that collides with a *different* post's slug_en: Astro's
+     * getStaticPaths would then emit two entries for the same /pl/ URL, and
+     * one post silently becomes unreachable with no build error. This checks
+     * both columns together, whichever field is being validated.
+     */
+    protected function slugCrossUniqueRule(?int $ignoreId): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($ignoreId): void {
+            if ($value === null) {
+                return;
+            }
+
+            $taken = Post::query()
+                ->where(fn ($q) => $q->where('slug_en', $value)->orWhere('slug_pl', $value))
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists();
+
+            if ($taken) {
+                $fail('The :attribute has already been taken.');
+            }
+        };
+    }
+
     /** Everything except the slug uniqueness rule, which differs per verb. */
     protected function sharedRules(): array
     {

@@ -2,6 +2,7 @@
 import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
+import { postSlug } from '@/lib/i18n'
 import { getConcerts, getPosts, getReleases, getShopItems, getSiteConfig } from '@/lib/cms'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
@@ -24,12 +25,13 @@ export async function getStaticPaths() {
 
   const paths: object[] = []
 
-  // Every locale's path for one item. The item slug is deliberately the same in
-  // each locale: detail pages are keyed on slug_en (there is no slug_pl on the
-  // public routes), so only the section segment differs.
-  const alternatesFor = (section: string, slug: string | number) =>
+  // Every locale's path for one item. `slug` is either the same string in every
+  // locale (concerts, merch — keyed on slug_en, there is no slug_pl on those
+  // public routes) or a per-locale resolver (posts — slug_pl under /pl/,
+  // falling back to slug_en when the post has no Polish title).
+  const alternatesFor = (section: string, slug: string | number | ((lang: Locale) => string)) =>
     Object.fromEntries(
-      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${slug}`]),
+      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${typeof slug === 'function' ? slug(l) : slug}`]),
     ) as Alternates
 
   for (const lang of LOCALES) {
@@ -46,10 +48,11 @@ export async function getStaticPaths() {
 
     if (cfg.modules.posts !== false) {
       for (const p of posts) {
+        const slug = postSlug(p, lang)
         paths.push({
-          params: { lang, section: slugMap[lang].posts ?? 'posts', slug: String(p.id) },
-          props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: '',
-            alternates: alternatesFor('posts', p.id) },
+          params: { lang, section: slugMap[lang].posts ?? 'posts', slug },
+          props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: slug,
+            alternates: alternatesFor('posts', l => postSlug(p, l)) },
         })
       }
     }

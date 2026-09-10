@@ -15,7 +15,8 @@ export type PostBlock = TextBlock | ImageBlock | EmbedBlock | RefBlock
 export interface PostSummary {
   id: number
   title: string
-  slug: string
+  slug_en: string
+  slug_pl: string | null
   intro: string | null
   excerpt: string
   published_at: string | null

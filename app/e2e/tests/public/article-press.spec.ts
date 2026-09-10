@@ -90,7 +90,9 @@ test.describe.serial('Article — press coverage', () => {
   failOnPageError()
 
   let postId: number
+  let postSlug: string
   let barePostId: number
+  let barePostSlug: string
   const pressIds: number[] = []
 
   test.beforeAll(async ({ request }) => {
@@ -125,14 +127,18 @@ test.describe.serial('Article — press coverage', () => {
         { type: 'ref', payload: { entity: 'press_release', id: pressIds[1] } },
       ],
     })
-    postId = (await post.json()).data.id
+    const postBody = (await post.json()).data
+    postId = postBody.id
+    postSlug = postBody.slug_en
 
     const bare = await api(request, 'post', '/api/posts', {
       title: { en: `E2E No Press ${Date.now()}` },
       published_at: new Date().toISOString(),
       blocks: [{ type: 'text', payload: { body: { en: '<p>No coverage here.</p>' } } }],
     })
-    barePostId = (await bare.json()).data.id
+    const bareBody = (await bare.json()).data
+    barePostId = bareBody.id
+    barePostSlug = bareBody.slug_en
 
     await rebuildAndWait(request, Date.now())
   })
@@ -151,7 +157,7 @@ test.describe.serial('Article — press coverage', () => {
   })
 
   test('the first piece of coverage becomes the pull quote', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postId}`)
+    await page.goto(`${WEB}/en/news/${postSlug}`)
 
     const quote = page.locator('.art-pull-quote')
     await expect(quote).toBeVisible()
@@ -163,14 +169,14 @@ test.describe.serial('Article — press coverage', () => {
   })
 
   test('the pull quote repeats the first press reference\'s headline', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postId}`)
+    await page.goto(`${WEB}/en/news/${postSlug}`)
 
     const quote = (await page.locator('.art-pull-quote').textContent())?.trim()
     expect(quote).toBe('The most exciting brass on the scene')
   })
 
   test('every further reference links out with a publication name', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postId}`)
+    await page.goto(`${WEB}/en/news/${postSlug}`)
 
     const rows = page.locator('.art-press')
     expect(await rows.count()).toBeGreaterThan(0)
@@ -187,7 +193,7 @@ test.describe.serial('Article — press coverage', () => {
   })
 
   test('press blocks are absent from a post with no coverage', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${barePostId}`)
+    await page.goto(`${WEB}/en/news/${barePostSlug}`)
 
     await expect(page.locator('.art-pull')).toHaveCount(0)
     await expect(page.locator('.art-press')).toHaveCount(0)

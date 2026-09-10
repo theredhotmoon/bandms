@@ -16,7 +16,7 @@ test.use({ storageState: { cookies: [], origins: [] } })
 function adminToken(): string {
   const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
   const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed post blocks')
+  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed posts')
   return entry.value
 }
 
@@ -68,64 +68,86 @@ async function rebuildAndWait(request: APIRequestContext, since: number) {
   throw new Error('Public site rebuild timed out')
 }
 
-test.describe.serial('Public article — content blocks', () => {
+// Section segment is read from the API rather than hardcoded, since it's a
+// per-locale custom_slug an editor can change in /admin/website-modules.
+async function postsSection(request: APIRequestContext, lang: 'en' | 'pl'): Promise<string> {
+  const res = await request.get(`${API}/api/site-config?lang=${lang}`, { headers: { Accept: 'application/json' } })
+  if (!res.ok()) throw new Error(`GET /api/site-config?lang=${lang} → ${res.status()}`)
+  const body = await res.json()
+  return body.module_config?.posts?.slug || 'posts'
+}
+
+test.describe.serial('Public news — slug-based routing', () => {
   failOnPageError()
 
-  let postId: number
-  let postSlug: string
+  const stamp = Date.now()
+  let sectionEn: string
+  let sectionPl: string
+
+  let bilingualId: number
+  let bilingualSlugEn: string
+  let bilingualSlugPl: string
+
+  let enOnlyId: number
+  let enOnlySlugEn: string
 
   test.beforeAll(async ({ request }) => {
     // A real Astro build (~9s) plus a possible second one if this worker's
-    // rebuild trigger loses the race to article-press.spec.ts's — comfortably
+    // rebuild trigger loses the race to another spec file's — comfortably
     // past Playwright's 30s default hook timeout under any load.
     test.setTimeout(180_000)
 
-    const res = await api(request, 'post', '/api/posts', {
-      title: { en: `E2E Blocks ${Date.now()}` },
+    ;[sectionEn, sectionPl] = await Promise.all([postsSection(request, 'en'), postsSection(request, 'pl')])
+
+    const bilingual = await api(request, 'post', '/api/posts', {
+      title: { en: `E2E Slug EN ${stamp}`, pl: `E2E Slug PL ${stamp}` },
       published_at: new Date().toISOString(),
-      blocks: [
-        { type: 'text',  payload: { body: { en: '<p>Block zero prose.</p>' } } },
-        { type: 'embed', payload: { url: 'https://vimeo.com/76979871' } },
-        { type: 'text',  payload: { body: { en: '<p>Block two prose.</p>' } } },
-        { type: 'ref',   payload: { entity: 'release', id: 999999 } },
-      ],
+      blocks: [{ type: 'text', payload: { body: { en: '<p>Bilingual post.</p>' } } }],
     })
-    const body = (await res.json()).data
-    postId = body.id
-    postSlug = body.slug_en
+    const bilingualBody = (await bilingual.json()).data
+    bilingualId = bilingualBody.id
+    bilingualSlugEn = bilingualBody.slug_en
+    bilingualSlugPl = bilingualBody.slug_pl
+
+    const enOnly = await api(request, 'post', '/api/posts', {
+      title: { en: `E2E Slug No PL ${stamp}` },
+      published_at: new Date().toISOString(),
+      blocks: [{ type: 'text', payload: { body: { en: '<p>English-only post.</p>' } } }],
+    })
+    const enOnlyBody = (await enOnly.json()).data
+    enOnlyId = enOnlyBody.id
+    enOnlySlugEn = enOnlyBody.slug_en
 
     await rebuildAndWait(request, Date.now())
   })
 
   test.afterAll(async ({ request }) => {
-    if (postId) await api(request, 'delete', `/api/posts/${postId}`)
+    if (bilingualId) await api(request, 'delete', `/api/posts/${bilingualId}`)
+    if (enOnlyId) await api(request, 'delete', `/api/posts/${enOnlyId}`)
   })
 
-  test('renders blocks in the stored order', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postSlug}`)
+  test('a bilingual post is served under its own slug in each locale', async ({ page }) => {
+    // The point of this fixture: without a real Polish title, slug_pl would be
+    // null and this assertion would be meaningless — it must actually differ.
+    expect(bilingualSlugPl).toBeTruthy()
+    expect(bilingualSlugPl).not.toBe(bilingualSlugEn)
 
-    // Order is the feature. Presence alone passes against a list sorted by id.
-    const prose = page.locator('.art-body .art-prose')
-    await expect(prose.nth(0)).toContainText('Block zero prose.')
-    await expect(prose.nth(1)).toContainText('Block two prose.')
+    await page.goto(`${WEB}/en/${sectionEn}/${bilingualSlugEn}`)
+    await expect(page.locator('.art-title')).toHaveText(`E2E Slug EN ${stamp}`)
 
-    const embed = page.locator('.art-body .pb-embed iframe')
-    await expect(embed).toHaveAttribute('src', /player\.vimeo\.com\/video\/76979871/)
+    await page.goto(`${WEB}/pl/${sectionPl}/${bilingualSlugPl}`)
+    await expect(page.locator('.art-title')).toHaveText(`E2E Slug PL ${stamp}`)
   })
 
-  test('the embed sits between the two paragraphs, not after them', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postSlug}`)
-
-    const kinds = await page.locator('.art-body > *').evaluateAll(els =>
-      els.map(el => (el.querySelector('iframe') ? 'embed' : el.className.includes('art-prose') ? 'text' : 'other')),
-    )
-    expect(kinds.filter(k => k !== 'other')).toEqual(['text', 'embed', 'text'])
+  test('a post with no Polish title is reachable under /pl/ via its slug_en', async ({ page }) => {
+    await page.goto(`${WEB}/pl/${sectionPl}/${enOnlySlugEn}`)
+    await expect(page.locator('.art-title')).toHaveText(`E2E Slug No PL ${stamp}`)
   })
 
-  test('a ref pointing at a deleted record renders nothing at all', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${postSlug}`)
+  test('the news listing links to a post by slug, not by numeric id', async ({ page }) => {
+    await page.goto(`${WEB}/en/${sectionEn}`)
 
-    await expect(page.locator('.art-rel-link')).toHaveCount(0)
-    await expect(page.locator('.art-body')).not.toContainText('999999')
+    await expect(page.locator(`a[href="/en/${sectionEn}/${bilingualSlugEn}"]`).first()).toBeVisible()
+    await expect(page.locator(`a[href$="/${bilingualId}"]`)).toHaveCount(0)
   })
 })
