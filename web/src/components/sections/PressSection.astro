@@ -8,7 +8,7 @@ import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getPressReleases, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { fmtDateShort } from '@/lib/i18n'
+import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -22,10 +22,10 @@ const [press, profile, siteConfig] = await Promise.all([
   getSiteConfig(lang),
 ])
 const s = siteConfig.module_config?.press?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 const COPY = {
   en: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Press',
     lead: 'What the papers, blogs and radio have said about us.',
     featured: 'Featured', coverage: 'Coverage',
@@ -33,7 +33,6 @@ const COPY = {
     read: 'Read',
   },
   pl: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Prasa',
     lead: 'Co pisały o nas gazety, blogi i radio.',
     featured: 'Wyróżnione', coverage: 'Publikacje',
@@ -68,7 +67,7 @@ const siteOf = (item: (typeof sorted)[number]) => {
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >
-  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'press')} />
+  <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'press')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

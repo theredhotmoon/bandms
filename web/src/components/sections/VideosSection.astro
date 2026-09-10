@@ -9,7 +9,7 @@ import ThemeSlot from '@/components/ThemeSlot.astro'
 import VideoGallery from '@/components/VideoGallery.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getMusicVideos, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { youtubeEmbedUrl, youtubeThumbnail, formatNumber } from '@/lib/i18n'
+import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -23,10 +23,10 @@ const [videos, profile, siteConfig] = await Promise.all([
   getSiteConfig(lang),
 ])
 const s = siteConfig.module_config?.videos?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 const COPY = {
   en: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Videos',
     lead: 'Live sets, official videos and clips from the road.',
     heading: 'Music videos',
@@ -36,7 +36,6 @@ const COPY = {
     watch: 'Watch on YouTube',
   },
   pl: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Teledyski',
     lead: 'Koncerty, oficjalne teledyski i klipy z trasy.',
     heading: 'Teledyski',
@@ -76,7 +75,7 @@ const galleryVideos = [...videos]
   title={`${t.title} — ${profile.name}`}
   description={t.lead}
 >
-  <PageHero kicker={t.kicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={660} heroImages={resolveHeroImages(siteConfig, 'videos')} />
+  <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={660} heroImages={resolveHeroImages(siteConfig, 'videos')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

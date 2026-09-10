@@ -16,7 +16,7 @@ import SocialLinks from '@/components/SocialLinks.astro'
 import { getReleases, getRelease, getBandProfile, getMusicVideos, getShopItems, getSiteConfig, getSocialLinks } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
-import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail } from '@/lib/i18n'
+import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -36,6 +36,7 @@ const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Pro
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
 const s = siteConfig.module_config?.releases?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 // Tracklists and lyrics live on the detail resource, not the list one, so each
 // release is fetched individually. This is a build-time cost paid once, not a
@@ -56,7 +57,6 @@ const year = (r: Release) => (r.release_date ? r.release_date.slice(0, 4) : '')
 
 const COPY = {
   en: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Music',
     lead: 'Brass-fuelled skank, dub-soaked rocksteady and ska-jazz heat — every release, every video, in one place.',
     featured: 'Featured release', tracklist: 'Tracklist',
@@ -74,7 +74,6 @@ const COPY = {
     views: 'views',
   },
   pl: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Muzyka',
     lead: 'Dęciaki na full, dubowe rocksteady i ska-jazzowy żar — wszystkie wydawnictwa i teledyski w jednym miejscu.',
     featured: 'Wyróżnione wydawnictwo', tracklist: 'Lista utworów',
@@ -182,7 +181,7 @@ const priceOf = (item: (typeof physical)[number]) => {
 >
   <!-- HERO -->
   <PageHero
-    kicker={t.kicker}
+    kicker={genreKicker}
     title={s.title || t.title}
     lead={s.lead || t.lead}
     titleSize={150}

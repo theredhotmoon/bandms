@@ -8,7 +8,7 @@ import { resolveHeroImages } from '@/lib/heroImages'
 import GalleryBrowser from '@/components/GalleryBrowser.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getAlbums, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { fmtDateShort } from '@/lib/i18n'
+import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -18,10 +18,10 @@ const { lang, alternates } = Astro.props
 
 const [albums, profile, siteConfig] = await Promise.all([getAlbums(), getBandProfile(lang), getSiteConfig(lang)])
 const s = siteConfig.module_config?.photos?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 const COPY = {
   en: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Gallery',
     lead: 'Brass in the air, feet off the floor. Live shots, backstage moments and studio days.',
     all: 'All',
@@ -33,7 +33,6 @@ const COPY = {
     none: 'No photos yet — check back soon.',
   },
   pl: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'Galeria',
     lead: 'Dęciaki w powietrzu, stopy w górze. Zdjęcia z koncertów, backstage’u i studia.',
     all: 'Wszystkie',
@@ -99,7 +98,7 @@ const categories = Object.values(
 >
   <!-- HERO -->
   <PageHero
-    kicker={t.kicker}
+    kicker={genreKicker}
     title={s.title || t.title}
     lead={s.lead || t.lead}
     heroImages={resolveHeroImages(siteConfig, 'photos')}
