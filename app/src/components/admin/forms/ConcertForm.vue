@@ -686,6 +686,10 @@ function submit() {
 .empty-note { font-size: 0.75rem; color: #334155; margin: auto 0; text-align: center; padding: 0.5rem; }
 
 /* Pool chips */
+/* touch-action: .band-pool/.lineup-panel are the scroll containers (overflow-y:
+   auto above); without this, a touch swipe starting on a draggable chip/item
+   is captured as a native drag instead of scrolling the panel, same as
+   PostBlockEditor.vue's block rows. */
 .pool-chip {
   display: flex;
   align-items: center;
@@ -699,6 +703,7 @@ function submit() {
   cursor: grab;
   user-select: none;
   transition: background 100ms, border-color 100ms;
+  touch-action: pan-y pinch-zoom;
 }
 .pool-chip:hover { background: #1a1a1a; border-color: #2a2a2a; }
 .pool-chip:active { cursor: grabbing; }
@@ -717,6 +722,7 @@ function submit() {
   cursor: grab;
   user-select: none;
   transition: background 100ms, border-color 100ms;
+  touch-action: pan-y pinch-zoom;
 }
 .lineup-item:hover { background: #1a1a1a; border-color: #2a2a2a; }
 .lineup-item.is-main {

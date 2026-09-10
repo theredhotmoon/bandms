@@ -166,12 +166,16 @@ function onDragEnd() {
   gap: 0.5rem;
 }
 
+/* touch-action: draggable="true" (above) captures a touch swipe as a native
+   drag unless told to prefer scrolling — same conflict as PostBlockEditor.vue's
+   block rows, here inside whatever modal/page scrolls this list. */
 .social-links-editor__row {
   display: flex;
   align-items: center;
   gap: 0.625rem;
   border-top: 2px solid transparent;
   transition: border-color 0.1s;
+  touch-action: pan-y pinch-zoom;
 }
 
 .social-links-editor__row--drag-over {
