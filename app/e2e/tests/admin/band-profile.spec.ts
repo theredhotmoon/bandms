@@ -57,6 +57,31 @@ test.describe('Band Profile Admin', () => {
       const counter = page.locator('text=/' + typedText.length.toString() + '\\s*\\/\\s*280/')
       await expect(counter).toBeVisible()
     })
+
+    // 5. About-page bio variant selector — wiring only, no save.
+    //
+    // "Save profile" resends all four bio_* fields from whatever the form
+    // last loaded, not just the one field a test changed — every other test
+    // in this describe block relies on that being harmless because nothing
+    // else is writing to bio_* concurrently. e2e/tests/public/about-bio-variant.spec.ts
+    // does write to bio_* (seeding content to prove the public page renders
+    // the selected variant), and runs in a different worker process, so a
+    // save here can race it and stomp its seeded data mid-run. Persistence
+    // through a real save is already covered — by BandProfileTest.php at the
+    // API level, and by the public spec's own PUT-then-read round trip — so
+    // this only needs to prove the control renders and updates locally.
+    test('About-page bio variant selector offers all four lengths and updates on selection', async ({ page }) => {
+      const variantSelect = page.locator('#about-bio-variant')
+      await expect(variantSelect).toBeVisible()
+
+      const optionValues = await variantSelect.locator('option').evaluateAll(
+        (opts) => opts.map((o) => (o as HTMLOptionElement).value),
+      )
+      expect(optionValues).toEqual(['short', 'medium', 'long', 'full'])
+
+      await variantSelect.selectOption('full')
+      await expect(variantSelect).toHaveValue('full')
+    })
   })
 
   // ── Career tab ──────────────────────────────────────────────────────────

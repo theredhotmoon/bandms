@@ -5,6 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import AboutBioVariantSelect from '@/components/admin/forms/AboutBioVariantSelect.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
@@ -45,6 +46,7 @@ const form = reactive({
   bio_long_pl:   '',
   bio_full_en:   '',
   bio_full_pl:   '',
+  about_bio_variant: 'medium' as BioTab,
   formation_year:      '' as string | number,
   hometown:            '',
   genres:              '',
@@ -87,6 +89,7 @@ watch(
     form.bio_long_pl   = val.translations?.bio_long?.pl   ?? ''
     form.bio_full_en   = val.translations?.bio_full?.en   ?? val.bio_full   ?? ''
     form.bio_full_pl   = val.translations?.bio_full?.pl   ?? ''
+    form.about_bio_variant  = val.about_bio_variant  ?? 'medium'
     form.formation_year     = val.formation_year     ?? ''
     form.hometown           = val.hometown           ?? ''
     form.genres             = val.genres             ?? ''
@@ -134,6 +137,7 @@ async function saveProfile() {
         ? { en: form.bio_long_en || undefined, pl: form.bio_long_pl || undefined } : null,
       bio_full:   (form.bio_full_en || form.bio_full_pl)
         ? { en: form.bio_full_en || undefined, pl: form.bio_full_pl || undefined } : null,
+      about_bio_variant: form.about_bio_variant,
       formation_year:      numOrNull(form.formation_year),
       hometown:            form.hometown            || null,
       genres:              form.genres              || null,
@@ -304,6 +308,8 @@ async function saveSocialLinks() {
                   <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button>
                 </div>
               </div>
+
+              <AboutBioVariantSelect v-model="form.about_bio_variant" />
 
               <div v-show="bioTab === 'short'" class="bio-panel">
                 <div class="bio-hint">Festival lineups, social media bios, radio intros — 1 sentence, ≤280 chars.</div>

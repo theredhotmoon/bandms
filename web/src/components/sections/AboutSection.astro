@@ -75,10 +75,23 @@ const COPY = {
 
 const t = COPY[lang] ?? COPY.en
 
-// The design exposes bio length as a tweaks-panel knob, not a control on the
-// page, so one length ships. Medium is the design's default; it falls back
-// rather than rendering an empty column when only another length is filled in.
-const bio = profile.bio_medium || profile.bio_long || profile.bio_short || ''
+// Which bio length renders here is an admin choice (Band Profile → Bio →
+// "Shown on public About page"), not a fixed design knob. FALLBACK_ORDER is
+// the chain used if the selected length is empty — it never renders a blank
+// bio column just because the chosen variant was left unset.
+const bioByVariant: Record<typeof profile.about_bio_variant, string | null> = {
+  short: profile.bio_short,
+  medium: profile.bio_medium,
+  long: profile.bio_long,
+  full: profile.bio_full,
+}
+const FALLBACK_ORDER = ['medium', 'long', 'short', 'full'] as const
+const bio =
+  bioByVariant[profile.about_bio_variant] ||
+  FALLBACK_ORDER.filter(v => v !== profile.about_bio_variant)
+    .map(v => bioByVariant[v])
+    .find(Boolean) ||
+  ''
 const bioParagraphs = bio
   .replace(/\r\n/g, '\n')
   .split(/\n\s*\n/)

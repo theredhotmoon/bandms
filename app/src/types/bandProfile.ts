@@ -19,6 +19,7 @@ export interface BandProfile {
   bio_medium: string | null
   bio_long: string | null
   bio_full: string | null
+  about_bio_variant: 'short' | 'medium' | 'long' | 'full'
   formation_year: number | null
   hometown: string | null
   genres: string | null
@@ -96,6 +97,7 @@ export interface BandProfilePayload {
   bio_medium?: string | TranslationMap | null
   bio_long?: string | TranslationMap | null
   bio_full?: string | TranslationMap | null
+  about_bio_variant?: 'short' | 'medium' | 'long' | 'full'
   formation_year?: number | null
   hometown?: string | null
   genres?: string | null

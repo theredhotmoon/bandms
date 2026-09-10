@@ -16,7 +16,7 @@ class BandProfile extends Model
     public array $translatable = ['bio_short', 'bio_medium', 'bio_long', 'bio_full', 'artistic_statement'];
 
     protected $fillable = [
-        'name', 'bio_short', 'bio_medium', 'bio_long', 'bio_full',
+        'name', 'bio_short', 'bio_medium', 'bio_long', 'bio_full', 'about_bio_variant',
         'formation_year', 'hometown', 'genres', 'comparable_artists',
         'booking_email', 'press_email', 'contact_email', 'artistic_statement',
         'tech_contact_phone', 'tech_contact_email', 'tech_rider_notes', 'career_level',
