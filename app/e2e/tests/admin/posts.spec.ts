@@ -10,10 +10,17 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
  * create/edit/delete race each other over the same shared row: the delete can
  * land between another test reading the row and submitting it, and once the
  * table is empty the edit has nothing to click at all.
+ *
+ * Kept as a single describe.serial (rather than two sibling ones) because
+ * `playwright.config.ts` sets `fullyParallel: true` — serial mode only
+ * orders tests *within* one describe block, so two sibling serial blocks in
+ * this file could still be scheduled onto different workers and run
+ * concurrently against the same `posts` table.
  */
 test.describe.serial('Admin Posts', () => {
   const postTitle = `E2E Post ${Date.now()}`
   const updatedTitle = `${postTitle} Updated`
+  const scrollPostTitle = `E2E Scroll Post ${Date.now()}`
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/posts')
@@ -176,39 +183,34 @@ test.describe.serial('Admin Posts', () => {
     // Modal must still be open
     await expect(page.locator('.modal-overlay')).toBeVisible()
   })
-})
-
-/**
- * Serial and self-contained for the same reason as the suite above: this
- * creates its own post so it isn't racing the shared row other tests use.
- */
-test.describe.serial('Admin Posts — content blocks scrolling', () => {
-  const postTitle = `E2E Scroll Post ${Date.now()}`
-
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/admin/posts')
-    await page.waitForLoadState('networkidle')
-  })
 
   test('a post with many content blocks stays scrollable to the submit button', async ({ page }) => {
     await page.getByRole('button', { name: '+ Add post' }).click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
-    await page.locator('input[placeholder="Post title"]').fill(postTitle)
+    await page.locator('input[placeholder="Post title"]').fill(scrollPostTitle)
 
-    // Enough blocks to push the modal well past the viewport — this is the
-    // state that used to make the content area unscrollable (see
-    // PostBlockEditor.vue's touch-action comment).
-    for (let i = 0; i < 15; i++) {
+    // Enough blocks to push the modal past the viewport — this is the state
+    // that used to make the content area unscrollable (see
+    // PostBlockEditor.vue's touch-action comment). 8 empty text blocks plus
+    // the rest of the form's fields is comfortably past a typical viewport
+    // height without padding the test with an arbitrarily large count.
+    for (let i = 0; i < 8; i++) {
       await page.getByRole('button', { name: '+ Text' }).click()
     }
-    await expect(page.locator('.block-row')).toHaveCount(15)
+    await expect(page.locator('.block-row')).toHaveCount(8)
 
     const overlay = page.locator('.modal-overlay')
     await expect.poll(() => overlay.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
 
     // Scroll with the mouse wheel, the way a sighted mouse user reaches the
-    // submit button once the block list overflows the modal.
-    await page.mouse.move(400, 300)
+    // submit button once the block list overflows the modal. Derive the
+    // pointer position from the overlay (always viewport-sized, since it's
+    // `position: fixed; inset: 0`) rather than the panel — once the panel
+    // overflows, its own bounding box extends past the viewport and a point
+    // derived from it can land off-screen.
+    const overlayBox = await page.locator('.modal-overlay').boundingBox()
+    if (!overlayBox) throw new Error('modal overlay not found')
+    await page.mouse.move(overlayBox.x + overlayBox.width / 2, overlayBox.y + overlayBox.height / 2)
     await page.mouse.wheel(0, 10000)
     await expect(page.getByRole('button', { name: 'Create' })).toBeInViewport()
 
@@ -225,9 +227,9 @@ test.describe.serial('Admin Posts — content blocks scrolling', () => {
     // reliably (verified: a synthetic touch swipe scrolled the modal even
     // with the fix reverted), so a gesture-based e2e assertion here would be
     // a flaky false-positive. Assert the actual mechanism instead: every
-    // block row must declare `touch-action: pan-y` so the browser prioritises
-    // vertical panning over starting a drag from touch input, whatever the
-    // block count. See the touch-action comment on `.block-row` in
+    // block row must declare a `touch-action` that prioritises vertical
+    // panning over starting a drag from touch input, whatever the block
+    // count. See the touch-action comment on `.block-row` in
     // PostBlockEditor.vue.
     await page.getByRole('button', { name: '+ Add post' }).click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
@@ -235,12 +237,12 @@ test.describe.serial('Admin Posts — content blocks scrolling', () => {
     await page.getByRole('button', { name: '+ Text' }).click()
     await expect(page.locator('.block-row')).toHaveCount(1)
 
-    await expect(page.locator('.block-row').first()).toHaveCSS('touch-action', 'pan-y')
+    await expect(page.locator('.block-row').first()).toHaveCSS('touch-action', 'pan-y pinch-zoom')
   })
 
   test('deletes the scroll test post', async ({ page }) => {
-    await searchTable(page, postTitle)
-    const row = page.locator('tbody tr').filter({ hasText: postTitle })
+    await searchTable(page, scrollPostTitle)
+    const row = page.locator('tbody tr').filter({ hasText: scrollPostTitle })
     await row.getByRole('button', { name: 'Delete' }).click()
     await confirmDelete(page)
     await expectToast(page, 'Post deleted')

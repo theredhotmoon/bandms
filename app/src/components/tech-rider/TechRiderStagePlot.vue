@@ -364,6 +364,11 @@ function cardBorderClass(item: StagePlacement): string {
         Drag to place
       </p>
 
+      <!-- [touch-action:pan-y_pinch-zoom] on the draggable rows below: this panel
+           is the scroll container (overflow-y-auto), so without it a touch swipe
+           starting on a member/temp row is captured as a native drag instead of
+           scrolling once the list overflows — same conflict as PostBlockEditor.vue's
+           block rows. -->
       <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-1.5">
 
         <!-- Regular members -->
@@ -371,7 +376,7 @@ function cardBorderClass(item: StagePlacement): string {
           v-for="member in availableMembers"
           :key="member.id"
           draggable="true"
-          class="flex items-center gap-2 p-2 rounded-lg border border-zinc-700/60 bg-zinc-800/40 cursor-grab active:cursor-grabbing hover:border-zinc-500/50 hover:bg-zinc-700/30 transition-all select-none"
+          class="flex items-center gap-2 p-2 rounded-lg border border-zinc-700/60 bg-zinc-800/40 cursor-grab active:cursor-grabbing hover:border-zinc-500/50 hover:bg-zinc-700/30 transition-all select-none [touch-action:pan-y_pinch-zoom]"
           :class="{ 'opacity-50': memberPositionCount(member.id) > 0 }"
           @dragstart="onPanelMemberDragStart($event, member.id)"
         >
@@ -418,7 +423,7 @@ function cardBorderClass(item: StagePlacement): string {
           v-for="temp in tempMusicians"
           :key="temp.id"
           draggable="true"
-          class="flex items-center gap-2 p-2 rounded-lg border border-amber-700/40 bg-amber-950/20 cursor-grab active:cursor-grabbing hover:border-amber-600/60 transition-all select-none"
+          class="flex items-center gap-2 p-2 rounded-lg border border-amber-700/40 bg-amber-950/20 cursor-grab active:cursor-grabbing hover:border-amber-600/60 transition-all select-none [touch-action:pan-y_pinch-zoom]"
           :class="{ 'opacity-50': tempPositionCount(temp.id) > 0 }"
           @dragstart="onPanelTempDragStart($event, temp.id)"
         >

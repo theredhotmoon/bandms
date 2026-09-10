@@ -88,8 +88,9 @@ function onDrop(to: number) {
    this, a touch drag started anywhere on a row is captured as a native HTML5
    drag instead of a scroll. Once enough blocks exist to fill the modal's
    scrollable area, every touch point lands on a row and scrolling the modal
-   becomes impossible on touch input. */
-.block-row { border: 1px solid #3f3f46; border-radius: 0.5rem; padding: 0.75rem; background: #18181b; touch-action: pan-y; }
+   becomes impossible on touch input. "pinch-zoom" is kept alongside "pan-y" so
+   this doesn't trade that bug for blocking pinch-to-zoom on the same rows. */
+.block-row { border: 1px solid #3f3f46; border-radius: 0.5rem; padding: 0.75rem; background: #18181b; touch-action: pan-y pinch-zoom; }
 .block-row--over { border-color: #60a5fa; }
 .block-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .block-grip { cursor: grab; color: #71717a; }
