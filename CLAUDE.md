@@ -732,8 +732,9 @@ directly.** A page's own set *replaces* the main set, and an empty set counts as
 no override — `app/src/utils/heroImageScopes.ts` repeats that rule for the admin,
 and the two must agree or the editor lies about what visitors will see.
 
-**`url` is non-nullable on the public side**, because the API drops rows whose
-photo has no file. Keep that filter: a null reaching a CSS `url()` renders as the
+**`url` is non-nullable on the public side**, because `hero_images.image` is a
+required column — hero pictures are uploaded directly, with no gallery photo
+that could be missing a file. A null reaching a CSS `url()` would render as the
 literal string `null`.
 
 **Anything the public site bakes must call `SiteRebuild::requestIfAuto()`.** It

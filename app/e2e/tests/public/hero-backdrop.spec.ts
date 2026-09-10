@@ -221,6 +221,8 @@ test.describe.serial('Public hero backdrop — active filter', () => {
   })
 
   test.afterAll(async ({ request }) => {
+    test.setTimeout(180_000)
+
     if (activeId) {
       const res = await authedFetch(request, 'delete', `/api/admin/hero-images/${activeId}`)
       expect(res.ok(), `cleanup delete of active picture failed with ${res.status()}`).toBeTruthy()
@@ -229,6 +231,14 @@ test.describe.serial('Public hero backdrop — active filter', () => {
       const res = await authedFetch(request, 'delete', `/api/admin/hero-images/${inactiveId}`)
       expect(res.ok(), `cleanup delete of inactive picture failed with ${res.status()}`).toBeTruthy()
     }
+
+    // The public /en/contact page was already rebuilt (in beforeAll) with
+    // data-hero-urls pointing at the two pictures just deleted above — without
+    // rebuilding again here, the shared dev site's contact page is left
+    // referencing dead files until something else happens to rebuild it. See
+    // root CLAUDE.md: restoring/deleting rows is not enough, the public
+    // container still holds the stale build.
+    await rebuildAndWait(request, Date.now())
   })
 
   test('an inactive picture never reaches the public candidate list', async ({ request, page }) => {

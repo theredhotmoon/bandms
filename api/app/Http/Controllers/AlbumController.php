@@ -108,11 +108,10 @@ class AlbumController extends Controller
         // photos.album_id is nullOnDelete, so dropping the album used to leave
         // orphan rows whose `image` still named a file that had just been
         // deleted. Nothing lists those rows — /api/albums only reaches photos
-        // through an album — but hero_images.photo_id still pointed at them, so
-        // a deleted album could leave every public page requesting a 404 as its
-        // hero backdrop, with no way to see or clear it in the admin.
+        // through an album — so an orphan just sat there forever, its file
+        // never reclaimed.
         //
-        // Deleting the photo cascades to hero_images, photo_tag and photo_post.
+        // Deleting the photo also cascades to photo_tag and photo_post.
         $paths = $album->photos->pluck('image')->filter()->all();
 
         // Rows first, in one transaction; files only once it has committed.

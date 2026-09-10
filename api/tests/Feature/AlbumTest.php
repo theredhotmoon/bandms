@@ -134,10 +134,14 @@ describe('DELETE /api/albums/{album}', function () {
     it('deletes an album', function () {
         $this->actingAsAdmin();
         $album = Album::create(['title' => 'Gone', 'slug_en' => 'gone']);
+        Storage::disk('public')->put('photos/gone-test.jpg', 'fake-content');
+        $photo = Photo::create(['album_id' => $album->id, 'image' => 'photos/gone-test.jpg', 'sort_order' => 0]);
 
         $this->deleteJson("/api/albums/{$album->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('albums', ['id' => $album->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+        Storage::disk('public')->assertMissing('photos/gone-test.jpg');
     });
 
     it('returns 404 for a non-existent album', function () {

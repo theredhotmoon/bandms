@@ -3,12 +3,12 @@ import type { SiteConfig } from './cms'
 /**
  * One hero backdrop candidate.
  *
- * `id` is the gallery **photo's** id, not the hero_images row id — the admin
- * payload carries both and names them apart; this one only ever needs the photo.
+ * `id` is the hero_images row's own id — hero pictures are uploaded directly
+ * and have no relationship to the gallery.
  *
- * `url` is non-nullable because the server drops rows whose photo has no file.
- * That guarantee lives there rather than here: a null would otherwise reach a
- * CSS `url()` and render as the literal string "null".
+ * `url` is non-nullable because `hero_images.image` is a required column on
+ * the server. That guarantee lives there rather than here: a null would
+ * otherwise reach a CSS `url()` and render as the literal string "null".
  */
 export interface HeroImage {
   id: number

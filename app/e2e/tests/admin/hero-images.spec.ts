@@ -128,16 +128,83 @@ test.describe('Hero Images Admin', () => {
     await expect(page.getByRole('button', { name: /^Main/ })).toContainText('picture')
   })
 
+  test('edits a caption and it persists across a reload', async ({ page }) => {
+    await page.goto('/admin/hero-images')
+    await page.waitForLoadState('networkidle')
+
+    const captionInput = page.locator('input[placeholder="Caption (optional)"]').last()
+    await captionInput.fill('E2E caption')
+
+    await Promise.all([
+      page.waitForResponse(res => /\/api\/admin\/hero-images\/\d+$/.test(res.url()) && res.request().method() === 'PATCH'),
+      captionInput.blur(),
+    ])
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.locator('input[placeholder="Caption (optional)"]').last()).toHaveValue('E2E caption')
+  })
+
+  test('reorders pictures with the arrow buttons and it persists across a reload', async ({ page }) => {
+    await page.goto('/admin/hero-images')
+    await page.waitForLoadState('networkidle')
+
+    // Upload a second picture so there's something to reorder against the
+    // first test's probe.
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'e2e-hero-2.png',
+      mimeType: 'image/png',
+      buffer: TEST_PNG,
+    })
+    await page.waitForLoadState('networkidle')
+
+    const thumbnails = page.locator('li.rounded-lg.overflow-hidden')
+    await expect(thumbnails).toHaveCount(2)
+
+    // Capture identifying info (image src) for both thumbnails in their
+    // current order.
+    const firstSrcBefore = await thumbnails.nth(0).locator('img').getAttribute('src')
+    const secondSrcBefore = await thumbnails.nth(1).locator('img').getAttribute('src')
+
+    // Move the first thumbnail later — it should swap with the second.
+    const moveLaterButtons = page.getByRole('button', { name: 'Move later' })
+    await Promise.all([
+      page.waitForResponse(res => /\/api\/admin\/hero-images\/[a-z-]+\/order$/.test(res.url()) && res.request().method() === 'PUT'),
+      moveLaterButtons.first().click(),
+    ])
+
+    const firstSrcAfter = await thumbnails.nth(0).locator('img').getAttribute('src')
+    const secondSrcAfter = await thumbnails.nth(1).locator('img').getAttribute('src')
+    expect(firstSrcAfter).toBe(secondSrcBefore)
+    expect(secondSrcAfter).toBe(firstSrcBefore)
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+
+    const firstSrcReloaded = await page.locator('li.rounded-lg.overflow-hidden').nth(0).locator('img').getAttribute('src')
+    expect(firstSrcReloaded).toBe(firstSrcAfter)
+  })
+
   test('toggling active off dims the thumbnail and updates the summary', async ({ page }) => {
     await page.goto('/admin/hero-images')
     await page.waitForLoadState('networkidle')
 
     const before = (await page.getByRole('button', { name: /^Main/ }).textContent()) ?? ''
+    const dimmedBefore = await page.locator('li.opacity-40').count()
 
-    const checkbox = page.locator('label:has-text("Active") input[type="checkbox"]').first()
-    await checkbox.uncheck()
+    // .last(), not .first(): this test's own probe (uploaded in the previous
+    // test) always lands at the highest position — the same reasoning the
+    // Remove test below already applies. .first() risks toggling a
+    // pre-existing real picture on the shared dev database.
+    const checkbox = page.locator('label:has-text("Active") input[type="checkbox"]').last()
 
-    await expect(page.locator('li.opacity-40')).toHaveCount(1)
+    await Promise.all([
+      page.waitForResponse(res => /\/api\/admin\/hero-images\/\d+$/.test(res.url()) && res.request().method() === 'PATCH'),
+      checkbox.uncheck(),
+    ])
+
+    await expect(page.locator('li.opacity-40')).toHaveCount(dimmedBefore + 1)
 
     await page.reload()
     await page.waitForLoadState('networkidle')
@@ -146,8 +213,16 @@ test.describe('Hero Images Admin', () => {
 
     // Restore it active, so the next test (and the introduced-id cleanup
     // above, which only deletes — it does not know how to re-toggle) leaves
-    // main in the state other specs expect.
-    await checkbox.check()
+    // main in the state other specs expect. Wait for the response and assert
+    // it landed, rather than firing-and-forgetting the restore.
+    const restoreCheckbox = page.locator('label:has-text("Active") input[type="checkbox"]').last()
+    const [restoreRes] = await Promise.all([
+      page.waitForResponse(res => /\/api\/admin\/hero-images\/\d+$/.test(res.url()) && res.request().method() === 'PATCH'),
+      restoreCheckbox.check(),
+    ])
+    expect(restoreRes.ok(), `restore of active state failed with ${restoreRes.status()}`).toBeTruthy()
+
+    await expect(page.locator('li.opacity-40')).toHaveCount(dimmedBefore)
   })
 
   test('removes a picture', async ({ page }) => {
