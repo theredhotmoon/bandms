@@ -170,6 +170,28 @@ describe('POST /api/posts', function () {
             ->assertJsonValidationErrors(['image']);
     });
 
+    // postSlug() on the public site blends slug_en and slug_pl into one
+    // effective namespace per locale (/pl/ serves slug_pl, falling back to
+    // slug_en) — a slug_pl that collides with a *different* post's slug_en
+    // would make one of them unreachable under /pl/ with no build error.
+    it('rejects a slug_pl that collides with another post\'s slug_en', function () {
+        $this->actingAsAdmin();
+        Post::factory()->create(['slug_en' => 'shared-slug']);
+
+        $this->postJson('/api/posts', ['title' => 'New Post', 'slug_pl' => 'shared-slug'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug_pl']);
+    });
+
+    it('rejects a slug_en that collides with another post\'s slug_pl', function () {
+        $this->actingAsAdmin();
+        Post::factory()->create(['slug_pl' => 'shared-slug']);
+
+        $this->postJson('/api/posts', ['title' => 'New Post', 'slug_en' => 'shared-slug'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug_en']);
+    });
+
 });
 
 // ── PUT /api/posts/{post} ─────────────────────────────────────────────────────
@@ -207,6 +229,24 @@ describe('PUT /api/posts/{post}', function () {
         $this->actingAsAdmin();
 
         $this->putJson('/api/posts/9999', ['title' => 'X'])->assertNotFound();
+    });
+
+    it('rejects updating slug_pl to collide with another post\'s slug_en', function () {
+        $this->actingAsAdmin();
+        Post::factory()->create(['slug_en' => 'shared-slug']);
+        $post = Post::factory()->create();
+
+        $this->putJson("/api/posts/{$post->id}", ['slug_pl' => 'shared-slug'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug_pl']);
+    });
+
+    it('allows a post to keep its own slug_en unchanged on update', function () {
+        $this->actingAsAdmin();
+        $post = Post::factory()->create(['slug_en' => 'keep-me']);
+
+        $this->putJson("/api/posts/{$post->id}", ['slug_en' => 'keep-me'])
+            ->assertSuccessful();
     });
 });
 
