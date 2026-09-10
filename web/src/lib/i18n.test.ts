@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { postSlug, formatGenreKicker } from './i18n'
+import { postSlug, formatGenreKicker, splitCommaList } from './i18n'
 
 describe('postSlug', () => {
   it('uses slug_en for the en locale', () => {
@@ -16,6 +16,18 @@ describe('postSlug', () => {
 
   it('falls back to slug_en for pl when slug_pl is an empty string', () => {
     expect(postSlug({ slug_en: 'brass-tour-2026', slug_pl: '' }, 'pl')).toBe('brass-tour-2026')
+  })
+})
+
+describe('splitCommaList', () => {
+  it('splits, trims and drops empty entries', () => {
+    expect(splitCommaList('Ska ,  Ska-Jazz ,Rocksteady,')).toEqual(['Ska', 'Ska-Jazz', 'Rocksteady'])
+  })
+
+  it('returns an empty array for null/undefined/empty', () => {
+    expect(splitCommaList(null)).toEqual([])
+    expect(splitCommaList(undefined)).toEqual([])
+    expect(splitCommaList('')).toEqual([])
   })
 })
 

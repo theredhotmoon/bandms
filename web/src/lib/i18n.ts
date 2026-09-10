@@ -55,18 +55,26 @@ export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 
 }
 
 /**
- * Formats the Band Profile's free-text, comma-separated `genres` field as a
- * page-header kicker line — e.g. `"Ska, Ska-Jazz, Rocksteady"` becomes
- * `"SKA · SKA-JAZZ · ROCKSTEADY"`.
+ * Splits a free-text, comma-separated field (`genres`, `comparable_artists`)
+ * into its entries. Defensive: a trailing comma is common and would
+ * otherwise produce an empty entry.
+ */
+export function splitCommaList(value: string | null | undefined): string[] {
+  return (value ?? '').split(',').map(v => v.trim()).filter(Boolean)
+}
+
+/**
+ * Formats the Band Profile's `genres` field as a page-header kicker line —
+ * e.g. `"Ska, Ska-Jazz, Rocksteady"` becomes `"SKA · SKA-JAZZ · ROCKSTEADY"`.
  *
  * Display-only: the stored value must stay comma-separated, since
  * `AboutSection`'s genre chips and the admin's pitch generator both split the
- * same field on commas. Returns null (not '') when there's nothing to show,
- * so `PageHero`'s `{kicker && …}` hides the line rather than rendering an
- * empty one.
+ * same field on commas via splitCommaList(). Returns null (not '') when
+ * there's nothing to show, so `PageHero`'s `{kicker && …}` hides the line
+ * rather than rendering an empty one.
  */
 export function formatGenreKicker(genres: string | null | undefined): string | null {
-  const list = (genres ?? '').split(',').map(g => g.trim()).filter(Boolean)
+  const list = splitCommaList(genres)
   return list.length > 0 ? list.join(' · ').toUpperCase() : null
 }
 
