@@ -1,12 +1,12 @@
 <script setup lang="ts">
-type BioTab = 'short' | 'medium' | 'long' | 'full'
+import type { BioVariant } from '@/types/bandProfile'
 
 defineProps<{
-  modelValue: BioTab
+  modelValue: BioVariant
 }>()
 
 defineEmits<{
-  'update:modelValue': [BioTab]
+  'update:modelValue': [BioVariant]
 }>()
 </script>
 
@@ -17,7 +17,7 @@ defineEmits<{
       id="about-bio-variant"
       :value="modelValue"
       class="field-input about-variant-select"
-      @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as BioTab)"
+      @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as BioVariant)"
     >
       <option value="short">One-liner</option>
       <option value="medium">Short</option>

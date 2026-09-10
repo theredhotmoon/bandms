@@ -104,18 +104,32 @@ test.describe.serial('Public — About page bio variant', () => {
     )
   })
 
-  test('renders the bio_full text when about_bio_variant is "full"', async ({ request, page }) => {
+  // bio_full/bio_long are edited via RichEditor (Tiptap) and stored as HTML —
+  // see app/src/components/admin/RichEditor.vue. AboutSection.astro used to
+  // print that HTML through Astro's auto-escaping {expr} interpolation,
+  // which showed literal "<p>...</p>" tags on the page instead of rendering
+  // them. Seeding real markup here (not a plain-text marker) is what actually
+  // exercises that bug — a plain string would pass whether or not the fix
+  // were in place.
+  test('renders bio_full as HTML — the format RichEditor produces — when about_bio_variant is "full"', async ({ request, page }) => {
     test.setTimeout(180_000)
 
     const marker = `E2E FULL BIO ${Date.now()}`
+    const html = `<p>${marker} — formed in the practice room.</p><p>Then <strong>200+</strong> shows later.</p>`
     await api(request, 'put', '/api/band-profile', {
-      bio_full: marker,
+      bio_full: html,
       about_bio_variant: 'full',
     })
     await rebuildAndWait(request, Date.now())
 
     await page.goto(`${WEB}/en/about`)
-    await expect(page.locator('.ab-bio').first()).toHaveText(marker)
+    const bioHtml = page.locator('.ab-bio-html')
+    await expect(bioHtml).toBeVisible()
+    await expect(bioHtml.locator('p').first()).toContainText(marker)
+    await expect(bioHtml.locator('strong')).toHaveText('200+')
+    // The regression this guards against: literal escaped markup rendered as
+    // visible text rather than being parsed as HTML.
+    await expect(page.locator('body')).not.toContainText('<p>')
   })
 
   test('falls back to another length when the selected variant is empty', async ({ request, page }) => {
@@ -136,5 +150,28 @@ test.describe.serial('Public — About page bio variant', () => {
 
     await page.goto(`${WEB}/en/about`)
     await expect(page.locator('.ab-bio').first()).toHaveText(marker)
+  })
+
+  // The riskier fallback direction: an admin explicitly picks the shortest
+  // length but has only written the long-form press biography so far — the
+  // fallback chain (by design, see AboutSection.astro) still shows something
+  // rather than "Biography coming soon.", and that something must render as
+  // real HTML, not escaped markup, exactly like the direct-selection case.
+  test('a fallback that lands on bio_full still renders it as HTML, not escaped', async ({ request, page }) => {
+    test.setTimeout(180_000)
+
+    const marker = `E2E FALLBACK FULL BIO ${Date.now()}`
+    const html = `<p>${marker}</p>`
+    await api(request, 'put', '/api/band-profile', {
+      bio_short: null,
+      bio_medium: null,
+      bio_long: null,
+      bio_full: html,
+      about_bio_variant: 'short',
+    })
+    await rebuildAndWait(request, Date.now())
+
+    await page.goto(`${WEB}/en/about`)
+    await expect(page.locator('.ab-bio-html p')).toHaveText(marker)
   })
 })

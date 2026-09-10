@@ -11,6 +11,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { useSocialLinks } from '@/composables/useSocialLinks'
 import type { SocialLinkPayload } from '@bandms/rider-core'
+import type { BioVariant } from '@/types/bandProfile'
 import { ApiValidationError } from '@/api/client'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 
@@ -32,8 +33,7 @@ async function createSnapshot() {
   }
 }
 
-type BioTab = 'short' | 'medium' | 'long' | 'full'
-const bioTab  = ref<BioTab>('short')
+const bioTab  = ref<BioVariant>('short')
 const bioLang = ref<'en' | 'pl'>('en')
 
 const form = reactive({
@@ -46,7 +46,7 @@ const form = reactive({
   bio_long_pl:   '',
   bio_full_en:   '',
   bio_full_pl:   '',
-  about_bio_variant: 'medium' as BioTab,
+  about_bio_variant: 'medium' as BioVariant,
   formation_year:      '' as string | number,
   hometown:            '',
   genres:              '',
@@ -116,7 +116,7 @@ watch(
 
 const shortChars     = computed(() => (bioLang.value === 'en' ? form.bio_short_en : form.bio_short_pl).length)
 const shortOverLimit = computed(() => shortChars.value > 280)
-const bioTabHasError = (tab: BioTab) => !!(fieldErrors.value[`bio_${tab}`])
+const bioTabHasError = (tab: BioVariant) => !!(fieldErrors.value[`bio_${tab}`])
 
 function numOrNull(v: string | number): number | null {
   const n = Number(v)
@@ -293,7 +293,7 @@ async function saveSocialLinks() {
               <div class="bio-tabs-row">
                 <div class="bio-tabs">
                   <button
-                    v-for="tab in (['short','medium','long','full'] as BioTab[])"
+                    v-for="tab in (['short','medium','long','full'] as BioVariant[])"
                     :key="tab"
                     type="button"
                     class="bio-tab"
@@ -342,7 +342,7 @@ async function saveSocialLinks() {
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
-                <div class="bio-hint">Website About page, grant applications, full press kit — no length limit.</div>
+                <div class="bio-hint">Grant applications, full press kit — no length limit. Select above to also show this on the public About page.</div>
                 <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" placeholder="Write the full press biography…" />
                 <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" placeholder="Napisz pełną biografię prasową…" />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>

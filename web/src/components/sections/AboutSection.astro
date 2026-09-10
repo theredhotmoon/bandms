@@ -76,27 +76,38 @@ const COPY = {
 const t = COPY[lang] ?? COPY.en
 
 // Which bio length renders here is an admin choice (Band Profile → Bio →
-// "Shown on public About page"), not a fixed design knob. FALLBACK_ORDER is
+// "Shown on public About page"), not a fixed design knob. PRIORITY_ORDER is
 // the chain used if the selected length is empty — it never renders a blank
 // bio column just because the chosen variant was left unset.
-const bioByVariant: Record<typeof profile.about_bio_variant, string | null> = {
+type BioVariant = typeof profile.about_bio_variant
+const bioByVariant: Record<BioVariant, string | null> = {
   short: profile.bio_short,
   medium: profile.bio_medium,
   long: profile.bio_long,
   full: profile.bio_full,
 }
-const FALLBACK_ORDER = ['medium', 'long', 'short', 'full'] as const
-const bio =
-  bioByVariant[profile.about_bio_variant] ||
-  FALLBACK_ORDER.filter(v => v !== profile.about_bio_variant)
-    .map(v => bioByVariant[v])
-    .find(Boolean) ||
-  ''
-const bioParagraphs = bio
-  .replace(/\r\n/g, '\n')
-  .split(/\n\s*\n/)
-  .map(p => p.trim())
-  .filter(Boolean)
+// bio_short/bio_medium come from plain <textarea> fields (plain text, split
+// into paragraphs below); bio_long/bio_full come from RichEditor, which
+// stores Tiptap-produced HTML (app/src/components/admin/RichEditor.vue) — so
+// they render via set:html, matching TextBlock.astro's handling of the same
+// editor's output elsewhere on this site. Rendering an HTML variant through
+// the plain-text path would print literal escaped tags on the page.
+const HTML_VARIANTS = new Set<BioVariant>(['long', 'full'])
+const PRIORITY_ORDER: BioVariant[] = [
+  profile.about_bio_variant,
+  ...(['medium', 'long', 'short', 'full'] as BioVariant[]).filter(v => v !== profile.about_bio_variant),
+]
+const winningVariant = PRIORITY_ORDER.find(v => bioByVariant[v])
+const bio = winningVariant ? bioByVariant[winningVariant]! : ''
+const bioIsHtml = winningVariant ? HTML_VARIANTS.has(winningVariant) : false
+const bioParagraphs = bioIsHtml
+  ? []
+  : bio
+      .replace(/\r\n/g, '\n')
+      .split(/\n\s*\n/)
+      .map(p => p.trim())
+      .filter(Boolean)
+const bioExcerpt = bioIsHtml ? bio.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : (bioParagraphs[0] ?? '')
 
 // `genres` and `comparable_artists` are free-text comma-separated fields, not
 // relations — split via splitCommaList(), shared with formatGenreKicker() so
@@ -162,7 +173,7 @@ const contacts = [
   lang={lang}
   alternates={alternates}
   title={`${t.title} — ${profile.name}`}
-  description={bioParagraphs[0] ?? t.lead}
+  description={bioExcerpt || t.lead}
 >
   <!-- HERO -->
   <PageHero
@@ -193,11 +204,13 @@ const contacts = [
   <section class="ab-sec page-x">
     <div class="ab-bio-grid">
       <div>
-        {bioParagraphs.length > 0
-          ? bioParagraphs.map((paragraph, i) => (
-              <p class={i === 0 ? 'ab-bio ab-bio--lead' : 'ab-bio'}>{paragraph}</p>
-            ))
-          : <p class="ab-bio">{t.noBio}</p>}
+        {bio === ''
+          ? <p class="ab-bio">{t.noBio}</p>
+          : bioIsHtml
+            ? <div class="ab-bio-html" set:html={bio} />
+            : bioParagraphs.map((paragraph, i) => (
+                <p class={i === 0 ? 'ab-bio ab-bio--lead' : 'ab-bio'}>{paragraph}</p>
+              ))}
 
         {genres.length > 0 && (
           <div class="ab-genres">
@@ -350,6 +363,34 @@ const contacts = [
   }
   /* The opening paragraph carries the page, so it is set larger. */
   .ab-bio--lead { font-size: 22px; }
+
+  /* RichEditor-sourced (bio_long/bio_full) HTML — same typography as .ab-bio,
+     plus the nested elements Tiptap's StarterKit can produce. Plain (non-
+     :global) selectors, matching TextBlock.astro's .art-prose: Astro scopes
+     this rule to the element this file renders (.ab-bio-html itself), which
+     covers the set:html-injected children below it too. */
+  .ab-bio-html { font: 500 19px/1.6 var(--font-body); color: var(--color-body); text-wrap: pretty; }
+  .ab-bio-html p { margin: 0 0 18px; }
+  .ab-bio-html p:last-child { margin-bottom: 0; }
+  .ab-bio-html h2,
+  .ab-bio-html h3 {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    text-transform: var(--display-transform);
+    margin: 26px 0 10px;
+    color: var(--color-ink);
+  }
+  .ab-bio-html ul,
+  .ab-bio-html ol { padding-left: 1.4em; margin: 0 0 18px; }
+  .ab-bio-html li { margin: 4px 0; }
+  .ab-bio-html a { color: var(--color-accent); text-underline-offset: 3px; }
+  .ab-bio-html blockquote {
+    margin: 12px 0 18px;
+    border-left: 4px solid var(--color-accent);
+    padding-left: 18px;
+    color: var(--color-muted);
+    font-style: italic;
+  }
 
   .ab-genres { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
   .ab-genre {
