@@ -10,7 +10,7 @@ import MemberGrid from '@/components/MemberGrid.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getBandProfile, getMembers, getConcerts, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { formatNumber } from '@/lib/i18n'
+import { formatNumber, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -32,7 +32,6 @@ const s = siteConfig.module_config?.about?.settings ?? {}
 
 const COPY = {
   en: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'About',
     lead: 'Six players, one upbeat. The story behind the band — and the people who make the room move.',
     formed: 'Formed', based: 'Based in',
@@ -53,7 +52,6 @@ const COPY = {
     noBio: 'Biography coming soon.',
   },
   pl: {
-    kicker: 'SKA · SKA-JAZZ · ROCKSTEADY',
     title: 'O nas',
     lead: 'Sześciu muzyków, jeden upbeat. Historia zespołu — i ludzie, którzy rozruszają każdą salę.',
     formed: 'Powstali', based: 'Z miasta',
@@ -98,6 +96,7 @@ const splitList = (value: string | null) =>
 
 const genres = splitList(profile.genres)
 const comparable = splitList(profile.comparable_artists)
+const genreKicker = formatGenreKicker(profile.genres)
 
 // The build clock, not profile.updated_at. Using the profile's timestamp meant
 // "years on stage" and "shows played" froze at whenever the profile was last
@@ -160,7 +159,7 @@ const contacts = [
 >
   <!-- HERO -->
   <PageHero
-    kicker={t.kicker}
+    kicker={genreKicker}
     title={s.title || t.title}
     lead={s.lead || t.lead}
     heroImages={resolveHeroImages(siteConfig, 'about')}

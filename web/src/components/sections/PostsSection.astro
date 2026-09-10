@@ -2,7 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
-import { postSlug } from '@/lib/i18n'
+import { postSlug, formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -26,6 +26,7 @@ const [firstPage, profile, siteConfig] = await Promise.all([
   getSiteConfig(lang),
 ])
 const s = siteConfig.module_config?.posts?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 let allPosts = [...firstPage.data]
 if (firstPage.meta.last_page > 1) {
@@ -47,7 +48,7 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
 
     <!-- ── HERO ──────────────────────────────────────────────── -->
     <PageHero
-      kicker="SKA · SKA-JAZZ · ROCKSTEADY"
+      kicker={genreKicker}
       title={s.title || 'News'}
       lead={s.lead || 'Studio updates, fresh dates and stories from the road.'}
       heroImages={resolveHeroImages(siteConfig, 'posts')}

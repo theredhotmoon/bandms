@@ -17,7 +17,7 @@ import ShowsMap from '@/components/ShowsMap.vue'
 import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { isUpcoming } from '@/lib/i18n'
+import { isUpcoming, formatGenreKicker } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
 
@@ -25,6 +25,7 @@ const ACCENT = 'var(--color-accent)'
 
 const [concerts, profile, siteConfig] = await Promise.all([getConcerts(), getBandProfile(lang), getSiteConfig(lang)])
 const s = siteConfig.module_config?.concerts?.settings ?? {}
+const genreKicker = formatGenreKicker(profile.genres)
 
 const upcoming = concerts
   .filter(c => isUpcoming(c.date))
@@ -75,7 +76,7 @@ function getTypeLabel(concert: Concert) {
 
     <!-- ── HERO ──────────────────────────────────────────────────── -->
     <PageHero
-      kicker="SKA · SKA-JAZZ · ROCKSTEADY"
+      kicker={genreKicker}
       title={s.title || 'Shows'}
       lead={s.lead || "Brass, bass and the upbeat — live. Every date we're playing next, and every floor we've already moved."}
       titleSize={150}

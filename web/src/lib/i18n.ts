@@ -54,6 +54,22 @@ export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 
   })
 }
 
+/**
+ * Formats the Band Profile's free-text, comma-separated `genres` field as a
+ * page-header kicker line — e.g. `"Ska, Ska-Jazz, Rocksteady"` becomes
+ * `"SKA · SKA-JAZZ · ROCKSTEADY"`.
+ *
+ * Display-only: the stored value must stay comma-separated, since
+ * `AboutSection`'s genre chips and the admin's pitch generator both split the
+ * same field on commas. Returns null (not '') when there's nothing to show,
+ * so `PageHero`'s `{kicker && …}` hides the line rather than rendering an
+ * empty one.
+ */
+export function formatGenreKicker(genres: string | null | undefined): string | null {
+  const list = (genres ?? '').split(',').map(g => g.trim()).filter(Boolean)
+  return list.length > 0 ? list.join(' · ').toUpperCase() : null
+}
+
 export function fmtTime(timeStr: string | null | undefined): string {
   if (!timeStr) return ''
   return timeStr.substring(0, 5)
