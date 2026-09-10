@@ -155,7 +155,11 @@ test.describe('Hero Images Admin', () => {
     await page.waitForLoadState('networkidle')
 
     const countBefore = await page.locator('li.rounded-lg.overflow-hidden').count()
-    await page.getByRole('button', { name: 'Remove' }).first().click()
+    // .last(), not .first(): a new upload always lands at the highest position
+    // (last in DOM order), so this is guaranteed to remove this test's own
+    // probe picture — never a pre-existing real one that might already be in
+    // the Main scope on the shared dev database.
+    await page.getByRole('button', { name: 'Remove' }).last().click()
 
     await expect(page.locator('li.rounded-lg.overflow-hidden')).toHaveCount(countBefore - 1)
   })

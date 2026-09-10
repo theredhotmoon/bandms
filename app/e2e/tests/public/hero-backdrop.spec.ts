@@ -221,8 +221,14 @@ test.describe.serial('Public hero backdrop — active filter', () => {
   })
 
   test.afterAll(async ({ request }) => {
-    if (activeId) await authedFetch(request, 'delete', `/api/admin/hero-images/${activeId}`)
-    if (inactiveId) await authedFetch(request, 'delete', `/api/admin/hero-images/${inactiveId}`)
+    if (activeId) {
+      const res = await authedFetch(request, 'delete', `/api/admin/hero-images/${activeId}`)
+      expect(res.ok(), `cleanup delete of active picture failed with ${res.status()}`).toBeTruthy()
+    }
+    if (inactiveId) {
+      const res = await authedFetch(request, 'delete', `/api/admin/hero-images/${inactiveId}`)
+      expect(res.ok(), `cleanup delete of inactive picture failed with ${res.status()}`).toBeTruthy()
+    }
   })
 
   test('an inactive picture never reaches the public candidate list', async ({ request, page }) => {
