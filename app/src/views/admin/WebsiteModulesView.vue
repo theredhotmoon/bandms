@@ -4,8 +4,8 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
-import type { WebsiteModule, ModuleSettings } from '@/types/website-module'
-import { settingsFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
+import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
+import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
 
 const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
 
@@ -113,6 +113,14 @@ const settingsFields = computed(() =>
   editingSlug.value ? settingsFieldsFor(editingSlug.value) : [],
 )
 
+// Section toggles, keyed by field — no locale dimension, so a flat boolean
+// map is enough (unlike draftSettings, which needs the `.<locale>` split).
+const draftVisibility = ref<Record<string, boolean>>({})
+
+const visibilityFields = computed(() =>
+  editingSlug.value ? visibilityFieldsFor(editingSlug.value) : [],
+)
+
 // Chrome modules (the footer) have no route, so a URL slug and a per-page count
 // would be inputs that change nothing. `enabled` still means something: off
 // hides the footer.
@@ -136,6 +144,14 @@ function startEdit(mod: WebsiteModule) {
     }
   }
   draftSettings.value = next
+
+  // Absent means visible — mirrors how the public site treats a missing key,
+  // so a module that has never saved this bag opens with every toggle on.
+  const nextVisibility: Record<string, boolean> = {}
+  for (const field of visibilityFieldsFor(mod.slug)) {
+    nextVisibility[field.key] = mod.visibility?.[field.key] ?? true
+  }
+  draftVisibility.value = nextVisibility
 }
 
 function cancelEdit() {
@@ -175,6 +191,14 @@ function collectSettings(slug: string): ModuleSettings {
   return out
 }
 
+function collectVisibility(slug: string): ModuleVisibility {
+  const out: ModuleVisibility = {}
+  for (const field of visibilityFieldsFor(slug)) {
+    out[field.key] = draftVisibility.value[field.key] ?? true
+  }
+  return out
+}
+
 async function saveEdit(slug: string) {
   fieldErrors.value = {}
   try {
@@ -197,6 +221,7 @@ async function saveEdit(slug: string) {
           : {}),
         per_page: draftPerPage.value,
         ...(settingsFields.value.length > 0 ? { settings: collectSettings(slug) } : {}),
+        ...(visibilityFields.value.length > 0 ? { visibility: collectVisibility(slug) } : {}),
       },
     })
     editingSlug.value = null
@@ -481,6 +506,36 @@ async function saveEdit(slug: string) {
             <span class="text-xs text-zinc-600">
               Copy changes appear on the public site after a rebuild. Leaving a locale
               empty clears it for that language only.
+            </span>
+          </div>
+
+          <!-- Section visibility. Which toggles appear comes from
+               MODULE_VISIBILITY_SCHEMA — a module absent from it shows none,
+               same additive-and-safe rule as page copy. Independent of the
+               module's own `enabled` switch, which controls the whole page. -->
+          <div v-if="visibilityFields.length > 0" class="flex flex-col gap-2">
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Section visibility</span>
+
+            <label
+              v-for="field in visibilityFields"
+              :key="field.key"
+              :for="`visibility-${field.key}`"
+              class="flex items-start gap-2.5 text-sm text-zinc-300 cursor-pointer select-none"
+            >
+              <input
+                :id="`visibility-${field.key}`"
+                v-model="draftVisibility[field.key]"
+                type="checkbox"
+                class="mt-0.5 rounded border-zinc-700 bg-zinc-800 text-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              />
+              <span class="flex flex-col gap-0.5">
+                <span>{{ field.label }}</span>
+                <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
+              </span>
+            </label>
+
+            <span class="text-xs text-zinc-600">
+              Changes appear on the public site after a rebuild.
             </span>
           </div>
 

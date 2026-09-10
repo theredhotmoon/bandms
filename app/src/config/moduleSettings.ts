@@ -167,3 +167,38 @@ export const MODULE_SETTINGS_SCHEMA: Record<string, ModuleSettingField[]> = {
 export function settingsFieldsFor(slug: string): ModuleSettingField[] {
   return MODULE_SETTINGS_SCHEMA[slug] ?? []
 }
+
+/**
+ * Which optional page sections a module can show or hide, independent of the
+ * module's own `enabled` flag (which controls the whole page/route, not one
+ * section of it). Same "additive, no-migration field" shape as
+ * MODULE_SETTINGS_SCHEMA, but no locale dimension — a section is shown or
+ * hidden, not translated per language — and no `type`, since every entry
+ * renders as a checkbox.
+ */
+export interface ModuleVisibilityField {
+  /** Key inside the visibility bag. Must match what the Astro section reads. */
+  key: string
+  label: string
+  /** Say what the toggle hides, not what the field is. */
+  help?: string
+}
+
+export const MODULE_VISIBILITY_SCHEMA: Record<string, ModuleVisibilityField[]> = {
+  about: [
+    {
+      key: 'show_stats',
+      label: 'Band in numbers',
+      help: 'The stats grid (monthly listeners, shows played, years on stage…) on the public About page. Still hidden automatically when there is nothing to show.',
+    },
+    {
+      key: 'show_members',
+      label: 'Band members',
+      help: 'The line-up grid on the public About page.',
+    },
+  ],
+}
+
+export function visibilityFieldsFor(slug: string): ModuleVisibilityField[] {
+  return MODULE_VISIBILITY_SCHEMA[slug] ?? []
+}

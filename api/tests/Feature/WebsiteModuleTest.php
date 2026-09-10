@@ -726,6 +726,85 @@ it('leaves settings untouched when the payload omits them', function () {
         ->assertJsonPath('data.settings.kicker.en', 'GET IN TOUCH');
 });
 
+// ── module visibility (section toggles, added 2026-09-10) ───────────────────
+
+it('returns an object, never null, when a module has no visibility bag', function () {
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.visibility', []);
+});
+
+it('saves a visibility toggle', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => ['show_stats' => false],
+    ])->assertOk()
+      ->assertJsonPath('data.visibility.show_stats', false);
+
+    $this->getJson('/api/site-config')
+        ->assertJsonPath('module_config.about.visibility.show_stats', false);
+});
+
+// The bag merges per key, same reasoning as settings: a payload naming only
+// show_stats must not silently reset show_members to some other value.
+it('leaves the other toggle alone on a partial visibility update', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => ['show_stats' => false],
+    ])->assertOk();
+
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => ['show_members' => false],
+    ])->assertOk()
+      ->assertJsonPath('data.visibility.show_stats', false)
+      ->assertJsonPath('data.visibility.show_members', false);
+});
+
+it('rejects a non-boolean visibility value', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => ['show_stats' => 'yes'],
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('visibility.show_stats');
+});
+
+it('leaves visibility untouched when the payload omits it', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', ['visibility' => ['show_stats' => false]])
+        ->assertOk();
+
+    $this->putJson('/api/admin/modules/about', ['custom_name' => ['en' => 'About us']])
+        ->assertOk()
+        ->assertJsonPath('data.visibility.show_stats', false);
+});
+
+it('rejects a list-shaped visibility payload rather than corrupting the bag', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => [true, false],
+    ])->assertStatus(422)
+      ->assertJsonValidationErrors('visibility');
+});
+
+it('casts a non-strict boolean value rather than storing it verbatim', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    // Laravel's 'boolean' rule accepts 0/1 without casting them — the
+    // controller must normalise to a real boolean itself, or the public
+    // site's strict `!== false` check would treat stored 0 as visible.
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => ['show_stats' => 0],
+    ])->assertOk()
+      ->assertJsonPath('data.visibility.show_stats', false);
+
+    expect(WebsiteModule::where('slug', 'about')->first()->visibility['show_stats'])->toBeBool();
+});
+
 // ── about module (added 2026-08-27) ──────────────────────────────────────────
 
 it('registers about as a module the migration created', function () {

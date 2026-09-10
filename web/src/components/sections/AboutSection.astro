@@ -29,6 +29,12 @@ const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
 const s = siteConfig.module_config?.about?.settings ?? {}
+// Admin-controlled section toggles (Website Modules → About → Section
+// visibility). Absent key means shown — a build against an API predating
+// this feature, or a module that has never saved the bag, must not hide
+// content nobody asked to hide.
+const visibility = siteConfig.module_config?.about?.visibility ?? {}
+const showSection = (key: string) => visibility[key] !== false
 
 const COPY = {
   en: {
@@ -233,7 +239,7 @@ const contacts = [
   </section>
 
   <!-- STATS -->
-  {stats.length > 0 && (
+  {showSection('show_stats') && stats.length > 0 && (
     <section class="ab-stats page-x">
       <h2 class="ab-stats-h">{t.stats}</h2>
       <div class="ab-stats-grid" style={`--stat-cols:${stats.length}`}>
@@ -249,23 +255,25 @@ const contacts = [
   )}
 
   <!-- MEMBERS -->
-  <section class="ab-sec page-x">
-    <div class="ab-head">
-      <Icon name="star" size={24} color="var(--color-accent)" />
-      <h2 class="ab-h2">{t.members}</h2>
-    </div>
-    <p class="ab-sub">{t.membersSub}</p>
+  {showSection('show_members') && (
+    <section class="ab-sec page-x">
+      <div class="ab-head">
+        <Icon name="star" size={24} color="var(--color-accent)" />
+        <h2 class="ab-h2">{t.members}</h2>
+      </div>
+      <p class="ab-sub">{t.membersSub}</p>
 
-    {gridMembers.length === 0 ? (
-      <p class="ab-bio">{t.membersEmpty}</p>
-    ) : (
-      <MemberGrid
-        client:visible
-        members={gridMembers}
-        copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view }}
-      />
-    )}
-  </section>
+      {gridMembers.length === 0 ? (
+        <p class="ab-bio">{t.membersEmpty}</p>
+      ) : (
+        <MemberGrid
+          client:visible
+          members={gridMembers}
+          copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view }}
+        />
+      )}
+    </section>
+  )}
 
   <!-- PRESS & BOOKING -->
   {(pressCards.length > 0 || contacts.length > 0) && (
