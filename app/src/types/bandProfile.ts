@@ -12,6 +12,11 @@ export interface BandProfileTranslations {
   artistic_statement: { en?: string | null; pl?: string | null }
 }
 
+// The four bio lengths (Band Profile → Bio tabs); about_bio_variant picks
+// which one the public About page renders. Single source of truth so the
+// admin's tab switcher and its About-page selector can't drift apart.
+export type BioVariant = 'short' | 'medium' | 'long' | 'full'
+
 export interface BandProfile {
   id: number
   name: string
@@ -19,6 +24,7 @@ export interface BandProfile {
   bio_medium: string | null
   bio_long: string | null
   bio_full: string | null
+  about_bio_variant: BioVariant
   formation_year: number | null
   hometown: string | null
   genres: string | null
@@ -96,6 +102,7 @@ export interface BandProfilePayload {
   bio_medium?: string | TranslationMap | null
   bio_long?: string | TranslationMap | null
   bio_full?: string | TranslationMap | null
+  about_bio_variant?: BioVariant
   formation_year?: number | null
   hometown?: string | null
   genres?: string | null

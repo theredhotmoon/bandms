@@ -2,8 +2,10 @@
 
 use App\Models\BandProfile;
 use App\Models\EpkVersion;
+use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 
@@ -108,6 +110,38 @@ describe('PUT /api/band-profile', function () {
             ->assertJsonPath('data.bio_short', null);
     });
 
+    it('defaults about_bio_variant to medium', function () {
+        $this->getJson('/api/band-profile')
+            ->assertSuccessful()
+            ->assertJsonPath('data.about_bio_variant', 'medium');
+    });
+
+    it('updates about_bio_variant', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['about_bio_variant' => 'full'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.about_bio_variant', 'full');
+
+        expect(BandProfile::findOrFail(1)->about_bio_variant)->toBe('full');
+    });
+
+    it('rejects an about_bio_variant outside short/medium/long/full', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['about_bio_variant' => 'extra-long'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['about_bio_variant']);
+    });
+
+    it('does not allow clearing about_bio_variant to null', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['about_bio_variant' => null])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['about_bio_variant']);
+    });
+
     it('updates career fields', function () {
         $this->actingAsAdmin();
 
@@ -191,6 +225,26 @@ describe('PUT /api/band-profile', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.name', 'Test Band')
             ->assertJsonPath('data.hometown', 'Kraków');
+    });
+
+    it('asks the public site to rebuild after a save, when auto-rebuild is on', function () {
+        Http::fake();
+        SiteSetting::set('auto_rebuild', 'true');
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['about_bio_variant' => 'full'])->assertSuccessful();
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/rebuild'));
+    });
+
+    it('does not rebuild when auto-rebuild is off', function () {
+        Http::fake();
+        SiteSetting::set('auto_rebuild', 'false');
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['about_bio_variant' => 'full'])->assertSuccessful();
+
+        Http::assertNothingSent();
     });
 });
 

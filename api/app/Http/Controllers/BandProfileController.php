@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Services\EpkSnapshotBuilder;
+use App\Support\SiteRebuild;
 
 class BandProfileController extends Controller
 {
@@ -44,6 +45,7 @@ class BandProfileController extends Controller
             'bio_full'                 => ['nullable'],
             'bio_full.en'              => ['nullable', 'string'],
             'bio_full.pl'              => ['nullable', 'string'],
+            'about_bio_variant'        => ['sometimes', 'required', 'string', 'in:short,medium,long,full'],
             'formation_year'           => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'hometown'                 => ['nullable', 'string', 'max:255'],
             'genres'                   => ['nullable', 'string', 'max:500'],
@@ -73,6 +75,10 @@ class BandProfileController extends Controller
 
         $profile = $this->profile();
         $profile->update($data);
+
+        // The public About page bakes this profile at build time, so a save
+        // that does not rebuild leaves the band looking at an unchanged page.
+        SiteRebuild::requestIfAuto();
 
         return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo']));
     }

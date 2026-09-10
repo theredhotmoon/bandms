@@ -5,11 +5,13 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import AboutBioVariantSelect from '@/components/admin/forms/AboutBioVariantSelect.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { useSocialLinks } from '@/composables/useSocialLinks'
 import type { SocialLinkPayload } from '@bandms/rider-core'
+import type { BioVariant } from '@/types/bandProfile'
 import { ApiValidationError } from '@/api/client'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 
@@ -31,8 +33,7 @@ async function createSnapshot() {
   }
 }
 
-type BioTab = 'short' | 'medium' | 'long' | 'full'
-const bioTab  = ref<BioTab>('short')
+const bioTab  = ref<BioVariant>('short')
 const bioLang = ref<'en' | 'pl'>('en')
 
 const form = reactive({
@@ -45,6 +46,7 @@ const form = reactive({
   bio_long_pl:   '',
   bio_full_en:   '',
   bio_full_pl:   '',
+  about_bio_variant: 'medium' as BioVariant,
   formation_year:      '' as string | number,
   hometown:            '',
   genres:              '',
@@ -87,6 +89,7 @@ watch(
     form.bio_long_pl   = val.translations?.bio_long?.pl   ?? ''
     form.bio_full_en   = val.translations?.bio_full?.en   ?? val.bio_full   ?? ''
     form.bio_full_pl   = val.translations?.bio_full?.pl   ?? ''
+    form.about_bio_variant  = val.about_bio_variant  ?? 'medium'
     form.formation_year     = val.formation_year     ?? ''
     form.hometown           = val.hometown           ?? ''
     form.genres             = val.genres             ?? ''
@@ -113,7 +116,7 @@ watch(
 
 const shortChars     = computed(() => (bioLang.value === 'en' ? form.bio_short_en : form.bio_short_pl).length)
 const shortOverLimit = computed(() => shortChars.value > 280)
-const bioTabHasError = (tab: BioTab) => !!(fieldErrors.value[`bio_${tab}`])
+const bioTabHasError = (tab: BioVariant) => !!(fieldErrors.value[`bio_${tab}`])
 
 function numOrNull(v: string | number): number | null {
   const n = Number(v)
@@ -134,6 +137,7 @@ async function saveProfile() {
         ? { en: form.bio_long_en || undefined, pl: form.bio_long_pl || undefined } : null,
       bio_full:   (form.bio_full_en || form.bio_full_pl)
         ? { en: form.bio_full_en || undefined, pl: form.bio_full_pl || undefined } : null,
+      about_bio_variant: form.about_bio_variant,
       formation_year:      numOrNull(form.formation_year),
       hometown:            form.hometown            || null,
       genres:              form.genres              || null,
@@ -289,7 +293,7 @@ async function saveSocialLinks() {
               <div class="bio-tabs-row">
                 <div class="bio-tabs">
                   <button
-                    v-for="tab in (['short','medium','long','full'] as BioTab[])"
+                    v-for="tab in (['short','medium','long','full'] as BioVariant[])"
                     :key="tab"
                     type="button"
                     class="bio-tab"
@@ -304,6 +308,8 @@ async function saveSocialLinks() {
                   <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button>
                 </div>
               </div>
+
+              <AboutBioVariantSelect v-model="form.about_bio_variant" />
 
               <div v-show="bioTab === 'short'" class="bio-panel">
                 <div class="bio-hint">Festival lineups, social media bios, radio intros — 1 sentence, ≤280 chars.</div>
@@ -336,7 +342,7 @@ async function saveSocialLinks() {
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
-                <div class="bio-hint">Website About page, grant applications, full press kit — no length limit.</div>
+                <div class="bio-hint">Grant applications, full press kit — no length limit. Select above to also show this on the public About page.</div>
                 <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" placeholder="Write the full press biography…" />
                 <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" placeholder="Napisz pełną biografię prasową…" />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>

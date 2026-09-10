@@ -19,6 +19,7 @@ class BandProfileResource extends JsonResource
             'bio_medium'              => $this->bio_medium !== '' ? $this->bio_medium : null,
             'bio_long'                => $this->bio_long !== '' ? $this->bio_long : null,
             'bio_full'                => $this->bio_full !== '' ? $this->bio_full : null,
+            'about_bio_variant'       => $this->about_bio_variant,
             'translations'            => [
                 'bio_short'          => $this->getTranslations('bio_short'),
                 'bio_medium'         => $this->getTranslations('bio_medium'),
