@@ -89,20 +89,22 @@ export function formatEventDates(
   lang: Locale = 'en',
 ): string {
   if (dates.length === 0) return ''
-  if (dates.length === 1) return fmtDate(dates[0], lang)
 
+  // Date-only strings ('2099-01-10') parse as UTC midnight, which renders as
+  // the previous day west of UTC — appending a local time-of-day, as every
+  // other date-only field in this codebase does (see ConcertDetail.astro),
+  // forces local-time parsing instead.
+  const toLocalDate = (d: string) => new Date(d + 'T00:00:00')
   const sorted = [...dates].sort()
-
-  if (display === 'list') {
-    return sorted.map(d => fmtDate(d, lang)).join(', ')
-  }
-
   const formatter = new Intl.DateTimeFormat(dateLocale(lang), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
-  return formatter.formatRange(new Date(sorted[0]), new Date(sorted[sorted.length - 1]))
+
+  if (sorted.length === 1) return formatter.format(toLocalDate(sorted[0]))
+  if (display === 'list') return sorted.map(d => formatter.format(toLocalDate(d))).join(', ')
+  return formatter.formatRange(toLocalDate(sorted[0]), toLocalDate(sorted[sorted.length - 1]))
 }
 
 export function fmtTime(timeStr: string | null | undefined): string {

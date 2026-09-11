@@ -62,6 +62,7 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
       posts={postsWithSlug}
       accent={ACCENT}
       postHrefBase={`/${lang}/${slugMap[lang].posts}`}
+      lang={lang}
       client:idle
     />
   </div>

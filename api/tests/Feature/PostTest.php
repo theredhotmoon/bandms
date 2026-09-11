@@ -274,6 +274,18 @@ describe('PUT /api/posts/{post}', function () {
         $this->assertDatabaseHas('post_concerts', ['post_id' => $post->id, 'concert_id' => $newGig->id]);
     });
 
+    // event_date_display is validated as nullable, but the column itself is
+    // NOT NULL — an explicit null must fall back rather than reach the
+    // database as a constraint violation.
+    it('falls back to "range" when event_date_display is explicitly nulled on update', function () {
+        $this->actingAsAdmin();
+        $post = Post::factory()->create(['event_date_display' => 'list']);
+
+        $this->putJson("/api/posts/{$post->id}", ['event_date_display' => null])
+            ->assertSuccessful()
+            ->assertJsonPath('data.event_date_display', 'range');
+    });
+
     it('returns 404 for a non-existent post', function () {
         $this->actingAsAdmin();
 

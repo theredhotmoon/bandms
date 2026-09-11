@@ -89,4 +89,18 @@ describe('formatEventDates', () => {
   it('sorts unordered dates before formatting a range', () => {
     expect(formatEventDates(['2026-06-05', '2026-06-01'], 'range')).toBe('1 – 5 June 2026')
   })
+
+  // Date-only strings ('2099-01-10') parse as UTC midnight, which is still
+  // the previous day in a timezone west of UTC — this pins the same guard
+  // ConcertDetail.astro already relies on (new Date(date + 'T00:00:00')).
+  it('does not shift the date back a day in a timezone west of UTC', () => {
+    const original = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      expect(formatEventDates(['2099-01-10'], 'range')).toContain('10')
+      expect(formatEventDates(['2099-01-10'], 'range')).not.toContain('9 January')
+    } finally {
+      process.env.TZ = original
+    }
+  })
 })

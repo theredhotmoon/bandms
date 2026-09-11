@@ -101,6 +101,13 @@ class PostController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($data, $post) {
+            // Validated as nullable (a client may send it only when 2+ concerts
+            // are linked), but the column itself is NOT NULL — an explicit null
+            // would otherwise reach the database as a constraint violation.
+            if (array_key_exists('event_date_display', $data) && $data['event_date_display'] === null) {
+                $data['event_date_display'] = 'range';
+            }
+
             $post->update(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks']));
 
             if (array_key_exists('tag_ids', $data)) {

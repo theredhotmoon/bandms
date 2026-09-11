@@ -21,6 +21,7 @@ const props = defineProps<{
   posts: PostSummary[]
   accent: string
   postHrefBase?: string
+  lang?: 'en' | 'pl'
 }>()
 
 const resolvedPostHrefBase = computed(() => props.postHrefBase ?? '/posts')
@@ -56,7 +57,7 @@ function postDate(p: PostSummary): string {
 }
 
 function eventDate(p: PostSummary): string {
-  return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range')
+  return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range', props.lang ?? 'en')
 }
 </script>
 
@@ -119,7 +120,7 @@ function eventDate(p: PostSummary): string {
           <p class="nf-feat-intro">{{ featured.intro ?? featured.excerpt }}</p>
           <div class="nf-feat-meta">
             <span class="nf-meta-date">{{ postDate(featured) }}</span>
-            <span v-if="eventDate(featured)" class="nf-meta-date nf-meta-event" :style="{ color: accent }">Event: {{ eventDate(featured) }}</span>
+            <span v-if="eventDate(featured)" class="nf-meta-date" :style="{ color: accent }">Event: {{ eventDate(featured) }}</span>
             <span class="nf-read-full" :style="{ color: accent }">
               Read full story
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" :stroke="accent" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
@@ -155,7 +156,7 @@ function eventDate(p: PostSummary): string {
             <h3 class="nf-card-title">{{ p.title }}</h3>
             <p class="nf-card-intro">{{ p.intro ?? p.excerpt }}</p>
             <span class="nf-card-date">{{ postDate(p) }}</span>
-            <span v-if="eventDate(p)" class="nf-card-date nf-meta-event" :style="{ color: accent }">Event: {{ eventDate(p) }}</span>
+            <span v-if="eventDate(p)" class="nf-card-date" :style="{ color: accent }">Event: {{ eventDate(p) }}</span>
           </div>
         </a>
       </div>
