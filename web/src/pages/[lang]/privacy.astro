@@ -1,0 +1,104 @@
+---
+/**
+ * Not CMS-driven — same class as this project's inline EN/PL string dicts
+ * (see CLAUDE.md: "~23 inline T = { en: …, pl: … } UI-string dicts"), not
+ * worth a `website_modules` row. Reserves the `privacy` segment as a fixed
+ * route, the same category as the existing fixed `/rider` and `/epk` routes.
+ */
+import type { Locale } from '@/types/shared'
+import { LOCALES, type Alternates } from '@/lib/locales'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getBandProfile } from '@/lib/cms'
+
+export async function getStaticPaths() {
+  return LOCALES.map(lang => ({ params: { lang } }))
+}
+
+const { lang } = Astro.params as { lang: Locale }
+const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/privacy`])) as Alternates
+
+const profile = await getBandProfile(lang).catch(() => null)
+const bandName = profile?.name ?? 'this site'
+const contactEmail = profile?.booking_email
+
+const T = {
+  en: {
+    title: 'Privacy policy',
+    description: 'How this site uses cookies and analytics.',
+    intro: `This page explains what ${bandName} collects when you visit this website, and how to change your mind.`,
+    cookiesHeading: 'Cookies and analytics',
+    cookiesBody:
+      'We use Google Analytics 4 to understand how visitors use this site — which pages are popular, roughly where visitors come from, and whether the site works well. Google Analytics only starts once you accept the cookie banner; it never runs before that, and nothing is tracked if you reject it.',
+    cookieName: 'Cookie',
+    cookieNameValue: '_ga, _ga_*',
+    cookiePurpose: 'Purpose',
+    cookiePurposeValue: 'Distinguishes visitors for Google Analytics reporting',
+    cookieDuration: 'Duration',
+    cookieDurationValue: 'Up to 14 months',
+    withdrawHeading: 'Changing your choice',
+    withdrawBody: 'You can accept or reject analytics cookies at any time from the "Cookie settings" link in the footer of any page.',
+    controllerHeading: 'Who to contact',
+    controllerBody: contactEmail
+      ? `Questions about this policy can be sent to ${contactEmail}.`
+      : `Questions about this policy can be sent via the contact page.`,
+    googleHeading: 'Google’s own policy',
+    googleBody: 'Google’s use of data is governed by its own privacy policy.',
+    googleLinkLabel: 'Google Privacy & Terms',
+  },
+  pl: {
+    title: 'Polityka prywatności',
+    description: 'Jak ta strona wykorzystuje pliki cookie i analitykę.',
+    intro: `Ta strona wyjaśnia, jakie dane zbiera ${bandName} podczas odwiedzin tej witryny i jak zmienić swoją decyzję.`,
+    cookiesHeading: 'Pliki cookie i analityka',
+    cookiesBody:
+      'Używamy Google Analytics 4, aby zrozumieć, jak odwiedzający korzystają z tej strony — które podstrony są popularne, w przybliżeniu skąd pochodzą odwiedzający i czy strona działa poprawnie. Google Analytics uruchamia się dopiero po zaakceptowaniu banera cookies; nigdy nie działa wcześniej, a odrzucenie oznacza brak jakiegokolwiek śledzenia.',
+    cookieName: 'Plik cookie',
+    cookieNameValue: '_ga, _ga_*',
+    cookiePurpose: 'Cel',
+    cookiePurposeValue: 'Rozróżnianie odwiedzających na potrzeby raportów Google Analytics',
+    cookieDuration: 'Czas przechowywania',
+    cookieDurationValue: 'Do 14 miesięcy',
+    withdrawHeading: 'Zmiana decyzji',
+    withdrawBody: 'W każdej chwili możesz zaakceptować lub odrzucić pliki cookie analityczne, korzystając z linku "Ustawienia cookies" w stopce dowolnej podstrony.',
+    controllerHeading: 'Kontakt',
+    controllerBody: contactEmail
+      ? `Pytania dotyczące tej polityki można kierować na adres ${contactEmail}.`
+      : `Pytania dotyczące tej polityki można kierować przez stronę kontaktową.`,
+    googleHeading: 'Polityka Google',
+    googleBody: 'Wykorzystanie danych przez Google podlega jego własnej polityce prywatności.',
+    googleLinkLabel: 'Prywatność i warunki Google',
+  },
+} as const
+
+const t = T[lang] ?? T.en
+---
+
+<BaseLayout lang={lang} alternates={alternates} title={t.title} description={t.description}>
+  <div class="mx-auto max-w-2xl px-4 sm:px-6 pt-16 pb-24">
+    <h1 class="text-3xl font-black text-body sm:text-4xl leading-tight">{t.title}</h1>
+
+    <div class="prose mt-6">
+      <p>{t.intro}</p>
+
+      <h2>{t.cookiesHeading}</h2>
+      <p>{t.cookiesBody}</p>
+      <ul>
+        <li><strong>{t.cookieName}:</strong> {t.cookieNameValue}</li>
+        <li><strong>{t.cookiePurpose}:</strong> {t.cookiePurposeValue}</li>
+        <li><strong>{t.cookieDuration}:</strong> {t.cookieDurationValue}</li>
+      </ul>
+
+      <h2>{t.withdrawHeading}</h2>
+      <p>{t.withdrawBody}</p>
+
+      <h2>{t.controllerHeading}</h2>
+      <p>{t.controllerBody}</p>
+
+      <h2>{t.googleHeading}</h2>
+      <p>
+        {t.googleBody}
+        {' '}<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">{t.googleLinkLabel}</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>

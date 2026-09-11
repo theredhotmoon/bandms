@@ -2,7 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { fmtDate } from '@/lib/i18n'
+import { fmtDate, postSlug } from '@/lib/i18n'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
 
 export async function getStaticPaths() {
@@ -18,6 +18,17 @@ const [post, profile, slugMap, siteConfig] = await Promise.all([
   getSiteConfig('en'),
 ])
 
+// The Polish equivalent of THIS page, resolved via the slug map rather than a
+// literal '/pl/posts' — see the identical comment in releases/[id].astro, the
+// route this pattern was first fixed on. A wrong entry here is a wrong
+// hreflang, not merely a wrong footer link.
+//
+// Unlike releases (id-keyed in both locales), the canonical /[lang]/[section]/[slug]
+// route addresses posts by postSlug(post, lang) — slug_pl under /pl/, falling
+// back to slug_en — never by id. Reusing `id` here the way releases/[id].astro
+// reuses its numeric id would point the hreflang at a URL nothing builds.
+const alternates = { pl: `/pl/${slugMap.pl.posts ?? 'posts'}/${postSlug(post, 'pl')}` }
+
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -32,6 +43,8 @@ const structuredData = {
 ---
 
 <BaseLayout
+  lang="en"
+  alternates={alternates}
   title={`${post.title} — ${profile.name}`}
   description={post.intro ?? post.excerpt}
   image={post.image}
@@ -66,7 +79,7 @@ const structuredData = {
     {/* Cover image */}
     {post.image && (
       <div class="mt-8 overflow-hidden rounded-card border border-border">
-        <img src={post.image} alt={post.title} loading="eager" class="w-full object-cover" />
+        <img src={post.image} alt={post.title} loading="eager" fetchpriority="high" class="w-full object-cover" />
       </div>
     )}
 

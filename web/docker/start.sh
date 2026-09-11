@@ -16,12 +16,15 @@ cd /repo/web
 
 echo "🔨  Building Astro site…"
 # PUBLIC_THEME selects the theme baked into this build, PUBLIC_CARTO_KEY
-# unlocks the map tiles. Astro only exposes PUBLIC_-prefixed vars to
-# import.meta.env, so the names matter. Both are inlined into the client JS at
-# build time, which is why a key change needs a rebuild and not just a restart.
+# unlocks the map tiles, PUBLIC_GA_MEASUREMENT_ID is the GA4 property the
+# consent banner loads once a visitor accepts. Astro only exposes PUBLIC_-
+# prefixed vars to import.meta.env, so the names matter. All three are inlined
+# into the client JS at build time, which is why a value change needs a
+# rebuild and not just a restart.
 API_BASE="${API_BASE}" \
   PUBLIC_THEME="${PUBLIC_THEME:-}" \
   PUBLIC_CARTO_KEY="${PUBLIC_CARTO_KEY:-}" \
+  PUBLIC_GA_MEASUREMENT_ID="${PUBLIC_GA_MEASUREMENT_ID:-}" \
   pnpm build
 
 echo "📋  Copying build output…"

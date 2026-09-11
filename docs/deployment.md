@@ -200,6 +200,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `SERVER_HOST` | `YOUR_SERVER_IP` |
 | `SERVER_SSH_KEY` | contents of `~/.ssh/bandms_deploy` — the **private** key, including the BEGIN/END lines |
 | `GHCR_TOKEN` | the `read:packages` token from step 4 |
+| `PUBLIC_CARTO_KEY` | optional — the CARTO basemap key. Only needed if you want the *admin panel's* venue map keyed too; see the callout in step 6 for why this is a second place to put the same value. |
 
 ---
 
@@ -228,12 +229,48 @@ the ones that break things quietly:
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | **leave blank** | a seeded admin whose password you did not choose |
 | `MAIL_*` | your SMTP provider's credentials | newsletter and contact form silently discard every message |
 | `STRIPE_SECRET_KEY` | `sk_test_…` to start | checkout returns 503 |
+| `PUBLIC_CARTO_KEY` | your CARTO basemap key (optional) | concert/venue map tiles render watermarked "API KEY REQUIRED" |
+| `PUBLIC_GA_MEASUREMENT_ID` | your GA4 Measurement ID (optional) | the consent banner and GA never render |
 
 Lock it down — it holds every secret the stack has:
 
 ```bash
 chmod 600 /opt/bandms/.env
 ```
+
+> **`PUBLIC_*` and `VITE_*` frontend vars aren't just "another line in `.env`" —
+> where you set them depends on *when* the service that reads them actually
+> builds.**
+>
+> - **Public site (`web/`)** rebuilds itself at **container startup** —
+>   `web/docker/start.sh` runs `astro build` then, not when the image is built.
+>   So a `PUBLIC_*` var just needs to be in `/opt/bandms/.env` like everything
+>   else on this page; recreate the container to pick it up:
+>   ```bash
+>   docker compose -f docker-compose.prod.yml up -d --no-deps web
+>   ```
+> - **Admin SPA (`app/`)** ships as a **prebuilt GHCR image** — Vite inlines its
+>   `VITE_*` vars into the JS bundle when *CI* builds the image (`app/Dockerfile`),
+>   and the server never runs that build. The equivalent value has to be a
+>   **GitHub Actions repository secret** consumed by `deploy.yml`'s
+>   `build-args:`, never anything in `/opt/bandms/.env` — the same rule
+>   `ADMIN_PATH` follows (see root `CLAUDE.md`, "Moving the admin panel").
+>
+> `PUBLIC_CARTO_KEY` needs *both*, under the identical name, because the two
+> apps read it at two different times:
+>
+> | Where | Reaches | How |
+> |---|---|---|
+> | `/opt/bandms/.env` → `PUBLIC_CARTO_KEY` | `web` (public concert/venue maps) | read at container **startup**; recreate `web` to apply |
+> | GitHub secret `PUBLIC_CARTO_KEY` → `VITE_CARTO_KEY` build-arg | `frontend` (admin panel) | baked at **CI build time**; needs a new push to `main` to apply |
+>
+> It's genuinely optional for the admin side today: `app/src/components/map/VenueMap.vue`
+> currently renders plain OpenStreetMap tiles and doesn't read `VITE_CARTO_KEY`
+> at all, even though it's wired all the way through `app/Dockerfile`. Setting
+> the GitHub secret is future-proofing, not a fix for anything currently broken.
+>
+> `PUBLIC_GA_MEASUREMENT_ID` only needs the first row — the admin panel doesn't
+> render GA or the consent banner.
 
 > **On mail:** do not point `MAIL_HOST` at the server itself. Hetzner blocks
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history

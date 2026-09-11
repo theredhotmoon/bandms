@@ -43,7 +43,7 @@ const mainImage = images[0]?.url ?? item.cover_photo
       <div class="space-y-3">
         {mainImage ? (
           <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square">
-            <img src={mainImage} alt={item.name} loading="eager" class="w-full h-full object-cover" />
+            <img src={mainImage} alt={item.name} loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
           </div>
         ) : (
           <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square flex items-center justify-center text-subtle">

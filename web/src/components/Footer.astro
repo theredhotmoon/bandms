@@ -51,6 +51,11 @@ const links = [
 ]
 
 const bandName = profile?.name ?? 'Skanking Storks'
+
+// Same gate BaseLayout uses for the consent banner itself — no point offering
+// to reopen a banner that was never wired up.
+const gaEnabled = Boolean(import.meta.env.PUBLIC_GA_MEASUREMENT_ID)
+const cookieSettingsLabel = lang === 'pl' ? 'Ustawienia cookies' : 'Cookie settings'
 ---
 
 {footerEnabled && (
@@ -107,10 +112,24 @@ const bandName = profile?.name ?? 'Skanking Storks'
       <span>&copy; {year} {bandName}</span>
       <span class="ft-bottom-right">
         {s.rights && <span>{s.rights}</span>}
+        {gaEnabled && (
+          <button type="button" id="cookie-settings-link" class="ft-cookie-btn">{cookieSettingsLabel}</button>
+        )}
         <LanguageSelector lang={lang} alternates={alternates} />
       </span>
     </div>
   </footer>
+)}
+
+{gaEnabled && (
+  <script>
+    // Reopens the consent banner — GDPR requires withdrawing consent to be as
+    // easy as giving it. Plain nanostore import rather than a Vue island:
+    // this is a one-line side effect, not a component.
+    import('@/stores/consent').then(({ resetConsent }) => {
+      document.getElementById('cookie-settings-link')?.addEventListener('click', () => resetConsent())
+    })
+  </script>
 )}
 
 <style>
@@ -208,6 +227,15 @@ const bandName = profile?.name ?? 'Skanking Storks'
   .ft-bottom-right { display: inline-flex; align-items: center; gap: 18px; flex-wrap: wrap; }
   .ft-bottom a { color: inherit; }
   .ft-bottom a:hover { color: var(--color-on-inverse); }
+
+  .ft-cookie-btn {
+    all: unset;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+  }
+  .ft-cookie-btn:hover { color: var(--color-on-inverse); }
 
   @media (max-width: 900px) {
     .ft-cols { grid-template-columns: 1fr; gap: 28px; }
