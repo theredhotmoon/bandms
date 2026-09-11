@@ -140,6 +140,7 @@ test.describe('Website Modules Admin', () => {
     await expect(page.getByText('Band members')).toBeVisible()
 
     const statsCheckbox = page.locator('#visibility-show_stats')
+    await expect(statsCheckbox).toBeChecked()
     await statsCheckbox.uncheck()
     await expect(statsCheckbox).not.toBeChecked()
     await statsCheckbox.check()

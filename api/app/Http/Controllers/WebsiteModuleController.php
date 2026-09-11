@@ -157,7 +157,9 @@ class WebsiteModuleController extends Controller
             // the stored bag rather than update named toggles — reject it
             // explicitly rather than silently absorbing it.
             'visibility'   => ['sometimes', 'array', function ($attribute, $value, $fail) {
-                if (array_is_list($value)) {
+                // array_is_list([]) is true, so an empty object — a legitimate
+                // no-op payload — must be excluded or it reads as a list too.
+                if ($value !== [] && array_is_list($value)) {
                     $fail('The visibility field must be an object keyed by field name, not a list.');
                 }
             }],

@@ -791,6 +791,18 @@ it('rejects a list-shaped visibility payload rather than corrupting the bag', fu
       ->assertJsonValidationErrors('visibility');
 });
 
+it('accepts an empty-object visibility payload as a no-op rather than rejecting it as a list', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    // array_is_list([]) is true in PHP, so an empty JSON object — which
+    // decodes to an empty PHP array indistinguishable from an empty list —
+    // must be excluded from the list-shape rejection or every no-op save
+    // fails with the same 422 meant for a genuine [true, false] payload.
+    $this->putJson('/api/admin/modules/about', [
+        'visibility' => [],
+    ])->assertOk();
+});
+
 it('casts a non-strict boolean value rather than storing it verbatim', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
 
