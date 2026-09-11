@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap'
 // undefined on those pages).
 import { LOCALES, DEFAULT_LOCALE } from './src/lib/locales.ts'
 
-const SITE = process.env.SITE_URL ?? 'https://skanking-storks.com'
+const SITE = process.env.SITE_URL ?? 'https://skankingstorks.band'
 const API_PROXY = process.env.API_PROXY ?? 'http://localhost:80'
 
 export default defineConfig({

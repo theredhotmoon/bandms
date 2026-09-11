@@ -9,7 +9,7 @@ services:
       - "443:443/udp"
     environment:
       # The Caddy site address. ":80" serves plain HTTP on the bare server IP.
-      # Set SITE_ADDRESS to a hostname (e.g. "skanking-storks.com") in
+      # Set SITE_ADDRESS to a hostname (e.g. "skankingstorks.band") in
       # /opt/bandms/.env and Caddy provisions a Let's Encrypt certificate
       # automatically — no other change needed.
       SITE_ADDRESS: "${SITE_ADDRESS:-:80}"
