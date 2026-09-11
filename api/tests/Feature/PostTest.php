@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Concert;
 use App\Models\Post;
 use App\Models\PostBlock;
 use App\Models\Tag;
@@ -80,6 +81,21 @@ describe('GET /api/posts', function () {
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Live Show');
     });
+
+    // The public news listing (NewsFilter.vue) reads event_dates off this
+    // endpoint, not the detail one — a regression here would only ever
+    // surface in the slower E2E suite without a test at this layer.
+    it('exposes event_dates for a linked concert in the list response', function () {
+        $post    = Post::factory()->create(['title' => 'Festival Post']);
+        $earlier = Concert::factory()->create(['date' => '2026-07-01']);
+        $later   = Concert::factory()->create(['date' => '2026-07-03']);
+        $post->concerts()->attach([$later->id, $earlier->id]);
+
+        $this->getJson('/api/posts')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.event_dates', ['2026-07-01', '2026-07-03'])
+            ->assertJsonPath('data.0.event_date_display', 'range');
+    });
 });
 
 // ── GET /api/posts/{post} ─────────────────────────────────────────────────────
@@ -154,6 +170,39 @@ describe('POST /api/posts', function () {
             ->assertJsonPath('data.tags.0.name', 'Live');
     });
 
+    it('creates a post linked to a single concert and derives its event date', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create(['date' => '2026-05-03']);
+
+        $this->postJson('/api/posts', ['title' => 'Concert Post', 'concert_ids' => [$concert->id]])
+            ->assertCreated()
+            ->assertJsonPath('data.event_dates', ['2026-05-03'])
+            ->assertJsonPath('data.concerts.0.id', $concert->id);
+    });
+
+    it('creates a post linked to multiple concerts (a festival) with sorted event dates', function () {
+        $this->actingAsAdmin();
+        $day2 = Concert::factory()->create(['date' => '2026-06-02']);
+        $day1 = Concert::factory()->create(['date' => '2026-06-01']);
+
+        $this->postJson('/api/posts', [
+            'title'       => 'Festival Post',
+            'concert_ids' => [$day2->id, $day1->id],
+            'event_date_display' => 'list',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.event_dates', ['2026-06-01', '2026-06-02'])
+            ->assertJsonPath('data.event_date_display', 'list');
+    });
+
+    it('rejects a concert_id that does not exist', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/posts', ['title' => 'Post', 'concert_ids' => [9999]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['concert_ids.0']);
+    });
+
     it('validates title is required', function () {
         $this->actingAsAdmin();
 
@@ -223,6 +272,33 @@ describe('PUT /api/posts/{post}', function () {
 
         $this->assertDatabaseMissing('post_tag', ['post_id' => $post->id, 'tag_id' => $oldTag->id]);
         $this->assertDatabaseHas('post_tag', ['post_id' => $post->id, 'tag_id' => $newTag->id]);
+    });
+
+    it('syncs concerts on update', function () {
+        $this->actingAsAdmin();
+        $post    = Post::factory()->create();
+        $oldGig  = Concert::factory()->create(['date' => '2026-04-01']);
+        $newGig  = Concert::factory()->create(['date' => '2026-05-01']);
+        $post->concerts()->attach($oldGig);
+
+        $this->putJson("/api/posts/{$post->id}", ['concert_ids' => [$newGig->id]])
+            ->assertSuccessful()
+            ->assertJsonPath('data.event_dates', ['2026-05-01']);
+
+        $this->assertDatabaseMissing('post_concerts', ['post_id' => $post->id, 'concert_id' => $oldGig->id]);
+        $this->assertDatabaseHas('post_concerts', ['post_id' => $post->id, 'concert_id' => $newGig->id]);
+    });
+
+    // event_date_display is validated as nullable, but the column itself is
+    // NOT NULL — an explicit null must fall back rather than reach the
+    // database as a constraint violation.
+    it('falls back to "range" when event_date_display is explicitly nulled on update', function () {
+        $this->actingAsAdmin();
+        $post = Post::factory()->create(['event_date_display' => 'list']);
+
+        $this->putJson("/api/posts/{$post->id}", ['event_date_display' => null])
+            ->assertSuccessful()
+            ->assertJsonPath('data.event_date_display', 'range');
     });
 
     it('returns 404 for a non-existent post', function () {
@@ -319,6 +395,24 @@ it('falls back to the url host when no site name was scraped', function () {
     $this->getJson("/api/posts/{$post->id}")
         ->assertOk()
         ->assertJsonPath('data.press_releases.0.site', 'brassbass.example');
+});
+
+it('returns an empty event_dates array for a post with no linked concert', function () {
+    $post = Post::factory()->create();
+
+    $this->getJson("/api/posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('data.event_dates', []);
+});
+
+it('drops the pivot row when a linked concert is deleted', function () {
+    $post    = Post::factory()->create();
+    $concert = Concert::factory()->create();
+    $post->concerts()->attach($concert);
+
+    $concert->delete();
+
+    $this->assertDatabaseMissing('post_concerts', ['post_id' => $post->id]);
 });
 
 it('omits press releases for a post with no coverage', function () {

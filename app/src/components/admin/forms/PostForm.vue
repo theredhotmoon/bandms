@@ -38,8 +38,9 @@ const form = reactive({
   intro_pl: '',
   image: null as string | null,
   published_at: '',
-  event_date: '',
+  event_date_display: 'range' as 'range' | 'list',
   tag_ids: [] as number[],
+  concert_ids: [] as number[],
   blocks: [] as PostBlockDraft[],
 })
 
@@ -61,8 +62,9 @@ watch(() => props.initial, (val) => {
   form.intro_pl = val?.translations?.intro?.pl ?? ''
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
-  form.event_date = val?.event_date ?? ''
+  form.event_date_display = val?.event_date_display ?? 'range'
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
+  form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.blocks = (val?.blocks ?? []).map(b => {
     if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
     if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
@@ -82,8 +84,9 @@ function submit() {
     intro: (form.intro_en || form.intro_pl) ? { en: form.intro_en || undefined, pl: form.intro_pl || undefined } : null,
     image: form.image || null,
     published_at: form.published_at || null,
-    event_date: form.event_date || null,
+    event_date_display: form.event_date_display,
     tag_ids: form.tag_ids,
+    concert_ids: form.concert_ids,
     // `url` is a preview-only field on image drafts; strip it before sending.
     blocks: form.blocks.map(b => ({
       type: b.type,
@@ -140,20 +143,32 @@ function submit() {
       <SingleImageUpload v-model="form.image" />
       <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
     </div>
-    <div class="flex gap-4">
-      <div class="flex-1">
-        <label class="field-label">Publish at</label>
-        <input v-model="form.published_at" type="datetime-local" class="field-input" />
-        <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
-      </div>
-      <div class="flex-1">
-        <label class="field-label">Event date</label>
-        <input v-model="form.event_date" type="date" class="field-input" />
-        <p v-if="errors?.event_date" class="field-error">{{ errors.event_date[0] }}</p>
-      </div>
+    <div>
+      <label class="field-label">Publish at</label>
+      <input v-model="form.published_at" type="datetime-local" class="field-input" />
+      <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
     </div>
 
-    <EntityRelationsPanel :tags="tags" v-model:tagIds="form.tag_ids" />
+    <EntityRelationsPanel
+      :tags="tags"
+      :concerts="concerts"
+      v-model:tagIds="form.tag_ids"
+      v-model:concertIds="form.concert_ids"
+    />
+
+    <div v-if="form.concert_ids.length > 1">
+      <label class="field-label">Event date shown as</label>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="radio" value="range" v-model="form.event_date_display" />
+          Date range
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="radio" value="list" v-model="form.event_date_display" />
+          List of dates
+        </label>
+      </div>
+    </div>
 
     <PostBlockEditor v-model="form.blocks" :entities="entityLists" />
     <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>

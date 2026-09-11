@@ -20,7 +20,8 @@ export interface PostSummary {
   intro: string | null
   excerpt: string
   published_at: string | null
-  event_date: string | null
+  event_dates: string[]
+  event_date_display: 'range' | 'list'
   tags: Tag[]
   created_at: string
   updated_at: string

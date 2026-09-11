@@ -78,6 +78,35 @@ export function formatGenreKicker(genres: string | null | undefined): string | n
   return list.length > 0 ? list.join(' · ').toUpperCase() : null
 }
 
+/**
+ * Formats a post's linked-concert dates for display. Empty when no concert is
+ * linked — callers must gate rendering on that, since an event date is only
+ * ever shown when a post is tied to a concert or festival.
+ */
+export function formatEventDates(
+  dates: string[],
+  display: 'range' | 'list',
+  lang: Locale = 'en',
+): string {
+  if (dates.length === 0) return ''
+
+  // Date-only strings ('2099-01-10') parse as UTC midnight, which renders as
+  // the previous day west of UTC — appending a local time-of-day, as every
+  // other date-only field in this codebase does (see ConcertDetail.astro),
+  // forces local-time parsing instead.
+  const toLocalDate = (d: string) => new Date(d + 'T00:00:00')
+  const sorted = [...dates].sort()
+  const formatter = new Intl.DateTimeFormat(dateLocale(lang), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  if (sorted.length === 1) return formatter.format(toLocalDate(sorted[0]))
+  if (display === 'list') return sorted.map(d => formatter.format(toLocalDate(d))).join(', ')
+  return formatter.formatRange(toLocalDate(sorted[0]), toLocalDate(sorted[sorted.length - 1]))
+}
+
 export function fmtTime(timeStr: string | null | undefined): string {
   if (!timeStr) return ''
   return timeStr.substring(0, 5)

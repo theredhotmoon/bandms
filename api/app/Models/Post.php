@@ -16,19 +16,33 @@ class Post extends Model
 
     public array $translatable = ['title', 'intro'];
 
-    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'image', 'published_at', 'event_date'];
+    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'image', 'published_at', 'event_date_display'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
-            'event_date'   => 'date',
         ];
     }
 
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'post_tag');
+    }
+
+    public function concerts(): BelongsToMany
+    {
+        return $this->belongsToMany(Concert::class, 'post_concerts');
+    }
+
+    /**
+     * Linked concerts in date order — shared so PostResource and
+     * PostSummaryResource can't drift apart on ordering or sort logic.
+     * Callers are responsible for checking relationLoaded('concerts') first.
+     */
+    public function sortedConcerts(): \Illuminate\Support\Collection
+    {
+        return $this->concerts->sortBy('date')->values();
     }
 
     public function blocks(): HasMany
