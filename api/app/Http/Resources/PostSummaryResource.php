@@ -31,7 +31,11 @@ class PostSummaryResource extends JsonResource
             'intro'        => $this->intro,
             'excerpt'      => $excerpt,
             'published_at' => $this->published_at,
-            'event_date'   => $this->event_date?->format('Y-m-d'),
+            'event_dates'  => $this->whenLoaded('concerts', fn () => $this->concerts
+                ->sortBy('date')
+                ->map(fn ($c) => $c->date->format('Y-m-d'))
+                ->values()),
+            'event_date_display' => $this->event_date_display,
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'translations' => [
                 'title' => $this->getTranslations('title'),

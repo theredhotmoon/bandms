@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-09-11
 
 ### Added
+- **A news post's event date is now derived from the concerts it's linked to, not typed in by hand.** The manual "Event date" field is gone from the post editor; instead, linking a post to one concert shows that concert's date, and linking it to several (a festival appearance across multiple days) shows either a date range or a list of every date, whichever the editor picks. No date is shown at all when no concert is linked. This reuses the existing "Link to…" concert picker already shared with press releases rather than adding a new one.
 - **About page sections can be hidden independently.** Website Modules → About now has a "Section visibility" group with two checkboxes — one for the "Band in numbers" stats grid, one for the "Band members" line-up — so either can be switched off without disabling the whole About page. Previously the only way to hide either section was to turn off the entire module. Turning off members now hides its heading too, not just the grid; the stats section still requires real stat data even when its toggle is on.
 
 ## [Unreleased] — 2026-09-03 21:44

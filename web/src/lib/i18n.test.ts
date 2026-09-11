@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { postSlug, formatGenreKicker, splitCommaList } from './i18n'
+import { postSlug, formatGenreKicker, splitCommaList, formatEventDates } from './i18n'
 
 describe('postSlug', () => {
   it('uses slug_en for the en locale', () => {
@@ -62,5 +62,31 @@ describe('formatGenreKicker', () => {
 
   it('returns null when the field is only commas and whitespace', () => {
     expect(formatGenreKicker(' , , ')).toBeNull()
+  })
+})
+
+describe('formatEventDates', () => {
+  it('returns empty string when no concert is linked', () => {
+    expect(formatEventDates([], 'range')).toBe('')
+  })
+
+  it('formats a single date without a range', () => {
+    expect(formatEventDates(['2026-05-03'], 'range')).toBe('3 May 2026')
+  })
+
+  it('collapses consecutive dates in the same month into a range', () => {
+    expect(formatEventDates(['2026-05-03', '2026-05-05'], 'range')).toBe('3 – 5 May 2026')
+  })
+
+  it('spans a range across months', () => {
+    expect(formatEventDates(['2026-04-28', '2026-05-02'], 'range')).toBe('28 April – 2 May 2026')
+  })
+
+  it('lists every date individually when display is "list"', () => {
+    expect(formatEventDates(['2026-06-02', '2026-06-01'], 'list')).toBe('1 June 2026, 2 June 2026')
+  })
+
+  it('sorts unordered dates before formatting a range', () => {
+    expect(formatEventDates(['2026-06-05', '2026-06-01'], 'range')).toBe('1 – 5 June 2026')
   })
 })

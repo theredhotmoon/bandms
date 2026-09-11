@@ -78,6 +78,33 @@ export function formatGenreKicker(genres: string | null | undefined): string | n
   return list.length > 0 ? list.join(' · ').toUpperCase() : null
 }
 
+/**
+ * Formats a post's linked-concert dates for display. Empty when no concert is
+ * linked — callers must gate rendering on that, since an event date is only
+ * ever shown when a post is tied to a concert or festival.
+ */
+export function formatEventDates(
+  dates: string[],
+  display: 'range' | 'list',
+  lang: Locale = 'en',
+): string {
+  if (dates.length === 0) return ''
+  if (dates.length === 1) return fmtDate(dates[0], lang)
+
+  const sorted = [...dates].sort()
+
+  if (display === 'list') {
+    return sorted.map(d => fmtDate(d, lang)).join(', ')
+  }
+
+  const formatter = new Intl.DateTimeFormat(dateLocale(lang), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  return formatter.formatRange(new Date(sorted[0]), new Date(sorted[sorted.length - 1]))
+}
+
 export function fmtTime(timeStr: string | null | undefined): string {
   if (!timeStr) return ''
   return timeStr.substring(0, 5)

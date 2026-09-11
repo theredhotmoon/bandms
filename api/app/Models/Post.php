@@ -16,19 +16,23 @@ class Post extends Model
 
     public array $translatable = ['title', 'intro'];
 
-    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'image', 'published_at', 'event_date'];
+    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'image', 'published_at', 'event_date_display'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
-            'event_date'   => 'date',
         ];
     }
 
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'post_tag');
+    }
+
+    public function concerts(): BelongsToMany
+    {
+        return $this->belongsToMany(Concert::class, 'post_concerts');
     }
 
     public function blocks(): HasMany

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { formatEventDates } from '@/lib/i18n'
 
 interface Tag { id: number; name: string; slug_en: string }
 
@@ -11,6 +12,8 @@ interface PostSummary {
   excerpt: string
   published_at: string | null
   created_at: string
+  event_dates: string[]
+  event_date_display: 'range' | 'list'
   tags: Tag[]
 }
 
@@ -50,6 +53,10 @@ function fmtDate(iso: string | null): string {
 
 function postDate(p: PostSummary): string {
   return fmtDate(p.published_at ?? p.created_at)
+}
+
+function eventDate(p: PostSummary): string {
+  return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range')
 }
 </script>
 
@@ -112,6 +119,7 @@ function postDate(p: PostSummary): string {
           <p class="nf-feat-intro">{{ featured.intro ?? featured.excerpt }}</p>
           <div class="nf-feat-meta">
             <span class="nf-meta-date">{{ postDate(featured) }}</span>
+            <span v-if="eventDate(featured)" class="nf-meta-date nf-meta-event" :style="{ color: accent }">Event: {{ eventDate(featured) }}</span>
             <span class="nf-read-full" :style="{ color: accent }">
               Read full story
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" :stroke="accent" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
@@ -147,6 +155,7 @@ function postDate(p: PostSummary): string {
             <h3 class="nf-card-title">{{ p.title }}</h3>
             <p class="nf-card-intro">{{ p.intro ?? p.excerpt }}</p>
             <span class="nf-card-date">{{ postDate(p) }}</span>
+            <span v-if="eventDate(p)" class="nf-card-date nf-meta-event" :style="{ color: accent }">Event: {{ eventDate(p) }}</span>
           </div>
         </a>
       </div>

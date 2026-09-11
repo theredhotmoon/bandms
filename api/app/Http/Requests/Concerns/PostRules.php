@@ -49,9 +49,11 @@ trait PostRules
             'intro.pl'      => 'nullable|string|max:1000',
             'image'         => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|gif|webp);base64,/'],
             'published_at'  => 'nullable|date',
-            'event_date'    => 'nullable|date',
+            'event_date_display' => ['nullable', Rule::in(['range', 'list'])],
             'tag_ids'       => 'nullable|array',
             'tag_ids.*'     => 'integer|exists:tags,id',
+            'concert_ids'   => 'nullable|array',
+            'concert_ids.*' => 'integer|exists:concerts,id',
 
             'blocks'                    => 'nullable|array',
             'blocks.*.type'             => ['required', Rule::in(PostBlockType::ALL)],

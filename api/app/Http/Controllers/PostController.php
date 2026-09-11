@@ -20,8 +20,8 @@ class PostController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date', 'created_at', 'updated_at'])
-            ->with(['tags', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
+        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
+            ->with(['tags', 'concerts', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
                 // Matches any block's payload, not just type=text: an embed's
@@ -67,11 +67,15 @@ class PostController extends Controller
                 'intro'        => $data['intro'] ?? null,
                 'image'        => $data['image'] ?? null,
                 'published_at' => $data['published_at'] ?? null,
-                'event_date'   => $data['event_date'] ?? null,
+                'event_date_display' => $data['event_date_display'] ?? 'range',
             ]);
 
             if (! empty($data['tag_ids'])) {
                 $post->tags()->sync($data['tag_ids']);
+            }
+
+            if (! empty($data['concert_ids'])) {
+                $post->concerts()->sync($data['concert_ids']);
             }
 
             PostBlockSync::sync($post, $data['blocks'] ?? []);
@@ -84,12 +88,12 @@ class PostController extends Controller
         // had no way at all to reach the public site.
         SiteRebuild::requestIfAuto();
 
-        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
 
     public function show(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
 
     public function update(UpdatePostRequest $request, Post $post): PostResource
@@ -97,10 +101,14 @@ class PostController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($data, $post) {
-            $post->update(Arr::except($data, ['tag_ids', 'blocks']));
+            $post->update(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks']));
 
             if (array_key_exists('tag_ids', $data)) {
                 $post->tags()->sync($data['tag_ids'] ?? []);
+            }
+
+            if (array_key_exists('concert_ids', $data)) {
+                $post->concerts()->sync($data['concert_ids'] ?? []);
             }
 
             if (array_key_exists('blocks', $data)) {
@@ -110,7 +118,7 @@ class PostController extends Controller
 
         SiteRebuild::requestIfAuto();
 
-        return new PostResource($post->load(['tags', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
 
     public function destroy(Post $post): JsonResponse

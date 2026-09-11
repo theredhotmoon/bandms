@@ -2,7 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
-import { postSlug } from '@/lib/i18n'
+import { postSlug, formatEventDates } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
@@ -58,10 +58,12 @@ const more = summaries.filter((_, i) => i !== idx).slice(0, 3)
 // strings it actually renders are collected here; a full i18n pass over the
 // article view is its own change.
 const COPY = {
-  en: { more: 'More from the blog' },
-  pl: { more: 'Więcej z bloga' },
+  en: { more: 'More from the blog', event: 'Event' },
+  pl: { more: 'Więcej z bloga', event: 'Wydarzenie' },
 } as const
 const copy = COPY[lang] ?? COPY.en
+
+const eventDateStr = formatEventDates(post.event_dates ?? [], post.event_date_display ?? 'range', lang)
 
 function moShort(iso: string): string {
   const dd = new Date(iso + 'T00:00:00')
@@ -147,6 +149,17 @@ const postsSection = slugMap[lang].posts ?? 'posts'
             </svg>
             {dateStr}
           </span>
+          {eventDateStr && (
+            <>
+              <span class="art-meta-diamond" aria-hidden="true"></span>
+              <span class="art-meta-date">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
+                </svg>
+                {copy.event}: {eventDateStr}
+              </span>
+            </>
+          )}
           <span class="art-meta-diamond" aria-hidden="true"></span>
           <button id="art-share-btn" class="art-share-btn" type="button">
             <svg id="art-share-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
