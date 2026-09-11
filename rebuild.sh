@@ -297,9 +297,9 @@ echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
 _print_summary
 
 if [[ "$RUN_TESTS" == true ]]; then
-  echo -e "  ${CYAN}ℹ  E2E tests not included in rebuild — run: ${BOLD}make test-all${RESET}"
+  echo -e "  ${CYAN}ℹ  Full test suite (frontend unit + backend unit + E2E) ran above.${RESET}"
 else
-  echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}make test-all${RESET}${YELLOW} before shipping${RESET}"
+  echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}bash scripts/test-all.sh${RESET}${YELLOW} (or make test-all) before shipping${RESET}"
 fi
 echo ""
 echo "  Useful next steps:"
