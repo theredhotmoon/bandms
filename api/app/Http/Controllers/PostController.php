@@ -21,7 +21,7 @@ class PostController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
-            ->with(['tags', 'concerts', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
+            ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
                 // Matches any block's payload, not just type=text: an embed's

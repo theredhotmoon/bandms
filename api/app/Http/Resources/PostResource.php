@@ -17,12 +17,10 @@ class PostResource extends JsonResource
             'intro'        => $this->intro,
             'image'        => $this->image,
             'published_at' => $this->published_at,
-            'event_dates'  => $this->whenLoaded('concerts', fn () => $this->concerts
-                ->sortBy('date')
-                ->map(fn ($c) => $c->date->format('Y-m-d'))
-                ->values()),
+            'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()
+                ->map(fn ($c) => $c->date->format('Y-m-d'))),
             'event_date_display' => $this->event_date_display,
-            'concerts' => $this->whenLoaded('concerts', fn () => $this->concerts->map(fn ($c) => [
+            'concerts' => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()->map(fn ($c) => [
                 'id'   => $c->id,
                 'date' => $c->date->format('Y-m-d'),
             ])),

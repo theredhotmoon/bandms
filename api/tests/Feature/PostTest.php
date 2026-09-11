@@ -81,6 +81,21 @@ describe('GET /api/posts', function () {
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Live Show');
     });
+
+    // The public news listing (NewsFilter.vue) reads event_dates off this
+    // endpoint, not the detail one — a regression here would only ever
+    // surface in the slower E2E suite without a test at this layer.
+    it('exposes event_dates for a linked concert in the list response', function () {
+        $post    = Post::factory()->create(['title' => 'Festival Post']);
+        $earlier = Concert::factory()->create(['date' => '2026-07-01']);
+        $later   = Concert::factory()->create(['date' => '2026-07-03']);
+        $post->concerts()->attach([$later->id, $earlier->id]);
+
+        $this->getJson('/api/posts')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.event_dates', ['2026-07-01', '2026-07-03'])
+            ->assertJsonPath('data.0.event_date_display', 'range');
+    });
 });
 
 // ── GET /api/posts/{post} ─────────────────────────────────────────────────────

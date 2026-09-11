@@ -35,6 +35,16 @@ class Post extends Model
         return $this->belongsToMany(Concert::class, 'post_concerts');
     }
 
+    /**
+     * Linked concerts in date order — shared so PostResource and
+     * PostSummaryResource can't drift apart on ordering or sort logic.
+     * Callers are responsible for checking relationLoaded('concerts') first.
+     */
+    public function sortedConcerts(): \Illuminate\Support\Collection
+    {
+        return $this->concerts->sortBy('date')->values();
+    }
+
     public function blocks(): HasMany
     {
         return $this->hasMany(PostBlock::class)->orderBy('position')->orderBy('id');
