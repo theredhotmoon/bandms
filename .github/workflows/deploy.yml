@@ -175,11 +175,16 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.PUBLIC_GA_MEASUREMENT_ID }}
+          SITE_ADDRESS: ${{ secrets.SITE_ADDRESS }}
+          APP_URL: ${{ secrets.APP_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          APP_FRONTEND_URL: ${{ secrets.APP_FRONTEND_URL }}
+          SITE_URL: ${{ secrets.SITE_URL }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID
+          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID,SITE_ADDRESS,APP_URL,FRONTEND_URL,APP_FRONTEND_URL,SITE_URL
           command_timeout: 15m
           script: |
             set -e
@@ -189,25 +194,43 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull backend frontend web
 
-            # PUBLIC_GA_MEASUREMENT_ID otherwise has no home: it's read from this
-            # server's own .env at container startup (web/ rebuilds itself then,
-            # not at image-build time — see docs/deployment.md), and nobody
-            # without server SSH access could ever set it. So this one var is
-            # deploy-managed instead of hand-edited: the GitHub secret is the
-            # source of truth and overwrites whatever .env already has on every
-            # deploy. Sync it in before `web` (recreated below) reads it.
-            #
-            # Guarded on the secret being non-empty — it's documented as
-            # optional, and an unset/cleared secret must leave any existing
-            # .env value alone rather than silently blanking analytics on the
-            # next deploy (caught in code review on this same PR).
-            if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
-              if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env 2>/dev/null; then
-                sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
+            # Some .env vars have no home other than a GitHub secret: nobody
+            # without server SSH access could ever set them by hand (see
+            # docs/deployment.md). For those, the secret is authoritative and
+            # overwrites .env on every deploy — guarded on non-empty so an
+            # unset/cleared secret leaves an existing value alone rather than
+            # silently blanking it (this guard was itself a code-review catch
+            # on the PUBLIC_GA_MEASUREMENT_ID version of this).
+            sync_secret_env() {
+              local key="$1" value="$2"
+              [ -n "$value" ] || return 0
+              if grep -q "^${key}=" .env 2>/dev/null; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
               else
-                echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+                echo "${key}=${value}" >> .env
               fi
-            fi
+            }
+            # web reads this at container startup, before it's recreated below.
+            sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
+            # caddy reads this at container startup too, before its own
+            # --force-recreate further down — SITE_ADDRESS is what turns on
+            # automatic HTTPS (Caddy provisions and renews the Let's Encrypt
+            # certificate itself; nothing else is needed). Left unset, Caddy
+            # falls back to plain :80, which is what silently broke GA4 —
+            # gtag.js can't set its Secure client-ID cookie or send hits on a
+            # page that isn't a secure context.
+            sync_secret_env SITE_ADDRESS "$SITE_ADDRESS"
+            # These four are the other half of "switch to a domain" (see
+            # docs/deployment.md step 11) — moving SITE_ADDRESS to a real
+            # hostname without also moving these leaves CORS, Stripe redirect
+            # URLs and outgoing-email links still pointing at the old value.
+            # backend picks up APP_URL/FRONTEND_URL/APP_FRONTEND_URL on its own
+            # `up -d` below (compose recreates on a changed resolved env, no
+            # --force-recreate needed); web picks up SITE_URL the same way.
+            sync_secret_env APP_URL "$APP_URL"
+            sync_secret_env FRONTEND_URL "$FRONTEND_URL"
+            sync_secret_env APP_FRONTEND_URL "$APP_FRONTEND_URL"
+            sync_secret_env SITE_URL "$SITE_URL"
 
             # MySQL is not part of the rolling restart, but it must be running
             # before the backend starts — every command below uses --no-deps, so

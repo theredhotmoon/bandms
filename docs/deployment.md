@@ -202,6 +202,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `GHCR_TOKEN` | the `read:packages` token from step 4 |
 | `PUBLIC_CARTO_KEY` | optional — the CARTO basemap key. Only needed if you want the *admin panel's* venue map keyed too; see the callout in step 6 for why this is a second place to put the same value. |
 | `PUBLIC_GA_MEASUREMENT_ID` | optional — the GA4 Measurement ID (`G-…`). Unlike every other `PUBLIC_*` var, this one is **deploy-managed**: `deploy.yml` writes it into `/opt/bandms/.env` on every push to `main`, because without this secret there is no way to set it at all for anyone without server SSH access. See the callout in step 6. |
+| `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL`, `SITE_URL` | optional, also deploy-managed the same way as `PUBLIC_GA_MEASUREMENT_ID` — this is the "switch to a domain" move from step 11, done without needing SSH access. Set all five together (`SITE_ADDRESS=yourdomain.com, www.yourdomain.com`, the rest `https://yourdomain.com`) or none — a partial set leaves CORS/Stripe/email pointed at a different origin than Caddy serves. |
 
 ---
 
@@ -420,13 +421,18 @@ migrations were still finishing. Restart `web` and it will refetch.
 
 ## 11. Switch to a domain (whenever you're ready)
 
-1. Point an `A` record at `YOUR_SERVER_IP` (and `AAAA` at the IPv6).
+1. Point an `A` record at `YOUR_SERVER_IP` (and `AAAA` at the IPv6). If you
+   want `www` too, point it (an `A` record or a `CNAME` to the apex both
+   work) — Caddy only answers for hostnames it's told about, so a `www` DNS
+   record with no matching `SITE_ADDRESS` entry just fails to connect, and a
+   `SITE_ADDRESS` entry with no matching DNS record never gets a certificate.
 2. Wait for DNS to propagate — verify with `dig +short yourdomain.com`.
-3. On the server, edit `/opt/bandms/.env`:
+3. Set the five vars — **with server SSH access**, edit `/opt/bandms/.env`
+   directly:
 
    ```diff
    -SITE_ADDRESS=:80
-   +SITE_ADDRESS=yourdomain.com
+   +SITE_ADDRESS=yourdomain.com, www.yourdomain.com
    -APP_URL=http://YOUR_SERVER_IP
    +APP_URL=https://yourdomain.com
    ```
@@ -434,7 +440,14 @@ migrations were still finishing. Restart `web` and it will refetch.
    …and the same `https://yourdomain.com` for `FRONTEND_URL`, `APP_FRONTEND_URL`
    and `SITE_URL`.
 
-4. Recreate everything that reads those values:
+   **Without server SSH access**, set the five as GitHub repository secrets
+   instead (see step 5) and push to `main` (or re-run the workflow) — the
+   deploy job writes them into `/opt/bandms/.env` and recreates the affected
+   containers itself. Set all five together; a partial set leaves some
+   containers on the old origin and others on the new one.
+
+4. If you edited `.env` by hand, recreate everything that reads those values
+   yourself (the GitHub-secret path above does this automatically):
 
    ```bash
    cd /opt/bandms
@@ -445,6 +458,17 @@ migrations were still finishing. Restart `web` and it will refetch.
 Caddy obtains and renews the certificate itself — no certbot, no cron job, no
 renewal to remember. Then update the Stripe webhook URL to the `https://` address
 and swap `sk_test_` for `sk_live_`.
+
+**This is also the fix if GA4 (or anything else needing a secure context) looks
+broken on an HTTP-only deployment.** A page served over plain HTTP is not a
+"secure context" — browsers silently refuse to set any cookie carrying the
+`Secure` attribute on it, no error, nothing in the console. GA4's own
+client-ID cookies (`_ga`, `_ga_*`) are among them, so `gtag.js` can load and
+initialize perfectly normally and still never send a single hit or write a
+cookie — confirmed directly (`document.cookie = "x=1; Secure"` silently drops
+on an HTTP page, `window.isSecureContext` is `false`). If GA4's DebugView
+shows nothing despite the banner working and the correct Measurement ID being
+served, check `SITE_ADDRESS` before suspecting the analytics code.
 
 ---
 
