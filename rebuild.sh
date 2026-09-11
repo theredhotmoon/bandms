@@ -107,20 +107,14 @@ _print_summary() {
 }
 
 # ── Test runner helper ───────────────────────────────────────────────────────
+# Delegates to scripts/test-all.sh rather than re-implementing test running here,
+# so rebuild.sh and `make test-all` never drift out of sync. Runs backend unit
+# (Pest), frontend unit (Vitest, app/ + web/) and E2E (Playwright) — the backend
+# is already up and migrated by this point in both rebuild modes, which is what
+# E2E needs.
 _run_tests() {
-  local app_key
-  app_key=$(grep '^APP_KEY=' .env | cut -d= -f2-)
-  [[ -z "$app_key" ]] && die "APP_KEY not found in .env — cannot run tests"
-
-  begin_step "Building test image"
-  docker build --target test -t bandms_test ./api
-  end_step "Test image built"
-
-  begin_step "Running Pest test suite"
-  docker run --rm \
-    -e APP_ENV=testing \
-    -e APP_KEY="$app_key" \
-    bandms_test
+  begin_step "Running full test suite (frontend unit + backend unit + E2E)"
+  bash scripts/test-all.sh
   end_step "All tests passed"
 }
 
@@ -145,7 +139,7 @@ for arg in "$@"; do
       echo "  (no flags)       Rebuild all Docker images, start containers, run migrations, run tests"
       echo "  --backend-only   Rebuild only the backend image — faster for PHP-only changes"
       echo "  --fresh-db       Rebuild all images + wipe DB volumes + re-migrate + seed"
-      echo "  --skip-tests     Skip the Pest test suite after rebuild (tests run by default)"
+      echo "  --skip-tests     Skip the full test suite after rebuild (frontend unit + backend unit + E2E; runs by default)"
       echo "  --run-tests      (alias for default behaviour — kept for backwards-compat)"
       echo "  --help           Show this message"
       echo ""
@@ -221,9 +215,9 @@ if [[ "$BACKEND_ONLY" == true ]]; then
   echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
   _print_summary
   if [[ "$RUN_TESTS" == true ]]; then
-    echo -e "  ${CYAN}ℹ  E2E tests not included in rebuild — run: ${BOLD}make test-all${RESET}"
+    echo -e "  ${CYAN}ℹ  Full test suite (frontend unit + backend unit + E2E) ran above.${RESET}"
   else
-    echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}make test-all${RESET}${YELLOW} before shipping${RESET}"
+    echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}bash scripts/test-all.sh${RESET}${YELLOW} (or make test-all) before shipping${RESET}"
   fi
   echo ""
   exit 0
@@ -303,9 +297,9 @@ echo -e "   Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
 _print_summary
 
 if [[ "$RUN_TESTS" == true ]]; then
-  echo -e "  ${CYAN}ℹ  E2E tests not included in rebuild — run: ${BOLD}make test-all${RESET}"
+  echo -e "  ${CYAN}ℹ  Full test suite (frontend unit + backend unit + E2E) ran above.${RESET}"
 else
-  echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}make test-all${RESET}${YELLOW} before shipping${RESET}"
+  echo -e "  ${YELLOW}⚠  Tests skipped — run: ${BOLD}bash scripts/test-all.sh${RESET}${YELLOW} (or make test-all) before shipping${RESET}"
 fi
 echo ""
 echo "  Useful next steps:"
