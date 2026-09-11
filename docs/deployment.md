@@ -278,28 +278,50 @@ chmod 600 /opt/bandms/.env
 > operating this server may have no SSH key at all. So `deploy.yml`'s SSH step
 > — which already authenticates via `SERVER_SSH_KEY` regardless of who
 > triggered the deploy — syncs the GitHub secret into `/opt/bandms/.env` itself
-> on every push to `main`, then recreates `web`:
+> on every push to `main`, via a shared `sync_secret_env` shell function, then
+> recreates whichever containers read the value:
 >
 > ```bash
-> if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
->   if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env; then
->     sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
->   else
->     echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
->   fi
-> fi
+> sync_secret_env() {
+>   local key="$1" value="$2"
+>   [ -n "$value" ] || return 0
+>   [ -f .env ] && { grep -v "^${key}=" .env > .env.tmp; mv .env.tmp .env; }
+>   echo "${key}=${value}" >> .env
+> }
+> sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
 > ```
 >
-> **The GitHub secret is authoritative for this one var, once set.** A manual
-> edit to `.env` on the server survives only until the next deploy, then gets
+> Filtering the old line out and re-appending the new one, rather than a sed
+> substitution in place, is deliberate: a first version used `sed -i
+> "s|^KEY=.*|KEY=${value}|"`, which corrupts any value containing `&`, `|`, or
+> `\` (all special in sed's replacement text) — a URL with a query string is
+> exactly the kind of value this function exists to write. An attempted fix
+> that escaped those characters was *also* wrong (its own sed command didn't
+> escape what it claimed to), caught only by actually running it, not by
+> reasoning about it — sed replacement-text semantics are the wrong thing to
+> get clever with here.
+>
+> **The GitHub secret is authoritative for this var, once set.** A manual edit
+> to `.env` on the server survives only until the next deploy, then gets
 > overwritten — the opposite of `PUBLIC_THEME`/`PUBLIC_CARTO_KEY`, which are
-> never touched by CI and stay exactly as hand-edited. The `[ -n ... ]` guard
+> never touched by CI and stay exactly as hand-edited. The `[ -n value ]` guard
 > exists so an *unset* secret can never silently blank an existing value —
 > caught in code review, since the secret was originally documented as
 > optional while the sync ran unconditionally. To change the Measurement ID,
 > update the `PUBLIC_GA_MEASUREMENT_ID` GitHub secret and push to `main` (or
 > re-run the workflow); don't SSH in and edit `.env` directly for this one,
 > it won't stick once the secret is set.
+>
+> `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL` and `SITE_URL`
+> use the same `sync_secret_env` function — see step 11 ("Switch to a
+> domain"). Those five are additionally **all-or-nothing**: the deploy script
+> counts how many of the five secrets are non-empty and aborts the whole
+> deploy (`exit 1`, before touching `.env`) if that count is neither 0 nor 5,
+> rather than leaving a comment warning about it. Setting only `SITE_ADDRESS`
+> would move Caddy to the new domain while `backend`'s CORS, Stripe redirect
+> URLs, and outgoing-email links stayed on the old one — a broken state with
+> nothing in the deploy output to say so, which is exactly what a partial-set
+> guard is for.
 
 > **On mail:** do not point `MAIL_HOST` at the server itself. Hetzner blocks
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history

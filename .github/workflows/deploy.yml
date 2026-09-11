@@ -201,32 +201,56 @@ jobs:
             # unset/cleared secret leaves an existing value alone rather than
             # silently blanking it (this guard was itself a code-review catch
             # on the PUBLIC_GA_MEASUREMENT_ID version of this).
+            #
+            # Deliberately not a sed substitution: &, |, and \ are all special
+            # in sed's replacement text, and a first attempt at escaping them
+            # here was itself wrong (verified: `sed 's/&/\\&/g'` does not
+            # produce a literal backslash under this pipeline's sed — testing
+            # that fix locally on Windows Git Bash gave a false pass, since
+            # the real target is the server's sed over SSH; a second, live
+            # test caught it). Filtering the old line out and appending the
+            # new one has no replacement-text semantics to get wrong, at the
+            # cost of moving an updated key to the end of the file — harmless
+            # for a shell-sourced .env.
             sync_secret_env() {
               local key="$1" value="$2"
               [ -n "$value" ] || return 0
-              if grep -q "^${key}=" .env 2>/dev/null; then
-                sed -i "s|^${key}=.*|${key}=${value}|" .env
-              else
-                echo "${key}=${value}" >> .env
-              fi
+              [ -f .env ] && { grep -v "^${key}=" .env > .env.tmp; mv .env.tmp .env; }
+              echo "${key}=${value}" >> .env
             }
             # web reads this at container startup, before it's recreated below.
             sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
-            # caddy reads this at container startup too, before its own
-            # --force-recreate further down — SITE_ADDRESS is what turns on
-            # automatic HTTPS (Caddy provisions and renews the Let's Encrypt
-            # certificate itself; nothing else is needed). Left unset, Caddy
-            # falls back to plain :80, which is what silently broke GA4 —
-            # gtag.js can't set its Secure client-ID cookie or send hits on a
-            # page that isn't a secure context.
-            sync_secret_env SITE_ADDRESS "$SITE_ADDRESS"
-            # These four are the other half of "switch to a domain" (see
+
+            # SITE_ADDRESS (caddy) is what turns on automatic HTTPS (Caddy
+            # provisions and renews the Let's Encrypt certificate itself;
+            # nothing else is needed) — left unset, Caddy falls back to plain
+            # :80, which is what silently broke GA4: gtag.js can't set its
+            # Secure client-ID cookie or send hits on a page that isn't a
+            # secure context. APP_URL/FRONTEND_URL/APP_FRONTEND_URL/SITE_URL
+            # are the other half of "switch to a domain" (see
             # docs/deployment.md step 11) — moving SITE_ADDRESS to a real
             # hostname without also moving these leaves CORS, Stripe redirect
             # URLs and outgoing-email links still pointing at the old value.
-            # backend picks up APP_URL/FRONTEND_URL/APP_FRONTEND_URL on its own
-            # `up -d` below (compose recreates on a changed resolved env, no
+            #
+            # So these five are all-or-nothing, enforced here rather than
+            # left as a warning in a comment (a code-review catch): a partial
+            # set aborts the deploy instead of silently half-migrating the
+            # origin.
+            domain_vars_set=0
+            for v in "$SITE_ADDRESS" "$APP_URL" "$FRONTEND_URL" "$APP_FRONTEND_URL" "$SITE_URL"; do
+              [ -n "$v" ] && domain_vars_set=$((domain_vars_set + 1))
+            done
+            if [ "$domain_vars_set" -gt 0 ] && [ "$domain_vars_set" -lt 5 ]; then
+              echo "::error::SITE_ADDRESS/APP_URL/FRONTEND_URL/APP_FRONTEND_URL/SITE_URL must all be set together, or none at all — only $domain_vars_set of 5 are set as secrets." >&2
+              exit 1
+            fi
+
+            # caddy reads SITE_ADDRESS at container startup, before its own
+            # --force-recreate further down; backend picks up
+            # APP_URL/FRONTEND_URL/APP_FRONTEND_URL on its own `up -d` below
+            # (compose recreates on a changed resolved env, no
             # --force-recreate needed); web picks up SITE_URL the same way.
+            sync_secret_env SITE_ADDRESS "$SITE_ADDRESS"
             sync_secret_env APP_URL "$APP_URL"
             sync_secret_env FRONTEND_URL "$FRONTEND_URL"
             sync_secret_env APP_FRONTEND_URL "$APP_FRONTEND_URL"
