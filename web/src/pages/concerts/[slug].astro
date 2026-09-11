@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getConcerts, getConcert, getConcertSetlist, getBandProfile } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
 import { fmtDate, fmtTime, isUpcoming } from '@/lib/i18n'
 
 export async function getStaticPaths() {
@@ -20,11 +21,19 @@ export async function getStaticPaths() {
 }
 
 const { id } = Astro.props
-const [concert, setlist, profile] = await Promise.all([
+const { slug } = Astro.params
+const [concert, setlist, profile, slugMap] = await Promise.all([
   getConcert(Number(id)),
   getConcertSetlist(Number(id)),
   getBandProfile('en'),
+  getSlugMap(),
 ])
+
+// The Polish equivalent of THIS page, resolved via the slug map rather than a
+// literal '/pl/concerts' — see the identical comment in releases/[id].astro,
+// the route this pattern was first fixed on. A wrong entry here is a wrong
+// hreflang, not merely a wrong footer link.
+const alternates = { pl: `/pl/${slugMap.pl.concerts ?? 'concerts'}/${slug}` }
 
 const upcoming = isUpcoming(concert.date)
 const dateStr  = fmtDate(concert.date, 'en')
@@ -51,6 +60,8 @@ const structuredData = {
 ---
 
 <BaseLayout
+  lang="en"
+  alternates={alternates}
   title={`${profile.name} @ ${concert.venue.name} — ${dateStr}`}
   description={concert.description ?? `${profile.name} live at ${concert.venue.name}, ${dateStr}`}
   image={concert.poster_url}
@@ -72,6 +83,7 @@ const structuredData = {
               src={concert.poster_url}
               alt={`Poster for ${profile.name} @ ${concert.venue.name}`}
               loading="eager"
+              fetchpriority="high"
               class="w-full object-cover"
             />
           </div>

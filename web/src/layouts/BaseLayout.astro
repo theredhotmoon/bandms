@@ -5,9 +5,14 @@ import BaseHead from '@/components/BaseHead.astro'
 import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
+import ConsentBanner from '@/components/ConsentBanner.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
+
+// Unset means the banner and GA never render — same fail-open shape as
+// PUBLIC_CARTO_KEY (see web/src/lib/basemap.ts).
+const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || ''
 
 export interface Props {
   title: string
@@ -71,6 +76,15 @@ const fontHref = THEME_FONTS[theme]
     </main>
     <Footer lang={lang} alternates={alternates} />
     <CartDrawer client:idle />
+    {/*
+      client:load, not client:idle like CartDrawer above — CartDrawer is
+      dormant until a nav button opens it elsewhere, so a hydration delay is
+      invisible. This banner is interactive from first paint; client:idle let
+      Accept/Reject sit in the DOM, clickable-looking, before Vue's handlers
+      were attached, so an early click did nothing — caught by
+      e2e/tests/public/consent-banner.spec.ts.
+    */}
+    {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} />}
     <ThemeSlot name="page-grain" />
   </body>
 </html>

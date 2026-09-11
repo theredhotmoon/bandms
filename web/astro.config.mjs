@@ -13,7 +13,24 @@ const API_PROXY = process.env.API_PROXY ?? 'http://localhost:80'
 export default defineConfig({
   output: 'static',
   site: SITE,
-  integrations: [vue(), sitemap()],
+  integrations: [
+    vue(),
+    sitemap({
+      // Belt-and-braces alongside each page's own `noindex` meta: these are
+      // Stripe-redirect and token-action pages, never something to surface in
+      // search — see the matching `noindex={true}` on each.
+      filter: page => {
+        const path = new URL(page).pathname
+        return (
+          !path.startsWith('/merch/success') &&
+          !path.startsWith('/merch/cancel') &&
+          !path.startsWith('/newsletter/confirm') &&
+          !path.startsWith('/newsletter/unsubscribe') &&
+          !path.startsWith('/rider')
+        )
+      },
+    }),
+  ],
   i18n: {
     defaultLocale: DEFAULT_LOCALE,
     locales: LOCALES,

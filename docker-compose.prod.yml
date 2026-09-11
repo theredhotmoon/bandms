@@ -47,6 +47,9 @@ services:
       # CARTO basemap key for the concert maps. Unset renders tiles watermarked
       # "API KEY REQUIRED" — see web/src/lib/basemap.ts.
       PUBLIC_CARTO_KEY: "${PUBLIC_CARTO_KEY:-}"
+      # GA4 Measurement ID. Unset means the consent banner and GA never render
+      # — see web/src/stores/consent.ts.
+      PUBLIC_GA_MEASUREMENT_ID: "${PUBLIC_GA_MEASUREMENT_ID:-}"
     depends_on:
       backend:
         condition: service_healthy

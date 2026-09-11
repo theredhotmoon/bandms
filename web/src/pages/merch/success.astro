@@ -9,7 +9,7 @@ import { getBandProfile } from '@/lib/cms'
 const profile = await getBandProfile('en')
 ---
 
-<BaseLayout title={`Order confirmed — ${profile.name}`} description="Your order has been received.">
+<BaseLayout title={`Order confirmed — ${profile.name}`} description="Your order has been received." noindex={true}>
   <div class="mx-auto max-w-2xl px-4 sm:px-6 pt-16 pb-24">
     <OrderConfirmation client:load />
   </div>

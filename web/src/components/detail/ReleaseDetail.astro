@@ -160,7 +160,7 @@ const structuredData = {
       <div class="rd-cover-col">
         <div class="rd-cover">
           {release.cover_image
-            ? <img src={release.cover_image} alt={release.title} loading="eager" />
+            ? <img src={release.cover_image} alt={release.title} loading="eager" fetchpriority="high" />
             : <span class="rd-fallback" aria-hidden="true" />}
           <span class="rd-stamp">{release.is_upcoming ? t.presave : t.outNow}</span>
         </div>
