@@ -117,4 +117,33 @@ test.describe('Website Modules Admin', () => {
 
     await ctx.close()
   })
+
+  // ── Section visibility (About) ────────────────────────────────────────────
+  //
+  // Wiring only, no save — e2e/tests/public/about-section-visibility.spec.ts
+  // writes to this same module's `visibility` bag via direct API PUT (to seed
+  // content and prove the public page respects the flag, requiring a real
+  // rebuild). That file runs in its own worker; a save here would resend
+  // whatever this page's draft last loaded and can stomp its seeded value
+  // mid-run, the same class of cross-file race the about_bio_variant feature
+  // hit — see e2e/tests/public/about-bio-variant.spec.ts's own note.
+  // Persistence through a real save is already covered by the Pest test in
+  // WebsiteModuleTest.php ("saves a visibility toggle") and by that public
+  // spec's own PUT-then-read round trip.
+  test('offers a section-visibility checkbox per configured toggle, checked by default', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit About settings' }).click()
+
+    await expect(page.getByText('Section visibility')).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText('Band in numbers')).toBeVisible()
+    await expect(page.getByText('Band members')).toBeVisible()
+
+    const statsCheckbox = page.locator('#visibility-show_stats')
+    await expect(statsCheckbox).toBeChecked()
+    await statsCheckbox.uncheck()
+    await expect(statsCheckbox).not.toBeChecked()
+    await statsCheckbox.check()
+    await expect(statsCheckbox).toBeChecked()
+  })
 })

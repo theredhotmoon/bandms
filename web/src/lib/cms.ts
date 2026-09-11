@@ -145,6 +145,13 @@ export interface ModuleConfig {
   slug?: string
   per_page: number | null
   /**
+   * Section toggles for this module — no locale dimension. Optional because an
+   * API predating this feature omits it; treat an absent key (or an absent
+   * bag entirely) as visible, never as hidden, the same rule `modules[slug]
+   * !== false` uses for whole-module enablement.
+   */
+  visibility?: Record<string, boolean>
+  /**
    * Editable copy for this module, with the locale already resolved by the API.
    * Optional because an API predating the settings migration omits it — read
    * through `settings?.field ?? ''`, never bare.

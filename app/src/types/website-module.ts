@@ -12,6 +12,14 @@ export type Localized = Record<Lang, string | null>
  */
 export type ModuleSettings = Record<string, Partial<Localized>>
 
+/**
+ * Per-module section toggles, keyed by field — no locale dimension, since a
+ * section is either shown or it isn't. A generic bag for the same reason
+ * ModuleSettings is: MODULE_VISIBILITY_SCHEMA decides which fields a module
+ * has, the server validates only that every value is a boolean.
+ */
+export type ModuleVisibility = Record<string, boolean>
+
 /** The editable fields of a module, as accepted by PUT /api/admin/modules/{slug}. */
 export interface WebsiteModuleSettingsPayload {
   custom_name?: Localized
@@ -23,6 +31,8 @@ export interface WebsiteModuleSettingsPayload {
    * untouched; an explicit null clears just that one.
    */
   settings?: ModuleSettings
+  /** Merged per field by the API. Omitting a key leaves it untouched. */
+  visibility?: ModuleVisibility
 }
 
 export interface WebsiteModule {
@@ -39,6 +49,12 @@ export interface WebsiteModule {
    * this is never null — but a field inside it may be missing either locale.
    */
   settings: ModuleSettings
+  /**
+   * Section toggles, as stored. The API serves `{}` when a module has none —
+   * an absent key means the section is visible (matches `modules[slug] !==
+   * false` elsewhere: absence must mean enabled, never hidden).
+   */
+  visibility: ModuleVisibility
   updated_at: string
 }
 

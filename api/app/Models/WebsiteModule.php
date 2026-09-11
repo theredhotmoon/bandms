@@ -11,12 +11,13 @@ class WebsiteModule extends Model
 
     public array $translatable = ['custom_name', 'custom_slug'];
 
-    protected $fillable = ['slug', 'display_name', 'custom_name', 'custom_slug', 'enabled', 'sort_order', 'per_page', 'settings'];
+    protected $fillable = ['slug', 'display_name', 'custom_name', 'custom_slug', 'enabled', 'sort_order', 'per_page', 'settings', 'visibility'];
 
     protected $casts = [
         'enabled'    => 'boolean',
         'sort_order' => 'integer',
         'per_page'   => 'integer',
         'settings'   => 'array',
+        'visibility' => 'array',
     ];
 }

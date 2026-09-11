@@ -252,6 +252,13 @@ interfaces claimed fields the API never sent, and one of them crash-looped the
 container for two months. Installing `@astrojs/check` and adding it to `build`
 would close it; expect a first run to surface a backlog.
 
+### Newsletter signup section on the homepage
+Requested 2026-09-10. **Note before starting:** `web/src/pages/[lang]/index.astro`
+already has a full newsletter section (kicker, title, sub-copy, `<NewsletterSignup
+client:visible />`) around line 247-258 — check with whoever asked whether this is
+about making it more prominent, restyling it, or something that's not actually
+there before assuming it needs to be built from scratch.
+
 ### Public-site E2E is thin, not absent
 Eight specs now cover the public Astro site on `:4322` (contact, availability,
 music, gallery, about, release detail, footer, the restyled pages). The **public

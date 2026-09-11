@@ -32,8 +32,13 @@ class WebsiteModuleController extends Controller
                 'enabled'  => (bool) $m->enabled,
                 'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
                 'slug'     => $slug === '' || $slug === null ? $m->slug : $slug,
-                'per_page' => $m->per_page,
-                'settings' => self::resolveSettings($m->settings, $locale),
+                'per_page'   => $m->per_page,
+                'settings'   => self::resolveSettings($m->settings, $locale),
+                // No locale dimension — a section is shown or it isn't, not
+                // translated per language. Absent key means visible, so a
+                // module that has never saved this bag (or predates the
+                // feature) renders exactly as it did before.
+                'visibility' => (object) ($m->visibility ?? []),
             ];
         });
 
@@ -142,10 +147,23 @@ class WebsiteModuleController extends Controller
         // registered is silently dropped by validate() rather than stored where
         // nothing will ever read it.
         $rules = [
-            'enabled'    => ['sometimes', 'boolean'],
-            'per_page'   => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
-            'settings'   => ['sometimes', 'array'],
-            'settings.*' => ['array'],
+            'enabled'      => ['sometimes', 'boolean'],
+            'per_page'     => ['sometimes', 'nullable', 'integer', 'in:6,9,10,12,15,20,24'],
+            'settings'     => ['sometimes', 'array'],
+            'settings.*'   => ['array'],
+            // A JSON list ({"visibility":[true,false]}) satisfies 'array' and
+            // 'visibility.*'=>'boolean' just as well as an object keyed by
+            // field name does, but merging it by numeric key would corrupt
+            // the stored bag rather than update named toggles — reject it
+            // explicitly rather than silently absorbing it.
+            'visibility'   => ['sometimes', 'array', function ($attribute, $value, $fail) {
+                // array_is_list([]) is true, so an empty object — a legitimate
+                // no-op payload — must be excluded or it reads as a list too.
+                if ($value !== [] && array_is_list($value)) {
+                    $fail('The visibility field must be an object keyed by field name, not a list.');
+                }
+            }],
+            'visibility.*' => ['boolean'],
         ];
 
         foreach (Locales::codes() as $code) {
@@ -216,6 +234,22 @@ class WebsiteModuleController extends Controller
             }
 
             $module->settings = $current;
+        }
+
+        if (array_key_exists('visibility', $validated)) {
+            // Assigned by key rather than array_merge()'d: merge is still the
+            // right semantics (a payload naming only show_stats must not
+            // silently reset show_members to its absent-means-true default),
+            // but array_merge() renumbers integer keys instead of overwriting
+            // them, and the 'boolean' rule accepts 0/1/'0'/'1' without
+            // casting — so both the key and the value need normalising here,
+            // the same way `enabled` is (bool)-cast above rather than stored
+            // as whatever Laravel's validator happened to leave it as.
+            $current = $module->visibility ?? [];
+            foreach ($validated['visibility'] as $key => $value) {
+                $current[$key] = (bool) $value;
+            }
+            $module->visibility = $current;
         }
 
         $module->save();
