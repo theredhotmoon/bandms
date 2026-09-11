@@ -5,6 +5,7 @@ import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
+import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/utils/basemap'
 
 const props = defineProps<{
   initial?: Venue | null
@@ -63,8 +64,8 @@ async function initMap() {
 
   lmap = L.map(mapEl.value!).setView([lat, lng], latNum() !== null ? 14 : 6)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  L.tileLayer(basemapTileUrl(import.meta.env.VITE_CARTO_KEY as string | undefined), {
+    attribution: BASEMAP_ATTRIBUTION,
   }).addTo(lmap)
 
   if (latNum() !== null) {

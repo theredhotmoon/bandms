@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, watch } from 'vue'
 import { ref } from 'vue'
 import type { Map as LeafletMap, Marker } from 'leaflet'
+import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/utils/basemap'
 
 interface Props {
   latitude: number | null
@@ -45,8 +46,8 @@ onMounted(async () => {
 
   map = L.map(mapContainer.value!).setView(center, 13)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  L.tileLayer(basemapTileUrl(import.meta.env.VITE_CARTO_KEY as string | undefined), {
+    attribution: BASEMAP_ATTRIBUTION,
     maxZoom: 19,
   }).addTo(map)
 
