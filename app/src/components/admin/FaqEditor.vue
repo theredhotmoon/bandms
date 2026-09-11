@@ -2,7 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
-import { LOCALES, emptyBag, type Lang as Locale } from '@/locales'
+import { LOCALES, DEFAULT_LOCALE, emptyBag, type Lang as Locale } from '@/locales'
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -66,7 +66,7 @@ function submit() {
 }
 
 const INPUT_BASE =
-  'w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors'
+  'flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors'
 
 function inputClass(key: string) {
   return props.errors[key]
@@ -124,18 +124,20 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Question</span>
-      <div class="flex gap-3">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-zinc-600" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
-          <input
-            :id="`faq-q-${l}`"
-            v-model="draft.question[l]"
-            type="text"
-            maxlength="300"
-            :aria-invalid="Boolean(errors[`question.${l}`])"
-            :class="inputClass(`question.${l}`)"
-          />
-          <span v-if="errors[`question.${l}`]" class="text-xs text-red-400">
+      <div class="trans-group">
+        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+          <div class="trans-row">
+            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
+            <input
+              :id="`faq-q-${l}`"
+              v-model="draft.question[l]"
+              type="text"
+              maxlength="300"
+              :aria-invalid="Boolean(errors[`question.${l}`])"
+              :class="inputClass(`question.${l}`)"
+            />
+          </div>
+          <span v-if="errors[`question.${l}`]" class="text-xs text-red-400 pl-10">
             {{ errors[`question.${l}`][0] }}
           </span>
         </div>
@@ -144,18 +146,20 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Answer</span>
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-zinc-600" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
-          <textarea
-            :id="`faq-a-${l}`"
-            v-model="draft.answer[l]"
-            rows="4"
-            maxlength="4000"
-            :aria-invalid="Boolean(errors[`answer.${l}`])"
-            :class="`${inputClass(`answer.${l}`)} resize-y`"
-          />
-          <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400">
+      <div class="trans-group">
+        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+          <div class="trans-row trans-row--top">
+            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
+            <textarea
+              :id="`faq-a-${l}`"
+              v-model="draft.answer[l]"
+              rows="4"
+              maxlength="4000"
+              :aria-invalid="Boolean(errors[`answer.${l}`])"
+              :class="`${inputClass(`answer.${l}`)} resize-y`"
+            />
+          </div>
+          <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400 pl-10">
             {{ errors[`answer.${l}`][0] }}
           </span>
         </div>
@@ -185,3 +189,5 @@ const otherErrors = computed(() =>
     </div>
   </form>
 </template>
+
+<style scoped src="./form-styles.css" />
