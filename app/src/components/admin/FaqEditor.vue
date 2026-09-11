@@ -66,7 +66,7 @@ function submit() {
 }
 
 const INPUT_BASE =
-  'w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors'
+  'flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors'
 
 function inputClass(key: string) {
   return props.errors[key]
@@ -124,18 +124,20 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Question</span>
-      <div class="flex flex-col gap-2">
+      <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
-          <label class="lang-tag" :class="{ 'lang-tag--pl': l !== DEFAULT_LOCALE }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
-          <input
-            :id="`faq-q-${l}`"
-            v-model="draft.question[l]"
-            type="text"
-            maxlength="300"
-            :aria-invalid="Boolean(errors[`question.${l}`])"
-            :class="inputClass(`question.${l}`)"
-          />
-          <span v-if="errors[`question.${l}`]" class="text-xs text-red-400">
+          <div class="trans-row">
+            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
+            <input
+              :id="`faq-q-${l}`"
+              v-model="draft.question[l]"
+              type="text"
+              maxlength="300"
+              :aria-invalid="Boolean(errors[`question.${l}`])"
+              :class="inputClass(`question.${l}`)"
+            />
+          </div>
+          <span v-if="errors[`question.${l}`]" class="text-xs text-red-400 pl-10">
             {{ errors[`question.${l}`][0] }}
           </span>
         </div>
@@ -144,18 +146,20 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Answer</span>
-      <div class="flex flex-col gap-2">
+      <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
-          <label class="lang-tag" :class="{ 'lang-tag--pl': l !== DEFAULT_LOCALE }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
-          <textarea
-            :id="`faq-a-${l}`"
-            v-model="draft.answer[l]"
-            rows="4"
-            maxlength="4000"
-            :aria-invalid="Boolean(errors[`answer.${l}`])"
-            :class="`${inputClass(`answer.${l}`)} resize-y`"
-          />
-          <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400">
+          <div class="trans-row trans-row--top">
+            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
+            <textarea
+              :id="`faq-a-${l}`"
+              v-model="draft.answer[l]"
+              rows="4"
+              maxlength="4000"
+              :aria-invalid="Boolean(errors[`answer.${l}`])"
+              :class="`${inputClass(`answer.${l}`)} resize-y`"
+            />
+          </div>
+          <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400 pl-10">
             {{ errors[`answer.${l}`][0] }}
           </span>
         </div>
@@ -186,24 +190,4 @@ const otherErrors = computed(() =>
   </form>
 </template>
 
-<style scoped>
-/* Pixel-identical to the shared .lang-badge in form-styles.css (same
-   convention as WebsiteModulesView.vue's .lang-tag) — this editor is
-   Tailwind-styled rather than importing that stylesheet, so the badge is
-   duplicated here rather than pulling in the whole dark-form CSS for one
-   element. Keep the values in sync by hand if .lang-badge ever changes. */
-.lang-tag {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 0.2rem 0.45rem;
-  border-radius: 0.25rem;
-  flex-shrink: 0;
-  background: #1e3a5f;
-  color: #60a5fa;
-  width: 2rem;
-  text-align: center;
-}
-.lang-tag--pl { background: #3f1010; color: #f87171; }
-</style>
+<style scoped src="./form-styles.css" />
