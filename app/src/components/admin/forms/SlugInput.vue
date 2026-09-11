@@ -85,8 +85,10 @@ function regeneratePl() {
           :value="modelValue"
           @input="onEnInput"
           class="field-input slug-field"
+          :class="{ 'field-input--error': errorEn }"
           :placeholder="placeholderEn"
           :maxlength="maxlength"
+          :aria-invalid="Boolean(errorEn)"
           autocomplete="off"
           spellcheck="false"
         />
@@ -104,8 +106,10 @@ function regeneratePl() {
           :value="modelValuePl ?? ''"
           @input="onPlInput"
           class="field-input slug-field"
+          :class="{ 'field-input--error': errorPl }"
           :placeholder="placeholderPl"
           :maxlength="maxlength"
+          :aria-invalid="Boolean(errorPl)"
           autocomplete="off"
           spellcheck="false"
         />
@@ -137,6 +141,7 @@ function regeneratePl() {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8125rem;
 }
+.field-input--error { border-color: #f87171 !important; }
 
 .slug-regen {
   position: absolute;
@@ -159,11 +164,4 @@ function regeneratePl() {
   color: #60a5fa;
   background: #1e3a5f33;
 }
-
-.lang-badge {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
-  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
-  background: #1e3a5f; color: #60a5fa; width: 2rem; text-align: center;
-}
-.lang-badge--pl { background: #3f1010; color: #f87171; }
 </style>
