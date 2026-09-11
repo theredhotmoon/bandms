@@ -2,6 +2,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
+import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
@@ -407,13 +408,11 @@ async function saveEdit(slug: string) {
             </div>
           </div>
 
-          <!-- URL slug inputs.
-               Deliberately not SlugInput.vue: that component derives the slug
-               from a source title and offers a regenerate button, which is the
-               label→URL coupling this field exists to break. With no source to
-               regenerate from it would emit '' and move a live page. These also
-               need a per-locale error and a path preview, which it has no slot
-               for. -->
+          <!-- URL slug. Uses SlugInput.vue like every other slug field in the
+               admin, but with no sourceEn/sourcePl: that suppresses the
+               regenerate button, since this field exists to break the
+               label→URL coupling regenerating would reintroduce. hintEn/Pl
+               carry the resolved path preview instead. -->
           <p v-if="!isPageModule" class="text-xs text-zinc-500">
             This module is site chrome, not a page — it has no URL. Switching it off
             hides it from the public site.
@@ -421,44 +420,18 @@ async function saveEdit(slug: string) {
 
           <div v-if="isPageModule" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
-            <div class="flex flex-col gap-2">
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center gap-2">
-                  <span class="lang-badge">EN</span>
-                  <input
-                    v-model="draftSlugEn"
-                    type="text"
-                    maxlength="60"
-                    :placeholder="mod.slug"
-                    :aria-invalid="Boolean(fieldErrors['custom_slug.en'])"
-                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                    :class="fieldErrors['custom_slug.en'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                  />
-                </div>
-                <span v-if="fieldErrors['custom_slug.en']" class="text-xs text-red-400 pl-10">
-                  {{ fieldErrors['custom_slug.en'][0] }}
-                </span>
-                <span v-else class="text-xs text-zinc-600 font-mono pl-10">{{ previewPath(mod, 'en', draftSlugEn) }}</span>
-              </div>
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center gap-2">
-                  <span class="lang-badge lang-badge--pl">PL</span>
-                  <input
-                    v-model="draftSlugPl"
-                    type="text"
-                    maxlength="60"
-                    :placeholder="mod.slug"
-                    :aria-invalid="Boolean(fieldErrors['custom_slug.pl'])"
-                    class="w-full rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                    :class="fieldErrors['custom_slug.pl'] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                  />
-                </div>
-                <span v-if="fieldErrors['custom_slug.pl']" class="text-xs text-red-400 pl-10">
-                  {{ fieldErrors['custom_slug.pl'][0] }}
-                </span>
-                <span v-else class="text-xs text-zinc-600 font-mono pl-10">{{ previewPath(mod, 'pl', draftSlugPl) }}</span>
-              </div>
-            </div>
+            <SlugInput
+              v-model="draftSlugEn"
+              v-model:modelValuePl="draftSlugPl"
+              :bilingual="true"
+              :placeholderEn="mod.slug"
+              :placeholderPl="mod.slug"
+              :maxlength="60"
+              :errorEn="fieldErrors['custom_slug.en']?.[0]"
+              :errorPl="fieldErrors['custom_slug.pl']?.[0]"
+              :hintEn="previewPath(mod, 'en', draftSlugEn)"
+              :hintPl="previewPath(mod, 'pl', draftSlugPl)"
+            />
             <span class="text-xs text-zinc-600">
               Lowercase letters, numbers and dashes. Leave empty to serve under
               <code class="text-zinc-500">/{{ mod.slug }}</code>. Changing this moves the page — old links stop working.
