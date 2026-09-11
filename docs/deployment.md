@@ -201,6 +201,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `SERVER_SSH_KEY` | contents of `~/.ssh/bandms_deploy` — the **private** key, including the BEGIN/END lines |
 | `GHCR_TOKEN` | the `read:packages` token from step 4 |
 | `PUBLIC_CARTO_KEY` | optional — the CARTO basemap key. Only needed if you want the *admin panel's* venue map keyed too; see the callout in step 6 for why this is a second place to put the same value. |
+| `PUBLIC_GA_MEASUREMENT_ID` | optional — the GA4 Measurement ID (`G-…`). Unlike every other `PUBLIC_*` var, this one is **deploy-managed**: `deploy.yml` writes it into `/opt/bandms/.env` on every push to `main`, because without this secret there is no way to set it at all for anyone without server SSH access. See the callout in step 6. |
 
 ---
 
@@ -230,7 +231,7 @@ the ones that break things quietly:
 | `MAIL_*` | your SMTP provider's credentials | newsletter and contact form silently discard every message |
 | `STRIPE_SECRET_KEY` | `sk_test_…` to start | checkout returns 503 |
 | `PUBLIC_CARTO_KEY` | your CARTO basemap key (optional) | concert/venue map tiles render watermarked "API KEY REQUIRED" |
-| `PUBLIC_GA_MEASUREMENT_ID` | your GA4 Measurement ID (optional) | the consent banner and GA never render |
+| `PUBLIC_GA_MEASUREMENT_ID` | leave as-is | overwritten from the GitHub secret on the next deploy regardless — see step 5 and the callout below |
 
 Lock it down — it holds every secret the stack has:
 
@@ -269,8 +270,30 @@ chmod 600 /opt/bandms/.env
 > at all, even though it's wired all the way through `app/Dockerfile`. Setting
 > the GitHub secret is future-proofing, not a fix for anything currently broken.
 >
-> `PUBLIC_GA_MEASUREMENT_ID` only needs the first row — the admin panel doesn't
-> render GA or the consent banner.
+> `PUBLIC_GA_MEASUREMENT_ID` is neither of the above — it's a **third pattern**,
+> deploy-managed rather than manually edited. `web/`'s own `.env` reasoning
+> still applies (read at container startup), but there's no admin-side build-arg
+> to fall back on here, and unlike a developer with `make`/`rebuild.sh`, someone
+> operating this server may have no SSH key at all. So `deploy.yml`'s SSH step
+> — which already authenticates via `SERVER_SSH_KEY` regardless of who
+> triggered the deploy — syncs the GitHub secret into `/opt/bandms/.env` itself
+> on every push to `main`, then recreates `web`:
+>
+> ```bash
+> if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env; then
+>   sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
+> else
+>   echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+> fi
+> ```
+>
+> **The GitHub secret is authoritative for this one var.** A manual edit to
+> `.env` on the server survives only until the next deploy, then gets
+> overwritten — the opposite of `PUBLIC_THEME`/`PUBLIC_CARTO_KEY`, which are
+> never touched by CI and stay exactly as hand-edited. To change the
+> Measurement ID, update the `PUBLIC_GA_MEASUREMENT_ID` GitHub secret and push
+> to `main` (or re-run the workflow); don't SSH in and edit `.env` directly for
+> this one, it won't stick.
 
 > **On mail:** do not point `MAIL_HOST` at the server itself. Hetzner blocks
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history
