@@ -231,7 +231,7 @@ the ones that break things quietly:
 | `MAIL_*` | your SMTP provider's credentials | newsletter and contact form silently discard every message |
 | `STRIPE_SECRET_KEY` | `sk_test_…` to start | checkout returns 503 |
 | `PUBLIC_CARTO_KEY` | your CARTO basemap key (optional) | concert/venue map tiles render watermarked "API KEY REQUIRED" |
-| `PUBLIC_GA_MEASUREMENT_ID` | leave as-is | overwritten from the GitHub secret on the next deploy regardless — see step 5 and the callout below |
+| `PUBLIC_GA_MEASUREMENT_ID` | leave as-is | overwritten from the GitHub secret on the next deploy, *if that secret is set* — an unset secret leaves this line untouched; see step 5 and the callout below |
 
 Lock it down — it holds every secret the stack has:
 
@@ -280,20 +280,25 @@ chmod 600 /opt/bandms/.env
 > on every push to `main`, then recreates `web`:
 >
 > ```bash
-> if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env; then
->   sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
-> else
->   echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+> if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
+>   if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env; then
+>     sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
+>   else
+>     echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+>   fi
 > fi
 > ```
 >
-> **The GitHub secret is authoritative for this one var.** A manual edit to
-> `.env` on the server survives only until the next deploy, then gets
+> **The GitHub secret is authoritative for this one var, once set.** A manual
+> edit to `.env` on the server survives only until the next deploy, then gets
 > overwritten — the opposite of `PUBLIC_THEME`/`PUBLIC_CARTO_KEY`, which are
-> never touched by CI and stay exactly as hand-edited. To change the
-> Measurement ID, update the `PUBLIC_GA_MEASUREMENT_ID` GitHub secret and push
-> to `main` (or re-run the workflow); don't SSH in and edit `.env` directly for
-> this one, it won't stick.
+> never touched by CI and stay exactly as hand-edited. The `[ -n ... ]` guard
+> exists so an *unset* secret can never silently blank an existing value —
+> caught in code review, since the secret was originally documented as
+> optional while the sync ran unconditionally. To change the Measurement ID,
+> update the `PUBLIC_GA_MEASUREMENT_ID` GitHub secret and push to `main` (or
+> re-run the workflow); don't SSH in and edit `.env` directly for this one,
+> it won't stick once the secret is set.
 
 > **On mail:** do not point `MAIL_HOST` at the server itself. Hetzner blocks
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history

@@ -196,10 +196,17 @@ jobs:
             # deploy-managed instead of hand-edited: the GitHub secret is the
             # source of truth and overwrites whatever .env already has on every
             # deploy. Sync it in before `web` (recreated below) reads it.
-            if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env 2>/dev/null; then
-              sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
-            else
-              echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+            #
+            # Guarded on the secret being non-empty — it's documented as
+            # optional, and an unset/cleared secret must leave any existing
+            # .env value alone rather than silently blanking analytics on the
+            # next deploy (caught in code review on this same PR).
+            if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
+              if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env 2>/dev/null; then
+                sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
+              else
+                echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+              fi
             fi
 
             # MySQL is not part of the rolling restart, but it must be running
