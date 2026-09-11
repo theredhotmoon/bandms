@@ -2,8 +2,8 @@
 #
 # The site address comes from SITE_ADDRESS in /opt/bandms/.env:
 #   SITE_ADDRESS=:80                  → plain HTTP on the bare server IP
-#   SITE_ADDRESS=skanking-storks.com  → automatic HTTPS via Let's Encrypt
-#   SITE_ADDRESS=skanking-storks.com, www.skanking-storks.com
+#   SITE_ADDRESS=skankingstorks.band  → automatic HTTPS via Let's Encrypt
+#   SITE_ADDRESS=skankingstorks.band, www.skankingstorks.band
 #                                     → both, with www redirected to the apex
 #
 # Switching to the domain form requires nothing else: point an A record at the

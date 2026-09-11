@@ -131,7 +131,7 @@ services:
       # GA4 Measurement ID. Unset means the consent banner and GA never render
       # — see web/src/stores/consent.ts.
       PUBLIC_GA_MEASUREMENT_ID: "${PUBLIC_GA_MEASUREMENT_ID:-}"
-      SITE_URL:  "${SITE_URL:-https://skanking-storks.com}"
+      SITE_URL:  "${SITE_URL:-https://skankingstorks.band}"
     ports:
       - "${WEB_PORT:-4322}:80"
     depends_on:
