@@ -174,11 +174,12 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
+          PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.PUBLIC_GA_MEASUREMENT_ID }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR
+          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID
           command_timeout: 15m
           script: |
             set -e
@@ -187,6 +188,26 @@ jobs:
             # Authenticate and pull new images
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull backend frontend web
+
+            # PUBLIC_GA_MEASUREMENT_ID otherwise has no home: it's read from this
+            # server's own .env at container startup (web/ rebuilds itself then,
+            # not at image-build time — see docs/deployment.md), and nobody
+            # without server SSH access could ever set it. So this one var is
+            # deploy-managed instead of hand-edited: the GitHub secret is the
+            # source of truth and overwrites whatever .env already has on every
+            # deploy. Sync it in before `web` (recreated below) reads it.
+            #
+            # Guarded on the secret being non-empty — it's documented as
+            # optional, and an unset/cleared secret must leave any existing
+            # .env value alone rather than silently blanking analytics on the
+            # next deploy (caught in code review on this same PR).
+            if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
+              if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env 2>/dev/null; then
+                sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
+              else
+                echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+              fi
+            fi
 
             # MySQL is not part of the rolling restart, but it must be running
             # before the backend starts — every command below uses --no-deps, so
