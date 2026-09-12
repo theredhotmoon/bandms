@@ -285,8 +285,14 @@ chmod 600 /opt/bandms/.env
 > sync_secret_env() {
 >   local key="$1" value="$2"
 >   [ -n "$value" ] || return 0
->   [ -f .env ] && { grep -v "^${key}=" .env > .env.tmp; mv .env.tmp .env; }
+>   if [ -f .env ]; then
+>     touch .env.tmp
+>     chmod 600 .env.tmp
+>     grep -v "^${key}=" .env > .env.tmp || true
+>     mv .env.tmp .env
+>   fi
 >   echo "${key}=${value}" >> .env
+>   chmod 600 .env
 > }
 > sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
 > ```
@@ -300,6 +306,14 @@ chmod 600 /opt/bandms/.env
 > escape what it claimed to), caught only by actually running it, not by
 > reasoning about it — sed replacement-text semantics are the wrong thing to
 > get clever with here.
+>
+> The `chmod`s and the `|| true` are not decoration — they are the two things
+> `sed -i` did for free and a filter-and-`mv` does not. `mv` hands `.env` the
+> temp file's own umask-derived mode, so without them a deploy quietly turns
+> the 0600 of step 8 into 0644 on a file holding `APP_KEY`, `DB_PASSWORD`,
+> `STRIPE_SECRET_KEY` and `MAIL_PASSWORD`; and `grep -v` exits 1 when it
+> matches every line, which under the script's `set -e` aborts the deploy if
+> `.env` ever holds nothing but the key being synced.
 >
 > **The GitHub secret is authoritative for this var, once set.** A manual edit
 > to `.env` on the server survives only until the next deploy, then gets
@@ -316,7 +330,8 @@ chmod 600 /opt/bandms/.env
 > use the same `sync_secret_env` function — see step 11 ("Switch to a
 > domain"). Those five are additionally **all-or-nothing**: the deploy script
 > counts how many of the five secrets are non-empty and aborts the whole
-> deploy (`exit 1`, before touching `.env`) if that count is neither 0 nor 5,
+> deploy (`exit 1`, before any of those five reaches `.env`) if that count is
+> neither 0 nor 5,
 > rather than leaving a comment warning about it. Setting only `SITE_ADDRESS`
 > would move Caddy to the new domain while `backend`'s CORS, Stripe redirect
 > URLs, and outgoing-email links stayed on the old one — a broken state with

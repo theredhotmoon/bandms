@@ -212,11 +212,27 @@ jobs:
             # new one has no replacement-text semantics to get wrong, at the
             # cost of moving an updated key to the end of the file — harmless
             # for a shell-sourced .env.
+            #
+            # Two things the `sed -i` this replaced did for free, and which have
+            # to be done by hand here: `mv` gives .env the temp file's own
+            # umask-derived mode (0644), silently widening a file that holds
+            # APP_KEY, DB_PASSWORD, STRIPE_SECRET_KEY and MAIL_PASSWORD (step 8
+            # of docs/deployment.md chmods it 0600) — so the temp file is
+            # created private and the mode re-asserted after the swap; and
+            # `grep -v` exits 1 when it emits no lines, which under `set -e`
+            # would abort the deploy over an .env holding nothing but this one
+            # key.
             sync_secret_env() {
               local key="$1" value="$2"
               [ -n "$value" ] || return 0
-              [ -f .env ] && { grep -v "^${key}=" .env > .env.tmp; mv .env.tmp .env; }
+              if [ -f .env ]; then
+                touch .env.tmp
+                chmod 600 .env.tmp
+                grep -v "^${key}=" .env > .env.tmp || true
+                mv .env.tmp .env
+              fi
               echo "${key}=${value}" >> .env
+              chmod 600 .env
             }
             # web reads this at container startup, before it's recreated below.
             sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
