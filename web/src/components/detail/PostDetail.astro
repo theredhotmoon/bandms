@@ -4,9 +4,8 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import { postSlug, formatEventDates } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getAllPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
-import type { PostSummary } from '@/types/post'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -20,15 +19,9 @@ const { lang, alternates, itemId } = Astro.props
 const slugMap = await getSlugMap()
 const siteConfig = await getSiteConfig(lang)
 
-// Fetch all pages to build summaries for prev/next navigation
-const allPosts: PostSummary[] = []
-let page = 1
-while (true) {
-  const { data, meta } = await getPosts(lang, page)
-  allPosts.push(...data)
-  if (page >= meta.last_page) break
-  page++
-}
+// Every post, not just page 1 — prev/next and "more from the blog" span the
+// whole archive.
+const allPosts = await getAllPosts(lang)
 const summaries = allPosts.map(p => ({
   id: p.id,
   slug: postSlug(p, lang),

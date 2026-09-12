@@ -150,4 +150,45 @@ test.describe.serial('Public news — slug-based routing', () => {
     await expect(page.locator(`a[href="/en/${sectionEn}/${bilingualSlugEn}"]`).first()).toBeVisible()
     await expect(page.locator(`a[href$="/${bilingualId}"]`)).toHaveCount(0)
   })
+
+  /**
+   * The homepage builds its own news hrefs rather than reusing the listing's,
+   * and it got them wrong — `${p.id}` where the route is emitted at
+   * postSlug(p, lang), so every "latest news" row on the landing page 404'd.
+   * The listing test above could not see it: two call sites, one covered.
+   *
+   * Checked per locale, because the template is locale-parameterised and
+   * postSlug resolves differently under pl (`slug_pl || slug_en`) — a
+   * regression that hardcoded slug_en would pass an /en-only test.
+   */
+  for (const { lang, expectedSlug } of [
+    { lang: 'en' as const, expectedSlug: () => bilingualSlugEn },
+    { lang: 'pl' as const, expectedSlug: () => bilingualSlugPl },
+  ]) {
+    test(`the ${lang} homepage links to news by slug, not by numeric id`, async ({ page }) => {
+      const section = lang === 'en' ? sectionEn : sectionPl
+      await page.goto(`${WEB}/${lang}`)
+
+      const rows = page.locator('.posts-list a.post-row')
+      await expect(rows.first()).toBeVisible()
+
+      // The seeded posts are the newest, so they head the "latest news" list.
+      // Asserting the exact expected href beats a shape check: a slug is not
+      // guaranteed to be non-numeric (a post titled "2026" slugs to "2026"),
+      // so `not.toMatch(/\/\d+$/)` would fail on correct code.
+      await expect(
+        page.locator(`.posts-list a.post-row[href="/${lang}/${section}/${expectedSlug()}"]`),
+      ).toHaveCount(1)
+
+      // And no row addresses a post by the id it actually has.
+      for (const id of [bilingualId, enOnlyId]) {
+        await expect(page.locator(`.posts-list a.post-row[href$="/${id}"]`)).toHaveCount(0)
+      }
+
+      // A slug-shaped href pointing at a page nothing built is the same 404, so
+      // follow it: only the article page proves the link resolves.
+      await rows.first().click()
+      await expect(page.locator('.art-title')).toBeVisible()
+    })
+  }
 })

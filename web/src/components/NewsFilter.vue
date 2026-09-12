@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { formatEventDates } from '@/lib/i18n'
+import type { Locale } from '@/types/shared'
 
 interface Tag { id: number; name: string; slug_en: string }
 
@@ -20,11 +21,15 @@ interface PostSummary {
 const props = defineProps<{
   posts: PostSummary[]
   accent: string
-  postHrefBase?: string
-  lang?: 'en' | 'pl'
+  /**
+   * Locale-aware base for a post URL, e.g. `/pl/aktualnosci`. Required, and
+   * deliberately has no default: post pages are emitted at
+   * `/[lang]/[section]/[postSlug]`, so any guessed base (the old `/posts`
+   * fallback) builds a URL nothing renders — a silent 404 the build cannot see.
+   */
+  postHrefBase: string
+  lang?: Locale
 }>()
-
-const resolvedPostHrefBase = computed(() => props.postHrefBase ?? '/posts')
 
 const q   = ref('')
 const tag = ref('all')
@@ -102,7 +107,7 @@ function eventDate(p: PostSummary): string {
 
     <!-- FEATURED POST -->
     <section v-if="featured" class="nf-featured-wrap">
-      <a :href="`${resolvedPostHrefBase}/${featured.slug}`" class="nf-featured">
+      <a :href="`${postHrefBase}/${featured.slug}`" class="nf-featured">
         <div class="nf-feat-img">
           <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           <span class="nf-feat-badge" :style="{ background: accent }">Featured</span>
@@ -138,7 +143,7 @@ function eventDate(p: PostSummary): string {
         <a
           v-for="p in rest"
           :key="p.id"
-          :href="`${resolvedPostHrefBase}/${p.slug}`"
+          :href="`${postHrefBase}/${p.slug}`"
           class="nf-card"
         >
           <div class="nf-card-img">

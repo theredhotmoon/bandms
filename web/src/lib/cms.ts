@@ -103,6 +103,27 @@ export async function getPosts(lang: Locale = 'en', page = 1): Promise<{ data: P
 export const getPost = (id: number, lang: Locale = 'en') =>
   get<Post>(`/posts/${id}`, { lang })
 
+/**
+ * Every post, across all pages.
+ *
+ * `getPosts()` serves one page and the API paginates to 12, so anything that
+ * needs the whole set has to walk `meta.last_page`. Three call sites did that
+ * by hand and a fourth — the detail route's getStaticPaths — did not, which
+ * silently capped the built pages at 12 while the listing went on linking to
+ * all of them. Post 13 onwards was listed and 404'd.
+ *
+ * Page 1 decides the page count, then the rest are fetched together.
+ */
+export async function getAllPosts(lang: Locale = 'en'): Promise<PostSummary[]> {
+  const first = await getPosts(lang, 1)
+  if (first.meta.last_page <= 1) return first.data
+
+  const rest = await Promise.all(
+    Array.from({ length: first.meta.last_page - 1 }, (_, i) => getPosts(lang, i + 2)),
+  )
+  return [...first.data, ...rest.flatMap(r => r.data)]
+}
+
 // ── Albums & Photos ───────────────────────────────────────────────────────────
 
 export const getAlbums = () =>
