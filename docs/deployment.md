@@ -202,6 +202,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `GHCR_TOKEN` | the `read:packages` token from step 4 |
 | `PUBLIC_CARTO_KEY` | optional — the CARTO basemap key. Only needed if you want the *admin panel's* venue map keyed too; see the callout in step 6 for why this is a second place to put the same value. |
 | `PUBLIC_GA_MEASUREMENT_ID` | optional — the GA4 Measurement ID (`G-…`). Unlike every other `PUBLIC_*` var, this one is **deploy-managed**: `deploy.yml` writes it into `/opt/bandms/.env` on every push to `main`, because without this secret there is no way to set it at all for anyone without server SSH access. See the callout in step 6. |
+| `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL`, `SITE_URL` | optional, also deploy-managed the same way as `PUBLIC_GA_MEASUREMENT_ID` — this is the "switch to a domain" move from step 11, done without needing SSH access. Set all five together (`SITE_ADDRESS=yourdomain.com, www.yourdomain.com`, the rest `https://yourdomain.com`) or none — a partial set leaves CORS/Stripe/email pointed at a different origin than Caddy serves. |
 
 ---
 
@@ -277,28 +278,91 @@ chmod 600 /opt/bandms/.env
 > operating this server may have no SSH key at all. So `deploy.yml`'s SSH step
 > — which already authenticates via `SERVER_SSH_KEY` regardless of who
 > triggered the deploy — syncs the GitHub secret into `/opt/bandms/.env` itself
-> on every push to `main`, then recreates `web`:
+> on every push to `main`, via a shared `sync_secret_env` shell function, then
+> recreates whichever containers read the value:
 >
 > ```bash
-> if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
->   if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env; then
->     sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
->   else
->     echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+> sync_secret_env() {
+>   local key="$1" value="$2" status
+>   [ -n "$value" ] || return 0
+>   if [ -f .env ]; then
+>     touch .env.tmp
+>     chmod 600 .env.tmp
+>     status=0
+>     grep -v "^${key}=" .env > .env.tmp || status=$?
+>     if [ "$status" -ge 2 ]; then
+>       rm -f .env.tmp
+>       echo "::error::sync_secret_env: grep exited ${status} reading .env; refusing to replace it" >&2
+>       return 1
+>     fi
+>     mv .env.tmp .env
 >   fi
-> fi
+>   echo "${key}=${value}" >> .env
+>   chmod 600 .env
+> }
+> sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
+> …
+> unset PUBLIC_GA_MEASUREMENT_ID SITE_ADDRESS APP_URL FRONTEND_URL APP_FRONTEND_URL SITE_URL
 > ```
 >
-> **The GitHub secret is authoritative for this one var, once set.** A manual
-> edit to `.env` on the server survives only until the next deploy, then gets
+> Filtering the old line out and re-appending the new one, rather than a sed
+> substitution in place, is deliberate: a first version used `sed -i
+> "s|^KEY=.*|KEY=${value}|"`, which corrupts any value containing `&`, `|`, or
+> `\` (all special in sed's replacement text) — a URL with a query string is
+> exactly the kind of value this function exists to write. An attempted fix
+> that escaped those characters was *also* wrong (its own sed command didn't
+> escape what it claimed to), caught only by actually running it, not by
+> reasoning about it — sed replacement-text semantics are the wrong thing to
+> get clever with here.
+>
+> The `chmod`s and the grep-status check are not decoration — they are the two
+> things `sed -i` did for free and a filter-and-`mv` does not. `mv` hands
+> `.env` the temp file's own umask-derived mode, so without them a deploy
+> quietly turns the 0600 of step 8 into 0644 on a file holding `APP_KEY`,
+> `DB_PASSWORD`, `STRIPE_SECRET_KEY` and `MAIL_PASSWORD`. And `grep -v` exits 1
+> when it matches every line — harmless, but indistinguishable from a real
+> failure if you write `|| true`: at exit ≥ 2 (read error, or a write error on
+> a full disk, which has happened here) the temp file is empty or partial, and
+> installing it destroys the only copy of those secrets. Hence the explicit
+> `$status` check rather than a reliance on `set -e`, which the shell ignores
+> inside any command that is part of an `&&`/`||` list — including a call to
+> this function.
+>
+> **The `unset` at the end is load-bearing.** Compose resolves `${VAR}` from the
+> shell environment *first* and `.env` only as a fallback, and every name listed
+> in the step's `envs:` arrives on the server exported whether or not its secret
+> exists — GitHub renders an unset secret as the empty string rather than
+> omitting the variable, and `drone-ssh` exports every name it finds set, empty
+> included. Compose treats set-but-empty as a value. So without the `unset`, a
+> *missing* secret overrides a hand-edited `.env` at container level — the exact
+> opposite of what the `[ -n "$value" ]` guard promises: `APP_URL` resolves to
+> `""` (CORS rejects the browser, emailed and Stripe links break), and
+> `${SITE_ADDRESS:-:80}` falls back to `:80`, silently returning a domain with a
+> working certificate to plain HTTP. Verified both ways against this compose
+> file. If you add a sixth deploy-managed var, add it to the `unset` too.
+>
+> **The GitHub secret is authoritative for this var, once set.** A manual edit
+> to `.env` on the server survives only until the next deploy, then gets
 > overwritten — the opposite of `PUBLIC_THEME`/`PUBLIC_CARTO_KEY`, which are
-> never touched by CI and stay exactly as hand-edited. The `[ -n ... ]` guard
+> never touched by CI and stay exactly as hand-edited. The `[ -n value ]` guard
 > exists so an *unset* secret can never silently blank an existing value —
 > caught in code review, since the secret was originally documented as
 > optional while the sync ran unconditionally. To change the Measurement ID,
 > update the `PUBLIC_GA_MEASUREMENT_ID` GitHub secret and push to `main` (or
 > re-run the workflow); don't SSH in and edit `.env` directly for this one,
 > it won't stick once the secret is set.
+>
+> `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL` and `SITE_URL`
+> use the same `sync_secret_env` function — see step 11 ("Switch to a
+> domain"). Those five are additionally **all-or-nothing**: the deploy script
+> counts how many of the five secrets are non-empty and aborts the whole
+> deploy (`exit 1`, before any of those five reaches `.env`) if that count is
+> neither 0 nor 5,
+> rather than leaving a comment warning about it. Setting only `SITE_ADDRESS`
+> would move Caddy to the new domain while `backend`'s CORS, Stripe redirect
+> URLs, and outgoing-email links stayed on the old one — a broken state with
+> nothing in the deploy output to say so, which is exactly what a partial-set
+> guard is for.
 
 > **On mail:** do not point `MAIL_HOST` at the server itself. Hetzner blocks
 > outbound port 25 on new accounts, and their IP ranges carry enough spam history
@@ -420,13 +484,18 @@ migrations were still finishing. Restart `web` and it will refetch.
 
 ## 11. Switch to a domain (whenever you're ready)
 
-1. Point an `A` record at `YOUR_SERVER_IP` (and `AAAA` at the IPv6).
+1. Point an `A` record at `YOUR_SERVER_IP` (and `AAAA` at the IPv6). If you
+   want `www` too, point it (an `A` record or a `CNAME` to the apex both
+   work) — Caddy only answers for hostnames it's told about, so a `www` DNS
+   record with no matching `SITE_ADDRESS` entry just fails to connect, and a
+   `SITE_ADDRESS` entry with no matching DNS record never gets a certificate.
 2. Wait for DNS to propagate — verify with `dig +short yourdomain.com`.
-3. On the server, edit `/opt/bandms/.env`:
+3. Set the five vars — **with server SSH access**, edit `/opt/bandms/.env`
+   directly:
 
    ```diff
    -SITE_ADDRESS=:80
-   +SITE_ADDRESS=yourdomain.com
+   +SITE_ADDRESS=yourdomain.com, www.yourdomain.com
    -APP_URL=http://YOUR_SERVER_IP
    +APP_URL=https://yourdomain.com
    ```
@@ -434,7 +503,14 @@ migrations were still finishing. Restart `web` and it will refetch.
    …and the same `https://yourdomain.com` for `FRONTEND_URL`, `APP_FRONTEND_URL`
    and `SITE_URL`.
 
-4. Recreate everything that reads those values:
+   **Without server SSH access**, set the five as GitHub repository secrets
+   instead (see step 5) and push to `main` (or re-run the workflow) — the
+   deploy job writes them into `/opt/bandms/.env` and recreates the affected
+   containers itself. Set all five together; a partial set leaves some
+   containers on the old origin and others on the new one.
+
+4. If you edited `.env` by hand, recreate everything that reads those values
+   yourself (the GitHub-secret path above does this automatically):
 
    ```bash
    cd /opt/bandms
@@ -445,6 +521,17 @@ migrations were still finishing. Restart `web` and it will refetch.
 Caddy obtains and renews the certificate itself — no certbot, no cron job, no
 renewal to remember. Then update the Stripe webhook URL to the `https://` address
 and swap `sk_test_` for `sk_live_`.
+
+**This is also the fix if GA4 (or anything else needing a secure context) looks
+broken on an HTTP-only deployment.** A page served over plain HTTP is not a
+"secure context" — browsers silently refuse to set any cookie carrying the
+`Secure` attribute on it, no error, nothing in the console. GA4's own
+client-ID cookies (`_ga`, `_ga_*`) are among them, so `gtag.js` can load and
+initialize perfectly normally and still never send a single hit or write a
+cookie — confirmed directly (`document.cookie = "x=1; Secure"` silently drops
+on an HTTP page, `window.isSecureContext` is `false`). If GA4's DebugView
+shows nothing despite the banner working and the correct Measurement ID being
+served, check `SITE_ADDRESS` before suspecting the analytics code.
 
 ---
 

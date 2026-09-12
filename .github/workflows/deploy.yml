@@ -175,11 +175,16 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.PUBLIC_GA_MEASUREMENT_ID }}
+          SITE_ADDRESS: ${{ secrets.SITE_ADDRESS }}
+          APP_URL: ${{ secrets.APP_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          APP_FRONTEND_URL: ${{ secrets.APP_FRONTEND_URL }}
+          SITE_URL: ${{ secrets.SITE_URL }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID
+          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID,SITE_ADDRESS,APP_URL,FRONTEND_URL,APP_FRONTEND_URL,SITE_URL
           command_timeout: 15m
           script: |
             set -e
@@ -189,25 +194,129 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull backend frontend web
 
-            # PUBLIC_GA_MEASUREMENT_ID otherwise has no home: it's read from this
-            # server's own .env at container startup (web/ rebuilds itself then,
-            # not at image-build time — see docs/deployment.md), and nobody
-            # without server SSH access could ever set it. So this one var is
-            # deploy-managed instead of hand-edited: the GitHub secret is the
-            # source of truth and overwrites whatever .env already has on every
-            # deploy. Sync it in before `web` (recreated below) reads it.
+            # Some .env vars have no home other than a GitHub secret: nobody
+            # without server SSH access could ever set them by hand (see
+            # docs/deployment.md). For those, the secret is authoritative and
+            # overwrites .env on every deploy — guarded on non-empty so an
+            # unset/cleared secret leaves an existing value alone rather than
+            # silently blanking it (this guard was itself a code-review catch
+            # on the PUBLIC_GA_MEASUREMENT_ID version of this).
             #
-            # Guarded on the secret being non-empty — it's documented as
-            # optional, and an unset/cleared secret must leave any existing
-            # .env value alone rather than silently blanking analytics on the
-            # next deploy (caught in code review on this same PR).
-            if [ -n "$PUBLIC_GA_MEASUREMENT_ID" ]; then
-              if grep -q '^PUBLIC_GA_MEASUREMENT_ID=' .env 2>/dev/null; then
-                sed -i "s|^PUBLIC_GA_MEASUREMENT_ID=.*|PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}|" .env
-              else
-                echo "PUBLIC_GA_MEASUREMENT_ID=${PUBLIC_GA_MEASUREMENT_ID}" >> .env
+            # Deliberately not a sed substitution: &, |, and \ are all special
+            # in sed's replacement text, and a first attempt at escaping them
+            # here was itself wrong (verified: `sed 's/&/\\&/g'` does not
+            # produce a literal backslash under this pipeline's sed — testing
+            # that fix locally on Windows Git Bash gave a false pass, since
+            # the real target is the server's sed over SSH; a second, live
+            # test caught it). Filtering the old line out and appending the
+            # new one has no replacement-text semantics to get wrong, at the
+            # cost of moving an updated key to the end of the file — harmless
+            # for a shell-sourced .env.
+            #
+            # Two things the `sed -i` this replaced did for free, and which have
+            # to be done by hand here: `mv` gives .env the temp file's own
+            # umask-derived mode (0644), silently widening a file that holds
+            # APP_KEY, DB_PASSWORD, STRIPE_SECRET_KEY and MAIL_PASSWORD (step 8
+            # of docs/deployment.md chmods it 0600) — so the temp file is
+            # created private and the mode re-asserted after the swap; and
+            # `grep -v` exits 1 when it emits no lines, which under `set -e`
+            # would abort the deploy over an .env holding nothing but this one
+            # key. Only exit 1 is tolerated: grep exits >=2 on a real error (a
+            # write failure on a full disk is a recurring condition on this
+            # project's hosts), and swallowing that would `mv` a truncated file
+            # over the only copy of APP_KEY, DB_PASSWORD, STRIPE_SECRET_KEY and
+            # MAIL_PASSWORD.
+            sync_secret_env() {
+              local key="$1" value="$2" status
+              [ -n "$value" ] || return 0
+              if [ -f .env ]; then
+                touch .env.tmp
+                chmod 600 .env.tmp
+                status=0
+                grep -v "^${key}=" .env > .env.tmp || status=$?
+                # 1 means .env held nothing but this key, which is fine. >=2 is
+                # a real read or write error, and .env.tmp is then empty or
+                # partial — so bail out instead of installing it. Checked
+                # explicitly rather than leaning on `set -e`, because -e is
+                # ignored inside any command that is part of an && / || list,
+                # including a call to this function, and the blast radius is
+                # the only copy of APP_KEY and DB_PASSWORD.
+                if [ "$status" -ge 2 ]; then
+                  rm -f .env.tmp
+                  echo "::error::sync_secret_env: grep exited ${status} reading .env; refusing to replace it" >&2
+                  return 1
+                fi
+                mv .env.tmp .env
               fi
+              echo "${key}=${value}" >> .env
+              chmod 600 .env
+            }
+            # web reads this at container startup, before it's recreated below.
+            sync_secret_env PUBLIC_GA_MEASUREMENT_ID "$PUBLIC_GA_MEASUREMENT_ID"
+
+            # SITE_ADDRESS (caddy) is what turns on automatic HTTPS (Caddy
+            # provisions and renews the Let's Encrypt certificate itself;
+            # nothing else is needed) — left unset, Caddy falls back to plain
+            # :80, which is what silently broke GA4: gtag.js can't set its
+            # Secure client-ID cookie or send hits on a page that isn't a
+            # secure context. APP_URL/FRONTEND_URL/APP_FRONTEND_URL/SITE_URL
+            # are the other half of "switch to a domain" (see
+            # docs/deployment.md step 11) — moving SITE_ADDRESS to a real
+            # hostname without also moving these leaves CORS, Stripe redirect
+            # URLs and outgoing-email links still pointing at the old value.
+            #
+            # So these five are all-or-nothing, enforced here rather than
+            # left as a warning in a comment (a code-review catch): a partial
+            # set aborts the deploy instead of silently half-migrating the
+            # origin.
+            #
+            # docker-compose.prod.yml does derive the last three from APP_URL
+            # (`${SITE_URL:-${APP_URL}}` and friends), so SITE_ADDRESS+APP_URL
+            # looks like it should be enough — it is not, and that objection has
+            # already been raised once in review. Those fallbacks only fire when
+            # the key is *absent* from .env, and step 6 of docs/deployment.md
+            # has every operator write all four URLs explicitly as
+            # http://YOUR_SERVER_IP. With those lines present, a 2-of-5 secret
+            # set leaves backend and web on the old origin while caddy serves
+            # the new one — exactly the silent half-migration this guard exists
+            # to stop.
+            domain_vars_set=0
+            for v in "$SITE_ADDRESS" "$APP_URL" "$FRONTEND_URL" "$APP_FRONTEND_URL" "$SITE_URL"; do
+              [ -n "$v" ] && domain_vars_set=$((domain_vars_set + 1))
+            done
+            if [ "$domain_vars_set" -gt 0 ] && [ "$domain_vars_set" -lt 5 ]; then
+              echo "::error::SITE_ADDRESS/APP_URL/FRONTEND_URL/APP_FRONTEND_URL/SITE_URL must all be set together, or none at all — only $domain_vars_set of 5 are set as secrets." >&2
+              exit 1
             fi
+
+            # caddy reads SITE_ADDRESS at container startup, before its own
+            # --force-recreate further down; backend picks up
+            # APP_URL/FRONTEND_URL/APP_FRONTEND_URL on its own `up -d` below
+            # (compose recreates on a changed resolved env, no
+            # --force-recreate needed); web picks up SITE_URL the same way.
+            sync_secret_env SITE_ADDRESS "$SITE_ADDRESS"
+            sync_secret_env APP_URL "$APP_URL"
+            sync_secret_env FRONTEND_URL "$FRONTEND_URL"
+            sync_secret_env APP_FRONTEND_URL "$APP_FRONTEND_URL"
+            sync_secret_env SITE_URL "$SITE_URL"
+
+            # Now drop all six from the shell, because Compose interpolation
+            # reads the shell environment *first* and .env only as a fallback.
+            # Every name in `envs:` above arrives here exported whether or not
+            # its secret exists: GitHub renders an unset secret as the empty
+            # string rather than omitting the variable, and drone-ssh exports
+            # every name it finds set, empty included. Compose treats
+            # set-but-empty as a value, so leaving them exported lets a *missing*
+            # secret override a hand-edited .env at container level — the precise
+            # opposite of what the `[ -n "$value" ]` guard above promises.
+            # Verified against this compose file: with the five exported empty,
+            # `APP_URL` resolves to "" (CORS rejects the browser; emailed and
+            # Stripe links break), `SITE_URL` to "", and `${SITE_ADDRESS:-:80}`
+            # falls all the way back to `:80` — silently reverting a domain and
+            # its HTTPS certificate to plain HTTP on the next deploy, which is
+            # the exact failure this whole change exists to fix. The values are
+            # in .env by this point, so unsetting them loses nothing.
+            unset PUBLIC_GA_MEASUREMENT_ID SITE_ADDRESS APP_URL FRONTEND_URL APP_FRONTEND_URL SITE_URL
 
             # MySQL is not part of the rolling restart, but it must be running
             # before the backend starts — every command below uses --no-deps, so
