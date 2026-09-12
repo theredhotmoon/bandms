@@ -7,7 +7,7 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import HeroBackdrop from '@/components/HeroBackdrop.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
-import { isUpcoming, fmtTime } from '@/lib/i18n'
+import { isUpcoming, fmtTime, postSlug } from '@/lib/i18n'
 
 export async function getStaticPaths() {
   return LOCALES.map(lang => ({ params: { lang } }))
@@ -227,7 +227,7 @@ const structuredData = {
           {latestPosts.map(p => {
             const { day, mo, yr } = fmtDate(p.published_at ?? p.created_at)
             return (
-              <a class="post-row" href={`/${lang}/${slugMap[lang].posts}/${p.id}`}>
+              <a class="post-row" href={`/${lang}/${slugMap[lang].posts}/${postSlug(p, lang)}`}>
                 <div class="post-date">
                   <span class="post-day">{day}</span>
                   <span class="post-mo">{mo} {yr}</span>

@@ -150,4 +150,31 @@ test.describe.serial('Public news — slug-based routing', () => {
     await expect(page.locator(`a[href="/en/${sectionEn}/${bilingualSlugEn}"]`).first()).toBeVisible()
     await expect(page.locator(`a[href$="/${bilingualId}"]`)).toHaveCount(0)
   })
+
+  /**
+   * The homepage builds its own news hrefs rather than reusing the listing's,
+   * and it got them wrong — `${p.id}` where the route is emitted at
+   * postSlug(p, lang), so every "latest news" row on the landing page 404'd.
+   * The listing test above could not see it: two call sites, one covered.
+   *
+   * Asserts the shape of *every* row rather than looking for the seeded post,
+   * so it does not depend on which three posts happen to be newest.
+   */
+  test('the homepage links to news by slug, not by numeric id', async ({ page }) => {
+    await page.goto(`${WEB}/en`)
+
+    const rows = page.locator('.posts-list a.post-row')
+    await expect(rows.first()).toBeVisible()
+
+    const hrefs = await rows.evaluateAll(els => els.map(e => e.getAttribute('href') ?? ''))
+    for (const href of hrefs) {
+      expect(href, 'homepage news link must not address a post by numeric id').not.toMatch(/\/\d+$/)
+      expect(href.startsWith(`/en/${sectionEn}/`), `unexpected news href: ${href}`).toBe(true)
+    }
+
+    // A slug-shaped href pointing at a page nothing built is the same 404, so
+    // follow it: only the article page proves the link resolves.
+    await rows.first().click()
+    await expect(page.locator('.art-title')).toBeVisible()
+  })
 })

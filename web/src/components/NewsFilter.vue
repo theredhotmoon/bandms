@@ -20,11 +20,17 @@ interface PostSummary {
 const props = defineProps<{
   posts: PostSummary[]
   accent: string
-  postHrefBase?: string
+  /**
+   * Locale-aware base for a post URL, e.g. `/pl/aktualnosci`. Required, and
+   * deliberately has no default: post pages are emitted at
+   * `/[lang]/[section]/[postSlug]`, so any guessed base (the old `/posts`
+   * fallback) builds a URL nothing renders — a silent 404 the build cannot see.
+   */
+  postHrefBase: string
   lang?: 'en' | 'pl'
 }>()
 
-const resolvedPostHrefBase = computed(() => props.postHrefBase ?? '/posts')
+const resolvedPostHrefBase = computed(() => props.postHrefBase)
 
 const q   = ref('')
 const tag = ref('all')
