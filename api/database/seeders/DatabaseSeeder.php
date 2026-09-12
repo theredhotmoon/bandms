@@ -20,19 +20,46 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]]);
 
-        DB::table('website_modules')->insertOrIgnore([
-            ['slug' => 'concerts',   'display_name' => 'Concerts',   'enabled' => true, 'sort_order' => 1,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'releases',   'display_name' => 'Releases',   'enabled' => true, 'sort_order' => 2,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'posts',      'display_name' => 'News',       'enabled' => true, 'sort_order' => 3,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'photos',     'display_name' => 'Photos',     'enabled' => true, 'sort_order' => 4,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'press',      'display_name' => 'Press',      'enabled' => true, 'sort_order' => 5,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'videos',     'display_name' => 'Videos',     'enabled' => true, 'sort_order' => 6,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'merch',      'display_name' => 'Shop',       'enabled' => true, 'sort_order' => 7,  'created_at' => now(), 'updated_at' => now(), 'custom_slug' => json_encode(['en' => 'shop', 'pl' => 'shop'])],
-            ['slug' => 'epk',        'display_name' => 'EPK',        'enabled' => true, 'sort_order' => 8,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'tech-rider', 'display_name' => 'Tech Rider', 'enabled' => true, 'sort_order' => 9,  'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'newsletter', 'display_name' => 'Newsletter', 'enabled' => true, 'sort_order' => 10, 'created_at' => now(), 'updated_at' => now()],
-            ['slug' => 'contact',    'display_name' => 'Contact',    'enabled' => true, 'sort_order' => 11, 'created_at' => now(), 'updated_at' => now(), 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
-        ]);
+        // Every row handed to one insert must carry an identical key set.
+        // Illuminate builds the INSERT column list from the *first* row and
+        // then flattens the bindings from all of them, so a row with an extra
+        // key shifts every value after it and the statement dies with
+        // "SQLSTATE[21S01]: Column count doesn't match value count at row N".
+        //
+        // That is exactly what happened: most rows had six keys, `merch` added
+        // `custom_slug` and `contact` added `custom_name` too, so the seeder
+        // blew up on row 7 — and with it `migrate:fresh --seed`, `make fresh`
+        // and `rebuild.sh --fresh-db`, all of which had already wiped the
+        // database by that point.
+        //
+        // Declaring the optional columns once keeps the widths uniform no
+        // matter which row sets them, so adding a module with a custom slug
+        // cannot bring this back.
+        $moduleDefaults = [
+            'custom_name' => null,
+            'custom_slug' => null,
+            'enabled'     => true,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ];
+
+        $modules = [
+            ['slug' => 'concerts',   'display_name' => 'Concerts',   'sort_order' => 1],
+            ['slug' => 'releases',   'display_name' => 'Releases',   'sort_order' => 2],
+            ['slug' => 'posts',      'display_name' => 'News',       'sort_order' => 3],
+            ['slug' => 'photos',     'display_name' => 'Photos',     'sort_order' => 4],
+            ['slug' => 'press',      'display_name' => 'Press',      'sort_order' => 5],
+            ['slug' => 'videos',     'display_name' => 'Videos',     'sort_order' => 6],
+            ['slug' => 'merch',      'display_name' => 'Shop',       'sort_order' => 7,  'custom_slug' => json_encode(['en' => 'shop', 'pl' => 'shop'])],
+            ['slug' => 'epk',        'display_name' => 'EPK',        'sort_order' => 8],
+            ['slug' => 'tech-rider', 'display_name' => 'Tech Rider', 'sort_order' => 9],
+            ['slug' => 'newsletter', 'display_name' => 'Newsletter', 'sort_order' => 10],
+            ['slug' => 'contact',    'display_name' => 'Contact',    'sort_order' => 11, 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
+        ];
+
+        DB::table('website_modules')->insertOrIgnore(
+            array_map(static fn (array $module): array => array_merge($moduleDefaults, $module), $modules)
+        );
 
         DB::table('site_settings')->insertOrIgnore([
             ['key' => 'auto_rebuild', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
