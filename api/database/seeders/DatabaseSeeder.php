@@ -22,25 +22,19 @@ class DatabaseSeeder extends Seeder
 
         // Every row handed to one insert must carry an identical key set.
         // Illuminate builds the INSERT column list from the *first* row and
-        // then flattens the bindings from all of them, so a row with an extra
+        // then flattens the bindings from every row, so a row with an extra
         // key shifts every value after it and the statement dies with
         // "SQLSTATE[21S01]: Column count doesn't match value count at row N".
         //
-        // That is exactly what happened: most rows had six keys, `merch` added
+        // That is what happened here: most rows had six keys, `merch` added
         // `custom_slug` and `contact` added `custom_name` too, so the seeder
         // blew up on row 7 — and with it `migrate:fresh --seed`, `make fresh`
         // and `rebuild.sh --fresh-db`, all of which had already wiped the
         // database by that point.
-        //
-        // Declaring the optional columns once keeps the widths uniform no
-        // matter which row sets them, so adding a module with a custom slug
-        // cannot bring this back.
-        $moduleDefaults = [
-            'custom_name' => null,
-            'custom_slug' => null,
-            'enabled'     => true,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+        $defaults = [
+            'enabled'    => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
 
         $modules = [
@@ -54,11 +48,25 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'epk',        'display_name' => 'EPK',        'sort_order' => 8],
             ['slug' => 'tech-rider', 'display_name' => 'Tech Rider', 'sort_order' => 9],
             ['slug' => 'newsletter', 'display_name' => 'Newsletter', 'sort_order' => 10],
+            // Belt and braces: 2026_08_26_000001_add_contact_website_module
+            // already creates this row, and `slug` is unique, so insertOrIgnore
+            // discards what follows on every database that has run migrations —
+            // which is all of them. Editing these values changes nothing;
+            // /pl/kontakt is set by that migration and its custom_slug backfill.
             ['slug' => 'contact',    'display_name' => 'Contact',    'sort_order' => 11, 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
         ];
 
+        // Derive the width from the rows themselves: every key any row uses
+        // becomes a null column on all of them. Listing the optional columns by
+        // hand would only cover the two that happen to be used today —
+        // `website_modules` also carries `per_page`, `settings` and
+        // `visibility`, and a row setting one of those (as the contact and
+        // footer migrations already do with `settings`) would reintroduce
+        // exactly this bug under a comment claiming it cannot happen.
+        $width = array_fill_keys(array_keys(array_merge($defaults, ...$modules)), null);
+
         DB::table('website_modules')->insertOrIgnore(
-            array_map(static fn (array $module): array => array_merge($moduleDefaults, $module), $modules)
+            array_map(static fn (array $module): array => array_merge($width, $defaults, $module), $modules)
         );
 
         DB::table('site_settings')->insertOrIgnore([
