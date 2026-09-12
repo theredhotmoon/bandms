@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getSlugMap, sectionSlug, LOCALES } from '@/lib/slugs'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
@@ -104,7 +104,7 @@ const structuredData = {
         {(concertsEnabled || releasesEnabled || (contactEnabled && profile.booking_email)) && (
           <div class="hero-ctas">
             {concertsEnabled && (
-              <a class="cta-primary" href={`/${lang}/${slugMap[lang].concerts}`}>
+              <a class="cta-primary" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}`}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                   <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
                 </svg>
@@ -112,10 +112,10 @@ const structuredData = {
               </a>
             )}
             {releasesEnabled && (
-              <a class="cta-secondary" href={`/${lang}/${slugMap[lang].releases}`}>Our music</a>
+              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>Our music</a>
             )}
             {contactEnabled && profile.booking_email && (
-              <a class="cta-secondary" href={`/${lang}/${slugMap[lang].contact}`}>Book us</a>
+              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'contact')}`}>Book us</a>
             )}
           </div>
         )}
@@ -144,14 +144,14 @@ const structuredData = {
             </svg>
             <h2 class="sec-title">Upcoming shows</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${slugMap[lang].concerts}`}>All shows →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}`}>All shows →</a>
         </div>
 
         <div class="gig-list">
           {upcoming.map(c => {
             const { day, mo, yr } = fmtDate(c.date)
             return (
-              <a class="gig-row" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>
+              <a class="gig-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}/${c.slug_en}`}>
                 <div class="gig-date">
                   <span class="gig-day">{day}</span>
                   <span class="gig-mo">{mo} {yr}</span>
@@ -184,11 +184,11 @@ const structuredData = {
             </svg>
             <h2 class="sec-title">Music</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${slugMap[lang].releases}`}>Discography →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>Discography →</a>
         </div>
         <div class="releases-grid">
           {latestReleases.map(r => (
-            <a class="release-card" href={`/${lang}/${slugMap[lang].releases}/${r.id}`}>
+            <a class="release-card" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}/${r.id}`}>
               <div class="release-cover">
                 {r.cover_image
                   ? <img src={r.cover_image} alt={r.title} loading="lazy" />
@@ -221,13 +221,13 @@ const structuredData = {
             </svg>
             <h2 class="sec-title">News</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${slugMap[lang].posts}`}>All posts →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}`}>All posts →</a>
         </div>
         <div class="posts-list">
           {latestPosts.map(p => {
             const { day, mo, yr } = fmtDate(p.published_at ?? p.created_at)
             return (
-              <a class="post-row" href={`/${lang}/${slugMap[lang].posts}/${postSlug(p, lang)}`}>
+              <a class="post-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}/${postSlug(p, lang)}`}>
                 <div class="post-date">
                   <span class="post-day">{day}</span>
                   <span class="post-mo">{mo} {yr}</span>

@@ -143,3 +143,37 @@ describe('hero image scopes', () => {
     expect(map.en.shop).toBe('shop')
   })
 })
+
+describe('sectionSlug', () => {
+  it('returns the mapped slug when the module has one', async () => {
+    const { sectionSlug } = await freshModule()
+    const map = { en: { posts: 'news' }, pl: { posts: 'aktualnosci' } }
+
+    expect(sectionSlug(map, 'en', 'posts')).toBe('news')
+    expect(sectionSlug(map, 'pl', 'posts')).toBe('aktualnosci')
+  })
+
+  /**
+   * The half that matters. A fail-open site-config serves `module_config: {}`,
+   * so the map has no entry at all for a module — and a bare
+   * `slugMap[lang].posts` then emits `/en/undefined/<slug>` while the route,
+   * which guards with `?? 'posts'`, built the page at `/en/posts/<slug>`. The
+   * linking page and the route have to reach the same answer or the link is
+   * dead, which is what getSlugMap's "consistent URLs, no dead links"
+   * guarantee rules out.
+   */
+  it('falls back to the module key when the map has no entry', async () => {
+    const { sectionSlug } = await freshModule()
+    const map = { en: {}, pl: {} }
+
+    expect(sectionSlug(map, 'en', 'posts')).toBe('posts')
+    expect(sectionSlug(map, 'pl', 'concerts')).toBe('concerts')
+  })
+
+  it('agrees with the `?? key` guard the routes use', async () => {
+    const { sectionSlug } = await freshModule()
+    const map: Record<'en' | 'pl', Record<string, string>> = { en: {}, pl: {} }
+
+    expect(sectionSlug(map, 'en', 'posts')).toBe(map.en.posts ?? 'posts')
+  })
+})

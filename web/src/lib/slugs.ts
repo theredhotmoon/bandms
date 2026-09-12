@@ -54,6 +54,21 @@ function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
  * links. Throwing instead would be worse — a failed Astro build crash-loops the
  * `web` container and takes the public site down entirely.
  */
+/**
+ * The URL segment for a section, falling back to the module key.
+ *
+ * The fallback is the half that matters. When site-config is unreachable the
+ * map ships module keys for the whole site — but a module with no row at all
+ * (fail-open serves `module_config: {}`) has no entry, so a bare
+ * `slugMap[lang].posts` is `undefined` and emits `/en/undefined/<slug>`. The
+ * routes already guard with `?? 'posts'`, so the linking page must use the same
+ * fallback or the two disagree and the link is dead — exactly what the
+ * "consistent URLs, no dead links" guarantee above rules out.
+ */
+export function sectionSlug(map: SlugMap, lang: Locale, key: string): string {
+  return map[lang][key] ?? key
+}
+
 export function getSlugMap(): Promise<SlugMap> {
   _pending ??= resolveSlugMap()
   return _pending

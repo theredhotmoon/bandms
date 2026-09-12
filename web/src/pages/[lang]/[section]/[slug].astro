@@ -3,7 +3,7 @@ import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
-import { getConcerts, getPosts, getReleases, getShopItems, getSiteConfig } from '@/lib/cms'
+import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig } from '@/lib/cms'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
 import PostDetail      from '@/components/detail/PostDetail.astro'
@@ -18,7 +18,7 @@ export async function getStaticPaths() {
     getSlugMap(),
     getSiteConfig(DEFAULT_LOCALE),
     getConcerts(),
-    getPosts('en').then(r => r.data),
+    getAllPosts('en'),
     getReleases('en'),
     getShopItems(),
   ])

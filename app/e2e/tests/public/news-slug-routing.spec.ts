@@ -157,24 +157,38 @@ test.describe.serial('Public news — slug-based routing', () => {
    * postSlug(p, lang), so every "latest news" row on the landing page 404'd.
    * The listing test above could not see it: two call sites, one covered.
    *
-   * Asserts the shape of *every* row rather than looking for the seeded post,
-   * so it does not depend on which three posts happen to be newest.
+   * Checked per locale, because the template is locale-parameterised and
+   * postSlug resolves differently under pl (`slug_pl || slug_en`) — a
+   * regression that hardcoded slug_en would pass an /en-only test.
    */
-  test('the homepage links to news by slug, not by numeric id', async ({ page }) => {
-    await page.goto(`${WEB}/en`)
+  for (const { lang, expectedSlug } of [
+    { lang: 'en' as const, expectedSlug: () => bilingualSlugEn },
+    { lang: 'pl' as const, expectedSlug: () => bilingualSlugPl },
+  ]) {
+    test(`the ${lang} homepage links to news by slug, not by numeric id`, async ({ page }) => {
+      const section = lang === 'en' ? sectionEn : sectionPl
+      await page.goto(`${WEB}/${lang}`)
 
-    const rows = page.locator('.posts-list a.post-row')
-    await expect(rows.first()).toBeVisible()
+      const rows = page.locator('.posts-list a.post-row')
+      await expect(rows.first()).toBeVisible()
 
-    const hrefs = await rows.evaluateAll(els => els.map(e => e.getAttribute('href') ?? ''))
-    for (const href of hrefs) {
-      expect(href, 'homepage news link must not address a post by numeric id').not.toMatch(/\/\d+$/)
-      expect(href.startsWith(`/en/${sectionEn}/`), `unexpected news href: ${href}`).toBe(true)
-    }
+      // The seeded posts are the newest, so they head the "latest news" list.
+      // Asserting the exact expected href beats a shape check: a slug is not
+      // guaranteed to be non-numeric (a post titled "2026" slugs to "2026"),
+      // so `not.toMatch(/\/\d+$/)` would fail on correct code.
+      await expect(
+        page.locator(`.posts-list a.post-row[href="/${lang}/${section}/${expectedSlug()}"]`),
+      ).toHaveCount(1)
 
-    // A slug-shaped href pointing at a page nothing built is the same 404, so
-    // follow it: only the article page proves the link resolves.
-    await rows.first().click()
-    await expect(page.locator('.art-title')).toBeVisible()
-  })
+      // And no row addresses a post by the id it actually has.
+      for (const id of [bilingualId, enOnlyId]) {
+        await expect(page.locator(`.posts-list a.post-row[href$="/${id}"]`)).toHaveCount(0)
+      }
+
+      // A slug-shaped href pointing at a page nothing built is the same 404, so
+      // follow it: only the article page proves the link resolves.
+      await rows.first().click()
+      await expect(page.locator('.art-title')).toBeVisible()
+    })
+  }
 })
