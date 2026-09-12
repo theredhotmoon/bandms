@@ -221,14 +221,31 @@ jobs:
             # created private and the mode re-asserted after the swap; and
             # `grep -v` exits 1 when it emits no lines, which under `set -e`
             # would abort the deploy over an .env holding nothing but this one
-            # key.
+            # key. Only exit 1 is tolerated: grep exits >=2 on a real error (a
+            # write failure on a full disk is a recurring condition on this
+            # project's hosts), and swallowing that would `mv` a truncated file
+            # over the only copy of APP_KEY, DB_PASSWORD, STRIPE_SECRET_KEY and
+            # MAIL_PASSWORD.
             sync_secret_env() {
-              local key="$1" value="$2"
+              local key="$1" value="$2" status
               [ -n "$value" ] || return 0
               if [ -f .env ]; then
                 touch .env.tmp
                 chmod 600 .env.tmp
-                grep -v "^${key}=" .env > .env.tmp || true
+                status=0
+                grep -v "^${key}=" .env > .env.tmp || status=$?
+                # 1 means .env held nothing but this key, which is fine. >=2 is
+                # a real read or write error, and .env.tmp is then empty or
+                # partial — so bail out instead of installing it. Checked
+                # explicitly rather than leaning on `set -e`, because -e is
+                # ignored inside any command that is part of an && / || list,
+                # including a call to this function, and the blast radius is
+                # the only copy of APP_KEY and DB_PASSWORD.
+                if [ "$status" -ge 2 ]; then
+                  rm -f .env.tmp
+                  echo "::error::sync_secret_env: grep exited ${status} reading .env; refusing to replace it" >&2
+                  return 1
+                fi
                 mv .env.tmp .env
               fi
               echo "${key}=${value}" >> .env
@@ -252,6 +269,17 @@ jobs:
             # left as a warning in a comment (a code-review catch): a partial
             # set aborts the deploy instead of silently half-migrating the
             # origin.
+            #
+            # docker-compose.prod.yml does derive the last three from APP_URL
+            # (`${SITE_URL:-${APP_URL}}` and friends), so SITE_ADDRESS+APP_URL
+            # looks like it should be enough — it is not, and that objection has
+            # already been raised once in review. Those fallbacks only fire when
+            # the key is *absent* from .env, and step 6 of docs/deployment.md
+            # has every operator write all four URLs explicitly as
+            # http://YOUR_SERVER_IP. With those lines present, a 2-of-5 secret
+            # set leaves backend and web on the old origin while caddy serves
+            # the new one — exactly the silent half-migration this guard exists
+            # to stop.
             domain_vars_set=0
             for v in "$SITE_ADDRESS" "$APP_URL" "$FRONTEND_URL" "$APP_FRONTEND_URL" "$SITE_URL"; do
               [ -n "$v" ] && domain_vars_set=$((domain_vars_set + 1))
@@ -271,6 +299,24 @@ jobs:
             sync_secret_env FRONTEND_URL "$FRONTEND_URL"
             sync_secret_env APP_FRONTEND_URL "$APP_FRONTEND_URL"
             sync_secret_env SITE_URL "$SITE_URL"
+
+            # Now drop all six from the shell, because Compose interpolation
+            # reads the shell environment *first* and .env only as a fallback.
+            # Every name in `envs:` above arrives here exported whether or not
+            # its secret exists: GitHub renders an unset secret as the empty
+            # string rather than omitting the variable, and drone-ssh exports
+            # every name it finds set, empty included. Compose treats
+            # set-but-empty as a value, so leaving them exported lets a *missing*
+            # secret override a hand-edited .env at container level — the precise
+            # opposite of what the `[ -n "$value" ]` guard above promises.
+            # Verified against this compose file: with the five exported empty,
+            # `APP_URL` resolves to "" (CORS rejects the browser; emailed and
+            # Stripe links break), `SITE_URL` to "", and `${SITE_ADDRESS:-:80}`
+            # falls all the way back to `:80` — silently reverting a domain and
+            # its HTTPS certificate to plain HTTP on the next deploy, which is
+            # the exact failure this whole change exists to fix. The values are
+            # in .env by this point, so unsetting them loses nothing.
+            unset PUBLIC_GA_MEASUREMENT_ID SITE_ADDRESS APP_URL FRONTEND_URL APP_FRONTEND_URL SITE_URL
 
             # MySQL is not part of the rolling restart, but it must be running
             # before the backend starts — every command below uses --no-deps, so
