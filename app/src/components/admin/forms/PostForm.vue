@@ -4,6 +4,7 @@ import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
 import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
@@ -53,6 +54,8 @@ const entityLists = computed<RefEntityLists>(() => ({
   shop_item:     props.shopItems.map(s => ({ id: s.id, label: s.name })),
 }))
 
+const { isDirty, markClean } = useDirtyGuard(() => form)
+
 watch(() => props.initial, (val) => {
   form.title_en = val?.translations?.title?.en ?? val?.title ?? ''
   form.title_pl = val?.translations?.title?.pl ?? ''
@@ -74,6 +77,7 @@ watch(() => props.initial, (val) => {
     // from a freshly-added, never-configured block.
     return { type: 'ref', payload: { entity: b.entity, id: (b.data?.id as number) ?? 0 }, dangling: b.data === null }
   })
+  markClean()
 }, { immediate: true })
 
 function submit() {
@@ -175,7 +179,7 @@ function submit() {
 
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
-      <button type="submit" :disabled="loading" class="btn-primary">
+      <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
         {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
       </button>
     </div>

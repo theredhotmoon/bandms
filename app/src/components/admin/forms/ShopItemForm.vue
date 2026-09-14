@@ -9,6 +9,7 @@ import type { MusicVideo } from '@/types/musicVideo'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useShop } from '@/composables/useShop'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 const props = defineProps<{
   initial?: ShopItem | null
@@ -65,6 +66,8 @@ watch(
   { immediate: true },
 )
 
+const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, prices: { ...prices } }))
+
 watch(
   () => props.initial,
   (item) => {
@@ -103,6 +106,7 @@ watch(
       form.video_ids        = item.video_ids ?? []
       form.category_ids     = item.category_ids ?? []
     }
+    markClean()
   },
   { immediate: true },
 )
@@ -373,7 +377,7 @@ function handleSubmit() {
     <!-- ── Actions ────────────────────────────────────────────────── -->
     <div class="form-actions">
       <button type="button" @click="emit('cancel')" class="btn-cancel">Cancel</button>
-      <button type="submit" :disabled="loading" class="btn-submit">
+      <button type="submit" :disabled="loading || !isDirty" class="btn-submit">
         {{ loading ? 'Saving…' : (initial ? 'Save changes' : 'Create item') }}
       </button>
     </div>

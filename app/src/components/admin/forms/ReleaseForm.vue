@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -121,6 +122,9 @@ const form = reactive({
 
 const tracks = ref<TrackRow[]>([emptyTrack(0)])
 
+const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, tracks: tracks.value }))
+const canSave = computed(() => isDirty.value || coverFile.value !== null || coverDelete.value)
+
 watch(
   () => props.initial,
   (val) => {
@@ -182,6 +186,7 @@ watch(
     coverFile.value    = null
     coverPreview.value = null
     coverDelete.value  = false
+    markClean()
   },
   { immediate: true },
 )
@@ -427,7 +432,7 @@ function handleSubmit() {
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
-      <button type="submit" :disabled="loading" class="btn-primary">
+      <button type="submit" :disabled="loading || !canSave" class="btn-primary">
         {{ loading ? 'Saving…' : (initial ? 'Update release' : 'Create release') }}
       </button>
     </div>
