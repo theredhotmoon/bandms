@@ -15,6 +15,7 @@ import { saveErrorMessage } from '@/api/client'
 import { useAuth } from './useAuth'
 import { useBandMembers } from './useBandMembers'
 import { useAllMemberSetups } from './useBandMemberSetups'
+import { useDirtyGuard } from './useDirtyGuard'
 import { useTechRider } from './useTechRiders'
 import type { SetupLookup } from '@bandms/rider-core'
 import { setupLookupFromGroups } from '@bandms/rider-core'
@@ -75,9 +76,9 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
   // ── Draft ───────────────────────────────────────────────────────────────────
 
   const draft = reactive<RiderDraft>(emptyDraft())
-  const dirty = ref(false)
   /** Which rider the draft was loaded from, so a refetch is not mistaken for a switch. */
   const loadedId = ref<number | null>(null)
+  const { isDirty: dirty, markClean } = useDirtyGuard(() => draft)
 
   watch(
     () => riderQ.data.value,
@@ -107,15 +108,14 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
         pa_foh: { ...defaultPaFoh(), ...(rider.pa_foh ?? {}) },
       })
       loadedId.value = rider.id
-      dirty.value = false
+      markClean()
     },
     { immediate: true },
   )
 
-  /** Every mutation of the draft goes through here so `dirty` cannot go stale. */
+  /** Every mutation of the draft goes through here; `dirty` is now derived, not flagged. */
   function patch<K extends keyof RiderDraft>(key: K, value: RiderDraft[K]) {
     draft[key] = value
-    dirty.value = true
   }
 
   // ── Derived rider ───────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     saving.value = true
     try {
       await riderMut.mutateAsync({ ...draft })
-      dirty.value = false
+      markClean()
       saved.value = true
       setTimeout(() => { saved.value = false }, 2000)
       toast.success('Rider saved')
