@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
@@ -80,6 +81,14 @@ const settingsFields = computed(() =>
 // map is enough (unlike draftSettings, which needs the `.<locale>` split).
 const draftVisibility = ref<Record<string, boolean>>({})
 
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  name: { en: draftNameEn.value, pl: draftNamePl.value },
+  slug: { en: draftSlugEn.value, pl: draftSlugPl.value },
+  perPage: draftPerPage.value,
+  settings: draftSettings.value,
+  visibility: draftVisibility.value,
+}))
+
 const visibilityFields = computed(() =>
   editingSlug.value ? visibilityFieldsFor(editingSlug.value) : [],
 )
@@ -115,6 +124,8 @@ function startEdit(mod: WebsiteModule) {
     nextVisibility[field.key] = mod.visibility?.[field.key] ?? true
   }
   draftVisibility.value = nextVisibility
+
+  markClean()
 }
 
 function cancelEdit() {
@@ -188,6 +199,7 @@ async function saveEdit(slug: string) {
       },
     })
     editingSlug.value = null
+    markClean()
   } catch (e) {
     // Field-level errors render inline next to the offending input; anything
     // else would otherwise vanish, leaving the form looking like it saved.
@@ -451,7 +463,7 @@ async function saveEdit(slug: string) {
             </button>
             <button
               class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="updateSettings.isPending.value"
+              :disabled="updateSettings.isPending.value || !isDirty"
               @click="saveEdit(mod.slug)"
             >
               {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}
