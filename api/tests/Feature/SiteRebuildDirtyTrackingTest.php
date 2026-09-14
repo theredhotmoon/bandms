@@ -266,3 +266,68 @@ it('marks press-releases dirty when a press release is deleted', function () {
 
     expect(SiteDirtyArea::where('area', 'press-releases')->exists())->toBeTrue();
 });
+
+use App\Models\Faq;
+use App\Models\ShopCategory;
+use App\Models\ShopItem;
+
+// NOTE on deviations from the task-7 brief's example test bodies, following the
+// same "verify against the real codebase" instruction as tasks 4-6's reports
+// document:
+//   1. There is no `/api/admin/shop-items` or `/api/admin/shop-categories`
+//      prefix. Both are registered directly under the `role:admin` group as
+//      `/api/shop/{shopItem}` (DELETE) and `/api/shop-categories` (POST) —
+//      see routes/api.php:420-437. `/api/admin/faqs` is correct as written;
+//      the faqs routes really do carry that prefix (routes/api.php:468-472).
+//   2. `ShopItem::factory()` and `ShopCategory` both have factories
+//      (`database/factories/ShopItemFactory.php`,
+//      `database/factories/ShopCategoryFactory.php`), so both are used as-is.
+//   3. Both `shop_items.profile_id` and `shop_categories.profile_id` are
+//      non-nullable FKs to `band_profiles`, and `ShopItemFactory`/
+//      `ShopCategoryController::store()` both default to profile id 1 —
+//      which violates the FK when no band profile exists. Same class of bug
+//      task-6 hit with `music_videos.profile_id`; the fix there was
+//      `$this->createProfile()` in a `beforeEach`/at the top of the test, so
+//      both shop tests below do the same.
+// The assertion in each test — SiteDirtyArea::where('area', '...')->exists() —
+// is unchanged from the brief.
+
+it('marks shop dirty when a shop item is deleted', function () {
+    $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $item = ShopItem::factory()->create();
+
+    $this->deleteJson("/api/shop/{$item->id}")->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'shop')->exists())->toBeTrue();
+});
+
+it('marks shop dirty when a shop category is created', function () {
+    $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/shop-categories', ['name' => 'Apparel'])->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'shop')->exists())->toBeTrue();
+});
+
+it('marks faqs dirty when a faq is created', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/admin/faqs', [
+        'module_slug' => 'contact',
+        'question' => ['en' => 'Q?'],
+        'answer' => ['en' => 'A.'],
+    ])->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'faqs')->exists())->toBeTrue();
+});

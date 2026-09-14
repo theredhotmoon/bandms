@@ -8,6 +8,7 @@ use App\Models\Faq;
 use App\Models\WebsiteModule;
 use Illuminate\Http\JsonResponse;
 use App\Support\Locales;
+use App\Support\SiteRebuild;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -63,6 +64,7 @@ class FaqController extends Controller
             ?? ((int) Faq::where('module_slug', $faq->module_slug)->max('sort_order') + 1);
         $faq->is_published = $data['is_published'] ?? true;
         $faq->save();
+        SiteRebuild::markDirty('faqs');
 
         return response()->json(['data' => new FaqResource($faq)], 201);
     }
@@ -88,6 +90,7 @@ class FaqController extends Controller
         }
 
         $faq->save();
+        SiteRebuild::markDirty('faqs');
 
         return response()->json(['data' => new FaqResource($faq)]);
     }
@@ -95,6 +98,7 @@ class FaqController extends Controller
     public function destroy(Faq $faq): JsonResponse
     {
         $faq->delete();
+        SiteRebuild::markDirty('faqs');
 
         return response()->json(null, 204);
     }
@@ -115,6 +119,7 @@ class FaqController extends Controller
                 ->where('module_slug', $data['module_slug'])
                 ->update(['sort_order' => $index]);
         }
+        SiteRebuild::markDirty('faqs');
 
         return response()->json([
             'data' => FaqResource::collection(
