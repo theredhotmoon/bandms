@@ -44,6 +44,7 @@ use App\Http\Controllers\TourController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\VenueController;
 use App\Http\Controllers\WebsiteModuleController;
+use App\Http\Controllers\SiteRebuildController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -485,9 +486,9 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/admin/modules', [WebsiteModuleController::class, 'index'])->name('api.admin.modules.index');
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
         Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
-        Route::put('/admin/site/settings', [WebsiteModuleController::class, 'updateSettings'])->name('api.admin.site.settings');
-        Route::post('/admin/site/rebuild', [WebsiteModuleController::class, 'rebuild'])->name('api.admin.site.rebuild');
-        Route::get('/admin/site/rebuild/status', [WebsiteModuleController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
+        Route::put('/admin/site/settings', [SiteRebuildController::class, 'updateSettings'])->name('api.admin.site.settings');
+        Route::post('/admin/site/rebuild', [SiteRebuildController::class, 'rebuild'])->name('api.admin.site.rebuild');
+        Route::get('/admin/site/rebuild/status', [SiteRebuildController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
 
         // Tech Riders
         Route::get('/tech-riders', [TechRiderController::class, 'index'])->name('api.tech-riders.index');
