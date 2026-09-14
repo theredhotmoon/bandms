@@ -746,14 +746,17 @@ git commit -m "Add RebuildBar and RebuildSettingsModal components"
 
 ---
 
-### Task 5: Mount `RebuildBar` in `AdminLayout`; remove old rebuild UI from `WebsiteModulesView`
+### Task 5: Mount `RebuildBar` in `AdminLayout`; remove old rebuild UI from `WebsiteModulesView` and `HeroImagesAdminView`
 
 **Files:**
 - Modify: `app/src/components/admin/AdminLayout.vue`
 - Modify: `app/src/views/admin/WebsiteModulesView.vue`
+- Modify: `app/src/views/admin/HeroImagesAdminView.vue`
 
 **Interfaces:**
-- Consumes: `RebuildBar` (Task 4), `useWebsiteModules()` (Task 3, already trimmed).
+- Consumes: `RebuildBar` (Task 4), `useWebsiteModules()` (Task 3, already trimmed), `useSiteRebuild()` (Task 3).
+
+**Note on scope:** `HeroImagesAdminView.vue` was not in the original research for this plan — it turned out to have its own second local "Rebuild Public Site" button, independently destructuring `rebuild`/`rebuildStatusQuery` from `useWebsiteModules()` (discovered only once Task 3 removed those exports and `pnpm build` failed there too, not just in `WebsiteModulesView.vue` as expected). It needs the exact same treatment as `WebsiteModulesView.vue` — Step 3 below covers it.
 
 - [ ] **Step 1: Mount `RebuildBar` in `AdminLayout.vue`**
 
@@ -836,23 +839,92 @@ In `<template>`, replace lines 242-296 (the header row containing the title/desc
     </div>
 ```
 
-- [ ] **Step 3: Leave the inline edit panel's Save button as-is for now**
+- [ ] **Step 3: Remove the old rebuild UI from `HeroImagesAdminView.vue`**
 
-The inline edit panel's Save button (lines 542-548, disabled on `updateSettings.isPending.value` alone) is untouched by this task — Task 6 adds the dirty guard to this same view and updates this button's `:disabled` binding then. No action needed here.
+Add the import (alongside the existing `useWebsiteModules` import, line 6):
 
-- [ ] **Step 4: Type-check**
+```ts
+import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { useSiteRebuild } from '@/composables/useSiteRebuild'
+```
+
+Replace line 12:
+
+```ts
+const { query: modulesQ, rebuild, rebuildStatusQuery } = useWebsiteModules()
+```
+
+with:
+
+```ts
+const { query: modulesQ } = useWebsiteModules()
+const { autoRebuild } = useSiteRebuild()
+```
+
+Delete lines 133-134 (`rebuilding` and the local `autoRebuild` computed — both now unused; `autoRebuild` comes directly from `useSiteRebuild()` above and every existing template reference to `autoRebuild`, e.g. the hint text later in the file, keeps working unchanged since the variable name is the same):
+
+```ts
+const rebuilding = computed(() => rebuildStatusQuery.data.value?.status === 'building')
+const autoRebuild = computed(() => modulesQ.data.value?.auto_rebuild ?? false)
+```
+
+In `<template>`, replace the header block (lines 140-159, the title/description plus the local rebuild button):
+
+```html
+      <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        <div>
+          <h1 class="text-2xl font-bold text-white">Hero Images</h1>
+          <p class="text-sm text-zinc-500 mt-1">
+            Pictures shown behind a page's title. With more than one active picture, one
+            is chosen at random on each visit. A page with none of its own uses Main.
+            Uploaded here directly — never from the photo gallery.
+          </p>
+        </div>
+
+        <button
+          v-if="!autoRebuild"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+          :disabled="rebuilding"
+          title="Rebuild the public site so the change becomes visible"
+          @click="rebuild.mutate()"
+        >
+          {{ rebuilding ? 'Rebuilding…' : '↺ Rebuild Public Site' }}
+        </button>
+      </div>
+```
+
+with just the title block:
+
+```html
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Hero Images</h1>
+        <p class="text-sm text-zinc-500 mt-1">
+          Pictures shown behind a page's title. With more than one active picture, one
+          is chosen at random on each visit. A page with none of its own uses Main.
+          Uploaded here directly — never from the photo gallery.
+        </p>
+      </div>
+```
+
+The informational hint further down the file (`<p v-if="!autoRebuild" class="text-xs text-zinc-500 mt-3">The public site is static — hero changes appear after a rebuild.</p>`) needs no change — it already reads the `autoRebuild` variable, which now resolves to `useSiteRebuild()`'s value instead of the deleted local computed.
+
+- [ ] **Step 4: Leave the inline edit panel's Save button as-is for now**
+
+The inline edit panel's Save button in `WebsiteModulesView.vue` (lines 542-548, disabled on `updateSettings.isPending.value` alone) is untouched by this task — Task 6 adds the dirty guard to this same view and updates this button's `:disabled` binding then. No action needed here.
+
+- [ ] **Step 5: Type-check**
 
 Run: `cd app && pnpm build`
-Expected: no errors (the Task 3 destructuring errors are now resolved).
+Expected: no errors (both the Task 3 destructuring errors in `WebsiteModulesView.vue` and the newly-discovered ones in `HeroImagesAdminView.vue` are now resolved).
 
-- [ ] **Step 5: Manually verify in the browser**
+- [ ] **Step 6: Manually verify in the browser**
 
-Run: `docker compose up -d` (if not already running), open `http://localhost:8081/admin/website-modules`, confirm the Rebuild bar appears above the page content on every admin route (check at least one other route, e.g. `/admin/faqs`), and that it no longer duplicates inside Website Modules itself.
+Run: `docker compose up -d` (if not already running), open `http://localhost:8081/admin/website-modules`, confirm the Rebuild bar appears above the page content on every admin route (check at least one other route, e.g. `/admin/faqs`), and that it no longer duplicates inside Website Modules itself. Also open `/admin/hero-images` and confirm its local rebuild button is gone and the global bar covers it instead.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/components/admin/AdminLayout.vue app/src/views/admin/WebsiteModulesView.vue
+git add app/src/components/admin/AdminLayout.vue app/src/views/admin/WebsiteModulesView.vue app/src/views/admin/HeroImagesAdminView.vue
 git commit -m "Mount RebuildBar globally; remove the old per-page rebuild controls"
 ```
 
