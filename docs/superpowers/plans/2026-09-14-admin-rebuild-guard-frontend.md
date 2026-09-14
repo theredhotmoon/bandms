@@ -836,9 +836,9 @@ In `<template>`, replace lines 242-296 (the header row containing the title/desc
     </div>
 ```
 
-- [ ] **Step 3: Add the dirty-guard-aware Save button in the inline edit panel — read the file first**
+- [ ] **Step 3: Leave the inline edit panel's Save button as-is for now**
 
-The inline edit panel's Save button (rendered when a module is being edited) is somewhere between the original lines 298-552, not reproduced in this plan. Open `app/src/views/admin/WebsiteModulesView.vue`, find the Save button inside the edit panel (it currently disables on `updateSettings.isPending.value`), and leave it as-is for now — Task 6 adds the dirty guard to this same view and will update this button's `:disabled` binding then. This step is a checkpoint only: confirm you can locate that button before moving to Task 6.
+The inline edit panel's Save button (lines 542-548, disabled on `updateSettings.isPending.value` alone) is untouched by this task — Task 6 adds the dirty guard to this same view and updates this button's `:disabled` binding then. No action needed here.
 
 - [ ] **Step 4: Type-check**
 
@@ -902,10 +902,28 @@ In `saveEdit()`, immediately after `editingSlug.value = null` (originally line 2
 
 - [ ] **Step 4: Gate the Save button on `isDirty`**
 
-Locate the Save button found in Task 5 Step 3 (inside the edit panel, currently disabled on `updateSettings.isPending.value` alone). Change its `:disabled` binding to also require `isDirty`:
+Change the Save button inside the edit panel (lines 542-548, currently disabled on `updateSettings.isPending.value` alone):
 
 ```html
-:disabled="updateSettings.isPending.value || !isDirty"
+<button
+  class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  :disabled="updateSettings.isPending.value"
+  @click="saveEdit(mod.slug)"
+>
+  {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}
+</button>
+```
+
+to:
+
+```html
+<button
+  class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  :disabled="updateSettings.isPending.value || !isDirty"
+  @click="saveEdit(mod.slug)"
+>
+  {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}
+</button>
 ```
 
 - [ ] **Step 5: Type-check and manually verify**
@@ -926,37 +944,86 @@ git commit -m "Wire useDirtyGuard into the website modules edit panel"
 ### Task 7: Dirty guard for the FAQ editor
 
 **Files:**
-- Modify: whichever component holds the FAQ draft state and Save button (locate via Step 1)
+- Modify: `app/src/components/admin/FaqEditor.vue`
 
 **Interfaces:**
 - Consumes: `useDirtyGuard` (Task 2).
 
-- [ ] **Step 1: Locate and read the FAQ editor**
+The draft state lives in `FaqEditor.vue` itself (not a `forms/` subfolder — it's directly under `app/src/components/admin/`), imported by `app/src/views/admin/FaqsAdminView.vue`. The view renders it with `v-if="editing === faq.id"` (existing row) or `v-if="editing === 'new'"` (new entry) — same unmount-on-close pattern as the Concert/Release/Post/ShopItem forms in Task 10, so no explicit `markClean()` after save is needed here either: `handleSave()` in the view sets `editing.value = null` on success, unmounting `FaqEditor` entirely: the next open remounts it fresh and the load-sync watcher re-snapshots the baseline.
 
-Open `app/src/views/admin/FaqsAdminView.vue` and follow its imports to find the child component holding the actual question/answer draft and Save button (likely `app/src/components/admin/forms/FaqEditor.vue` or similar under `app/src/components/admin/`). Read the full file. Identify:
-- The reactive draft object or set of refs holding the editable question/answer/module/published fields.
-- Whether it resets on `props.initial`/`props.faq` change (a `watch(..., { immediate: true })`), and where that callback ends.
-- The save function and what happens on success (does the parent close a panel, as in the other forms researched for this plan?).
-- The exact Save button markup and its current `:disabled` binding.
+- [ ] **Step 1: Add the dirty guard**
 
-- [ ] **Step 2: Add the dirty guard**
+Add the import and, after the existing state declarations (`draft`, `draftModule`, `published` — lines 23-29):
 
-Following the exact same pattern as Task 6 and the forms in Tasks 8-11: add `const { isDirty, markClean } = useDirtyGuard(() => /* the draft object/refs found in Step 1 */)`, call `markClean()` at the end of the load-sync watcher, call `markClean()` after a successful save, and change the Save button's `:disabled` to include `|| !isDirty` (or `!isDirty` alone if there's no separate pending/loading flag already gating it).
+```ts
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
-- [ ] **Step 3: Type-check and manually verify**
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  question: draft.question,
+  answer: draft.answer,
+  module: draftModule.value,
+  published: published.value,
+}))
+```
+
+- [ ] **Step 2: Snapshot the baseline when the target changes**
+
+In the `watch(() => props.faq, ..., { immediate: true })` callback (lines 33-44), add `markClean()` as the last statement inside the callback, immediately before its closing `}` (the line just before line 44's `},`):
+
+```ts
+watch(
+  () => props.faq,
+  (faq) => {
+    draftModule.value = faq?.module_slug ?? props.moduleSlug
+    published.value = faq?.is_published ?? true
+    for (const l of LOCALES) {
+      draft.question[l] = faq?.question?.[l] ?? ''
+      draft.answer[l] = faq?.answer?.[l] ?? ''
+    }
+    markClean()
+  },
+  { immediate: true },
+)
+```
+
+- [ ] **Step 3: Gate the Save button on `isDirty`**
+
+Change the Save button (lines 182-188):
+
+```html
+<button
+  type="submit"
+  class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  :disabled="pending"
+>
+  {{ pending ? 'Saving…' : 'Save' }}
+</button>
+```
+
+to:
+
+```html
+<button
+  type="submit"
+  class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  :disabled="pending || !isDirty"
+>
+  {{ pending ? 'Saving…' : 'Save' }}
+</button>
+```
+
+- [ ] **Step 4: Type-check and manually verify**
 
 Run: `cd app && pnpm build`
 
-In the browser, open `/admin/faqs`, confirm Save starts disabled when editing an existing FAQ, becomes enabled after a change, and disables again after saving.
+In the browser, open `/admin/faqs`, confirm Save starts disabled when editing an existing FAQ, becomes enabled after a change, and disables again after saving. Also confirm the "new entry" flow: Save starts disabled on an empty draft and enables once a field is filled in.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/views/admin/FaqsAdminView.vue app/src/components/admin/forms/FaqEditor.vue
+git add app/src/components/admin/FaqEditor.vue
 git commit -m "Wire useDirtyGuard into the FAQ editor"
 ```
-
-(adjust the `git add` paths to whatever file(s) Step 1 actually found)
 
 ---
 
@@ -1141,20 +1208,87 @@ git add app/src/components/band-member/MemberDefaultGear.vue
 git commit -m "Replace MemberDefaultGear's hand-rolled dirty ref with useDirtyGuard"
 ```
 
-- [ ] **Step 7: `MemberSetupsPanel.vue` — read the full file first**
+- [ ] **Step 7: `MemberSetupsPanel.vue` — add the dirty guard**
 
-This file's full source was not captured during planning research (only the specific dirty-related lines were confirmed: `dirty`/`loadedId` declared ~lines 35-37, `saving`/`saved` ~lines 76-77, `dirty.value = false` on load inside a `watch(() => setupQ.data.value, ...)` at line 59, `onRigChange()` sets `dirty.value = true` at lines 64-67 while updating a `rig` ref, `save()` spans ~87-111 setting `dirty.value = false` at line 102, `openSetup()` at ~154-157 reads `dirty.value` as a discard-confirm guard, and the template has two more manual sets at ~231-232 (a name `@input` handler) and ~239 (an instrument `@change` handler) whose exact ref names are unknown from prior research. Read the full file now to identify every ref that composes the setup draft — expected to include at least `rig`, and whatever refs back the name input and instrument select found at those template lines.
+Add the import and replace the state declarations (lines 32-37):
 
-- [ ] **Step 8: `MemberSetupsPanel.vue` — apply the same pattern**
+```ts
+const name = ref('')
+const instrumentId = ref<number | null>(null)
+const rig = ref<RigSpec>(defaultRigSpec())
+const dirty = ref(false)
+/** Which setup the draft was loaded from, so a refetch is not mistaken for a switch. */
+const loadedId = ref<number | null>(null)
+```
 
-Once the full set of draft-composing refs is confirmed (Step 7), apply the identical transformation used in Steps 1-4 above and in Task 8:
-- Add `import { useDirtyGuard } from '@/composables/useDirtyGuard'`.
-- Replace the `dirty = ref(false)` declaration with `const { isDirty: dirty, markClean } = useDirtyGuard(() => ({ /* every draft-composing ref found in Step 7, e.g. rig: rig.value, plus the name/instrument refs */ }))`. Keep `loadedId` as a separate plain ref, unchanged — it is a refetch-clobber guard, not draft content.
-- Replace `dirty.value = false` (line 59, inside the load watcher) with `markClean()`.
-- Remove the `dirty.value = true` line from `onRigChange()` (lines 64-67) — keep the rest of the function.
-- Remove the `dirty = true` fragments from the two template handlers (~231-232, ~239) — keep the rest of each handler (the input/select still needs to update its own ref).
-- Replace `dirty.value = false` after save (line 102) with `markClean()`.
-- `openSetup()`'s `if (dirty.value && !confirm(...)) return` guard (line 155) needs no change — `dirty.value` still reads correctly.
+with:
+
+```ts
+const name = ref('')
+const instrumentId = ref<number | null>(null)
+const rig = ref<RigSpec>(defaultRigSpec())
+/** Which setup the draft was loaded from, so a refetch is not mistaken for a switch. */
+const loadedId = ref<number | null>(null)
+const { isDirty: dirty, markClean } = useDirtyGuard(() => ({
+  name: name.value,
+  instrumentId: instrumentId.value,
+  rig: rig.value,
+}))
+```
+
+(add `import { useDirtyGuard } from '@/composables/useDirtyGuard'` with the file's other imports)
+
+- [ ] **Step 8: `MemberSetupsPanel.vue` — wire baseline resets and remove manual flagging**
+
+In the `watch(() => setupQ.data.value, ..., { immediate: true })` callback (lines 39-62), replace line 59:
+
+```ts
+    dirty.value = false
+```
+
+with:
+
+```ts
+    markClean()
+```
+
+In `onRigChange()` (lines 64-67), remove the `dirty.value = true` line:
+
+```ts
+function onRigChange(field: RigField, value: unknown) {
+  rig.value = { ...rig.value, [field]: value } as RigSpec
+}
+```
+
+In the template, remove `@input="dirty = true"` from the name input (line 231-232) — it becomes:
+
+```html
+<input
+  v-model="name"
+  class="meta-input"
+  placeholder="e.g. Festival rig"
+/>
+```
+
+And remove the `; dirty = true` fragment from the instrument select's `@change` handler (line 239) — it becomes:
+
+```html
+@change="instrumentId = Number(($event.target as HTMLSelectElement).value) || null"
+```
+
+In `save()` (lines 87-111), replace line 102:
+
+```ts
+    dirty.value = false
+```
+
+with:
+
+```ts
+    markClean()
+```
+
+`openSetup()`'s `if (dirty.value && !confirm('Discard unsaved changes to this setup?')) return` guard (line 155) needs no change — `dirty.value` still reads correctly through the computed alias.
 
 - [ ] **Step 9: `MemberSetupsPanel.vue` — align the Save button with the rest of the app**
 
