@@ -129,3 +129,63 @@ it('marks website-modules dirty on a module update', function () {
 
     expect(SiteDirtyArea::where('area', 'website-modules')->exists())->toBeTrue();
 });
+
+use App\Models\Concert;
+use App\Models\Setlist;
+use App\Models\SetlistItem;
+use App\Models\Song;
+use App\Models\Venue;
+
+// NOTE on deviations from the task-5 brief's example test bodies, following
+// the same "verify against the real codebase" instruction task-2-4's report
+// documents:
+//   1. There is no `/api/admin/{concerts,venues,setlists}` prefix. All three
+//      resources are registered directly under the `role:admin` group as
+//      `/api/concerts`, `/api/venues`, `/api/setlists` (routes/api.php:300-413).
+//   2. There is no `Setlist::factory()` or `Song::factory()`/`SetlistItem::factory()`
+//      (`database/factories/` has only ConcertFactory and VenueFactory).
+//      `tests/Feature/SetlistTest.php` builds these rows with plain
+//      `Setlist::create(['name' => ...])`, `Song::create(['title' => ...])` and
+//      `SetlistItem::create([...])` throughout, so the same convention is used
+//      here. `Concert::factory()->create()` and `Venue::factory()` do exist and
+//      are used as-is (ConcertFactory auto-supplies a `Venue::factory()` for
+//      `venue_id`).
+// The assertion in each test — SiteDirtyArea::where('area', '...')->exists() —
+// is unchanged from the brief.
+
+it('marks concerts dirty when a concert is deleted', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $concert = Concert::factory()->create();
+
+    $this->deleteJson("/api/concerts/{$concert->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'concerts')->exists())->toBeTrue();
+});
+
+it('marks venues dirty when a venue is created', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/venues', ['name' => 'A New Venue'])->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'venues')->exists())->toBeTrue();
+});
+
+it('marks setlists dirty when a setlist item is reordered', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $setlist = Setlist::create(['name' => 'Set']);
+    $song = Song::create(['title' => 'Opening Track']);
+    $item = SetlistItem::create(['setlist_id' => $setlist->id, 'song_id' => $song->id, 'position' => 1]);
+
+    $this->putJson("/api/setlists/{$setlist->id}/items/reorder", ['order' => [$item->id]])->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'setlists')->exists())->toBeTrue();
+});

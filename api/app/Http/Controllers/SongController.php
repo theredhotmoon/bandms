@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\SongResource;
 use App\Models\Song;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,19 +19,29 @@ class SongController extends Controller
     public function store(Request $request): SongResource
     {
         $data = $this->validated($request);
-        return new SongResource(Song::create($data));
+        $song = Song::create($data);
+
+        SiteRebuild::markDirty('setlists');
+
+        return new SongResource($song);
     }
 
     public function update(Request $request, Song $song): SongResource
     {
         $data = $this->validated($request, partial: true);
         $song->update($data);
+
+        SiteRebuild::markDirty('setlists');
+
         return new SongResource($song->fresh());
     }
 
     public function destroy(Song $song): JsonResponse
     {
         $song->delete();
+
+        SiteRebuild::markDirty('setlists');
+
         return response()->json(null, 204);
     }
 

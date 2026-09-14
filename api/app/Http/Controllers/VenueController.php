@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\VenueResource;
 use App\Models\Venue;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -38,6 +39,8 @@ class VenueController extends Controller
             $venue->socialLinks()->create(array_merge($link, ['position' => $index]));
         }
 
+        SiteRebuild::markDirty('venues');
+
         return new VenueResource($venue->load('tags', 'socialLinks'));
     }
 
@@ -71,12 +74,16 @@ class VenueController extends Controller
             }
         }
 
+        SiteRebuild::markDirty('venues');
+
         return new VenueResource($venue->load('tags', 'socialLinks'));
     }
 
     public function destroy(Venue $venue): JsonResponse
     {
         $venue->delete();
+
+        SiteRebuild::markDirty('venues');
 
         return response()->json(null, 204);
     }

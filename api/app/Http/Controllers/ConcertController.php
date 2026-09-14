@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ConcertResource;
 use App\Models\Concert;
 use App\Models\Venue;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -53,6 +54,8 @@ class ConcertController extends Controller
         $this->syncTags($concert, $data['tag_ids'] ?? null);
         $this->syncLinks($concert, $data['links'] ?? []);
 
+        SiteRebuild::markDirty('concerts');
+
         return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
     }
 
@@ -71,6 +74,8 @@ class ConcertController extends Controller
         $this->syncTags($concert, $data['tag_ids'] ?? null);
         $this->syncLinks($concert, $data['links'] ?? []);
 
+        SiteRebuild::markDirty('concerts');
+
         return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
     }
 
@@ -80,6 +85,8 @@ class ConcertController extends Controller
             Storage::disk('public')->delete($concert->poster);
         }
         $concert->delete();
+
+        SiteRebuild::markDirty('concerts');
 
         return response()->json(null, 204);
     }
@@ -95,6 +102,8 @@ class ConcertController extends Controller
         $path = $request->file('poster')->store('posters', 'public');
         $concert->update(['poster' => $path]);
 
+        SiteRebuild::markDirty('concerts');
+
         return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
     }
 
@@ -104,6 +113,8 @@ class ConcertController extends Controller
             Storage::disk('public')->delete($concert->poster);
             $concert->update(['poster' => null]);
         }
+
+        SiteRebuild::markDirty('concerts');
 
         return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
     }

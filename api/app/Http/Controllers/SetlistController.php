@@ -10,6 +10,7 @@ use App\Models\Concert;
 use App\Models\Setlist;
 use App\Models\SetlistItem;
 use App\Models\Song;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -38,6 +39,9 @@ class SetlistController extends Controller
     {
         $data = $this->validatedSetlist($request);
         $setlist = Setlist::create($data);
+
+        SiteRebuild::markDirty('setlists');
+
         return new SetlistResource($setlist->load('concert.venue'));
     }
 
@@ -50,12 +54,18 @@ class SetlistController extends Controller
     {
         $data = $this->validatedSetlist($request, partial: true);
         $setlist->update($data);
+
+        SiteRebuild::markDirty('setlists');
+
         return new SetlistResource($setlist->fresh()->load('concert.venue'));
     }
 
     public function destroy(Setlist $setlist): JsonResponse
     {
         $setlist->delete();
+
+        SiteRebuild::markDirty('setlists');
+
         return response()->json(null, 204);
     }
 
@@ -81,6 +91,8 @@ class SetlistController extends Controller
         $item = SetlistItem::create($data);
         $item->load('song');
 
+        SiteRebuild::markDirty('setlists');
+
         return new SetlistItemResource($item);
     }
 
@@ -100,6 +112,8 @@ class SetlistController extends Controller
         $item->update($data);
         $item->load('song');
 
+        SiteRebuild::markDirty('setlists');
+
         return new SetlistItemResource($item->fresh());
     }
 
@@ -108,6 +122,9 @@ class SetlistController extends Controller
         abort_unless($item->setlist_id === $setlist->id, 404);
         $item->delete();
         $this->resequence($setlist);
+
+        SiteRebuild::markDirty('setlists');
+
         return response()->json(null, 204);
     }
 
@@ -123,6 +140,8 @@ class SetlistController extends Controller
                 ->where('setlist_id', $setlist->id)
                 ->update(['position' => $position + 1]);
         }
+
+        SiteRebuild::markDirty('setlists');
 
         return response()->json(['ok' => true]);
     }
@@ -159,6 +178,8 @@ class SetlistController extends Controller
                 'is_encore'  => $songData['is_encore'] ?? false,
             ]);
         }
+
+        SiteRebuild::markDirty('setlists');
 
         return new SetlistResource($setlist->fresh()->load('concert.venue'));
     }
