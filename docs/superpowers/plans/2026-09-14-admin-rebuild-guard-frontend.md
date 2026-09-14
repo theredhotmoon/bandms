@@ -1106,7 +1106,7 @@ git commit -m "Wire useDirtyGuard into the FAQ editor"
 
 **Interfaces:**
 - Consumes: `useDirtyGuard` (Task 2).
-- Produces: same public shape as before — `dirty` is still the name returned (aliased from `isDirty`), so `TechRiderAdminView.vue` needs **no changes** (it reads `dirty.value`, passes `:dirty="dirty"` as a prop, and calls nothing that sets `dirty` directly — `patch()` is its only mutation gateway, which this task changes internally, not at its call sites).
+- Produces: same public shape as before — `dirty` is still the name returned (aliased from `isDirty`), so `TechRiderAdminView.vue` needs **no changes to how it reads `dirty`** (it reads `dirty.value` in script, passes `:dirty="dirty"` as a prop, and calls nothing that sets `dirty` directly — `patch()` is its only mutation gateway, which this task changes internally, not at its call sites). **Correction (final review pass):** the view's Save button itself still needed a change — its `:disabled` binding checked only `editor.saving.value`, never `dirty`, so it stayed clickable on a clean rider. That wasn't caused by this task's composable swap; it was a pre-existing gap in the view that this task's "no changes" claim papered over. See the final-review fix report for the one-line fix.
 
 - [ ] **Step 1: Add the import**
 

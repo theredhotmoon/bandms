@@ -13,7 +13,7 @@ export function useSiteRebuild() {
     queryKey: REBUILD_QUERY_KEY,
     queryFn: () => fetchRebuildStatus(token.value!),
     enabled: () => token.value !== null,
-    refetchInterval: (query) => (query.state.data?.status === 'building' ? 2000 : false),
+    refetchInterval: (query) => (query.state.data?.status === 'building' ? 2000 : 30000),
     staleTime: 0,
   })
 
