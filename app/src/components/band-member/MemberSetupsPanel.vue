@@ -15,6 +15,7 @@ import type { RigField, RigSpec } from '@bandms/rider-core'
 import { defaultRigSpec } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
 import { unnamedChannelMessage } from '@/utils/rigValidation'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 interface Props { member: BandMember }
 const props = defineProps<Props>()
@@ -32,9 +33,13 @@ watch(memberId, () => { openId.value = null })
 const name = ref('')
 const instrumentId = ref<number | null>(null)
 const rig = ref<RigSpec>(defaultRigSpec())
-const dirty = ref(false)
 /** Which setup the draft was loaded from, so a refetch is not mistaken for a switch. */
 const loadedId = ref<number | null>(null)
+const { isDirty: dirty, markClean } = useDirtyGuard(() => ({
+  name: name.value,
+  instrumentId: instrumentId.value,
+  rig: rig.value,
+}))
 
 watch(
   () => setupQ.data.value,
@@ -56,14 +61,13 @@ watch(
       foh_notes: setup.foh_notes ?? '',
     }
     loadedId.value = setup.id
-    dirty.value = false
+    markClean()
   },
   { immediate: true },
 )
 
 function onRigChange(field: RigField, value: unknown) {
   rig.value = { ...rig.value, [field]: value } as RigSpec
-  dirty.value = true
 }
 
 const selectedInstrument = computed<Instrument | null>(
@@ -99,7 +103,7 @@ async function save() {
       instrument_id: instrumentId.value,
       ...rig.value,
     })
-    dirty.value = false
+    markClean()
     saved.value = true
     setTimeout(() => { saved.value = false }, 2000)
     toast.success('Setup saved')
@@ -228,7 +232,6 @@ function instrumentIconType(inst: Instrument | null) {
               v-model="name"
               class="meta-input"
               placeholder="e.g. Festival rig"
-              @input="dirty = true"
             />
           </div>
           <div class="field-group">
@@ -236,7 +239,7 @@ function instrumentIconType(inst: Instrument | null) {
             <select
               :value="instrumentId ?? ''"
               class="meta-input"
-              @change="instrumentId = Number(($event.target as HTMLSelectElement).value) || null; dirty = true"
+              @change="instrumentId = Number(($event.target as HTMLSelectElement).value) || null"
             >
               <option value="">— Any / not specified —</option>
               <option v-for="inst in member.instruments" :key="inst.id" :value="inst.id">
@@ -264,7 +267,7 @@ function instrumentIconType(inst: Instrument | null) {
             type="button"
             class="btn-save"
             :class="{ 'btn-save--ok': saved }"
-            :disabled="saving"
+            :disabled="saving || !dirty"
             @click="save"
           >
             {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save setup' }}
