@@ -67,8 +67,15 @@ export interface SiteSettings {
   auto_rebuild: boolean
 }
 
+export interface PendingArea {
+  area: string
+  changedAt: string | null
+}
+
 export interface RebuildStatus {
   status: 'idle' | 'building' | 'done' | 'error' | 'unknown'
   startedAt: number | null
   finishedAt: number | null
+  autoRebuild: boolean
+  pendingAreas: PendingArea[]
 }

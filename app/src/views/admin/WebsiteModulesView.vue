@@ -1,54 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { ApiValidationError } from '@/api/client'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
 
-const { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild } = useWebsiteModules()
-
-const autoRebuild = computed(() => query.data.value?.auto_rebuild ?? false)
-
-const rebuildStatus  = computed(() => rebuildStatusQuery.data.value?.status ?? 'idle')
-const rebuildStarted = computed(() => rebuildStatusQuery.data.value?.startedAt ?? null)
-
-// ── Elapsed-time ticker ───────────────────────────────────────────────────────
-
-const ESTIMATED_MS = 45_000
-
-const now = ref(Date.now())
-let ticker: ReturnType<typeof setInterval> | null = null
-
-watch(rebuildStatus, (status) => {
-  if (ticker) { clearInterval(ticker); ticker = null }
-  if (status === 'building') {
-    ticker = setInterval(() => { now.value = Date.now() }, 1000)
-  }
-}, { immediate: true })
-
-onUnmounted(() => { if (ticker) clearInterval(ticker) })
-
-const elapsedSec = computed(() => {
-  if (!rebuildStarted.value) return 0
-  return Math.floor((now.value - rebuildStarted.value) / 1000)
-})
-
-const progressPct = computed(() => {
-  if (rebuildStatus.value === 'done')  return 100
-  if (rebuildStatus.value === 'error') return 100
-  if (rebuildStatus.value !== 'building' || !rebuildStarted.value) return 0
-  return Math.min((elapsedSec.value / (ESTIMATED_MS / 1000)) * 90, 90)
-})
-
-const showBar = computed(() =>
-  rebuildStatus.value === 'building' ||
-  rebuildStatus.value === 'done'     ||
-  rebuildStatus.value === 'error'
-)
+const { query, toggleModule, updateSettings, reorder } = useWebsiteModules()
 
 // ── Draggable ordered list ────────────────────────────────────────────────────
 
@@ -119,6 +81,14 @@ const settingsFields = computed(() =>
 // map is enough (unlike draftSettings, which needs the `.<locale>` split).
 const draftVisibility = ref<Record<string, boolean>>({})
 
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  name: { en: draftNameEn.value, pl: draftNamePl.value },
+  slug: { en: draftSlugEn.value, pl: draftSlugPl.value },
+  perPage: draftPerPage.value,
+  settings: draftSettings.value,
+  visibility: draftVisibility.value,
+}))
+
 const visibilityFields = computed(() =>
   editingSlug.value ? visibilityFieldsFor(editingSlug.value) : [],
 )
@@ -154,6 +124,8 @@ function startEdit(mod: WebsiteModule) {
     nextVisibility[field.key] = mod.visibility?.[field.key] ?? true
   }
   draftVisibility.value = nextVisibility
+
+  markClean()
 }
 
 function cancelEdit() {
@@ -227,6 +199,7 @@ async function saveEdit(slug: string) {
       },
     })
     editingSlug.value = null
+    markClean()
   } catch (e) {
     // Field-level errors render inline next to the offending input; anything
     // else would otherwise vanish, leaving the form looking like it saved.
@@ -239,60 +212,9 @@ async function saveEdit(slug: string) {
 <template>
   <AdminLayout>
   <div class="p-6 max-w-3xl mx-auto">
-    <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
-      <div>
-        <h1 class="text-2xl font-bold text-white">Website Modules</h1>
-        <p class="text-sm text-zinc-500 mt-1">Drag rows to set the nav order. Order takes effect after a rebuild.</p>
-      </div>
-
-      <div class="flex items-center gap-4 flex-wrap">
-        <label class="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            class="w-4 h-4 rounded accent-teal-500"
-            :checked="autoRebuild"
-            :disabled="setAutoRebuild.isPending.value"
-            @change="setAutoRebuild.mutate(!autoRebuild)"
-          />
-          Auto-rebuild on changes
-        </label>
-
-        <button
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-          :disabled="rebuildStatus === 'building' || autoRebuild"
-          :title="autoRebuild ? 'Auto-rebuild is active — changes rebuild automatically' : 'Rebuild the public Astro site'"
-          @click="rebuild.mutate()"
-        >
-          <span>{{ rebuildStatus === 'building' ? 'Rebuilding…' : '↺ Rebuild Public Site' }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Progress bar -->
-    <div v-if="showBar" class="mb-6 rounded-xl overflow-hidden bg-zinc-800">
-      <div
-        class="h-2 transition-all duration-1000 ease-out"
-        :class="{
-          'bg-teal-500': rebuildStatus === 'building',
-          'bg-green-500': rebuildStatus === 'done',
-          'bg-red-500': rebuildStatus === 'error',
-        }"
-        :style="{ width: `${progressPct}%` }"
-      />
-      <div class="px-4 py-2 flex items-center justify-between text-xs">
-        <span
-          :class="{
-            'text-teal-400': rebuildStatus === 'building',
-            'text-green-400': rebuildStatus === 'done',
-            'text-red-400': rebuildStatus === 'error',
-          }"
-        >
-          <template v-if="rebuildStatus === 'building'">Building… {{ elapsedSec }}s</template>
-          <template v-else-if="rebuildStatus === 'done'">Rebuild complete ✓</template>
-          <template v-else-if="rebuildStatus === 'error'">Rebuild failed — check container logs</template>
-        </span>
-        <span class="text-zinc-500">~{{ Math.round(ESTIMATED_MS / 1000) }}s estimated</span>
-      </div>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-white">Website Modules</h1>
+      <p class="text-sm text-zinc-500 mt-1">Drag rows to set the nav order. Order takes effect after a rebuild.</p>
     </div>
 
     <div v-if="query.isLoading.value" class="text-zinc-500">Loading…</div>
@@ -541,7 +463,7 @@ async function saveEdit(slug: string) {
             </button>
             <button
               class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="updateSettings.isPending.value"
+              :disabled="updateSettings.isPending.value || !isDirty"
               @click="saveEdit(mod.slug)"
             >
               {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}

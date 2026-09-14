@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
 import { LOCALES, DEFAULT_LOCALE, emptyBag, type Lang as Locale } from '@/locales'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -28,6 +29,13 @@ const draft = reactive({
 const draftModule = ref(props.moduleSlug)
 const published = ref(true)
 
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  question: draft.question,
+  answer: draft.answer,
+  module: draftModule.value,
+  published: published.value,
+}))
+
 // Re-seed whenever the target changes — the editor is reused across rows, so
 // without this, opening a second entry would show the first one's text.
 watch(
@@ -39,6 +47,7 @@ watch(
       draft.question[l] = faq?.question?.[l] ?? ''
       draft.answer[l] = faq?.answer?.[l] ?? ''
     }
+    markClean()
   },
   { immediate: true },
 )
@@ -182,7 +191,7 @@ const otherErrors = computed(() =>
       <button
         type="submit"
         class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        :disabled="pending"
+        :disabled="pending || !isDirty"
       >
         {{ pending ? 'Saving…' : 'Save' }}
       </button>

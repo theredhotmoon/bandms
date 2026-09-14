@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
+use App\Support\SiteRebuild;
 
 class BandMemberController extends Controller
 {
@@ -70,6 +71,8 @@ class BandMemberController extends Controller
         $member->instruments()->sync($request->input('instrument_ids', []));
         $member->load(['socialLinks', 'instruments', 'mainInstrument']);
 
+        SiteRebuild::markDirty('band-members');
+
         return new BandMemberResource($member);
     }
 
@@ -119,6 +122,9 @@ class BandMemberController extends Controller
         }
 
         $member->instruments()->sync($request->input('instrument_ids', []));
+
+        SiteRebuild::markDirty('band-members');
+
         $member->load(['socialLinks', 'instruments', 'mainInstrument']);
 
         return new BandMemberResource($member);
@@ -139,6 +145,9 @@ class BandMemberController extends Controller
 
         $path = $request->file('photo')->store('members', 'public');
         $member->update(['photo' => '/storage/' . $path]);
+
+        SiteRebuild::markDirty('band-members');
+
         $member->load(['socialLinks', 'instruments', 'mainInstrument']);
 
         return new BandMemberResource($member);
@@ -158,12 +167,16 @@ class BandMemberController extends Controller
                 ->update(['sort_order' => $index]);
         }
 
+        SiteRebuild::markDirty('band-members');
+
         return response()->json(['ok' => true]);
     }
 
     public function destroy(BandMember $member): JsonResponse
     {
         $member->delete();
+
+        SiteRebuild::markDirty('band-members');
 
         return response()->json(null, 204);
     }

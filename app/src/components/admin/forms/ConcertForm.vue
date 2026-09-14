@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
@@ -110,6 +111,9 @@ const links = ref<ConcertLinkPayload[]>([])
 const newLinkLabel = ref('')
 const newLinkUrl   = ref('')
 
+const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, lineup: lineup.value, links: links.value }))
+const canSave = computed(() => isDirty.value || posterFile.value !== null || posterDelete.value)
+
 watch(() => props.initial, (concert) => {
   if (!concert) {
     form.name_en          = ''
@@ -129,6 +133,7 @@ watch(() => props.initial, (concert) => {
     posterFile.value      = null
     posterPreview.value   = null
     posterDelete.value    = false
+    markClean()
     return
   }
 
@@ -162,6 +167,7 @@ watch(() => props.initial, (concert) => {
   ]
   entries.sort((a, b) => (a._initSort ?? 99) - (b._initSort ?? 99))
   lineup.value = entries
+  markClean()
 }, { immediate: true })
 
 // keep main-band play_time label in sync with start_time field
@@ -589,7 +595,7 @@ function submit() {
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
-      <button type="submit" :disabled="loading" class="btn-primary">
+      <button type="submit" :disabled="loading || !canSave" class="btn-primary">
         {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
       </button>
     </div>

@@ -10,7 +10,6 @@ use App\Support\Locales;
 use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class WebsiteModuleController extends Controller
 {
@@ -254,7 +253,7 @@ class WebsiteModuleController extends Controller
 
         $module->save();
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('website-modules');
 
         return response()->json(['data' => new WebsiteModuleResource($module)]);
     }
@@ -294,41 +293,4 @@ class WebsiteModuleController extends Controller
             },
         ];
     }
-
-    public function updateSettings(Request $request): JsonResponse
-    {
-        $validated = $request->validate(['auto_rebuild' => 'required|boolean']);
-
-        SiteSetting::set('auto_rebuild', $validated['auto_rebuild'] ? 'true' : 'false');
-
-        return response()->json(['auto_rebuild' => $validated['auto_rebuild']]);
-    }
-
-    public function rebuild(): JsonResponse
-    {
-        SiteRebuild::request();
-
-        return response()->json(['status' => 'rebuild_started']);
-    }
-
-    public function rebuildStatus(): JsonResponse
-    {
-        $fallback = ['status' => 'unknown', 'startedAt' => null, 'finishedAt' => null];
-
-        try {
-            $response = Http::timeout(5)->get('http://web:3001/status');
-            if (! $response->successful()) {
-                return response()->json($fallback);
-            }
-            $body = $response->json();
-            return response()->json([
-                'status'     => $body['status']     ?? 'unknown',
-                'startedAt'  => $body['startedAt']  ?? null,
-                'finishedAt' => $body['finishedAt'] ?? null,
-            ]);
-        } catch (\Exception) {
-            return response()->json($fallback);
-        }
-    }
-
 }

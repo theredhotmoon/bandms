@@ -737,12 +737,18 @@ required column — hero pictures are uploaded directly, with no gallery photo
 that could be missing a file. A null reaching a CSS `url()` would render as the
 literal string `null`.
 
-**Anything the public site bakes must call `SiteRebuild::requestIfAuto()`.** It
-lives in `api/app/Support/SiteRebuild.php` because it used to be a *private*
+**Anything the public site bakes must call `SiteRebuild::markDirty('<area>')`.**
+It lives in `api/app/Support/SiteRebuild.php` because it used to be a *private*
 method on `WebsiteModuleController`, so hero images shipped without it: with
 auto-rebuild on, the admin hides its manual rebuild button, and a save then had
 no way whatsoever to reach the public site. Adding a new write that changes
-baked content means adding that call.
+baked content means adding that call — with `<area>` one of the 14 area keys
+already in use across the controllers: `band-profile`, `band-members`,
+`hero-images`, `posts`, `website-modules`, `concerts`, `venues`, `setlists`,
+`releases`, `photos`, `music-videos`, `press-releases`, `shop`, `faqs`. A social
+link's area depends on its *owner column*, not on which controller reached it —
+see `SocialLinkController::dirtyArea()` for the pattern when one write can
+affect more than one kind of public page.
 
 **A scope is only worth offering if the page renders a hero.** `footer` is
 excluded by `NON_PAGE_MODULES`; `tech-rider` is excluded separately in

@@ -281,7 +281,7 @@ async function discardVersion(id: number) {
                 type="button"
                 class="btn-save"
                 :class="{ 'btn-save--ok': editor.saved.value }"
-                :disabled="editor.saving.value"
+                :disabled="editor.saving.value || !dirty"
                 @click="editor.save"
               >
                 {{ editor.saved.value ? 'Saved ✓' : editor.saving.value ? 'Saving…' : 'Save rider' }}

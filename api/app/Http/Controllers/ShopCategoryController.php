@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\Rule;
+use App\Support\SiteRebuild;
 
 class ShopCategoryController extends Controller
 {
@@ -26,6 +27,7 @@ class ShopCategoryController extends Controller
         $data['slug']       = ShopCategory::generateSlug($data['name']);
 
         $category = ShopCategory::create($data);
+        SiteRebuild::markDirty('shop');
 
         return new ShopCategoryResource($category);
     }
@@ -39,6 +41,7 @@ class ShopCategoryController extends Controller
         }
 
         $shopCategory->update($data);
+        SiteRebuild::markDirty('shop');
 
         return new ShopCategoryResource($shopCategory);
     }
@@ -46,6 +49,7 @@ class ShopCategoryController extends Controller
     public function destroy(ShopCategory $shopCategory): JsonResponse
     {
         $shopCategory->delete();
+        SiteRebuild::markDirty('shop');
 
         return response()->json(null, 204);
     }

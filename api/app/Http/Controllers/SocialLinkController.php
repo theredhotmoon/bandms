@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\SocialLinkResource;
 use App\Models\BandProfile;
 use App\Models\SocialLink;
+use App\Support\SiteRebuild;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -31,6 +32,8 @@ class SocialLinkController extends Controller
 
         $link = $this->profile()->socialLinks()->create($data);
 
+        SiteRebuild::markDirty('band-profile');
+
         return new SocialLinkResource($link);
     }
 
@@ -43,12 +46,21 @@ class SocialLinkController extends Controller
 
         $link->update($data);
 
+        if ($area = $this->dirtyArea($link)) {
+            SiteRebuild::markDirty($area);
+        }
+
         return new SocialLinkResource($link);
     }
 
     public function destroy(SocialLink $link): \Illuminate\Http\Response
     {
+        $area = $this->dirtyArea($link);
         $link->delete();
+
+        if ($area) {
+            SiteRebuild::markDirty($area);
+        }
 
         return response()->noContent();
     }
@@ -68,8 +80,26 @@ class SocialLinkController extends Controller
             $profile->socialLinks()->create(array_merge($link, ['position' => $index]));
         }
 
+        SiteRebuild::markDirty('band-profile');
+
         return SocialLinkResource::collection(
             $profile->socialLinks()->orderBy('position')->get()
         );
+    }
+
+    /**
+     * Which area a social link's write affects, based on its owner column —
+     * not on how this controller reached it, since update()/destroy() act on
+     * whichever SocialLink the route binds, regardless of owner.
+     */
+    private function dirtyArea(SocialLink $link): ?string
+    {
+        return match (true) {
+            $link->member_id !== null  => 'band-members',
+            $link->author_id !== null  => null, // authors aren't baked publicly
+            $link->venue_id !== null   => 'venues',
+            $link->profile_id !== null => 'band-profile',
+            default => null,
+        };
     }
 }

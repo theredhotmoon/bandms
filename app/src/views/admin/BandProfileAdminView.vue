@@ -14,6 +14,7 @@ import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { BioVariant } from '@/types/bandProfile'
 import { ApiValidationError } from '@/api/client'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -66,6 +67,8 @@ const form = reactive({
   career_level: 1 as 1 | 2 | 3 | 4,
 })
 
+const { isDirty, markClean } = useDirtyGuard(() => form)
+
 const fieldErrors = ref<Record<string, string[]>>({})
 const saving = ref(false)
 const saved  = ref(false)
@@ -110,6 +113,7 @@ watch(
     contextPins.epk_logo_id        = val.epk_logo_id        ?? null
     contextPins.tech_rider_logo_id = val.tech_rider_logo_id ?? null
     contextPins.website_logo_id    = val.website_logo_id    ?? null
+    markClean()
   },
   { immediate: true },
 )
@@ -157,6 +161,7 @@ async function saveProfile() {
       career_level:   form.career_level,
     })
     saved.value = true
+    markClean()
     setTimeout(() => { saved.value = false }, 2000)
     toast.success('Profile saved')
   } catch (e) {
@@ -566,7 +571,7 @@ async function saveSocialLinks() {
           </template>
 
           <div v-if="section !== 'social' && section !== 'logo'" class="flex justify-end pt-1">
-            <button type="submit" :disabled="saving" class="btn-save" :class="{ 'btn-save--ok': saved }">
+            <button type="submit" :disabled="saving || !isDirty" class="btn-save" :class="{ 'btn-save--ok': saved }">
               {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save profile' }}
             </button>
           </div>

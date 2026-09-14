@@ -3,6 +3,14 @@ import { test, expect } from '@playwright/test'
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 test.describe('Band Profile Admin', () => {
+  // Bio-name, Career-level and Contacts-email below all perform a real save
+  // against the single shared `band_profiles` row — the form always resends
+  // every field, not a diff (see the About-bio-variant note further down).
+  // Serial mode keeps those three saves from interleaving with each other
+  // inside this file; see the report for the pre-existing, out-of-scope risk
+  // of interleaving with *other* spec files that also touch this row.
+  test.describe.configure({ mode: 'serial' })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/band-profile')
     await page.waitForLoadState('networkidle')
@@ -21,15 +29,34 @@ test.describe('Band Profile Admin', () => {
     })
 
     // 2. Update band name, save, toast
+    //
+    // useDirtyGuard disables Save until the form actually differs from what
+    // was loaded. Filling the name with its own current dev-DB value (it used
+    // to be a hardcoded "Test Band Name") leaves the form clean and Save
+    // stays disabled — so this appends a timestamp to guarantee a real
+    // change, the same collision-avoidance pattern SeedE2eTicket uses, and
+    // restores the original name at the end since this writes to shared dev
+    // content (see "E2E specs that write to the dev database must restore
+    // it" in the root CLAUDE.md).
     test('update band name, save, shows "Profile saved" toast', async ({ page }) => {
       const nameInput = page.locator('input[placeholder="Your band name"]')
-      await nameInput.fill('Test Band Name')
+      const saveBtn = page.locator('form button[type="submit"]')
+      const original = await nameInput.inputValue()
 
-      await page.getByRole('button', { name: 'Save profile' }).click()
+      await nameInput.fill(`${original}-e2e-${Date.now()}`)
+      await expect(saveBtn).toBeEnabled()
+
+      await saveBtn.click()
       await expect(page.getByRole('button', { name: /Saving/ })).toBeVisible()
       await expect(page.getByRole('button', { name: /Saved/ })).toBeVisible()
+      await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
 
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Profile saved')
+      // Restore the dev DB's original band name.
+      await nameInput.fill(original)
+      await expect(saveBtn).toBeEnabled()
+      await saveBtn.click()
+      await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+      await expect(nameInput).toHaveValue(original)
     })
 
     // 3. Clear name, save → validation error
@@ -92,14 +119,49 @@ test.describe('Band Profile Admin', () => {
     })
 
     // 5. Click "Local Band" career level card, active class, save
+    //
+    // The dev DB currently has career_level = Local Band already, so clicking
+    // it is a no-op for useDirtyGuard and Save stays disabled. Detect whether
+    // that's the case and, if so, dirty-gate through a different card and
+    // save it first — the "click Local Band, save" below then both proves
+    // the real assertion and lands back on the original value. If the dev DB
+    // ever holds a different level instead, the branch below restores it
+    // after, so this file never leaves career_level changed either way.
     test('click "Local Band" card gives it active class and save succeeds', async ({ page }) => {
-      const localBandCard = page.locator('.career-level-card', { hasText: 'Local Band' })
-      await localBandCard.click()
+      const saveBtn = page.locator('form button[type="submit"]')
+      const cardFor = (name: string) => page.locator('.career-level-card', { hasText: name })
+      const CARD_NAMES = ['Garage Band', 'Local Band', 'Pro Band', 'Custom']
 
+      let originalCard: string | null = null
+      for (const name of CARD_NAMES) {
+        const cls = (await cardFor(name).getAttribute('class')) ?? ''
+        if (cls.includes('career-level-card--active')) { originalCard = name; break }
+      }
+
+      if (originalCard === 'Local Band') {
+        await cardFor('Garage Band').click()
+        await expect(cardFor('Garage Band')).toHaveClass(/career-level-card--active/)
+        await expect(saveBtn).toBeEnabled()
+        await saveBtn.click()
+        await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+      }
+
+      const localBandCard = cardFor('Local Band')
+      await localBandCard.click()
       await expect(localBandCard).toHaveClass(/career-level-card--active/)
 
-      await page.getByRole('button', { name: 'Save profile' }).click()
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Profile saved')
+      await expect(saveBtn).toBeEnabled()
+      await saveBtn.click()
+      await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+
+      // If the dev DB started on some other level, put it back — this test
+      // must not leave career_level changed in shared dev content.
+      if (originalCard && originalCard !== 'Local Band') {
+        await cardFor(originalCard).click()
+        await expect(saveBtn).toBeEnabled()
+        await saveBtn.click()
+        await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+      }
     })
   })
 
@@ -141,13 +203,32 @@ test.describe('Band Profile Admin', () => {
     })
 
     // 9. Update booking email, save → toast
+    //
+    // Same useDirtyGuard trap as the band-name test above: the dev DB already
+    // holds "booking@testband.com", so filling that exact value leaves the
+    // form clean and Save disabled. Mutate it with a `+e2e<timestamp>` tag
+    // (still a valid email, so HTML5 type="email" validation doesn't block
+    // it) and restore the original afterward.
     test('update booking email and save shows "Profile saved" toast', async ({ page }) => {
       const bookingEmailInput = page.locator('input[type="email"]').first()
-      await bookingEmailInput.fill('booking@testband.com')
+      const saveBtn = page.locator('form button[type="submit"]')
+      const original = await bookingEmailInput.inputValue()
+      const updated = original.includes('@')
+        ? original.replace('@', `+e2e${Date.now()}@`)
+        : `booking-e2e-${Date.now()}@testband.com`
 
-      await page.getByRole('button', { name: 'Save profile' }).click()
+      await bookingEmailInput.fill(updated)
+      await expect(saveBtn).toBeEnabled()
 
-      await expect(page.locator('[data-sonner-toast]')).toContainText('Profile saved')
+      await saveBtn.click()
+      await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+
+      // Restore the dev DB's original booking email.
+      await bookingEmailInput.fill(original)
+      await expect(saveBtn).toBeEnabled()
+      await saveBtn.click()
+      await expect(page.locator('[data-sonner-toast]').last()).toContainText('Profile saved')
+      await expect(bookingEmailInput).toHaveValue(original)
     })
 
     // 10. Invalid email → validation error

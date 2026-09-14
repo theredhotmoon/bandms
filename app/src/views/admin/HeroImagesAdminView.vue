@@ -4,12 +4,14 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useHeroImages } from '@/composables/useHeroImages'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { useSiteRebuild } from '@/composables/useSiteRebuild'
 import { scopeSet, hasOwnSet } from '@/utils/heroImageScopes'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import type { HeroImage } from '@/types/heroImage'
 
 const { query, upload, update, reorder, remove } = useHeroImages()
-const { query: modulesQ, rebuild, rebuildStatusQuery } = useWebsiteModules()
+const { query: modulesQ } = useWebsiteModules()
+const { autoRebuild } = useSiteRebuild()
 
 const sets = computed(() => query.data.value?.data)
 
@@ -130,32 +132,18 @@ function scopeSummary(key: string): string {
   return n === 1 ? '1 picture' : `${n} pictures`
 }
 
-const rebuilding = computed(() => rebuildStatusQuery.data.value?.status === 'building')
-const autoRebuild = computed(() => modulesQ.data.value?.auto_rebuild ?? false)
 </script>
 
 <template>
   <AdminLayout>
     <div class="p-6 max-w-5xl mx-auto">
-      <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div>
-          <h1 class="text-2xl font-bold text-white">Hero Images</h1>
-          <p class="text-sm text-zinc-500 mt-1">
-            Pictures shown behind a page's title. With more than one active picture, one
-            is chosen at random on each visit. A page with none of its own uses Main.
-            Uploaded here directly — never from the photo gallery.
-          </p>
-        </div>
-
-        <button
-          v-if="!autoRebuild"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-          :disabled="rebuilding"
-          title="Rebuild the public site so the change becomes visible"
-          @click="rebuild.mutate()"
-        >
-          {{ rebuilding ? 'Rebuilding…' : '↺ Rebuild Public Site' }}
-        </button>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Hero Images</h1>
+        <p class="text-sm text-zinc-500 mt-1">
+          Pictures shown behind a page's title. With more than one active picture, one
+          is chosen at random on each visit. A page with none of its own uses Main.
+          Uploaded here directly — never from the photo gallery.
+        </p>
       </div>
 
       <p v-if="query.isError.value" class="text-sm text-red-400 mb-4">

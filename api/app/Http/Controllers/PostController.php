@@ -86,7 +86,7 @@ class PostController extends Controller
         // Posts are baked into the static site. PostController never called this
         // — with auto-rebuild on, the admin hides its manual button, so a save
         // had no way at all to reach the public site.
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('posts');
 
         return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
@@ -123,7 +123,7 @@ class PostController extends Controller
             }
         }, 3);
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('posts');
 
         return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
@@ -136,7 +136,7 @@ class PostController extends Controller
 
         $post->delete();
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('posts');
 
         return response()->json(null, 204);
     }

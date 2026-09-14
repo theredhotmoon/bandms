@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
+import RebuildBar from './RebuildBar.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
 const router = useRouter()
@@ -289,7 +290,10 @@ watch(() => route.path, (path) => {
     </aside>
 
     <main class="main-content">
-      <slot />
+      <RebuildBar />
+      <div class="main-content-body">
+        <slot />
+      </div>
     </main>
   </div>
 </template>
@@ -500,6 +504,13 @@ watch(() => route.path, (path) => {
 .main-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content-body {
+  flex: 1;
   overflow: auto;
 }
 </style>

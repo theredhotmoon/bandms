@@ -12,6 +12,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Support\SiteRebuild;
 
 class ShopItemController extends Controller
 {
@@ -76,6 +77,7 @@ class ShopItemController extends Controller
         }
 
         $this->syncRelations($request, $item);
+        SiteRebuild::markDirty('shop');
 
         $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
         return new ShopItemResource($item);
@@ -110,6 +112,7 @@ class ShopItemController extends Controller
         });
 
         $this->syncRelations($request, $shopItem);
+        SiteRebuild::markDirty('shop');
 
         $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
         return new ShopItemResource($shopItem);
@@ -122,6 +125,7 @@ class ShopItemController extends Controller
             Storage::disk('public')->delete($photo->image);
         }
         $shopItem->delete();
+        SiteRebuild::markDirty('shop');
 
         return response()->json(['message' => 'Shop item deleted']);
     }
@@ -140,6 +144,7 @@ class ShopItemController extends Controller
             'sort_order' => $sort,
             'alt_text'   => $request->input('alt_text'),
         ]);
+        SiteRebuild::markDirty('shop');
 
         return response()->json([
             'id'         => $photo->id,
@@ -154,6 +159,7 @@ class ShopItemController extends Controller
         abort_unless($photo->shop_item_id === $shopItem->id, 404);
         Storage::disk('public')->delete($photo->image);
         $photo->delete();
+        SiteRebuild::markDirty('shop');
 
         return response()->json(['message' => 'Photo deleted']);
     }
@@ -167,6 +173,7 @@ class ShopItemController extends Controller
                 $shopItem->photos()->where('id', $id)->update(['sort_order' => $order]);
             }
         });
+        SiteRebuild::markDirty('shop');
 
         return response()->json(['message' => 'Reordered']);
     }
@@ -188,6 +195,7 @@ class ShopItemController extends Controller
 
         $profile = BandProfile::firstOrFail();
         $profile->update(['shop_currencies' => array_map('strtoupper', $request->input('currencies'))]);
+        SiteRebuild::markDirty('shop');
 
         return response()->json(['currencies' => $profile->shop_currencies]);
     }

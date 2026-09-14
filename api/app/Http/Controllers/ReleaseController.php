@@ -7,6 +7,7 @@ use App\Http\Resources\ReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\Release;
 use App\Models\ReleasePhoto;
+use App\Support\SiteRebuild;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
@@ -93,6 +94,8 @@ class ReleaseController extends Controller
 
         $release->load('tracks.links', 'links', 'photos');
 
+        SiteRebuild::markDirty('releases');
+
         return new ReleaseResource($release);
     }
 
@@ -151,6 +154,8 @@ class ReleaseController extends Controller
 
         $release->load('tracks.links', 'links', 'photos');
 
+        SiteRebuild::markDirty('releases');
+
         return new ReleaseResource($release);
     }
 
@@ -166,6 +171,8 @@ class ReleaseController extends Controller
 
         $release->delete();
 
+        SiteRebuild::markDirty('releases');
+
         return response()->noContent();
     }
 
@@ -180,6 +187,8 @@ class ReleaseController extends Controller
         $path = $request->file('cover')->store('release-covers', 'public');
         $release->update(['cover_image' => $path]);
 
+        SiteRebuild::markDirty('releases');
+
         return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
     }
 
@@ -189,6 +198,8 @@ class ReleaseController extends Controller
             Storage::disk('public')->delete($release->cover_image);
             $release->update(['cover_image' => null]);
         }
+
+        SiteRebuild::markDirty('releases');
 
         return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
     }
@@ -213,6 +224,8 @@ class ReleaseController extends Controller
             ]);
         }
 
+        SiteRebuild::markDirty('releases');
+
         return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
     }
 
@@ -220,6 +233,8 @@ class ReleaseController extends Controller
     {
         Storage::disk('public')->delete($photo->image);
         $photo->delete();
+
+        SiteRebuild::markDirty('releases');
 
         return response()->noContent();
     }
@@ -234,6 +249,8 @@ class ReleaseController extends Controller
         foreach ($data['order'] as $sortOrder => $photoId) {
             $release->photos()->where('id', $photoId)->update(['sort_order' => $sortOrder]);
         }
+
+        SiteRebuild::markDirty('releases');
 
         return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
     }

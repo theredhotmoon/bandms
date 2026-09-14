@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import type { BandMember, DefaultGearItem, DefaultGearItemType } from '@bandms/rider-core'
 import { useBandMembers } from '@/composables/useBandMembers'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 const props = defineProps<{ member: BandMember }>()
 const { update } = useBandMembers()
@@ -23,13 +24,13 @@ const GEAR_TYPES: { value: DefaultGearItemType; label: string }[] = [
 
 const items = ref<DefaultGearItem[]>([])
 const saving = ref(false)
-const dirty  = ref(false)
+const { isDirty: dirty, markClean } = useDirtyGuard(() => items.value)
 
 watch(
   () => props.member.default_gear,
   (val) => {
     items.value = val ? val.map(i => ({ ...i })) : []
-    dirty.value = false
+    markClean()
   },
   { immediate: true },
 )
@@ -43,17 +44,14 @@ function addItem() {
     own_gear: true,
     notes: '',
   })
-  dirty.value = true
 }
 
 function removeItem(id: string) {
   items.value = items.value.filter(i => i.id !== id)
-  dirty.value = true
 }
 
 function patchItem(id: string, patch: Partial<DefaultGearItem>) {
   items.value = items.value.map(i => i.id === id ? { ...i, ...patch } : i)
-  dirty.value = true
 }
 
 async function save() {
@@ -61,7 +59,7 @@ async function save() {
   try {
     await update.mutateAsync({ id: props.member.id, payload: { default_gear: items.value } })
     toast.success('Default gear saved')
-    dirty.value = false
+    markClean()
   } catch {
     toast.error('Failed to save gear')
   } finally {

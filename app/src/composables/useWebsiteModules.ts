@@ -4,9 +4,6 @@ import {
   updateModule,
   updateModuleSettings,
   reorderModules,
-  updateSiteSettings,
-  triggerRebuild,
-  fetchRebuildStatus,
 } from '@/api/website-modules'
 import { useAuth } from './useAuth'
 import type { WebsiteModuleSettingsPayload } from '@/types/website-module'
@@ -19,14 +16,6 @@ export function useWebsiteModules() {
     queryKey: ['website-modules'],
     queryFn: () => fetchModules(token.value!),
     enabled: () => token.value !== null,
-  })
-
-  const rebuildStatusQuery = useQuery({
-    queryKey: ['rebuild-status'],
-    queryFn: () => fetchRebuildStatus(token.value!),
-    enabled: () => token.value !== null,
-    refetchInterval: (query) => query.state.data?.status === 'building' ? 2000 : false,
-    staleTime: 0,
   })
 
   const toggleModule = useMutation({
@@ -46,20 +35,10 @@ export function useWebsiteModules() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
   })
 
-  const setAutoRebuild = useMutation({
-    mutationFn: (autoRebuild: boolean) => updateSiteSettings(token.value!, autoRebuild),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['website-modules'] }),
-  })
-
   const reorder = useMutation({
     mutationFn: (slugs: string[]) => reorderModules(token.value!, slugs),
     onSuccess: (data) => queryClient.setQueryData(['website-modules'], data),
   })
 
-  const rebuild = useMutation({
-    mutationFn: () => triggerRebuild(token.value!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rebuild-status'] }),
-  })
-
-  return { query, rebuildStatusQuery, toggleModule, updateSettings, reorder, setAutoRebuild, rebuild }
+  return { query, toggleModule, updateSettings, reorder }
 }

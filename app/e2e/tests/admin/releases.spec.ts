@@ -90,6 +90,14 @@ test.describe('Releases Admin', () => {
     await expect(page.getByRole('cell', { name: editedTitle })).not.toBeVisible({ timeout: 8000 })
   })
 
+  // useDirtyGuard disables "Create release" on a blank, untouched form — the
+  // button can't even be clicked, let alone reach HTML5 validation, which is
+  // arguably a stronger guarantee than relying on `required` alone. To still
+  // prove the underlying rule ("no release without a title") through a path
+  // compatible with dirty-gating, this types into a non-title field first so
+  // the form is genuinely dirty and Create becomes enabled, then leaves the
+  // title blank and confirms the browser's native `required` validation still
+  // blocks the submit.
   test('validation: submit without title → browser required constraint fires', async ({ page }) => {
     await page.goto('/admin/releases')
     await page.waitForLoadState('networkidle')
@@ -99,8 +107,15 @@ test.describe('Releases Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
+    const createBtn = modal.getByRole('button', { name: /Create release/i })
+    await expect(createBtn).toBeDisabled()
+
+    // Dirty-gate via a non-title field, leaving the title itself blank.
+    await modal.locator('select').first().selectOption('EP')
+    await expect(createBtn).toBeEnabled()
+
     // Leave title empty, click submit
-    await modal.getByRole('button', { name: /Create release/i }).click()
+    await createBtn.click()
 
     // The title input has `required`; the form should not have submitted (modal stays open)
     await expect(modal).toBeVisible()
