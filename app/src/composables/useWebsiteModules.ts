@@ -4,10 +4,12 @@ import {
   updateModule,
   updateModuleSettings,
   reorderModules,
+} from '@/api/website-modules'
+import {
   updateSiteSettings,
   triggerRebuild,
   fetchRebuildStatus,
-} from '@/api/website-modules'
+} from '@/api/site-rebuild'
 import { useAuth } from './useAuth'
 import type { WebsiteModuleSettingsPayload } from '@/types/website-module'
 
