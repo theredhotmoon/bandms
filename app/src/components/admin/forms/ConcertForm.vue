@@ -133,6 +133,7 @@ watch(() => props.initial, (concert) => {
     posterFile.value      = null
     posterPreview.value   = null
     posterDelete.value    = false
+    markClean()
     return
   }
 

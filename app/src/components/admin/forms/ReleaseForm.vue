@@ -145,6 +145,7 @@ watch(
       coverFile.value     = null
       coverPreview.value  = null
       coverDelete.value   = false
+      markClean()
       return
     }
     form.title_en       = val.translations?.title?.en ?? val.title
