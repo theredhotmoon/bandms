@@ -6,6 +6,7 @@ use App\Http\Resources\PressReleaseResource;
 use App\Http\Resources\PressReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\PressRelease;
+use App\Support\SiteRebuild;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Http\JsonResponse;
@@ -64,6 +65,8 @@ class PressReleaseController extends Controller
 
         $pr->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags');
 
+        SiteRebuild::markDirty('press-releases');
+
         return new PressReleaseResource($pr);
     }
 
@@ -75,12 +78,16 @@ class PressReleaseController extends Controller
 
         $pressRelease->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags');
 
+        SiteRebuild::markDirty('press-releases');
+
         return new PressReleaseResource($pressRelease);
     }
 
     public function destroy(PressRelease $pressRelease): Response
     {
         $pressRelease->delete();
+
+        SiteRebuild::markDirty('press-releases');
 
         return response()->noContent();
     }

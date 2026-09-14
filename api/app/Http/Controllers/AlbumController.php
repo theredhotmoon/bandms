@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AlbumResource;
 use App\Models\Album;
 use App\Models\Photo;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -74,6 +75,8 @@ class AlbumController extends Controller
             ]);
         }
 
+        SiteRebuild::markDirty('photos');
+
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
 
@@ -97,6 +100,8 @@ class AlbumController extends Controller
         if (array_key_exists('tag_ids', $data)) {
             $album->tags()->sync($data['tag_ids'] ?? []);
         }
+
+        SiteRebuild::markDirty('photos');
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
@@ -129,6 +134,8 @@ class AlbumController extends Controller
             Storage::disk('public')->delete($path);
         }
 
+        SiteRebuild::markDirty('photos');
+
         return response()->json(null, 204);
     }
 
@@ -153,6 +160,8 @@ class AlbumController extends Controller
             ]);
         }
 
+        SiteRebuild::markDirty('photos');
+
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
 
@@ -165,6 +174,8 @@ class AlbumController extends Controller
         }
 
         $photo->delete();
+
+        SiteRebuild::markDirty('photos');
 
         return response()->json(null, 204);
     }
@@ -179,6 +190,8 @@ class AlbumController extends Controller
         foreach ($data['order'] as $sortOrder => $photoId) {
             $album->photos()->where('id', $photoId)->update(['sort_order' => $sortOrder]);
         }
+
+        SiteRebuild::markDirty('photos');
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }

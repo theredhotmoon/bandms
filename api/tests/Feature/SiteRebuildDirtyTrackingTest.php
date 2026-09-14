@@ -189,3 +189,80 @@ it('marks setlists dirty when a setlist item is reordered', function () {
 
     expect(SiteDirtyArea::where('area', 'setlists')->exists())->toBeTrue();
 });
+
+use App\Models\Album;
+use App\Models\MusicVideo;
+use App\Models\PressRelease;
+use App\Models\Release;
+
+// NOTE on deviations from the task-6 brief's example test bodies, following the
+// same "verify against the real codebase" instruction as tasks 4 and 5's
+// reports document:
+//   1. There is no `/api/admin/{releases,photos,music-videos,press-releases}`
+//      prefix. All four are registered directly under the `role:admin` group as
+//      `/api/releases`, `/api/photos`, `/api/music-videos`, `/api/press-releases`
+//      (routes/api.php:349-372).
+//   2. There is no `Album::factory()` or `MusicVideo::factory()`
+//      (`database/factories/` has only ReleaseFactory and PressReleaseFactory).
+//      `tests/Feature/AlbumTest.php` and `tests/Feature/PhotoTest.php` build
+//      albums with plain `Album::create(['title' => ..., 'slug_en' => ...])`,
+//      so the same convention is used here for the photo test.
+//   3. `music_videos.profile_id` is a non-nullable FK to `band_profiles`
+//      (`2026_05_09_000006_create_music_videos_table.php`), and
+//      `MusicVideoController::store()` falls back to `BandProfile::value('id')
+//      ?? 1` when no profile exists — which would violate the FK. Every
+//      existing `tests/Feature/MusicVideoTest.php` case calls
+//      `$this->createProfile()` in a `beforeEach` for exactly this reason, so
+//      the music-videos test below does the same.
+// The assertion in each test — SiteDirtyArea::where('area', '...')->exists() —
+// is unchanged from the brief.
+
+it('marks releases dirty when a release is deleted', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $release = Release::factory()->create();
+
+    $this->deleteJson("/api/releases/{$release->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'releases')->exists())->toBeTrue();
+});
+
+it('marks photos dirty when a photo caption is updated', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $album = Album::create(['title' => 'Test Album', 'slug_en' => 'test-album']);
+    $photo = $album->photos()->create(['image' => 'photos/a.jpg', 'sort_order' => 0]);
+
+    $this->putJson("/api/photos/{$photo->id}", ['caption' => 'New caption'])->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'photos')->exists())->toBeTrue();
+});
+
+it('marks music-videos dirty when a music video is created', function () {
+    $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/music-videos', ['title' => 'A Video', 'video_url' => 'https://youtube.com/watch?v=abc'])
+        ->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'music-videos')->exists())->toBeTrue();
+});
+
+it('marks press-releases dirty when a press release is deleted', function () {
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $pr = PressRelease::factory()->create();
+
+    $this->deleteJson("/api/press-releases/{$pr->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'press-releases')->exists())->toBeTrue();
+});

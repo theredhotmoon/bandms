@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PhotoResource;
 use App\Models\Photo;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -32,6 +33,8 @@ class PhotoController extends Controller
 
         $photo->update($data);
 
+        SiteRebuild::markDirty('photos');
+
         return new PhotoResource($photo->load('album'));
     }
 
@@ -42,6 +45,8 @@ class PhotoController extends Controller
         }
 
         $photo->delete();
+
+        SiteRebuild::markDirty('photos');
 
         return response()->json(null, 204);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BandProfile;
 use App\Models\MusicVideo;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -33,6 +34,8 @@ class MusicVideoController extends Controller
         $data['profile_id'] = BandProfile::value('id') ?? 1;
         $item = MusicVideo::create($data);
 
+        SiteRebuild::markDirty('music-videos');
+
         return response()->json(['data' => $this->format($item)], 201);
     }
 
@@ -51,6 +54,9 @@ class MusicVideoController extends Controller
         ]);
 
         $musicVideo->update($data);
+
+        SiteRebuild::markDirty('music-videos');
+
         return response()->json(['data' => $this->format($musicVideo)]);
     }
 
@@ -121,6 +127,9 @@ class MusicVideoController extends Controller
     public function destroy(MusicVideo $musicVideo): JsonResponse
     {
         $musicVideo->delete();
+
+        SiteRebuild::markDirty('music-videos');
+
         return response()->json(null, 204);
     }
 
@@ -147,6 +156,8 @@ class MusicVideoController extends Controller
             'og_site_name' => $data['provider_name'] ?? null,
             'channel_name' => $data['author_name'] ?? null,
         ]);
+
+        SiteRebuild::markDirty('music-videos');
 
         return response()->json(['data' => $this->format($musicVideo->fresh())]);
     }
