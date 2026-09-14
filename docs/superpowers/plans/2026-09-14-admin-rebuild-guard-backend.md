@@ -491,7 +491,9 @@ All four files already `use App\Support\SiteRebuild;` — no import changes need
 use App\Models\BandProfile;
 use App\Models\HeroImage;
 use App\Models\Post;
+use App\Models\User;
 use App\Models\WebsiteModule;
+use Laravel\Passport\Passport;
 
 it('marks band-profile dirty on a profile update', function () {
     Http::fake();
