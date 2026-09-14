@@ -32,4 +32,17 @@ describe('useDirtyGuard', () => {
     state.name = 'c'
     expect(isDirty.value).toBe(true)
   })
+
+  it('stays clean when undefined-valued keys are present (JSON.stringify cloneState regression)', () => {
+    const state = reactive({ name: 'a', venueId: undefined })
+    const { isDirty, markClean } = useDirtyGuard(() => state)
+    // Should start clean despite undefined key
+    expect(isDirty.value).toBe(false)
+    // Should stay clean after markClean with no real change
+    markClean()
+    expect(isDirty.value).toBe(false)
+    // Should only become dirty on an actual value change
+    state.name = 'b'
+    expect(isDirty.value).toBe(true)
+  })
 })

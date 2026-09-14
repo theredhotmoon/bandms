@@ -21,6 +21,10 @@ describe('deepEqual', () => {
   it('treats two nulls as equal', () => {
     expect(deepEqual(null, null)).toBe(true)
   })
+
+  it('treats an undefined-valued key equivalent to an absent key', () => {
+    expect(deepEqual({ a: 1, b: undefined }, { a: 1 })).toBe(true)
+  })
 })
 
 describe('cloneState', () => {

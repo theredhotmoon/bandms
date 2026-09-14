@@ -10,8 +10,12 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     return a.every((item, i) => deepEqual(item, b[i]))
   }
 
-  const aKeys = Object.keys(a as Record<string, unknown>)
-  const bKeys = Object.keys(b as Record<string, unknown>)
+  const aKeys = Object.keys(a as Record<string, unknown>).filter(
+    (key) => (a as Record<string, unknown>)[key] !== undefined,
+  )
+  const bKeys = Object.keys(b as Record<string, unknown>).filter(
+    (key) => (b as Record<string, unknown>)[key] !== undefined,
+  )
   if (aKeys.length !== bKeys.length) return false
 
   return aKeys.every((key) =>
