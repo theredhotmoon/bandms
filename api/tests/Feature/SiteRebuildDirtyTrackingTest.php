@@ -389,3 +389,28 @@ it('marks venues dirty when a venue-owned social link is deleted, not band-profi
     expect(SiteDirtyArea::where('area', 'venues')->exists())->toBeTrue();
     expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeFalse();
 });
+
+it('marks band-members dirty when a member-owned social link is deleted, not band-profile', function () {
+    $profile = $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $member = $profile->members()->create(['first_name' => 'Jane', 'last_name' => 'Doe']);
+    // A member-owned link carries both member_id AND profile_id — see
+    // BandMemberController::store()/update(), which explicitly pass
+    // 'profile_id' => $profile->id when creating via $member->socialLinks()
+    // (BandMember::socialLinks() is hasMany(SocialLink::class, 'member_id')).
+    $link = SocialLink::create([
+        'member_id'  => $member->id,
+        'profile_id' => $profile->id,
+        'platform'   => 'instagram',
+        'url'        => 'https://instagram.com/x',
+        'position'   => 0,
+    ]);
+
+    $this->deleteJson("/api/band-profile/social-links/{$link->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'band-members')->exists())->toBeTrue();
+    expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeFalse();
+});

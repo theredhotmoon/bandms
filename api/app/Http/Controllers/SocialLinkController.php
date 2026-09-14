@@ -95,9 +95,11 @@ class SocialLinkController extends Controller
     private function dirtyArea(SocialLink $link): ?string
     {
         return match (true) {
-            $link->profile_id !== null => 'band-profile',
+            $link->member_id !== null  => 'band-members',
+            $link->author_id !== null  => null, // authors aren't baked publicly
             $link->venue_id !== null   => 'venues',
-            default => null, // member_id/author_id owners aren't baked publicly
+            $link->profile_id !== null => 'band-profile',
+            default => null,
         };
     }
 }

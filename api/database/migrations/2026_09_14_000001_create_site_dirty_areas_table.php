@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('site_dirty_areas', function (Blueprint $table) {
             $table->string('area')->primary();
-            $table->timestamp('changed_at');
+            $table->timestamp('changed_at', 3);
         });
     }
 
