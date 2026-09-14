@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Support\SiteRebuild;
 
 class BandLogoController extends Controller
 {
@@ -73,6 +74,8 @@ class BandLogoController extends Controller
             'sort_order'    => 0,
         ]);
 
+        SiteRebuild::markDirty('band-profile');
+
         return new BandLogoResource($logo);
     }
 
@@ -99,6 +102,8 @@ class BandLogoController extends Controller
 
         $logo->update($data);
 
+        SiteRebuild::markDirty('band-profile');
+
         return new BandLogoResource($logo->fresh());
     }
 
@@ -115,6 +120,8 @@ class BandLogoController extends Controller
             BandLogo::where('profile_id', $logo->profile_id)->update(['is_default' => false]);
             BandLogo::where('id', $logo->id)->update(['is_default' => true]);
         });
+
+        SiteRebuild::markDirty('band-profile');
 
         return new BandLogoResource($logo->fresh());
     }
@@ -135,6 +142,8 @@ class BandLogoController extends Controller
 
         Storage::disk('public')->delete($logo->file_path);
         $logo->delete();
+
+        SiteRebuild::markDirty('band-profile');
 
         return response()->json(null, 204);
     }

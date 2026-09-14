@@ -331,3 +331,61 @@ it('marks faqs dirty when a faq is created', function () {
 
     expect(SiteDirtyArea::where('area', 'faqs')->exists())->toBeTrue();
 });
+
+use App\Models\SocialLink;
+
+// NOTE on deviations from the task-8 brief's example test bodies, following the
+// same "verify against the real codebase" instruction as tasks 4-7's reports
+// document:
+//   1. There is no `/api/admin/band-members` or `/api/admin/social-links`
+//      prefix. Both live directly under `/api/band-profile/...`
+//      (routes/api.php:276, 295-298): `POST /api/band-profile/members`,
+//      `PUT|DELETE /api/band-profile/social-links/{link}`.
+//   2. `BandMemberController::profile()` and `SocialLinkController::profile()`
+//      both do `BandProfile::findOrFail(1)`, so a band profile with id 1 must
+//      exist first — same FK/singleton issue tasks 4-7 hit with
+//      `BandProfile::factory()->create(['id' => 1])`. `$this->createProfile()`
+//      is used here too, matching BandMemberTest.php/SocialLinkTest.php.
+// The assertion in each test — SiteDirtyArea::where('area', '...')->exists() —
+// is unchanged from the brief.
+
+it('marks band-members dirty when a member is created', function () {
+    $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/band-profile/members', ['first_name' => 'Jane', 'last_name' => 'Doe'])
+        ->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'band-members')->exists())->toBeTrue();
+});
+
+it('marks band-profile dirty when a profile-owned social link is deleted', function () {
+    $profile = $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $link = SocialLink::create(['profile_id' => $profile->id, 'platform' => 'instagram', 'url' => 'https://instagram.com/x', 'position' => 0]);
+
+    $this->deleteJson("/api/band-profile/social-links/{$link->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeTrue();
+});
+
+it('marks venues dirty when a venue-owned social link is deleted, not band-profile', function () {
+    $this->createProfile();
+    Http::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    Passport::actingAs($admin);
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $venue = Venue::factory()->create();
+    $link = SocialLink::create(['venue_id' => $venue->id, 'platform' => 'instagram', 'url' => 'https://instagram.com/x', 'position' => 0]);
+
+    $this->deleteJson("/api/band-profile/social-links/{$link->id}")->assertNoContent();
+
+    expect(SiteDirtyArea::where('area', 'venues')->exists())->toBeTrue();
+    expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeFalse();
+});
