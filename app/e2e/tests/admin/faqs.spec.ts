@@ -37,7 +37,7 @@ test.describe('FAQ Admin', () => {
     await expect(page.getByText(QUESTION_EN, { exact: true })).toBeVisible({ timeout: 8000 })
   })
 
-  test('edit: renaming the question updates the row', async ({ page }) => {
+  test('edit: renaming the question updates the row, and Save is dirty-gated', async ({ page }) => {
     await page.goto('/admin/faqs')
     await page.waitForLoadState('networkidle')
 
@@ -49,12 +49,27 @@ test.describe('FAQ Admin', () => {
 
     const input = page.locator('#faq-q-en')
     await expect(input).toHaveValue(QUESTION_EN)
-    await input.fill(EDITED_EN)
 
-    await page.getByRole('button', { name: /^Save$/ }).click()
+    // useDirtyGuard seeds its baseline from the entry being edited, so the
+    // freshly-opened editor is clean and Save starts disabled.
+    const saveButton = page.getByRole('button', { name: /^Save$/ })
+    await expect(saveButton).toBeDisabled()
+
+    await input.fill(EDITED_EN)
+    await expect(saveButton).toBeEnabled()
+
+    await saveButton.click()
 
     await expect(page.locator('[data-sonner-toast]')).toContainText('Question saved', { timeout: 8000 })
     await expect(page.getByText(EDITED_EN, { exact: true })).toBeVisible({ timeout: 8000 })
+
+    // Reopening the same row reseeds the editor from the just-saved value —
+    // markClean() runs again on the new baseline, so Save goes back to
+    // disabled until it is dirty again.
+    const savedRow = page.locator('div.rounded-xl').filter({ hasText: EDITED_EN })
+    await savedRow.getByRole('button', { name: /^Edit question/ }).click()
+    await expect(page.locator('#faq-q-en')).toHaveValue(EDITED_EN)
+    await expect(page.getByRole('button', { name: /^Save$/ })).toBeDisabled()
   })
 
   test('publish toggle flips the badge between Live and Draft', async ({ page }) => {
