@@ -60,3 +60,72 @@ it('rebuilds and clears pending immediately when auto_rebuild is true', function
     expect(SiteDirtyArea::pending())->toHaveCount(0);
     Http::assertSent(fn ($request) => $request->url() === 'http://web:3001/rebuild');
 });
+
+use App\Models\HeroImage;
+use App\Models\User;
+use App\Models\WebsiteModule;
+use Laravel\Passport\Passport;
+
+// NOTE on deviations from the task-4 brief's example test bodies: the brief's
+// own instructions say to check factory/payload conventions against existing
+// feature tests when they differ from what it assumed, and they do differ
+// here in three ways —
+//   1. There is no HeroImage::factory(); every existing hero-image test
+//      builds rows with HeroImage::create() (see tests/Feature/HeroImageTest.php).
+//   2. The admin-posts endpoint is `POST /api/posts` (role:admin,publisher),
+//      not `/api/admin/posts` — see routes/api.php and tests/Feature/PostTest.php,
+//      which also shows `title` sent as a plain string, not a per-locale array.
+//   3. `id` is not in BandProfile's $fillable, so `BandProfile::factory()->create(['id' => 1])`
+//      cannot reliably seed the id=1 singleton BandProfileController::profile()
+//      requires. tests/TestCase.php already provides `createProfile()` for
+//      exactly this — a raw DB insert that guarantees id=1 regardless of
+//      auto-increment state — and every other band-profile test uses it.
+// The assertion in each test (SiteDirtyArea::where('area', '...')->exists())
+// is unchanged from the brief.
+
+it('marks band-profile dirty on a profile update', function () {
+    Http::fake();
+    $this->createProfile();
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->putJson('/api/band-profile', ['name' => 'New Name'])->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeTrue();
+});
+
+it('marks hero-images dirty on a hero image reorder', function () {
+    Http::fake();
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    $image = HeroImage::create([
+        'scope'    => 'main',
+        'image'    => 'hero-images/a.jpg',
+        'position' => 0,
+    ]);
+
+    $this->putJson('/api/admin/hero-images/main/order', ['order' => [$image->id]])->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'hero-images')->exists())->toBeTrue();
+});
+
+it('marks posts dirty on a post creation', function () {
+    Http::fake();
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+
+    $this->postJson('/api/posts', ['title' => 'A post'])->assertCreated();
+
+    expect(SiteDirtyArea::where('area', 'posts')->exists())->toBeTrue();
+});
+
+it('marks website-modules dirty on a module update', function () {
+    Http::fake();
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+    SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
+    WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
+
+    $this->putJson('/api/admin/modules/concerts', ['enabled' => false])->assertOk();
+
+    expect(SiteDirtyArea::where('area', 'website-modules')->exists())->toBeTrue();
+});

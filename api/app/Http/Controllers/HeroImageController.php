@@ -55,7 +55,7 @@ class HeroImageController extends Controller
 
         // The public site bakes these, so a save that does not rebuild leaves
         // the band looking at an unchanged page.
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('hero-images');
 
         return response()->json(['data' => (object) $this->allScopes()]);
     }
@@ -70,7 +70,7 @@ class HeroImageController extends Controller
 
         $heroImage->update($data);
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('hero-images');
 
         return response()->json(['data' => (object) $this->allScopes()]);
     }
@@ -95,7 +95,7 @@ class HeroImageController extends Controller
             HeroImage::where('id', $id)->where('scope', $data['scope'])->update(['position' => $position]);
         }
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('hero-images');
 
         return response()->json(['data' => (object) $this->allScopes()]);
     }
@@ -109,7 +109,7 @@ class HeroImageController extends Controller
 
         $heroImage->delete();
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('hero-images');
 
         return response()->json(null, 204);
     }

@@ -254,7 +254,7 @@ class WebsiteModuleController extends Controller
 
         $module->save();
 
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('website-modules');
 
         return response()->json(['data' => new WebsiteModuleResource($module)]);
     }

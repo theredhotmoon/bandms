@@ -78,7 +78,7 @@ class BandProfileController extends Controller
 
         // The public About page bakes this profile at build time, so a save
         // that does not rebuild leaves the band looking at an unchanged page.
-        SiteRebuild::requestIfAuto();
+        SiteRebuild::markDirty('band-profile');
 
         return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo']));
     }
