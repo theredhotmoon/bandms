@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SiteDirtyArea;
+use Illuminate\Support\Carbon;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -12,8 +13,13 @@ it('upserts an area rather than appending a duplicate', function () {
 });
 
 it('orders pending areas most-recently-changed first', function () {
+    Carbon::setTestNow('2026-01-01 00:00:00');
     SiteDirtyArea::markDirty('concerts');
+
+    Carbon::setTestNow('2026-01-01 00:01:00');
     SiteDirtyArea::markDirty('faqs');
+
+    Carbon::setTestNow();
 
     $pending = SiteDirtyArea::pending();
 
