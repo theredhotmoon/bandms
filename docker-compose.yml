@@ -103,6 +103,7 @@ services:
       ADMIN_PATH: "${ADMIN_PATH:-admin}"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/caddy/maintenance:/usr/share/caddy/maintenance:ro
     ports:
       - "${SITE_PORT:-8081}:80"
     depends_on:
