@@ -71,6 +71,32 @@ test.describe('Users Admin', () => {
     await expect(modal).not.toBeVisible()
   })
 
+  test('edit user: password confirmation mismatch shows the backend validation message', async ({ page }) => {
+    await page.goto('/admin/users')
+    await page.waitForLoadState('networkidle')
+
+    const row = page.locator('tr').filter({ hasText: UNIQUE_EMAIL })
+    await row.getByRole('button', { name: /edit/i }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    // Passes client-side `required` but fails the backend's `confirmed` rule —
+    // this is the case the generic "Failed to update user" toast used to hide.
+    await modal.locator('input[type="password"]').first().fill('Password1!')
+    await modal.locator('input[type="password"]').nth(1).fill('Different1!')
+
+    await modal.getByRole('button', { name: /save|update/i }).click()
+
+    const toast = page.locator('[data-sonner-toast]')
+    await expect(toast).toBeVisible({ timeout: 8000 })
+    await expect(toast).toContainText(/confirmation/i)
+    await expect(toast).not.toContainText('Failed to update user')
+
+    // Save was rejected — modal stays open with the invalid input still in it.
+    await expect(modal).toBeVisible()
+  })
+
   test('delete user: confirm dialog appears, confirm delete → toast and row gone', async ({ page }) => {
     await page.goto('/admin/users')
     await page.waitForLoadState('networkidle')

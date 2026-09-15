@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
+import { saveErrorMessage } from '@/api/client'
 import { useUsers } from '@/composables/useUsers'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAuth } from '@/composables/useAuth'
@@ -64,8 +65,8 @@ async function submitAdd() {
     await create.mutateAsync({ ...addForm })
     showAdd.value = false
     toast.success('User created')
-  } catch {
-    toast.error('Failed to create user')
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to create user'))
   } finally {
     adding.value = false
   }
@@ -125,8 +126,8 @@ async function submitEdit() {
     await update.mutateAsync({ id: editingId.value, payload })
     showEdit.value = false
     toast.success('User updated')
-  } catch {
-    toast.error('Failed to update user')
+  } catch (e) {
+    toast.error(saveErrorMessage(e, 'Failed to update user'))
   } finally {
     saving.value = false
   }
