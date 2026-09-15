@@ -45,6 +45,35 @@ describe('GET /api/band-profile/members', function () {
             ->assertSuccessful()
             ->assertJsonStructure(['data' => [['id', 'first_name', 'last_name', 'social_links', 'instruments']]]);
     });
+
+    it('hides login_email from an unauthenticated request', function () {
+        $this->createProfile();
+        BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'is_current' => true, 'sort_order' => 0, 'can_login' => true, 'login_email' => 'john@example.com']);
+
+        $this->getJson('/api/band-profile/members')
+            ->assertSuccessful()
+            ->assertJsonMissingPath('data.0.login_email');
+    });
+
+    // Regression: this route deliberately carries no auth:api middleware (the
+    // public site builds from it too), so nothing switches the app's default
+    // guard to 'api'. A real Bearer token sent by the admin panel must still
+    // be honoured here. Passport::actingAs() can't exercise this — it sets
+    // the default guard directly — so this issues a real token over a real
+    // HTTP header instead, the same way the admin SPA actually calls this.
+    it('exposes login_email to an admin sending a real Bearer token, even on this unmiddlewared route', function () {
+        $this->createProfile();
+        BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'is_current' => true, 'sort_order' => 0, 'can_login' => true, 'login_email' => 'john@example.com']);
+
+        \Laravel\Passport\Client::factory()->asPersonalAccessTokenClient()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $token = $admin->createToken('test')->accessToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/band-profile/members')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.login_email', 'john@example.com');
+    });
 });
 
 // ── POST /api/band-profile/members ────────────────────────────────────────────
