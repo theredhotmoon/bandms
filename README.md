@@ -589,8 +589,12 @@ error, so it passes through untouched.
 
 The page is a static file mounted straight into the `caddy` container, so it
 renders even while every other container is down. Edit it directly — no
-rebuild needed, just `docker compose up -d --no-deps --force-recreate caddy`
-(see above: a bind-mount edit alone does not get picked up).
+rebuild needed, just recreate Caddy (see above: a bind-mount edit alone does
+not get picked up):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+```
 
 ### Pointing a domain at the server
 
