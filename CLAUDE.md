@@ -674,6 +674,50 @@ resolve `.astro` imports, and `types/shop.ts` has a `ShopItem`/`ShopItemSummary`
 variance mismatch. Filter those two; anything else is yours. Note `tsc` does not
 check `.astro` files at all, so wiring bugs inside them surface only in `dist/`.
 
+### Type-checking `app/` — `vue-tsc --noEmit -p tsconfig.json` checks *nothing*
+
+**Symptom:** `vue-tsc --noEmit -p tsconfig.json` reports zero errors, a PR merges
+on that basis, and the very next push-to-main deploy fails at
+`docker buildx build` (the `Build & push images` job — the PR's own `Tests` check
+never runs it, since that job is gated to `push`, not `pull_request`) with
+`error TS6133: 'toast' is declared but its value is never read.` in a file the
+"clean" check had just passed. This shipped in #104 and broke `main`'s deploy
+pipeline until #105.
+
+**Root cause:** `app/tsconfig.json` is a **solution-style** file:
+
+```json
+{ "files": [], "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }] }
+```
+
+`-p tsconfig.json` **without `-b`** loads that file as an ordinary program. Its
+`files` array is empty and it has no `include`, so there is nothing to check —
+the command exits 0 having type-checked zero files, regardless of what's
+actually broken. This is silent: no warning that the file list was empty, no
+hint that `-b` was needed. `pnpm build` runs `vue-tsc -b && vite build` — `-b`
+is what actually walks the referenced projects (`tsconfig.app.json`,
+`tsconfig.node.json`) and enforces `noUnusedLocals`/`noUnusedParameters`. Only
+that command matches what CI's Docker build runs.
+
+**Fix — always verify against the real command, not a plausible-looking one:**
+
+```bash
+cd app && rm -f tsconfig.app.tsbuildinfo tsconfig.node.tsbuildinfo && pnpm build
+```
+
+Clearing `.tsbuildinfo` first matters: `-b` is incremental, and a stale build
+cache from an earlier, cleaner state of a file can mask an error introduced
+since. `pnpm build` runs the type-check *and* `vite build`, so a pass here is
+the same guarantee CI's `Build & push images` job gets — nothing stronger is
+available short of running `docker build --target app -f app/Dockerfile .`
+itself, which is the only way to catch a Dockerfile-level break (a missing
+build arg, a COPY path) rather than a source-level one.
+
+**Never trust `vue-tsc --noEmit -p tsconfig.json` (or `-p tsconfig.app.json`
+alone) as a stand-in for this.** It can pass on a file that will fail the real
+build, and there is no error message pointing at why — the fix is to always run
+the `-b` form, never the plain `-p tsconfig.json` form, for this repo.
+
 ---
 
 ### A disabled module unbuilds its pages — every link to it must be gated
