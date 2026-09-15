@@ -19,7 +19,7 @@ import { useConcerts } from '@/composables/useConcerts'
 import { usePosts } from '@/composables/usePosts'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useAuth } from '@/composables/useAuth'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import { uploadShopPhoto, deleteShopPhoto, reorderShopPhotos } from '@/api/shop'
 import type { ShopItemPayload, ShopItemPhoto, ShopItemSummary, ShopCategory } from '@/types/shop'
 import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
@@ -99,8 +99,7 @@ async function handleSubmit(payload: ShopItemPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -110,8 +109,8 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Item deleted')
     confirmId.value = null
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 
@@ -153,8 +152,8 @@ async function savePhotoOrder() {
     await reorderShopPhotos(token.value!, editingId.value, localPhotos.value.map((p) => p.id))
     originalOrder.value = localPhotos.value.map((p) => p.id)
     toast.success('Order saved')
-  } catch {
-    toast.error('Failed to save order')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save order')
   }
 }
 
@@ -170,8 +169,8 @@ async function onPhotoFileChange(e: Event) {
     }
     await qc.invalidateQueries({ queryKey: ['shop-item', editingId] })
     toast.success('Photo(s) uploaded')
-  } catch {
-    toast.error('Upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Upload failed')
   } finally {
     photoUploading.value = false
     if (photoInput.value) photoInput.value.value = ''
@@ -185,8 +184,8 @@ async function deletePhoto(photoId: number) {
     localPhotos.value   = localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)
     await qc.invalidateQueries({ queryKey: ['shop-item', editingId] })
-  } catch {
-    toast.error('Failed to delete photo')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete photo')
   }
 }
 
@@ -229,8 +228,7 @@ async function saveCategory() {
     }
     openNewCategory()
   } catch (e) {
-    if (e instanceof ApiValidationError) categoryFieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', categoryFieldErrors)
   }
 }
 
@@ -239,8 +237,8 @@ async function deleteCategory(id: number) {
     await categoriesQ.remove.mutateAsync(id)
     toast.success('Category deleted')
     if (editingCategory.value?.id === id) openNewCategory()
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 
@@ -271,8 +269,8 @@ async function saveCurrencySettings() {
     await saveCurrencies.mutateAsync(currencyList.value)
     toast.success('Currencies saved')
     showCurrencyModal.value = false
-  } catch {
-    toast.error('Failed to save currencies')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save currencies')
   }
 }
 

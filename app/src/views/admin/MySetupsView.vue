@@ -7,6 +7,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useMyRiderConfirmations } from '@/composables/useRiderConfirmations'
 import type { BandMember } from '@bandms/rider-core'
 import { toast } from 'vue-sonner'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { user } = useAuth()
 const { query } = useBandMembers()
@@ -19,8 +20,8 @@ async function confirmRig(riderId: number, riderName: string) {
   try {
     await confirm.mutateAsync(riderId)
     toast.success(`Confirmed your rig for ${riderName}`)
-  } catch {
-    toast.error('Could not record your confirmation')
+  } catch (e) {
+    reportSaveError(e, 'Could not record your confirmation')
   }
 }
 

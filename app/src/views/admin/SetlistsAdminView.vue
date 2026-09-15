@@ -6,6 +6,7 @@ import SetlistEditor from '@/components/setlist/SetlistEditor.vue'
 import SetlistFmImportModal from '@/components/setlist/SetlistFmImportModal.vue'
 import { useSetlists } from '@/composables/useSetlists'
 import { useSongs } from '@/composables/useSongs'
+import { reportSaveError } from '@/utils/formErrors'
 
 type MainTab = 'setlists' | 'library'
 const mainTab = ref<MainTab>('setlists')
@@ -29,8 +30,8 @@ async function createSetlist() {
     newName.value    = ''
     showNewForm.value = false
     toast.success('Setlist created')
-  } catch {
-    toast.error('Failed to create setlist')
+  } catch (e) {
+    reportSaveError(e, 'Failed to create setlist')
   } finally {
     creating.value = false
   }
@@ -43,8 +44,8 @@ async function confirmDelete() {
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
     toast.success('Setlist deleted')
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 
@@ -114,8 +115,8 @@ async function submitSong() {
       toast.success('Song created')
     }
     showSongForm.value = false
-  } catch {
-    toast.error('Failed to save song')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save song')
   } finally {
     savingSong.value = false
   }
@@ -127,8 +128,8 @@ async function confirmDeleteSong() {
     await songRemove.mutateAsync(confirmSongDeleteId.value)
     confirmSongDeleteId.value = null
     toast.success('Song deleted')
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 

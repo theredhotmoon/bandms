@@ -5,7 +5,6 @@
  */
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { saveErrorMessage } from '@/api/client'
 import RigEditor from '@/components/rig/RigEditor.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import { useMemberSetups, useMemberSetup } from '@/composables/useBandMemberSetups'
@@ -16,6 +15,7 @@ import { defaultRigSpec } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
 import { unnamedChannelMessage } from '@/utils/rigValidation'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { reportSaveError } from '@/utils/formErrors'
 
 interface Props { member: BandMember }
 const props = defineProps<Props>()
@@ -108,7 +108,7 @@ async function save() {
     setTimeout(() => { saved.value = false }, 2000)
     toast.success('Setup saved')
   } catch (e) {
-    toast.error(saveErrorMessage(e, 'Failed to save setup'))
+    reportSaveError(e, 'Failed to save setup')
   } finally {
     saving.value = false
   }
@@ -129,8 +129,8 @@ async function createSetup() {
     newName.value = ''
     showNewRow.value = false
     toast.success('Setup created')
-  } catch {
-    toast.error('Failed to create setup')
+  } catch (e) {
+    reportSaveError(e, 'Failed to create setup')
   } finally {
     creating.value = false
   }
@@ -141,8 +141,8 @@ async function removeSetup(id: number) {
     await remove.mutateAsync(id)
     if (openId.value === id) openId.value = null
     toast.success('Setup deleted')
-  } catch {
-    toast.error('Failed to delete setup')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete setup')
   }
 }
 
@@ -150,8 +150,8 @@ async function makeDefault(id: number) {
   try {
     await setDefault.mutateAsync(id)
     toast.success('Default setup updated')
-  } catch {
-    toast.error('Failed to update default')
+  } catch (e) {
+    reportSaveError(e, 'Failed to update default')
   }
 }
 

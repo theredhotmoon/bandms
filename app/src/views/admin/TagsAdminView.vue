@@ -10,7 +10,7 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useTags } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { Tag, TagPayload } from '@/types/tag'
 
 const { query, create, update, remove } = useTags()
@@ -42,8 +42,7 @@ async function handleSubmit(payload: TagPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -53,7 +52,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Tag deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 

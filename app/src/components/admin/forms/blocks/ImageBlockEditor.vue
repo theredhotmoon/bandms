@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { toast } from 'vue-sonner'
 import { uploadPostBlockImage } from '@/api/postBlocks'
 import { useAuth } from '@/composables/useAuth'
+import { reportSaveError } from '@/utils/formErrors'
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -27,8 +27,8 @@ async function onFile(e: Event) {
     // `url` is kept alongside `path` purely so the editor can show a preview
     // before the post is saved; only `path` is submitted.
     emit('update:payload', { ...props.payload, path, url })
-  } catch {
-    toast.error('Image upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Image upload failed')
   } finally {
     uploading.value = false
     if (fileInput.value) fileInput.value.value = ''

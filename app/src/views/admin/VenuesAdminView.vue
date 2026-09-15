@@ -11,7 +11,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { useVenues } from '@/composables/useVenues'
 import { useTags } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { Venue, VenuePayload } from '@/types/venue'
 
 const { query, create, update, remove } = useVenues()
@@ -47,8 +47,7 @@ async function handleSubmit(payload: VenuePayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -58,7 +57,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Venue deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 

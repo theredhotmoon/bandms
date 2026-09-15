@@ -6,8 +6,8 @@ import BandMemberForm from '@/components/admin/forms/BandMemberForm.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { useAuth } from '@/composables/useAuth'
-import { ApiValidationError } from '@/api/client'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { user } = useAuth()
 const { query, update } = useBandMembers()
@@ -28,8 +28,7 @@ async function handleSubmit(payload: BandMemberPayload) {
     await update.mutateAsync({ id: myMember.value.id, payload })
     toast.success('Profile updated')
   } catch (e) {
-    if (e instanceof ApiValidationError) errors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', errors)
   } finally {
     saving.value = false
   }

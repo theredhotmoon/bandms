@@ -12,7 +12,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { useBands } from '@/composables/useBands'
 import { useAuthors } from '@/composables/useAuthors'
 import { useTableControls } from '@/composables/useTableControls'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { Band, BandPayload } from '@/types/band'
 
 const { query, create, update, remove } = useBands()
@@ -65,8 +65,7 @@ async function handleSubmit(payload: BandPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -76,7 +75,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Band deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 

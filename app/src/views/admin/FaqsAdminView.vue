@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import FaqEditor from '@/components/admin/FaqEditor.vue'
 import { useFaqs } from '@/composables/useFaqs'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
 
 const { query, create, update, remove, reorder } = useFaqs()
@@ -63,10 +63,7 @@ async function save(payload: FaqPayload) {
     if (payload.module_slug) activeSlug.value = payload.module_slug
     editing.value = null
   } catch (e) {
-    // Field errors render next to the offending input; anything else would
-    // vanish and leave the form looking like it saved.
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Could not save the question')
+    reportSaveError(e, 'Could not save the question', fieldErrors)
   }
 }
 
@@ -77,8 +74,8 @@ async function destroy(faq: Faq) {
     await remove.mutateAsync(faq.id)
     if (editing.value === faq.id) cancelEdit()
     toast.success('Question deleted')
-  } catch {
-    toast.error('Could not delete the question')
+  } catch (e) {
+    reportSaveError(e, 'Could not delete the question')
   }
 }
 

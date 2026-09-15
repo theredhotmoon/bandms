@@ -22,8 +22,8 @@ import {
   reorderReleasePhotos,
 } from '@/api/releases'
 import type { UploadProgress } from '@/api/releases'
-import { ApiValidationError } from '@/api/client'
 import type { Release, ReleaseSummary, ReleasePayload, ReleasePhoto } from '@/types/release'
+import { reportSaveError } from '@/utils/formErrors'
 
 const TYPE_BADGE: Record<string, string> = {
   LP:          '#888888',
@@ -111,8 +111,7 @@ async function handleSubmit(payload: ReleasePayload, coverFile: File | null, del
     toast.success(isCreating.value ? 'Release created' : 'Release updated')
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -122,8 +121,8 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Release deleted')
     confirmId.value = null
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 
@@ -169,8 +168,8 @@ async function savePhotoOrder() {
     await reorderReleasePhotos(token.value!, editingId.value, localPhotos.value.map((p) => p.id))
     originalOrder.value = localPhotos.value.map((p) => p.id)
     toast.success('Order saved')
-  } catch {
-    toast.error('Failed to save order')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save order')
   }
 }
 
@@ -181,8 +180,8 @@ async function deletePhoto(photoId: number) {
     localPhotos.value   = localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)
     await queryClient.invalidateQueries({ queryKey: ['releases'] })
-  } catch {
-    toast.error('Failed to delete photo')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete photo')
   }
 }
 
@@ -201,8 +200,8 @@ async function uploadPhotos() {
     dropZoneRef.value?.clear()
     await queryClient.invalidateQueries({ queryKey: ['releases'] })
     toast.success(`${updated.photos?.length ?? 0} photos added`)
-  } catch {
-    toast.error('Upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Upload failed')
   } finally {
     photoUploading.value = false
     photoProgress.value  = null

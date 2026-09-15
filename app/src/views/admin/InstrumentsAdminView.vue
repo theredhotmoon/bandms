@@ -13,7 +13,7 @@ import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
 
 const { query, create, update, remove } = useInstruments()
@@ -86,8 +86,7 @@ async function submit() {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Failed to save instrument')
+    reportSaveError(e, 'Failed to save instrument', fieldErrors)
   }
 }
 
@@ -99,7 +98,7 @@ async function confirmDelete() {
   try {
     await remove.mutateAsync(confirmId.value)
     toast.success('Instrument deleted')
-  } catch { toast.error('Failed to delete instrument') }
+  } catch (e) { reportSaveError(e, 'Failed to delete instrument') }
   finally { confirmLoading.value = false; confirmOpen.value = false; confirmId.value = null }
 }
 </script>

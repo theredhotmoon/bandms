@@ -9,7 +9,7 @@ import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import MemberDefaultGear from '@/components/band-member/MemberDefaultGear.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 
 const { query, create, update, remove, uploadPhoto, reorder } = useBandMembers()
@@ -64,8 +64,8 @@ async function onDrop() {
   localOrder.value = null
   try {
     await reorder.mutateAsync(ids)
-  } catch {
-    toast.error('Failed to save new order')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save new order')
   }
 }
 
@@ -100,8 +100,7 @@ async function handleCreate(payload: BandMemberPayload) {
     showCreateModal.value = false
     openId.value = created.id
   } catch (e) {
-    if (e instanceof ApiValidationError) createErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', createErrors)
   }
 }
 
@@ -120,8 +119,7 @@ async function handleUpdate(payload: BandMemberPayload) {
     }
     toast.success('Member updated')
   } catch (e) {
-    if (e instanceof ApiValidationError) updateErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', updateErrors)
   }
 }
 
@@ -135,7 +133,7 @@ async function confirmDelete() {
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
     toast.success('Member removed')
-  } catch { toast.error('Failed to remove') }
+  } catch (e) { reportSaveError(e, 'Failed to remove') }
 }
 </script>
 

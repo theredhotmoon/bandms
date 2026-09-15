@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useSetlistFmSearch, useSetlists } from '@/composables/useSetlists'
 import type { SetlistFmArtist, SetlistFmSetlist } from '@/types/setlist'
+import { reportSaveError } from '@/utils/formErrors'
 
 const emit = defineEmits<{ close: []; imported: [setlistId: number] }>()
 
@@ -28,8 +29,8 @@ async function doSearchArtist() {
   try {
     artists.value = await searchArtist.mutateAsync(artistQuery.value.trim())
     step.value = 'search'
-  } catch {
-    toast.error('Failed to search setlist.fm')
+  } catch (e) {
+    reportSaveError(e, 'Failed to search setlist.fm')
   } finally {
     searching.value = false
   }
@@ -42,8 +43,8 @@ async function pickArtist(artist: SetlistFmArtist) {
   try {
     const res = await fetchArtistSetlists.mutateAsync({ mbid: artist.mbid })
     setlists.value = res.data
-  } catch {
-    toast.error('Failed to load setlists')
+  } catch (e) {
+    reportSaveError(e, 'Failed to load setlists')
   } finally {
     loadingSets.value = false
   }
@@ -69,8 +70,8 @@ async function doImport() {
     })
     toast.success(`Imported "${result.name}"`)
     emit('imported', result.id)
-  } catch {
-    toast.error('Import failed')
+  } catch (e) {
+    reportSaveError(e, 'Import failed')
   } finally {
     importing.value = false
   }

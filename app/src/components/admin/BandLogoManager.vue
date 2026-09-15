@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useBandLogos } from '@/composables/useBandLogos'
+import { reportSaveError } from '@/utils/formErrors'
 import type { BandLogo, BandLogoPayload, LogoVariant, LogoBackground } from '@/types/bandLogo'
 import { LOGO_VARIANT_LABELS, LOGO_BACKGROUND_LABELS } from '@/types/bandLogo'
 
@@ -90,8 +91,8 @@ async function doUpload() {
     })
     toast.success('Logo uploaded')
     cancelPending()
-  } catch {
-    toast.error('Upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Upload failed')
   }
 }
 
@@ -124,8 +125,8 @@ async function saveEdit(id: number) {
     await update.mutateAsync({ id, payload: { ...editForm } })
     toast.success('Logo updated')
     editingId.value = null
-  } catch {
-    toast.error('Failed to save changes')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save changes')
   }
 }
 
@@ -135,8 +136,8 @@ async function doSetDefault(id: number) {
   try {
     await setDefault.mutateAsync(id)
     toast.success('Default logo updated')
-  } catch {
-    toast.error('Failed to set default')
+  } catch (e) {
+    reportSaveError(e, 'Failed to set default')
   }
 }
 
@@ -146,8 +147,8 @@ async function toggleDeprecated(logo: BandLogo) {
   try {
     await update.mutateAsync({ id: logo.id, payload: { is_deprecated: !logo.is_deprecated } })
     toast.success(logo.is_deprecated ? 'Logo restored' : 'Logo marked as deprecated')
-  } catch {
-    toast.error('Failed to update status')
+  } catch (e) {
+    reportSaveError(e, 'Failed to update status')
   }
 }
 
@@ -168,8 +169,8 @@ async function doDelete(id: number) {
     await remove.mutateAsync(id)
     toast.success('Logo deleted')
     confirmDeleteId.value = null
-  } catch {
-    toast.error('Failed to delete logo')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete logo')
   }
 }
 

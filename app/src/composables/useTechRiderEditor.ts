@@ -11,7 +11,7 @@ import type { Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { updateMemberSetup } from '@/api/bandMemberSetups'
-import { saveErrorMessage } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import { useAuth } from './useAuth'
 import { useBandMembers } from './useBandMembers'
 import { useAllMemberSetups } from './useBandMemberSetups'
@@ -180,7 +180,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       toast.success('Rider saved')
       return true
     } catch (e) {
-      toast.error(saveErrorMessage(e, 'Failed to save rider'))
+      reportSaveError(e, 'Failed to save rider')
       return false
     } finally {
       saving.value = false
@@ -229,7 +229,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       await queryClient.invalidateQueries({ queryKey: ['member-setups', member] })
       toast.success('Saved to the member\'s rig — remember to save the rider too')
     } catch (e) {
-      toast.error(saveErrorMessage(e, 'Could not save to the saved rig'))
+      reportSaveError(e, 'Could not save to the saved rig')
     } finally {
       promoting.value = false
     }

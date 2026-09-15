@@ -14,7 +14,7 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useTours } from '@/composables/useTours'
 import { useBands } from '@/composables/useBands'
 import { useTableControls } from '@/composables/useTableControls'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { AuthorSummary, AuthorPayload } from '@/types/author'
 
 const { query, create, update, remove } = useAuthors()
@@ -72,8 +72,7 @@ async function handleSubmit(payload: AuthorPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -83,7 +82,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Author deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 
 </script>
