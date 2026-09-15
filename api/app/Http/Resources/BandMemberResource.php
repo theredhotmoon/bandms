@@ -24,7 +24,15 @@ class BandMemberResource extends JsonResource
             'quit_at'    => $this->quit_at?->format('Y-m-d'),
             'sort_order'   => $this->sort_order,
             'calendar_url' => $this->calendar_url,
-            'login_email'  => $this->when($request->user()?->isAdmin(), $this->login_email),
+            // Resolve explicitly against the 'api' guard: this resource is also
+            // rendered by the public, unauthenticated GET /band-profile/members
+            // route (the Astro build fetches it with no token), which carries no
+            // auth:api middleware. Without a middleware to switch the app's
+            // default guard to 'api', $request->user() would resolve against the
+            // session-based 'web' guard and always be null here — even for an
+            // admin sending a valid Bearer token — silently dropping login_email
+            // on every list refetch after a save.
+            'login_email'  => $this->when($request->user('api')?->isAdmin(), $this->login_email),
             'can_login'    => $this->can_login,
             'main_instrument_id' => $this->main_instrument_id,
             'main_instrument'    => $this->mainInstrument ? [
