@@ -38,8 +38,17 @@ describe('reportSaveError', () => {
     expect(toastError).toHaveBeenCalledWith('You cannot delete your own account.')
   })
 
-  it('falls back to the given message for an unrecognised error', () => {
-    reportSaveError(new Error('boom'), 'Failed to save')
+  // A few API functions (music-video metadata/sync, Facebook-likes sync) do
+  // their own fetch and throw a plain Error instead of going through
+  // handleResponse — their message must still reach the toast.
+  it('surfaces a plain Error message from endpoints that bypass handleResponse', () => {
+    reportSaveError(new Error('Could not retrieve metadata for this URL.'), 'Failed to save')
+
+    expect(toastError).toHaveBeenCalledWith('Could not retrieve metadata for this URL.')
+  })
+
+  it('falls back to the given message for a non-Error thrown value', () => {
+    reportSaveError('boom', 'Failed to save')
 
     expect(toastError).toHaveBeenCalledWith('Failed to save')
   })

@@ -75,6 +75,14 @@ export function saveErrorMessage(error: unknown, fallback: string): string {
     return error.message
   }
 
+  // Not every endpoint goes through handleResponse — a few (music-video
+  // metadata/sync, the Facebook-likes sync) do their own fetch and throw a
+  // plain Error carrying the backend's message. Falling back to the generic
+  // string here would silently drop that message instead of showing it.
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
   return fallback
 }
 
