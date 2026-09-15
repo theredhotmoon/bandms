@@ -443,7 +443,10 @@ const promo = [
   }
 
   /* ── Form + contacts ───────────────────────────────────────────────────── */
-  .ct-main { padding-block: 56px 54px; }
+  /* Matches ConcertsSection's `.sec` (the list, not the full-bleed map) and
+     NewsFilter's content column, so Contact reads at the same width as News
+     and Shows instead of stretching to the page-x gutter on wide screens. */
+  .ct-main { padding-block: 56px 54px; max-width: 1200px; margin-inline: auto; }
   .ct-grid {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
@@ -497,7 +500,7 @@ const promo = [
   }
 
   /* ── Promoters & press ─────────────────────────────────────────────────── */
-  .ct-promo { padding-block: 56px; }
+  .ct-promo { padding-block: 56px; max-width: 1200px; margin-inline: auto; }
   .ct-promo-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
   .ct-promo-title { margin: 0; font-size: 56px; line-height: .96; }
   .ct-promo-sub {
