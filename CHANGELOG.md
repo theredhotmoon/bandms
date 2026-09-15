@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-15
+
+### Added
+- **A friendly maintenance page instead of a raw 502.** Whenever `backend`, `frontend` or `web` is unreachable — mid-rebuild, mid-restart — visitors now see a "we're updating our website, we'll be back soon" page rather than a bare gateway error. Caddy serves it directly, so it works even while every app container is down. Placeholder copy for now; real design to follow.
+
 ## [Unreleased] — 2026-09-11
 
 ### Added
