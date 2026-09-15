@@ -578,6 +578,24 @@ docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
 A manual server-side edit is a **hotfix, not a fix** — the next deploy `scp`s the
 repo's copy over it. Land the same change in the repo.
 
+#### Maintenance page
+
+Whichever of `backend`, `frontend` or `web` is unreachable — mid-rebuild, mid-restart,
+or crash-looping — Caddy returns a `502/503/504` for the paths it fronts. The
+Caddyfile's `handle_errors` block catches only those, and serves
+`docker/caddy/maintenance/maintenance.html` instead of a raw gateway error. A
+real `404` (a page that was never built) is a normal response, not a proxy
+error, so it passes through untouched.
+
+The page is a static file mounted straight into the `caddy` container, so it
+renders even while every other container is down. Edit it directly — no
+rebuild needed, just recreate Caddy (see above: a bind-mount edit alone does
+not get picked up):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
+```
+
 ### Pointing a domain at the server
 
 `SITE_ADDRESS` in `/opt/bandms/.env` is the whole switch. `:80` serves plain

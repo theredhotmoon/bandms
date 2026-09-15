@@ -166,7 +166,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker/caddy/Caddyfile,scripts/prod-backup-db.sh"
+          source: "docker-compose.prod.yml,docker/caddy/Caddyfile,docker/caddy/maintenance,scripts/prod-backup-db.sh"
           target: /opt/bandms/
 
       - name: Deploy via SSH

@@ -94,4 +94,25 @@
 	handle {
 		reverse_proxy web:80
 	}
+
+	# ── Maintenance page ─────────────────────────────────────────────────────
+	# 502/503/504 only happen when Caddy can't reach an upstream (backend,
+	# frontend or web — e.g. mid-rebuild or mid-restart), so this only ever
+	# fires during an actual outage. A real 404 from Astro is a normal
+	# response, not a proxy error, so handle_errors never sees it and pages
+	# that genuinely don't exist still 404 as expected.
+	#
+	# The maintenance file is mounted straight into this container, so it
+	# renders even when every other container is down.
+	handle_errors {
+		@maintenance expression `{err.status_code} in [502, 503, 504]`
+		handle @maintenance {
+			root * /usr/share/caddy/maintenance
+			rewrite * /maintenance.html
+			file_server
+		}
+		# respond's status must be explicit — with none given it defaults to
+		# 200, which would report a real error as a healthy response.
+		respond "{err.status_code} {err.status_text}" {err.status_code}
+	}
 }
