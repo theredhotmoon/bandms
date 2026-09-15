@@ -204,6 +204,16 @@ reverted — this wants a reviewed diff per file, not a regex.
 
 ## Other open items
 
+### Try the maintenance page against production, not just dev
+PR #108 added a Caddy `handle_errors` maintenance page (502/503/504 →
+`docker/caddy/maintenance/maintenance.html`), verified only against the local
+dev stack (stopped `web`, curled through Caddy on `:8081`, confirmed status and
+body). Never exercised on the actual server — confirm the `scp` step in
+`deploy.yml` actually lands `docker/caddy/maintenance/` at `/opt/bandms/` on a
+real deploy, and that a real 502 (e.g. during the next `web` or `backend`
+recreate) shows the page rather than Caddy's bare error. Swap in the real
+design first if it's ready by then.
+
 ### E2E flakiness is connection resets, not memory
 Every full run loses ~2 specs, a different pair each time, always downstream of `[vite] http proxy error … ECONNRESET` — never an assertion mismatch. No OOM or GPU signatures in any run. Suspected cause is `pm.max_children = 20` in `api/docker/www.conf`: an admin page fires 6–10 parallel API calls, times two Playwright workers plus setup traffic. **Untested** — raising the pool trades RAM for connection headroom. Documented in `CLAUDE.md`.
 
