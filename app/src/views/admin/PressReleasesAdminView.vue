@@ -16,7 +16,7 @@ import { useAlbums } from '@/composables/useAlbums'
 import { useTours } from '@/composables/useTours'
 import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 
 const { query, create, update, remove } = usePressReleases()
@@ -81,8 +81,7 @@ async function handleSubmit(payload: PressReleasePayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -92,8 +91,8 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Deleted')
     confirmId.value = null
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 

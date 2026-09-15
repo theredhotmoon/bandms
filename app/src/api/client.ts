@@ -34,7 +34,14 @@ export async function handleResponse<T>(response: Response): Promise<T> {
 
   if (response.status === 422) {
     const body = (await response.json()) as ValidationErrors
-    throw new ApiValidationError(body.errors)
+    // Not every 422 carries a Laravel `errors` bag — a business-rule check
+    // (e.g. "You cannot delete your own account.") returns a bare `message`
+    // instead. Routing that through ApiValidationError would leave `.errors`
+    // undefined and crash saveErrorMessage's `Object.entries(error.errors)`.
+    if (body.errors && Object.keys(body.errors).length > 0) {
+      throw new ApiValidationError(body.errors)
+    }
+    throw new ApiError(422, body.message ?? 'Validation failed')
   }
 
   let message = response.statusText
@@ -65,6 +72,14 @@ export function saveErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (error instanceof ApiError && error.message) {
+    return error.message
+  }
+
+  // Not every endpoint goes through handleResponse — a few (music-video
+  // metadata/sync, the Facebook-likes sync) do their own fetch and throw a
+  // plain Error carrying the backend's message. Falling back to the generic
+  // string here would silently drop that message instead of showing it.
+  if (error instanceof Error && error.message) {
     return error.message
   }
 

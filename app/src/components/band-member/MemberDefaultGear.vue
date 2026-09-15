@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner'
 import type { BandMember, DefaultGearItem, DefaultGearItemType } from '@bandms/rider-core'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { reportSaveError } from '@/utils/formErrors'
 
 const props = defineProps<{ member: BandMember }>()
 const { update } = useBandMembers()
@@ -60,8 +61,8 @@ async function save() {
     await update.mutateAsync({ id: props.member.id, payload: { default_gear: items.value } })
     toast.success('Default gear saved')
     markClean()
-  } catch {
-    toast.error('Failed to save gear')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save gear')
   } finally {
     saving.value = false
   }

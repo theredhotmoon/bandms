@@ -14,8 +14,8 @@ import { useAuth } from '@/composables/useAuth'
 import { batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
 import { togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
-import { ApiValidationError } from '@/api/client'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { query, update, remove, reorderPhotos } = useAlbums()
 const { query: venuesQ } = useVenues()
@@ -52,8 +52,8 @@ async function handleBatchUpload(
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
     toast.success(`Album "${album.title}" created with ${album.photos.length} photo${album.photos.length !== 1 ? 's' : ''}`)
     showBatch.value = false
-  } catch {
-    toast.error('Upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Upload failed')
   } finally {
     batchUploading.value = false
     batchProgress.value = null
@@ -110,8 +110,7 @@ async function saveEdit() {
     toast.success('Album updated')
     showEdit.value = false
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -159,8 +158,8 @@ async function saveOrder() {
     })
     originalOrder.value = localPhotos.value.map((p) => p.id)
     toast.success('Order saved')
-  } catch {
-    toast.error('Failed to save order')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save order')
   }
 }
 
@@ -172,8 +171,8 @@ async function toggleEpk(photo: AlbumPhoto) {
     viewAlbum.value = refreshed ?? null
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value
     toast.success(photo.epk_featured ? 'Removed from EPK' : 'Added to EPK')
-  } catch {
-    toast.error('Failed to update EPK status')
+  } catch (e) {
+    reportSaveError(e, 'Failed to update EPK status')
   }
 }
 
@@ -187,8 +186,8 @@ async function deletePhoto(albumId: number, photoId: number) {
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)
     toast.success('Photo removed')
-  } catch {
-    toast.error('Failed to remove photo')
+  } catch (e) {
+    reportSaveError(e, 'Failed to remove photo')
   } finally {
     deletingPhotoId.value = null
   }
@@ -203,7 +202,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Album deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 

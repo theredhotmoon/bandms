@@ -6,6 +6,7 @@ import { useSongs } from '@/composables/useSongs'
 import { useConcerts } from '@/composables/useConcerts'
 import type { SetlistItem, SetlistTransition } from '@/types/setlist'
 import type { Song } from '@/types/song'
+import { reportSaveError } from '@/utils/formErrors'
 
 const props = defineProps<{ setlistId: number }>()
 
@@ -45,8 +46,8 @@ async function saveMeta() {
     savedMeta.value = true
     setTimeout(() => { savedMeta.value = false }, 2000)
     toast.success('Setlist saved')
-  } catch {
-    toast.error('Failed to save')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save')
   } finally {
     savingMeta.value = false
   }
@@ -103,8 +104,8 @@ async function moveItem(items: SetlistItem[], fromIdx: number, dir: -1 | 1) {
   ;[newOrder[fromIdx], newOrder[toIdx]] = [newOrder[toIdx], newOrder[fromIdx]]
   try {
     await reorder.mutateAsync(newOrder)
-  } catch {
-    toast.error('Reorder failed')
+  } catch (e) {
+    reportSaveError(e, 'Reorder failed')
   }
 }
 
@@ -118,8 +119,8 @@ async function patchItem(itemId: number, patch: Partial<{
 }>) {
   try {
     await updateItem.mutateAsync({ itemId, payload: patch })
-  } catch {
-    toast.error('Failed to update')
+  } catch (e) {
+    reportSaveError(e, 'Failed to update')
   }
 }
 
@@ -132,8 +133,8 @@ async function doRemoveItem() {
     await removeItem.mutateAsync(confirmRemoveId.value)
     if (expandedItemId.value === confirmRemoveId.value) expandedItemId.value = null
     confirmRemoveId.value = null
-  } catch {
-    toast.error('Failed to remove')
+  } catch (e) {
+    reportSaveError(e, 'Failed to remove')
   }
 }
 
@@ -157,8 +158,8 @@ async function addExistingSong(song: Song) {
     showAddSong.value = false
     addSongFilter.value = ''
     toast.success(`Added "${song.title}"`)
-  } catch {
-    toast.error('Failed to add song')
+  } catch (e) {
+    reportSaveError(e, 'Failed to add song')
   }
 }
 
@@ -172,8 +173,8 @@ async function addNewSong() {
     addSongNewTitle.value = ''
     showAddSong.value = false
     toast.success(`Created & added "${song.title}"`)
-  } catch {
-    toast.error('Failed to create song')
+  } catch (e) {
+    reportSaveError(e, 'Failed to create song')
   } finally {
     addingNew.value = false
   }

@@ -18,6 +18,7 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { usePosts } from '@/composables/usePosts'
 import { useTechRiders } from '@/composables/useTechRiders'
+import { reportSaveError } from '@/utils/formErrors'
 import { fetchTicketStats } from '@/api/admin'
 import type { EpkVersion } from '@/types/epkVersion'
 import type { PressReleaseSummary } from '@/types/press-release'
@@ -50,14 +51,14 @@ async function handlePublish(id: number) {
   try {
     await publishEpk.mutateAsync(id)
     toast.success('EPK version published — now live at /epk')
-  } catch { toast.error('Failed to publish') }
+  } catch (e) { reportSaveError(e, 'Failed to publish') }
 }
 
 async function handleDiscard(id: number) {
   try {
     await discardEpk.mutateAsync(id)
     toast.success('Snapshot discarded')
-  } catch { toast.error('Failed to discard') }
+  } catch (e) { reportSaveError(e, 'Failed to discard') }
 }
 const { query: bandsQ } = useBands()
 const { query: venuesQ } = useVenues()
@@ -74,7 +75,7 @@ const { list: techRidersQ } = useTechRiders()
 async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
   try {
     await updateProfile.mutateAsync({ career_level: level })
-  } catch { toast.error('Failed to update career level') }
+  } catch (e) { reportSaveError(e, 'Failed to update career level') }
 }
 
 const stats = computed(() => [

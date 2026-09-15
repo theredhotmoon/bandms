@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
@@ -203,8 +203,7 @@ async function saveEdit(slug: string) {
   } catch (e) {
     // Field-level errors render inline next to the offending input; anything
     // else would otherwise vanish, leaving the form looking like it saved.
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Could not save the module')
+    reportSaveError(e, 'Could not save the module', fieldErrors)
   }
 }
 </script>

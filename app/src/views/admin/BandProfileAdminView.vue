@@ -12,9 +12,9 @@ import { useEpkVersions } from '@/composables/useEpkVersions'
 import { useSocialLinks } from '@/composables/useSocialLinks'
 import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { BioVariant } from '@/types/bandProfile'
-import { ApiValidationError } from '@/api/client'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -29,8 +29,8 @@ async function createSnapshot() {
     toast.success('EPK snapshot created — review it on the Dashboard')
     showSnapshotModal.value = false
     snapshotReason.value = ''
-  } catch {
-    toast.error('Failed to create snapshot')
+  } catch (e) {
+    reportSaveError(e, 'Failed to create snapshot')
   }
 }
 
@@ -165,8 +165,7 @@ async function saveProfile() {
     setTimeout(() => { saved.value = false }, 2000)
     toast.success('Profile saved')
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Failed to save')
+    reportSaveError(e, 'Failed to save', fieldErrors)
   } finally {
     saving.value = false
   }
@@ -176,8 +175,8 @@ async function saveContextPins() {
   try {
     await update.mutateAsync(contextPins)
     toast.success('Logo settings saved')
-  } catch {
-    toast.error('Failed to save logo settings')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save logo settings')
   }
 }
 
@@ -186,7 +185,7 @@ async function doSyncFb() {
     const result = await syncFb.mutateAsync()
     toast.success(`${result.likes.toLocaleString()} Facebook likes synced`)
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : 'Failed to sync Facebook likes')
+    reportSaveError(e, 'Failed to sync Facebook likes')
   }
 }
 
@@ -199,7 +198,7 @@ async function handleRiderUpload(e: Event) {
   try {
     await uploadRider.mutateAsync(file)
     toast.success('Tech rider uploaded')
-  } catch { toast.error('Upload failed') }
+  } catch (e) { reportSaveError(e, 'Upload failed') }
   if (riderInput.value) riderInput.value.value = ''
 }
 
@@ -209,18 +208,18 @@ async function handlePlotUpload(e: Event) {
   try {
     await uploadPlot.mutateAsync(file)
     toast.success('Stage plot uploaded')
-  } catch { toast.error('Upload failed') }
+  } catch (e) { reportSaveError(e, 'Upload failed') }
   if (plotInput.value) plotInput.value.value = ''
 }
 
 async function removeRider() {
   try { await deleteRider.mutateAsync(); toast.success('Tech rider removed') }
-  catch { toast.error('Failed to remove') }
+  catch (e) { reportSaveError(e, 'Failed to remove') }
 }
 
 async function removePlot() {
   try { await deletePlot.mutateAsync(); toast.success('Stage plot removed') }
-  catch { toast.error('Failed to remove') }
+  catch (e) { reportSaveError(e, 'Failed to remove') }
 }
 
 type Section = 'bio' | 'career' | 'social' | 'contacts' | 'stats' | 'epk' | 'logo'
@@ -245,8 +244,8 @@ async function saveSocialLinks() {
   try {
     await linksSync.mutateAsync(profileLinks.value)
     toast.success('Social links saved')
-  } catch {
-    toast.error('Failed to save social links')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save social links')
   } finally {
     savingLinks.value = false
   }

@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useNewsletterSubscribers } from '@/composables/useNewsletterSubscribers'
 import type { NewsletterSubscriber } from '@/types/newsletterSubscriber'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { query, remove, page } = useNewsletterSubscribers()
 
@@ -26,8 +27,8 @@ async function doDelete(id: number) {
   try {
     await remove.mutateAsync(id)
     toast.success('Subscriber removed.')
-  } catch {
-    toast.error('Failed to remove subscriber.')
+  } catch (e) {
+    reportSaveError(e, 'Failed to remove subscriber.')
   } finally {
     confirmId.value = null
   }

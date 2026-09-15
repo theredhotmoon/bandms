@@ -5,6 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useHeroImages } from '@/composables/useHeroImages'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useSiteRebuild } from '@/composables/useSiteRebuild'
+import { reportSaveError } from '@/utils/formErrors'
 import { scopeSet, hasOwnSet } from '@/utils/heroImageScopes'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import type { HeroImage } from '@/types/heroImage'
@@ -62,8 +63,8 @@ async function onFilesChosen(e: Event) {
       files: files.map(file => ({ file, caption: '' })),
     })
     toast.success(files.length === 1 ? 'Picture uploaded' : `${files.length} pictures uploaded`)
-  } catch {
-    toast.error('Upload failed')
+  } catch (e) {
+    reportSaveError(e, 'Upload failed')
   } finally {
     if (fileInput.value) fileInput.value.value = ''
   }
@@ -85,16 +86,16 @@ async function saveCaption(image: HeroImage, value: string) {
   if (value === (image.caption ?? '')) return
   try {
     await update.mutateAsync({ id: image.id, payload: { caption: value || null } })
-  } catch {
-    toast.error('Could not save caption')
+  } catch (e) {
+    reportSaveError(e, 'Could not save caption')
   }
 }
 
 async function toggleActive(image: HeroImage) {
   try {
     await update.mutateAsync({ id: image.id, payload: { active: !image.active } })
-  } catch {
-    toast.error('Could not update')
+  } catch (e) {
+    reportSaveError(e, 'Could not update')
   }
 }
 
@@ -111,8 +112,8 @@ async function move(index: number, delta: number) {
   order.splice(next, 0, moved)
   try {
     await reorder.mutateAsync({ scope: selected.value, order })
-  } catch {
-    toast.error('Could not reorder')
+  } catch (e) {
+    reportSaveError(e, 'Could not reorder')
   }
 }
 
@@ -120,8 +121,8 @@ async function removeImage(image: HeroImage) {
   try {
     await remove.mutateAsync(image.id)
     toast.success('Picture removed')
-  } catch {
-    toast.error('Could not remove picture')
+  } catch (e) {
+    reportSaveError(e, 'Could not remove picture')
   }
 }
 

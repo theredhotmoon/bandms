@@ -7,7 +7,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import TourForm from '@/components/admin/forms/TourForm.vue'
 import { useTours } from '@/composables/useTours'
 import { useTour } from '@/composables/useTour'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { TourSummary, TourPayload } from '@/types/tour'
 
 const { query, create, update, remove } = useTours()
@@ -55,8 +55,7 @@ async function handleSubmit(payload: TourPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -66,8 +65,8 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Tour deleted')
     confirmId.value = null
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 

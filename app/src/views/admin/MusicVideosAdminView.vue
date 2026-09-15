@@ -10,6 +10,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useTableControls } from '@/composables/useTableControls'
 import type { MusicVideo, MusicVideoPayload, VideoMetadata } from '@/types/musicVideo'
+import { reportSaveError } from '@/utils/formErrors'
 
 const { query, create, update, remove, previewFetch, retrieveMetadata, syncViews } = useMusicVideos()
 const fetchingPreviewId = ref<number | null>(null)
@@ -31,7 +32,7 @@ async function doRetrieveMetadata() {
       form.title = meta.title
     }
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : 'Could not retrieve metadata')
+    reportSaveError(e, 'Could not retrieve metadata')
   }
 }
 
@@ -56,7 +57,7 @@ async function doSyncViews() {
     const result = await syncViews.mutateAsync()
     toast.success(`Synced ${result.updated} video${result.updated === 1 ? '' : 's'} · ${result.total_views.toLocaleString()} total views`)
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : 'Failed to sync YouTube views')
+    reportSaveError(e, 'Failed to sync YouTube views')
   }
 }
 
@@ -65,8 +66,8 @@ async function doFetchPreview(id: number) {
   try {
     await previewFetch.mutateAsync(id)
     toast.success('Preview fetched')
-  } catch {
-    toast.error('Could not fetch preview for this URL')
+  } catch (e) {
+    reportSaveError(e, 'Could not fetch preview for this URL')
   } finally {
     fetchingPreviewId.value = null
   }
@@ -148,8 +149,8 @@ async function submit() {
       toast.success('Music video added')
     }
     closeModal()
-  } catch {
-    toast.error('Failed to save music video')
+  } catch (e) {
+    reportSaveError(e, 'Failed to save music video')
   }
 }
 
@@ -164,8 +165,8 @@ async function confirmDelete() {
   try {
     await remove.mutateAsync(confirmId.value)
     toast.success('Music video deleted')
-  } catch {
-    toast.error('Failed to delete music video')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete music video')
   } finally {
     confirmLoading.value = false
     confirmOpen.value    = false

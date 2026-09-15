@@ -19,9 +19,10 @@ import { useTableControls } from '@/composables/useTableControls'
 import { uploadConcertPoster, deleteConcertPoster } from '@/api/concerts'
 import { venueGate } from '@/utils/venueGate'
 import { createRiderForConcert } from '@/api/techRiders'
-import { ApiError, ApiValidationError } from '@/api/client'
+import { ApiError } from '@/api/client'
 import { useRouter } from 'vue-router'
 import { adminUrl } from '@/config/admin'
+import { reportSaveError } from '@/utils/formErrors'
 import type { Concert, ConcertPayload } from '@/types/concert'
 
 const { query, create, update, remove } = useConcerts()
@@ -65,7 +66,7 @@ async function createRider(concert: Concert) {
       router.push(adminUrl('tech-rider'))
       return
     }
-    toast.error('Could not create a rider for this concert')
+    reportSaveError(e, 'Could not create a rider for this concert')
   } finally {
     creatingRiderFor.value = null
   }
@@ -122,8 +123,7 @@ async function handleSubmit(payload: ConcertPayload, posterFile: File | null, de
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -133,7 +133,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Concert deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 

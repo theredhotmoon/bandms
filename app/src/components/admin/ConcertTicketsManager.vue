@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useConcertTickets } from '@/composables/useConcertTickets'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { TicketType, PriceTier, TicketTypePayload, PriceTierPayload } from '@/types/ticket'
 
 const props = defineProps<{ concertId: number }>()
@@ -76,8 +76,7 @@ async function submitType() {
     }
     showTypeForm.value = false
   } catch (e) {
-    if (e instanceof ApiValidationError) typeErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', typeErrors)
   }
 }
 
@@ -86,7 +85,7 @@ async function removeType(t: TicketType) {
   try {
     await deleteType.mutateAsync(t.id)
     toast.success('Ticket type deleted')
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 
 // ── Price tier form ───────────────────────────────────────────────────────
@@ -139,8 +138,7 @@ async function submitTier() {
     }
     tierModal.value = null
   } catch (e) {
-    if (e instanceof ApiValidationError) tierErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', tierErrors)
   }
 }
 
@@ -149,7 +147,7 @@ async function removeTier(typeId: number, tier: PriceTier) {
   try {
     await deleteTier.mutateAsync({ typeId, tierId: tier.id })
     toast.success('Tier deleted')
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 
 function fmtPrice(price: number, currency: string): string {

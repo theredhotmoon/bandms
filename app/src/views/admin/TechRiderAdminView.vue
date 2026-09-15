@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import { saveErrorMessage } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RiderChannelList from '@/components/tech-rider/RiderChannelList.vue'
 import RiderConfirmations from '@/components/tech-rider/RiderConfirmations.vue'
@@ -90,8 +90,8 @@ async function createRider() {
     openId.value = rider.id
     activeSection.value = 'stage'
     toast.success('Rider created')
-  } catch {
-    toast.error('Failed to create rider')
+  } catch (e) {
+    reportSaveError(e, 'Failed to create rider')
   } finally {
     creating.value = false
   }
@@ -104,8 +104,8 @@ async function confirmDelete() {
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
     toast.success('Rider deleted')
-  } catch {
-    toast.error('Failed to delete')
+  } catch (e) {
+    reportSaveError(e, 'Failed to delete')
   }
 }
 
@@ -116,8 +116,8 @@ async function duplicateRider(id: number) {
     openId.value = copy.id
     activeSection.value = 'stage'
     toast.success(`Copied to "${copy.name}"`)
-  } catch {
-    toast.error('Failed to duplicate this rider')
+  } catch (e) {
+    reportSaveError(e, 'Failed to duplicate this rider')
   }
 }
 
@@ -125,8 +125,8 @@ async function setActive(id: number) {
   try {
     await activate.mutateAsync(id)
     toast.success('Active rider updated')
-  } catch {
-    toast.error('Failed to set active rider')
+  } catch (e) {
+    reportSaveError(e, 'Failed to set active rider')
   }
 }
 
@@ -166,15 +166,15 @@ async function publish(notes: string) {
     showPublishModal.value = false
     toast.success(`Published v${version.version_number} — the rider link now serves it`)
   } catch (e) {
-    toast.error(saveErrorMessage(e, 'Failed to publish this rider'))
+    reportSaveError(e, 'Failed to publish this rider')
   }
 }
 
 async function compareVersions(olderId: number, newerId: number) {
   try {
     await versions.compare(olderId, newerId)
-  } catch {
-    toast.error('Could not load those versions to compare')
+  } catch (e) {
+    reportSaveError(e, 'Could not load those versions to compare')
   }
 }
 
@@ -195,7 +195,7 @@ async function askForConfirmations() {
       toast.success(`Asked ${result.requested} musician${result.requested === 1 ? '' : 's'} to confirm`)
     }
   } catch (e) {
-    toast.error(saveErrorMessage(e, 'Could not send the confirmation requests'))
+    reportSaveError(e, 'Could not send the confirmation requests')
   }
 }
 
@@ -203,8 +203,8 @@ async function discardVersion(id: number) {
   try {
     await versions.discard.mutateAsync(id)
     toast.success('Version deleted')
-  } catch {
-    toast.error('Could not delete that version')
+  } catch (e) {
+    reportSaveError(e, 'Could not delete that version')
   }
 }
 </script>

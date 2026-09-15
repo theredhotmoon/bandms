@@ -17,7 +17,7 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useShop } from '@/composables/useShop'
 import { useTableControls } from '@/composables/useTableControls'
-import { ApiValidationError } from '@/api/client'
+import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
 
 const { query, create, update, remove } = usePosts()
@@ -75,8 +75,7 @@ async function handleSubmit(payload: PostPayload) {
     }
     closeModal()
   } catch (e) {
-    if (e instanceof ApiValidationError) fieldErrors.value = e.errors
-    else toast.error('Something went wrong')
+    reportSaveError(e, 'Something went wrong', fieldErrors)
   }
 }
 
@@ -86,7 +85,7 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmId.value)
     toast.success('Post deleted')
     confirmId.value = null
-  } catch { toast.error('Failed to delete') }
+  } catch (e) { reportSaveError(e, 'Failed to delete') }
 }
 </script>
 
