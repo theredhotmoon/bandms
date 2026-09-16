@@ -54,7 +54,9 @@ const links = [
   { href: `/${lang}/${slugMap[lang].newsletter}`, label: t.newsletterLink },
 ]
 
-const bandName = profile?.name ?? ''
+// Same fallback as Header: the band's one name, or the hostname — never a
+// translated label standing in for it.
+const bandName = profile?.name?.trim() || (Astro.site ? new URL(Astro.site).hostname : '')
 
 // Same gate BaseLayout uses for the consent banner itself — no point offering
 // to reopen a banner that was never wired up.

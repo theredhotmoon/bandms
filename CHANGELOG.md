@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The Shows map's popup markup inserted the venue name and city into HTML without escaping. It escapes them now, along with the new editable labels.
 - **`GET /api/site-config` now serves page copy for the requested locale only.** It used to fall back to the other language for a field left empty, which was right while the bag had no defaults and is wrong now that every string has one per language: a Polish-only heading would have leaked onto the English page while the admin promised the English default. FAQ answers keep their fallback — a question has no default to fall back to.
 - The privacy page and the cookie banner's link to it now honour the *Privacy & cookies* module switch; *Homepage* and *Site-wide* no longer show a Live/Off toggle the public build never read.
-- The header's home link falls back to an accessible "Home" label instead of an empty anchor when the band profile cannot be read at build time.
+- The header and footer brand fall back to the site's hostname instead of an empty anchor when the band profile cannot be read at build time. The band name is one name in every language — it is never translated and carries no localised label.
 
 ## [Unreleased] — 2026-09-16
 
