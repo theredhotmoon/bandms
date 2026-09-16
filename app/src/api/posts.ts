@@ -1,5 +1,5 @@
 import type { Post, PostPayload, PostSummary } from '@/types/post'
-import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 import type { Lang } from '@/composables/useLang'
 
 export interface PaginationMeta {
@@ -30,15 +30,29 @@ export interface PostFilters {
  * them — its "Draft" filter and the dashboard count would otherwise be empty.
  */
 export async function fetchPosts(token: string, filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
+  const res = await fetch(`${API_BASE}/api/admin/posts?${listParams(filters, lang)}`, { headers: authHeaders(token) })
+  const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
+  return { data: raw.data, meta: raw.meta }
+}
+
+/**
+ * Published posts only, as any visitor sees them. For signed-in users whose
+ * role may not read `/api/admin/posts` (members) — the dashboard's post count
+ * needs *a* number, and a 403 would silently make it zero.
+ */
+export async function fetchPublicPosts(filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
+  const res = await fetch(`${API_BASE}/api/posts?${listParams(filters, lang)}`, { headers: jsonHeaders })
+  const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
+  return { data: raw.data, meta: raw.meta }
+}
+
+function listParams(filters: PostFilters, lang: Lang): URLSearchParams {
   const params = new URLSearchParams()
   if (filters.search)  params.set('search', filters.search)
   if (filters.tag_id)  params.set('tag_id', String(filters.tag_id))
   if (filters.page)    params.set('page', String(filters.page))
   params.set('lang', lang)
-
-  const res = await fetch(`${API_BASE}/api/admin/posts?${params}`, { headers: authHeaders(token) })
-  const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
-  return { data: raw.data, meta: raw.meta }
+  return params
 }
 
 export async function fetchPost(token: string, id: number, lang: Lang = 'en'): Promise<Post> {

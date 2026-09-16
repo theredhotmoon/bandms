@@ -76,17 +76,38 @@ test.describe.serial('Public news — drafts are not built', () => {
     liveId = live.data.id
     liveSlug = live.data.slug_en
 
-    await rebuildAndWait(request, stamp)
+    // `since` is taken *after* the seed, not at collection time: a build another
+    // worker triggered between the two would otherwise pass the >= check having
+    // read the database before the live post existed.
+    await rebuildAndWait(request, Date.now())
   })
 
+  // Deleting the rows is not enough — the live post is baked into the static
+  // site until something rebuilds it, and with auto-rebuild off nothing does.
   test.afterAll(async ({ request }) => {
+    test.setTimeout(180_000)
     if (draftId) await authedFetch(request, 'delete', `/api/posts/${draftId}`)
     if (liveId) await authedFetch(request, 'delete', `/api/posts/${liveId}`)
+    await rebuildAndWait(request, Date.now())
   })
 
+  // Retries only on 5xx: right after a rebuild the Astro build and the admin
+  // specs can saturate php-fpm and Caddy answers 502, which is neither of the
+  // two statuses this test is about. A wrong answer (200 for the draft) fails
+  // on the first try.
+  async function publicStatus(request: import('@playwright/test').APIRequestContext, path: string): Promise<number> {
+    let status = 0
+    for (let attempt = 0; attempt < 4; attempt++) {
+      status = (await request.get(`${API}${path}`)).status()
+      if (status < 500) return status
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+    return status
+  }
+
   test('the API itself hides the draft from anonymous readers', async ({ request }) => {
-    expect((await request.get(`${API}/api/posts/${draftId}`)).status()).toBe(404)
-    expect((await request.get(`${API}/api/posts/${liveId}`)).ok()).toBe(true)
+    expect(await publicStatus(request, `/api/posts/${draftId}`)).toBe(404)
+    expect(await publicStatus(request, `/api/posts/${liveId}`)).toBe(200)
   })
 
   test('the news list shows the published post and not the draft', async ({ page }) => {

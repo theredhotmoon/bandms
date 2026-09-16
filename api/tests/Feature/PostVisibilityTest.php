@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Post;
+use App\Models\PressRelease;
 
 /**
  * A post with no published_at is a draft: the admin lists it as "Draft" and it
@@ -143,4 +144,20 @@ it('leaves published_at alone when the update does not mention it', function () 
     $this->putJson("/api/posts/{$post->id}", ['title' => 'Renamed'])->assertSuccessful();
 
     expect($post->fresh()->published_at)->not->toBeNull();
+});
+
+// ── Other public routes that embed posts ─────────────────────────────────────
+
+// PressReleaseResource emits each linked post's title and slug, so a draft
+// linked to a press release for later would announce itself here.
+it('omits a linked draft from the public press-release detail', function () {
+    $pr = PressRelease::factory()->create();
+    $live = Post::factory()->published()->create(['title' => 'Live']);
+    $draft = Post::factory()->draft()->create(['title' => 'Draft']);
+    $pr->posts()->sync([$live->id, $draft->id]);
+
+    $this->getJson("/api/press-releases/{$pr->id}")
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data.posts')
+        ->assertJsonPath('data.posts.0.title', 'Live');
 });

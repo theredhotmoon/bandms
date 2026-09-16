@@ -30,7 +30,10 @@ class PressReleaseController extends Controller
 
     public function show(PressRelease $pressRelease): PressReleaseResource
     {
-        $pressRelease->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags');
+        // Public route: a linked draft post must not surface here either — the
+        // resource emits each post's title and slug. Safe to scope, because the
+        // admin's press-release form has no linked-posts picker to prefill.
+        $pressRelease->load(['concerts', 'posts' => fn ($q) => $q->published(), 'albums', 'releases', 'tours', 'tags']);
 
         return new PressReleaseResource($pressRelease);
     }
