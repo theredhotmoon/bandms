@@ -26,6 +26,7 @@ import { PRESS_COPY } from './modules/press'
 import { PRIVACY_COPY } from './modules/privacy'
 import { RELEASES_COPY } from './modules/releases'
 import { SITE_COPY } from './modules/site'
+import { TECH_RIDER_COPY } from './modules/techRider'
 import { VIDEOS_COPY } from './modules/videos'
 
 export type { CopyField, CopyKeys, ResolvedCopy } from './types'
@@ -46,6 +47,7 @@ export {
   PRIVACY_COPY,
   RELEASES_COPY,
   SITE_COPY,
+  TECH_RIDER_COPY,
   VIDEOS_COPY,
 }
 
@@ -64,6 +66,7 @@ export const MODULE_COPY: Readonly<Record<string, readonly CopyField[]>> = {
   privacy: PRIVACY_COPY,
   releases: RELEASES_COPY,
   site: SITE_COPY,
+  'tech-rider': TECH_RIDER_COPY,
   videos: VIDEOS_COPY,
 }
 

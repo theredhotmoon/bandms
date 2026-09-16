@@ -363,6 +363,14 @@ export const CONTACT_COPY = defineCopy([
     defaults: { en: 'Select a date', pl: 'Wybierz termin' },
   },
   {
+    key: 'calPrevMonth', label: '"Previous month" (screen readers)', group: 'Availability calendar', maxLength: 40,
+    defaults: { en: 'Previous month', pl: 'Poprzedni miesiąc' },
+  },
+  {
+    key: 'calNextMonth', label: '"Next month" (screen readers)', group: 'Availability calendar', maxLength: 40,
+    defaults: { en: 'Next month', pl: 'Następny miesiąc' },
+  },
+  {
     key: 'calClose', label: '"Close" button', group: 'Availability calendar', maxLength: 30,
     defaults: { en: 'Close', pl: 'Zamknij' },
   },

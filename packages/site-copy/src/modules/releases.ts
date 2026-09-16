@@ -126,6 +126,10 @@ export const RELEASES_COPY = defineCopy([
     defaults: { en: 'Sing along.', pl: 'Śpiewaj z nami.' },
   },
   {
+    key: 'lyricsNav', label: 'Song list (screen readers)', group: 'Lyrics', maxLength: 40,
+    defaults: { en: 'Songs', pl: 'Utwory' },
+  },
+  {
     key: 'lyricsEmpty', label: 'No lyrics yet', group: 'Lyrics', maxLength: 80,
     defaults: { en: 'No lyrics published yet.', pl: 'Brak opublikowanych tekstów.' },
   },

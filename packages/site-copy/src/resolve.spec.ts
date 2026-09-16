@@ -74,7 +74,7 @@ describe('the registry', () => {
   it('covers every module the public site reads copy for', () => {
     expect(slugs).toEqual(expect.arrayContaining([
       'about', 'concerts', 'contact', 'epk', 'footer', 'home', 'merch',
-      'newsletter', 'photos', 'posts', 'press', 'privacy', 'releases', 'site', 'videos',
+      'newsletter', 'photos', 'posts', 'press', 'privacy', 'releases', 'site', 'tech-rider', 'videos',
     ]))
   })
 

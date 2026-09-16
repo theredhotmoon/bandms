@@ -15,7 +15,8 @@ import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
  * renamed (changing its slug) or switched off entirely, so this cannot be a
  * hardcoded /en/contact any more. `null` means the module is off: no link.
  */
-const { contactHref = null } = defineProps<{ contactHref?: string | null }>()
+/** Labels from the Tech Rider module's copy — see pages/rider/index.astro. */
+const { contactHref = null, copy } = defineProps<{ contactHref?: string | null; copy: { notFound: string; contact: string } }>()
 
 const status    = ref<'loading' | 'ready' | 'error'>('loading')
 const published = ref<PublishedRider | null>(null)
@@ -45,7 +46,7 @@ onMounted(async () => {
     status.value    = 'ready'
   } catch {
     status.value = 'error'
-    error.value  = 'Rider not found, or the link has expired.'
+    error.value  = copy.notFound
   }
 })
 </script>
@@ -58,7 +59,7 @@ onMounted(async () => {
 
     <div v-else-if="status === 'error'" class="text-center py-20 text-muted">
       <p class="text-lg">{{ error }}</p>
-      <a v-if="contactHref" :href="contactHref" class="mt-4 inline-block text-accent hover:underline">Contact us</a>
+      <a v-if="contactHref" :href="contactHref" class="mt-4 inline-block text-accent hover:underline">{{ copy.contact }}</a>
     </div>
 
     <RiderSheet

@@ -13,6 +13,8 @@ export interface AvailabilityCopy {
   request: string
   pickPrompt: string
   close: string
+  prevMonth: string
+  nextMonth: string
   loadError: string
   /** Shown while a month's availability is still being fetched. */
   loading: string
@@ -253,7 +255,7 @@ function chooseAnother() {
         type="button"
         class="am-arrow"
         :disabled="monthOffset <= 0"
-        aria-label="Previous month"
+        :aria-label="copy.prevMonth"
         @click="monthOffset--"
       >‹</button>
       <span class="am-month" aria-live="polite">
@@ -263,7 +265,7 @@ function chooseAnother() {
         type="button"
         class="am-arrow"
         :disabled="monthOffset >= MAX_AHEAD"
-        aria-label="Next month"
+        :aria-label="copy.nextMonth"
         @click="monthOffset++"
       >›</button>
     </div>

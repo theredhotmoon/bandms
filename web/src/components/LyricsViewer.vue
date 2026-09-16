@@ -11,7 +11,7 @@ export interface LyricSong {
   lyrics: string
 }
 
-const props = defineProps<{ songs: readonly LyricSong[]; emptyLabel: string }>()
+const props = defineProps<{ songs: readonly LyricSong[]; emptyLabel: string; navLabel: string }>()
 
 const activeId = ref<number | null>(props.songs[0]?.id ?? null)
 
@@ -49,7 +49,7 @@ onUnmounted(() => unsubscribe?.())
   <p v-if="songs.length === 0" class="ly-empty">{{ emptyLabel }}</p>
 
   <div v-else class="ly">
-    <nav class="ly-nav" aria-label="Songs">
+    <nav class="ly-nav" :aria-label="navLabel">
       <button
         v-for="song in songs"
         :key="song.id"

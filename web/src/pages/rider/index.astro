@@ -1,11 +1,15 @@
 ---
 import { getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
+import { TECH_RIDER_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules['tech-rider'] === false) return Astro.redirect('/404', 307)
 
 const slugMap = await getSlugMap()
 const contactHref = siteConfig.modules.contact === false ? null : `/en/${slugMap.en.contact}`
+// Unlocalised route (the venue's link), so it reads the default locale's copy.
+const t = moduleCopy(siteConfig, 'tech-rider', TECH_RIDER_COPY, 'en')
 
 // Nginx serves this page for any sub-path of /rider/
 // e.g., /rider/TOKEN → this index.html is served
@@ -15,8 +19,8 @@ import PublicRider from '@/components/PublicRider.vue'
 ---
 
 <BaseLayout
-  title="Technical Rider"
-  description="Technical rider document."
+  title={t.title}
+  description={t.title}
   noindex={true}
 >
   <!--
@@ -24,5 +28,5 @@ import PublicRider from '@/components/PublicRider.vue'
     its own page frame, margins and print stylesheet. Constraining it to the
     site's reading column would crop the stage plot.
   -->
-  <PublicRider contactHref={contactHref} client:load />
+  <PublicRider contactHref={contactHref} copy={{ notFound: t.notFound, contact: t.contact }} client:load />
 </BaseLayout>

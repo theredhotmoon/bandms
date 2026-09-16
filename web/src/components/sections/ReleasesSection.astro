@@ -306,7 +306,7 @@ const priceOf = (item: (typeof physical)[number]) => {
           <h2 class="mu-h2">{t.lyrics}</h2>
         </div>
         <p class="mu-sub">{t.lyricsSub}</p>
-        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} />
+        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} navLabel={t.lyricsNav} />
       </section>
     </>
   )}

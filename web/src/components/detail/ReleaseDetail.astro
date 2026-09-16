@@ -213,7 +213,7 @@ const structuredData = {
       <ThemeSlot name="section-divider" height={14} tone="accent" />
       <section id="lyrics" class="rd-sec page-x">
         <SectionHead icon="quote" title={t.lyrics} size="sm" />
-        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} />
+        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} navLabel={t.lyricsNav} />
       </section>
     </>
   )}
