@@ -110,6 +110,23 @@ test.describe('Unknown URL', () => {
     })
   }
 
+  test('an Accept-Language-chosen 404 tells caches it varies', async ({ request }) => {
+    // Without Vary a shared cache would pin the first visitor's language onto
+    // /nope for everyone — the same reasoning as the root redirect's headers.
+    const res = await request.get(`${WEB}/nope-${Date.now()}`, { headers: { 'Accept-Language': 'pl' } })
+    expect(res.status()).toBe(404)
+    expect(res.headers()['vary'] ?? '').toMatch(/accept-language/i)
+  })
+
+  test('the sitemap does not advertise the 404 pages', async ({ request }) => {
+    // They are built as ordinary routes, so the sitemap integration lists them
+    // unless told otherwise — and nginx marks them internal, so a crawler sent
+    // there reports a permanent "submitted URL not found".
+    const res = await request.get(`${WEB}/sitemap-0.xml`)
+    test.skip(res.status() === 404, 'no sitemap built (SITE_URL unset?)')
+    expect(await res.text()).not.toMatch(/\/(en|pl)\/404\/?</)
+  })
+
   test('a missing built asset also 404s rather than looping or serving a page as a script', async ({ request }) => {
     const res = await request.get(`${WEB}/_astro/does-not-exist-${Date.now()}.js`)
     expect(res.status()).toBe(404)
