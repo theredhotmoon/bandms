@@ -57,6 +57,9 @@ const [profile, siteConfig] = await Promise.all([
 const cart = cartCopy(merchCopy(siteConfig, lang))
 const privacy = moduleCopy(siteConfig, 'privacy', PRIVACY_COPY, lang)
 const bannerCopy = { body: privacy.bannerBody, accept: privacy.bannerAccept, reject: privacy.bannerReject, privacy: privacy.bannerLink }
+// With the privacy row switched off its page is not built, so the banner
+// must not link to it — same "gate on the module map" rule as every other link.
+const privacyHref = siteConfig.modules.privacy !== false ? `/${lang}/privacy` : null
 const bandName = profile?.name?.trim() || ''
 const pageTitle = !bandName || title === bandName ? title : `${title} — ${bandName}`
 
@@ -105,7 +108,7 @@ const fontHref = THEME_FONTS[theme]
       were attached, so an early click did nothing — caught by
       e2e/tests/public/consent-banner.spec.ts.
     */}
-    {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} copy={bannerCopy} />}
+    {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} copy={bannerCopy} privacyHref={privacyHref} />}
     <ThemeSlot name="page-grain" />
   </body>
 </html>

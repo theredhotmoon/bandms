@@ -6,7 +6,7 @@ import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
-import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
+import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
 
 const { query, toggleModule, updateSettings, reorder } = useWebsiteModules()
@@ -270,8 +270,11 @@ async function saveEdit(slug: string) {
             <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
           </div>
 
-          <!-- Status badge -->
+          <!-- Status badge. Hidden with the toggle for rows the public build
+               never switches off — a badge that can only ever read "Live"
+               is a control pretending to be one. -->
           <span
+            v-if="!ALWAYS_ON_MODULES.has(mod.slug)"
             class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
             :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
           >
@@ -292,7 +295,7 @@ async function saveEdit(slug: string) {
           </button>
 
           <!-- Toggle -->
-          <label class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
+          <label v-if="!ALWAYS_ON_MODULES.has(mod.slug)" class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
             <input
               type="checkbox"
               class="w-4 h-4 rounded accent-teal-500"

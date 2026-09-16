@@ -37,10 +37,17 @@ export interface ModuleSettingField {
  * `footer` and `site` have no route at all; `home` and `privacy` have one, but
  * it is fixed (`/{lang}`, `/{lang}/privacy`). For all four a URL slug and a
  * per-page count would be inputs that do nothing, so the admin hides them.
- * `enabled` still means something for footer and privacy; for home and site
- * it is ignored by the public build, and the row is best left switched on.
  */
 export const NON_PAGE_MODULES = new Set(['footer', 'site', 'home', 'privacy'])
+
+/**
+ * Rows whose `enabled` flag the public build ignores — there is no homepage
+ * to unbuild, and no page for the site-wide labels to belong to. The admin
+ * hides the toggle and the Live/Off badge for these rather than presenting a
+ * switch that does nothing. `footer` (hides the footer) and `privacy`
+ * (unbuilds the policy page and drops the cookie banner's link) keep theirs.
+ */
+export const ALWAYS_ON_MODULES = new Set(['home', 'site'])
 
 function toField(field: CopyField): ModuleSettingField {
   return {

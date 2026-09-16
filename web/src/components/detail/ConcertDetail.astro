@@ -55,6 +55,14 @@ const ticketCopy = {
   processing: t.tktProcessing, submit: t.tktSubmit,
   errorCheckout: t.tktErrorCheckout, errorNetwork: t.tktErrorNetwork,
 }
+// JSON.stringify does not escape `<`, so an admin-entered "</script>" would
+// end the carrier element early and leave the ticket list on "Loading…" for
+// every visitor. Escaped for script context: `<` becomes the six-character
+// sequence \u003c, which JSON.parse reads back as `<`.
+const ticketCopyJson = JSON.stringify(ticketCopy)
+  .replace(/</g, '\\u003c')
+  .replace(/\u2028/g, '\\u2028')
+  .replace(/\u2029/g, '\\u2029')
 
 const hasInternalTickets = ticketTypes.length > 0
 
@@ -583,7 +591,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   </div>
 
   <!-- ── Ticket purchase modal ─────────────────────────────── -->
-  <script type="application/json" id="tkt-copy" set:html={JSON.stringify(ticketCopy)} />
+  <script type="application/json" id="tkt-copy" set:html={ticketCopyJson} />
   <div id="tkt-modal" class="tkt-modal-backdrop" hidden aria-modal="true" role="dialog" aria-labelledby="tkt-modal-title">
     <div class="tkt-modal-box">
       <h3 id="tkt-modal-title" class="tkt-modal-title">{t.tktModalTitle}</h3>

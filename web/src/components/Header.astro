@@ -17,10 +17,12 @@ const [siteConfig, slugMap, profile] = await Promise.all([
   getBandProfile(lang).catch(() => null),
 ])
 
-// The brand is the profile's name, not a literal — the same fail-open shape
-// BaseLayout uses for the <title> suffix.
-const brand = profile?.name?.trim() || ''
+// The brand is the profile's name, not a literal. Fail-open like BaseLayout's
+// <title> suffix — but a home link with no text and no accessible name is a
+// broken header, not a missing suffix, so an unreadable profile falls back to
+// the site-wide "Home" label rather than an empty anchor.
 const site = siteCopy(siteConfig, lang)
+const brand = profile?.name?.trim() || site.homeLink
 const cartLabel = merchCopy(siteConfig, lang).cartOpen
 
 const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'about', 'contact'] as const
@@ -44,7 +46,7 @@ const current = Astro.url.pathname
 
 <header class="ss-header">
   <div class="ss-header-inner">
-    <a href={`/${lang}`} class="ss-logo">{brand}</a>
+    <a href={`/${lang}`} class="ss-logo" aria-label={site.homeLink}>{brand}</a>
 
     <nav class="ss-desktop-nav" aria-label={site.navLabel}>
       {links.map(({ href, label }) => (

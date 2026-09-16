@@ -7,6 +7,11 @@ import { defineCopy } from '../resolve'
  */
 export const SITE_COPY = defineCopy([
   {
+    key: 'homeLink', label: 'Home link (screen readers)', group: 'Navigation', maxLength: 40,
+    help: 'Accessible name of the band-name link in the header; also shown in its place if the profile cannot be read at build time.',
+    defaults: { en: 'Home', pl: 'Strona główna' },
+  },
+  {
     key: 'navLabel', label: 'Main navigation (screen readers)', group: 'Navigation', maxLength: 40,
     defaults: { en: 'Main navigation', pl: 'Nawigacja główna' },
   },

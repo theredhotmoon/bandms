@@ -1254,8 +1254,12 @@ valid targets — switching a section off must not make its questions unsavable.
 A generic bag shaped `{"field": {"en": "...", "pl": "..."}}`, not named columns —
 six Contact fields as columns would put one module's fields on every module's
 row. `GET /api/site-config?lang=xx` serves it as `module_config.<key>.settings`
-with the locale already resolved, falling back to the other locale rather than
-emitting null.
+flattened to **the requested locale only** — a field with no value in that
+language is omitted, and the registry default fills it. It used to walk the
+en↔pl fallback chain, which was right while the bag had nothing else to fall
+back to and is wrong now: a Polish-only "Upcoming shows" heading would leak
+onto `/en/` while the admin's placeholder still promised the English default.
+The FAQ resource keeps its chain, because a question has no registry default.
 
 **Which strings exist, and what they say by default, is the registry in
 `packages/site-copy/src/modules/<slug>.ts`** — one `CopyField` per string on
@@ -1308,8 +1312,12 @@ escapes every string it puts into `innerHTML`.
 `home` and `privacy` (the policy plus the cookie banner) sit at fixed routes.
 For all four the admin hides the URL-slug and per-page inputs, the hero-images
 editor skips them (`home` is already its own hardcoded scope there), and the FAQ
-admin does not offer them as categories. `enabled` means something only for
-`footer` and `privacy`. Their `settings` bags are seeded empty: the registry
+admin does not offer them as categories. `enabled` means something for
+`footer` (hides it) and `privacy` (unbuilds the policy page and drops the cookie
+banner's link to it); `home` and `site` are in `ALWAYS_ON_MODULES`, which hides
+their toggle and Live/Off badge — the public build ignores the flag, so a
+switch there would be a control pretending to be one. Their `settings` bags
+are seeded empty: the registry
 carries the defaults. Neither `Header.astro`'s `MODULE_SLUGS` nor
 `[lang]/[section].astro`'s section lists include them, so no nav entry or route
 can appear by accident — and because they *are* module rows, their keys are

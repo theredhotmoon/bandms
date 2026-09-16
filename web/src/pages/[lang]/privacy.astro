@@ -12,6 +12,10 @@ import { PRIVACY_COPY, fillCopy } from '@bandms/site-copy'
 import { moduleCopy } from '@/lib/copy'
 
 export async function getStaticPaths() {
+  // Switching the row off in /admin/website-modules unbuilds the page, the
+  // same as any other module. `!== false` so a fail-open config keeps it.
+  const cfg = await getSiteConfig()
+  if (cfg.modules.privacy === false) return []
   return LOCALES.map(lang => ({ params: { lang } }))
 }
 

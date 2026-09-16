@@ -642,15 +642,22 @@ it('serves module settings on site-config with the locale resolved', function ()
         ->assertJsonPath('module_config.contact.settings.kicker', 'SKONTAKTUJ SIĘ');
 });
 
-it('falls back to the other locale rather than emitting an empty setting', function () {
+// An override written in one language must not surface on the other's page.
+// The public site has a default for every string per locale (the
+// @bandms/site-copy registry), so an absent key means "print that language's
+// default" — a Polish-only "Upcoming shows" heading leaking onto /en/ would
+// contradict the placeholder the admin shows as "what the site says now".
+it('serves only the requested locale, leaving the other to the registry default', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
 
     $module = WebsiteModule::where('slug', 'contact')->first();
     $module->settings = ['kicker' => ['en' => 'ENGLISH ONLY']];
     $module->save();
 
-    $this->getJson('/api/site-config?lang=pl')
+    $this->getJson('/api/site-config?lang=en')
         ->assertJsonPath('module_config.contact.settings.kicker', 'ENGLISH ONLY');
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertJsonMissingPath('module_config.contact.settings.kicker');
 });
 
 it('returns an object, never null, when a module has no settings', function () {

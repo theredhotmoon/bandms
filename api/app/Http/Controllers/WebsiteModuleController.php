@@ -81,10 +81,15 @@ class WebsiteModuleController extends Controller
     /**
      * Flatten {"field": {"en": ..., "pl": ...}} to {"field": "..."} for one locale.
      *
-     * Falls back down the locale's declared chain (config/locales.php) rather
-     * than emitting null, on the same reasoning as FaqSummaryResource: the Astro
-     * build bakes whatever it gets, and a null here renders an empty hero with a
-     * green build.
+     * The requested locale only — a field the band has not written in this
+     * language is omitted, and the public site prints that language's default
+     * from the @bandms/site-copy registry. This used to walk the locale's
+     * fallback chain (config/locales.php), which was the right call while the
+     * bag had nothing else to fall back to. Now that every string has a
+     * per-locale default, the chain would leak a Polish-only override onto the
+     * English page — and the admin's placeholder would still be promising the
+     * English default. The FAQ resource keeps its chain: a question has no
+     * registry default to fall back to.
      *
      * Returns an object, never null — the public site does
      * `settings.kicker ?? ''` and an absent bag would throw at build time,
@@ -100,7 +105,9 @@ class WebsiteModuleController extends Controller
                 continue;
             }
 
-            $out[$field] = Locales::resolve($value, $locale) ?? '';
+            if (filled($value[$locale] ?? null)) {
+                $out[$field] = $value[$locale];
+            }
         }
 
         return $out;
