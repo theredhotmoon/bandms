@@ -188,6 +188,11 @@ test.describe('Shop Admin', () => {
 
   // ── Validation ─────────────────────────────────────────────────────────────
 
+  // Since #99 the submit is dirty-gated and disabled on a pristine form (see
+  // posts.spec / releases.spec for the same fix). Dirty the form through the
+  // description, leave the name blank, and expect an error — the name has no
+  // `required` attribute, so this exercises the client-side price check or
+  // the server's 422, whichever fires first; both surface as a field error.
   test('validation: submit empty name → error shown', async ({ page }) => {
     await page.goto('/admin/shop')
     await page.waitForLoadState('networkidle')
@@ -197,9 +202,16 @@ test.describe('Shop Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.getByRole('button', { name: /create item/i }).click()
+    const createBtn = modal.getByRole('button', { name: /create item/i })
+    await expect(createBtn).toBeDisabled()
+
+    await modal.locator('textarea[placeholder="Describe the item…"]').fill('No name yet')
+    await expect(createBtn).toBeEnabled()
+
+    await createBtn.click()
 
     const errorMessage = modal.locator('[class*="error"], [class*="invalid"], .field-error, [role="alert"]')
     await expect(errorMessage.first()).toBeVisible({ timeout: 5000 })
+    await expect(modal).toBeVisible()
   })
 })
