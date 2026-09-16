@@ -135,8 +135,11 @@ it('pads a row that sets a column no other row sets', function () {
  * that happen to declare a slug today.
  *
  * Str::slug stands in for that migration's private slugify(). The two agree on
- * every label seeded here; they can differ on Polish input, so a row whose
- * label is not ASCII needs an explicit custom_slug regardless of this test.
+ * every label seeded here, and only there: they can differ on Polish input,
+ * Str::slug spells `@` as "at" where slugify() drops it, and the migration
+ * falls back to the key when the label derives to nothing at all. So a row
+ * whose label is anything but plain ASCII words needs an explicit custom_slug
+ * regardless of what this test says.
  */
 it('stores an explicit slug on every module whose label does not slugify to its key', function () {
     seedOntoEmptyModules();
