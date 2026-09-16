@@ -95,3 +95,73 @@ describe('getAllPosts', () => {
     expect(calls.every(u => u.includes('lang=pl'))).toBe(true)
   })
 })
+
+/**
+ * getBandProfile is read by BaseLayout on every page (for the <title> suffix)
+ * as well as by the Footer and most pages themselves. Unmemoised that was three
+ * requests per page across the build, and a single transient failure — caught
+ * by the layout's fail-open — silently baked one page with no band name.
+ */
+describe('getBandProfile', () => {
+  function stubProfileFetch(failFirst = 0) {
+    const calls: string[] = []
+    let n = 0
+    const fetch = vi.fn(async (url: string) => {
+      calls.push(url)
+      n += 1
+      if (n <= failFirst) return { ok: false, status: 503, json: async () => ({}) }
+      const lang = new URL(url, 'http://x').searchParams.get('lang')
+      return { ok: true, status: 200, json: async () => ({ data: { name: `Band (${lang})` } }) }
+    })
+    return { fetch, calls }
+  }
+
+  it('fetches each locale once, however many pages ask', async () => {
+    const { fetch, calls } = stubProfileFetch()
+    vi.stubGlobal('fetch', fetch)
+    const { getBandProfile } = await freshModule()
+
+    const [a, b, c, d] = await Promise.all([
+      getBandProfile('en'), getBandProfile('en'), getBandProfile('pl'), getBandProfile(),
+    ])
+
+    expect(calls).toHaveLength(2)
+    expect(a.name).toBe('Band (en)')
+    expect(a).toBe(b)
+    expect(c.name).toBe('Band (pl)')
+    expect(d).toBe(a) // the default locale is 'en', and shares its entry
+  })
+
+  it('retries a blip on the next call rather than caching the failure', async () => {
+    const { fetch, calls } = stubProfileFetch(1)
+    vi.stubGlobal('fetch', fetch)
+    const { getBandProfile } = await freshModule()
+
+    await expect(getBandProfile('en')).rejects.toThrow('CMS 503')
+    expect((await getBandProfile('en')).name).toBe('Band (en)')
+    expect(calls).toHaveLength(2)
+  })
+
+  it('stops retrying after three failures and caches the rejection', async () => {
+    const { fetch, calls } = stubProfileFetch(99)
+    vi.stubGlobal('fetch', fetch)
+    const { getBandProfile } = await freshModule()
+
+    for (let i = 0; i < 5; i++) {
+      await expect(getBandProfile('en')).rejects.toThrow('CMS 503')
+    }
+
+    // Three real attempts; the last two calls were answered from the cache.
+    expect(calls).toHaveLength(3)
+  })
+
+  it('still rejects for callers that do not catch — a profile page must not build hollow', async () => {
+    const { fetch } = stubProfileFetch(99)
+    vi.stubGlobal('fetch', fetch)
+    const { getBandProfile } = await freshModule()
+
+    // What BaseLayout does, and what a page whose subject is the profile does.
+    expect(await getBandProfile('en').catch(() => null)).toBeNull()
+    await expect(getBandProfile('en')).rejects.toThrow()
+  })
+})

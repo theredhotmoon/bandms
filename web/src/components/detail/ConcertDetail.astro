@@ -112,7 +112,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 ---
 
 <BaseLayout
-  title={concert.name ? `${concert.name} — ${dayNum} ${moShort} ${yrNum}` : `${profile.name} @ ${concert.venue.name} — ${dayNum} ${moShort} ${yrNum}`}
+  title={`${concert.name || concert.venue.name} — ${dayNum} ${moShort} ${yrNum}`}
   description={concert.description ?? `${profile.name} live at ${concert.venue.name}, ${dayNum} ${moShort} ${yrNum}`}
   image={concert.poster_url}
   structuredData={structuredData}

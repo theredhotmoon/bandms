@@ -80,7 +80,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
 ---
 
 <BaseLayout
-  title={`${post.title} — ${profile.name}`}
+  title={post.title}
   description={post.intro ?? post.excerpt}
   image={post.image}
   structuredData={structuredData}

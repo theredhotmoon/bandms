@@ -40,8 +40,51 @@ async function getOptional<T>(path: string): Promise<T | null> {
 
 // ── Band profile ──────────────────────────────────────────────────────────────
 
-export const getBandProfile = (lang: Locale = 'en') =>
-  get<BandProfile>('/band-profile', { lang })
+/**
+ * Memoised per locale for the life of the build.
+ *
+ * BaseLayout reads this on every page for the <title> suffix, on top of the
+ * Footer and most pages reading it themselves — three requests per page, ~75
+ * pages, against the same `pm.max_children` pool CLAUDE.md documents as
+ * saturating. Unmemoised, one ECONNRESET mid-build was swallowed by the
+ * layout's fail-open and baked *that one page* with no band name, silently.
+ * The profile cannot change mid-build, so a locale is fetched once.
+ *
+ * A failure is retried on the next call, a bounded number of times, then the
+ * rejection itself is cached — the same policy as getSiteConfig, and for the
+ * same reason. Unlike site-config there is no fail-open value here: most
+ * callers do not catch, deliberately, because a page whose subject is the
+ * profile must fail the build rather than ship hollow. The layout catches.
+ */
+export const getBandProfile: (lang?: Locale) => Promise<BandProfile> = memoisePerLocale(
+  (lang) => get<BandProfile>('/band-profile', { lang }),
+  3,
+)
+
+function memoisePerLocale<T>(
+  fetcher: (lang: Locale) => Promise<T>,
+  maxAttempts: number,
+): (lang?: Locale) => Promise<T> {
+  const cache = new Map<Locale, Promise<T>>()
+  const attempts = new Map<Locale, number>()
+
+  return (lang: Locale = 'en') => {
+    const hit = cache.get(lang)
+    if (hit) return hit
+
+    const attempt = (attempts.get(lang) ?? 0) + 1
+    attempts.set(lang, attempt)
+
+    const pending = fetcher(lang).catch((err: unknown) => {
+      // Retry a blip; stop hammering a backend that is genuinely down.
+      if (attempt < maxAttempts) cache.delete(lang)
+      throw err
+    })
+
+    cache.set(lang, pending)
+    return pending
+  }
+}
 
 export const getEpk = (lang: Locale = 'en') =>
   get<EpkData>('/band-profile/epk', { lang })

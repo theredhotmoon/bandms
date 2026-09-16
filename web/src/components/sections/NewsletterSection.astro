@@ -53,7 +53,7 @@ const t = COPY[lang] ?? COPY.en
 <BaseLayout
   lang={lang}
   alternates={alternates}
-  title={`${t.title} — ${profile.name}`}
+  title={t.title}
   description={t.lead}
 >
   <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'newsletter')} />

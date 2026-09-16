@@ -102,7 +102,7 @@ const structuredData = {
 <BaseLayout
   lang={lang}
   alternates={alternates}
-  title={`${release.title} — ${profile.name}`}
+  title={release.title}
   description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
   image={release.cover_image}
   structuredData={structuredData}
