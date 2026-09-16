@@ -27,11 +27,15 @@ class PostBlockFactory extends Factory
         return $this->state(['type' => 'ref', 'payload' => ['entity' => $entity, 'id' => $id]]);
     }
 
-    public function embed(string $url, string $provider = 'link', ?string $label = null): static
+    public function embed(string $url, string $provider = 'link', ?string $labelEn = null, ?string $labelPl = null): static
     {
         return $this->state([
             'type'    => 'embed',
-            'payload' => ['provider' => $provider, 'url' => $url, 'label' => $label],
+            'payload' => [
+                'provider' => $provider,
+                'url'      => $url,
+                'label'    => $labelEn !== null ? ['en' => $labelEn, 'pl' => $labelPl] : null,
+            ],
         ]);
     }
 

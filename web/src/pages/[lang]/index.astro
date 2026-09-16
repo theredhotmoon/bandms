@@ -7,7 +7,7 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import HeroBackdrop from '@/components/HeroBackdrop.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
-import { isUpcoming, fmtTime, postSlug } from '@/lib/i18n'
+import { isUpcoming, fmtTime, postSlug, fmtDateParts } from '@/lib/i18n'
 
 export async function getStaticPaths() {
   return LOCALES.map(lang => ({ params: { lang } }))
@@ -48,15 +48,6 @@ const contactEnabled  = enabled('contact')
 const upcoming  = concerts.filter(c => isUpcoming(c.date)).slice(0, 4)
 const latestReleases = releases.slice(0, 4)
 const latestPosts    = posts.slice(0, 3)
-
-function fmtDate(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00')
-  return {
-    day:  d.getDate().toString().padStart(2, '0'),
-    mo:   d.toLocaleDateString('en-GB', { month: 'short' }),
-    yr:   d.getFullYear(),
-  }
-}
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -149,7 +140,7 @@ const structuredData = {
 
         <div class="gig-list">
           {upcoming.map(c => {
-            const { day, mo, yr } = fmtDate(c.date)
+            const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
               <a class="gig-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}/${c.slug_en}`}>
                 <div class="gig-date">
@@ -225,7 +216,7 @@ const structuredData = {
         </div>
         <div class="posts-list">
           {latestPosts.map(p => {
-            const { day, mo, yr } = fmtDate(p.published_at ?? p.created_at)
+            const { day, mo, yr } = fmtDateParts(p.published_at ?? p.created_at, lang)
             return (
               <a class="post-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}/${postSlug(p, lang)}`}>
                 <div class="post-date">

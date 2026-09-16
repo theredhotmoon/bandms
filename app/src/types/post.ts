@@ -28,6 +28,7 @@ export interface EmbedBlock extends BlockBase {
   provider: EmbedProviderName
   url: string | null
   label: string | null
+  translations: { label: Bag }
   /** null when the URL names no single item — render as a link, not an iframe. */
   embed_id: string | null
 }

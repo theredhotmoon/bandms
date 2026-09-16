@@ -45,9 +45,14 @@ const moduleLinks = orderedSlugs
     label: siteConfig.module_config[slug]?.label ?? slug,
   }))
 
+const COPY = {
+  en: { newsletter: 'Newsletter', cookieSettings: 'Cookie settings' },
+  pl: { newsletter: 'Newsletter', cookieSettings: 'Ustawienia cookies' },
+}
+
 const links = [
   ...moduleLinks,
-  { href: `/${lang}/${slugMap[lang].newsletter}`, label: lang === 'pl' ? 'Newsletter' : 'Newsletter' },
+  { href: `/${lang}/${slugMap[lang].newsletter}`, label: COPY[lang].newsletter },
 ]
 
 const bandName = profile?.name ?? 'Skanking Storks'
@@ -55,7 +60,7 @@ const bandName = profile?.name ?? 'Skanking Storks'
 // Same gate BaseLayout uses for the consent banner itself — no point offering
 // to reopen a banner that was never wired up.
 const gaEnabled = Boolean(import.meta.env.PUBLIC_GA_MEASUREMENT_ID)
-const cookieSettingsLabel = lang === 'pl' ? 'Ustawienia cookies' : 'Cookie settings'
+const cookieSettingsLabel = COPY[lang].cookieSettings
 ---
 
 {footerEnabled && (

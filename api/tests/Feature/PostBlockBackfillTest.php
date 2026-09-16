@@ -66,7 +66,7 @@ it('keeps link labels rather than discarding them', function () {
         'links' => [['type' => 'normal', 'url' => 'https://example.com', 'label' => 'Read more']],
     ]));
 
-    expect($blocks[0]['payload']['label'])->toBe('Read more');
+    expect($blocks[0]['payload']['label'])->toBe(['en' => 'Read more', 'pl' => null]);
 });
 
 // The old type column carries `facebook`, which is not a provider in the new

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { postSlug, formatGenreKicker, splitCommaList, formatEventDates } from './i18n'
+import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDateParts } from './i18n'
 
 describe('postSlug', () => {
   it('uses slug_en for the en locale', () => {
@@ -62,6 +62,23 @@ describe('formatGenreKicker', () => {
 
   it('returns null when the field is only commas and whitespace', () => {
     expect(formatGenreKicker(' , , ')).toBeNull()
+  })
+})
+
+describe('fmtDateParts', () => {
+  it('formats the month abbreviation in English by default', () => {
+    expect(fmtDateParts('2026-09-10')).toEqual({ day: '10', mo: 'Sept', yr: 2026 })
+  })
+
+  // ConcertsSection.astro and pages/[lang]/index.astro used to reimplement
+  // this with a hardcoded 'en-GB' locale, so a Polish gig row showed "Sep"
+  // instead of "wrz" — this pins the fix.
+  it('formats the month abbreviation in Polish when lang is pl', () => {
+    expect(fmtDateParts('2026-09-10', 'pl').mo).toBe('wrz')
+  })
+
+  it('pads a single-digit day with a leading zero', () => {
+    expect(fmtDateParts('2026-09-05').day).toBe('05')
   })
 })
 

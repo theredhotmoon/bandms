@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-16
+
+### Fixed
+- **Polish pages showed English month abbreviations on gig and post date rows.** The homepage and the Shows page each reimplemented date formatting with a hardcoded `en-GB` locale instead of using the site's own locale registry, so `/pl/` visitors saw "Sep" instead of "wrz". Both now call a shared `fmtDateParts()` helper that resolves the month name from the requested locale.
+- **The footer's cookie-settings label and newsletter link used hardcoded `lang === 'pl' ? … : …` ternaries** instead of the same per-locale copy dictionary pattern used everywhere else on the public site — harmless today with two locales, but the exact shape that broke hreflang generation once already. Replaced with a `COPY` dict.
+- **A post's embedded link label ("Read more", etc.) could not be translated.** Every other content block field (body, alt text, caption) already supported separate English/Polish text; the embed block's `label` was validated and stored as a plain string. It's now a `{en, pl}` bag end to end — validation, API response, admin editor (adds an EN/PL input pair), and a migration to convert existing rows — matching the pattern used by every other block field.
+
+### Added
+- Test coverage pinning the Polish month-abbreviation fix (`web/src/lib/i18n.test.ts`) and the embed label's bilingual shape (`postBlocks.spec.ts`, `PostBlockBackfillTest.php`).
+
 ## [Unreleased] — 2026-09-15
 
 ### Added

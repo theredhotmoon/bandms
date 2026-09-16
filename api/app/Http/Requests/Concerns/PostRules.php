@@ -64,7 +64,8 @@ trait PostRules
             'blocks.*.payload.alt.pl'   => 'nullable|string|max:255',
             'blocks.*.payload.caption.en' => 'nullable|string|max:500',
             'blocks.*.payload.caption.pl' => 'nullable|string|max:500',
-            'blocks.*.payload.label'    => 'nullable|string|max:255',
+            'blocks.*.payload.label.en' => 'nullable|string|max:255',
+            'blocks.*.payload.label.pl' => 'nullable|string|max:255',
             // Stamped by normaliseBlocks() in prepareForValidation(), not sent
             // by the client — but FormRequest::validated() drops any key that
             // has no rule naming it, merged input included.

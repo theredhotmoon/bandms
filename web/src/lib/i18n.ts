@@ -55,6 +55,21 @@ export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 
 }
 
 /**
+ * Splits a date into day/month-abbr/year for compact date-block layouts
+ * (the stacked "10 / SEP / 2026" style used on gig and post rows). Locale-aware
+ * via dateLocale(lang) — callers used to reimplement this with a hardcoded
+ * 'en-GB', which meant Polish pages still showed English month abbreviations.
+ */
+export function fmtDateParts(dateStr: string, lang: Locale = 'en'): { day: string; mo: string; yr: number } {
+  const d = new Date(dateStr + 'T00:00:00')
+  return {
+    day: d.getDate().toString().padStart(2, '0'),
+    mo: d.toLocaleDateString(dateLocale(lang), { month: 'short' }),
+    yr: d.getFullYear(),
+  }
+}
+
+/**
  * Splits a free-text, comma-separated field (`genres`, `comparable_artists`)
  * into its entries. Defensive: a trailing comma is common and would
  * otherwise produce an empty entry.

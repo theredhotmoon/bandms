@@ -71,7 +71,7 @@ watch(() => props.initial, (val) => {
   form.blocks = (val?.blocks ?? []).map(b => {
     if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
     if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
-    if (b.type === 'embed') return { type: 'embed', payload: { url: b.url, label: b.label } }
+    if (b.type === 'embed') return { type: 'embed', payload: { url: b.url, label: b.translations.label } }
     // data is null when the referenced entity was deleted — flagged rather
     // than silently defaulted to id 0, which is otherwise indistinguishable
     // from a freshly-added, never-configured block.

@@ -10,6 +10,8 @@ const url = computed(() => (props.payload.url as string) ?? '')
 // Preview only — the server re-detects and stores the provider on save.
 const detected = computed(() => detectProvider(url.value))
 
+const label = computed(() => (props.payload.label ?? {}) as { en?: string; pl?: string })
+
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })
 }
@@ -24,12 +26,18 @@ function set(key: string, value: unknown) {
       />
       <span v-if="url" class="provider-badge">{{ providerLabel(detected) }}</span>
     </div>
-    <input
-      v-if="detected === 'link'"
-      :value="(payload.label as string) ?? ''"
-      @input="set('label', ($event.target as HTMLInputElement).value || null)"
-      class="field-input" placeholder="Link text (optional)"
-    />
+    <div v-if="detected === 'link'" class="trans-group">
+      <div class="trans-row">
+        <span class="lang-badge">EN</span>
+        <input :value="label.en ?? ''" @input="set('label', { ...label, en: ($event.target as HTMLInputElement).value })"
+               class="field-input flex-1" placeholder="Link text (optional)" />
+      </div>
+      <div class="trans-row">
+        <span class="lang-badge lang-badge--pl">PL</span>
+        <input :value="label.pl ?? ''" @input="set('label', { ...label, pl: ($event.target as HTMLInputElement).value })"
+               class="field-input flex-1" placeholder="Tekst linku (opcjonalnie)" />
+      </div>
+    </div>
   </div>
 </template>
 

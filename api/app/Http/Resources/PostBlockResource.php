@@ -53,10 +53,11 @@ class PostBlockResource extends JsonResource
             ],
 
             PostBlockType::EMBED => $base + [
-                'provider' => $payload['provider'] ?? 'link',
-                'url'      => $payload['url'] ?? null,
-                'label'    => $payload['label'] ?? null,
-                'embed_id' => isset($payload['url']) ? EmbedProvider::embedId($payload['url']) : null,
+                'provider'     => $payload['provider'] ?? 'link',
+                'url'          => $payload['url'] ?? null,
+                'label'        => $this->translated($this->labelBag($payload), $locale),
+                'embed_id'     => isset($payload['url']) ? EmbedProvider::embedId($payload['url']) : null,
+                'translations' => ['label' => $this->labelBag($payload)],
             ],
 
             PostBlockType::REF => $base + [
@@ -69,6 +70,26 @@ class PostBlockResource extends JsonResource
 
             default => $base + ['payload' => $payload],
         };
+    }
+
+    /**
+     * Normalises an embed's `label` to a {en, pl} bag regardless of what's
+     * stored. New rows are always written as a bag (PostRules, the 2026-09-15
+     * migration), but a rolled-back migration or a stale pre-deploy client
+     * can still leave a legacy plain string here — coercing it up front, once,
+     * keeps `translated()`'s strict array type hint safe and stops a raw
+     * string reaching the admin editor's `translations.label`, where it would
+     * be spread character-by-character into a corrupt payload on save.
+     */
+    private function labelBag(array $payload): array
+    {
+        $label = $payload['label'] ?? null;
+
+        if (is_array($label)) {
+            return $label;
+        }
+
+        return filled($label) ? ['en' => $label, 'pl' => null] : ['en' => null, 'pl' => null];
     }
 
     /** Resolve a {en, pl} bag for the request locale, falling back to the other. */
