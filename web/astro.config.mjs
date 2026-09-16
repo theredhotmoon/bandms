@@ -19,6 +19,13 @@ export default defineConfig({
       // Belt-and-braces alongside each page's own `noindex` meta: these are
       // Stripe-redirect and token-action pages, never something to surface in
       // search — see the matching `noindex={true}` on each.
+      //
+      // The per-locale 404 pages are different: they are built as ordinary
+      // routes (Astro can emit only one root 404.html) and nginx marks them
+      // `internal`, so a crawler sent there by the sitemap gets a 404 and
+      // reports "submitted URL not found" on every crawl. The integration's
+      // built-in 404 exclusion only covers the root page — it reads its *own*
+      // i18n option, not Astro's — so they are excluded here, off the registry.
       filter: page => {
         const path = new URL(page).pathname
         return (
@@ -26,7 +33,8 @@ export default defineConfig({
           !path.startsWith('/merch/cancel') &&
           !path.startsWith('/newsletter/confirm') &&
           !path.startsWith('/newsletter/unsubscribe') &&
-          !path.startsWith('/rider')
+          !path.startsWith('/rider') &&
+          !LOCALES.some(l => path === `/${l}/404` || path === `/${l}/404/`)
         )
       },
     }),

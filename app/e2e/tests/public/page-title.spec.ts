@@ -89,8 +89,7 @@ test.describe('Public page <title>', () => {
     const name = await bandName(request)
     // privacy.astro hands BaseLayout its heading with no band name of its own;
     // if the layout stopped appending, this is a page that would lose it. (The
-    // 404 page would be the natural pick, but nginx answers unknown paths with
-    // its own bare "404 Not Found" rather than Astro's 404.html.)
+    // 404 page does the same and is covered in not-found.spec.ts.)
     const res = await page.goto(`${WEB}/en/privacy`)
     test.skip(res?.status() === 404, '/en/privacy is not built')
 

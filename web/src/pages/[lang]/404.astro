@@ -1,0 +1,50 @@
+---
+/**
+ * The not-found page, one per locale. nginx serves it for any 404 — by URL
+ * prefix when the miss is under /en/ or /pl/, and by Accept-Language for an
+ * unprefixed one — see the error_page blocks in web/docker/nginx.conf. It is
+ * a normal built route only because Astro can emit a single root 404.html;
+ * nginx marks the built paths `internal`, so a direct request for /en/404/ is
+ * itself a 404 rather than a 200 for a page that says "not found".
+ *
+ * Copy is an inline EN/PL dict, the same class as the ~23 others (CLAUDE.md),
+ * typed against the registry so a third locale is a compile error here.
+ */
+import type { Locale } from '@/types/shared'
+import { LOCALES } from '@/lib/locales'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+export async function getStaticPaths() {
+  return LOCALES.map(lang => ({ params: { lang } }))
+}
+
+const { lang } = Astro.params as { lang: Locale }
+
+const T: Record<Locale, { title: string; description: string; body: string; home: string }> = {
+  en: {
+    title: 'Page not found',
+    description: "The page you're looking for doesn't exist.",
+    body: "The page you're looking for doesn't exist or has been moved.",
+    home: 'Back to home',
+  },
+  pl: {
+    title: 'Nie znaleziono strony',
+    description: 'Strona, której szukasz, nie istnieje.',
+    body: 'Strona, której szukasz, nie istnieje lub została przeniesiona.',
+    home: 'Wróć na stronę główną',
+  },
+}
+
+const t = T[lang]
+---
+
+<BaseLayout lang={lang} title={t.title} description={t.description} noindex={true}>
+  <div class="mx-auto max-w-lg px-4 sm:px-6 py-32 text-center">
+    <p class="text-8xl font-black text-subtle">404</p>
+    <h1 class="mt-4 text-2xl font-black text-body">{t.title}</h1>
+    <p class="mt-2 text-muted">{t.body}</p>
+    <a href={`/${lang}/`} class="mt-8 inline-block rounded-card bg-accent px-6 py-3 font-bold text-on-accent hover:bg-accent-dark transition-colors">
+      {t.home}
+    </a>
+  </div>
+</BaseLayout>
