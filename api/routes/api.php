@@ -242,6 +242,14 @@ Route::middleware('auth:api')->group(function () {
 
     // ── Publisher + Admin: posts ────────────────────────────────────────────
 
+    // The editor reads through these, not the public GETs, because the public
+    // list and detail hide drafts (null published_at).
+    Route::get('/admin/posts', [PostController::class, 'adminIndex'])
+        ->middleware('role:admin,publisher')
+        ->name('api.admin.posts.index');
+    Route::get('/admin/posts/{post}', [PostController::class, 'adminShow'])
+        ->middleware('role:admin,publisher')
+        ->name('api.admin.posts.show');
     Route::post('/posts', [PostController::class, 'store'])
         ->middleware('role:admin,publisher')
         ->name('api.posts.store');

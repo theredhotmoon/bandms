@@ -148,6 +148,31 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('.modal-overlay')).not.toBeVisible()
   })
 
+  // The public site hides posts with no published_at, so the band needs to be
+  // able to withdraw one by clearing the date — not just to set it. A form that
+  // dropped the empty field from its payload would leave the post published.
+  test('sets a publish date, then clears it back to Draft', async ({ page }) => {
+    const publishedAt = page.locator('.modal-overlay input[type="datetime-local"]')
+    const row = () => page.locator('tbody tr').filter({ hasText: updatedTitle })
+
+    await searchTable(page, updatedTitle)
+    await expect(row()).toContainText('Draft')
+
+    await row().getByRole('button', { name: 'Edit' }).click()
+    await expect(page.locator('input[placeholder="Post title"]')).toHaveValue(updatedTitle)
+    await publishedAt.fill('2026-09-01T10:00')
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expectToast(page, 'Post updated')
+    await expect(row()).toContainText('2026-09-01')
+
+    await row().getByRole('button', { name: 'Edit' }).click()
+    await expect(publishedAt).toHaveValue('2026-09-01T10:00')
+    await publishedAt.fill('')
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expectToast(page, 'Post updated')
+    await expect(row()).toContainText('Draft')
+  })
+
   test('deletes a post and shows "Post deleted" toast', async ({ page }) => {
     await searchTable(page, updatedTitle)
 

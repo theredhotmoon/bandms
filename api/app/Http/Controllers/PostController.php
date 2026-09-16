@@ -9,6 +9,7 @@ use App\Http\Resources\PostSummaryResource;
 use App\Models\Post;
 use App\Support\PostBlockSync;
 use App\Support\SiteRebuild;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,9 +19,29 @@ use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
+    /**
+     * Public list — published posts only. Drafts (null published_at) never
+     * reach the Astro build, which is what reads this.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
+        return $this->listResponse($request, $this->listQuery($request)->published());
+    }
+
+    /**
+     * Admin list — every post, draft or not, with the same filters and paging
+     * as the public list. Its own route rather than the public one behaving
+     * differently when a token is present (the FaqController::adminIndex
+     * split), so an anonymous admin call can never quietly hide drafts.
+     */
+    public function adminIndex(Request $request): AnonymousResourceCollection
+    {
+        return $this->listResponse($request, $this->listQuery($request));
+    }
+
+    private function listQuery(Request $request): Builder
+    {
+        return Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
@@ -40,7 +61,10 @@ class PostController extends Controller
             )
             ->orderByDesc('published_at')
             ->orderByDesc('created_at');
+    }
 
+    private function listResponse(Request $request, Builder $query): AnonymousResourceCollection
+    {
         $posts = $request->filled('page')
             ? $query->paginate(12)
             : $query->get();
@@ -91,7 +115,19 @@ class PostController extends Controller
         return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
 
+    /**
+     * Public detail. A draft 404s — indistinguishable from a post that never
+     * existed, so the URL confirms nothing.
+     */
     public function show(Post $post): PostResource
+    {
+        abort_if($post->published_at === null, 404);
+
+        return $this->adminShow($post);
+    }
+
+    /** Admin detail — drafts included; what the editor loads. */
+    public function adminShow(Post $post): PostResource
     {
         return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
     }
