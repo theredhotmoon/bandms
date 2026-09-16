@@ -19,7 +19,7 @@ export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
   switch (type) {
     case 'text':  return { body: { en: '', pl: '' } }
     case 'image': return { path: '', alt: { en: '', pl: '' }, caption: { en: '', pl: '' } }
-    case 'embed': return { url: '', label: null }
+    case 'embed': return { url: '', label: { en: '', pl: '' } }
     case 'ref':   return { entity: 'concert', id: 0 }
   }
 }

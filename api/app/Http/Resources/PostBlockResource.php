@@ -53,10 +53,11 @@ class PostBlockResource extends JsonResource
             ],
 
             PostBlockType::EMBED => $base + [
-                'provider' => $payload['provider'] ?? 'link',
-                'url'      => $payload['url'] ?? null,
-                'label'    => $payload['label'] ?? null,
-                'embed_id' => isset($payload['url']) ? EmbedProvider::embedId($payload['url']) : null,
+                'provider'     => $payload['provider'] ?? 'link',
+                'url'          => $payload['url'] ?? null,
+                'label'        => $this->translated($payload['label'] ?? [], $locale),
+                'embed_id'     => isset($payload['url']) ? EmbedProvider::embedId($payload['url']) : null,
+                'translations' => ['label' => $payload['label'] ?? ['en' => null, 'pl' => null]],
             ],
 
             PostBlockType::REF => $base + [

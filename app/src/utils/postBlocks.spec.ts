@@ -39,8 +39,8 @@ describe('defaultPayload', () => {
     })
   })
 
-  it('gives an embed block a url and a null label', () => {
-    expect(defaultPayload('embed')).toEqual({ url: '', label: null })
+  it('gives an embed block a url and an empty bilingual label', () => {
+    expect(defaultPayload('embed')).toEqual({ url: '', label: { en: '', pl: '' } })
   })
 
   it('defaults a ref block to a concert with no id', () => {

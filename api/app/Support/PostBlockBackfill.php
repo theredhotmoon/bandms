@@ -58,7 +58,7 @@ final class PostBlockBackfill
                     // column carries `facebook`, which is not a provider here.
                     'provider' => EmbedProvider::detect($link['url']),
                     'url'      => $link['url'],
-                    'label'    => $link['label'] ?? null,
+                    'label'    => filled($link['label'] ?? null) ? ['en' => $link['label'], 'pl' => null] : null,
                 ],
             ];
         }

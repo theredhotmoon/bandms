@@ -17,7 +17,7 @@ import ShowsMap from '@/components/ShowsMap.vue'
 import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { isUpcoming, formatGenreKicker } from '@/lib/i18n'
+import { isUpcoming, formatGenreKicker, fmtDateParts } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
 
@@ -42,15 +42,6 @@ const concertsWithCoords = concerts.filter(
 )
 const coordIds = new Set(concertsWithCoords.map(c => c.id))
 
-function getDay(date: string) {
-  return new Date(date + 'T00:00:00').getDate().toString().padStart(2, '0')
-}
-function getMo(date: string) {
-  return new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { month: 'short' })
-}
-function getYr(date: string) {
-  return new Date(date + 'T00:00:00').getFullYear()
-}
 function getTicketLink(concert: Concert) {
   return concert.links?.find(l => /ticket|buy|bilet/i.test(l.label))?.url ?? null
 }
@@ -152,11 +143,12 @@ function getTypeLabel(concert: Concert) {
           {upcoming.map(c => {
             const ticketUrl = getTicketLink(c)
             const typeLabel = getTypeLabel(c)
+            const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
               <div class="gig-row">
-                <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${getMo(c.date)} ${getYr(c.date)}`}>
-                  <span class="date-day">{getDay(c.date)}</span>
-                  <span class="date-mo">{getMo(c.date)} {getYr(c.date)}</span>
+                <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${mo} ${yr}`}>
+                  <span class="date-day">{day}</span>
+                  <span class="date-mo">{mo} {yr}</span>
                 </a>
                 <a class="row-main" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>
                   <span class="city-name">{c.name ?? (c.venue.city ?? c.venue.name)}</span>
@@ -220,18 +212,19 @@ function getTypeLabel(concert: Concert) {
     {past.length > 0 && (
       <div class="archive-wrap-outer">
         <ShowsArchiveFilter
-          concerts={past.map(c => ({
-            id: c.id,
-            href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
-            date: c.date,
-            day: getDay(c.date),
-            mo: getMo(c.date),
-            yr: String(getYr(c.date)),
-            city: c.venue.city ?? c.venue.name,
-            venue: c.venue.name,
-            type: getTypeLabel(c) ?? '',
-            hasCoords: c.venue.latitude != null && c.venue.longitude != null,
-          }))}
+          concerts={past.map(c => {
+            const { day, mo, yr } = fmtDateParts(c.date, lang)
+            return {
+              id: c.id,
+              href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
+              date: c.date,
+              day, mo, yr: String(yr),
+              city: c.venue.city ?? c.venue.name,
+              venue: c.venue.name,
+              type: getTypeLabel(c) ?? '',
+              hasCoords: c.venue.latitude != null && c.venue.longitude != null,
+            }
+          })}
           accent={ACCENT}
           client:visible
         />
