@@ -2,12 +2,9 @@
 // Stripe's cancel_url. Nothing was charged and the cart is deliberately left
 // intact, so "Return to cart" resumes exactly where the customer left off.
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getBandProfile } from '@/lib/cms'
-
-const profile = await getBandProfile('en')
 ---
 
-<BaseLayout title={`Checkout cancelled — ${profile.name}`} description="Your checkout was cancelled." noindex={true}>
+<BaseLayout title="Checkout cancelled" description="Your checkout was cancelled." noindex={true}>
   <div class="mx-auto max-w-2xl px-4 sm:px-6 pt-16 pb-24">
     <div class="rounded-card border border-border bg-surface p-8 sm:p-10">
       <h1 class="text-2xl font-black text-body sm:text-3xl">Checkout cancelled</h1>

@@ -25,7 +25,7 @@ const mainImage = images[0]?.url ?? item.cover_photo
 ---
 
 <BaseLayout
-  title={`${item.name} — ${profile.name} Merch`}
+  title={item.name}
   description={item.description ?? `${item.name} — official merch from ${profile.name}`}
   image={mainImage}
   lang={lang}

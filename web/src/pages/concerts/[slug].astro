@@ -62,7 +62,7 @@ const structuredData = {
 <BaseLayout
   lang="en"
   alternates={alternates}
-  title={`${profile.name} @ ${concert.venue.name} — ${dateStr}`}
+  title={`${concert.venue.name} — ${dateStr}`}
   description={concert.description ?? `${profile.name} live at ${concert.venue.name}, ${dateStr}`}
   image={concert.poster_url}
   structuredData={structuredData}

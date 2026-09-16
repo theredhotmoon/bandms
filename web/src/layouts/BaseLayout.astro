@@ -7,6 +7,7 @@ import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ConsentBanner from '@/components/ConsentBanner.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
+import { getBandProfile } from '@/lib/cms'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
 
@@ -21,7 +22,6 @@ export interface Props {
   canonical?: string
   noindex?: boolean
   structuredData?: object
-  bandName?: string
   lang?: Locale
   alternates?: Alternates
 }
@@ -33,12 +33,21 @@ const {
   canonical,
   noindex,
   structuredData,
-  bandName = 'Skanking Storks',
   lang = 'en',
   alternates = {},
 } = Astro.props
 
-const pageTitle = title === bandName ? title : `${title} — ${bandName}`
+// The layout is the only thing that appends the band name to a <title>. Pass
+// the page's own heading and nothing more — a caller that adds the name itself
+// gets it twice, which is how every section page shipped as
+// "News — Skanking Storks — Skanking Storks" from July to September 2026.
+// The name comes from the profile, not a literal: a `bandName` prop with a
+// hardcoded default used to sit here, nobody passed it, and it only looked
+// right for the one band whose name happened to match. Fail-open like Footer,
+// so an unreachable API costs the suffix rather than the build.
+const profile = await getBandProfile(lang).catch(() => null)
+const bandName = profile?.name?.trim() || ''
+const pageTitle = !bandName || title === bandName ? title : `${title} — ${bandName}`
 
 // Theme is an attribute rather than a build flag: every theme's tokens ship in
 // one stylesheet scoped to [data-theme], so switching is a runtime concern the
