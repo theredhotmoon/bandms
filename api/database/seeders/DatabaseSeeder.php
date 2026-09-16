@@ -40,7 +40,14 @@ class DatabaseSeeder extends Seeder
         $modules = [
             ['slug' => 'concerts',   'display_name' => 'Concerts',   'sort_order' => 1],
             ['slug' => 'releases',   'display_name' => 'Releases',   'sort_order' => 2],
-            ['slug' => 'posts',      'display_name' => 'News',       'sort_order' => 3],
+            // 'News' does not slugify to the key 'posts', so without an explicit
+            // slug a freshly seeded database serves News at /en/posts while every
+            // migrated one serves /en/news: the 2026_08_26_000002 backfill derives
+            // slugs from the label, but it only sees rows that exist when it runs,
+            // and the seeder runs after it. These values reproduce that derivation.
+            // `merch`/'Shop' below is the same case. No other seeded label diverges
+            // from its key, and where they agree the key fallback already serves it.
+            ['slug' => 'posts',      'display_name' => 'News',       'sort_order' => 3,  'custom_slug' => json_encode(['en' => 'news', 'pl' => 'news'])],
             ['slug' => 'photos',     'display_name' => 'Photos',     'sort_order' => 4],
             ['slug' => 'press',      'display_name' => 'Press',      'sort_order' => 5],
             ['slug' => 'videos',     'display_name' => 'Videos',     'sort_order' => 6],
@@ -56,18 +63,7 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'contact',    'display_name' => 'Contact',    'sort_order' => 11, 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
         ];
 
-        // Derive the width from the rows themselves: every key any row uses
-        // becomes a null column on all of them. Listing the optional columns by
-        // hand would only cover the two that happen to be used today —
-        // `website_modules` also carries `per_page`, `settings` and
-        // `visibility`, and a row setting one of those (as the contact and
-        // footer migrations already do with `settings`) would reintroduce
-        // exactly this bug under a comment claiming it cannot happen.
-        $width = array_fill_keys(array_keys(array_merge($defaults, ...$modules)), null);
-
-        DB::table('website_modules')->insertOrIgnore(
-            array_map(static fn (array $module): array => array_merge($width, $defaults, $module), $modules)
-        );
+        DB::table('website_modules')->insertOrIgnore(self::uniformRows($modules, $defaults));
 
         DB::table('site_settings')->insertOrIgnore([
             ['key' => 'auto_rebuild', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
@@ -139,5 +135,34 @@ class DatabaseSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]]);
+    }
+
+    /**
+     * Pads every row to one column set so a multi-row insert cannot mismatch.
+     *
+     * Illuminate takes the INSERT column list from the *first* row but emits one
+     * placeholder per key per row, so a row carrying an extra key is rejected
+     * outright by the engine — MySQL with "SQLSTATE[21S01]: Column count doesn't
+     * match value count at row N", SQLite with "all VALUES must have the same
+     * number of terms". Nothing is written, including the rows before it.
+     *
+     * The width is derived from the rows rather than from a hand-written list of
+     * optional columns, which would only cover the ones used today;
+     * `website_modules` also carries `per_page`, `settings` and `visibility`.
+     *
+     * Only safe for nullable columns. A column omitted by some row is bound as
+     * an explicit NULL rather than left out, so a NOT NULL column set on one row
+     * alone would take the type default on MySQL and be skipped on SQLite rather
+     * than inherit its DEFAULT. Every NOT NULL column here is supplied by
+     * $defaults on all rows, which is what keeps that out of reach.
+     */
+    public static function uniformRows(array $rows, array $defaults = []): array
+    {
+        $width = array_fill_keys(array_keys(array_merge($defaults, ...$rows)), null);
+
+        return array_map(
+            static fn (array $row): array => array_merge($width, $defaults, $row),
+            $rows
+        );
     }
 }
