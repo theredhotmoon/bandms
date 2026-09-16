@@ -2,7 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
-import { postSlug, formatEventDates } from '@/lib/i18n'
+import { postSlug, formatEventDates, fmtDate, fmtDateShort } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getAllPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
@@ -36,9 +36,7 @@ const [post, profile] = await Promise.all([
   getBandProfile(lang),
 ])
 
-const d = new Date((post.published_at ?? post.created_at) + 'T00:00:00')
-const mo = ['January','February','March','April','May','June','July','August','September','October','November','December']
-const dateStr = `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear()}`
+const dateStr = fmtDate(post.published_at ?? post.created_at, lang)
 
 // Prev (newer) / next (older) — posts are newest-first
 const prevSlug = idx > 0                   ? summaries[idx - 1].slug : null
@@ -57,12 +55,6 @@ const COPY = {
 const copy = COPY[lang] ?? COPY.en
 
 const eventDateStr = formatEventDates(post.event_dates ?? [], post.event_date_display ?? 'range', lang)
-
-function moShort(iso: string): string {
-  const dd = new Date(iso + 'T00:00:00')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${dd.getDate()} ${months[dd.getMonth()]} ${dd.getFullYear()}`
-}
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -234,7 +226,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
                     <span class="art-more-tag">{p.tags[0].name}</span>
                   )}
                   <h4 class="art-more-card-title">{p.title}</h4>
-                  <span class="art-more-date">{moShort(p.date)}</span>
+                  <span class="art-more-date">{fmtDateShort(p.date, lang)}</span>
                 </div>
               </a>
             ))}

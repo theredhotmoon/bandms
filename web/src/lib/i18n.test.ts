@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDateParts } from './i18n'
+import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDate, fmtDateShort, fmtDateParts } from './i18n'
 
 describe('postSlug', () => {
   it('uses slug_en for the en locale', () => {
@@ -79,6 +79,67 @@ describe('fmtDateParts', () => {
 
   it('pads a single-digit day with a leading zero', () => {
     expect(fmtDateParts('2026-09-05').day).toBe('05')
+  })
+})
+
+// `posts.published_at`/`created_at` are full ISO timestamps
+// ('2026-09-14T20:01:32.000000Z'), not date-only strings. Every date helper used
+// to unconditionally append 'T00:00:00' before parsing — the date-only guard
+// (see formatEventDates) — which turned a timestamp into garbage and rendered
+// the whole news section's dates as "NaN undefined NaN".
+describe('parsing full ISO timestamps (posts.published_at / created_at)', () => {
+  const ts = '2026-09-14T20:01:32.000000Z'
+
+  /** Run `fn` with the process pinned to `tz`, restoring it afterwards. */
+  function inTimeZone(tz: string, fn: () => void) {
+    const original = process.env.TZ
+    process.env.TZ = tz
+    try { fn() } finally { process.env.TZ = original }
+  }
+
+  it('fmtDateParts yields a real day/month/year for a timestamp', () => {
+    inTimeZone('UTC', () => {
+      expect(fmtDateParts(ts)).toEqual({ day: '14', mo: 'Sept', yr: 2026 })
+    })
+  })
+
+  it('fmtDate / fmtDateShort format a timestamp', () => {
+    inTimeZone('UTC', () => {
+      expect(fmtDate(ts)).toBe('14 September 2026')
+      expect(fmtDateShort(ts)).toBe('14 Sept 2026')
+    })
+  })
+
+  it('fmtDate formats in Polish when lang is pl', () => {
+    inTimeZone('UTC', () => {
+      expect(fmtDate(ts, 'pl')).toBe('14 września 2026')
+    })
+  })
+
+  it('fmtDate still formats a date-only string, and does not shift it west of UTC', () => {
+    inTimeZone('America/New_York', () => {
+      expect(fmtDate('2099-01-10')).toBe('10 January 2099')
+      expect(fmtDateShort('2099-01-10')).toBe('10 Jan 2099')
+    })
+  })
+
+  // The admin's published_at is a datetime-local stored as typed, with the
+  // server on UTC — so the calendar day the band typed is the timestamp's UTC
+  // date. NewsFilter.vue is a client:idle island and formats the same value at
+  // build (UTC container) and again in the visitor's browser; a zone-dependent
+  // result would flip a 22:30 post to the next day for a Warsaw visitor, and
+  // disagree with the SSR-only homepage row and article header for that post.
+  it('formats a timestamp by its UTC calendar day whatever zone the runtime is in', () => {
+    const lateEvening = '2026-09-14T22:30:00.000000Z'
+    const earlyMorning = '2026-09-14T01:30:00.000000Z'
+    for (const tz of ['Europe/Warsaw', 'America/Los_Angeles', 'Asia/Tokyo', 'UTC']) {
+      inTimeZone(tz, () => {
+        expect(fmtDateShort(lateEvening), tz).toBe('14 Sept 2026')
+        expect(fmtDateShort(earlyMorning), tz).toBe('14 Sept 2026')
+        expect(fmtDateParts(lateEvening).day, tz).toBe('14')
+        expect(fmtDateParts(earlyMorning).day, tz).toBe('14')
+      })
+    }
   })
 })
 
