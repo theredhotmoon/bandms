@@ -185,28 +185,32 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('tbody tr').filter({ hasText: updatedTitle })).toHaveCount(0)
   })
 
+  // Since #99 every form's submit is dirty-gated: on a pristine form "Create"
+  // is disabled, so it cannot even be clicked (Playwright waits for an
+  // enabled button and times out — which is exactly how this test failed for
+  // a while). To still prove the rule "no post without a title", dirty the
+  // form through a non-title field, then submit with the title blank and
+  // let the input's native `required` block it. Same shape as releases.spec.
   test('shows validation error when saving without a title', async ({ page }) => {
     await page.getByRole('button', { name: '+ Add post' }).click()
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
 
-    // Leave title empty and submit
-    await page.getByRole('button', { name: 'Create' }).click()
+    const createBtn = modal.getByRole('button', { name: 'Create' })
+    await expect(createBtn).toBeDisabled()
 
-    // Either a browser-native validation message or a .field-error element must appear
-    const titleInput = page.locator('input[placeholder="Post title"]')
-    const isNativeInvalid = await titleInput.evaluate(
-      (el) => !(el as HTMLInputElement).validity.valid
-    )
+    await modal.locator('textarea[placeholder*="introductory"]').fill('Intro without a title')
+    await expect(createBtn).toBeEnabled()
 
-    if (!isNativeInvalid) {
-      // Server-side validation path
-      await expect(page.locator('.field-error').first()).toBeVisible()
-    } else {
-      expect(isNativeInvalid).toBe(true)
-    }
+    await createBtn.click()
 
-    // Modal must still be open
-    await expect(page.locator('.modal-overlay')).toBeVisible()
+    const titleInput = modal.locator('input[placeholder="Post title"]')
+    await expect(titleInput).toHaveAttribute('required', '')
+    expect(await titleInput.evaluate((el) => (el as HTMLInputElement).validity.valid)).toBe(false)
+
+    // Not submitted: the modal is still open and no "created" toast appeared.
+    await expect(modal).toBeVisible()
+    await expect(page.getByText('Post created')).toHaveCount(0)
   })
 
   test('a post with many content blocks stays scrollable to the submit button', async ({ page }) => {
