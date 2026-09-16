@@ -36,20 +36,32 @@ export function postSlug(post: { slug_en: string; slug_pl?: string | null }, lan
 
 /**
  * Parses the two date shapes the API sends, so every formatter below accepts
- * either without the caller knowing which it has.
+ * either without the caller knowing which it has. Both come out as *local
+ * midnight of a calendar day*, which is what a displayed date is.
  *
  * - Date-only columns (`concerts.date`, `event_dates[]`) arrive as
  *   '2026-09-14'. JS parses that as UTC midnight, which is still the previous
  *   evening west of UTC, so a local time-of-day is appended to force local
  *   parsing (the guard ConcertDetail.astro has always used).
  * - Timestamp columns (`posts.published_at`, `created_at`) arrive as
- *   '2026-09-14T20:01:32.000000Z' and already carry a time and zone. Appending
+ *   '2026-09-14T20:01:32.000000Z' — Laravel always serialises in UTC. Appending
  *   'T00:00:00' to one of those produces an Invalid Date, which
  *   getDate()/getMonth()/getFullYear() then render as "NaN undefined NaN" —
- *   the whole News section shipped that way.
+ *   the whole News section shipped that way. The calendar day is the UTC date:
+ *   the admin's published_at is a datetime-local stored as typed on a UTC
+ *   server, so those fields are what the band actually chose. Formatting the
+ *   instant in the runtime's zone instead would be wrong twice over —
+ *   NewsFilter.vue is a client:idle island that renders once in the UTC build
+ *   container and again in the visitor's browser, so a 22:30 post would
+ *   hydrate to the next day for a Warsaw visitor while the SSR-only homepage
+ *   row and article header kept the 14th.
+ *
+ * Anything else (a timestamp with a non-UTC offset) is handed to `Date` as-is;
+ * the API does not currently send that shape.
  */
 export function parseApiDate(dateStr: string): Date {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(dateStr + 'T00:00:00') : new Date(dateStr)
+  const m = /^(\d{4}-\d{2}-\d{2})(?:$|T.*(?:Z|\+00:00)$)/.exec(dateStr)
+  return m ? new Date(m[1] + 'T00:00:00') : new Date(dateStr)
 }
 
 export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en'): string {
