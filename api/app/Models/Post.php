@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasSlug;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +24,17 @@ class Post extends Model
         return [
             'published_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Posts the public site may show. A null published_at is a draft: the admin
+     * lists it as "Draft", and nothing a visitor reaches may include it — not
+     * the list, not the detail, not a search hit. Scheduling (a future
+     * published_at) is not modelled yet; see TODO.md.
+     */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->whereNotNull('published_at');
     }
 
     public function tags(): BelongsToMany

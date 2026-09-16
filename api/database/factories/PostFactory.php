@@ -15,7 +15,10 @@ class PostFactory extends Factory
             'title'        => rtrim($title, '.'),
             'slug_en'      => Str::slug($title),
             'image'        => null,
-            'published_at' => fake()->optional(0.8)->dateTimeBetween('-1 year', 'now'),
+            // Always published by default: the public endpoints hide drafts, so
+            // a randomly-null default would make every public GET test flaky.
+            // Use ->draft() for a hidden post.
+            'published_at' => fake()->dateTimeBetween('-1 year', 'now'),
         ];
     }
 

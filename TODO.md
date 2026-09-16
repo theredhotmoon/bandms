@@ -159,6 +159,52 @@ an environment variable on the server*. Related: the Hetzner runbook under
 
 ---
 
+## Scheduled news posts — not possible yet
+
+**Status:** requested 2026-09-16, not built. Today `published_at` is a switch,
+not a timer: **null hides the post everywhere public, any date shows it** —
+including a date in the future. Set "next Friday" on a post and it is on the
+site the moment the next rebuild runs, dated Friday.
+
+**Why JavaScript cannot do it.** The public site is static: `astro build` bakes
+every post's HTML into `dist/`. A client-side "hide until the date" leaves the
+full text in the HTML for Googlebot, `view-source`, RSS readers, the sitemap and
+the news list's island JSON — hidden from a human's eyes, published to every
+robot. Scheduling has to happen where the pages are *decided*, which is the API
+the build reads and the moment the build runs.
+
+**What it takes — two pieces, both server-side:**
+
+1. **`Post::scopePublished()` becomes `whereNotNull(published_at)->where('published_at', '<=', now())`.**
+   One line in `api/app/Models/Post.php`; the public list, detail and search all
+   go through it already. A future-dated post then 404s and is left out of the
+   build exactly like a draft. The admin's status column
+   (`PostsAdminView.vue`) should grow a third state — *Scheduled* — so the
+   editor can see the difference.
+2. **Something has to rebuild the site when a scheduled time passes.** Nothing
+   does today: the auto-rebuild fires on admin *saves* (`SiteRebuild::markDirty`),
+   never on the clock. Add a Laravel scheduler command (every 5 min is plenty)
+   that looks for posts with `published_at` between the last successful build's
+   `startedAt` and `now()` and calls `SiteRebuild::markDirty('posts')` when it
+   finds one. The scheduler itself needs a runner — `php artisan schedule:work`
+   in the backend container's entrypoint, or a host cron hitting
+   `schedule:run`; check `api/docker/entrypoint.sh` for whether one already
+   exists before adding it. The Pest test is straightforward: freeze time with
+   `Carbon::setTestNow`, create a post dated one minute ahead, run the command
+   at T+2 and assert the dirty area was marked.
+
+**Do piece 1 only with piece 2.** Piece 1 alone hides a scheduled post until the
+next unrelated admin save — "appears late, at random" is worse than today's
+"appears immediately, clearly dated", because it looks broken instead of
+looking like a missing feature.
+
+**Not a substitute:** `web/docker/start.sh` rebuilding on a fixed timer. It
+rebuilds the *baked* source and would thrash the site every N minutes whether
+or not anything changed; the dirty-area mechanism exists precisely to avoid
+that.
+
+---
+
 ## Pre-sale early access — designed, not built
 
 **Status:** design approved, no implementation. Spec: [`docs/superpowers/specs/2026-08-23-presale-early-access-design.md`](docs/superpowers/specs/2026-08-23-presale-early-access-design.md)

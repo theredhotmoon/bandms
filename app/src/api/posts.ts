@@ -1,5 +1,5 @@
 import type { Post, PostPayload, PostSummary } from '@/types/post'
-import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 import type { Lang } from '@/composables/useLang'
 
 export interface PaginationMeta {
@@ -24,21 +24,26 @@ export interface PostFilters {
   page?: number
 }
 
-export async function fetchPosts(filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
+/**
+ * The admin reads through `/api/admin/posts`, not the public `/api/posts`: the
+ * public routes hide drafts (null published_at), and the editor has to see
+ * them — its "Draft" filter and the dashboard count would otherwise be empty.
+ */
+export async function fetchPosts(token: string, filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
   const params = new URLSearchParams()
   if (filters.search)  params.set('search', filters.search)
   if (filters.tag_id)  params.set('tag_id', String(filters.tag_id))
   if (filters.page)    params.set('page', String(filters.page))
   params.set('lang', lang)
 
-  const res = await fetch(`${API_BASE}/api/posts?${params}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/admin/posts?${params}`, { headers: authHeaders(token) })
   const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
   return { data: raw.data, meta: raw.meta }
 }
 
-export async function fetchPost(id: number, lang: Lang = 'en'): Promise<Post> {
+export async function fetchPost(token: string, id: number, lang: Lang = 'en'): Promise<Post> {
   assertSafeId(id)
-  const res = await fetch(`${API_BASE}/api/posts/${id}?lang=${lang}`, { headers: jsonHeaders })
+  const res = await fetch(`${API_BASE}/api/admin/posts/${id}?lang=${lang}`, { headers: authHeaders(token) })
   return handleResponse<PostResponse>(res).then((r) => r.data)
 }
 

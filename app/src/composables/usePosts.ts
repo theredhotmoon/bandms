@@ -16,7 +16,8 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
 
   const query = useQuery<PostListResponse>({
     queryKey: qk,
-    queryFn: () => fetchPosts(filters.value, lang.value),
+    queryFn: () => fetchPosts(token.value!, filters.value, lang.value),
+    enabled: () => token.value !== null,
   })
 
   const create = useMutation({
@@ -39,11 +40,12 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
 }
 
 export function usePost(id: Ref<number | null>) {
+  const { token } = useAuth()
   const { lang } = useLang()
   const qk = computed(() => ['posts', id.value, lang.value])
   return useQuery<Post>({
     queryKey: qk,
-    queryFn: () => fetchPost(id.value!, lang.value),
-    enabled: computed(() => id.value !== null),
+    queryFn: () => fetchPost(token.value!, id.value!, lang.value),
+    enabled: computed(() => id.value !== null && token.value !== null),
   })
 }

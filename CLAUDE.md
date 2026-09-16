@@ -1200,6 +1200,34 @@ so nobody questioned that the *value* was structurally incapable of being right.
 
 ---
 
+## A post with no `published_at` is a draft — and the admin reads its own routes
+
+`GET /api/posts` and `GET /api/posts/{post}` return **published posts only**
+(`Post::scopePublished()`); a draft's detail URL 404s, indistinguishable from
+one that never existed. The Astro build reads those endpoints anonymously, so a
+draft is never built. Until Sep 2026 there was no filter at all and every
+draft was live — the admin's *Draft* label was a lie.
+
+**The admin must not read the public endpoints.** `app/src/api/posts.ts`
+fetches `GET /api/admin/posts` and `/api/admin/posts/{post}` with the Bearer
+token — the `FaqController::index` / `adminIndex` split, not "the same URL
+returns more when a token is present". Point the editor back at `/api/posts`
+and its Draft filter, dashboard count and *Edit* on any draft all quietly
+break, with a 404 for the last one.
+
+**`published_at` is a switch, not a timer.** Any non-null value publishes,
+including a future date; scheduling needs both a `<= now()` clause *and* a
+clock-driven rebuild, neither of which exists — `TODO.md` has the design. Do
+not add the clause on its own.
+
+**`Post::factory()` is always published.** Its default used to be
+`optional(0.8)`, i.e. 20% drafts, which would make any public-GET test flaky
+now that drafts are hidden. Use `->draft()` when the test needs one.
+
+**The migration `2026_09_16_000001_backfill_post_published_at` stamped every
+dateless post with its `created_at`**, so hiding drafts removed nothing that
+was visible the day before. It runs once and is deliberately irreversible.
+
 ## FAQ entries are per subpage
 
 `faqs.module_slug` mirrors `website_modules.slug`, so FAQ categories track the
