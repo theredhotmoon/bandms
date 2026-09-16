@@ -24,6 +24,32 @@ it('serialises an embed block with its provider and extracted id', function () {
         ->assertJsonPath('data.blocks.0.embed_id', '76979871');
 });
 
+it('resolves an embed block label to the requested locale, with all translations', function () {
+    $post = Post::factory()->create();
+    PostBlock::factory()->for($post)->embed('https://example.com/tour', 'link', 'Read more', 'Czytaj więcej')->create();
+
+    $this->getJson("/api/posts/{$post->id}?lang=pl")
+        ->assertSuccessful()
+        ->assertJsonPath('data.blocks.0.label', 'Czytaj więcej')
+        ->assertJsonPath('data.blocks.0.translations.label.en', 'Read more');
+});
+
+// A rolled-back translate-embed-labels migration, or a stale pre-deploy
+// client, can still leave payload.label as a plain string rather than a
+// {en, pl} bag. PostBlockResource must coerce it instead of crashing —
+// see PostBlockResource::labelBag().
+it('treats a legacy plain-string embed label as English rather than crashing', function () {
+    $post = Post::factory()->create();
+    $block = PostBlock::factory()->for($post)->embed('https://example.com/tour', 'link')->create();
+    $block->update(['payload' => [...$block->payload, 'label' => 'Legacy label']]);
+
+    $this->getJson("/api/posts/{$post->id}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.blocks.0.label', 'Legacy label')
+        ->assertJsonPath('data.blocks.0.translations.label.en', 'Legacy label')
+        ->assertJsonPath('data.blocks.0.translations.label.pl', null);
+});
+
 it('serialises an image block as an absolute storage url', function () {
     $post = Post::factory()->create();
     PostBlock::factory()->for($post)->image('post-blocks/ab12cd.webp')->create();

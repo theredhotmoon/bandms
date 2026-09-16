@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Test coverage pinning the Polish month-abbreviation fix (`web/src/lib/i18n.test.ts`) and the embed label's bilingual shape (`postBlocks.spec.ts`, `PostBlockBackfillTest.php`).
 
+## [Unreleased] — 2026-09-15
+
 ### Added
 - **A friendly maintenance page instead of a raw 502.** Whenever `backend`, `frontend` or `web` is unreachable — mid-rebuild, mid-restart — visitors now see a "we're updating our website, we'll be back soon" page rather than a bare gateway error. Caddy serves it directly, so it works even while every app container is down. Placeholder copy for now; real design to follow.
 
