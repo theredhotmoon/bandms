@@ -1,24 +1,24 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import { getBandProfile } from '@/lib/cms'
+/**
+ * Legacy unlocalised /newsletter.
+ *
+ * Kept so inbound links from before the /[lang]/... routes keep working.
+ * Delegates to the same section component as the localised route rather than
+ * holding a second copy — this file had drifted into its own pre-theme layout
+ * with its own hardcoded English, which is exactly what delegation prevents.
+ */
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { LOCALES } from '@/lib/locales'
+import NewsletterSection from '@/components/sections/NewsletterSection.astro'
 
-const profile = await getBandProfile('en')
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules.newsletter === false) return Astro.redirect('/404', 307)
+
+// Every locale's own list page, resolved through the slug map so a custom
+// Polish slug does not turn the hreflang row into a 404.
+const slugMap = await getSlugMap()
+const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].newsletter ?? 'newsletter'}`]))
 ---
 
-<BaseLayout
-  title="Newsletter"
-  description={`Subscribe to the ${profile.name} newsletter for news, shows, and exclusive updates.`}
->
-  <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32 text-center">
-    <div class="accent-line mx-auto mb-6" />
-    <h1 class="text-3xl font-black text-body sm:text-4xl">Stay in the loop</h1>
-    <p class="mt-4 text-muted leading-relaxed">
-      New shows, releases, and behind-the-scenes from {profile.name} straight to your inbox.
-      No spam. Unsubscribe any time.
-    </p>
-    <div class="mt-8">
-      <NewsletterSignup client:load />
-    </div>
-  </div>
-</BaseLayout>
+<NewsletterSection lang="en" alternates={alternates} />

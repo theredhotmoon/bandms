@@ -7,7 +7,9 @@ import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ConsentBanner from '@/components/ConsentBanner.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
-import { getBandProfile } from '@/lib/cms'
+import { getBandProfile, getSiteConfig } from '@/lib/cms'
+import { PRIVACY_COPY } from '@bandms/site-copy'
+import { cartCopy, merchCopy, moduleCopy } from '@/lib/copy'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
 
@@ -45,7 +47,16 @@ const {
 // hardcoded default used to sit here, nobody passed it, and it only looked
 // right for the one band whose name happened to match. Fail-open like Footer,
 // so an unreachable API costs the suffix rather than the build.
-const profile = await getBandProfile(lang).catch(() => null)
+const [profile, siteConfig] = await Promise.all([
+  getBandProfile(lang).catch(() => null),
+  getSiteConfig(lang),
+])
+
+// The cart drawer and cookie banner are mounted here on every page, so their
+// copy is read here too — from the merch and privacy rows respectively.
+const cart = cartCopy(merchCopy(siteConfig, lang))
+const privacy = moduleCopy(siteConfig, 'privacy', PRIVACY_COPY, lang)
+const bannerCopy = { body: privacy.bannerBody, accept: privacy.bannerAccept, reject: privacy.bannerReject, privacy: privacy.bannerLink }
 const bandName = profile?.name?.trim() || ''
 const pageTitle = !bandName || title === bandName ? title : `${title} — ${bandName}`
 
@@ -75,6 +86,7 @@ const fontHref = THEME_FONTS[theme]
       canonical={canonical}
       noindex={noindex}
       structuredData={structuredData}
+      siteName={bandName}
     />
     <slot name="head" />
   </head>
@@ -84,7 +96,7 @@ const fontHref = THEME_FONTS[theme]
       <slot />
     </main>
     <Footer lang={lang} alternates={alternates} />
-    <CartDrawer client:idle />
+    <CartDrawer client:idle copy={cart} />
     {/*
       client:load, not client:idle like CartDrawer above — CartDrawer is
       dormant until a nav button opens it elsewhere, so a hydration delay is
@@ -93,7 +105,7 @@ const fontHref = THEME_FONTS[theme]
       were attached, so an early click did nothing — caught by
       e2e/tests/public/consent-banner.spec.ts.
     */}
-    {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} />}
+    {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} copy={bannerCopy} />}
     <ThemeSlot name="page-grain" />
   </body>
 </html>

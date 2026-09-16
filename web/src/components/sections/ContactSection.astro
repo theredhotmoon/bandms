@@ -14,6 +14,8 @@ import { resolveHeroImages } from '@/lib/heroImages'
 import Icon from '@/components/Icon.astro'
 import { getBandProfile, getSocialLinks, getSiteConfig, getEpkOptional } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
+import { CONTACT_COPY, fillCopy } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang?: Locale
@@ -31,139 +33,32 @@ const [profile, socialLinks, siteConfig, slugMap, epk] = await Promise.all([
   getEpkOptional(lang),
 ])
 
-// Band-editable copy. `settings` is optional because an API predating the
-// migration omits it, so every read goes through ?? — a bare access would throw
-// at build time and the Astro build is all-or-nothing.
-const s = siteConfig.module_config?.contact?.settings ?? {}
+// Every string on this page and its three islands: registry defaults for this
+// locale, overridden by whatever the band saved in Website Modules → Contact.
+const t = moduleCopy(siteConfig, 'contact', CONTACT_COPY, lang)
 
-const COPY = {
+// Month and weekday names are locale data, not band copy — they stay here,
+// keyed by the registry so a third locale is a compile error at this table.
+const CALENDAR: Record<Locale, { months: readonly string[]; weekdays: readonly string[] }> = {
   en: {
-    title: 'Contact',
-    formTitle: 'Send a message', formSub: 'Fill in the form and hit send — it lands straight in our inbox.',
-    reasonLabel: "What's this about?",
-    reasons: [
-      { value: 'general' as const, label: 'Say hello' },
-      { value: 'booking' as const, label: 'Booking' },
-      { value: 'press' as const, label: 'Press' },
-      { value: 'other' as const, label: 'Other' },
-    ],
-    name: 'Your name', namePh: 'Jane Skankowska',
-    email: 'Email', emailPh: 'you@email.com',
-    subject: 'Subject', subjectPh: "What's on your mind?",
-    message: 'Message', messagePh: 'Tell us everything — dates, venue, capacity, the lot.',
-    send: 'Send message', sending: 'Sending…',
-    sent: "Message sent — we'll be in touch within 48h. BIG UP!",
-    sendAnother: 'Send another',
-    error: 'Please add your name, a valid email and a message.',
-    directTitle: 'Reach us directly',
-    booking: 'Booking', press: 'Press', general: 'General',
-    follow: 'Or find us on',
-    promoTitle: 'Promoters & press',
-    promoSub: 'Everything you need to put us on your stage — or your page.',
-    bookTitle: 'Book us', bookSub: 'Check open dates and send a request.', bookCta: 'Check availability',
-    epkTitle: 'Press kit (EPK)', epkSub: 'Bio, hi-res photos, logos & stats in one pack.', epkCta: 'Open EPK',
-    riderTitle: 'Tech rider', riderSub: 'Stage plan, input list, monitors & hospitality.', riderCta: 'View rider',
-    photosTitle: 'Press photos', photosSub: 'Hi-res, print-ready shots in the gallery.', photosCta: 'Open gallery',
-    bookingSubject: 'Booking request — {date}',
-    bookingSubjectUnavailable: 'Booking request — {date} (we had this date marked busy)',
-    epk: {
-      title: 'Press kit (EPK)',
-      subtitle: 'Everything press and promoters need, in one place.',
-      contents: "What's inside",
-      allLabel: 'Open the full press kit',
-      close: 'Close',
-      empty: "The press kit is still being put together — email us and we'll send what you need.",
-      bio: 'Band bio', bioMeta: 'Short, medium and long',
-      photos: 'Press photos', photosMeta: '{n} hi-res shots',
-      logo: 'Logo', logoMeta: 'Full-colour, web and print',
-      streaming: 'Streaming & stats', streamingMeta: '{n} platforms',
-      monthlyMeta: '{n} monthly listeners',
-      rider: 'Tech rider', riderMeta: 'Stage plan & input list · PDF',
-      stagePlot: 'Stage plot', stagePlotMeta: 'Backline & positions · PDF',
-    },
-    cal: {
-      title: 'Check our availability',
-      subtitle: "Pick a date and send a request — we'll reply within 48h.",
-      open: 'Open', booked: 'Booked', held: 'On hold',
-      request: 'Request this date',
-      pickPrompt: 'Select a date',
-      close: 'Close',
-      loadError: "We couldn't load the calendar just now — tell us your date in the contact form and we'll confirm by email.",
-      loading: 'Checking which dates are free…',
-      confirmTitle: 'That date looks taken',
-      confirmBody: "We already have something on {date}. You're welcome to ask anyway — we'll reply either way, and plans do change.",
-      confirmYes: 'Ask anyway',
-      confirmNo: 'Choose another',
-      months: ['January', 'February', 'March', 'April', 'May', 'June',
-               'July', 'August', 'September', 'October', 'November', 'December'],
-      weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-    },
+    months: ['January', 'February', 'March', 'April', 'May', 'June',
+             'July', 'August', 'September', 'October', 'November', 'December'],
+    weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
   },
   pl: {
-    title: 'Kontakt',
-    formTitle: 'Napisz do nas', formSub: 'Wypełnij formularz i wyślij — trafi prosto na naszą skrzynkę.',
-    reasonLabel: 'W jakiej sprawie?',
-    reasons: [
-      { value: 'general' as const, label: 'Przywitaj się' },
-      { value: 'booking' as const, label: 'Booking' },
-      { value: 'press' as const, label: 'Prasa' },
-      { value: 'other' as const, label: 'Inne' },
-    ],
-    name: 'Imię i nazwisko', namePh: 'Jan Skankowski',
-    email: 'Email', emailPh: 'ty@email.com',
-    subject: 'Temat', subjectPh: 'O czym chcesz napisać?',
-    message: 'Wiadomość', messagePh: 'Napisz wszystko — daty, miejsce, pojemność sali, całość.',
-    send: 'Wyślij wiadomość', sending: 'Wysyłanie…',
-    sent: 'Wiadomość wysłana — odezwiemy się w 48h. BIG UP!',
-    sendAnother: 'Wyślij kolejną',
-    error: 'Podaj imię, poprawny email i treść wiadomości.',
-    directTitle: 'Napisz bezpośrednio',
-    booking: 'Booking', press: 'Prasa', general: 'Ogólny',
-    follow: 'Albo znajdź nas na',
-    promoTitle: 'Organizatorzy i prasa',
-    promoSub: 'Wszystko, czego potrzebujesz, by zaprosić nas na scenę — lub na łamy.',
-    bookTitle: 'Zarezerwuj nas', bookSub: 'Sprawdź wolne terminy i wyślij zapytanie.', bookCta: 'Sprawdź dostępność',
-    epkTitle: 'Press kit (EPK)', epkSub: 'Bio, zdjęcia hi-res, loga i statystyki w jednej paczce.', epkCta: 'Otwórz EPK',
-    riderTitle: 'Rider techniczny', riderSub: 'Plan sceny, lista wejść, monitory i hospitality.', riderCta: 'Podgląd ridera',
-    photosTitle: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku — w galerii.', photosCta: 'Otwórz galerię',
-    bookingSubject: 'Zapytanie o termin — {date}',
-    bookingSubjectUnavailable: 'Zapytanie o termin — {date} (termin oznaczony jako zajęty)',
-    epk: {
-      title: 'Press kit (EPK)',
-      subtitle: 'Wszystko, czego potrzebuje prasa i organizatorzy — w jednym miejscu.',
-      contents: 'Co w środku',
-      allLabel: 'Otwórz pełny press kit',
-      close: 'Zamknij',
-      empty: 'Press kit jest w przygotowaniu — napisz do nas, a wyślemy, co potrzebujesz.',
-      bio: 'Bio zespołu', bioMeta: 'Krótkie, średnie i długie',
-      photos: 'Zdjęcia prasowe', photosMeta: '{n} zdjęć hi-res',
-      logo: 'Logo', logoMeta: 'Pełny kolor, web i druk',
-      streaming: 'Streaming i statystyki', streamingMeta: '{n} platform',
-      monthlyMeta: '{n} słuchaczy miesięcznie',
-      rider: 'Rider techniczny', riderMeta: 'Plan sceny i lista wejść · PDF',
-      stagePlot: 'Plan sceny', stagePlotMeta: 'Backline i pozycje · PDF',
-    },
-    cal: {
-      title: 'Sprawdź dostępność',
-      subtitle: 'Wybierz termin i wyślij zapytanie — odpowiemy w 48h.',
-      open: 'Wolne', booked: 'Zajęte', held: 'Rezerwacja',
-      request: 'Zapytaj o ten termin',
-      pickPrompt: 'Wybierz termin',
-      close: 'Zamknij',
-      loadError: 'Nie udało się wczytać kalendarza — podaj termin w formularzu kontaktowym, a potwierdzimy mailem.',
-      loading: 'Sprawdzamy wolne terminy…',
-      confirmTitle: 'Ten termin wygląda na zajęty',
-      confirmBody: 'Mamy już coś zaplanowane na {date}. Możesz mimo to zapytać — odpowiemy tak czy inaczej, a plany czasem się zmieniają.',
-      confirmYes: 'Zapytaj mimo to',
-      confirmNo: 'Wybierz inny',
-      months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-               'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
-      weekdays: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
-    },
+    months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+             'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
+    weekdays: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
   },
-} as const
+}
+const calendar = CALENDAR[lang] ?? CALENDAR.en
 
-const t = COPY[lang] ?? COPY.en
+const formReasons = [
+  { value: 'general' as const, label: t.reasonGeneral },
+  { value: 'booking' as const, label: t.reasonBooking },
+  { value: 'press' as const, label: t.reasonPress },
+  { value: 'other' as const, label: t.reasonOther },
+]
 
 // Gate on the module map, never on `=== true` and never on whether content
 // exists: getSiteConfig fails open to {} when the API is unreachable mid-build,
@@ -173,9 +68,9 @@ const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
 
 const channels = [
-  { key: 'booking', icon: 'calendar', label: t.booking, email: profile.booking_email, note: s.booking_note },
-  { key: 'press',   icon: 'quote',    label: t.press,   email: profile.press_email,   note: s.press_note },
-  { key: 'general', icon: 'mail',     label: t.general, email: profile.contact_email, note: s.general_note },
+  { key: 'booking', icon: 'calendar', label: t.booking, email: profile.booking_email, note: t.booking_note },
+  { key: 'press',   icon: 'quote',    label: t.press,   email: profile.press_email,   note: t.press_note },
+  { key: 'general', icon: 'mail',     label: t.general, email: profile.contact_email, note: t.general_note },
 ].filter(c => c.email)
 
 // ── Press kit contents ────────────────────────────────────────────────────────
@@ -195,52 +90,52 @@ const n = (value: number) => value.toLocaleString(dateLocale(lang))
 const epkAssets = [
   {
     icon: 'quote',
-    title: t.epk.bio,
-    meta: t.epk.bioMeta,
+    title: t.epkBio,
+    meta: t.epkBioMeta,
     href: epkPageHref,
     isFile: false,
     show: Boolean(profile.bio_short || profile.bio_medium || profile.bio_long),
   },
   {
     icon: 'camera',
-    title: t.epk.photos,
-    meta: t.epk.photosMeta.replace('{n}', n(photoCount)),
+    title: t.epkPhotos,
+    meta: fillCopy(t.epkPhotosMeta, { n: n(photoCount) }),
     href: photosHref,
     isFile: false,
     show: photoCount > 0,
   },
   {
     icon: 'star',
-    title: t.epk.logo,
-    meta: t.epk.logoMeta,
+    title: t.epkLogo,
+    meta: t.epkLogoMeta,
     href: profile.logo_url ?? '',
     isFile: true,
     show: Boolean(profile.logo_url),
   },
   {
     icon: 'spotify',
-    title: t.epk.streaming,
+    title: t.epkStreaming,
     // Monthly listeners are the number promoters ask for; platform count is the
     // fallback when the stat is not filled in.
     meta: monthly > 0
-      ? t.epk.monthlyMeta.replace('{n}', n(monthly))
-      : t.epk.streamingMeta.replace('{n}', n(platformCount)),
+      ? fillCopy(t.epkMonthlyMeta, { n: n(monthly) })
+      : fillCopy(t.epkStreamingMeta, { n: n(platformCount) }),
     href: epkPageHref,
     isFile: false,
     show: platformCount > 0 || monthly > 0,
   },
   {
     icon: 'filter',
-    title: t.epk.rider,
-    meta: t.epk.riderMeta,
+    title: t.epkRider,
+    meta: t.epkRiderMeta,
     href: profile.tech_rider_url ?? '',
     isFile: true,
     show: Boolean(profile.tech_rider_url),
   },
   {
     icon: 'pin',
-    title: t.epk.stagePlot,
-    meta: t.epk.stagePlotMeta,
+    title: t.epkStagePlot,
+    meta: t.epkStagePlotMeta,
     href: profile.stage_plot_url ?? '',
     isFile: true,
     show: Boolean(profile.stage_plot_url),
@@ -269,13 +164,13 @@ const promo = [
   lang={lang}
   alternates={alternates}
   title={t.title}
-  description={s.lead || `Get in touch with ${profile.name} for bookings, press inquiries, and more.`}
+  description={t.lead || `${t.title} — ${profile.name}`}
 >
   <!-- HERO -->
   <PageHero
-    kicker={s.kicker}
-    title={s.title || t.title}
-    lead={s.lead}
+    kicker={t.kicker}
+    title={t.title}
+    lead={t.lead}
     heroImages={resolveHeroImages(siteConfig, 'contact')}
   >
     <Fragment slot="meta">
@@ -289,8 +184,8 @@ const promo = [
       </div>
 
       <div class="ct-pills">
-        {s.reply_time_label && (
-          <span class="ct-pill"><Icon name="mail" size={18} color="var(--color-accent)" />{s.reply_time_label}</span>
+        {t.reply_time_label && (
+          <span class="ct-pill"><Icon name="mail" size={18} color="var(--color-accent)" />{t.reply_time_label}</span>
         )}
         {profile.hometown && (
           <span class="ct-pill"><Icon name="pin" size={18} color="var(--color-accent)" />{profile.hometown}</span>
@@ -308,14 +203,14 @@ const promo = [
         client:visible
         copy={{
           title: t.formTitle, subtitle: t.formSub,
-          reasonLabel: t.reasonLabel, reasons: t.reasons,
+          reasonLabel: t.reasonLabel, reasons: formReasons,
           name: t.name, namePlaceholder: t.namePh,
           email: t.email, emailPlaceholder: t.emailPh,
           subject: t.subject, subjectPlaceholder: t.subjectPh,
           message: t.message, messagePlaceholder: t.messagePh,
           send: t.send, sending: t.sending, sent: t.sent,
           sendAnother: t.sendAnother, error: t.error,
-          replyNote: s.reply_time_label ?? '',
+          replyNote: t.reply_time_label,
           bookingSubject: t.bookingSubject,
           bookingSubjectUnavailable: t.bookingSubjectUnavailable,
           locale: dateLocale(lang),
@@ -390,10 +285,21 @@ const promo = [
   <!-- client:idle, not client:visible: the modal renders nothing until opened,
        so a visibility trigger would never fire and its document-level click
        listener would never attach. -->
-  <AvailabilityModal client:idle copy={t.cal} />
+  <AvailabilityModal client:idle copy={{
+    title: t.calTitle, subtitle: t.calSubtitle,
+    open: t.calOpen, booked: t.calBooked, held: t.calHeld,
+    request: t.calRequest, pickPrompt: t.calPickPrompt, close: t.calClose,
+    loadError: t.calLoadError, loading: t.calLoading,
+    confirmTitle: t.calConfirmTitle, confirmBody: t.calConfirmBody,
+    confirmYes: t.calConfirmYes, confirmNo: t.calConfirmNo,
+    months: calendar.months, weekdays: calendar.weekdays,
+  }} />
   <EpkModal
     client:idle
-    copy={t.epk}
+    copy={{
+      title: t.epkModalTitle, subtitle: t.epkModalSubtitle, contents: t.epkModalContents,
+      allLabel: t.epkModalAll, close: t.epkModalClose, empty: t.epkModalEmpty,
+    }}
     assets={epkAssets}
     allHref={enabled('epk') ? epkPageHref : null}
   />

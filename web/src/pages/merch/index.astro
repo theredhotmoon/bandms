@@ -1,81 +1,24 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getShopItems, getShopCategories, getBandProfile } from '@/lib/cms'
-import { formatPrice, preferredPrice } from '@/stores/cart'
+/**
+ * Legacy unlocalised /merch.
+ *
+ * Kept so inbound links from before the /[lang]/... routes keep working.
+ * Delegates to the same section component as the localised route rather than
+ * holding a second copy — this file had drifted into its own pre-theme layout
+ * with its own hardcoded English, which is exactly what delegation prevents.
+ */
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { LOCALES } from '@/lib/locales'
+import MerchSection from '@/components/sections/MerchSection.astro'
 
-const [items, categories, profile] = await Promise.all([
-  getShopItems(),
-  getShopCategories(),
-  getBandProfile('en'),
-])
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules.merch === false) return Astro.redirect('/404', 307)
 
-const available = items.filter(i => i.is_available || i.is_presale)
+// Every locale's own list page, resolved through the slug map so a custom
+// Polish slug does not turn the hreflang row into a 404.
+const slugMap = await getSlugMap()
+const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}`]))
 ---
 
-<BaseLayout
-  title="Merch"
-  description={`Official merchandise from ${profile.name}. Records, apparel, and more.`}
->
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">Merch</h1>
-    </div>
-
-    {available.length === 0 ? (
-      <div class="rounded-card border border-border bg-surface p-10 text-center">
-        <p class="text-lg text-muted">No items available right now.</p>
-        <p class="mt-1 text-sm text-subtle">Check back soon, or subscribe to the newsletter for updates.</p>
-        <a href="/newsletter" class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
-      </div>
-    ) : (
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {available
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map(item => {
-            const price = preferredPrice(item.prices)
-            return (
-              <a href={`/merch/${item.slug_en}`} class="group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5">
-                <!-- Cover photo -->
-                <div class="aspect-square overflow-hidden bg-surface-2 relative">
-                  {item.cover_photo ? (
-                    <img
-                      src={item.cover_photo}
-                      alt={item.name}
-                      loading="lazy"
-                      class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div class="flex h-full items-center justify-center text-subtle">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9l4-4 4 4 4-4 4 4"/>
-                      </svg>
-                    </div>
-                  )}
-                  {item.is_presale && (
-                    <span class="absolute top-2 left-2 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold text-on-accent">
-                      PRE-ORDER
-                    </span>
-                  )}
-                  {item.stock_quantity === 0 && !item.is_presale && (
-                    <div class="absolute inset-0 bg-inverse/60 flex items-center justify-center text-on-inverse">
-                      <span class="text-xs font-bold text-muted uppercase tracking-wider">Sold Out</span>
-                    </div>
-                  )}
-                </div>
-                <!-- Info -->
-                <div class="p-3">
-                  <p class="text-sm font-semibold text-body leading-snug group-hover:text-accent transition-colors line-clamp-2">
-                    {item.name}
-                  </p>
-                  {price && (
-                    <p class="mt-1 text-sm font-bold text-accent">{formatPrice(price)}</p>
-                  )}
-                </div>
-              </a>
-            )
-          })}
-      </div>
-    )}
-  </div>
-</BaseLayout>
+<MerchSection lang="en" alternates={alternates} />

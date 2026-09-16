@@ -2,6 +2,22 @@
 // Nginx serves this page for any sub-path of /newsletter/unsubscribe/
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import TokenAction from '@/components/TokenAction.vue'
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { NEWSLETTER_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
+
+// Unlocalised route (the email links here), so it reads the default locale's
+// copy from the Newsletter module.
+const [siteConfig, slugMap] = await Promise.all([getSiteConfig('en'), getSlugMap()])
+const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, 'en')
+const tokenCopy = {
+  waiting: t.waiting,
+  confirmSuccess: t.confirmSuccess, confirmError: t.confirmError,
+  unsubscribeSuccess: t.unsubscribeSuccess, unsubscribeError: t.unsubscribeError,
+  networkError: t.networkError, backHome: t.backHome, goToNewsletter: t.goToNewsletter,
+}
+const newsletterHref = `/en/${slugMap.en.newsletter ?? 'newsletter'}`
 ---
 
 <BaseLayout
@@ -10,6 +26,6 @@ import TokenAction from '@/components/TokenAction.vue'
   noindex={true}
 >
   <div class="mx-auto max-w-lg px-4 sm:px-6 pt-24 pb-32">
-    <TokenAction action="unsubscribe" client:load />
+    <TokenAction action="unsubscribe" copy={tokenCopy} homeHref="/en" newsletterHref={newsletterHref} client:load />
   </div>
 </BaseLayout>

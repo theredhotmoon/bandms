@@ -5,30 +5,24 @@ import { consentStatus, denyConsent, grantConsent, loadStoredConsent } from '@/s
 import { disableGoogleAnalytics, loadGoogleAnalytics } from '@/lib/analytics'
 import type { Locale } from '@/types/shared'
 
+/** Labels from the Privacy module's copy — see BaseLayout.astro. */
+export interface ConsentCopy {
+  body: string
+  accept: string
+  reject: string
+  privacy: string
+}
+
 interface Props {
   lang: Locale
   measurementId: string
+  copy: ConsentCopy
 }
 const props = defineProps<Props>()
 
 const status = useStore(consentStatus)
 
-const T = {
-  en: {
-    body: 'We use cookies to understand how visitors use this site. Analytics only load if you accept.',
-    accept: 'Accept',
-    reject: 'Reject',
-    privacy: 'Privacy policy',
-  },
-  pl: {
-    body: 'Używamy plików cookie, aby zrozumieć, jak odwiedzający korzystają z tej strony. Analityka ładuje się tylko po Twojej zgodzie.',
-    accept: 'Akceptuję',
-    reject: 'Odrzucam',
-    privacy: 'Polityka prywatności',
-  },
-} as const
-
-const t = T[props.lang] ?? T.en
+const t = props.copy
 const privacyHref = `/${props.lang}/privacy`
 
 // grant/deny/resetConsent() only persist + flip the atom; starting or

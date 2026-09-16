@@ -9,8 +9,10 @@ import TrackList from '@/components/TrackList.vue'
 import LyricsViewer from '@/components/LyricsViewer.vue'
 import { getRelease, getBandProfile, getSiteConfig, getShopItems } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
+import { PLATFORM_LABELS } from '@/types/release'
 import { fmtDate } from '@/lib/i18n'
+import { RELEASES_COPY } from '@bandms/site-copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -29,27 +31,16 @@ const [release, profile, siteConfig, slugMap] = await Promise.all([
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
 
-const COPY = {
-  en: {
-    music: 'Music', tracklist: 'Tracklist', photos: 'Photos', lyrics: 'Lyrics',
-    lyricsEmpty: 'No lyrics published yet.',
-    viewLyrics: 'Lyrics', buy: 'Buy physical',
-    outNow: 'Out now', presave: 'Pre-save', listen: 'Listen',
-  },
-  pl: {
-    music: 'Muzyka', tracklist: 'Lista utworów', photos: 'Zdjęcia', lyrics: 'Teksty',
-    lyricsEmpty: 'Brak opublikowanych tekstów.',
-    viewLyrics: 'Tekst', buy: 'Kup fizycznie',
-    outNow: 'Już dostępne', presave: 'Pre-save', listen: 'Posłuchaj',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Shares the Music page's copy: the crumb, tracklist, lyrics and buy labels
+// are the same strings, edited once in Website Modules → Music.
+const t = moduleCopy(siteConfig, 'releases', RELEASES_COPY, lang)
+const site = siteCopy(siteConfig, lang)
+const typeLabels: Record<string, string> = { LP: t.typeAlbum, EP: t.typeEp, single: t.typeSingle, compilation: t.typeCompilation }
 
 const year = release.release_date ? new Date(release.release_date).getFullYear() : null
 
 const metaLine = [
-  RELEASE_TYPE_LABELS[release.type] ?? release.type,
+  typeLabels[release.type] ?? release.type,
   year ? String(year) : null,
   release.label_name,
 ]
@@ -103,7 +94,7 @@ const structuredData = {
   lang={lang}
   alternates={alternates}
   title={release.title}
-  description={release.description ?? `${RELEASE_TYPE_LABELS[release.type]} by ${profile.name}${year ? `, ${year}` : ''}`}
+  description={release.description ?? `${typeLabels[release.type] ?? release.type} · ${profile.name}${year ? `, ${year}` : ''}`}
   image={release.cover_image}
   structuredData={structuredData}
 >
@@ -111,8 +102,8 @@ const structuredData = {
   <section class="rd-hero page-x">
     <ThemeSlot name="hero-backdrop" />
     <div class="rd-hero-in">
-      <nav class="rd-crumb" aria-label="Breadcrumb">
-        <a href={href('releases')}>{t.music}</a>
+      <nav class="rd-crumb" aria-label={site.breadcrumbLabel}>
+        <a href={href('releases')}>{t.title}</a>
         <span class="rd-crumb-sep" aria-hidden="true">→</span>
         <span class="rd-crumb-cur">{release.title}</span>
       </nav>

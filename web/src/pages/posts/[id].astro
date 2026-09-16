@@ -1,96 +1,31 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
+/**
+ * Legacy unlocalised /posts/{id}.
+ *
+ * Kept so inbound links from before the /[lang]/... routes keep working.
+ * Delegates to the same detail component as the localised route rather than
+ * holding a second copy — this file had drifted into its own pre-theme layout
+ * with its own hardcoded English, which is exactly what delegation prevents.
+ */
+import { getAllPosts, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { fmtDate, postSlug } from '@/lib/i18n'
-import PostBlocks from '@/components/blocks/PostBlocks.astro'
+import { LOCALES } from '@/lib/locales'
+import { postSlug } from '@/lib/i18n'
+import PostDetail from '@/components/detail/PostDetail.astro'
 
 export async function getStaticPaths() {
-  const { data: posts } = await getPosts('en', 1)
-  return posts.map(p => ({ params: { id: String(p.id) } }))
+  const posts = await getAllPosts('en')
+  return posts.map(p => ({ params: { id: String(p.id) }, props: { post: p } }))
 }
 
-const { id } = Astro.params
-const [post, profile, slugMap, siteConfig] = await Promise.all([
-  getPost(Number(id), 'en'),
-  getBandProfile('en'),
-  getSlugMap(),
-  getSiteConfig('en'),
-])
+const { post } = Astro.props as { post: Awaited<ReturnType<typeof getAllPosts>>[number] }
 
-// The Polish equivalent of THIS page, resolved via the slug map rather than a
-// literal '/pl/posts' — see the identical comment in releases/[id].astro, the
-// route this pattern was first fixed on. A wrong entry here is a wrong
-// hreflang, not merely a wrong footer link.
-//
-// Unlike releases (id-keyed in both locales), the canonical /[lang]/[section]/[slug]
-// route addresses posts by postSlug(post, lang) — slug_pl under /pl/, falling
-// back to slug_en — never by id. Reusing `id` here the way releases/[id].astro
-// reuses its numeric id would point the hreflang at a URL nothing builds.
-const alternates = { pl: `/pl/${slugMap.pl.posts ?? 'posts'}/${postSlug(post, 'pl')}` }
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules.posts === false) return Astro.redirect('/404', 307)
 
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'Article',
-  headline: post.title,
-  description: post.intro ?? post.excerpt,
-  image: post.image ?? undefined,
-  datePublished: post.published_at ?? post.created_at,
-  author: { '@type': 'Organization', name: profile.name },
-  publisher: { '@type': 'Organization', name: profile.name },
-  url: Astro.url.href,
-}
+// The localised routes key posts by their per-locale slug, not by id.
+const slugMap = await getSlugMap()
+const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].posts ?? 'posts'}/${postSlug(post, l)}`]))
 ---
 
-<BaseLayout
-  lang="en"
-  alternates={alternates}
-  title={post.title}
-  description={post.intro ?? post.excerpt}
-  image={post.image}
-  structuredData={structuredData}
->
-  <div class="mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-24">
-    <nav class="mb-8 text-sm text-subtle">
-      <a href="/posts" class="hover:text-muted transition-colors">News</a>
-      <span class="mx-2">›</span>
-      <span class="text-muted line-clamp-1">{post.title}</span>
-    </nav>
-
-    {/* Tags */}
-    {post.tags.length > 0 && (
-      <div class="flex flex-wrap gap-2 mb-4">
-        {post.tags.map(tag => (
-          <span class="rounded-pill bg-surface-2 px-3 py-0.5 text-xs text-muted">{tag.name}</span>
-        ))}
-      </div>
-    )}
-
-    <h1 class="text-3xl font-black text-body sm:text-4xl leading-tight">{post.title}</h1>
-
-    {post.intro && (
-      <p class="mt-4 text-lg text-muted leading-relaxed">{post.intro}</p>
-    )}
-
-    <time class="mt-3 block text-sm text-subtle" datetime={post.published_at ?? post.created_at}>
-      {fmtDate(post.published_at ?? post.created_at, 'en')}
-    </time>
-
-    {/* Cover image */}
-    {post.image && (
-      <div class="mt-8 overflow-hidden rounded-card border border-border">
-        <img src={post.image} alt={post.title} loading="eager" fetchpriority="high" class="w-full object-cover" />
-      </div>
-    )}
-
-    {/* Content blocks */}
-    <div class="mt-8">
-      <PostBlocks
-        blocks={post.blocks ?? []}
-        lang="en"
-        slugMap={slugMap}
-        modules={siteConfig.modules ?? {}}
-      />
-    </div>
-  </div>
-</BaseLayout>
+<PostDetail lang="en" alternates={alternates} itemId={post.id} />

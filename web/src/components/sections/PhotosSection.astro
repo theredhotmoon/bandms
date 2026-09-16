@@ -9,6 +9,8 @@ import GalleryBrowser from '@/components/GalleryBrowser.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getAlbums, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
+import { PHOTOS_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -17,35 +19,11 @@ interface Props {
 const { lang, alternates } = Astro.props
 
 const [albums, profile, siteConfig] = await Promise.all([getAlbums(), getBandProfile(lang), getSiteConfig(lang)])
-const s = siteConfig.module_config?.photos?.settings ?? {}
 const genreKicker = formatGenreKicker(profile.genres)
 
-const COPY = {
-  en: {
-    title: 'Gallery',
-    lead: 'Brass in the air, feet off the floor. Live shots, backstage moments and studio days.',
-    all: 'All',
-    photos: 'photos',
-    pressReady: 'Press-ready',
-    shotAt: 'Shot at',
-    close: 'Close', prev: 'Previous photo', next: 'Next photo',
-    empty: 'Nothing in this category yet.',
-    none: 'No photos yet — check back soon.',
-  },
-  pl: {
-    title: 'Galeria',
-    lead: 'Dęciaki w powietrzu, stopy w górze. Zdjęcia z koncertów, backstage’u i studia.',
-    all: 'Wszystkie',
-    photos: 'zdjęć',
-    pressReady: 'Do prasy',
-    shotAt: 'Zdjęcia z',
-    close: 'Zamknij', prev: 'Poprzednie zdjęcie', next: 'Następne zdjęcie',
-    empty: 'Brak zdjęć w tej kategorii.',
-    none: 'Brak zdjęć — wkrótce.',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Gallery.
+const t = moduleCopy(siteConfig, 'photos', PHOTOS_COPY, lang)
 
 // Unpublished albums and empty ones are both invisible: a gallery card that
 // opens an empty lightbox is worse than an absent card.
@@ -99,8 +77,8 @@ const categories = Object.values(
   <!-- HERO -->
   <PageHero
     kicker={genreKicker}
-    title={s.title || t.title}
-    lead={s.lead || t.lead}
+    title={t.title}
+    lead={t.lead}
     heroImages={resolveHeroImages(siteConfig, 'photos')}
   />
 

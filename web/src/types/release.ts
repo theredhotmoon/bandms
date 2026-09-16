@@ -57,12 +57,9 @@ export interface Release extends ReleaseSummary {
   photos: ReleasePhoto[]
 }
 
-export const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
-  LP:          'Album',
-  EP:          'EP',
-  single:      'Single',
-  compilation: 'Compilation',
-}
+// Release-type labels are copy, not types: they come from the Music module's
+// registry (@bandms/site-copy → typeAlbum, typeEp, …) so the band can edit
+// and translate them. The English map that lived here is gone.
 
 export const PLATFORM_LABELS: Record<ReleasePlatform, string> = {
   spotify:     'Spotify',

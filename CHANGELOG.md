@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-17
+
+### Added
+- **Every string on the public site is now editable from the admin, per language.** Website Modules used to offer a page title and a lead per module and nothing else; the Shows page's "Where we play" / "Upcoming shows" / "Played shows" headings and subtitles, the About page's "The line-up" / "By the numbers" / "Press & booking" blocks, and roughly 250 other strings — section headings, subtitles, buttons, empty states, form labels, the ticket-checkout modal, the cart, the cookie banner, the privacy policy, the 404 page — were hardcoded. Each is now a field in **Website Modules → *module* → Page copy**, grouped by the page's own sections (collapsible, with the current text shown as the placeholder so an editor sees what the site says before overriding it). Leaving a field empty keeps the default for that language; a rebuild publishes the change.
+- **Three new rows in Website Modules that exist for their copy alone:** *Homepage* (hero buttons, section headings, the newsletter box), *Privacy & cookies* (the policy text and the cookie banner) and *Site-wide* (navigation labels, the FAQ block's heading, the 404 page). Like *Footer*, they have no URL slug to move and never appear in the nav.
+- `@bandms/site-copy`, a workspace package holding that registry — one file per module listing every string with its English and Polish defaults. The public site reads it for defaults, the admin reads it for the form, so adding a string is one entry in one file and a `t.<key>` read in the section. No migration, no admin change.
+- Test coverage: `resolve.spec.ts` (44 cases — the resolver, and registry sanity: unique keys, an English default on every field, nothing over its cap, the pre-existing keys the band's saved overrides live under), three Pest tests for the new rows, an admin E2E for the grouped form and placeholders, and a public E2E (`section-copy.spec.ts`) that saves a Shows heading, rebuilds, and reads it back on `/en/` and `/pl/` — then clears it and checks the default returns.
+
+### Fixed
+- **The Polish Shows page rendered English.** `ConcertsSection`, `PostsSection` and `MerchSection` had never had a Polish string dictionary — every heading, subtitle, button and empty state on `/pl/koncerty` (and the news filter, the shop's empty state, "PRE-ORDER", "Sold Out") was English. All of it now has Polish defaults, and the show page's weekday and month names follow the locale too.
+- **Ten legacy unlocalised pages (`/concerts`, `/concerts/{slug}`, `/posts`, `/posts/{id}`, `/merch`, `/merch/{slug}`, `/epk`, `/press`, `/videos`, `/newsletter`) were full copies of their localised twins**, in the pre-theme layout, with their own hardcoded English. They now delegate to the same section and detail components the localised routes use — as `/about` and `/releases` already did — with correct hreflang alternates. Five card components only those copies used are gone.
+- **The header, the mobile menu and `og:site_name` printed "Skanking Storks" as a literal** rather than the band's name from the profile. All three read the profile now, like the page title and footer already did.
+- Release-type labels ("Album", "EP", "Single", "Compilation") were an English-only map; they are copy now, translatable like everything else.
+- The Shows map's popup markup inserted the venue name and city into HTML without escaping. It escapes them now, along with the new editable labels.
+
 ## [Unreleased] — 2026-09-16
 
 ### Fixed

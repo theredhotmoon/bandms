@@ -14,9 +14,19 @@ interface ArchivedConcert {
   hasCoords: boolean
 }
 
+/** Labels come from the Shows module's copy — see ConcertsSection.astro. */
+export interface ArchiveCopy {
+  title: string
+  sub: string
+  all: string
+  showOnMap: string
+  empty: string
+}
+
 const props = defineProps<{
   concerts: ArchivedConcert[]
   accent: string
+  copy: ArchiveCopy
 }>()
 
 const safeHref = (u: string) => u.startsWith('/') || /^https?:\/\//i.test(u) ? u : '#'
@@ -51,7 +61,7 @@ function showOnMap(id: number) {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" :stroke="accent" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="0.8" :fill="accent" stroke="none"/>
         </svg>
-        <h2 class="archive-title">Played shows</h2>
+        <h2 class="archive-title">{{ copy.title }}</h2>
       </div>
       <div class="year-filters">
         <button
@@ -60,10 +70,10 @@ function showOnMap(id: number) {
           class="year-btn"
           :class="{ active: selectedYear === y }"
           @click="selectedYear = y"
-        >{{ y === 'all' ? 'All' : y }}</button>
+        >{{ y === 'all' ? copy.all : y }}</button>
       </div>
     </div>
-    <p class="archive-sub">The road so far — browse the back catalogue of gigs.</p>
+    <p class="archive-sub">{{ copy.sub }}</p>
 
     <div class="archive-list">
       <div v-for="c in shown" :key="c.id" class="archive-row">
@@ -79,20 +89,20 @@ function showOnMap(id: number) {
         <button
           v-if="c.hasCoords"
           class="arc-map-btn"
-          :aria-label="`Show ${c.city} on map`"
+          :aria-label="`${copy.showOnMap}: ${c.city}`"
           type="button"
           @click="showOnMap(c.id)"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="none" aria-hidden="true">
             <path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" :fill="accent"/>
           </svg>
-          Show on map
+          {{ copy.showOnMap }}
         </button>
         <div v-else />
       </div>
     </div>
 
-    <div v-if="shown.length === 0" class="archive-empty">No shows for this year.</div>
+    <div v-if="shown.length === 0" class="archive-empty">{{ copy.empty }}</div>
   </div>
 </template>
 

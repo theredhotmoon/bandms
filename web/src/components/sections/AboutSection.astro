@@ -11,6 +11,8 @@ import FaqSection from '@/components/sections/FaqSection.astro'
 import { getBandProfile, getMembers, getConcerts, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { formatNumber, formatGenreKicker, splitCommaList } from '@/lib/i18n'
+import { ABOUT_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -28,7 +30,6 @@ const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
 
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
-const s = siteConfig.module_config?.about?.settings ?? {}
 // Admin-controlled section toggles (Website Modules → About → Section
 // visibility). Absent key means shown — a build against an API predating
 // this feature, or a module that has never saved the bag, must not hide
@@ -36,50 +37,9 @@ const s = siteConfig.module_config?.about?.settings ?? {}
 const visibility = siteConfig.module_config?.about?.visibility ?? {}
 const showSection = (key: string) => visibility[key] !== false
 
-const COPY = {
-  en: {
-    title: 'About',
-    lead: 'Six players, one upbeat. The story behind the band — and the people who make the room move.',
-    formed: 'Formed', based: 'Based in',
-    forFans: 'For fans of',
-    stats: 'By the numbers',
-    statMonthly: 'Monthly listeners', statInsta: 'Instagram', statYoutube: 'YouTube',
-    statShows: 'Shows played', statYears: 'Years on stage',
-    members: 'The line-up', membersSub: 'Tap a player to read their story.',
-    former: 'Past members', plays: 'Plays', view: 'View', close: 'Close',
-    membersEmpty: 'Line-up coming soon.',
-    press: 'Press & booking', pressSub: 'Everything press and promoters need — in one place.',
-    epk: 'Press kit (EPK)', epkSub: 'Bio, photos, stats & logos',
-    photos: 'Press photos', photosSub: 'Hi-res, print-ready',
-    rider: 'Tech rider', riderSub: 'Stage plan & input list (PDF)',
-    stagePlot: 'Stage plot', stagePlotSub: 'Backline & positions',
-    open: 'Open', download: 'Download',
-    booking: 'Booking', pressLabel: 'Press',
-    noBio: 'Biography coming soon.',
-  },
-  pl: {
-    title: 'O nas',
-    lead: 'Sześciu muzyków, jeden upbeat. Historia zespołu — i ludzie, którzy rozruszają każdą salę.',
-    formed: 'Powstali', based: 'Z miasta',
-    forFans: 'Dla fanów',
-    stats: 'W liczbach',
-    statMonthly: 'Słuchaczy mies.', statInsta: 'Instagram', statYoutube: 'YouTube',
-    statShows: 'Zagranych koncertów', statYears: 'Lat na scenie',
-    members: 'Skład', membersSub: 'Kliknij muzyka, by poznać jego historię.',
-    former: 'Byli członkowie', plays: 'Gra na', view: 'Zobacz', close: 'Zamknij',
-    membersEmpty: 'Skład wkrótce.',
-    press: 'Prasa i booking', pressSub: 'Wszystko, czego potrzebuje prasa i organizatorzy — w jednym miejscu.',
-    epk: 'Press kit (EPK)', epkSub: 'Bio, zdjęcia, statystyki i loga',
-    photos: 'Zdjęcia prasowe', photosSub: 'Hi-res, gotowe do druku',
-    rider: 'Rider techniczny', riderSub: 'Plan sceny i lista wejść (PDF)',
-    stagePlot: 'Plan sceny', stagePlotSub: 'Backline i pozycje',
-    open: 'Otwórz', download: 'Pobierz',
-    booking: 'Booking', pressLabel: 'Prasa',
-    noBio: 'Biografia wkrótce.',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → About.
+const t = moduleCopy(siteConfig, 'about', ABOUT_COPY, lang)
 
 // Which bio length renders here is an admin choice (Band Profile → Bio →
 // "Shown on public About page"), not a fixed design knob. PRIORITY_ORDER is
@@ -184,8 +144,8 @@ const contacts = [
   <!-- HERO -->
   <PageHero
     kicker={genreKicker}
-    title={s.title || t.title}
-    lead={s.lead || t.lead}
+    title={t.title}
+    lead={t.lead}
     heroImages={resolveHeroImages(siteConfig, 'about')}
   >
     <Fragment slot="meta">

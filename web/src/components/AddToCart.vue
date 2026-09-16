@@ -3,7 +3,19 @@ import { ref, computed } from 'vue'
 import { addToCart, preferredPrice, formatPrice } from '@/stores/cart'
 import type { ShopItem, ShopItemVariant } from '@/types/shop'
 
-const props = defineProps<{ item: ShopItem }>()
+/** Labels from the Merch module's copy — see lib/copy.ts addToCartCopy(). */
+export interface AddToCartCopy {
+  presale: string
+  optionFallback: string
+  buyNow: string
+  addToCart: string
+  added: string
+  outOfStock: string
+  selectOption: string
+  ships: string
+}
+
+const props = defineProps<{ item: ShopItem; copy: AddToCartCopy; lang?: string }>()
 
 const selectedVariantId = ref<number | null>(
   props.item.variants.length === 1 ? (props.item.variants[0]?.id ?? null) : null
@@ -29,7 +41,7 @@ const needsVariant = computed(() => props.item.variants.length > 0 && !selectedV
 
 const presaleShipsAt = computed(() => {
   if (!props.item.presale_ships_at) return null
-  return new Date(props.item.presale_ships_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  return new Date(props.item.presale_ships_at).toLocaleDateString(props.lang ?? 'en', { month: 'long', year: 'numeric' })
 })
 
 function add() {
@@ -55,14 +67,14 @@ function add() {
     <div v-if="price" class="text-2xl font-black text-body">
       {{ formatPrice(price) }}
       <span v-if="item.is_presale" class="ml-2 rounded-pill bg-accent/10 px-2 py-0.5 text-sm font-medium text-accent">
-        Pre-sale
+        {{ copy.presale }}
       </span>
     </div>
 
     <!-- Variants -->
     <div v-if="item.variants.length > 0">
       <p class="text-sm font-medium text-muted mb-2">
-        {{ item.variants[0]?.name ?? 'Option' }}
+        {{ item.variants[0]?.name ?? copy.optionFallback }}
       </p>
       <div class="flex flex-wrap gap-2">
         <button
@@ -92,7 +104,7 @@ function add() {
         rel="noopener noreferrer"
         class="inline-flex w-full items-center justify-center rounded-card bg-accent py-3 font-bold text-on-accent hover:bg-accent-dark transition-colors"
       >
-        Buy Now
+        {{ copy.buyNow }}
       </a>
     </div>
 
@@ -110,14 +122,14 @@ function add() {
       ]"
       @click="add"
     >
-      <span v-if="added">Added to cart ✓</span>
-      <span v-else-if="!inStock">Out of stock</span>
-      <span v-else-if="needsVariant">Select an option</span>
-      <span v-else>Add to Cart</span>
+      <span v-if="added">{{ copy.added }}</span>
+      <span v-else-if="!inStock">{{ copy.outOfStock }}</span>
+      <span v-else-if="needsVariant">{{ copy.selectOption }}</span>
+      <span v-else>{{ copy.addToCart }}</span>
     </button>
 
     <p v-if="item.is_presale && presaleShipsAt" class="text-xs text-muted">
-      Ships {{ presaleShipsAt }}
+      {{ copy.ships.replace('{date}', presaleShipsAt) }}
     </p>
   </div>
 </template>

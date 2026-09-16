@@ -16,11 +16,18 @@ interface Pin {
 const props = defineProps<{
   concerts: Pin[]
   accent: string
+  /** Legend and popup badge labels, from the Shows module's copy. */
+  legendUpcoming: string
+  legendPlayed: string
 }>()
 
 const mapEl = ref<HTMLDivElement>()
 let map: any
 let markerById: Record<number, any> = {}
+
+// Popup markup is built as a string for Leaflet, so everything admin-entered
+// — the badge labels, the city, the venue — is escaped on the way in.
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
 
 const INK = 'var(--color-ink)'
 const PAPER = 'var(--color-page)'
@@ -52,15 +59,15 @@ function formatDate(dateStr: string) {
 
 function popupHTML(c: Pin, accent: string) {
   const badge = c.upcoming
-    ? `<span style="background:${accent};color:var(--color-surface);font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">Upcoming</span>`
-    : `<span style="background:${INK};color:${PAPER};font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">Played</span>`
+    ? `<span style="background:${accent};color:var(--color-surface);font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">${escapeHtml(props.legendUpcoming)}</span>`
+    : `<span style="background:${INK};color:${PAPER};font:800 9px/1 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;">${escapeHtml(props.legendPlayed)}</span>`
   return `<div style="min-width:180px;font-family:Archivo,sans-serif;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       ${badge}
       <span style="font:700 11px/1 Archivo,sans-serif;color:var(--color-muted);letter-spacing:.04em;">${formatDate(c.date)}</span>
     </div>
-    <div style="font:400 22px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:.01em;color:${INK};">${c.city ?? ''}</div>
-    <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${c.venue}</div>
+    <div style="font:400 22px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:.01em;color:${INK};">${escapeHtml(c.city ?? '')}</div>
+    <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${escapeHtml(c.venue)}</div>
     <a href="${escapedHref(c.href)}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">View details →</a>
   </div>`
 }
@@ -150,10 +157,10 @@ onUnmounted(() => {
     <!-- legend -->
     <div style="position:absolute;top:14px;right:14px;z-index:500;background:var(--color-page);border:3px solid var(--color-ink);box-shadow:5px 5px 0 v-bind(accent);padding:12px 14px;display:flex;flex-direction:column;gap:9px;">
       <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink);">
-        <span :style="`width:16px;height:16px;border-radius:50%;background:${accent};border:2px solid var(--color-ink);display:inline-block;`"></span>Upcoming
+        <span :style="`width:16px;height:16px;border-radius:50%;background:${accent};border:2px solid var(--color-ink);display:inline-block;`"></span>{{ legendUpcoming }}
       </span>
       <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink);">
-        <span style="width:14px;height:14px;border-radius:50%;background:var(--color-ink);border:2px solid var(--color-page);outline:1px solid var(--color-ink);display:inline-block;"></span>Played
+        <span style="width:14px;height:14px;border-radius:50%;background:var(--color-ink);border:2px solid var(--color-page);outline:1px solid var(--color-ink);display:inline-block;"></span>{{ legendPlayed }}
       </span>
     </div>
   </div>

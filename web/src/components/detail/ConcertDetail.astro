@@ -4,8 +4,11 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
-import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile } from '@/lib/cms'
+import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 import { fmtTime, isUpcoming } from '@/lib/i18n'
+import { dateLocale } from '@/lib/locales'
 
 interface Props {
   lang: Locale
@@ -29,12 +32,29 @@ const summaries = concerts.map(x => ({
 }))
 const idx = summaries.findIndex(s => s.id === itemId)
 
-const [concert, setlist, profile, ticketTypes] = await Promise.all([
+const [concert, setlist, profile, ticketTypes, siteConfig] = await Promise.all([
   getConcert(itemId),
   getConcertSetlist(itemId),
   getBandProfile(lang),
   getConcertTickets(itemId).catch(() => [] as { id: number; is_on_sale: boolean }[]),
+  getSiteConfig(lang),
 ])
+
+// Shares the Shows page's copy — Website Modules → Shows → "Show page" and
+// "Ticket checkout" hold this page's strings.
+const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
+const site = siteCopy(siteConfig, lang)
+
+// The ticket list and checkout modal are driven by a client script that
+// builds its own markup, so their strings ride along as JSON rather than
+// being rendered here.
+const ticketCopy = {
+  none: t.tktNone, loadError: t.tktLoadError,
+  statusUnavailable: t.tktStatusUnavailable, statusOnSaleFrom: t.tktStatusOnSaleFrom,
+  remaining: t.tktRemaining, available: t.tktAvailable, qty: t.tktQty, buy: t.tktBuy,
+  processing: t.tktProcessing, submit: t.tktSubmit,
+  errorCheckout: t.tktErrorCheckout, errorNetwork: t.tktErrorNetwork,
+}
 
 const hasInternalTickets = ticketTypes.length > 0
 
@@ -43,9 +63,9 @@ const isPast = !upcoming
 
 const d = new Date(concert.date + 'T00:00:00')
 const dayNum  = d.getDate().toString().padStart(2, '0')
-const moShort = d.toLocaleDateString('en-GB', { month: 'short' })
+const moShort = d.toLocaleDateString(dateLocale(lang), { month: 'short' })
 const yrNum   = d.getFullYear()
-const weekday = d.toLocaleDateString('en-GB', { weekday: 'long' })
+const weekday = d.toLocaleDateString(dateLocale(lang), { weekday: 'long' })
 
 const fullAddr = [
   concert.venue.street ? `${concert.venue.street}${concert.venue.street_number ? ' ' + concert.venue.street_number : ''}` : null,
@@ -125,10 +145,10 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   <div class="ss">
 
     <!-- ── BREADCRUMB ──────────────────────────────────────── -->
-    <nav class="crumb" aria-label="Breadcrumb">
-      <a class="crumb-link" href={`/${lang}`}>Home</a>
+    <nav class="crumb" aria-label={site.breadcrumbLabel}>
+      <a class="crumb-link" href={`/${lang}`}>{t.crumbHome}</a>
       <span class="crumb-sep" aria-hidden="true">→</span>
-      <a class="crumb-link" href={`/${lang}/${concertsSection}`}>Shows</a>
+      <a class="crumb-link" href={`/${lang}/${concertsSection}`}>{t.title}</a>
       <span class="crumb-sep" aria-hidden="true">→</span>
       <span class="crumb-cur">{concert.venue.city ?? concert.venue.name} · {yrNum}</span>
     </nav>
@@ -138,7 +158,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
       <!-- Tags / status badges -->
       <div class="badge-row">
         <span class={`status-badge ${isPast ? 'status-past' : 'status-up'}`}>
-          {isPast ? 'Past show' : 'Upcoming show'}
+          {isPast ? t.badgePast : t.badgeUpcoming}
         </span>
         {concert.tags?.map(tg => (
           <span class="tag-badge">{tg.name}</span>
@@ -169,7 +189,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6"/>
             </svg>
-            Buy tickets
+            {t.buyTickets}
           </a>
         )}
         {!isPast && ticketLinks.length === 0 && hasInternalTickets && (
@@ -177,7 +197,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
               <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
             </svg>
-            Buy tickets
+            {t.buyTickets}
           </a>
         )}
         {!isPast && ticketLinks.length === 0 && !hasInternalTickets && (
@@ -185,7 +205,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
               <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
             </svg>
-            Tickets TBA
+            {t.ticketsTba}
           </a>
         )}
         <a class="cta-secondary" href={gcalLink()} target="_blank" rel="noopener noreferrer">
@@ -193,14 +213,14 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
             <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
           </svg>
-          Add to calendar
+          {t.addToCalendar}
         </a>
-        <button id="share-btn" class="cta-secondary" type="button">
+        <button id="share-btn" class="cta-secondary" type="button" data-copied={t.shareCopied} data-share={t.share}>
           <svg id="share-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
             <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
           </svg>
-          <span id="share-label">Share</span>
+          <span id="share-label">{t.share}</span>
         </button>
       </div>
     </header>
@@ -213,7 +233,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <div class="poster-frame">
             <img
               src={concert.poster_url}
-              alt={`Poster for ${profile.name} at ${concert.venue.name}`}
+              alt={fillCopy(t.posterAlt, { band: profile.name, venue: concert.venue.name })}
               class="poster-img"
               loading="eager"
               fetchpriority="high"
@@ -222,10 +242,10 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         ) : (
           <div class="poster-placeholder">
             <div class="poster-checker" aria-hidden="true"></div>
-            <span>Poster coming soon</span>
+            <span>{t.posterPending}</span>
           </div>
         )}
-        <p class="poster-caption">Gig poster</p>
+        <p class="poster-caption">{t.posterCaption}</p>
       </div>
 
       <!-- Facts grid -->
@@ -236,7 +256,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
                 <circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>
               </svg>
-              Doors
+              {t.factDoors}
             </span>
             <span class="fact-val">{fmtTime(concert.doors_open)}</span>
           </div>
@@ -247,7 +267,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
                 <path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill={ACCENT} stroke="none"/>
               </svg>
-              On stage
+              {t.factOnStage}
             </span>
             <span class="fact-val">{fmtTime(concert.start_time)}</span>
           </div>
@@ -258,7 +278,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
               </svg>
-              Set length
+              {t.factSetLength}
             </span>
             <span class="fact-val">{setTotal}</span>
           </div>
@@ -269,7 +289,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
                 <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
               </svg>
-              City
+              {t.factCity}
             </span>
             <span class="fact-val">{concert.venue.city}</span>
           </div>
@@ -284,7 +304,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill={ACCENT} stroke="none"/>
           </svg>
-          <h2 class="sec-title">About this show</h2>
+          <h2 class="sec-title">{t.aboutTitle}</h2>
         </div>
         <p class="about-body">{concert.description}</p>
       </section>
@@ -298,7 +318,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/>
             <path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17 13.6a5.5 5.5 0 0 1 3.5 5.4"/>
           </svg>
-          <h2 class="sec-title">Line-up for the night</h2>
+          <h2 class="sec-title">{t.lineupTitle}</h2>
         </div>
         <div class="lineup-list">
           {concert.bands.sort((a, b) => a.sort_order - b.sort_order).map((band, i) => (
@@ -307,7 +327,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <div class="lineup-info">
                 <span class="lineup-name">{band.name}</span>
                 <span class="lineup-role">
-                  {i === 0 ? 'Headliner' : 'Support'}
+                  {i === 0 ? t.headliner : t.support}
                   {band.play_time && ` · ${fmtTime(band.play_time)}`}
                 </span>
               </div>
@@ -326,11 +346,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
               <circle cx="12" cy="12" r="0.8" fill={ACCENT} stroke="none"/>
             </svg>
-            <h2 class="sec-title">{isPast ? 'What we played' : 'Planned set'}</h2>
+            <h2 class="sec-title">{isPast ? t.setlistPast : t.setlistPlanned}</h2>
           </div>
           {setTotal && (
             <span class="setlist-meta">
-              {setlist.items.length} songs{setTotal ? ` · ${setTotal}` : ''}
+              {setlist.items.length} {t.songs}{setTotal ? ` · ${setTotal}` : ''}
             </span>
           )}
         </div>
@@ -343,7 +363,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           ))}
           {encoreSongs.length > 0 && (
             <>
-              <div class="encore-bar">★ Encore</div>
+              <div class="encore-bar">{t.encore}</div>
               {encoreSongs.map((item, i) => (
                 <div class="setlist-row">
                   <span class="setlist-num">E{i + 1}</span>
@@ -363,7 +383,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
           <circle cx="12" cy="10" r="2.6"/>
         </svg>
-        <h2 class="sec-title">Venue & getting there</h2>
+        <h2 class="sec-title">{t.venueTitle}</h2>
       </div>
 
       <div class="venue-card">
@@ -397,7 +417,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
                 <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
                 <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
               </svg>
-              Open in maps
+              {t.openInMaps}
             </a>
           )}
         </div>
@@ -417,11 +437,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               />
             </div>
             <div class="venue-info-col">
-              <div class="venue-info-head">Getting there</div>
+              <div class="venue-info-head">{t.gettingThere}</div>
               {concert.venue.additional_info ? (
                 <p class="venue-info-body">{concert.venue.additional_info}</p>
               ) : (
-                <p class="venue-info-body venue-info-muted">No transport info yet.</p>
+                <p class="venue-info-body venue-info-muted">{t.noTransportInfo}</p>
               )}
               {fullAddr && (
                 <div class="venue-info-addr">
@@ -448,9 +468,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
           </svg>
-          <h2 class="sec-title">Tickets</h2>
+          <h2 class="sec-title">{t.ticketsTitle}</h2>
         </div>
-        <div id="tickets-container" class="tickets-loading">Loading availability…</div>
+        <div id="tickets-container" class="tickets-loading">{t.ticketsLoading}</div>
       </section>
     )}
 
@@ -461,7 +481,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14M13 6l6 6-6 6"/>
           </svg>
-          <h2 class="sec-title">{isPast ? 'Links' : 'Tickets'}</h2>
+          <h2 class="sec-title">{isPast ? t.linksTitle : t.ticketsTitle}</h2>
         </div>
         <div class="links-list">
           {ticketLinks.map(l => (
@@ -493,13 +513,13 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
             <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
           </svg>
-          <h2 class="sec-title">{upcoming ? 'More upcoming shows' : 'More past shows'}</h2>
+          <h2 class="sec-title">{upcoming ? t.moreUpcoming : t.morePast}</h2>
         </div>
         <div class="more-grid">
           {moreConcerts.map(c => {
             const md = new Date(c.date + 'T00:00:00')
             const mDay = md.getDate().toString().padStart(2, '0')
-            const mMo  = md.toLocaleDateString('en-GB', { month: 'short' })
+            const mMo  = md.toLocaleDateString(dateLocale(lang), { month: 'short' })
             const mYr  = md.getFullYear()
             const mUp  = isUpcoming(c.date)
             return (
@@ -528,7 +548,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M15 6l-6 6 6 6"/>
         </svg>
-        All shows
+        {t.allShows}
       </a>
     </div>
 
@@ -541,20 +561,20 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
                 </svg>
-                Previous
+                {t.previous}
               </span>
-              <span class="pn-city">Show</span>
+              <span class="pn-city">{t.navShow}</span>
             </a>
           ) : <div />}
           {nextSlug ? (
             <a class="prevnext-btn next-btn" href={`/${lang}/${concertsSection}/${nextSlug}`}>
               <span class="pn-dir">
-                Next
+                {t.next}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
                   <path d="M9 6l6 6-6 6"/>
                 </svg>
               </span>
-              <span class="pn-city">Show</span>
+              <span class="pn-city">{t.navShow}</span>
             </a>
           ) : <div />}
         </div>
@@ -563,23 +583,24 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   </div>
 
   <!-- ── Ticket purchase modal ─────────────────────────────── -->
+  <script type="application/json" id="tkt-copy" set:html={JSON.stringify(ticketCopy)} />
   <div id="tkt-modal" class="tkt-modal-backdrop" hidden aria-modal="true" role="dialog" aria-labelledby="tkt-modal-title">
     <div class="tkt-modal-box">
-      <h3 id="tkt-modal-title" class="tkt-modal-title">Your details</h3>
-      <p class="tkt-modal-sub">Your tickets will be emailed to you after payment.</p>
+      <h3 id="tkt-modal-title" class="tkt-modal-title">{t.tktModalTitle}</h3>
+      <p class="tkt-modal-sub">{t.tktModalSub}</p>
       <form id="tkt-modal-form" novalidate>
         <div class="tkt-modal-field">
-          <label class="tkt-modal-lbl" for="tkt-name">Full name</label>
-          <input id="tkt-name" class="tkt-modal-inp" type="text" autocomplete="name" required placeholder="Jane Smith" />
+          <label class="tkt-modal-lbl" for="tkt-name">{t.tktName}</label>
+          <input id="tkt-name" class="tkt-modal-inp" type="text" autocomplete="name" required placeholder={t.tktNamePh} />
         </div>
         <div class="tkt-modal-field">
-          <label class="tkt-modal-lbl" for="tkt-email">Email address</label>
-          <input id="tkt-email" class="tkt-modal-inp" type="email" autocomplete="email" required placeholder="jane@example.com" />
+          <label class="tkt-modal-lbl" for="tkt-email">{t.tktEmail}</label>
+          <input id="tkt-email" class="tkt-modal-inp" type="email" autocomplete="email" required placeholder={t.tktEmailPh} />
         </div>
         <p id="tkt-modal-error" class="tkt-modal-error"></p>
         <div class="tkt-modal-actions">
-          <button id="tkt-modal-cancel" type="button" class="tkt-modal-ghost">Cancel</button>
-          <button id="tkt-modal-submit" type="submit" class="tkt-modal-submit">Proceed to payment →</button>
+          <button id="tkt-modal-cancel" type="button" class="tkt-modal-ghost">{t.tktCancel}</button>
+          <button id="tkt-modal-submit" type="submit" class="tkt-modal-submit">{t.tktSubmit}</button>
         </div>
       </form>
     </div>
@@ -608,13 +629,13 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     btn.style.color = 'var(--color-on-accent)'
     btn.style.borderColor = 'var(--color-accent)'
     icon.setAttribute('stroke', 'var(--color-on-accent)')
-    label.textContent = 'Link copied'
+    label.textContent = btn.dataset.copied ?? 'Link copied'
     setTimeout(() => {
       btn.style.background = ''
       btn.style.color = ''
       btn.style.borderColor = ''
       icon.setAttribute('stroke', 'var(--color-accent)')
-      label.textContent = 'Share'
+      label.textContent = btn.dataset.share ?? 'Share'
     }, 2500)
   })
 </script>
@@ -630,6 +651,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   else {
     const concertId = section.dataset.concertId!
     const apiBase   = (window as unknown as Record<string, string>).__API_BASE__ ?? ''
+    // Admin-editable labels, serialised by the frontmatter above. Escaped on
+    // the way into innerHTML like every other string that lands there.
+    const copy = JSON.parse(document.getElementById('tkt-copy')?.textContent ?? '{}') as Record<string, string>
+    const esc  = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
+    const fill = (tpl: string, values: Record<string, string | number>) => tpl.replace(/\{(\w+)\}/g, (m, k: string) => k in values ? String(values[k]) : m)
 
     // Pending purchase state (set when user clicks "Buy →")
     let pending: { typeId: number; currency: string; maxQty: number | null } | null = null
@@ -657,17 +683,17 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         }[] = Array.isArray(json) ? json : (json.data ?? [])
 
         if (!types.length) {
-          container.innerHTML = '<p class="tkt-none">No tickets available for this event.</p>'
+          container.innerHTML = `<p class="tkt-none">${esc(copy.none)}</p>`
           return
         }
 
         const html = types.map(t => {
           if (!t.is_on_sale) {
-            let status = 'Not available'
+            let status = esc(copy.statusUnavailable)
             if (t.available_from) {
               const d = new Date(t.available_from)
               if (d > new Date()) {
-                status = 'On sale from ' + d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                status = esc(fill(copy.statusOnSaleFrom, { date: d.toLocaleString(document.documentElement.lang || 'en', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }))
               }
             }
             return `<div class="tkt-row tkt-off">
@@ -677,7 +703,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           }
           const tier      = t.active_tier!
           const price     = new Intl.NumberFormat('en-GB', { style: 'currency', currency: tier.currency }).format(tier.price)
-          const remaining = tier.remaining != null ? `${tier.remaining} left` : 'Available'
+          const remaining = tier.remaining != null ? esc(fill(copy.remaining, { n: tier.remaining })) : esc(copy.available)
           const maxQty    = Math.min(t.max_per_order ?? 10, tier.remaining ?? 10, 10)
           return `<div class="tkt-row tkt-on">
             <div class="tkt-info">
@@ -689,13 +715,13 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
               <div class="tkt-price">${price}</div>
               <div class="tkt-rem ${tier.remaining !== null && tier.remaining < 20 ? 'tkt-low' : ''}">${remaining}</div>
               <div class="tkt-buy-row">
-                <label class="tkt-qty-label" for="qty-${t.id}">Qty</label>
+                <label class="tkt-qty-label" for="qty-${t.id}">${esc(copy.qty)}</label>
                 <input id="qty-${t.id}" class="tkt-qty" type="number" value="1" min="1" max="${maxQty}" />
                 <button class="tkt-buy-btn"
                   data-type-id="${t.id}"
                   data-currency="${tier.currency}"
                   data-max="${maxQty}">
-                  Buy →
+                  ${esc(copy.buy)}
                 </button>
               </div>
             </div>
@@ -720,7 +746,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         })
       })
       .catch(() => {
-        container.innerHTML = '<p class="tkt-none">Could not load ticket info.</p>'
+        container.innerHTML = `<p class="tkt-none">${esc(copy.loadError)}</p>`
       })
 
     // ── Modal logic ─────────────────────────────────────────────────────────
@@ -745,7 +771,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 
         const submitBtn = modalForm.querySelector<HTMLButtonElement>('#tkt-modal-submit')!
         submitBtn.disabled  = true
-        submitBtn.textContent = 'Processing…'
+        submitBtn.textContent = copy.processing
 
         try {
           const res = await fetch('/api/checkout', {
@@ -765,14 +791,14 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           if (data.checkout_url) {
             window.location.href = data.checkout_url
           } else {
-            showModalError(data.message ?? 'Checkout failed. Please try again.')
+            showModalError(data.message ?? copy.errorCheckout)
             submitBtn.disabled   = false
-            submitBtn.textContent = 'Proceed to payment →'
+            submitBtn.textContent = copy.submit
           }
         } catch {
-          showModalError('Network error. Please try again.')
+          showModalError(copy.errorNetwork)
           submitBtn.disabled   = false
-          submitBtn.textContent = 'Proceed to payment →'
+          submitBtn.textContent = copy.submit
         }
       })
     }

@@ -7,7 +7,7 @@ export type Localized = Record<Lang, string | null>
  * Editable page copy, keyed by field then locale.
  *
  * A generic bag rather than named fields: which fields a module has is decided
- * by MODULE_SETTINGS_SCHEMA on the client and by nothing at all on the server,
+ * by the @bandms/site-copy registry on the client and by nothing at all on the server,
  * so adding a field to a module needs no migration.
  */
 export type ModuleSettings = Record<string, Partial<Localized>>

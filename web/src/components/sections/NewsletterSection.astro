@@ -9,6 +9,8 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getBandProfile, getSiteConfig } from '@/lib/cms'
 import { formatGenreKicker } from '@/lib/i18n'
+import { NEWSLETTER_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -17,37 +19,11 @@ interface Props {
 const { lang, alternates } = Astro.props
 
 const [profile, siteConfig] = await Promise.all([getBandProfile(lang), getSiteConfig(lang)])
-const s = siteConfig.module_config?.newsletter?.settings ?? {}
 const genreKicker = formatGenreKicker(profile.genres)
 
-const COPY = {
-  en: {
-    title: 'Newsletter',
-    lead: 'Tour dates, new tunes and where to catch us live — straight to your inbox.',
-    panelTitle: 'Never miss a skank',
-    panelSub: 'New shows, releases and behind-the-scenes. No spam, unsubscribe any time.',
-    placeholder: 'your@email.com',
-    submit: 'Join the list',
-    sending: 'Subscribing…',
-    done: "You're on the list!",
-    error: 'Something went wrong. Please try again.',
-    confirmNote: 'We send a confirmation link first — check your inbox to finish signing up.',
-  },
-  pl: {
-    title: 'Newsletter',
-    lead: 'Daty tras, nowe kawałki i gdzie nas złapać na żywo — prosto na maila.',
-    panelTitle: 'Nie przegap żadnego skanku',
-    panelSub: 'Nowe koncerty, wydawnictwa i kulisy. Bez spamu, wypisz się kiedy chcesz.',
-    placeholder: 'twoj@email.com',
-    submit: 'Dołącz do listy',
-    sending: 'Zapisywanie…',
-    done: 'Jesteś na liście!',
-    error: 'Coś poszło nie tak. Spróbuj ponownie.',
-    confirmNote: 'Najpierw wysyłamy link potwierdzający — sprawdź skrzynkę, by dokończyć zapis.',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Newsletter.
+const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, lang)
 ---
 
 <BaseLayout
@@ -56,7 +32,7 @@ const t = COPY[lang] ?? COPY.en
   title={t.title}
   description={t.lead}
 >
-  <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'newsletter')} />
+  <PageHero kicker={genreKicker} title={t.title} lead={t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'newsletter')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

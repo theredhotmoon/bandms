@@ -4,11 +4,20 @@
 // long before the order it describes exists.
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import OrderConfirmation from '@/components/OrderConfirmation.vue'
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { merchCopy, orderCopy } from '@/lib/copy'
+
+// Unlocalised route (Stripe's success_url), so it reads the default locale's
+// copy from the Merch module.
+const [siteConfig, slugMap] = await Promise.all([getSiteConfig('en'), getSlugMap()])
+const t = merchCopy(siteConfig, 'en')
+const merchHref = `/en/${slugMap.en.merch ?? 'merch'}`
 
 ---
 
-<BaseLayout title="Order confirmed" description="Your order has been received." noindex={true}>
+<BaseLayout title={t.orderPageTitle} description={t.orderThanks} noindex={true}>
   <div class="mx-auto max-w-2xl px-4 sm:px-6 pt-16 pb-24">
-    <OrderConfirmation client:load />
+    <OrderConfirmation client:load copy={orderCopy(t)} merchHref={merchHref} />
   </div>
 </BaseLayout>

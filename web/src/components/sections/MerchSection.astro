@@ -16,6 +16,8 @@ import { resolveHeroImages } from '@/lib/heroImages'
 import { getShopItems, getShopCategories, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { formatPrice, preferredPrice } from '@/stores/cart'
 import FaqSection from '@/components/sections/FaqSection.astro'
+import { MERCH_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 const [items, categories, profile, siteConfig] = await Promise.all([
   getShopItems(),
@@ -23,7 +25,9 @@ const [items, categories, profile, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
-const s = siteConfig.module_config?.merch?.settings ?? {}
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Merch.
+const t = moduleCopy(siteConfig, 'merch', MERCH_COPY, lang)
 
 const available = items.filter(i => i.is_available || i.is_presale)
 ---
@@ -31,12 +35,12 @@ const available = items.filter(i => i.is_available || i.is_presale)
 <BaseLayout
   lang={lang}
   alternates={alternates}
-  title="Merch"
-  description={`Official merchandise from ${profile.name}. Records, apparel, and more.`}
+  title={t.title}
+  description={t.lead || `${t.title} — ${profile.name}`}
 >
   <PageHero
-    title={s.title || 'Merch'}
-    lead={s.lead}
+    title={t.title}
+    lead={t.lead}
     heroImages={resolveHeroImages(siteConfig, 'merch')}
   />
 
@@ -44,9 +48,9 @@ const available = items.filter(i => i.is_available || i.is_presale)
 
     {available.length === 0 ? (
       <div class="rounded-card border border-border bg-surface p-10 text-center">
-        <p class="text-lg text-muted">No items available right now.</p>
-        <p class="mt-1 text-sm text-subtle">Check back soon, or subscribe to the newsletter for updates.</p>
-        <a href={`/${lang}/${slugMap[lang].newsletter}`} class="mt-4 inline-block text-accent hover:underline text-sm">Subscribe →</a>
+        <p class="text-lg text-muted">{t.emptyTitle}</p>
+        <p class="mt-1 text-sm text-subtle">{t.emptySub}</p>
+        <a href={`/${lang}/${slugMap[lang].newsletter}`} class="mt-4 inline-block text-accent hover:underline text-sm">{t.emptyLink}</a>
       </div>
     ) : (
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -74,12 +78,12 @@ const available = items.filter(i => i.is_available || i.is_presale)
                   )}
                   {item.is_presale && (
                     <span class="absolute top-2 left-2 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold text-on-accent">
-                      PRE-ORDER
+                      {t.preorder}
                     </span>
                   )}
                   {item.stock_quantity === 0 && !item.is_presale && (
                     <div class="absolute inset-0 bg-inverse/60 flex items-center justify-center text-on-inverse">
-                      <span class="text-xs font-bold text-muted uppercase tracking-wider">Sold Out</span>
+                      <span class="text-xs font-bold text-muted uppercase tracking-wider">{t.soldOut}</span>
                     </div>
                   )}
                 </div>

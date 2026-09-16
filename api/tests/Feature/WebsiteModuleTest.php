@@ -35,15 +35,19 @@ it('returns module_order sorted by sort_order on site-config', function () {
 // `contact` is registered by 2026_08_26_000001_add_contact_website_module, so it
 // is present in every freshly migrated database — including this test one. Tests
 // below that count rows have to account for that baseline, which as of
-// 2026-08-27 is three rows added by migration: contact, about and footer.
-// `footer` is chrome rather than a page — it has no route and no slug that
-// matters — but it is a website_modules row so its copy is editable and it can
-// be switched off.
+// 2026-09-17 is six rows added by migration: contact, about, footer, home,
+// privacy and site. `footer` and `site` are chrome rather than pages — no route,
+// no slug that matters — and `home` and `privacy` sit at fixed routes; all four
+// are website_modules rows so their copy is editable in the admin.
 it('returns the baseline modules when nothing else is registered', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
-        // Keyed in sort_order: contact (11), about (12), footer (90).
-        ->assertJsonPath('modules', ['contact' => true, 'about' => true, 'footer' => true]);
+        // Keyed in sort_order: contact (11), about (12), home (89), footer (90),
+        // privacy (91), site (92).
+        ->assertJsonPath('modules', [
+            'contact' => true, 'about' => true, 'home' => true,
+            'footer' => true, 'privacy' => true, 'site' => true,
+        ]);
 });
 
 it('registers contact as a configurable module with a Polish name', function () {
@@ -86,15 +90,18 @@ it('returns all modules and auto_rebuild for admin', function () {
     WebsiteModule::create(['slug' => 'concerts', 'display_name' => 'Concerts', 'enabled' => true, 'sort_order' => 1]);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
-    // concerts, then the migrated baseline modules in sort_order:
-    // contact (11), about (12), footer (90).
+    // concerts (1), then the migrated baseline modules in sort_order:
+    // contact (11), about (12), home (89), footer (90), privacy (91), site (92).
     $this->getJson('/api/admin/modules')
         ->assertOk()
-        ->assertJsonCount(4, 'data')
+        ->assertJsonCount(7, 'data')
         ->assertJsonPath('data.0.slug', 'concerts')
         ->assertJsonPath('data.1.slug', 'contact')
         ->assertJsonPath('data.2.slug', 'about')
-        ->assertJsonPath('data.3.slug', 'footer')
+        ->assertJsonPath('data.3.slug', 'home')
+        ->assertJsonPath('data.4.slug', 'footer')
+        ->assertJsonPath('data.5.slug', 'privacy')
+        ->assertJsonPath('data.6.slug', 'site')
         ->assertJsonPath('auto_rebuild', false);
 });
 
@@ -965,4 +972,46 @@ it('serves the same locale registry whatever lang is requested', function () {
 it('reports the resolved locale of the response itself', function () {
     $this->getJson('/api/site-config?lang=pl')->assertJsonPath('locale', 'pl');
     $this->getJson('/api/site-config?lang=de')->assertJsonPath('locale', 'en');
+});
+
+// ── copy-only rows (added 2026-09-17) ────────────────────────────────────────
+//
+// home, privacy and site exist so the strings on those surfaces are editable,
+// the way footer's are. They seed no settings: the public site prints the
+// registry defaults until the band overrides a field.
+
+it('registers home, privacy and site as copy-only modules', function () {
+    foreach (['home' => 'Homepage', 'privacy' => 'Privacy & cookies', 'site' => 'Site-wide'] as $slug => $name) {
+        $row = WebsiteModule::where('slug', $slug)->first();
+
+        expect($row)->not->toBeNull()
+            ->and($row->display_name)->toBe($name)
+            ->and((bool) $row->enabled)->toBeTrue()
+            ->and($row->settings)->toBeNull()
+            ->and($row->getTranslation('custom_slug', 'en', false))->toBeEmpty()
+            ->and($row->per_page)->toBeNull();
+    }
+});
+
+it('serves an override saved on a copy-only row per locale', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/home', [
+        'settings' => ['showsTitle' => ['en' => 'Next up', 'pl' => 'Najbliżej']],
+    ])->assertOk();
+
+    $this->getJson('/api/site-config?lang=en')
+        ->assertJsonPath('module_config.home.settings.showsTitle', 'Next up');
+    $this->getJson('/api/site-config?lang=pl')
+        ->assertJsonPath('module_config.home.settings.showsTitle', 'Najbliżej');
+});
+
+it('refuses a page slug that would shadow the fixed privacy route', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    // `privacy` is served by fallback from its module key, so the effective-slug
+    // uniqueness check has to reject it exactly as it rejects `epk`.
+    $this->putJson('/api/admin/modules/about', ['custom_slug' => ['en' => 'privacy']])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['custom_slug.en']);
 });

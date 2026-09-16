@@ -10,6 +10,8 @@ import VideoGallery from '@/components/VideoGallery.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getMusicVideos, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, formatGenreKicker } from '@/lib/i18n'
+import { VIDEOS_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -22,31 +24,11 @@ const [videos, profile, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
-const s = siteConfig.module_config?.videos?.settings ?? {}
 const genreKicker = formatGenreKicker(profile.genres)
 
-const COPY = {
-  en: {
-    title: 'Videos',
-    lead: 'Live sets, official videos and clips from the road.',
-    heading: 'Music videos',
-    empty: 'No videos yet — check back soon.',
-    views: 'views',
-    close: 'Close',
-    watch: 'Watch on YouTube',
-  },
-  pl: {
-    title: 'Teledyski',
-    lead: 'Koncerty, oficjalne teledyski i klipy z trasy.',
-    heading: 'Teledyski',
-    empty: 'Brak teledysków — wkrótce.',
-    views: 'wyświetleń',
-    close: 'Zamknij',
-    watch: 'Zobacz na YouTube',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Videos.
+const t = moduleCopy(siteConfig, 'videos', VIDEOS_COPY, lang)
 
 // Same shape the Music page builds, so both pages share one gallery island
 // rather than each rendering videos its own way.
@@ -75,7 +57,7 @@ const galleryVideos = [...videos]
   title={t.title}
   description={t.lead}
 >
-  <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={660} heroImages={resolveHeroImages(siteConfig, 'videos')} />
+  <PageHero kicker={genreKicker} title={t.title} lead={t.lead} leadWidth={660} heroImages={resolveHeroImages(siteConfig, 'videos')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

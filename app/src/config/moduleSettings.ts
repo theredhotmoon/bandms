@@ -3,169 +3,64 @@
  *
  * `website_modules.settings` is a free-form bag on the server — it validates
  * shape (`{field: {en, pl}}`) but not which fields exist, so a module can gain
- * a field without a migration. This map is what turns that bag into a form.
+ * a field without a migration. What turns that bag into a form is the
+ * registry in `@bandms/site-copy`: one entry per public-site string, with its
+ * default text per locale. The public site reads the same registry for its
+ * defaults, so the placeholder an editor sees here is exactly what the page
+ * prints when the field is left empty — and adding a string is one entry in
+ * the package, never a change here.
  *
- * A module absent from here simply shows no copy fields, which is why adding
- * one is additive and safe.
- *
- * The keys must match what the public site reads from
- * `module_config.<slug>.settings` — see web/src/components/sections/.
+ * A module absent from the registry simply shows no copy fields, which is why
+ * adding one is additive and safe.
  */
+import { copyFieldsFor, copyGroupsFor, defaultFor, type CopyField } from '@bandms/site-copy'
 
 export interface ModuleSettingField {
   /** Key inside the settings bag. Must match what the Astro section reads. */
   key: string
   label: string
+  /** Fieldset the input sits in — follows the page's own sections. */
+  group: string
   /** Single-line input vs. a textarea. */
   type: 'text' | 'textarea'
   /** Mirrors the server's `settings.*.en|pl` max:2000 rule. */
   maxLength?: number
   /** Shown under the input — say where the copy appears, not what it is. */
   help?: string
-  placeholder?: string
+  /** The default text per locale, shown as the placeholder. */
+  placeholder: (locale: string) => string
 }
 
 /**
- * Modules that are chrome rather than a page.
+ * Modules that are chrome or a fixed route rather than a movable page.
  *
- * They have no route, so a URL slug and a per-page count would be inputs that
- * do nothing. The admin hides those fields for these.
+ * `footer` and `site` have no route at all; `home` and `privacy` have one, but
+ * it is fixed (`/{lang}`, `/{lang}/privacy`). For all four a URL slug and a
+ * per-page count would be inputs that do nothing, so the admin hides them.
+ * `enabled` still means something for footer and privacy; for home and site
+ * it is ignored by the public build, and the row is best left switched on.
  */
-export const NON_PAGE_MODULES = new Set(['footer'])
+export const NON_PAGE_MODULES = new Set(['footer', 'site', 'home', 'privacy'])
 
-/**
- * Every page module gets an H1 field for its page header.
- */
-function pageTitleField(placeholder: string): ModuleSettingField {
+function toField(field: CopyField): ModuleSettingField {
   return {
-    key: 'title',
-    label: 'Page title',
-    type: 'text',
-    maxLength: 60,
-    help: 'Shown as the H1 at the top of the page header.',
-    placeholder,
+    key: field.key,
+    label: field.label,
+    group: field.group,
+    type: field.type ?? 'text',
+    maxLength: field.maxLength,
+    help: field.help,
+    placeholder: locale => defaultFor(field, locale),
   }
 }
 
-/**
- * Every page module gets these two — the H1 in the page's header and the
- * wording shown below it. Prepended to a module's own fields so the header
- * inputs always come first in the form.
- */
-function pageHeaderFields(titlePlaceholder: string): ModuleSettingField[] {
-  return [
-    pageTitleField(titlePlaceholder),
-    {
-      key: 'lead',
-      label: 'Wording below title',
-      type: 'textarea',
-      maxLength: 400,
-      help: 'Sits under the title in the page header.',
-    },
-  ]
-}
-
-export const MODULE_SETTINGS_SCHEMA: Record<string, ModuleSettingField[]> = {
-  about: pageHeaderFields('About'),
-  concerts: pageHeaderFields('Shows'),
-  releases: pageHeaderFields('Music'),
-  posts: pageHeaderFields('News'),
-  photos: pageHeaderFields('Gallery'),
-  videos: pageHeaderFields('Videos'),
-  press: pageHeaderFields('Press'),
-  merch: pageHeaderFields('Merch'),
-  epk: pageHeaderFields('EPK'),
-  newsletter: pageHeaderFields('Newsletter'),
-  contact: [
-    pageTitleField('Contact'),
-    {
-      key: 'kicker',
-      label: 'Kicker',
-      type: 'text',
-      maxLength: 60,
-      help: 'Small line above the page title. Set in caps in the design.',
-      placeholder: 'GET IN TOUCH',
-    },
-    {
-      key: 'lead',
-      label: 'Lead paragraph',
-      type: 'textarea',
-      maxLength: 400,
-      help: 'Sits under the title in the hero, and doubles as the page meta description.',
-    },
-    {
-      key: 'reply_time_label',
-      label: 'Reply-time badge',
-      type: 'text',
-      maxLength: 60,
-      help: 'Shown as a hero pill and again beside the send button. Leave empty to hide both.',
-      placeholder: 'Replies within 48h',
-    },
-    {
-      key: 'booking_note',
-      label: 'Booking note',
-      type: 'text',
-      maxLength: 120,
-      help: 'Caption under the booking email. Hidden if the profile has no booking address.',
-    },
-    {
-      key: 'press_note',
-      label: 'Press note',
-      type: 'text',
-      maxLength: 120,
-      help: 'Caption under the press email.',
-    },
-    {
-      key: 'general_note',
-      label: 'General note',
-      type: 'text',
-      maxLength: 120,
-      help: 'Caption under the general contact email.',
-    },
-  ],
-  footer: [
-    {
-      key: 'tagline',
-      label: 'Tagline',
-      type: 'text',
-      maxLength: 120,
-      help: 'Sits under the band name in the footer’s first column.',
-      placeholder: 'SKA · SKA-JAZZ · ROCKSTEADY',
-    },
-    {
-      key: 'booking_title',
-      label: 'Booking column heading',
-      type: 'text',
-      maxLength: 60,
-      placeholder: 'Booking & contact',
-    },
-    {
-      key: 'booking_text',
-      label: 'Booking blurb',
-      type: 'textarea',
-      maxLength: 300,
-      help: 'Shown above the booking email, which comes from the band profile.',
-    },
-    {
-      key: 'follow_title',
-      label: 'Links column heading',
-      type: 'text',
-      maxLength: 60,
-      placeholder: 'Follow',
-    },
-    {
-      key: 'rights',
-      label: 'Rights line',
-      type: 'text',
-      maxLength: 120,
-      help: 'Right-hand side of the bottom bar. The copyright and year are automatic.',
-      placeholder: 'All rights reserved.',
-    },
-  ],
-}
-
 export function settingsFieldsFor(slug: string): ModuleSettingField[] {
-  return MODULE_SETTINGS_SCHEMA[slug] ?? []
+  return copyFieldsFor(slug).map(toField)
+}
+
+/** The same fields, bucketed by `group` in page order, for the form's fieldsets. */
+export function settingsGroupsFor(slug: string): { group: string; fields: ModuleSettingField[] }[] {
+  return copyGroupsFor(slug).map(({ group, fields }) => ({ group, fields: fields.map(toField) }))
 }
 
 /**
