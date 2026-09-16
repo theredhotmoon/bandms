@@ -2,6 +2,7 @@
 
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * The seeder is the only route to a working fresh database — `migrate:fresh
@@ -119,6 +120,42 @@ it('pads a row that sets a column no other row sets', function () {
         ->and(json_decode(DB::table('website_modules')->where('slug', 'beta')->value('settings'), true))->toBe(['lead' => 'x'])
         ->and(DB::table('website_modules')->where('slug', 'gamma')->value('per_page'))->toBe(24)
         ->and(DB::table('website_modules')->where('slug', 'alpha')->value('settings'))->toBeNull();
+});
+
+/**
+ * Makes the "no other seeded label diverges from its key" invariant real rather
+ * than hand-audited. Without this, adding
+ *
+ *     ['slug' => 'tickets', 'display_name' => 'Live Tickets', 'sort_order' => 12]
+ *
+ * reintroduces exactly the split this file exists to prevent: fresh databases
+ * serve /en/tickets while every migrated one serves /en/live-tickets, because
+ * the 2026_08_26_000002 backfill derived the slug from the label. The suite
+ * would otherwise stay green, since the assertions above only cover the rows
+ * that happen to declare a slug today.
+ *
+ * Str::slug stands in for that migration's private slugify(). The two agree on
+ * every label seeded here; they can differ on Polish input, so a row whose
+ * label is not ASCII needs an explicit custom_slug regardless of this test.
+ */
+it('stores an explicit slug on every module whose label does not slugify to its key', function () {
+    seedOntoEmptyModules();
+
+    $bare = DB::table('website_modules')->whereNull('custom_slug')->get();
+
+    // Guard the guard: if nothing comes back the loop below asserts nothing.
+    expect($bare)->not->toBeEmpty();
+
+    foreach ($bare as $module) {
+        expect(Str::slug($module->display_name))->toBe(
+            $module->slug,
+            "Module '{$module->slug}' stores no custom_slug, so it is served at "
+            . "/en/{$module->slug} on a fresh database — but its label "
+            . "'{$module->display_name}' derives '" . Str::slug($module->display_name)
+            . "', which is where every migrated database serves it. Give the row "
+            . 'an explicit custom_slug, the way posts and merch have one.'
+        );
+    }
 });
 
 it('is idempotent — a second run neither duplicates nor throws', function () {

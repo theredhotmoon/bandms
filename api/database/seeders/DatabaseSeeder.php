@@ -150,11 +150,21 @@ class DatabaseSeeder extends Seeder
      * optional columns, which would only cover the ones used today;
      * `website_modules` also carries `per_page`, `settings` and `visibility`.
      *
-     * Only safe for nullable columns. A column omitted by some row is bound as
-     * an explicit NULL rather than left out, so a NOT NULL column set on one row
-     * alone would take the type default on MySQL and be skipped on SQLite rather
-     * than inherit its DEFAULT. Every NOT NULL column here is supplied by
-     * $defaults on all rows, which is what keeps that out of reach.
+     * Only safe for nullable columns, and the reason is specific to the IGNORE
+     * modifier this seeder inserts with. A column omitted by some row is bound
+     * as an explicit NULL rather than left out, and `insertOrIgnore` emits
+     * INSERT IGNORE / INSERT OR IGNORE, which downgrades the resulting NOT NULL
+     * violation instead of raising it. Measured, because reasoning from strict
+     * mode gets this wrong — a NOT NULL `enabled` column with DEFAULT 1, set on
+     * one row only:
+     *
+     *   MySQL 8.4 (STRICT_TRANS_TABLES on): no exception; the row stores 0, the
+     *                                       implicit type default, NOT DEFAULT 1
+     *   SQLite:                             no exception; the row is skipped
+     *
+     * So the failure is silent data loss either way, never an error you would
+     * notice. Every NOT NULL column here is supplied by $defaults on all rows,
+     * which is what keeps that out of reach.
      */
     public static function uniformRows(array $rows, array $defaults = []): array
     {
