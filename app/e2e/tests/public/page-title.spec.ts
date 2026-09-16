@@ -37,8 +37,17 @@ async function bandName(request: import('@playwright/test').APIRequestContext): 
   return data.name
 }
 
-function occurrences(haystack: string, needle: string): number {
-  return haystack.split(needle).length - 1
+/**
+ * The regression shape, asserted on the suffix rather than by counting the name:
+ * a heading may legitimately mention the band ("Skanking Storks announce a tour
+ * — Skanking Storks" is correct), so "exactly once" would false-fail on content.
+ */
+function expectSuffixedOnce(title: string, name: string): void {
+  const suffix = ` — ${name}`
+  expect(title, `title was "${title}"`).toMatch(new RegExp(`${escapeRegExp(suffix)}$`))
+  expect(title, `title was "${title}"`).not.toMatch(new RegExp(`${escapeRegExp(suffix + suffix)}$`))
+  // A bare " — Band" (empty heading) would still pass the two checks above.
+  expect(title.slice(0, -suffix.length), `title was "${title}"`).toMatch(/\S/)
 }
 
 test.describe('Public page <title>', () => {
@@ -55,20 +64,16 @@ test.describe('Public page <title>', () => {
   })
 
   for (const path of ['/en/news', '/en/contact', '/en/about', '/pl/kontakt']) {
-    test(`${path} carries the band name exactly once, as a suffix`, async ({ page, request }) => {
+    test(`${path} carries the band name as its suffix, once`, async ({ page, request }) => {
       const name = await bandName(request)
       const res = await page.goto(`${WEB}${path}`)
       test.skip(res?.status() === 404, `${path} is not built — module disabled or slug moved`)
 
-      const title = await page.title()
-      expect(title, `title was "${title}"`).toMatch(new RegExp(` — ${escapeRegExp(name)}$`))
-      expect(occurrences(title, name), `title was "${title}"`).toBe(1)
-      // A bare " — Band" (empty heading) would still pass the two checks above.
-      expect(title.replace(` — ${name}`, '')).toMatch(/\S/)
+      expectSuffixedOnce(await page.title(), name)
     })
   }
 
-  test('a post detail page carries the band name exactly once', async ({ page, request }) => {
+  test('a post detail page carries the band name as its suffix, once', async ({ page, request }) => {
     const name = await bandName(request)
     await page.goto(`${WEB}/en/news`)
     const first = page.locator('a[href^="/en/news/"]').first()
@@ -77,9 +82,7 @@ test.describe('Public page <title>', () => {
     await first.click()
     await page.waitForURL(/\/en\/news\/.+/)
 
-    const title = await page.title()
-    expect(occurrences(title, name), `title was "${title}"`).toBe(1)
-    expect(title).toMatch(new RegExp(` — ${escapeRegExp(name)}$`))
+    expectSuffixedOnce(await page.title(), name)
   })
 
   test('a page that passes a bare title still gets the suffix from the layout', async ({ page, request }) => {
@@ -91,9 +94,7 @@ test.describe('Public page <title>', () => {
     const res = await page.goto(`${WEB}/en/privacy`)
     test.skip(res?.status() === 404, '/en/privacy is not built')
 
-    const title = await page.title()
-    expect(title, `title was "${title}"`).toMatch(new RegExp(` — ${escapeRegExp(name)}$`))
-    expect(occurrences(title, name)).toBe(1)
+    expectSuffixedOnce(await page.title(), name)
   })
 })
 
