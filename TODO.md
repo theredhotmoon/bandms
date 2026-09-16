@@ -159,49 +159,33 @@ an environment variable on the server*. Related: the Hetzner runbook under
 
 ---
 
-## Scheduled news posts — not possible yet
+## Scheduled news posts — designed, not built
 
-**Status:** requested 2026-09-16, not built. Today `published_at` is a switch,
-not a timer: **null hides the post everywhere public, any date shows it** —
-including a date in the future. Set "next Friday" on a post and it is on the
-site the moment the next rebuild runs, dated Friday.
+**Status:** design approved 2026-09-16, no implementation. Spec:
+[`docs/superpowers/specs/2026-09-16-scheduled-posts-design.md`](docs/superpowers/specs/2026-09-16-scheduled-posts-design.md)
 
-**Why JavaScript cannot do it.** The public site is static: `astro build` bakes
-every post's HTML into `dist/`. A client-side "hide until the date" leaves the
-full text in the HTML for Googlebot, `view-source`, RSS readers, the sitemap and
-the news list's island JSON — hidden from a human's eyes, published to every
-robot. Scheduling has to happen where the pages are *decided*, which is the API
-the build reads and the moment the build runs.
+**The problem:** `published_at` is a switch, not a timer — null hides the
+post everywhere public (since #117), any date shows it, including a date in
+the future. Set "next Friday" on a post and it is on the site at the next
+rebuild, dated Friday. JavaScript cannot fix this: the site is static, so a
+client-side "hide until the date" leaves the full text in the HTML for
+crawlers, `view-source`, the sitemap and the news island's JSON.
 
-**What it takes — two pieces, both server-side:**
+**What was decided:** `Post::scopePublished()` gains `<= now()`; a
+`posts:publish-scheduled` command runs every minute under `schedule:work`
+(a fourth supervisord program) and fires the rebuild when a post crosses its
+time, tracked by a watermark row in `site_settings` and skipping posts whose
+own save already rebuilt (`updated_at < published_at`). A scheduled post
+**always** rebuilds, whatever the auto-rebuild switch says. The time an
+editor types is the band's local time: one `BAND_TIMEZONE` env var, naive
+strings in are parsed in that zone, resources out are serialised in it, and
+storage stays UTC — so the admin form needs no date code. Admin shows a third
+*Scheduled* state and warns when the scheduler has not checked in.
 
-1. **`Post::scopePublished()` becomes `whereNotNull(published_at)->where('published_at', '<=', now())`.**
-   One line in `api/app/Models/Post.php`; the public list, detail and search all
-   go through it already. A future-dated post then 404s and is left out of the
-   build exactly like a draft. The admin's status column
-   (`PostsAdminView.vue`) should grow a third state — *Scheduled* — so the
-   editor can see the difference.
-2. **Something has to rebuild the site when a scheduled time passes.** Nothing
-   does today: the auto-rebuild fires on admin *saves* (`SiteRebuild::markDirty`),
-   never on the clock. Add a Laravel scheduler command (every 5 min is plenty)
-   that looks for posts with `published_at` between the last successful build's
-   `startedAt` and `now()` and calls `SiteRebuild::markDirty('posts')` when it
-   finds one. The scheduler itself needs a runner — `php artisan schedule:work`
-   in the backend container's entrypoint, or a host cron hitting
-   `schedule:run`; check `api/docker/entrypoint.sh` for whether one already
-   exists before adding it. The Pest test is straightforward: freeze time with
-   `Carbon::setTestNow`, create a post dated one minute ahead, run the command
-   at T+2 and assert the dirty area was marked.
-
-**Do piece 1 only with piece 2.** Piece 1 alone hides a scheduled post until the
-next unrelated admin save — "appears late, at random" is worse than today's
-"appears immediately, clearly dated", because it looks broken instead of
-looking like a missing feature.
-
-**Not a substitute:** `web/docker/start.sh` rebuilding on a fixed timer. It
-rebuilds the *baked* source and would thrash the site every N minutes whether
-or not anything changed; the dirty-area mechanism exists precisely to avoid
-that.
+**Next step:** `/superpowers:writing-plans` from the spec, then implement
+in the spec's order. **Do not ship the `<= now()` clause without the
+command** — alone it hides a scheduled post until the next unrelated admin
+save, which looks broken rather than missing.
 
 ---
 
@@ -279,6 +263,17 @@ Every full run loses ~2 specs, a different pair each time, always downstream of 
 `GET /api/shop` filters `where('is_available', true)`, so a presale-only item (`is_available = false`, `is_presale = true`) never reaches the public site. `merch/index.astro` filters `is_available || is_presale` and renders a "presale" badge — code that can never fire — and `GET /api/shop/by-slug/{slug}` 404s the same items, so a shared link to one is dead.
 
 Found while fixing the merch build crash. Deliberately **not** fixed there: making presale items public is a product decision, not a bug fix, and it changes what a live public site displays. The three layers currently disagree about what presale means; pick one and make them agree.
+
+### Public shop detail leaks draft post ids
+`GET /api/shop/{item}` returns `post_ids` for every linked post, drafts
+included, because the admin's shop editor prefills its post picker from that
+same public response — scoping it to `Post::published()` would silently
+unlink every draft on the next save. Only ids leak, never titles or slugs,
+and each id 404s publicly, so the exposure is "a draft exists", nothing
+more. Fix is the #117 pattern: an admin detail read beside the existing
+`GET /api/shop-admin` list (`ShopItemController::adminIndex`) for the
+editor, then scope the public one. Found while hiding drafts in #117;
+deliberately left.
 
 ### Admin routes return 500 instead of 401
 Any admin route without an `Accept: application/json` header returns 500, not 401 — Laravel's auth middleware trying to redirect to a `login` named route that does not exist in an API-only app. Verified across five endpoints. Needs an exception-handler fix.
