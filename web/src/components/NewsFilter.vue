@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { formatEventDates } from '@/lib/i18n'
+import { formatEventDates, fmtDateShort } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
 
 interface Tag { id: number; name: string; slug_en: string }
@@ -50,15 +50,8 @@ const matched = computed(() => props.posts.filter(p => {
 const featured = computed(() => matched.value[0] ?? null)
 const rest     = computed(() => matched.value.slice(1))
 
-function fmtDate(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso + 'T00:00:00')
-  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear()}`
-}
-
 function postDate(p: PostSummary): string {
-  return fmtDate(p.published_at ?? p.created_at)
+  return fmtDateShort(p.published_at ?? p.created_at, props.lang ?? 'en')
 }
 
 function eventDate(p: PostSummary): string {

@@ -34,10 +34,27 @@ export function postSlug(post: { slug_en: string; slug_pl?: string | null }, lan
   return lang === 'pl' ? (post.slug_pl || post.slug_en) : post.slug_en
 }
 
+/**
+ * Parses the two date shapes the API sends, so every formatter below accepts
+ * either without the caller knowing which it has.
+ *
+ * - Date-only columns (`concerts.date`, `event_dates[]`) arrive as
+ *   '2026-09-14'. JS parses that as UTC midnight, which is still the previous
+ *   evening west of UTC, so a local time-of-day is appended to force local
+ *   parsing (the guard ConcertDetail.astro has always used).
+ * - Timestamp columns (`posts.published_at`, `created_at`) arrive as
+ *   '2026-09-14T20:01:32.000000Z' and already carry a time and zone. Appending
+ *   'T00:00:00' to one of those produces an Invalid Date, which
+ *   getDate()/getMonth()/getFullYear() then render as "NaN undefined NaN" —
+ *   the whole News section shipped that way.
+ */
+export function parseApiDate(dateStr: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(dateStr + 'T00:00:00') : new Date(dateStr)
+}
+
 export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en'): string {
   if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString(dateLocale(lang), {
+  return parseApiDate(dateStr).toLocaleDateString(dateLocale(lang), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -46,8 +63,7 @@ export function fmtDate(dateStr: string | null | undefined, lang: Locale = 'en')
 
 export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 'en'): string {
   if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString(dateLocale(lang), {
+  return parseApiDate(dateStr).toLocaleDateString(dateLocale(lang), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -61,7 +77,7 @@ export function fmtDateShort(dateStr: string | null | undefined, lang: Locale = 
  * 'en-GB', which meant Polish pages still showed English month abbreviations.
  */
 export function fmtDateParts(dateStr: string, lang: Locale = 'en'): { day: string; mo: string; yr: number } {
-  const d = new Date(dateStr + 'T00:00:00')
+  const d = parseApiDate(dateStr)
   return {
     day: d.getDate().toString().padStart(2, '0'),
     mo: d.toLocaleDateString(dateLocale(lang), { month: 'short' }),
@@ -105,11 +121,7 @@ export function formatEventDates(
 ): string {
   if (dates.length === 0) return ''
 
-  // Date-only strings ('2099-01-10') parse as UTC midnight, which renders as
-  // the previous day west of UTC — appending a local time-of-day, as every
-  // other date-only field in this codebase does (see ConcertDetail.astro),
-  // forces local-time parsing instead.
-  const toLocalDate = (d: string) => new Date(d + 'T00:00:00')
+  const toLocalDate = parseApiDate
   const sorted = [...dates].sort()
   const formatter = new Intl.DateTimeFormat(dateLocale(lang), {
     day: 'numeric',

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-09-16
 
 ### Fixed
+- **Every news date on the public site read "NaN undefined NaN"** — the homepage news rows, the News list (featured post and cards), the article header and its "more from the blog" rows. A post's date is a full timestamp (`2026-09-14T20:01:32Z`), but each surface parsed it with the date-only idiom used for concerts (`new Date(iso + 'T00:00:00')`), producing an Invalid Date that nothing flags: the build stays green because `getDate()` returns `NaN` instead of throwing. All date formatters now share one `parseApiDate()` that accepts both shapes, and the three hand-rolled month-name arrays are gone — which also means Polish news pages now show Polish month names instead of English ones.
 - **Polish pages showed English month abbreviations on gig and post date rows.** The homepage and the Shows page each reimplemented date formatting with a hardcoded `en-GB` locale instead of using the site's own locale registry, so `/pl/` visitors saw "Sep" instead of "wrz". Both now call a shared `fmtDateParts()` helper that resolves the month name from the requested locale.
 - **The not-found page is now in the visitor's language.** A miss under `/pl/` gets the Polish page, under `/en/` the English one, and an unprefixed miss follows the browser's language — the same rule as the homepage redirect. It was English-only, with `lang="en"` and a home link to `/`, for Polish visitors too.
 - **Unknown URLs showed nginx's bare "404 Not Found" instead of the site's own not-found page.** The designed page was built on every start and never served, because nginx was never told about it. It now serves it — still with a real 404 status, so search engines don't index missing pages.
@@ -16,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A post's embedded link label ("Read more", etc.) could not be translated.** Every other content block field (body, alt text, caption) already supported separate English/Polish text; the embed block's `label` was validated and stored as a plain string. It's now a `{en, pl}` bag end to end — validation, API response, admin editor (adds an EN/PL input pair), and a migration to convert existing rows — matching the pattern used by every other block field.
 
 ### Added
-- Test coverage pinning the Polish month-abbreviation fix (`web/src/lib/i18n.test.ts`) and the embed label's bilingual shape (`postBlocks.spec.ts`, `PostBlockBackfillTest.php`).
+- Test coverage pinning the Polish month-abbreviation fix and timestamp parsing (`web/src/lib/i18n.test.ts`), plus a public E2E spec (`news-dates.spec.ts`) that asserts a real date on every news surface in both languages and the embed label's bilingual shape (`postBlocks.spec.ts`, `PostBlockBackfillTest.php`).
 
 ## [Unreleased] — 2026-09-15
 

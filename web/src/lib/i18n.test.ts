@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDateParts } from './i18n'
+import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDate, fmtDateShort, fmtDateParts } from './i18n'
 
 describe('postSlug', () => {
   it('uses slug_en for the en locale', () => {
@@ -79,6 +79,45 @@ describe('fmtDateParts', () => {
 
   it('pads a single-digit day with a leading zero', () => {
     expect(fmtDateParts('2026-09-05').day).toBe('05')
+  })
+})
+
+// `posts.published_at`/`created_at` are full ISO timestamps
+// ('2026-09-14T20:01:32.000000Z'), not date-only strings. Every date helper used
+// to unconditionally append 'T00:00:00' before parsing — the date-only guard
+// (see formatEventDates) — which turned a timestamp into garbage and rendered
+// the whole news section's dates as "NaN undefined NaN".
+describe('parsing full ISO timestamps (posts.published_at / created_at)', () => {
+  const ts = '2026-09-14T20:01:32.000000Z'
+
+  it('fmtDateParts yields a real day/month/year for a timestamp', () => {
+    const parts = fmtDateParts(ts)
+    expect(parts.day).toBe('14')
+    expect(parts.mo).toBe('Sept')
+    expect(parts.yr).toBe(2026)
+  })
+
+  it('fmtDate formats a timestamp', () => {
+    expect(fmtDate(ts)).toBe('14 September 2026')
+  })
+
+  it('fmtDateShort formats a timestamp', () => {
+    expect(fmtDateShort(ts)).toBe('14 Sept 2026')
+  })
+
+  it('fmtDate still formats a date-only string, and does not shift it west of UTC', () => {
+    const original = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      expect(fmtDate('2099-01-10')).toBe('10 January 2099')
+      expect(fmtDateShort('2099-01-10')).toBe('10 Jan 2099')
+    } finally {
+      process.env.TZ = original
+    }
+  })
+
+  it('fmtDate formats in Polish when lang is pl', () => {
+    expect(fmtDate(ts, 'pl')).toBe('14 września 2026')
   })
 })
 
