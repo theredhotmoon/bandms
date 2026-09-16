@@ -9,7 +9,7 @@
  */
 import { getConcerts, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
 import ConcertDetail from '@/components/detail/ConcertDetail.astro'
 
 export async function getStaticPaths() {
@@ -29,7 +29,7 @@ const siteConfig = await getSiteConfig()
 if (siteConfig.modules.concerts === false) return Astro.redirect('/404', 307)
 
 const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].concerts ?? 'concerts'}/${slug}`]))
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].concerts ?? 'concerts'}/${slug}`]))
 ---
 
 <ConcertDetail lang="en" alternates={alternates} itemId={itemId} />

@@ -9,16 +9,19 @@
  */
 import { getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
 import MerchSection from '@/components/sections/MerchSection.astro'
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.merch === false) return Astro.redirect('/404', 307)
 
-// Every locale's own list page, resolved through the slug map so a custom
-// Polish slug does not turn the hreflang row into a 404.
+// The *other* locales' pages, resolved through the slug map so a custom
+// Polish slug does not turn the hreflang row into a 404. The default locale
+// is left out on purpose: this page's canonical is its own unlocalised URL,
+// and an `en` alternate pointing at /en/… would disagree with it — the
+// broken-cluster shape releases/[id].astro already avoids.
 const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}`]))
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}`]))
 ---
 
 <MerchSection lang="en" alternates={alternates} />

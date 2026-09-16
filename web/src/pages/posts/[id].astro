@@ -9,7 +9,7 @@
  */
 import { getAllPosts, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
 import PostDetail from '@/components/detail/PostDetail.astro'
 
@@ -25,7 +25,7 @@ if (siteConfig.modules.posts === false) return Astro.redirect('/404', 307)
 
 // The localised routes key posts by their per-locale slug, not by id.
 const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].posts ?? 'posts'}/${postSlug(post, l)}`]))
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].posts ?? 'posts'}/${postSlug(post, l)}`]))
 ---
 
 <PostDetail lang="en" alternates={alternates} itemId={post.id} />

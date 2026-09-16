@@ -19,6 +19,7 @@ const props = defineProps<{
   /** Legend and popup badge labels, from the Shows module's copy. */
   legendUpcoming: string
   legendPlayed: string
+  popupCta: string
 }>()
 
 const mapEl = ref<HTMLDivElement>()
@@ -68,7 +69,7 @@ function popupHTML(c: Pin, accent: string) {
     </div>
     <div style="font:400 22px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:.01em;color:${INK};">${escapeHtml(c.city ?? '')}</div>
     <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${escapeHtml(c.venue)}</div>
-    <a href="${escapedHref(c.href)}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">View details →</a>
+    <a href="${escapedHref(c.href)}" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:${INK};color:${PAPER};font:400 14px/1 Anton,sans-serif;text-transform:uppercase;letter-spacing:.02em;padding:9px 12px;text-decoration:none;">${escapeHtml(props.popupCta)}</a>
   </div>`
 }
 

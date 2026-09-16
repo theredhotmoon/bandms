@@ -55,6 +55,10 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'Played', pl: 'Zagrane' },
   },
   {
+    key: 'mapPopupCta', label: 'Pin popup: "View details" link', group: 'Where we play (map)', maxLength: 40,
+    defaults: { en: 'View details →', pl: 'Zobacz szczegóły →' },
+  },
+  {
     key: 'showOnMap', label: '"Show on map" button', group: 'Where we play (map)', maxLength: 40,
     help: 'On every show row that has a pin, in the upcoming list and the archive.',
     defaults: { en: 'Show on map', pl: 'Pokaż na mapie' },

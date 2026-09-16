@@ -8,6 +8,11 @@ export const EPK_COPY = defineCopy([
     defaults: { en: '', pl: '' },
   },
   {
+    key: 'tabTitle', label: 'Browser tab title', group: 'Page header', maxLength: 60,
+    help: 'The document title only — the H1 shows the band name unless "Page title" is set.',
+    defaults: { en: 'EPK', pl: 'EPK' },
+  },
+  {
     key: 'kicker', label: 'Kicker', group: 'Page header', maxLength: 60,
     help: 'Small line above the page title.',
     defaults: { en: 'ELECTRONIC PRESS KIT', pl: 'ELECTRONIC PRESS KIT' },

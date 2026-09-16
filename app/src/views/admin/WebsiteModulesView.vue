@@ -267,7 +267,9 @@ async function saveEdit(slug: string) {
               :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
             >{{ mod.custom_name?.en || mod.display_name }}</span>
             <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
-            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
+            <!-- No URL hint for chrome rows: /home and /site are not routes.
+                 privacy keeps its fixed one, like tech-rider does. -->
+            <span v-if="!NON_PAGE_MODULES.has(mod.slug) || mod.slug === 'privacy'" class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
           </div>
 
           <!-- Status badge. Hidden with the toggle for rows the public build

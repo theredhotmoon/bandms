@@ -9,7 +9,7 @@
  */
 import { getShopItems, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
 import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 
 export async function getStaticPaths() {
@@ -27,7 +27,7 @@ const siteConfig = await getSiteConfig()
 if (siteConfig.modules.merch === false) return Astro.redirect('/404', 307)
 
 const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}/${slug}`]))
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}/${slug}`]))
 ---
 
 <MerchItemDetail lang="en" alternates={alternates} itemSlug={slug!} />
