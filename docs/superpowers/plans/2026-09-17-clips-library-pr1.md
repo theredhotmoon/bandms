@@ -28,7 +28,7 @@
 
 **api/**
 - `database/migrations/2026_09_17_000001_create_clips_table.php` — `clips` + `clippables`
-- `app/Models/Clip.php` — model, translatable `title`, inverse morph relations, `owners()`
+- `app/Models/Clip.php` — model, translatable `title`, inverse morph relations, `ownersList()`
 - `app/Models/Concerns/HasClips.php` — `clips()` morphToMany
 - `app/Models/Concert.php`, `Release.php`, `ShopItem.php`, `Album.php` — `use HasClips`
 - `app/Providers/AppServiceProvider.php` — `Relation::enforceMorphMap`
@@ -230,7 +230,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Test: `api/tests/Feature/ClipModelTest.php`
 
 **Interfaces:**
-- Produces: `Clip` (`provider, url, title, category, recorded_on, show_in_epk`), `$concert->clips()` ordered by pivot `position`, `$clip->concerts()` etc., `Clip::owners(): array`, `ClipOwners::MAP` (`alias => class`), `ClipOwners::dirtyArea(string $alias): ?string`, `ClipCategory::PRESETS`.
+- Produces: `Clip` (`provider, url, title, category, recorded_on, show_in_epk`), `$concert->clips()` ordered by pivot `position`, `$clip->concerts()` etc., `Clip::ownersList(): array`, `ClipOwners::MAP` (`alias => class`), `ClipOwners::dirtyArea(string $alias): ?string`, `ClipCategory::PRESETS`.
 
 - [ ] **Step 1: Write the failing model test**
 
