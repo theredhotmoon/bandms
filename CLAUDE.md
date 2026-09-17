@@ -293,6 +293,33 @@ of already-published versions predate anything you add.
 
 ---
 
+### EPK versions: an archived one serves nothing, and "restore" is just publish
+
+`/api/band-profile/epk` serves whichever `epk_versions` row is `published`
+(falling back to the live builder when none is). Unlike tech-rider versions,
+an EPK version has **no token of its own** — archived rows are history, not
+permalinks — so the admin can delete them, and the only way an old snapshot
+reaches a visitor again is `POST /api/epk-versions/{id}/publish` on it, which
+archives the current live row inside the same transaction. The live row is the
+one thing that cannot be deleted. `EpkVersionHistory.vue` (opened from the
+Dashboard widget and Band Profile → EPK) is the UI for all of this, and
+`useEpkVersionHistory` owns the shared toasts/handlers.
+
+**`snapshot` is cast to `array` — pass it the array.** `store()` used to hand
+it `json_encode(...)`, so Eloquent encoded it again and every published EPK
+came back from the API as a JSON *string* under `data`. Nobody noticed because
+the dev DB had never held a published version.
+`2026_09_17_000001_fix_double_encoded_epk_snapshots` repairs old rows once.
+Tech-rider versions never had the bug; they pass the array.
+
+**`e2e/tests/admin/epk-versions.spec.ts` publishes for real.** It records
+which version was live, restores it in `afterAll` and deletes what it created
+— but if *nothing* was live beforehand it necessarily leaves one version
+published, because a live version cannot be deleted. Clear it with SQL if the
+dev DB should go back to zero versions.
+
+---
+
 ### `make fresh` kills Passport clients — must follow with `make passport`
 
 **Symptom:** All API calls that require a Bearer token return 401 after running `make fresh`.

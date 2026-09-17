@@ -9,6 +9,8 @@ import AboutBioVariantSelect from '@/components/admin/forms/AboutBioVariantSelec
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
 import { useEpkVersions } from '@/composables/useEpkVersions'
+import { useEpkVersionHistory } from '@/composables/useEpkVersionHistory'
+import EpkVersionHistory from '@/components/admin/EpkVersionHistory.vue'
 import { useSocialLinks } from '@/composables/useSocialLinks'
 import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { BioVariant } from '@/types/bandProfile'
@@ -19,6 +21,7 @@ import { reportSaveError } from '@/utils/formErrors'
 const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
 const { create: createVersion } = useEpkVersions()
+const history = useEpkVersionHistory()
 
 const showSnapshotModal = ref(false)
 const snapshotReason    = ref('')
@@ -533,9 +536,14 @@ async function saveSocialLinks() {
                 <div class="field-label mb-0.5">EPK Snapshot</div>
                 <p class="field-hint">Create a snapshot of the current EPK content. Once accepted on the Dashboard, it becomes the live version served at <code style="color:#9ca3af;">/epk</code>.</p>
               </div>
-              <button type="button" @click="showSnapshotModal = true" class="btn-snapshot">
-                Create EPK snapshot
-              </button>
+              <div class="epk-snapshot-actions">
+                <button type="button" @click="history.open.value = true" class="btn-history">
+                  Version history
+                </button>
+                <button type="button" @click="showSnapshotModal = true" class="btn-snapshot">
+                  Create EPK snapshot
+                </button>
+              </div>
             </div>
 
             <div>
@@ -587,6 +595,18 @@ async function saveSocialLinks() {
         </template>
       </template>
     </div>
+
+    <EpkVersionHistory
+      :open="history.open.value"
+      :versions="history.versions.value"
+      :loading="history.loading.value"
+        :error="history.error.value"
+      :publishing="history.publishing.value"
+      :deleting="history.deleting.value"
+      @close="history.open.value = false"
+      @make-live="history.makeLive"
+      @remove="history.remove"
+    />
 
     <AdminModal :open="showSnapshotModal" title="Create EPK Snapshot" max-width="36rem" @close="showSnapshotModal = false">
       <form @submit.prevent="createSnapshot" class="flex flex-col gap-4">
@@ -700,6 +720,13 @@ async function saveSocialLinks() {
   white-space: nowrap; transition: background 100ms;
 }
 .btn-snapshot:hover { background: #333333; }
+.epk-snapshot-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.btn-history {
+  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
+  cursor: pointer; background: transparent; border: 1px solid #333333; color: #9ca3af;
+  white-space: nowrap; transition: background 100ms;
+}
+.btn-history:hover { background: #1f1f1f; color: #d0d0d0; }
 
 .stage-thumb {
   width: 10rem; border-radius: 0.375rem; border: 1px solid #2a2a2a;
