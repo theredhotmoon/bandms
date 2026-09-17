@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-09-17
 
 ### Added
+- **EPK version history in the admin.** The Dashboard's EPK widget and Band Profile → EPK both open a *Version history* modal listing every snapshot ever taken — Live, Pending or Archived — with its date and release reason. From it an archived version can be **made live again** (the current live one is archived in the same step), an archived or pending one can be **deleted**, and a pending draft can be published or discarded as before. The live version is the one thing that cannot be deleted. Until now only the single pending draft was visible anywhere in the admin, and archived versions were locked: nothing could restore or remove them.
+
+### Fixed
+- **A published EPK was served as a JSON string, not an object.** `POST /api/epk-versions` encoded the snapshot before handing it to a column Eloquent already encodes, so every stored version was double-encoded and `GET /api/band-profile/epk` returned `"data": "{…}"` for it — the public EPK page would have rendered nothing. It went unnoticed because the dev database had never held a published version. Snapshots are stored correctly now, and a one-off migration repairs any existing rows.
+- Publishing an EPK version never flagged the public site for rebuild, so with auto-rebuild on a newly published snapshot had no way to reach `/epk`. It marks `band-profile` dirty now.
+
+## [Unreleased] — 2026-09-17 (site copy)
+
+### Added
 - **Every string on the public site is now editable from the admin, per language.** Website Modules used to offer a page title and a lead per module and nothing else; the Shows page's "Where we play" / "Upcoming shows" / "Played shows" headings and subtitles, the About page's "The line-up" / "By the numbers" / "Press & booking" blocks, and roughly 250 other strings — section headings, subtitles, buttons, empty states, form labels, the ticket-checkout modal, the cart, the cookie banner, the privacy policy, the 404 page — were hardcoded. Each is now a field in **Website Modules → *module* → Page copy**, grouped by the page's own sections (collapsible, with the current text shown as the placeholder so an editor sees what the site says before overriding it). Leaving a field empty keeps the default for that language; a rebuild publishes the change.
 - **Three new rows in Website Modules that exist for their copy alone:** *Homepage* (hero buttons, section headings, the newsletter box), *Privacy & cookies* (the policy text and the cookie banner) and *Site-wide* (navigation labels, the FAQ block's heading, the 404 page). Like *Footer*, they have no URL slug to move and never appear in the nav.
 - `@bandms/site-copy`, a workspace package holding that registry — one file per module listing every string with its English and Polish defaults. The public site reads it for defaults, the admin reads it for the form, so adding a string is one entry in one file and a `t.<key>` read in the section. No migration, no admin change.

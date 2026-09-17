@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\EpkVersion;
+use App\Models\SiteDirtyArea;
 
 beforeEach(fn () => $this->createProfile());
 
@@ -88,6 +89,16 @@ describe('POST /api/epk-versions', function () {
             ->assertJsonPath('message', 'A pending version already exists. Publish or discard it first.');
     });
 
+    it('stores the snapshot so the public endpoint serves it as an object, not a JSON string', function () {
+        $this->actingAsAdmin();
+        $id = $this->postJson('/api/epk-versions')->assertCreated()->json('data.id');
+        EpkVersion::whereKey($id)->update(['status' => 'published', 'published_at' => now()]);
+
+        $data = $this->getJson('/api/band-profile/epk')->assertOk()->json('data');
+
+        expect($data)->toBeArray()->toHaveKey('name');
+    });
+
     it('release_reason is optional', function () {
         $this->actingAsAdmin();
         $this->postJson('/api/epk-versions', [])->assertCreated();
@@ -121,21 +132,39 @@ describe('POST /api/epk-versions/{version}/publish', function () {
         $this->assertDatabaseHas('epk_versions', ['id' => $pending->id,   'status' => 'published']);
     });
 
-    it('returns 422 when trying to publish a non-pending version', function () {
+    it('returns 422 when trying to publish the version that is already live', function () {
         $this->actingAsAdmin();
         $published = EpkVersion::create(['version_number' => 1, 'snapshot' => '{}', 'status' => 'published']);
 
         $this->postJson("/api/epk-versions/{$published->id}/publish")
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Only pending versions can be published.');
+            ->assertJsonPath('message', 'This version is already live.');
     });
 
-    it('returns 422 when trying to publish an archived version', function () {
+    it('restores an archived version and archives the one that was live', function () {
         $this->actingAsAdmin();
-        $archived = EpkVersion::create(['version_number' => 1, 'snapshot' => '{}', 'status' => 'archived']);
+        $archived = EpkVersion::create(['version_number' => 1, 'snapshot' => ['v' => 1], 'status' => 'archived', 'published_at' => now()->subMonth()]);
+        $live     = EpkVersion::create(['version_number' => 2, 'snapshot' => ['v' => 2], 'status' => 'published', 'published_at' => now()->subWeek()]);
 
         $this->postJson("/api/epk-versions/{$archived->id}/publish")
-            ->assertUnprocessable();
+            ->assertSuccessful()
+            ->assertJsonPath('data.status', 'published');
+
+        $this->assertDatabaseHas('epk_versions', ['id' => $live->id,     'status' => 'archived']);
+        $this->assertDatabaseHas('epk_versions', ['id' => $archived->id, 'status' => 'published']);
+        expect($archived->fresh()->published_at->greaterThan(now()->subMinute()))->toBeTrue();
+
+        // The public endpoint serves whichever row is published — the restored snapshot.
+        $this->getJson('/api/band-profile/epk')->assertJsonPath('data.v', 1);
+    });
+
+    it('marks band-profile dirty so the public site rebuilds', function () {
+        $this->actingAsAdmin();
+        $pending = makePendingVersion();
+
+        $this->postJson("/api/epk-versions/{$pending->id}/publish")->assertSuccessful();
+
+        expect(SiteDirtyArea::where('area', 'band-profile')->exists())->toBeTrue();
     });
 
     it('returns 404 for a non-existent version', function () {
@@ -166,24 +195,42 @@ describe('DELETE /api/epk-versions/{version}', function () {
         $this->assertDatabaseMissing('epk_versions', ['id' => $version->id]);
     });
 
-    it('returns 422 when trying to delete a published version', function () {
+    it('returns 422 when trying to delete the live version', function () {
         $this->actingAsAdmin();
         $published = EpkVersion::create(['version_number' => 1, 'snapshot' => '{}', 'status' => 'published']);
 
         $this->deleteJson("/api/epk-versions/{$published->id}")
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Only pending versions can be discarded.');
+            ->assertJsonPath('message', 'This version is what the public EPK currently serves. Make another version live first.');
+        $this->assertDatabaseHas('epk_versions', ['id' => $published->id]);
     });
 
-    it('returns 422 when trying to delete an archived version', function () {
+    it('deletes an archived version and returns 204', function () {
         $this->actingAsAdmin();
         $archived = EpkVersion::create(['version_number' => 1, 'snapshot' => '{}', 'status' => 'archived']);
 
-        $this->deleteJson("/api/epk-versions/{$archived->id}")->assertUnprocessable();
+        $this->deleteJson("/api/epk-versions/{$archived->id}")->assertNoContent();
+        $this->assertDatabaseMissing('epk_versions', ['id' => $archived->id]);
     });
 
     it('returns 404 for a non-existent version', function () {
         $this->actingAsAdmin();
         $this->deleteJson('/api/epk-versions/99999')->assertNotFound();
+    });
+});
+
+// ── Repair migration for double-encoded snapshots ─────────────────────────────
+
+describe('2026_09_17_000001_fix_double_encoded_epk_snapshots', function () {
+    it('decodes rows stored as a JSON string and leaves correct rows alone', function () {
+        DB::table('epk_versions')->insert([
+            ['version_number' => 1, 'snapshot' => json_encode(json_encode(['name' => 'Old'])), 'status' => 'archived',  'created_at' => now(), 'updated_at' => now()],
+            ['version_number' => 2, 'snapshot' => json_encode(['name' => 'New']),              'status' => 'published', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        (require database_path('migrations/2026_09_17_000001_fix_double_encoded_epk_snapshots.php'))->up();
+
+        expect(EpkVersion::where('version_number', 1)->first()->snapshot)->toBe(['name' => 'Old'])
+            ->and(EpkVersion::where('version_number', 2)->first()->snapshot)->toBe(['name' => 'New']);
     });
 });

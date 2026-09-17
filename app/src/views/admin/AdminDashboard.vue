@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { adminUrl } from '@/config/admin'
-import { toast } from 'vue-sonner'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import CareerLevelWidget from '@/components/admin/CareerLevelWidget.vue'
@@ -15,12 +14,12 @@ import { useAuth } from '@/composables/useAuth'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useMusicVideos } from '@/composables/useMusicVideos'
-import { useEpkVersions } from '@/composables/useEpkVersions'
+import { useEpkVersionHistory } from '@/composables/useEpkVersionHistory'
+import EpkVersionHistory from '@/components/admin/EpkVersionHistory.vue'
 import { usePosts } from '@/composables/usePosts'
 import { useTechRiders } from '@/composables/useTechRiders'
 import { reportSaveError } from '@/utils/formErrors'
 import { fetchTicketStats } from '@/api/admin'
-import type { EpkVersion } from '@/types/epkVersion'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { TechRiderSummary } from '@bandms/rider-core'
 
@@ -42,24 +41,8 @@ const statCards = computed(() =>
       ]
     : [],
 )
-const { query: epkVersionsQ, publish: publishEpk, discard: discardEpk } = useEpkVersions()
-
-const pendingVersion  = computed(() => epkVersionsQ.data.value?.find((v: EpkVersion) => v.status === 'pending') ?? null)
-const publishedVersion = computed(() => epkVersionsQ.data.value?.find((v: EpkVersion) => v.status === 'published') ?? null)
-
-async function handlePublish(id: number) {
-  try {
-    await publishEpk.mutateAsync(id)
-    toast.success('EPK version published — now live at /epk')
-  } catch (e) { reportSaveError(e, 'Failed to publish') }
-}
-
-async function handleDiscard(id: number) {
-  try {
-    await discardEpk.mutateAsync(id)
-    toast.success('Snapshot discarded')
-  } catch (e) { reportSaveError(e, 'Failed to discard') }
-}
+const epk = useEpkVersionHistory()
+const { pendingVersion, publishedVersion } = epk
 const { query: bandsQ } = useBands()
 const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
@@ -150,7 +133,7 @@ const avgEnhanceScore = computed(() => {
       </div>
 
       <!-- EPK Versions widget -->
-      <div class="readiness-widget" v-if="epkVersionsQ.data.value !== undefined">
+      <div class="readiness-widget" v-if="epk.loaded.value">
         <div class="readiness-header">
           <div>
             <div class="readiness-title">EPK Versions</div>
@@ -159,7 +142,10 @@ const avgEnhanceScore = computed(() => {
               <span v-else style="color:#f87171;">No published version — EPK shows live data</span>
             </div>
           </div>
-          <RouterLink :to="adminUrl('band-profile')" class="epk-create-link">Create snapshot →</RouterLink>
+          <div class="epk-header-actions">
+            <button type="button" class="epk-create-link" @click="epk.open.value = true">All versions</button>
+            <RouterLink :to="adminUrl('band-profile')" class="epk-create-link">Create snapshot →</RouterLink>
+          </div>
         </div>
 
         <div v-if="pendingVersion" class="epk-pending">
@@ -172,13 +158,13 @@ const avgEnhanceScore = computed(() => {
           <div class="epk-pending-actions">
             <button
               class="btn-epk-publish"
-              :disabled="publishEpk.isPending.value"
-              @click="handlePublish(pendingVersion.id)"
-            >{{ publishEpk.isPending.value ? 'Publishing…' : 'Publish' }}</button>
+              :disabled="epk.publishing.value"
+              @click="epk.makeLive(pendingVersion)"
+            >{{ epk.publishing.value ? 'Publishing…' : 'Publish' }}</button>
             <button
               class="btn-epk-discard"
-              :disabled="discardEpk.isPending.value"
-              @click="handleDiscard(pendingVersion.id)"
+              :disabled="epk.deleting.value"
+              @click="epk.remove(pendingVersion)"
             >Discard</button>
           </div>
         </div>
@@ -186,6 +172,17 @@ const avgEnhanceScore = computed(() => {
           No pending snapshot. Go to <RouterLink :to="adminUrl('band-profile')" style="color:#c0c0c0;">Band Profile → EPK</RouterLink> to create one.
         </div>
       </div>
+
+      <EpkVersionHistory
+        :open="epk.open.value"
+        :versions="epk.versions.value"
+        :loading="epk.loading.value"
+        :publishing="epk.publishing.value"
+        :deleting="epk.deleting.value"
+        @close="epk.open.value = false"
+        @make-live="epk.makeLive"
+        @remove="epk.remove"
+      />
 
       <!-- Career level widget -->
       <div class="mt-8" v-if="profileQ.data.value">
@@ -294,7 +291,9 @@ const avgEnhanceScore = computed(() => {
 .quick-btn:hover { background: #333333; }
 
 /* EPK widget */
+.epk-header-actions { display: flex; gap: 0.4rem; align-items: center; }
 .epk-create-link {
+  background: transparent; cursor: pointer; font-family: inherit; line-height: inherit;
   font-size: 0.78rem; color: #c0c0c0; text-decoration: none;
   white-space: nowrap; padding: 0.3rem 0.75rem;
   border: 1px solid #333333; border-radius: 0.375rem;
