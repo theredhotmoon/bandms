@@ -81,16 +81,22 @@ test.describe('EPK version history', () => {
 
   test.afterAll(async ({ playwright, baseURL }) => {
     const request = await playwright.request.newContext(apiOptions(baseURL))
-    if (originalLiveId !== null) {
-      const res = await request.post(`/api/epk-versions/${originalLiveId}/publish`)
-      expect(res.status(), `restore of v#${originalLiveId} failed: ${await res.text()}`).toBe(200)
-    }
-    for (const v of await list(request)) {
-      if (v.release_reason?.startsWith(REASON_PREFIX) && v.status !== 'published') {
-        await request.delete(`/api/epk-versions/${v.id}`)
+    try {
+      if (originalLiveId !== null) {
+        const res = await request.post(`/api/epk-versions/${originalLiveId}/publish`)
+        // 422 "already live" means beforeAll never got as far as archiving it — nothing to restore.
+        if (res.status() !== 422) {
+          expect(res.status(), `restore of v#${originalLiveId} failed: ${await res.text()}`).toBe(200)
+        }
       }
+    } finally {
+      for (const v of await list(request)) {
+        if (v.release_reason?.startsWith(REASON_PREFIX) && v.status !== 'published') {
+          await request.delete(`/api/epk-versions/${v.id}`)
+        }
+      }
+      await request.dispose()
     }
-    await request.dispose()
   })
 
   test('lists every version, restores an archived one and deletes the one it replaced', async ({ page }) => {

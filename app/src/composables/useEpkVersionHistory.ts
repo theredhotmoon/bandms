@@ -43,6 +43,7 @@ export function useEpkVersionHistory() {
     publishedVersion,
     loaded:     computed(() => query.data.value !== undefined),
     loading:    computed(() => query.isPending.value),
+    error:      computed(() => query.isError.value),
     publishing: computed(() => publish.isPending.value),
     deleting:   computed(() => discard.isPending.value),
     makeLive,

@@ -177,6 +177,7 @@ const avgEnhanceScore = computed(() => {
         :open="epk.open.value"
         :versions="epk.versions.value"
         :loading="epk.loading.value"
+        :error="epk.error.value"
         :publishing="epk.publishing.value"
         :deleting="epk.deleting.value"
         @close="epk.open.value = false"

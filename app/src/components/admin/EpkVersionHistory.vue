@@ -9,7 +9,7 @@
  * "Make live" exists: restoring is the only way an old snapshot reaches a
  * visitor again.
  */
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { EpkVersion, EpkVersionStatus } from '@/types/epkVersion'
 
@@ -17,10 +17,11 @@ interface Props {
   open: boolean
   versions: EpkVersion[]
   loading: boolean
+  error: boolean
   publishing: boolean
   deleting: boolean
 }
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
@@ -29,6 +30,10 @@ const emit = defineEmits<{
 }>()
 
 const confirmId = ref<number | null>(null)
+
+// A confirm left open behind a closed modal would be one click from deleting
+// the next time the modal opens.
+watch(() => props.open, (open) => { if (!open) confirmId.value = null })
 
 const STATUS_LABEL: Record<EpkVersionStatus, string> = {
   published: 'Live',
@@ -51,6 +56,10 @@ function confirmRemove(version: EpkVersion): void {
   <AdminModal :open="open" title="EPK version history" max-width="36rem" @close="emit('close')">
     <div class="history">
       <p v-if="loading" class="empty">Loading…</p>
+
+      <p v-else-if="error" class="empty empty--error">
+        Could not load the version history. Try again in a moment.
+      </p>
 
       <p v-else-if="!versions.length" class="empty">
         No snapshots yet. Until one is published, <code>/epk</code> shows the live
@@ -95,7 +104,7 @@ function confirmRemove(version: EpkVersion): void {
             >{{ version.status === 'pending' ? 'Discard' : 'Delete' }}</button>
           </div>
 
-          <div v-if="confirmId === version.id" class="confirm" role="dialog" aria-modal="true">
+          <div v-if="confirmId === version.id" class="confirm" role="group" :aria-label="`Confirm removing v${version.version_number}`">
             <p class="confirm-text">
               <template v-if="version.status === 'pending'">
                 Discard this draft? Nothing has been published from it.
@@ -124,6 +133,7 @@ function confirmRemove(version: EpkVersion): void {
 .history { display: flex; flex-direction: column; gap: 0.75rem; }
 .empty { font-size: 0.8rem; color: #64748b; line-height: 1.6; margin: 0; }
 .empty code { color: #9ca3af; }
+.empty--error { color: #f87171; }
 
 .version-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .version {

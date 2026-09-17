@@ -600,6 +600,7 @@ async function saveSocialLinks() {
       :open="history.open.value"
       :versions="history.versions.value"
       :loading="history.loading.value"
+        :error="history.error.value"
       :publishing="history.publishing.value"
       :deleting="history.deleting.value"
       @close="history.open.value = false"
