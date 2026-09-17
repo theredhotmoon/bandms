@@ -24,8 +24,9 @@ that list and still could not be attached to a concert.
 ## Goals
 
 - A **library of clips**, each a pasted URL from YouTube, Vimeo, Instagram,
-  TikTok or Facebook (anything else becomes a labelled link), with a bilingual
-  title, a category and an optional recording date.
+  TikTok or Facebook — or an audio player from Spotify, SoundCloud or Apple
+  Music (anything else becomes a labelled link) — with a bilingual title, a
+  category and an optional recording date.
 - A clip is **attached to the things it documents** — a concert, a release, a
   shop item, an album — and each of those public pages lists its clips.
 - A news post can **embed any clip from the library**, or **create one on
@@ -35,7 +36,8 @@ that list and still could not be attached to a concert.
   other — **plus anything the band types**.
 - A clip can be marked for the **EPK**, and lands in the next published
   snapshot.
-- Facebook joins the embed providers, for embeds in posts as well as clips.
+- Facebook, Spotify, SoundCloud and Apple Music join the embed providers, for
+  embeds in posts as well as clips.
 
 ## Non-goals
 
@@ -47,6 +49,12 @@ that list and still could not be attached to a concert.
 - Migrating existing `embed` blocks into clips. An embed with no owner is
   still a legitimate thing to put in a post.
 - A category table with CRUD. Five words and a free-text field.
+- A **Bandcamp player**. Its embed needs the numeric album/track id, which is
+  in the page's `<meta>` and not in the URL — a server-side fetch (the
+  `fetchMeta` pattern press releases use). A Bandcamp URL is a labelled link
+  row until that follow-up; the link still works.
+- A `kind` (video/audio) column. Whether a provider is a video or an audio
+  player is a property of the provider, derived in one function on each side.
 - Attaching clips to tours, band members, venues or posts as owners. Tours
   and members have no public page to show them; posts *consume* clips
   through blocks (see *Decisions*).
@@ -62,7 +70,9 @@ that list and still could not be attached to a concert.
 | Category storage? | **Free string** with five presets offered as chips. Presets get bilingual public labels from the copy registry; a custom category prints as typed. |
 | Which owners does the admin offer? | Only ones with a public surface: **concert, release, shop item**. `Album` gets the trait so the model is ready, but the UI does not offer it until albums have a page — the "tour" rule from `PostBlockType`. |
 | Stable ids? | **Required.** Posts reference clips by id, so no write path may delete-and-recreate. Attachments are synced; clip rows are upserted. |
-| "Other" providers? | The existing detector's set plus **Facebook**. Anything else falls back to a labelled link row, as embeds already do. |
+| "Other" providers? | The existing detector's set plus **Facebook**, and the audio players **Spotify, SoundCloud, Apple Music**. Anything else falls back to a labelled link row, as embeds already do. |
+| Audio too? | **Yes**, at zero model cost: a clip is `provider + url`. The only real change is that `EmbedBlock.astro` stops assuming 16:9 — audio players are fixed-height. `release_links` keeps the "listen on" *links*; a clip is the *player*. |
+| Name? | Still **Clips**. It reads fine for a sound clip; "Media" collides with photos in the admin nav. |
 | Where does the concert editor's "add a video" live? | A small reusable `AttachedClipsField` on the concert, release and shop-item forms: list, quick-add, detach. The clip's own form owns the full attachment picker. |
 | Ship as? | **Two PRs, one spec.** PR 1: library + Facebook + admin screen + concert surface + news. PR 2: release, merch and EPK surfaces. Nothing in PR 1 is redone in PR 2. |
 
@@ -112,17 +122,32 @@ Category presets live in one place, `App\Support\ClipCategory::PRESETS`,
 mirrored by `app/src/utils/clipCategories.ts` — the admin's chip list and
 the public label lookup both read from their side of it.
 
-### 2. `EmbedProvider` gains Facebook
+### 2. `EmbedProvider` gains Facebook and three audio players
 
-`HOSTS` gains `'facebook.com' => 'facebook'` and `'fb.watch' => 'facebook'`;
-`PROVIDERS` gains `'facebook'`. Facebook's player is
+`HOSTS` gains `'facebook.com' => 'facebook'`, `'fb.watch' => 'facebook'`,
+`'open.spotify.com' => 'spotify'`, `'soundcloud.com' => 'soundcloud'`,
+`'music.apple.com' => 'apple_music'`; `PROVIDERS` gains all four. Facebook's player is
 `https://www.facebook.com/plugins/video.php?href=<encoded video URL>` — it
 takes the whole URL, not an id — so `embedId()`'s Facebook arm returns the
 URL itself when it matches `facebook.com/<page>/videos/<digits>`,
 `facebook.com/watch/?v=<digits>`, `facebook.com/reel/<digits>` or
 `fb.watch/<slug>`, and `null` otherwise (a page URL is on facebook.com but
-names no video, exactly the Vimeo-channel case). `EmbedBlock.astro`'s `SRC`
-map adds the matching arm, URL-encoding the value.
+names no video, exactly the Vimeo-channel case).
+
+Audio ids, one arm each:
+
+| Provider | `embedId()` returns | Player |
+|---|---|---|
+| `spotify` | `{type}/{id}` from `open.spotify.com/(track|album|playlist|episode|show)/{id}` | `https://open.spotify.com/embed/{type}/{id}` |
+| `soundcloud` | the full URL (the player takes `?url=`) when the path has at least `/{user}/{slug}` | `https://w.soundcloud.com/player/?url=<encoded>&visual=false` |
+| `apple_music` | the path after the host (`/{cc}/album/{slug}/{id}`) when it ends in a numeric id | `https://embed.music.apple.com{path}` |
+
+`EmbedBlock.astro`'s `SRC` map adds the four arms. **It also stops assuming
+16:9.** A `SHAPE` map says how each provider's frame is sized — video
+providers keep the aspect box; `spotify` 352 px, `soundcloud` 166 px,
+`apple_music` 450 px fixed. `isAudioProvider()` lives beside the host list on
+both sides (`EmbedProvider::isAudio()`, `postBlocks.ts`) so the admin badge
+can say "Audio · Spotify".
 
 `app/src/utils/postBlocks.ts` (`detectProvider`, `providerLabel`) mirrors
 the host list, as it already does for the other four.
@@ -227,7 +252,8 @@ library is the source of truth.
 **`ClipsGrid.astro`** (`web/src/components/ClipsGrid.astro`): heading from
 copy, then a responsive 1→2-column grid where each cell is the existing
 `EmbedBlock.astro` fed `{provider, url, embed_id, label: title}` followed by a
-caption row — category label + title + `recorded_on`. Renders nothing for an
+caption row — category label + title + `recorded_on`. Audio and video mix in
+one grid; `EmbedBlock`'s shape map keeps an audio cell from stretching to 16:9. Renders nothing for an
 empty list; the section is content-gated like FAQ, since it links nowhere.
 
 Category labels: `resolveCopy` gives preset labels through the new
@@ -272,7 +298,10 @@ Types: `web/src/types/clip.ts` (`Clip`), `clips?: Clip[]` on `Concert`,
 
 **Pest**
 - `EmbedProviderTest`: Facebook detection for `/videos/`, `/watch/?v=`,
-  `/reel/`, `fb.watch`; page URL → `null` id.
+  `/reel/`, `fb.watch`; page URL → `null` id. Spotify `track|album|playlist`
+  → `type/id`, artist page → `null`; SoundCloud track → full URL, bare
+  profile → `null`; Apple Music album → path, `music.apple.com/` root →
+  `null`; `isAudio()` true for the three, false for the rest.
 - `ClipTest`: create stamps provider; `PUT` keeps the id; `attach` syncs
   (adds, removes, positions from index); attach/detach endpoints; cascade on
   owner delete removes pivot but not the clip; delete removes pivot rows;
@@ -295,9 +324,10 @@ Types: `web/src/types/clip.ts` (`Clip`), `clips?: Clip[]` on `Concert`,
 
 **Playwright, public** (`app/e2e/tests/public/`) — the rebuild-and-wait
 pattern (`.serial`, seed via API, trigger the rebuild webhook, poll):
-- `concert-clips.spec.ts`: a YouTube clip attached to a concert → the
-  concert page has an `iframe[src*="youtube-nocookie.com/embed/<id>"]` inside
-  the clips grid, and the category label.
+- `concert-clips.spec.ts`: a YouTube clip and a Spotify clip attached to a
+  concert → the concert page has an `iframe[src*="youtube-nocookie.com/embed/<id>"]`
+  and an `iframe[src*="open.spotify.com/embed/"]` inside the clips grid, the
+  category label, and the Spotify frame is **not** in a 16:9 box.
 - `article-clip.spec.ts`: a post with a `clip` ref → iframe present and the
   caption links to the concert page.
 - PR 2: release and merch pages, EPK.
@@ -314,6 +344,9 @@ pattern (`.serial`, seed via API, trigger the rebuild webhook, poll):
   YouTube-only, profile-owned, feeds the Videos page.
 - **`Post` as a clip owner.** Would put a clip *on* a post with no position in
   the article; the `ref` block already places it.
+- **A separate audio model / `kind` column.** Every audio provider is an
+  iframe like every video provider; the only difference is frame height, which
+  is the renderer's business, not the schema's.
 - **Auto-attach a post's embeds to the concerts the post is linked to.**
   Turns a routing choice into a content side effect; rejected in favour of
   explicit attachment.

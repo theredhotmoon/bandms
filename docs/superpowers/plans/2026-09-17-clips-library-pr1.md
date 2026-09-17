@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A library of video clips (YouTube / Vimeo / Instagram / TikTok / Facebook / link) that can be attached to concerts and embedded in news posts, with an admin screen, a quick-add on the concert form, a `ref: clip` post block, and a clips section on the public concert page.
+**Goal:** A library of clips — video (YouTube / Vimeo / Instagram / TikTok / Facebook) or audio players (Spotify / SoundCloud / Apple Music), anything else a link — that can be attached to concerts and embedded in news posts, with an admin screen, a quick-add on the concert form, a `ref: clip` post block, and a clips section on the public concert page.
 
-**Architecture:** One `clips` table plus a polymorphic `clippables` pivot (`morphToMany`), a `HasClips` trait on owner models, a `ClipController` with CRUD + attach/detach, `ClipResource` for JSON, a `clip` arm in `PostBlockResolver`. The admin reuses `EmbedBlockEditor` for URL entry and `EntityRelationsPanel` for attachments; the public site reuses `EmbedBlock.astro` for rendering. Facebook is added to `EmbedProvider` first, since both embeds and clips use it.
+**Architecture:** One `clips` table plus a polymorphic `clippables` pivot (`morphToMany`), a `HasClips` trait on owner models, a `ClipController` with CRUD + attach/detach, `ClipResource` for JSON, a `clip` arm in `PostBlockResolver`. The admin reuses `EmbedBlockEditor` for URL entry and `EntityRelationsPanel` for attachments; the public site reuses `EmbedBlock.astro` for rendering. Facebook and the three audio providers are added to `EmbedProvider` first, since both embeds and clips use them; `EmbedBlock.astro` learns a per-provider frame shape because audio players are fixed-height, not 16:9.
 
 **Tech Stack:** Laravel 11 + Pest (api/), Vue 3 + TanStack Query v5 + Vitest (app/), Astro + Vue islands (web/), Playwright (app/e2e/), `@bandms/site-copy` registry.
 
@@ -72,7 +72,7 @@
 
 ---
 
-### Task 1: Facebook joins `EmbedProvider` (API, admin mirror, public renderer)
+### Task 1: Facebook, Spotify, SoundCloud and Apple Music join `EmbedProvider` (API, admin mirror, public renderer)
 
 **Files:**
 - Modify: `api/app/Support/EmbedProvider.php`
@@ -82,7 +82,7 @@
 - Modify: `web/src/components/blocks/EmbedBlock.astro`
 
 **Interfaces:**
-- Produces: `EmbedProvider::PROVIDERS` includes `'facebook'`; `EmbedProvider::embedId()` returns the **full URL** for a Facebook video URL (the player takes `?href=`), `null` for a Facebook page URL.
+- Produces: `EmbedProvider::PROVIDERS` includes `'facebook'`, `'spotify'`, `'soundcloud'`, `'apple_music'`; `EmbedProvider::embedId()` returns the **full URL** for Facebook and SoundCloud (their players take the page URL as a query param), `{type}/{id}` for Spotify, the URL path for Apple Music, `null` when the URL names no single item. `EmbedProvider::isAudio(string $provider): bool`. Admin: `isAudioProvider()` in `utils/postBlocks.ts`. Public: `EmbedBlock.astro` sizes frames from a `SHAPE` map.
 
 - [ ] **Step 1: Replace the "facebook is deliberately NOT a provider" test with Facebook cases**
 
@@ -112,7 +112,46 @@ Inside `describe('EmbedProvider::embedId', …)` add:
         expect(EmbedProvider::embedId('https://fb.watch/abcDEF123/'))->toBe('https://fb.watch/abcDEF123/');
         expect(EmbedProvider::embedId('https://www.facebook.com/band/posts/123'))->toBeNull();
     });
+
+    it('extracts spotify as type/id and rejects an artist page', function () {
+        expect(EmbedProvider::embedId('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'))->toBe('track/4uLU6hMCjMI75M1A2tKUQC');
+        expect(EmbedProvider::embedId('https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3?si=abc'))->toBe('album/1DFixLWuPkv3KT3TnV35m3');
+        expect(EmbedProvider::embedId('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M'))->toBe('playlist/37i9dQZF1DXcBWIGoYBM5M');
+        expect(EmbedProvider::embedId('https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF'))->toBeNull();
+    });
+
+    // SoundCloud's player takes ?url=<page>, so the id is the URL — but only a
+    // track/set path; a bare profile names nothing playable.
+    it('returns the full url for a soundcloud track and null for a profile', function () {
+        expect(EmbedProvider::embedId('https://soundcloud.com/band/live-at-klub-x'))->toBe('https://soundcloud.com/band/live-at-klub-x');
+        expect(EmbedProvider::embedId('https://soundcloud.com/band'))->toBeNull();
+    });
+
+    it('returns the path for an apple music album or song and null for the root', function () {
+        expect(EmbedProvider::embedId('https://music.apple.com/pl/album/some-album/1440857781'))->toBe('/pl/album/some-album/1440857781');
+        expect(EmbedProvider::embedId('https://music.apple.com/us/album/song-name/1440857781?i=1440857800'))->toBe('/us/album/song-name/1440857781?i=1440857800');
+        expect(EmbedProvider::embedId('https://music.apple.com/'))->toBeNull();
+    });
+});
+
+describe('EmbedProvider::detect — audio', function () {
+    it('detects spotify, soundcloud and apple music', function () {
+        expect(EmbedProvider::detect('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'))->toBe('spotify');
+        expect(EmbedProvider::detect('https://soundcloud.com/band/live'))->toBe('soundcloud');
+        expect(EmbedProvider::detect('https://music.apple.com/pl/album/x/1'))->toBe('apple_music');
+    });
+
+    it('knows which providers are audio', function () {
+        expect(EmbedProvider::isAudio('spotify'))->toBeTrue();
+        expect(EmbedProvider::isAudio('soundcloud'))->toBeTrue();
+        expect(EmbedProvider::isAudio('apple_music'))->toBeTrue();
+        expect(EmbedProvider::isAudio('youtube'))->toBeFalse();
+        expect(EmbedProvider::isAudio('link'))->toBeFalse();
+    });
+});
 ```
+
+The three audio `it()`s go inside the existing `describe('EmbedProvider::embedId', …)` before its closing `});`; the `detect — audio` describe is a new top-level block after it.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -124,18 +163,31 @@ Expected: FAIL — `detect()` returns `'link'` for facebook.
 - [ ] **Step 3: Implement Facebook in `EmbedProvider`**
 
 ```php
-    public const PROVIDERS = ['youtube', 'vimeo', 'instagram', 'tiktok', 'facebook', 'link'];
+    public const PROVIDERS = ['youtube', 'vimeo', 'instagram', 'tiktok', 'facebook', 'spotify', 'soundcloud', 'apple_music', 'link'];
+
+    /** Audio players are fixed-height frames, not 16:9 — the renderer needs to know. */
+    public const AUDIO = ['spotify', 'soundcloud', 'apple_music'];
 
     private const HOSTS = [
-        'youtube.com'   => 'youtube',
-        'youtu.be'      => 'youtube',
-        'vimeo.com'     => 'vimeo',
-        'instagram.com' => 'instagram',
-        'tiktok.com'    => 'tiktok',
-        'facebook.com'  => 'facebook',
-        'fb.watch'      => 'facebook',
+        'youtube.com'      => 'youtube',
+        'youtu.be'         => 'youtube',
+        'vimeo.com'        => 'vimeo',
+        'instagram.com'    => 'instagram',
+        'tiktok.com'       => 'tiktok',
+        'facebook.com'     => 'facebook',
+        'fb.watch'         => 'facebook',
+        'open.spotify.com' => 'spotify',
+        'soundcloud.com'   => 'soundcloud',
+        'music.apple.com'  => 'apple_music',
     ];
+
+    public static function isAudio(string $provider): bool
+    {
+        return in_array($provider, self::AUDIO, true);
+    }
 ```
+
+`detect()` strips a leading `www.` and suffix-matches, so `open.spotify.com` is listed as-is: a bare `spotify.com` would also claim `www.spotify.com` marketing pages, which carry no id and would render as links anyway, but the explicit host keeps detection honest.
 
 In `embedId()`'s match add, before `default`:
 
@@ -143,9 +195,31 @@ In `embedId()`'s match add, before `default`:
             // Facebook's player is plugins/video.php?href=<url>: the whole URL
             // is the id. Only URLs that name a single video qualify.
             'facebook'  => preg_match('~(?:facebook\.com/(?:[^/]+/videos/\d+|watch/?\?v=\d+|reel/\d+)|fb\.watch/[A-Za-z0-9_-]+)~', $url) === 1 ? $url : null,
+            // Spotify's player is /embed/{type}/{id}; artists have no player.
+            'spotify'   => preg_match('~open\.spotify\.com/(track|album|playlist|episode|show)/([A-Za-z0-9]+)~', $url, $m) === 1 ? "{$m[1]}/{$m[2]}" : null,
+            // SoundCloud's player takes ?url=<page>; needs /{user}/{track-or-set}.
+            'soundcloud' => preg_match('~soundcloud\.com/[^/?#]+/[^/?#]+~', $url) === 1 ? $url : null,
+            // Apple Music: embed.music.apple.com + the same path (incl. ?i= for a song).
+            'apple_music' => self::appleMusicPath($url),
 ```
 
-Update the class docblock's last sentence to: `Adding a provider is one entry in HOSTS plus one arm in embedId() — and one arm in web/src/components/blocks/EmbedBlock.astro and one in app/src/utils/postBlocks.ts.`
+and a helper below `match()`:
+
+```php
+    private static function appleMusicPath(string $url): ?string
+    {
+        $path  = parse_url($url, PHP_URL_PATH) ?? '';
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        if (preg_match('~^/[a-z]{2}/(?:album|song|playlist)/[^/]+/(?:pl\.)?[A-Za-z0-9.]+$~', $path) !== 1) {
+            return null;
+        }
+
+        return $path . ($query ? "?{$query}" : '');
+    }
+```
+
+Update the class docblock's last sentence to: `Adding a provider is one entry in HOSTS plus one arm in embedId() (and AUDIO if it is a fixed-height player) — mirrored by one arm each in web/src/components/blocks/EmbedBlock.astro's SRC/SHAPE maps and app/src/utils/postBlocks.ts.`
 
 - [ ] **Step 4: Run the test to verify it passes**
 
@@ -156,14 +230,25 @@ Same command as Step 2. Expected: PASS. Also run `--filter PostBlock` to confirm
 `app/src/types/post.ts` and `web/src/types/post.ts`:
 
 ```ts
-export type EmbedProviderName = 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'facebook' | 'link'
+export type EmbedProviderName =
+  | 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'facebook'
+  | 'spotify' | 'soundcloud' | 'apple_music'
+  | 'link'
 ```
 
 `app/src/utils/postBlocks.ts`:
 
 ```ts
 const PROVIDER_LABELS: Record<EmbedProviderName, string> = {
-  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', link: 'Link',
+  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',
+  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music', link: 'Link',
+}
+
+/** Must mirror EmbedProvider::AUDIO. Audio players are fixed-height frames. */
+const AUDIO_PROVIDERS: ReadonlySet<EmbedProviderName> = new Set(['spotify', 'soundcloud', 'apple_music'])
+
+export function isAudioProvider(p: EmbedProviderName): boolean {
+  return AUDIO_PROVIDERS.has(p)
 }
 
 const PROVIDER_HOSTS: Record<string, EmbedProviderName> = {
@@ -174,36 +259,95 @@ const PROVIDER_HOSTS: Record<string, EmbedProviderName> = {
   'tiktok.com': 'tiktok',
   'facebook.com': 'facebook',
   'fb.watch': 'facebook',
+  'open.spotify.com': 'spotify',
+  'soundcloud.com': 'soundcloud',
+  'music.apple.com': 'apple_music',
 }
 ```
 
 Append to `app/src/utils/postBlocks.spec.ts`:
 
 ```ts
-describe('detectProvider — facebook', () => {
+describe('detectProvider — facebook and audio', () => {
   it('detects facebook.com and fb.watch', () => {
     expect(detectProvider('https://www.facebook.com/band/videos/123/')).toBe('facebook')
     expect(detectProvider('https://fb.watch/abc123/')).toBe('facebook')
   })
-  it('labels it Facebook', () => {
+  it('detects the three audio players', () => {
+    expect(detectProvider('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC')).toBe('spotify')
+    expect(detectProvider('https://soundcloud.com/band/live')).toBe('soundcloud')
+    expect(detectProvider('https://music.apple.com/pl/album/x/1')).toBe('apple_music')
+  })
+  it('labels them and knows which are audio', () => {
     expect(providerLabel('facebook')).toBe('Facebook')
+    expect(providerLabel('apple_music')).toBe('Apple Music')
+    expect(isAudioProvider('spotify')).toBe(true)
+    expect(isAudioProvider('youtube')).toBe(false)
   })
 })
 ```
 
-(Check the file's existing imports include `describe`, `it`, `expect` from `vitest` and `detectProvider`, `providerLabel` from `./postBlocks`; add if missing.)
+(Check the file's existing imports include `describe`, `it`, `expect` from `vitest` and `detectProvider`, `providerLabel`, `isAudioProvider` from `./postBlocks`; add if missing.)
+
+In `EmbedBlockEditor.vue`, make the badge name the medium for audio: import `isAudioProvider` and render `{{ isAudioProvider(detected) ? 'Audio · ' : '' }}{{ providerLabel(detected) }}` inside `.provider-badge`. Existing E2E assertions of `toHaveText('Vimeo')` are unaffected (video).
 
 Run: `cd app && pnpm vitest run src/utils/postBlocks.spec.ts` → PASS.
 
-Also update the placeholder in `app/src/components/admin/forms/blocks/EmbedBlockEditor.vue` to `"Paste a YouTube, Vimeo, Instagram, TikTok or Facebook URL"`.
+Also update the placeholder in `app/src/components/admin/forms/blocks/EmbedBlockEditor.vue` to `"Paste a video (YouTube, Vimeo, Instagram, TikTok, Facebook) or audio (Spotify, SoundCloud, Apple Music) URL"`.
 
-- [ ] **Step 6: Public renderer arm**
+- [ ] **Step 6: Public renderer — four `SRC` arms and a per-provider `SHAPE`**
 
 In `web/src/components/blocks/EmbedBlock.astro` `SRC` map add:
 
 ```ts
-  facebook:  id => `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(id)}&show_text=false`,
+  facebook:    id => `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(id)}&show_text=false`,
+  spotify:     id => `https://open.spotify.com/embed/${id}`,
+  soundcloud:  id => `https://w.soundcloud.com/player/?url=${encodeURIComponent(id)}&visual=false`,
+  apple_music: id => `https://embed.music.apple.com${id}`,
 ```
+
+Below it, replace the single-ratio assumption:
+
+```ts
+/**
+ * Video players fill a 16:9 box. Audio players are fixed-height widgets and
+ * would sit as a strip inside a tall empty frame if forced into one — so each
+ * provider says how its frame is sized. Heights are the providers' documented
+ * defaults.
+ */
+type Shape = { kind: 'video' } | { kind: 'audio'; height: number }
+const SHAPE: Record<string, Shape> = {
+  youtube: { kind: 'video' }, vimeo: { kind: 'video' }, instagram: { kind: 'video' },
+  tiktok: { kind: 'video' }, facebook: { kind: 'video' },
+  spotify: { kind: 'audio', height: 352 },
+  soundcloud: { kind: 'audio', height: 166 },
+  apple_music: { kind: 'audio', height: 450 },
+}
+const shape: Shape = SHAPE[block.provider] ?? { kind: 'video' }
+```
+
+Template — the wrapper gains a modifier class and, for audio, an inline pixel height (a per-row value, so `style=` rather than a class; a pixel height is not a colour/font/radius, so the token lint does not judge it):
+
+```astro
+{src ? (
+  <div class={`pb-embed pb-embed--${shape.kind}`} data-provider={block.provider}
+       style={shape.kind === 'audio' ? `height:${shape.height}px` : undefined}>
+    <iframe src={src} title={block.label ?? (shape.kind === 'audio' ? 'Embedded audio' : 'Embedded media')} loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            allowfullscreen frameborder="0"></iframe>
+  </div>
+) : block.url ? (
+```
+
+Styles:
+
+```css
+  .pb-embed { position: relative; margin: 0 0 28px; }
+  .pb-embed--video { padding-top: 56.25%; }
+  .pb-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+```
+
+(`autoplay` in `allow` is what Spotify's and Apple's players need to start *on click* inside an iframe; nothing auto-starts.) Task 7 Step 7 seeds a Spotify clip and checks the built HTML carries `pb-embed--audio` with `style="height:352px"`.
 
 - [ ] **Step 7: Type-check both frontends and commit**
 
@@ -211,7 +355,7 @@ In `web/src/components/blocks/EmbedBlock.astro` `SRC` map add:
 cd /c/Projects/bandms/app && rm -f tsconfig.app.tsbuildinfo tsconfig.node.tsbuildinfo && pnpm build
 cd /c/Projects/bandms/web && npx tsc --noEmit -p tsconfig.json   # only the 2 documented pre-existing errors
 cd /c/Projects/bandms && git add -A api/app/Support/EmbedProvider.php api/tests/Feature/EmbedProviderTest.php app/src/utils/postBlocks.ts app/src/utils/postBlocks.spec.ts app/src/types/post.ts web/src/types/post.ts web/src/components/blocks/EmbedBlock.astro app/src/components/admin/forms/blocks/EmbedBlockEditor.vue
-git commit -m "Add Facebook as an embed provider
+git commit -m "Add Facebook, Spotify, SoundCloud and Apple Music as embed providers
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
@@ -1595,10 +1739,12 @@ Then seed one clip against the dev stack to see it render (token from `app/e2e/.
 CID=$(curl -s localhost:8081/api/concerts | python -c "import sys,json;print(json.load(sys.stdin)['data'][0]['id'])")
 curl -s -X POST localhost:8081/api/clips -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d "{\"url\":\"https://www.youtube.com/watch?v=dQw4w9WgXcQ\",\"category\":\"live\",\"attach\":[{\"type\":\"concert\",\"id\":$CID}]}"
-API_BASE=http://localhost:8081 pnpm build && grep -l 'clips-grid' dist/en/concerts/*/index.html | head -1
+curl -s -X POST localhost:8081/api/clips -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"url\":\"https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC\",\"category\":\"studio\",\"attach\":[{\"type\":\"concert\",\"id\":$CID}]}"
+API_BASE=http://localhost:8081 pnpm build && P=$(grep -l 'clips-grid' dist/en/concerts/*/index.html | head -1) && grep -o 'pb-embed--audio[^>]*' "$P" | head -1
 ```
 
-Expected: one concert page contains `data-testid="clips-grid"` and `youtube-nocookie.com/embed/dQw4w9WgXcQ`. Delete the seeded clip afterwards (`curl -X DELETE …/api/clips/<id>`), or keep it for the E2E task and delete there.
+Expected: one concert page contains `data-testid="clips-grid"`, `youtube-nocookie.com/embed/dQw4w9WgXcQ`, and a `pb-embed--audio` wrapper with `style="height:352px"` around `open.spotify.com/embed/track/…`. Delete the seeded clip afterwards (`curl -X DELETE …/api/clips/<id>`), or keep it for the E2E task and delete there.
 
 - [ ] **Step 8: Commit**
 
@@ -2639,6 +2785,7 @@ test.describe.serial('Public clips', () => {
   let concertId: number
   let concertSlug: string
   let clipId: number
+  let audioClipId: number
   let postId: number
   let postSlug: string
 
@@ -2658,6 +2805,14 @@ test.describe.serial('Public clips', () => {
     })).json()).data
     clipId = clip.id
 
+    const audio = (await (await api(request, 'post', '/api/clips', {
+      url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC',
+      title: { en: `E2E public audio ${Date.now()}` },
+      category: 'studio',
+      attach: [{ type: 'concert', id: concertId }],
+    })).json()).data
+    audioClipId = audio.id
+
     const post = (await (await api(request, 'post', '/api/posts', {
       title: { en: `E2E clip post ${Date.now()}` },
       published_at: new Date().toISOString(),
@@ -2672,6 +2827,7 @@ test.describe.serial('Public clips', () => {
   test.afterAll(async ({ request }) => {
     if (postId) await api(request, 'delete', `/api/posts/${postId}`)
     if (clipId) await api(request, 'delete', `/api/clips/${clipId}`)
+    if (audioClipId) await api(request, 'delete', `/api/clips/${audioClipId}`)
   })
 
   test('the concert page lists the clip with its category label', async ({ page }) => {
@@ -2681,6 +2837,16 @@ test.describe.serial('Public clips', () => {
     await expect(grid).toBeVisible()
     await expect(grid.locator('iframe').first()).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/)
     await expect(grid.locator('.clips-cat').first()).toHaveText('Backstage')
+  })
+
+  test('an audio clip renders as a fixed-height player, not a 16:9 box', async ({ page }) => {
+    await page.goto(`${WEB}/en/concerts/${concertSlug}`)
+
+    const audio = page.getByTestId('clips-grid').locator('.pb-embed--audio')
+    await expect(audio).toHaveCount(1)
+    await expect(audio.locator('iframe')).toHaveAttribute('src', /open\.spotify\.com\/embed\/track\/4uLU6hMCjMI75M1A2tKUQC/)
+    const box = await audio.boundingBox()
+    expect(box?.height).toBe(352)
   })
 
   test('the Polish page uses the Polish category label', async ({ page }) => {
@@ -2710,7 +2876,7 @@ test.describe.serial('Public clips', () => {
 ```bash
 cd /c/Projects/bandms/app && pnpm test:e2e -- e2e/tests/public/concert-clips.spec.ts
 ```
-Expected: 3 passed (or 2 passed + 1 skipped if no PL alternate).
+Expected: 4 passed (or 3 passed + 1 skipped if no PL alternate).
 
 - [ ] **Step 3: Commit**
 
@@ -2757,6 +2923,13 @@ the `site` module (`clipCategory*`); a custom category prints as typed. The
 concert page heading is `CONCERTS_COPY.clipsTitle`. Rendering is
 `ClipsGrid.astro` → `EmbedBlock.astro`, the same iframe a post embed uses.
 
+**Audio is a provider, not a kind.** Spotify, SoundCloud and Apple Music are
+entries in `EmbedProvider::HOSTS` like the video hosts; `EmbedProvider::AUDIO`
+(mirrored by `isAudioProvider()` in `postBlocks.ts`) only tells the renderer
+to size the frame from `EmbedBlock.astro`'s `SHAPE` map instead of the 16:9
+box. Bandcamp is a plain link on purpose — its player wants a numeric id that
+is not in the URL — until someone adds the page fetch.
+
 A clip write marks **every owner's area** dirty plus `posts` (see
 `ClipController::markDirty()`), and `band-profile` when `show_in_epk` is
 involved. Release, merch and EPK surfaces are PR 2.
@@ -2766,7 +2939,7 @@ involved. Release, merch and EPK surfaces are PR 2.
 
 ```markdown
 ### Added
-- **Clips library** — attach YouTube/Vimeo/Instagram/TikTok/Facebook videos to concerts from `/admin/clips` or straight from the concert form; embed any clip in a news post (or create one from the post editor); the public show page lists its clips. Facebook is now an embed provider everywhere.
+- **Clips library** — attach YouTube/Vimeo/Instagram/TikTok/Facebook videos and Spotify/SoundCloud/Apple Music players to concerts from `/admin/clips` or straight from the concert form; embed any clip in a news post (or create one from the post editor); the public show page lists its clips. Facebook, Spotify, SoundCloud and Apple Music are now embed providers everywhere, and audio players render at their own height instead of 16:9.
 ```
 
 `TODO.md` — add an entry: *Clips PR 2: release + merch pages and EPK snapshot surfaces (spec `docs/superpowers/specs/2026-09-17-clips-library-design.md` §6).*
@@ -2820,7 +2993,7 @@ Then run `/code-review` on the PR before merging (CLAUDE.md requires an explicit
 |---|---|
 | `clips` + `clippables`, morph map, `HasClips` on 4 models | 2 |
 | `ClipCategory::PRESETS` + admin mirror | 2, 8 |
-| Facebook provider (API, admin util, `EmbedBlock.astro`) | 1 |
+| Facebook + Spotify/SoundCloud/Apple Music providers, `isAudio`, `SHAPE` map (API, admin util, `EmbedBlock.astro`) | 1 |
 | `GET /api/clips`; POST/PUT/DELETE; attach/detach; `ClipRequest` stamping; `exists` on owner | 3 |
 | Dirty areas per owner + posts + band-profile | 3 |
 | `ClipResource` shape incl. `owners` | 3 |
