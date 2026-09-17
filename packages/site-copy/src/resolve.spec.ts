@@ -43,6 +43,18 @@ describe('resolveCopy', () => {
     expect(resolveCopy(FIELDS, 'en', { badge: 'NEW' }).badge).toBe('NEW')
   })
 
+  it("uses the other locale's value only where this locale has no default", () => {
+    // The chain-resolved bag says the band wrote both fields in the other
+    // language. The heading has a default here, so that default wins; the
+    // badge has none, so the other language's text is better than nothing.
+    const fallback = { title: 'Koncerty', badge: 'NOWOŚĆ' }
+    const t = resolveCopy(FIELDS, 'en', {}, fallback)
+    expect(t.title).toBe('Shows')
+    expect(t.badge).toBe('NOWOŚĆ')
+    // An own-locale value still beats the chained one.
+    expect(resolveCopy(FIELDS, 'en', { badge: 'NEW' }, fallback).badge).toBe('NEW')
+  })
+
   it('tolerates a missing settings bag', () => {
     // An API predating the settings migration omits the bag entirely.
     expect(resolveCopy(FIELDS, 'en', undefined).title).toBe('Shows')

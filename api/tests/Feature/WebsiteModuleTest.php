@@ -657,7 +657,10 @@ it('serves only the requested locale, leaving the other to the registry default'
     $this->getJson('/api/site-config?lang=en')
         ->assertJsonPath('module_config.contact.settings.kicker', 'ENGLISH ONLY');
     $this->getJson('/api/site-config?lang=pl')
-        ->assertJsonMissingPath('module_config.contact.settings.kicker');
+        ->assertJsonMissingPath('module_config.contact.settings.kicker')
+        // …but the chain-resolved bag still carries it, for fields whose
+        // registry default is empty — the public site decides which applies.
+        ->assertJsonPath('module_config.contact.settings_fallback.kicker', 'ENGLISH ONLY');
 });
 
 it('returns an object, never null, when a module has no settings', function () {

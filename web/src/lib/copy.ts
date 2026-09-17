@@ -20,7 +20,8 @@ export function moduleCopy<F extends readonly CopyField[]>(
   fields: F,
   lang: string,
 ): ResolvedCopy<F> {
-  return resolveCopy(fields, lang, siteConfig.module_config?.[slug]?.settings)
+  const cfg = siteConfig.module_config?.[slug]
+  return resolveCopy(fields, lang, cfg?.settings, cfg?.settings_fallback)
 }
 
 /**

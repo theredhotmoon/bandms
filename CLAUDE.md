@@ -1259,7 +1259,12 @@ language is omitted, and the registry default fills it. It used to walk the
 en↔pl fallback chain, which was right while the bag had nothing else to fall
 back to and is wrong now: a Polish-only "Upcoming shows" heading would leak
 onto `/en/` while the admin's placeholder still promised the English default.
-The FAQ resource keeps its chain, because a question has no registry default.
+A sibling `settings_fallback` carries the chain-resolved bag, and
+`resolveCopy()` reads it for **one case only: a field whose registry default
+is empty** (the Contact kicker, the footer headings) — there "print the
+default" would print nothing, and a band that wrote the field in one language
+has always seen it on both. The FAQ resource keeps its chain unconditionally,
+because a question has no registry default.
 
 **Which strings exist, and what they say by default, is the registry in
 `packages/site-copy/src/modules/<slug>.ts`** — one `CopyField` per string on
@@ -1291,8 +1296,9 @@ snake_case keys predate the registry and are what production rows hold.
 
 **An empty default means "hidden until the band writes something"** — the
 Contact kicker, the reply-time pill, the footer tagline. `resolveCopy()`
-returns `''` for those, and the section gates on it. Whitespace-only overrides
-count as empty. A locale with no default of its own reads `en`, so a third
+returns `''` for those, and the section gates on it — unless the band wrote it
+in the *other* language, in which case that text shows (see above).
+Whitespace-only overrides count as empty. A locale with no default of its own reads `en`, so a third
 language does not blank 250 strings on day one.
 
 **Templates stay templates.** `{date}`, `{n}`, `{band}` are substituted by the

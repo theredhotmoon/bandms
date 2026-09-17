@@ -432,7 +432,8 @@ async function saveEdit(slug: string) {
 
             <span class="text-xs text-zinc-600">
               The greyed text in each box is what the site shows now. Type to replace it;
-              leaving a box empty keeps the default for that language. Changes appear on the
+              leaving a box empty keeps the default for that language. Where there is no
+              default at all, the other language's text is used. Changes appear on the
               public site after a rebuild.
             </span>
           </div>

@@ -20,15 +20,15 @@ import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, formatGenreKicker, fmtDateParts } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { CONCERTS_COPY, resolveCopy } from '@bandms/site-copy'
-import { newsletterFormCopy } from '@/lib/copy'
+import { CONCERTS_COPY } from '@bandms/site-copy'
+import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
 const [concerts, profile, siteConfig] = await Promise.all([getConcerts(), getBandProfile(lang), getSiteConfig(lang)])
 // Every string on this page and its islands: registry defaults for this
 // locale, overridden by whatever the band saved in Website Modules → Shows.
-const t = resolveCopy(CONCERTS_COPY, lang, siteConfig.module_config?.concerts?.settings)
+const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
 const newsletterCopy = newsletterFormCopy(siteConfig, lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
