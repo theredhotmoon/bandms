@@ -6,6 +6,8 @@ import { postSlug, formatEventDates, fmtDate, fmtDateShort } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getAllPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
+import { POSTS_COPY } from '@bandms/site-copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -45,14 +47,10 @@ const nextSlug = idx < summaries.length - 1 ? summaries[idx + 1].slug : null
 // More: up to 3 other posts
 const more = summaries.filter((_, i) => i !== idx).slice(0, 3)
 
-// This page was hardcoded in English while being served under /pl/ too. Only the
-// strings it actually renders are collected here; a full i18n pass over the
-// article view is its own change.
-const COPY = {
-  en: { more: 'More from the blog', event: 'Event' },
-  pl: { more: 'Więcej z bloga', event: 'Wydarzenie' },
-} as const
-const copy = COPY[lang] ?? COPY.en
+// Shares the News page's copy — one place in Website Modules → News edits the
+// list and the article view together.
+const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
+const site = siteCopy(siteConfig, lang)
 
 const eventDateStr = formatEventDates(post.event_dates ?? [], post.event_date_display ?? 'range', lang)
 
@@ -99,13 +97,13 @@ const postsSection = slugMap[lang].posts ?? 'posts'
       <!-- content inside hero -->
       <div class="ar-col art-hero-content">
         <!-- breadcrumb -->
-        <nav class="art-crumb" aria-label="Breadcrumb">
-          <a class="art-crumb-link" href={`/${lang}`}>Home</a>
+        <nav class="art-crumb" aria-label={site.breadcrumbLabel}>
+          <a class="art-crumb-link" href={`/${lang}`}>{t.crumbHome}</a>
           <span class="art-crumb-sep" aria-hidden="true">→</span>
-          <a class="art-crumb-link" href={`/${lang}/${postsSection}`}>News</a>
+          <a class="art-crumb-link" href={`/${lang}/${postsSection}`}>{t.title}</a>
           <span class="art-crumb-sep" aria-hidden="true">→</span>
           <span class="art-crumb-cur">
-            {post.tags?.[0]?.name ?? 'Article'}
+            {post.tags?.[0]?.name ?? t.articleFallback}
           </span>
         </nav>
 
@@ -141,17 +139,17 @@ const postsSection = slugMap[lang].posts ?? 'posts'
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
                 </svg>
-                {copy.event}: {eventDateStr}
+                {t.event}: {eventDateStr}
               </span>
             </>
           )}
           <span class="art-meta-diamond" aria-hidden="true"></span>
-          <button id="art-share-btn" class="art-share-btn" type="button">
+          <button id="art-share-btn" class="art-share-btn" type="button" data-copied={t.shareCopied} data-share={t.share}>
             <svg id="art-share-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
               <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
             </svg>
-            <span id="art-share-label">Share</span>
+            <span id="art-share-label">{t.share}</span>
           </button>
         </div>
       </div>
@@ -176,7 +174,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path d="M15 6l-6 6 6 6"/>
         </svg>
-        Back to news
+        {t.backToList}
       </a>
     </div>
 
@@ -190,7 +188,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
                 </svg>
-                Newer post
+                {t.newer}
               </span>
               <span class="art-pn-title">{summaries[idx - 1]?.title}</span>
             </a>
@@ -198,7 +196,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
           {nextSlug ? (
             <a class="art-pn-btn art-pn-next" href={`/${lang}/${postsSection}/${nextSlug}`}>
               <span class="art-pn-dir">
-                Older post
+                {t.older}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" stroke-linecap="round" aria-hidden="true">
                   <path d="M9 6l6 6-6 6"/>
                 </svg>
@@ -216,7 +214,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
         <!-- strip: teal + ink (reversed) -->
         <div class="checker-strip-ta" aria-hidden="true"></div>
         <div class="ar-col art-more-inner">
-          <h3 class="art-more-title">{copy.more}</h3>
+          <h3 class="art-more-title">{t.more}</h3>
           <div class="art-more-grid">
             {more.map(p => (
               <a href={`/${lang}/${postsSection}/${p.slug}`} class="art-more-card">
@@ -256,12 +254,12 @@ const postsSection = slugMap[lang].posts ?? 'posts'
     btn.style.background = 'var(--color-accent)'
     btn.style.borderColor = 'var(--color-accent)'
     icon.setAttribute('stroke', 'var(--color-on-accent)')
-    label.textContent = 'Copied'
+    label.textContent = btn.dataset.copied ?? 'Copied'
     setTimeout(() => {
       btn.style.background = ''
       btn.style.borderColor = ''
       icon.setAttribute('stroke', 'var(--color-accent)')
-      label.textContent = 'Share'
+      label.textContent = btn.dataset.share ?? 'Share'
     }, 1800)
   })
 </script>

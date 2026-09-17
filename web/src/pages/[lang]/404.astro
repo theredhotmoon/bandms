@@ -7,12 +7,14 @@
  * nginx marks the built paths `internal`, so a direct request for /en/404/ is
  * itself a 404 rather than a 200 for a page that says "not found".
  *
- * Copy is an inline EN/PL dict, the same class as the ~23 others (CLAUDE.md),
- * typed against the registry so a third locale is a compile error here.
+ * Copy is editable like every other public string — it lives on the `site`
+ * website_modules row, since a 404 belongs to no page.
  */
 import type { Locale } from '@/types/shared'
 import { LOCALES } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getSiteConfig } from '@/lib/cms'
+import { siteCopy } from '@/lib/copy'
 
 export async function getStaticPaths() {
   return LOCALES.map(lang => ({ params: { lang } }))
@@ -20,22 +22,9 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Locale }
 
-const T: Record<Locale, { title: string; description: string; body: string; home: string }> = {
-  en: {
-    title: 'Page not found',
-    description: "The page you're looking for doesn't exist.",
-    body: "The page you're looking for doesn't exist or has been moved.",
-    home: 'Back to home',
-  },
-  pl: {
-    title: 'Nie znaleziono strony',
-    description: 'Strona, której szukasz, nie istnieje.',
-    body: 'Strona, której szukasz, nie istnieje lub została przeniesiona.',
-    home: 'Wróć na stronę główną',
-  },
-}
-
-const t = T[lang]
+// Copy comes from the site-wide row (Website Modules → Site-wide → 404 page).
+const site = siteCopy(await getSiteConfig(lang), lang)
+const t = { title: site.notFoundTitle, description: site.notFoundDescription, body: site.notFoundBody, home: site.notFoundHome }
 ---
 
 <BaseLayout lang={lang} title={t.title} description={t.description} noindex={true}>

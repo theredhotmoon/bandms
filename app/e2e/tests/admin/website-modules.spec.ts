@@ -105,6 +105,69 @@ test.describe('Website Modules Admin', () => {
     await expect(page.locator('#set-kicker-pl')).toHaveValue(before, { timeout: 8000 })
   })
 
+  // ── Grouped page copy ─────────────────────────────────────────────────────
+  //
+  // Every string on a public page is a field here, grouped by the page's own
+  // sections. The registry (@bandms/site-copy) supplies both the grouping and
+  // the placeholder, which is the text the page prints when the box is empty.
+  test('groups page copy by page section, with the header group open first', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Concerts settings' }).click()
+
+    const copy = page.getByTestId('page-copy')
+    await expect(copy).toBeVisible({ timeout: 8000 })
+
+    const header = copy.locator('details[data-copy-group="Page header"]')
+    const upcoming = copy.locator('details[data-copy-group="Upcoming shows"]')
+    const archive = copy.locator('details[data-copy-group="Played shows"]')
+    await expect(header).toHaveAttribute('open', '')
+    await expect(upcoming).not.toHaveAttribute('open', '')
+    await expect(archive).toBeVisible()
+
+    // Closed group: its inputs exist but are hidden until the summary is opened.
+    const heading = page.locator('#set-upcomingTitle-en')
+    await expect(heading).toBeHidden()
+    await upcoming.locator('summary').click()
+    await expect(heading).toBeVisible()
+
+    // The placeholder is the live default, per locale.
+    await expect(heading).toHaveAttribute('placeholder', 'Upcoming shows')
+    await expect(page.locator('#set-upcomingTitle-pl')).toHaveAttribute('placeholder', 'Nadchodzące koncerty')
+    await expect(page.locator('#set-mapTitle-en')).toHaveAttribute('placeholder', 'Where we play')
+  })
+
+  test('the About page exposes its member, stats and press headings as copy', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit About settings' }).click()
+
+    const copy = page.getByTestId('page-copy')
+    await expect(copy).toBeVisible({ timeout: 8000 })
+    for (const group of ['Band in numbers', 'Band members', 'Press & booking']) {
+      await expect(copy.locator(`details[data-copy-group="${group}"]`)).toBeVisible()
+    }
+    await copy.locator('details[data-copy-group="Band members"] summary').click()
+    await expect(page.locator('#set-members-en')).toHaveAttribute('placeholder', 'The line-up')
+    await expect(page.locator('#set-membersSub-pl')).toHaveAttribute('placeholder', 'Kliknij muzyka, by poznać jego historię.')
+  })
+
+  // home, privacy and site are rows that exist for their copy alone. They get
+  // the copy form, and none of the inputs that would move a page.
+  test('copy-only rows show page copy but no URL slug', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+
+    for (const [name, group] of [['Homepage', 'Hero'], ['Site-wide', '404 page'], ['Privacy & cookies', 'Cookie banner']] as const) {
+      await page.getByRole('button', { name: `Edit ${name} settings` }).click()
+      const copy = page.getByTestId('page-copy')
+      await expect(copy).toBeVisible({ timeout: 8000 })
+      await expect(copy.locator(`details[data-copy-group="${group}"]`)).toBeVisible()
+      await expect(page.getByText('URL slug', { exact: true })).toHaveCount(0)
+      await page.getByRole('button', { name: 'Cancel' }).click()
+    }
+  })
+
   test('is closed to non-admins', async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } })
     const page = await ctx.newPage()
@@ -136,8 +199,10 @@ test.describe('Website Modules Admin', () => {
     await page.getByRole('button', { name: 'Edit About settings' }).click()
 
     await expect(page.getByText('Section visibility')).toBeVisible({ timeout: 8000 })
-    await expect(page.getByText('Band in numbers')).toBeVisible()
-    await expect(page.getByText('Band members')).toBeVisible()
+    // Scoped to the checkbox labels: the same two names are also page-copy
+    // group headings further up the form.
+    await expect(page.locator('label[for="visibility-show_stats"]')).toContainText('Band in numbers')
+    await expect(page.locator('label[for="visibility-show_members"]')).toContainText('Band members')
 
     const statsCheckbox = page.locator('#visibility-show_stats')
     await expect(statsCheckbox).toBeChecked()

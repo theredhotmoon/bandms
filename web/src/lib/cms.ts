@@ -221,6 +221,12 @@ export interface ModuleConfig {
    * through `settings?.field ?? ''`, never bare.
    */
   settings?: Record<string, string>
+  /**
+   * The same bag with the server's locale chain applied. Read by
+   * resolveCopy() only for fields whose registry default is empty — see
+   * packages/site-copy/src/resolve.ts.
+   */
+  settings_fallback?: Record<string, string>
 }
 
 /** One entry of the API's locale registry — mirrors api/config/locales.php. */

@@ -17,6 +17,8 @@ import { resolveHeroImages } from '@/lib/heroImages'
 import NewsFilter from '@/components/NewsFilter.vue'
 import { getAllPosts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import FaqSection from '@/components/sections/FaqSection.astro'
+import { POSTS_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -25,7 +27,9 @@ const [allPosts, profile, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
-const s = siteConfig.module_config?.posts?.settings ?? {}
+// Every string on this page and its island: registry defaults for this
+// locale, overridden by whatever the band saved in Website Modules → News.
+const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
 const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
@@ -34,16 +38,16 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
 <BaseLayout
   lang={lang}
   alternates={alternates}
-  title="News"
-  description="Studio updates, fresh dates and stories from the road."
+  title={t.title}
+  description={t.lead}
 >
   <div class="ss">
 
     <!-- ── HERO ──────────────────────────────────────────────── -->
     <PageHero
       kicker={genreKicker}
-      title={s.title || 'News'}
-      lead={s.lead || 'Studio updates, fresh dates and stories from the road.'}
+      title={t.title}
+      lead={t.lead}
       heroImages={resolveHeroImages(siteConfig, 'posts')}
     />
 
@@ -56,6 +60,10 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
       accent={ACCENT}
       postHrefBase={`/${lang}/${slugMap[lang].posts}`}
       lang={lang}
+      copy={{
+        all: t.filterAll, searchPlaceholder: t.searchPlaceholder, searchLabel: t.searchLabel,
+        noMatch: t.noMatch, featured: t.featured, readFull: t.readFull, event: t.event,
+      }}
       client:idle
     />
   </div>

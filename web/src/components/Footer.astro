@@ -6,6 +6,8 @@ import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import { getSiteConfig, getBandProfile, getSocialLinks } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
+import { FOOTER_COPY } from '@bandms/site-copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang?: Locale
@@ -24,7 +26,6 @@ const [siteConfig, slugMap, profile, socialLinks] = await Promise.all([
 // `!== false` rather than `=== true`: getSiteConfig fails open to {} when the API
 // is unreachable mid-build, and an absent key has to mean enabled.
 const footerEnabled = siteConfig.modules.footer !== false
-const s = siteConfig.module_config?.footer?.settings ?? {}
 
 const year = new Date().getFullYear()
 
@@ -45,22 +46,22 @@ const moduleLinks = orderedSlugs
     label: siteConfig.module_config[slug]?.label ?? slug,
   }))
 
-const COPY = {
-  en: { newsletter: 'Newsletter', cookieSettings: 'Cookie settings' },
-  pl: { newsletter: 'Newsletter', cookieSettings: 'Ustawienia cookies' },
-}
-
+// Footer copy from the footer row, chrome labels from the site row.
+const t = moduleCopy(siteConfig, 'footer', FOOTER_COPY, lang)
+const site = siteCopy(siteConfig, lang)
 const links = [
   ...moduleLinks,
-  { href: `/${lang}/${slugMap[lang].newsletter}`, label: COPY[lang].newsletter },
+  { href: `/${lang}/${slugMap[lang].newsletter}`, label: t.newsletterLink },
 ]
 
-const bandName = profile?.name ?? 'Skanking Storks'
+// Same fallback as Header: the band's one name, or the hostname — never a
+// translated label standing in for it.
+const bandName = profile?.name?.trim() || (Astro.site ? new URL(Astro.site).hostname : '')
 
 // Same gate BaseLayout uses for the consent banner itself — no point offering
 // to reopen a banner that was never wired up.
 const gaEnabled = Boolean(import.meta.env.PUBLIC_GA_MEASUREMENT_ID)
-const cookieSettingsLabel = COPY[lang].cookieSettings
+const cookieSettingsLabel = t.cookieSettings
 ---
 
 {footerEnabled && (
@@ -74,7 +75,7 @@ const cookieSettingsLabel = COPY[lang].cookieSettings
     <div class="ft-cols">
       <div>
         <a href={`/${lang}`} class="ft-brand">{bandName}</a>
-        {s.tagline && <p class="ft-tagline">{s.tagline}</p>}
+        {t.tagline && <p class="ft-tagline">{t.tagline}</p>}
 
         {socialLinks.length > 0 && (
           <div class="ft-socials">
@@ -93,10 +94,10 @@ const cookieSettingsLabel = COPY[lang].cookieSettings
         )}
       </div>
 
-      {(s.booking_title || profile?.booking_email) && (
+      {(t.booking_title || profile?.booking_email) && (
         <div>
-          {s.booking_title && <h2 class="ft-col-title">{s.booking_title}</h2>}
-          {s.booking_text && <p class="ft-col-text">{s.booking_text}</p>}
+          {t.booking_title && <h2 class="ft-col-title">{t.booking_title}</h2>}
+          {t.booking_text && <p class="ft-col-text">{t.booking_text}</p>}
           {profile?.booking_email && (
             <a class="ft-mail" href={`mailto:${profile.booking_email}`}>
               <Icon name="mail" size={20} color="var(--color-accent)" />{profile.booking_email}
@@ -106,8 +107,8 @@ const cookieSettingsLabel = COPY[lang].cookieSettings
       )}
 
       <div>
-        {s.follow_title && <h2 class="ft-col-title">{s.follow_title}</h2>}
-        <nav class="ft-nav" aria-label="Footer navigation">
+        {t.follow_title && <h2 class="ft-col-title">{t.follow_title}</h2>}
+        <nav class="ft-nav" aria-label={site.footerNavLabel}>
           {links.map(({ href, label }) => <a href={href}>{label}</a>)}
         </nav>
       </div>
@@ -116,11 +117,11 @@ const cookieSettingsLabel = COPY[lang].cookieSettings
     <div class="ft-bottom">
       <span>&copy; {year} {bandName}</span>
       <span class="ft-bottom-right">
-        {s.rights && <span>{s.rights}</span>}
+        {t.rights && <span>{t.rights}</span>}
         {gaEnabled && (
           <button type="button" id="cookie-settings-link" class="ft-cookie-btn">{cookieSettingsLabel}</button>
         )}
-        <LanguageSelector lang={lang} alternates={alternates} />
+        <LanguageSelector lang={lang} alternates={alternates} label={site.languageLabel} />
       </span>
     </div>
   </footer>

@@ -18,6 +18,16 @@ interface PostSummary {
   tags: Tag[]
 }
 
+export interface NewsFilterCopy {
+  all: string
+  searchPlaceholder: string
+  searchLabel: string
+  noMatch: string
+  featured: string
+  readFull: string
+  event: string
+}
+
 const props = defineProps<{
   posts: PostSummary[]
   accent: string
@@ -29,6 +39,8 @@ const props = defineProps<{
    */
   postHrefBase: string
   lang?: Locale
+  /** Labels from the News module's copy — see PostsSection.astro. */
+  copy: NewsFilterCopy
 }>()
 
 const q   = ref('')
@@ -69,7 +81,7 @@ function eventDate(p: PostSummary): string {
           :class="{ active: tag === 'all' }"
           type="button"
           @click="tag = 'all'"
-        >All</button>
+        >{{ copy.all }}</button>
         <button
           v-for="t in allTags"
           :key="t.slug"
@@ -87,15 +99,15 @@ function eventDate(p: PostSummary): string {
           v-model="q"
           class="nf-search"
           type="search"
-          placeholder="Search posts…"
-          aria-label="Search posts"
+          :placeholder="copy.searchPlaceholder"
+          :aria-label="copy.searchLabel"
         />
       </div>
     </section>
 
     <!-- NO RESULTS -->
     <div v-if="matched.length === 0" class="nf-empty">
-      No posts match your search.
+      {{ copy.noMatch }}
     </div>
 
     <!-- FEATURED POST -->
@@ -103,7 +115,7 @@ function eventDate(p: PostSummary): string {
       <a :href="`${postHrefBase}/${featured.slug}`" class="nf-featured">
         <div class="nf-feat-img">
           <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
-          <span class="nf-feat-badge" :style="{ background: accent }">Featured</span>
+          <span class="nf-feat-badge" :style="{ background: accent }">{{ copy.featured }}</span>
         </div>
         <div class="nf-feat-body">
           <div class="nf-chip-row">
@@ -118,9 +130,9 @@ function eventDate(p: PostSummary): string {
           <p class="nf-feat-intro">{{ featured.intro ?? featured.excerpt }}</p>
           <div class="nf-feat-meta">
             <span class="nf-meta-date">{{ postDate(featured) }}</span>
-            <span v-if="eventDate(featured)" class="nf-meta-date" :style="{ color: accent }">Event: {{ eventDate(featured) }}</span>
+            <span v-if="eventDate(featured)" class="nf-meta-date" :style="{ color: accent }">{{ copy.event }}: {{ eventDate(featured) }}</span>
             <span class="nf-read-full" :style="{ color: accent }">
-              Read full story
+              {{ copy.readFull }}
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" :stroke="accent" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
                 <path d="M5 12h14M13 6l6 6-6 6"/>
               </svg>
@@ -154,7 +166,7 @@ function eventDate(p: PostSummary): string {
             <h3 class="nf-card-title">{{ p.title }}</h3>
             <p class="nf-card-intro">{{ p.intro ?? p.excerpt }}</p>
             <span class="nf-card-date">{{ postDate(p) }}</span>
-            <span v-if="eventDate(p)" class="nf-card-date" :style="{ color: accent }">Event: {{ eventDate(p) }}</span>
+            <span v-if="eventDate(p)" class="nf-card-date" :style="{ color: accent }">{{ copy.event }}: {{ eventDate(p) }}</span>
           </div>
         </a>
       </div>

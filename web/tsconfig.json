@@ -11,6 +11,9 @@
       ],
       "@bandms/rider-core/*": [
         "../packages/rider-core/src/*"
+      ],
+      "@bandms/site-copy": [
+        "../packages/site-copy/src/index.ts"
       ]
     }
   }

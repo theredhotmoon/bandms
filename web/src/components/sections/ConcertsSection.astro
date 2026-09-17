@@ -20,11 +20,16 @@ import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, formatGenreKicker, fmtDateParts } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
+import { CONCERTS_COPY } from '@bandms/site-copy'
+import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
 const [concerts, profile, siteConfig] = await Promise.all([getConcerts(), getBandProfile(lang), getSiteConfig(lang)])
-const s = siteConfig.module_config?.concerts?.settings ?? {}
+// Every string on this page and its islands: registry defaults for this
+// locale, overridden by whatever the band saved in Website Modules → Shows.
+const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
+const newsletterCopy = newsletterFormCopy(siteConfig, lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
 const upcoming = concerts
@@ -47,8 +52,8 @@ function getTicketLink(concert: Concert) {
 }
 function getTypeLabel(concert: Concert) {
   const slug = concert.tags?.find(t => ['festival','support','club'].includes(t.slug_en))?.slug_en
-  if (slug === 'festival') return 'Festival'
-  if (slug === 'support') return 'Support'
+  if (slug === 'festival') return t.typeFestival
+  if (slug === 'support') return t.typeSupport
   return null
 }
 ---
@@ -56,8 +61,8 @@ function getTypeLabel(concert: Concert) {
 <BaseLayout
   lang={lang}
   alternates={alternates}
-  title="Shows"
-  description={`Live performances by ${profile.name}. Upcoming shows and past concerts.`}
+  title={t.title}
+  description={t.lead}
 >
   <Fragment slot="head">
 </Fragment>
@@ -68,8 +73,8 @@ function getTypeLabel(concert: Concert) {
     <!-- ── HERO ──────────────────────────────────────────────────── -->
     <PageHero
       kicker={genreKicker}
-      title={s.title || 'Shows'}
-      lead={s.lead || "Brass, bass and the upbeat — live. Every date we're playing next, and every floor we've already moved."}
+      title={t.title}
+      lead={t.lead}
       titleSize={150}
       leadWidth={640}
       heroImages={resolveHeroImages(siteConfig, 'concerts')}
@@ -78,15 +83,15 @@ function getTypeLabel(concert: Concert) {
         <div class="stats">
           <div class="stat stat-accent">
             <span class="stat-n">{upcoming.length}</span>
-            <span class="stat-l">upcoming</span>
+            <span class="stat-l">{t.statUpcoming}</span>
           </div>
           <div class="stat">
             <span class="stat-n">{past.length}</span>
-            <span class="stat-l">shows played</span>
+            <span class="stat-l">{t.statPlayed}</span>
           </div>
           <div class="stat">
             <span class="stat-n">{cities}</span>
-            <span class="stat-l">cities</span>
+            <span class="stat-l">{t.statCities}</span>
           </div>
         </div>
       </Fragment>
@@ -101,12 +106,9 @@ function getTypeLabel(concert: Concert) {
               <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
               <circle cx="12" cy="10" r="2.6"/>
             </svg>
-            <h2 class="sec-title">Where we play</h2>
+            <h2 class="sec-title">{t.mapTitle}</h2>
           </div>
-          <p class="sec-sub">
-            Every dot is a gig. Teal = coming up, ink = already played.
-            Tap a pin to open.
-          </p>
+          <p class="sec-sub">{t.mapSub}</p>
         </div>
         <div class="map-frame">
           <ShowsMap
@@ -121,6 +123,9 @@ function getTypeLabel(concert: Concert) {
               upcoming: isUpcoming(c.date),
             }))}
             accent={ACCENT}
+            legendUpcoming={t.mapLegendUpcoming}
+            legendPlayed={t.mapLegendPlayed}
+            popupCta={t.mapPopupCta}
             client:visible
           />
         </div>
@@ -134,9 +139,9 @@ function getTypeLabel(concert: Concert) {
           <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
           <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
         </svg>
-        <h2 class="sec-title">Upcoming shows</h2>
+        <h2 class="sec-title">{t.upcomingTitle}</h2>
       </div>
-      <p class="sec-sub">Grab a ticket before the room fills up.</p>
+      <p class="sec-sub">{t.upcomingSub}</p>
 
       {upcoming.length > 0 ? (
         <div class="gig-list">
@@ -156,7 +161,7 @@ function getTypeLabel(concert: Concert) {
                     <span class="venue-name">{c.name ? (c.venue.city ?? c.venue.name) + ' · ' + c.venue.name : c.venue.name}</span>
                     {typeLabel && <span class="type-badge">{typeLabel}</span>}
                     <span class="view-link">
-                      Details
+                      {t.details}
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M9 6l6 6-6 6"/>
                       </svg>
@@ -168,13 +173,13 @@ function getTypeLabel(concert: Concert) {
                     <button
                       class="map-pin-btn"
                       data-concert-id={c.id}
-                      aria-label={`Show ${c.venue.city ?? c.venue.name} on map`}
+                      aria-label={`${t.showOnMap}: ${c.venue.city ?? c.venue.name}`}
                       type="button"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="none" aria-hidden="true">
                         <path d="M12 3.5l1.2 5.3 5.3 1.2-5.3 1.2L12 16.5l-1.2-5.3L5.5 10l5.3-1.2z" fill="currentColor"/>
                       </svg>
-                      Show on map
+                      {t.showOnMap}
                     </button>
                   )}
                   {ticketUrl
@@ -183,11 +188,11 @@ function getTypeLabel(concert: Concert) {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                           <path d="M5 12h14M13 6l6 6-6 6"/>
                         </svg>
-                        Tickets
+                        {t.tickets}
                       </a>
                     )
                     : (
-                      <a class="details-btn" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>Details</a>
+                      <a class="details-btn" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>{t.details}</a>
                     )
                   }
                 </div>
@@ -198,9 +203,9 @@ function getTypeLabel(concert: Concert) {
       ) : (
         <div class="empty-state">
           <div class="empty-checker" aria-hidden="true"></div>
-          <p class="empty-title">No upcoming shows announced yet.</p>
-          <p class="empty-sub">Get on the list to be first to know.</p>
-          <a class="empty-link" href={`/${lang}/${slugMap[lang].newsletter}`}>Join the newsletter →</a>
+          <p class="empty-title">{t.emptyTitle}</p>
+          <p class="empty-sub">{t.emptySub}</p>
+          <a class="empty-link" href={`/${lang}/${slugMap[lang].newsletter}`}>{t.emptyLink}</a>
         </div>
       )}
     </section>
@@ -226,6 +231,7 @@ function getTypeLabel(concert: Concert) {
             }
           })}
           accent={ACCENT}
+          copy={{ title: t.archiveTitle, sub: t.archiveSub, all: t.archiveAll, showOnMap: t.showOnMap, empty: t.archiveEmpty }}
           client:visible
         />
       </div>
@@ -236,15 +242,12 @@ function getTypeLabel(concert: Concert) {
     <section class="nl-sec">
       <div class="nl-box">
         <div class="nl-text">
-          <span class="nl-badge">★ SKA</span>
-          <h2 class="nl-title">Never miss a skank</h2>
-          <p class="nl-sub">
-            Tour dates, new tunes and where to catch us live —
-            straight to your inbox.
-          </p>
+          <span class="nl-badge">{t.nlBadge}</span>
+          <h2 class="nl-title">{t.nlTitle}</h2>
+          <p class="nl-sub">{t.nlSub}</p>
         </div>
         <div class="nl-form-wrap">
-          <NewsletterSignup client:visible />
+          <NewsletterSignup client:visible {...newsletterCopy} />
         </div>
       </div>
     </section>

@@ -20,6 +20,7 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY app/package.json                  app/package.json
 COPY web/package.json                  web/package.json
 COPY packages/rider-core/package.json  packages/rider-core/package.json
+COPY packages/site-copy/package.json   packages/site-copy/package.json
 RUN pnpm install --frozen-lockfile --filter exp-01...
 
 COPY packages/ packages/

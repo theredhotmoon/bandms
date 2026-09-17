@@ -3,20 +3,26 @@ import { ref, onMounted } from 'vue'
 
 type ActionType = 'confirm' | 'unsubscribe'
 
-const props = defineProps<{ action: ActionType }>()
+/** Labels from the Newsletter module's copy — see the token pages. */
+export interface TokenActionCopy {
+  waiting: string
+  confirmSuccess: string
+  confirmError: string
+  unsubscribeSuccess: string
+  unsubscribeError: string
+  networkError: string
+  backHome: string
+  goToNewsletter: string
+}
+
+const props = defineProps<{ action: ActionType; copy: TokenActionCopy; homeHref: string; newsletterHref: string }>()
 
 const status = ref<'loading' | 'success' | 'error'>('loading')
 const message = ref('')
 
 const MESSAGES: Record<ActionType, { success: string; error: string }> = {
-  confirm: {
-    success: 'Your email has been confirmed. Welcome to the list!',
-    error:   'This confirmation link is invalid or has already been used.',
-  },
-  unsubscribe: {
-    success: 'You have been successfully unsubscribed.',
-    error:   'This unsubscribe link is invalid or has already been used.',
-  },
+  confirm:     { success: props.copy.confirmSuccess,     error: props.copy.confirmError },
+  unsubscribe: { success: props.copy.unsubscribeSuccess, error: props.copy.unsubscribeError },
 }
 
 const API_PATHS: Record<ActionType, (token: string) => string> = {
@@ -49,7 +55,7 @@ onMounted(async () => {
     }
   } catch {
     status.value = 'error'
-    message.value = 'Network error. Please try again.'
+    message.value = props.copy.networkError
   }
 })
 </script>
@@ -59,7 +65,7 @@ onMounted(async () => {
     <!-- Loading -->
     <div v-if="status === 'loading'" class="flex flex-col items-center gap-4">
       <div class="w-10 h-10 rounded-pill border-2 border-border border-t-accent animate-spin" />
-      <p class="text-muted">Please wait…</p>
+      <p class="text-muted">{{ copy.waiting }}</p>
     </div>
 
     <!-- Success -->
@@ -70,7 +76,7 @@ onMounted(async () => {
         </svg>
       </div>
       <p class="text-xl font-semibold text-body">{{ message }}</p>
-      <a href="/" class="text-accent hover:underline text-sm">← Back to home</a>
+      <a :href="homeHref" class="text-accent hover:underline text-sm">{{ copy.backHome }}</a>
     </div>
 
     <!-- Error -->
@@ -81,7 +87,7 @@ onMounted(async () => {
         </svg>
       </div>
       <p class="text-xl font-semibold text-body">{{ message }}</p>
-      <a href="/en/newsletter" class="text-accent hover:underline text-sm">Go to newsletter page</a>
+      <a :href="newsletterHref" class="text-accent hover:underline text-sm">{{ copy.goToNewsletter }}</a>
     </div>
   </div>
 </template>

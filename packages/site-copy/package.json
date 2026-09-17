@@ -1,0 +1,10 @@
+{
+  "name": "@bandms/site-copy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "Every editable string on the public site, with its default per locale, and the admin's form schema for it — one registry both apps read. Ships TypeScript source, not a build, like @bandms/rider-core; both consumers run Vite.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

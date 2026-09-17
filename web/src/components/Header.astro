@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSiteConfig } from '@/lib/cms'
+import { getSiteConfig, getBandProfile } from '@/lib/cms'
+import { merchCopy, siteCopy } from '@/lib/copy'
 import { getSlugMap } from '@/lib/slugs'
 import MobileNav from './MobileNav.vue'
 import CartIcon from './CartIcon.vue'
@@ -10,10 +11,21 @@ interface Props {
 }
 const { lang = 'en' } = Astro.props
 
-const [siteConfig, slugMap] = await Promise.all([
+const [siteConfig, slugMap, profile] = await Promise.all([
   getSiteConfig(lang),
   getSlugMap(),
+  getBandProfile(lang).catch(() => null),
 ])
+
+// The brand is the profile's name, not a literal, and it is the same in
+// every language — a band has one name. No aria-label: that would replace the
+// accessible name with a translated label. Fail-open like BaseLayout's <title>
+// suffix, but a home link with no text is a broken header rather than a
+// missing suffix, so an unreadable profile falls back to the site's own
+// hostname — language-neutral, and honest about what went wrong.
+const site = siteCopy(siteConfig, lang)
+const brand = profile?.name?.trim() || (Astro.site ? new URL(Astro.site).hostname : '')
+const cartLabel = merchCopy(siteConfig, lang).cartOpen
 
 const MODULE_SLUGS = ['concerts', 'releases', 'posts', 'photos', 'videos', 'press', 'merch', 'epk', 'about', 'contact'] as const
 
@@ -36,9 +48,9 @@ const current = Astro.url.pathname
 
 <header class="ss-header">
   <div class="ss-header-inner">
-    <a href={`/${lang}`} class="ss-logo">Skanking Storks</a>
+    <a href={`/${lang}`} class="ss-logo">{brand}</a>
 
-    <nav class="ss-desktop-nav" aria-label="Main navigation">
+    <nav class="ss-desktop-nav" aria-label={site.navLabel}>
       {links.map(({ href, label }) => (
         current.startsWith(href)
           ? <span class="ss-nav-link is-active" aria-current="page">{label}</span>
@@ -47,8 +59,8 @@ const current = Astro.url.pathname
     </nav>
 
     <div class="ss-header-right">
-      <CartIcon client:idle />
-      <MobileNav links={links} client:idle />
+      <CartIcon client:idle label={cartLabel} />
+      <MobileNav links={links} brand={brand} copy={{ open: site.menuOpen, close: site.menuClose, navLabel: site.mobileNavLabel }} client:idle />
     </div>
   </div>
 </header>

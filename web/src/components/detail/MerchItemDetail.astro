@@ -4,7 +4,9 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
-import { getShopItem, getBandProfile } from '@/lib/cms'
+import { getShopItem, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { MERCH_COPY } from '@bandms/site-copy'
+import { moduleCopy, addToCartCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -15,10 +17,13 @@ interface Props {
 const { lang, alternates, itemSlug } = Astro.props
 const slugMap = await getSlugMap()
 
-const [item, profile] = await Promise.all([
+const [item, profile, siteConfig] = await Promise.all([
   getShopItem(itemSlug),
   getBandProfile(lang),
+  getSiteConfig(lang),
 ])
+// Shares the Merch page's copy — Website Modules → Merch → "Item cards & pages".
+const t = moduleCopy(siteConfig, 'merch', MERCH_COPY, lang)
 
 const images = (item.photos ?? []).sort((a, b) => a.sort_order - b.sort_order)
 const mainImage = images[0]?.url ?? item.cover_photo
@@ -33,7 +38,7 @@ const mainImage = images[0]?.url ?? item.cover_photo
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-24">
     <nav class="mb-8 text-sm text-subtle">
-      <a href={`/${lang}/${slugMap[lang].merch ?? 'merch'}`} class="hover:text-muted transition-colors">Merch</a>
+      <a href={`/${lang}/${slugMap[lang].merch ?? 'merch'}`} class="hover:text-muted transition-colors">{t.title}</a>
       <span class="mx-2">›</span>
       <span class="text-muted">{item.name}</span>
     </nav>
@@ -77,7 +82,7 @@ const mainImage = images[0]?.url ?? item.cover_photo
         )}
 
         <div class="mt-6">
-          <AddToCart item={item} client:visible />
+          <AddToCart item={item} copy={addToCartCopy(t)} lang={lang} client:visible />
         </div>
 
         {item.description && (

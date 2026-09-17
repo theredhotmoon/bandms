@@ -9,6 +9,8 @@ import ThemeSlot from '@/components/ThemeSlot.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { getPressReleases, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
+import { PRESS_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -21,27 +23,11 @@ const [press, profile, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
-const s = siteConfig.module_config?.press?.settings ?? {}
 const genreKicker = formatGenreKicker(profile.genres)
 
-const COPY = {
-  en: {
-    title: 'Press',
-    lead: 'What the papers, blogs and radio have said about us.',
-    featured: 'Featured', coverage: 'Coverage',
-    empty: 'No press coverage yet.',
-    read: 'Read',
-  },
-  pl: {
-    title: 'Prasa',
-    lead: 'Co pisały o nas gazety, blogi i radio.',
-    featured: 'Wyróżnione', coverage: 'Publikacje',
-    empty: 'Brak publikacji prasowych.',
-    read: 'Czytaj',
-  },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Press.
+const t = moduleCopy(siteConfig, 'press', PRESS_COPY, lang)
 
 const sorted = [...press].sort((a, b) =>
   (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at),
@@ -67,7 +53,7 @@ const siteOf = (item: (typeof sorted)[number]) => {
   title={t.title}
   description={t.lead}
 >
-  <PageHero kicker={genreKicker} title={s.title || t.title} lead={s.lead || t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'press')} />
+  <PageHero kicker={genreKicker} title={t.title} lead={t.lead} leadWidth={620} heroImages={resolveHeroImages(siteConfig, 'press')} />
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 

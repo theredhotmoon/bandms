@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getFaqs } from '@/lib/cms'
+import { getFaqs, getSiteConfig } from '@/lib/cms'
+import { siteCopy } from '@/lib/copy'
 import FaqAccordion from '@/components/FaqAccordion.vue'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
@@ -28,12 +29,9 @@ const { module, lang = 'en', divider = true } = Astro.props
 
 const faqs = await getFaqs(module, lang)
 
-const COPY = {
-  en: { title: 'Quick answers', sub: 'The things promoters and fans ask us most.' },
-  pl: { title: 'Szybkie odpowiedzi', sub: 'To, o co najczęściej pytają organizatorzy i fani.' },
-} as const
-
-const t = COPY[lang] ?? COPY.en
+// Heading and subtitle come from the site-wide copy row: the block is the
+// same on every page, so it is edited once (Website Modules → Site-wide).
+const t = siteCopy(await getSiteConfig(lang), lang)
 ---
 
 {faqs.length > 0 && (
@@ -42,9 +40,9 @@ const t = COPY[lang] ?? COPY.en
     <section class="faq-section page-x">
       <div class="faq-head">
         <Icon name="quote" size={24} color="var(--color-accent)" />
-        <h2 class="faq-title">{t.title}</h2>
+        <h2 class="faq-title">{t.faqTitle}</h2>
       </div>
-      <p class="faq-sub">{t.sub}</p>
+      <p class="faq-sub">{t.faqSub}</p>
       <FaqAccordion items={faqs} client:visible />
     </section>
   </>

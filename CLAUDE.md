@@ -1128,10 +1128,14 @@ new error, at `STATIC_SLUGS`. More than one means something drifted back to a
 hardcoded pair. (Two unrelated errors are pre-existing; see *Type-checking
 `web/`*.)
 
-Two things are deliberately still per-locale columns and **not** registry-driven:
+Two things are deliberately still per-locale and **not** registry-driven:
 `slug_en`/`slug_pl` on concerts/releases/posts/albums/shop_items (a third locale
 needs a migration — this is why `PostController` and `ReleaseController` still
-name `'pl'`), and the ~23 inline `T = { en: …, pl: … }` UI-string dicts.
+name `'pl'`), and the `defaults: { en, pl }` on every `CopyField` in
+`packages/site-copy` — the UI strings themselves. Those used to be ~23 inline
+`T = { en: …, pl: … }` dicts scattered through `web/src`; they are now one
+registry (see *Editable page copy* below), and `resolveCopy()` falls back to
+`en` for a locale with no default, so a third language is additive there too.
 
 **A fifth place, outside all of this, also names a locale: `web/docker/nginx.conf`'s
 `map $http_accept_language $preferred_locale`**, which picks the language for the
@@ -1245,33 +1249,98 @@ valid targets — switching a section off must not make its questions unsavable.
 
 ---
 
-## Editable page copy lives in `website_modules.settings`
+## Editable page copy lives in `website_modules.settings` — every string, via `@bandms/site-copy`
 
 A generic bag shaped `{"field": {"en": "...", "pl": "..."}}`, not named columns —
 six Contact fields as columns would put one module's fields on every module's
 row. `GET /api/site-config?lang=xx` serves it as `module_config.<key>.settings`
-with the locale already resolved, falling back to the other locale rather than
-emitting null.
+flattened to **the requested locale only** — a field with no value in that
+language is omitted, and the registry default fills it. It used to walk the
+en↔pl fallback chain, which was right while the bag had nothing else to fall
+back to and is wrong now: a Polish-only "Upcoming shows" heading would leak
+onto `/en/` while the admin's placeholder still promised the English default.
+A sibling `settings_fallback` carries the chain-resolved bag, and
+`resolveCopy()` reads it for **one case only: a field whose registry default
+is empty** (the Contact kicker, the footer headings) — there "print the
+default" would print nothing, and a band that wrote the field in one language
+has always seen it on both. The FAQ resource keeps its chain unconditionally,
+because a question has no registry default.
 
-Read it as `siteConfig.module_config?.<key>?.settings ?? {}` and then
-`settings.field ?? ''`. An API predating the migration omits the bag entirely,
-and a bare access throws at build time — which kills all 35 pages, not one.
+**Which strings exist, and what they say by default, is the registry in
+`packages/site-copy/src/modules/<slug>.ts`** — one `CopyField` per string on
+the public site: key, admin label, fieldset `group`, and `defaults` per locale.
+Both apps read it. The public site resolves a page's copy with
 
-**Which fields a module has is a client-side decision.** The server validates
-the shape (`{field: {en, pl}}`) and the 2000-char limit, nothing more. The admin
-form is generated from `app/src/config/moduleSettings.ts`, so adding a field is:
-add it there, then read it in the Astro section. No migration.
+```ts
+const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)   // web/src/lib/copy.ts
+```
 
-A module absent from that map simply shows no copy fields, which is why adding
-one is additive and safe.
+and reads `t.upcomingTitle`; the admin builds its form from the same list and
+shows each default as the input's placeholder. **Adding a string is one entry in
+the module's file plus one `t.<key>` read** — no migration, no admin change.
+The server still validates only shape and the 2000-char cap.
 
-**A module need not be a page.** `footer` is a `website_modules` row with no
-route and no meaningful slug — it exists so its copy is editable and so it can be
-switched off. `app/src/config/moduleSettings.ts` lists such modules in
-`NON_PAGE_MODULES`, and the admin hides the URL-slug and per-page inputs for
-them rather than offering controls that change nothing. Neither `Header.astro`'s
-`MODULE_SLUGS` nor `[lang]/[section].astro`'s section lists include it, so no nav
-entry or route can appear by accident.
+**There is no inline `COPY = { en, pl }` dict in a section any more, and no
+literal English in a template.** The old ~23 dicts are gone; the last two
+places that still hold a locale pair by design are month/weekday names in
+`ContactSection.astro` (calendar data, not band copy) and `nginx.conf`'s
+Accept-Language map. A new hardcoded string in `web/src` is a regression —
+`/pl/concerts` shipped English headings for months because Concerts, Posts and
+Merch had never had a dict at all.
+
+**Keys are permanent once shipped.** Overrides are stored under them, so
+renaming `upcomingTitle` silently drops whatever the band typed. The mixed
+casing (`reply_time_label` beside `formTitle`) is that rule in action: the
+snake_case keys predate the registry and are what production rows hold.
+`resolve.spec.ts` pins them.
+
+**An empty default means "hidden until the band writes something"** — the
+Contact kicker, the reply-time pill, the footer tagline. `resolveCopy()`
+returns `''` for those, and the section gates on it — unless the band wrote it
+in the *other* language, in which case that text shows (see above).
+Whitespace-only overrides count as empty. A locale with no default of its own reads `en`, so a third
+language does not blank 250 strings on day one.
+
+**Templates stay templates.** `{date}`, `{n}`, `{band}` are substituted by the
+consumer through `fillCopy()`; the band edits the sentence, not the value. The
+`help` text of such a field says which tokens it takes.
+
+**Islands get copy through props**, never by importing the registry — an island
+has no `siteConfig`. Each one declares a `*Copy` interface and the section (or
+`lib/copy.ts`, for islands shared across pages: the newsletter form, the cart,
+the add-to-cart button, the order confirmation) shapes the registry into it.
+The show page's ticket-checkout script builds markup from a
+`<script type="application/json" id="tkt-copy">` blob for the same reason, and
+escapes every string it puts into `innerHTML`.
+
+**Four rows exist for their copy alone, and `NON_PAGE_MODULES` lists them.**
+`footer` and `site` (nav labels, the FAQ block, the 404 page) have no route;
+`home` and `privacy` (the policy plus the cookie banner) sit at fixed routes.
+For all four the admin hides the URL-slug and per-page inputs, the hero-images
+editor skips them (`home` is already its own hardcoded scope there), and the FAQ
+admin does not offer them as categories. `enabled` means something for
+`footer` (hides it) and `privacy` (unbuilds the policy page and drops the cookie
+banner's link to it); `home` and `site` are in `ALWAYS_ON_MODULES`, which hides
+their toggle and Live/Off badge — the public build ignores the flag, so a
+switch there would be a control pretending to be one. Their `settings` bags
+are seeded empty: the registry
+carries the defaults. Neither `Header.astro`'s `MODULE_SLUGS` nor
+`[lang]/[section].astro`'s section lists include them, so no nav entry or route
+can appear by accident — and because they *are* module rows, their keys are
+reserved by the effective-slug uniqueness check, which is what stops another
+module claiming `/en/privacy`.
+
+**The admin form folds each `group` into a `<details>`**, first group open.
+`data-copy-group="<group>"` and `data-testid="page-copy"` are the E2E hooks;
+`getByText('Band members')` now matches both a copy group and a visibility
+toggle, so scope to the label.
+
+**Verify a copy change mechanically, not by reading.** `tsc` does not check
+`.astro`, so a mistyped `t.upcomingTitel` renders `undefined` in a green build.
+`resolveCopy()` is typed with the registry's literal keys, which catches it in
+`.ts`/`.vue`; for sections, `grep -o 't\.\w\+' <file> | sort -u` against the
+module's keys settles it, and `grep -rl undefined web/dist --include=*.html`
+after a build should be empty.
 
 Editors live at **`/admin/website-modules`** (page copy, per module) and
 **`/admin/faqs`** (questions, grouped by subpage).

@@ -1,36 +1,27 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import PostCard from '@/components/PostCard.astro'
-import { getPosts, getBandProfile } from '@/lib/cms'
+/**
+ * Legacy unlocalised /posts.
+ *
+ * Kept so inbound links from before the /[lang]/... routes keep working.
+ * Delegates to the same section component as the localised route rather than
+ * holding a second copy — this file had drifted into its own pre-theme layout
+ * with its own hardcoded English, which is exactly what delegation prevents.
+ */
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
+import PostsSection from '@/components/sections/PostsSection.astro'
 
-const [{ data: posts, meta }, profile] = await Promise.all([
-  getPosts('en', 1),
-  getBandProfile('en'),
-])
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules.posts === false) return Astro.redirect('/404', 307)
+
+// The *other* locales' pages, resolved through the slug map so a custom
+// Polish slug does not turn the hreflang row into a 404. The default locale
+// is left out on purpose: this page's canonical is its own unlocalised URL,
+// and an `en` alternate pointing at /en/… would disagree with it — the
+// broken-cluster shape releases/[id].astro already avoids.
+const slugMap = await getSlugMap()
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].posts ?? 'posts'}`]))
 ---
 
-<BaseLayout
-  title="News"
-  description={`News, updates, and stories from ${profile.name}.`}
->
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
-    <div class="mb-12">
-      <div class="accent-line mb-4" />
-      <h1 class="text-4xl font-black text-body sm:text-5xl">News</h1>
-    </div>
-
-    {posts.length === 0 ? (
-      <p class="text-muted">No posts yet — check back soon.</p>
-    ) : (
-      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map(p => <PostCard post={p} />)}
-      </div>
-    )}
-
-    {meta && meta.last_page > 1 && (
-      <p class="mt-8 text-center text-sm text-subtle">
-        Showing {posts.length} of {meta.total} posts — more pages coming soon.
-      </p>
-    )}
-  </div>
-</BaseLayout>
+<PostsSection lang="en" alternates={alternates} />

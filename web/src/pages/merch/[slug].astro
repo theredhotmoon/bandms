@@ -1,114 +1,33 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro'
-import AddToCart from '@/components/AddToCart.vue'
-import { getShopItems, getShopItem, getBandProfile } from '@/lib/cms'
+/**
+ * Legacy unlocalised /merch/{slug}.
+ *
+ * Kept so inbound links from before the /[lang]/... routes keep working.
+ * Delegates to the same detail component as the localised route rather than
+ * holding a second copy — this file had drifted into its own pre-theme layout
+ * with its own hardcoded English, which is exactly what delegation prevents.
+ */
+import { getShopItems, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
+import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 
 export async function getStaticPaths() {
   const items = await getShopItems()
-
-  // This mapped `i.slug`, which does not exist — ShopItemSummary has slug_en
-  // and slug_pl, and the API sends neither as `slug`. params.slug came out
-  // undefined, Astro's getParameter threw, and that aborts the ENTIRE build,
-  // not just this page. The container then exits and restart-loops forever
-  // while `docker ps` still reports it healthy.
-  //
-  // The shop being empty was the only thing keeping the site up: adding the
-  // first product through the admin would have taken the public site down.
-  // Identical bug and identical blast radius to concerts/[slug].astro.
-  //
-  // shop_items.slug_en is NOT NULL UNIQUE, so the filter is not strictly
-  // needed today — it is one line of insurance against the payload shape
-  // changing, because the cost of a missing param here is the whole site
-  // rather than one page. No filter on availability is needed either: GET
-  // /api/shop already returns only is_available items, so everything listed
-  // here is fetchable by GET /api/shop/by-slug.
+  // slug_en is NOT NULL UNIQUE, so the filter is insurance: a missing param
+  // here costs the whole build, not one page.
   return items
     .filter(i => i.slug_en)
     .map(i => ({ params: { slug: i.slug_en } }))
 }
 
 const { slug } = Astro.params
-const [item, profile] = await Promise.all([
-  getShopItem(slug!),
-  getBandProfile('en'),
-])
 
-// Normalised here rather than guarded at each use: a field the API stops
-// sending must degrade to an empty list, never abort the build.
-const images     = [...(item.photos ?? [])].sort((a, b) => a.sort_order - b.sort_order)
-const categories = item.categories ?? []
-const tags       = item.tags ?? []
-const mainImage  = images[0]?.url ?? item.cover_photo
+const siteConfig = await getSiteConfig()
+if (siteConfig.modules.merch === false) return Astro.redirect('/404', 307)
+
+const slugMap = await getSlugMap()
+const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].merch ?? 'merch'}/${slug}`]))
 ---
 
-<BaseLayout
-  title={item.name}
-  description={item.description ?? `${item.name} — official merch from ${profile.name}`}
-  image={mainImage}
->
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-24">
-    <nav class="mb-8 text-sm text-subtle">
-      <a href="/merch" class="hover:text-muted transition-colors">Merch</a>
-      <span class="mx-2">›</span>
-      <span class="text-muted">{item.name}</span>
-    </nav>
-
-    <div class="grid gap-10 lg:grid-cols-2">
-      <!-- Images -->
-      <div class="space-y-3">
-        {mainImage ? (
-          <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square">
-            <img src={mainImage} alt={item.name} loading="eager" class="w-full h-full object-cover" />
-          </div>
-        ) : (
-          <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square flex items-center justify-center text-subtle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-            </svg>
-          </div>
-        )}
-        {images.length > 1 && (
-          <div class="grid grid-cols-4 gap-2">
-            {images.map(p => (
-              <div class="overflow-hidden rounded-card border border-border bg-surface-2 aspect-square">
-                <img src={p.url} alt={p.alt_text ?? item.name} loading="lazy" class="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <!-- Details -->
-      <div>
-        <p class="text-xs text-muted uppercase tracking-wider mb-1">{item.type}</p>
-        <h1 class="text-3xl font-black text-body leading-tight">{item.name}</h1>
-
-        {categories.length > 0 && (
-          <div class="flex flex-wrap gap-2 mt-2">
-            {categories.map(c => (
-              <span class="rounded-pill bg-surface-2 px-2 py-0.5 text-xs text-muted">{c.name}</span>
-            ))}
-          </div>
-        )}
-
-        <div class="mt-6">
-          <AddToCart item={item} client:visible />
-        </div>
-
-        {item.description && (
-          <div class="prose mt-8">
-            {item.description.split('\n\n').map(p => <p>{p}</p>)}
-          </div>
-        )}
-
-        {tags.length > 0 && (
-          <div class="mt-6 flex flex-wrap gap-2">
-            {tags.map(t => (
-              <span class="rounded-pill bg-surface-2 px-2 py-0.5 text-xs text-muted">#{t.name}</span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-</BaseLayout>
+<MerchItemDetail lang="en" alternates={alternates} itemSlug={slug!} />

@@ -57,7 +57,7 @@ export default defineConfig({
       // the workspace dependency and Node is handed a .vue file it cannot
       // parse — which fails during the SSR pass, not in the browser, so the
       // error names astro build rather than the component.
-      noExternal: ['@bandms/rider-core'],
+      noExternal: ['@bandms/rider-core', '@bandms/site-copy'],
     },
   },
 })

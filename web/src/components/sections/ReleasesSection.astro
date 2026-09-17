@@ -15,8 +15,10 @@ import FaqSection from '@/components/sections/FaqSection.astro'
 import SocialLinks from '@/components/SocialLinks.astro'
 import { getReleases, getRelease, getBandProfile, getMusicVideos, getShopItems, getSiteConfig, getSocialLinks } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
-import { RELEASE_TYPE_LABELS, PLATFORM_LABELS } from '@/types/release'
+import { PLATFORM_LABELS } from '@/types/release'
 import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail, formatGenreKicker } from '@/lib/i18n'
+import { RELEASES_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -35,7 +37,6 @@ const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Pro
 
 const enabled = (slug: string) => siteConfig.modules[slug] !== false
 const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
-const s = siteConfig.module_config?.releases?.settings ?? {}
 const genreKicker = formatGenreKicker(profile.genres)
 
 // Tracklists and lyrics live on the detail resource, not the list one, so each
@@ -55,46 +56,14 @@ const rest = sorted.slice(1)
 
 const year = (r: Release) => (r.release_date ? r.release_date.slice(0, 4) : '')
 
-const COPY = {
-  en: {
-    title: 'Music',
-    lead: 'Brass-fuelled skank, dub-soaked rocksteady and ska-jazz heat — every release, every video, in one place.',
-    featured: 'Featured release', tracklist: 'Tracklist',
-    disco: 'Discography',
-    discoSub: 'Singles, EPs and the records that built the skank. Open a release to see its tracklist.',
-    where: 'Where to listen', whereSub: "Pick your poison — we're on every platform that spins.",
-    videos: 'Music videos',
-    lyrics: 'Lyrics', lyricsSub: 'Sing along.',
-    lyricsEmpty: 'No lyrics published yet.',
-    buy: 'Buy physical', buySub: 'Wax, plastic and tape for the collectors.', buyCta: 'View',
-    tracks: 'tracks', viewLyrics: 'Lyrics', detail: 'Release page',
-    outNow: 'Out now', presave: 'Pre-save', listen: 'Listen',
-    close: 'Close', watch: 'Watch on YouTube',
-    empty: 'No releases yet — watch this space.',
-    views: 'views',
-  },
-  pl: {
-    title: 'Muzyka',
-    lead: 'Dęciaki na full, dubowe rocksteady i ska-jazzowy żar — wszystkie wydawnictwa i teledyski w jednym miejscu.',
-    featured: 'Wyróżnione wydawnictwo', tracklist: 'Lista utworów',
-    disco: 'Dyskografia',
-    discoSub: 'Single, EP-ki i płyty, które zbudowały skank. Kliknij wydawnictwo, by zobaczyć listę utworów.',
-    where: 'Gdzie słuchać', whereSub: 'Wybierz swoje — jesteśmy na każdej platformie, która gra.',
-    videos: 'Teledyski',
-    lyrics: 'Teksty', lyricsSub: 'Śpiewaj z nami.',
-    lyricsEmpty: 'Brak opublikowanych tekstów.',
-    buy: 'Kup fizycznie', buySub: 'Winyl, plastik i taśma dla kolekcjonerów.', buyCta: 'Zobacz',
-    tracks: 'utworów', viewLyrics: 'Tekst', detail: 'Strona wydawnictwa',
-    outNow: 'Już dostępne', presave: 'Pre-save', listen: 'Posłuchaj',
-    close: 'Zamknij', watch: 'Zobacz na YouTube',
-    empty: 'Brak wydawnictw — wkrótce.',
-    views: 'wyświetleń',
-  },
-} as const
+// Every string on this page: registry defaults for this locale, overridden by
+// whatever the band saved in Website Modules → Music.
+const t = moduleCopy(siteConfig, 'releases', RELEASES_COPY, lang)
 
-const t = COPY[lang] ?? COPY.en
-
-const typeLabel = (r: Release) => RELEASE_TYPE_LABELS[r.type] ?? r.type
+// Release-type labels are copy too — they used to come from a hardcoded
+// English map in types/release.ts.
+const typeLabels: Record<string, string> = { LP: t.typeAlbum, EP: t.typeEp, single: t.typeSingle, compilation: t.typeCompilation }
+const typeLabel = (r: Release) => typeLabels[r.type] ?? r.type
 const statusLabel = (r: Release) => (r.is_upcoming ? t.presave : t.outNow)
 
 const trackRows = (r: Release) =>
@@ -182,8 +151,8 @@ const priceOf = (item: (typeof physical)[number]) => {
   <!-- HERO -->
   <PageHero
     kicker={genreKicker}
-    title={s.title || t.title}
-    lead={s.lead || t.lead}
+    title={t.title}
+    lead={t.lead}
     titleSize={150}
     heroImages={resolveHeroImages(siteConfig, 'releases')}
   >
@@ -337,7 +306,7 @@ const priceOf = (item: (typeof physical)[number]) => {
           <h2 class="mu-h2">{t.lyrics}</h2>
         </div>
         <p class="mu-sub">{t.lyricsSub}</p>
-        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} />
+        <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} navLabel={t.lyricsNav} />
       </section>
     </>
   )}

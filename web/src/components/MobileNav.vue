@@ -3,7 +3,8 @@ import { ref } from 'vue'
 
 interface NavLink { href: string; label: string }
 
-const props = defineProps<{ links: NavLink[] }>()
+interface MobileNavCopy { open: string; close: string; navLabel: string }
+const props = defineProps<{ links: NavLink[]; brand: string; copy: MobileNavCopy }>()
 const open = ref(false)
 
 function toggle() { open.value = !open.value }
@@ -15,7 +16,7 @@ function close()  { open.value = false }
     <button
       type="button"
       class="mob-toggle"
-      :aria-label="open ? 'Close menu' : 'Open menu'"
+      :aria-label="open ? copy.close : copy.open"
       :aria-expanded="open"
       @click="toggle"
     >
@@ -35,15 +36,15 @@ function close()  { open.value = false }
       >
         <div class="mob-panel">
           <div class="mob-top">
-            <span class="mob-brand">Skanking Storks</span>
-            <button type="button" class="mob-close" aria-label="Close menu" @click="close">
+            <span class="mob-brand">{{ brand }}</span>
+            <button type="button" class="mob-close" :aria-label="copy.close" @click="close">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
           </div>
 
-          <nav class="mob-links" aria-label="Mobile navigation">
+          <nav class="mob-links" :aria-label="copy.navLabel">
             <a
               v-for="link in props.links"
               :key="link.href"

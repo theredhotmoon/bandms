@@ -5,31 +5,26 @@ import { consentStatus, denyConsent, grantConsent, loadStoredConsent } from '@/s
 import { disableGoogleAnalytics, loadGoogleAnalytics } from '@/lib/analytics'
 import type { Locale } from '@/types/shared'
 
+/** Labels from the Privacy module's copy — see BaseLayout.astro. */
+export interface ConsentCopy {
+  body: string
+  accept: string
+  reject: string
+  privacy: string
+}
+
 interface Props {
   lang: Locale
   measurementId: string
+  copy: ConsentCopy
+  /** Null when the privacy page is switched off — the link is then omitted. */
+  privacyHref: string | null
 }
 const props = defineProps<Props>()
 
 const status = useStore(consentStatus)
 
-const T = {
-  en: {
-    body: 'We use cookies to understand how visitors use this site. Analytics only load if you accept.',
-    accept: 'Accept',
-    reject: 'Reject',
-    privacy: 'Privacy policy',
-  },
-  pl: {
-    body: 'Używamy plików cookie, aby zrozumieć, jak odwiedzający korzystają z tej strony. Analityka ładuje się tylko po Twojej zgodzie.',
-    accept: 'Akceptuję',
-    reject: 'Odrzucam',
-    privacy: 'Polityka prywatności',
-  },
-} as const
-
-const t = T[props.lang] ?? T.en
-const privacyHref = `/${props.lang}/privacy`
+const t = props.copy
 
 // grant/deny/resetConsent() only persist + flip the atom; starting or
 // stopping GA is this component's job, triggered by the same watcher
@@ -56,7 +51,7 @@ onMounted(loadStoredConsent)
     <div class="mx-auto flex max-w-5xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm text-muted">
         {{ t.body }}
-        <a :href="privacyHref" class="underline hover:text-body">{{ t.privacy }}</a>
+        <a v-if="privacyHref" :href="privacyHref" class="underline hover:text-body">{{ t.privacy }}</a>
       </p>
       <div class="flex flex-none gap-3">
         <button

@@ -8,6 +8,8 @@ import HeroBackdrop from '@/components/HeroBackdrop.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, fmtTime, postSlug, fmtDateParts } from '@/lib/i18n'
+import { HOME_COPY } from '@bandms/site-copy'
+import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
 
 export async function getStaticPaths() {
   return LOCALES.map(lang => ({ params: { lang } }))
@@ -39,6 +41,11 @@ const enabled = (slug: string) => siteConfig.modules[slug] !== false
 // The homepage is not a website_modules row, so its hero scope is the reserved
 // 'home' name. Falls back to the main set when the band has set none of its own.
 const heroImages = resolveHeroImages(siteConfig, 'home')
+
+// The homepage is a `home` row for copy purposes — fixed route, no slug, but
+// every heading and button on it is editable in Website Modules → Homepage.
+const t = moduleCopy(siteConfig, 'home', HOME_COPY, lang)
+const newsletterCopy = newsletterFormCopy(siteConfig, lang)
 
 const concertsEnabled = enabled('concerts')
 const releasesEnabled = enabled('releases')
@@ -87,7 +94,7 @@ const structuredData = {
         )}
         <h1 class="hero-title">{profile.name}</h1>
         {profile.hometown && profile.formation_year && (
-          <p class="hero-origin">{profile.hometown} · Est. {profile.formation_year}</p>
+          <p class="hero-origin">{profile.hometown} · {t.estPrefix} {profile.formation_year}</p>
         )}
         {profile.bio_short && (
           <p class="hero-bio">{profile.bio_short}</p>
@@ -99,14 +106,14 @@ const structuredData = {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                   <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
                 </svg>
-                See shows
+                {t.ctaShows}
               </a>
             )}
             {releasesEnabled && (
-              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>Our music</a>
+              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>{t.ctaMusic}</a>
             )}
             {contactEnabled && profile.booking_email && (
-              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'contact')}`}>Book us</a>
+              <a class="cta-secondary" href={`/${lang}/${sectionSlug(slugMap, lang, 'contact')}`}>{t.ctaBook}</a>
             )}
           </div>
         )}
@@ -133,9 +140,9 @@ const structuredData = {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>
             </svg>
-            <h2 class="sec-title">Upcoming shows</h2>
+            <h2 class="sec-title">{t.showsTitle}</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}`}>All shows →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}`}>{t.showsAll}</a>
         </div>
 
         <div class="gig-list">
@@ -173,9 +180,9 @@ const structuredData = {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/>
             </svg>
-            <h2 class="sec-title">Music</h2>
+            <h2 class="sec-title">{t.musicTitle}</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>Discography →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'releases')}`}>{t.musicAll}</a>
         </div>
         <div class="releases-grid">
           {latestReleases.map(r => (
@@ -210,9 +217,9 @@ const structuredData = {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 5h16M4 10h16M4 15h10"/>
             </svg>
-            <h2 class="sec-title">News</h2>
+            <h2 class="sec-title">{t.newsTitle}</h2>
           </div>
-          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}`}>All posts →</a>
+          <a class="see-all" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}`}>{t.newsAll}</a>
         </div>
         <div class="posts-list">
           {latestPosts.map(p => {
@@ -239,11 +246,11 @@ const structuredData = {
     <div class="checker-strip checker-acc" aria-hidden="true"></div>
     <section class="nl-section">
       <div class="nl-inner">
-        <p class="nl-kicker">Stay in the loop</p>
-        <h2 class="nl-title">Get the news first</h2>
-        <p class="nl-sub">New shows, releases, and behind-the-scenes — straight to your inbox. No spam.</p>
+        <p class="nl-kicker">{t.nlKicker}</p>
+        <h2 class="nl-title">{t.nlTitle}</h2>
+        <p class="nl-sub">{t.nlSub}</p>
         <div class="nl-form-wrap">
-          <NewsletterSignup client:visible />
+          <NewsletterSignup client:visible {...newsletterCopy} />
         </div>
       </div>
     </section>

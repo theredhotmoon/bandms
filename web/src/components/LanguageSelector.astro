@@ -5,9 +5,11 @@ import { LOCALES, flag, htmlLang, nativeName, type Alternates } from '@/lib/loca
 interface Props {
   lang: Locale
   alternates?: Alternates
+  /** Screen-reader label, from the site-wide copy row. */
+  label?: string
 }
 
-const { lang, alternates = {} } = Astro.props
+const { lang, alternates = {}, label = 'Language selector' } = Astro.props
 const currentHref = Astro.url.pathname
 
 /**
@@ -25,7 +27,7 @@ const options = LOCALES.flatMap(l => {
 ---
 
 {options.length > 1 && (
-  <div class="lang-selector" aria-label="Language selector">
+  <div class="lang-selector" aria-label={label}>
     {options.map(({ locale, href }, i) => (
       <>
         {i > 0 && <span class="lang-sep" aria-hidden="true">·</span>}

@@ -5,13 +5,19 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import FaqEditor from '@/components/admin/FaqEditor.vue'
 import { useFaqs } from '@/composables/useFaqs'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
+import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
 
 const { query, create, update, remove, reorder } = useFaqs()
 const { query: modulesQuery } = useWebsiteModules()
 
-const modules = computed(() => modulesQuery.data.value?.data ?? [])
+// Only rows whose page renders <FaqSection> — chrome and fixed-route rows
+// (footer, site, home, privacy) exist for their editable copy and have no FAQ
+// block, so offering them here would be a category nothing ever displays.
+const modules = computed(() =>
+  (modulesQuery.data.value?.data ?? []).filter(m => !NON_PAGE_MODULES.has(m.slug)),
+)
 const faqs = computed(() => query.data.value?.data ?? [])
 
 // Which subpage's questions are on screen. Defaults to contact, the only module

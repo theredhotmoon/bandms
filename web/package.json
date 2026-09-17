@@ -15,6 +15,7 @@
     "@astrojs/sitemap": "^3.2.1",
     "@astrojs/vue": "^4.5.0",
     "@bandms/rider-core": "workspace:*",
+    "@bandms/site-copy": "workspace:*",
     "@nanostores/vue": "^0.10.0",
     "@tailwindcss/postcss": "^4.0.0",
     "astro": "^5.0.0",

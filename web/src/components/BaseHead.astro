@@ -12,11 +12,13 @@ export interface Props {
   lang?: Locale
   /** Path per locale for this page, from the route. */
   alternates?: Alternates
+  /** og:site_name — the band's name from the profile, passed by BaseLayout. */
+  siteName?: string
 }
 
 const {
   title, description, image, canonical, noindex = false, structuredData,
-  lang = 'en', alternates = {},
+  lang = 'en', alternates = {}, siteName = '',
 } = Astro.props
 const site = Astro.site?.toString().replace(/\/$/, '') ?? ''
 const ogImage = image ? (image.startsWith('http') ? image : `${site}${image}`) : `${site}/og-default.png`
@@ -43,7 +45,7 @@ const canonicalUrl = canonical ?? Astro.url.href
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image"       content={ogImage} />
-<meta property="og:site_name"   content="Skanking Storks" />
+{siteName && <meta property="og:site_name"   content={siteName} />}
 
 <!-- Twitter Card -->
 <meta name="twitter:card"        content="summary_large_image" />

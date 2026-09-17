@@ -32,7 +32,8 @@ class WebsiteModuleController extends Controller
                 'label'    => $m->getTranslation('custom_name', $locale, false) ?: $m->display_name,
                 'slug'     => $slug === '' || $slug === null ? $m->slug : $slug,
                 'per_page'   => $m->per_page,
-                'settings'   => self::resolveSettings($m->settings, $locale),
+                'settings'          => self::resolveSettings($m->settings, $locale),
+                'settings_fallback' => self::resolveSettings($m->settings, $locale, chain: true),
                 // No locale dimension — a section is shown or it isn't, not
                 // translated per language. Absent key means visible, so a
                 // module that has never saved this bag (or predates the
@@ -81,16 +82,28 @@ class WebsiteModuleController extends Controller
     /**
      * Flatten {"field": {"en": ..., "pl": ...}} to {"field": "..."} for one locale.
      *
-     * Falls back down the locale's declared chain (config/locales.php) rather
-     * than emitting null, on the same reasoning as FaqSummaryResource: the Astro
-     * build bakes whatever it gets, and a null here renders an empty hero with a
-     * green build.
+     * Served twice, because the two consumers want different things and only
+     * the public site knows which applies to a given field:
      *
-     * Returns an object, never null — the public site does
-     * `settings.kicker ?? ''` and an absent bag would throw at build time,
+     *  - `settings` — the requested locale only. A field the band has not
+     *    written in this language is omitted and the @bandms/site-copy
+     *    registry prints that language's default. Walking the fallback chain
+     *    here would leak a Polish-only "Upcoming shows" onto the English page
+     *    while the admin's placeholder still promised the English default.
+     *  - `settings_fallback` (`$chain = true`) — the locale's declared chain
+     *    (config/locales.php), i.e. the pre-2026-09-17 behaviour. The public
+     *    site reads this only for fields whose registry default is *empty*
+     *    (the Contact kicker, the footer headings): there, "print the default"
+     *    would mean "print nothing", and a band that filled the field in one
+     *    language expects it on both, as it always was.
+     *
+     * The FAQ resource keeps its chain unconditionally: a question has no
+     * registry default to fall back to.
+     *
+     * Returns an object, never null — an absent bag would throw at build time,
      * which takes down all 35 pages rather than one.
      */
-    private static function resolveSettings(?array $settings, string $locale): array
+    private static function resolveSettings(?array $settings, string $locale, bool $chain = false): array
     {
         $out = [];
 
@@ -100,7 +113,13 @@ class WebsiteModuleController extends Controller
                 continue;
             }
 
-            $out[$field] = Locales::resolve($value, $locale) ?? '';
+            $resolved = $chain
+                ? Locales::resolve($value, $locale)
+                : ($value[$locale] ?? null);
+
+            if (filled($resolved)) {
+                $out[$field] = $resolved;
+            }
         }
 
         return $out;

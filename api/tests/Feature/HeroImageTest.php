@@ -301,10 +301,17 @@ it('serves an empty hero_images object rather than null when none are active', f
 });
 
 it('keeps hero images out of module_config so the slug map is unaffected', function () {
+    // `main` is a hero scope and nothing else — unlike `home`, which has been a
+    // website_modules row (for its editable copy) since 2026-09-17, so it is
+    // legitimately in module_config now. The point stands: a scope must never
+    // leak a phantom module into the map slugs.ts builds from module_config.
+    heroRow(['scope' => 'main']);
     heroRow(['scope' => 'home']);
 
     $response = $this->getJson('/api/site-config')->assertOk();
 
-    expect(array_keys($response->json('module_config')))->not->toContain('home');
+    expect(array_keys($response->json('module_config')))->not->toContain('main');
+    expect($response->json('module_config.home'))->not->toHaveKey('hero_images');
+    expect($response->json('hero_images.main'))->toHaveCount(1);
     expect($response->json('hero_images.home'))->toHaveCount(1);
 });

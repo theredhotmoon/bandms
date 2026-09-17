@@ -4,6 +4,20 @@ import { useStore } from '@nanostores/vue'
 import { cartItems, cartOpen, removeFromCart, updateQuantity, cartTotal, formatPrice } from '@/stores/cart'
 import type { CheckoutPayload } from '@/lib/checkout'
 
+/** Labels from the Merch module's copy — see lib/copy.ts cartCopy(). */
+export interface CartCopy {
+  title: string
+  close: string
+  empty: string
+  remove: string
+  total: string
+  checkout: string
+  secureNote: string
+  checkoutFailed: string
+}
+
+const props = defineProps<{ copy: CartCopy }>()
+
 const open  = useStore(cartOpen)
 const items = useStore(cartItems)
 
@@ -35,7 +49,7 @@ async function checkout() {
     const data = (await res.json()) as { checkout_url?: string }
     if (data.checkout_url) window.location.href = data.checkout_url
   } catch {
-    alert('Checkout failed. Please try again.')
+    alert(props.copy.checkoutFailed)
   }
 }
 </script>
@@ -50,8 +64,8 @@ async function checkout() {
       <aside class="relative z-10 flex h-full w-full max-w-sm flex-col bg-surface shadow-2xl">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 class="font-bold text-body">Cart</h2>
-          <button type="button" class="text-muted hover:text-body transition-colors" aria-label="Close cart" @click="close">
+          <h2 class="font-bold text-body">{{ copy.title }}</h2>
+          <button type="button" class="text-muted hover:text-body transition-colors" :aria-label="copy.close" @click="close">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -60,7 +74,7 @@ async function checkout() {
 
         <!-- Items -->
         <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          <p v-if="isEmpty" class="text-muted text-sm text-center mt-8">Your cart is empty.</p>
+          <p v-if="isEmpty" class="text-muted text-sm text-center mt-8">{{ copy.empty }}</p>
           <div v-for="item in itemList" :key="`${item.shopItemId}-${item.variantId}`" class="flex gap-3">
             <img v-if="item.photo" :src="item.photo" :alt="item.name" class="w-16 h-16 rounded-card object-cover bg-surface-2 flex-none" loading="lazy" />
             <div v-else class="w-16 h-16 rounded-card bg-surface-2 flex-none" />
@@ -72,7 +86,7 @@ async function checkout() {
                 <button type="button" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity - 1)">−</button>
                 <span class="text-sm text-body w-4 text-center">{{ item.quantity }}</span>
                 <button type="button" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity + 1)">+</button>
-                <button type="button" class="ml-auto text-xs text-subtle hover:text-danger transition-colors" @click="removeFromCart(item.shopItemId, item.variantId)">Remove</button>
+                <button type="button" class="ml-auto text-xs text-subtle hover:text-danger transition-colors" @click="removeFromCart(item.shopItemId, item.variantId)">{{ copy.remove }}</button>
               </div>
             </div>
           </div>
@@ -81,7 +95,7 @@ async function checkout() {
         <!-- Footer -->
         <div v-if="!isEmpty" class="border-t border-border px-5 py-4 space-y-3">
           <div class="flex justify-between text-sm">
-            <span class="text-muted">Total</span>
+            <span class="text-muted">{{ copy.total }}</span>
             <span class="font-bold text-body">{{ formattedTotal }}</span>
           </div>
           <button
@@ -89,9 +103,9 @@ async function checkout() {
             class="w-full rounded-card bg-accent py-3 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors"
             @click="checkout"
           >
-            Checkout
+            {{ copy.checkout }}
           </button>
-          <p class="text-[10px] text-subtle text-center">Secure checkout via Stripe</p>
+          <p class="text-[10px] text-subtle text-center">{{ copy.secureNote }}</p>
         </div>
       </aside>
     </div>

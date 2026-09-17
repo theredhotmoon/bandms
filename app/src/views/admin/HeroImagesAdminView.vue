@@ -29,9 +29,12 @@ const NO_HERO_MODULES = new Set(['tech-rider'])
 /**
  * Scopes in editing order: the fallback first, then the homepage, then pages.
  *
- * NON_PAGE_MODULES is excluded because those rows have no route at all — a hero
- * for the footer would be a control that changes nothing. Disabled modules stay
- * in the list: switching a section off must not make its pictures unreachable.
+ * NON_PAGE_MODULES is excluded because those rows have no route, or a fixed one
+ * with no PageHero — a hero for the footer or the privacy policy would be a
+ * control that changes nothing. `home` is in that set too, which is why the
+ * homepage appears once, as the hardcoded scope below, and not again as a row.
+ * Disabled modules stay in the list: switching a section off must not make its
+ * pictures unreachable.
  */
 const scopes = computed(() => [
   { key: 'main', label: 'Main', hint: 'Used by every page that has none of its own' },

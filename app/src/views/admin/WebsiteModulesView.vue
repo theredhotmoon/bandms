@@ -6,7 +6,7 @@ import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
-import { settingsFieldsFor, visibilityFieldsFor, NON_PAGE_MODULES } from '@/config/moduleSettings'
+import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
 
 const { query, toggleModule, updateSettings, reorder } = useWebsiteModules()
@@ -76,6 +76,13 @@ const settingsFields = computed(() =>
   editingSlug.value ? settingsFieldsFor(editingSlug.value) : [],
 )
 
+// The same fields bucketed by page section. About alone has ~35 fields × two
+// locales, so the form folds each group into a <details>; the first group (the
+// page header) starts open, the rest closed.
+const settingsGroups = computed(() =>
+  editingSlug.value ? settingsGroupsFor(editingSlug.value) : [],
+)
+
 // Section toggles, keyed by field — no locale dimension, so a flat boolean
 // map is enough (unlike draftSettings, which needs the `.<locale>` split).
 const draftVisibility = ref<Record<string, boolean>>({})
@@ -92,9 +99,8 @@ const visibilityFields = computed(() =>
   editingSlug.value ? visibilityFieldsFor(editingSlug.value) : [],
 )
 
-// Chrome modules (the footer) have no route, so a URL slug and a per-page count
-// would be inputs that change nothing. `enabled` still means something: off
-// hides the footer.
+// Chrome and fixed-route modules (footer, site, home, privacy) have no movable
+// URL, so a slug and a per-page count would be inputs that change nothing.
 const isPageModule = computed(() =>
   editingSlug.value ? !NON_PAGE_MODULES.has(editingSlug.value) : true,
 )
@@ -110,7 +116,7 @@ function startEdit(mod: WebsiteModule) {
 
   const next: Record<string, string> = {}
   for (const field of settingsFieldsFor(mod.slug)) {
-    for (const locale of ['en', 'pl'] as const) {
+    for (const locale of LOCALES) {
       next[`${field.key}.${locale}`] = mod.settings?.[field.key]?.[locale] ?? ''
     }
   }
@@ -261,11 +267,16 @@ async function saveEdit(slug: string) {
               :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
             >{{ mod.custom_name?.en || mod.display_name }}</span>
             <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
-            <span class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
+            <!-- No URL hint for chrome rows: /home and /site are not routes.
+                 privacy keeps its fixed one, like tech-rider does. -->
+            <span v-if="!NON_PAGE_MODULES.has(mod.slug) || mod.slug === 'privacy'" class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
           </div>
 
-          <!-- Status badge -->
+          <!-- Status badge. Hidden with the toggle for rows the public build
+               never switches off — a badge that can only ever read "Live"
+               is a control pretending to be one. -->
           <span
+            v-if="!ALWAYS_ON_MODULES.has(mod.slug)"
             class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
             :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
           >
@@ -286,7 +297,7 @@ async function saveEdit(slug: string) {
           </button>
 
           <!-- Toggle -->
-          <label class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
+          <label v-if="!ALWAYS_ON_MODULES.has(mod.slug)" class="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 flex-shrink-0">
             <input
               type="checkbox"
               class="w-4 h-4 rounded accent-teal-500"
@@ -358,54 +369,72 @@ async function saveEdit(slug: string) {
             </span>
           </div>
 
-          <!-- Page copy. Which fields appear comes from MODULE_SETTINGS_SCHEMA,
-               not from the server: settings is a free-form bag, so a module
-               gains a field here without a migration. -->
-          <div v-if="settingsFields.length > 0" class="flex flex-col gap-3">
+          <!-- Page copy. Which fields appear comes from the @bandms/site-copy
+               registry, not from the server: settings is a free-form bag, so a
+               module gains a field there without a migration. Grouped by page
+               section; a group's <details> keeps the form scannable. -->
+          <div v-if="settingsFields.length > 0" class="flex flex-col gap-3" data-testid="page-copy">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Page copy</span>
 
-            <div v-for="field in settingsFields" :key="field.key" class="flex flex-col gap-1">
-              <span class="text-xs text-zinc-400">{{ field.label }}</span>
-              <div class="trans-group">
-                <div v-for="locale in LOCALES" :key="locale" class="flex flex-col gap-1">
-                  <div class="trans-row" :class="{ 'trans-row--top': field.type === 'textarea' }">
-                    <label class="lang-badge" :class="{ 'lang-badge--pl': locale !== DEFAULT_LOCALE }" :for="`set-${field.key}-${locale}`">
-                      {{ locale.toUpperCase() }}
-                    </label>
-                    <textarea
-                      v-if="field.type === 'textarea'"
-                      :id="`set-${field.key}-${locale}`"
-                      v-model="draftSettings[`${field.key}.${locale}`]"
-                      rows="3"
-                      :maxlength="field.maxLength"
-                      :placeholder="field.placeholder"
-                      :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
-                      class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-y"
-                      :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                    />
-                    <input
-                      v-else
-                      :id="`set-${field.key}-${locale}`"
-                      v-model="draftSettings[`${field.key}.${locale}`]"
-                      type="text"
-                      :maxlength="field.maxLength"
-                      :placeholder="field.placeholder"
-                      :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
-                      class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                      :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
-                    />
+            <details
+              v-for="(group, gi) in settingsGroups"
+              :key="group.group"
+              :open="gi === 0"
+              class="copy-group rounded-lg border border-zinc-800 bg-zinc-900/40"
+              :data-copy-group="group.group"
+            >
+              <summary class="flex items-center justify-between gap-3 cursor-pointer select-none px-3 py-2 text-sm text-zinc-300">
+                <span>{{ group.group }}</span>
+                <span class="text-xs text-zinc-600">{{ group.fields.length }} {{ group.fields.length === 1 ? 'field' : 'fields' }}</span>
+              </summary>
+
+              <div class="flex flex-col gap-3 px-3 pb-3 pt-1 border-t border-zinc-800">
+                <div v-for="field in group.fields" :key="field.key" class="flex flex-col gap-1">
+                  <span class="text-xs text-zinc-400">{{ field.label }}</span>
+                  <div class="trans-group">
+                    <div v-for="locale in LOCALES" :key="locale" class="flex flex-col gap-1">
+                      <div class="trans-row" :class="{ 'trans-row--top': field.type === 'textarea' }">
+                        <label class="lang-badge" :class="{ 'lang-badge--pl': locale !== DEFAULT_LOCALE }" :for="`set-${field.key}-${locale}`">
+                          {{ locale.toUpperCase() }}
+                        </label>
+                        <textarea
+                          v-if="field.type === 'textarea'"
+                          :id="`set-${field.key}-${locale}`"
+                          v-model="draftSettings[`${field.key}.${locale}`]"
+                          rows="3"
+                          :maxlength="field.maxLength"
+                          :placeholder="field.placeholder(locale)"
+                          :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
+                          class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-y"
+                          :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                        />
+                        <input
+                          v-else
+                          :id="`set-${field.key}-${locale}`"
+                          v-model="draftSettings[`${field.key}.${locale}`]"
+                          type="text"
+                          :maxlength="field.maxLength"
+                          :placeholder="field.placeholder(locale)"
+                          :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
+                          class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                          :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                        />
+                      </div>
+                      <span v-if="fieldErrors[`settings.${field.key}.${locale}`]" class="text-xs text-red-400 pl-10">
+                        {{ fieldErrors[`settings.${field.key}.${locale}`][0] }}
+                      </span>
+                    </div>
                   </div>
-                  <span v-if="fieldErrors[`settings.${field.key}.${locale}`]" class="text-xs text-red-400 pl-10">
-                    {{ fieldErrors[`settings.${field.key}.${locale}`][0] }}
-                  </span>
+                  <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
                 </div>
               </div>
-              <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
-            </div>
+            </details>
 
             <span class="text-xs text-zinc-600">
-              Copy changes appear on the public site after a rebuild. Leaving a locale
-              empty clears it for that language only.
+              The greyed text in each box is what the site shows now. Type to replace it;
+              leaving a box empty keeps the default for that language. Where there is no
+              default at all, the other language's text is used. Changes appear on the
+              public site after a rebuild.
             </span>
           </div>
 
