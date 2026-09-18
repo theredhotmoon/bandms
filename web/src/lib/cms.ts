@@ -115,8 +115,8 @@ export const getSocialLinks = () =>
 export const getConcerts = () =>
   get<Concert[]>('/concerts')
 
-export const getConcert = (id: number) =>
-  get<Concert>(`/concerts/${id}`)
+export const getConcert = (id: number, lang: Locale = 'en') =>
+  get<Concert>(`/concerts/${id}`, { lang })
 
 export const getConcertSetlist = (id: number) =>
   getOptional<PublicSetlist>(`/concerts/${id}/setlist`)

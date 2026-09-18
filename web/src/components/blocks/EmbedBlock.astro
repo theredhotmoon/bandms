@@ -1,7 +1,15 @@
 ---
-import type { EmbedBlock } from '@/types/post'
+import type { EmbedProviderName } from '@/types/post'
 
-interface Props { block: EmbedBlock }
+/** The fields an iframe needs — an embed block or a clip, either works. */
+export interface EmbedLike {
+  provider: EmbedProviderName
+  url: string | null
+  label: string | null
+  embed_id: string | null
+}
+
+interface Props { block: EmbedLike }
 const { block } = Astro.props
 
 /**

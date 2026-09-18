@@ -4,6 +4,7 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
+import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
@@ -33,7 +34,7 @@ const summaries = concerts.map(x => ({
 const idx = summaries.findIndex(s => s.id === itemId)
 
 const [concert, setlist, profile, ticketTypes, siteConfig] = await Promise.all([
-  getConcert(itemId),
+  getConcert(itemId, lang),
   getConcertSetlist(itemId),
   getBandProfile(lang),
   getConcertTickets(itemId).catch(() => [] as { id: number; is_on_sale: boolean }[]),
@@ -383,6 +384,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         </div>
       </section>
     )}
+
+    <!-- ── CLIPS ───────────────────────────────────────────── -->
+    <ClipsGrid class="sec clips-sec" clips={concert.clips ?? []} heading={t.clipsTitle} copy={site} />
 
     <!-- ── VENUE & GETTING THERE ───────────────────────────── -->
     <section class="sec venue-sec">

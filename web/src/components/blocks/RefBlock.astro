@@ -3,6 +3,7 @@ import type { RefBlock } from '@/types/post'
 import type { Locale } from '@/types/shared'
 import type { SlugMap } from '@/lib/slugs'
 import { refHref } from '@/lib/refHref'
+import EmbedBlock from './EmbedBlock.astro'
 
 interface Props {
   block: RefBlock
@@ -22,10 +23,33 @@ const label =
   block.entity === 'concert'  ? (data.venue?.name ?? data.date ?? 'Concert')
 : block.entity === 'shop_item' ? data.name
 : block.entity === 'album'      ? data.title
+: block.entity === 'clip'       ? (data.title ?? '')
 : data.title
+
+// A clip's caption links to the show it was filmed at, when it has one.
+const clipConcert = block.entity === 'clip' && data.concert
+  ? refHref('concert', data.concert, lang, slugMap, modules)
+  : null
+const clipConcertLabel = block.entity === 'clip' && data.concert
+  ? [data.concert.venue?.name, data.concert.date].filter(Boolean).join(' · ')
+  : ''
 ---
 
-{block.entity === 'press_release' && isFirstPress ? (
+{block.entity === 'clip' ? (
+  <figure class="art-clip">
+    <EmbedBlock block={{ provider: data.provider, url: data.url, label: data.title ?? null, embed_id: data.embed_id ?? null }} />
+    {(label || clipConcertLabel) && (
+      <figcaption class="art-clip-cap">
+        {label && <span class="art-clip-title">{label}</span>}
+        {clipConcertLabel && (clipConcert ? (
+          <a href={clipConcert.href} class="art-clip-show">{clipConcertLabel} →</a>
+        ) : (
+          <span class="art-clip-show art-clip-show--dead">{clipConcertLabel}</span>
+        ))}
+      </figcaption>
+    )}
+  </figure>
+) : block.entity === 'press_release' && isFirstPress ? (
   <blockquote class="art-pull">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--color-accent)" aria-hidden="true">
       <path d="M9 7H5v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2C9 14.3 10 12.7 10 10V8a1 1 0 0 0-1-1zm9 0h-4v5h3v-1c0 1.5-.6 2.4-2 3l.6 1.2c2.4-1 3.4-2.6 3.4-5.4V8a1 1 0 0 0-1-1z" />
@@ -92,4 +116,12 @@ const label =
     .art-pull-quote { font-size: 22px; }
     .art-pull { padding-left: 16px; }
   }
+
+  .art-clip { margin: 0 0 28px; }
+  .art-clip :global(.pb-embed) { margin-bottom: 10px; }
+  .art-clip-cap { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; font: 500 14px/1.4 var(--font-body); color: var(--color-body); }
+  .art-clip-title { font-weight: 700; }
+  .art-clip-show { color: var(--color-accent); text-decoration: none; font-weight: 700; }
+  .art-clip-show:hover { text-decoration: underline; }
+  .art-clip-show--dead { color: var(--color-muted); }
 </style>

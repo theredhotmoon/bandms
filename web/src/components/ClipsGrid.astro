@@ -1,0 +1,55 @@
+---
+import type { Clip } from '@/types/clip'
+import type { ClipCategoryCopy } from '@/lib/clipCategory'
+import { clipCategoryLabel } from '@/lib/clipCategory'
+import EmbedBlock from '@/components/blocks/EmbedBlock.astro'
+
+/**
+ * A grid of clips — the same iframe an embed block renders, with a caption.
+ * Renders nothing for an empty list: this is a content section, it links
+ * nowhere, and an empty heading is worse than no section.
+ */
+interface Props {
+  clips: Clip[]
+  heading: string
+  copy: ClipCategoryCopy
+  /** Section class hook so a host page can space it like its siblings. */
+  class?: string
+}
+const { clips, heading, copy, class: cls = '' } = Astro.props
+---
+
+{clips.length > 0 && (
+  <section class={`clips-grid ${cls}`} data-testid="clips-grid">
+    <h2 class="clips-title">{heading}</h2>
+    <ul class="clips-list">
+      {clips.map(clip => (
+        <li class="clips-item" data-provider={clip.provider}>
+          <EmbedBlock block={{ provider: clip.provider, url: clip.url, label: clip.title, embed_id: clip.embed_id }} />
+          <div class="clips-caption">
+            <span class="clips-cat">{clipCategoryLabel(clip.category, copy)}</span>
+            {clip.title && <span class="clips-name">{clip.title}</span>}
+            {clip.recorded_on && <time class="clips-date" datetime={clip.recorded_on}>{clip.recorded_on}</time>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .clips-title {
+    font-family: var(--font-display); font-weight: var(--display-weight);
+    font-size: 30px; line-height: 1.02; letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform); margin: 0 0 18px; color: var(--color-ink);
+  }
+  .clips-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .clips-list { grid-template-columns: 1fr 1fr; } }
+  .clips-item :global(.pb-embed) { margin-bottom: 10px; }
+  .clips-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; font: 500 14px/1.4 var(--font-body); color: var(--color-body); }
+  .clips-cat {
+    font: 800 11px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .clips-date { color: var(--color-muted); font-size: 13px; }
+</style>
