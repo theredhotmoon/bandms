@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { providerLabel, detectProvider } from '@/utils/postBlocks'
+import { providerLabel, detectProvider, isAudioProvider } from '@/utils/postBlocks'
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -22,9 +22,9 @@ function set(key: string, value: unknown) {
     <div class="flex items-center gap-2">
       <input
         :value="url" @input="set('url', ($event.target as HTMLInputElement).value)"
-        class="field-input flex-1" placeholder="Paste a YouTube, Vimeo, Instagram or TikTok URL" required
+        class="field-input flex-1" placeholder="Paste a video (YouTube, Vimeo, Instagram, TikTok, Facebook) or audio (Spotify, SoundCloud, Apple Music) URL" required
       />
-      <span v-if="url" class="provider-badge">{{ providerLabel(detected) }}</span>
+      <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? 'Audio · ' : '' }}{{ providerLabel(detected) }}</span>
     </div>
     <div v-if="detected === 'link'" class="trans-group">
       <div class="trans-row">

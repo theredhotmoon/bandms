@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { defaultPayload, move, providerLabel, detectProvider } from './postBlocks'
+import { defaultPayload, move, providerLabel, detectProvider, isAudioProvider } from './postBlocks'
 
 describe('move', () => {
   it('moves an item down', () => {
@@ -71,7 +71,6 @@ describe('detectProvider', () => {
   })
 
   it('falls back to link for any other host', () => {
-    expect(detectProvider('https://www.facebook.com/band/posts/123')).toBe('link')
     expect(detectProvider('https://example.com/news')).toBe('link')
   })
 
@@ -86,5 +85,23 @@ describe('detectProvider', () => {
   // is the entire point of this helper: the two must agree.
   it('matches by host, not by substring anywhere in the url', () => {
     expect(detectProvider('https://example.com/share?ref=https://youtube.com/x')).toBe('link')
+  })
+})
+
+describe('detectProvider — facebook and audio', () => {
+  it('detects facebook.com and fb.watch', () => {
+    expect(detectProvider('https://www.facebook.com/band/videos/123/')).toBe('facebook')
+    expect(detectProvider('https://fb.watch/abc123/')).toBe('facebook')
+  })
+  it('detects the three audio players', () => {
+    expect(detectProvider('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC')).toBe('spotify')
+    expect(detectProvider('https://soundcloud.com/band/live')).toBe('soundcloud')
+    expect(detectProvider('https://music.apple.com/pl/album/x/1')).toBe('apple_music')
+  })
+  it('labels them and knows which are audio', () => {
+    expect(providerLabel('facebook')).toBe('Facebook')
+    expect(providerLabel('apple_music')).toBe('Apple Music')
+    expect(isAudioProvider('spotify')).toBe(true)
+    expect(isAudioProvider('youtube')).toBe(false)
   })
 })

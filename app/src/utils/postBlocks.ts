@@ -25,11 +25,19 @@ export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
 }
 
 const PROVIDER_LABELS: Record<EmbedProviderName, string> = {
-  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', link: 'Link',
+  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',
+  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music', link: 'Link',
 }
 
 export function providerLabel(p: EmbedProviderName): string {
   return PROVIDER_LABELS[p] ?? 'Link'
+}
+
+/** Must mirror EmbedProvider::AUDIO. Audio players are fixed-height frames. */
+const AUDIO_PROVIDERS: ReadonlySet<EmbedProviderName> = new Set(['spotify', 'soundcloud', 'apple_music'])
+
+export function isAudioProvider(p: EmbedProviderName): boolean {
+  return AUDIO_PROVIDERS.has(p)
 }
 
 /** Host suffix => provider. Must mirror api/app/Support/EmbedProvider.php's HOSTS exactly. */
@@ -39,6 +47,11 @@ const PROVIDER_HOSTS: Record<string, EmbedProviderName> = {
   'vimeo.com': 'vimeo',
   'instagram.com': 'instagram',
   'tiktok.com': 'tiktok',
+  'facebook.com': 'facebook',
+  'fb.watch': 'facebook',
+  'open.spotify.com': 'spotify',
+  'soundcloud.com': 'soundcloud',
+  'music.apple.com': 'apple_music',
 }
 
 /**
