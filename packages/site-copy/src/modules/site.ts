@@ -65,4 +65,26 @@ export const SITE_COPY = defineCopy([
     key: 'notFoundHome', label: '"Back to home" button', group: '404 page', maxLength: 40,
     defaults: { en: 'Back to home', pl: 'Wróć na stronę główną' },
   },
+  // ── Clips ── category labels shown wherever a clip renders (concert page,
+  // news). A custom category typed in the admin prints as typed.
+  {
+    key: 'clipCategoryLive', label: '"Live" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Live', pl: 'Na żywo' },
+  },
+  {
+    key: 'clipCategoryStudio', label: '"Studio" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Studio', pl: 'Studio' },
+  },
+  {
+    key: 'clipCategoryBackstage', label: '"Backstage" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Backstage', pl: 'Za kulisami' },
+  },
+  {
+    key: 'clipCategoryInterview', label: '"Interview" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Interview', pl: 'Wywiad' },
+  },
+  {
+    key: 'clipCategoryOther', label: '"Other" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Other', pl: 'Inne' },
+  },
 ])

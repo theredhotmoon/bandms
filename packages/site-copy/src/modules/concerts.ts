@@ -230,6 +230,11 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'Planned set', pl: 'Planowany set' },
   },
   {
+    key: 'clipsTitle', label: 'Clips heading', group: 'Show page', maxLength: 60,
+    help: 'Heading of the videos section on a show page. Hidden when the show has no clips.',
+    defaults: { en: 'Videos from this show', pl: 'Nagrania z koncertu' },
+  },
+  {
     key: 'songs', label: '"songs" count unit', group: 'Show page', maxLength: 30,
     help: 'After the number of songs in the setlist header.',
     defaults: { en: 'songs', pl: 'utworów' },
