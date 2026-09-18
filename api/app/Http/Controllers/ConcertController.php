@@ -56,12 +56,12 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
     }
 
     public function show(Concert $concert): ConcertResource
     {
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
     }
 
     public function update(Request $request, Concert $concert): ConcertResource
@@ -76,7 +76,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
     }
 
     public function destroy(Concert $concert): JsonResponse
@@ -104,7 +104,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
     }
 
     public function destroyPoster(Concert $concert): ConcertResource
@@ -116,7 +116,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
     }
 
     private function messages(): array

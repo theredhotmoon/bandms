@@ -55,6 +55,19 @@ describe('GET /api/concerts/{concert}', function () {
     it('returns 404 for a non-existent concert', function () {
         $this->getJson('/api/concerts/9999')->assertNotFound();
     });
+
+    it('carries the concert clips in pivot order', function () {
+        $concert = Concert::factory()->create();
+        $a = \App\Models\Clip::factory()->create(['title' => ['en' => 'A']]);
+        $b = \App\Models\Clip::factory()->create(['title' => ['en' => 'B']]);
+        $concert->clips()->attach([$b->id => ['position' => 0], $a->id => ['position' => 1]]);
+
+        $this->getJson("/api/concerts/{$concert->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.clips.0.title', 'B')
+            ->assertJsonPath('data.clips.1.title', 'A')
+            ->assertJsonPath('data.clips.0.embed_id', 'dQw4w9WgXcQ');
+    });
 });
 
 // ── POST /api/concerts ────────────────────────────────────────────────────────
