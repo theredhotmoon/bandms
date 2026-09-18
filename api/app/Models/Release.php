@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasClips;
 use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Release extends Model
 {
-    use HasFactory, HasSlug, HasTranslations;
+    use HasFactory, HasSlug, HasTranslations, HasClips;
 
     public array $translatable = ['title', 'description'];
 
