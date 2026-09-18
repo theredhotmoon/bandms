@@ -13,14 +13,12 @@ interface Props {
   clips: Clip[]
   heading: string
   copy: ClipCategoryCopy
-  /** Section class hook so a host page can space it like its siblings. */
-  class?: string
 }
-const { clips, heading, copy, class: cls = '' } = Astro.props
+const { clips, heading, copy } = Astro.props
 ---
 
 {clips.length > 0 && (
-  <section class={`clips-grid ${cls}`} data-testid="clips-grid">
+  <div class="clips-grid" data-testid="clips-grid">
     <h2 class="clips-title">{heading}</h2>
     <ul class="clips-list">
       {clips.map(clip => (
@@ -34,7 +32,7 @@ const { clips, heading, copy, class: cls = '' } = Astro.props
         </li>
       ))}
     </ul>
-  </section>
+  </div>
 )}
 
 <style>

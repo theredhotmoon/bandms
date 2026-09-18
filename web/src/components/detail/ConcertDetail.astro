@@ -386,7 +386,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     )}
 
     <!-- ── CLIPS ───────────────────────────────────────────── -->
-    <ClipsGrid class="sec clips-sec" clips={concert.clips ?? []} heading={t.clipsTitle} copy={site} />
+    {(concert.clips ?? []).length > 0 && (
+      <section class="sec clips-sec">
+        <ClipsGrid clips={concert.clips ?? []} heading={t.clipsTitle} copy={site} />
+      </section>
+    )}
 
     <!-- ── VENUE & GETTING THERE ───────────────────────────── -->
     <section class="sec venue-sec">
