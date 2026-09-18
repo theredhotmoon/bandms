@@ -133,6 +133,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: adminUrl('clips'),
+      name: 'admin-clips',
+      component: () => import('@/views/admin/ClipsAdminView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: adminUrl('instruments'),
       name: 'admin-instruments',
       component: () => import('@/views/admin/InstrumentsAdminView.vue'),

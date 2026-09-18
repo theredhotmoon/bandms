@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { providerLabel, detectProvider, isAudioProvider } from '@/utils/postBlocks'
 
-const props = defineProps<{ payload: Record<string, unknown> }>()
+const props = defineProps<{ payload: Record<string, unknown>; hideLabel?: boolean }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 
 const url = computed(() => (props.payload.url as string) ?? '')
@@ -26,7 +26,7 @@ function set(key: string, value: unknown) {
       />
       <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? 'Audio · ' : '' }}{{ providerLabel(detected) }}</span>
     </div>
-    <div v-if="detected === 'link'" class="trans-group">
+    <div v-if="detected === 'link' && !hideLabel" class="trans-group">
       <div class="trans-row">
         <span class="lang-badge">EN</span>
         <input :value="label.en ?? ''" @input="set('label', { ...label, en: ($event.target as HTMLInputElement).value })"

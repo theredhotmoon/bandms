@@ -18,7 +18,7 @@ type GroupId = 'band' | 'content' | 'shows' | 'more' | 'pageconfig'
 
 const groupRoutes: Record<GroupId, string[]> = {
   band:       [adminUrl('my-profile'), adminUrl('my-setups'), adminUrl('band-profile'), adminUrl('band-members'),
-               adminUrl('releases'), adminUrl('music-videos'), adminUrl('photos'), adminUrl('band-calendar'),
+               adminUrl('releases'), adminUrl('music-videos'), adminUrl('clips'), adminUrl('photos'), adminUrl('band-calendar'),
                adminUrl('tech-rider'), adminUrl('setlists')],
   content:    [adminUrl('posts'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
   shows:      [adminUrl('concerts'), adminUrl('tours'), adminUrl('venues'), adminUrl('door')],
@@ -114,6 +114,10 @@ watch(() => route.path, (path) => {
               <RouterLink :to="adminUrl('music-videos')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                 Music Videos
+              </RouterLink>
+              <RouterLink :to="adminUrl('clips')" class="nav-item" active-class="nav-item--active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>
+                Clips
               </RouterLink>
               <RouterLink :to="adminUrl('photos')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
