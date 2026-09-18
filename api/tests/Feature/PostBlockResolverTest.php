@@ -101,3 +101,40 @@ it('resolves a deleted clip to null', function () {
 
     expect(PostBlockResolver::resolve(collect([$block]))[$block->id])->toBeNull();
 });
+
+// morphedByMany has no ORDER BY of its own, so an unordered ->first() would
+// caption an arbitrary concert. Deliberately attach the *higher*-id concert
+// at pivot position 0 — this only passes when position, not insertion/id
+// order, drives the pick.
+it('picks the concert at pivot position 0, not the lowest id', function () {
+    $lower  = Concert::factory()->create();
+    $higher = Concert::factory()->create();
+    expect($higher->id)->toBeGreaterThan($lower->id);
+
+    $clip = \App\Models\Clip::factory()->create();
+    $clip->concerts()->attach([$higher->id => ['position' => 0], $lower->id => ['position' => 1]]);
+
+    $post  = Post::factory()->create();
+    $block = PostBlock::factory()->for($post)->ref('clip', $clip->id)->create();
+
+    $data = PostBlockResolver::resolve(collect([$block]))[$block->id];
+
+    expect($data['concert']['id'])->toBe($higher->id);
+});
+
+// One query per entity type, not one per block — the clip arm eager-loads
+// pivot+concerts and venue, but that's still a fixed number regardless of
+// how many clip blocks are resolved.
+it('issues a fixed number of queries for the clip entity regardless of block count', function () {
+    $post   = Post::factory()->create();
+    $clips  = \App\Models\Clip::factory()->count(5)->create();
+    $clips->each(fn ($c) => $c->concerts()->attach(Concert::factory()->create()->id, ['position' => 0]));
+    $blocks = $clips->map(fn ($c) => PostBlock::factory()->for($post)->ref('clip', $c->id)->create());
+
+    DB::enableQueryLog();
+    PostBlockResolver::resolve(collect($blocks));
+    $count = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($count)->toBe(3);
+});
