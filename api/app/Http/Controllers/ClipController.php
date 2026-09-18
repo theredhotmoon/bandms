@@ -82,8 +82,7 @@ class ClipController extends Controller
             ->where('clippable_type', $type)->where('clippable_id', $id)->max('position') + 1;
         $relation->syncWithoutDetaching([$id => ['position' => $next]]);
 
-        SiteRebuild::markDirty(ClipOwners::dirtyArea($type));
-        SiteRebuild::markDirty('posts');
+        $this->markOwnerDirty($clip, $type);
 
         return new ClipResource($clip->load(self::OWNER_RELATIONS));
     }
@@ -94,8 +93,7 @@ class ClipController extends Controller
 
         $clip->ownerRelation($type)->detach($id);
 
-        SiteRebuild::markDirty(ClipOwners::dirtyArea($type));
-        SiteRebuild::markDirty('posts');
+        $this->markOwnerDirty($clip, $type);
 
         return new ClipResource($clip->load(self::OWNER_RELATIONS));
     }
@@ -149,6 +147,23 @@ class ClipController extends Controller
         }
         SiteRebuild::markDirty('posts');
         if ($clip->show_in_epk || $clip->wasChanged('show_in_epk')) {
+            SiteRebuild::markDirty('band-profile');
+        }
+    }
+
+    /**
+     * Dirty areas for a single attach/detach: the one owner's area, posts
+     * (ref blocks), and the EPK when this clip is flagged for it — the same
+     * three areas markDirty() covers for store/update/destroy, kept in sync
+     * so attach/detach cannot silently skip the EPK rebuild.
+     */
+    private function markOwnerDirty(Clip $clip, string $type): void
+    {
+        if ($area = ClipOwners::dirtyArea($type)) {
+            SiteRebuild::markDirty($area);
+        }
+        SiteRebuild::markDirty('posts');
+        if ($clip->show_in_epk) {
             SiteRebuild::markDirty('band-profile');
         }
     }

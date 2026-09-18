@@ -147,6 +147,16 @@ describe('attach / detach', function () {
 
         $this->assertDatabaseHas('clippables', ['clip_id' => $second->id, 'clippable_id' => $concert->id, 'position' => 4]);
     });
+
+    it('marks the EPK area dirty when attaching an EPK-flagged clip', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+        $clip = Clip::factory()->create(['show_in_epk' => true]);
+
+        $this->postJson("/api/clips/{$clip->id}/attach", ['type' => 'concert', 'id' => $concert->id])->assertSuccessful();
+
+        expect(SiteDirtyArea::pluck('area')->all())->toContain('concerts', 'posts', 'band-profile');
+    });
 });
 
 describe('DELETE /api/clips/{clip}', function () {
