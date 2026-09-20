@@ -99,11 +99,11 @@ final class PostBlockResolver
                 ])->all(),
 
             // A clip renders as its embed plus a "Live at … →" caption, so it
-            // carries its first attached concert (or null) inline. The eager
-            // load orders by pivot position (then concert id as a tiebreak),
-            // matching Clip::ownersList() — morphedByMany has no ORDER BY of
-            // its own, so an unordered ->first() would caption an arbitrary
-            // concert on a clip attached to more than one.
+            // carries one attached concert (or null) inline. morphedByMany
+            // has no ORDER BY of its own, so an unordered ->first() would
+            // caption an arbitrary concert on a clip attached to more than
+            // one; ordering by pivot position (the clip's slot within each
+            // concert's list, then concert id) makes the pick deterministic.
             'clip' => Clip::with(['concerts' => fn ($q) => $q->orderByPivot('position')->orderBy('concerts.id'), 'concerts.venue'])->whereIn('id', $ids)->get()
                 ->keyBy('id')->map(function ($c) {
                     $concert = $c->concerts->first();

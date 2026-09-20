@@ -85,12 +85,16 @@ describe('POST /api/clips', function () {
 });
 
 describe('PUT /api/clips/{clip}', function () {
-    it('keeps the id and syncs attachments in array order', function () {
+    // `position` is the clip's slot within the *owner's* list — the order the
+    // public page renders. A new owner gets the next slot in that owner's
+    // list, whatever index it had in `attach`.
+    it("keeps the id and appends new owners at the end of each owner's list", function () {
         $this->actingAsAdmin();
         $clip = Clip::factory()->create();
         [$a, $b] = Concert::factory()->count(2)->create();
         $release = Release::factory()->create();
         $clip->concerts()->attach($a->id, ['position' => 0]);
+        Clip::factory()->create()->concerts()->attach($b->id, ['position' => 4]);
 
         $this->putJson("/api/clips/{$clip->id}", [
             'url'    => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -98,8 +102,38 @@ describe('PUT /api/clips/{clip}', function () {
         ])->assertSuccessful()->assertJsonPath('data.id', $clip->id);
 
         $this->assertDatabaseMissing('clippables', ['clip_id' => $clip->id, 'clippable_type' => 'concert', 'clippable_id' => $a->id]);
-        $this->assertDatabaseHas('clippables', ['clip_id' => $clip->id, 'clippable_type' => 'concert', 'clippable_id' => $b->id, 'position' => 1]);
+        $this->assertDatabaseHas('clippables', ['clip_id' => $clip->id, 'clippable_type' => 'concert', 'clippable_id' => $b->id, 'position' => 5]);
         $this->assertDatabaseHas('clippables', ['clip_id' => $clip->id, 'clippable_type' => 'release', 'clippable_id' => $release->id, 'position' => 0]);
+    });
+
+    // The admin form always resends the full owner list, so an unrelated edit
+    // must not move the clip within a show it was already attached to.
+    it("does not reorder an existing owner's list on an unrelated edit", function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+        $first  = Clip::factory()->create();
+        $second = Clip::factory()->create();
+        $first->concerts()->attach($concert->id, ['position' => 1]);
+        $second->concerts()->attach($concert->id, ['position' => 2]);
+
+        $this->putJson("/api/clips/{$second->id}", [
+            'title'  => ['en' => 'Renamed'],
+            'attach' => [['type' => 'concert', 'id' => $concert->id]],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('clippables', ['clip_id' => $second->id, 'clippable_id' => $concert->id, 'position' => 2]);
+        expect($concert->fresh()->clips->pluck('id')->all())->toBe([$first->id, $second->id]);
+    });
+
+    it('stores the default category for an empty one and never nulls the provider', function () {
+        $this->actingAsAdmin();
+        $clip = Clip::factory()->create(['provider' => 'youtube', 'category' => 'studio']);
+
+        $this->putJson("/api/clips/{$clip->id}", ['category' => '', 'provider' => null])->assertSuccessful()
+            ->assertJsonPath('data.category', 'live')->assertJsonPath('data.provider', 'youtube');
+
+        $this->postJson('/api/clips', ['url' => 'https://vimeo.com/76979871', 'category' => null])
+            ->assertCreated()->assertJsonPath('data.category', 'live');
     });
 
     it('leaves attachments alone when attach is omitted', function () {

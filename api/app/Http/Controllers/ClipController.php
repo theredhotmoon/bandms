@@ -77,10 +77,7 @@ class ClipController extends Controller
     {
         ['type' => $type, 'id' => $id] = $this->ownerInput($request);
 
-        $relation = $clip->ownerRelation($type);
-        $next = (int) DB::table('clippables')
-            ->where('clippable_type', $type)->where('clippable_id', $id)->max('position') + 1;
-        $relation->syncWithoutDetaching([$id => ['position' => $next]]);
+        $clip->ownerRelation($type)->syncWithoutDetaching([$id => ['position' => $this->nextPosition($type, $id)]]);
 
         $this->markOwnerDirty($clip, $type);
 
@@ -116,25 +113,63 @@ class ClipController extends Controller
     /** Column attributes from a validated payload — never `attach`. */
     private function attributes(array $data): array
     {
-        return array_intersect_key($data, array_flip(['provider', 'url', 'title', 'category', 'recorded_on', 'show_in_epk']));
+        $attrs = array_intersect_key($data, array_flip(['url', 'title', 'category', 'recorded_on', 'show_in_epk']));
+
+        // `provider` is stamped from `url` by ClipRequest, never taken from the
+        // client: a PUT without a url must leave it alone, and the column is
+        // NOT NULL. Same for `category` — the rule is nullable, the column is
+        // not, and array union would keep a present-but-null key.
+        if (isset($data['url'])) {
+            $attrs['provider'] = $data['provider'];
+        }
+        if (array_key_exists('category', $attrs) && $attrs['category'] === null) {
+            $attrs['category'] = 'live';
+        }
+
+        return $attrs;
     }
 
     /**
-     * Replace the clip's owners with `attach`, positions from array index.
-     * One sync() per owner type: an omitted type detaches everything of that
-     * type, which is what "this is the full list" means.
+     * Replace the clip's owners with `attach`. One sync() per owner type: an
+     * omitted type detaches everything of that type, which is what "this is
+     * the full list" means.
+     *
+     * `position` is the clip's slot within the *owner's* list — what
+     * HasClips::clips() orders by and the public page renders. An owner the
+     * clip already has keeps its slot; a new one goes to the end of that
+     * owner's list, exactly as attach() does. The order of `attach` itself
+     * carries no meaning, so an unrelated edit from the admin form (which
+     * always resends the full list) cannot reorder a show's clips.
      *
      * @param array<int, array{type: string, id: int}> $attach
      */
     private function syncOwners(Clip $clip, array $attach): void
     {
         $byType = array_fill_keys(ClipOwners::aliases(), []);
-        foreach (array_values($attach) as $i => $row) {
-            $byType[$row['type']][(int) $row['id']] = ['position' => $i];
+        foreach ($attach as $row) {
+            $byType[$row['type']][] = (int) $row['id'];
         }
-        foreach ($byType as $type => $rows) {
+
+        foreach ($byType as $type => $ids) {
+            $current = DB::table('clippables')
+                ->where('clip_id', $clip->id)->where('clippable_type', $type)
+                ->pluck('position', 'clippable_id');
+
+            $rows = [];
+            foreach (array_unique($ids) as $id) {
+                $rows[$id] = ['position' => $current->has($id) ? (int) $current[$id] : $this->nextPosition($type, $id)];
+            }
             $clip->ownerRelation($type)->sync($rows);
         }
+    }
+
+    /** The next free slot in one owner's clip list; 0 for an owner with none. */
+    private function nextPosition(string $type, int $id): int
+    {
+        $max = DB::table('clippables')
+            ->where('clippable_type', $type)->where('clippable_id', $id)->max('position');
+
+        return $max === null ? 0 : (int) $max + 1;
     }
 
     /** Every area a clip can appear in: each owner's page, plus posts (ref blocks) and the EPK. */

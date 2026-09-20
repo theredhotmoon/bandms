@@ -78,7 +78,8 @@ final class EmbedProvider
             // is the id. Only URLs that name a single video qualify.
             'facebook'  => preg_match('~(?:facebook\.com/(?:[^/]+/videos/\d+|watch/?\?v=\d+|reel/\d+)|fb\.watch/[A-Za-z0-9_-]+)~', $url) === 1 ? $url : null,
             // Spotify's player is /embed/{type}/{id}; artists have no player.
-            'spotify'   => preg_match('~open\.spotify\.com/(track|album|playlist|episode|show)/([A-Za-z0-9]+)~', $url, $m) === 1 ? "{$m[1]}/{$m[2]}" : null,
+            // A localised web player prefixes the path with /intl-xx[-yy]/.
+            'spotify'   => preg_match('~open\.spotify\.com/(?:intl-[A-Za-z]{2,3}(?:-[A-Za-z]{2,4})?/)?(track|album|playlist|episode|show)/([A-Za-z0-9]+)~', $url, $m) === 1 ? "{$m[1]}/{$m[2]}" : null,
             // SoundCloud's player takes ?url=<page>; needs /{user}/{track-or-set}.
             'soundcloud' => preg_match('~soundcloud\.com/[^/?#]+/[^/?#]+~', $url) === 1 ? $url : null,
             // Apple Music: embed.music.apple.com + the same path (incl. ?i= for a song).

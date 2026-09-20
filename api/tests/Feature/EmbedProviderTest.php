@@ -70,6 +70,9 @@ describe('EmbedProvider::embedId', function () {
         expect(EmbedProvider::embedId('https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3?si=abc'))->toBe('album/1DFixLWuPkv3KT3TnV35m3');
         expect(EmbedProvider::embedId('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M'))->toBe('playlist/37i9dQZF1DXcBWIGoYBM5M');
         expect(EmbedProvider::embedId('https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF'))->toBeNull();
+        // A localised web player shares /intl-xx/ links — what a Polish band copies.
+        expect(EmbedProvider::embedId('https://open.spotify.com/intl-pl/track/4uLU6hMCjMI75M1A2tKUQC?si=x'))->toBe('track/4uLU6hMCjMI75M1A2tKUQC');
+        expect(EmbedProvider::embedId('https://open.spotify.com/intl-pt-br/album/1DFixLWuPkv3KT3TnV35m3'))->toBe('album/1DFixLWuPkv3KT3TnV35m3');
     });
 
     // SoundCloud's player takes ?url=<page>, so the id is the URL — but only a
