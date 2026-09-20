@@ -238,23 +238,6 @@ with mail-tester.com from the app (`php artisan tinker` →
 
 ---
 
-## Clips PR 2 — release, merch and EPK surfaces
-
-**Status:** PR 1 (library, `/admin/clips`, concert quick-add, news `ref: clip`
-block, concert page section) is done. The `HasClips` trait is already on
-`Release`, `ShopItem` and `Album`, and the admin's clip form already offers
-releases and merch as owners — but nothing on the public site reads them yet.
-Spec: `docs/superpowers/specs/2026-09-17-clips-library-design.md` §6.
-
-- Release page and merch page: a `<ClipsGrid>` section, same as the show page.
-- EPK snapshot: clips with `show_in_epk` (the flag is stored and the
-  `band-profile` area is already marked dirty on change; the snapshot builder
-  ignores it).
-- Bandcamp as an audio provider needs a page fetch for the numeric player id
-  — it stays a plain link until someone adds that.
-
----
-
 ## Scheduled news posts — designed, not built
 
 **Status:** design approved 2026-09-16, no implementation. Spec:
