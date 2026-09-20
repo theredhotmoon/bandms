@@ -14,6 +14,7 @@ import type { ReleaseSummary } from '@/types/release'
 import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
+import type { Clip } from '@/types/clip'
 
 const props = defineProps<{
   initial?: Post | null
@@ -24,6 +25,7 @@ const props = defineProps<{
   musicVideos: MusicVideo[]
   pressReleases: PressReleaseSummary[]
   shopItems: ShopItemSummary[]
+  clips: Clip[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -52,6 +54,10 @@ const entityLists = computed<RefEntityLists>(() => ({
   music_video:   props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
   press_release: props.pressReleases.map(p => ({ id: p.id, label: p.og_title ?? p.url })),
   shop_item:     props.shopItems.map(s => ({ id: s.id, label: s.name })),
+  clip:          props.clips.map(c => ({
+    id: c.id,
+    label: [c.title ?? c.url, c.category, c.owners[0]?.label].filter(Boolean).join(' · '),
+  })),
 }))
 
 const { isDirty, markClean } = useDirtyGuard(() => form)
