@@ -18,25 +18,41 @@ export function useClips() {
     qc.invalidateQueries({ queryKey: ['concerts'] })
   }
 
+  // Every mutation returns the full clip, so the library cache is written from
+  // the response before the refetch lands. Consumers that render a list from
+  // this query — the post editor's clip select, the concert form's attached
+  // list — see the change at once; otherwise a block pointed at a just-created
+  // clip shows the placeholder until the refetch, because its <option> does
+  // not exist yet.
+  const upsert = (clip: Clip) => {
+    qc.setQueryData<Clip[]>(CLIPS_QKEY, old =>
+      old?.some(c => c.id === clip.id) ? old.map(c => (c.id === clip.id ? clip : c)) : [...(old ?? []), clip],
+    )
+    invalidate()
+  }
+
   const create = useMutation({
     mutationFn: (payload: ClipPayload) => createClip(token.value!, payload),
-    onSuccess: invalidate,
+    onSuccess: upsert,
   })
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ClipPayload }) => updateClip(token.value!, id, payload),
-    onSuccess: invalidate,
+    onSuccess: upsert,
   })
   const remove = useMutation({
     mutationFn: (id: number) => deleteClip(token.value!, id),
-    onSuccess: invalidate,
+    onSuccess: (_, id) => {
+      qc.setQueryData<Clip[]>(CLIPS_QKEY, old => old?.filter(c => c.id !== id))
+      invalidate()
+    },
   })
   const attach = useMutation({
     mutationFn: ({ id, owner }: { id: number; owner: ClipAttach }) => attachClip(token.value!, id, owner),
-    onSuccess: invalidate,
+    onSuccess: upsert,
   })
   const detach = useMutation({
     mutationFn: ({ id, owner }: { id: number; owner: ClipAttach }) => detachClip(token.value!, id, owner),
-    onSuccess: invalidate,
+    onSuccess: upsert,
   })
 
   return { query, create, update, remove, attach, detach }
