@@ -159,6 +159,85 @@ an environment variable on the server*. Related: the Hetzner runbook under
 
 ---
 
+## Email addresses on the domain — free, and decided before the DNS move
+
+**Status:** nothing exists. The site needs `booking@`, `press@`, `info@`,
+`merch@` (and whatever else the contact page promises) on `skankingstorks.band`,
+and the API's outgoing mail — newsletter confirmations, order and ticket mail —
+is unconfigured in production: `docker-compose.prod.yml` defaults
+`MAIL_MAILER` to `log`, which silently drops every message.
+
+**Decide this before doing the DNS item above, not after.** The recommended
+route moves the nameservers to Cloudflare, and if that happens *after* the
+GoDaddy A records are set, the same records have to be re-entered at Cloudflare
+and the GoDaddy step was wasted. Either do both at Cloudflare in one sitting, or
+pick a route that leaves DNS at GoDaddy.
+
+### Receiving — forward, don't host
+
+Nobody needs a separate inbox; the band members already have mail. Aliases that
+forward are cheaper, need no login and are maintained in one place.
+
+| Option | Cost | Trade |
+|---|---|---|
+| **Cloudflare Email Routing** (recommended) | free, unlimited addresses, catch-all | needs the domain's nameservers at Cloudflare (free plan) |
+| ImprovMX | free tier: 1 domain, a few aliases | DNS stays at GoDaddy; just MX + TXT records |
+| Zoho Mail Forever Free | free: 5 real mailboxes, 5 GB each | web/mobile only — **no IMAP/POP** on the free tier; the only free host of actual mailboxes left |
+| iCloud+ / Purelymail / Migadu | ~$1/mo, ~$10/yr, cheap | real mailboxes with IMAP, if forwarding turns out not to be enough |
+
+Google Workspace and Proton need paid seats per address. **Do not self-host**
+(Mailcow, Mail-in-a-Box): the Hetzner box almost certainly has port 25 blocked
+by default, and a fresh IP sits in spam folders for months.
+
+Each alias forwards to the Gmail/whatever of whoever handles it. Replying *as*
+`booking@…` is Gmail's "Send mail as" with the sending provider's SMTP below.
+
+### Sending — the app and the humans share one provider
+
+The API needs an SMTP endpoint regardless of what receives mail. Free tiers:
+**Resend** (3 000/month), **Brevo** (300/day), Mailgun/Postmark (trial). The
+same SMTP credentials go into Gmail's "Send mail as" so replies from
+`booking@…` carry the domain, not `via gmail.com`.
+
+Then on the server (`/opt/bandms/.env`, same hand-edited file as the domain
+item — the deploy never writes it):
+
+```bash
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.resend.com        # or the chosen provider
+MAIL_PORT=587
+MAIL_USERNAME=resend
+MAIL_PASSWORD=<api key>
+MAIL_FROM_ADDRESS=no-reply@skankingstorks.band
+MAIL_FROM_NAME="Skanking Storks"
+```
+
+followed by `up -d --no-deps --force-recreate backend` — `optimize` bakes mail
+config at container start like everything else.
+
+### DNS records, whichever pair is chosen
+
+- `MX` → the receiving provider (Cloudflare or ImprovMX give the hosts).
+- `SPF` (`TXT @`): one record listing both the receiving *and* the sending
+  provider — two SPF records on one name is a permanent fail, merge them.
+- `DKIM`: the sending provider's `CNAME`/`TXT` set, per its dashboard.
+- `DMARC` (`TXT _dmarc`): start with `v=DMARC1; p=none; rua=mailto:…` and
+  tighten later.
+
+Without the trio, mail from the domain goes to spam whatever host is used. Test
+with mail-tester.com from the app (`php artisan tinker` →
+`Mail::raw('x', fn ($m) => $m->to('…'))`) *and* from Gmail's send-as.
+
+### Verify
+
+- A message to each alias arrives at the right person's inbox.
+- A newsletter signup on the live site produces a confirmation mail with a
+  `https://skankingstorks.band/…` link — `FRONTEND_URL` drives it, see the
+  domain item.
+- `docker logs bandms-backend | grep -i mail` shows no `log` driver output.
+
+---
+
 ## Clips PR 2 — release, merch and EPK surfaces
 
 **Status:** PR 1 (library, `/admin/clips`, concert quick-add, news `ref: clip`
