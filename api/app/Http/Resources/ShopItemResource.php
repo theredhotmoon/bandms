@@ -53,6 +53,7 @@ class ShopItemResource extends JsonResource
                 'slug' => $c->slug,
             ])->values(),
             'variants'         => ShopItemVariantResource::collection($this->whenLoaded('variants')),
+            'clips'            => ClipResource::collection($this->whenLoaded('clips')),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
         ];

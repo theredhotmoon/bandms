@@ -50,6 +50,7 @@ class ReleaseResource extends JsonResource
                     'url'      => $l->url,
                 ])->values(),
             ])),
+            'clips'        => ClipResource::collection($this->whenLoaded('clips')),
             'photos'       => $this->whenLoaded('photos', fn () => $this->photos->map(fn ($p) => [
                 'id'         => $p->id,
                 'image_url'  => '/storage/' . $p->image,

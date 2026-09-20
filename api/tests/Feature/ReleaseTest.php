@@ -49,6 +49,19 @@ describe('GET /api/releases/{release}', function () {
     it('returns 404 for a non-existent release', function () {
         $this->getJson('/api/releases/9999')->assertNotFound();
     });
+
+    it('carries the release clips in pivot order', function () {
+        $release = Release::create(['profile_id' => 1, 'title' => 'Greatest Hits', 'type' => 'LP']);
+        $a = \App\Models\Clip::factory()->create(['title' => ['en' => 'A']]);
+        $b = \App\Models\Clip::factory()->create(['title' => ['en' => 'B']]);
+        $release->clips()->attach([$b->id => ['position' => 0], $a->id => ['position' => 1]]);
+
+        $this->getJson("/api/releases/{$release->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.clips.0.title', 'B')
+            ->assertJsonPath('data.clips.1.title', 'A')
+            ->assertJsonPath('data.clips.0.embed_id', 'dQw4w9WgXcQ');
+    });
 });
 
 // ── POST /api/releases ────────────────────────────────────────────────────────

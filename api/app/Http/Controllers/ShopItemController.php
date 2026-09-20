@@ -20,7 +20,7 @@ class ShopItemController extends Controller
 
     public function index(): ResourceCollection
     {
-        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants'])
+        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants', 'clips'])
             ->where('is_available', true)
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
@@ -32,7 +32,7 @@ class ShopItemController extends Controller
     public function show(ShopItem $shopItem): ShopItemResource
     {
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips']);
         return new ShopItemResource($shopItem);
     }
 
@@ -40,7 +40,7 @@ class ShopItemController extends Controller
     {
         $shopItem = ShopItem::where('slug_en', $slug)->orWhere('slug_pl', $slug)->firstOrFail();
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips']);
         return new ShopItemResource($shopItem);
     }
 
@@ -48,7 +48,7 @@ class ShopItemController extends Controller
 
     public function adminIndex(): ResourceCollection
     {
-        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants'])
+        $items = ShopItem::with(['prices', 'photos', 'categories', 'variants', 'clips'])
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->get();
@@ -79,7 +79,7 @@ class ShopItemController extends Controller
         $this->syncRelations($request, $item);
         SiteRebuild::markDirty('shop');
 
-        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
+        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips']);
         return new ShopItemResource($item);
     }
 
@@ -114,7 +114,7 @@ class ShopItemController extends Controller
         $this->syncRelations($request, $shopItem);
         SiteRebuild::markDirty('shop');
 
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips']);
         return new ShopItemResource($shopItem);
     }
 

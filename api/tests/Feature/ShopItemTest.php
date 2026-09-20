@@ -101,6 +101,22 @@ describe('GET /api/shop/{shopItem}', function () {
 
         expect($data)->toHaveKeys(['tags', 'release_ids', 'concert_ids', 'post_ids', 'video_ids', 'category_ids', 'photos']);
     });
+
+    it('carries the item clips in pivot order, by id and by slug', function () {
+        $item = ShopItem::factory()->create(['slug_en' => 'clip-tee']);
+        $a = \App\Models\Clip::factory()->create(['title' => ['en' => 'A']]);
+        $b = \App\Models\Clip::factory()->create(['title' => ['en' => 'B']]);
+        $item->clips()->attach([$b->id => ['position' => 0], $a->id => ['position' => 1]]);
+
+        $this->getJson("/api/shop/{$item->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.clips.0.title', 'B')
+            ->assertJsonPath('data.clips.1.title', 'A');
+
+        $this->getJson('/api/shop/by-slug/clip-tee')
+            ->assertSuccessful()
+            ->assertJsonPath('data.clips.0.embed_id', 'dQw4w9WgXcQ');
+    });
 });
 
 // ── GET /api/shop-admin ───────────────────────────────────────────────────────
