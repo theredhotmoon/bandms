@@ -79,7 +79,7 @@ it('re-detects the provider from the url instead of mapping the old type column'
         ],
     ]));
 
-    expect($blocks[0]['payload']['provider'])->toBe('link');
+    expect($blocks[0]['payload']['provider'])->toBe('facebook');
     expect($blocks[1]['payload']['provider'])->toBe('youtube');
 });
 

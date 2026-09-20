@@ -1,7 +1,10 @@
 import type { Tag } from './tag'
 
-export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item'
-export type EmbedProviderName = 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'link'
+export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item' | 'clip'
+export type EmbedProviderName =
+  | 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'facebook'
+  | 'spotify' | 'soundcloud' | 'apple_music'
+  | 'link'
 
 interface BlockBase { id: number; position: number }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasClips;
 use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Album extends Model
 {
-    use HasSlug;
+    use HasSlug, HasClips;
 
     protected $fillable = ['title', 'slug_en', 'slug_pl', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at'];
 

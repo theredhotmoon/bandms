@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
@@ -559,6 +560,9 @@ function submit() {
         <button type="button" class="btn-add-link" @click="addLink">Add</button>
       </div>
     </div>
+
+    <!-- Clips (saved immediately via the clips API, not with this form) -->
+    <AttachedClipsField owner-type="concert" :owner-id="initial?.id ?? null" />
 
     <!-- Concert poster -->
     <div>

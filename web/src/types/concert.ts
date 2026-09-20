@@ -1,5 +1,6 @@
 import type { Venue } from './venue'
 import type { Tag } from './tag'
+import type { Clip } from './clip'
 
 export interface ConcertBand {
   id: number
@@ -29,6 +30,7 @@ export interface Concert {
   bands: ConcertBand[]
   tags?: Tag[]
   links?: ConcertLink[]
+  clips?: Clip[]
   translations?: {
     name?:        { en?: string | null; pl?: string | null }
     description?: { en?: string | null; pl?: string | null }

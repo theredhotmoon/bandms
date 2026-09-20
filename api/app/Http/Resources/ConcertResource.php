@@ -44,6 +44,7 @@ class ConcertResource extends JsonResource
                     'url'   => $l->url,
                 ])
             ),
+            'clips' => ClipResource::collection($this->whenLoaded('clips')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

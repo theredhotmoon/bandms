@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasClips;
 use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use App\Models\ShopItemVariant;
 
 class ShopItem extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory, HasSlug, HasClips;
 
     protected $fillable = [
         'profile_id', 'name', 'slug_en', 'slug_pl', 'type', 'description',

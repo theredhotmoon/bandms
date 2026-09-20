@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-20 (clips library)
+
+### Added
+- **Clips library** — attach YouTube/Vimeo/Instagram/TikTok/Facebook videos and Spotify/SoundCloud/Apple Music players to concerts from `/admin/clips` or straight from the concert form; embed any clip in a news post (or create one from the post editor's *Reference → Clip → Add a new clip…*); the public show page lists its clips with a category label, and a news clip block links back to the show it was recorded at. Facebook, Spotify, SoundCloud and Apple Music are now embed providers everywhere, and audio players render at their own height instead of in a 16:9 box.
+- Categories are free text with five presets (live, studio, backstage, interview, other); the presets' public labels are editable per language under *Website Modules → Site-wide → Clips*, and the show page's "Clips" heading under *Shows*.
+- Test coverage: Pest (`EmbedProviderTest`, `ClipModelTest`, `ClipTest`, `ConcertTest`, `PostBlockResolverTest`), Vitest (`postBlocks`, `clipCategories`, site-copy `resolve`, web `clipCategory`), admin E2E (`clips.spec`, `post-clip-block.spec`) and public E2E (`concert-clips.spec`).
+
 ## [Unreleased] — 2026-09-17
 
 ### Added

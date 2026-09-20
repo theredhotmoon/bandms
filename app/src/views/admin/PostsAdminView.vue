@@ -16,6 +16,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useMusicVideos } from '@/composables/useMusicVideos'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useShop } from '@/composables/useShop'
+import { useClips } from '@/composables/useClips'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
@@ -28,6 +29,7 @@ const { query: releasesQ }   = useReleases()
 const { query: musicVideosQ }   = useMusicVideos()
 const { query: pressReleasesQ } = usePressReleases()
 const { query: shopItemsQ }     = useShop()
+const { query: clipsQ }         = useClips()
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
@@ -172,6 +174,7 @@ async function confirmDelete() {
         :musicVideos="musicVideosQ.data.value ?? []"
         :pressReleases="pressReleasesQ.data.value ?? []"
         :shopItems="shopItemsQ.data.value ?? []"
+        :clips="clipsQ.data.value ?? []"
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"

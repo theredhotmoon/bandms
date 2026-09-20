@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { copyFieldsFor, copyGroupsFor, defaultFor, defineCopy, fillCopy, MODULE_COPY, resolveCopy } from './index'
+import {
+  CONCERTS_COPY,
+  copyFieldsFor,
+  copyGroupsFor,
+  defaultFor,
+  defineCopy,
+  fillCopy,
+  MODULE_COPY,
+  resolveCopy,
+  SITE_COPY,
+} from './index'
 
 const FIELDS = defineCopy([
   { key: 'title', label: 'Title', group: 'Header', defaults: { en: 'Shows', pl: 'Koncerty' } },
@@ -64,6 +74,20 @@ describe('resolveCopy', () => {
   it('emits every key, and only the registry keys', () => {
     const t = resolveCopy(FIELDS, 'en', { stray: 'x' })
     expect(Object.keys(t).sort()).toEqual(['badge', 'lead', 'title'])
+  })
+})
+
+describe('clip copy', () => {
+  it('has a label for every preset category on the site module', () => {
+    const t = resolveCopy(SITE_COPY, 'pl')
+    expect(t.clipCategoryLive).toBe('Na żywo')
+    expect(t.clipCategoryStudio).toBe('Studio')
+    expect(t.clipCategoryBackstage).toBe('Za kulisami')
+    expect(t.clipCategoryInterview).toBe('Wywiad')
+    expect(t.clipCategoryOther).toBe('Inne')
+  })
+  it('has the concert page clips heading', () => {
+    expect(resolveCopy(CONCERTS_COPY, 'en').clipsTitle).toBe('Videos from this show')
   })
 })
 

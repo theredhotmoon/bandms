@@ -3,11 +3,14 @@
 namespace App\Support;
 
 use App\Models\Album;
+use App\Models\Clip;
 use App\Models\Concert;
 use App\Models\MusicVideo;
 use App\Models\PressRelease;
 use App\Models\Release;
 use App\Models\ShopItem;
+use App\Support\EmbedProvider;
+use App\Support\Locales;
 use Illuminate\Support\Collection;
 
 /**
@@ -94,6 +97,32 @@ final class PostBlockResolver
                     // quoting itself, and article-press.spec.ts asserts it.
                     'site'  => $p->og_site_name ?: (parse_url($p->url, PHP_URL_HOST) ?: null),
                 ])->all(),
+
+            // A clip renders as its embed plus a "Live at … →" caption, so it
+            // carries one attached concert (or null) inline. morphedByMany
+            // has no ORDER BY of its own, so an unordered ->first() would
+            // caption an arbitrary concert on a clip attached to more than
+            // one; ordering by pivot position (the clip's slot within each
+            // concert's list, then concert id) makes the pick deterministic.
+            'clip' => Clip::with(['concerts' => fn ($q) => $q->orderByPivot('position')->orderBy('concerts.id'), 'concerts.venue'])->whereIn('id', $ids)->get()
+                ->keyBy('id')->map(function ($c) {
+                    $concert = $c->concerts->first();
+
+                    return [
+                        'id'       => $c->id,
+                        'provider' => $c->provider,
+                        'url'      => $c->url,
+                        'embed_id' => EmbedProvider::embedId($c->url),
+                        'title'    => Locales::resolve($c->getTranslations('title'), app()->getLocale()),
+                        'category' => $c->category,
+                        'concert'  => $concert ? [
+                            'id'      => $concert->id,
+                            'slug_en' => $concert->slug_en,
+                            'date'    => $concert->date?->format('Y-m-d'),
+                            'venue'   => $concert->venue ? ['id' => $concert->venue->id, 'name' => $concert->venue->name] : null,
+                        ] : null,
+                    ];
+                })->all(),
 
             default => [],
         };

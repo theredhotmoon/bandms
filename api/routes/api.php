@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClipController;
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FaqController;
@@ -128,6 +129,8 @@ Route::get('/press-releases', [PressReleaseController::class, 'index'])->name('a
 Route::get('/press-releases/{pressRelease}', [PressReleaseController::class, 'show'])->name('api.press-releases.show');
 
 Route::get('/music-videos', [MusicVideoController::class, 'index'])->name('api.music-videos.index');
+
+Route::get('/clips', [ClipController::class, 'index'])->name('api.clips.index');
 
 Route::get('/instruments', [InstrumentController::class, 'index'])->name('api.instruments.index');
 
@@ -378,6 +381,14 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/music-videos/{musicVideo}', [MusicVideoController::class, 'update'])->name('api.music-videos.update');
         Route::delete('/music-videos/{musicVideo}', [MusicVideoController::class, 'destroy'])->name('api.music-videos.destroy');
         Route::post('/music-videos/{musicVideo}/fetch-preview', [MusicVideoController::class, 'fetchPreview'])->name('api.music-videos.fetch-preview');
+
+        // Clips library. Attach/detach are the owner forms' quick paths, so a
+        // concert form can add a clip without knowing the clip's other owners.
+        Route::post('/clips', [ClipController::class, 'store'])->name('api.clips.store');
+        Route::put('/clips/{clip}', [ClipController::class, 'update'])->name('api.clips.update');
+        Route::delete('/clips/{clip}', [ClipController::class, 'destroy'])->name('api.clips.destroy');
+        Route::post('/clips/{clip}/attach', [ClipController::class, 'attach'])->name('api.clips.attach');
+        Route::delete('/clips/{clip}/attach', [ClipController::class, 'detach'])->name('api.clips.detach');
 
         Route::post('/instruments', [InstrumentController::class, 'store'])->name('api.instruments.store');
         Route::put('/instruments/{instrument}', [InstrumentController::class, 'update'])->name('api.instruments.update');

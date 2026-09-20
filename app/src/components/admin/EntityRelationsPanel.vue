@@ -8,6 +8,7 @@ import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
 import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
+import type { ShopItemSummary } from '@/types/shop'
 
 defineProps<{
   concerts?: Concert[]
@@ -18,6 +19,7 @@ defineProps<{
   tags?: Tag[]
   musicVideos?: MusicVideo[]
   pressReleases?: PressReleaseSummary[]
+  shopItems?: ShopItemSummary[]
 }>()
 
 const concertIds      = defineModel<number[]>('concertIds',      { default: () => [] })
@@ -28,6 +30,7 @@ const tourIds         = defineModel<number[]>('tourIds',         { default: () =
 const tagIds          = defineModel<number[]>('tagIds',          { default: () => [] })
 const musicVideoIds   = defineModel<number[]>('musicVideoIds',   { default: () => [] })
 const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
+const shopItemIds     = defineModel<number[]>('shopItemIds',     { default: () => [] })
 
 const expanded = reactive({
   concerts:      false,
@@ -38,6 +41,7 @@ const expanded = reactive({
   tags:          false,
   musicVideos:   false,
   pressReleases: false,
+  shopItems:     false,
 })
 
 function toggle(current: number[], set: (v: number[]) => void, id: number) {
@@ -92,6 +96,19 @@ function label(text: string, count: number) {
         <label v-for="r in releases" :key="r.id" class="checkbox-item">
           <input type="checkbox" :checked="releaseIds.includes(r.id)" @change="toggle(releaseIds, v => releaseIds = v, r.id)" />
           <span>{{ r.title }} <span class="assoc-badge">{{ r.type }}</span></span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="shopItems?.length" class="assoc-section">
+      <button type="button" class="assoc-toggle" @click="expanded.shopItems = !expanded.shopItems">
+        <span>{{ label('Shop items', shopItemIds.length) }}</span>
+        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.shopItems }">›</span>
+      </button>
+      <div v-if="expanded.shopItems" class="assoc-body checkbox-list">
+        <label v-for="s in shopItems" :key="s.id" class="checkbox-item">
+          <input type="checkbox" :checked="shopItemIds.includes(s.id)" @change="toggle(shopItemIds, v => shopItemIds = v, s.id)" />
+          <span>{{ s.name }}</span>
         </label>
       </div>
     </div>

@@ -2,8 +2,11 @@ import type { Tag } from './tag'
 import type { TranslationMap } from './shared'
 
 export type PostBlockType     = 'text' | 'image' | 'embed' | 'ref'
-export type EmbedProviderName = 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'link'
-export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item'
+export type EmbedProviderName =
+  | 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'facebook'
+  | 'spotify' | 'soundcloud' | 'apple_music'
+  | 'link'
+export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item' | 'clip'
 
 interface BlockBase { id: number; position: number }
 type Bag = { en?: string | null; pl?: string | null }
