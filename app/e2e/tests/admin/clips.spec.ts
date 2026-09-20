@@ -78,7 +78,9 @@ test.describe.serial('Clips admin', () => {
     await form.locator('input').first().fill('https://vimeo.com/76979871')
     await expect(form.locator('.provider-badge')).toHaveText('Vimeo')
     await form.getByTestId('clip-title-en').fill(TITLE)
-    await form.getByTestId('clip-category-custom').fill('charity gig')
+    // Typed key by key: the custom category starts with a preset word, and the
+    // picker used to blank the field the moment the text spelled "live".
+    await form.getByTestId('clip-category-custom').pressSequentially('live acoustic')
 
     await form.getByRole('button', { name: /^Concerts/ }).click()
     await form.locator('.checkbox-item', { hasText: concertDate }).first().locator('input').check()
@@ -89,7 +91,7 @@ test.describe.serial('Clips admin', () => {
     await searchTable(page, TITLE)
     const row = page.locator('tbody tr', { hasText: TITLE })
     await expect(row).toBeVisible()
-    await expect(row).toContainText('charity gig')
+    await expect(row).toContainText('live acoustic')
     await expect(row).toContainText('Vimeo')
     await expect(row.locator('td').nth(3)).toHaveText('1')   // "Attached to"
   })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetLabel } from '@/utils/clipCategories'
 
 /**
@@ -8,7 +8,25 @@ import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetLabel } from '@/utils/cl
  */
 const model = defineModel<string>({ default: 'live' })
 
-const custom = computed(() => (isPresetCategory(model.value) ? '' : model.value))
+// The input keeps its own text rather than deriving it from the model: while
+// typing "live acoustic" the model passes through "live", and a computed that
+// blanks on presets would empty the field at that keystroke. Text is only
+// written *from* the model when it changes to something the text does not
+// already spell — a chip press, or the host form resetting it.
+const text = ref(isPresetCategory(model.value) ? '' : model.value)
+
+watch(model, value => {
+  if (isPresetCategory(value)) {
+    if (text.value.trim() !== value) text.value = ''
+  } else if (text.value.trim() !== value) {
+    text.value = value
+  }
+})
+
+function onInput(event: Event) {
+  text.value = (event.target as HTMLInputElement).value
+  model.value = text.value.trim() || 'live'
+}
 </script>
 
 <template>
@@ -17,9 +35,10 @@ const custom = computed(() => (isPresetCategory(model.value) ? '' : model.value)
       <button v-for="p in CLIP_CATEGORY_PRESETS" :key="p" type="button" class="preset-chip"
               :class="{ active: model === p }" @click="model = p">{{ presetLabel(p) }}</button>
     </div>
-    <input :value="custom" class="field-input" placeholder="…or type your own category"
+    <!-- Enter must not implicitly submit whichever form hosts this picker. -->
+    <input :value="text" class="field-input" placeholder="…or type your own category"
            maxlength="64" data-testid="clip-category-custom"
-           @input="model = ($event.target as HTMLInputElement).value.trim() || 'live'" />
+           @input="onInput" @keydown.enter.prevent />
   </div>
 </template>
 

@@ -105,7 +105,10 @@ function onClipSelect(value: string) {
 
     <div v-if="entity === 'clip' && addingClip" class="new-clip" data-testid="new-clip">
       <div class="flex items-center gap-2">
-        <input v-model="newClipUrl" type="url" class="field-input flex-1" placeholder="Paste a video URL…" data-testid="new-clip-url" />
+        <!-- Enter attaches; without a handler it would implicitly submit the
+             host post form with this block's id still 0. -->
+        <input v-model="newClipUrl" type="url" class="field-input flex-1" placeholder="Paste a video URL…"
+               data-testid="new-clip-url" @keydown.enter.prevent="attachNewClip" />
         <span v-if="newClipUrl" class="provider-badge">{{ providerLabel(detectProvider(newClipUrl)) }}</span>
       </div>
       <ClipCategoryPicker v-model="newClipCategory" />

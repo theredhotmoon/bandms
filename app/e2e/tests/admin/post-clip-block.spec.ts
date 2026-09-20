@@ -64,7 +64,9 @@ test.describe.serial('Post block — clip', () => {
     await expect(panel.locator('.provider-badge')).toHaveText('TikTok')
     await panel.getByRole('button', { name: 'Live', exact: true }).click()
     if (concertCount > 0) await panel.getByTestId('new-clip-concert').selectOption({ index: 1 })
-    await panel.getByRole('button', { name: 'Attach' }).click()
+    // Enter in the URL field attaches — it used to submit the whole post form
+    // with this block's id still 0 and surface a validation error instead.
+    await panel.getByTestId('new-clip-url').press('Enter')
     await expectToast(page, 'Clip added to the library')
 
     // The select now shows the new clip and the add panel is gone.
