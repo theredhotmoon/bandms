@@ -7,6 +7,7 @@ import SectionHead from '@/components/SectionHead.astro'
 import Icon from '@/components/Icon.astro'
 import TrackList from '@/components/TrackList.vue'
 import LyricsViewer from '@/components/LyricsViewer.vue'
+import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getRelease, getBandProfile, getSiteConfig, getShopItems } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { PLATFORM_LABELS } from '@/types/release'
@@ -203,6 +204,17 @@ const structuredData = {
             </a>
           ))}
         </div>
+      </section>
+    </>
+  )}
+
+  <!-- CLIPS -->
+  {(release.clips ?? []).length > 0 && (
+    <>
+      <ThemeSlot name="section-divider" height={14} tone="ink" />
+      <section class="rd-sec page-x" data-testid="release-clips">
+        <SectionHead icon="play" title={t.clipsTitle} size="sm" />
+        <ClipsGrid clips={release.clips ?? []} copy={site} />
       </section>
     </>
   )}

@@ -165,3 +165,24 @@ describe('getBandProfile', () => {
     await expect(getBandProfile('en')).rejects.toThrow()
   })
 })
+
+/**
+ * A merch item carries clips whose titles the API resolves for the requested
+ * locale — so the item fetch must say which one, like getRelease does.
+ */
+describe('getShopItem', () => {
+  it('requests the locale it was given', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: true, status: 200, json: async () => ({ data: { id: 1 } }) }
+    }))
+    const { getShopItem } = await freshModule()
+
+    await getShopItem('clip-tee', 'pl')
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain('/shop/by-slug/clip-tee')
+    expect(calls[0]).toContain('lang=pl')
+  })
+})

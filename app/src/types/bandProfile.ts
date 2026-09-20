@@ -1,3 +1,4 @@
+import type { Clip } from './clip'
 import type { BandMember } from '@bandms/rider-core'
 import type { SocialLink } from '@bandms/rider-core'
 import type { ReleaseType, ReleasePlatform } from './release'
@@ -233,6 +234,8 @@ export interface EpkData {
   social_links: EpkSocialLink[]
   testimonials: EpkTestimonial[]
   music_videos: EpkMusicVideo[]
+  /** Absent on snapshots published before the builder emitted clips. */
+  clips?: Omit<Clip, 'show_in_epk' | 'translations' | 'owners'>[]
   featured_release: EpkRelease | null
   press_photos: EpkPhoto[]
   press_articles: EpkPressArticle[]

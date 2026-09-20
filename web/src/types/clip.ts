@@ -11,3 +11,9 @@ export interface Clip {
   recorded_on: string | null
   show_in_epk: boolean
 }
+
+/**
+ * What a clip needs to render: everything but the admin-only flag. The EPK
+ * snapshot freezes clips in this shape, so ClipsGrid takes it rather than Clip.
+ */
+export type RenderableClip = Omit<Clip, 'show_in_epk'>

@@ -154,4 +154,9 @@ export const RELEASES_COPY = defineCopy([
     key: 'photos', label: 'Photos heading', group: 'Release page', maxLength: 60,
     defaults: { en: 'Photos', pl: 'Zdjęcia' },
   },
+  {
+    key: 'clipsTitle', label: 'Clips heading', group: 'Release page', maxLength: 60,
+    help: 'Heading of the videos section on a release page. Hidden when the release has no clips.',
+    defaults: { en: 'Videos', pl: 'Nagrania' },
+  },
 ])

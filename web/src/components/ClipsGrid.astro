@@ -1,5 +1,5 @@
 ---
-import type { Clip } from '@/types/clip'
+import type { RenderableClip } from '@/types/clip'
 import type { ClipCategoryCopy } from '@/lib/clipCategory'
 import { clipCategoryLabel } from '@/lib/clipCategory'
 import EmbedBlock from '@/components/blocks/EmbedBlock.astro'
@@ -8,10 +8,13 @@ import EmbedBlock from '@/components/blocks/EmbedBlock.astro'
  * A grid of clips — the same iframe an embed block renders, with a caption.
  * Renders nothing for an empty list: this is a content section, it links
  * nowhere, and an empty heading is worse than no section.
+ *
+ * `heading` is optional: pages built from SectionHead blocks (release, EPK)
+ * supply their own and pass none; the show page passes one.
  */
 interface Props {
-  clips: Clip[]
-  heading: string
+  clips: RenderableClip[]
+  heading?: string
   copy: ClipCategoryCopy
 }
 const { clips, heading, copy } = Astro.props
@@ -19,7 +22,7 @@ const { clips, heading, copy } = Astro.props
 
 {clips.length > 0 && (
   <div class="clips-grid" data-testid="clips-grid">
-    <h2 class="clips-title">{heading}</h2>
+    {heading && <h2 class="clips-title">{heading}</h2>}
     <ul class="clips-list">
       {clips.map(clip => (
         <li class="clips-item" data-provider={clip.provider}>

@@ -1,3 +1,4 @@
+import type { RenderableClip } from './clip'
 import type { BandMember } from './bandMember'
 import type { SocialLink } from './socialLink'
 import type { ReleaseType, ReleasePlatform } from './release'
@@ -93,6 +94,9 @@ export interface EpkMusicVideo {
   published_at: string | null
 }
 
+/** A clip frozen in the snapshot — what ClipsGrid renders, title already resolved. */
+export type EpkClip = RenderableClip
+
 export interface EpkData {
   name: string
   bio_short: string | null
@@ -116,6 +120,9 @@ export interface EpkData {
   // field even if the builder starts sending it. Consumers must guard.
   testimonials?: EpkTestimonial[]
   music_videos: EpkMusicVideo[]
+  // Optional for the same reason as testimonials: snapshots published before
+  // the builder emitted clips never carry the key. Read as `epk.clips ?? []`.
+  clips?: EpkClip[]
   featured_release: EpkRelease | null
   press_photos: EpkPhoto[]
   press_articles: EpkPressArticle[]

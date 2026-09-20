@@ -8,10 +8,11 @@ import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
+import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getEpk, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDate, formatNumber } from '@/lib/i18n'
 import { EPK_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -24,6 +25,9 @@ const [epk, profile, siteConfig] = await Promise.all([getEpk(lang), getBandProfi
 // Every string on this page: registry defaults for this locale, overridden by
 // whatever the band saved in Website Modules → EPK.
 const t = moduleCopy(siteConfig, 'epk', EPK_COPY, lang)
+const site = siteCopy(siteConfig, lang)
+// Snapshots published before the builder emitted clips carry no key at all.
+const clips = epk.clips ?? []
 
 const bio = epk.bio_long || epk.bio_medium || epk.bio_short || ''
 const bioParagraphs = bio.replace(/\r\n/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
@@ -134,6 +138,13 @@ const contacts = [
           )}
         </div>
       </div>
+    </section>
+  )}
+
+  {clips.length > 0 && (
+    <section class="epk-sec page-x" data-testid="epk-clips">
+      <SectionHead icon="play" title={t.clips} size="sm" />
+      <ClipsGrid clips={clips} copy={site} />
     </section>
   )}
 
