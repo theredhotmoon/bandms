@@ -1581,6 +1581,51 @@ Its specs run under the admin's vitest (`app/vitest.config.ts` includes
 `../packages/*/src/**/*.spec.ts`), so there is still one command and one bitmask
 bit in `scripts/test-all.sh`.
 
+## Clips are a library, attached polymorphically — posts reference, never own
+
+`clips` holds every live/studio/backstage video; `clippables` is a
+`morphToMany` pivot (`clippable_type` stores the **alias** from
+`App\Support\ClipOwners::MAP`, enforced through `Relation::enforceMorphMap` —
+never rename an alias, it is data). Owners get `->clips()` from the `HasClips`
+trait, which also detaches on delete because a polymorphic column cannot carry
+an FK. `Album` has the trait but the admin does not offer it: albums have no
+public page.
+
+**Posts are not owners.** A post embeds a clip with a `ref` block
+(`entity: clip`); the block decides where in the article it sits. A clip
+created from the block editor's *Add a new clip…* is a real library row and
+outlives the post.
+
+**Clip ids are referenced by post blocks, so no write path may
+delete-and-recreate them.** `PUT /api/clips/{id}` updates in place and
+`sync()`s owners; the concert form's quick-add goes through `POST /api/clips`
+and `DELETE /api/clips/{id}/attach`, never through the concert PUT.
+
+**`AttachedClipsField` reads the clips query, not the concert row.**
+`ConcertForm` resets every field whenever its `initial` prop changes, so if
+the field took `initial.clips` and the view re-derived `editing` from the
+concerts query after each add, the refetch would wipe unsaved edits. The field
+filters `useClips().query` by owner instead; `useClips` invalidates both
+`['clips']` and `['concerts']`, so it stays current while the host form's
+snapshot is left alone.
+
+Category is free text with five presets (`ClipCategory::PRESETS`,
+`app/src/utils/clipCategories.ts`). Public labels for the presets are copy on
+the `site` module (`clipCategory*`); a custom category prints as typed. The
+concert page heading is `CONCERTS_COPY.clipsTitle`. Rendering is
+`ClipsGrid.astro` → `EmbedBlock.astro`, the same iframe a post embed uses.
+
+**Audio is a provider, not a kind.** Spotify, SoundCloud and Apple Music are
+entries in `EmbedProvider::HOSTS` like the video hosts; `EmbedProvider::AUDIO`
+(mirrored by `isAudioProvider()` in `postBlocks.ts`) only tells the renderer
+to size the frame from `EmbedBlock.astro`'s `SHAPE` map instead of the 16:9
+box. Bandcamp is a plain link on purpose — its player wants a numeric id that
+is not in the URL — until someone adds the page fetch.
+
+A clip write marks **every owner's area** dirty plus `posts` (see
+`ClipController::markDirty()`), and `band-profile` when `show_in_epk` is
+involved. Release, merch and EPK surfaces are PR 2.
+
 ## Quality standard — tests run by default
 
 **Always run the full test suite before reporting a feature done or before shipping.**
