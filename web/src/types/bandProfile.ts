@@ -26,7 +26,6 @@ export interface BandProfile {
   stat_facebook_followers: number | null
   logo_url: string | null
   tech_rider_url: string | null
-  stage_plot_url: string | null
   career_level: 1 | 2 | 3 | 4
   members?: BandMember[]
   social_links?: SocialLink[]

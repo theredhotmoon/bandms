@@ -75,8 +75,8 @@ const channels = [
 
 // ── Press kit contents ────────────────────────────────────────────────────────
 //
-// Assembled from what the API actually holds, so a band with no stage plot has
-// no stage-plot row. Every field is read defensively: a published EPK version is
+// Assembled from what the API actually holds, so a band with no rider linked
+// has no rider row. Every field is read defensively: a published EPK version is
 // a frozen snapshot that predates any field added later.
 
 const epkPageHref = href('epk')
@@ -128,17 +128,12 @@ const epkAssets = [
     icon: 'filter',
     title: t.epkRider,
     meta: t.epkRiderMeta,
+    // The rider's own page — /rider/{token}, served by the tech-rider module.
+    // A disabled module unbuilds it, so this gates on the module map like every
+    // other route link; `isFile` is false because it is a page, not a download.
     href: profile.tech_rider_url ?? '',
-    isFile: true,
-    show: Boolean(profile.tech_rider_url),
-  },
-  {
-    icon: 'pin',
-    title: t.epkStagePlot,
-    meta: t.epkStagePlotMeta,
-    href: profile.stage_plot_url ?? '',
-    isFile: true,
-    show: Boolean(profile.stage_plot_url),
+    isFile: false,
+    show: Boolean(profile.tech_rider_url) && enabled('tech-rider'),
   },
 ]
   // Rows that point at the EPK page disappear with the module, for the same
@@ -151,11 +146,9 @@ const epkAssets = [
 const promo = [
   { icon: 'calendar', title: t.bookTitle,   sub: t.bookSub,   cta: t.bookCta,   href: null,             show: true, isFile: false },
   { icon: 'star',     title: t.epkTitle,    sub: t.epkSub,    cta: t.epkCta,    href: null,             show: enabled('epk') || epkAssets.length > 0, isFile: false },
-  // Links the file, not /rider. That route is the token shell — PublicRider
-  // reads the last path segment, sees "rider", and renders "Invalid rider link."
-  // Every other consumer of this field (the About press card, the EPK asset row)
-  // already links the file directly.
-  { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: profile.tech_rider_url ?? '', show: Boolean(profile.tech_rider_url), isFile: true },
+  // The rider page carries the stage plot too; gated on the module that
+  // serves it, for the same reason the EPK and Photos cards are.
+  { icon: 'filter',   title: t.riderTitle,  sub: t.riderSub,  cta: t.riderCta,  href: profile.tech_rider_url ?? '', show: Boolean(profile.tech_rider_url) && enabled('tech-rider'), isFile: false },
   { icon: 'camera',   title: t.photosTitle, sub: t.photosSub, cta: t.photosCta, href: href('photos'),   show: enabled('photos'), isFile: false },
 ].filter(p => p.show)
 ---
