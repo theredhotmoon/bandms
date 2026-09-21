@@ -1679,6 +1679,11 @@ the chained `rider-link-admin` → `rider-link-public` projects — two
 single-file projects, not one project matching both files, because a shared
 project still lets Playwright's default worker count run the two files
 concurrently and reproduce the race the split exists to prevent.
+`band-profile.spec.ts` joins the same chain (`band-profile-admin`, ahead of
+`rider-link-admin`) for a related reason: its Bio/Career/Contacts saves
+resend the *whole* form, including whatever `epk_tech_rider_id` it loaded, so
+left in the parallel pool it can overwrite the rider specs' link mid-run or
+resend a since-deleted rider's id and 422.
 
 ## Quality standard — tests run by default
 

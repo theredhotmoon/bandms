@@ -2,13 +2,17 @@ import { defineConfig, devices } from '@playwright/test'
 
 // epk-versions/clips-surfaces publish EPK versions for real (epk-admin/epk-public
 // below); band-profile-rider/epk-modal both write band_profiles.epk_tech_rider_id
-// on the shared row (rider-link below). All four need to stay out of the
+// on the shared row (rider-link below). band-profile.spec.ts also touches that
+// row: its whole-form Saves resend whatever epk_tech_rider_id the form loaded,
+// which can stomp the rider specs' link mid-run or resend a deleted rider's id
+// and 422 (band-profile-admin below). All five need to stay out of the
 // parallel `chromium` pool.
 const EPK_PUBLISHING_SPECS = [
   /epk-versions\.spec\.ts/,
   /clips-surfaces\.spec\.ts/,
   /epk-modal\.spec\.ts/,
   /band-profile-rider\.spec\.ts/,
+  /band-profile\.spec\.ts/,
 ]
 
 export default defineConfig({
@@ -98,6 +102,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['epk-admin'],
     },
+    // band-profile.spec.ts performs several whole-form Saves against the same
+    // band_profiles row the rider specs link, each resending whatever
+    // epk_tech_rider_id the form loaded — a race with rider-link-admin/-public
+    // if it ran in the parallel pool. Chained after epk-public and before the
+    // rider specs, the same shape as everything else here.
+    {
+      name: 'band-profile-admin',
+      testMatch: /band-profile\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['epk-public'],
+    },
     // Both of these write band_profiles.epk_tech_rider_id and the public one
     // waits on a site rebuild in between, so they cannot share a moment with
     // each other either. A single project matching both files was tried
@@ -115,7 +130,7 @@ export default defineConfig({
       name: 'rider-link-admin',
       testMatch: /band-profile-rider\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['epk-public'],
+      dependencies: ['band-profile-admin'],
     },
     {
       name: 'rider-link-public',

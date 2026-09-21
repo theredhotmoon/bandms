@@ -29,6 +29,15 @@ const { list: ridersQ } = useTechRiders()
 const publishableRiders = computed(() =>
   (ridersQ.data.value ?? []).filter(r => r.published_version_number != null),
 )
+
+// A rider deleted in /admin/tech-rider after this form loaded would leave a
+// stale id here, and every Save — from any tab — resends the whole form. The
+// list refetches on window focus, so drop the id as soon as it is gone.
+watch(publishableRiders, (riders) => {
+  if (!ridersQ.isSuccess.value || form.epk_tech_rider_id == null) return
+  if (!riders.some(r => r.id === form.epk_tech_rider_id)) form.epk_tech_rider_id = null
+})
+
 const riderPageUrl = adminUrl('tech-rider')
 const { create: createVersion } = useEpkVersions()
 const history = useEpkVersionHistory()
