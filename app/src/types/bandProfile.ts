@@ -18,6 +18,13 @@ export interface BandProfileTranslations {
 // admin's tab switcher and its About-page selector can't drift apart.
 export type BioVariant = 'short' | 'medium' | 'long' | 'full'
 
+/** What the admin shows for the rider linked to the press kit. */
+export interface EpkTechRiderRef {
+  id: number
+  name: string
+  published_version: number | null
+}
+
 export interface BandProfile {
   id: number
   name: string
@@ -45,8 +52,10 @@ export interface BandProfile {
   stat_facebook_followers: number | null
   facebook_likes: number | null
   facebook_likes_synced_at: string | null
+  /** `/rider/{token}` of the linked rider, null until it has a published version. */
   tech_rider_url: string | null
-  stage_plot_url: string | null
+  epk_tech_rider_id: number | null
+  epk_tech_rider: EpkTechRiderRef | null
   epk_release_id: number | null
   epk_album_id: number | null
   logo_url: string | null              // current default logo URL (convenience)
@@ -122,6 +131,7 @@ export interface BandProfilePayload {
   stat_facebook_followers?: number | null
   epk_release_id?: number | null
   epk_album_id?: number | null
+  epk_tech_rider_id?: number | null
   epk_logo_id?: number | null
   tech_rider_logo_id?: number | null
   website_logo_id?: number | null
@@ -229,7 +239,6 @@ export interface EpkData {
   stat_youtube_subscribers: number | null
   stat_facebook_followers: number | null
   tech_rider_url: string | null
-  stage_plot_url: string | null
   logo_url: string | null
   social_links: EpkSocialLink[]
   testimonials: EpkTestimonial[]

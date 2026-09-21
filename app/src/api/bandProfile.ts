@@ -24,44 +24,6 @@ export async function updateBandProfile(token: string, payload: BandProfilePaylo
   return handleResponse<BandProfileResponse>(res).then((r) => r.data)
 }
 
-export async function uploadTechRider(token: string, file: File): Promise<BandProfile> {
-  const body = new FormData()
-  body.append('file', file)
-  const res = await fetch(`${API_BASE}/api/band-profile/tech-rider`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body,
-  })
-  return handleResponse<BandProfileResponse>(res).then((r) => r.data)
-}
-
-export async function deleteTechRider(token: string): Promise<BandProfile> {
-  const res = await fetch(`${API_BASE}/api/band-profile/tech-rider`, {
-    method: 'DELETE',
-    headers: authHeaders(token),
-  })
-  return handleResponse<BandProfileResponse>(res).then((r) => r.data)
-}
-
-export async function uploadStagePlot(token: string, file: File): Promise<BandProfile> {
-  const body = new FormData()
-  body.append('file', file)
-  const res = await fetch(`${API_BASE}/api/band-profile/stage-plot`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body,
-  })
-  return handleResponse<BandProfileResponse>(res).then((r) => r.data)
-}
-
-export async function deleteStagePlot(token: string): Promise<BandProfile> {
-  const res = await fetch(`${API_BASE}/api/band-profile/stage-plot`, {
-    method: 'DELETE',
-    headers: authHeaders(token),
-  })
-  return handleResponse<BandProfileResponse>(res).then((r) => r.data)
-}
-
 export async function checkCalendarAvailability(date: string): Promise<CalendarAvailability> {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid date format — expected YYYY-MM-DD')
   const res = await fetch(
