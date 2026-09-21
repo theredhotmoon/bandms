@@ -117,10 +117,14 @@ test.describe('Gallery page', () => {
   test('lightbox arrows advance and wrap around', async ({ page }) => {
     await page.goto(`${WEB}/en/photos`)
 
+    // Guard before hydrating, like every other card test here: hydrated()
+    // waits for a card to exist, so on an instance with no albums it times
+    // out instead of skipping.
+    const cards = page.locator('.gb-card')
+    test.skip((await cards.count()) === 0, 'No published albums on this instance')
     await hydrated(page, '.gb-card')
 
     // Find an album with more than one photo; wrapping needs at least two.
-    const cards = page.locator('.gb-card')
     let opened = false
     for (let i = 0; i < (await cards.count()); i++) {
       const label = (await cards.nth(i).locator('.gb-count').textContent()) ?? ''
