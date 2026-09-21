@@ -275,6 +275,19 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 
 **Fix:** Open the rider in `/admin/tech-rider` and press **Publish**. After that the rider's own token always serves whichever version is currently published; each version also has its own permanent token in the version-history modal.
 
+**The press kit links the rider by its own token.** Band profile → EPK has a
+*Tech rider & stage plot* selector (`band_profiles.epk_tech_rider_id`) that
+offers **only riders with a published version** — the API rejects any other
+id with 422 — and `tech_rider_url` on `/api/band-profile` and in every EPK
+snapshot is `/rider/{rider.public_token}`, never a version token. So a rider
+republish reaches the Contact page's press kit without a new EPK version and
+without a site rebuild (the string does not change). There is no uploaded
+PDF or stage-plot image any more; the sheet *is* both documents. The rows
+that link it gate on the `tech-rider` module, because a switched-off module
+unbuilds `/rider/*`. Deleting the linked rider nulls the FK and marks
+`band-profile` dirty; without that the baked Contact page would keep a token
+that now 404s.
+
 **The link is served by Astro, not the SPA.** `/rider/*` is absent from Caddy's
 `@spa` matcher, so `web` answers it — and the page also 404s when the
 `tech-rider` module is switched off in `/admin/website-modules`, because a
@@ -1660,7 +1673,17 @@ version is live, so `app/playwright.config.ts` runs them in chained projects
 third spec that publishes a version joins that chain, not `chromium`. With
 *nothing* live beforehand `clips-surfaces` publishes nothing — the live
 builder already serves the flagged clip, and a version published then could
-never be deleted.
+never be deleted. The same applies to `band-profile-rider.spec.ts` and
+`public/epk-modal.spec.ts`, which both write `epk_tech_rider_id`: they run in
+the chained `rider-link-admin` → `rider-link-public` projects — two
+single-file projects, not one project matching both files, because a shared
+project still lets Playwright's default worker count run the two files
+concurrently and reproduce the race the split exists to prevent.
+`band-profile.spec.ts` joins the same chain (`band-profile-admin`, ahead of
+`rider-link-admin`) for a related reason: its Bio/Career/Contacts saves
+resend the *whole* form, including whatever `epk_tech_rider_id` it loaded, so
+left in the parallel pool it can overwrite the rider specs' link mid-run or
+resend a since-deleted rider's id and 422.
 
 ## Quality standard — tests run by default
 

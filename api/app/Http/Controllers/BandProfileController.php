@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BandProfileResource;
 use App\Models\BandProfile;
 use App\Models\EpkVersion;
+use App\Models\TechRider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Services\EpkSnapshotBuilder;
 use App\Support\SiteRebuild;
 
@@ -21,7 +21,7 @@ class BandProfileController extends Controller
     public function show(): BandProfileResource
     {
         return new BandProfileResource(
-            $this->profile()->load(['members', 'socialLinks', 'logos', 'defaultLogo'])
+            $this->profile()->load(['members', 'socialLinks', 'logos', 'defaultLogo', 'epkTechRider.publishedVersion'])
         );
     }
 
@@ -66,6 +66,18 @@ class BandProfileController extends Controller
             'stat_facebook_followers'  => ['nullable', 'integer', 'min:0'],
             'epk_release_id'           => ['nullable', 'integer', 'exists:releases,id'],
             'epk_album_id'             => ['nullable', 'integer', 'exists:albums,id'],
+            // Laravel's `exists` rule cannot express "has a published version",
+            // and a never-published rider's public page 404s — so the press kit
+            // must never be allowed to point at one.
+            'epk_tech_rider_id'        => ['nullable', 'integer', function (string $attribute, mixed $value, \Closure $fail) {
+                $published = TechRider::whereKey($value)
+                    ->where('profile_id', $this->profile()->id)
+                    ->whereHas('publishedVersion')
+                    ->exists();
+                if (! $published) {
+                    $fail('Only a rider with a published version can be linked to the EPK.');
+                }
+            }],
             'career_level'             => ['nullable', 'integer', 'min:1', 'max:4'],
             // Context-specific logo pins (must belong to this profile)
             'epk_logo_id'              => ['nullable', 'integer', 'exists:band_logos,id'],
@@ -80,59 +92,7 @@ class BandProfileController extends Controller
         // that does not rebuild leaves the band looking at an unchanged page.
         SiteRebuild::markDirty('band-profile');
 
-        return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo']));
-    }
-
-    public function uploadTechRider(Request $request): BandProfileResource
-    {
-        $request->validate(['file' => 'required|file|mimes:pdf|max:10240']);
-
-        $profile = $this->profile();
-        if ($profile->tech_rider_path) {
-            Storage::disk('public')->delete($profile->tech_rider_path);
-        }
-
-        $path = $request->file('file')->store('epk', 'public');
-        $profile->update(['tech_rider_path' => $path]);
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function destroyTechRider(): BandProfileResource
-    {
-        $profile = $this->profile();
-        if ($profile->tech_rider_path) {
-            Storage::disk('public')->delete($profile->tech_rider_path);
-            $profile->update(['tech_rider_path' => null]);
-        }
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function uploadStagePlot(Request $request): BandProfileResource
-    {
-        $request->validate(['file' => 'required|image|max:4096']);
-
-        $profile = $this->profile();
-        if ($profile->stage_plot_path) {
-            Storage::disk('public')->delete($profile->stage_plot_path);
-        }
-
-        $path = $request->file('file')->store('epk', 'public');
-        $profile->update(['stage_plot_path' => $path]);
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function destroyStagePlot(): BandProfileResource
-    {
-        $profile = $this->profile();
-        if ($profile->stage_plot_path) {
-            Storage::disk('public')->delete($profile->stage_plot_path);
-            $profile->update(['stage_plot_path' => null]);
-        }
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
+        return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo', 'epkTechRider.publishedVersion']));
     }
 
     public function showEpk(): JsonResponse

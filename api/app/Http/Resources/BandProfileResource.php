@@ -46,8 +46,14 @@ class BandProfileResource extends JsonResource
             'stat_facebook_followers'  => $this->stat_facebook_followers,
             'facebook_likes'           => $this->facebook_likes,
             'facebook_likes_synced_at' => $this->facebook_likes_synced_at?->toIso8601String(),
-            'tech_rider_url'           => $this->tech_rider_path ? '/storage/' . $this->tech_rider_path : null,
-            'stage_plot_url'          => $this->stage_plot_path ? '/storage/' . $this->stage_plot_path : null,
+            // See BandProfile::epkTechRiderUrl() for the derivation.
+            'tech_rider_url'          => $this->epkTechRiderUrl(),
+            'epk_tech_rider_id'       => $this->epk_tech_rider_id,
+            'epk_tech_rider'          => $this->epkTechRider ? [
+                'id'                => $this->epkTechRider->id,
+                'name'              => $this->epkTechRider->name,
+                'published_version' => $this->epkTechRider->publishedVersion?->version_number,
+            ] : null,
             'epk_release_id'          => $this->epk_release_id,
             'epk_album_id'            => $this->epk_album_id,
             // Logo fields

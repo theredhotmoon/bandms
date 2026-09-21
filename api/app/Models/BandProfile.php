@@ -23,8 +23,7 @@ class BandProfile extends Model
         'stat_spotify_monthly', 'stat_instagram_followers', 'stat_tiktok_followers',
         'stat_youtube_subscribers', 'stat_facebook_followers',
         'facebook_likes', 'facebook_likes_synced_at',
-        'tech_rider_path', 'stage_plot_path',
-        'epk_release_id', 'epk_album_id',
+        'epk_release_id', 'epk_album_id', 'epk_tech_rider_id',
         'epk_logo_id', 'tech_rider_logo_id', 'website_logo_id',
         'shop_currencies',
     ];
@@ -105,5 +104,26 @@ class BandProfile extends Model
     public function epkAlbum(): BelongsTo
     {
         return $this->belongsTo(Album::class, 'epk_album_id');
+    }
+
+    /** The rider the press kit links to — see epkTechRiderUrl() for the token it publishes. */
+    public function epkTechRider(): BelongsTo
+    {
+        return $this->belongsTo(TechRider::class, 'epk_tech_rider_id');
+    }
+
+    /**
+     * Where the press kit sends a promoter for the rider — the rider's own
+     * token, so a republish reaches every link without a new EPK version.
+     * Null until that rider has a published version: its page 404s before
+     * then, and every public row hides on null.
+     */
+    public function epkTechRiderUrl(): ?string
+    {
+        $rider = $this->epkTechRider;
+
+        return $rider && $rider->publishedVersion
+            ? '/rider/' . $rider->public_token
+            : null;
     }
 }

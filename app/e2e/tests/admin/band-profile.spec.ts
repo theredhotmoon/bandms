@@ -273,5 +273,18 @@ test.describe('Band Profile Admin', () => {
 
       await expect(modal).not.toBeVisible()
     })
+
+    // The tech rider selector (band_profiles.epk_tech_rider_id) moved to
+    // band-profile-rider.spec.ts — it writes the same shared row that
+    // public/epk-modal.spec.ts writes, and the two are chained together in
+    // the chained `rider-link-admin` → `rider-link-public` projects so they
+    // never share the parallel pool.
+    //
+    // This file stayed in the parallel `chromium` pool at first, but its own
+    // Bio/Career/Contacts saves above resend the whole form — including
+    // whatever epk_tech_rider_id it loaded — so it could still stomp the
+    // rider specs' link mid-run or resend a since-deleted rider's id and 422.
+    // It now runs in the same chain, as the `band-profile-admin` project
+    // ahead of `rider-link-admin` (see `app/playwright.config.ts`).
   })
 })

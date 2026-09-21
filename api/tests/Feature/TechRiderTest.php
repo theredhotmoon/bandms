@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\BandProfile;
+use App\Models\SiteDirtyArea;
 use App\Models\TechRider;
 
 beforeEach(fn () => $this->createProfile());
@@ -359,6 +361,29 @@ describe('DELETE /api/tech-riders/{techRider}', function () {
     it('returns 404 for a non-existent rider', function () {
         $this->actingAsAdmin();
         $this->deleteJson('/api/tech-riders/99999')->assertNotFound();
+    });
+});
+
+describe('deleting a rider the EPK links', function () {
+    it('marks band-profile dirty so the baked press kit is rebuilt', function () {
+        $this->actingAsAdmin();
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Linked', 'is_active' => false]);
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+
+        $this->deleteJson("/api/tech-riders/{$rider->id}")->assertNoContent();
+
+        expect(SiteDirtyArea::pluck('area')->all())->toContain('band-profile');
+    });
+
+    it('does not mark band-profile dirty for an unlinked rider', function () {
+        SiteDirtyArea::query()->delete();
+
+        $this->actingAsAdmin();
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Unlinked', 'is_active' => false]);
+
+        $this->deleteJson("/api/tech-riders/{$rider->id}")->assertNoContent();
+
+        expect(SiteDirtyArea::pluck('area')->all())->not->toContain('band-profile');
     });
 });
 

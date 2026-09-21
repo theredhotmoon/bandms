@@ -11,6 +11,7 @@ use App\Models\BandProfile;
 use App\Models\Concert;
 use App\Models\TechRider;
 use App\Models\TechRiderVersion;
+use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
@@ -200,7 +201,16 @@ class TechRiderController extends Controller
 
     public function destroy(TechRider $techRider): JsonResponse
     {
+        // The press kit bakes this rider's token into the Contact page. The FK
+        // nulls on delete, but the served site keeps the link until something
+        // marks the area dirty — and with auto-rebuild on nothing else would.
+        $linked = BandProfile::where('epk_tech_rider_id', $techRider->id)->exists();
+
         $techRider->delete();
+
+        if ($linked) {
+            SiteRebuild::markDirty('band-profile');
+        }
 
         return response()->json(null, 204);
     }

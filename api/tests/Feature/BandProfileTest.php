@@ -3,10 +3,10 @@
 use App\Models\BandProfile;
 use App\Models\EpkVersion;
 use App\Models\SiteSetting;
+use App\Models\TechRider;
 use App\Models\User;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Passport;
 
 describe('GET /api/band-profile', function () {
@@ -316,294 +316,128 @@ describe('GET /api/band-profile/epk', function () {
     });
 });
 
-describe('POST /api/band-profile/tech-rider', function () {
+
+describe('epk_tech_rider_id schema', function () {
     beforeEach(fn () => $this->createProfile());
 
-    it('returns 401 without authentication', function () {
-        Storage::fake('public');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', [
-            'file' => UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf'),
-        ])->assertUnauthorized();
+    it('has the FK column and no file columns', function () {
+        expect(Schema::hasColumn('band_profiles', 'epk_tech_rider_id'))->toBeTrue()
+            ->and(Schema::hasColumn('band_profiles', 'tech_rider_path'))->toBeFalse()
+            ->and(Schema::hasColumn('band_profiles', 'stage_plot_path'))->toBeFalse();
     });
 
-    it('returns 403 for non-admin roles', function () {
-        Storage::fake('public');
-        Passport::actingAs(User::factory()->create(['role' => 'member']));
+    it('resolves the linked rider through epkTechRider()', function () {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Club show', 'is_active' => false]);
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
 
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', [
-            'file' => UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf'),
-        ])->assertForbidden();
+        expect(BandProfile::findOrFail(1)->epkTechRider->id)->toBe($rider->id);
     });
 
-    it('stores the PDF and updates tech_rider_path on the profile', function () {
-        Storage::fake('public');
+    it('nulls the link when the rider is deleted', function () {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Club show', 'is_active' => false]);
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+
+        $rider->delete();
+
+        expect(BandProfile::findOrFail(1)->epk_tech_rider_id)->toBeNull();
+    });
+
+    it('no longer exposes the upload endpoints', function () {
         $this->actingAsAdmin();
 
-        $file = UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])
-            ->assertSuccessful();
-
-        $profile = BandProfile::findOrFail(1);
-        expect($profile->tech_rider_path)->not->toBeNull();
-        Storage::disk('public')->assertExists($profile->tech_rider_path);
-    });
-
-    it('returns tech_rider_url in the response after upload', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])
-            ->assertSuccessful()
-            ->assertJsonPath('data.tech_rider_url', fn ($url) => str_starts_with($url, '/storage/'));
-    });
-
-    it('rejects non-PDF files', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('tech-rider.txt', 100, 'text/plain');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['file']);
-    });
-
-    it('requires a file to be present', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $this->postJson('/api/band-profile/tech-rider', [])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['file']);
-    });
-
-    it('replaces an existing tech rider file', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $first = UploadedFile::fake()->create('rider-v1.pdf', 100, 'application/pdf');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $first])->assertSuccessful();
-        $firstPath = BandProfile::findOrFail(1)->tech_rider_path;
-
-        $second = UploadedFile::fake()->create('rider-v2.pdf', 100, 'application/pdf');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $second])->assertSuccessful();
-        $secondPath = BandProfile::findOrFail(1)->tech_rider_path;
-
-        expect($secondPath)->not->toBe($firstPath);
-        Storage::disk('public')->assertMissing($firstPath);
-        Storage::disk('public')->assertExists($secondPath);
+        $this->postJson('/api/band-profile/tech-rider')->assertNotFound();
+        $this->deleteJson('/api/band-profile/tech-rider')->assertNotFound();
+        $this->postJson('/api/band-profile/stage-plot')->assertNotFound();
+        $this->deleteJson('/api/band-profile/stage-plot')->assertNotFound();
     });
 });
 
-describe('DELETE /api/band-profile/tech-rider', function () {
+describe('PUT /api/band-profile epk_tech_rider_id', function () {
     beforeEach(fn () => $this->createProfile());
 
-    it('returns 401 without authentication', function () {
-        $this->deleteJson('/api/band-profile/tech-rider')->assertUnauthorized();
-    });
+    /** A rider with one published version, the way the module leaves it after Publish. */
+    function publishedRider(string $name = 'Festival set'): TechRider
+    {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => $name, 'is_active' => false]);
+        $rider->versions()->create([
+            'version_number' => 1,
+            'snapshot'       => ['format' => 1],
+            'status'         => 'published',
+            'published_at'   => now(),
+        ]);
 
-    it('returns 403 for non-admin roles', function () {
-        Passport::actingAs(User::factory()->create(['role' => 'member']));
+        return $rider;
+    }
 
-        $this->deleteJson('/api/band-profile/tech-rider')->assertForbidden();
-    });
-
-    it('clears the tech_rider_path field on the profile', function () {
-        Storage::fake('public');
+    it('links a rider that has a published version', function () {
         $this->actingAsAdmin();
+        $rider = publishedRider();
 
-        $file = UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])->assertSuccessful();
-
-        $pathBefore = BandProfile::findOrFail(1)->tech_rider_path;
-        expect($pathBefore)->not->toBeNull();
-
-        $this->deleteJson('/api/band-profile/tech-rider')->assertSuccessful();
-
-        $profile = BandProfile::findOrFail(1);
-        expect($profile->tech_rider_path)->toBeNull();
-    });
-
-    it('deletes the file from storage', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])->assertSuccessful();
-        $path = BandProfile::findOrFail(1)->tech_rider_path;
-
-        $this->deleteJson('/api/band-profile/tech-rider')->assertSuccessful();
-
-        Storage::disk('public')->assertMissing($path);
-    });
-
-    it('returns null for tech_rider_url after deletion', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('tech-rider.pdf', 100, 'application/pdf');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/tech-rider', ['file' => $file])->assertSuccessful();
-
-        $this->deleteJson('/api/band-profile/tech-rider')
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
             ->assertSuccessful()
-            ->assertJsonPath('data.tech_rider_url', null);
+            ->assertJsonPath('data.epk_tech_rider_id', $rider->id)
+            ->assertJsonPath('data.tech_rider_url', "/rider/{$rider->public_token}")
+            ->assertJsonPath('data.epk_tech_rider.name', 'Festival set')
+            ->assertJsonPath('data.epk_tech_rider.published_version', 1);
     });
 
-    it('succeeds even when no tech rider is currently set', function () {
+    it('rejects a rider that has never been published', function () {
         $this->actingAsAdmin();
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Draft', 'is_active' => false]);
 
-        $this->deleteJson('/api/band-profile/tech-rider')->assertSuccessful();
-
-        expect(BandProfile::findOrFail(1)->tech_rider_path)->toBeNull();
-    });
-});
-
-describe('POST /api/band-profile/stage-plot', function () {
-    beforeEach(fn () => $this->createProfile());
-
-    it('returns 401 without authentication', function () {
-        Storage::fake('public');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', [
-            'file' => UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg'),
-        ])->assertUnauthorized();
-    });
-
-    it('returns 403 for non-admin roles', function () {
-        Storage::fake('public');
-        Passport::actingAs(User::factory()->create(['role' => 'member']));
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', [
-            'file' => UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg'),
-        ])->assertForbidden();
-    });
-
-    it('stores the image and updates stage_plot_path on the profile', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])
-            ->assertSuccessful();
-
-        $profile = BandProfile::findOrFail(1);
-        expect($profile->stage_plot_path)->not->toBeNull();
-        Storage::disk('public')->assertExists($profile->stage_plot_path);
-    });
-
-    it('returns stage_plot_url in the response after upload', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.png', 100, 'image/png');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])
-            ->assertSuccessful()
-            ->assertJsonPath('data.stage_plot_url', fn ($url) => str_starts_with($url, '/storage/'));
-    });
-
-    it('rejects non-image files', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.pdf', 100, 'application/pdf');
-
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['file']);
+            ->assertJsonPath('errors.epk_tech_rider_id.0', 'Only a rider with a published version can be linked to the EPK.');
+
+        expect(BandProfile::findOrFail(1)->epk_tech_rider_id)->toBeNull();
     });
 
-    it('requires a file to be present', function () {
-        Storage::fake('public');
+    it('rejects a rider whose only version is archived', function () {
+        $this->actingAsAdmin();
+        $rider = publishedRider();
+        $rider->versions()->update(['status' => 'archived']);
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
+            ->assertUnprocessable();
+    });
+
+    it('rejects an id that names no rider', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/band-profile/stage-plot', [])
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => 999999])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['file']);
+            ->assertJsonValidationErrors('epk_tech_rider_id');
     });
 
-    it('replaces an existing stage plot file', function () {
-        Storage::fake('public');
+    it('clears the link with null', function () {
         $this->actingAsAdmin();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => publishedRider()->id]);
 
-        $first = UploadedFile::fake()->create('plot-v1.jpg', 100, 'image/jpeg');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $first])->assertSuccessful();
-        $firstPath = BandProfile::findOrFail(1)->stage_plot_path;
-
-        $second = UploadedFile::fake()->create('plot-v2.jpg', 100, 'image/jpeg');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $second])->assertSuccessful();
-        $secondPath = BandProfile::findOrFail(1)->stage_plot_path;
-
-        expect($secondPath)->not->toBe($firstPath);
-        Storage::disk('public')->assertMissing($firstPath);
-        Storage::disk('public')->assertExists($secondPath);
-    });
-});
-
-describe('DELETE /api/band-profile/stage-plot', function () {
-    beforeEach(fn () => $this->createProfile());
-
-    it('returns 401 without authentication', function () {
-        $this->deleteJson('/api/band-profile/stage-plot')->assertUnauthorized();
-    });
-
-    it('returns 403 for non-admin roles', function () {
-        Passport::actingAs(User::factory()->create(['role' => 'member']));
-
-        $this->deleteJson('/api/band-profile/stage-plot')->assertForbidden();
-    });
-
-    it('clears the stage_plot_path field on the profile', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])->assertSuccessful();
-
-        $pathBefore = BandProfile::findOrFail(1)->stage_plot_path;
-        expect($pathBefore)->not->toBeNull();
-
-        $this->deleteJson('/api/band-profile/stage-plot')->assertSuccessful();
-
-        $profile = BandProfile::findOrFail(1);
-        expect($profile->stage_plot_path)->toBeNull();
-    });
-
-    it('deletes the file from storage', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])->assertSuccessful();
-        $path = BandProfile::findOrFail(1)->stage_plot_path;
-
-        $this->deleteJson('/api/band-profile/stage-plot')->assertSuccessful();
-
-        Storage::disk('public')->assertMissing($path);
-    });
-
-    it('returns null for stage_plot_url after deletion', function () {
-        Storage::fake('public');
-        $this->actingAsAdmin();
-
-        $file = UploadedFile::fake()->create('stage-plot.jpg', 100, 'image/jpeg');
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/band-profile/stage-plot', ['file' => $file])->assertSuccessful();
-
-        $this->deleteJson('/api/band-profile/stage-plot')
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => null])
             ->assertSuccessful()
-            ->assertJsonPath('data.stage_plot_url', null);
+            ->assertJsonPath('data.epk_tech_rider_id', null)
+            ->assertJsonPath('data.tech_rider_url', null)
+            ->assertJsonPath('data.epk_tech_rider', null);
     });
 
-    it('succeeds even when no stage plot is currently set', function () {
-        $this->actingAsAdmin();
+    it('serves tech_rider_url publicly and never a stage_plot_url', function () {
+        $rider = publishedRider();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
 
-        $this->deleteJson('/api/band-profile/stage-plot')->assertSuccessful();
+        $this->getJson('/api/band-profile')
+            ->assertSuccessful()
+            ->assertJsonPath('data.tech_rider_url', "/rider/{$rider->public_token}")
+            ->assertJsonMissingPath('data.stage_plot_url');
+    });
 
-        expect(BandProfile::findOrFail(1)->stage_plot_path)->toBeNull();
+    it('serves null tech_rider_url when the rider is deleted after linking', function () {
+        $rider = publishedRider();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+        $rider->delete();
+
+        $this->getJson('/api/band-profile')
+            ->assertSuccessful()
+            ->assertJsonPath('data.tech_rider_url', null)
+            ->assertJsonPath('data.epk_tech_rider', null);
     });
 });

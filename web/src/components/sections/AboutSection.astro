@@ -119,14 +119,12 @@ const gridMembers = [...members]
     socials: (m.social_links ?? []).map(s => ({ platform: s.platform, url: s.url })),
   }))
 
-// Press cards, each present only when its target exists. EPK and photos are
-// module routes and disappear with the module; the rider and stage plot are
-// storage files and do not.
+// Press cards, each present only when its target exists. Both are module
+// routes and disappear with the module. The rider is not offered here: it
+// lives in the Contact page's press kit, beside the booking channels.
 const pressCards = [
-  { icon: 'star', title: t.epk, sub: t.epkSub, href: href('epk'), cta: t.open, isFile: false, show: enabled('epk') },
-  { icon: 'camera', title: t.photos, sub: t.photosSub, href: href('photos'), cta: t.open, isFile: false, show: enabled('photos') },
-  { icon: 'filter', title: t.rider, sub: t.riderSub, href: profile.tech_rider_url ?? '', cta: t.download, isFile: true, show: Boolean(profile.tech_rider_url) },
-  { icon: 'pin', title: t.stagePlot, sub: t.stagePlotSub, href: profile.stage_plot_url ?? '', cta: t.download, isFile: true, show: Boolean(profile.stage_plot_url) },
+  { icon: 'star', title: t.epk, sub: t.epkSub, href: href('epk'), cta: t.open, show: enabled('epk') },
+  { icon: 'camera', title: t.photos, sub: t.photosSub, href: href('photos'), cta: t.open, show: enabled('photos') },
 ].filter(c => c.show)
 
 const contacts = [
@@ -249,19 +247,14 @@ const contacts = [
         {pressCards.length > 0 && (
           <div class="ab-press-grid" style={`--press-cols:${pressCards.length}`}>
             {pressCards.map(card => (
-              <a
-                class="ab-press-card"
-                href={card.href}
-                target={card.isFile ? '_blank' : undefined}
-                rel={card.isFile ? 'noopener' : undefined}
-              >
+              <a class="ab-press-card" href={card.href}>
                 <Icon name={card.icon} size={30} color="var(--color-accent)" />
                 <span class="ab-press-body">
                   <span class="ab-press-title">{card.title}</span>
                   <span class="ab-press-sub">{card.sub}</span>
                 </span>
                 <span class="ab-press-cta">
-                  <Icon name={card.isFile ? 'download' : 'chevron'} size={16} color="var(--color-accent)" />
+                  <Icon name="chevron" size={16} color="var(--color-accent)" />
                   {card.cta}
                 </span>
               </a>

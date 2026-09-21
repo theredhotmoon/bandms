@@ -8,6 +8,8 @@ import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import AboutBioVariantSelect from '@/components/admin/forms/AboutBioVariantSelect.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useReleases } from '@/composables/useReleases'
+import { useTechRiders } from '@/composables/useTechRiders'
+import { adminUrl } from '@/config/admin'
 import { useEpkVersions } from '@/composables/useEpkVersions'
 import { useEpkVersionHistory } from '@/composables/useEpkVersionHistory'
 import EpkVersionHistory from '@/components/admin/EpkVersionHistory.vue'
@@ -18,8 +20,25 @@ import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 
-const { query, update, uploadRider, deleteRider, uploadPlot, deletePlot, syncFb } = useBandProfile()
+const { query, update, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
+const { list: ridersQ } = useTechRiders()
+
+// Only a rider with a published version can be linked — its page 404s until
+// then, and the API rejects anything else. Same rule as the server.
+const publishableRiders = computed(() =>
+  (ridersQ.data.value ?? []).filter(r => r.published_version_number != null),
+)
+
+// A rider deleted in /admin/tech-rider after this form loaded would leave a
+// stale id here, and every Save — from any tab — resends the whole form. The
+// list refetches on window focus, so drop the id as soon as it is gone.
+watch(publishableRiders, (riders) => {
+  if (!ridersQ.isSuccess.value || form.epk_tech_rider_id == null) return
+  if (!riders.some(r => r.id === form.epk_tech_rider_id)) form.epk_tech_rider_id = null
+})
+
+const riderPageUrl = adminUrl('tech-rider')
 const { create: createVersion } = useEpkVersions()
 const history = useEpkVersionHistory()
 
@@ -67,6 +86,7 @@ const form = reactive({
   stat_youtube_subscribers: '' as string | number,
   stat_facebook_followers:  '' as string | number,
   epk_release_id: null as number | null,
+  epk_tech_rider_id: null as number | null,
   career_level: 1 as 1 | 2 | 3 | 4,
 })
 
@@ -112,6 +132,7 @@ watch(
     form.stat_youtube_subscribers = val.stat_youtube_subscribers ?? ''
     form.stat_facebook_followers  = val.stat_facebook_followers  ?? ''
     form.epk_release_id = val.epk_release_id ?? null
+    form.epk_tech_rider_id = val.epk_tech_rider_id ?? null
     form.career_level   = (val.career_level ?? 1) as 1 | 2 | 3 | 4
     contextPins.epk_logo_id        = val.epk_logo_id        ?? null
     contextPins.tech_rider_logo_id = val.tech_rider_logo_id ?? null
@@ -161,6 +182,7 @@ async function saveProfile() {
       stat_youtube_subscribers: numOrNull(form.stat_youtube_subscribers),
       stat_facebook_followers:  numOrNull(form.stat_facebook_followers),
       epk_release_id: form.epk_release_id,
+      epk_tech_rider_id: form.epk_tech_rider_id,
       career_level:   form.career_level,
     })
     saved.value = true
@@ -190,39 +212,6 @@ async function doSyncFb() {
   } catch (e) {
     reportSaveError(e, 'Failed to sync Facebook likes')
   }
-}
-
-const riderInput = ref<HTMLInputElement | null>(null)
-const plotInput  = ref<HTMLInputElement | null>(null)
-
-async function handleRiderUpload(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try {
-    await uploadRider.mutateAsync(file)
-    toast.success('Tech rider uploaded')
-  } catch (e) { reportSaveError(e, 'Upload failed') }
-  if (riderInput.value) riderInput.value.value = ''
-}
-
-async function handlePlotUpload(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try {
-    await uploadPlot.mutateAsync(file)
-    toast.success('Stage plot uploaded')
-  } catch (e) { reportSaveError(e, 'Upload failed') }
-  if (plotInput.value) plotInput.value.value = ''
-}
-
-async function removeRider() {
-  try { await deleteRider.mutateAsync(); toast.success('Tech rider removed') }
-  catch (e) { reportSaveError(e, 'Failed to remove') }
-}
-
-async function removePlot() {
-  try { await deletePlot.mutateAsync(); toast.success('Stage plot removed') }
-  catch (e) { reportSaveError(e, 'Failed to remove') }
 }
 
 type Section = 'bio' | 'career' | 'social' | 'contacts' | 'stats' | 'epk' | 'logo'
@@ -531,6 +520,22 @@ async function saveSocialLinks() {
               </div>
             </div>
 
+            <div>
+              <label class="field-label" for="epk-tech-rider">Tech rider &amp; stage plot</label>
+              <select id="epk-tech-rider" v-model="form.epk_tech_rider_id" class="field-input" data-testid="epk-tech-rider">
+                <option :value="null">— None —</option>
+                <option v-for="r in publishableRiders" :key="r.id" :value="r.id">
+                  {{ r.name }} (v{{ r.published_version_number }})
+                </option>
+              </select>
+              <p v-if="fieldErrors.epk_tech_rider_id" class="field-error">{{ fieldErrors.epk_tech_rider_id[0] }}</p>
+              <p class="field-hint">
+                Only riders with a published version are listed. The press kit links the rider's permanent page,
+                which always shows its latest published version.
+                <RouterLink :to="riderPageUrl" class="field-hint-link">Manage riders →</RouterLink>
+              </p>
+            </div>
+
             <div class="epk-snapshot-section">
               <div>
                 <div class="field-label mb-0.5">EPK Snapshot</div>
@@ -543,36 +548,6 @@ async function saveSocialLinks() {
                 <button type="button" @click="showSnapshotModal = true" class="btn-snapshot">
                   Create EPK snapshot
                 </button>
-              </div>
-            </div>
-
-            <div>
-              <label class="field-label">Tech rider (PDF)</label>
-              <div v-if="query.data.value?.tech_rider_url" class="file-row">
-                <a :href="query.data.value.tech_rider_url" target="_blank" class="file-link">View current tech rider →</a>
-                <button type="button" class="btn-remove-file" :disabled="deleteRider.isPending.value" @click="removeRider">Remove</button>
-              </div>
-              <div v-else class="file-upload-row">
-                <input ref="riderInput" type="file" accept=".pdf" style="display:none" @change="handleRiderUpload" />
-                <button type="button" class="btn-upload-file" :disabled="uploadRider.isPending.value" @click="riderInput?.click()">
-                  {{ uploadRider.isPending.value ? 'Uploading…' : 'Upload PDF' }}
-                </button>
-                <span class="file-hint">Max 10 MB</span>
-              </div>
-            </div>
-
-            <div>
-              <label class="field-label">Stage plot (image)</label>
-              <div v-if="query.data.value?.stage_plot_url" class="file-row">
-                <img :src="query.data.value.stage_plot_url" class="stage-thumb" alt="Stage plot" />
-                <button type="button" class="btn-remove-file" :disabled="deletePlot.isPending.value" @click="removePlot">Remove</button>
-              </div>
-              <div v-else class="file-upload-row">
-                <input ref="plotInput" type="file" accept="image/*" style="display:none" @change="handlePlotUpload" />
-                <button type="button" class="btn-upload-file" :disabled="uploadPlot.isPending.value" @click="plotInput?.click()">
-                  {{ uploadPlot.isPending.value ? 'Uploading…' : 'Upload image' }}
-                </button>
-                <span class="file-hint">PNG, JPG — max 4 MB</span>
               </div>
             </div>
           </template>
@@ -688,27 +663,8 @@ async function saveSocialLinks() {
 .char-count.warn { color: #f59e0b; }
 .char-count.over { color: #f87171; }
 
-.file-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.375rem; }
-.file-link { font-size: 0.8rem; color: #9ca3af; text-decoration: none; transition: color 120ms; }
-.file-link:hover { color: #d0d0d0; }
-
-.btn-remove-file {
-  padding: 0.25rem 0.625rem; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #7f1d1d; color: #f87171;
-  transition: background 120ms;
-}
-.btn-remove-file:hover:not(:disabled) { background: #450a0a; }
-.btn-remove-file:disabled { opacity: 0.4; cursor: default; }
-
-.file-upload-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.375rem; }
-.btn-upload-file {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0;
-  transition: background 100ms;
-}
-.btn-upload-file:hover:not(:disabled) { background: #333333; }
-.btn-upload-file:disabled { opacity: 0.4; cursor: default; }
-.file-hint { font-size: 0.7rem; color: #475569; }
+.field-hint-link { color: #9ca3af; text-decoration: underline; margin-left: 0.25rem; }
+.field-hint-link:hover { color: #d0d0d0; }
 
 .epk-snapshot-section {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
@@ -727,11 +683,6 @@ async function saveSocialLinks() {
   white-space: nowrap; transition: background 100ms;
 }
 .btn-history:hover { background: #1f1f1f; color: #d0d0d0; }
-
-.stage-thumb {
-  width: 10rem; border-radius: 0.375rem; border: 1px solid #2a2a2a;
-  object-fit: contain; background: #141414;
-}
 
 .btn-save {
   padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;

@@ -1,7 +1,19 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Both publish EPK versions for real — see the epk-admin / epk-public projects.
-const EPK_PUBLISHING_SPECS = [/epk-versions\.spec\.ts/, /clips-surfaces\.spec\.ts/]
+// epk-versions/clips-surfaces publish EPK versions for real (epk-admin/epk-public
+// below); band-profile-rider/epk-modal both write band_profiles.epk_tech_rider_id
+// on the shared row (rider-link below). band-profile.spec.ts also touches that
+// row: its whole-form Saves resend whatever epk_tech_rider_id the form loaded,
+// which can stomp the rider specs' link mid-run or resend a deleted rider's id
+// and 422 (band-profile-admin below). All five need to stay out of the
+// parallel `chromium` pool.
+const EPK_PUBLISHING_SPECS = [
+  /epk-versions\.spec\.ts/,
+  /clips-surfaces\.spec\.ts/,
+  /epk-modal\.spec\.ts/,
+  /band-profile-rider\.spec\.ts/,
+  /band-profile\.spec\.ts/,
+]
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -89,6 +101,42 @@ export default defineConfig({
       testMatch: /clips-surfaces\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['epk-admin'],
+    },
+    // band-profile.spec.ts performs several whole-form Saves against the same
+    // band_profiles row the rider specs link, each resending whatever
+    // epk_tech_rider_id the form loaded — a race with rider-link-admin/-public
+    // if it ran in the parallel pool. Chained after epk-public and before the
+    // rider specs, the same shape as everything else here.
+    {
+      name: 'band-profile-admin',
+      testMatch: /band-profile\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['epk-public'],
+    },
+    // Both of these write band_profiles.epk_tech_rider_id and the public one
+    // waits on a site rebuild in between, so they cannot share a moment with
+    // each other either. A single project matching both files was tried
+    // first (testMatch: [bandProfileRider, epkModal] with fullyParallel:
+    // false) and does NOT serialise them: fullyParallel only governs tests
+    // *within* one file, so with the default 2 workers Playwright still ran
+    // the two files in different workers at the same time — reproducing
+    // exactly the race this split exists to prevent (a form save in one spec
+    // landed between the other spec's version-publish and its own link PUT,
+    // tripping "Only a rider with a published version can be linked"). Two
+    // single-file projects chained by `dependencies`, the same shape as
+    // epk-admin/epk-public above, is what actually guarantees one file runs
+    // at a time.
+    {
+      name: 'rider-link-admin',
+      testMatch: /band-profile-rider\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['band-profile-admin'],
+    },
+    {
+      name: 'rider-link-public',
+      testMatch: /epk-modal\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['rider-link-admin'],
     },
   ],
   webServer: {
