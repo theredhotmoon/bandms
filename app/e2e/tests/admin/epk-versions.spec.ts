@@ -62,10 +62,12 @@ test.describe('EPK version history', () => {
     const request = await playwright.request.newContext(apiOptions(baseURL))
     const before = await list(request)
 
-    // A pending draft blocks store(). Ours from an aborted run can go; anyone else's must not.
+    // A pending draft blocks store(). One left by an E2E run — ours from an
+    // aborted run, or clips-surfaces.spec.ts's between its store and publish
+    // on a parallel worker — can go; anyone else's must not.
     const pending = before.find((v) => v.status === 'pending')
     if (pending) {
-      if (!pending.release_reason?.startsWith(REASON_PREFIX)) {
+      if (!pending.release_reason?.startsWith('E2E ')) {
         throw new Error(`A pending EPK version (v${pending.version_number}) exists — publish or discard it before running this spec`)
       }
       await request.delete(`/api/epk-versions/${pending.id}`)

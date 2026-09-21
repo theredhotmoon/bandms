@@ -133,8 +133,11 @@ test.describe.serial('Public clips — release, merch, EPK', () => {
       clipIds.push(clip.id)
     }
 
-    // The EPK serves the published version, never the live builder, while one
-    // exists — so the flagged clip only reaches the page through a new version.
+    // The EPK serves the published version while one exists, so the flagged
+    // clip only reaches the page through a new version — which afterAll can
+    // archive and delete once the previous live one is restored. With nothing
+    // live (a fresh DB) the live builder already serves the clip, and a
+    // version published now could never be deleted, so publish nothing.
     const versions = (await (await api(request, 'get', '/api/epk-versions')).json()).data as Version[]
     const pending = versions.find(v => v.status === 'pending')
     if (pending && !pending.release_reason?.startsWith('E2E ')) {
@@ -143,9 +146,11 @@ test.describe.serial('Public clips — release, merch, EPK', () => {
     if (pending) await api(request, 'delete', `/api/epk-versions/${pending.id}`)
     originalLiveEpkId = versions.find(v => v.status === 'published')?.id ?? null
 
-    const created = (await (await api(request, 'post', '/api/epk-versions', { release_reason: REASON })).json()).data as { id: number }
-    publishedEpkId = created.id
-    await api(request, 'post', `/api/epk-versions/${publishedEpkId}/publish`)
+    if (originalLiveEpkId !== null) {
+      const created = (await (await api(request, 'post', '/api/epk-versions', { release_reason: REASON })).json()).data as { id: number }
+      publishedEpkId = created.id
+      await api(request, 'post', `/api/epk-versions/${publishedEpkId}/publish`)
+    }
 
     await rebuildAndWait(request, Date.now())
   })
@@ -160,11 +165,18 @@ test.describe.serial('Public clips — release, merch, EPK', () => {
       ['restore live EPK', async () => {
         if (originalLiveEpkId === null) return
         await api(request, 'post', `/api/epk-versions/${originalLiveEpkId}/publish`).catch(e => {
-          // 422 "already live" means we never got as far as publishing ours.
-          if (!String(e.message).includes('→ 422')) throw e
+          // 422 "already live": we never got as far as publishing ours.
+          // 404: epk-versions.spec.ts, running in parallel, owned that version
+          // and has since restored the true original and deleted it.
+          if (!/→ (422|404)/.test(String(e.message))) throw e
         })
       }],
-      ['delete E2E EPK version', async () => { if (publishedEpkId !== null) await api(request, 'delete', `/api/epk-versions/${publishedEpkId}`) }],
+      ['delete E2E EPK version', async () => {
+        if (publishedEpkId === null) return
+        const mine = ((await (await api(request, 'get', '/api/epk-versions')).json()).data as Version[]).find(v => v.id === publishedEpkId)
+        // A live version cannot be deleted; only reachable if the restore above failed, which is already recorded.
+        if (mine && mine.status !== 'published') await api(request, 'delete', `/api/epk-versions/${publishedEpkId}`)
+      }],
       ...clipIds.map((id): [string, () => Promise<unknown>] => [`delete clip ${id}`, () => api(request, 'delete', `/api/clips/${id}`)]),
       ['delete shop item', async () => { if (shopItemId) await api(request, 'delete', `/api/shop/${shopItemId}`) }],
       ...enabledByUs.map((slug): [string, () => Promise<unknown>] => [`disable ${slug} again`, () => api(request, 'put', `/api/admin/modules/${slug}`, { enabled: false })]),
@@ -173,15 +185,14 @@ test.describe.serial('Public clips — release, merch, EPK', () => {
       await step().catch(e => failures.push(`${name}: ${e.message}`))
     }
     // Restoring the rows is not enough: the built site still carries the
-    // pages this spec switched on, until something rebuilds it.
-    if (enabledByUs.length) {
-      await rebuildAndWait(request, Date.now()).catch(e => failures.push(`final rebuild: ${e.message}`))
-      // The webhook's publish step must *replace* the served files: a merge
-      // would leave the release page up with its module off.
-      if (enabledByUs.includes('releases')) {
-        const res = await request.get(`${WEB}/en/${releasesSection}/${releaseId}`)
-        if (res.status() !== 404) failures.push(`release page still served after its module was switched off (${res.status()})`)
-      }
+    // pages this spec switched on and the clips it seeded, until something
+    // rebuilds it.
+    await rebuildAndWait(request, Date.now()).catch(e => failures.push(`final rebuild: ${e.message}`))
+    // The webhook's publish step must drop what the new build no longer has:
+    // a merge would leave the release page up with its module off.
+    if (enabledByUs.includes('releases')) {
+      const res = await request.get(`${WEB}/en/${releasesSection}/${releaseId}`)
+      if (res.status() !== 404) failures.push(`release page still served after its module was switched off (${res.status()})`)
     }
     expect(failures).toEqual([])
   })
