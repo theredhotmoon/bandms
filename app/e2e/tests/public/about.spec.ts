@@ -130,7 +130,9 @@ test.describe('About page', () => {
     await expect(chips.first()).toHaveText(/\S/)
   })
 
-  test('press cards link to something real and files open in a new tab', async ({ page }) => {
+  // Since the EPK links the rider page (2026-09-21) every press card here is
+  // an internal route; the rider and stage-plot cards are gone for good.
+  test('press cards are internal routes, and none is the rider', async ({ page }) => {
     await page.goto(`${WEB}/en/about`)
 
     const cards = page.locator('.ab-press-card')
@@ -138,11 +140,9 @@ test.describe('About page', () => {
 
     for (let i = 0; i < (await cards.count()); i++) {
       const href = await cards.nth(i).getAttribute('href')
-      expect(href).toBeTruthy()
-
-      const target = await cards.nth(i).getAttribute('target')
-      if (href!.startsWith('/storage/')) expect(target).toBe('_blank')
-      else expect(target).toBeNull()
+      expect(href).toMatch(/^\/en\//)
+      expect(await cards.nth(i).getAttribute('target')).toBeNull()
+      await expect(cards.nth(i).locator('.ab-press-title')).not.toHaveText(/rider|stage plot/i)
     }
   })
 
