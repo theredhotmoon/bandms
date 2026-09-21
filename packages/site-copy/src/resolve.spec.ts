@@ -168,4 +168,21 @@ describe('the registry', () => {
     expect(copyFieldsFor('nope')).toEqual([])
     expect(copyGroupsFor('nope')).toEqual([])
   })
+
+  it('retired the file-era rider keys when the EPK started linking the rider page', () => {
+    // 2026-09-21: the press kit links /rider/{token}, which carries the stage
+    // plot, so the separate stage-plot rows and the About press cards went.
+    // See docs/superpowers/specs/2026-09-21-epk-tech-rider-link-design.md.
+    const about = copyFieldsFor('about').map(f => f.key)
+    for (const key of ['rider', 'riderSub', 'stagePlot', 'stagePlotSub', 'download']) {
+      expect(about, key).not.toContain(key)
+    }
+    const contact = copyFieldsFor('contact').map(f => f.key)
+    expect(contact).not.toContain('epkStagePlot')
+    expect(contact).not.toContain('epkStagePlotMeta')
+    expect(contact).toEqual(expect.arrayContaining(['riderTitle', 'riderSub', 'riderCta', 'epkRider', 'epkRiderMeta']))
+    const epkRider = copyFieldsFor('contact').find(f => f.key === 'epkRider')!
+    expect(defaultFor(epkRider, 'en')).toBe('Tech rider & stage plot')
+    expect(defaultFor(epkRider, 'pl')).toBe('Rider techniczny i plan sceny')
+  })
 })

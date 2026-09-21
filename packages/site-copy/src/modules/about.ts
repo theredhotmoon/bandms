@@ -124,28 +124,8 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Hi-res, print-ready', pl: 'Hi-res, gotowe do druku' },
   },
   {
-    key: 'rider', label: 'Rider card: title', group: 'Press & booking', maxLength: 60,
-    defaults: { en: 'Tech rider', pl: 'Rider techniczny' },
-  },
-  {
-    key: 'riderSub', label: 'Rider card: subtitle', group: 'Press & booking', maxLength: 100,
-    defaults: { en: 'Stage plan & input list (PDF)', pl: 'Plan sceny i lista wejść (PDF)' },
-  },
-  {
-    key: 'stagePlot', label: 'Stage plot card: title', group: 'Press & booking', maxLength: 60,
-    defaults: { en: 'Stage plot', pl: 'Plan sceny' },
-  },
-  {
-    key: 'stagePlotSub', label: 'Stage plot card: subtitle', group: 'Press & booking', maxLength: 100,
-    defaults: { en: 'Backline & positions', pl: 'Backline i pozycje' },
-  },
-  {
     key: 'open', label: '"Open" button', group: 'Press & booking', maxLength: 30,
     defaults: { en: 'Open', pl: 'Otwórz' },
-  },
-  {
-    key: 'download', label: '"Download" button', group: 'Press & booking', maxLength: 30,
-    defaults: { en: 'Download', pl: 'Pobierz' },
   },
   {
     key: 'booking', label: 'Booking email label', group: 'Press & booking', maxLength: 30,

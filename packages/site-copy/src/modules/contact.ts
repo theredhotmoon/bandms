@@ -217,7 +217,7 @@ export const CONTACT_COPY = defineCopy([
   },
   {
     key: 'riderTitle', label: 'Tech rider: title', group: 'Promoters & press', maxLength: 60,
-    defaults: { en: 'Tech rider', pl: 'Rider techniczny' },
+    defaults: { en: 'Tech rider & stage plot', pl: 'Rider techniczny i plan sceny' },
   },
   {
     key: 'riderSub', label: 'Tech rider: subtitle', group: 'Promoters & press', maxLength: 120,
@@ -315,19 +315,11 @@ export const CONTACT_COPY = defineCopy([
   },
   {
     key: 'epkRider', label: 'Rider row: title', group: 'Press kit modal', maxLength: 40,
-    defaults: { en: 'Tech rider', pl: 'Rider techniczny' },
+    defaults: { en: 'Tech rider & stage plot', pl: 'Rider techniczny i plan sceny' },
   },
   {
     key: 'epkRiderMeta', label: 'Rider row: caption', group: 'Press kit modal', maxLength: 60,
-    defaults: { en: 'Stage plan & input list · PDF', pl: 'Plan sceny i lista wejść · PDF' },
-  },
-  {
-    key: 'epkStagePlot', label: 'Stage plot row: title', group: 'Press kit modal', maxLength: 40,
-    defaults: { en: 'Stage plot', pl: 'Plan sceny' },
-  },
-  {
-    key: 'epkStagePlotMeta', label: 'Stage plot row: caption', group: 'Press kit modal', maxLength: 60,
-    defaults: { en: 'Backline & positions · PDF', pl: 'Backline i pozycje · PDF' },
+    defaults: { en: 'Stage plan, input list & backline', pl: 'Plan sceny, lista wejść i backline' },
   },
 
   // ── Availability modal ──────────────────────────────────────────────
