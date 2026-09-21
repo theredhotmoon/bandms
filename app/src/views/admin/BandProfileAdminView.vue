@@ -511,6 +511,22 @@ async function saveSocialLinks() {
               </div>
             </div>
 
+            <div>
+              <label class="field-label" for="epk-tech-rider">Tech rider &amp; stage plot</label>
+              <select id="epk-tech-rider" v-model="form.epk_tech_rider_id" class="field-input" data-testid="epk-tech-rider">
+                <option :value="null">— None —</option>
+                <option v-for="r in publishableRiders" :key="r.id" :value="r.id">
+                  {{ r.name }} (v{{ r.published_version_number }})
+                </option>
+              </select>
+              <p v-if="fieldErrors.epk_tech_rider_id" class="field-error">{{ fieldErrors.epk_tech_rider_id[0] }}</p>
+              <p class="field-hint">
+                Only riders with a published version are listed. The press kit links the rider's permanent page,
+                which always shows its latest published version.
+                <RouterLink :to="riderPageUrl" class="field-hint-link">Manage riders →</RouterLink>
+              </p>
+            </div>
+
             <div class="epk-snapshot-section">
               <div>
                 <div class="field-label mb-0.5">EPK Snapshot</div>
@@ -524,22 +540,6 @@ async function saveSocialLinks() {
                   Create EPK snapshot
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label class="field-label" for="epk-tech-rider">Tech rider &amp; stage plot</label>
-              <select id="epk-tech-rider" v-model="form.epk_tech_rider_id" class="field-input" data-testid="epk-tech-rider">
-                <option :value="null">— None —</option>
-                <option v-for="r in publishableRiders" :key="r.id" :value="r.id">
-                  {{ r.name }} (v{{ r.published_version_number }})
-                </option>
-              </select>
-              <p v-if="fieldErrors.epk_tech_rider_id" class="field-error">{{ fieldErrors.epk_tech_rider_id[0] }}</p>
-              <p class="field-hint">
-                Only riders with a published version are listed. The press kit links the rider's permanent page,
-                which always shows its latest published version.
-                <router-link :to="riderPageUrl" class="field-hint-link">Manage riders →</router-link>
-              </p>
             </div>
           </template>
 
