@@ -6,7 +6,6 @@ use App\Models\Photo;
 use App\Models\PressRelease;
 use App\Models\SocialLink;
 use App\Models\Tag;
-use App\Models\TechRider;
 use App\Models\Venue;
 use App\Services\EpkSnapshotBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

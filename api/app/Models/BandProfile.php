@@ -106,10 +106,7 @@ class BandProfile extends Model
         return $this->belongsTo(Album::class, 'epk_album_id');
     }
 
-    /**
-     * The rider the press kit links to — by the rider's own token, so the
-     * link follows every republish without a new EPK version.
-     */
+    /** The rider the press kit links to — see epkTechRiderUrl() for the token it publishes. */
     public function epkTechRider(): BelongsTo
     {
         return $this->belongsTo(TechRider::class, 'epk_tech_rider_id');

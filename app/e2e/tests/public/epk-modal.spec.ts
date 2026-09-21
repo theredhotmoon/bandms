@@ -26,7 +26,7 @@ test.use({ storageState: { cookies: [], origins: [] } })
 function adminToken(): string {
   const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
   const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed clips')
+  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed the rider')
   return entry.value
 }
 

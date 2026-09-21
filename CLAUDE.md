@@ -284,7 +284,9 @@ republish reaches the Contact page's press kit without a new EPK version and
 without a site rebuild (the string does not change). There is no uploaded
 PDF or stage-plot image any more; the sheet *is* both documents. The rows
 that link it gate on the `tech-rider` module, because a switched-off module
-unbuilds `/rider/*`.
+unbuilds `/rider/*`. Deleting the linked rider nulls the FK and marks
+`band-profile` dirty; without that the baked Contact page would keep a token
+that now 404s.
 
 **The link is served by Astro, not the SPA.** `/rider/*` is absent from Caddy's
 `@spa` matcher, so `web` answers it — and the page also 404s when the
@@ -1671,7 +1673,12 @@ version is live, so `app/playwright.config.ts` runs them in chained projects
 third spec that publishes a version joins that chain, not `chromium`. With
 *nothing* live beforehand `clips-surfaces` publishes nothing — the live
 builder already serves the flagged clip, and a version published then could
-never be deleted.
+never be deleted. The same applies to `band-profile-rider.spec.ts` and
+`public/epk-modal.spec.ts`, which both write `epk_tech_rider_id`: they run in
+the chained `rider-link-admin` → `rider-link-public` projects — two
+single-file projects, not one project matching both files, because a shared
+project still lets Playwright's default worker count run the two files
+concurrently and reproduce the race the split exists to prevent.
 
 ## Quality standard — tests run by default
 
