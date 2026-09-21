@@ -280,10 +280,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/band-profile/calendar/events', [BandCalendarController::class, 'events'])->name('api.calendar.events');
         Route::put('/band-profile', [BandProfileController::class, 'update'])->name('api.band-profile.update');
         Route::post('/band-profile/sync-facebook-likes', [FacebookSyncController::class, 'syncLikes'])->name('api.band-profile.sync-facebook-likes');
-        Route::post('/band-profile/tech-rider', [BandProfileController::class, 'uploadTechRider'])->name('api.band-profile.tech-rider.upload');
-        Route::delete('/band-profile/tech-rider', [BandProfileController::class, 'destroyTechRider'])->name('api.band-profile.tech-rider.destroy');
-        Route::post('/band-profile/stage-plot', [BandProfileController::class, 'uploadStagePlot'])->name('api.band-profile.stage-plot.upload');
-        Route::delete('/band-profile/stage-plot', [BandProfileController::class, 'destroyStagePlot'])->name('api.band-profile.stage-plot.destroy');
         Route::post('/band-profile/members', [BandMemberController::class, 'store'])->name('api.band-profile.members.store');
         Route::post('/band-profile/members/{member}/photo', [BandMemberController::class, 'uploadPhoto'])->name('api.band-profile.members.photo.upload');
         Route::delete('/band-profile/members/{member}', [BandMemberController::class, 'destroy'])->name('api.band-profile.members.destroy');

@@ -7,7 +7,6 @@ use App\Models\BandProfile;
 use App\Models\EpkVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Services\EpkSnapshotBuilder;
 use App\Support\SiteRebuild;
 
@@ -81,58 +80,6 @@ class BandProfileController extends Controller
         SiteRebuild::markDirty('band-profile');
 
         return new BandProfileResource($profile->load(['members', 'socialLinks', 'logos', 'defaultLogo']));
-    }
-
-    public function uploadTechRider(Request $request): BandProfileResource
-    {
-        $request->validate(['file' => 'required|file|mimes:pdf|max:10240']);
-
-        $profile = $this->profile();
-        if ($profile->tech_rider_path) {
-            Storage::disk('public')->delete($profile->tech_rider_path);
-        }
-
-        $path = $request->file('file')->store('epk', 'public');
-        $profile->update(['tech_rider_path' => $path]);
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function destroyTechRider(): BandProfileResource
-    {
-        $profile = $this->profile();
-        if ($profile->tech_rider_path) {
-            Storage::disk('public')->delete($profile->tech_rider_path);
-            $profile->update(['tech_rider_path' => null]);
-        }
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function uploadStagePlot(Request $request): BandProfileResource
-    {
-        $request->validate(['file' => 'required|image|max:4096']);
-
-        $profile = $this->profile();
-        if ($profile->stage_plot_path) {
-            Storage::disk('public')->delete($profile->stage_plot_path);
-        }
-
-        $path = $request->file('file')->store('epk', 'public');
-        $profile->update(['stage_plot_path' => $path]);
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
-    }
-
-    public function destroyStagePlot(): BandProfileResource
-    {
-        $profile = $this->profile();
-        if ($profile->stage_plot_path) {
-            Storage::disk('public')->delete($profile->stage_plot_path);
-            $profile->update(['stage_plot_path' => null]);
-        }
-
-        return new BandProfileResource($profile->load(['members', 'socialLinks']));
     }
 
     public function showEpk(): JsonResponse
