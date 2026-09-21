@@ -19,6 +19,7 @@ class EpkSnapshotBuilder
             'musicVideos',
             'epkRelease.links',
             'epkRelease.tracks.links',
+            'epkTechRider.publishedVersion',
         ]);
 
         $pressPhotos = Photo::where('epk_featured', true)
@@ -64,8 +65,9 @@ class EpkSnapshotBuilder
             'stat_tiktok_followers'    => $profile->stat_tiktok_followers,
             'stat_youtube_subscribers' => $profile->stat_youtube_subscribers,
             'stat_facebook_followers'  => $profile->stat_facebook_followers,
-            'tech_rider_url'           => $profile->tech_rider_path ? '/storage/' . $profile->tech_rider_path : null,
-            'stage_plot_url'           => $profile->stage_plot_path ? '/storage/' . $profile->stage_plot_path : null,
+            // The rider's own token, never a version token — see
+            // BandProfile::epkTechRiderUrl(), which the profile API shares.
+            'tech_rider_url'           => $profile->epkTechRiderUrl(),
             'social_links'             => $profile->socialLinks->map(fn ($l) => [
                 'platform' => $l->platform,
                 'url'      => $l->url,

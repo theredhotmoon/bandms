@@ -6,6 +6,7 @@ use App\Models\Photo;
 use App\Models\PressRelease;
 use App\Models\SocialLink;
 use App\Models\Tag;
+use App\Models\TechRider;
 use App\Models\Venue;
 use App\Services\EpkSnapshotBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,8 +41,8 @@ it('returns an array with all expected top-level keys', function () {
         'hometown', 'genres', 'comparable_artists', 'booking_email',
         'press_email', 'stat_spotify_monthly', 'stat_instagram_followers',
         'stat_tiktok_followers', 'stat_youtube_subscribers', 'stat_facebook_followers',
-        'tech_rider_url', 'stage_plot_url', 'social_links', 'music_videos',
-        'featured_release', 'press_photos', 'press_articles', 'upcoming_concerts',
+        'tech_rider_url', 'social_links', 'music_videos',
+        'featured_release', 'press_photos', 'press_articles', 'upcoming_concerts', 'clips',
     ] as $key) {
         expect($result)->toHaveKey($key);
     }
@@ -62,23 +63,28 @@ it('returns the band name from the profile', function () {
     expect(EpkSnapshotBuilder::build()['name'])->toBe('Test Band');
 });
 
-it('returns null for rider URLs when paths are not set', function () {
+it('returns null for rider URLs when no rider is linked', function () {
     $result = EpkSnapshotBuilder::build();
 
     expect($result['tech_rider_url'])->toBeNull();
-    expect($result['stage_plot_url'])->toBeNull();
+    expect($result)->not->toHaveKey('stage_plot_url');
 });
 
-it('returns storage-prefixed URLs when rider paths are set', function () {
-    \App\Models\BandProfile::findOrFail(1)->update([
-        'tech_rider_path' => 'riders/tech.pdf',
-        'stage_plot_path' => 'riders/stage.pdf',
+it('freezes the linked rider as its own token and emits no stage_plot_url', function () {
+    $rider = \App\Models\TechRider::create(['profile_id' => 1, 'name' => 'Festival set', 'is_active' => false]);
+    $rider->versions()->create([
+        'version_number' => 1, 'snapshot' => ['format' => 1], 'status' => 'published', 'published_at' => now(),
     ]);
+    \App\Models\BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
 
-    $result = EpkSnapshotBuilder::build();
+    $snapshot = EpkSnapshotBuilder::build();
 
-    expect($result['tech_rider_url'])->toBe('/storage/riders/tech.pdf');
-    expect($result['stage_plot_url'])->toBe('/storage/riders/stage.pdf');
+    expect($snapshot['tech_rider_url'])->toBe("/rider/{$rider->public_token}")
+        ->and($snapshot)->not->toHaveKey('stage_plot_url');
+});
+
+it('freezes null when no rider is linked', function () {
+    expect(EpkSnapshotBuilder::build()['tech_rider_url'])->toBeNull();
 });
 
 // ── Social links ──────────────────────────────────────────────────────────────
