@@ -351,3 +351,93 @@ describe('epk_tech_rider_id schema', function () {
         $this->deleteJson('/api/band-profile/stage-plot')->assertNotFound();
     });
 });
+
+describe('PUT /api/band-profile epk_tech_rider_id', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    /** A rider with one published version, the way the module leaves it after Publish. */
+    function publishedRider(string $name = 'Festival set'): TechRider
+    {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => $name, 'is_active' => false]);
+        $rider->versions()->create([
+            'version_number' => 1,
+            'snapshot'       => ['format' => 1],
+            'status'         => 'published',
+            'published_at'   => now(),
+        ]);
+
+        return $rider;
+    }
+
+    it('links a rider that has a published version', function () {
+        $this->actingAsAdmin();
+        $rider = publishedRider();
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
+            ->assertSuccessful()
+            ->assertJsonPath('data.epk_tech_rider_id', $rider->id)
+            ->assertJsonPath('data.tech_rider_url', "/rider/{$rider->public_token}")
+            ->assertJsonPath('data.epk_tech_rider.name', 'Festival set')
+            ->assertJsonPath('data.epk_tech_rider.published_version', 1);
+    });
+
+    it('rejects a rider that has never been published', function () {
+        $this->actingAsAdmin();
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Draft', 'is_active' => false]);
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.epk_tech_rider_id.0', 'Only a rider with a published version can be linked to the EPK.');
+
+        expect(BandProfile::findOrFail(1)->epk_tech_rider_id)->toBeNull();
+    });
+
+    it('rejects a rider whose only version is archived', function () {
+        $this->actingAsAdmin();
+        $rider = publishedRider();
+        $rider->versions()->update(['status' => 'archived']);
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => $rider->id])
+            ->assertUnprocessable();
+    });
+
+    it('rejects an id that names no rider', function () {
+        $this->actingAsAdmin();
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => 999999])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('epk_tech_rider_id');
+    });
+
+    it('clears the link with null', function () {
+        $this->actingAsAdmin();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => publishedRider()->id]);
+
+        $this->putJson('/api/band-profile', ['epk_tech_rider_id' => null])
+            ->assertSuccessful()
+            ->assertJsonPath('data.epk_tech_rider_id', null)
+            ->assertJsonPath('data.tech_rider_url', null)
+            ->assertJsonPath('data.epk_tech_rider', null);
+    });
+
+    it('serves tech_rider_url publicly and never a stage_plot_url', function () {
+        $rider = publishedRider();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+
+        $this->getJson('/api/band-profile')
+            ->assertSuccessful()
+            ->assertJsonPath('data.tech_rider_url', "/rider/{$rider->public_token}")
+            ->assertJsonMissingPath('data.stage_plot_url');
+    });
+
+    it('serves null tech_rider_url when the rider is deleted after linking', function () {
+        $rider = publishedRider();
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+        $rider->delete();
+
+        $this->getJson('/api/band-profile')
+            ->assertSuccessful()
+            ->assertJsonPath('data.tech_rider_url', null)
+            ->assertJsonPath('data.epk_tech_rider', null);
+    });
+});

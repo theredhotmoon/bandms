@@ -114,4 +114,19 @@ class BandProfile extends Model
     {
         return $this->belongsTo(TechRider::class, 'epk_tech_rider_id');
     }
+
+    /**
+     * Where the press kit sends a promoter for the rider — the rider's own
+     * token, so a republish reaches every link without a new EPK version.
+     * Null until that rider has a published version: its page 404s before
+     * then, and every public row hides on null.
+     */
+    public function epkTechRiderUrl(): ?string
+    {
+        $rider = $this->epkTechRider;
+
+        return $rider && $rider->publishedVersion
+            ? '/rider/' . $rider->public_token
+            : null;
+    }
 }
