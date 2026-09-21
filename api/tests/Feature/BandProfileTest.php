@@ -3,9 +3,11 @@
 use App\Models\BandProfile;
 use App\Models\EpkVersion;
 use App\Models\SiteSetting;
+use App\Models\TechRider;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 
@@ -605,5 +607,31 @@ describe('DELETE /api/band-profile/stage-plot', function () {
         $this->deleteJson('/api/band-profile/stage-plot')->assertSuccessful();
 
         expect(BandProfile::findOrFail(1)->stage_plot_path)->toBeNull();
+    });
+});
+
+describe('epk_tech_rider_id schema', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    it('has the FK column and no file columns', function () {
+        expect(Schema::hasColumn('band_profiles', 'epk_tech_rider_id'))->toBeTrue()
+            ->and(Schema::hasColumn('band_profiles', 'tech_rider_path'))->toBeFalse()
+            ->and(Schema::hasColumn('band_profiles', 'stage_plot_path'))->toBeFalse();
+    });
+
+    it('resolves the linked rider through epkTechRider()', function () {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Club show', 'is_active' => false]);
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+
+        expect(BandProfile::findOrFail(1)->epkTechRider->id)->toBe($rider->id);
+    });
+
+    it('nulls the link when the rider is deleted', function () {
+        $rider = TechRider::create(['profile_id' => 1, 'name' => 'Club show', 'is_active' => false]);
+        BandProfile::findOrFail(1)->update(['epk_tech_rider_id' => $rider->id]);
+
+        $rider->delete();
+
+        expect(BandProfile::findOrFail(1)->epk_tech_rider_id)->toBeNull();
     });
 });
