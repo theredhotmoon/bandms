@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-21 (EPK links the tech rider)
+
+### Changed
+- **Band profile → EPK links a tech rider from the tech-rider module instead of taking a PDF and a stage-plot image.** The new *Tech rider & stage plot* selector offers riders that have a published version; the press kit on the Contact page then links the rider's permanent page, which carries the stage plot and always shows the latest published version — so republishing a rider updates the press kit with no new EPK version.
+- The About page's press cards no longer list the rider or stage plot; the Contact page's press-kit modal has one *Tech rider & stage plot* row instead of two.
+
+### Removed
+- `POST|DELETE /api/band-profile/tech-rider` and `/stage-plot`, the `tech_rider_path` / `stage_plot_path` columns (their files are deleted by the migration) and `stage_plot_url` from the profile API and EPK snapshots. `tech_rider_url` keeps its name and now holds `/rider/{token}`.
+- Copy keys `rider`, `riderSub`, `stagePlot`, `stagePlotSub`, `download` (About) and `epkStagePlot`, `epkStagePlotMeta` (Contact). Overrides saved under them are dropped.
+
 ## [Unreleased] — 2026-09-20 (clips, part 2)
 
 ### Added

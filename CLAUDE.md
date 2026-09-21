@@ -275,6 +275,17 @@ The shell page is then an ordinary file check and `=404` ends the chain.
 
 **Fix:** Open the rider in `/admin/tech-rider` and press **Publish**. After that the rider's own token always serves whichever version is currently published; each version also has its own permanent token in the version-history modal.
 
+**The press kit links the rider by its own token.** Band profile → EPK has a
+*Tech rider & stage plot* selector (`band_profiles.epk_tech_rider_id`) that
+offers **only riders with a published version** — the API rejects any other
+id with 422 — and `tech_rider_url` on `/api/band-profile` and in every EPK
+snapshot is `/rider/{rider.public_token}`, never a version token. So a rider
+republish reaches the Contact page's press kit without a new EPK version and
+without a site rebuild (the string does not change). There is no uploaded
+PDF or stage-plot image any more; the sheet *is* both documents. The rows
+that link it gate on the `tech-rider` module, because a switched-off module
+unbuilds `/rider/*`.
+
 **The link is served by Astro, not the SPA.** `/rider/*` is absent from Caddy's
 `@spa` matcher, so `web` answers it — and the page also 404s when the
 `tech-rider` module is switched off in `/admin/website-modules`, because a
