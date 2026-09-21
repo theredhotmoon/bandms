@@ -27,14 +27,14 @@ API_BASE="${API_BASE}" \
   PUBLIC_GA_MEASUREMENT_ID="${PUBLIC_GA_MEASUREMENT_ID:-}" \
   pnpm build
 
-echo "📋  Copying build output…"
-# Clear first. `cp -r` merges, so a page whose module was switched off stays
-# served from the previous build — the exact opposite of the guarantee the
-# module system rests on ("a disabled module unbuilds its pages"). `docker
-# compose restart` reuses the container filesystem, so this directory
-# accumulates across runs; only a force-recreate started clean.
-rm -rf /usr/share/nginx/html/*
-cp -r /repo/web/dist/* /usr/share/nginx/html/
+echo "📋  Syncing build output…"
+# `--delete`, because `cp -r` merges: a page whose module was switched off
+# would stay served from the previous build — the exact opposite of the
+# guarantee the module system rests on ("a disabled module unbuilds its
+# pages"). `docker compose restart` reuses the container filesystem, so this
+# directory accumulates across runs; only a force-recreate started clean.
+# Same command as rebuild.sh, so the two publish paths cannot drift again.
+rsync -a --delete /repo/web/dist/ /usr/share/nginx/html/
 
 echo "🚀  Starting rebuild webhook and Nginx…"
 node /docker/rebuild-webhook.js &

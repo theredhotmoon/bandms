@@ -1,3 +1,5 @@
+import type { Clip } from './clip'
+
 export type ReleaseType     = 'LP' | 'EP' | 'single' | 'compilation'
 export type ReleasePlatform = 'spotify' | 'apple_music' | 'bandcamp' | 'youtube' | 'instagram'
 
@@ -55,6 +57,7 @@ export interface Release extends ReleaseSummary {
   description: string | null
   tracks: ReleaseTrack[]
   photos: ReleasePhoto[]
+  clips?: Clip[]
 }
 
 // Release-type labels are copy, not types: they come from the Music module's

@@ -28,7 +28,7 @@ RUN pnpm install --frozen-lockfile --filter bandms-web...
 # Astro SSG build can reach the backend API over Docker networking.
 FROM node:22-alpine AS app
 
-RUN apk add --no-cache nginx wget && \
+RUN apk add --no-cache nginx wget rsync && \
     npm install -g pnpm@11 && \
     mkdir -p /usr/share/nginx/html /var/log/nginx /run/nginx
 

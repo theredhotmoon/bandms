@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// Both publish EPK versions for real — see the epk-admin / epk-public projects.
+const EPK_PUBLISHING_SPECS = [/epk-versions\.spec\.ts/, /clips-surfaces\.spec\.ts/]
+
 export default defineConfig({
   testDir: './e2e/tests',
   fullyParallel: true,
@@ -68,6 +71,24 @@ export default defineConfig({
         storageState: 'e2e/.auth/admin.json',
       },
       dependencies: ['setup'],
+      testIgnore: EPK_PUBLISHING_SPECS,
+    },
+    // The two specs that publish EPK versions for real cannot share a moment:
+    // /epk serves whichever version is live, and each asserts on its own. A
+    // dependency chain runs them one after the other, alongside the rest of
+    // the suite. If epk-versions fails, clips-surfaces is reported "did not
+    // run" rather than failing on a half-restored state.
+    {
+      name: 'epk-admin',
+      testMatch: /epk-versions\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'epk-public',
+      testMatch: /clips-surfaces\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['epk-admin'],
     },
   ],
   webServer: {

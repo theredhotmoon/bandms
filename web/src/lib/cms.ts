@@ -190,8 +190,9 @@ export const getPressReleases = () =>
 export const getShopItems = () =>
   get<ShopItemSummary[]>('/shop')
 
-export const getShopItem = (slug: string) =>
-  get<ShopItem>(`/shop/by-slug/${slug}`)
+// `lang` resolves the item's clip titles; the item's own fields are not translated.
+export const getShopItem = (slug: string, lang: Locale = 'en') =>
+  get<ShopItem>(`/shop/by-slug/${slug}`, { lang })
 
 export const getShopCategories = () =>
   get<ShopCategory[]>('/shop-categories')

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-20 (clips, part 2)
+
+### Added
+- **Clips on the release page, the merch item page and the EPK.** A clip attached to a release or a merch item in `/admin/clips` now renders on that page, under a heading editable per language (*Website Modules → Releases → Release page*, *Merch → Item cards & pages*). A clip marked *Show in EPK* is included in the next published EPK version, newest recording first, under *EPK → Sections → Clips heading*. Until now the checkbox and the owner pickers existed but nothing on the public site read them.
+
+### Fixed
+- **Switching a module off and rebuilding from the admin left its page served.** The container's start-up script clears the served files before copying in a build, but the rebuild webhook — what the admin's *Rebuild* button and auto-rebuild use — still merged, so a disabled module's page stayed live until the container was recreated. Both paths now sync with `rsync --delete`, which drops what the new build no longer has without ever leaving the live site empty mid-copy.
+
 ## [Unreleased] — 2026-09-20 (clips library)
 
 ### Added

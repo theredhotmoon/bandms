@@ -25,7 +25,7 @@ class ReleaseController extends Controller
 
     public function show(Release $release): ReleaseResource
     {
-        $release->load('tracks.links', 'links', 'photos');
+        $release->load('tracks.links', 'links', 'photos', 'clips');
 
         return new ReleaseResource($release);
     }
@@ -92,7 +92,7 @@ class ReleaseController extends Controller
             }
         }
 
-        $release->load('tracks.links', 'links', 'photos');
+        $release->load('tracks.links', 'links', 'photos', 'clips');
 
         SiteRebuild::markDirty('releases');
 
@@ -152,7 +152,7 @@ class ReleaseController extends Controller
             }
         }
 
-        $release->load('tracks.links', 'links', 'photos');
+        $release->load('tracks.links', 'links', 'photos', 'clips');
 
         SiteRebuild::markDirty('releases');
 
@@ -189,7 +189,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
     }
 
     public function destroyCover(Release $release): ReleaseResource
@@ -201,7 +201,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
     }
 
     public function addPhotos(Request $request, Release $release): ReleaseResource
@@ -226,7 +226,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
     }
 
     public function removePhoto(Release $release, ReleasePhoto $photo): Response
@@ -252,6 +252,6 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
     }
 }

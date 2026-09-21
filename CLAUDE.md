@@ -1407,7 +1407,16 @@ reuses the container filesystem, so the directory accumulated across every run;
 only `up -d --force-recreate` ever started clean. That silently inverted the
 guarantee the module system rests on.
 
-**Fix (applied):** `rm -rf /usr/share/nginx/html/*` before the copy.
+**Fix (applied):** `rsync -a --delete /repo/web/dist/ /usr/share/nginx/html/`
+in **both** `web/docker/start.sh` and `web/docker/rebuild.sh`. The first fix
+(`rm -rf` then `cp -r`) only touched `start.sh`; the webhook script (the
+admin's Rebuild button and auto-rebuild) kept merging for months, so a
+switched-off module's page stayed served until the container was recreated.
+**Do not port the `rm -rf` to the webhook path**: Nginx is live while it runs,
+so clearing first 404s every URL for the length of the copy — and leaves an
+empty site if the copy dies, as it does on a full disk. rsync updates in place
+and only removes what the new build no longer has. `clips-surfaces.spec.ts`
+asserts a disabled module's page 404s after a webhook rebuild.
 
 **Why it hid for so long:** the two commands disagreed. Anyone who happened to
 force-recreate saw correct behaviour, and anyone who restarted saw a page that
@@ -1624,7 +1633,34 @@ is not in the URL — until someone adds the page fetch.
 
 A clip write marks **every owner's area** dirty plus `posts` (see
 `ClipController::markDirty()`), and `band-profile` when `show_in_epk` is
-involved. Release, merch and EPK surfaces are PR 2.
+involved.
+
+**Four public surfaces read clips**: the show page and the news clip block
+(PR 1, #122), the release page, the merch item page and the EPK (PR 2). The
+EPK's list is `EpkSnapshotBuilder`'s `clips` — those flagged `show_in_epk`,
+newest `recorded_on` first — and it is frozen in the published version like
+everything else there: flagging a clip does nothing on `/epk` until someone
+publishes a new EPK version. Snapshots published before the key existed carry
+no `clips` at all, so the page reads `epk.clips ?? []`. `ClipsGrid` takes
+`RenderableClip` (a `Clip` minus `show_in_epk`), which is what the snapshot
+stores. The merch fetch passes `lang` for the same reason the release fetch
+does — clip titles resolve per locale; the item's own fields are not
+translated.
+
+**The dev DB has `releases`, `merch` and `epk` switched off**, which is why
+`release-detail`, `music`, `gallery` and `epk-modal` skip most of their cases
+and why `clips-surfaces.spec.ts` enables the three for its run and switches
+them back — with a trailing rebuild, because the served site is what
+visitors (and the next spec) see, not the row.
+
+**Two specs publish EPK versions for real, and they must not overlap.**
+`epk-versions.spec.ts` and `clips-surfaces.spec.ts` each assert on whichever
+version is live, so `app/playwright.config.ts` runs them in chained projects
+(`epk-admin` → `epk-public`) and keeps them out of the `chromium` pool. A
+third spec that publishes a version joins that chain, not `chromium`. With
+*nothing* live beforehand `clips-surfaces` publishes nothing — the live
+builder already serves the flagged clip, and a version published then could
+never be deleted.
 
 ## Quality standard — tests run by default
 

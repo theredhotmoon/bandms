@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   CONCERTS_COPY,
+  EPK_COPY,
+  MERCH_COPY,
+  RELEASES_COPY,
   copyFieldsFor,
   copyGroupsFor,
   defaultFor,
@@ -88,6 +91,11 @@ describe('clip copy', () => {
   })
   it('has the concert page clips heading', () => {
     expect(resolveCopy(CONCERTS_COPY, 'en').clipsTitle).toBe('Videos from this show')
+  })
+  it('has a clips heading on the release, merch and EPK pages', () => {
+    expect(resolveCopy(RELEASES_COPY, 'en').clipsTitle).toBe('Videos')
+    expect(resolveCopy(MERCH_COPY, 'pl').clipsTitle).toBe('Nagrania')
+    expect(resolveCopy(EPK_COPY, 'pl').clips).toBe('Nagrania')
   })
 })
 

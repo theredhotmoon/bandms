@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\BandProfile;
+use App\Models\Clip;
 use App\Models\Concert;
 use App\Models\Photo;
 use App\Models\PressRelease;
+use App\Support\EmbedProvider;
 use App\Support\Locales;
 
 class EpkSnapshotBuilder
@@ -33,6 +35,15 @@ class EpkSnapshotBuilder
             ->where('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->limit(5)
+            ->get();
+
+        // Only what the band flagged for the EPK, newest recording first;
+        // undated clips sort after the dated ones. Frozen like everything
+        // else here — a clip edited later needs a new version to reach /epk.
+        $clips = Clip::where('show_in_epk', true)
+            ->orderByRaw('recorded_on IS NULL')
+            ->orderByDesc('recorded_on')
+            ->orderByDesc('id')
             ->get();
 
         $release = $profile->epkRelease;
@@ -99,6 +110,15 @@ class EpkSnapshotBuilder
                     'id'   => $t->id,
                     'name' => Locales::resolve($t->getTranslations('name')) ?? '',
                 ])->values()->all(),
+            ])->values()->all(),
+            'clips' => $clips->map(fn ($c) => [
+                'id'          => $c->id,
+                'provider'    => $c->provider,
+                'url'         => $c->url,
+                'embed_id'    => EmbedProvider::embedId($c->url),
+                'title'       => Locales::resolve($c->getTranslations('title')),
+                'category'    => $c->category,
+                'recorded_on' => $c->recorded_on?->format('Y-m-d'),
             ])->values()->all(),
             'upcoming_concerts' => $upcomingConcerts->map(fn ($c) => [
                 'id'         => $c->id,

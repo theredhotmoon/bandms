@@ -89,6 +89,25 @@ describe('POST /api/epk-versions', function () {
             ->assertJsonPath('message', 'A pending version already exists. Publish or discard it first.');
     });
 
+    // Only clips the band flagged for the EPK, newest recording first; an
+    // undated clip sorts after the dated ones.
+    it('snapshots the clips flagged for the EPK, newest recording first', function () {
+        $this->actingAsAdmin();
+        $undated = \App\Models\Clip::factory()->create(['show_in_epk' => true, 'recorded_on' => null, 'title' => ['en' => 'Undated']]);
+        $older   = \App\Models\Clip::factory()->create(['show_in_epk' => true, 'recorded_on' => '2025-01-01', 'title' => ['en' => 'Older']]);
+        $newer   = \App\Models\Clip::factory()->create(['show_in_epk' => true, 'recorded_on' => '2026-03-03', 'title' => ['en' => 'Newer'], 'category' => 'studio']);
+        \App\Models\Clip::factory()->create(['show_in_epk' => false, 'title' => ['en' => 'Hidden']]);
+
+        $snapshot = $this->postJson('/api/epk-versions', [])->assertCreated()->json('data.snapshot');
+
+        expect(array_column($snapshot['clips'], 'title'))->toBe(['Newer', 'Older', 'Undated']);
+        expect($snapshot['clips'][0])->toMatchArray([
+            'id' => $newer->id, 'provider' => 'youtube', 'embed_id' => 'dQw4w9WgXcQ',
+            'category' => 'studio', 'recorded_on' => '2026-03-03',
+        ]);
+        expect($snapshot['clips'][0])->toHaveKey('url');
+    });
+
     it('stores the snapshot so the public endpoint serves it as an object, not a JSON string', function () {
         $this->actingAsAdmin();
         $id = $this->postJson('/api/epk-versions')->assertCreated()->json('data.id');

@@ -1,3 +1,5 @@
+import type { Clip } from './clip'
+
 export interface ShopCategory {
   id: number
   name: string
@@ -51,6 +53,7 @@ export interface ShopItemSummary {
 export interface ShopItem extends ShopItemSummary {
   description: string | null
   photos: ShopItemPhoto[]
+  clips?: Clip[]
   tags: { id: number; name: string; slug_en: string }[]
   // Optional on purpose: responses produced before this field was added do not
   // carry it, and the Astro build dies on the whole site if a page dereferences

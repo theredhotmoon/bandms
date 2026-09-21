@@ -4,9 +4,10 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
+import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getShopItem, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { MERCH_COPY } from '@bandms/site-copy'
-import { moduleCopy, addToCartCopy } from '@/lib/copy'
+import { moduleCopy, addToCartCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -18,12 +19,14 @@ const { lang, alternates, itemSlug } = Astro.props
 const slugMap = await getSlugMap()
 
 const [item, profile, siteConfig] = await Promise.all([
-  getShopItem(itemSlug),
+  getShopItem(itemSlug, lang),
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
 // Shares the Merch page's copy — Website Modules → Merch → "Item cards & pages".
 const t = moduleCopy(siteConfig, 'merch', MERCH_COPY, lang)
+const site = siteCopy(siteConfig, lang)
+const clips = item.clips ?? []
 
 const images = (item.photos ?? []).sort((a, b) => a.sort_order - b.sort_order)
 const mainImage = images[0]?.url ?? item.cover_photo
@@ -100,5 +103,12 @@ const mainImage = images[0]?.url ?? item.cover_photo
         )}
       </div>
     </div>
+
+    <!-- Clips: below the gallery/details grid, with the grid's own heading. -->
+    {clips.length > 0 && (
+      <section class="mt-16" data-testid="merch-clips">
+        <ClipsGrid clips={clips} heading={t.clipsTitle} copy={site} />
+      </section>
+    )}
   </div>
 </BaseLayout>

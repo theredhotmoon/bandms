@@ -54,6 +54,11 @@ export const EPK_COPY = defineCopy([
     defaults: { en: 'Tracklist', pl: 'Lista utworów' },
   },
   {
+    key: 'clips', label: 'Clips heading', group: 'Sections', maxLength: 60,
+    help: 'Heading of the videos section. Hidden when no clip is marked "Show in EPK".',
+    defaults: { en: 'Videos', pl: 'Nagrania' },
+  },
+  {
     key: 'shows', label: 'Upcoming shows heading', group: 'Sections', maxLength: 60,
     defaults: { en: 'Upcoming shows', pl: 'Nadchodzące koncerty' },
   },

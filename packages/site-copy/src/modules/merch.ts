@@ -76,6 +76,11 @@ export const MERCH_COPY = defineCopy([
     help: '{date} is filled in with the shipping month.',
     defaults: { en: 'Ships {date}', pl: 'Wysyłka {date}' },
   },
+  {
+    key: 'clipsTitle', label: 'Clips heading', group: 'Item cards & pages', maxLength: 60,
+    help: 'Heading of the videos section on an item page. Hidden when the item has no clips.',
+    defaults: { en: 'Videos', pl: 'Nagrania' },
+  },
 
   // ── Cart ────────────────────────────────────────────────────────────
   {
