@@ -411,10 +411,30 @@ docker exec bandms_backend sh -c 'touch /tmp/probe && echo WRITE_OK'
 # touch: /tmp/probe: Read-only file system
 ```
 
+**"`docker exec` returns nothing" is not proof on its own — check your own
+timeout first.** Immediately after a `--no-cache` rebuild the disk is saturated
+and a loaded MySQL can simply be slow: in Sep 2026 `docker exec bandms_mysql`
+wrapped in `timeout 90` returned empty output and looked exactly like this
+failure, and the same command under `timeout 240` answered `mysqld is alive`
+with correct row counts. Re-run with a generous timeout before concluding the
+VM is broken; the write probe above is the signal that actually distinguishes
+them.
+
 **Root cause is almost always the Windows host disk being full.** The WSL VM's
 `ext4.vhdx` cannot grow, writes fail with I/O errors, and ext4 does what ext4
-does on an I/O error: it remounts itself read-only to protect the data. Check
-`C:` free space first, before anything else.
+does on an I/O error: it remounts itself read-only to protect the data.
+
+**Check the drive the VHDX actually lives on — `F:`, not `C:`.** This section
+said "check `C:` free space first" long after the disk was moved off it (see
+*Moving Docker's disk to another drive* below), and that is the wrong drive:
+`C:` free space says nothing about how full Docker's disk is. Following it in
+Sep 2026 during a failed build produced a reassuring **214 GB free on `C:`**
+that was entirely irrelevant — the answer happened to be "not a disk problem",
+but the reading could not have told you either way.
+
+```powershell
+Get-PSDrive F | Select-Object @{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}}
+```
 
 **Two things that look like fixes and are not:**
 
@@ -517,6 +537,40 @@ docker buildx ls
 ```
 
 A healthy `buildx ls` lists `running` against each node with its platform list.
+
+**But `running` does not mean healthy — there is a second variant those two
+commands clear.** On 2026-09-22 a `rebuild.sh` died in `apk add` with an
+`ECONNRESET` storm against npm while *every* check above came back clean:
+`WRITE_OK`, both buildx nodes `running`, and `apk update` in a plain
+`docker run` returning `APK_OK` — so container networking was fine **outside**
+BuildKit. The tell was the command you would never think to run:
+
+```bash
+docker system df
+# error getting build cache usage: … too many levels of symbolic links
+```
+
+That is a **corrupt build cache**, whose broken overlay mounts starve the
+build's network stack. Reclaim it — both of these are safe, and between them
+they returned 120 GB here:
+
+```bash
+docker builder prune -af         # 72 GB
+docker image prune -f            # 48 GB — dangling only, never -a
+```
+
+**Two traps in that variant.** The corrupt cache *record* can survive the
+prune **and** a `wsl --shutdown`, so `docker system df` keeps printing the same
+error long after builds are fine again — it is stale bookkeeping, not a live
+fault. **Test with an actual build, not with `df`:**
+
+```bash
+printf 'FROM alpine\nRUN apk add --no-cache curl\n' | DOCKER_BUILDKIT=1 docker build -
+```
+
+Two seconds means BuildKit is healthy whatever `df` says. And note `docker
+system df` is *also* the "what is using space?" command, so in this state you
+cannot measure before pruning — prune first, measure after.
 
 **It silently degrades container networking too, and that is the trap.** In
 Sep 2026 a build's `pnpm install` took ~900 s and filled the log with
