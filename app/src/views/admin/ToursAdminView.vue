@@ -24,7 +24,7 @@ const confirmId   = ref<number | null>(null)
 const fullRecord  = useTour(editingId)
 
 const modalTitle  = computed(() =>
-  isCreating.value ? 'New tour' : (fullRecord.data.value?.name ?? 'Edit tour'),
+  isCreating.value ? t('shows.tours.modalNew') : (fullRecord.data.value?.name ?? t('shows.tours.modalEdit')),
 )
 
 function openCreate() {
@@ -73,10 +73,10 @@ async function confirmDelete() {
   }
 }
 
-function dateRange(t: TourSummary): string {
-  if (!t.start_date && !t.end_date) return '—'
-  if (t.start_date && t.end_date) return `${t.start_date} → ${t.end_date}`
-  return t.start_date ?? t.end_date ?? '—'
+function dateRange(tour: TourSummary): string {
+  if (!tour.start_date && !tour.end_date) return '—'
+  if (tour.start_date && tour.end_date) return `${tour.start_date} → ${tour.end_date}` /* i18n-ignore: pure interpolation, no copy */
+  return tour.start_date ?? tour.end_date ?? '—'
 }
 </script>
 
@@ -104,20 +104,20 @@ function dateRange(t: TourSummary): string {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in query.data.value" :key="t.id" class="table-row">
-              <td class="td" style="color:#475569;">{{ t.id }}</td>
+            <tr v-for="tour in query.data.value" :key="tour.id" class="table-row">
+              <td class="td" style="color:#475569;">{{ tour.id }}</td>
               <td class="td">
-                <img v-if="t.poster" :src="t.poster" :alt="t.name" class="poster-thumb" />
+                <img v-if="tour.poster" :src="tour.poster" :alt="tour.name" class="poster-thumb" />
                 <div v-else class="poster-placeholder">♟</div>
               </td>
-              <td class="td font-medium" style="color:#e2e8f0;">{{ t.name }}</td>
-              <td class="td" style="color:#64748b; font-size:0.75rem; white-space:nowrap;">{{ dateRange(t) }}</td>
+              <td class="td font-medium" style="color:#e2e8f0;">{{ tour.name }}</td>
+              <td class="td" style="color:#64748b; font-size:0.75rem; white-space:nowrap;">{{ dateRange(tour) }}</td>
               <td class="td">
-                <span class="concerts-pill">{{ t.concerts_count }}</span>
+                <span class="concerts-pill">{{ tour.concerts_count }}</span>
               </td>
               <td class="td text-right">
-                <button @click="openEdit(t)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
-                <button @click="confirmId = t.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
+                <button @click="openEdit(tour)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                <button @click="confirmId = tour.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
               </td>
             </tr>
           </tbody>
@@ -141,7 +141,7 @@ function dateRange(t: TourSummary): string {
 
     <ConfirmDialog
       :open="confirmId !== null"
-      message="This tour and all its data will be permanently deleted. Concert assignments will be removed."
+      :message="$t('shows.tours.deleteMessage')"
       :loading="remove.isPending.value"
       @confirm="confirmDelete"
       @cancel="confirmId = null"

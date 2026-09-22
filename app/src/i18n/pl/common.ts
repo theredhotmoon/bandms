@@ -9,6 +9,8 @@ export default {
     saving: 'Zapisywanie…',
     remove: 'Usuń',
     add: 'Dodaj',
+    update: 'Zapisz zmiany',
+    create: 'Utwórz',
     moveUp: 'W górę',
     moveDown: 'W dół',
   },
@@ -29,6 +31,7 @@ export default {
     somethingWentWrong: 'Coś poszło nie tak',
     deleteFailed: 'Nie udało się usunąć',
     saveFailed: 'Nie udało się zapisać',
+    networkError: 'Błąd sieci. Spróbuj ponownie.',
   },
   table: {
     searchPlaceholder: 'Szukaj…',

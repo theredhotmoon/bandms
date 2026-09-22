@@ -9,6 +9,8 @@ export default {
     saving: 'Saving…',
     remove: 'Remove',
     add: 'Add',
+    update: 'Update',
+    create: 'Create',
     moveUp: 'Up',
     moveDown: 'Down',
   },
@@ -29,6 +31,7 @@ export default {
     somethingWentWrong: 'Something went wrong',
     deleteFailed: 'Failed to delete',
     saveFailed: 'Failed to save',
+    networkError: 'Network error. Please try again.',
   },
   table: {
     searchPlaceholder: 'Search…',

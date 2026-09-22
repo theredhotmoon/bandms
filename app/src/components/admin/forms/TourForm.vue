@@ -138,7 +138,7 @@ function submit() {
     <div>
       <div class="section-title">
         {{ $t('shows.tours.form.concerts') }}
-        <span v-if="selectedConcertIds.size" class="count-badge">{{ selectedConcertIds.size }} {{ $t('shows.tours.form.selected') }}</span>
+        <span v-if="selectedConcertIds.size" class="count-badge">{{ $t('shows.tours.form.selectedCount', { n: selectedConcertIds.size }) }}</span>
       </div>
       <div v-if="concertsQuery.isPending.value" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.loadingConcerts') }}</div>
       <div v-else-if="!concertsQuery.data.value?.length" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.noConcerts') }}</div>
@@ -156,7 +156,7 @@ function submit() {
             @change="toggleConcert(c.id)"
           />
           <span class="concert-date">{{ c.date }}</span>
-          <span class="concert-venue">{{ c.venue?.name ?? 'No venue' }}</span>
+          <span class="concert-venue">{{ c.venue?.name ?? $t('shows.tours.form.noVenue') }}</span>
           <span v-if="c.description" class="concert-desc">{{ c.description }}</span>
         </label>
       </div>
@@ -211,7 +211,7 @@ function submit() {
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update tour' : 'Create tour') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('shows.tours.form.update') : $t('shows.tours.form.create')) }}
       </button>
     </div>
 

@@ -59,19 +59,37 @@ const MIGRATED = [
 ]
 
 const HAS_WORDS = /[A-Za-zÀ-ž]{2,}/
-const ATTRS = /(?<!:)\b(?:placeholder|aria-label|title)="([^"]*)"/g
-
-/** Lines that produce user-facing copy outside the template. */
-const SCRIPT_CALL = /\b(?:toast\.(?:success|error|info|warning|message)|reportSaveError)\s*\(/
-/** Every string literal on such a line, including template literals. */
-const ANY_LITERAL = /'([^'\\]*(?:\\.[^'\\]*)*)'|"([^"\\]*(?:\\.[^"\\]*)*)"|`([^`\\]*(?:\\.[^`\\]*)*)`/g
-/**
- * Words plus an internal space. User copy has both ("Failed to publish",
- * `v${n} deleted`); the identifiers sharing these lines do not
- * (`version.status === 'pending'`), which is what keeps them unflagged. A
- * genuinely one-word message would slip through — a ratchet, not a proof.
- */
 const HAS_INNER_SPACE = /\S\s+\S/
+/** A dotted path like shows.venues.title — a key, not copy. */
+const KEYPATH = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/
+
+/**
+ * Does this string literal look like something a person reads?
+ *
+ * Copy either starts with a capital ("Save", "New tour") or contains a space
+ * ("✓ Mark as Scanned"). The technical literals sharing these lines —
+ * 'main', 'pending', 'T', class names, key paths — do neither. 'PLN' and
+ * friends are the residue; mark those i18n-ignore.
+ */
+function looksLikeCopy(v) {
+  if (!v || !HAS_WORDS.test(v) || KEYPATH.test(v)) return false
+  return /^[^a-zà-ž]*[A-ZÀ-Ž]/.test(v) || HAS_INNER_SPACE.test(v)
+}
+
+/** Attributes whose value is copy. Bound forms (:title="…") are checked too. */
+const COPY_ATTRS = 'placeholder|aria-label|title|label|message|alt'
+const STATIC_ATTR = new RegExp(`(?<![:\w-])(?:${COPY_ATTRS})="([^"]*)"`, 'g')
+const BOUND_ATTR = new RegExp(`:(?:${COPY_ATTRS})="([^"]*)"`, 'g')
+// Deliberately simple: no escaped-quote handling. A literal containing an
+// escaped quote just ends early here, which at worst truncates a reported hit —
+// it never hides one, and copy detection does not need a real tokenizer.
+const LITERAL = /'([^'\n]*)'|"([^"\n]*)"|`([^`\n]*)`/g
+
+/** Every string literal inside an expression, filtered to copy. */
+function copyLiterals(expr) {
+  LITERAL.lastIndex = 0
+  return [...expr.matchAll(LITERAL)].map(m => m[1] ?? m[2] ?? m[3]).filter(looksLikeCopy)
+}
 
 function templateOf(src) {
   const start = src.indexOf('<template>')
@@ -143,6 +161,23 @@ const violations = []
 const record = (file, line, hits) =>
   violations.push({ file: relative(ROOT, file).split(sep).join('/'), line, hits: [...new Set(hits)].join(' | ') })
 
+const NL = String.fromCharCode(10)
+
+/** 1-based line count of a prefix. */
+const countLines = (prefix) => prefix.split(NL).length
+
+/** Literals inside {{ … }} — where "Save" and every ternary label hides. */
+function mustacheHits(tpl, offset) {
+  const out = []
+  const re = /\{\{([\s\S]*?)\}\}/g
+  let m
+  while ((m = re.exec(tpl)) !== null) {
+    const hits = copyLiterals(m[1])
+    if (hits.length) out.push({ line: offset + countLines(tpl.slice(0, m.index)) - 1, hits })
+  }
+  return out
+}
+
 for (const entry of MIGRATED) {
   const { files, missing } = filesFor(entry)
   if (missing) {
@@ -152,7 +187,7 @@ for (const entry of MIGRATED) {
 
   for (const file of files) {
     const src = readFileSync(file, 'utf8')
-    const lines = src.split('\n')
+    const lines = src.split(NL)
     const exempt = (n) => (lines[n - 1] ?? '').includes('i18n-ignore')
 
     const tpl = templateOf(src)
@@ -161,22 +196,38 @@ for (const entry of MIGRATED) {
         const abs = tpl.offset + run.line - 1
         if (!exempt(abs)) record(file, abs, [run.text])
       }
-      tpl.body.split('\n').forEach((l, i) => {
+      for (const m of mustacheHits(tpl.body, tpl.offset)) {
+        if (!exempt(m.line)) record(file, m.line, m.hits)
+      }
+      tpl.body.split(NL).forEach((l, i) => {
         const abs = tpl.offset + i
         if (exempt(abs)) return
-        const hits = [...l.matchAll(ATTRS)].filter(m => HAS_WORDS.test(m[1])).map(m => m[0])
+        STATIC_ATTR.lastIndex = 0
+        const stat = [...l.matchAll(STATIC_ATTR)].map(m => m[1]).filter(looksLikeCopy)
+        BOUND_ATTR.lastIndex = 0
+        const bound = [...l.matchAll(BOUND_ATTR)].flatMap(m => copyLiterals(m[1]))
+        const hits = [...stat, ...bound]
         if (hits.length) record(file, abs, hits)
       })
     }
 
-    lines.forEach((l, i) => {
-      if (exempt(i + 1) || !SCRIPT_CALL.test(l)) return
-      ANY_LITERAL.lastIndex = 0
-      const hits = [...l.matchAll(ANY_LITERAL)]
-        .map(m => m[1] ?? m[2] ?? m[3])
-        .filter(s => s && HAS_WORDS.test(s) && HAS_INNER_SPACE.test(s))
-      if (hits.length) record(file, i + 1, hits)
-    })
+    // Script side: any copy literal, not just toasts. A modal title built in a
+    // computed is exactly as user-facing as one in the template.
+    const sStart = src.indexOf('<script')
+    const sEnd = src.lastIndexOf('</script>')
+    const scriptRange = file.endsWith('.ts')
+      ? [0, lines.length]
+      : (sStart === -1 ? null : [countLines(src.slice(0, sStart)) - 1, countLines(src.slice(0, sEnd))])
+    if (scriptRange) {
+      for (let i = scriptRange[0]; i < scriptRange[1]; i++) {
+        const l = lines[i]
+        if (!l || exempt(i + 1)) continue
+        if (/^\s*(\/\/|\*|\/\*)/.test(l)) continue        // comments
+        if (/^\s*import\s|from\s+['"]/.test(l)) continue    // module specifiers
+        const hits = copyLiterals(l)
+        if (hits.length) record(file, i + 1, hits)
+      }
+    }
   }
 }
 

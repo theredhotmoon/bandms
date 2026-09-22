@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
@@ -9,6 +10,8 @@ import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } 
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
 import type { Tag } from '@/types/tag'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Concert | null
@@ -25,7 +28,7 @@ const emit = defineEmits<{
 }>()
 
 const { query: profileQ } = useBandProfile()
-const mainBandName = computed(() => profileQ.data.value?.name ?? 'Our band')
+const mainBandName = computed(() => profileQ.data.value?.name ?? t('shows.concerts.form.ourBand'))
 
 // ── Poster ────────────────────────────────────────────────────
 const posterInput   = ref<HTMLInputElement | null>(null)
@@ -101,11 +104,13 @@ interface LineupEntry {
 const lineup = ref<LineupEntry[]>([{ type: 'main', play_time: '' }])
 
 // ── Links ─────────────────────────────────────────────────────
+// i18n-ignore: seed values for stored link labels, not UI copy — translating
+// them would make saved data depend on the admin's chrome language.
 const LINK_PRESETS = [
-  { label: 'Buy Tickets', url: '' },
-  { label: 'Facebook Event', url: '' },
-  { label: 'Event Info', url: '' },
-  { label: 'Live Stream', url: '' },
+  { label: 'Buy Tickets', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Facebook Event', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Event Info', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Live Stream', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
 ]
 
 const links = ref<ConcertLinkPayload[]>([])
@@ -411,7 +416,7 @@ function submit() {
             <span>{{ band.name }}</span>
           </div>
           <p v-if="!availableBands.length" class="empty-note">
-            {{ bands.length ? 'All bands added' : 'No bands yet' }}
+            {{ bands.length ? $t('shows.concerts.form.allBandsAdded') : $t('shows.concerts.form.noBandsYet') }}
           </p>
         </div>
 
@@ -574,7 +579,7 @@ function submit() {
         @dragover.prevent
         @drop="onPosterDrop"
       >
-        <img v-if="displayPoster" :src="displayPoster" class="poster-img" alt="Concert poster" />
+        <img v-if="displayPoster" :src="displayPoster" class="poster-img" :alt="$t('shows.concerts.form.posterAlt')" />
         <div v-else class="poster-placeholder">
           <svg class="poster-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -600,7 +605,7 @@ function submit() {
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !canSave" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
 

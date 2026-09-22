@@ -85,8 +85,8 @@ async function confirmDelete() {
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="City" sort-key="city" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('common.fields.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('shows.venues.form.city')" sort-key="city" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('shows.venues.street') }}</th>
                 <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
@@ -118,7 +118,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit venue' : 'New venue'" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('shows.venues.modalEdit') : $t('shows.venues.modalNew')" @close="closeModal">
       <VenueForm :initial="editing" :tags="tagsQ.data.value ?? []" :loading="create.isPending.value || update.isPending.value" :errors="fieldErrors" @submit="handleSubmit" @cancel="closeModal" />
     </AdminModal>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
@@ -6,6 +7,8 @@ import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
 import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/utils/basemap'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Venue | null
@@ -97,8 +100,10 @@ async function searchPlace() {
   searchResults.value = []
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`
-    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } })
-    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`)
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' /* i18n-ignore: HTTP header */ } })
+    // i18n-ignore: developer diagnostic — the catch below replaces it with a
+    // translated, user-facing message, so this string never reaches the UI.
+    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`) /* i18n-ignore: developer diagnostic, replaced by a translated message in the catch */
     const data = await res.json() as {
       lat: string
       lon: string
@@ -119,13 +124,13 @@ async function searchPlace() {
       addr:  r.address,
     })) as typeof searchResults.value
     showResults.value = searchResults.value.length > 0
-    if (searchResults.value.length === 0) searchError.value = 'No matching places found.'
+    if (searchResults.value.length === 0) searchError.value = t('shows.venues.form.noMatches')
   } catch {
     // Never swallow this. The failure mode here is a blocked request — CSP
     // (connect-src must list nominatim.openstreetmap.org) or the network — and
     // an empty result list is indistinguishable from "no such place", which is
     // exactly how a dead search button went unnoticed. Say so instead.
-    searchError.value = 'Could not reach the place search. Check your connection, or pin the location by clicking the map.'
+    searchError.value = t('shows.venues.form.searchUnreachable')
   } finally {
     searching.value = false
   }
@@ -263,7 +268,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
           @keydown.escape="showResults = false"
         />
         <button type="button" class="btn-search" :disabled="searching" @click="searchPlace">
-          {{ searching ? '…' : 'Search' }}
+          {{ searching ? '…' : $t('shows.venues.form.search') }}
         </button>
       </div>
       <p v-if="searchError" class="field-error">{{ searchError }}</p>
@@ -298,7 +303,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>

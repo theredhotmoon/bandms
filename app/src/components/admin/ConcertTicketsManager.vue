@@ -16,7 +16,7 @@ const { query, createType, updateType, deleteType, createTier, updateTier, delet
 // ── Ticket type form ──────────────────────────────────────────────────────
 const showTypeForm = ref(false)
 const editingType = ref<TicketType | null>(null)
-const typeForm = ref({ name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN', total_tickets: '' })
+const typeForm = ref({ name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, total_tickets: '' })
 const typeErrors = ref<Record<string, string[]>>({})
 
 // Show inline price/currency/total fields when creating or editing a 0-or-1-tier type.
@@ -34,7 +34,7 @@ function toLocalDatetime(iso: string | null | undefined): string {
 function openCreateType() {
   tierModal.value = null
   editingType.value = null
-  typeForm.value = { name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN', total_tickets: '' }
+  typeForm.value = { name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, total_tickets: '' }
   typeErrors.value = {}
   showTypeForm.value = true
 }
@@ -50,7 +50,7 @@ function openEditType(type: TicketType) {
     on_sale_until: toLocalDatetime(type.on_sale_until),
     max_per_order: type.max_per_order != null ? String(type.max_per_order) : '',
     price: singleTier ? String(singleTier.price) : '',
-    currency: singleTier ? singleTier.currency : 'PLN',
+    currency: singleTier ? singleTier.currency : 'PLN', /* i18n-ignore: ISO currency code */
     total_tickets: singleTier?.available_count != null ? String(singleTier.available_count) : '',
   }
   typeErrors.value = {}
@@ -93,13 +93,13 @@ async function removeType(type: TicketType) {
 
 // ── Price tier form ───────────────────────────────────────────────────────
 const tierModal = ref<{ typeId: number; tier: PriceTier | null } | null>(null)
-const tierForm = ref({ name: '', price: '', currency: 'PLN', available_from: '', available_until: '', available_count: '', sort_order: '0' })
+const tierForm = ref({ name: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, available_from: '', available_until: '', available_count: '', sort_order: '0' })
 const tierErrors = ref<Record<string, string[]>>({})
 
 function openCreateTier(typeId: number) {
   showTypeForm.value = false
   tierModal.value = { typeId, tier: null }
-  tierForm.value = { name: '', price: '', currency: 'PLN', available_from: '', available_until: '', available_count: '', sort_order: '0' }
+  tierForm.value = { name: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, available_from: '', available_until: '', available_count: '', sort_order: '0' }
   tierErrors.value = {}
 }
 
@@ -214,7 +214,7 @@ function fmtPrice(price: number, currency: string): string {
 
     <!-- Type form inline -->
     <div v-if="showTypeForm" class="form-panel">
-      <div class="form-title">{{ editingType ? 'Edit type' : 'New type' }}</div>
+      <div class="form-title">{{ editingType ? $t('shows.tickets.manager.editType') : $t('shows.tickets.manager.newType') }}</div>
       <div class="field">
         <label class="lbl"><i18n-t keypath="common.fields.name" tag="span" scope="global" /> *</label>
         <input v-model="typeForm.name" class="inp" required />
@@ -260,14 +260,14 @@ function fmtPrice(price: number, currency: string): string {
       <div class="form-actions">
         <button class="btn-ghost" @click="showTypeForm = false">{{ $t('common.actions.cancel') }}</button>
         <button class="btn-primary" :disabled="createType.isPending.value || updateType.isPending.value" @click="submitType">
-          {{ createType.isPending.value || updateType.isPending.value ? 'Saving…' : 'Save' }}
+          {{ createType.isPending.value || updateType.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
         </button>
       </div>
     </div>
 
     <!-- Tier modal -->
     <div v-if="tierModal" class="form-panel">
-      <div class="form-title">{{ tierModal.tier ? 'Edit tier' : 'New price tier' }}</div>
+      <div class="form-title">{{ tierModal.tier ? $t('shows.tickets.manager.editTier') : $t('shows.tickets.manager.newTier') }}</div>
       <div class="field">
         <label class="lbl"><i18n-t keypath="shows.tickets.manager.tierName" tag="span" scope="global" /> *</label>
         <input v-model="tierForm.name" class="inp" :placeholder="$t('shows.tickets.manager.tierNamePlaceholder')" required />
@@ -308,7 +308,7 @@ function fmtPrice(price: number, currency: string): string {
       <div class="form-actions">
         <button class="btn-ghost" @click="tierModal = null">{{ $t('common.actions.cancel') }}</button>
         <button class="btn-primary" :disabled="createTier.isPending.value || updateTier.isPending.value" @click="submitTier">
-          {{ createTier.isPending.value || updateTier.isPending.value ? 'Saving…' : 'Save' }}
+          {{ createTier.isPending.value || updateTier.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
         </button>
       </div>
     </div>

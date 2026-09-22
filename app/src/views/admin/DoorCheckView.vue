@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { doorCheck, doorScan } from '@/api/tickets'
 import { useAuth } from '@/composables/useAuth'
 import type { DoorCheckResult } from '@/types/ticket'
+
+const { t } = useI18n()
 
 interface ScanLogEntry {
   ts: string
@@ -53,9 +56,9 @@ async function check(code: string) {
     const data = await doorCheck(token.value!, trimmed)
     currentCode.value = trimmed
     result.value = data
-    addLog(trimmed, data.valid, data.valid ? (data.customer ?? 'OK') : (data.reason ?? 'INVALID'))
+    addLog(trimmed, data.valid, data.valid ? (data.customer ?? t('shows.door.ok')) : (data.reason ?? t('shows.door.invalidShort')))
   } catch {
-    error.value = 'Network error. Please try again.'
+    error.value = t('common.state.networkError')
   } finally {
     loading.value = false
     manualCode.value = ''
@@ -69,9 +72,9 @@ async function confirmScan() {
   try {
     const data = await doorScan(token.value!, currentCode.value)
     result.value = data
-    addLog(currentCode.value, data.valid, 'ENTERED')
+    addLog(currentCode.value, data.valid, t('shows.door.entered'))
   } catch {
-    error.value = 'Network error. Please try again.'
+    error.value = t('common.state.networkError')
   } finally {
     scanning.value = false
   }
@@ -98,7 +101,7 @@ async function startCamera() {
     detector = new BarcodeDetector({ formats: ['qr_code'] })
     scanLoop()
   } catch {
-    cameraError.value = 'Camera access denied or unavailable.'
+    cameraError.value = t('shows.door.cameraDenied')
   }
 }
 
@@ -158,7 +161,7 @@ onUnmounted(() => {
           :disabled="loading"
         />
         <button type="submit" class="btn-check" :disabled="loading || !manualCode.trim()">
-          {{ loading ? '…' : 'Check' }}
+          {{ loading ? '…' : $t('shows.door.check') }}
         </button>
         <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">{{ $t('shows.door.reset') }}</button>
       </form>
@@ -206,7 +209,7 @@ onUnmounted(() => {
           :disabled="scanning"
           @click="confirmScan"
         >
-          {{ scanning ? 'Scanning…' : '✓ Mark as Scanned' }}
+          {{ scanning ? $t('shows.door.scanning') : $t('shows.door.markScanned') }}
         </button>
       </div>
 
@@ -220,7 +223,7 @@ onUnmounted(() => {
         >
           <span class="log-ts">{{ entry.ts }}</span>
           <span class="log-code">{{ entry.code.slice(0, 8) }}</span>
-          <span class="log-name">{{ entry.valid ? entry.name : 'INVALID' }}</span>
+          <span class="log-name">{{ entry.valid ? entry.name : $t('shows.door.invalidShort') }}</span>
         </div>
       </div>
     </div>

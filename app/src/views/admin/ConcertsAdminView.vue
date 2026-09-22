@@ -149,7 +149,7 @@ async function confirmDelete() {
           @click="openCreate"
           class="btn-add-primary"
           :disabled="noVenues"
-          :title="noVenues ? 'Add a venue before creating a concert' : undefined"
+          :title="noVenues ? $t('shows.concerts.addDisabledTitle') : undefined"
         >{{ $t('shows.concerts.add') }}</button>
       </div>
 
@@ -183,7 +183,7 @@ async function confirmDelete() {
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Date" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('common.fields.date')" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.name') }}</th>
                 <th class="th">{{ $t('shows.concerts.columns.doorsStart') }}</th>
                 <th class="th">{{ $t('shows.venues.singular') }}</th>
@@ -230,7 +230,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit concert' : 'New concert'" maxWidth="56rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('shows.concerts.modalEdit') : $t('shows.concerts.modalNew')" maxWidth="56rem" @close="closeModal">
       <ConcertForm
         :initial="editing"
         :venues="venuesQ.data.value ?? []"
@@ -245,7 +245,7 @@ async function confirmDelete() {
 
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
 
-    <AdminModal :open="ticketsConcert !== null" :title="`Tickets — ${ticketsConcert?.name ?? ticketsConcert?.date ?? ''}`" maxWidth="52rem" @close="ticketsConcert = null">
+    <AdminModal :open="ticketsConcert !== null" :title="$t('shows.concerts.ticketsModal', { name: ticketsConcert?.name ?? ticketsConcert?.date ?? '' })" maxWidth="52rem" @close="ticketsConcert = null">
       <ConcertTicketsManager v-if="ticketsConcert" :concert-id="ticketsConcert.id" />
     </AdminModal>
   </AdminLayout>
