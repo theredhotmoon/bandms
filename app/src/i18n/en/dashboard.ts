@@ -39,6 +39,11 @@ export default {
     confirmDelete: 'Delete v{version}? It cannot be made live again afterwards.',
     confirmAria: 'Confirm removing v{version}',
     keep: 'Keep',
+    nowLive: 'v{version} is now live at /epk',
+    publishFailed: 'Failed to publish',
+    discarded: 'Snapshot discarded',
+    deleted: 'v{version} deleted',
+    deleteFailed: 'Failed to delete',
   },
   career: {
     title: 'Band Career Level',

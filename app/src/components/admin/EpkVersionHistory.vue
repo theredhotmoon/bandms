@@ -73,9 +73,21 @@ function confirmRemove(version: EpkVersion): void {
         {{ $t('dashboard.epk.loadError') }}
       </p>
 
-      <p v-else-if="!versions.length" class="empty">
-        {{ $t('dashboard.epk.empty', { code: '/epk' }) }}
-      </p>
+      <!--
+        <i18n-t>, not a {code} string param: interpolating a named param
+        renders plain text, which silently dropped the <code> element and the
+        `.empty code` styling with it. The slot puts real markup back inside
+        the translated sentence, in whatever position each language needs.
+      -->
+      <i18n-t
+        v-else-if="!versions.length"
+        keypath="dashboard.epk.empty"
+        tag="p"
+        class="empty"
+        scope="global"
+      >
+        <template #code><code>/epk</code></template> <!-- i18n-ignore: route path -->
+      </i18n-t>
 
       <ul v-else class="version-list">
         <li

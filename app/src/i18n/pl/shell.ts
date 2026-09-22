@@ -57,5 +57,7 @@ export default {
     password: 'Hasło',
     submit: 'Zaloguj się',
     submitting: 'Logowanie…',
+    welcomeToast: 'Witaj ponownie! Dobrze Cię znowu widzieć.',
+    unexpectedError: 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.',
   },
 }

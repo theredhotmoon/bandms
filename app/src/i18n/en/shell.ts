@@ -57,5 +57,7 @@ export default {
     password: 'Password',
     submit: 'Sign In',
     submitting: 'Signing in…',
+    welcomeToast: 'Welcome back! Great to see you again.',
+    unexpectedError: 'An unexpected error occurred. Please try again.',
   },
 }

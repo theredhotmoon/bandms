@@ -39,6 +39,11 @@ export default {
     confirmDelete: 'Usunąć v{version}? Nie będzie już można ustawić jej jako aktualnej.',
     confirmAria: 'Potwierdź usunięcie v{version}',
     keep: 'Zachowaj',
+    nowLive: 'v{version} jest teraz dostępna na /epk',
+    publishFailed: 'Nie udało się opublikować',
+    discarded: 'Migawka odrzucona',
+    deleted: 'v{version} usunięta',
+    deleteFailed: 'Nie udało się usunąć',
   },
   career: {
     title: 'Poziom kariery zespołu',

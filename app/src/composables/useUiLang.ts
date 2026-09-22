@@ -1,13 +1,14 @@
 import { ref } from 'vue'
 import { i18n } from '@/i18n'
-import { resolveStoredLocale, UI_LANG_STORAGE_KEY } from '@/utils/uiLocale'
+import { readStoredLocale, writeStoredLocale } from '@/utils/uiLocale'
 import type { Lang } from '@/locales'
 
 export type { Lang }
 
 // Module-level singleton, read once at load — the same shape as useLang and
-// useAuth. Read via the pure resolver so an unknown stored value degrades.
-const uiLang = ref<Lang>(resolveStoredLocale(localStorage.getItem(UI_LANG_STORAGE_KEY)))
+// useAuth. Read through the guarded helper so an unknown (or unreadable)
+// stored value degrades to the default rather than throwing on import.
+const uiLang = ref<Lang>(readStoredLocale())
 
 /**
  * The language the admin *chrome* is rendered in.
@@ -20,10 +21,13 @@ const uiLang = ref<Lang>(resolveStoredLocale(localStorage.getItem(UI_LANG_STORAG
  * owns that attribute, so there is exactly one writer.
  */
 export function useUiLang() {
+  // Apply before persisting. A storage write that throws must not leave the
+  // panel split — <html lang> and the select on the new language while every
+  // string is still in the old one.
   function setUiLang(l: Lang): void {
     uiLang.value = l
-    localStorage.setItem(UI_LANG_STORAGE_KEY, l)
     i18n.global.locale.value = l
+    writeStoredLocale(l)
   }
 
   return { uiLang, setUiLang }

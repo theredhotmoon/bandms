@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { useEpkVersions } from './useEpkVersions'
 import { reportSaveError } from '@/utils/formErrors'
@@ -15,6 +16,7 @@ import type { EpkVersion } from '@/types/epkVersion'
  */
 export function useEpkVersionHistory() {
   const { query, publish, discard } = useEpkVersions()
+  const { t } = useI18n()
 
   const open = ref(false)
 
@@ -25,15 +27,17 @@ export function useEpkVersionHistory() {
   async function makeLive(version: EpkVersion): Promise<void> {
     try {
       await publish.mutateAsync(version.id)
-      toast.success(`v${version.version_number} is now live at /epk`)
-    } catch (e) { reportSaveError(e, 'Failed to publish') }
+      toast.success(t('dashboard.epk.nowLive', { version: version.version_number }))
+    } catch (e) { reportSaveError(e, t('dashboard.epk.publishFailed')) }
   }
 
   async function remove(version: EpkVersion): Promise<void> {
     try {
       await discard.mutateAsync(version.id)
-      toast.success(version.status === 'pending' ? 'Snapshot discarded' : `v${version.version_number} deleted`)
-    } catch (e) { reportSaveError(e, 'Failed to delete') }
+      toast.success(version.status === 'pending'
+        ? t('dashboard.epk.discarded')
+        : t('dashboard.epk.deleted', { version: version.version_number }))
+    } catch (e) { reportSaveError(e, t('dashboard.epk.deleteFailed')) }
   }
 
   return {

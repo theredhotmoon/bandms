@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { useAuth } from '@/composables/useAuth'
 import { ApiError, ApiValidationError } from '@/api/auth'
@@ -9,6 +10,7 @@ const emit = defineEmits<{
 }>()
 
 const { login } = useAuth()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -23,7 +25,7 @@ async function handleSubmit() {
 
   try {
     await login({ email: email.value, password: password.value })
-    toast.success('Welcome back! Great to see you again.')
+    toast.success(t('shell.signIn.welcomeToast'))
     emit('success')
   } catch (err) {
     if (err instanceof ApiValidationError) {
@@ -35,7 +37,7 @@ async function handleSubmit() {
     } else if (err instanceof ApiError) {
       generalError.value = err.message
     } else {
-      generalError.value = 'An unexpected error occurred. Please try again.'
+      generalError.value = t('shell.signIn.unexpectedError')
     }
   } finally {
     loading.value = false

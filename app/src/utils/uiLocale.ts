@@ -25,6 +25,32 @@ export function resolveStoredLocale(raw: string | null): Lang {
 }
 
 /**
+ * Reading and writing the preference, both guarded.
+ *
+ * `localStorage` throws — not returns null — in a private window, with site
+ * data blocked, or over quota. An unguarded read at module load would stop the
+ * whole panel booting; an unguarded write would abort `setUiLang` halfway,
+ * leaving `<html lang>` and the select on the new language while every string
+ * stayed in the old one. Failing to persist is the acceptable outcome: the
+ * switch still applies for this session.
+ */
+export function readStoredLocale(): Lang {
+  try {
+    return resolveStoredLocale(localStorage.getItem(UI_LANG_STORAGE_KEY))
+  } catch {
+    return DEFAULT_LOCALE
+  }
+}
+
+export function writeStoredLocale(locale: Lang): void {
+  try {
+    localStorage.setItem(UI_LANG_STORAGE_KEY, locale)
+  } catch {
+    // Not persisted — this browser refuses storage. The session still switches.
+  }
+}
+
+/**
  * Polish has three plural forms, and vue-i18n's default rule (positional, by
  * message index) only models two. Without this, "5 koncerty" ships.
  *
