@@ -30,6 +30,8 @@ export default {
     rebuilding: 'Przebudowywanie…',
     autoActive: 'Automatyczne przebudowywanie jest włączone — zmiany publikują się same',
     rebuildTitle: 'Przebuduj stronę publiczną',
+    autoToggle: 'Automatyczne przebudowywanie po każdej zmianie',
+    autoHint: 'Gdy włączone, strona publiczna przebudowuje się sama po każdym zapisie — przycisk ręcznej przebudowy pozostaje nieaktywny.',
     settingsTitle: 'Ustawienia przebudowy',
   },
   rebuildAreas: {

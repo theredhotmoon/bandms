@@ -30,6 +30,8 @@ export default {
     rebuilding: 'Rebuilding…',
     autoActive: 'Auto-rebuild is active — changes rebuild automatically',
     rebuildTitle: 'Rebuild the public site',
+    autoToggle: 'Auto-rebuild on every change',
+    autoHint: 'When on, the public site rebuilds automatically after each save — the manual Rebuild button stays disabled.',
     settingsTitle: 'Rebuild settings',
   },
   rebuildAreas: {

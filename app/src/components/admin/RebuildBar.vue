@@ -1,21 +1,30 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSiteRebuild } from '@/composables/useSiteRebuild'
-import { rebuildAreaLabel } from '@/config/rebuildAreas'
+import { rebuildAreaMessageKey } from '@/config/rebuildAreas'
 import RebuildSettingsModal from './RebuildSettingsModal.vue'
 
 const { isBuilding, autoRebuild, pendingAreas, rebuild } = useSiteRebuild()
+const { t } = useI18n()
 
 const showPending = ref(false)
 const showSettings = ref(false)
+
+// An area with no catalogue entry prints its raw key rather than a missing
+// message — see rebuildAreaMessageKey.
+function areaLabel(area: string): string {
+  const key = rebuildAreaMessageKey(area)
+  return key ? t(key) : area
+}
 
 function relativeTime(iso: string | null): string {
   if (!iso) return ''
   const diffMs = Date.now() - new Date(iso).getTime()
   const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  return `${Math.floor(minutes / 60)}h ago`
+  if (minutes < 1) return t('common.time.justNow')
+  if (minutes < 60) return t('common.time.minutesAgo', { n: minutes })
+  return t('common.time.hoursAgo', { n: Math.floor(minutes / 60) })
 }
 </script>
 
@@ -29,12 +38,12 @@ function relativeTime(iso: string | null): string {
         @click="showPending = !showPending"
       >
         <span class="pending-count">{{ pendingAreas.length }}</span>
-        pending change{{ pendingAreas.length === 1 ? '' : 's' }}
+        {{ $t('common.rebuild.pendingChanges', pendingAreas.length) }}
       </button>
 
       <div v-if="showPending && pendingAreas.length > 0" class="pending-popover">
         <div v-for="item in pendingAreas" :key="item.area" class="pending-row">
-          <span>{{ rebuildAreaLabel(item.area) }}</span>
+          <span>{{ areaLabel(item.area) }}</span>
           <span class="pending-time">{{ relativeTime(item.changedAt) }}</span>
         </div>
       </div>
@@ -44,13 +53,13 @@ function relativeTime(iso: string | null): string {
       type="button"
       class="btn-rebuild"
       :disabled="isBuilding || autoRebuild || pendingAreas.length === 0"
-      :title="autoRebuild ? 'Auto-rebuild is active — changes rebuild automatically' : 'Rebuild the public site'"
+      :title="autoRebuild ? $t('common.rebuild.autoActive') : $t('common.rebuild.rebuildTitle')"
       @click="rebuild.mutate()"
     >
-      {{ isBuilding ? 'Rebuilding…' : '↺ Rebuild Public Site' }}
+      {{ isBuilding ? $t('common.rebuild.rebuilding') : $t('common.rebuild.rebuild') }}
     </button>
 
-    <button type="button" class="btn-settings" title="Rebuild settings" @click="showSettings = true">
+    <button type="button" class="btn-settings" :title="$t('common.rebuild.settingsTitle')" @click="showSettings = true">
       ⚙
     </button>
 

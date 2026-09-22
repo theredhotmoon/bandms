@@ -9,7 +9,7 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-panel">
-      <h2 class="modal-title">Rebuild settings</h2>
+      <h2 class="modal-title">{{ $t('common.rebuild.settingsTitle') }}</h2>
 
       <label class="auto-rebuild-toggle">
         <input
@@ -18,14 +18,14 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
           :disabled="setAutoRebuild.isPending.value"
           @change="setAutoRebuild.mutate(!autoRebuild)"
         />
-        Auto-rebuild on every change
+        {{ $t('common.rebuild.autoToggle') }}
       </label>
 
       <p class="modal-hint">
-        When on, the public site rebuilds automatically after each save — the manual Rebuild button stays disabled.
+        {{ $t('common.rebuild.autoHint') }}
       </p>
 
-      <button type="button" class="btn-close" @click="emit('close')">Close</button>
+      <button type="button" class="btn-close" @click="emit('close')">{{ $t('common.actions.close') }}</button>
     </div>
   </div>
 </template>

@@ -30,11 +30,11 @@ const pages = computed<(number | '…')[]>(() => {
 </script>
 
 <template>
-  <div class="pg" role="navigation" aria-label="Pagination">
-    <span class="pg-info">{{ from }}–{{ to }} of {{ total }}</span>
+  <div class="pg" role="navigation" :aria-label="$t('common.pagination.label')">
+    <span class="pg-info">{{ $t('common.pagination.range', { from, to, total }) }}</span>
 
     <div class="pg-controls">
-      <button class="pg-btn" :disabled="page <= 1" aria-label="Previous page" @click="go(page - 1)">
+      <button class="pg-btn" :disabled="page <= 1" :aria-label="$t('common.pagination.previous')" @click="go(page - 1)">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
         </svg>
@@ -51,7 +51,7 @@ const pages = computed<(number | '…')[]>(() => {
         >{{ p }}</button>
       </template>
 
-      <button class="pg-btn" :disabled="page >= totalPages" aria-label="Next page" @click="go(page + 1)">
+      <button class="pg-btn" :disabled="page >= totalPages" :aria-label="$t('common.pagination.next')" @click="go(page + 1)">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
         </svg>

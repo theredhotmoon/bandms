@@ -17,10 +17,10 @@ defineProps<{
         v-model="search"
         class="search-input"
         type="search"
-        placeholder="Search…"
+        :placeholder="$t('common.table.searchPlaceholder')"
         autocomplete="off"
         spellcheck="false"
-        aria-label="Search"
+        :aria-label="$t('common.table.searchLabel')"
       />
     </div>
 
