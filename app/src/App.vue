@@ -4,13 +4,15 @@ import { useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { Toaster } from 'vue-sonner'
 import AppNavbar from '@/components/AppNavbar.vue'
-import { useLang } from '@/composables/useLang'
+import { useUiLang } from '@/composables/useUiLang'
 
 const route = useRoute()
-const { lang } = useLang()
+const { uiLang } = useUiLang()
 
-// Keep <html lang> in sync with the active locale (WCAG 3.1.1)
-watch(lang, (l) => { document.documentElement.lang = l }, { immediate: true })
+// Keep <html lang> in sync with the language the chrome is rendered in
+// (WCAG 3.1.1). Deliberately the UI axis, not the content axis: an editor
+// proofreading Polish copy in an English panel is reading an English page.
+watch(uiLang, (l) => { document.documentElement.lang = l }, { immediate: true })
 
 // AppNavbar is the chrome for the handful of non-admin pages the SPA still owns:
 // the fan portal, ticket claim and the tech-rider preview. Everything the public
@@ -36,7 +38,7 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link">{{ $t('shell.skipLink') }}</a>
   <AppNavbar v-if="showNavbar" />
   <div ref="mainContent" id="main-content" tabindex="-1" :class="showNavbar ? 'page-offset' : ''">
     <RouterView />

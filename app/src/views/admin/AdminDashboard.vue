@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { adminUrl } from '@/config/admin'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -24,6 +25,7 @@ import type { PressReleaseSummary } from '@/types/press-release'
 import type { TechRiderSummary } from '@bandms/rider-core'
 
 const { user, token } = useAuth()
+const { t } = useI18n()
 
 const { data: ticketStats } = useQuery({
   queryKey: ['ticket-stats'],
@@ -34,10 +36,10 @@ const { data: ticketStats } = useQuery({
 const statCards = computed(() =>
   ticketStats.value
     ? [
-        { label: 'Total',       value: ticketStats.value.total },
-        { label: 'Active',      value: ticketStats.value.active },
-        { label: 'Transferred', value: ticketStats.value.transferred },
-        { label: 'Scanned',     value: ticketStats.value.scanned },
+        { label: t('dashboard.tickets.total'),       value: ticketStats.value.total },
+        { label: t('dashboard.tickets.active'),      value: ticketStats.value.active },
+        { label: t('dashboard.tickets.transferred'), value: ticketStats.value.transferred },
+        { label: t('dashboard.tickets.scanned'),     value: ticketStats.value.scanned },
       ]
     : [],
 )
@@ -58,16 +60,16 @@ const { list: techRidersQ } = useTechRiders()
 async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
   try {
     await updateProfile.mutateAsync({ career_level: level })
-  } catch (e) { reportSaveError(e, 'Failed to update career level') }
+  } catch (e) { reportSaveError(e, t('dashboard.career.updateFailed')) }
 }
 
 const stats = computed(() => [
-  { label: 'Bands', count: bandsQ.data.value?.length, link: adminUrl('bands'), color: '#c0c0c0' },
-  { label: 'Releases', count: releasesQ.data.value?.length, link: adminUrl('releases'), color: '#f472b6' },
-  { label: 'Tours',    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: '#fbbf24' },
-  { label: 'Venues', count: venuesQ.data.value?.length, link: adminUrl('venues'), color: '#34d399' },
-  { label: 'Concerts', count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: '#fb923c' },
-  { label: 'Tags', count: tagsQ.data.value?.length, link: adminUrl('tags'), color: '#22d3ee' },
+  { label: t('dashboard.stats.bands'), count: bandsQ.data.value?.length, link: adminUrl('bands'), color: '#c0c0c0' },
+  { label: t('dashboard.stats.releases'), count: releasesQ.data.value?.length, link: adminUrl('releases'), color: '#f472b6' },
+  { label: t('dashboard.stats.tours'),    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: '#fbbf24' },
+  { label: t('dashboard.stats.venues'), count: venuesQ.data.value?.length, link: adminUrl('venues'), color: '#34d399' },
+  { label: t('dashboard.stats.concerts'), count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: '#fb923c' },
+  { label: t('dashboard.stats.tags'), count: tagsQ.data.value?.length, link: adminUrl('tags'), color: '#22d3ee' },
 ])
 
 
@@ -113,9 +115,9 @@ const avgEnhanceScore = computed(() => {
     <div class="p-8 max-w-4xl">
       <div class="mb-8">
         <h1 class="text-xl font-bold mb-1" style="color:#e2e8f0;">
-          Welcome back<span v-if="user">, {{ user.first_name }}</span>
+          {{ user ? $t('dashboard.welcomeNamed', { name: user.first_name }) : $t('dashboard.welcome') }}
         </h1>
-        <p class="text-sm" style="color:#64748b;">BandMS Admin Panel — manage all your content below.</p>
+        <p class="text-sm" style="color:#64748b;">{{ $t('dashboard.subtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
@@ -136,20 +138,20 @@ const avgEnhanceScore = computed(() => {
       <div class="readiness-widget" v-if="epk.loaded.value">
         <div class="readiness-header">
           <div>
-            <div class="readiness-title">EPK Versions</div>
+            <div class="readiness-title">{{ $t('dashboard.epk.title') }}</div>
             <div class="readiness-sub">
-              <span v-if="publishedVersion">Live: v{{ publishedVersion.version_number }} ({{ publishedVersion.published_at?.slice(0,10) }})</span>
-              <span v-else style="color:#f87171;">No published version — EPK shows live data</span>
+              <span v-if="publishedVersion">{{ $t('dashboard.epk.live', { version: publishedVersion.version_number, date: publishedVersion.published_at?.slice(0,10) }) }}</span>
+              <span v-else style="color:#f87171;">{{ $t('dashboard.epk.none') }}</span>
             </div>
           </div>
           <div class="epk-header-actions">
-            <button type="button" class="epk-create-link" @click="epk.open.value = true">All versions</button>
-            <RouterLink :to="adminUrl('band-profile')" class="epk-create-link">Create snapshot →</RouterLink>
+            <button type="button" class="epk-create-link" @click="epk.open.value = true">{{ $t('dashboard.epk.allVersions') }}</button>
+            <RouterLink :to="adminUrl('band-profile')" class="epk-create-link">{{ $t('dashboard.epk.createSnapshot') }}</RouterLink>
           </div>
         </div>
 
         <div v-if="pendingVersion" class="epk-pending">
-          <div class="epk-pending-badge">Pending review</div>
+          <div class="epk-pending-badge">{{ $t('dashboard.epk.pendingBadge') }}</div>
           <div class="epk-pending-meta">
             <span class="epk-version-num">v{{ pendingVersion.version_number }}</span>
             <span class="epk-pending-date">{{ pendingVersion.created_at?.slice(0,10) }}</span>
@@ -160,16 +162,16 @@ const avgEnhanceScore = computed(() => {
               class="btn-epk-publish"
               :disabled="epk.publishing.value"
               @click="epk.makeLive(pendingVersion)"
-            >{{ epk.publishing.value ? 'Publishing…' : 'Publish' }}</button>
+            >{{ epk.publishing.value ? $t('dashboard.epk.publishing') : $t('dashboard.epk.publish') }}</button>
             <button
               class="btn-epk-discard"
               :disabled="epk.deleting.value"
               @click="epk.remove(pendingVersion)"
-            >Discard</button>
+            >{{ $t('dashboard.epk.discard') }}</button>
           </div>
         </div>
         <div v-else class="epk-no-pending">
-          No pending snapshot. Go to <RouterLink :to="adminUrl('band-profile')" style="color:#c0c0c0;">Band Profile → EPK</RouterLink> to create one.
+          {{ $t('dashboard.epk.noPendingPrefix') }} <RouterLink :to="adminUrl('band-profile')" style="color:#c0c0c0;">{{ $t('dashboard.epk.noPendingLink') }}</RouterLink> {{ $t('dashboard.epk.noPendingSuffix') }}
         </div>
       </div>
 
@@ -187,7 +189,7 @@ const avgEnhanceScore = computed(() => {
 
       <!-- Career level widget -->
       <div class="mt-8" v-if="profileQ.data.value">
-        <div class="readiness-title mb-2">Band Career Level</div>
+        <div class="readiness-title mb-2">{{ $t('dashboard.career.title') }}</div>
         <CareerLevelWidget
           :profile="profileQ.data.value"
           :concerts="concertsQ.data.value ?? []"
@@ -206,8 +208,8 @@ const avgEnhanceScore = computed(() => {
       <div class="readiness-widget" v-if="pressQ.data.value?.length">
         <div class="readiness-header">
           <div>
-            <div class="readiness-title">Press Coverage Enhance Level</div>
-            <div class="readiness-sub">Enrich each article with tags, concerts, releases and authors to increase score.</div>
+            <div class="readiness-title">{{ $t('dashboard.enhance.title') }}</div>
+            <div class="readiness-sub">{{ $t('dashboard.enhance.subtitle') }}</div>
           </div>
           <div class="score-ring">
             <svg viewBox="0 0 40 40" class="ring-svg">
@@ -228,7 +230,7 @@ const avgEnhanceScore = computed(() => {
           </div>
         </div>
 
-        <div class="enhance-sub">Lowest-scoring articles — click to improve:</div>
+        <div class="enhance-sub">{{ $t('dashboard.enhance.lowest') }}</div>
         <div class="enhance-list">
           <RouterLink
             v-for="{ pr, score: s } in enhancedPressItems"
@@ -249,21 +251,21 @@ const avgEnhanceScore = computed(() => {
       </div>
 
       <div class="mt-8">
-        <h2 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#475569;">Quick actions</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#475569;">{{ $t('dashboard.quickActions.title') }}</h2>
         <div class="flex flex-wrap gap-2">
-          <RouterLink :to="adminUrl('bands')" class="quick-btn">+ Band</RouterLink>
-          <RouterLink :to="adminUrl('venues')" class="quick-btn">+ Venue</RouterLink>
-          <RouterLink :to="adminUrl('concerts')" class="quick-btn">+ Concert</RouterLink>
-          <RouterLink :to="adminUrl('posts')" class="quick-btn">+ Post</RouterLink>
-          <RouterLink :to="adminUrl('releases')" class="quick-btn">+ Release</RouterLink>
-          <RouterLink :to="adminUrl('tours')" class="quick-btn">+ Tour</RouterLink>
-          <RouterLink :to="adminUrl('photos')" class="quick-btn">+ Photo</RouterLink>
-          <RouterLink :to="adminUrl('music-videos')" class="quick-btn">+ Video</RouterLink>
+          <RouterLink :to="adminUrl('bands')" class="quick-btn">{{ $t('dashboard.quickActions.band') }}</RouterLink>
+          <RouterLink :to="adminUrl('venues')" class="quick-btn">{{ $t('dashboard.quickActions.venue') }}</RouterLink>
+          <RouterLink :to="adminUrl('concerts')" class="quick-btn">{{ $t('dashboard.quickActions.concert') }}</RouterLink>
+          <RouterLink :to="adminUrl('posts')" class="quick-btn">{{ $t('dashboard.quickActions.post') }}</RouterLink>
+          <RouterLink :to="adminUrl('releases')" class="quick-btn">{{ $t('dashboard.quickActions.release') }}</RouterLink>
+          <RouterLink :to="adminUrl('tours')" class="quick-btn">{{ $t('dashboard.quickActions.tour') }}</RouterLink>
+          <RouterLink :to="adminUrl('photos')" class="quick-btn">{{ $t('dashboard.quickActions.photo') }}</RouterLink>
+          <RouterLink :to="adminUrl('music-videos')" class="quick-btn">{{ $t('dashboard.quickActions.video') }}</RouterLink>
         </div>
       </div>
 
       <section v-if="ticketStats" class="mt-8">
-        <h2 class="text-lg font-semibold mb-3" style="color:#e2e8f0;">Tickets</h2>
+        <h2 class="text-lg font-semibold mb-3" style="color:#e2e8f0;">{{ $t('dashboard.tickets.title') }}</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div v-for="s in statCards" :key="s.label" class="rounded border p-3 text-center" style="background:#141414;border-color:#222222;">
             <div class="text-2xl font-bold" style="color:#e2e8f0;">{{ s.value }}</div>

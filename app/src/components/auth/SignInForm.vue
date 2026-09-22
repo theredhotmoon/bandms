@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { useAuth } from '@/composables/useAuth'
 import { ApiError, ApiValidationError } from '@/api/auth'
@@ -9,6 +10,7 @@ const emit = defineEmits<{
 }>()
 
 const { login } = useAuth()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -23,7 +25,7 @@ async function handleSubmit() {
 
   try {
     await login({ email: email.value, password: password.value })
-    toast.success('Welcome back! Great to see you again.')
+    toast.success(t('shell.signIn.welcomeToast'))
     emit('success')
   } catch (err) {
     if (err instanceof ApiValidationError) {
@@ -35,7 +37,7 @@ async function handleSubmit() {
     } else if (err instanceof ApiError) {
       generalError.value = err.message
     } else {
-      generalError.value = 'An unexpected error occurred. Please try again.'
+      generalError.value = t('shell.signIn.unexpectedError')
     }
   } finally {
     loading.value = false
@@ -50,7 +52,7 @@ async function handleSubmit() {
     </p>
 
     <div>
-      <label class="field-label" for="signin-email">Email</label>
+      <label class="field-label" for="signin-email">{{ $t('shell.signIn.email') }}</label>
       <input
         id="signin-email"
         v-model="email"
@@ -59,13 +61,13 @@ async function handleSubmit() {
         autocomplete="email"
         class="field-input"
         :class="{ 'border-red-500': fieldErrors.email }"
-        placeholder="your@email.com"
+        :placeholder="$t('shell.signIn.emailPlaceholder')"
       />
       <p v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</p>
     </div>
 
     <div>
-      <label class="field-label" for="signin-password">Password</label>
+      <label class="field-label" for="signin-password">{{ $t('shell.signIn.password') }}</label>
       <input
         id="signin-password"
         v-model="password"
@@ -80,7 +82,7 @@ async function handleSubmit() {
     </div>
 
     <button type="submit" :disabled="loading" class="btn-primary w-full justify-center">
-      {{ loading ? 'Signing in…' : 'Sign In' }}
+      {{ loading ? $t('shell.signIn.submitting') : $t('shell.signIn.submit') }}
     </button>
   </form>
 </template>

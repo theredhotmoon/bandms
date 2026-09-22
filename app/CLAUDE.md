@@ -91,6 +91,52 @@ it edits raw translation bags, so an untranslated locale must render an empty
 input, not the other language's text. See the root `CLAUDE.md` for the full
 three-file picture.
 
+### Two language axes — chrome and content
+
+`useLang()` (`site_lang`) is the **content** locale: which translation of the
+band's data the editor is working on. It is passed as `?lang=` and sits in every
+TanStack `queryKey`.
+
+`useUiLang()` (`admin_ui_lang`) is the **chrome** locale: which language the
+menus, buttons and toasts are in. It drives `vue-i18n` and `<html lang>`.
+
+**They are deliberately separate, and the storage keys must stay separate.** An
+editor routinely proofreads English copy; making one control do both would
+refetch every post, release and profile the moment someone changed the menu
+language. `App.vue` watches the **chrome** axis for `<html lang>` — announcing
+the page as Polish because the *content* being edited is Polish is the wrong
+answer for a screen reader.
+
+### Admin UI strings live in `src/i18n/`
+
+One module per nav group, `en/` and `pl/`. `en/index.ts` is the schema source of
+truth and `pl/index.ts` is typed `: MessageSchema`, so **a missing Polish key
+fails `pnpm build`**. Read them with `$t('area.key')` in templates or
+`useI18n().t` in script.
+
+**Never put `as const` on `en/index.ts`.** It widens each value to its own
+string *literal* type, and `MessageSchema` then demands the Polish value be the
+identical English text — every translation becomes a type error.
+
+**`@` is reserved syntax in a vue-i18n message.** It introduces a linked
+message (`@:common.actions.save`), so a literal `your@email.com` in a catalogue
+throws `Message compilation error: Invalid linked format` — **at runtime, when
+the component first renders that key**. `vue-tsc` cannot see it (the value is a
+valid `string`), so it ships green and then blanks the component: this took out
+the entire sign-in form while the logged-in dashboard looked fine. Escape it as
+`"your{'@'}email.com"`. The same applies to `|`, which separates plural forms.
+
+**Polish needs three plural forms** (`1 koncert / 2 koncerty / 5 koncertów`).
+vue-i18n's default rule is positional and only models two, so `pluralRules.pl`
+in `src/i18n/plural.ts` is wired to `polishPluralIndex()` in
+`src/utils/uiLocale.ts` — a util, not a composable, so vitest's `node`
+environment can import it without a `localStorage` shim.
+
+`scripts/check-admin-strings.mjs` runs ahead of `vue-tsc` in `pnpm build` and
+fails on hardcoded text in any path listed in its `MIGRATED` array. **Adding an
+area to the sweep means adding its paths there**; append `i18n-ignore` to a line
+whose text is genuinely fixed (a wordmark, a glyph).
+
 ### Composables
 - Named `use*`, placed in `src/composables/`.
 - One composable = one logical concern.

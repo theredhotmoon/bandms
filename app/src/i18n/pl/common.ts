@@ -1,0 +1,53 @@
+export default {
+  actions: {
+    cancel: 'Anuluj',
+    close: 'Zamknij',
+    delete: 'Usuń',
+    deleting: 'Usuwanie…',
+  },
+  confirm: {
+    deleteTitle: 'Potwierdź usunięcie',
+    deleteMessage: 'Ten rekord zostanie trwale usunięty. Tej operacji nie można cofnąć.',
+  },
+  table: {
+    searchPlaceholder: 'Szukaj…',
+    searchLabel: 'Szukaj',
+  },
+  pagination: {
+    label: 'Paginacja',
+    range: '{from}–{to} z {total}',
+    previous: 'Poprzednia strona',
+    next: 'Następna strona',
+  },
+  time: {
+    justNow: 'przed chwilą',
+    minutesAgo: '{n} min temu',
+    hoursAgo: '{n} godz. temu',
+  },
+  rebuild: {
+    pendingChanges: 'oczekująca zmiana | oczekujące zmiany | oczekujących zmian',
+    rebuild: '↺ Przebuduj stronę',
+    rebuilding: 'Przebudowywanie…',
+    autoActive: 'Automatyczne przebudowywanie jest włączone — zmiany publikują się same',
+    rebuildTitle: 'Przebuduj stronę publiczną',
+    autoToggle: 'Automatyczne przebudowywanie po każdej zmianie',
+    autoHint: 'Gdy włączone, strona publiczna przebudowuje się sama po każdym zapisie — przycisk ręcznej przebudowy pozostaje nieaktywny.',
+    settingsTitle: 'Ustawienia przebudowy',
+  },
+  rebuildAreas: {
+    'band-profile': 'Profil zespołu',
+    'band-members': 'Skład zespołu',
+    'hero-images': 'Zdjęcia nagłówkowe',
+    posts: 'Aktualności',
+    'website-modules': 'Moduły strony',
+    concerts: 'Koncerty',
+    venues: 'Miejsca',
+    setlists: 'Setlisty',
+    releases: 'Wydawnictwa',
+    photos: 'Zdjęcia',
+    'music-videos': 'Teledyski',
+    'press-releases': 'Materiały prasowe',
+    shop: 'Sklep',
+    faqs: 'FAQ',
+  },
+}
