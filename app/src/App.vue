@@ -38,7 +38,7 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link">{{ $t('shell.skipLink') }}</a>
   <AppNavbar v-if="showNavbar" />
   <div ref="mainContent" id="main-content" tabindex="-1" :class="showNavbar ? 'page-offset' : ''">
     <RouterView />

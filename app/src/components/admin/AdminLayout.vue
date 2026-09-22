@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
@@ -7,8 +8,22 @@ import RebuildBar from './RebuildBar.vue'
 import UiLangSwitcher from './UiLangSwitcher.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+
+// Explicit branches rather than a computed `shell.roles.${role}` key: $t is
+// typed against the English catalogue, and a template-literal key widens to
+// `string`, which throws that check away. An unknown role falls through to the
+// raw value rather than rendering a missing key.
+const roleLabel = computed(() => {
+  switch (user.value?.role) {
+    case 'admin':     return t('shell.roles.admin')
+    case 'member':    return t('shell.roles.member')
+    case 'publisher': return t('shell.roles.publisher')
+    default:          return user.value?.role ?? ''
+  }
+})
 
 async function handleLogout() {
   await logout()
@@ -64,15 +79,15 @@ watch(() => route.path, (path) => {
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-mark">
-          <span class="logo-band">Band</span><span class="logo-ms">MS</span>
+          <span class="logo-band">Band</span><span class="logo-ms">MS</span> <!-- i18n-ignore: product wordmark -->
         </div>
-        <div class="logo-sub">Admin</div>
+        <div class="logo-sub">{{ $t('shell.brand.subtitle') }}</div>
       </div>
 
       <nav class="sidebar-nav">
         <RouterLink :to="adminUrl()" class="nav-item" exact-active-class="nav-item--active">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Dashboard
+          {{ $t('shell.nav.dashboard') }}
         </RouterLink>
 
         <!-- ── Your Band ──────────────────────────────── -->
@@ -84,7 +99,7 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('band') && !openGroups.has('band')" class="active-dot" />
-              Your Band
+              {{ $t('shell.groups.band') }}
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('band') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -92,49 +107,49 @@ watch(() => route.path, (path) => {
             <template v-if="isMember">
               <RouterLink :to="adminUrl('my-profile')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                My Profile
+                {{ $t('shell.nav.myProfile') }}
               </RouterLink>
               <RouterLink :to="adminUrl('my-setups')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h14a2 2 0 002-2v0a2 2 0 00-2-2h-4"/><path d="M12 3v14"/><rect x="8" y="3" width="8" height="4" rx="1"/></svg>
-                My Stage Setups
+                {{ $t('shell.nav.mySetups') }}
               </RouterLink>
             </template>
             <template v-if="isAdmin">
               <RouterLink :to="adminUrl('band-profile')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
-                Band Profile
+                {{ $t('shell.nav.bandProfile') }}
               </RouterLink>
               <RouterLink :to="adminUrl('band-members')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                Band Members
+                {{ $t('shell.nav.bandMembers') }}
               </RouterLink>
               <RouterLink :to="adminUrl('releases')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                Releases
+                {{ $t('shell.nav.releases') }}
               </RouterLink>
               <RouterLink :to="adminUrl('music-videos')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                Music Videos
+                {{ $t('shell.nav.musicVideos') }}
               </RouterLink>
               <RouterLink :to="adminUrl('clips')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>
-                Clips
+                {{ $t('shell.nav.clips') }}
               </RouterLink>
               <RouterLink :to="adminUrl('photos')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Photos
+                {{ $t('shell.nav.photos') }}
               </RouterLink>
               <RouterLink :to="adminUrl('band-calendar')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-                Band Calendar
+                {{ $t('shell.nav.bandCalendar') }}
               </RouterLink>
               <RouterLink :to="adminUrl('tech-rider')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h14a2 2 0 002-2v0a2 2 0 00-2-2h-4"/><path d="M12 3v14"/><rect x="8" y="3" width="8" height="4" rx="1"/></svg>
-                Tech Rider
+                {{ $t('shell.nav.techRider') }}
               </RouterLink>
               <RouterLink :to="adminUrl('setlists')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                Setlists
+                {{ $t('shell.nav.setlists') }}
               </RouterLink>
             </template>
           </div>
@@ -149,31 +164,31 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('content') && !openGroups.has('content')" class="active-dot" />
-              Content
+              {{ $t('shell.groups.content') }}
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('content') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-if="openGroups.has('content')" class="accordion-body">
             <RouterLink :to="adminUrl('posts')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              Posts
+              {{ $t('shell.nav.posts') }}
             </RouterLink>
             <template v-if="isAdmin">
               <RouterLink :to="adminUrl('press-releases')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Press
+                {{ $t('shell.nav.press') }}
               </RouterLink>
               <RouterLink :to="adminUrl('pitch')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Pitch Generator
+                {{ $t('shell.nav.pitch') }}
               </RouterLink>
               <RouterLink :to="adminUrl('newsletter')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Newsletter
+                {{ $t('shell.nav.newsletter') }}
               </RouterLink>
               <RouterLink :to="adminUrl('authors')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                Authors & Contacts
+                {{ $t('shell.nav.authors') }}
               </RouterLink>
             </template>
           </div>
@@ -188,26 +203,26 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('shows') && !openGroups.has('shows')" class="active-dot" />
-              Shows
+              {{ $t('shell.groups.shows') }}
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('shows') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-if="openGroups.has('shows')" class="accordion-body">
             <RouterLink :to="adminUrl('concerts')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Concerts
+              {{ $t('shell.nav.concerts') }}
             </RouterLink>
             <RouterLink :to="adminUrl('tours')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              Tours
+              {{ $t('shell.nav.tours') }}
             </RouterLink>
             <RouterLink :to="adminUrl('venues')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              Venues
+              {{ $t('shell.nav.venues') }}
             </RouterLink>
             <RouterLink :to="adminUrl('door')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M15 15h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2z"/></svg>
-              Door Check
+              {{ $t('shell.nav.door') }}
             </RouterLink>
           </div>
         </template>
@@ -221,30 +236,30 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('more') && !openGroups.has('more')" class="active-dot" />
-              Settings
+              {{ $t('shell.groups.more') }}
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('more') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-if="openGroups.has('more')" class="accordion-body">
             <RouterLink :to="adminUrl('shop')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-              Shop
+              {{ $t('shell.nav.shop') }}
             </RouterLink>
             <RouterLink :to="adminUrl('bands')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="3"/><path d="M15 8a3 3 0 010 8M18 5a7 7 0 010 14"/></svg>
-              Other Bands
+              {{ $t('shell.nav.bands') }}
             </RouterLink>
             <RouterLink :to="adminUrl('tags')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              Tags
+              {{ $t('shell.nav.tags') }}
             </RouterLink>
             <RouterLink :to="adminUrl('instruments')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-              Instruments
+              {{ $t('shell.nav.instruments') }}
             </RouterLink>
             <RouterLink :to="adminUrl('users')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-              Users
+              {{ $t('shell.nav.users') }}
             </RouterLink>
           </div>
         </template>
@@ -258,22 +273,22 @@ watch(() => route.path, (path) => {
           >
             <span class="accordion-title">
               <span v-if="isGroupActive('pageconfig') && !openGroups.has('pageconfig')" class="active-dot" />
-              Page Configuration
+              {{ $t('shell.groups.pageconfig') }}
             </span>
             <svg class="chevron" :class="{ 'chevron--open': openGroups.has('pageconfig') }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-if="openGroups.has('pageconfig')" class="accordion-body">
             <RouterLink :to="adminUrl('website-modules')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="4" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="3" y="10" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="4" rx="1"/><rect x="3" y="17" width="7" height="4" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/></svg>
-              Website Modules
+              {{ $t('shell.nav.websiteModules') }}
             </RouterLink>
             <RouterLink :to="adminUrl('faqs')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              FAQ
+              {{ $t('shell.nav.faqs') }}
             </RouterLink>
             <RouterLink :to="adminUrl('hero-images')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              Hero Images
+              {{ $t('shell.nav.heroImages') }}
             </RouterLink>
           </div>
         </template>
@@ -285,12 +300,12 @@ watch(() => route.path, (path) => {
           <div class="user-avatar">{{ (user.first_name?.[0] ?? '') }}{{ (user.last_name?.[0] ?? '') }}</div>
           <div class="user-info">
             <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
-            <div class="user-role">{{ user.role }}</div>
+            <div class="user-role">{{ roleLabel }}</div>
           </div>
         </div>
         <button @click="handleLogout" class="btn-signout">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          Sign out
+          {{ $t('shell.signOut') }}
         </button>
       </div>
     </aside>
