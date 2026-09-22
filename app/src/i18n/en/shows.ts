@@ -1,4 +1,28 @@
 export default {
+  tickets: {
+    title: 'Concert Tickets',
+    backToConcerts: '← Concerts',
+    filterEmailPlaceholder: 'Filter by email…',
+    allStatuses: 'All statuses',
+    status: { active: 'Active', transferred: 'Transferred', scanned: 'Scanned', voided: 'Voided' },
+    loadFailed: 'Failed to load tickets.',
+    noMatch: 'No tickets match your filters.',
+    columns: { uuid: 'UUID', holderName: 'Holder name', holderEmail: 'Holder email', status: 'Status' },
+  },
+  door: {
+    title: 'Door Check',
+    subtitle: 'Scan a ticket QR code, or paste a ticket UUID.',
+    offline: '⚠ Offline — results may be stale',
+    uuidPlaceholder: 'Paste ticket UUID…',
+    reset: 'Reset',
+    invalid: 'INVALID TICKET',
+    alreadyScanned: 'ALREADY SCANNED',
+    valid: 'VALID — ALLOW ENTRY',
+    concert: 'Concert',
+    customer: 'Customer',
+    scannedAt: 'Scanned at',
+    recentScans: 'Recent scans',
+  },
   tours: {
     title: 'Tours',
     add: '+ Add tour',

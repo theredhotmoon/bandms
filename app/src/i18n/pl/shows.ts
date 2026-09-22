@@ -1,4 +1,28 @@
 export default {
+  tickets: {
+    title: 'Bilety na koncert',
+    backToConcerts: '← Koncerty',
+    filterEmailPlaceholder: 'Filtruj po adresie e-mail…',
+    allStatuses: 'Wszystkie statusy',
+    status: { active: 'Aktywny', transferred: 'Przekazany', scanned: 'Zeskanowany', voided: 'Anulowany' },
+    loadFailed: 'Nie udało się wczytać biletów.',
+    noMatch: 'Żaden bilet nie pasuje do filtrów.',
+    columns: { uuid: 'UUID', holderName: 'Imię i nazwisko', holderEmail: 'E-mail posiadacza', status: 'Status' },
+  },
+  door: {
+    title: 'Kontrola biletów',
+    subtitle: 'Zeskanuj kod QR biletu lub wklej jego UUID.',
+    offline: '⚠ Offline — wyniki mogą być nieaktualne',
+    uuidPlaceholder: 'Wklej UUID biletu…',
+    reset: 'Resetuj',
+    invalid: 'BILET NIEPRAWIDŁOWY',
+    alreadyScanned: 'JUŻ ZESKANOWANY',
+    valid: 'PRAWIDŁOWY — WPUŚĆ',
+    concert: 'Koncert',
+    customer: 'Klient',
+    scannedAt: 'Zeskanowano',
+    recentScans: 'Ostatnie skany',
+  },
   tours: {
     title: 'Trasy',
     add: '+ Dodaj trasę',

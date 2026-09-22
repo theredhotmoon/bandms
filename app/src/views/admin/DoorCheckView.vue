@@ -138,10 +138,10 @@ onUnmounted(() => {
 <template>
   <AdminLayout>
     <div class="door-wrap">
-      <h1 class="door-title">Door Check</h1>
-      <p class="door-sub">Scan a ticket QR code, or paste a ticket UUID.</p>
+      <h1 class="door-title">{{ $t('shows.door.title') }}</h1>
+      <p class="door-sub">{{ $t('shows.door.subtitle') }}</p>
 
-      <p v-if="!isOnline" class="offline-warning">⚠ Offline — results may be stale</p>
+      <p v-if="!isOnline" class="offline-warning">{{ $t('shows.door.offline') }}</p>
 
       <div v-if="cameraSupported" class="camera-section">
         <video ref="videoEl" autoplay playsinline />
@@ -152,7 +152,7 @@ onUnmounted(() => {
         <input
           v-model="manualCode"
           class="code-input"
-          placeholder="Paste ticket UUID…"
+          :placeholder="$t('shows.door.uuidPlaceholder')"
           autocomplete="off"
           spellcheck="false"
           :disabled="loading"
@@ -160,7 +160,7 @@ onUnmounted(() => {
         <button type="submit" class="btn-check" :disabled="loading || !manualCode.trim()">
           {{ loading ? '…' : 'Check' }}
         </button>
-        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">Reset</button>
+        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">{{ $t('shows.door.reset') }}</button>
       </form>
 
       <p v-if="error" class="error-msg">{{ error }}</p>
@@ -169,31 +169,31 @@ onUnmounted(() => {
         <div class="status-row">
           <div class="status-dot" :style="{ background: statusColor() }"></div>
           <div class="status-text" :style="{ color: statusColor() }">
-            <template v-if="!result.valid">INVALID TICKET</template>
-            <template v-else-if="result.scanned">ALREADY SCANNED</template>
-            <template v-else>VALID — ALLOW ENTRY</template>
+            <template v-if="!result.valid">{{ $t('shows.door.invalid') }}</template>
+            <template v-else-if="result.scanned">{{ $t('shows.door.alreadyScanned') }}</template>
+            <template v-else>{{ $t('shows.door.valid') }}</template>
           </div>
         </div>
 
         <div v-if="result.valid" class="info-grid">
           <div class="info-row">
-            <span class="info-label">Type</span>
+            <span class="info-label">{{ $t('common.fields.type') }}</span>
             <span class="info-val">{{ result.ticket_type ?? '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Concert</span>
+            <span class="info-label">{{ $t('shows.door.concert') }}</span>
             <span class="info-val">{{ result.concert ?? '—' }}</span>
           </div>
           <div class="info-row" v-if="result.concert_date">
-            <span class="info-label">Date</span>
+            <span class="info-label">{{ $t('common.fields.date') }}</span>
             <span class="info-val">{{ result.concert_date }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Customer</span>
+            <span class="info-label">{{ $t('shows.door.customer') }}</span>
             <span class="info-val">{{ result.customer ?? '—' }}</span>
           </div>
           <div v-if="result.scanned && result.scanned_at" class="info-row">
-            <span class="info-label">Scanned at</span>
+            <span class="info-label">{{ $t('shows.door.scannedAt') }}</span>
             <span class="info-val" style="color:#f59e0b;">{{ new Date(result.scanned_at).toLocaleString() }}</span>
           </div>
         </div>
@@ -211,7 +211,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="scanLog.length" class="scan-log">
-        <div class="log-header">Recent scans</div>
+        <div class="log-header">{{ $t('shows.door.recentScans') }}</div>
         <div
           v-for="entry in scanLog"
           :key="entry.ts + entry.code"
