@@ -10,8 +10,13 @@
  * visitor again.
  */
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AdminModal from '@/components/admin/AdminModal.vue'
+import { useUiLang } from '@/composables/useUiLang'
 import type { EpkVersion, EpkVersionStatus } from '@/types/epkVersion'
+
+const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 interface Props {
   open: boolean
@@ -35,15 +40,22 @@ const confirmId = ref<number | null>(null)
 // the next time the modal opens.
 watch(() => props.open, (open) => { if (!open) confirmId.value = null })
 
-const STATUS_LABEL: Record<EpkVersionStatus, string> = {
-  published: 'Live',
-  pending:   'Pending',
-  archived:  'Archived',
+const STATUS_KEY: Record<EpkVersionStatus, string> = {
+  published: 'dashboard.epk.status.published',
+  pending:   'dashboard.epk.status.pending',
+  archived:  'dashboard.epk.status.archived',
 }
 
+function statusLabel(status: EpkVersionStatus): string {
+  return t(STATUS_KEY[status])
+}
+
+// Month names follow the chrome language, not the browser's. `undefined` here
+// used to mean "whatever the OS says", which could print a Polish month in an
+// English panel.
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(uiLang.value, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function confirmRemove(version: EpkVersion): void {
@@ -53,17 +65,16 @@ function confirmRemove(version: EpkVersion): void {
 </script>
 
 <template>
-  <AdminModal :open="open" title="EPK version history" max-width="36rem" @close="emit('close')">
+  <AdminModal :open="open" :title="$t('dashboard.epk.historyTitle')" max-width="36rem" @close="emit('close')">
     <div class="history">
-      <p v-if="loading" class="empty">Loading…</p>
+      <p v-if="loading" class="empty">{{ $t('dashboard.epk.loading') }}</p>
 
       <p v-else-if="error" class="empty empty--error">
-        Could not load the version history. Try again in a moment.
+        {{ $t('dashboard.epk.loadError') }}
       </p>
 
       <p v-else-if="!versions.length" class="empty">
-        No snapshots yet. Until one is published, <code>/epk</code> shows the live
-        profile data — create a snapshot from Band Profile → EPK.
+        {{ $t('dashboard.epk.empty', { code: '/epk' }) }}
       </p>
 
       <ul v-else class="version-list">
@@ -81,9 +92,9 @@ function confirmRemove(version: EpkVersion): void {
                 class="version-status"
                 :class="`is-${version.status}`"
                 data-testid="epk-version-status"
-              >{{ STATUS_LABEL[version.status] }}</span>
+              >{{ statusLabel(version.status) }}</span>
               <span class="version-date">
-                {{ version.status === 'pending' ? `created ${formatDate(version.created_at)}` : formatDate(version.published_at) }}
+                {{ version.status === 'pending' ? $t('dashboard.epk.created', { date: formatDate(version.created_at) }) : formatDate(version.published_at) }}
               </span>
             </div>
             <p v-if="version.release_reason" class="version-reason">{{ version.release_reason }}</p>
@@ -95,32 +106,32 @@ function confirmRemove(version: EpkVersion): void {
               class="btn-live"
               :disabled="publishing"
               @click="emit('makeLive', version)"
-            >{{ version.status === 'pending' ? 'Publish' : 'Make live' }}</button>
+            >{{ version.status === 'pending' ? $t('dashboard.epk.publish') : $t('dashboard.epk.makeLive') }}</button>
             <button
               type="button"
               class="btn-ghost btn-ghost--danger"
               :disabled="deleting"
               @click="confirmId = version.id"
-            >{{ version.status === 'pending' ? 'Discard' : 'Delete' }}</button>
+            >{{ version.status === 'pending' ? $t('dashboard.epk.discard') : $t('dashboard.epk.delete') }}</button>
           </div>
 
-          <div v-if="confirmId === version.id" class="confirm" role="group" :aria-label="`Confirm removing v${version.version_number}`">
+          <div v-if="confirmId === version.id" class="confirm" role="group" :aria-label="$t('dashboard.epk.confirmAria', { version: version.version_number })">
             <p class="confirm-text">
               <template v-if="version.status === 'pending'">
-                Discard this draft? Nothing has been published from it.
+                {{ $t('dashboard.epk.confirmDiscard') }}
               </template>
               <template v-else>
-                Delete v{{ version.version_number }}? It cannot be made live again afterwards.
+                {{ $t('dashboard.epk.confirmDelete', { version: version.version_number }) }}
               </template>
             </p>
             <div class="confirm-actions">
-              <button type="button" class="btn-ghost" @click="confirmId = null">Keep</button>
+              <button type="button" class="btn-ghost" @click="confirmId = null">{{ $t('dashboard.epk.keep') }}</button>
               <button
                 type="button"
                 class="btn-danger"
                 :disabled="deleting"
                 @click="confirmRemove(version)"
-              >{{ version.status === 'pending' ? 'Discard' : 'Delete' }}</button>
+              >{{ version.status === 'pending' ? $t('dashboard.epk.discard') : $t('dashboard.epk.delete') }}</button>
             </div>
           </div>
         </li>
