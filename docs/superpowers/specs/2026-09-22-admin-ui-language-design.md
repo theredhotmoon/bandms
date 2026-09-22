@@ -102,8 +102,8 @@ This is the part that earns the library its keep, and it is not vue-i18n's
 default behaviour — it must be wired deliberately.
 
 ```ts
-// en/index.ts
-export default { common, shell, concerts, /* … */ } as const
+// en/index.ts — deliberately NOT `as const`
+export default { common, shell, concerts, /* … */ }
 
 // schema.ts
 import en from './en'
@@ -116,6 +116,13 @@ declare module 'vue-i18n' {
 const pl: MessageSchema = { common, shell, concerts, /* … */ }
 export default pl
 ```
+
+**`as const` must not be used on the English barrel.** It would widen each
+value to its own string *literal* type, so `MessageSchema` would demand that
+`pl.common.actions.save` be the literal `'Save'` — every Polish translation
+would be a type error. Without it, `typeof en` gives the key structure with
+`string` values, which is exactly the constraint wanted: **keys required,
+values free**.
 
 Two guarantees follow:
 
