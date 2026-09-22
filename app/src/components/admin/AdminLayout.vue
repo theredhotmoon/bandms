@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
 import RebuildBar from './RebuildBar.vue'
+import UiLangSwitcher from './UiLangSwitcher.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
 const router = useRouter()
@@ -279,6 +280,7 @@ watch(() => route.path, (path) => {
       </nav>
 
       <div class="sidebar-footer">
+        <UiLangSwitcher />
         <div v-if="user" class="sidebar-user">
           <div class="user-avatar">{{ (user.first_name?.[0] ?? '') }}{{ (user.last_name?.[0] ?? '') }}</div>
           <div class="user-info">
