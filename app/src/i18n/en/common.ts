@@ -1,0 +1,51 @@
+export default {
+  actions: {
+    cancel: 'Cancel',
+    close: 'Close',
+    delete: 'Delete',
+    deleting: 'Deleting…',
+  },
+  confirm: {
+    deleteTitle: 'Confirm deletion',
+    deleteMessage: 'This record will be permanently deleted. This action cannot be undone.',
+  },
+  table: {
+    searchPlaceholder: 'Search…',
+    searchLabel: 'Search',
+  },
+  pagination: {
+    label: 'Pagination',
+    range: '{from}–{to} of {total}',
+    previous: 'Previous page',
+    next: 'Next page',
+  },
+  time: {
+    justNow: 'just now',
+    minutesAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
+  },
+  rebuild: {
+    pendingChanges: 'pending change | pending changes',
+    rebuild: '↺ Rebuild Public Site',
+    rebuilding: 'Rebuilding…',
+    autoActive: 'Auto-rebuild is active — changes rebuild automatically',
+    rebuildTitle: 'Rebuild the public site',
+    settingsTitle: 'Rebuild settings',
+  },
+  rebuildAreas: {
+    'band-profile': 'Band Profile',
+    'band-members': 'Band Members',
+    'hero-images': 'Hero Images',
+    posts: 'Posts',
+    'website-modules': 'Website Modules',
+    concerts: 'Concerts',
+    venues: 'Venues',
+    setlists: 'Setlists',
+    releases: 'Releases',
+    photos: 'Photos',
+    'music-videos': 'Music Videos',
+    'press-releases': 'Press Releases',
+    shop: 'Shop',
+    faqs: 'FAQs',
+  },
+}
