@@ -75,7 +75,7 @@ async function confirmDelete() {
 
 function dateRange(tour: TourSummary): string {
   if (!tour.start_date && !tour.end_date) return '—'
-  if (tour.start_date && tour.end_date) return `${tour.start_date} → ${tour.end_date}` /* i18n-ignore: pure interpolation, no copy */
+  if (tour.start_date && tour.end_date) return `${tour.start_date} → ${tour.end_date}` /* i18n-ignore: pure interpolation, no copy */
   return tour.start_date ?? tour.end_date ?? '—'
 }
 </script>

@@ -103,7 +103,7 @@ async function searchPlace() {
     const res  = await fetch(url, { headers: { 'Accept-Language': 'en' /* i18n-ignore: HTTP header */ } })
     // i18n-ignore: developer diagnostic — the catch below replaces it with a
     // translated, user-facing message, so this string never reaches the UI.
-    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`) /* i18n-ignore: developer diagnostic, replaced by a translated message in the catch */
+    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`) /* i18n-ignore: developer diagnostic, replaced by a translated message in the catch */
     const data = await res.json() as {
       lat: string
       lon: string
@@ -252,7 +252,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
     </div>
     <div>
       <label class="field-label">{{ $t('shows.venues.form.capacity') }}</label>
-      <input v-model="form.capacity" type="number" min="1" class="field-input" placeholder="e.g. 500" style="max-width:12rem;" />
+      <input v-model="form.capacity" type="number" min="1" class="field-input" :placeholder="$t('shows.venues.form.capacityPlaceholder')" style="max-width:12rem;" />
       <p v-if="errors?.capacity" class="field-error">{{ errors.capacity[0] }}</p>
     </div>
 

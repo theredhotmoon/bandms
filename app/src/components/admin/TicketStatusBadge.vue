@@ -1,16 +1,26 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { TicketStatus } from '@/types/ticket'
 
 const props = defineProps<{ status: TicketStatus }>()
 
-const badge: Record<TicketStatus, { label: string; cls: string }> = {
-  active:      { label: 'Active',      cls: 'badge-active' },
-  transferred: { label: 'Transferred', cls: 'badge-transferred' },
-  scanned:     { label: 'Scanned',     cls: 'badge-scanned' },
-  voided:      { label: 'Voided',      cls: 'badge-voided' },
+const { t } = useI18n()
+
+// Labels come from the same keys the ticket-list filter uses, so the filter
+// and the rows cannot disagree — they did: a Polish filter read "Zeskanowany"
+// over rows that all read "SCANNED".
+const STATUS: Record<TicketStatus, { key: string; cls: string }> = {
+  active:      { key: 'shows.tickets.status.active',      cls: 'badge-active' },
+  transferred: { key: 'shows.tickets.status.transferred', cls: 'badge-transferred' },
+  scanned:     { key: 'shows.tickets.status.scanned',     cls: 'badge-scanned' },
+  voided:      { key: 'shows.tickets.status.voided',      cls: 'badge-voided' },
 }
 
-const b = badge[props.status] ?? { label: props.status, cls: 'badge-voided' }
+const b = computed(() => {
+  const entry = STATUS[props.status]
+  return entry ? { label: t(entry.key), cls: entry.cls } : { label: props.status, cls: 'badge-voided' }
+})
 </script>
 
 <template>

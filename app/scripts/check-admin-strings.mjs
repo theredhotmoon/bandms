@@ -72,13 +72,20 @@ const KEYPATH = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/
  * friends are the residue; mark those i18n-ignore.
  */
 function looksLikeCopy(v) {
-  if (!v || !HAS_WORDS.test(v) || KEYPATH.test(v)) return false
+  if (!v || KEYPATH.test(v)) return false
+  // Two letters ANYWHERE, not two consecutive: "e.g. 25.00" is copy and has no
+  // adjacent pair, which is how `placeholder="e.g. 500"` slipped through.
+  if ((v.match(/[A-Za-zÀ-ž]/g) ?? []).length < 2) return false
   return /^[^a-zà-ž]*[A-ZÀ-Ž]/.test(v) || HAS_INNER_SPACE.test(v)
 }
 
 /** Attributes whose value is copy. Bound forms (:title="…") are checked too. */
 const COPY_ATTRS = 'placeholder|aria-label|title|label|message|alt'
-const STATIC_ATTR = new RegExp(`(?<![:\w-])(?:${COPY_ATTRS})="([^"]*)"`, 'g')
+// Built from a regex literal, NOT a template literal: in a template literal
+// `\w` collapses to the literal character `w`, so the lookbehind compiled to
+// (?<![:w-]) and excluded only the letter w — meaning `:subtitle="…"` was
+// scanned as if it were a static `title="…"`.
+const STATIC_ATTR = new RegExp('(?<![:\\w-])(?:' + COPY_ATTRS + ')="([^"]*)"', 'g')
 const BOUND_ATTR = new RegExp(`:(?:${COPY_ATTRS})="([^"]*)"`, 'g')
 // Deliberately simple: no escaped-quote handling. A literal containing an
 // escaped quote just ends early here, which at worst truncates a reported hit —

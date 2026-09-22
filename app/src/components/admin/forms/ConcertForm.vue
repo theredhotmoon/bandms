@@ -107,10 +107,10 @@ const lineup = ref<LineupEntry[]>([{ type: 'main', play_time: '' }])
 // i18n-ignore: seed values for stored link labels, not UI copy — translating
 // them would make saved data depend on the admin's chrome language.
 const LINK_PRESETS = [
-  { label: 'Buy Tickets', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
-  { label: 'Facebook Event', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
-  { label: 'Event Info', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
-  { label: 'Live Stream', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Buy Tickets', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Facebook Event', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Event Info', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Live Stream', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
 ]
 
 const links = ref<ConcertLinkPayload[]>([])

@@ -6,7 +6,7 @@ import { useConcertTickets } from '@/composables/useConcertTickets'
 import { reportSaveError } from '@/utils/formErrors'
 import type { TicketType, PriceTier, TicketTypePayload, PriceTierPayload } from '@/types/ticket'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{ concertId: number }>()
 
@@ -50,7 +50,7 @@ function openEditType(type: TicketType) {
     on_sale_until: toLocalDatetime(type.on_sale_until),
     max_per_order: type.max_per_order != null ? String(type.max_per_order) : '',
     price: singleTier ? String(singleTier.price) : '',
-    currency: singleTier ? singleTier.currency : 'PLN', /* i18n-ignore: ISO currency code */
+    currency: singleTier ? singleTier.currency : 'PLN', /* i18n-ignore: ISO currency code */
     total_tickets: singleTier?.available_count != null ? String(singleTier.available_count) : '',
   }
   typeErrors.value = {}
@@ -154,7 +154,7 @@ async function removeTier(typeId: number, tier: PriceTier) {
 }
 
 function fmtPrice(price: number, currency: string): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(price)
+  return new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(price)
 }
 </script>
 
@@ -227,7 +227,7 @@ function fmtPrice(price: number, currency: string): string {
       <div v-if="showInlinePricing" class="field-row">
         <div class="field">
           <label class="lbl">{{ $t('shows.tickets.manager.price') }}</label>
-          <input v-model="typeForm.price" type="number" step="0.01" min="0" class="inp" placeholder="e.g. 25.00" />
+          <input v-model="typeForm.price" type="number" step="0.01" min="0" class="inp" :placeholder="$t('shows.tickets.manager.pricePlaceholder')" />
           <p v-if="typeErrors.price" class="err-txt">{{ typeErrors.price[0] }}</p>
         </div>
         <div class="field" style="max-width:7rem;">
