@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -13,6 +14,8 @@ import { useTags } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Venue, VenuePayload } from '@/types/venue'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = useVenues()
 const { query: tagsQ } = useTags()
@@ -40,14 +43,14 @@ async function handleSubmit(payload: VenuePayload) {
   try {
     if (editing.value) {
       await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Venue updated')
+      toast.success(t('shows.venues.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Venue created')
+      toast.success(t('shows.venues.created'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -55,9 +58,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Venue deleted')
+    toast.success(t('shows.venues.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 </script>
 
@@ -65,27 +68,27 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Venues</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add venue</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('shows.venues.title') }}</h1>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('shows.venues.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load venues.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('shows.venues.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!tc.rawTotal.value">No venues yet.</span>
-            <span v-else>No venues match your search.</span>
+            <span v-if="!tc.rawTotal.value">{{ $t('shows.venues.empty') }}</span>
+            <span v-else>{{ $t('shows.venues.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
                 <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader label="City" sort-key="city" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Street</th>
-                <th class="th text-right">Actions</th>
+                <th class="th">{{ $t('shows.venues.street') }}</th>
+                <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,8 +97,8 @@ async function confirmDelete() {
                 <td class="td" style="color:#94a3b8;">{{ venue.city ?? '—' }}</td>
                 <td class="td" style="color:#94a3b8;">{{ [venue.street, venue.street_number].filter(Boolean).join(' ') || '—' }}</td>
                 <td class="td text-right">
-                  <button @click="openEdit(venue)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = venue.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(venue)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = venue.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>

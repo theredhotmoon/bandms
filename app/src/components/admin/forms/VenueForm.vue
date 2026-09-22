@@ -212,53 +212,53 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <!-- Name -->
     <div>
-      <label class="field-label">Name <span style="color:#f87171;">*</span></label>
-      <input v-model="form.name" required class="field-input" placeholder="Venue name" />
+      <label class="field-label">{{ $t('common.fields.name') }} <span style="color:#f87171;">*</span></label>
+      <input v-model="form.name" required class="field-input" :placeholder="$t('shows.venues.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
 
     <!-- Structured address -->
     <div class="address-grid">
       <div class="col-street">
-        <label class="field-label">Street</label>
-        <input v-model="form.street" class="field-input" placeholder="ul. Floriańska" />
+        <label class="field-label">{{ $t('shows.venues.street') }}</label>
+        <input v-model="form.street" class="field-input" :placeholder="$t('shows.venues.form.streetPlaceholder')" />
         <p v-if="errors?.street" class="field-error">{{ errors.street[0] }}</p>
       </div>
       <div class="col-number">
-        <label class="field-label">No.</label>
+        <label class="field-label">{{ $t('shows.venues.form.number') }}</label>
         <input v-model="form.street_number" class="field-input" placeholder="12" />
         <p v-if="errors?.street_number" class="field-error">{{ errors.street_number[0] }}</p>
       </div>
       <div class="col-postcode">
-        <label class="field-label">Postcode</label>
+        <label class="field-label">{{ $t('shows.venues.form.postcode') }}</label>
         <input v-model="form.postcode" class="field-input" placeholder="31-021" />
         <p v-if="errors?.postcode" class="field-error">{{ errors.postcode[0] }}</p>
       </div>
       <div class="col-city">
-        <label class="field-label">City</label>
-        <input v-model="form.city" class="field-input" placeholder="Kraków" />
+        <label class="field-label">{{ $t('shows.venues.form.city') }}</label>
+        <input v-model="form.city" class="field-input" :placeholder="$t('shows.venues.form.cityPlaceholder')" />
         <p v-if="errors?.city" class="field-error">{{ errors.city[0] }}</p>
       </div>
     </div>
     <div>
-      <label class="field-label">Additional info</label>
-      <input v-model="form.additional_info" class="field-input" placeholder="Floor, entrance, parking notes…" />
+      <label class="field-label">{{ $t('shows.venues.form.extra') }}</label>
+      <input v-model="form.additional_info" class="field-input" :placeholder="$t('shows.venues.form.extraPlaceholder')" />
       <p v-if="errors?.additional_info" class="field-error">{{ errors.additional_info[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Venue capacity</label>
+      <label class="field-label">{{ $t('shows.venues.form.capacity') }}</label>
       <input v-model="form.capacity" type="number" min="1" class="field-input" placeholder="e.g. 500" style="max-width:12rem;" />
       <p v-if="errors?.capacity" class="field-error">{{ errors.capacity[0] }}</p>
     </div>
 
     <!-- Map + search -->
     <div>
-      <label class="field-label">Location on map</label>
+      <label class="field-label">{{ $t('shows.venues.form.map') }}</label>
       <div class="map-search-row">
         <input
           v-model="searchQuery"
           class="field-input"
-          placeholder="Search for a place…"
+          :placeholder="$t('shows.venues.form.mapSearchPlaceholder')"
           @keydown.enter.prevent="searchPlace"
           @keydown.escape="showResults = false"
         />
@@ -277,18 +277,18 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
         >{{ r.label }}</button>
       </div>
       <div ref="mapEl" class="map-container" />
-      <p class="map-hint">Click the map to pin coordinates, or use the search above (address fields are auto-filled).</p>
+      <p class="map-hint">{{ $t('shows.venues.form.mapHint') }}</p>
     </div>
 
     <!-- Tags -->
     <div>
-      <label class="field-label">Tags</label>
+      <label class="field-label">{{ $t('common.fields.tags') }}</label>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
           <span>{{ t.name }}</span>
         </label>
-        <p v-if="!tags.length" class="text-xs" style="color:#475569;">No tags available.</p>
+        <p v-if="!tags.length" class="text-xs" style="color:#475569;">{{ $t('shows.venues.form.noTags') }}</p>
       </div>
     </div>
 
@@ -296,7 +296,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
     <SocialLinksEditor v-model="socialLinks" />
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
       </button>
