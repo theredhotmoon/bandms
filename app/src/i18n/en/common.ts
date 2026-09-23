@@ -27,7 +27,6 @@ export default {
     image: 'Image',
     published: 'Published',
     slug: 'Slug URL',
-    image: 'Image',
     tags: 'Tags',
     date: 'Date',
     type: 'Type',
