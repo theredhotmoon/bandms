@@ -79,7 +79,7 @@ function regeneratePl() {
 <template>
   <div class="slug-wrap">
     <div class="slug-row">
-      <span class="lang-badge">EN</span>
+      <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-column slug_en field -->
       <div class="slug-input-wrap flex-1">
         <input
           :value="modelValue"
@@ -92,7 +92,7 @@ function regeneratePl() {
           autocomplete="off"
           spellcheck="false"
         />
-        <button v-if="sourceEn !== undefined" type="button" class="slug-regen" @click="regenerateEn" title="Auto-generate from title">
+        <button v-if="sourceEn !== undefined" type="button" class="slug-regen" @click="regenerateEn" :title="$t('common.slug.autoGenerate')">
           <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
         </button>
       </div>
@@ -100,7 +100,7 @@ function regeneratePl() {
     <p v-if="errorEn" class="field-error">{{ errorEn }}</p>
     <p v-else-if="hintEn" class="field-hint">{{ hintEn }}</p>
     <div v-if="bilingual" class="slug-row">
-      <span class="lang-badge lang-badge--pl">PL</span>
+      <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
       <div class="slug-input-wrap flex-1">
         <input
           :value="modelValuePl ?? ''"
@@ -113,7 +113,7 @@ function regeneratePl() {
           autocomplete="off"
           spellcheck="false"
         />
-        <button v-if="sourcePl !== undefined" type="button" class="slug-regen" @click="regeneratePl" title="Auto-generate from Polish title">
+        <button v-if="sourcePl !== undefined" type="button" class="slug-regen" @click="regeneratePl" :title="$t('common.slug.autoGeneratePl')">
           <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
         </button>
       </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
@@ -7,6 +8,8 @@ import { detectProvider, providerLabel } from '@/utils/postBlocks'
 import { presetLabel } from '@/utils/clipCategories'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Clip, ClipOwnerType } from '@/types/clip'
+
+const { t } = useI18n()
 
 /**
  * The owner side of the clips library: what is attached to this record, a
@@ -45,39 +48,39 @@ async function add() {
       attach: [{ type: props.ownerType, id: props.ownerId }],
     })
     url.value = ''
-    toast.success('Clip added')
-  } catch (e) { reportSaveError(e, 'Failed to add clip') }
+    toast.success(t('common.clips.added'))
+  } catch (e) { reportSaveError(e, t('common.clips.addFailed')) }
 }
 
 async function remove(clip: Clip) {
   if (!props.ownerId) return
   try {
     await detach.mutateAsync({ id: clip.id, owner: { type: props.ownerType, id: props.ownerId } })
-    toast.success('Clip detached')
-  } catch (e) { reportSaveError(e, 'Failed to detach clip') }
+    toast.success(t('common.clips.detached'))
+  } catch (e) { reportSaveError(e, t('common.clips.detachFailed')) }
 }
 </script>
 
 <template>
   <div data-testid="attached-clips">
-    <label class="field-label">Clips</label>
+    <label class="field-label">{{ $t('common.clips.title') }}</label>
 
-    <p v-if="!ownerId" class="text-xs" style="color:#475569;">Save first to add clips.</p>
+    <p v-if="!ownerId" class="text-xs" style="color:#475569;">{{ $t('common.clips.saveFirst') }}</p>
     <template v-else>
       <div v-if="clips.length" class="links-list">
         <div v-for="clip in clips" :key="clip.id" class="link-row" data-testid="attached-clip">
           <span class="link-label">{{ presetLabel(clip.category) }} · {{ providerLabel(clip.provider) }}</span>
           <a :href="clip.url" target="_blank" rel="noopener" class="link-url">{{ clip.title ?? clip.url }}</a>
-          <button type="button" class="remove-btn" :disabled="detach.isPending.value" title="Detach clip" @click="remove(clip)">×</button>
+          <button type="button" class="remove-btn" :disabled="detach.isPending.value" :title="$t('common.clips.detach')" @click="remove(clip)">×</button>
         </div>
       </div>
 
       <ClipCategoryPicker v-model="category" />
       <div class="link-add-row mt-2">
-        <input v-model="url" type="url" class="field-input link-url-input" placeholder="Paste a video URL…"
+        <input v-model="url" type="url" class="field-input link-url-input" :placeholder="$t('common.clips.urlPlaceholder')"
                data-testid="attached-clip-url" @keydown.enter.prevent="add" />
         <span v-if="url" class="provider-badge">{{ providerLabel(detectProvider(url)) }}</span>
-        <button type="button" class="btn-add-link" :disabled="create.isPending.value || !url.trim()" @click="add">Add clip</button>
+        <button type="button" class="btn-add-link" :disabled="create.isPending.value || !url.trim()" @click="add">{{ $t('common.clips.add') }}</button>
       </div>
     </template>
   </div>
