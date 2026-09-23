@@ -111,7 +111,16 @@ answer for a screen reader.
 
 One module per nav group, `en/` and `pl/`. `en/index.ts` is the schema source of
 truth and `pl/index.ts` is typed `: MessageSchema`, so **a missing Polish key
-fails `pnpm build`**. Read them with `$t('area.key')` in templates or
+fails `pnpm build`** with a TS2322.
+
+**The types do NOT check call sites.** `t('shows.totally.bogus.key')` compiles
+clean — `MessageSchema` only forces `pl` to mirror `en`. A mistyped key is
+caught by `scripts/check-i18n-keys.mjs`, which runs ahead of `vue-tsc` in the
+build and resolves every static `$t(…)` / `keypath=` reference against the
+English catalogue. A *dynamically built* key is checked by neither, which is
+why `fallbackLocale` still matters.
+
+Read them with `$t('area.key')` in templates or
 `useI18n().t` in script.
 
 **Never put `as const` on `en/index.ts`.** It widens each value to its own

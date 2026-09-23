@@ -128,8 +128,16 @@ Two guarantees follow:
 
 1. Adding an English string makes `pl/index.ts` **stop compiling** until it is
    translated.
-2. A mistyped key such as `concerts.titel` is a **type error**, not a string
-   rendered literally on screen.
+2. A mistyped key such as `concerts.titel` is caught by
+   `app/scripts/check-i18n-keys.mjs`, which runs ahead of `vue-tsc` in the
+   build.
+
+**This originally claimed a mistyped key was a type error. That was wrong.**
+`DefineLocaleMessage` does not key-check call sites in this setup —
+`t('shows.totally.bogus.key')` compiles clean under `vue-tsc -b` and renders
+the raw dotted key on screen. Only guarantee 1 is enforced by types; guarantee
+2 is enforced by the key checker, which exists because this claim was tested
+and failed.
 
 `pnpm build` (`vue-tsc -b && vite build`) enforces both. The `-b` matters:
 `CLAUDE.md` documents that the plain `-p tsconfig.json` form loads a
@@ -143,7 +151,7 @@ files, exiting 0 regardless of what is broken.
 `shortLabel()`. The registry stays the three files named in `CLAUDE.md`.
 
 `fallbackLocale` is `DEFAULT_LOCALE` (`en`). This is a fallback that should
-never fire — the schema typing makes a missing key impossible — and exists
+never fire for a static key, now that the key checker runs in the build — and exists
 only so a runtime surprise degrades to English rather than to a raw key.
 
 ### Polish plurals

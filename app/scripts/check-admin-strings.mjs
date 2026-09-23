@@ -76,11 +76,11 @@ const KEYPATH = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/
  * 'main', 'pending', 'T', class names, key paths — do neither. 'PLN' and
  * friends are the residue; mark those i18n-ignore.
  */
+/** Two letters ANYWHERE, not two consecutive — "e.g. 500" has no adjacent pair. */
+const hasTwoLetters = (v) => !!v && !KEYPATH.test(v) && (v.match(/[A-Za-zÀ-ž]/g) ?? []).length >= 2
+
 function looksLikeCopy(v) {
-  if (!v || KEYPATH.test(v)) return false
-  // Two letters ANYWHERE, not two consecutive: "e.g. 25.00" is copy and has no
-  // adjacent pair, which is how `placeholder="e.g. 500"` slipped through.
-  if ((v.match(/[A-Za-zÀ-ž]/g) ?? []).length < 2) return false
+  if (!hasTwoLetters(v)) return false
   return /^[^a-zà-ž]*[A-ZÀ-Ž]/.test(v) || HAS_INNER_SPACE.test(v)
 }
 
@@ -92,15 +92,28 @@ const COPY_ATTRS = 'placeholder|aria-label|title|label|message|alt'
 // scanned as if it were a static `title="…"`.
 const STATIC_ATTR = new RegExp('(?<![:\\w-])(?:' + COPY_ATTRS + ')="([^"]*)"', 'g')
 const BOUND_ATTR = new RegExp(`:(?:${COPY_ATTRS})="([^"]*)"`, 'g')
-// Deliberately simple: no escaped-quote handling. A literal containing an
-// escaped quote just ends early here, which at worst truncates a reported hit —
-// it never hides one, and copy detection does not need a real tokenizer.
-const LITERAL = /'([^'\n]*)'|"([^"\n]*)"|`([^`\n]*)`/g
+// Escaped quotes ARE handled. Without it, `toast.error('Couldn\'t save', 'Failed
+// to publish')` consumes `'Couldn\'` as the first literal, re-anchors mid-line,
+// and the second string is never produced — so one apostrophe silently stops a
+// whole line being checked. That is hiding a hit, not truncating one.
+const LITERAL = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\\n]|\\.)*)`/g
 
-/** Every string literal inside an expression, filtered to copy. */
+/** Any other directive expression: @click="…", :data-tip="…", v-bind:x="…". */
+const OTHER_DIRECTIVE = /(?:@|v-on:|v-bind:|:)([A-Za-z0-9_.-]+)="([^"]*)"/g
+
+/**
+ * Every string literal inside an expression, filtered to copy.
+ *
+ * `${…}` is stripped first: the interpolated expression is code, never copy.
+ * Without that, `:style="\`width:${pct}%\`"` reads as copy because the
+ * identifier supplies the letters. Real copy survives it — `\`v${n} deleted\``
+ * becomes "v deleted", which still has a space and letters.
+ */
 function copyLiterals(expr) {
   LITERAL.lastIndex = 0
-  return [...expr.matchAll(LITERAL)].map(m => m[1] ?? m[2] ?? m[3]).filter(looksLikeCopy)
+  return [...expr.matchAll(LITERAL)]
+    .map(m => (m[1] ?? m[2] ?? m[3] ?? '').replace(/\$\{[^}]*\}/g, ''))
+    .filter(looksLikeCopy)
 }
 
 function templateOf(src) {
@@ -214,11 +227,19 @@ for (const entry of MIGRATED) {
       tpl.body.split(NL).forEach((l, i) => {
         const abs = tpl.offset + i
         if (exempt(abs)) return
+        // A STATIC copy attribute's whole value is user-facing by definition,
+        // so the capital-or-space heuristic must NOT apply here — it would let
+        // placeholder="unlimited" through, which is exactly the regression the
+        // ratchet exists to stop. Any two letters is enough.
         STATIC_ATTR.lastIndex = 0
-        const stat = [...l.matchAll(STATIC_ATTR)].map(m => m[1]).filter(looksLikeCopy)
+        const stat = [...l.matchAll(STATIC_ATTR)].map(m => m[1]).filter(hasTwoLetters)
         BOUND_ATTR.lastIndex = 0
         const bound = [...l.matchAll(BOUND_ATTR)].flatMap(m => copyLiterals(m[1]))
-        const hits = [...stat, ...bound]
+        // Literals in any other directive expression — @click="err = 'Try again'",
+        // :data-tip="'Not on sale'" — which no attribute list would cover.
+        OTHER_DIRECTIVE.lastIndex = 0
+        const other = [...l.matchAll(OTHER_DIRECTIVE)].flatMap(m => copyLiterals(m[2]))
+        const hits = [...stat, ...bound, ...other]
         if (hits.length) record(file, abs, hits)
       })
     }
@@ -235,7 +256,11 @@ for (const entry of MIGRATED) {
         const l = lines[i]
         if (!l || exempt(i + 1)) continue
         if (/^\s*(\/\/|\*|\/\*)/.test(l)) continue        // comments
-        if (/^\s*import\s|from\s+['"]/.test(l)) continue    // module specifiers
+        // Anchored: the old `from\s+['"]` alternative was unanchored, so ANY
+        // line containing `from '` was skipped whole — including
+        // toast.success(`Imported ${n} rows from "${f}"`) and any line with a
+        // trailing `// lifted from 'X'` comment.
+        if (/^\s*(?:import\b|export\s+(?:\*|\{|type\b))/.test(l)) continue
         const hits = copyLiterals(l)
         if (hits.length) record(file, i + 1, hits)
       }
