@@ -22,20 +22,20 @@ function set(key: string, value: unknown) {
     <div class="flex items-center gap-2">
       <input
         :value="url" @input="set('url', ($event.target as HTMLInputElement).value)"
-        class="field-input flex-1" placeholder="Paste a video (YouTube, Vimeo, Instagram, TikTok, Facebook) or audio (Spotify, SoundCloud, Apple Music) URL" required
+        class="field-input flex-1" :placeholder="$t('content.blocks.embed.urlPlaceholder')" required
       />
-      <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? 'Audio · ' : '' }}{{ providerLabel(detected) }}</span>
+      <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioLabel', { provider: providerLabel(detected) }) : providerLabel(detected) }}</span>
     </div>
     <div v-if="detected === 'link' && !hideLabel" class="trans-group">
       <div class="trans-row">
-        <span class="lang-badge">EN</span>
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="label.en ?? ''" @input="set('label', { ...label, en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Link text (optional)" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span>
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="label.pl ?? ''" @input="set('label', { ...label, pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Tekst linku (opcjonalnie)" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextPl')" />
       </div>
     </div>
   </div>

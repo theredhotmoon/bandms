@@ -41,6 +41,7 @@ const MIGRATED = [
   'components/admin/RebuildBar.vue',
   'components/admin/RebuildSettingsModal.vue',
   'components/admin/SortHeader.vue',
+  'components/admin/forms/ClipCategoryPicker.vue',
   'components/admin/forms/SlugInput.vue',
   'components/admin/forms/AttachedClipsField.vue',
   'components/admin/forms/SocialLinksEditor.vue',
@@ -59,6 +60,8 @@ const MIGRATED = [
   'views/admin/DoorCheckView.vue',
   'views/admin/ToursAdminView.vue',
   'views/admin/VenuesAdminView.vue',
+  'components/admin/forms/PostBlockEditor.vue',
+  'components/admin/forms/blocks',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]

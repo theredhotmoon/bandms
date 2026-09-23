@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
@@ -6,6 +7,8 @@ import { useClips } from '@/composables/useClips'
 import { detectProvider, providerLabel } from '@/utils/postBlocks'
 import { reportSaveError } from '@/utils/formErrors'
 import type { RefEntity } from '@/types/post'
+
+const { t } = useI18n()
 
 export interface RefEntityLists {
   concert:       { id: number; label: string }[]
@@ -22,11 +25,15 @@ const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 
 // `tour` is absent on purpose: tours have no public page, so a tour reference
 // could only link somewhere that isn't built.
-const ENTITY_LABELS: Record<RefEntity, string> = {
-  concert: 'Concert', album: 'Photo album', release: 'Release',
-  music_video: 'Music video', press_release: 'Press coverage', shop_item: 'Shop item',
-  clip: 'Clip',
-}
+const ENTITY_LABELS = computed<Record<RefEntity, string>>(() => ({
+  concert: t('content.blocks.ref.entity.concert'),
+  album: t('content.blocks.ref.entity.album'),
+  release: t('content.blocks.ref.entity.release'),
+  music_video: t('content.blocks.ref.entity.video'),
+  press_release: t('content.blocks.ref.entity.press'),
+  shop_item: t('content.blocks.ref.entity.shop'),
+  clip: t('content.blocks.ref.entity.clip'),
+}))
 
 const entity = computed(() => (props.payload.entity as RefEntity) ?? 'concert')
 const items  = computed(() => props.entities[entity.value] ?? [])
@@ -59,8 +66,8 @@ async function attachNewClip() {
     emit('update:payload', { ...props.payload, entity: 'clip', id: clip.id })
     addingClip.value = false
     newClipUrl.value = ''
-    toast.success('Clip added to the library')
-  } catch (e) { reportSaveError(e, 'Failed to add clip') }
+    toast.success(t('content.blocks.ref.clipAdded'))
+  } catch (e) { reportSaveError(e, t('common.clips.addFailed')) }
 }
 
 function onClipSelect(value: string) {
@@ -87,7 +94,7 @@ function onClipSelect(value: string) {
       <select v-if="entity !== 'clip'" :value="(payload.id as number) ? String(payload.id) : ''"
               @change="emit('update:payload', { ...payload, id: Number(($event.target as HTMLSelectElement).value) || 0 })"
               class="field-input flex-1" required>
-        <option value="" disabled>Choose an item…</option>
+        <option value="" disabled>{{ $t('content.blocks.ref.chooseItem') }}</option>
         <option v-for="i in items" :key="i.id" :value="i.id">{{ i.label }}</option>
       </select>
 
@@ -97,8 +104,8 @@ function onClipSelect(value: string) {
       <select v-else :value="addingClip ? '__new__' : ((payload.id as number) ? String(payload.id) : '')"
               @change="onClipSelect(($event.target as HTMLSelectElement).value)"
               class="field-input flex-1" :required="!addingClip" data-testid="clip-select">
-        <option value="" disabled>Choose a clip…</option>
-        <option value="__new__">＋ Add a new clip…</option>
+        <option value="" disabled>{{ $t('content.blocks.ref.chooseClip') }}</option>
+        <option value="__new__">{{ $t('content.blocks.ref.addNewClip') }}</option>
         <option v-for="i in items" :key="i.id" :value="i.id">{{ i.label }}</option>
       </select>
     </div>
@@ -107,17 +114,17 @@ function onClipSelect(value: string) {
       <div class="flex items-center gap-2">
         <!-- Enter attaches; without a handler it would implicitly submit the
              host post form with this block's id still 0. -->
-        <input v-model="newClipUrl" type="url" class="field-input flex-1" placeholder="Paste a video URL…"
+        <input v-model="newClipUrl" type="url" class="field-input flex-1" :placeholder="$t('common.clips.urlPlaceholder')"
                data-testid="new-clip-url" @keydown.enter.prevent="attachNewClip" />
         <span v-if="newClipUrl" class="provider-badge">{{ providerLabel(detectProvider(newClipUrl)) }}</span>
       </div>
       <ClipCategoryPicker v-model="newClipCategory" />
       <div class="flex gap-2 items-center">
         <select v-model="newClipConcert" class="field-input flex-1" data-testid="new-clip-concert">
-          <option value="">No concert</option>
+          <option value="">{{ $t('content.blocks.ref.noConcert') }}</option>
           <option v-for="c in entities.concert" :key="c.id" :value="c.id">{{ c.label }}</option>
         </select>
-        <button type="button" class="btn-attach" :disabled="createClip.isPending.value || !newClipUrl.trim()" @click="attachNewClip">Attach</button>
+        <button type="button" class="btn-attach" :disabled="createClip.isPending.value || !newClipUrl.trim()" @click="attachNewClip">{{ $t('content.blocks.ref.attach') }}</button>
       </div>
     </div>
   </div>

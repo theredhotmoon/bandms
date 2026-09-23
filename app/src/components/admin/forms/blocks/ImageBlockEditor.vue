@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { uploadPostBlockImage } from '@/api/postBlocks'
 import { useAuth } from '@/composables/useAuth'
 import { reportSaveError } from '@/utils/formErrors'
+
+const { t } = useI18n()
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -28,7 +31,7 @@ async function onFile(e: Event) {
     // before the post is saved; only `path` is submitted.
     emit('update:payload', { ...props.payload, path, url })
   } catch (e) {
-    reportSaveError(e, 'Image upload failed')
+    reportSaveError(e, t('content.blocks.image.uploadFailed'))
   } finally {
     uploading.value = false
     if (fileInput.value) fileInput.value.value = ''
@@ -40,33 +43,33 @@ async function onFile(e: Event) {
   <div class="flex flex-col gap-2">
     <div v-if="payload.url || payload.path" class="img-preview">
       <img :src="(payload.url as string) ?? `/storage/${payload.path}`" alt="" class="img-preview-el" />
-      <button type="button" class="btn-remove" @click="emit('update:payload', { ...payload, path: '', url: '' })" title="Remove image">✕</button>
+      <button type="button" class="btn-remove" @click="emit('update:payload', { ...payload, path: '', url: '' })" :title="$t('content.blocks.image.remove')">✕</button>
     </div>
     <div v-else class="siu-drop" @click="fileInput?.click()">
-      <span class="siu-label">{{ uploading ? 'Uploading…' : 'Click to upload an image' }}</span>
+      <span class="siu-label">{{ uploading ? $t('content.blocks.image.uploading') : $t('content.blocks.image.upload') }}</span>
       <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFile" />
     </div>
 
     <div class="trans-group">
       <div class="trans-row">
-        <span class="lang-badge">EN</span>
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="bag('alt').en ?? ''" @input="set('alt', { ...bag('alt'), en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Alt text (describes the image)" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.image.altEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span>
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="bag('alt').pl ?? ''" @input="set('alt', { ...bag('alt'), pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Tekst alternatywny" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.image.altPl')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge">EN</span>
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="bag('caption').en ?? ''" @input="set('caption', { ...bag('caption'), en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Caption (optional)" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.image.captionEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span>
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="bag('caption').pl ?? ''" @input="set('caption', { ...bag('caption'), pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" placeholder="Podpis" />
+               class="field-input flex-1" :placeholder="$t('content.blocks.image.captionPl')" />
       </div>
     </div>
   </div>
