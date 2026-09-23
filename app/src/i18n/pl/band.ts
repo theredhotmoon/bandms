@@ -1,4 +1,9 @@
 export default {
+  // Distinct from common.clips, which is the *field* embedded in other forms
+  // (AttachedClipsField: "Clips", "Add clip", "Detach clip"). These are the
+  // library screen: a page title and a create button with its + prefix. Same
+  // English word, different surface — keep them apart so a translator can
+  // word the page heading differently from the inline field label.
   clips: {
     title: 'Klipy',
     add: '+ Dodaj klip',

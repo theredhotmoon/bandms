@@ -141,10 +141,34 @@ in `src/i18n/plural.ts` is wired to `polishPluralIndex()` in
 `src/utils/uiLocale.ts` — a util, not a composable, so vitest's `node`
 environment can import it without a `localStorage` shim.
 
-`scripts/check-admin-strings.mjs` runs ahead of `vue-tsc` in `pnpm build` and
-fails on hardcoded text in any path listed in its `MIGRATED` array. **Adding an
-area to the sweep means adding its paths there**; append `i18n-ignore` to a line
-whose text is genuinely fixed (a wordmark, a glyph).
+### Three guards run ahead of `vue-tsc` in `pnpm build`
+
+Each answers a different question, and a red one means something specific:
+
+| Script | Fails when | Fix |
+|---|---|---|
+| `check-admin-strings.mjs` | a file in `MIGRATED` still has hardcoded text | move it to the catalogue, or append `i18n-ignore` with a reason |
+| `check-i18n-keys.mjs` | a `$t('…')` key has no catalogue entry | fix the typo, or add the key |
+| `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED` | add its path to `MIGRATED` |
+
+**`MIGRATED` is the ratchet.** Adding an area to the sweep means adding its
+paths there, and the coverage guard exists because forgetting that step was the
+single most repeated defect in the sweep — six reviews found five instances
+(`TicketStatusBadge`, `ClipCategoryPicker`, `TableToolbar`, and the shared form
+children). Each time the area read as *done* while a component inside it still
+rendered English.
+
+**Never list a path before its strings are migrated.** The lint then reports a
+pass over English text, which is worse than no guard at all.
+
+**`i18n-ignore` carries two meanings** — "genuinely fixed" (a wordmark, `PLN`,
+a route path) and "deliberately deferred" (the pitch email bodies, pending
+their language picker). Always write the reason after the marker; the next
+person cannot tell them apart otherwise.
+
+Since these run only inside `pnpm build`, the CI `Tests` job runs `pnpm build`
+explicitly — without it they fire only on push-to-main, which is the #104/#105
+failure shape.
 
 ### Composables
 - Named `use*`, placed in `src/composables/`.

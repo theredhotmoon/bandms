@@ -24,19 +24,41 @@ const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '
 const SRC = join(ROOT, 'src')
 const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 
-/** The MIGRATED entries, read from the string lint so there is one list. */
+/**
+ * The MIGRATED entries, read from the string lint so there is one list.
+ *
+ * The array's end is found by matching brackets, not by the first `]`: a
+ * comment or a future nested value inside the region would truncate the list
+ * silently, and a *partial* parse does not trip the empty-list check — it just
+ * reports already-listed files as gaps, telling you to add what is there.
+ */
 function migratedPaths() {
   const src = readFileSync(LINT, 'utf8')
-  const start = src.indexOf('const MIGRATED = [')
-  const end = src.indexOf(']', start)
-  if (start === -1 || end === -1) {
+  const open = src.indexOf('const MIGRATED = [')
+  if (open === -1) {
     console.error('✗ i18n coverage: could not find MIGRATED in check-admin-strings.mjs')
     process.exit(1)
   }
-  return [...src.slice(start, end).matchAll(/'([^']+)'/g)].map((m) => m[1])
+  let depth = 0
+  let end = -1
+  for (let i = src.indexOf('[', open); i < src.length; i++) {
+    if (src[i] === '[') depth++
+    else if (src[i] === ']') { depth--; if (depth === 0) { end = i; break } }
+  }
+  if (end === -1) {
+    console.error('✗ i18n coverage: MIGRATED array is unterminated')
+    process.exit(1)
+  }
+  return [...src.slice(open, end).matchAll(/'([^']+)'/g)].map((m) => m[1])
 }
 
 const MIGRATED = migratedPaths()
+// Before the scan, not after: a broken parse must not first report every file
+// in src/ as an uncovered gap.
+if (MIGRATED.length === 0) {
+  console.error('✗ i18n coverage: parsed zero MIGRATED entries — the parser is broken')
+  process.exit(1)
+}
 
 const files = []
 const walk = (dir) => {
@@ -44,7 +66,12 @@ const walk = (dir) => {
     const p = join(dir, name)
     if (statSync(p).isDirectory()) {
       if (name !== 'i18n') walk(p)
-    } else if (p.endsWith('.vue') || p.endsWith('.ts')) {
+    } else if (p.endsWith('.vue') || (p.endsWith('.ts') && !p.endsWith('.spec.ts'))) {
+      // Specs are excluded deliberately. A spec that calls useI18n() or
+      // asserts on catalogue text would be reported as a gap, and the only
+      // remedy this guard offers — add it to MIGRATED — then makes the string
+      // lint flag the assertions themselves. There is no exit from that short
+      // of i18n-ignore on every assertion line.
       files.push(p)
     }
   }
@@ -59,7 +86,13 @@ walk(SRC)
  * `t(entry.key)` with a computed key, i.e. precisely the file this guard was
  * written to catch. It reported a clean tree and I nearly shipped it.
  */
-const RENDERS = /useI18n\s*\(|\$t\s*\(|keypath\s*=|<i18n-t/
+const RENDERS = /useI18n\s*\(|\$t\s*\(|keypath\s*=|<i18n-t|\bi18n\.global\.t\s*\(/
+
+/**
+ * Strip comments before testing. Without this a doc comment merely *mentioning*
+ * useI18n() reports the file as a gap, since the regex reads raw text.
+ */
+const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
 const toRel = (abs) => relative(SRC, abs).split(sep).join('/')
 const covered = (rel) => MIGRATED.some((m) => rel === m || rel.startsWith(m + '/'))
@@ -68,12 +101,7 @@ const gaps = []
 for (const file of files) {
   const rel = toRel(file)
   if (covered(rel)) continue
-  if (RENDERS.test(readFileSync(file, 'utf8'))) gaps.push(rel)
-}
-
-if (MIGRATED.length === 0) {
-  console.error('✗ i18n coverage: parsed zero MIGRATED entries — the parser is broken')
-  process.exit(1)
+  if (RENDERS.test(stripComments(readFileSync(file, 'utf8')))) gaps.push(rel)
 }
 
 if (gaps.length === 0) {

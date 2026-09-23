@@ -76,6 +76,16 @@ jobs:
         working-directory: ./app
         run: pnpm test:unit
 
+      # `pnpm build` is vue-tsc -b plus the three i18n guards, and until now it
+      # ran ONLY inside the Docker image build — which is gated to push, not
+      # pull_request. So a PR could go green and break main's deploy on merge:
+      # exactly the #104/#105 incident (TS6133 in a file a `-p tsconfig.json`
+      # check had just passed). Running it here puts every guard where a
+      # reviewer can see it fail.
+      - name: Type-check and i18n guards
+        working-directory: ./app
+        run: pnpm build
+
   build-and-push:
     name: Build & push images
     needs: test
