@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -19,6 +20,7 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { AuthorSummary, AuthorPayload } from '@/types/author'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const { query, create, update, remove } = useAuthors()
 const { query: pressReleasesQ } = usePressReleases()
@@ -133,7 +135,7 @@ async function confirmDelete() {
                 </td>
                 <td class="td notes-cell">{{ author.notes ?? '—' }}</td>
                 <td class="td" style="color:#475569; font-size:0.72rem; white-space:nowrap;">
-                  {{ new Date(author.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                  {{ new Date(author.created_at).toLocaleDateString(uiLang, { day: 'numeric', month: 'short', year: 'numeric' }) }}
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(author.id)" class="btn-edit">{{ $t('common.actions.edit') }}</button>

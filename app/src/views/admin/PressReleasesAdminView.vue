@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -21,6 +22,7 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const { query, create, update, remove } = usePressReleases()
 
@@ -101,7 +103,7 @@ async function confirmDelete() {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(uiLang.value, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function hostname(url: string): string {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -8,6 +9,7 @@ import type { NewsletterSubscriber } from '@/types/newsletterSubscriber'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const { query, remove, page } = useNewsletterSubscribers()
 
@@ -38,7 +40,7 @@ async function doDelete(id: number) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  return new Date(iso).toLocaleDateString(uiLang.value, {
     day: 'numeric', month: 'short', year: 'numeric',
   })
 }
@@ -49,7 +51,7 @@ function exportCsv() {
     rows.push([s.email, s.name ?? '', s.source ?? '', formatDate(s.subscribed_at), s.confirmed_at ? t('content.newsletter.status.confirmed') : t('content.newsletter.status.pending')])
   }
   const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
@@ -97,7 +99,7 @@ function exportCsv() {
               <th>{{ $t('common.fields.name') }}</th>
               <th>{{ $t('content.newsletter.columns.source') }}</th>
               <th>{{ $t('content.newsletter.columns.subscribed') }}</th>
-              <th>{{ $t('shows.tickets.columns.status') }}</th>
+              <th>{{ $t('content.newsletter.columns.status') }}</th>
               <th></th>
             </tr>
           </thead>

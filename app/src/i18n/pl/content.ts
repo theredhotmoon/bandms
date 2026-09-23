@@ -37,7 +37,7 @@ export default {
     loadFailed: 'Nie udało się wczytać subskrybentów.',
     empty: 'Brak subskrybentów.',
     noResults: 'Brak wyników dla „{q}”.',
-    columns: { source: 'Źródło', subscribed: 'Zapisano' },
+    columns: { source: 'Źródło', subscribed: 'Zapisano', status: 'Status' },
     csv: { email: 'E-mail', name: 'Nazwa', source: 'Źródło', subscribedAt: 'Data zapisu', status: 'Status' },
     status: { confirmed: 'Potwierdzony', pending: 'Oczekujący' },
     removed: 'Subskrybent usunięty.',

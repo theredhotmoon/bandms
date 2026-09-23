@@ -110,8 +110,8 @@ async function confirmDelete() {
             <template #filters>
               <select v-model="filterStatus" class="filter-select">
                 <option value="">{{ $t('content.posts.filter.all') }}</option>
-                <option value="published">{{ $t('common.fields.published') }}</option>
-                <option value="draft">{{ $t('content.posts.draft') }}</option>
+                <option value="published">{{ $t('content.posts.filter.published') }}</option>
+                <option value="draft">{{ $t('content.posts.filter.draft') }}</option>
               </select>
             </template>
           </TableToolbar>

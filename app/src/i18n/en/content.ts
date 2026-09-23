@@ -37,7 +37,7 @@ export default {
     loadFailed: 'Failed to load subscribers.',
     empty: 'No subscribers yet.',
     noResults: 'No results for "{q}".',
-    columns: { source: 'Source', subscribed: 'Subscribed' },
+    columns: { source: 'Source', subscribed: 'Subscribed', status: 'Status' },
     csv: { email: 'Email', name: 'Name', source: 'Source', subscribedAt: 'Subscribed at', status: 'Status' },
     status: { confirmed: 'Confirmed', pending: 'Pending' },
     removed: 'Subscriber removed.',
