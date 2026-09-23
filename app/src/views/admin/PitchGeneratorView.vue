@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -9,6 +10,8 @@ import { useAuthors } from '@/composables/useAuthors'
 import { useBandContactPrefill } from '@/composables/useBandContactPrefill'
 import { bandMention } from '@/utils/pitchRecipient'
 import type { AuthorSummary } from '@/types/author'
+
+const { t } = useI18n()
 
 const { query: profileQ } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -49,14 +52,14 @@ const matchedAuthor = computed(() => {
   return authorsQ.data.value.find((a: AuthorSummary) => a.name.toLowerCase().includes(q)) ?? null
 })
 
-const pitchTypes: { key: PitchType; label: string; icon: string }[] = [
-  { key: 'venue',    label: 'Venue / Booker',  icon: '🎪' },
-  { key: 'blog',     label: 'Music Blog / PR',  icon: '📰' },
-  { key: 'playlist', label: 'Playlist Curator', icon: '🎧' },
-  { key: 'sync',     label: 'Sync / Film & TV', icon: '🎬' },
-  { key: 'festival', label: 'Festival',          icon: '🎸' },
-  { key: 'band',     label: 'Band Contact',      icon: '🎵' },
-]
+const pitchTypes = computed<{ key: PitchType; label: string; icon: string }[]>(() => [
+  { key: 'venue',    label: t('content.pitch.types.venue'),    icon: '🎪' },
+  { key: 'blog',     label: t('content.pitch.types.blog'),     icon: '📰' },
+  { key: 'playlist', label: t('content.pitch.types.playlist'), icon: '🎧' },
+  { key: 'sync',     label: t('content.pitch.types.sync'),     icon: '🎬' },
+  { key: 'festival', label: t('content.pitch.types.festival'), icon: '🎸' },
+  { key: 'band',     label: t('content.pitch.types.band'),     icon: '🎵' },
+])
 
 const upcomingConcerts = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
@@ -69,90 +72,90 @@ const latestRelease = computed(() =>
 
 function fmtDate(iso: string): string {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   } catch {
     return iso
   }
 }
 
 function genreText(genres: string | null): string {
-  if (!genres) return 'music'
+  if (!genres) return 'music' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const list = genres.split(',').map((g) => g.trim()).filter(Boolean)
   if (list.length === 1) return list[0]
-  if (list.length === 2) return list.join(' and ')
-  return list.slice(0, -1).join(', ') + ' and ' + list.at(-1)
+  if (list.length === 2) return list.join(' and ') // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  return list.slice(0, -1).join(', ') + ' and ' + list.at(-1) // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
 }
 
 const pitch = computed((): string => {
   const p = profileQ.data.value
   if (!p) return ''
 
-  const name    = p.name ?? 'the band'
+  const name    = p.name ?? 'the band' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const bio     = p.bio_short ?? ''
   const genres  = genreText(p.genres)
-  const similar = p.comparable_artists ? `\n\nFor fans of ${p.comparable_artists}.` : ''
-  const stats   = p.stat_spotify_monthly ? `\n\n${name} currently has ${p.stat_spotify_monthly.toLocaleString()} monthly Spotify listeners.` : ''
-  const release = latestRelease.value ? `\n\nTheir latest release "${latestRelease.value.title}" (${latestRelease.value.type.toUpperCase()}) is out now.` : ''
-  const epk     = `\n\nFull EPK available at: [your domain]/epk`
-  const contact = p.booking_email ? `\n\nBooking: ${p.booking_email}` : ''
-  const sign    = `\n\nBest,\n[Your name]`
+  const similar = p.comparable_artists ? `\n\nFor fans of ${p.comparable_artists}.` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const stats   = p.stat_spotify_monthly ? `\n\n${name} currently has ${p.stat_spotify_monthly.toLocaleString()} monthly Spotify listeners.` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const release = latestRelease.value ? `\n\nTheir latest release "${latestRelease.value.title}" (${latestRelease.value.type.toUpperCase()}) is out now.` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const epk     = `\n\nFull EPK available at: [your domain]/epk` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const contact = p.booking_email ? `\n\nBooking: ${p.booking_email}` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const sign    = `\n\nBest,\n[Your name]` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
 
-  const to = recipientName.value ? `Hi ${recipientName.value},\n\n` : 'Hi,\n\n'
+  const to = recipientName.value ? `Hi ${recipientName.value},\n\n` : 'Hi,\n\n' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const note = customNote.value ? `\n\n${customNote.value}` : ''
 
   switch (selectedType.value) {
     case 'venue':
       return (
         to +
-        `I'm reaching out on behalf of ${name}, a ${genres} act based in ${p.hometown ?? 'the area'}.` +
+        `I'm reaching out on behalf of ${name}, a ${genres} act based in ${p.hometown ?? 'the area'}.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         (bio ? `\n\n${bio}` : '') + similar + stats + release +
         (upcomingConcerts.value.length
-          ? `\n\nWe're actively touring and looking for the right venues to partner with.`
+          ? `\n\nWe're actively touring and looking for the right venues to partner with.` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
           : '') +
         note + epk + contact + sign
       )
     case 'blog':
       return (
         to +
-        `I'm writing to share ${name}, a ${genres} artist ${p.hometown ? `from ${p.hometown}` : "worth your readers' time"}.` +
+        `I'm writing to share ${name}, a ${genres} artist ${p.hometown ? `from ${p.hometown}` : "worth your readers' time"}.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         (bio ? `\n\n${bio}` : '') + similar + stats + release +
-        note + epk + (p.press_email ? `\n\nPress contact: ${p.press_email}` : '') + sign
+        note + epk + (p.press_email ? `\n\nPress contact: ${p.press_email}` : '') + sign // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
       )
     case 'playlist':
       return (
         to +
-        `I wanted to pitch ${name} for your playlist consideration.` +
-        ` ${name} makes ${genres} music${similar ? ' — ' + (p.comparable_artists ?? '') : ''}.` +
+        `I wanted to pitch ${name} for your playlist consideration.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+        ` ${name} makes ${genres} music${similar ? ' — ' + (p.comparable_artists ?? '') : ''}.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         (bio ? `\n\n${bio}` : '') + stats + release +
-        `\n\nWould love for you to give it a listen — Spotify link: [add link]` +
+        `\n\nWould love for you to give it a listen — Spotify link: [add link]` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         note + sign
       )
     case 'sync':
       return (
         to +
-        `I'd like to submit ${name}'s music for sync consideration.` +
-        ` ${name} creates ${genres} tracks with a strong cinematic quality.` +
+        `I'd like to submit ${name}'s music for sync consideration.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+        ` ${name} creates ${genres} tracks with a strong cinematic quality.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         (bio ? `\n\n${bio}` : '') +
-        (latestRelease.value ? `\n\nLatest release: "${latestRelease.value.title}" — full stems and custom edits available on request.` : '') +
-        note + epk + (p.booking_email ? `\n\nSync inquiries: ${p.booking_email}` : '') + sign
+        (latestRelease.value ? `\n\nLatest release: "${latestRelease.value.title}" — full stems and custom edits available on request.` : '') + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+        note + epk + (p.booking_email ? `\n\nSync inquiries: ${p.booking_email}` : '') + sign // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
       )
     case 'festival':
       return (
         to +
-        `I'm submitting ${name} for consideration for your festival lineup.` +
-        ` ${name} is a ${genres} act ${p.hometown ? `based in ${p.hometown}` : ''} known for high-energy live performances.` +
+        `I'm submitting ${name} for consideration for your festival lineup.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+        ` ${name} is a ${genres} act ${p.hometown ? `based in ${p.hometown}` : ''} known for high-energy live performances.` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         (bio ? `\n\n${bio}` : '') + similar + stats +
-        (upcomingConcerts.value.length ? `\n\nThe band is currently on tour and available for festival slots.` : '') +
+        (upcomingConcerts.value.length ? `\n\nThe band is currently on tour and available for festival slots.` : '') + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         note + epk + contact + sign
       )
     case 'band': {
       const lastGigText = bandLastGig.value
         ? `since ${fmtDate(bandLastGig.value)}`
-        : 'in a while'
+        : 'in a while' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
       const withBand = bandMention(bandName.value, recipientName.value)
       return (
         to +
-        `We haven't played a gig together${withBand} ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` +
+        `We haven't played a gig together${withBand} ${lastGigText}. We have some news:\n\n[PASTE_RECENT_NEWS_LINKS_HERE]\n\nLet's play a gig!` + // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
         note + epk + contact + sign
       )
     }
@@ -173,17 +176,17 @@ async function copyPitch() {
   <AdminLayout>
     <div class="pg-page">
       <div class="pg-header">
-        <h1 class="pg-title">Pitch Generator</h1>
-        <p class="pg-sub">Auto-fill outreach emails from your BandMS profile data.</p>
+        <h1 class="pg-title">{{ $t('content.pitch.title') }}</h1>
+        <p class="pg-sub">{{ $t('content.pitch.subtitle') }}</p>
       </div>
 
-      <div v-if="!profileQ.data.value" class="loading">Loading profile…</div>
+      <div v-if="!profileQ.data.value" class="loading">{{ $t('content.pitch.loadingProfile') }}</div>
 
       <div v-else class="pg-layout">
         <!-- Controls -->
         <div class="pg-controls">
           <div class="control-group">
-            <label class="control-label">Pitch type</label>
+            <label class="control-label">{{ $t('content.pitch.type') }}</label>
             <div class="type-tabs">
               <button
                 v-for="t in pitchTypes"
@@ -198,24 +201,24 @@ async function copyPitch() {
           </div>
 
           <div class="control-group">
-            <label class="control-label">Recipient name <span class="hint">(optional)</span></label>
-            <input v-model="recipientName" class="ctrl-input" placeholder="Jane, John, The team…" />
+            <label class="control-label">{{ $t('content.pitch.recipient') }} <span class="hint">{{ $t('content.pitch.optional') }}</span></label>
+            <input v-model="recipientName" class="ctrl-input" :placeholder="$t('content.pitch.recipientPlaceholder')" />
             <div v-if="recipientName.trim() && authorsQ.data.value" class="contact-status">
               <template v-if="matchedAuthor">
-                <span class="contact-badge contact-badge--returning">Returning contact</span>
+                <span class="contact-badge contact-badge--returning">{{ $t('content.pitch.returningContact') }}</span>
                 <span class="contact-name">{{ matchedAuthor.name }}</span>
                 <span v-if="matchedAuthor.email" class="contact-detail">{{ matchedAuthor.email }}</span>
                 <span v-if="matchedAuthor.phone" class="contact-detail">{{ matchedAuthor.phone }}</span>
               </template>
               <template v-else>
-                <span class="contact-badge contact-badge--new">First contact</span>
-                <span class="contact-hint">Not in your contacts yet.</span>
+                <span class="contact-badge contact-badge--new">{{ $t('content.pitch.firstContact') }}</span>
+                <span class="contact-hint">{{ $t('content.pitch.notInContacts') }}</span>
               </template>
             </div>
           </div>
 
           <div v-if="bandContacts.length > 1" class="control-group">
-            <label class="control-label">Contact at {{ bandName }}</label>
+            <label class="control-label">{{ $t('content.pitch.contactAt', { band: bandName }) }}</label>
             <select
               class="ctrl-input"
               :value="selectedContactId ?? ''"
@@ -228,25 +231,25 @@ async function copyPitch() {
           </div>
 
           <div v-if="selectedType === 'band'" class="control-group">
-            <label class="control-label">Last gig together <span class="hint">(optional)</span></label>
+            <label class="control-label">{{ $t('content.pitch.lastGig') }} <span class="hint">{{ $t('content.pitch.optional') }}</span></label>
             <input v-model="bandLastGig" type="date" class="ctrl-input" />
           </div>
 
           <div class="control-group">
-            <label class="control-label">Custom note to insert <span class="hint">(optional)</span></label>
-            <textarea v-model="customNote" rows="3" class="ctrl-input" placeholder="We played your venue last year and the crowd loved it…" style="resize:vertical;" />
+            <label class="control-label">{{ $t('content.pitch.customNote') }} <span class="hint">{{ $t('content.pitch.optional') }}</span></label>
+            <textarea v-model="customNote" rows="3" class="ctrl-input" :placeholder="$t('content.pitch.customNotePlaceholder')" style="resize:vertical;" />
           </div>
 
           <div v-if="!profileQ.data.value?.bio_short" class="warning-box">
-            Add a short bio to Band Profile to improve generated pitches.
+            {{ $t('content.pitch.bioHint') }}
           </div>
         </div>
 
         <!-- Output -->
         <div class="pg-output">
           <div class="output-toolbar">
-            <span class="output-label">Generated pitch</span>
-            <button class="copy-btn" @click="copyPitch">{{ copied ? 'Copied!' : 'Copy' }}</button>
+            <span class="output-label">{{ $t('content.pitch.generated') }}</span>
+            <button class="copy-btn" @click="copyPitch">{{ copied ? $t('content.pitch.copied') : $t('content.pitch.copy') }}</button>
           </div>
           <pre class="pitch-text">{{ pitch }}</pre>
         </div>
