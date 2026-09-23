@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -18,6 +20,9 @@ import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
+
+const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const { query, create, update, remove } = usePressReleases()
 
@@ -47,7 +52,7 @@ const confirmId   = ref<number | null>(null)
 const fullRecord  = usePressRelease(editingId)
 
 const modalTitle  = computed(() =>
-  isCreating.value ? 'Add press release' : 'Edit press release',
+  isCreating.value ? t('content.press.modalNew') : t('content.press.modalEdit'),
 )
 
 function openCreate() {
@@ -74,14 +79,14 @@ async function handleSubmit(payload: PressReleasePayload) {
   try {
     if (isCreating.value) {
       await create.mutateAsync(payload)
-      toast.success('Press release added')
+      toast.success(t('content.press.created'))
     } else {
       await update.mutateAsync({ id: editingId.value!, payload })
-      toast.success('Press release updated')
+      toast.success(t('content.press.updated'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -89,16 +94,16 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Deleted')
+    toast.success(t('content.press.deleted'))
     confirmId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('common.state.deleteFailed'))
   }
 }
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(uiLang.value, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function hostname(url: string): string {
@@ -110,28 +115,28 @@ function hostname(url: string): string {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Press Releases</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add press release</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('content.press.title') }}</h1>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('content.press.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">Loading…</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">Failed to load press releases.</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('content.press.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
           <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
-            <span v-if="!(query.data.value?.length)">No press releases yet. Add the first one above.</span>
-            <span v-else>No press releases match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('content.press.empty') }}</span>
+            <span v-else>{{ $t('content.press.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <th class="th" style="width:3.5rem;">Image</th>
-                <SortHeader label="Article" sort-key="og_title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Tags</th>
-                <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th text-right">Actions</th>
+                <th class="th" style="width:3.5rem;">{{ $t('common.fields.image') }}</th>
+                <SortHeader :label="$t('content.press.article')" sort-key="og_title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('common.fields.tags') }}</th>
+                <SortHeader :label="$t('common.fields.published')" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -156,12 +161,12 @@ function hostname(url: string): string {
                   </div>
                 </td>
                 <td class="td" style="white-space:nowrap;">
-                  <span v-if="pr.featured" class="epk-badge" title="Featured on EPK">EPK</span>
+                  <span v-if="pr.featured" class="epk-badge" :title="$t('content.press.featuredTitle')">EPK</span> <!-- i18n-ignore: acronym, same in both languages -->
                   <span style="color:#64748b;">{{ formatDate(pr.published_at) }}</span>
                 </td>
                 <td class="td text-right">
-                  <button @click="openEdit(pr)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = pr.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(pr)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = pr.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -183,7 +188,7 @@ function hostname(url: string): string {
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="52rem" @close="closeModal">
       <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
-        Loading…
+        {{ $t('common.state.loading') }}
       </div>
       <PressReleaseForm
         v-else
@@ -202,7 +207,7 @@ function hostname(url: string): string {
 
     <ConfirmDialog
       :open="confirmId !== null"
-      message="This press release will be permanently deleted."
+      :message="$t('content.press.deleteMessage')"
       :loading="remove.isPending.value"
       @confirm="confirmDelete"
       @cancel="confirmId = null"
