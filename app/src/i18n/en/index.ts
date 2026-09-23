@@ -1,3 +1,4 @@
+import band from './band'
 import common from './common'
 import content from './content'
 import dashboard from './dashboard'
@@ -9,4 +10,4 @@ import shows from './shows'
  * its own string literal type, and `pl` would then be required to repeat the
  * English text verbatim. Plain object gives "keys required, values free".
  */
-export default { common, content, dashboard, shell, shows }
+export default { band, common, content, dashboard, shell, shows }
