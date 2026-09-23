@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
 import { useClips } from '@/composables/useClips'
 import { detectProvider, providerLabel } from '@/utils/postBlocks'
-import { presetLabel } from '@/utils/clipCategories'
+import { presetMessageKey } from '@/utils/clipCategories'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Clip, ClipOwnerType } from '@/types/clip'
 
@@ -59,6 +59,12 @@ async function remove(clip: Clip) {
     toast.success(t('common.clips.detached'))
   } catch (e) { reportSaveError(e, t('common.clips.detachFailed')) }
 }
+
+// A custom category prints as the band typed it; only presets are translated.
+function categoryLabel(value: string): string {
+  const key = presetMessageKey(value)
+  return key ? t(key) : value
+}
 </script>
 
 <template>
@@ -69,7 +75,7 @@ async function remove(clip: Clip) {
     <template v-else>
       <div v-if="clips.length" class="links-list">
         <div v-for="clip in clips" :key="clip.id" class="link-row" data-testid="attached-clip">
-          <span class="link-label">{{ presetLabel(clip.category) }} · {{ providerLabel(clip.provider) }}</span>
+          <span class="link-label">{{ categoryLabel(clip.category) }} · {{ providerLabel(clip.provider) }}</span>
           <a :href="clip.url" target="_blank" rel="noopener" class="link-url">{{ clip.title ?? clip.url }}</a>
           <button type="button" class="remove-btn" :disabled="detach.isPending.value" :title="$t('common.clips.detach')" @click="remove(clip)">×</button>
         </div>

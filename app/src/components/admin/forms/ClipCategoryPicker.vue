@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, watch } from 'vue'
-import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetLabel } from '@/utils/clipCategories'
+import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetMessageKey } from '@/utils/clipCategories'
+
+const { t } = useI18n()
 
 /**
  * Five preset chips plus a free-text input. A chip fills the input; typing
@@ -27,16 +30,22 @@ function onInput(event: Event) {
   text.value = (event.target as HTMLInputElement).value
   model.value = text.value.trim() || 'live'
 }
+
+// A custom category prints as the band typed it; only presets are translated.
+function categoryLabel(value: string): string {
+  const key = presetMessageKey(value)
+  return key ? t(key) : value
+}
 </script>
 
 <template>
   <div class="cat-picker">
     <div class="link-presets">
       <button v-for="p in CLIP_CATEGORY_PRESETS" :key="p" type="button" class="preset-chip"
-              :class="{ active: model === p }" @click="model = p">{{ presetLabel(p) }}</button>
+              :class="{ active: model === p }" @click="model = p">{{ categoryLabel(p) }}</button>
     </div>
     <!-- Enter must not implicitly submit whichever form hosts this picker. -->
-    <input :value="text" class="field-input" placeholder="…or type your own category"
+    <input :value="text" class="field-input" :placeholder="$t('common.clipCategory.customPlaceholder')"
            maxlength="64" data-testid="clip-category-custom"
            @input="onInput" @keydown.enter.prevent />
   </div>

@@ -41,6 +41,7 @@ const MIGRATED = [
   'components/admin/RebuildBar.vue',
   'components/admin/RebuildSettingsModal.vue',
   'components/admin/SortHeader.vue',
+  'components/admin/forms/ClipCategoryPicker.vue',
   'components/admin/forms/SlugInput.vue',
   'components/admin/forms/AttachedClipsField.vue',
   'components/admin/forms/SocialLinksEditor.vue',

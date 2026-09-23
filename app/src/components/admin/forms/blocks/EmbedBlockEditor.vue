@@ -24,7 +24,7 @@ function set(key: string, value: unknown) {
         :value="url" @input="set('url', ($event.target as HTMLInputElement).value)"
         class="field-input flex-1" :placeholder="$t('content.blocks.embed.urlPlaceholder')" required
       />
-      <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioPrefix') : '' }}{{ providerLabel(detected) }}</span>
+      <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioLabel', { provider: providerLabel(detected) }) : providerLabel(detected) }}</span>
     </div>
     <div v-if="detected === 'link' && !hideLabel" class="trans-group">
       <div class="trans-row">

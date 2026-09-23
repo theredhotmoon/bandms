@@ -29,7 +29,7 @@ export default {
     },
     embed: {
       urlPlaceholder: 'Paste a video (YouTube, Vimeo, Instagram, TikTok, Facebook) or audio (Spotify, SoundCloud, Apple Music) URL',
-      audioPrefix: 'Audio · ',
+      audioLabel: 'Audio · {provider}',
       linkTextEn: 'Link text (optional)',
       linkTextPl: 'Tekst linku (opcjonalnie)',
     },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetLabel } from './clipCategories'
+import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetMessageKey } from './clipCategories'
 
 describe('clipCategories', () => {
   it('lists the five presets in order', () => {
@@ -9,8 +9,12 @@ describe('clipCategories', () => {
     expect(isPresetCategory('studio')).toBe(true)
     expect(isPresetCategory('charity gig')).toBe(false)
   })
-  it('labels presets for the admin and echoes custom text', () => {
-    expect(presetLabel('backstage')).toBe('Backstage')
-    expect(presetLabel('charity gig')).toBe('charity gig')
+  it('returns the catalogue key for a preset', () => {
+    expect(presetMessageKey('backstage')).toBe('common.clipCategory.backstage')
+  })
+  // null, not the raw value: the caller prints custom text as the band typed
+  // it, and a non-existent key would render as the key.
+  it('returns null for a custom category', () => {
+    expect(presetMessageKey('charity gig')).toBeNull()
   })
 })

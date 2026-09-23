@@ -77,6 +77,14 @@ export default {
     dragToReorder: 'Przeciągnij, aby zmienić kolejność',
     urlPlaceholder: 'Adres {platform}…',
   },
+  clipCategory: {
+    live: 'Na żywo',
+    studio: 'Studio',
+    backstage: 'Za kulisami',
+    interview: 'Wywiad',
+    other: 'Inne',
+    customPlaceholder: '…lub wpisz własną kategorię',
+  },
   clips: {
     title: 'Klipy',
     saveFirst: 'Zapisz, aby dodać klipy.',

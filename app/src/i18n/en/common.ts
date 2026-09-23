@@ -77,6 +77,14 @@ export default {
     dragToReorder: 'Drag to reorder',
     urlPlaceholder: '{platform} URL…',
   },
+  clipCategory: {
+    live: 'Live',
+    studio: 'Studio',
+    backstage: 'Backstage',
+    interview: 'Interview',
+    other: 'Other',
+    customPlaceholder: '…or type your own category',
+  },
   clips: {
     title: 'Clips',
     saveFirst: 'Save first to add clips.',

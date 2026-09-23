@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -14,9 +15,11 @@ import { useReleases } from '@/composables/useReleases'
 import { useShop } from '@/composables/useShop'
 import { useTableControls } from '@/composables/useTableControls'
 import { providerLabel } from '@/utils/postBlocks'
-import { presetLabel } from '@/utils/clipCategories'
+import { presetMessageKey } from '@/utils/clipCategories'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Clip, ClipPayload } from '@/types/clip'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = useClips()
 const { query: concertsQ } = useConcerts()
@@ -53,6 +56,12 @@ async function confirmDelete() {
   try { await remove.mutateAsync(confirmId.value); toast.success('Clip deleted'); confirmId.value = null }
   catch (e) { reportSaveError(e, 'Failed to delete') }
 }
+
+// A custom category prints as the band typed it; only presets are translated.
+function categoryLabel(value: string): string {
+  const key = presetMessageKey(value)
+  return key ? t(key) : value
+}
 </script>
 
 <template>
@@ -87,7 +96,7 @@ async function confirmDelete() {
             <tbody>
               <tr v-for="clip in tc.paginated.value" :key="clip.id" class="table-row">
                 <td class="td font-medium" style="color:#e2e8f0;">{{ clip.title ?? clip.url }}</td>
-                <td class="td" style="color:#94a3b8;">{{ presetLabel(clip.category) }}</td>
+                <td class="td" style="color:#94a3b8;">{{ categoryLabel(clip.category) }}</td>
                 <td class="td" style="color:#94a3b8;">{{ providerLabel(clip.provider) }}</td>
                 <td class="td" style="color:#94a3b8;">{{ clip.owners.length }}</td>
                 <td class="td text-xs font-mono" style="color:#64748b;">{{ clip.recorded_on ?? '—' }}</td>
