@@ -65,6 +65,10 @@ const MIGRATED = [
   'views/admin/VenuesAdminView.vue',
   'components/admin/forms/PostBlockEditor.vue',
   'components/admin/forms/blocks',
+  'views/admin/AuthorsAdminView.vue',
+  'views/admin/NewsletterAdminView.vue',
+  'views/admin/PostsAdminView.vue',
+  'views/admin/PressReleasesAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]

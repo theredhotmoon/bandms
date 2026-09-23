@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -20,6 +21,8 @@ import { useClips } from '@/composables/useClips'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = usePosts()
 const { query: tagsQ }       = useTags()
@@ -70,14 +73,14 @@ async function handleSubmit(payload: PostPayload) {
   try {
     if (editingId.value && !isCreating.value) {
       await update.mutateAsync({ id: editingId.value, payload })
-      toast.success('Post updated')
+      toast.success(t('content.posts.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Post created')
+      toast.success(t('content.posts.created'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -85,9 +88,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Post deleted')
+    toast.success(t('content.posts.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 </script>
 
@@ -95,35 +98,35 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Posts</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add post</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('content.posts.title') }}</h1>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('content.posts.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load posts.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('content.posts.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
               <select v-model="filterStatus" class="filter-select">
-                <option value="">All statuses</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
+                <option value="">{{ $t('content.posts.filter.all') }}</option>
+                <option value="published">{{ $t('common.fields.published') }}</option>
+                <option value="draft">{{ $t('content.posts.draft') }}</option>
               </select>
             </template>
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!(query.data.value?.data?.length)">No posts yet.</span>
-            <span v-else>No posts match your search.</span>
+            <span v-if="!(query.data.value?.data?.length)">{{ $t('content.posts.empty') }}</span>
+            <span v-else>{{ $t('content.posts.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Tags</th>
-                <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th text-right">Actions</th>
+                <SortHeader :label="$t('common.fields.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('common.fields.tags') }}</th>
+                <SortHeader :label="$t('common.fields.published')" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -138,11 +141,11 @@ async function confirmDelete() {
                   <span v-else style="color:#475569;">—</span>
                 </td>
                 <td class="td text-xs" :style="post.published_at ? 'color:#34d399;' : 'color:#475569;'">
-                  {{ post.published_at ? post.published_at.slice(0,10) : 'Draft' }}
+                  {{ post.published_at ? post.published_at.slice(0,10) : $t('content.posts.draft') }}
                 </td>
                 <td class="td text-right">
-                  <button @click="openEdit(post.id)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = post.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(post.id)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = post.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -162,8 +165,8 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="isCreating ? 'New post' : 'Edit post'" max-width="44rem" @close="closeModal">
-      <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">Loading post…</div>
+    <AdminModal :open="showModal" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
+      <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">{{ $t('content.posts.loadingOne') }}</div>
       <PostForm
         v-else
         :initial="formPost"

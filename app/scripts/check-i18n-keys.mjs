@@ -33,7 +33,10 @@ function keysOf(file, prefix) {
   const stack = []
   for (const raw of readFileSync(file, 'utf8').split(NL)) {
     const line = raw.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
-    if (!line.trim() || /^\s*(import|export|\}|\)|\/)/.test(line.trim()) && !/:\s*\{/.test(line)) {
+    // \b on the keywords: without it a key named `exportCsv:` starts with
+    // "export" and is skipped as a statement, so the key never lands in the
+    // catalogue and every reference to it reports as unresolvable.
+    if (!line.trim() || /^\s*(?:import\b|export\b|[})/])/.test(line.trim()) && !/:\s*\{/.test(line)) {
       if (/^\s*\},?\s*$/.test(line)) stack.pop()
       continue
     }

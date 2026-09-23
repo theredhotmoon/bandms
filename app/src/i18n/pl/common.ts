@@ -24,6 +24,8 @@ export default {
     title: 'Tytuł',
     email: 'E-mail',
     phone: 'Telefon',
+    image: 'Zdjęcie',
+    published: 'Opublikowano',
     slug: 'Adres URL (slug)',
     image: 'Zdjęcie',
     tags: 'Tagi',
@@ -46,6 +48,9 @@ export default {
   pagination: {
     label: 'Paginacja',
     range: '{from}–{to} z {total}',
+    prevShort: '← Poprz.',
+    nextShort: 'Nast. →',
+    pageOf: 'Strona {page} z {total}',
     previous: 'Poprzednia strona',
     next: 'Następna strona',
   },

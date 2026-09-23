@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useNewsletterSubscribers } from '@/composables/useNewsletterSubscribers'
 import type { NewsletterSubscriber } from '@/types/newsletterSubscriber'
 import { reportSaveError } from '@/utils/formErrors'
+
+const { t } = useI18n()
 
 const { query, remove, page } = useNewsletterSubscribers()
 
@@ -26,9 +29,9 @@ const confirmId = ref<number | null>(null)
 async function doDelete(id: number) {
   try {
     await remove.mutateAsync(id)
-    toast.success('Subscriber removed.')
+    toast.success(t('content.newsletter.removed'))
   } catch (e) {
-    reportSaveError(e, 'Failed to remove subscriber.')
+    reportSaveError(e, t('content.newsletter.removeFailed'))
   } finally {
     confirmId.value = null
   }
@@ -41,9 +44,9 @@ function formatDate(iso: string) {
 }
 
 function exportCsv() {
-  const rows = [['Email', 'Name', 'Source', 'Subscribed at', 'Status']]
+  const rows = [[t('content.newsletter.csv.email'), t('content.newsletter.csv.name'), t('content.newsletter.csv.source'), t('content.newsletter.csv.subscribedAt'), t('content.newsletter.csv.status')]]
   for (const s of subscribers.value) {
-    rows.push([s.email, s.name ?? '', s.source ?? '', formatDate(s.subscribed_at), s.confirmed_at ? 'Confirmed' : 'Pending'])
+    rows.push([s.email, s.name ?? '', s.source ?? '', formatDate(s.subscribed_at), s.confirmed_at ? t('content.newsletter.status.confirmed') : t('content.newsletter.status.pending')])
   }
   const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -61,14 +64,14 @@ function exportCsv() {
     <div class="view-wrap">
       <div class="view-header">
         <div class="header-left">
-          <h1 class="view-title">Newsletter</h1>
-          <span class="subscriber-count">{{ total }} subscriber{{ total !== 1 ? 's' : '' }}</span>
+          <h1 class="view-title">{{ $t('content.newsletter.title') }}</h1>
+          <span class="subscriber-count">{{ $t('content.newsletter.subscribers', { n: total }, total) }}</span>
         </div>
         <button v-if="subscribers.length" class="btn-export" @click="exportCsv">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
           </svg>
-          Export CSV
+          {{ $t('content.newsletter.exportCsv') }}
         </button>
       </div>
 
@@ -77,24 +80,24 @@ function exportCsv() {
           v-model="search"
           type="search"
           class="search-input"
-          placeholder="Search by email or name…"
+          :placeholder="$t('content.newsletter.searchPlaceholder')"
         />
       </div>
 
-      <div v-if="query.isPending.value" class="state-msg">Loading…</div>
-      <div v-else-if="query.isError.value" class="state-msg state-msg--error">Failed to load subscribers.</div>
-      <div v-else-if="!subscribers.length" class="state-msg">No subscribers yet.</div>
-      <div v-else-if="!filtered.length" class="state-msg">No results for "{{ search }}".</div>
+      <div v-if="query.isPending.value" class="state-msg">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="query.isError.value" class="state-msg state-msg--error">{{ $t('content.newsletter.loadFailed') }}</div>
+      <div v-else-if="!subscribers.length" class="state-msg">{{ $t('content.newsletter.empty') }}</div>
+      <div v-else-if="!filtered.length" class="state-msg">{{ $t('content.newsletter.noResults', { q: search }) }}</div>
 
       <div v-else class="table-wrap">
         <table class="sub-table">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Name</th>
-              <th>Source</th>
-              <th>Subscribed</th>
-              <th>Status</th>
+              <th>{{ $t('common.fields.email') }}</th>
+              <th>{{ $t('common.fields.name') }}</th>
+              <th>{{ $t('content.newsletter.columns.source') }}</th>
+              <th>{{ $t('content.newsletter.columns.subscribed') }}</th>
+              <th>{{ $t('shows.tickets.columns.status') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -108,16 +111,16 @@ function exportCsv() {
               <td class="cell-secondary">{{ formatDate(s.subscribed_at) }}</td>
               <td class="cell-secondary">
                 <span class="status-badge" :class="s.confirmed_at ? 'status-badge--confirmed' : 'status-badge--pending'">
-                  {{ s.confirmed_at ? 'Confirmed' : 'Pending' }}
+                  {{ s.confirmed_at ? t('content.newsletter.status.confirmed') : t('content.newsletter.status.pending') }}
                 </span>
               </td>
               <td class="cell-action">
                 <template v-if="confirmId === s.id">
-                  <span class="confirm-text">Remove?</span>
-                  <button class="btn-confirm-yes" @click="doDelete(s.id)">Yes</button>
-                  <button class="btn-confirm-no"  @click="confirmId = null">No</button>
+                  <span class="confirm-text">{{ $t('content.newsletter.confirmRemove') }}</span>
+                  <button class="btn-confirm-yes" @click="doDelete(s.id)">{{ $t('content.newsletter.yes') }}</button>
+                  <button class="btn-confirm-no"  @click="confirmId = null">{{ $t('content.newsletter.no') }}</button>
                 </template>
-                <button v-else class="btn-delete" @click="confirmId = s.id" title="Remove subscriber">
+                <button v-else class="btn-delete" @click="confirmId = s.id" :title="$t('content.newsletter.removeTitle')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
                   </svg>
@@ -130,9 +133,9 @@ function exportCsv() {
 
       <!-- Pagination -->
       <div v-if="meta && meta.last_page > 1" class="pagination">
-        <button :disabled="page <= 1" @click="page--">← Prev</button>
-        <span>Page {{ page }} of {{ meta.last_page }}</span>
-        <button :disabled="page >= meta.last_page" @click="page++">Next →</button>
+        <button :disabled="page <= 1" @click="page--">{{ $t('common.pagination.prevShort') }}</button>
+        <span>{{ $t('common.pagination.pageOf', { page, total: meta.last_page }) }}</span>
+        <button :disabled="page >= meta.last_page" @click="page++">{{ $t('common.pagination.nextShort') }}</button>
       </div>
     </div>
   </AdminLayout>
