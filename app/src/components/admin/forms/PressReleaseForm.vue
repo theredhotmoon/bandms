@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { reactive, ref, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { fetchMetaForUrl } from '@/api/press-releases'
@@ -9,6 +10,8 @@ import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
 import type { TourSummary } from '@/types/tour'
 import type { PressRelease, PressReleaseMeta, PressReleasePayload } from '@/types/press-release'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: PressRelease | null
@@ -85,7 +88,7 @@ async function fetchMeta() {
     if (meta.og_site_name)   form.og_site_name   = meta.og_site_name
     previewImage.value = meta.og_image
   } catch (e: unknown) {
-    fetchError.value = e instanceof Error ? e.message : 'Failed to fetch'
+    fetchError.value = e instanceof Error ? e.message : t('content.press.fetchFailed')
   } finally {
     fetching.value = false
   }
@@ -116,14 +119,14 @@ function submit() {
 
     <!-- URL + fetch -->
     <div>
-      <label class="field-label">Article URL <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('content.press.articleUrl') }} <span style="color:#f87171;">*</span></label>
       <div class="url-row">
         <input
           v-model="form.url"
           type="url"
           required
           class="field-input flex-1"
-          placeholder="https://example.com/article-about-the-band"
+          :placeholder="$t('content.press.urlPlaceholder')"
         />
         <button
           type="button"
@@ -131,7 +134,7 @@ function submit() {
           :disabled="!form.url || fetching"
           @click="fetchMeta"
         >
-          {{ fetching ? 'Fetching…' : 'Fetch preview' }}
+          {{ fetching ? $t('content.press.fetching') : $t('content.press.fetchPreview') }}
         </button>
       </div>
       <p v-if="fetchError" class="field-error">{{ fetchError }}</p>
@@ -149,7 +152,7 @@ function submit() {
       />
       <div class="og-body">
         <div v-if="form.og_site_name" class="og-site">{{ form.og_site_name }}</div>
-        <div class="og-title">{{ form.og_title || '(no title)' }}</div>
+        <div class="og-title">{{ form.og_title || $t('content.press.noTitle') }}</div>
         <div v-if="form.og_description" class="og-desc">{{ form.og_description }}</div>
       </div>
     </div>
@@ -157,26 +160,26 @@ function submit() {
     <!-- Editable meta fields -->
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2">
-        <label class="field-label">Title</label>
-        <input v-model="form.og_title" class="field-input" placeholder="Article headline" />
+        <label class="field-label">{{ $t('common.fields.title') }}</label>
+        <input v-model="form.og_title" class="field-input" :placeholder="$t('content.press.titlePlaceholder')" />
       </div>
       <div>
-        <label class="field-label">Site name</label>
-        <input v-model="form.og_site_name" class="field-input" placeholder="e.g. Rolling Stone" />
+        <label class="field-label">{{ $t('content.press.siteName') }}</label>
+        <input v-model="form.og_site_name" class="field-input" :placeholder="$t('content.press.siteNamePlaceholder')" />
       </div>
       <div>
-        <label class="field-label">Image URL</label>
-        <input v-model="form.og_image" type="url" class="field-input" placeholder="https://…" />
+        <label class="field-label">{{ $t('content.press.imageUrl') }}</label>
+        <input v-model="form.og_image" type="url" class="field-input" :placeholder="$t('common.fields.urlPlaceholder')" />
       </div>
       <div class="col-span-2">
-        <label class="field-label">Description</label>
-        <textarea v-model="form.og_description" class="field-input" rows="3" placeholder="Short article description" />
+        <label class="field-label">{{ $t('common.fields.description') }}</label>
+        <textarea v-model="form.og_description" class="field-input" rows="3" :placeholder="$t('content.press.descriptionPlaceholder')" />
       </div>
     </div>
 
     <!-- Published at -->
     <div>
-      <label class="field-label">Publish date</label>
+      <label class="field-label">{{ $t('content.press.publishDate') }}</label>
       <input v-model="form.published_at" type="datetime-local" class="field-input" style="max-width:18rem;" />
     </div>
 
@@ -200,15 +203,15 @@ function submit() {
     <!-- Featured on EPK -->
     <label class="featured-toggle">
       <input type="checkbox" v-model="form.featured" />
-      <span class="featured-label">Feature on EPK</span>
-      <span class="featured-hint">Shows this article in the Press section of your public EPK (up to 3 featured articles displayed).</span>
+      <span class="featured-label">{{ $t('content.press.featureEpk') }}</span>
+      <span class="featured-hint">{{ $t('content.press.featureEpkHint') }}</span>
     </label>
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update press release' : 'Add press release') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('content.press.update') : $t('content.press.create')) }}
       </button>
     </div>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
@@ -15,6 +16,8 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import type { Clip } from '@/types/clip'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Post | null
@@ -48,7 +51,7 @@ const form = reactive({
 })
 
 const entityLists = computed<RefEntityLists>(() => ({
-  concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? 'TBA'}` })),
+  concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? t('content.posts.venueTba')}` })),
   album:         props.albums.map(a => ({ id: a.id, label: a.title })),
   release:       props.releases.map(r => ({ id: r.id, label: r.title })),
   music_video:   props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
@@ -109,21 +112,21 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
-      <label class="field-label">Title <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('common.fields.title') }} <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
         <div class="trans-row">
-          <span class="lang-badge">EN</span>
-          <input v-model="form.title_en" required class="field-input flex-1" placeholder="Post title" />
+          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
+          <input v-model="form.title_en" required class="field-input flex-1" :placeholder="$t('content.posts.titlePlaceholderEn')" />
         </div>
         <div class="trans-row">
-          <span class="lang-badge lang-badge--pl">PL</span>
-          <input v-model="form.title_pl" class="field-input flex-1" placeholder="Tytuł posta" />
+          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
+          <input v-model="form.title_pl" class="field-input flex-1" :placeholder="$t('content.posts.titlePlaceholderPl')" />
         </div>
       </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Slug URL</label>
+      <label class="field-label">{{ $t('common.fields.slug') }}</label>
       <SlugInput
         v-model="form.slug_en"
         v-model:modelValuePl="form.slug_pl"
@@ -135,26 +138,26 @@ function submit() {
       <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Intro</label>
+      <label class="field-label">{{ $t('content.posts.intro') }}</label>
       <div class="trans-group">
         <div class="trans-row trans-row--top">
-          <span class="lang-badge">EN</span>
-          <textarea v-model="form.intro_en" class="field-input flex-1" rows="2" placeholder="Short introductory text shown in previews…" />
+          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
+          <textarea v-model="form.intro_en" class="field-input flex-1" rows="2" :placeholder="$t('content.posts.introPlaceholderEn')" />
         </div>
         <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl">PL</span>
-          <textarea v-model="form.intro_pl" class="field-input flex-1" rows="2" placeholder="Krótki tekst wprowadzający…" />
+          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
+          <textarea v-model="form.intro_pl" class="field-input flex-1" rows="2" :placeholder="$t('content.posts.introPlaceholderPl')" />
         </div>
       </div>
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Image</label>
+      <label class="field-label">{{ $t('common.fields.image') }}</label>
       <SingleImageUpload v-model="form.image" />
       <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Publish at</label>
+      <label class="field-label">{{ $t('content.posts.publishAt') }}</label>
       <input v-model="form.published_at" type="datetime-local" class="field-input" />
       <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
     </div>
@@ -167,15 +170,15 @@ function submit() {
     />
 
     <div v-if="form.concert_ids.length > 1">
-      <label class="field-label">Event date shown as</label>
+      <label class="field-label">{{ $t('content.posts.eventDateShownAs') }}</label>
       <div class="flex gap-4">
         <label class="flex items-center gap-2 text-sm">
           <input type="radio" value="range" v-model="form.event_date_display" />
-          Date range
+          {{ $t('content.posts.dateRange') }}
         </label>
         <label class="flex items-center gap-2 text-sm">
           <input type="radio" value="list" v-model="form.event_date_display" />
-          List of dates
+          {{ $t('content.posts.dateList') }}
         </label>
       </div>
     </div>
@@ -184,9 +187,9 @@ function submit() {
     <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>

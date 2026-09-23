@@ -21,6 +21,11 @@ export default {
   fields: {
     name: 'Name',
     description: 'Description',
+    title: 'Title',
+    email: 'Email',
+    phone: 'Phone',
+    slug: 'Slug URL',
+    image: 'Image',
     tags: 'Tags',
     date: 'Date',
     type: 'Type',
