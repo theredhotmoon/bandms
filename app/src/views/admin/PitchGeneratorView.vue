@@ -72,18 +72,18 @@ const latestRelease = computed(() =>
 
 function fmtDate(iso: string): string {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   } catch {
     return iso
   }
 }
 
 function genreText(genres: string | null): string {
-  if (!genres) return 'music'
+  if (!genres) return 'music' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const list = genres.split(',').map((g) => g.trim()).filter(Boolean)
   if (list.length === 1) return list[0]
-  if (list.length === 2) return list.join(' and ')
-  return list.slice(0, -1).join(', ') + ' and ' + list.at(-1)
+  if (list.length === 2) return list.join(' and ') // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  return list.slice(0, -1).join(', ') + ' and ' + list.at(-1) // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
 }
 
 const pitch = computed((): string => {
@@ -97,7 +97,7 @@ const pitch = computed((): string => {
   const stats   = p.stat_spotify_monthly ? `\n\n${name} currently has ${p.stat_spotify_monthly.toLocaleString()} monthly Spotify listeners.` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const release = latestRelease.value ? `\n\nTheir latest release "${latestRelease.value.title}" (${latestRelease.value.type.toUpperCase()}) is out now.` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const epk     = `\n\nFull EPK available at: [your domain]/epk` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
-  const contact = p.booking_email ? `\n\nBooking: ${p.booking_email}` : ''
+  const contact = p.booking_email ? `\n\nBooking: ${p.booking_email}` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const sign    = `\n\nBest,\n[Your name]` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
 
   const to = recipientName.value ? `Hi ${recipientName.value},\n\n` : 'Hi,\n\n' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker

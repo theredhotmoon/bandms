@@ -3,7 +3,11 @@ import { test, expect } from '@playwright/test'
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 /**
- * The Pitch Generator had no spec at all, and this migration turned its
+ * band-contacts.spec.ts:104/:123 already assert this view's heading, so the
+ * English default has a second dependency on content.pitch.title — worth
+ * knowing before anyone changes the default locale.
+ *
+ * This is the first spec for the view itself. The migration turned its
  * `pitchTypes` const array into a computed so the tab labels re-render on a
  * language switch. A const would have frozen them at module load and looked
  * fine in every English run — which is exactly the failure this asserts.
