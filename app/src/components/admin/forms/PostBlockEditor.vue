@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { computed, ref } from 'vue'
 import { defaultPayload, move } from '@/utils/postBlocks'
 import type { PostBlockDraft, PostBlockType } from '@/types/post'
 import TextBlockEditor  from './blocks/TextBlockEditor.vue'
@@ -8,12 +9,17 @@ import EmbedBlockEditor from './blocks/EmbedBlockEditor.vue'
 import RefBlockEditor   from './blocks/RefBlockEditor.vue'
 import type { RefEntityLists } from './blocks/RefBlockEditor.vue'
 
+const { t } = useI18n()
+
 const props = defineProps<{ modelValue: PostBlockDraft[]; entities: RefEntityLists }>()
 const emit = defineEmits<{ 'update:modelValue': [PostBlockDraft[]] }>()
 
-const TYPE_LABELS: Record<PostBlockType, string> = {
-  text: 'Text', image: 'Image', embed: 'Embed / link', ref: 'Reference',
-}
+const TYPE_LABELS = computed<Record<PostBlockType, string>>(() => ({
+  text: t('content.blocks.kind.text'),
+  image: t('content.blocks.kind.image'),
+  embed: t('content.blocks.kind.embed'),
+  ref: t('content.blocks.kind.ref'),
+}))
 
 function add(type: PostBlockType) {
   emit('update:modelValue', [...props.modelValue, { type, payload: defaultPayload(type) }])
@@ -43,7 +49,7 @@ function onDrop(to: number) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-2">
-      <label class="field-label mb-0">Content blocks</label>
+      <label class="field-label mb-0">{{ $t('content.blocks.title') }}</label>
       <div class="flex gap-1">
         <button v-for="(label, type) in TYPE_LABELS" :key="type" type="button"
                 class="btn-add" @click="add(type as PostBlockType)">+ {{ label }}</button>
@@ -51,7 +57,7 @@ function onDrop(to: number) {
     </div>
 
     <p v-if="modelValue.length === 0" class="empty-hint">
-      No blocks yet. Add text, an image, an embed or a reference — they render in this order.
+      {{ $t('content.blocks.empty') }}
     </p>
 
     <div class="flex flex-col gap-2">
@@ -66,11 +72,11 @@ function onDrop(to: number) {
           <span class="block-grip" aria-hidden="true">⠿</span>
           <span class="block-type">{{ TYPE_LABELS[block.type] }}</span>
           <span class="block-pos">{{ i + 1 }}</span>
-          <button type="button" class="btn-remove" @click="remove(i)" title="Remove block">✕</button>
+          <button type="button" class="btn-remove" @click="remove(i)" :title="$t('content.blocks.remove')">✕</button>
         </div>
 
         <p v-if="block.dangling" class="block-dangling">
-          ⚠ The item this block referenced was deleted. Pick a new one or remove this block.
+          {{ $t('content.blocks.danglingRef') }}
         </p>
 
         <TextBlockEditor  v-if="block.type === 'text'"  :payload="block.payload" @update:payload="setPayload(i, $event)" />
