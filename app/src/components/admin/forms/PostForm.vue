@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
@@ -15,6 +16,8 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import type { Clip } from '@/types/clip'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Post | null
@@ -48,7 +51,7 @@ const form = reactive({
 })
 
 const entityLists = computed<RefEntityLists>(() => ({
-  concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? 'TBA'}` })),
+  concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? t('content.posts.venueTba')}` })),
   album:         props.albums.map(a => ({ id: a.id, label: a.title })),
   release:       props.releases.map(r => ({ id: r.id, label: r.title })),
   music_video:   props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
@@ -149,7 +152,7 @@ function submit() {
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
     </div>
     <div>
-      <label class="field-label">{{ $t('content.posts.image') }}</label>
+      <label class="field-label">{{ $t('common.fields.image') }}</label>
       <SingleImageUpload v-model="form.image" />
       <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
     </div>

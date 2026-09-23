@@ -25,6 +25,7 @@ export default {
     email: 'Email',
     phone: 'Phone',
     slug: 'Slug URL',
+    image: 'Image',
     tags: 'Tags',
     date: 'Date',
     type: 'Type',

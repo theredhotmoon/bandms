@@ -17,10 +17,10 @@ export default {
   posts: {
     titlePlaceholderEn: 'Post title',
     titlePlaceholderPl: 'Tytuł posta',
+    venueTba: 'TBA',
     intro: 'Intro',
     introPlaceholderEn: 'Short introductory text shown in previews…',
     introPlaceholderPl: 'Krótki tekst wprowadzający…',
-    image: 'Image',
     publishAt: 'Publish at',
     eventDateShownAs: 'Event date shown as',
     dateRange: 'Date range',

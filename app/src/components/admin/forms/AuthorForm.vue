@@ -52,7 +52,7 @@ watch(
     socialLinks.value           = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
     press_release_ids.value = val?.press_releases?.map((p) => p.id) ?? []
     concert_ids.value       = val?.concerts?.map((c) => c.id)       ?? []
-    tour_ids.value          = val?.tours?.map((t) => t.id)           ?? []
+    tour_ids.value          = val?.tours?.map((tour) => tour.id)           ?? []
     band_ids.value          = val?.bands?.map((b) => b.id)           ?? []
   },
   { immediate: true },
@@ -126,11 +126,11 @@ function submit() {
       </div>
       <div>
         <label class="field-label">{{ $t('common.fields.phone') }}</label>
-        <input v-model="form.phone" class="field-input" placeholder="+48 123 456 789" />
+        <input v-model="form.phone" class="field-input" placeholder="+48 123 456 789" <!-- i18n-ignore: number format example, no words --> />
       </div>
       <div>
         <label class="field-label">{{ $t('content.authors.whatsapp') }}</label>
-        <input v-model="form.whatsapp" class="field-input" placeholder="+48 123 456 789" />
+        <input v-model="form.whatsapp" class="field-input" placeholder="+48 123 456 789" <!-- i18n-ignore: number format example, no words --> />
       </div>
     </div>
 
@@ -178,9 +178,9 @@ function submit() {
         {{ sectionLabel(t('content.authors.sections.tours'), tour_ids.length) }}
       </button>
       <div v-if="expandedSections.tours" class="assoc-list">
-        <label v-for="t in tours" :key="t.id" class="assoc-item">
-          <input type="checkbox" :checked="tour_ids.includes(t.id)" @change="toggle(tour_ids, t.id)" class="assoc-check" />
-          <span class="assoc-text">{{ t.name }}</span>
+        <label v-for="tour in tours" :key="tour.id" class="assoc-item">
+          <input type="checkbox" :checked="tour_ids.includes(tour.id)" @change="toggle(tour_ids, tour.id)" class="assoc-check" />
+          <span class="assoc-text">{{ tour.name }}</span>
         </label>
       </div>
     </div>
