@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -24,6 +25,8 @@ import { useRouter } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Concert, ConcertPayload } from '@/types/concert'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = useConcerts()
 const { query: venuesQ } = useVenues()
@@ -58,15 +61,15 @@ async function createRider(concert: Concert) {
   creatingRiderFor.value = concert.id
   try {
     const rider = await createRiderForConcert(token.value!, concert.id)
-    toast.success(`Created "${rider.name}"`)
+    toast.success(t('shows.concerts.riderCreated', { name: rider.name }))
     router.push(adminUrl('tech-rider'))
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
-      toast.info('This concert already has a rider')
+      toast.info(t('shows.concerts.riderExists'))
       router.push(adminUrl('tech-rider'))
       return
     }
-    reportSaveError(e, 'Could not create a rider for this concert')
+    reportSaveError(e, t('shows.concerts.riderFailed'))
   } finally {
     creatingRiderFor.value = null
   }
@@ -109,10 +112,10 @@ async function handleSubmit(payload: ConcertPayload, posterFile: File | null, de
     let concert: Concert
     if (editing.value) {
       concert = await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Concert updated')
+      toast.success(t('shows.concerts.updated'))
     } else {
       concert = await create.mutateAsync(payload)
-      toast.success('Concert created')
+      toast.success(t('shows.concerts.created'))
     }
     if (posterFile) {
       await uploadConcertPoster(token.value!, concert.id, posterFile)
@@ -123,7 +126,7 @@ async function handleSubmit(payload: ConcertPayload, posterFile: File | null, de
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -131,9 +134,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Concert deleted')
+    toast.success(t('shows.concerts.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 </script>
 
@@ -141,50 +144,50 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Concerts</h1>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('shows.concerts.title') }}</h1>
         <button
           @click="openCreate"
           class="btn-add-primary"
           :disabled="noVenues"
-          :title="noVenues ? 'Add a venue before creating a concert' : undefined"
-        >+ Add concert</button>
+          :title="noVenues ? $t('shows.concerts.addDisabledTitle') : undefined"
+        >{{ $t('shows.concerts.add') }}</button>
       </div>
 
       <div v-if="noVenues" class="venue-notice">
-        <span>You need at least one venue before you can add a concert.</span>
-        <RouterLink :to="adminUrl('venues')" class="venue-notice-link">Go to Venues &rarr;</RouterLink>
+        <span>{{ $t('shows.concerts.needVenue') }}</span>
+        <RouterLink :to="adminUrl('venues')" class="venue-notice-link">{{ $t('shows.concerts.goToVenues') }}</RouterLink>
       </div>
       <div v-else-if="venuesFailed" class="venue-notice">
-        <span>Could not load venues — saving a concert may fail until this resolves.</span>
-        <button type="button" class="venue-notice-link" @click="venuesQ.refetch()">Retry</button>
+        <span>{{ $t('shows.concerts.venuesLoadFailed') }}</span>
+        <button type="button" class="venue-notice-link" @click="venuesQ.refetch()">{{ $t('shows.concerts.retry') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load concerts.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('shows.concerts.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
               <select v-model="filterWhen" class="filter-select">
-                <option value="">All dates</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="past">Past</option>
+                <option value="">{{ $t('shows.concerts.filter.all') }}</option>
+                <option value="upcoming">{{ $t('shows.concerts.filter.upcoming') }}</option>
+                <option value="past">{{ $t('shows.concerts.filter.past') }}</option>
               </select>
             </template>
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!(query.data.value?.length)">No concerts yet.</span>
-            <span v-else>No concerts match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('shows.concerts.empty') }}</span>
+            <span v-else>{{ $t('shows.concerts.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Date" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Name</th>
-                <th class="th">Doors / Start</th>
-                <th class="th">Venue</th>
-                <th class="th text-right">Actions</th>
+                <SortHeader :label="$t('common.fields.date')" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('common.fields.name') }}</th>
+                <th class="th">{{ $t('shows.concerts.columns.doorsStart') }}</th>
+                <th class="th">{{ $t('shows.venues.singular') }}</th>
+                <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -202,12 +205,12 @@ async function confirmDelete() {
                   <button
                     class="btn-edit"
                     :disabled="creatingRiderFor === concert.id"
-                    title="Create a tech rider for this gig"
+                    :title="$t('shows.concerts.riderTitle')"
                     @click="createRider(concert)"
-                  >Rider</button>
-                  <button @click="ticketsConcert = concert" class="btn-edit">Tickets</button>
-                  <button @click="openEdit(concert)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = concert.id" class="btn-delete">Delete</button>
+                  >{{ $t('shows.concerts.rider') }}</button>
+                  <button @click="ticketsConcert = concert" class="btn-edit">{{ $t('shows.concerts.tickets') }}</button>
+                  <button @click="openEdit(concert)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = concert.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -227,7 +230,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit concert' : 'New concert'" maxWidth="56rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('shows.concerts.modalEdit') : $t('shows.concerts.modalNew')" maxWidth="56rem" @close="closeModal">
       <ConcertForm
         :initial="editing"
         :venues="venuesQ.data.value ?? []"
@@ -242,7 +245,7 @@ async function confirmDelete() {
 
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
 
-    <AdminModal :open="ticketsConcert !== null" :title="`Tickets — ${ticketsConcert?.name ?? ticketsConcert?.date ?? ''}`" maxWidth="52rem" @close="ticketsConcert = null">
+    <AdminModal :open="ticketsConcert !== null" :title="$t('shows.concerts.ticketsModal', { name: ticketsConcert?.name ?? ticketsConcert?.date ?? '' })" maxWidth="52rem" @close="ticketsConcert = null">
       <ConcertTicketsManager v-if="ticketsConcert" :concert-id="ticketsConcert.id" />
     </AdminModal>
   </AdminLayout>

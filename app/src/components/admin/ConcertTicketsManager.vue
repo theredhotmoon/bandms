@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useConcertTickets } from '@/composables/useConcertTickets'
 import { reportSaveError } from '@/utils/formErrors'
 import type { TicketType, PriceTier, TicketTypePayload, PriceTierPayload } from '@/types/ticket'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{ concertId: number }>()
 
@@ -13,7 +16,7 @@ const { query, createType, updateType, deleteType, createTier, updateTier, delet
 // ── Ticket type form ──────────────────────────────────────────────────────
 const showTypeForm = ref(false)
 const editingType = ref<TicketType | null>(null)
-const typeForm = ref({ name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN', total_tickets: '' })
+const typeForm = ref({ name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, total_tickets: '' })
 const typeErrors = ref<Record<string, string[]>>({})
 
 // Show inline price/currency/total fields when creating or editing a 0-or-1-tier type.
@@ -31,23 +34,23 @@ function toLocalDatetime(iso: string | null | undefined): string {
 function openCreateType() {
   tierModal.value = null
   editingType.value = null
-  typeForm.value = { name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN', total_tickets: '' }
+  typeForm.value = { name: '', description: '', available_from: '', on_sale_until: '', max_per_order: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, total_tickets: '' }
   typeErrors.value = {}
   showTypeForm.value = true
 }
 
-function openEditType(t: TicketType) {
+function openEditType(type: TicketType) {
   tierModal.value = null
-  editingType.value = t
-  const singleTier = t.tiers.length === 1 ? t.tiers[0] : null
+  editingType.value = type
+  const singleTier = type.tiers.length === 1 ? type.tiers[0] : null
   typeForm.value = {
-    name: t.name,
-    description: t.description ?? '',
-    available_from: toLocalDatetime(t.available_from),
-    on_sale_until: toLocalDatetime(t.on_sale_until),
-    max_per_order: t.max_per_order != null ? String(t.max_per_order) : '',
+    name: type.name,
+    description: type.description ?? '',
+    available_from: toLocalDatetime(type.available_from),
+    on_sale_until: toLocalDatetime(type.on_sale_until),
+    max_per_order: type.max_per_order != null ? String(type.max_per_order) : '',
     price: singleTier ? String(singleTier.price) : '',
-    currency: singleTier ? singleTier.currency : 'PLN',
+    currency: singleTier ? singleTier.currency : 'PLN', /* i18n-ignore: ISO currency code */
     total_tickets: singleTier?.available_count != null ? String(singleTier.available_count) : '',
   }
   typeErrors.value = {}
@@ -69,34 +72,34 @@ async function submitType() {
   try {
     if (editingType.value) {
       await updateType.mutateAsync({ id: editingType.value.id, payload })
-      toast.success('Ticket type updated')
+      toast.success(t('shows.tickets.manager.typeUpdated'))
     } else {
       await createType.mutateAsync(payload)
-      toast.success('Ticket type created')
+      toast.success(t('shows.tickets.manager.typeCreated'))
     }
     showTypeForm.value = false
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', typeErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), typeErrors)
   }
 }
 
-async function removeType(t: TicketType) {
-  if (!confirm(`Delete ticket type "${t.name}"?`)) return
+async function removeType(type: TicketType) {
+  if (!confirm(t('shows.tickets.manager.confirmDeleteType', { name: type.name }))) return
   try {
-    await deleteType.mutateAsync(t.id)
-    toast.success('Ticket type deleted')
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+    await deleteType.mutateAsync(type.id)
+    toast.success(t('shows.tickets.manager.typeDeleted'))
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 
 // ── Price tier form ───────────────────────────────────────────────────────
 const tierModal = ref<{ typeId: number; tier: PriceTier | null } | null>(null)
-const tierForm = ref({ name: '', price: '', currency: 'PLN', available_from: '', available_until: '', available_count: '', sort_order: '0' })
+const tierForm = ref({ name: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, available_from: '', available_until: '', available_count: '', sort_order: '0' })
 const tierErrors = ref<Record<string, string[]>>({})
 
 function openCreateTier(typeId: number) {
   showTypeForm.value = false
   tierModal.value = { typeId, tier: null }
-  tierForm.value = { name: '', price: '', currency: 'PLN', available_from: '', available_until: '', available_count: '', sort_order: '0' }
+  tierForm.value = { name: '', price: '', currency: 'PLN' /* i18n-ignore: ISO currency code */, available_from: '', available_until: '', available_count: '', sort_order: '0' }
   tierErrors.value = {}
 }
 
@@ -131,40 +134,40 @@ async function submitTier() {
     const { typeId, tier } = tierModal.value
     if (tier) {
       await updateTier.mutateAsync({ typeId, tierId: tier.id, payload })
-      toast.success('Tier updated')
+      toast.success(t('shows.tickets.manager.tierUpdated'))
     } else {
       await createTier.mutateAsync({ typeId, payload })
-      toast.success('Tier created')
+      toast.success(t('shows.tickets.manager.tierCreated'))
     }
     tierModal.value = null
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', tierErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), tierErrors)
   }
 }
 
 async function removeTier(typeId: number, tier: PriceTier) {
-  if (!confirm(`Delete tier "${tier.name}"?`)) return
+  if (!confirm(t('shows.tickets.manager.confirmDeleteTier', { name: tier.name }))) return
   try {
     await deleteTier.mutateAsync({ typeId, tierId: tier.id })
-    toast.success('Tier deleted')
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+    toast.success(t('shows.tickets.manager.tierDeleted'))
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 
 function fmtPrice(price: number, currency: string): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(price)
+  return new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(price)
 }
 </script>
 
 <template>
   <div class="tkm">
     <div class="tkm-header">
-      <span class="tkm-title">Ticket Types</span>
-      <button class="btn-add" @click="openCreateType">+ Add type</button>
+      <span class="tkm-title">{{ $t('shows.tickets.manager.title') }}</span>
+      <button class="btn-add" @click="openCreateType">{{ $t('shows.tickets.manager.addType') }}</button>
     </div>
 
-    <div v-if="query.isPending.value" class="tkm-state">Loading…</div>
-    <div v-else-if="query.isError.value" class="tkm-state err">Failed to load tickets.</div>
-    <div v-else-if="!query.data.value?.length" class="tkm-state">No ticket types yet.</div>
+    <div v-if="query.isPending.value" class="tkm-state">{{ $t('common.state.loading') }}</div>
+    <div v-else-if="query.isError.value" class="tkm-state err">{{ $t('shows.tickets.manager.loadFailed') }}</div>
+    <div v-else-if="!query.data.value?.length" class="tkm-state">{{ $t('shows.tickets.manager.empty') }}</div>
 
     <div v-else class="type-list">
       <div v-for="tt in query.data.value" :key="tt.id" class="type-card">
@@ -172,24 +175,24 @@ function fmtPrice(price: number, currency: string): string {
         <div class="type-head">
           <div class="type-meta">
             <span class="type-name">{{ tt.name }}</span>
-            <span class="type-sold">{{ tt.sold_count }} sold</span>
+            <span class="type-sold">{{ $t('shows.tickets.manager.soldCount', { n: tt.sold_count }) }}</span>
             <span v-if="tt.active_tier" class="badge badge-sale">
-              On sale · {{ fmtPrice(tt.active_tier.price, tt.active_tier.currency) }}
+              {{ $t('shows.tickets.manager.onSalePrice', { price: fmtPrice(tt.active_tier.price, tt.active_tier.currency) }) }}
             </span>
-            <span v-else class="badge badge-off">Not on sale</span>
-            <span v-if="tt.available_from" class="type-info">From {{ tt.available_from.slice(0, 16).replace('T', ' ') }}</span>
-            <span v-if="tt.on_sale_until" class="type-info">Until {{ tt.on_sale_until.slice(0, 16).replace('T', ' ') }}</span>
-            <span v-if="tt.max_per_order" class="type-info">Max {{ tt.max_per_order }}/order</span>
+            <span v-else class="badge badge-off">{{ $t('shows.tickets.manager.notOnSale') }}</span>
+            <span v-if="tt.available_from" class="type-info">{{ $t('shows.tickets.manager.fromDate', { date: tt.available_from.slice(0, 16).replace('T', ' ') }) }}</span>
+            <span v-if="tt.on_sale_until" class="type-info">{{ $t('shows.tickets.manager.untilDate', { date: tt.on_sale_until.slice(0, 16).replace('T', ' ') }) }}</span>
+            <span v-if="tt.max_per_order" class="type-info">{{ $t('shows.tickets.manager.maxPerOrderCount', { n: tt.max_per_order }) }}</span>
           </div>
           <div class="type-actions">
-            <button class="btn-edit" @click="openEditType(tt)">Edit</button>
-            <button class="btn-delete" @click="removeType(tt)">Delete</button>
+            <button class="btn-edit" @click="openEditType(tt)">{{ $t('common.actions.edit') }}</button>
+            <button class="btn-delete" @click="removeType(tt)">{{ $t('common.actions.delete') }}</button>
           </div>
         </div>
 
         <!-- Tiers -->
         <div class="tiers">
-          <div v-if="!tt.tiers.length" class="tier-empty">No price tiers yet.</div>
+          <div v-if="!tt.tiers.length" class="tier-empty">{{ $t('shows.tickets.manager.noTiers') }}</div>
           <div v-for="tier in tt.tiers" :key="tier.id" class="tier-row">
             <span class="tier-name">{{ tier.name }}</span>
             <span class="tier-price">{{ fmtPrice(tier.price, tier.currency) }}</span>
@@ -197,115 +200,115 @@ function fmtPrice(price: number, currency: string): string {
               {{ tier.available_from ?? '—' }} → {{ tier.available_until ?? '—' }}
             </span>
             <span v-if="tier.available_count != null" class="tier-count">
-              {{ tier.available_count - tier.sold_count }} / {{ tier.available_count }} left
+              {{ $t('shows.tickets.manager.leftCount', { available: tier.available_count - tier.sold_count, total: tier.available_count }) }}
             </span>
             <div class="tier-acts">
-              <button class="btn-edit-sm" @click="openEditTier(tt.id, tier)">Edit</button>
+              <button class="btn-edit-sm" @click="openEditTier(tt.id, tier)">{{ $t('common.actions.edit') }}</button>
               <button class="btn-del-sm" @click="removeTier(tt.id, tier)">✕</button>
             </div>
           </div>
-          <button class="btn-add-tier" @click="openCreateTier(tt.id)">+ Add tier</button>
+          <button class="btn-add-tier" @click="openCreateTier(tt.id)">{{ $t('shows.tickets.manager.addTier') }}</button>
         </div>
       </div>
     </div>
 
     <!-- Type form inline -->
     <div v-if="showTypeForm" class="form-panel">
-      <div class="form-title">{{ editingType ? 'Edit type' : 'New type' }}</div>
+      <div class="form-title">{{ editingType ? $t('shows.tickets.manager.editType') : $t('shows.tickets.manager.newType') }}</div>
       <div class="field">
-        <label class="lbl">Name *</label>
+        <label class="lbl"><i18n-t keypath="common.fields.name" tag="span" scope="global" /> *</label>
         <input v-model="typeForm.name" class="inp" required />
         <p v-if="typeErrors.name" class="err-txt">{{ typeErrors.name[0] }}</p>
       </div>
       <div class="field">
-        <label class="lbl">Description</label>
+        <label class="lbl">{{ $t('common.fields.description') }}</label>
         <textarea v-model="typeForm.description" class="inp" rows="2" />
       </div>
       <div v-if="showInlinePricing" class="field-row">
         <div class="field">
-          <label class="lbl">Price</label>
-          <input v-model="typeForm.price" type="number" step="0.01" min="0" class="inp" placeholder="e.g. 25.00" />
+          <label class="lbl">{{ $t('shows.tickets.manager.price') }}</label>
+          <input v-model="typeForm.price" type="number" step="0.01" min="0" class="inp" :placeholder="$t('shows.tickets.manager.pricePlaceholder')" />
           <p v-if="typeErrors.price" class="err-txt">{{ typeErrors.price[0] }}</p>
         </div>
         <div class="field" style="max-width:7rem;">
-          <label class="lbl">Currency</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.currency') }}</label>
           <input v-model="typeForm.currency" class="inp" maxlength="3" style="text-transform:uppercase;" />
         </div>
         <div class="field" style="max-width:10rem;">
-          <label class="lbl">Total tickets</label>
-          <input v-model="typeForm.total_tickets" type="number" min="1" class="inp" placeholder="unlimited" />
+          <label class="lbl">{{ $t('shows.tickets.manager.totalTickets') }}</label>
+          <input v-model="typeForm.total_tickets" type="number" min="1" class="inp" :placeholder="$t('shows.tickets.manager.unlimited')" />
           <p v-if="typeErrors.total_tickets" class="err-txt">{{ typeErrors.total_tickets[0] }}</p>
         </div>
       </div>
       <div class="field-row">
         <div class="field">
-          <label class="lbl">On sale from</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.onSaleFrom') }}</label>
           <input v-model="typeForm.available_from" type="datetime-local" class="inp" />
           <p v-if="typeErrors.available_from" class="err-txt">{{ typeErrors.available_from[0] }}</p>
         </div>
         <div class="field">
-          <label class="lbl">Sale cutoff</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.saleCutoff') }}</label>
           <input v-model="typeForm.on_sale_until" type="datetime-local" class="inp" />
           <p v-if="typeErrors.on_sale_until" class="err-txt">{{ typeErrors.on_sale_until[0] }}</p>
         </div>
         <div class="field" style="max-width:10rem;">
-          <label class="lbl">Max per order</label>
-          <input v-model="typeForm.max_per_order" type="number" min="1" class="inp" placeholder="unlimited" />
+          <label class="lbl">{{ $t('shows.tickets.manager.maxPerOrder') }}</label>
+          <input v-model="typeForm.max_per_order" type="number" min="1" class="inp" :placeholder="$t('shows.tickets.manager.unlimited')" />
           <p v-if="typeErrors.max_per_order" class="err-txt">{{ typeErrors.max_per_order[0] }}</p>
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-ghost" @click="showTypeForm = false">Cancel</button>
+        <button class="btn-ghost" @click="showTypeForm = false">{{ $t('common.actions.cancel') }}</button>
         <button class="btn-primary" :disabled="createType.isPending.value || updateType.isPending.value" @click="submitType">
-          {{ createType.isPending.value || updateType.isPending.value ? 'Saving…' : 'Save' }}
+          {{ createType.isPending.value || updateType.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
         </button>
       </div>
     </div>
 
     <!-- Tier modal -->
     <div v-if="tierModal" class="form-panel">
-      <div class="form-title">{{ tierModal.tier ? 'Edit tier' : 'New price tier' }}</div>
+      <div class="form-title">{{ tierModal.tier ? $t('shows.tickets.manager.editTier') : $t('shows.tickets.manager.newTier') }}</div>
       <div class="field">
-        <label class="lbl">Tier name *</label>
-        <input v-model="tierForm.name" class="inp" placeholder="e.g. Early Bird" required />
+        <label class="lbl"><i18n-t keypath="shows.tickets.manager.tierName" tag="span" scope="global" /> *</label>
+        <input v-model="tierForm.name" class="inp" :placeholder="$t('shows.tickets.manager.tierNamePlaceholder')" required />
         <p v-if="tierErrors.name" class="err-txt">{{ tierErrors.name[0] }}</p>
       </div>
       <div class="field-row">
         <div class="field">
-          <label class="lbl">Price *</label>
+          <label class="lbl"><i18n-t keypath="shows.tickets.manager.price" tag="span" scope="global" /> *</label>
           <input v-model="tierForm.price" type="number" step="0.01" min="0" class="inp" />
           <p v-if="tierErrors.price" class="err-txt">{{ tierErrors.price[0] }}</p>
         </div>
         <div class="field" style="max-width:7rem;">
-          <label class="lbl">Currency</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.currency') }}</label>
           <input v-model="tierForm.currency" class="inp" maxlength="3" style="text-transform:uppercase;" />
         </div>
       </div>
       <div class="field-row">
         <div class="field">
-          <label class="lbl">Available from</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.availableFrom') }}</label>
           <input v-model="tierForm.available_from" type="date" class="inp" />
         </div>
         <div class="field">
-          <label class="lbl">Available until</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.availableUntil') }}</label>
           <input v-model="tierForm.available_until" type="date" class="inp" />
         </div>
       </div>
       <div class="field-row">
         <div class="field" style="max-width:12rem;">
-          <label class="lbl">Ticket count</label>
-          <input v-model="tierForm.available_count" type="number" min="1" class="inp" placeholder="unlimited" />
+          <label class="lbl">{{ $t('shows.tickets.manager.ticketCount') }}</label>
+          <input v-model="tierForm.available_count" type="number" min="1" class="inp" :placeholder="$t('shows.tickets.manager.unlimited')" />
           <p v-if="tierErrors.available_count" class="err-txt">{{ tierErrors.available_count[0] }}</p>
         </div>
         <div class="field" style="max-width:7rem;">
-          <label class="lbl">Sort order</label>
+          <label class="lbl">{{ $t('shows.tickets.manager.sortOrder') }}</label>
           <input v-model="tierForm.sort_order" type="number" min="0" class="inp" />
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-ghost" @click="tierModal = null">Cancel</button>
+        <button class="btn-ghost" @click="tierModal = null">{{ $t('common.actions.cancel') }}</button>
         <button class="btn-primary" :disabled="createTier.isPending.value || updateTier.isPending.value" @click="submitTier">
-          {{ createTier.isPending.value || updateTier.isPending.value ? 'Saving…' : 'Save' }}
+          {{ createTier.isPending.value || updateTier.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
         </button>
       </div>
     </div>

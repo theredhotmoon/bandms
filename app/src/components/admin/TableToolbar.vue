@@ -27,7 +27,7 @@ defineProps<{
     <slot name="filters" />
 
     <span v-if="total > 0" class="result-count" aria-live="polite">
-      {{ showing === total ? total : `${showing} / ${total}` }}
+      {{ /* i18n-ignore: numeric format, no copy */ showing === total ? total : `${showing} / ${total}` }}
     </span>
   </div>
 </template>

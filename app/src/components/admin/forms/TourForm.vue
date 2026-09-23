@@ -103,45 +103,45 @@ function submit() {
 
     <!-- Name -->
     <div>
-      <label class="field-label">Tour name <span style="color:#f87171;">*</span></label>
-      <input v-model="form.name" required class="field-input" placeholder="e.g. Summer Skanking Tour 2025" />
+      <label class="field-label">{{ $t('shows.tours.form.name') }} <span style="color:#f87171;">*</span></label>
+      <input v-model="form.name" required class="field-input" :placeholder="$t('shows.tours.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
 
     <!-- Dates + Poster -->
     <div class="grid grid-cols-3 gap-3">
       <div>
-        <label class="field-label">Start date</label>
+        <label class="field-label">{{ $t('shows.tours.form.startDate') }}</label>
         <input v-model="form.start_date" type="date" class="field-input" />
         <p v-if="errors?.start_date" class="field-error">{{ errors.start_date[0] }}</p>
       </div>
       <div>
-        <label class="field-label">End date</label>
+        <label class="field-label">{{ $t('shows.tours.form.endDate') }}</label>
         <input v-model="form.end_date" type="date" class="field-input" />
         <p v-if="errors?.end_date" class="field-error">{{ errors.end_date[0] }}</p>
       </div>
       <div>
-        <label class="field-label">Poster URL</label>
-        <input v-model="form.poster" class="field-input" placeholder="https://…" />
+        <label class="field-label">{{ $t('shows.tours.form.poster') }}</label>
+        <input v-model="form.poster" class="field-input" :placeholder="$t('common.fields.urlPlaceholder')" />
         <p v-if="errors?.poster" class="field-error">{{ errors.poster[0] }}</p>
       </div>
     </div>
 
     <!-- Description -->
     <div>
-      <label class="field-label">Description</label>
-      <RichEditor v-model="form.description" placeholder="Describe this tour…" />
+      <label class="field-label">{{ $t('common.fields.description') }}</label>
+      <RichEditor v-model="form.description" :placeholder="$t('shows.tours.form.descriptionPlaceholder')" />
       <p v-if="errors?.description" class="field-error">{{ errors.description[0] }}</p>
     </div>
 
     <!-- Concerts -->
     <div>
       <div class="section-title">
-        Concerts
-        <span v-if="selectedConcertIds.size" class="count-badge">{{ selectedConcertIds.size }} selected</span>
+        {{ $t('shows.tours.form.concerts') }}
+        <span v-if="selectedConcertIds.size" class="count-badge">{{ $t('shows.tours.form.selectedCount', { n: selectedConcertIds.size }) }}</span>
       </div>
-      <div v-if="concertsQuery.isPending.value" class="text-xs" style="color:#475569;">Loading concerts…</div>
-      <div v-else-if="!concertsQuery.data.value?.length" class="text-xs" style="color:#475569;">No concerts available.</div>
+      <div v-if="concertsQuery.isPending.value" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.loadingConcerts') }}</div>
+      <div v-else-if="!concertsQuery.data.value?.length" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.noConcerts') }}</div>
       <div v-else class="concerts-list">
         <label
           v-for="c in concertsQuery.data.value"
@@ -156,7 +156,7 @@ function submit() {
             @change="toggleConcert(c.id)"
           />
           <span class="concert-date">{{ c.date }}</span>
-          <span class="concert-venue">{{ c.venue?.name ?? 'No venue' }}</span>
+          <span class="concert-venue">{{ c.venue?.name ?? $t('shows.tours.form.noVenue') }}</span>
           <span v-if="c.description" class="concert-desc">{{ c.description }}</span>
         </label>
       </div>
@@ -166,23 +166,23 @@ function submit() {
     <div>
       <div class="flex items-center justify-between mb-2">
         <div class="section-title mb-0">
-          Additional images
+          {{ $t('shows.tours.form.images') }}
           <span v-if="images.length" class="count-badge">{{ images.length }}</span>
         </div>
-        <button type="button" @click="addImage" class="btn-add-row">+ Add image</button>
+        <button type="button" @click="addImage" class="btn-add-row">{{ $t('shows.tours.form.addImage') }}</button>
       </div>
 
-      <div v-if="!images.length" class="empty-hint">No additional images.</div>
+      <div v-if="!images.length" class="empty-hint">{{ $t('shows.tours.form.noImages') }}</div>
       <div class="rows-list">
         <div v-for="(img, i) in images" :key="i" class="img-row">
           <span class="row-num">{{ i + 1 }}</span>
-          <input v-model="img.url" required class="field-input flex-1" placeholder="Image URL" />
-          <input v-model="img.caption" class="field-input caption-input" placeholder="Caption (optional)" />
+          <input v-model="img.url" required class="field-input flex-1" :placeholder="$t('shows.tours.form.imageUrlPlaceholder')" />
+          <input v-model="img.caption" class="field-input caption-input" :placeholder="$t('shows.tours.form.captionPlaceholder')" />
           <div class="move-group">
-            <button type="button" class="move-btn" :disabled="i === 0" @click="moveImage(i, i - 1)" title="Up">↑</button>
-            <button type="button" class="move-btn" :disabled="i === images.length - 1" @click="moveImage(i, i + 1)" title="Down">↓</button>
+            <button type="button" class="move-btn" :disabled="i === 0" @click="moveImage(i, i - 1)" :title="$t('common.actions.moveUp')">↑</button>
+            <button type="button" class="move-btn" :disabled="i === images.length - 1" @click="moveImage(i, i + 1)" :title="$t('common.actions.moveDown')">↓</button>
           </div>
-          <button type="button" class="remove-btn" @click="removeImage(i)" title="Remove">✕</button>
+          <button type="button" class="remove-btn" @click="removeImage(i)" :title="$t('common.actions.remove')">✕</button>
         </div>
       </div>
     </div>
@@ -191,27 +191,27 @@ function submit() {
     <div>
       <div class="flex items-center justify-between mb-2">
         <div class="section-title mb-0">
-          Additional links
+          {{ $t('shows.tours.form.links') }}
           <span v-if="links.length" class="count-badge">{{ links.length }}</span>
         </div>
-        <button type="button" @click="addLink" class="btn-add-row">+ Add link</button>
+        <button type="button" @click="addLink" class="btn-add-row">{{ $t('shows.tours.form.addLink') }}</button>
       </div>
 
-      <div v-if="!links.length" class="empty-hint">No additional links.</div>
+      <div v-if="!links.length" class="empty-hint">{{ $t('shows.tours.form.noLinks') }}</div>
       <div class="rows-list">
         <div v-for="(link, i) in links" :key="i" class="link-row">
-          <input v-model="link.label" required class="field-input label-input" placeholder="Label (e.g. Tickets)" />
-          <input v-model="link.url" required class="field-input flex-1" placeholder="https://…" />
-          <button type="button" class="remove-btn" @click="removeLink(i)" title="Remove">✕</button>
+          <input v-model="link.label" required class="field-input label-input" :placeholder="$t('shows.tours.form.linkLabelPlaceholder')" />
+          <input v-model="link.url" required class="field-input flex-1" :placeholder="$t('common.fields.urlPlaceholder')" />
+          <button type="button" class="remove-btn" @click="removeLink(i)" :title="$t('common.actions.remove')">✕</button>
         </div>
       </div>
     </div>
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update tour' : 'Create tour') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('shows.tours.form.update') : $t('shows.tours.form.create')) }}
       </button>
     </div>
 

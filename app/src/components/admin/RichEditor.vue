@@ -40,25 +40,25 @@ function cmd(action: () => void) {
     <!-- Toolbar -->
     <div class="toolbar" v-if="editor">
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('bold') }"
-        @click="cmd(() => editor!.chain().focus().toggleBold().run())" title="Bold (Ctrl+B)">
+        @click="cmd(() => editor!.chain().focus().toggleBold().run())" :title="$t('common.editor.bold')">
         <strong>B</strong>
       </button>
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('italic') }"
-        @click="cmd(() => editor!.chain().focus().toggleItalic().run())" title="Italic (Ctrl+I)">
+        @click="cmd(() => editor!.chain().focus().toggleItalic().run())" :title="$t('common.editor.italic')">
         <em>I</em>
       </button>
       <div class="tb-divider" />
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('heading', { level: 2 }) }"
-        @click="cmd(() => editor!.chain().focus().toggleHeading({ level: 2 }).run())" title="Heading 2">
+        @click="cmd(() => editor!.chain().focus().toggleHeading({ level: 2 }).run())" :title="$t('common.editor.heading2')">
         H2
       </button>
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('heading', { level: 3 }) }"
-        @click="cmd(() => editor!.chain().focus().toggleHeading({ level: 3 }).run())" title="Heading 3">
+        @click="cmd(() => editor!.chain().focus().toggleHeading({ level: 3 }).run())" :title="$t('common.editor.heading3')">
         H3
       </button>
       <div class="tb-divider" />
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('bulletList') }"
-        @click="cmd(() => editor!.chain().focus().toggleBulletList().run())" title="Bullet list">
+        @click="cmd(() => editor!.chain().focus().toggleBulletList().run())" :title="$t('common.editor.bulletList')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/>
           <line x1="9" y1="18" x2="20" y2="18"/>
@@ -68,7 +68,7 @@ function cmd(action: () => void) {
         </svg>
       </button>
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('orderedList') }"
-        @click="cmd(() => editor!.chain().focus().toggleOrderedList().run())" title="Ordered list">
+        @click="cmd(() => editor!.chain().focus().toggleOrderedList().run())" :title="$t('common.editor.orderedList')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/>
           <line x1="10" y1="18" x2="21" y2="18"/>
@@ -77,7 +77,7 @@ function cmd(action: () => void) {
       </button>
       <div class="tb-divider" />
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('blockquote') }"
-        @click="cmd(() => editor!.chain().focus().toggleBlockquote().run())" title="Blockquote">
+        @click="cmd(() => editor!.chain().focus().toggleBlockquote().run())" :title="$t('common.editor.blockquote')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
           <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>

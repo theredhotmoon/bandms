@@ -38,35 +38,35 @@ const filtered = computed<AdminTicket[]>(() => {
     <div class="p-8 max-w-4xl">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-lg font-semibold" style="color:#e2e8f0;">
-          Concert Tickets <span class="text-sm font-normal" style="color:#475569;">#{{ concertId }}</span>
+          {{ $t('shows.tickets.title') }} <span class="text-sm font-normal" style="color:#475569;">#{{ concertId }}</span>
         </h1>
-        <RouterLink :to="adminUrl('concerts')" class="text-sm" style="color:#64748b;">← Concerts</RouterLink>
+        <RouterLink :to="adminUrl('concerts')" class="text-sm" style="color:#64748b;">{{ $t('shows.tickets.backToConcerts') }}</RouterLink>
       </div>
 
       <div class="flex gap-3 mb-4 flex-wrap">
-        <input v-model="search" type="search" placeholder="Filter by email…" class="search-input" />
+        <input v-model="search" type="search" :placeholder="$t('shows.tickets.filterEmailPlaceholder')" class="search-input" />
         <select v-model="statusFilter" class="filter-select">
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="transferred">Transferred</option>
-          <option value="scanned">Scanned</option>
-          <option value="voided">Voided</option>
+          <option value="">{{ $t('shows.tickets.allStatuses') }}</option>
+          <option value="active">{{ $t('shows.tickets.status.active') }}</option>
+          <option value="transferred">{{ $t('shows.tickets.status.transferred') }}</option>
+          <option value="scanned">{{ $t('shows.tickets.status.scanned') }}</option>
+          <option value="voided">{{ $t('shows.tickets.status.voided') }}</option>
         </select>
       </div>
 
-      <div v-if="isPending" class="state-msg">Loading…</div>
-      <div v-else-if="isError" class="state-msg" style="color:#f87171;">Failed to load tickets.</div>
-      <div v-else-if="!filtered.length" class="state-msg">No tickets match your filters.</div>
+      <div v-if="isPending" class="state-msg">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="isError" class="state-msg" style="color:#f87171;">{{ $t('shows.tickets.loadFailed') }}</div>
+      <div v-else-if="!filtered.length" class="state-msg">{{ $t('shows.tickets.noMatch') }}</div>
 
       <div v-else class="table-card">
         <table class="w-full">
           <thead>
             <tr style="border-bottom:1px solid #222222;">
-              <th class="th">UUID</th>
-              <th class="th">Holder name</th>
-              <th class="th">Holder email</th>
-              <th class="th">Status</th>
-              <th class="th">Type</th>
+              <th class="th">{{ $t('shows.tickets.columns.uuid') }}</th>
+              <th class="th">{{ $t('shows.tickets.columns.holderName') }}</th>
+              <th class="th">{{ $t('shows.tickets.columns.holderEmail') }}</th>
+              <th class="th">{{ $t('shows.tickets.columns.status') }}</th>
+              <th class="th">{{ $t('common.fields.type') }}</th>
             </tr>
           </thead>
           <tbody>

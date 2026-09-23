@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { doorCheck, doorScan } from '@/api/tickets'
 import { useAuth } from '@/composables/useAuth'
 import type { DoorCheckResult } from '@/types/ticket'
+
+const { t } = useI18n()
 
 interface ScanLogEntry {
   ts: string
@@ -53,9 +56,9 @@ async function check(code: string) {
     const data = await doorCheck(token.value!, trimmed)
     currentCode.value = trimmed
     result.value = data
-    addLog(trimmed, data.valid, data.valid ? (data.customer ?? 'OK') : (data.reason ?? 'INVALID'))
+    addLog(trimmed, data.valid, data.valid ? (data.customer ?? t('shows.door.ok')) : (data.reason ?? t('shows.door.invalidShort')))
   } catch {
-    error.value = 'Network error. Please try again.'
+    error.value = t('common.state.networkError')
   } finally {
     loading.value = false
     manualCode.value = ''
@@ -69,9 +72,9 @@ async function confirmScan() {
   try {
     const data = await doorScan(token.value!, currentCode.value)
     result.value = data
-    addLog(currentCode.value, data.valid, 'ENTERED')
+    addLog(currentCode.value, data.valid, t('shows.door.entered'))
   } catch {
-    error.value = 'Network error. Please try again.'
+    error.value = t('common.state.networkError')
   } finally {
     scanning.value = false
   }
@@ -98,7 +101,7 @@ async function startCamera() {
     detector = new BarcodeDetector({ formats: ['qr_code'] })
     scanLoop()
   } catch {
-    cameraError.value = 'Camera access denied or unavailable.'
+    cameraError.value = t('shows.door.cameraDenied')
   }
 }
 
@@ -138,10 +141,10 @@ onUnmounted(() => {
 <template>
   <AdminLayout>
     <div class="door-wrap">
-      <h1 class="door-title">Door Check</h1>
-      <p class="door-sub">Scan a ticket QR code, or paste a ticket UUID.</p>
+      <h1 class="door-title">{{ $t('shows.door.title') }}</h1>
+      <p class="door-sub">{{ $t('shows.door.subtitle') }}</p>
 
-      <p v-if="!isOnline" class="offline-warning">⚠ Offline — results may be stale</p>
+      <p v-if="!isOnline" class="offline-warning">{{ $t('shows.door.offline') }}</p>
 
       <div v-if="cameraSupported" class="camera-section">
         <video ref="videoEl" autoplay playsinline />
@@ -152,15 +155,15 @@ onUnmounted(() => {
         <input
           v-model="manualCode"
           class="code-input"
-          placeholder="Paste ticket UUID…"
+          :placeholder="$t('shows.door.uuidPlaceholder')"
           autocomplete="off"
           spellcheck="false"
           :disabled="loading"
         />
         <button type="submit" class="btn-check" :disabled="loading || !manualCode.trim()">
-          {{ loading ? '…' : 'Check' }}
+          {{ loading ? '…' : $t('shows.door.check') }}
         </button>
-        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">Reset</button>
+        <button v-if="result || manualCode" type="button" class="btn-reset" @click="reset">{{ $t('shows.door.reset') }}</button>
       </form>
 
       <p v-if="error" class="error-msg">{{ error }}</p>
@@ -169,31 +172,31 @@ onUnmounted(() => {
         <div class="status-row">
           <div class="status-dot" :style="{ background: statusColor() }"></div>
           <div class="status-text" :style="{ color: statusColor() }">
-            <template v-if="!result.valid">INVALID TICKET</template>
-            <template v-else-if="result.scanned">ALREADY SCANNED</template>
-            <template v-else>VALID — ALLOW ENTRY</template>
+            <template v-if="!result.valid">{{ $t('shows.door.invalid') }}</template>
+            <template v-else-if="result.scanned">{{ $t('shows.door.alreadyScanned') }}</template>
+            <template v-else>{{ $t('shows.door.valid') }}</template>
           </div>
         </div>
 
         <div v-if="result.valid" class="info-grid">
           <div class="info-row">
-            <span class="info-label">Type</span>
+            <span class="info-label">{{ $t('common.fields.type') }}</span>
             <span class="info-val">{{ result.ticket_type ?? '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Concert</span>
+            <span class="info-label">{{ $t('shows.door.concert') }}</span>
             <span class="info-val">{{ result.concert ?? '—' }}</span>
           </div>
           <div class="info-row" v-if="result.concert_date">
-            <span class="info-label">Date</span>
+            <span class="info-label">{{ $t('common.fields.date') }}</span>
             <span class="info-val">{{ result.concert_date }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Customer</span>
+            <span class="info-label">{{ $t('shows.door.customer') }}</span>
             <span class="info-val">{{ result.customer ?? '—' }}</span>
           </div>
           <div v-if="result.scanned && result.scanned_at" class="info-row">
-            <span class="info-label">Scanned at</span>
+            <span class="info-label">{{ $t('shows.door.scannedAt') }}</span>
             <span class="info-val" style="color:#f59e0b;">{{ new Date(result.scanned_at).toLocaleString() }}</span>
           </div>
         </div>
@@ -206,12 +209,12 @@ onUnmounted(() => {
           :disabled="scanning"
           @click="confirmScan"
         >
-          {{ scanning ? 'Scanning…' : '✓ Mark as Scanned' }}
+          {{ scanning ? $t('shows.door.scanning') : $t('shows.door.markScanned') }}
         </button>
       </div>
 
       <div v-if="scanLog.length" class="scan-log">
-        <div class="log-header">Recent scans</div>
+        <div class="log-header">{{ $t('shows.door.recentScans') }}</div>
         <div
           v-for="entry in scanLog"
           :key="entry.ts + entry.code"
@@ -220,7 +223,7 @@ onUnmounted(() => {
         >
           <span class="log-ts">{{ entry.ts }}</span>
           <span class="log-code">{{ entry.code.slice(0, 8) }}</span>
-          <span class="log-name">{{ entry.valid ? entry.name : 'INVALID' }}</span>
+          <span class="log-name">{{ entry.valid ? entry.name : $t('shows.door.invalidShort') }}</span>
         </div>
       </div>
     </div>

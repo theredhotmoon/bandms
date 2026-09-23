@@ -10,8 +10,9 @@ export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: readStoredLocale(),
-  // Should never fire — the schema typing makes a missing key impossible. It
-  // exists so a runtime surprise degrades to English rather than a raw key.
+  // en is complete relative to pl by the schema typing, and every *static* call
+  // site is checked by scripts/check-i18n-keys.mjs in the build. Neither covers
+  // a dynamically built key, so this still earns its place.
   fallbackLocale: DEFAULT_LOCALE,
   messages: { en, pl },
   pluralRules,

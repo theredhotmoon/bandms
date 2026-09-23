@@ -9,7 +9,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  label: 'Social links',
+  label: '',  // i18n-ignore: empty default; the heading falls back to common.social.title
 })
 
 const emit = defineEmits<{
@@ -106,7 +106,7 @@ function onDragEnd() {
 
 <template>
   <div class="social-links-editor">
-    <div class="social-links-editor__heading">{{ label }}</div>
+    <div class="social-links-editor__heading">{{ label || $t('common.social.title') }}</div>
     <div class="social-links-editor__list">
       <div
         v-for="(platform, i) in orderedPlatforms"
@@ -122,7 +122,7 @@ function onDragEnd() {
         <span
           class="social-links-editor__handle"
           aria-hidden="true"
-          title="Drag to reorder"
+          :title="$t('common.social.dragToReorder')"
         >
           <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
             <circle cx="3" cy="2"  r="1.5" /><circle cx="7" cy="2"  r="1.5" />
@@ -140,7 +140,7 @@ function onDragEnd() {
           v-model="urls[platform]"
           class="field-input social-links-editor__input"
           type="url"
-          :placeholder="`${platformMap[platform].label} URL…`"
+          :placeholder="$t('common.social.urlPlaceholder', { platform: platformMap[platform].label })"
           :aria-label="platformMap[platform].label"
           @input="emitLinks"
         />

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
@@ -6,6 +7,8 @@ import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
 import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/utils/basemap'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Venue | null
@@ -97,8 +100,10 @@ async function searchPlace() {
   searchResults.value = []
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`
-    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } })
-    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`)
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' /* i18n-ignore: HTTP header */ } })
+    // i18n-ignore: developer diagnostic — the catch below replaces it with a
+    // translated, user-facing message, so this string never reaches the UI.
+    if (!res.ok) throw new Error(`Nominatim responded ${res.status}`) /* i18n-ignore: developer diagnostic, replaced by a translated message in the catch */
     const data = await res.json() as {
       lat: string
       lon: string
@@ -119,13 +124,13 @@ async function searchPlace() {
       addr:  r.address,
     })) as typeof searchResults.value
     showResults.value = searchResults.value.length > 0
-    if (searchResults.value.length === 0) searchError.value = 'No matching places found.'
+    if (searchResults.value.length === 0) searchError.value = t('shows.venues.form.noMatches')
   } catch {
     // Never swallow this. The failure mode here is a blocked request — CSP
     // (connect-src must list nominatim.openstreetmap.org) or the network — and
     // an empty result list is indistinguishable from "no such place", which is
     // exactly how a dead search button went unnoticed. Say so instead.
-    searchError.value = 'Could not reach the place search. Check your connection, or pin the location by clicking the map.'
+    searchError.value = t('shows.venues.form.searchUnreachable')
   } finally {
     searching.value = false
   }
@@ -212,58 +217,58 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <!-- Name -->
     <div>
-      <label class="field-label">Name <span style="color:#f87171;">*</span></label>
-      <input v-model="form.name" required class="field-input" placeholder="Venue name" />
+      <label class="field-label">{{ $t('common.fields.name') }} <span style="color:#f87171;">*</span></label>
+      <input v-model="form.name" required class="field-input" :placeholder="$t('shows.venues.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
 
     <!-- Structured address -->
     <div class="address-grid">
       <div class="col-street">
-        <label class="field-label">Street</label>
-        <input v-model="form.street" class="field-input" placeholder="ul. Floriańska" />
+        <label class="field-label">{{ $t('shows.venues.street') }}</label>
+        <input v-model="form.street" class="field-input" :placeholder="$t('shows.venues.form.streetPlaceholder')" />
         <p v-if="errors?.street" class="field-error">{{ errors.street[0] }}</p>
       </div>
       <div class="col-number">
-        <label class="field-label">No.</label>
+        <label class="field-label">{{ $t('shows.venues.form.number') }}</label>
         <input v-model="form.street_number" class="field-input" placeholder="12" />
         <p v-if="errors?.street_number" class="field-error">{{ errors.street_number[0] }}</p>
       </div>
       <div class="col-postcode">
-        <label class="field-label">Postcode</label>
+        <label class="field-label">{{ $t('shows.venues.form.postcode') }}</label>
         <input v-model="form.postcode" class="field-input" placeholder="31-021" />
         <p v-if="errors?.postcode" class="field-error">{{ errors.postcode[0] }}</p>
       </div>
       <div class="col-city">
-        <label class="field-label">City</label>
-        <input v-model="form.city" class="field-input" placeholder="Kraków" />
+        <label class="field-label">{{ $t('shows.venues.form.city') }}</label>
+        <input v-model="form.city" class="field-input" :placeholder="$t('shows.venues.form.cityPlaceholder')" />
         <p v-if="errors?.city" class="field-error">{{ errors.city[0] }}</p>
       </div>
     </div>
     <div>
-      <label class="field-label">Additional info</label>
-      <input v-model="form.additional_info" class="field-input" placeholder="Floor, entrance, parking notes…" />
+      <label class="field-label">{{ $t('shows.venues.form.extra') }}</label>
+      <input v-model="form.additional_info" class="field-input" :placeholder="$t('shows.venues.form.extraPlaceholder')" />
       <p v-if="errors?.additional_info" class="field-error">{{ errors.additional_info[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Venue capacity</label>
-      <input v-model="form.capacity" type="number" min="1" class="field-input" placeholder="e.g. 500" style="max-width:12rem;" />
+      <label class="field-label">{{ $t('shows.venues.form.capacity') }}</label>
+      <input v-model="form.capacity" type="number" min="1" class="field-input" :placeholder="$t('shows.venues.form.capacityPlaceholder')" style="max-width:12rem;" />
       <p v-if="errors?.capacity" class="field-error">{{ errors.capacity[0] }}</p>
     </div>
 
     <!-- Map + search -->
     <div>
-      <label class="field-label">Location on map</label>
+      <label class="field-label">{{ $t('shows.venues.form.map') }}</label>
       <div class="map-search-row">
         <input
           v-model="searchQuery"
           class="field-input"
-          placeholder="Search for a place…"
+          :placeholder="$t('shows.venues.form.mapSearchPlaceholder')"
           @keydown.enter.prevent="searchPlace"
           @keydown.escape="showResults = false"
         />
         <button type="button" class="btn-search" :disabled="searching" @click="searchPlace">
-          {{ searching ? '…' : 'Search' }}
+          {{ searching ? '…' : $t('shows.venues.form.search') }}
         </button>
       </div>
       <p v-if="searchError" class="field-error">{{ searchError }}</p>
@@ -277,18 +282,18 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
         >{{ r.label }}</button>
       </div>
       <div ref="mapEl" class="map-container" />
-      <p class="map-hint">Click the map to pin coordinates, or use the search above (address fields are auto-filled).</p>
+      <p class="map-hint">{{ $t('shows.venues.form.mapHint') }}</p>
     </div>
 
     <!-- Tags -->
     <div>
-      <label class="field-label">Tags</label>
+      <label class="field-label">{{ $t('common.fields.tags') }}</label>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
           <span>{{ t.name }}</span>
         </label>
-        <p v-if="!tags.length" class="text-xs" style="color:#475569;">No tags available.</p>
+        <p v-if="!tags.length" class="text-xs" style="color:#475569;">{{ $t('shows.venues.form.noTags') }}</p>
       </div>
     </div>
 
@@ -296,9 +301,9 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
     <SocialLinksEditor v-model="socialLinks" />
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
@@ -9,6 +10,8 @@ import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } 
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
 import type { Tag } from '@/types/tag'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initial?: Concert | null
@@ -25,7 +28,7 @@ const emit = defineEmits<{
 }>()
 
 const { query: profileQ } = useBandProfile()
-const mainBandName = computed(() => profileQ.data.value?.name ?? 'Our band')
+const mainBandName = computed(() => profileQ.data.value?.name ?? t('shows.concerts.form.ourBand'))
 
 // ── Poster ────────────────────────────────────────────────────
 const posterInput   = ref<HTMLInputElement | null>(null)
@@ -101,11 +104,13 @@ interface LineupEntry {
 const lineup = ref<LineupEntry[]>([{ type: 'main', play_time: '' }])
 
 // ── Links ─────────────────────────────────────────────────────
+// i18n-ignore: seed values for stored link labels, not UI copy — translating
+// them would make saved data depend on the admin's chrome language.
 const LINK_PRESETS = [
-  { label: 'Buy Tickets', url: '' },
-  { label: 'Facebook Event', url: '' },
-  { label: 'Event Info', url: '' },
-  { label: 'Live Stream', url: '' },
+  { label: 'Buy Tickets', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Facebook Event', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Event Info', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
+  { label: 'Live Stream', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
 ]
 
 const links = ref<ConcertLinkPayload[]>([])
@@ -321,15 +326,15 @@ function submit() {
 
     <!-- Name -->
     <div>
-      <label class="field-label">Event name</label>
+      <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
       <div class="trans-group">
         <div class="trans-row">
-          <span class="lang-badge">EN</span>
-          <input v-model="form.name_en" type="text" class="field-input flex-1" placeholder="e.g. Summer Ska Festival 2026 (optional)" />
+          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code, and these badge the per-column name_en/name_pl fields -->
+          <input v-model="form.name_en" type="text" class="field-input flex-1" :placeholder="$t('shows.concerts.form.eventNamePlaceholderEn')" />
         </div>
         <div class="trans-row">
-          <span class="lang-badge lang-badge--pl">PL</span>
-          <input v-model="form.name_pl" type="text" class="field-input flex-1" placeholder="np. Letni Festiwal Ska 2026" />
+          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
+          <input v-model="form.name_pl" type="text" class="field-input flex-1" :placeholder="$t('shows.concerts.form.eventNamePlaceholderPl')" />
         </div>
       </div>
       <p v-if="errors?.['name.en']" class="field-error">{{ errors['name.en'][0] }}</p>
@@ -338,9 +343,9 @@ function submit() {
 
     <!-- Venue -->
     <div>
-      <label class="field-label">Venue <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:#f87171;">*</span></label>
       <select v-model="form.venue_id" required class="field-input">
-        <option :value="0" disabled>Select a venue…</option>
+        <option :value="0" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
         <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
       </select>
       <p v-if="errors?.venue_id" class="field-error">{{ errors.venue_id[0] }}</p>
@@ -355,7 +360,7 @@ function submit() {
             {{ [selectedVenue.postcode, selectedVenue.city].filter(Boolean).join(' ') }}
           </p>
           <p v-if="selectedVenue.additional_info" class="venue-extra">{{ selectedVenue.additional_info }}</p>
-          <p v-if="selectedVenue.latitude == null" class="venue-no-coords">No map coordinates set for this venue.</p>
+          <p v-if="selectedVenue.latitude == null" class="venue-no-coords">{{ $t('shows.concerts.form.noCoords') }}</p>
         </div>
         <div v-if="selectedVenue.latitude != null" class="venue-map-wrap">
           <VenueMap
@@ -370,22 +375,22 @@ function submit() {
     <!-- Date + times -->
     <div class="time-grid">
       <div>
-        <label class="field-label">Date <span style="color:#f87171;">*</span></label>
+        <label class="field-label">{{ $t('common.fields.date') }} <span style="color:#f87171;">*</span></label>
         <input v-model="form.date" type="date" required class="field-input" />
         <p v-if="errors?.date" class="field-error">{{ errors.date[0] }}</p>
       </div>
       <div>
-        <label class="field-label">Doors open</label>
+        <label class="field-label">{{ $t('shows.concerts.form.doorsOpen') }}</label>
         <input v-model="form.doors_open" type="time" class="field-input" />
         <p v-if="errors?.doors_open" class="field-error">{{ errors.doors_open[0] }}</p>
       </div>
       <div>
-        <label class="field-label">Sound check <span class="label-note">(our band)</span></label>
+        <label class="field-label">{{ $t('shows.concerts.form.soundCheck') }} <span class="label-note">{{ $t('shows.concerts.form.soundCheckNote') }}</span></label>
         <input v-model="form.sound_check_time" type="time" class="field-input" />
         <p v-if="errors?.sound_check_time" class="field-error">{{ errors.sound_check_time[0] }}</p>
       </div>
       <div>
-        <label class="field-label">Show start time</label>
+        <label class="field-label">{{ $t('shows.concerts.form.showStart') }}</label>
         <input v-model="form.start_time" type="time" class="field-input" />
         <p v-if="errors?.start_time" class="field-error">{{ errors.start_time[0] }}</p>
       </div>
@@ -393,12 +398,12 @@ function submit() {
 
     <!-- Lineup builder -->
     <div>
-      <label class="field-label">Lineup</label>
+      <label class="field-label">{{ $t('shows.concerts.form.lineup') }}</label>
       <div class="lineup-cols">
 
         <!-- Left: available bands -->
         <div class="band-pool">
-          <p class="panel-title">Available bands</p>
+          <p class="panel-title">{{ $t('shows.concerts.form.availableBands') }}</p>
           <div
             v-for="band in availableBands"
             :key="band.id"
@@ -411,7 +416,7 @@ function submit() {
             <span>{{ band.name }}</span>
           </div>
           <p v-if="!availableBands.length" class="empty-note">
-            {{ bands.length ? 'All bands added' : 'No bands yet' }}
+            {{ bands.length ? $t('shows.concerts.form.allBandsAdded') : $t('shows.concerts.form.noBandsYet') }}
           </p>
         </div>
 
@@ -424,7 +429,7 @@ function submit() {
           @dragover="onPanelDragOver"
           @drop="onPanelDrop"
         >
-          <p class="panel-title">Concert lineup <span class="panel-hint">(drag to reorder)</span></p>
+          <p class="panel-title">{{ $t('shows.concerts.form.concertLineup') }} <span class="panel-hint">{{ $t('shows.concerts.form.dragToReorder') }}</span></p>
 
           <div
             v-for="(item, idx) in lineup"
@@ -443,14 +448,14 @@ function submit() {
             <span class="drag-dots">⠿</span>
             <span class="item-name">
               {{ item.type === 'main' ? mainBandName : item.name }}
-              <span v-if="item.type === 'main'" class="main-badge">us</span>
+              <span v-if="item.type === 'main'" class="main-badge">{{ $t('shows.concerts.form.us') }}</span>
             </span>
             <span class="item-time">
               <template v-if="item.type === 'main'">
                 <span class="time-auto" :class="{ dim: !form.start_time }">
                   {{ form.start_time || '—' }}
                 </span>
-                <span class="time-auto-label">↑ band start</span>
+                <span class="time-auto-label">{{ $t('shows.concerts.form.bandStart') }}</span>
               </template>
               <input
                 v-else
@@ -458,34 +463,34 @@ function submit() {
                 type="time"
                 class="play-time-input"
                 placeholder="--:--"
-                title="Approximate set time"
+                :title="$t('shows.concerts.form.setTimeTitle')"
               />
             </span>
             <button
               v-if="item.type !== 'main'"
               type="button"
               class="remove-btn"
-              title="Remove from lineup"
+              :title="$t('shows.concerts.form.removeFromLineup')"
               @click="removeFromLineup(idx)"
             >×</button>
           </div>
 
-          <p v-if="!lineup.length" class="empty-note">Drop bands here to build the lineup</p>
+          <p v-if="!lineup.length" class="empty-note">{{ $t('shows.concerts.form.dropBands') }}</p>
         </div>
       </div>
     </div>
 
     <!-- Description -->
     <div>
-      <label class="field-label">Description</label>
+      <label class="field-label">{{ $t('common.fields.description') }}</label>
       <div class="trans-group">
         <div class="trans-row trans-row--top">
-          <span class="lang-badge">EN</span>
-          <textarea v-model="form.description_en" class="field-input flex-1" rows="2" placeholder="Optional description…" />
+          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code, and these badge the per-column name_en/name_pl fields -->
+          <textarea v-model="form.description_en" class="field-input flex-1" rows="2" :placeholder="$t('shows.concerts.form.descriptionPlaceholderEn')" />
         </div>
         <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl">PL</span>
-          <textarea v-model="form.description_pl" class="field-input flex-1" rows="2" placeholder="Opcjonalny opis…" />
+          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
+          <textarea v-model="form.description_pl" class="field-input flex-1" rows="2" :placeholder="$t('shows.concerts.form.descriptionPlaceholderPl')" />
         </div>
       </div>
       <p v-if="errors?.['description.en']" class="field-error">{{ errors['description.en'][0] }}</p>
@@ -494,7 +499,7 @@ function submit() {
 
     <!-- Slug URL -->
     <div>
-      <label class="field-label">Slug URL</label>
+      <label class="field-label">{{ $t('shows.concerts.form.slug') }}</label>
       <SlugInput
         v-model="form.slug_en"
         v-model:modelValuePl="form.slug_pl"
@@ -508,19 +513,19 @@ function submit() {
 
     <!-- Tags -->
     <div>
-      <label class="field-label">Tags</label>
+      <label class="field-label">{{ $t('common.fields.tags') }}</label>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
           <span>{{ t.name }}</span>
         </label>
-        <p v-if="!tags.length" class="text-xs" style="color:#475569;">No tags available.</p>
+        <p v-if="!tags.length" class="text-xs" style="color:#475569;">{{ $t('shows.concerts.form.noTags') }}</p>
       </div>
     </div>
 
     <!-- Links -->
     <div>
-      <label class="field-label">Links</label>
+      <label class="field-label">{{ $t('shows.concerts.form.links') }}</label>
 
       <!-- Existing links list -->
       <div v-if="links.length" class="links-list">
@@ -548,16 +553,16 @@ function submit() {
         <input
           v-model="newLinkLabel"
           class="field-input link-label-input"
-          placeholder="Label"
+          :placeholder="$t('shows.concerts.form.linkLabelPlaceholder')"
         />
         <input
           v-model="newLinkUrl"
           type="url"
           class="field-input link-url-input"
-          placeholder="https://…"
+          :placeholder="$t('common.fields.urlPlaceholder')"
           @keydown.enter.prevent="addLink"
         />
-        <button type="button" class="btn-add-link" @click="addLink">Add</button>
+        <button type="button" class="btn-add-link" @click="addLink">{{ $t('common.actions.add') }}</button>
       </div>
     </div>
 
@@ -566,7 +571,7 @@ function submit() {
 
     <!-- Concert poster -->
     <div>
-      <label class="field-label">Concert poster</label>
+      <label class="field-label">{{ $t('shows.concerts.form.poster') }}</label>
       <div
         class="poster-drop"
         :class="{ 'has-image': displayPoster }"
@@ -574,14 +579,14 @@ function submit() {
         @dragover.prevent
         @drop="onPosterDrop"
       >
-        <img v-if="displayPoster" :src="displayPoster" class="poster-img" alt="Concert poster" />
+        <img v-if="displayPoster" :src="displayPoster" class="poster-img" :alt="$t('shows.concerts.form.posterAlt')" />
         <div v-else class="poster-placeholder">
           <svg class="poster-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="poster-hint">Click or drop image</span>
-          <span class="poster-sub">JPG · PNG · WebP · max 4 MB</span>
+          <span class="poster-hint">{{ $t('shows.concerts.form.dropImage') }}</span>
+          <span class="poster-sub">{{ $t('shows.concerts.form.imageHint') }}</span>
         </div>
         <input
           ref="posterInput"
@@ -592,15 +597,15 @@ function submit() {
         />
       </div>
       <div v-if="displayPoster" class="poster-clear-row">
-        <button type="button" class="btn-poster-clear" @click.stop="clearPoster">Remove poster</button>
+        <button type="button" class="btn-poster-clear" @click.stop="clearPoster">{{ $t('shows.concerts.form.removePoster') }}</button>
       </div>
     </div>
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !canSave" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
 
