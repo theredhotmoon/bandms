@@ -69,6 +69,7 @@ const MIGRATED = [
   'views/admin/NewsletterAdminView.vue',
   'views/admin/PostsAdminView.vue',
   'views/admin/PressReleasesAdminView.vue',
+  'views/admin/PitchGeneratorView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]
