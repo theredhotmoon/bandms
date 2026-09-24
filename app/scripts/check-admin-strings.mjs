@@ -27,6 +27,7 @@
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { copyHits } from './lib/template-scan.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 
@@ -83,10 +84,6 @@ const MIGRATED = [
   'views/admin/AdminEntry.vue',
 ]
 
-import {
-  HAS_WORDS, KEYPATH, hasTwoLetters, looksLikeCopy, COPY_ATTRS, STATIC_ATTR, BOUND_ATTR,
-  LITERAL, OTHER_DIRECTIVE, copyLiterals, templateOf, textRuns,
-} from './lib/template-scan.mjs'
 
 function filesFor(entry) {
   const abs = join(ROOT, 'src', entry)
@@ -110,21 +107,6 @@ const record = (file, line, hits) =>
 
 const NL = String.fromCharCode(10)
 
-/** 1-based line count of a prefix. */
-const countLines = (prefix) => prefix.split(NL).length
-
-/** Literals inside {{ … }} — where "Save" and every ternary label hides. */
-function mustacheHits(tpl, offset) {
-  const out = []
-  const re = /\{\{([\s\S]*?)\}\}/g
-  let m
-  while ((m = re.exec(tpl)) !== null) {
-    const hits = copyLiterals(m[1])
-    if (hits.length) out.push({ line: offset + countLines(tpl.slice(0, m.index)) - 1, hits })
-  }
-  return out
-}
-
 for (const entry of MIGRATED) {
   const { files, missing } = filesFor(entry)
   if (missing) {
@@ -137,55 +119,8 @@ for (const entry of MIGRATED) {
     const lines = src.split(NL)
     const exempt = (n) => (lines[n - 1] ?? '').includes('i18n-ignore')
 
-    const tpl = templateOf(src)
-    if (tpl) {
-      for (const run of textRuns(tpl.body)) {
-        const abs = tpl.offset + run.line - 1
-        if (!exempt(abs)) record(file, abs, [run.text])
-      }
-      for (const m of mustacheHits(tpl.body, tpl.offset)) {
-        if (!exempt(m.line)) record(file, m.line, m.hits)
-      }
-      tpl.body.split(NL).forEach((l, i) => {
-        const abs = tpl.offset + i
-        if (exempt(abs)) return
-        // A STATIC copy attribute's whole value is user-facing by definition,
-        // so the capital-or-space heuristic must NOT apply here — it would let
-        // placeholder="unlimited" through, which is exactly the regression the
-        // ratchet exists to stop. Any two letters is enough.
-        STATIC_ATTR.lastIndex = 0
-        const stat = [...l.matchAll(STATIC_ATTR)].map(m => m[1]).filter(hasTwoLetters)
-        BOUND_ATTR.lastIndex = 0
-        const bound = [...l.matchAll(BOUND_ATTR)].flatMap(m => copyLiterals(m[1]))
-        // Literals in any other directive expression — @click="err = 'Try again'",
-        // :data-tip="'Not on sale'" — which no attribute list would cover.
-        OTHER_DIRECTIVE.lastIndex = 0
-        const other = [...l.matchAll(OTHER_DIRECTIVE)].flatMap(m => copyLiterals(m[2]))
-        const hits = [...stat, ...bound, ...other]
-        if (hits.length) record(file, abs, hits)
-      })
-    }
-
-    // Script side: any copy literal, not just toasts. A modal title built in a
-    // computed is exactly as user-facing as one in the template.
-    const sStart = src.indexOf('<script')
-    const sEnd = src.lastIndexOf('</script>')
-    const scriptRange = file.endsWith('.ts')
-      ? [0, lines.length]
-      : (sStart === -1 ? null : [countLines(src.slice(0, sStart)) - 1, countLines(src.slice(0, sEnd))])
-    if (scriptRange) {
-      for (let i = scriptRange[0]; i < scriptRange[1]; i++) {
-        const l = lines[i]
-        if (!l || exempt(i + 1)) continue
-        if (/^\s*(\/\/|\*|\/\*)/.test(l)) continue        // comments
-        // Anchored: the old `from\s+['"]` alternative was unanchored, so ANY
-        // line containing `from '` was skipped whole — including
-        // toast.success(`Imported ${n} rows from "${f}"`) and any line with a
-        // trailing `// lifted from 'X'` comment.
-        if (/^\s*(?:import\b|export\s+(?:\*|\{|type\b))/.test(l)) continue
-        const hits = copyLiterals(l)
-        if (hits.length) record(file, i + 1, hits)
-      }
+    for (const { line, hits } of copyHits(src, { isTs: file.endsWith('.ts') })) {
+      if (!exempt(line)) record(file, line, hits)
     }
   }
 }

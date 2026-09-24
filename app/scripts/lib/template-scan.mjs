@@ -129,3 +129,86 @@ export function textRuns(tpl) {
   flush()
   return runs
 }
+
+export const NL = String.fromCharCode(10)
+
+/** 1-based line count of a prefix. */
+export const countLines = (prefix) => prefix.split(NL).length
+
+/** Literals inside {{ … }} — where "Save" and every ternary label hides. */
+export function mustacheHits(tpl, offset) {
+  const out = []
+  const re = /\{\{([\s\S]*?)\}\}/g
+  let m
+  while ((m = re.exec(tpl)) !== null) {
+    const hits = copyLiterals(m[1])
+    if (hits.length) out.push({ line: offset + countLines(tpl.slice(0, m.index)) - 1, hits })
+  }
+  return out
+}
+
+/**
+ * Every user-facing string in a file, as { line, hits }.
+ *
+ * THE single definition of "copy" for both guards. It used to live inside the
+ * string lint, and the coverage guard reimplemented a fraction of it —
+ * textRuns only, 1 of the 4 sources — so a child whose English lived entirely
+ * in `placeholder` / `aria-label` / `title` attributes passed the coverage
+ * check silently. SingleImageUpload, one of the components that gap let ship,
+ * is exactly that shape.
+ *
+ * Exemptions are NOT applied here. The caller decides: the string lint honours
+ * `i18n-ignore`, while the coverage guard deliberately does not — an
+ * unmigrated file's ignore markers are not yet meaningful, and the intended
+ * fix for a report is to put the file on the ratchet first.
+ */
+export function copyHits(src, { isTs = false } = {}) {
+  const out = []
+  const lines = src.split(NL)
+
+  const tpl = templateOf(src)
+  if (tpl) {
+    for (const run of textRuns(tpl.body)) out.push({ line: tpl.offset + run.line - 1, hits: [run.text] })
+    for (const m of mustacheHits(tpl.body, tpl.offset)) out.push(m)
+
+    tpl.body.split(NL).forEach((l, i) => {
+      const line = tpl.offset + i
+      // A STATIC copy attribute's whole value is user-facing by definition, so
+      // the capital-or-space heuristic must NOT apply here — it would let
+      // placeholder="unlimited" through. Any two letters is enough.
+      STATIC_ATTR.lastIndex = 0
+      const stat = [...l.matchAll(STATIC_ATTR)].map((m) => m[1]).filter(hasTwoLetters)
+      BOUND_ATTR.lastIndex = 0
+      const bound = [...l.matchAll(BOUND_ATTR)].flatMap((m) => copyLiterals(m[1]))
+      // Literals in any other directive expression — @click="err = 'Try again'".
+      OTHER_DIRECTIVE.lastIndex = 0
+      const other = [...l.matchAll(OTHER_DIRECTIVE)].flatMap((m) => copyLiterals(m[2]))
+      const hits = [...stat, ...bound, ...other]
+      if (hits.length) out.push({ line, hits })
+    })
+  }
+
+  // Script side: any copy literal, not just toasts. A modal title built in a
+  // computed is exactly as user-facing as one in the template.
+  const sStart = src.indexOf('<script')
+  const sEnd = src.lastIndexOf('</script>')
+  const range = isTs
+    ? [0, lines.length]
+    : sStart === -1
+      ? null
+      : [countLines(src.slice(0, sStart)) - 1, countLines(src.slice(0, sEnd))]
+  if (range) {
+    for (let i = range[0]; i < range[1]; i++) {
+      const l = lines[i]
+      if (!l) continue
+      if (/^\s*(\/\/|\*|\/\*)/.test(l)) continue
+      // Anchored: an unanchored `from ['"]` skipped any line merely containing
+      // `from '`, including toast bodies and trailing comments.
+      if (/^\s*(?:import\b|export\s+(?:\*|\{|type\b))/.test(l)) continue
+      const hits = copyLiterals(l)
+      if (hits.length) out.push({ line: i + 1, hits })
+    }
+  }
+
+  return out
+}

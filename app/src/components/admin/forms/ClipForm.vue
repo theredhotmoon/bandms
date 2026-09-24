@@ -75,7 +75,7 @@ function submit() {
       <label class="field-label">{{ $t('common.fields.title') }}</label>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="trans-row">
-          <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span> <!-- i18n-ignore: locale code -->
+          <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
           <input v-model="form.title[l]" class="field-input flex-1" :placeholder="l === DEFAULT_LOCALE ? $t('band.clips.form.titlePlaceholderEn') : $t('band.clips.form.titlePlaceholderPl')" :data-testid="`clip-title-${l}`" />
         </div>
       </div>

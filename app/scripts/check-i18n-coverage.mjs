@@ -18,7 +18,7 @@
  * lint if someone adds a literal later.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { looksLikeCopy, templateOf, textRuns } from './lib/template-scan.mjs'
+import { copyHits } from './lib/template-scan.mjs'
 import { join, relative, sep, dirname, resolve } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
@@ -98,6 +98,12 @@ const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\
 const toRel = (abs) => relative(SRC, abs).split(sep).join('/')
 const covered = (rel) => MIGRATED.some((m) => rel === m || rel.startsWith(m + '/'))
 
+/**
+ * Display path. A workspace-package child resolves outside src/, where
+ * relative() yields '../../packages/…' and 'src/' + that reads as nonsense.
+ */
+const show = (rel) => (rel.startsWith('..') ? rel.replace(/^(?:\.\.\/)+/, '') : 'src/' + rel)
+
 const gaps = []
 for (const file of files) {
   const rel = toRel(file)
@@ -138,21 +144,49 @@ for (const file of files) {
  */
 const IMPORTS = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]|import\s*\(\s*['"]([^'"]+\.vue)['"]\s*\)/g
 
+/**
+ * Resolve a `.vue` specifier to a path on disk.
+ *
+ * `@bandms/<pkg>/…` is a workspace package, not a node_modules download — it
+ * lives at ../packages/<pkg>. Without this, `RiderSheet.vue` (imported by
+ * TechRiderPreviewView) resolved to a path under src/views/ that does not
+ * exist, and an unreadable file was indistinguishable from a typo: both hit
+ * the same `catch` and vanished. Anything still unresolvable is *reported*,
+ * never silently dropped — a guard that skips what it cannot parse is how the
+ * blind spot above stayed open.
+ */
+const PACKAGES = join(ROOT, '..', 'packages')
+const resolveSpec = (abs, spec) => {
+  if (spec.startsWith('@/')) return join(SRC, spec.slice(2))
+  if (spec.startsWith('.')) return resolve(dirname(abs), spec)
+  const pkg = spec.match(/^@bandms\/([^/]+)\/(.+)$/)
+  if (pkg) return join(PACKAGES, pkg[1], 'src', pkg[2])
+  return null
+}
+
+const unresolved = []
 const importsOf = (abs) => {
   const src = readFileSync(abs, 'utf8')
   const out = []
   for (const m of src.matchAll(IMPORTS)) {
     const spec = m[1] ?? m[2]
-    out.push(spec.startsWith('@/') ? join(SRC, spec.slice(2)) : resolve(dirname(abs), spec))
+    const p = resolveSpec(abs, spec)
+    if (p === null) { unresolved.push({ spec, from: toRel(abs) }); continue }
+    out.push(p)
   }
   return out
 }
 
-/** Does this file show a reader bare English? Same scanner as the string lint. */
-function showsCopy(abs) {
-  const tpl = templateOf(readFileSync(abs, 'utf8'))
-  return tpl ? textRuns(tpl.body).some((r) => looksLikeCopy(r.text)) : false
-}
+/**
+ * Does this file show a reader any English?
+ *
+ * `copyHits` is the string lint's own detection, not a subset of it. The first
+ * version of this called `textRuns` alone — 1 of its 4 sources — so a child
+ * whose English lived entirely in `placeholder` / `aria-label` / `title`
+ * passed silently. `SingleImageUpload`, one of the components this very guard
+ * was written to catch, is exactly that shape.
+ */
+const showsCopy = (abs) => copyHits(readFileSync(abs, 'utf8')).length > 0
 
 const seen = new Set()
 const unguarded = []
@@ -164,13 +198,43 @@ while (queue.length) {
     if (seen.has(child)) continue
     seen.add(child)
     let rel
-    try { rel = toRel(child); readFileSync(child) } catch { continue }
-    if (covered(rel)) { queue.push(child); continue }
-    if (showsCopy(child)) unguarded.push({ rel, via: toRel(parent) })
+    try { rel = toRel(child); readFileSync(child) } catch { unresolved.push({ spec: rel, from: toRel(parent) }); continue }
+    // Enqueue unconditionally. Enqueueing only *covered* children stopped the
+    // walk dead at any copy-free wrapper — `<div class="w"><Child/></div>`,
+    // which is the shape this admin uses for panels — so a grandchild full of
+    // English went unreported while the docstring claimed the walk was
+    // transitive. It now actually is. `seen` already handles cycles.
+    queue.push(child)
+    if (!covered(rel) && showsCopy(child)) unguarded.push({ rel, via: toRel(parent) })
   }
 }
 
-if (gaps.length === 0 && unguarded.length === 0) {
+// A file caught by check 1 must not be repeated under check 2's heading, which
+// says "these render no translations at all" — false for a file that does.
+const gapSet = new Set(gaps)
+const unguardedOnly = unguarded.filter((u) => !gapSet.has(u.rel))
+
+// Printed whether or not anything failed, and deliberately not fatal: an
+// import this resolver cannot follow is a hole in the walk, and a hole nobody
+// can see is how the gap above survived four merged PRs. A warning keeps it
+// visible without failing a build over a specifier shape that may be perfectly
+// legitimate.
+if (unresolved.length) {
+  const seenSpecs = new Set()
+  console.warn(`\n⚠ i18n coverage: ${unresolved.length} .vue import(s) could not be followed\n`)
+  for (const u of unresolved) {
+    const k = `${u.spec}|${u.from}`
+    if (seenSpecs.has(k)) continue
+    seenSpecs.add(k)
+    console.warn(`  ${u.spec}\n      imported by ${show(u.from)}`)
+  }
+  console.warn(`
+Anything they render is outside the walk. Teach resolveSpec() about the
+specifier shape, or migrate the target by hand.
+`)
+}
+
+if (gaps.length === 0 && unguardedOnly.length === 0) {
   console.log(
     `✓ i18n coverage: every translating file is on the ratchet, and every ` +
       `component they render with it (${MIGRATED.length} path(s))`,
@@ -180,7 +244,7 @@ if (gaps.length === 0 && unguarded.length === 0) {
 
 if (gaps.length) {
   console.error(`\n✗ i18n coverage: ${gaps.length} file(s) render translations but are not guarded\n`)
-  for (const g of gaps) console.error(`  src/${g}`)
+  for (const g of gaps) console.error(`  ${show(g)}`)
   console.error(`
 Add each to MIGRATED in app/scripts/check-admin-strings.mjs. Until then the
 string lint never looks at them, so the area they sit in reads as finished
@@ -188,9 +252,9 @@ while they can quietly go back to hardcoded English.
 `)
 }
 
-if (unguarded.length) {
-  console.error(`\n✗ i18n coverage: ${unguarded.length} component(s) render English inside a migrated area\n`)
-  for (const u of unguarded) console.error(`  src/${u.rel}\n      rendered by src/${u.via}`)
+if (unguardedOnly.length) {
+  console.error(`\n✗ i18n coverage: ${unguardedOnly.length} component(s) render English inside a migrated area\n`)
+  for (const u of unguardedOnly) console.error(`  ${show(u.rel)}\n      rendered by ${show(u.via)}`)
   console.error(`
 These render no translations at all, so nothing else can see them: the string
 lint does not look outside MIGRATED, and the check above only flags files that
