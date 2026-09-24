@@ -5,9 +5,10 @@ import content from './content'
 import dashboard from './dashboard'
 import media from './media'
 import rider from './rider'
+import setlists from './setlists'
 import shell from './shell'
 import shows from './shows'
 
-const pl: MessageSchema = { band, common, content, dashboard, media, rider, shell, shows }
+const pl: MessageSchema = { band, common, content, dashboard, media, rider, setlists, shell, shows }
 
 export default pl

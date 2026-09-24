@@ -36,7 +36,13 @@ function keysOf(file, prefix) {
     // \b on the keywords: without it a key named `exportCsv:` starts with
     // "export" and is skipped as a statement, so the key never lands in the
     // catalogue and every reference to it reports as unresolvable.
-    if (!line.trim() || /^\s*(?:import\b|export\b|[})/])/.test(line.trim()) && !/:\s*\{/.test(line)) {
+    // `import`/`export` must be followed by whitespace to count as a
+    // statement. With a bare \b, the catalogue key `import: 'Import setlist'`
+    // was read as an import statement and skipped, so the key never entered
+    // the set and every reference to it reported as unresolvable — a false
+    // positive that looks exactly like a typo. Same trap as the `exportCsv:`
+    // note below, one character further along.
+    if (!line.trim() || /^\s*(?:import\s|export\s|[})/])/.test(line.trim()) && !/:\s*\{/.test(line)) {
       if (/^\s*\},?\s*$/.test(line)) stack.pop()
       continue
     }

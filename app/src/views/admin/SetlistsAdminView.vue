@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { toast } from 'vue-sonner'
+import { formatShortDate, formatDuration } from '@/utils/formatDate'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import SetlistEditor from '@/components/setlist/SetlistEditor.vue'
 import SetlistFmImportModal from '@/components/setlist/SetlistFmImportModal.vue'
 import { useSetlists } from '@/composables/useSetlists'
 import { useSongs } from '@/composables/useSongs'
 import { reportSaveError } from '@/utils/formErrors'
+
+const { t, locale } = useI18n()
 
 type MainTab = 'setlists' | 'library'
 const mainTab = ref<MainTab>('setlists')
@@ -29,9 +33,9 @@ async function createSetlist() {
     openId.value     = s.id
     newName.value    = ''
     showNewForm.value = false
-    toast.success('Setlist created')
+    toast.success(t('setlists.setlists.created'))
   } catch (e) {
-    reportSaveError(e, 'Failed to create setlist')
+    reportSaveError(e, t('setlists.setlists.createFailed'))
   } finally {
     creating.value = false
   }
@@ -43,23 +47,16 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmDeleteId.value)
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
-    toast.success('Setlist deleted')
+    toast.success(t('setlists.setlists.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('setlists.setlists.deleteFailed'))
   }
 }
 
-function formatDate(d: string | null): string {
-  if (!d) return ''
-  const [y, m, day] = d.split('-')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${day} ${months[parseInt(m, 10) - 1]} ${y}`
-}
+const formatDate = (d: string | null) => formatShortDate(d, locale.value)
 
-function formatDuration(sec: number | null): string {
-  if (!sec) return ''
-  return `${Math.floor(sec / 60)} min`
-}
+const formatMinutes = (sec: number | null) =>
+  sec ? t('setlists.setlists.minutes', { n: Math.floor(sec / 60) }) : ''
 
 function handleImported(id: number) {
   openId.value = id
@@ -109,14 +106,14 @@ async function submitSong() {
   try {
     if (editSongId.value) {
       await songUpdate.mutateAsync({ id: editSongId.value, payload })
-      toast.success('Song updated')
+      toast.success(t('setlists.songs.updated'))
     } else {
       await songCreate.mutateAsync(payload)
-      toast.success('Song created')
+      toast.success(t('setlists.songs.created'))
     }
     showSongForm.value = false
   } catch (e) {
-    reportSaveError(e, 'Failed to save song')
+    reportSaveError(e, t('setlists.songs.saveFailed'))
   } finally {
     savingSong.value = false
   }
@@ -127,18 +124,13 @@ async function confirmDeleteSong() {
   try {
     await songRemove.mutateAsync(confirmSongDeleteId.value)
     confirmSongDeleteId.value = null
-    toast.success('Song deleted')
+    toast.success(t('setlists.songs.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('setlists.songs.deleteFailed'))
   }
 }
 
-function formatDur(sec: number | null): string {
-  if (!sec) return '—'
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
+const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 </script>
 
 <template>
@@ -148,10 +140,10 @@ function formatDur(sec: number | null): string {
       <!-- Main tabs -->
       <div class="main-tabs">
         <button class="main-tab" :class="{ active: mainTab === 'setlists' }" @click="mainTab = 'setlists'">
-          🎵 Setlists
+          {{ $t('setlists.setlists.tabSetlists') }}
         </button>
         <button class="main-tab" :class="{ active: mainTab === 'library' }" @click="mainTab = 'library'">
-          📋 Song library
+          {{ $t('setlists.setlists.tabLibrary') }}
         </button>
       </div>
 
@@ -161,9 +153,9 @@ function formatDur(sec: number | null): string {
         <!-- Left sidebar -->
         <aside class="sidebar">
           <div class="sidebar-header">
-            <h1 class="sidebar-title">Setlists</h1>
+            <h1 class="sidebar-title">{{ $t('setlists.setlists.title') }}</h1>
             <div class="sidebar-actions">
-              <button type="button" class="btn-import-fm" @click="showImportModal = true">↓ setlist.fm</button>
+              <button type="button" class="btn-import-fm" @click="showImportModal = true">{{ $t('setlists.setlists.importFm') }}</button>
               <button type="button" class="btn-new-icon" @click="showNewForm = !showNewForm">+</button>
             </div>
           </div>
@@ -172,19 +164,19 @@ function formatDur(sec: number | null): string {
             <input
               v-model="newName"
               class="new-input"
-              placeholder="Setlist name…"
+              :placeholder="$t('setlists.setlists.namePlaceholder')"
               autofocus
               @keydown.enter="createSetlist"
               @keydown.escape="showNewForm = false; newName = ''"
             />
             <button type="button" class="btn-create" :disabled="!newName.trim() || creating" @click="createSetlist">
-              {{ creating ? '…' : 'Create' }}
+              {{ creating ? '…' : $t('setlists.setlists.create') }}
             </button>
           </div>
 
-          <div v-if="list.isPending.value" class="sidebar-state">Loading…</div>
-          <div v-else-if="list.isError.value" class="sidebar-state sidebar-err">Error loading setlists</div>
-          <div v-else-if="!list.data.value?.length" class="sidebar-state">No setlists yet.</div>
+          <div v-if="list.isPending.value" class="sidebar-state">{{ $t('common.state.loading') }}</div>
+          <div v-else-if="list.isError.value" class="sidebar-state sidebar-err">{{ $t('setlists.setlists.loadError') }}</div>
+          <div v-else-if="!list.data.value?.length" class="sidebar-state">{{ $t('setlists.setlists.empty') }}</div>
           <div v-else class="setlist-items">
             <div
               v-for="s in list.data.value"
@@ -201,9 +193,9 @@ function formatDur(sec: number | null): string {
                     <span class="meta-gig">{{ formatDate(s.concert_date) }}</span>
                     <span class="meta-gig">{{ s.concert_venue }}</span>
                   </template>
-                  <span v-else class="meta-preset">preset</span>
-                  <span>{{ s.item_count }} songs</span>
-                  <span v-if="s.total_duration_sec">{{ formatDuration(s.total_duration_sec) }}</span>
+                  <span v-else class="meta-preset">{{ $t('setlists.setlists.preset') }}</span>
+                  <span>{{ $t('setlists.setlists.songCount', s.item_count, { named: { n: s.item_count } }) }}</span>
+                  <span v-if="s.total_duration_sec">{{ formatMinutes(s.total_duration_sec) }}</span>
                 </div>
               </div>
               <button type="button" class="del-btn" @click.stop="confirmDeleteId = s.id">✕</button>
@@ -215,8 +207,8 @@ function formatDur(sec: number | null): string {
         <div class="editor-pane">
           <div v-if="openId === null" class="empty-state">
             <div class="empty-icon">🎵</div>
-            <div class="empty-title">No setlist selected</div>
-            <p class="empty-hint">Pick a setlist from the sidebar, or create a new one.<br>Setlists are saved as presets and can be assigned to a gig.</p>
+            <div class="empty-title">{{ $t('setlists.setlists.noneSelected') }}</div>
+            <p class="empty-hint">{{ $t('setlists.setlists.noneSelectedHint') }}<br>{{ $t('setlists.setlists.noneSelectedHint2') }}</p>
           </div>
           <SetlistEditor v-else :key="openId" :setlist-id="openId" />
         </div>
@@ -226,23 +218,23 @@ function formatDur(sec: number | null): string {
       <!-- ── SONG LIBRARY TAB ─────────────────────────────────────────────── -->
       <div v-else class="library-view">
         <div class="library-header">
-          <span class="lib-title">Song library</span>
-          <button type="button" class="btn-new-song" @click="openNewSong">+ New song</button>
+          <span class="lib-title">{{ $t('setlists.songs.title') }}</span>
+          <button type="button" class="btn-new-song" @click="openNewSong">{{ $t('setlists.songs.add') }}</button>
         </div>
 
-        <div v-if="songList.isPending.value" class="lib-state">Loading…</div>
-        <div v-else-if="songList.isError.value" class="lib-state lib-err">Failed to load songs.</div>
+        <div v-if="songList.isPending.value" class="lib-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="songList.isError.value" class="lib-state lib-err">{{ $t('setlists.songs.loadFailed') }}</div>
         <div v-else-if="!songList.data.value?.length" class="lib-state">
-          No songs yet. Songs are added here or automatically when you add them to a setlist.
+          {{ $t('setlists.songs.empty') }}
         </div>
         <table v-else class="song-table">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Duration</th>
-              <th>BPM</th>
-              <th>Key</th>
-              <th>Notes</th>
+              <th>{{ $t('setlists.songs.columns.title') }}</th>
+              <th>{{ $t('setlists.songs.columns.duration') }}</th>
+              <th>{{ $t('setlists.songs.columns.bpm') }}</th>
+              <th>{{ $t('setlists.songs.columns.key') }}</th>
+              <th>{{ $t('setlists.songs.columns.notes') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -254,8 +246,8 @@ function formatDur(sec: number | null): string {
               <td class="td-meta">{{ s.key ?? '—' }}</td>
               <td class="td-notes">{{ s.notes || '—' }}</td>
               <td class="td-actions">
-                <button type="button" class="btn-edit" @click="openEditSong(s)">Edit</button>
-                <button type="button" class="btn-del" @click="confirmSongDeleteId = s.id">Del</button>
+                <button type="button" class="btn-edit" @click="openEditSong(s)">{{ $t('common.actions.edit') }}</button>
+                <button type="button" class="btn-del" @click="confirmSongDeleteId = s.id">{{ $t('setlists.songs.del') }}</button>
               </td>
             </tr>
           </tbody>
@@ -265,36 +257,36 @@ function formatDur(sec: number | null): string {
         <div v-if="showSongForm" class="song-modal-overlay" @click.self="showSongForm = false">
           <div class="song-modal">
             <div class="song-modal-header">
-              <span>{{ editSongId ? 'Edit song' : 'New song' }}</span>
+              <span>{{ editSongId ? $t('setlists.songs.modalEdit') : $t('setlists.songs.modalNew') }}</span>
               <button type="button" class="btn-close" @click="showSongForm = false">✕</button>
             </div>
             <div class="song-modal-body">
               <div class="field-group">
-                <label class="field-label">Title <span style="color:#f87171">*</span></label>
-                <input v-model="songForm.title" class="field-input" placeholder="Song title" autofocus />
+                <label class="field-label">{{ $t('setlists.songs.songTitle') }} <span style="color:#f87171">*</span></label>
+                <input v-model="songForm.title" class="field-input" :placeholder="$t('setlists.songs.songTitlePlaceholder')" autofocus />
               </div>
               <div class="song-form-grid">
                 <div class="field-group">
-                  <label class="field-label">Duration (seconds)</label>
-                  <input v-model="songForm.duration_sec" type="number" min="1" max="7200" class="field-input" placeholder="e.g. 245" />
+                  <label class="field-label">{{ $t('setlists.songs.duration') }}</label>
+                  <input v-model="songForm.duration_sec" type="number" min="1" max="7200" class="field-input" :placeholder="$t('setlists.songs.durationPlaceholder')" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label">BPM</label>
-                  <input v-model="songForm.bpm" type="number" min="20" max="400" class="field-input" placeholder="e.g. 128" />
+                  <label class="field-label">{{ $t('setlists.songs.bpm') }}</label>
+                  <input v-model="songForm.bpm" type="number" min="20" max="400" class="field-input" :placeholder="$t('setlists.songs.bpmPlaceholder')" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label">Key</label>
-                  <input v-model="songForm.key" class="field-input" placeholder="e.g. A minor" />
+                  <label class="field-label">{{ $t('setlists.songs.key') }}</label>
+                  <input v-model="songForm.key" class="field-input" :placeholder="$t('setlists.songs.keyPlaceholder')" />
                 </div>
               </div>
               <div class="field-group">
-                <label class="field-label">Notes <span class="opt">(optional)</span></label>
+                <label class="field-label">{{ $t('setlists.songs.notes') }} <span class="opt">{{ $t('setlists.songs.optional') }}</span></label>
                 <textarea v-model="songForm.notes" class="field-input" rows="2" style="resize:vertical" />
               </div>
               <div class="song-form-actions">
-                <button type="button" class="btn-ghost" @click="showSongForm = false">Cancel</button>
+                <button type="button" class="btn-ghost" @click="showSongForm = false">{{ $t('common.actions.cancel') }}</button>
                 <button type="button" class="btn-save-song" :disabled="!songForm.title.trim() || savingSong" @click="submitSong">
-                  {{ savingSong ? 'Saving…' : (editSongId ? 'Update' : 'Create') }}
+                  {{ savingSong ? $t('common.actions.saving') : (editSongId ? $t('common.actions.update') : $t('common.actions.create')) }}
                 </button>
               </div>
             </div>
@@ -305,11 +297,11 @@ function formatDur(sec: number | null): string {
         <div v-if="confirmSongDeleteId !== null" class="song-modal-overlay" @click.self="confirmSongDeleteId = null">
           <div class="song-modal song-modal--sm">
             <div class="song-modal-body">
-              <p class="confirm-title">Delete this song?</p>
-              <p class="confirm-text">This removes it from the library and all setlists it appears in.</p>
+              <p class="confirm-title">{{ $t('setlists.songs.deleteTitle') }}</p>
+              <p class="confirm-text">{{ $t('setlists.songs.deleteMessage') }}</p>
               <div class="song-form-actions">
-                <button type="button" class="btn-ghost" @click="confirmSongDeleteId = null">Cancel</button>
-                <button type="button" class="btn-danger" @click="confirmDeleteSong">Delete</button>
+                <button type="button" class="btn-ghost" @click="confirmSongDeleteId = null">{{ $t('common.actions.cancel') }}</button>
+                <button type="button" class="btn-danger" @click="confirmDeleteSong">{{ $t('common.actions.delete') }}</button>
               </div>
             </div>
           </div>
@@ -326,11 +318,11 @@ function formatDur(sec: number | null): string {
       <!-- Confirm delete setlist -->
       <div v-if="confirmDeleteId !== null" class="confirm-overlay" @click.self="confirmDeleteId = null">
         <div class="confirm-card" role="dialog" aria-modal="true">
-          <div class="confirm-title">Delete setlist?</div>
-          <p class="confirm-text">This permanently deletes the setlist and all its items.</p>
+          <div class="confirm-title">{{ $t('setlists.setlists.deleteTitle') }}</div>
+          <p class="confirm-text">{{ $t('setlists.setlists.deleteMessage') }}</p>
           <div class="confirm-actions">
-            <button type="button" class="btn-ghost" @click="confirmDeleteId = null">Cancel</button>
-            <button type="button" class="btn-danger" @click="confirmDelete">Delete</button>
+            <button type="button" class="btn-ghost" @click="confirmDeleteId = null">{{ $t('common.actions.cancel') }}</button>
+            <button type="button" class="btn-danger" @click="confirmDelete">{{ $t('common.actions.delete') }}</button>
           </div>
         </div>
       </div>

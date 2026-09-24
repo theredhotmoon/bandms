@@ -73,13 +73,12 @@ describe('i18n catalogues', () => {
       // silently returns only the first branch — `'Bio | EPK'` renders as
       // `"Bio"`, with nothing reported anywhere. Verified against vue-i18n.
       //
-      // So it is allowlisted per key, not waved through per character: these
-      // two are genuine plural forms, and any new pipe has to be justified
-      // here rather than shipping truncated.
-      // Every key here is a real plural form, checked by eye against both
-      // catalogues. The list is deliberately explicit rather than a naming
-      // convention: a pipe silently truncates, so adding one should cost a
-      // line in a test and a moment's thought, not nothing.
+      // So it is allowlisted per key, not waved through per character. Every
+      // key below is a real plural form, checked against both catalogues. The
+      // list is deliberately explicit rather than a naming convention: a pipe
+      // truncates silently, so adding one should cost a line in a test and a
+      // moment's thought, not nothing. It grows with the sweep, and that is
+      // the friction working rather than a sign it needs automating.
       const PLURALS = new Set([
         'common.rebuild.pendingChanges',
         'content.newsletter.subscribers',
@@ -95,6 +94,11 @@ describe('i18n catalogues', () => {
         'media.photos.photoCount',
         'media.photos.albumCreated',
         'media.batchUpload.create',
+        'setlists.setlists.songCount',
+        'setlists.setlistEditor.songCount',
+        'setlists.setlistFm.setlistCount',
+        'setlists.setlistFm.songCount',
+        'setlists.setlistFm.toImport',
       ])
 
       const offenders = all

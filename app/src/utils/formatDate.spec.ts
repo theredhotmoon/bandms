@@ -1,0 +1,41 @@
+import { describe, it, expect } from 'vitest'
+import { formatShortDate, formatDuration } from './formatDate'
+
+describe('formatShortDate', () => {
+  it('formats in the locale it is given', () => {
+    // The whole reason this util exists: the same date reads differently per
+    // locale, and three setlist files were hardcoding the English month.
+    expect(formatShortDate('2026-05-08', 'en')).toContain('May')
+    expect(formatShortDate('2026-05-08', 'pl')).not.toContain('May')
+  })
+
+  it('includes the day and the year', () => {
+    const out = formatShortDate('2026-05-08', 'en')
+    expect(out).toContain('8')
+    expect(out).toContain('2026')
+  })
+
+  it('returns empty for null, undefined and empty string', () => {
+    expect(formatShortDate(null, 'en')).toBe('')
+    expect(formatShortDate(undefined, 'en')).toBe('')
+    expect(formatShortDate('', 'en')).toBe('')
+  })
+
+  it('returns an unparseable value untouched rather than "Invalid Date"', () => {
+    expect(formatShortDate('not-a-date', 'en')).toBe('not-a-date')
+  })
+})
+
+describe('formatDuration', () => {
+  it('pads the seconds', () => {
+    expect(formatDuration(245)).toBe('4:05')
+    expect(formatDuration(60)).toBe('1:00')
+    expect(formatDuration(3599)).toBe('59:59')
+  })
+
+  it('returns empty for null, undefined and zero', () => {
+    expect(formatDuration(null)).toBe('')
+    expect(formatDuration(undefined)).toBe('')
+    expect(formatDuration(0)).toBe('')
+  })
+})

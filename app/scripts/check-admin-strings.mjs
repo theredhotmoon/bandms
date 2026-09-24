@@ -89,6 +89,8 @@ const MIGRATED = [
   'components/admin/forms/ReleaseForm.vue',
   'components/admin/forms/ImageDropZone.vue',
   'views/admin/PhotosAdminView.vue',
+  'views/admin/SetlistsAdminView.vue',
+  'components/setlist',
   'views/admin/MusicVideosAdminView.vue',
   'components/admin/forms/BatchPhotoUpload.vue',
   'composables/useTechRiderEditor.ts',

@@ -4,6 +4,7 @@ import content from './content'
 import dashboard from './dashboard'
 import media from './media'
 import rider from './rider'
+import setlists from './setlists'
 import shell from './shell'
 import shows from './shows'
 
@@ -12,4 +13,4 @@ import shows from './shows'
  * its own string literal type, and `pl` would then be required to repeat the
  * English text verbatim. Plain object gives "keys required, values free".
  */
-export default { band, common, content, dashboard, media, rider, shell, shows }
+export default { band, common, content, dashboard, media, rider, setlists, shell, shows }
