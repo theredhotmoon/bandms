@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import { useBandLogos } from '@/composables/useBandLogos'
 import { reportSaveError } from '@/utils/formErrors'
 import type { BandLogo, BandLogoPayload, LogoVariant, LogoBackground } from '@/types/bandLogo'
-import { LOGO_VARIANT_LABELS, LOGO_BACKGROUND_LABELS } from '@/types/bandLogo'
+import { LOGO_VARIANTS, LOGO_BACKGROUNDS } from '@/types/bandLogo'
 
 const { t } = useI18n()
 
@@ -268,13 +268,13 @@ function isAnyUpdatePending(id: number): boolean {
             <div class="blm-field">
               <label class="field-label">{{ $t('band.logos.variant') }}</label>
               <select v-model="uploadForm.variant" class="field-input">
-                <option v-for="(label, key) in LOGO_VARIANT_LABELS" :key="key" :value="key">{{ label }}</option>
+                <option v-for="key in LOGO_VARIANTS" :key="key" :value="key">{{ $t(`band.logos.variants.${key}`) }}</option>
               </select>
             </div>
             <div class="blm-field">
               <label class="field-label">{{ $t('band.logos.background') }}</label>
               <select v-model="uploadForm.background" class="field-input">
-                <option v-for="(label, key) in LOGO_BACKGROUND_LABELS" :key="key" :value="key">{{ label }}</option>
+                <option v-for="key in LOGO_BACKGROUNDS" :key="key" :value="key">{{ $t(`band.logos.backgrounds.${key}`) }}</option>
               </select>
             </div>
           </div>
@@ -336,8 +336,8 @@ function isAnyUpdatePending(id: number): boolean {
           <div class="blm-card-body">
             <!-- Meta chips -->
             <div class="blm-chips">
-              <span class="blm-chip">{{ LOGO_VARIANT_LABELS[logo.variant] }}</span>
-              <span class="blm-chip">{{ LOGO_BACKGROUND_LABELS[logo.background] }}</span>
+              <span class="blm-chip">{{ $t(`band.logos.variants.${logo.variant}`) }}</span>
+              <span class="blm-chip">{{ $t(`band.logos.backgrounds.${logo.background}`) }}</span>
             </div>
 
             <!-- Label / version -->
@@ -413,13 +413,13 @@ function isAnyUpdatePending(id: number): boolean {
                 <div class="blm-field">
                   <label class="field-label">{{ $t('band.logos.variant') }}</label>
                   <select v-model="editForm.variant" class="field-input field-input--sm">
-                    <option v-for="(lbl, key) in LOGO_VARIANT_LABELS" :key="key" :value="key">{{ lbl }}</option>
+                    <option v-for="key in LOGO_VARIANTS" :key="key" :value="key">{{ $t(`band.logos.variants.${key}`) }}</option>
                   </select>
                 </div>
                 <div class="blm-field">
                   <label class="field-label">{{ $t('band.logos.background') }}</label>
                   <select v-model="editForm.background" class="field-input field-input--sm">
-                    <option v-for="(lbl, key) in LOGO_BACKGROUND_LABELS" :key="key" :value="key">{{ lbl }}</option>
+                    <option v-for="key in LOGO_BACKGROUNDS" :key="key" :value="key">{{ $t(`band.logos.backgrounds.${key}`) }}</option>
                   </select>
                 </div>
               </div>

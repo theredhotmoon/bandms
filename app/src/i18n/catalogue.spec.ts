@@ -61,15 +61,33 @@ describe('i18n catalogues', () => {
       // resolve to a *linked message* instead — silently rendering something
       // other than the text that was written. Require the escape everywhere.
       //
-      // `|` is deliberately not checked here: it is the plural separator, and
-      // several messages use it for exactly that (common.rebuild.pendingChanges,
-      // content.newsletter.subscribers). Escape it as {'|'} only in a message
-      // that is not meant to be plural.
       const offenders = all
         .filter(({ value }) => /(?<!\{')@(?!'\})/.test(value))
         .map(({ key, value }) => `${key}: ${value}`)
 
       expect(offenders, `\n  Escape as {'@'}:\n  ${offenders.join('\n  ')}\n`).toEqual([])
+    })
+
+    it(`${locale}: no unintended | in a message`, () => {
+      // `|` is worse than `@`, not milder, and the first draft of this spec
+      // dismissed it. `@` throws. A literal pipe compiles clean and vue-i18n
+      // silently returns only the first branch — `'Bio | EPK'` renders as
+      // `"Bio"`, with nothing reported anywhere. Verified against vue-i18n.
+      //
+      // So it is allowlisted per key, not waved through per character: these
+      // two are genuine plural forms, and any new pipe has to be justified
+      // here rather than shipping truncated.
+      const PLURALS = new Set(['common.rebuild.pendingChanges', 'content.newsletter.subscribers'])
+
+      const offenders = all
+        .filter(({ key, value }) => !PLURALS.has(key) && /(?<!\{')\|(?!'\})/.test(value))
+        .map(({ key, value }) => `${key}: ${value}`)
+
+      expect(
+        offenders,
+        `\n  A literal | truncates the message silently. Escape as {'|'}, or add\n` +
+          `  the key to PLURALS if it really is a plural form:\n  ${offenders.join('\n  ')}\n`,
+      ).toEqual([])
     })
 
     it(`${locale}: an escaped {'@'} renders as a plain @`, () => {
@@ -115,6 +133,17 @@ describe('i18n catalogues', () => {
         for (const field of ['name', 'sub', 'tagline']) {
           expect(has(`band.career.levels.l${n}.${field}`), `l${n}.${field}`).toBe(true)
         }
+      }
+    })
+
+    it('band.logos covers every LogoVariant and LogoBackground', () => {
+      // Mirrors LOGO_VARIANTS / LOGO_BACKGROUNDS in types/bandLogo.ts, which
+      // is where these used to live as English labels.
+      for (const v of ['full', 'icon', 'horizontal', 'stacked', 'wordmark']) {
+        expect(has(`band.logos.variants.${v}`), v).toBe(true)
+      }
+      for (const b of ['light', 'dark', 'transparent', 'any']) {
+        expect(has(`band.logos.backgrounds.${b}`), b).toBe(true)
       }
     })
   })

@@ -1,9 +1,4 @@
 export default {
-  // Distinct from common.clips, which is the *field* embedded in other forms
-  // (AttachedClipsField: "Clips", "Add clip", "Detach clip"). These are the
-  // library screen: a page title and a create button with its + prefix. Same
-  // English word, different surface — keep them apart so a translator can
-  // word the page heading differently from the inline field label.
   career: {
     levels: {
       l1: {
@@ -26,6 +21,17 @@ export default {
         sub: 'Define your own goals',
         tagline: 'Define your own goals — personalised checklist for your band',
       },
+    },
+    widget: {
+      levelNum: 'Level {n}',
+      progress: '{done}/{total} complete',
+      levelComplete: '🎉 Level {n} complete!',
+      readyFor: "You're ready for {emoji} {name}",
+      advanceTo: 'Advance to Level {n} →',
+      customTitle: 'Custom goals — coming soon',
+      customSub: "Define your own milestones and targets. This level lets you build a personalised checklist matching your band's unique path — sync licensing, booking agency targets, streaming thresholds, and more.",
+      customGoalItem: 'Custom goal {n} — click to define',
+      nextPeek: 'Next: {emoji} Level {n} — {name}',
     },
     sections: {
       identity: 'Identity',
@@ -180,6 +186,8 @@ export default {
     labelPlaceholder: 'e.g. Primary full-colour',
     variant: 'Variant',
     background: 'Background',
+    variants: { full: 'Full logo', icon: 'Icon / Square', horizontal: 'Horizontal', stacked: 'Stacked', wordmark: 'Wordmark (text only)' },
+    backgrounds: { light: 'For light backgrounds', dark: 'For dark backgrounds', transparent: 'Transparent', any: 'Any / Universal' },
     versionLabel: 'Version label',
     versionPlaceholder: 'e.g. v2 2024',
     notes: 'Notes',
@@ -203,6 +211,11 @@ export default {
     useDefault: '— Use default —',
     savePins: 'Save pins',
   },
+  // Distinct from common.clips, which is the *field* embedded in other forms
+  // (AttachedClipsField: "Clips", "Add clip", "Detach clip"). These are the
+  // library screen: a page title and a create button with its + prefix. Same
+  // English word, different surface — keep them apart so a translator can
+  // word the page heading differently from the inline field label.
   clips: {
     title: 'Clips',
     add: '+ Add clip',

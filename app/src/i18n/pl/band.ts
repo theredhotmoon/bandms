@@ -1,9 +1,4 @@
 export default {
-  // Distinct from common.clips, which is the *field* embedded in other forms
-  // (AttachedClipsField: "Clips", "Add clip", "Detach clip"). These are the
-  // library screen: a page title and a create button with its + prefix. Same
-  // English word, different surface — keep them apart so a translator can
-  // word the page heading differently from the inline field label.
   career: {
     levels: {
       l1: {
@@ -26,6 +21,17 @@ export default {
         sub: 'Własne cele',
         tagline: 'Zdefiniuj własne cele — spersonalizowana lista dla Waszego zespołu',
       },
+    },
+    widget: {
+      levelNum: 'Poziom {n}',
+      progress: 'ukończono {done}/{total}',
+      levelComplete: '🎉 Poziom {n} ukończony!',
+      readyFor: 'Czas na {emoji} {name}',
+      advanceTo: 'Przejdź na poziom {n} →',
+      customTitle: 'Własne cele — wkrótce',
+      customSub: 'Zdefiniujcie własne kamienie milowe i cele. Ten poziom pozwala zbudować spersonalizowaną listę dopasowaną do drogi Waszego zespołu — licencje sync, cele agencji bookingowych, progi streamingowe i więcej.',
+      customGoalItem: 'Własny cel {n} — kliknij, aby zdefiniować',
+      nextPeek: 'Dalej: {emoji} Poziom {n} — {name}',
     },
     sections: {
       identity: 'Tożsamość',
@@ -180,6 +186,8 @@ export default {
     labelPlaceholder: 'np. Podstawowy pełnokolorowy',
     variant: 'Wariant',
     background: 'Tło',
+    variants: { full: 'Pełne logo', icon: 'Ikona / kwadrat', horizontal: 'Poziome', stacked: 'Piętrowe', wordmark: 'Sygnet tekstowy' },
+    backgrounds: { light: 'Na jasne tła', dark: 'Na ciemne tła', transparent: 'Przezroczyste', any: 'Dowolne / uniwersalne' },
     versionLabel: 'Etykieta wersji',
     versionPlaceholder: 'np. v2 2024',
     notes: 'Notatki',
@@ -203,6 +211,11 @@ export default {
     useDefault: '— Użyj domyślnego —',
     savePins: 'Zapisz przypisania',
   },
+  // Distinct from common.clips, which is the *field* embedded in other forms
+  // (AttachedClipsField: "Clips", "Add clip", "Detach clip"). These are the
+  // library screen: a page title and a create button with its + prefix. Same
+  // English word, different surface — keep them apart so a translator can
+  // word the page heading differently from the inline field label.
   clips: {
     title: 'Klipy',
     add: '+ Dodaj klip',

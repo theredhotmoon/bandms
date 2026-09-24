@@ -143,10 +143,23 @@ function templateOf(src) {
  *
  * Scans character by character so a run spanning several lines is seen, which
  * a per-line regex cannot do.
+ *
+ * This tracks an explicit in-tag flag plus the attribute quote, rather than a
+ * `<`/`>` nesting depth. The depth version counted EVERY angle bracket, so a
+ * comparison inside a binding — `:class="{ 'x--past': lvl.level < currentLevel }"`
+ * in CareerLevelWidget.vue — incremented depth with no `>` to balance it, and
+ * the file stayed "inside a tag" to the end: **zero** text runs scanned, a
+ * green tick over nine hardcoded English strings. The `>` half is the same bug
+ * mirrored (`shortChars > 240` closes a tag early), which is how a lint can
+ * both miss text and invent it.
+ *
+ * So: `<` opens a tag only when followed by a name, `/` or `!`, and `>` closes
+ * one only outside an attribute value.
  */
 function textRuns(tpl) {
   const runs = []
-  let i = 0, line = 1, depth = 0, buf = '', bufLine = 1
+  let i = 0, line = 1, buf = '', bufLine = 1
+  let inTag = false, quote = null
 
   const flush = () => {
     if (HAS_WORDS.test(buf)) runs.push({ text: buf.trim().replace(/\s+/g, ' '), line: bufLine })
@@ -154,14 +167,14 @@ function textRuns(tpl) {
   }
 
   while (i < tpl.length) {
-    if (tpl.startsWith('<!--', i)) {
+    if (!inTag && tpl.startsWith('<!--', i)) {
       const end = tpl.indexOf('-->', i)
       const skipped = tpl.slice(i, end === -1 ? tpl.length : end + 3)
       line += (skipped.match(/\n/g) || []).length
       i += skipped.length
       continue
     }
-    if (tpl.startsWith('{{', i)) {
+    if (!inTag && tpl.startsWith('{{', i)) {
       const end = tpl.indexOf('}}', i)
       const skipped = tpl.slice(i, end === -1 ? tpl.length : end + 2)
       line += (skipped.match(/\n/g) || []).length
@@ -169,12 +182,19 @@ function textRuns(tpl) {
       continue
     }
     const ch = tpl[i]
-    if (ch === '<') { flush(); depth++ }
-    else if (ch === '>') { depth = Math.max(depth - 1, 0); buf = ''; bufLine = line }
-    else if (depth === 0) {
+
+    if (inTag) {
+      if (quote) { if (ch === quote) quote = null }
+      else if (ch === '"' || ch === "'") quote = ch
+      else if (ch === '>') { inTag = false; buf = ''; bufLine = line }
+    } else if (ch === '<' && /[A-Za-z/!]/.test(tpl[i + 1] ?? '')) {
+      flush()
+      inTag = true
+    } else {
       if (!buf.trim() && ch.trim()) bufLine = line
       buf += ch
     }
+
     if (ch === '\n') line++
     i++
   }

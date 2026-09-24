@@ -8,10 +8,6 @@ import type { ReleaseSummary } from '@/types/release'
 
 const { t } = useI18n()
 
-// CSS, not copy — kept out of the template so the string lint is not asked
-// to judge `width:%; background:` as a sentence.
-const progressStyle = computed(() => ({ width: `${pct.value}%`, background: currentDef.value.color })) // i18n-ignore: CSS
-
 interface Props {
   profile: BandProfile
   concerts: Concert[]
@@ -373,6 +369,9 @@ const allItems       = computed(() => currentDef.value.sections.flatMap((s) => s
 const doneCount      = computed(() => allItems.value.filter((i) => i.done).length)
 const totalItems     = computed(() => allItems.value.length)
 const pct            = computed(() => Math.round((doneCount.value / totalItems.value) * 100))
+// CSS, not copy — kept out of the template so the string lint is not asked
+// to judge `width:%; background:` as a sentence.
+const progressStyle = computed(() => ({ width: `${pct.value}%`, background: currentDef.value.color })) // i18n-ignore: CSS
 
 const readyToAdvance = computed(
   () => !currentDef.value.isCustom && nextDef.value !== null && doneCount.value === totalItems.value
@@ -402,7 +401,7 @@ function advanceLevel() {
         >
           <span class="clw-tab-emoji">{{ lvl.emoji }}</span>
           <span class="clw-tab-name">{{ lvl.name }}</span>
-          <span class="clw-tab-num">Level {{ lvl.level }}</span>
+          <span class="clw-tab-num">{{ $t('band.career.widget.levelNum', { n: lvl.level }) }}</span>
         </button>
       </div>
     </div>
@@ -419,15 +418,15 @@ function advanceLevel() {
               <div class="clw-prog-bar" :style="progressStyle" />
             </div>
             <span class="clw-prog-label" :style="`color:${currentDef.color}`">
-              {{ doneCount }}/{{ totalItems }} complete
+              {{ $t('band.career.widget.progress', { done: doneCount, total: totalItems }) }}
             </span>
           </div>
         </div>
         <div v-if="readyToAdvance" class="clw-advance-box">
-          <div class="clw-advance-title">🎉 Level {{ currentLevel }} complete!</div>
-          <div class="clw-advance-sub">You're ready for {{ nextDef!.emoji }} {{ nextDef!.name }}</div>
+          <div class="clw-advance-title">{{ $t('band.career.widget.levelComplete', { n: currentLevel }) }}</div>
+          <div class="clw-advance-sub">{{ $t('band.career.widget.readyFor', { emoji: nextDef!.emoji, name: nextDef!.name }) }}</div>
           <button type="button" class="clw-advance-btn" @click="advanceLevel">
-            Advance to Level {{ nextDef!.level }} →
+            {{ $t('band.career.widget.advanceTo', { n: nextDef!.level }) }}
           </button>
         </div>
       </div>
@@ -435,16 +434,14 @@ function advanceLevel() {
       <!-- Custom level placeholder -->
       <div v-if="currentDef.isCustom" class="clw-custom-placeholder">
         <div class="clw-custom-icon">⚙️</div>
-        <div class="clw-custom-title">Custom goals — coming soon</div>
+        <div class="clw-custom-title">{{ $t('band.career.widget.customTitle') }}</div>
         <div class="clw-custom-sub">
-          Define your own milestones and targets. This level lets you build a personalised
-          checklist matching your band's unique path — sync licensing, booking agency
-          targets, streaming thresholds, and more.
+          {{ $t('band.career.widget.customSub') }}
         </div>
         <div class="clw-custom-preview">
           <div class="clw-custom-item" v-for="n in 4" :key="n">
             <span class="clw-custom-check">○</span>
-            <span class="clw-custom-label">Custom goal {{ n }} — click to define</span>
+            <span class="clw-custom-label">{{ $t('band.career.widget.customGoalItem', { n }) }}</span>
           </div>
         </div>
       </div>
@@ -477,7 +474,7 @@ function advanceLevel() {
 
       <!-- Next level peek -->
       <div v-if="nextDef && !readyToAdvance && !currentDef.isCustom" class="clw-next-peek">
-        <span class="clw-next-label">Next: {{ nextDef.emoji }} Level {{ nextDef.level }} — {{ nextDef.name }}</span>
+        <span class="clw-next-label">{{ $t('band.career.widget.nextPeek', { emoji: nextDef.emoji, n: nextDef.level, name: nextDef.name }) }}</span>
         <span class="clw-next-sub">{{ nextDef.tagline }}</span>
       </div>
     </div>
