@@ -126,11 +126,23 @@ for (const file of files) {
  * which hands the file to the string lint, where `i18n-ignore` is available
  * for genuinely fixed text (AppNavbar's wordmark is the standing example).
  */
+/**
+ * Both static and dynamic imports. `defineAsyncComponent(() => import('…'))`
+ * is how AdminEntry loads the dashboard — matching only the static form would
+ * stop the walk at a lazy boundary, which is precisely where a component is
+ * easiest to forget.
+ *
+ * Still not exhaustive: a component resolved through `<component :is>` from a
+ * runtime value cannot be found by reading imports. That is a known limit, not
+ * an oversight — the guard is a ratchet, not a proof.
+ */
+const IMPORTS = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]|import\s*\(\s*['"]([^'"]+\.vue)['"]\s*\)/g
+
 const importsOf = (abs) => {
   const src = readFileSync(abs, 'utf8')
   const out = []
-  for (const m of src.matchAll(/import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/g)) {
-    const spec = m[1]
+  for (const m of src.matchAll(IMPORTS)) {
+    const spec = m[1] ?? m[2]
     out.push(spec.startsWith('@/') ? join(SRC, spec.slice(2)) : resolve(dirname(abs), spec))
   }
   return out
