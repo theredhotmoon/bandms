@@ -1,11 +1,15 @@
 import { defineCopy } from '../resolve'
 
 /**
- * The public rider link's page shell — title and the not-found state. The
- * rider sheet itself (@bandms/rider-core RiderSheet.vue) is the document a
- * venue crew prints and is deliberately not in this registry: it is fixed
- * English by design, the same way it is styled with fixed values rather than
- * theme tokens.
+ * The public rider link's page shell — title, and the two states where no
+ * sheet renders at all.
+ *
+ * The sheet itself (@bandms/rider-core RiderSheet.vue) is deliberately not in
+ * this registry, and no longer because it is English: it takes its ~150
+ * strings as a prop from the package's own locale bundles. They are document
+ * vocabulary — "Ch", "Mic / DI", "STAGE BACK" — that no band will ever edit,
+ * and listing them here would bury these three fields behind a wall of inputs
+ * in the admin while duplicating the whole sheet into a second registry.
  */
 export const TECH_RIDER_COPY = defineCopy([
   {
@@ -16,6 +20,11 @@ export const TECH_RIDER_COPY = defineCopy([
     key: 'notFound', label: 'Link invalid or expired', group: 'Rider page', maxLength: 160,
     help: 'Shown when the token in the URL matches no published rider.',
     defaults: { en: 'Rider not found, or the link has expired.', pl: 'Nie znaleziono ridera lub link wygasł.' },
+  },
+  {
+    key: 'invalidLink', label: 'Malformed link', group: 'Rider page', maxLength: 160,
+    help: 'Shown when the URL carries no usable token at all — a truncated paste, not an expired rider.',
+    defaults: { en: 'Invalid rider link.', pl: 'Nieprawidłowy link do ridera.' },
   },
   {
     key: 'contact', label: '"Contact us" link', group: 'Rider page', maxLength: 40,

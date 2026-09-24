@@ -3,13 +3,19 @@ import { getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { TECH_RIDER_COPY } from '@bandms/site-copy'
 import { moduleCopy } from '@/lib/copy'
+import { DEFAULT_LOCALE } from '@/lib/locales'
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules['tech-rider'] === false) return Astro.redirect('/404', 307)
 
 const slugMap = await getSlugMap()
-const contactHref = siteConfig.modules.contact === false ? null : `/en/${slugMap.en.contact}`
+const contactHref = siteConfig.modules.contact === false
+  ? null
+  : `/${DEFAULT_LOCALE}/${slugMap[DEFAULT_LOCALE].contact}`
 // Unlocalised route (the venue's link), so it reads the default locale's copy.
-const t = moduleCopy(siteConfig, 'tech-rider', TECH_RIDER_COPY, 'en')
+// Through the registry, not a literal: this said 'en' while claiming to mean
+// the default, so a band that moved the site's default language would still
+// have shipped English rider pages.
+const t = moduleCopy(siteConfig, 'tech-rider', TECH_RIDER_COPY, DEFAULT_LOCALE)
 
 // Nginx serves this page for any sub-path of /rider/
 // e.g., /rider/TOKEN → this index.html is served
@@ -28,5 +34,5 @@ import PublicRider from '@/components/PublicRider.vue'
     its own page frame, margins and print stylesheet. Constraining it to the
     site's reading column would crop the stage plot.
   -->
-  <PublicRider contactHref={contactHref} copy={{ notFound: t.notFound, contact: t.contact }} client:load />
+  <PublicRider contactHref={contactHref} copy={{ notFound: t.notFound, contact: t.contact, invalidLink: t.invalidLink }} client:load />
 </BaseLayout>

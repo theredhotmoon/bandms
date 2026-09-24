@@ -303,6 +303,10 @@ export default {
       owner: 'Właściciel',
     },
   },
+  preview: {
+    loading: 'Wczytywanie ridera technicznego…',
+    loadFailed: 'Nie udało się wczytać ridera technicznego. Sprawdź, czy jakiś rider jest opublikowany.',
+  },
   admin: {
     tabs: {
       stage: 'Plan sceny',

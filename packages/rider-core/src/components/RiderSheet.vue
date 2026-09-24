@@ -4,7 +4,8 @@ import type { TechRider } from '../types/techRider'
 import type { RiderMember } from '../types/bandMember'
 import type { TechRiderVersion } from '../types/techRiderVersion'
 import type { StagePlacement, GigTempMusician } from '../types/stagePlot'
-import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
+import type { RiderSheetLabels } from '../labels/types'
+import { fillLabel } from '../labels'
 import { placementStatus, resolveRider, resolveRig } from '../riderResolver'
 import { resolveStageInstruments, instrumentBadgesFor, BADGE_R } from '../stageInstruments'
 import InstrumentIcon from './InstrumentIcon.vue'
@@ -26,11 +27,23 @@ import InstrumentIcon from './InstrumentIcon.vue'
  */
 const props = defineProps<{
   rider: TechRider
+  /**
+   * Every word the sheet prints, from `riderSheetLabels(locale)`.
+   *
+   * Required, and the component holds no strings of its own: the venue's copy
+   * and the band's preview are one document, so which language it comes out
+   * in has to be decided at the call site rather than defaulted to whatever
+   * the library happened to hardcode. See ../labels/types.ts.
+   */
+  labels: RiderSheetLabels
+  /** BCP-47 tag for the version date; follows the document, not the reader. */
+  locale?: string
   members?: RiderMember[]
   version?: TechRiderVersion | null
   logoUrl?: string | null
 }>()
 
+const t       = computed(() => props.labels)
 const rider   = computed(() => props.rider)
 const members = computed(() => props.members ?? [])
 const version = computed(() => props.version ?? null)
@@ -40,8 +53,12 @@ const logoUrl = computed(() => props.logoUrl ?? null)
 const versionLabel = computed(() => {
   if (!version.value) return ''
   const date = version.value.published_at
-    ? new Date(version.value.published_at).toLocaleDateString(undefined, {
-        day: 'numeric', month: 'short', year: 'numeric',
+    ? new Date(version.value.published_at).toLocaleDateString(props.locale, {
+        // `long`, not `short`: Polish dates take the genitive ("8 maja"), and
+        // CLDR's abbreviated May is the nominative "maj". Eleven months would
+        // read correctly and the twelfth would not — the same trap the admin's
+        // formatShortDate() documents.
+        day: 'numeric', month: 'long', year: 'numeric',
       })
     : ''
   return date ? `v${version.value.version_number} · ${date}` : `v${version.value.version_number}`
@@ -91,18 +108,18 @@ function findMember(id: number | null): RiderMember | null {
 
 function memberDisplayName(item: StagePlacement): string {
   if (item.temp_id) {
-    const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
-    return t ? t.name : 'Guest'
+    const guest = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
+    return guest ? guest.name : t.value.common.guest
   }
   const m = findMember(item.band_member_id)
   if (m) return m.nickname ?? `${m.first_name} ${m.last_name}`
-  return `Member #${item.band_member_id}`
+  return fillLabel(t.value.common.unknownMember, { id: item.band_member_id ?? '?' })
 }
 
 function memberInitials(item: StagePlacement): string {
   if (item.temp_id) {
-    const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
-    return (t?.name?.[0] ?? '?').toUpperCase()
+    const guest = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
+    return (guest?.name?.[0] ?? '?').toUpperCase()
   }
   const m = findMember(item.band_member_id)
   if (m) return `${m.first_name[0] ?? ''}${m.last_name[0] ?? ''}`.toUpperCase()
@@ -111,8 +128,8 @@ function memberInitials(item: StagePlacement): string {
 
 function memberRole(item: StagePlacement): string {
   if (item.temp_id) {
-    const t = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
-    return t?.role || 'Guest'
+    const guest = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
+    return guest?.role || t.value.common.guest
   }
   return findMember(item.band_member_id)?.role ?? ''
 }
@@ -125,7 +142,7 @@ const effectiveInputs = computed(() => resolved.value?.inputs ?? [])
 const effectiveMonitors = computed(() =>
   (resolved.value?.monitors ?? []).map((m) => ({
     label: m.source.kind === 'extra' ? m.label : `${m.source.name}${m.label ? ` — ${m.label}` : ''}`,
-    type: m.type === 'iem' ? 'IEM' : 'Wedge',
+    type: m.type === 'iem' ? t.value.monitorSummary.iem : t.value.monitorSummary.wedge,
     mix_description: m.mix_description,
     iem: m.type === 'iem',
     model: m.iem_transmitter_model,
@@ -136,7 +153,7 @@ const effectiveMonitors = computed(() =>
 const allWireless = computed(() =>
   (resolved.value?.wireless ?? []).map((u) => ({
     name: u.source.name,
-    type: u.type,
+    type: t.value.wirelessTypes[u.type] ?? u.type,
     model: u.brand_model,
     band: u.frequency_band,
     own: u.own_unit,
@@ -147,7 +164,7 @@ const allWireless = computed(() =>
 const allBackline = computed(() =>
   (resolved.value?.backline ?? []).map((b) => ({
     name: b.name || b.source.name,
-    category: b.category.replace(/_/g, ' '),
+    category: t.value.backlineCategories[b.category] ?? b.category,
     brand: b.brand_preference,
     specs: b.specs,
     notes: b.notes,
@@ -176,19 +193,26 @@ function svgY(pct: number): number { return PAD + (pct / 100) * (SVG_H - PAD * 2
 // Icon badges for a placed musician — one per instrument they play at this
 // position (up to 3), arranged down the left side of the avatar circle.
 function instrumentBadges(item: StagePlacement) {
-  return instrumentBadgesFor(item, members.value)
+  return instrumentBadgesFor(item, members.value, t.value.instruments)
 }
 
 // True when nothing was configured on this position and we are showing the
 // member's profile instrument instead — the printed name is dimmed to match.
 function isInferred(item: StagePlacement): boolean {
-  return resolveStageInstruments(item, members.value).some(i => i.inferred)
+  return resolveStageInstruments(item, members.value, t.value.instruments).some(i => i.inferred)
 }
 
 // Instrument names shown under each musician, with the same profile fallback.
 function instrumentNames(item: StagePlacement, sep: string): string {
-  return resolveStageInstruments(item, members.value).map(i => i.label).join(sep)
+  return resolveStageInstruments(item, members.value, t.value.instruments).map(i => i.label).join(sep)
 }
+
+/** The show-file row prints a format inside a sentence, so it is filled here. */
+const showFileValue = computed(() =>
+  fillLabel(t.value.paFoh.showFileValue, {
+    format: paFoh.value?.show_file_format || t.value.paFoh.tbd,
+  }),
+)
 
 function printPage() { window.print() }
 </script>
@@ -198,7 +222,7 @@ function printPage() { window.print() }
       <!-- Screen toolbar -->
       <div class="print-toolbar no-print">
         <div class="toolbar-left">
-          <span class="toolbar-badge">Tech Rider</span>
+          <span class="toolbar-badge">{{ t.toolbar.badge }}</span>
           <img v-if="logoUrl" :src="logoUrl" alt="" class="toolbar-logo" />
           <div class="toolbar-info">
             <span class="toolbar-name">{{ rider.name }}</span>
@@ -214,7 +238,7 @@ function printPage() { window.print() }
             <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
             <rect x="6" y="14" width="12" height="8"/>
           </svg>
-          Print / Save PDF
+          {{ t.toolbar.print }}
         </button>
       </div>
 
@@ -222,8 +246,8 @@ function printPage() { window.print() }
 
         <!-- ── Cover ──────────────────────────────────────────── -->
         <div class="cover-page page-break">
-          <div class="cover-title">Technical Rider</div>
-          <img v-if="logoUrl" :src="logoUrl" alt="Band logo" class="cover-logo" />
+          <div class="cover-title">{{ t.cover.title }}</div>
+          <img v-if="logoUrl" :src="logoUrl" :alt="t.cover.logoAlt" class="cover-logo" />
           <div class="cover-rider-name">{{ rider.name }}</div>
           <div v-if="rider.concert" class="cover-concert">
             {{ rider.concert.date }}
@@ -232,31 +256,31 @@ function printPage() { window.print() }
           <div class="cover-divider" />
           <div class="cover-meta">
             <div class="cover-meta-item">
-              <span class="meta-label">Musicians</span>
+              <span class="meta-label">{{ t.cover.musicians }}</span>
               <span class="meta-value">{{ stagePlot.length }}</span>
             </div>
             <div class="cover-meta-item">
-              <span class="meta-label">Total inputs</span>
+              <span class="meta-label">{{ t.cover.totalInputs }}</span>
               <span class="meta-value">{{ effectiveInputs.length }}</span>
             </div>
             <div class="cover-meta-item">
-              <span class="meta-label">Status</span>
-              <span class="meta-value">{{ rider.is_active ? 'Active' : 'Draft' }}</span>
+              <span class="meta-label">{{ t.cover.status }}</span>
+              <span class="meta-value">{{ rider.is_active ? t.cover.active : t.cover.draft }}</span>
             </div>
           </div>
         </div>
 
         <!-- ── Stage Plot Diagram ─────────────────────────────── -->
         <section v-if="stagePlot.length" class="section page-break">
-          <h2 class="section-title">Stage Plot</h2>
+          <h2 class="section-title">{{ t.stage.title }}</h2>
           <div class="stage-diagram-wrap">
             <svg :viewBox="`0 0 ${SVG_W} ${SVG_H}`" class="stage-svg" xmlns="http://www.w3.org/2000/svg">
               <rect x="0" y="0" :width="SVG_W" :height="SVG_H" class="svg-stage-bg" rx="8"/>
               <rect x="1" y="1" :width="SVG_W-2" :height="SVG_H-2" fill="none" class="svg-stage-border" rx="8"/>
               <line :x1="PAD" :y1="PAD*0.8" :x2="SVG_W-PAD" :y2="PAD*0.8" class="svg-edge-line"/>
-              <text :x="SVG_W/2" :y="PAD*0.55" text-anchor="middle" class="svg-edge-label">STAGE BACK</text>
+              <text :x="SVG_W/2" :y="PAD*0.55" text-anchor="middle" class="svg-edge-label">{{ t.stage.back }}</text>
               <line :x1="PAD" :y1="SVG_H-PAD*0.8" :x2="SVG_W-PAD" :y2="SVG_H-PAD*0.8" class="svg-edge-line"/>
-              <text :x="SVG_W/2" :y="SVG_H-PAD*0.25" text-anchor="middle" class="svg-edge-label">▲ AUDIENCE ▲</text>
+              <text :x="SVG_W/2" :y="SVG_H-PAD*0.25" text-anchor="middle" class="svg-edge-label">{{ t.stage.audience }}</text>
               <g v-for="(item, idx) in stagePlot" :key="item.id">
                 <circle :cx="svgX(item.x)+1" :cy="svgY(item.y)+1" r="26" class="svg-member-shadow"/>
                 <circle :cx="svgX(item.x)" :cy="svgY(item.y)" r="26" :class="item.temp_id ? 'svg-member-circle--guest' : 'svg-member-circle'"/>
@@ -292,14 +316,14 @@ function printPage() { window.print() }
               />
               <span class="stage-index-name">{{ memberDisplayName(item) }}</span>
               <span class="stage-index-role" :class="{ 'is-inferred': isInferred(item) }">{{ instrumentNames(item, ' · ') }}</span>
-              <span v-if="item.temp_id" class="guest-badge">GUEST</span>
+              <span v-if="item.temp_id" class="guest-badge">{{ t.stage.guest }}</span>
             </div>
           </div>
         </section>
 
         <!-- ── Per-Musician Configuration ────────────────────── -->
         <section v-if="stagePlot.length" class="section">
-          <h2 class="section-title">Musician Configuration</h2>
+          <h2 class="section-title">{{ t.musicians.title }}</h2>
           <div v-for="(item, idx) in stagePlot" :key="item.id" class="member-block">
             <div class="member-header">
               <span class="member-number">{{ idx+1 }}</span>
@@ -307,67 +331,67 @@ function printPage() { window.print() }
                 <div class="member-name">{{ memberDisplayName(item) }}</div>
                 <div class="member-role-line">
                   {{ memberRole(item) }}
-                  <span v-if="item.instruments?.length"> — {{ (item.instruments ?? []).map(i => i.label || INSTRUMENT_TYPE_LABELS[i.type]).join(', ') }}</span>
+                  <span v-if="item.instruments?.length"> — {{ (item.instruments ?? []).map(i => i.label || t.instruments[i.type] || i.type).join(', ') }}</span>
                 </div>
               </div>
-              <span v-if="item.temp_id" class="guest-badge">GUEST</span>
+              <span v-if="item.temp_id" class="guest-badge">{{ t.stage.guest }}</span>
               <span :class="isComplete(item) ? 'status-complete' : 'status-incomplete'">
-                {{ isComplete(item) ? '✓ Complete' : '⚠ Incomplete' }}
+                {{ isComplete(item) ? t.musicians.complete : t.musicians.incomplete }}
               </span>
             </div>
             <div v-if="rigFor(item).inputs.length" class="detail-section">
-              <div class="detail-title">Signal chain / Inputs <span class="chain-badge">{{ rigFor(item).signal_chain_type.replace(/_/g, ' ') }}</span></div>
+              <div class="detail-title">{{ t.musicians.signalChain }} <span class="chain-badge">{{ t.chains[rigFor(item).signal_chain_type] ?? rigFor(item).signal_chain_type }}</span></div>
               <table class="data-table">
-                <thead><tr><th>Ch</th><th>Instrument / Source</th><th>Mic / DI</th><th>Model</th><th>Stand</th><th>Notes</th></tr></thead>
+                <thead><tr><th>{{ t.columns.channel }}</th><th>{{ t.columns.source }}</th><th>{{ t.columns.micDi }}</th><th>{{ t.columns.model }}</th><th>{{ t.columns.stand }}</th><th>{{ t.columns.notes }}</th></tr></thead>
                 <tbody>
                   <tr v-for="row in rigFor(item).inputs" :key="row.id">
-                    <td class="td-num">{{ channelOf(item, row.id) }}</td><td>{{ row.instrument }}</td><td>{{ row.mic_di }}</td><td>{{ row.mic_model }}</td><td>{{ row.stand_type }}</td><td class="td-notes">{{ row.notes }}</td>
+                    <td class="td-num">{{ channelOf(item, row.id) }}</td><td>{{ row.instrument }}</td><td>{{ t.micDi[row.mic_di] ?? row.mic_di }}</td><td>{{ row.mic_model }}</td><td>{{ row.stand_type }}</td><td class="td-notes">{{ row.notes }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div v-else class="detail-section detail-empty">No inputs configured</div>
+            <div v-else class="detail-section detail-empty">{{ t.musicians.noInputs }}</div>
             <div v-if="rigFor(item).monitors.length" class="detail-section">
-              <div class="detail-title">Monitor / IEM</div>
+              <div class="detail-title">{{ t.musicians.monitors }}</div>
               <table class="data-table">
-                <thead><tr><th>Type</th><th>Label</th><th>Config</th><th>Mix description</th><th>IEM model</th><th>Frequency</th></tr></thead>
+                <thead><tr><th>{{ t.columns.type }}</th><th>{{ t.columns.label }}</th><th>{{ t.columns.config }}</th><th>{{ t.columns.mixDescription }}</th><th>{{ t.columns.iemModel }}</th><th>{{ t.columns.frequency }}</th></tr></thead>
                 <tbody>
                   <tr v-for="mon in rigFor(item).monitors" :key="mon.id">
-                    <td>{{ mon.type === 'iem' ? 'IEM' : 'Wedge' }}</td><td>{{ mon.label }}</td><td>{{ mon.config }}</td><td>{{ mon.mix_description || '—' }}</td><td>{{ mon.type === 'iem' ? (mon.iem_transmitter_model||'—') : '—' }}</td><td>{{ mon.type === 'iem' ? (mon.iem_frequency||'—') : '—' }}</td>
+                    <td>{{ mon.type === 'iem' ? t.monitorSummary.iem : t.monitorSummary.wedge }}</td><td>{{ mon.label }}</td><td>{{ mon.config }}</td><td>{{ mon.mix_description || t.common.none }}</td><td>{{ mon.type === 'iem' ? (mon.iem_transmitter_model||t.common.none) : t.common.none }}</td><td>{{ mon.type === 'iem' ? (mon.iem_frequency||t.common.none) : t.common.none }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div v-else class="detail-section detail-empty">No monitors configured</div>
+            <div v-else class="detail-section detail-empty">{{ t.musicians.noMonitors }}</div>
             <div v-if="rigFor(item).wireless.length" class="detail-section">
-              <div class="detail-title">Wireless</div>
+              <div class="detail-title">{{ t.musicians.wireless }}</div>
               <table class="data-table">
-                <thead><tr><th>Type</th><th>Brand / Model</th><th>Freq. band</th><th>Own unit</th><th>Notes</th></tr></thead>
+                <thead><tr><th>{{ t.columns.type }}</th><th>{{ t.columns.brandModel }}</th><th>{{ t.columns.freqBand }}</th><th>{{ t.columns.ownUnit }}</th><th>{{ t.columns.notes }}</th></tr></thead>
                 <tbody>
                   <tr v-for="(u, i) in rigFor(item).wireless" :key="i">
-                    <td>{{ u.type }}</td><td>{{ u.brand_model||'—' }}</td><td>{{ u.frequency_band||'—' }}</td><td>{{ u.own_unit ? 'Yes' : 'No' }}</td><td class="td-notes">{{ u.notes }}</td>
+                    <td>{{ t.wirelessTypes[u.type] ?? u.type }}</td><td>{{ u.brand_model||t.common.none }}</td><td>{{ u.frequency_band||t.common.none }}</td><td>{{ u.own_unit ? t.common.yes : t.common.no }}</td><td class="td-notes">{{ u.notes }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div v-if="rigFor(item).backline.some(b => b.needed)" class="detail-section">
-              <div class="detail-title">Backline required</div>
+              <div class="detail-title">{{ t.musicians.backline }}</div>
               <div v-for="bl in rigFor(item).backline.filter(b => b.needed)" :key="bl.id" class="kv-row">
-                <span class="kv-key">Item</span><span class="kv-val">{{ bl.name || bl.category.replace(/_/g, ' ') }}</span>
-                <span class="kv-key">Brand preference</span><span class="kv-val">{{ bl.brand_preference||'—' }}</span>
-                <span class="kv-key">Specs</span><span class="kv-val">{{ bl.specs||'—' }}</span>
-                <template v-if="bl.notes"><span class="kv-key">Notes</span><span class="kv-val">{{ bl.notes }}</span></template>
+                <span class="kv-key">{{ t.musicians.item }}</span><span class="kv-val">{{ bl.name || t.backlineCategories[bl.category] || bl.category }}</span>
+                <span class="kv-key">{{ t.columns.brandPreference }}</span><span class="kv-val">{{ bl.brand_preference||t.common.none }}</span>
+                <span class="kv-key">{{ t.columns.specs }}</span><span class="kv-val">{{ bl.specs||t.common.none }}</span>
+                <template v-if="bl.notes"><span class="kv-key">{{ t.columns.notes }}</span><span class="kv-val">{{ bl.notes }}</span></template>
               </div>
             </div>
             <div v-if="rigFor(item).power.outlets_needed > 0" class="detail-section">
-              <div class="detail-title">Power</div>
+              <div class="detail-title">{{ t.musicians.power }}</div>
               <div class="kv-row">
-                <span class="kv-key">Outlets needed</span><span class="kv-val">{{ rigFor(item).power.outlets_needed }}</span>
-                <template v-if="rigFor(item).power.notes"><span class="kv-key">Notes</span><span class="kv-val">{{ rigFor(item).power.notes }}</span></template>
+                <span class="kv-key">{{ t.musicians.outletsNeeded }}</span><span class="kv-val">{{ rigFor(item).power.outlets_needed }}</span>
+                <template v-if="rigFor(item).power.notes"><span class="kv-key">{{ t.columns.notes }}</span><span class="kv-val">{{ rigFor(item).power.notes }}</span></template>
               </div>
             </div>
             <div v-if="rigFor(item).foh_notes" class="detail-section">
-              <div class="detail-title">FOH notes</div>
+              <div class="detail-title">{{ t.musicians.fohNotes }}</div>
               <p class="foh-notes">{{ rigFor(item).foh_notes }}</p>
             </div>
           </div>
@@ -375,12 +399,12 @@ function printPage() { window.print() }
 
         <!-- ── Consolidated Input List ────────────────────────── -->
         <section v-if="effectiveInputs.length" class="section page-break">
-          <h2 class="section-title">Complete Input List</h2>
+          <h2 class="section-title">{{ t.inputs.title }}</h2>
           <table class="data-table">
-            <thead><tr><th>Ch</th><th>Instrument / Source</th><th>Mic / DI</th><th>Model</th><th>Stand</th><th>Notes</th></tr></thead>
+            <thead><tr><th>{{ t.columns.channel }}</th><th>{{ t.columns.source }}</th><th>{{ t.columns.micDi }}</th><th>{{ t.columns.model }}</th><th>{{ t.columns.stand }}</th><th>{{ t.columns.notes }}</th></tr></thead>
             <tbody>
               <tr v-for="row in effectiveInputs" :key="row.key">
-                <td class="td-num">{{ row.channel }}</td><td>{{ row.instrument }}</td><td>{{ row.mic_di }}</td><td>{{ row.mic_model }}</td><td>{{ row.stand_type }}</td><td class="td-notes">{{ row.notes }}</td>
+                <td class="td-num">{{ row.channel }}</td><td>{{ row.instrument }}</td><td>{{ t.micDi[row.mic_di] ?? row.mic_di }}</td><td>{{ row.mic_model }}</td><td>{{ row.stand_type }}</td><td class="td-notes">{{ row.notes }}</td>
               </tr>
             </tbody>
           </table>
@@ -388,12 +412,12 @@ function printPage() { window.print() }
 
         <!-- ── Monitor Summary ────────────────────────────────── -->
         <section v-if="effectiveMonitors.length" class="section">
-          <h2 class="section-title">Monitor / IEM Summary</h2>
+          <h2 class="section-title">{{ t.monitorSummary.title }}</h2>
           <table class="data-table">
-            <thead><tr><th>Musician</th><th>Type</th><th>Mix description</th><th>IEM model</th><th>Frequency</th></tr></thead>
+            <thead><tr><th>{{ t.columns.musician }}</th><th>{{ t.columns.type }}</th><th>{{ t.columns.mixDescription }}</th><th>{{ t.columns.iemModel }}</th><th>{{ t.columns.frequency }}</th></tr></thead>
             <tbody>
               <tr v-for="(mon, i) in effectiveMonitors" :key="i">
-                <td>{{ mon.label }}</td><td>{{ mon.type }}</td><td>{{ mon.mix_description||'—' }}</td><td>{{ mon.iem ? (mon.model||'—') : '—' }}</td><td>{{ mon.iem ? (mon.freq||'—') : '—' }}</td>
+                <td>{{ mon.label }}</td><td>{{ mon.type }}</td><td>{{ mon.mix_description||t.common.none }}</td><td>{{ mon.iem ? (mon.model||t.common.none) : t.common.none }}</td><td>{{ mon.iem ? (mon.freq||t.common.none) : t.common.none }}</td>
               </tr>
             </tbody>
           </table>
@@ -401,12 +425,12 @@ function printPage() { window.print() }
 
         <!-- ── Wireless Registry ──────────────────────────────── -->
         <section v-if="allWireless.length" class="section">
-          <h2 class="section-title">RF / Wireless Registry</h2>
+          <h2 class="section-title">{{ t.wirelessRegistry.title }}</h2>
           <table class="data-table">
-            <thead><tr><th>Musician / Unit</th><th>Type</th><th>Brand / Model</th><th>Freq. band</th><th>Own</th><th>Notes</th></tr></thead>
+            <thead><tr><th>{{ t.columns.musicianUnit }}</th><th>{{ t.columns.type }}</th><th>{{ t.columns.brandModel }}</th><th>{{ t.columns.freqBand }}</th><th>{{ t.columns.own }}</th><th>{{ t.columns.notes }}</th></tr></thead>
             <tbody>
               <tr v-for="(u, i) in allWireless" :key="`m-${i}`">
-                <td>{{ u.name }}</td><td>{{ u.type }}</td><td>{{ u.model||'—' }}</td><td>{{ u.band||'—' }}</td><td>{{ u.own ? 'Yes' : 'No' }}</td><td class="td-notes">{{ u.notes }}</td>
+                <td>{{ u.name }}</td><td>{{ u.type }}</td><td>{{ u.model||t.common.none }}</td><td>{{ u.band||t.common.none }}</td><td>{{ u.own ? t.common.yes : t.common.no }}</td><td class="td-notes">{{ u.notes }}</td>
               </tr>
             </tbody>
           </table>
@@ -414,12 +438,12 @@ function printPage() { window.print() }
 
         <!-- ── Backline ────────────────────────────────────────── -->
         <section v-if="allBackline.length" class="section">
-          <h2 class="section-title">Backline Requirements</h2>
+          <h2 class="section-title">{{ t.backline.title }}</h2>
           <table class="data-table">
-            <thead><tr><th>Musician / Item</th><th>Category</th><th>Brand preference</th><th>Specs</th><th>Notes</th></tr></thead>
+            <thead><tr><th>{{ t.columns.musicianItem }}</th><th>{{ t.columns.category }}</th><th>{{ t.columns.brandPreference }}</th><th>{{ t.columns.specs }}</th><th>{{ t.columns.notes }}</th></tr></thead>
             <tbody>
               <tr v-for="(bl, i) in allBackline" :key="i">
-                <td>{{ bl.name }}</td><td>{{ bl.category }}</td><td>{{ bl.brand||'—' }}</td><td>{{ bl.specs||'—' }}</td><td class="td-notes">{{ bl.notes }}</td>
+                <td>{{ bl.name }}</td><td>{{ bl.category }}</td><td>{{ bl.brand||t.common.none }}</td><td>{{ bl.specs||t.common.none }}</td><td class="td-notes">{{ bl.notes }}</td>
               </tr>
             </tbody>
           </table>
@@ -427,28 +451,28 @@ function printPage() { window.print() }
 
         <!-- ── PA / FOH ────────────────────────────────────────── -->
         <section v-if="paFoh && (paFoh.room_coverage_notes || paFoh.console_preference || paFoh.brings_own_foh_engineer || paFoh.subwoofer_notes || paFoh.processing_notes)" class="section">
-          <h2 class="section-title">PA / FOH Requirements</h2>
+          <h2 class="section-title">{{ t.paFoh.title }}</h2>
           <div class="kv-grid">
-            <template v-if="paFoh.room_coverage_notes"><span class="kv-key">Room coverage</span><span class="kv-val">{{ paFoh.room_coverage_notes }}</span></template>
-            <template v-if="paFoh.subwoofer_notes"><span class="kv-key">Subwoofer</span><span class="kv-val">{{ paFoh.subwoofer_notes }}</span></template>
-            <template v-if="paFoh.processing_notes"><span class="kv-key">Processing</span><span class="kv-val">{{ paFoh.processing_notes }}</span></template>
-            <template v-if="paFoh.console_preference"><span class="kv-key">Console preference</span><span class="kv-val">{{ paFoh.console_preference }}</span></template>
-            <template v-if="paFoh.brings_own_foh_engineer"><span class="kv-key">FOH engineer</span><span class="kv-val">{{ paFoh.foh_engineer_name || 'Band brings own engineer' }}</span></template>
-            <template v-if="paFoh.brings_show_file"><span class="kv-key">Show file</span><span class="kv-val">Yes — format: {{ paFoh.show_file_format || 'TBD' }}</span></template>
+            <template v-if="paFoh.room_coverage_notes"><span class="kv-key">{{ t.paFoh.roomCoverage }}</span><span class="kv-val">{{ paFoh.room_coverage_notes }}</span></template>
+            <template v-if="paFoh.subwoofer_notes"><span class="kv-key">{{ t.paFoh.subwoofer }}</span><span class="kv-val">{{ paFoh.subwoofer_notes }}</span></template>
+            <template v-if="paFoh.processing_notes"><span class="kv-key">{{ t.paFoh.processing }}</span><span class="kv-val">{{ paFoh.processing_notes }}</span></template>
+            <template v-if="paFoh.console_preference"><span class="kv-key">{{ t.paFoh.consolePreference }}</span><span class="kv-val">{{ paFoh.console_preference }}</span></template>
+            <template v-if="paFoh.brings_own_foh_engineer"><span class="kv-key">{{ t.paFoh.engineer }}</span><span class="kv-val">{{ paFoh.foh_engineer_name || t.paFoh.ownEngineer }}</span></template>
+            <template v-if="paFoh.brings_show_file"><span class="kv-key">{{ t.paFoh.showFile }}</span><span class="kv-val">{{ showFileValue }}</span></template>
           </div>
         </section>
 
         <!-- ── Power ──────────────────────────────────────────── -->
         <section v-if="allPowerPositions.length" class="section">
-          <h2 class="section-title">Power Requirements</h2>
+          <h2 class="section-title">{{ t.power.title }}</h2>
           <table class="data-table">
-            <thead><tr><th>Location / Musician</th><th>Outlets</th><th>Notes</th></tr></thead>
+            <thead><tr><th>{{ t.columns.locationMusician }}</th><th>{{ t.columns.outlets }}</th><th>{{ t.columns.notes }}</th></tr></thead>
             <tbody>
               <tr v-for="(pos, i) in allPowerPositions" :key="i">
                 <td>{{ pos.location }}</td><td class="td-num">{{ pos.outlets }}</td><td class="td-notes">{{ pos.notes }}</td>
               </tr>
               <tr v-if="power?.needs_clean_power" class="tr-highlight">
-                <td colspan="3"><strong>Clean / isolated power required.</strong> {{ power.general_notes }}</td>
+                <td colspan="3"><strong>{{ t.power.cleanPower }}</strong> {{ power.general_notes }}</td>
               </tr>
             </tbody>
           </table>
@@ -457,7 +481,7 @@ function printPage() { window.print() }
         <!-- Footer -->
         <div class="doc-footer no-page-break">
           <p>
-            Technical Rider — <strong>{{ rider.name }}</strong>
+            {{ t.cover.title }} — <strong>{{ rider.name }}</strong>
             <span v-if="versionLabel"> · {{ versionLabel }}</span>
           </p>
         </div>

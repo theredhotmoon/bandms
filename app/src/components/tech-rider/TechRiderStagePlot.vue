@@ -9,6 +9,7 @@
 import { computed, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import PlacementModal from './PlacementModal.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import type { BandMember } from '@bandms/rider-core'
@@ -17,7 +18,7 @@ import type { RigSpec } from '@bandms/rider-core'
 import type { GigLineup, GigTempMusician, StagePlacement } from '@bandms/rider-core'
 import { defaultPlacement, defaultPlacedInstrument } from '@bandms/rider-core'
 import { placementStatus, resolveRig, overriddenFields } from '@bandms/rider-core'
-import { memberMainInstrumentType, resolveStageInstruments } from '@bandms/rider-core'
+import { instrumentLabels, memberMainInstrumentType, resolveStageInstruments } from '@bandms/rider-core'
 
 interface Props {
   modelValue: StagePlacement[]
@@ -39,6 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const emit = defineEmits<{
   'update:modelValue': [StagePlacement[]]
@@ -322,7 +324,7 @@ watch(qrItemId, async (id) => {
 // ── Display helpers ───────────────────────────────────────────────────────────
 
 function displayInstruments(item: StagePlacement) {
-  return resolveStageInstruments(item, props.bandMembers)
+  return resolveStageInstruments(item, props.bandMembers, instrumentLabels(uiLang.value))
 }
 
 function itemDisplayName(item: StagePlacement): string {

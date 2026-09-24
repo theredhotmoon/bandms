@@ -10,6 +10,7 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RigEditor from '@/components/rig/RigEditor.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
@@ -20,7 +21,7 @@ import type { Instrument } from '@bandms/rider-core'
 import type { StagePlotItemType } from '@bandms/rider-core'
 import type { RigField } from '@bandms/rider-core'
 import type { GigTempMusician, PlacedInstrument, StagePlacement } from '@bandms/rider-core'
-import { defaultPlacedInstrument, INSTRUMENT_TYPE_LABELS } from '@bandms/rider-core'
+import { defaultPlacedInstrument, instrumentLabels } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
 import { overriddenFields, resolveRig } from '@bandms/rider-core'
 
@@ -45,6 +46,14 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
+
+/**
+ * Instrument names come from the shared catalogue, not the vue-i18n one: the
+ * rider sheet prints the same 31 names and they must match exactly, so the
+ * package owns them and both surfaces read the same map.
+ */
+const instNames = computed(() => instrumentLabels(uiLang.value))
 
 const displayName = computed(() => {
   if (props.tempMusician) return `${props.tempMusician.name} (guest)`
@@ -217,7 +226,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
             <button
               type="button"
               class="icon-btn"
-              :title="INSTRUMENT_TYPE_LABELS[inst.type]"
+              :title="instNames[inst.type]"
               @click="pickerFor = pickerFor === inst.id ? null : inst.id"
             >
               <InstrumentIcon :type="inst.type" :size="20" />
@@ -225,7 +234,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
             <input
               :value="inst.label"
               class="field-input"
-              :placeholder="INSTRUMENT_TYPE_LABELS[inst.type]"
+              :placeholder="instNames[inst.type]"
               @input="patchInstrument(inst.id, { label: ($event.target as HTMLInputElement).value })"
             />
             <button type="button" class="btn-remove" @click="removeInstrument(inst.id)">✕</button>

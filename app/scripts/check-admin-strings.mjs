@@ -106,6 +106,7 @@ const MIGRATED = [
   'components/tech-rider/TechRiderPaFoh.vue',
   'components/tech-rider/TechRiderSidebar.vue',
   'views/admin/TechRiderAdminView.vue',
+  'views/TechRiderPreviewView.vue',
   'views/admin/MusicVideosAdminView.vue',
   'components/admin/forms/BatchPhotoUpload.vue',
   'composables/useTechRiderEditor.ts',

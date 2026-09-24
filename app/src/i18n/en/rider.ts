@@ -318,6 +318,10 @@ export default {
       owner: 'Owner',
     },
   },
+  preview: {
+    loading: 'Loading tech rider…',
+    loadFailed: 'Could not load the tech rider. Please check that a rider is published.',
+  },
   admin: {
     tabs: {
       stage: 'Stage Plot',

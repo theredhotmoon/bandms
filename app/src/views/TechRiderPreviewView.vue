@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { fetchActiveTechRider, fetchTechRider } from '@/api/techRiders'
 import { fetchBandMembers } from '@/api/bandMembers'
 import { fetchBandProfile } from '@/api/bandProfile'
 import type { TechRider, BandMember } from '@bandms/rider-core'
+import { riderSheetLabels } from '@bandms/rider-core'
 import type { BandProfile } from '@/types/bandProfile'
 import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
+import { useUiLang } from '@/composables/useUiLang'
 
 /**
  * The band's own preview of a tech rider — opened from the editor's topbar.
@@ -23,6 +26,17 @@ import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
  * under it after the link is sent.
  */
 const route = useRoute()
+const { t } = useI18n()
+const { uiLang } = useUiLang()
+
+/**
+ * The preview follows the *chrome* language, not the content language.
+ *
+ * It is the band reading their own document, so it should match the panel
+ * around it. The venue's copy is resolved separately, from the public site's
+ * default locale — see web/src/components/PublicRider.vue.
+ */
+const sheetLabels = computed(() => riderSheetLabels(uiLang.value))
 
 const rider   = ref<TechRider | null>(null)
 const members = ref<BandMember[]>([])
@@ -43,7 +57,7 @@ onMounted(async () => {
     members.value = membersData
     profile.value = profileData
   } catch {
-    error.value = 'Could not load the tech rider. Please check that a rider is published.'
+    error.value = t('rider.preview.loadFailed')
   } finally {
     loading.value = false
   }
@@ -60,7 +74,7 @@ const logoUrl = computed(() => {
 </script>
 
 <template>
-  <div v-if="loading" class="preview-loading">Loading tech rider…</div>
+  <div v-if="loading" class="preview-loading">{{ $t('rider.preview.loading') }}</div>
   <div v-else-if="error" class="preview-error">{{ error }}</div>
 
   <!--
@@ -71,6 +85,8 @@ const logoUrl = computed(() => {
   <RiderSheet
     v-else-if="rider"
     :rider="rider"
+    :labels="sheetLabels"
+    :locale="uiLang"
     :members="members"
     :logo-url="logoUrl"
   />
