@@ -71,6 +71,8 @@ const MIGRATED = [
   'views/admin/PressReleasesAdminView.vue',
   'views/admin/PitchGeneratorView.vue',
   'views/admin/ClipsAdminView.vue',
+  'components/admin/BandLogoManager.vue',
+  'components/admin/CareerLevelWidget.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]

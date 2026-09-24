@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import { adminUrl } from '@/config/admin'
 import type { BandProfile } from '@/types/bandProfile'
 import type { Concert } from '@/types/concert'
 import type { ReleaseSummary } from '@/types/release'
+
+const { t } = useI18n()
+
+// CSS, not copy — kept out of the template so the string lint is not asked
+// to judge `width:%; background:` as a sentence.
+const progressStyle = computed(() => ({ width: `${pct.value}%`, background: currentDef.value.color })) // i18n-ignore: CSS
 
 interface Props {
   profile: BandProfile
@@ -62,84 +69,84 @@ const LEVELS = computed((): LevelDef[] => {
     // ── Level 1 – Garage Band ──────────────────────────────────────────────
     {
       level: 1,
-      name: 'Garage Band',
-      tagline: 'Establish your identity — who are you as a band?',
+      name: t('band.career.levels.l1.name'),
+      tagline: t('band.career.levels.l1.tagline'),
       emoji: '🎸',
       color: '#34d399',
       sections: [
         {
-          name: 'Identity',
+          name: t('band.career.sections.identity'),
           items: [
             {
               id: 'name-bio',
-              label: 'Band name & short bio',
+              label: t('band.career.items.nameBio.label'),
               done: !!(p.name && p.bio_short),
               link: adminUrl('band-profile'),
-              tip: 'Fill in your name and at least a 280-char short bio',
+              tip: t('band.career.items.nameBio.tip'),
             },
             {
               id: 'hometown',
-              label: 'Hometown & formation year',
+              label: t('band.career.items.hometown.label'),
               done: !!(p.hometown && p.formation_year),
               link: adminUrl('band-profile'),
-              tip: 'Venues and press always ask where you are from',
+              tip: t('band.career.items.hometown.tip'),
             },
             {
               id: 'genres',
-              label: 'Genre tags set',
+              label: t('band.career.items.genres.label'),
               done: !!(p.genres),
               link: adminUrl('band-profile'),
-              tip: 'Tag your genre so fans and algorithms can find you',
+              tip: t('band.career.items.genres.tip'),
             },
           ],
         },
         {
-          name: 'Band',
+          name: t('band.career.sections.band'),
           items: [
             {
               id: 'members',
-              label: 'At least 2 band members listed',
+              label: t('band.career.items.members.label'),
               done: props.membersCount >= 2,
               link: adminUrl('band-members'),
-              tip: 'Add member profiles so booking agents know your lineup',
+              tip: t('band.career.items.members.tip'),
             },
           ],
         },
         {
-          name: 'First Music',
+          name: t('band.career.sections.firstMusic'),
           items: [
             {
               id: 'first-release',
-              label: 'First release uploaded',
+              label: t('band.career.items.firstRelease.label'),
               done: props.releases.length >= 1,
               link: adminUrl('releases'),
-              tip: 'Upload your first album, EP or single',
+              tip: t('band.career.items.firstRelease.tip'),
             },
             {
               id: 'cover-art',
-              label: 'Cover artwork on a release',
+              label: t('band.career.items.coverArt.label'),
               done: props.releases.some((r) => !!r.cover_image),
               link: adminUrl('releases'),
-              tip: 'Streaming platforms require cover art',
+              tip: t('band.career.items.coverArt.tip'),
             },
           ],
         },
         {
-          name: 'Online Presence',
+          name: t('band.career.sections.onlinePresence'),
           items: [
             {
               id: 'social-links',
-              label: '2+ social media links',
+              label: t('band.career.items.socialLinks.label'),
               done: !!(p.social_links?.length && p.social_links.length >= 2),
               link: adminUrl('band-profile'),
-              tip: 'Instagram, Spotify, YouTube — minimum 2 platforms',
+              tip: t('band.career.items.socialLinks.tip'),
             },
             {
               id: 'booking-email',
-              label: 'Booking contact email',
+              label: t('band.career.items.bookingEmail.label'),
               done: !!(p.booking_email),
               link: adminUrl('band-profile'),
-              tip: 'Direct email — not a social handle or contact form',
+              tip: t('band.career.items.bookingEmail.tip'),
             },
           ],
         },
@@ -149,84 +156,84 @@ const LEVELS = computed((): LevelDef[] => {
     // ── Level 2 – Local Band ───────────────────────────────────────────────
     {
       level: 2,
-      name: 'Local Band',
-      tagline: 'Build your audience — releases, shows, content & first press',
+      name: t('band.career.levels.l2.name'),
+      tagline: t('band.career.levels.l2.tagline'),
       emoji: '🌿',
       color: '#60a5fa',
       sections: [
         {
-          name: 'Releases & Music',
+          name: t('band.career.sections.releasesMusic'),
           items: [
             {
               id: 'multi-releases',
-              label: '3+ releases in catalogue',
+              label: t('band.career.items.multiReleases.label'),
               done: props.releases.length >= 3,
               link: adminUrl('releases'),
-              tip: 'Build a back-catalogue fans can discover',
+              tip: t('band.career.items.multiReleases.tip'),
             },
             {
               id: 'music-video',
-              label: 'Music video added',
+              label: t('band.career.items.musicVideo.label'),
               done: props.musicVideosCount >= 1,
               link: adminUrl('music-videos'),
-              tip: '"Live video is non-negotiable" — EPK checklist 2026',
+              tip: t('band.career.items.musicVideo.tip'),
             },
           ],
         },
         {
-          name: 'Live Activity',
+          name: t('band.career.sections.liveActivity'),
           items: [
             {
               id: 'concerts',
-              label: '3+ concerts on record',
+              label: t('band.career.items.concerts.label'),
               done: props.concerts.length >= 3,
               link: adminUrl('concerts'),
-              tip: 'Build a show history for your EPK and booking pitches',
+              tip: t('band.career.items.concerts.tip'),
             },
             {
               id: 'upcoming-show',
-              label: 'Upcoming show listed',
+              label: t('band.career.items.upcomingShow.label'),
               done: hasUpcoming(),
               link: adminUrl('concerts'),
-              tip: 'Active touring artists book more shows',
+              tip: t('band.career.items.upcomingShow.tip'),
             },
           ],
         },
         {
-          name: 'Content & Press',
+          name: t('band.career.sections.contentPress'),
           items: [
             {
               id: 'first-press',
-              label: 'First press article / feature',
+              label: t('band.career.items.firstPress.label'),
               done: props.pressCount >= 1,
               link: adminUrl('press-releases'),
-              tip: 'Any blog post, review or interview that mentions you',
+              tip: t('band.career.items.firstPress.tip'),
             },
             {
               id: 'news-posts',
-              label: '3+ news posts published',
+              label: t('band.career.items.newsPosts.label'),
               done: props.postsCount >= 3,
               link: adminUrl('posts'),
-              tip: 'Regular content signals an active band to Google and fans',
+              tip: t('band.career.items.newsPosts.tip'),
             },
           ],
         },
         {
-          name: 'Discovery',
+          name: t('band.career.sections.discovery'),
           items: [
             {
               id: 'bio-variants',
-              label: 'Short & medium bio written',
+              label: t('band.career.items.bioVariants.label'),
               done: !!(p.bio_short && p.bio_medium),
               link: adminUrl('band-profile'),
-              tip: 'Booking agents copy-paste the short bio into listings',
+              tip: t('band.career.items.bioVariants.tip'),
             },
             {
               id: 'comparable',
-              label: 'Comparable artists set',
+              label: t('band.career.items.comparable.label'),
               done: !!(p.comparable_artists),
               link: adminUrl('band-profile'),
-              tip: '"For fans of X" is the most-read line on any EPK',
+              tip: t('band.career.items.comparable.tip'),
             },
           ],
         },
@@ -236,98 +243,98 @@ const LEVELS = computed((): LevelDef[] => {
     // ── Level 3 – Pro Band ─────────────────────────────────────────────────
     {
       level: 3,
-      name: 'Pro Band',
-      tagline: 'Establish your industry presence — EPK, agents, sync, media',
+      name: t('band.career.levels.l3.name'),
+      tagline: t('band.career.levels.l3.tagline'),
       emoji: '🏆',
       color: '#f472b6',
       sections: [
         {
-          name: 'EPK & Promo',
+          name: t('band.career.sections.ePKPromo'),
           items: [
             {
               id: 'full-epk',
-              label: 'Full EPK published (versioned)',
+              label: t('band.career.items.fullEpk.label'),
               done: props.epkPublished,
               link: adminUrl('band-profile'),
-              tip: 'Create and publish a versioned EPK snapshot',
+              tip: t('band.career.items.fullEpk.tip'),
             },
             {
               id: 'featured-release',
-              label: 'Featured release set on EPK',
+              label: t('band.career.items.featuredRelease.label'),
               done: !!(p.epk_release_id),
               link: adminUrl('band-profile'),
-              tip: 'Choose your best release to headline the EPK',
+              tip: t('band.career.items.featuredRelease.tip'),
             },
             {
               id: 'tech-rider',
-              label: 'Active tech rider built',
+              label: t('band.career.items.techRider.label'),
               done: props.techRiderActive,
               link: adminUrl('tech-rider'),
-              tip: 'Professionals judge you by your rider — be specific',
+              tip: t('band.career.items.techRider.tip'),
             },
           ],
         },
         {
-          name: 'Contacts & Industry',
+          name: t('band.career.sections.contactsIndustry'),
           items: [
             {
               id: 'press-email',
-              label: 'Press email set',
+              label: t('band.career.items.pressEmail.label'),
               done: !!(p.press_email),
               link: adminUrl('band-profile'),
-              tip: 'Separate press contact for journalists and bloggers',
+              tip: t('band.career.items.pressEmail.tip'),
             },
             {
               id: 'tech-email',
-              label: 'Tech contact email set',
+              label: t('band.career.items.techEmail.label'),
               done: !!(p.tech_contact_email),
               link: adminUrl('band-profile'),
-              tip: 'Venues need a dedicated tech contact for production',
+              tip: t('band.career.items.techEmail.tip'),
             },
           ],
         },
         {
-          name: 'Reach',
+          name: t('band.career.sections.reach'),
           items: [
             {
               id: 'ten-concerts',
-              label: '10+ shows on record',
+              label: t('band.career.items.tenConcerts.label'),
               done: props.concerts.length >= 10,
               link: adminUrl('concerts'),
-              tip: 'Venues want to see your live history before booking',
+              tip: t('band.career.items.tenConcerts.tip'),
             },
             {
               id: 'multi-press',
-              label: '3+ press articles / media features',
+              label: t('band.career.items.multiPress.label'),
               done: props.pressCount >= 3,
               link: adminUrl('press-releases'),
-              tip: 'Media coverage builds credibility for festival applications',
+              tip: t('band.career.items.multiPress.tip'),
             },
             {
               id: 'stats',
-              label: 'Streaming / social stats entered',
+              label: t('band.career.items.stats.label'),
               done: !!(p.stat_spotify_monthly || p.stat_instagram_followers),
               link: adminUrl('band-profile'),
-              tip: 'Numbers make your EPK scannable in 10 seconds',
+              tip: t('band.career.items.stats.tip'),
             },
           ],
         },
         {
-          name: 'Content',
+          name: t('band.career.sections.content'),
           items: [
             {
               id: 'full-bio',
-              label: 'Full bio written (2–3 paragraphs)',
+              label: t('band.career.items.fullBio.label'),
               done: !!(p.bio_long),
               link: adminUrl('band-profile'),
-              tip: 'Required for festival programmes and booking agencies',
+              tip: t('band.career.items.fullBio.tip'),
             },
             {
               id: 'statement',
-              label: 'Artistic statement written',
+              label: t('band.career.items.statement.label'),
               done: !!(p.artistic_statement),
               link: adminUrl('band-profile'),
-              tip: 'Required for grant applications and premium festival programmers',
+              tip: t('band.career.items.statement.tip'),
             },
           ],
         },
@@ -337,18 +344,18 @@ const LEVELS = computed((): LevelDef[] => {
     // ── Level 4 – Custom ──────────────────────────────────────────────────
     {
       level: 4,
-      name: 'Custom',
-      tagline: 'Define your own goals — personalised checklist for your band',
+      name: t('band.career.levels.l4.name'),
+      tagline: t('band.career.levels.l4.tagline'),
       emoji: '⚙️',
       color: '#fbbf24',
       isCustom: true,
       sections: [
         {
-          name: 'Your Goals',
+          name: t('band.career.sections.yourGoals'),
           items: [
-            { id: 'custom-1', label: 'Goal 1 (placeholder)', done: false, link: '#', tip: 'Define your own milestone' },
-            { id: 'custom-2', label: 'Goal 2 (placeholder)', done: false, link: '#', tip: 'Define your own milestone' },
-            { id: 'custom-3', label: 'Goal 3 (placeholder)', done: false, link: '#', tip: 'Define your own milestone' },
+            { id: 'custom-1', label: t('band.career.customGoal.label', { n: 1 }), done: false, link: '#', tip: t('band.career.customGoal.tip') },
+            { id: 'custom-2', label: t('band.career.customGoal.label', { n: 2 }), done: false, link: '#', tip: t('band.career.customGoal.tip') },
+            { id: 'custom-3', label: t('band.career.customGoal.label', { n: 3 }), done: false, link: '#', tip: t('band.career.customGoal.tip') },
           ],
         },
       ],
@@ -409,7 +416,7 @@ function advanceLevel() {
           <div class="clw-tagline">{{ currentDef.emoji }} {{ currentDef.name }} — {{ currentDef.tagline }}</div>
           <div v-if="!currentDef.isCustom" class="clw-progress-row">
             <div class="clw-prog-wrap">
-              <div class="clw-prog-bar" :style="`width:${pct}%; background:${currentDef.color}`" />
+              <div class="clw-prog-bar" :style="progressStyle" />
             </div>
             <span class="clw-prog-label" :style="`color:${currentDef.color}`">
               {{ doneCount }}/{{ totalItems }} complete
