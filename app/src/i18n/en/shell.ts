@@ -50,6 +50,8 @@ export default {
     publisher: 'publisher',
   },
   signOut: 'Sign out',
+  adminLink: 'Admin',
+  bandLogoAlt: 'Band logo',
   signIn: {
     heading: 'Sign In',
     email: 'Email',

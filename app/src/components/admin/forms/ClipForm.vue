@@ -66,34 +66,34 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4" data-testid="clip-form">
     <div>
-      <label class="field-label">Video URL <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('band.clips.form.url') }} <span style="color:#f87171;">*</span></label>
       <EmbedBlockEditor :payload="embedPayload" hide-label @update:payload="form.url = String($event.url ?? '')" />
       <p v-if="errors?.url" class="field-error">{{ errors.url[0] }}</p>
     </div>
 
     <div>
-      <label class="field-label">Title</label>
+      <label class="field-label">{{ $t('common.fields.title') }}</label>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="trans-row">
           <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
-          <input v-model="form.title[l]" class="field-input flex-1" :placeholder="l === DEFAULT_LOCALE ? 'Clip title' : 'Tytuł klipu'" :data-testid="`clip-title-${l}`" />
+          <input v-model="form.title[l]" class="field-input flex-1" :placeholder="l === DEFAULT_LOCALE ? $t('band.clips.form.titlePlaceholderEn') : $t('band.clips.form.titlePlaceholderPl')" :data-testid="`clip-title-${l}`" />
         </div>
       </div>
     </div>
 
     <div>
-      <label class="field-label">Category</label>
+      <label class="field-label">{{ $t('band.clips.columns.category') }}</label>
       <ClipCategoryPicker v-model="form.category" />
       <p v-if="errors?.category" class="field-error">{{ errors.category[0] }}</p>
     </div>
 
     <div class="flex gap-4 items-end">
       <div>
-        <label class="field-label">Recorded on</label>
+        <label class="field-label">{{ $t('band.clips.form.recordedOn') }}</label>
         <input v-model="form.recorded_on" type="date" class="field-input" />
       </div>
       <label class="flex items-center gap-2 pb-2" style="color:#d0d0d0; font-size:0.85rem;">
-        <input v-model="form.show_in_epk" type="checkbox" /> Show in EPK
+        <input v-model="form.show_in_epk" type="checkbox" /> {{ $t('band.clips.form.showInEpk') }}
       </label>
     </div>
 
@@ -103,9 +103,9 @@ function submit() {
     />
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>

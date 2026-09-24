@@ -227,6 +227,13 @@ export default {
     deleted: 'Clip deleted',
     modalNew: 'New clip',
     modalEdit: 'Edit clip',
+    form: {
+      url: 'Video URL',
+      titlePlaceholderEn: 'Clip title',
+      titlePlaceholderPl: 'Tytuł klipu',
+      recordedOn: 'Recorded on',
+      showInEpk: 'Show in EPK',
+    },
     columns: { category: 'Category', provider: 'Provider', attachedTo: 'Attached to', recorded: 'Recorded' },
   },
   // The Band Profile screen. `careerTab` rather than `career` because the

@@ -86,6 +86,28 @@ export default {
     dragToReorder: 'Drag to reorder',
     urlPlaceholder: '{platform} URL…',
   },
+  // The relations panel shared by the post, press-release and clip forms.
+  // Deliberately worded more fully than shell.nav — "Blog posts" and "Music
+  // releases" sit in a list of link targets, where the sidebar's terse "Posts"
+  // reads as ambiguous. Same split as band.clips vs common.clips.
+  relations: {
+    title: 'Link to…',
+    tags: 'Tags',
+    concerts: 'Concerts',
+    releases: 'Music releases',
+    shopItems: 'Shop items',
+    tours: 'Tours',
+    albums: 'Photo albums',
+    posts: 'Blog posts',
+    musicVideos: 'Music videos',
+    press: 'Press',
+  },
+  imageUpload: {
+    alt: 'Post image',
+    remove: 'Remove image',
+    dropzone: 'Drop image or click to browse',
+    hint: 'JPG, PNG, WebP — max 20 MB',
+  },
   clipCategory: {
     live: 'Live',
     studio: 'Studio',
