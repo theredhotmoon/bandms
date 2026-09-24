@@ -22,12 +22,12 @@ defineEmits<{ open: [placementId: string] }>()
     :type="clickable && source.placementId ? 'button' : undefined"
     class="source-badge"
     :class="[`source-badge--${source.kind}`, { 'source-badge--clickable': clickable && source.placementId }]"
-    :title="source.overridden ? `${source.name} — changed for this gig` : source.detail"
+    :title="source.overridden ? $t('rider.sourceBadge.changedSuffix', { name: source.name }) : source.detail"
     @click="clickable && source.placementId ? $emit('open', source.placementId) : undefined"
   >
     <span class="source-name">{{ source.name }}</span>
     <span class="source-detail">{{ source.detail }}</span>
-    <span v-if="source.overridden" class="override-dot" title="Changed for this gig" />
+    <span v-if="source.overridden" class="override-dot" :title="$t('rider.sourceBadge.changed')" />
   </component>
 </template>
 

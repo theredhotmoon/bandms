@@ -18,10 +18,15 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   clearable:   false,
   iconOnly:    false,
-  placeholder:  'Pick an icon',
+  placeholder:  '',
   disabled:     false,
   excludeTypes: () => [],
 })
+
+/** Layout classes, not copy — extracted so the string lint is not asked to
+ * judge 'w-full justify-between' as a sentence, and because an HTML comment
+ * cannot live inside a tag's attribute list. */
+const triggerClass = computed(() => (props.iconOnly ? 'justify-center' : 'w-full justify-between')) // i18n-ignore: CSS classes
 
 const emit = defineEmits<{
   'update:modelValue': [StagePlotItemType | null]
@@ -103,7 +108,7 @@ function onAncestorScroll(e: Event) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') open.value = false
+  if (e.key === 'Escape') open.value = false // i18n-ignore: KeyboardEvent.key name
 }
 
 watch(open, async (isOpen) => {
@@ -137,7 +142,7 @@ onBeforeUnmount(() => {
     <button
       type="button"
       class="flex items-center gap-2 rounded-md border border-zinc-600 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-      :class="iconOnly ? 'justify-center' : 'w-full justify-between'"
+      :class="triggerClass"
       :disabled="disabled"
       :aria-expanded="open"
       aria-haspopup="listbox"
@@ -148,7 +153,7 @@ onBeforeUnmount(() => {
         <svg v-else class="w-[18px] h-[18px] text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m6-6H6" />
         </svg>
-        <span v-if="!iconOnly" class="truncate">{{ current?.label ?? placeholder }}</span>
+        <span v-if="!iconOnly" class="truncate">{{ current?.label ?? (placeholder || $t('rider.iconPicker.pick')) }}</span>
       </span>
       <svg v-if="!iconOnly" class="w-3.5 h-3.5 flex-shrink-0 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -168,7 +173,7 @@ onBeforeUnmount(() => {
         ref="searchRef"
         v-model="search"
         type="text"
-        placeholder="Search instruments…"
+        :placeholder="$t('rider.iconPicker.search')"
         class="mb-2 w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
       />
 
@@ -177,7 +182,7 @@ onBeforeUnmount(() => {
         type="button"
         class="mb-2 w-full rounded-md px-2 py-1.5 text-left text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
         @click="select(null)"
-      >— Not mapped —</button>
+      >{{ $t('rider.iconPicker.notMapped') }}</button>
 
       <div v-for="g in groups" :key="g.group" class="mb-2 last:mb-0">
         <p class="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
@@ -202,7 +207,7 @@ onBeforeUnmount(() => {
       </div>
 
       <p v-if="!groups.length" class="px-1 py-3 text-center text-xs text-zinc-500">
-        No instrument matches "{{ search }}".
+        {{ $t('rider.iconPicker.noMatch', { query: search }) }}
       </p>
     </div>
     </Teleport>

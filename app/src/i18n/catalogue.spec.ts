@@ -99,6 +99,14 @@ describe('i18n catalogues', () => {
         'setlists.setlistFm.setlistCount',
         'setlists.setlistFm.songCount',
         'setlists.setlistFm.toImport',
+        'rider.stagePlot.units',
+        'rider.stagePlot.outlets',
+        'rider.placement.sectionsChanged',
+        'rider.lineup.inLineup',
+        'rider.requirements.sends',
+        'rider.requirements.items',
+        'rider.requirements.units',
+        'rider.requirements.outletsAcross',
       ])
 
       const offenders = all
@@ -199,6 +207,17 @@ describe('i18n catalogues', () => {
         expect(has(`setlists.setlistEditor.transitions.${tr}`), tr).toBe(true)
       }
     })
+    it('rider.stagePlot.views covers every StageView', () => {
+      // Built as a template literal in the view switcher and again for the
+      // per-card tooltips, so check-i18n-keys cannot see either.
+      for (const v of [
+        'members', 'instruments', 'signal_chain', 'monitor',
+        'wireless', 'backline', 'power', 'foh',
+      ]) {
+        expect(has(`rider.stagePlot.views.${v}`), v).toBe(true)
+      }
+    })
+
     it('media.videos.hosts covers every videoHost() return', () => {
       // videoHost() returns a key now, not a label — YouTube and Vimeo are
       // brand names but the fallback is a generic noun that translates.

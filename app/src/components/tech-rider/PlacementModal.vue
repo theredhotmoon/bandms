@@ -9,6 +9,7 @@
  * people's saved rigs.
  */
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import RigEditor from '@/components/rig/RigEditor.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
@@ -43,10 +44,12 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
+
 const displayName = computed(() => {
   if (props.tempMusician) return `${props.tempMusician.name} (guest)`
   if (props.member) return props.member.nickname ?? `${props.member.first_name} ${props.member.last_name}`
-  return 'Musician'
+  return t('rider.placement.musician')
 })
 
 const linkedSetup = computed<BandMemberSetup | null>(() => {
@@ -92,7 +95,7 @@ function clearAllOverrides() {
   // override, so clearing would wipe the placement's whole setup rather than
   // restore anything — and there would be no undo.
   if (!props.placement || !linkedSetup.value) return
-  if (!confirm(`Discard this gig's changes and go back to “${linkedSetup.value.name}”?`)) return
+  if (!confirm(t('rider.placement.discardAsk', { name: linkedSetup.value.name }))) return
   patch({ overrides: {} })
 }
 
@@ -102,7 +105,7 @@ function selectSetup(event: Event) {
   const el = event.target as HTMLSelectElement
   const id = el.value === '' ? null : Number(el.value)
   if (!props.placement) return
-  if (overridden.value.length && !confirm("Switching rigs discards this gig's changes. Continue?")) {
+  if (overridden.value.length && !confirm(t('rider.placement.switchAsk'))) {
     // Cancelling changes nothing reactive, so Vue never re-renders the select
     // and it would keep showing the rig that was *not* chosen.
     el.value = String(props.placement.setup_id ?? '')
@@ -157,7 +160,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
 <template>
   <AdminModal
     :open="open"
-    :title="`${displayName} — stage position`"
+    :title="$t('rider.placement.stagePosition', { name: displayName })"
     max-width="52rem"
     @close="emit('close')"
   >
@@ -165,27 +168,26 @@ function pickType(id: string, type: StagePlotItemType | null) {
 
       <!-- Which saved rig -->
       <div class="rig-picker">
-        <label class="field-label">Playing through</label>
+        <label class="field-label">{{ $t('rider.placement.playingThrough') }}</label>
         <select
           :value="placement.setup_id ?? ''"
           class="field-input"
           @change="selectSetup($event)"
         >
-          <option value="">— No saved rig (this gig only) —</option>
+          <option value="">{{ $t('rider.placement.noSavedRig') }}</option>
           <option v-for="s in memberSetups" :key="s.id" :value="s.id">
             {{ s.name }}{{ s.is_default ? ' (default)' : '' }}
           </option>
         </select>
         <p class="picker-hint">
           <template v-if="linkedSetup">
-            Channels, monitors and power come from “{{ linkedSetup.name }}”. Edits below apply
-            to this gig only until you save them back.
+            {{ $t('rider.placement.inheritedFrom', { name: linkedSetup.name }) }}
           </template>
           <template v-else-if="memberSetups.length">
-            Nothing linked — everything entered here lives on this rider alone.
+            {{ $t('rider.placement.nothingLinked') }}
           </template>
           <template v-else>
-            This musician has no saved rigs yet. Anything entered here stays on this rider.
+            {{ $t('rider.placement.noRigsYet') }}
           </template>
         </p>
       </div>
@@ -193,7 +195,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
       <!-- Instruments -->
       <div class="instruments-block">
         <div class="block-header">
-          <span class="block-title">Instruments on stage</span>
+          <span class="block-title">{{ $t('rider.placement.instruments') }}</span>
           <div class="block-actions">
             <button
               v-for="inst in (member?.instruments ?? [])"
@@ -202,12 +204,12 @@ function pickType(id: string, type: StagePlotItemType | null) {
               class="quick-add"
               @click="addProfileInstrument(inst)"
             >+ {{ inst.name }}</button>
-            <button type="button" class="quick-add quick-add--blank" @click="addInstrument">+ Blank</button>
+            <button type="button" class="quick-add quick-add--blank" @click="addInstrument">{{ $t('rider.placement.addBlank') }}</button>
           </div>
         </div>
 
         <div v-if="!placement.instruments.length" class="block-empty">
-          No instrument slots — the stage card falls back to this member's profile instrument.
+          {{ $t('rider.placement.noSlots') }}
         </div>
 
         <div v-else class="instrument-rows">
@@ -255,13 +257,13 @@ function pickType(id: string, type: StagePlotItemType | null) {
         <div class="footer-status">
           <template v-if="linkedSetup && overridden.length">
             <span class="status-dot" />
-            {{ overridden.length }} section{{ overridden.length === 1 ? '' : 's' }} changed for this gig
+            {{ $t('rider.placement.sectionsChanged', overridden.length, { named: { n: overridden.length } }) }}
           </template>
           <template v-else-if="linkedSetup">
-            Matches “{{ linkedSetup.name }}” exactly
+            {{ $t('rider.placement.matchesExactly', { name: linkedSetup.name }) }}
           </template>
           <template v-else>
-            No saved rig linked — this setup applies to this gig only
+            {{ $t('rider.placement.noRigLinked') }}
           </template>
         </div>
 
@@ -271,7 +273,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
             type="button"
             class="btn-ghost"
             @click="clearAllOverrides"
-          >Revert all</button>
+          >{{ $t('rider.placement.revertAll') }}</button>
           <button
             v-if="overridden.length && linkedSetup"
             type="button"
@@ -279,9 +281,9 @@ function pickType(id: string, type: StagePlotItemType | null) {
             :disabled="promoting"
             @click="promote"
           >
-            {{ promoting ? 'Saving…' : `Save to ${displayName}'s rig` }}
+            {{ promoting ? $t('common.actions.saving') : $t('rider.placement.saveToRig', { name: displayName }) }}
           </button>
-          <button type="button" class="btn-done" @click="emit('close')">Done</button>
+          <button type="button" class="btn-done" @click="emit('close')">{{ $t('rider.placement.done') }}</button>
         </div>
       </div>
     </div>
