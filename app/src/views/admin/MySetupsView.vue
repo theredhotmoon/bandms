@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
@@ -9,6 +10,7 @@ import type { BandMember } from '@bandms/rider-core'
 import { toast } from 'vue-sonner'
 import { reportSaveError } from '@/utils/formErrors'
 
+const { t } = useI18n()
 const { user } = useAuth()
 const { query } = useBandMembers()
 
@@ -19,15 +21,15 @@ const { pending, confirm } = useMyRiderConfirmations()
 async function confirmRig(riderId: number, riderName: string) {
   try {
     await confirm.mutateAsync(riderId)
-    toast.success(`Confirmed your rig for ${riderName}`)
+    toast.success(t('band.setups.confirmed', { name: riderName }))
   } catch (e) {
-    reportSaveError(e, 'Could not record your confirmation')
+    reportSaveError(e, t('band.setups.confirmFailed'))
   }
 }
 
 function gigLabel(c: { rider?: { name: string; concert: { date: string; venue: string | null } | null } }): string {
   const concert = c.rider?.concert
-  if (!concert) return c.rider?.name ?? 'this gig'
+  if (!concert) return c.rider?.name ?? t('band.setups.thisGig')
   const date = new Date(concert.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
   return [concert.venue, date].filter(Boolean).join(', ')
 }
@@ -41,18 +43,15 @@ const myMember = computed(() =>
   <AdminLayout>
     <div class="my-setups-shell">
       <div class="page-header">
-        <div class="page-title">My Stage Setups</div>
-        <div class="page-subtitle">Manage your personal rig presets — inputs, monitor mix, backline, and power requirements.</div>
+        <div class="page-title">{{ ('band.setups.title') }}</div>
+        <div class="page-subtitle">{{ ('band.setups.subtitle') }}</div>
       </div>
 
       <div v-if="pending.length" class="confirm-banner">
         <div class="confirm-title">
-          {{ pending.length === 1 ? 'A rider is waiting on you' : `${pending.length} riders are waiting on you` }}
+          {{ $t('band.setups.waiting', pending.length, { named: { n: pending.length } }) }}
         </div>
-        <p class="confirm-hint">
-          Check that the rig below is right for the gig, then confirm. Whatever it
-          says when the rider is sent is what the venue's engineer will set up.
-        </p>
+        <p class="confirm-hint">{{ $t('band.setups.waitingHint') }}</p>
         <div class="confirm-rows">
           <div v-for="c in pending" :key="c.id" class="confirm-row">
             <span class="confirm-gig">{{ gigLabel(c) }}</span>
@@ -61,14 +60,14 @@ const myMember = computed(() =>
               class="btn-confirm"
               :disabled="confirm.isPending.value"
               @click="confirmRig(c.tech_rider_id, gigLabel(c))"
-            >Confirm my rig</button>
+            >{{ $t('band.setups.confirmRig') }}</button>
           </div>
         </div>
       </div>
 
-      <div v-if="query.isPending.value" class="state-msg">Loading…</div>
+      <div v-if="query.isPending.value" class="state-msg">{{ ('common.state.loading') }}</div>
       <div v-else-if="!myMember" class="state-msg">
-        Your account is not linked to a band member profile yet. Ask an admin to link your account.
+        {{ ('band.myProfile.notLinked') }}
       </div>
       <MemberSetupsPanel v-else :key="myMember.id" :member="myMember" />
     </div>

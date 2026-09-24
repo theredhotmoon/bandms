@@ -5,6 +5,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import RigEditor from '@/components/rig/RigEditor.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import { useMemberSetups, useMemberSetup } from '@/composables/useBandMemberSetups'
@@ -18,6 +19,8 @@ import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 
 interface Props { member: BandMember }
+const { t } = useI18n()
+
 const props = defineProps<Props>()
 
 const memberId = computed(() => props.member.id)
@@ -85,7 +88,7 @@ const saved = ref(false)
  * here rather than left to the 422, which cannot say which row it meant.
  */
 const blockingProblem = computed(() =>
-  unnamedChannelMessage([{ label: name.value || 'this rig', inputs: rig.value.inputs }]),
+  unnamedChannelMessage([{ label: name.value || t('band.setups.thisRig'), inputs: rig.value.inputs }]),
 )
 
 async function save() {
@@ -106,9 +109,9 @@ async function save() {
     markClean()
     saved.value = true
     setTimeout(() => { saved.value = false }, 2000)
-    toast.success('Setup saved')
+    toast.success(t('band.setups.saved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save setup')
+    reportSaveError(e, t('band.setups.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -128,9 +131,9 @@ async function createSetup() {
     openId.value = setup.id
     newName.value = ''
     showNewRow.value = false
-    toast.success('Setup created')
+    toast.success(t('band.setups.created'))
   } catch (e) {
-    reportSaveError(e, 'Failed to create setup')
+    reportSaveError(e, t('band.setups.createFailed'))
   } finally {
     creating.value = false
   }
@@ -140,23 +143,23 @@ async function removeSetup(id: number) {
   try {
     await remove.mutateAsync(id)
     if (openId.value === id) openId.value = null
-    toast.success('Setup deleted')
+    toast.success(t('band.setups.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete setup')
+    reportSaveError(e, t('band.setups.deleteFailed'))
   }
 }
 
 async function makeDefault(id: number) {
   try {
     await setDefault.mutateAsync(id)
-    toast.success('Default setup updated')
+    toast.success(t('band.setups.defaultUpdated'))
   } catch (e) {
-    reportSaveError(e, 'Failed to update default')
+    reportSaveError(e, t('band.setups.defaultFailed'))
   }
 }
 
 function openSetup(id: number) {
-  if (dirty.value && !confirm('Discard unsaved changes to this setup?')) return
+  if (dirty.value && !confirm(t('band.setups.discardConfirm'))) return
   openId.value = id
 }
 
@@ -172,26 +175,26 @@ function instrumentIconType(inst: Instrument | null) {
     <!-- Setup list -->
     <aside class="setups-list">
       <div class="list-header">
-        <span class="list-title">Saved rigs</span>
-        <button type="button" class="btn-new" title="New setup" @click="showNewRow = true">+</button>
+        <span class="list-title">{{ $t('band.setups.savedRigs') }}</span>
+        <button type="button" class="btn-new" :title="$t('band.setups.newSetup')" @click="showNewRow = true">+</button>
       </div>
 
       <div v-if="showNewRow" class="new-row">
         <input
           v-model="newName"
           class="new-input"
-          placeholder="e.g. Festival rig"
+          :placeholder="$t('band.setups.namePlaceholder')"
           @keyup.enter="createSetup"
           @keyup.esc="showNewRow = false"
         />
         <button type="button" class="btn-mini" :disabled="!newName.trim() || creating" @click="createSetup">
-          {{ creating ? '…' : 'Add' }}
+          {{ creating ? '…' : $t('band.setups.addButton') }}
         </button>
       </div>
 
-      <div v-if="list.isPending.value" class="list-state">Loading…</div>
+      <div v-if="list.isPending.value" class="list-state">{{ $t('common.state.loading') }}</div>
       <div v-else-if="!(list.data.value ?? []).length" class="list-state">
-        No saved rigs yet.
+        {{ $t('band.setups.empty') }}
       </div>
 
       <button
@@ -205,14 +208,14 @@ function instrumentIconType(inst: Instrument | null) {
         <div class="setup-item-main">
           <span class="setup-name">{{ s.name }}</span>
           <span class="setup-meta">
-            {{ s.input_count }} ch · {{ s.monitor_count }} mon
+            {{ $t('band.setups.counts', { ch: s.input_count, mon: s.monitor_count }) }}
             <span v-if="s.instrument_name"> · {{ s.instrument_name }}</span>
           </span>
         </div>
-        <span v-if="s.is_default" class="badge-default">Default</span>
+        <span v-if="s.is_default" class="badge-default">{{ $t('band.setups.isDefault') }}</span>
         <span v-else class="item-actions">
-          <span class="mini-action" title="Make default" @click.stop="makeDefault(s.id)">★</span>
-          <span class="mini-action mini-action--del" title="Delete" @click.stop="removeSetup(s.id)">✕</span>
+          <span class="mini-action" :title="$t('band.setups.makeDefault')" @click.stop="makeDefault(s.id)">★</span>
+          <span class="mini-action mini-action--del" :title="$t('band.setups.delete')" @click.stop="removeSetup(s.id)">✕</span>
         </span>
       </button>
     </aside>
@@ -220,28 +223,28 @@ function instrumentIconType(inst: Instrument | null) {
     <!-- Editor -->
     <section class="setup-editor">
       <div v-if="openId === null" class="editor-empty">
-        Select a saved rig, or create one.
+        {{ $t('band.setups.selectPrompt') }}
       </div>
-      <div v-else-if="setupQ.isPending.value" class="editor-empty">Loading…</div>
+      <div v-else-if="setupQ.isPending.value" class="editor-empty">{{ $t('common.state.loading') }}</div>
 
       <template v-else>
         <div class="editor-meta">
           <div class="field-group">
-            <label class="field-label">Setup name</label>
+            <label class="field-label">{{ $t('band.setups.nameLabel') }}</label>
             <input
               v-model="name"
               class="meta-input"
-              placeholder="e.g. Festival rig"
+              :placeholder="$t('band.setups.namePlaceholder')"
             />
           </div>
           <div class="field-group">
-            <label class="field-label">Instrument (optional)</label>
+            <label class="field-label">{{ $t('band.setups.instrument') }}</label>
             <select
               :value="instrumentId ?? ''"
               class="meta-input"
               @change="instrumentId = Number(($event.target as HTMLSelectElement).value) || null"
             >
-              <option value="">— Any / not specified —</option>
+              <option value="">{{ $t('band.setups.anyInstrument') }}</option>
               <option v-for="inst in member.instruments" :key="inst.id" :value="inst.id">
                 {{ inst.name }}
               </option>
@@ -262,7 +265,7 @@ function instrumentIconType(inst: Instrument | null) {
         />
 
         <div class="editor-footer">
-          <span v-if="dirty" class="dirty-hint">Unsaved changes</span>
+          <span v-if="dirty" class="dirty-hint">{{ $t('band.setups.unsaved') }}</span>
           <button
             type="button"
             class="btn-save"
@@ -270,7 +273,7 @@ function instrumentIconType(inst: Instrument | null) {
             :disabled="saving || !dirty"
             @click="save"
           >
-            {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save setup' }}
+            {{ saved ? $t('band.setups.savedBadge') : saving ? $t('common.actions.saving') : $t('band.setups.save') }}
           </button>
         </div>
       </template>

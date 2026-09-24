@@ -89,6 +89,7 @@ describe('i18n catalogues', () => {
         'rider.rig.inputs.count.channel',
         'rider.rig.inputs.count.extraChannel',
         'rider.rig.inputs.needsName',
+        'band.setups.waiting',
       ])
 
       const offenders = all
@@ -178,6 +179,15 @@ describe('i18n catalogues', () => {
       for (const n of ['channel', 'extraChannel']) {
         expect(has(`rider.rig.inputs.empty.${n}`), n).toBe(true)
         expect(has(`rider.rig.inputs.count.${n}`), n).toBe(true)
+      }
+    })
+
+    it('band.gear.types covers every DefaultGearItemType', () => {
+      for (const g of [
+        'microphone', 'amp_head', 'amp_combo', 'cabinet', 'di_box', 'keyboard',
+        'drum_kit', 'drum_hardware', 'pedal_board', 'wireless_system', 'other',
+      ]) {
+        expect(has(`band.gear.types.${g}`), g).toBe(true)
       }
     })
 

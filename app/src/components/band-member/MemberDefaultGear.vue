@@ -1,26 +1,19 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import type { BandMember, DefaultGearItem, DefaultGearItemType } from '@bandms/rider-core'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 
 const props = defineProps<{ member: BandMember }>()
+const { t } = useI18n()
 const { update } = useBandMembers()
 
-const GEAR_TYPES: { value: DefaultGearItemType; label: string }[] = [
-  { value: 'microphone',      label: 'Microphone'        },
-  { value: 'amp_head',        label: 'Amp Head'          },
-  { value: 'amp_combo',       label: 'Combo Amp'         },
-  { value: 'cabinet',         label: 'Cabinet'           },
-  { value: 'di_box',          label: 'DI Box'            },
-  { value: 'keyboard',        label: 'Keyboard / Synth'  },
-  { value: 'drum_kit',        label: 'Drum Kit'          },
-  { value: 'drum_hardware',   label: 'Drum Hardware'     },
-  { value: 'pedal_board',     label: 'Pedal Board'       },
-  { value: 'wireless_system', label: 'Wireless System'   },
-  { value: 'other',           label: 'Other'             },
+const GEAR_TYPES: DefaultGearItemType[] = [
+  'microphone', 'amp_head', 'amp_combo', 'cabinet', 'di_box', 'keyboard',
+  'drum_kit', 'drum_hardware', 'pedal_board', 'wireless_system', 'other',
 ]
 
 const items = ref<DefaultGearItem[]>([])
@@ -59,10 +52,10 @@ async function save() {
   saving.value = true
   try {
     await update.mutateAsync({ id: props.member.id, payload: { default_gear: items.value } })
-    toast.success('Default gear saved')
+    toast.success(t('band.gear.saved'))
     markClean()
   } catch (e) {
-    reportSaveError(e, 'Failed to save gear')
+    reportSaveError(e, t('band.gear.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -71,14 +64,13 @@ async function save() {
 
 <template>
   <div class="gear-section">
-    <div class="section-hint">
-      Define this member's preferred or expected gear — microphones, amps, DI boxes, etc.
-      Mark each item as <strong>Own gear</strong> (they bring it) or <strong>Backline required</strong>
-      (the venue / promoter must provide it). These preferences appear in the stage plot detail view.
-    </div>
+    <i18n-t keypath="band.gear.hint" tag="div" class="section-hint" scope="global">
+      <template #ownGear><strong>{{ $t('band.gear.ownGear') }}</strong></template>
+      <template #backline><strong>{{ $t('band.gear.backlineRequired') }}</strong></template>
+    </i18n-t>
 
     <div v-if="!items.length" class="no-items">
-      No gear defined yet — click "Add gear item" to start.
+      {{ $t('band.gear.empty') }}
     </div>
 
     <div v-else class="gear-list">
@@ -90,35 +82,35 @@ async function save() {
             class="type-select"
             @change="patchItem(item.id, { type: ($event.target as HTMLSelectElement).value as DefaultGearItemType })"
           >
-            <option v-for="t in GEAR_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+            <option v-for="g in GEAR_TYPES" :key="g" :value="g">{{ $t(`band.gear.types.${g}`) }}</option>
           </select>
-          <button type="button" class="btn-remove" @click="removeItem(item.id)">✕ Remove</button>
+          <button type="button" class="btn-remove" @click="removeItem(item.id)">{{ $t('band.gear.remove') }}</button>
         </div>
 
         <div class="gear-fields">
           <div class="field-group">
-            <label class="field-label">Label</label>
+            <label class="field-label">{{ $t('band.gear.label') }}</label>
             <input
               :value="item.label"
               class="field-input"
-              placeholder="e.g. Main vocal mic, Guitar amp…"
+              :placeholder="$t('band.gear.labelPlaceholder')"
               @input="patchItem(item.id, { label: ($event.target as HTMLInputElement).value })"
             />
           </div>
 
           <div class="field-group">
-            <label class="field-label">Brand / Model</label>
+            <label class="field-label">{{ $t('band.gear.brand') }}</label>
             <input
               :value="item.brand_model"
               class="field-input"
-              placeholder="e.g. Shure SM58, Fender Twin Reverb…"
+              :placeholder="$t('band.gear.brandPlaceholder')"
               @input="patchItem(item.id, { brand_model: ($event.target as HTMLInputElement).value })"
             />
           </div>
 
           <div class="field-group field-group--wide">
             <div class="own-gear-row">
-              <span class="field-label">Provision</span>
+              <span class="field-label">{{ $t('band.gear.provision') }}</span>
               <label class="toggle-label">
                 <button
                   type="button"
@@ -130,18 +122,18 @@ async function save() {
                   <span class="toggle-thumb" />
                 </button>
                 <span class="toggle-text" :class="item.own_gear ? 'toggle-text--own' : 'toggle-text--backline'">
-                  {{ item.own_gear ? 'Member brings own' : 'Backline required' }}
+                  {{ item.own_gear ? $t('band.gear.bringsOwn') : $t('band.gear.backlineNeeded') }}
                 </span>
               </label>
             </div>
           </div>
 
           <div class="field-group field-group--wide">
-            <label class="field-label">Notes <span class="field-opt">(optional)</span></label>
+            <label class="field-label">{{ $t('band.gear.notes') }} <span class="field-opt">{{ $t('band.gear.optional') }}</span></label>
             <input
               :value="item.notes"
               class="field-input"
-              placeholder="Any specific preferences, requirements…"
+              :placeholder="$t('band.gear.notesPlaceholder')"
               @input="patchItem(item.id, { notes: ($event.target as HTMLInputElement).value })"
             />
           </div>
@@ -151,7 +143,7 @@ async function save() {
     </div>
 
     <div class="footer-row">
-      <button type="button" class="btn-add" @click="addItem">+ Add gear item</button>
+      <button type="button" class="btn-add" @click="addItem">{{ $t('band.gear.add') }}</button>
       <button
         type="button"
         class="btn-save"
@@ -159,7 +151,7 @@ async function save() {
         :disabled="saving || !dirty"
         @click="save"
       >
-        {{ saving ? 'Saving…' : 'Save' }}
+        {{ saving ? $t('common.actions.saving') : $t('common.actions.save') }}
       </button>
     </div>
   </div>
