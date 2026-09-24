@@ -11,7 +11,10 @@ const monitors = computed(() => props.modelValue ?? [])
 
 function add() {
   const n = monitors.value.length + 1
-  emit('update:modelValue', [...monitors.value, defaultMonitorSpec(`Monitor ${n}`)])
+  // The seeded label is persisted and ends up on the rider a venue prints,
+  // which is deliberately English — same rule as the channel rows a
+  // signal-chain preset builds. The input's placeholder IS translated.
+  emit('update:modelValue', [...monitors.value, defaultMonitorSpec(`Monitor ${n}`)]) // i18n-ignore: seeded rider data
 }
 
 function remove(id: string) {
@@ -25,13 +28,10 @@ function patch(id: string, changes: Partial<MonitorSpec>) {
 
 <template>
   <div class="rig-section">
-    <div class="rig-hint">
-      One entry per monitor send. A wedge and an IEM are two entries — IEM details
-      flow into the rider's RF list automatically.
-    </div>
+    <div class="rig-hint">{{ $t('rider.rig.monitors.hint') }}</div>
 
     <div v-if="!monitors.length" class="item-empty">
-      No monitor sends yet.
+      {{ $t('rider.rig.monitors.empty') }}
     </div>
 
     <div v-else class="item-list">
@@ -40,62 +40,62 @@ function patch(id: string, changes: Partial<MonitorSpec>) {
           <input
             :value="mon.label"
             class="field-input label-input"
-            :placeholder="`Monitor ${idx + 1}`"
+            :placeholder="$t('rider.rig.monitors.item', { n: idx + 1 })"
             @input="patch(mon.id, { label: ($event.target as HTMLInputElement).value })"
           />
-          <button type="button" class="btn-remove" @click="remove(mon.id)">✕ Remove</button>
+          <button type="button" class="btn-remove" @click="remove(mon.id)">{{ $t('rider.rig.monitors.remove') }}</button>
         </div>
 
         <div class="form-grid">
           <div class="field-group">
-            <label class="field-label">Type</label>
+            <label class="field-label">{{ $t('rider.rig.monitors.type') }}</label>
             <div class="type-buttons">
               <button
                 type="button"
                 class="type-btn"
                 :class="{ 'type-btn--on': mon.type === 'wedge' }"
                 @click="patch(mon.id, { type: 'wedge' })"
-              >🔊 Wedge</button>
+              >{{ $t('rider.rig.monitors.wedge') }}</button>
               <button
                 type="button"
                 class="type-btn"
                 :class="{ 'type-btn--on': mon.type === 'iem' }"
                 @click="patch(mon.id, { type: 'iem' })"
-              >🎧 IEM</button>
+              >{{ $t('rider.rig.monitors.iem') }}</button>
             </div>
           </div>
 
           <div class="field-group">
-            <label class="field-label">Configuration</label>
+            <label class="field-label">{{ $t('rider.rig.monitors.configuration') }}</label>
             <div class="type-buttons">
               <button
                 type="button"
                 class="type-btn"
                 :class="{ 'type-btn--on': mon.config === 'mono' }"
                 @click="patch(mon.id, { config: 'mono' })"
-              >Mono</button>
+              >{{ $t('rider.rig.monitors.mono') }}</button>
               <button
                 type="button"
                 class="type-btn"
                 :class="{ 'type-btn--on': mon.config === 'stereo' }"
                 @click="patch(mon.id, { config: 'stereo' })"
-              >Stereo</button>
+              >{{ $t('rider.rig.monitors.stereo') }}</button>
             </div>
           </div>
 
           <div class="field-group field-group--wide">
-            <label class="field-label">Mix description — what should be in it?</label>
+            <label class="field-label">{{ $t('rider.rig.monitors.mix') }}</label>
             <input
               :value="mon.mix_description"
               class="field-input"
-              placeholder="e.g. my vocals loud + kick, no guitars, click on left"
+              :placeholder="$t('rider.rig.monitors.mixPlaceholder')"
               @input="patch(mon.id, { mix_description: ($event.target as HTMLInputElement).value })"
             />
           </div>
 
           <template v-if="mon.type === 'iem'">
             <div class="field-group">
-              <label class="field-label">Wireless pack</label>
+              <label class="field-label">{{ $t('rider.rig.monitors.pack') }}</label>
               <label class="toggle-label">
                 <input
                   type="checkbox"
@@ -104,27 +104,27 @@ function patch(id: string, changes: Partial<MonitorSpec>) {
                   @change="patch(mon.id, { iem_own_pack: ($event.target as HTMLInputElement).checked })"
                 />
                 <span class="toggle-text">
-                  {{ mon.iem_own_pack ? 'Own pack' : 'Venue pack needed' }}
+                  {{ mon.iem_own_pack ? $t('rider.rig.monitors.ownPack') : $t('rider.rig.monitors.venuePack') }}
                 </span>
               </label>
             </div>
 
             <div class="field-group">
-              <label class="field-label">Transmitter model</label>
+              <label class="field-label">{{ $t('rider.rig.monitors.transmitter') }}</label>
               <input
                 :value="mon.iem_transmitter_model"
                 class="field-input"
-                placeholder="e.g. Shure PSM300"
+                :placeholder="$t('rider.rig.monitors.transmitterPlaceholder')"
                 @input="patch(mon.id, { iem_transmitter_model: ($event.target as HTMLInputElement).value })"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Frequency (MHz)</label>
+              <label class="field-label">{{ $t('rider.rig.monitors.frequency') }}</label>
               <input
                 :value="mon.iem_frequency"
                 class="field-input"
-                placeholder="e.g. 606.000"
+                :placeholder="$t('rider.rig.monitors.frequencyPlaceholder')"
                 @input="patch(mon.id, { iem_frequency: ($event.target as HTMLInputElement).value })"
               />
             </div>
@@ -133,7 +133,7 @@ function patch(id: string, changes: Partial<MonitorSpec>) {
       </div>
     </div>
 
-    <button type="button" class="btn-add" @click="add">+ Add monitor send</button>
+    <button type="button" class="btn-add" @click="add">{{ $t('rider.rig.monitors.add') }}</button>
   </div>
 </template>
 

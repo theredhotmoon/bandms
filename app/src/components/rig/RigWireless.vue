@@ -7,12 +7,7 @@ interface Props { modelValue: WirelessSpec[] }
 const props = defineProps<Props>()
 const emit = defineEmits<{ 'update:modelValue': [value: WirelessSpec[]] }>()
 
-const TYPE_LABELS: Record<WirelessType, string> = {
-  instrument: 'Instrument transmitter',
-  vocal: 'Vocal / handheld wireless',
-  iem: 'IEM pack (wireless monitor)',
-  other: 'Other',
-}
+const TYPES: WirelessType[] = ['instrument', 'vocal', 'iem', 'other']
 
 const units = computed(() => props.modelValue ?? [])
 
@@ -31,56 +26,53 @@ function patch(id: string, changes: Partial<WirelessSpec>) {
 
 <template>
   <div class="rig-section">
-    <div class="rig-hint">
-      Wireless systems used at this position — transmitters and IEM packs.
-      Frequencies are collected into the rider's RF coordination list.
-    </div>
+    <div class="rig-hint">{{ $t('rider.rig.wireless.hint') }}</div>
 
     <div v-if="!units.length" class="item-empty">
-      No wireless units.
+      {{ $t('rider.rig.wireless.empty') }}
     </div>
 
     <div v-else class="item-list">
       <div v-for="(unit, idx) in units" :key="unit.id" class="item-card">
         <div class="item-header">
-          <span class="item-title">#{{ idx + 1 }} — {{ TYPE_LABELS[unit.type] }}</span>
-          <button type="button" class="btn-remove" @click="remove(unit.id)">✕ Remove</button>
+          <span class="item-title">#{{ idx + 1 }} — {{ $t(`rider.rig.wireless.types.${unit.type}`) }}</span>
+          <button type="button" class="btn-remove" @click="remove(unit.id)">{{ $t('rider.rig.wireless.remove') }}</button>
         </div>
 
         <div class="form-grid">
           <div class="field-group">
-            <label class="field-label">Type</label>
+            <label class="field-label">{{ $t('rider.rig.wireless.type') }}</label>
             <select
               :value="unit.type"
               class="field-input"
               @change="patch(unit.id, { type: ($event.target as HTMLSelectElement).value as WirelessType })"
             >
-              <option v-for="(label, key) in TYPE_LABELS" :key="key" :value="key">{{ label }}</option>
+              <option v-for="key in TYPES" :key="key" :value="key">{{ $t(`rider.rig.wireless.types.${key}`) }}</option>
             </select>
           </div>
 
           <div class="field-group">
-            <label class="field-label">Brand / model</label>
+            <label class="field-label">{{ $t('rider.rig.wireless.brand') }}</label>
             <input
               :value="unit.brand_model"
               class="field-input"
-              placeholder="e.g. Shure GLXD16"
+              :placeholder="$t('rider.rig.wireless.brandPlaceholder')"
               @input="patch(unit.id, { brand_model: ($event.target as HTMLInputElement).value })"
             />
           </div>
 
           <div class="field-group">
-            <label class="field-label">Frequency band</label>
+            <label class="field-label">{{ $t('rider.rig.wireless.band') }}</label>
             <input
               :value="unit.frequency_band"
               class="field-input"
-              placeholder="e.g. 2.4 GHz, 606–630 MHz"
+              :placeholder="$t('rider.rig.wireless.bandPlaceholder')"
               @input="patch(unit.id, { frequency_band: ($event.target as HTMLInputElement).value })"
             />
           </div>
 
           <div class="field-group">
-            <label class="field-label">Ownership</label>
+            <label class="field-label">{{ $t('rider.rig.wireless.ownership') }}</label>
             <label class="toggle-label">
               <input
                 type="checkbox"
@@ -89,17 +81,17 @@ function patch(id: string, changes: Partial<WirelessSpec>) {
                 @change="patch(unit.id, { own_unit: ($event.target as HTMLInputElement).checked })"
               />
               <span class="toggle-text">
-                {{ unit.own_unit ? 'Own unit' : 'Venue must provide' }}
+                {{ unit.own_unit ? $t('rider.rig.wireless.ownUnit') : $t('rider.rig.wireless.venueProvides') }}
               </span>
             </label>
           </div>
 
           <div class="field-group field-group--wide">
-            <label class="field-label">Notes</label>
+            <label class="field-label">{{ $t('rider.rig.wireless.notes') }}</label>
             <input
               :value="unit.notes"
               class="field-input"
-              placeholder="Anything the RF coordinator should know…"
+              :placeholder="$t('rider.rig.wireless.notesPlaceholder')"
               @input="patch(unit.id, { notes: ($event.target as HTMLInputElement).value })"
             />
           </div>
@@ -107,7 +99,7 @@ function patch(id: string, changes: Partial<WirelessSpec>) {
       </div>
     </div>
 
-    <button type="button" class="btn-add" @click="add">+ Add wireless unit</button>
+    <button type="button" class="btn-add" @click="add">{{ $t('rider.rig.wireless.add') }}</button>
   </div>
 </template>
 

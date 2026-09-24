@@ -145,7 +145,7 @@ function resetOrder() {
       </div>
       <RigInputsTable
         :model-value="extras"
-        noun="extra channel"
+        noun="extraChannel"
         @update:model-value="emit('update:extras', $event)"
       />
     </div>

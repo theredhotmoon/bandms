@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
@@ -12,6 +13,7 @@ import { useInstruments } from '@/composables/useInstruments'
 import { reportSaveError } from '@/utils/formErrors'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 
+const { t } = useI18n()
 const { query, create, update, remove, uploadPhoto, reorder } = useBandMembers()
 const { query: instrumentsQuery } = useInstruments()
 
@@ -65,7 +67,7 @@ async function onDrop() {
   try {
     await reorder.mutateAsync(ids)
   } catch (e) {
-    reportSaveError(e, 'Failed to save new order')
+    reportSaveError(e, t('band.members.reorderFailed'))
   }
 }
 
@@ -96,11 +98,11 @@ async function handleCreate(payload: BandMemberPayload) {
     if (photoFile) {
       await uploadPhoto.mutateAsync({ id: created.id, file: photoFile })
     }
-    toast.success('Member added')
+    toast.success(t('band.members.added'))
     showCreateModal.value = false
     openId.value = created.id
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', createErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), createErrors)
   }
 }
 
@@ -117,9 +119,9 @@ async function handleUpdate(payload: BandMemberPayload) {
     if (photoFile) {
       await uploadPhoto.mutateAsync({ id: openMember.value.id, file: photoFile })
     }
-    toast.success('Member updated')
+    toast.success(t('band.members.updated'))
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', updateErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), updateErrors)
   }
 }
 
@@ -132,8 +134,8 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmDeleteId.value)
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
-    toast.success('Member removed')
-  } catch (e) { reportSaveError(e, 'Failed to remove') }
+    toast.success(t('band.members.removed'))
+  } catch (e) { reportSaveError(e, t('band.members.removeFailed')) }
 }
 </script>
 
@@ -144,17 +146,17 @@ async function confirmDelete() {
       <!-- ── Member sidebar ──────────────────────────────────────────────── -->
       <aside class="members-sidebar">
         <div class="sidebar-header">
-          <h1 class="sidebar-title">Band Members</h1>
-          <button type="button" class="btn-new" title="Add member" @click="showCreateModal = true">+</button>
+          <h1 class="sidebar-title">{{ $t('band.members.title') }}</h1>
+          <button type="button" class="btn-new" :title="$t('band.members.add')" @click="showCreateModal = true">+</button>
         </div>
 
-        <div v-if="query.isPending.value" class="sidebar-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="sidebar-state sidebar-state--err">Failed to load</div>
+        <div v-if="query.isPending.value" class="sidebar-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="sidebar-state sidebar-state--err">{{ $t('band.members.loadFailed') }}</div>
 
         <div v-else class="member-list">
           <!-- Current lineup -->
           <template v-if="currentMembers.length">
-            <div class="list-group-label">Current lineup</div>
+            <div class="list-group-label">{{ $t('band.members.currentLineup') }}</div>
             <div
               v-for="m in currentMembers"
               :key="m.id"
@@ -181,7 +183,7 @@ async function confirmDelete() {
 
           <!-- Former members -->
           <template v-if="exMembers.length">
-            <div class="list-group-label list-group-label--dim">Former</div>
+            <div class="list-group-label list-group-label--dim">{{ $t('band.members.former') }}</div>
             <div
               v-for="m in exMembers"
               :key="m.id"
@@ -206,7 +208,7 @@ async function confirmDelete() {
           </template>
 
           <div v-if="!currentMembers.length && !exMembers.length" class="sidebar-state">
-            No members yet.<br>Click + to add one.
+            {{ $t('band.members.empty') }}<br>{{ $t('band.members.emptyHint') }}
           </div>
         </div>
       </aside>
@@ -217,9 +219,9 @@ async function confirmDelete() {
         <!-- Nothing selected -->
         <div v-if="!openMember" class="empty-state">
           <div class="empty-icon">🎸</div>
-          <div class="empty-title">No member selected</div>
-          <p class="empty-hint">Select a member from the sidebar, or add a new one.</p>
-          <button type="button" class="btn-primary-lg" @click="showCreateModal = true">Add first member</button>
+          <div class="empty-title">{{ $t('band.members.noneSelected') }}</div>
+          <p class="empty-hint">{{ $t('band.members.noneSelectedHint') }}</p>
+          <button type="button" class="btn-primary-lg" @click="showCreateModal = true">{{ $t('band.members.addFirst') }}</button>
         </div>
 
         <!-- Member detail -->
@@ -240,9 +242,9 @@ async function confirmDelete() {
             <button
               type="button"
               class="btn-delete"
-              title="Remove member"
+              :title="$t('band.members.removeTitle')"
               @click="confirmDeleteId = openMember.id"
-            >Remove</button>
+            >{{ $t('band.members.remove') }}</button>
           </div>
 
           <!-- Tab bar -->
@@ -252,19 +254,19 @@ async function confirmDelete() {
               class="detail-tab"
               :class="{ active: detailTab === 'profile' }"
               @click="detailTab = 'profile'"
-            >👤 Profile</button>
+            >{{ $t('band.members.tabProfile') }}</button>
             <button
               type="button"
               class="detail-tab"
               :class="{ active: detailTab === 'setups' }"
               @click="detailTab = 'setups'"
-            >🎚️ Stage Setups</button>
+            >{{ $t('band.members.tabSetups') }}</button>
             <button
               type="button"
               class="detail-tab"
               :class="{ active: detailTab === 'gear' }"
               @click="detailTab = 'gear'"
-            >🎛️ Default Gear</button>
+            >{{ $t('band.members.tabGear') }}</button>
           </div>
 
           <!-- Tab: Profile -->
@@ -298,7 +300,7 @@ async function confirmDelete() {
     <!-- Create modal -->
     <AdminModal
       :open="showCreateModal"
-      title="Add member"
+      :title="$t('band.members.add')"
       max-width="54rem"
       @close="showCreateModal = false; createErrors = {}"
     >
@@ -314,7 +316,7 @@ async function confirmDelete() {
     <!-- Delete confirm -->
     <ConfirmDialog
       :open="confirmDeleteId !== null"
-      message="This member will be permanently removed from the band."
+      :message="$t('band.members.removeConfirm')"
       :loading="remove.isPending.value"
       @confirm="confirmDelete"
       @cancel="confirmDeleteId = null"

@@ -12,14 +12,11 @@ function patch(changes: Partial<PowerSpec>) {
 
 <template>
   <div class="rig-section">
-    <div class="rig-hint">
-      Outlets needed at this stage position. Each position with at least one outlet
-      becomes a row in the rider's power list.
-    </div>
+    <div class="rig-hint">{{ $t('rider.rig.power.hint') }}</div>
 
     <div class="power-row">
       <div class="field-group">
-        <label class="field-label">Outlets needed (230V)</label>
+        <label class="field-label">{{ $t('rider.rig.power.outlets') }}</label>
         <div class="outlets-row">
           <button
             type="button"
@@ -37,11 +34,11 @@ function patch(changes: Partial<PowerSpec>) {
       </div>
 
       <div class="field-group">
-        <label class="field-label">Notes</label>
+        <label class="field-label">{{ $t('rider.rig.power.notes') }}</label>
         <input
           :value="modelValue.notes"
           class="field-input"
-          placeholder="e.g. clean/isolated power, separate circuit from lighting"
+          :placeholder="$t('rider.rig.power.notesPlaceholder')"
           @input="patch({ notes: ($event.target as HTMLInputElement).value })"
         />
       </div>

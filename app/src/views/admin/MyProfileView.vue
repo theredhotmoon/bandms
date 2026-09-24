@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import BandMemberForm from '@/components/admin/forms/BandMemberForm.vue'
@@ -9,6 +10,7 @@ import { useAuth } from '@/composables/useAuth'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 import { reportSaveError } from '@/utils/formErrors'
 
+const { t } = useI18n()
 const { user } = useAuth()
 const { query, update } = useBandMembers()
 const { query: instrumentsQuery } = useInstruments()
@@ -26,9 +28,9 @@ async function handleSubmit(payload: BandMemberPayload) {
   saving.value = true
   try {
     await update.mutateAsync({ id: myMember.value.id, payload })
-    toast.success('Profile updated')
+    toast.success(t('band.myProfile.updated'))
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', errors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), errors)
   } finally {
     saving.value = false
   }
@@ -39,13 +41,13 @@ async function handleSubmit(payload: BandMemberPayload) {
   <AdminLayout>
     <div class="my-profile-shell">
       <div class="page-header">
-        <div class="page-title">My Profile</div>
-        <div class="page-subtitle">Edit your band member profile — name, bio, instruments, social links.</div>
+        <div class="page-title">{{ $t('band.myProfile.title') }}</div>
+        <div class="page-subtitle">{{ $t('band.myProfile.subtitle') }}</div>
       </div>
 
-      <div v-if="query.isPending.value" class="state-msg">Loading…</div>
+      <div v-if="query.isPending.value" class="state-msg">{{ $t('common.state.loading') }}</div>
       <div v-else-if="!myMember" class="state-msg">
-        Your account is not linked to a band member profile yet. Ask an admin to link your account.
+        {{ $t('band.myProfile.notLinked') }}
       </div>
       <BandMemberForm
         v-else

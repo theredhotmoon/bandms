@@ -48,26 +48,27 @@ function buildInputs() {
 <template>
   <div class="rig-section">
     <div class="chain-selector">
-      <label class="field-label">Signal chain / setup type</label>
+      <label class="field-label">{{ $t('rider.rig.signalChain.label') }}</label>
       <select
         :value="chainType"
         class="chain-select"
         @change="emit('update:chainType', ($event.target as HTMLSelectElement).value as SignalChainType)"
       >
         <option v-for="opt in chainOptions" :key="opt.value" :value="opt.value">
-          {{ opt.label }}
+          {{ $t(`rider.rig.chains.${opt.value}.label`) }}
         </option>
       </select>
-      <p v-if="selectedMeta" class="field-hint">{{ selectedMeta.description }}</p>
+      <p v-if="selectedMeta" class="field-hint">{{ $t(`rider.rig.chains.${chainType}.description`) }}</p>
     </div>
 
     <div v-if="chainType !== 'other'" class="build-banner">
       <span class="build-icon">⚡</span>
       <div class="build-body">
-        <span class="build-label">Auto-build channels from signal chain</span>
+        <span class="build-label">{{ $t('rider.rig.signalChain.autoBuild') }}</span>
         <span class="build-desc">
-          Generates {{ selectedMeta.channels }} channel{{ selectedMeta.channels === 1 ? '' : 's' }}
-          for "{{ selectedMeta.label }}"
+          {{ $t('rider.rig.signalChain.generates', selectedMeta.channels, {
+            named: { n: selectedMeta.channels, name: $t(`rider.rig.chains.${chainType}.label`) },
+          }) }}
         </span>
       </div>
       <button
@@ -75,10 +76,10 @@ function buildInputs() {
         type="button"
         class="build-btn build-btn--go"
         @click="buildInputs"
-      >Build →</button>
+      >{{ $t('rider.rig.signalChain.build') }}</button>
       <template v-else>
-        <span class="build-warn">{{ modelValue.length }} existing rows</span>
-        <button type="button" class="build-btn build-btn--replace" @click="buildInputs">Replace</button>
+        <span class="build-warn">{{ $t('rider.rig.signalChain.existingRows', modelValue.length, { named: { n: modelValue.length } }) }}</span>
+        <button type="button" class="build-btn build-btn--replace" @click="buildInputs">{{ $t('rider.rig.signalChain.replace') }}</button>
       </template>
     </div>
 

@@ -41,11 +41,22 @@ export function hasUnnamedChannels(inputs: InputRow[] | undefined): boolean {
 /**
  * Why this rig cannot be saved yet, or null when it can.
  *
+ * Returns a catalogue key and its params rather than a sentence. This module
+ * is deliberately pure — no Vue — so it cannot call useI18n(), and the
+ * previous version returned English that went straight into a toast. That
+ * English survived the i18n sweep invisibly: the toast argument is a variable,
+ * so the string lint's script scan never sees a literal, and a types/utils
+ * file is not walked by the coverage guard either.
+ *
  * Phrased as an instruction rather than a validation code: the user is looking
  * at the row in question, and "row 3 of Extra channels needs an instrument
  * name" tells them what to do next. "The given data was invalid" does not.
  */
-export function unnamedChannelMessage(groups: ChannelGroup[]): string | null {
+export type RigProblem =
+  | { key: 'band.setups.unnamedOne'; params: { row: number; label: string } }
+  | { key: 'band.setups.unnamedMany'; params: { total: number; where: string } }
+
+export function unnamedChannelProblem(groups: ChannelGroup[]): RigProblem | null {
   const offenders = groups
     .map((group) => ({ label: group.label, rows: unnamedChannels(group.inputs) }))
     .filter((group) => group.rows.length > 0)
@@ -58,10 +69,10 @@ export function unnamedChannelMessage(groups: ChannelGroup[]): string | null {
   // any amount of counting.
   if (total === 1) {
     const [only] = offenders
-    return `Row ${only.rows[0]} of ${only.label} needs an instrument name before this can be saved.`
+    return { key: 'band.setups.unnamedOne', params: { row: only.rows[0], label: only.label } }
   }
 
   const where = offenders.map((group) => `${group.label} (${group.rows.join(', ')})`).join('; ')
 
-  return `${total} channels still need an instrument name: ${where}.`
+  return { key: 'band.setups.unnamedMany', params: { total, where } }
 }

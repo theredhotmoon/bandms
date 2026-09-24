@@ -142,18 +142,18 @@ function submit() {
         <!-- Name row: first · nickname · last -->
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="field-label">First name <span style="color:#f87171;">*</span></label>
-            <input v-model="form.first_name" required class="field-input" placeholder="Jane" />
+            <label class="field-label">{{ $t('band.members.form.firstName') }} <span style="color:#f87171;">*</span></label>
+            <input v-model="form.first_name" required class="field-input" :placeholder="$t('band.members.form.firstNamePlaceholder')" />
             <p v-if="errors?.first_name" class="field-error">{{ errors.first_name[0] }}</p>
           </div>
           <div>
-            <label class="field-label">Nickname <span class="hint">(optional)</span></label>
-            <input v-model="form.nickname" class="field-input" placeholder="JJ" />
+            <label class="field-label">{{ $t('band.members.form.nickname') }} <span class="hint">{{ $t('band.members.form.optional') }}</span></label>
+            <input v-model="form.nickname" class="field-input" :placeholder="$t('band.members.form.nicknamePlaceholder')" />
             <p v-if="errors?.nickname" class="field-error">{{ errors.nickname[0] }}</p>
           </div>
           <div>
-            <label class="field-label">Last name <span style="color:#f87171;">*</span></label>
-            <input v-model="form.last_name" required class="field-input" placeholder="Smith" />
+            <label class="field-label">{{ $t('band.members.form.lastName') }} <span style="color:#f87171;">*</span></label>
+            <input v-model="form.last_name" required class="field-input" :placeholder="$t('band.members.form.lastNamePlaceholder')" />
             <p v-if="errors?.last_name" class="field-error">{{ errors.last_name[0] }}</p>
           </div>
         </div>
@@ -161,25 +161,25 @@ function submit() {
         <!-- Role + Google Calendar in one row -->
       <div class="grid grid-cols-3 gap-3">
           <div>
-              <label class="field-label">Email address <span style="color:#f87171;">*</span></label>
-              <input v-model="form.login_email" type="email" required class="field-input" placeholder="member@example.com" />
+              <label class="field-label">{{ $t('band.members.form.email') }} <span style="color:#f87171;">*</span></label>
+              <input v-model="form.login_email" type="email" required class="field-input" :placeholder="$t('band.members.form.emailPlaceholder')" />
               <p v-if="errors?.login_email" class="field-error">{{ errors.login_email[0] }}</p>
           </div>
           <div>
-            <label class="field-label">Google Calendar link <span class="hint">(optional)</span></label>
-            <input v-model="form.calendar_url" class="field-input" placeholder="https://calendar.google.com/…" />
+            <label class="field-label">{{ $t('band.members.form.calendar') }} <span class="hint">{{ $t('band.members.form.optional') }}</span></label>
+            <input v-model="form.calendar_url" class="field-input" :placeholder="$t('band.members.form.calendarPlaceholder')" />
             <p v-if="errors?.calendar_url" class="field-error">{{ errors.calendar_url[0] }}</p>
           </div>
           <div>
-              <label class="field-label">Role</label>
-              <input v-model="form.role" class="field-input" placeholder="Vocalist, Guitarist…" />
+              <label class="field-label">{{ $t('band.members.form.role') }}</label>
+              <input v-model="form.role" class="field-input" :placeholder="$t('band.members.form.rolePlaceholder')" />
               <p v-if="errors?.role" class="field-error">{{ errors.role[0] }}</p>
           </div>
         </div>
 
         <div>
-          <label class="field-label">Bio</label>
-          <RichEditor v-model="form.bio" placeholder="Short biography…" />
+          <label class="field-label">{{ $t('band.members.form.bio') }}</label>
+          <RichEditor v-model="form.bio" :placeholder="$t('band.members.form.bioPlaceholder')" />
           <p v-if="errors?.bio" class="field-error">{{ errors.bio[0] }}</p>
         </div>
 
@@ -192,12 +192,12 @@ function submit() {
 
         <!-- Photo -->
         <div>
-          <label class="field-label">Photo</label>
+          <label class="field-label">{{ $t('band.members.form.photo') }}</label>
           <div class="aside-avatar-wrap">
             <img
               v-if="photoPreview || form.photo"
               :src="photoPreview || form.photo"
-              alt="Avatar preview"
+              :alt="$t('band.members.form.avatarAlt')"
               class="aside-avatar-img"
             />
             <div v-else class="aside-avatar-placeholder">
@@ -212,8 +212,8 @@ function submit() {
             @drop.prevent="onPhotoDrop"
             @click="photoInput?.click()"
           >
-            <span class="aside-drop-label">{{ photoPreview || form.photo ? 'Replace' : 'Upload photo' }}</span>
-            <span class="aside-drop-hint">JPG · PNG · WebP</span>
+            <span class="aside-drop-label">{{ photoPreview || form.photo ? $t('band.members.form.replace') : $t('band.members.form.upload') }}</span>
+            <span class="aside-drop-hint">{{ $t('band.members.form.formats') }}</span>
             <input ref="photoInput" type="file" accept="image/*" style="display:none" @change="onPhotoInputChange" />
           </div>
           <button
@@ -221,13 +221,13 @@ function submit() {
             type="button"
             class="aside-clear"
             @click.stop="clearPhoto"
-          >✕ Remove photo</button>
+          >{{ $t('band.members.form.removePhoto') }}</button>
           <p v-if="errors?.photo" class="field-error">{{ errors.photo[0] }}</p>
         </div>
 
         <!-- Status -->
         <div>
-          <label class="field-label">Status</label>
+          <label class="field-label">{{ $t('band.members.form.status') }}</label>
           <label class="toggle-label">
             <button
               type="button"
@@ -239,20 +239,20 @@ function submit() {
               <span class="toggle-thumb" />
             </button>
             <span class="text-sm" :style="form.is_current ? 'color:#e0e0e0;' : 'color:#94a3b8;'">
-              {{ form.is_current ? 'Current' : 'Ex-member' }}
+              {{ form.is_current ? $t('band.members.form.current') : $t('band.members.form.exMember') }}
             </span>
           </label>
         </div>
 
         <!-- Joined / Quit -->
         <div>
-          <label class="field-label">Joined band at</label>
+          <label class="field-label">{{ $t('band.members.form.joined') }}</label>
           <input v-model="form.joined_at" type="date" class="field-input" />
           <p v-if="errors?.joined_at" class="field-error">{{ errors.joined_at[0] }}</p>
         </div>
 
         <div>
-          <label class="field-label" :style="form.is_current ? 'opacity:0.35;' : ''">Quit band at</label>
+          <label class="field-label" :style="form.is_current ? 'opacity:0.35;' : ''">{{ $t('band.members.form.quit') }}</label>
           <input v-model="form.quit_at" type="date" class="field-input" :disabled="form.is_current" />
           <p v-if="errors?.quit_at" class="field-error">{{ errors.quit_at[0] }}</p>
         </div>
@@ -261,8 +261,8 @@ function submit() {
         <div v-if="availableInstruments?.length">
 
           <!-- Main instrument (single-select radio cards) -->
-          <div class="member-links-heading">Main instrument</div>
-          <p class="instruments-hint">Used as icon on the stage plot &amp; tech rider.</p>
+          <div class="member-links-heading">{{ $t('band.members.form.mainInstrument') }}</div>
+          <p class="instruments-hint">{{ $t('band.members.form.mainInstrumentHint') }}</p>
           <div class="instruments-grid">
             <button
               v-for="inst in availableInstruments"
@@ -282,8 +282,8 @@ function submit() {
           </div>
 
           <!-- Also plays (multi-select checkboxes) -->
-          <div class="member-links-heading" style="margin-top:0.75rem;">Also plays</div>
-          <p class="instruments-hint">Optional. All instruments this member can cover.</p>
+          <div class="member-links-heading" style="margin-top:0.75rem;">{{ $t('band.members.form.alsoPlays') }}</div>
+          <p class="instruments-hint">{{ $t('band.members.form.alsoPlaysHint') }}</p>
           <div class="instruments-grid">
             <label
               v-for="inst in availableInstruments"
@@ -307,9 +307,9 @@ function submit() {
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update member' : 'Add member') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('band.members.form.update') : $t('band.members.form.create')) }}
       </button>
     </div>
   </form>
