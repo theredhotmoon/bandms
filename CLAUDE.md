@@ -337,6 +337,12 @@ that now 404s.
 `tech-rider` module is switched off in `/admin/website-modules`, because a
 disabled module unbuilds its routes. Two different causes, one symptom.
 
+**The sheet's own wording comes from `@bandms/rider-core`, not the snapshot.**
+A published version freezes the band's *data*; the headings and column names
+are resolved at render time from the labels bundle, so fixing a typo in
+"Subwoofer requirements" reaches every already-published rider with no
+republish. See *The sheet's words are a required prop* below.
+
 **It rendered an empty page for a long time.** `web/src/components/PublicRider.vue`
 read `title` and `content_html`; `GET /api/public/rider/{token}` returns a
 `{format, taken_at, rider, members, profile, version}` snapshot and has never
@@ -1700,6 +1706,51 @@ run Vite. That has two consequences worth knowing:
 Its specs run under the admin's vitest (`app/vitest.config.ts` includes
 `../packages/*/src/**/*.spec.ts`), so there is still one command and one bitmask
 bit in `scripts/test-all.sh`.
+
+### The sheet's words are a required prop, and they are not site copy
+
+`RiderSheet.vue` holds **no strings**. Every word it prints — ~100 headings and
+column names plus the enum tables (16 signal chains, 4 wireless types, 5
+backline categories, 3 mic/DI choices, 31 instruments) — arrives through a
+required `labels: RiderSheetLabels` prop, from `riderSheetLabels(locale)` in
+`packages/rider-core/src/labels/`.
+
+**Required, not optional with an English default.** Adding a field to
+`RiderSheetLabels` is then a compile error at both call sites, which is the only
+mechanism that forces a new sheet string to be answered in every language before
+it ships. An optional prop would let one silently print English forever.
+
+**They are deliberately *not* `CopyField`s in `@bandms/site-copy`.** Two
+reasons, and the first is the weaker one: no band will ever want to edit "Ch" or
+"STAGE BACK", and ~150 of them would bury the three real rider fields in
+`/admin/website-modules`. The second is the one that matters — both apps must
+print the *same* words, and two registries holding the same 150 strings is
+exactly the drift this package exists to prevent. Same boundary as the fixed
+styling: document vocabulary belongs to the document.
+
+Who passes what:
+
+| Surface | Locale | Why |
+|---|---|---|
+| `app/src/views/TechRiderPreviewView.vue` | `useUiLang()` | the band reading their own document — matches the panel around it |
+| `web/src/components/PublicRider.vue` | `DEFAULT_LOCALE` | `/rider/{token}` is one unlocalised route; a per-rider language would need a column on the published snapshot |
+
+**The instrument names are shared further still.** `InstrumentLabels` is split
+out of the sheet bundle because `resolveStageInstruments()` bakes a name into
+every channel row, and the admin's stage plot and placement modal render the
+same 31 names from their own palette. That resolver takes the map as an
+*optional* trailing argument defaulting to English — callers that render no
+names (the completeness check, the version diff, the fixtures) should not have
+to supply one — so the two admin call sites passing `instrumentLabels(uiLang)`
+is a thing to check by eye, not something the compiler enforces.
+
+**None of the three admin i18n guards can see any of this.** They walk `app/`,
+and `RiderSheet.vue` now passes all three trivially — it holds no strings and
+calls no `$t`. `packages/rider-core/src/labels/labels.spec.ts` is what checks
+the bundles (pl mirrors en, nothing empty, every `{token}` is one `fillLabel`
+fills, an unknown locale falls back to English), and
+`e2e/tests/admin/rider-sheet-language.spec.ts` is what checks the *wiring* —
+hardcode `riderSheetLabels('en')` in the preview and only that spec goes red.
 
 ## Clips are a library, attached polymorphically — posts reference, never own
 

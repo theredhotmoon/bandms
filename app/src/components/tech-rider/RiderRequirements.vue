@@ -7,6 +7,8 @@
  * better together than behind four tabs, and it makes the derived-plus-extras
  * pattern obvious by repetition.
  */
+import { useI18n } from 'vue-i18n'
+import { enumLabel } from '@/utils/enumLabel'
 import RigMonitors from '@/components/rig/RigMonitors.vue'
 import RigBackline from '@/components/rig/RigBackline.vue'
 import RigWireless from '@/components/rig/RigWireless.vue'
@@ -22,6 +24,12 @@ interface Props {
   extraWireless: WirelessSpec[]
   powerNotes: PowerNotes
 }
+const { t } = useI18n()
+
+// Stored values — see enumLabel().
+const backlineLabel = (v: string) => enumLabel(t, `rider.rig.backline.categories.${v}`, v)
+const wirelessLabel = (v: string) => enumLabel(t, `rider.rig.wireless.types.${v}`, v)
+
 defineProps<Props>()
 
 const emit = defineEmits<{
@@ -32,13 +40,7 @@ const emit = defineEmits<{
   open: [placementId: string]
 }>()
 
-const BACKLINE_LABELS: Record<string, string> = {
-  drum_kit: 'Drum kit',
-  guitar_amp: 'Guitar amp',
-  bass_amp: 'Bass amp',
-  keyboard: 'Keyboard / keys',
-  other: 'Other',
-}
+
 </script>
 
 <template>
@@ -47,17 +49,17 @@ const BACKLINE_LABELS: Record<string, string> = {
     <!-- ── Monitors ──────────────────────────────────────────────────────── -->
     <section class="req-block">
       <header class="req-header">
-        <h3 class="req-title">🔊 Monitors / IEM</h3>
-        <span class="req-count">{{ resolved.monitors.length }} send{{ resolved.monitors.length === 1 ? '' : 's' }}</span>
+        <h3 class="req-title">{{ $t('rider.requirements.monitorsTitle') }}</h3>
+        <span class="req-count">{{ $t('rider.requirements.sends', resolved.monitors.length, { named: { n: resolved.monitors.length } }) }}</span>
       </header>
 
       <div v-if="!resolved.monitors.length" class="req-empty">
-        No monitor sends yet — they come from each musician's saved rig.
+        {{ $t('rider.requirements.monitorsEmpty') }}
       </div>
       <table v-else class="req-table">
         <thead>
           <tr>
-            <th>#</th><th>Send</th><th>Type</th><th>Mix</th><th>RF</th><th>From</th>
+            <th>#</th><th>{{ $t('rider.requirements.cols.send') }}</th><th>{{ $t('rider.requirements.cols.type') }}</th><th>{{ $t('rider.requirements.cols.mix') }}</th><th>{{ $t('rider.requirements.cols.rf') }}</th><th>{{ $t('rider.requirements.cols.from') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -66,15 +68,15 @@ const BACKLINE_LABELS: Record<string, string> = {
             <td>{{ mon.label || '—' }}</td>
             <td>
               <span class="pill" :class="mon.type === 'iem' ? 'pill--iem' : 'pill--wedge'">
-                {{ mon.type === 'iem' ? 'IEM' : 'Wedge' }} · {{ mon.config }}
+                {{ mon.type === 'iem' ? $t('rider.rig.monitors.iem') : $t('rider.rig.monitors.wedge') }} · {{ mon.config }}
               </span>
             </td>
             <td class="cell-dim">{{ mon.mix_description || '—' }}</td>
             <td class="cell-dim">
               <template v-if="mon.type === 'iem'">
                 {{ mon.iem_transmitter_model || '—' }}
-                <span v-if="mon.iem_frequency"> · {{ mon.iem_frequency }} MHz</span>
-                <span v-if="!mon.iem_own_pack" class="need-tag">venue pack</span>
+                <span v-if="mon.iem_frequency"> {{ $t('rider.requirements.mhz', { freq: mon.iem_frequency }) }}</span>
+                <span v-if="!mon.iem_own_pack" class="need-tag">{{ $t('rider.requirements.venuePack') }}</span>
               </template>
               <template v-else>—</template>
             </td>
@@ -84,7 +86,7 @@ const BACKLINE_LABELS: Record<string, string> = {
       </table>
 
       <details class="extras-fold">
-        <summary>Extra monitor sends ({{ extraMonitors.length }})</summary>
+        <summary>{{ $t('rider.requirements.extraMonitors', { n: extraMonitors.length }) }}</summary>
         <RigMonitors
           :model-value="extraMonitors"
           @update:model-value="emit('update:extraMonitors', $event)"
@@ -95,21 +97,21 @@ const BACKLINE_LABELS: Record<string, string> = {
     <!-- ── Backline ──────────────────────────────────────────────────────── -->
     <section class="req-block">
       <header class="req-header">
-        <h3 class="req-title">🥁 Backline required</h3>
-        <span class="req-count">{{ resolved.backline.length }} item{{ resolved.backline.length === 1 ? '' : 's' }}</span>
+        <h3 class="req-title">{{ $t('rider.requirements.backlineTitle') }}</h3>
+        <span class="req-count">{{ $t('rider.requirements.items', resolved.backline.length, { named: { n: resolved.backline.length } }) }}</span>
       </header>
 
       <div v-if="!resolved.backline.length" class="req-empty">
-        Nothing requested from the promoter — every musician brings their own.
+        {{ $t('rider.requirements.backlineEmpty') }}
       </div>
       <table v-else class="req-table">
         <thead>
-          <tr><th>Item</th><th>Category</th><th>Brand</th><th>Specs</th><th>From</th></tr>
+          <tr><th>{{ $t('rider.requirements.cols.item') }}</th><th>{{ $t('rider.requirements.cols.category') }}</th><th>{{ $t('rider.requirements.cols.brand') }}</th><th>{{ $t('rider.requirements.cols.specs') }}</th><th>{{ $t('rider.requirements.cols.from') }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="item in resolved.backline" :key="item.key">
             <td>{{ item.name || '—' }}</td>
-            <td class="cell-dim">{{ BACKLINE_LABELS[item.category] ?? item.category }}</td>
+            <td class="cell-dim">{{ backlineLabel(item.category) }}</td>
             <td class="cell-dim">{{ item.brand_preference || '—' }}</td>
             <td class="cell-dim">{{ item.specs || '—' }}</td>
             <td><RiderSourceBadge :source="item.source" clickable @open="emit('open', $event)" /></td>
@@ -118,7 +120,7 @@ const BACKLINE_LABELS: Record<string, string> = {
       </table>
 
       <details class="extras-fold">
-        <summary>Extra backline ({{ extraBackline.length }})</summary>
+        <summary>{{ $t('rider.requirements.extraBackline', { n: extraBackline.length }) }}</summary>
         <RigBackline
           :model-value="extraBackline"
           @update:model-value="emit('update:extraBackline', $event)"
@@ -129,16 +131,16 @@ const BACKLINE_LABELS: Record<string, string> = {
     <!-- ── Power ─────────────────────────────────────────────────────────── -->
     <section class="req-block">
       <header class="req-header">
-        <h3 class="req-title">⚡ Power</h3>
-        <span class="req-count">{{ resolved.power.total_outlets }} outlets across {{ resolved.power.positions.length }} position{{ resolved.power.positions.length === 1 ? '' : 's' }}</span>
+        <h3 class="req-title">{{ $t('rider.requirements.powerTitle') }}</h3>
+        <span class="req-count">{{ $t('rider.requirements.outletsAcross', resolved.power.positions.length, { named: { outlets: resolved.power.total_outlets, n: resolved.power.positions.length } }) }}</span>
       </header>
 
       <div v-if="!resolved.power.positions.length" class="req-empty">
-        No power positions — set outlet counts on each musician's rig.
+        {{ $t('rider.requirements.powerEmpty') }}
       </div>
       <table v-else class="req-table">
         <thead>
-          <tr><th>Position</th><th>Outlets</th><th>Notes</th><th>From</th></tr>
+          <tr><th>{{ $t('rider.requirements.cols.position') }}</th><th>{{ $t('rider.requirements.cols.outlets') }}</th><th>{{ $t('rider.requirements.cols.notes') }}</th><th>{{ $t('rider.requirements.cols.from') }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="pos in resolved.power.positions" :key="pos.key">
@@ -152,13 +154,13 @@ const BACKLINE_LABELS: Record<string, string> = {
 
       <div class="power-notes">
         <div class="field-group">
-          <label class="field-label">Total wattage (optional)</label>
+          <label class="field-label">{{ $t('rider.requirements.totalWattage') }}</label>
           <input
             :value="powerNotes.total_wattage ?? ''"
             type="number"
             min="0"
             class="field-input"
-            placeholder="e.g. 3500"
+            :placeholder="$t('rider.requirements.wattagePlaceholder')"
             @input="emit('update:powerNotes', {
               ...powerNotes,
               total_wattage: ($event.target as HTMLInputElement).value === ''
@@ -168,7 +170,7 @@ const BACKLINE_LABELS: Record<string, string> = {
           />
         </div>
         <div class="field-group">
-          <label class="field-label">Clean power</label>
+          <label class="field-label">{{ $t('rider.requirements.cleanPower') }}</label>
           <label class="toggle-label">
             <input
               type="checkbox"
@@ -179,15 +181,15 @@ const BACKLINE_LABELS: Record<string, string> = {
                 needs_clean_power: ($event.target as HTMLInputElement).checked,
               })"
             />
-            <span class="toggle-text">Isolated / clean circuit required</span>
+            <span class="toggle-text">{{ $t('rider.requirements.isolatedRequired') }}</span>
           </label>
         </div>
         <div class="field-group field-group--wide">
-          <label class="field-label">General power notes</label>
+          <label class="field-label">{{ $t('rider.requirements.generalNotes') }}</label>
           <input
             :value="powerNotes.general_notes"
             class="field-input"
-            placeholder="e.g. separate circuit from lighting, 3× 16A on stage left"
+            :placeholder="$t('rider.requirements.generalPlaceholder')"
             @input="emit('update:powerNotes', {
               ...powerNotes,
               general_notes: ($event.target as HTMLInputElement).value,
@@ -200,25 +202,25 @@ const BACKLINE_LABELS: Record<string, string> = {
     <!-- ── RF ────────────────────────────────────────────────────────────── -->
     <section class="req-block">
       <header class="req-header">
-        <h3 class="req-title">📡 RF / Wireless</h3>
-        <span class="req-count">{{ resolved.wireless.length }} unit{{ resolved.wireless.length === 1 ? '' : 's' }}</span>
+        <h3 class="req-title">{{ $t('rider.requirements.rfTitle') }}</h3>
+        <span class="req-count">{{ $t('rider.requirements.units', resolved.wireless.length, { named: { n: resolved.wireless.length } }) }}</span>
       </header>
 
       <div v-if="!resolved.wireless.length" class="req-empty">
-        No wireless units on this rider.
+        {{ $t('rider.requirements.rfEmpty') }}
       </div>
       <table v-else class="req-table">
         <thead>
-          <tr><th>Type</th><th>Model</th><th>Band</th><th>Owner</th><th>Notes</th><th>From</th></tr>
+          <tr><th>{{ $t('rider.requirements.cols.type') }}</th><th>{{ $t('rider.requirements.cols.model') }}</th><th>{{ $t('rider.requirements.cols.band') }}</th><th>{{ $t('rider.requirements.cols.owner') }}</th><th>{{ $t('rider.requirements.cols.notes') }}</th><th>{{ $t('rider.requirements.cols.from') }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="unit in resolved.wireless" :key="unit.key">
-            <td>{{ unit.type }}</td>
+            <td>{{ wirelessLabel(unit.type) }}</td>
             <td>{{ unit.brand_model || '—' }}</td>
             <td class="cell-dim">{{ unit.frequency_band || '—' }}</td>
             <td class="cell-dim">
-              <span v-if="unit.own_unit">Band</span>
-              <span v-else class="need-tag">venue</span>
+              <span v-if="unit.own_unit">{{ $t('rider.requirements.ownerBand') }}</span>
+              <span v-else class="need-tag">{{ $t('rider.requirements.ownerVenue') }}</span>
             </td>
             <td class="cell-dim">{{ unit.notes || '—' }}</td>
             <td><RiderSourceBadge :source="unit.source" clickable @open="emit('open', $event)" /></td>
@@ -227,7 +229,7 @@ const BACKLINE_LABELS: Record<string, string> = {
       </table>
 
       <details class="extras-fold">
-        <summary>Extra wireless units ({{ extraWireless.length }})</summary>
+        <summary>{{ $t('rider.requirements.extraWireless', { n: extraWireless.length }) }}</summary>
         <RigWireless
           :model-value="extraWireless"
           @update:model-value="emit('update:extraWireless', $event)"

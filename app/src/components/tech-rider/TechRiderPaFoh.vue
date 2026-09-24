@@ -12,66 +12,63 @@ function update(field: keyof PaFohRequirements, value: unknown) {
 
 <template>
   <div class="pafoh-section">
-    <div class="section-hint">
-      Minimum PA specification and front-of-house expectations for the venue.
-      Be specific — "line array, L-Acoustics or equivalent" is more useful than "good PA".
-    </div>
+    <div class="section-hint">{{ $t('rider.paFoh.hint') }}</div>
 
     <div class="form-grid">
       <div class="field-group field-group--wide">
-        <label class="field-label">Room coverage / PA requirement</label>
+        <label class="field-label">{{ $t('rider.paFoh.coverage') }}</label>
         <textarea
           :value="modelValue.room_coverage_notes"
           class="field-input"
           rows="3"
-          placeholder="e.g. Full line array covering all seating. Stereo L/R rig capable of 105 dB SPL at mix position."
+          :placeholder="$t('rider.paFoh.coveragePlaceholder')"
           @input="update('room_coverage_notes', ($event.target as HTMLTextAreaElement).value)"
         />
       </div>
 
       <div class="field-group field-group--wide">
-        <label class="field-label">Subwoofer requirements</label>
+        <label class="field-label">{{ $t('rider.paFoh.subs') }}</label>
         <input
           :value="modelValue.subwoofer_notes"
           class="field-input"
-          placeholder="e.g. Minimum 2× 18″ subs per side. Cardioid sub config preferred."
+          :placeholder="$t('rider.paFoh.subsPlaceholder')"
           @input="update('subwoofer_notes', ($event.target as HTMLInputElement).value)"
         />
       </div>
 
       <div class="field-group field-group--wide">
-        <label class="field-label">System processing expectations</label>
+        <label class="field-label">{{ $t('rider.paFoh.processing') }}</label>
         <input
           :value="modelValue.processing_notes"
           class="field-input"
-          placeholder="e.g. Stereo 31-band EQ on main bus. Access to Lake/Dolby Lake or equivalent."
+          :placeholder="$t('rider.paFoh.processingPlaceholder')"
           @input="update('processing_notes', ($event.target as HTMLInputElement).value)"
         />
       </div>
 
       <div class="field-group">
-        <label class="field-label">Console preference</label>
+        <label class="field-label">{{ $t('rider.paFoh.console') }}</label>
         <input
           :value="modelValue.console_preference"
           class="field-input"
-          placeholder="e.g. Avid S6L, DiGiCo SD12, Yamaha CL5"
+          :placeholder="$t('rider.paFoh.consolePlaceholder')"
           @input="update('console_preference', ($event.target as HTMLInputElement).value)"
         />
       </div>
 
       <div class="field-group">
-        <label class="field-label">Show file format</label>
+        <label class="field-label">{{ $t('rider.paFoh.showFile') }}</label>
         <input
           :value="modelValue.show_file_format"
           class="field-input"
-          placeholder="e.g. Avid Profile .avtp, SD12 .sess"
+          :placeholder="$t('rider.paFoh.showFilePlaceholder')"
           :disabled="!modelValue.brings_show_file"
           @input="update('show_file_format', ($event.target as HTMLInputElement).value)"
         />
       </div>
 
       <div class="field-group">
-        <label class="field-label">Bringing own FOH engineer?</label>
+        <label class="field-label">{{ $t('rider.paFoh.ownEngineer') }}</label>
         <label class="toggle-label">
           <input
             type="checkbox"
@@ -79,19 +76,19 @@ function update(field: keyof PaFohRequirements, value: unknown) {
             class="toggle-input"
             @change="update('brings_own_foh_engineer', ($event.target as HTMLInputElement).checked)"
           />
-          <span class="toggle-text">{{ modelValue.brings_own_foh_engineer ? 'Yes — travelling with FOH engineer' : 'No — using house engineer' }}</span>
+          <span class="toggle-text">{{ modelValue.brings_own_foh_engineer ? $t('rider.paFoh.ownEngineerYes') : $t('rider.paFoh.ownEngineerNo') }}</span>
         </label>
         <input
           v-if="modelValue.brings_own_foh_engineer"
           :value="modelValue.foh_engineer_name"
           class="field-input mt-1"
-          placeholder="Engineer name"
+          :placeholder="$t('rider.paFoh.engineerName')"
           @input="update('foh_engineer_name', ($event.target as HTMLInputElement).value)"
         />
       </div>
 
       <div class="field-group">
-        <label class="field-label">Bringing own show file?</label>
+        <label class="field-label">{{ $t('rider.paFoh.ownShowFile') }}</label>
         <label class="toggle-label">
           <input
             type="checkbox"
@@ -99,7 +96,7 @@ function update(field: keyof PaFohRequirements, value: unknown) {
             class="toggle-input"
             @change="update('brings_show_file', ($event.target as HTMLInputElement).checked)"
           />
-          <span class="toggle-text">{{ modelValue.brings_show_file ? 'Yes — we provide a show file' : 'No — starting from scratch' }}</span>
+          <span class="toggle-text">{{ modelValue.brings_show_file ? $t('rider.paFoh.ownShowFileYes') : $t('rider.paFoh.ownShowFileNo') }}</span>
         </label>
       </div>
     </div>

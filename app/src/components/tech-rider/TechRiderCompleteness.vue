@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { RiderCompleteness } from '@bandms/rider-core'
+import { gapWords as toWords } from '@/utils/riderGaps'
 
 interface Props { completeness: RiderCompleteness }
 defineProps<Props>()
 
 defineEmits<{ open: [placementId: string] }>()
+
+const { t } = useI18n()
+
+const gapWords = (missing: string[]) => toWords(missing, t)
 </script>
 
 <template>
@@ -14,7 +20,7 @@ defineEmits<{ open: [placementId: string] }>()
         <div class="bar-fill" :style="{ width: `${completeness.pct}%` }" />
       </div>
       <span class="bar-label">
-        {{ completeness.complete }}/{{ completeness.total }} ready
+        {{ $t('rider.completeness.ready', { done: completeness.complete, total: completeness.total }) }}
       </span>
     </div>
 
@@ -27,7 +33,7 @@ defineEmits<{ open: [placementId: string] }>()
         @click="$emit('open', status.placementId)"
       >
         <span class="gap-name">{{ status.name }}</span>
-        <span class="gap-missing">no {{ status.missing.join(', ') }}</span>
+        <span class="gap-missing">{{ $t('rider.completeness.missing', { items: gapWords(status.missing) }) }}</span>
       </button>
     </div>
   </div>

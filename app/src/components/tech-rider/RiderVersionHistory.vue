@@ -9,6 +9,9 @@
  */
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
+import { formatShortDate } from '@/utils/formatDate'
+import { useUiLang } from '@/composables/useUiLang'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { TechRiderVersion } from '@bandms/rider-core'
 import type { RiderDiff } from '@/utils/riderDiff'
@@ -28,6 +31,9 @@ const emit = defineEmits<{
   compare: [olderId: number, newerId: number]
   clearDiff: []
 }>()
+
+const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 /**
  * The version published immediately before this one, if any.
@@ -49,28 +55,32 @@ function linkFor(version: TechRiderVersion): string {
 async function copyLink(version: TechRiderVersion) {
   try {
     await navigator.clipboard.writeText(linkFor(version))
-    toast.success(`Link to v${version.version_number} copied`)
+    toast.success(t('rider.versions.copied', { n: version.version_number }))
   } catch {
-    toast.error('Could not copy the link')
+    toast.error(t('rider.versions.copyFailed'))
   }
 }
 
+/**
+ * `undefined` as the locale means the *browser's*, so a Polish admin on an
+ * English browser read English dates here whatever the UI switcher said. And
+ * month:'short' is the Polish genitive trap formatShortDate() documents —
+ * CLDR's abbreviated May is the nominative "maj", so eleven months looked
+ * right and the twelfth did not.
+ */
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
+  return formatShortDate(iso, uiLang.value)
 }
 </script>
 
 <template>
-  <AdminModal :open="open" title="Version history" max-width="36rem" @close="emit('close')">
+  <AdminModal :open="open" :title="$t('rider.versions.title')" max-width="36rem" @close="emit('close')">
     <div class="history">
-      <p v-if="loading" class="empty">Loading…</p>
+      <p v-if="loading" class="empty">{{ $t('common.state.loading') }}</p>
 
       <p v-else-if="!versions.length" class="empty">
-        This rider has never been published. Until it is, its public link returns
-        “not found” — nothing is sent by accident.
+        {{ $t('rider.versions.never') }}
       </p>
 
       <ul v-else class="version-list">
@@ -81,15 +91,15 @@ function formatDate(iso: string | null): string {
               <span
                 class="version-status"
                 :class="version.status === 'published' ? 'is-live' : 'is-archived'"
-              >{{ version.status === 'published' ? 'Live link' : 'Archived' }}</span>
+              >{{ version.status === 'published' ? $t('rider.versions.liveLink') : $t('rider.versions.archived') }}</span>
               <span class="version-date">{{ formatDate(version.published_at) }}</span>
             </div>
             <p v-if="version.notes" class="version-notes">{{ version.notes }}</p>
           </div>
 
           <div class="version-actions">
-            <a :href="linkFor(version)" target="_blank" rel="noopener" class="btn-ghost btn-ghost--sm">Open</a>
-            <button type="button" class="btn-ghost btn-ghost--sm" @click="copyLink(version)">Copy link</button>
+            <a :href="linkFor(version)" target="_blank" rel="noopener" class="btn-ghost btn-ghost--sm">{{ $t('rider.versions.open') }}</a>
+            <button type="button" class="btn-ghost btn-ghost--sm" @click="copyLink(version)">{{ $t('rider.versions.copyLink') }}</button>
             <button
               v-if="previousOf(i)"
               type="button"
@@ -97,7 +107,7 @@ function formatDate(iso: string | null): string {
               :disabled="diffing"
               @click="emit('compare', previousOf(i)!.id, version.id)"
             >
-              vs v{{ previousOf(i)!.version_number }}
+              {{ $t('rider.versions.versus', { n: previousOf(i)!.version_number }) }}
             </button>
             <button
               v-if="version.status !== 'published'"
@@ -105,39 +115,37 @@ function formatDate(iso: string | null): string {
               class="btn-ghost btn-ghost--sm btn-ghost--danger"
               :disabled="discarding"
               @click="confirmId = version.id"
-            >Delete</button>
+            >{{ $t('common.actions.delete') }}</button>
           </div>
 
           <div v-if="confirmId === version.id" class="confirm" role="dialog" aria-modal="true">
             <p class="confirm-text">
-              Delete v{{ version.version_number }}? Anyone holding its link will stop
-              being able to open it.
+              {{ $t('rider.versions.deleteAsk', { n: version.version_number }) }}
             </p>
             <div class="confirm-actions">
-              <button type="button" class="btn-ghost btn-ghost--sm" @click="confirmId = null">Keep</button>
+              <button type="button" class="btn-ghost btn-ghost--sm" @click="confirmId = null">{{ $t('rider.versions.keep') }}</button>
               <button
                 type="button"
                 class="btn-danger btn-danger--sm"
                 :disabled="discarding"
                 @click="emit('discard', version.id); confirmId = null"
-              >Delete</button>
+              >{{ $t('common.actions.delete') }}</button>
             </div>
           </div>
         </li>
       </ul>
 
-      <div v-if="diffing" class="diff diff--loading">Comparing…</div>
+      <div v-if="diffing" class="diff diff--loading">{{ $t('rider.versions.comparing') }}</div>
 
       <div v-else-if="diff" class="diff">
         <div class="diff-head">
           <span class="diff-title">v{{ diff.from }} → v{{ diff.to }}</span>
-          <span class="diff-summary">{{ diff.identical ? 'No changes' : diff.summary }}</span>
-          <button type="button" class="btn-ghost btn-ghost--sm" @click="emit('clearDiff')">Close</button>
+          <span class="diff-summary">{{ diff.identical ? $t('rider.versions.noChanges') : diff.summary }}</span>
+          <button type="button" class="btn-ghost btn-ghost--sm" @click="emit('clearDiff')">{{ $t('common.actions.close') }}</button>
         </div>
 
         <p v-if="diff.identical" class="diff-none">
-          These two versions render the same rider — the differences between them
-          are things the sheet does not print.
+          {{ $t('rider.versions.noChangesHint') }}
         </p>
 
         <div v-for="section in diff.sections" :key="section.title" class="diff-section">

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { PublishedRider } from '@bandms/rider-core'
+import { riderSheetLabels } from '@bandms/rider-core'
 import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
+import { DEFAULT_LOCALE, dateLocale } from '@/lib/locales'
 
 /**
  * The venue's copy of a published tech rider.
@@ -16,7 +18,19 @@ import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
  * hardcoded /en/contact any more. `null` means the module is off: no link.
  */
 /** Labels from the Tech Rider module's copy — see pages/rider/index.astro. */
-const { contactHref = null, copy } = defineProps<{ contactHref?: string | null; copy: { notFound: string; contact: string } }>()
+const { contactHref = null, copy } = defineProps<{
+  contactHref?: string | null
+  copy: { notFound: string; contact: string; invalidLink: string }
+}>()
+
+/**
+ * The venue's link is one unlocalised route, so the sheet is printed in the
+ * site's default language rather than the visitor's — a German promoter opening
+ * a Polish band's rider gets the band's document, not a half-translated one.
+ * A per-rider language would need a column on the published snapshot.
+ */
+const sheetLabels = riderSheetLabels(DEFAULT_LOCALE)
+const sheetLocale = dateLocale(DEFAULT_LOCALE)
 
 const status    = ref<'loading' | 'ready' | 'error'>('loading')
 const published = ref<PublishedRider | null>(null)
@@ -31,7 +45,7 @@ onMounted(async () => {
   // Same guard the admin's client uses, so a junk path never reaches the API.
   if (!token || token === 'rider' || !/^[A-Za-z0-9]{16,64}$/.test(token)) {
     status.value = 'error'
-    error.value  = 'Invalid rider link.'
+    error.value  = copy.invalidLink
     return
   }
 
@@ -65,6 +79,8 @@ onMounted(async () => {
     <RiderSheet
       v-else-if="published"
       :rider="published.rider"
+      :labels="sheetLabels"
+      :locale="sheetLocale"
       :members="published.members"
       :version="published.version"
       :logo-url="published.profile?.logo_url ?? null"
