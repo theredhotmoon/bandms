@@ -246,6 +246,7 @@ export default {
       name: 'Band name',
       namePlaceholder: 'Your band name',
       label: 'Bio',
+      aboutVariantLabel: 'Shown on public About page',
       variants: {
         short: 'One-liner',
         medium: 'Short',

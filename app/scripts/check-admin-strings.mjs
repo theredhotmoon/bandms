@@ -73,6 +73,7 @@ const MIGRATED = [
   'views/admin/ClipsAdminView.vue',
   'components/admin/BandLogoManager.vue',
   'components/admin/CareerLevelWidget.vue',
+  'components/admin/forms/AboutBioVariantSelect.vue',
   'views/admin/BandProfileAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',

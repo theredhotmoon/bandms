@@ -242,6 +242,7 @@ export default {
       name: 'Nazwa zespołu',
       namePlaceholder: 'Nazwa Waszego zespołu',
       label: 'Bio',
+      aboutVariantLabel: 'Pokazywane na publicznej stronie O nas',
       variants: {
         short: 'Jednozdaniowe',
         medium: 'Krótkie',
