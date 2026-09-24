@@ -37,8 +37,8 @@ function remove() {
       v-if="modelValue"
       class="siu-preview"
     >
-      <img :src="modelValue" alt="Post image" class="siu-img" />
-      <button type="button" class="siu-remove" @click="remove" title="Remove image">✕</button>
+      <img :src="modelValue" :alt="$t('common.imageUpload.alt')" class="siu-img" />
+      <button type="button" class="siu-remove" @click="remove" :title="$t('common.imageUpload.remove')">✕</button>
     </div>
 
     <div
@@ -51,8 +51,8 @@ function remove() {
       @click="fileInput?.click()"
     >
       <span class="siu-icon">⬆</span>
-      <span class="siu-label">Drop image or click to browse</span>
-      <span class="siu-hint">JPG, PNG, WebP — max 20 MB</span>
+      <span class="siu-label">{{ $t('common.imageUpload.dropzone') }}</span>
+      <span class="siu-hint">{{ $t('common.imageUpload.hint') }}</span>
       <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileInput" />
     </div>
   </div>

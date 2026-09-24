@@ -155,11 +155,25 @@ Each answers a different question, and a red one means something specific:
 |---|---|---|
 | `check-admin-strings.mjs` | a file in `MIGRATED` still has hardcoded text | move it to the catalogue, or append `i18n-ignore` with a reason |
 | `check-i18n-keys.mjs` | a `$t('…')` key has no catalogue entry | fix the typo, or add the key |
-| `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED` | add its path to `MIGRATED` |
+| `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED`, **or** a component rendered inside a migrated area shows English while translating nothing | add its path to `MIGRATED` |
 
 A fourth check lives in the test suite rather than the build —
 `src/i18n/catalogue.spec.ts`, which compiles every message and is the only
 thing that catches an unescaped `@` (see above).
+
+**The coverage guard asks two different questions**, and the second one exists
+because the first has a blind spot. A component that renders *no* translations
+matches nothing in `RENDERS`, so the "translates but unguarded" check cannot
+see it; the string lint never looks outside `MIGRATED`; and the key guard only
+resolves keys that exist. Between the three, a component could render an entire
+English form inside an area whose PR had been reviewed and merged — which
+happened four times (`AboutBioVariantSelect`, `EntityRelationsPanel`,
+`ClipForm`, `SingleImageUpload`). So the guard also walks the import graph from
+every `MIGRATED` file and flags any component reachable from one that shows bare
+English while translating nothing.
+
+Both guards share `scripts/lib/template-scan.mjs`. Keep it that way — two
+copies of "what counts as copy" drifting apart is the same class of gap.
 
 **`MIGRATED` is the ratchet.** Adding an area to the sweep means adding its
 paths there, and the coverage guard exists because forgetting that step was the

@@ -45,7 +45,7 @@ async function handleLogout() {
       <img
         v-if="bandLogoUrl"
         :src="bandLogoUrl"
-        alt="Band logo"
+        :alt="$t('shell.bandLogoAlt')"
         class="nav-band-logo"
       />
       <!-- Fallback: original BandMS logo -->
@@ -53,7 +53,7 @@ async function handleLogout() {
         <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M9 19V6l12-3v13M9 19c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-3c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zM9 10l12-3"/>
         </svg>
-        <span class="logo-text">Band<span class="logo-accent">MS</span></span>
+        <span class="logo-text">Band<span class="logo-accent">MS</span></span> <!-- i18n-ignore: the BandMS wordmark -->
       </template>
     </a>
 
@@ -72,13 +72,13 @@ async function handleLogout() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
-        Admin
+        {{ $t('shell.adminLink') }}
       </RouterLink>
       <button v-if="isLoggedIn" class="btn-signout" @click="handleLogout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
           <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
         </svg>
-        Sign out
+        {{ $t('shell.signOut') }}
       </button>
     </div>
   </nav>

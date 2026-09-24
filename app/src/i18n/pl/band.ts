@@ -227,6 +227,13 @@ export default {
     deleted: 'Klip usunięty',
     modalNew: 'Nowy klip',
     modalEdit: 'Edytuj klip',
+    form: {
+      url: 'Adres wideo',
+      titlePlaceholderEn: 'Clip title',
+      titlePlaceholderPl: 'Tytuł klipu',
+      recordedOn: 'Data nagrania',
+      showInEpk: 'Pokaż w EPK',
+    },
     columns: { category: 'Kategoria', provider: 'Serwis', attachedTo: 'Przypisany do', recorded: 'Nagrano' },
   },
   // Placeholders ending in `En`/`Pl` name the *content* locale of the field

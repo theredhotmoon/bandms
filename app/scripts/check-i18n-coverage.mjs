@@ -18,7 +18,8 @@
  * lint if someone adds a literal later.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { looksLikeCopy, templateOf, textRuns } from './lib/template-scan.mjs'
+import { join, relative, sep, dirname, resolve } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 const SRC = join(ROOT, 'src')
@@ -104,16 +105,87 @@ for (const file of files) {
   if (RENDERS.test(stripComments(readFileSync(file, 'utf8')))) gaps.push(rel)
 }
 
-if (gaps.length === 0) {
-  console.log(`✓ i18n coverage: every translating file is on the ratchet (${MIGRATED.length} path(s))`)
+/**
+ * Second check: a component *rendered inside* a migrated area must itself be
+ * on the ratchet, even when it renders no translations at all.
+ *
+ * The check above only sees a file that already calls `$t`. A child with pure
+ * hardcoded English and no `useI18n` import matches none of RENDERS, so it is
+ * invisible to it — and equally invisible to the string lint, which never
+ * looks outside MIGRATED, and to the key guard, which only resolves keys that
+ * exist. Three guards, and between them a component could render an entire
+ * English form inside a "finished" area.
+ *
+ * That is not hypothetical. It shipped four times: AboutBioVariantSelect
+ * (inside the Bio tab, in the same PR that declared Band Profile done),
+ * EntityRelationsPanel, ClipForm and SingleImageUpload. Each sat under an area
+ * whose PR had been reviewed and merged.
+ *
+ * Reachability is transitive: a grandchild is as visible to the reader as a
+ * child. The fix for a report is always the same — add the path to MIGRATED,
+ * which hands the file to the string lint, where `i18n-ignore` is available
+ * for genuinely fixed text (AppNavbar's wordmark is the standing example).
+ */
+const importsOf = (abs) => {
+  const src = readFileSync(abs, 'utf8')
+  const out = []
+  for (const m of src.matchAll(/import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/g)) {
+    const spec = m[1]
+    out.push(spec.startsWith('@/') ? join(SRC, spec.slice(2)) : resolve(dirname(abs), spec))
+  }
+  return out
+}
+
+/** Does this file show a reader bare English? Same scanner as the string lint. */
+function showsCopy(abs) {
+  const tpl = templateOf(readFileSync(abs, 'utf8'))
+  return tpl ? textRuns(tpl.body).some((r) => looksLikeCopy(r.text)) : false
+}
+
+const seen = new Set()
+const unguarded = []
+const queue = files.filter((f) => covered(toRel(f)))
+
+while (queue.length) {
+  const parent = queue.pop()
+  for (const child of importsOf(parent)) {
+    if (seen.has(child)) continue
+    seen.add(child)
+    let rel
+    try { rel = toRel(child); readFileSync(child) } catch { continue }
+    if (covered(rel)) { queue.push(child); continue }
+    if (showsCopy(child)) unguarded.push({ rel, via: toRel(parent) })
+  }
+}
+
+if (gaps.length === 0 && unguarded.length === 0) {
+  console.log(
+    `✓ i18n coverage: every translating file is on the ratchet, and every ` +
+      `component they render with it (${MIGRATED.length} path(s))`,
+  )
   process.exit(0)
 }
 
-console.error(`\n✗ i18n coverage: ${gaps.length} file(s) render translations but are not guarded\n`)
-for (const g of gaps) console.error(`  src/${g}`)
-console.error(`
+if (gaps.length) {
+  console.error(`\n✗ i18n coverage: ${gaps.length} file(s) render translations but are not guarded\n`)
+  for (const g of gaps) console.error(`  src/${g}`)
+  console.error(`
 Add each to MIGRATED in app/scripts/check-admin-strings.mjs. Until then the
 string lint never looks at them, so the area they sit in reads as finished
 while they can quietly go back to hardcoded English.
 `)
+}
+
+if (unguarded.length) {
+  console.error(`\n✗ i18n coverage: ${unguarded.length} component(s) render English inside a migrated area\n`)
+  for (const u of unguarded) console.error(`  src/${u.rel}\n      rendered by src/${u.via}`)
+  console.error(`
+These render no translations at all, so nothing else can see them: the string
+lint does not look outside MIGRATED, and the check above only flags files that
+already call $t. Migrate each and add its path to MIGRATED — or, if its text is
+genuinely fixed (a wordmark, a glyph), add the path anyway and mark the line
+i18n-ignore, so the decision is recorded rather than implied.
+`)
+}
+
 process.exit(1)

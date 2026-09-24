@@ -50,6 +50,8 @@ export default {
     publisher: 'redaktor',
   },
   signOut: 'Wyloguj',
+  adminLink: 'Panel',
+  bandLogoAlt: 'Logo zespołu',
   signIn: {
     heading: 'Zaloguj się',
     email: 'E-mail',

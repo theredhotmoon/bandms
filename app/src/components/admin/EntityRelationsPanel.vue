@@ -59,11 +59,11 @@ function label(text: string, count: number) {
 
 <template>
   <div class="assoc-sections">
-    <div class="assoc-title">Link to…</div>
+    <div class="assoc-title">{{ $t('common.relations.title') }}</div>
 
     <div v-if="tags?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.tags = !expanded.tags">
-        <span>{{ label('Tags', tagIds.length) }}</span>
+        <span>{{ label($t('common.relations.tags'), tagIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.tags }">›</span>
       </button>
       <div v-if="expanded.tags" class="assoc-body checkbox-list">
@@ -76,7 +76,7 @@ function label(text: string, count: number) {
 
     <div v-if="concerts?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.concerts = !expanded.concerts">
-        <span>{{ label('Concerts', concertIds.length) }}</span>
+        <span>{{ label($t('common.relations.concerts'), concertIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.concerts }">›</span>
       </button>
       <div v-if="expanded.concerts" class="assoc-body checkbox-list">
@@ -89,7 +89,7 @@ function label(text: string, count: number) {
 
     <div v-if="releases?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.releases = !expanded.releases">
-        <span>{{ label('Music releases', releaseIds.length) }}</span>
+        <span>{{ label($t('common.relations.releases'), releaseIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.releases }">›</span>
       </button>
       <div v-if="expanded.releases" class="assoc-body checkbox-list">
@@ -102,7 +102,7 @@ function label(text: string, count: number) {
 
     <div v-if="shopItems?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.shopItems = !expanded.shopItems">
-        <span>{{ label('Shop items', shopItemIds.length) }}</span>
+        <span>{{ label($t('common.relations.shopItems'), shopItemIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.shopItems }">›</span>
       </button>
       <div v-if="expanded.shopItems" class="assoc-body checkbox-list">
@@ -115,7 +115,7 @@ function label(text: string, count: number) {
 
     <div v-if="tours?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.tours = !expanded.tours">
-        <span>{{ label('Tours', tourIds.length) }}</span>
+        <span>{{ label($t('common.relations.tours'), tourIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.tours }">›</span>
       </button>
       <div v-if="expanded.tours" class="assoc-body checkbox-list">
@@ -128,7 +128,7 @@ function label(text: string, count: number) {
 
     <div v-if="albums?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.albums = !expanded.albums">
-        <span>{{ label('Photo albums', albumIds.length) }}</span>
+        <span>{{ label($t('common.relations.albums'), albumIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.albums }">›</span>
       </button>
       <div v-if="expanded.albums" class="assoc-body checkbox-list">
@@ -141,7 +141,7 @@ function label(text: string, count: number) {
 
     <div v-if="posts?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.posts = !expanded.posts">
-        <span>{{ label('Blog posts', postIds.length) }}</span>
+        <span>{{ label($t('common.relations.posts'), postIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.posts }">›</span>
       </button>
       <div v-if="expanded.posts" class="assoc-body checkbox-list">
@@ -154,7 +154,7 @@ function label(text: string, count: number) {
 
     <div v-if="musicVideos?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.musicVideos = !expanded.musicVideos">
-        <span>{{ label('Music videos', musicVideoIds.length) }}</span>
+        <span>{{ label($t('common.relations.musicVideos'), musicVideoIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.musicVideos }">›</span>
       </button>
       <div v-if="expanded.musicVideos" class="assoc-body checkbox-list">
@@ -167,7 +167,7 @@ function label(text: string, count: number) {
 
     <div v-if="pressReleases?.length" class="assoc-section">
       <button type="button" class="assoc-toggle" @click="expanded.pressReleases = !expanded.pressReleases">
-        <span>{{ label('Press', pressReleaseIds.length) }}</span>
+        <span>{{ label($t('common.relations.press'), pressReleaseIds.length) }}</span>
         <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.pressReleases }">›</span>
       </button>
       <div v-if="expanded.pressReleases" class="assoc-body checkbox-list">
