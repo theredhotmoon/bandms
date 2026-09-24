@@ -6,8 +6,8 @@ import { unnamedChannels } from '@/utils/rigValidation'
 
 interface Props {
   modelValue: InputRow[]
-  /** Optional label for the empty state, e.g. "extra channel". */
-  noun?: string
+  /** Which catalogue noun to use for the empty state and the row counter. */
+  noun?: 'channel' | 'extraChannel'
 }
 const props = withDefaults(defineProps<Props>(), { noun: 'channel' })
 const emit = defineEmits<{ 'update:modelValue': [value: InputRow[]] }>()
@@ -23,8 +23,20 @@ function isUnnamed(row: InputRow): boolean {
   return row.instrument.trim() === ''
 }
 
-const MIC_DI_OPTIONS: MicDiChoice[] = ['Mic', 'DI', 'Mic+DI']
-const STAND_OPTIONS = ['Short boom', 'Tall boom', 'Straight', 'Low tom', 'Desk', 'None', 'Other']
+const MIC_DI_OPTIONS: { value: MicDiChoice; key: string }[] = [
+  { value: 'Mic', key: 'mic' }, // i18n-ignore: persisted value
+  { value: 'DI', key: 'di' }, // i18n-ignore: persisted value
+  { value: 'Mic+DI', key: 'micDi' }, // i18n-ignore: persisted value
+]
+const STAND_OPTIONS: { value: string; key: string }[] = [
+  { value: 'Short boom', key: 'shortBoom' }, // i18n-ignore: persisted value
+  { value: 'Tall boom', key: 'tallBoom' }, // i18n-ignore: persisted value
+  { value: 'Straight', key: 'straight' }, // i18n-ignore: persisted value
+  { value: 'Low tom', key: 'lowTom' }, // i18n-ignore: persisted value
+  { value: 'Desk', key: 'desk' }, // i18n-ignore: persisted value
+  { value: 'None', key: 'none' }, // i18n-ignore: persisted value
+  { value: 'Other', key: 'other' }, // i18n-ignore: persisted value
+]
 
 function addRow() {
   emit('update:modelValue', [...props.modelValue, defaultInputRow()])
@@ -58,25 +70,25 @@ function moveRow(id: string, dir: -1 | 1) {
         <thead>
           <tr>
             <th class="col-ch">#</th>
-            <th class="col-instr">Instrument / source</th>
-            <th class="col-micdi">Mic / DI</th>
-            <th class="col-model">Model</th>
-            <th class="col-stand">Stand</th>
-            <th class="col-notes">Notes</th>
+            <th class="col-instr">{{ $t('rider.rig.inputs.instrument') }}</th>
+            <th class="col-micdi">{{ $t('rider.rig.inputs.micDi') }}</th>
+            <th class="col-model">{{ $t('rider.rig.inputs.model') }}</th>
+            <th class="col-stand">{{ $t('rider.rig.inputs.stand') }}</th>
+            <th class="col-notes">{{ $t('rider.rig.inputs.notes') }}</th>
             <th class="col-actions"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="modelValue.length === 0">
-            <td colspan="7" class="empty-row">No {{ noun }}s yet — click "Add row" to start.</td>
+            <td colspan="7" class="empty-row">{{ $t(`rider.rig.inputs.empty.${noun}`) }}</td>
           </tr>
           <tr v-for="(row, idx) in modelValue" :key="row.id" class="data-row">
             <td class="col-ch">
               <div class="ch-cell">
                 <span class="ch-num">{{ idx + 1 }}</span>
                 <div class="move-btns">
-                  <button type="button" class="move-btn" title="Move up" @click="moveRow(row.id, -1)">▲</button>
-                  <button type="button" class="move-btn" title="Move down" @click="moveRow(row.id, 1)">▼</button>
+                  <button type="button" class="move-btn" :title="$t('rider.rig.inputs.moveUp')" @click="moveRow(row.id, -1)">▲</button>
+                  <button type="button" class="move-btn" :title="$t('rider.rig.inputs.moveDown')" @click="moveRow(row.id, 1)">▼</button>
                 </div>
               </div>
             </td>
@@ -86,7 +98,7 @@ function moveRow(id: string, dir: -1 | 1) {
                 class="cell-input"
                 :class="{ 'cell-input--invalid': isUnnamed(row) }"
                 :aria-invalid="isUnnamed(row)"
-                placeholder="e.g. Kick drum (in)"
+                :placeholder="$t('rider.rig.inputs.instrumentPlaceholder')"
                 required
                 @input="updateRow(row.id, 'instrument', ($event.target as HTMLInputElement).value)"
               />
@@ -97,14 +109,14 @@ function moveRow(id: string, dir: -1 | 1) {
                 class="cell-select"
                 @change="updateRow(row.id, 'mic_di', ($event.target as HTMLSelectElement).value as MicDiChoice)"
               >
-                <option v-for="opt in MIC_DI_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
+                <option v-for="opt in MIC_DI_OPTIONS" :key="opt.value" :value="opt.value">{{ $t(`rider.rig.inputs.micDiOptions.${opt.key}`) }}</option>
               </select>
             </td>
             <td class="col-model">
               <input
                 :value="row.mic_model"
                 class="cell-input"
-                placeholder="e.g. SM57"
+                :placeholder="$t('rider.rig.inputs.modelPlaceholder')"
                 @input="updateRow(row.id, 'mic_model', ($event.target as HTMLInputElement).value)"
               />
             </td>
@@ -114,19 +126,19 @@ function moveRow(id: string, dir: -1 | 1) {
                 class="cell-select"
                 @change="updateRow(row.id, 'stand_type', ($event.target as HTMLSelectElement).value)"
               >
-                <option v-for="opt in STAND_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
+                <option v-for="opt in STAND_OPTIONS" :key="opt.value" :value="opt.value">{{ $t(`rider.rig.inputs.standOptions.${opt.key}`) }}</option>
               </select>
             </td>
             <td class="col-notes">
               <input
                 :value="row.notes"
                 class="cell-input"
-                placeholder="Optional notes…"
+                :placeholder="$t('rider.rig.inputs.notesPlaceholder')"
                 @input="updateRow(row.id, 'notes', ($event.target as HTMLInputElement).value)"
               />
             </td>
             <td class="col-actions">
-              <button type="button" class="del-btn" title="Remove row" @click="removeRow(row.id)">✕</button>
+              <button type="button" class="del-btn" :title="$t('rider.rig.inputs.removeRow')" @click="removeRow(row.id)">✕</button>
             </td>
           </tr>
         </tbody>
@@ -134,11 +146,10 @@ function moveRow(id: string, dir: -1 | 1) {
     </div>
 
     <div class="table-footer">
-      <button type="button" class="btn-add-row" @click="addRow">+ Add row</button>
-      <span class="row-count">{{ modelValue.length }} {{ noun }}{{ modelValue.length === 1 ? '' : 's' }}</span>
+      <button type="button" class="btn-add-row" @click="addRow">{{ $t('rider.rig.inputs.addRow') }}</button>
+      <span class="row-count">{{ $t(`rider.rig.inputs.count.${noun}`, modelValue.length, { named: { n: modelValue.length } }) }}</span>
       <span v-if="unnamedCount" class="needs-name" role="status">
-        {{ unnamedCount }} {{ unnamedCount === 1 ? 'row needs' : 'rows need' }} an instrument name
-        before this can be saved
+        {{ $t('rider.rig.inputs.needsName', unnamedCount, { named: { n: unnamedCount } }) }}
       </span>
     </div>
   </div>

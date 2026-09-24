@@ -7,11 +7,29 @@
 
 import type { InputRow, MicDiChoice, SignalChainType } from '@bandms/rider-core'
 
-// ── Labels & descriptions ─────────────────────────────────────────────────────
+// ── Signal-chain presets ─────────────────────────────────────────────────────
+//
+// The user-facing label and description of each preset live in the i18n
+// catalogue under rider.rig.chains.<id>; this file keeps only the shape.
+//
+// EVERYTHING ELSE HERE IS DATA, NOT CHROME, AND MUST STAY ENGLISH:
+//
+//   * 'Mic' | 'DI' | 'Mic+DI' is the MicDiChoice union — a persisted value,
+//     typed in @bandms/rider-core. Translating it breaks the data model.
+//   * 'Short boom', 'None' and friends are stored in stand_type, and the
+//     select that edits them renders the stored value as its own label.
+//   * The channel names a preset builds are seeded INTO the user's table and
+//     end up on the rider a venue prints. The sheet itself is deliberately
+//     untranslated (it is a document, not chrome), and seeding Polish rows
+//     would make a rider read half in each language depending on which UI
+//     language the musician happened to have selected when they pressed
+//     Build.
+//
+// So this file is deliberately NOT on the string lint's MIGRATED list. If a
+// genuinely user-facing string is ever added here, move it to the catalogue
+// instead of listing the file.
 
 export interface ChainMeta {
-  label: string
-  description: string
   channels: number         // Expected channel count
   category: ChainCategory
 }
@@ -25,22 +43,22 @@ export type ChainCategory =
   | 'other'
 
 export const CHAIN_META: Record<SignalChainType, ChainMeta> = {
-  modeler_mono:    { label: 'Modeler / Profiler — Mono',         description: '1× mono DI (XLR or jack)',                  channels: 1,  category: 'guitar_bass' },
-  modeler_stereo:  { label: 'Modeler / Profiler — Stereo',       description: '2× DI (L + R)',                             channels: 2,  category: 'guitar_bass' },
-  amp_mic:         { label: 'Amp — Mic only',                    description: '1× microphone on speaker cabinet',          channels: 1,  category: 'guitar_bass' },
-  amp_mic_di:      { label: 'Amp — Mic + DI (parallel)',         description: '1× mic + 1× DI (pre-amp split)',            channels: 2,  category: 'guitar_bass' },
-  amp_di:          { label: 'Amp — Line / cab-sim DI',           description: '1× DI from line out or cab simulator',      channels: 1,  category: 'guitar_bass' },
-  direct_mono:     { label: 'Direct — Mono DI',                  description: '1× DI (jack or XLR)',                       channels: 1,  category: 'guitar_bass' },
-  direct_stereo:   { label: 'Direct — Stereo DI',                description: '2× DI (L + R)',                             channels: 2,  category: 'guitar_bass' },
-  drum_acoustic:   { label: 'Acoustic drum kit',                 description: '10-ch standard: kick in/out, snare top/btm, hi-hat, 3 toms, 2 overheads', channels: 10, category: 'drums' },
-  drum_electronic: { label: 'Electronic / pad kit',              description: '1–2 DI from drum module',                  channels: 2,  category: 'drums' },
-  drum_hybrid:     { label: 'Hybrid kit',                        description: '10-ch acoustic mics + 1× trigger DI',       channels: 11, category: 'drums' },
-  vocal_mic:       { label: 'Vocal — Wired mic',                 description: '1× wired microphone on stand',              channels: 1,  category: 'vocals' },
-  vocal_wireless:  { label: 'Vocal — Wireless',                  description: '1× wireless handheld (transmitter info in RF section)', channels: 1, category: 'vocals' },
-  acoustic_di:     { label: 'Acoustic — DI only',                description: '1× DI from onboard pickup',                channels: 1,  category: 'acoustic' },
-  acoustic_mic:    { label: 'Acoustic — Mic only',               description: '1× clip or area mic',                      channels: 1,  category: 'acoustic' },
-  acoustic_mic_di: { label: 'Acoustic — Mic + DI',               description: '1× mic + 1× DI (blend at FOH)',             channels: 2,  category: 'acoustic' },
-  other:           { label: 'Custom / Manual',                   description: 'Define inputs manually below',              channels: 0,  category: 'other' },
+  modeler_mono:    { channels: 1,  category: 'guitar_bass' },
+  modeler_stereo:  { channels: 2,  category: 'guitar_bass' },
+  amp_mic:         { channels: 1,  category: 'guitar_bass' },
+  amp_mic_di:      { channels: 2,  category: 'guitar_bass' },
+  amp_di:          { channels: 1,  category: 'guitar_bass' },
+  direct_mono:     { channels: 1,  category: 'guitar_bass' },
+  direct_stereo:   { channels: 2,  category: 'guitar_bass' },
+  drum_acoustic:   { channels: 10, category: 'drums' },
+  drum_electronic: { channels: 2,  category: 'drums' },
+  drum_hybrid:     { channels: 11, category: 'drums' },
+  vocal_mic:       { channels: 1,  category: 'vocals' },
+  vocal_wireless:  { channels: 1, category: 'vocals' },
+  acoustic_di:     { channels: 1,  category: 'acoustic' },
+  acoustic_mic:    { channels: 1,  category: 'acoustic' },
+  acoustic_mic_di: { channels: 2,  category: 'acoustic' },
+  other:           { channels: 0,  category: 'other' },
 }
 
 // ── Categories exposed for instrument-aware filtering ─────────────────────────

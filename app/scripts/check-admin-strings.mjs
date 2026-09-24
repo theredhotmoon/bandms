@@ -79,7 +79,7 @@ const MIGRATED = [
   'components/admin/forms/SingleImageUpload.vue',
   'components/admin/forms/ClipForm.vue',
   'components/AppNavbar.vue',
-  'views/admin/BandProfileAdminView.vue',
+  'components/rig',  'views/admin/BandProfileAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]

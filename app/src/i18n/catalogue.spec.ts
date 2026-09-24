@@ -77,7 +77,19 @@ describe('i18n catalogues', () => {
       // So it is allowlisted per key, not waved through per character: these
       // two are genuine plural forms, and any new pipe has to be justified
       // here rather than shipping truncated.
-      const PLURALS = new Set(['common.rebuild.pendingChanges', 'content.newsletter.subscribers'])
+      // Every key here is a real plural form, checked by eye against both
+      // catalogues. The list is deliberately explicit rather than a naming
+      // convention: a pipe silently truncates, so adding one should cost a
+      // line in a test and a moment's thought, not nothing.
+      const PLURALS = new Set([
+        'common.rebuild.pendingChanges',
+        'content.newsletter.subscribers',
+        'rider.rig.signalChain.generates',
+        'rider.rig.signalChain.existingRows',
+        'rider.rig.inputs.count.channel',
+        'rider.rig.inputs.count.extraChannel',
+        'rider.rig.inputs.needsName',
+      ])
 
       const offenders = all
         .filter(({ key, value }) => !PLURALS.has(key) && /(?<!\{')\|(?!'\})/.test(value))
@@ -133,6 +145,39 @@ describe('i18n catalogues', () => {
         for (const field of ['name', 'sub', 'tagline']) {
           expect(has(`band.career.levels.l${n}.${field}`), `l${n}.${field}`).toBe(true)
         }
+      }
+    })
+
+    it('rider.rig covers every chain, tab, category and option', () => {
+      // Mirrors SignalChainType, the RigEditor tab union, BacklineCategory,
+      // WirelessType, and the value/key tables in RigInputsTable.
+      for (const c of [
+        'modeler_mono', 'modeler_stereo', 'amp_mic', 'amp_mic_di', 'amp_di',
+        'direct_mono', 'direct_stereo', 'drum_acoustic', 'drum_electronic',
+        'drum_hybrid', 'vocal_mic', 'vocal_wireless', 'acoustic_di',
+        'acoustic_mic', 'acoustic_mic_di', 'other',
+      ]) {
+        expect(has(`rider.rig.chains.${c}.label`), c).toBe(true)
+        expect(has(`rider.rig.chains.${c}.description`), c).toBe(true)
+      }
+      for (const t of ['inputs', 'monitors', 'backline', 'power', 'wireless', 'foh']) {
+        expect(has(`rider.rig.tabs.${t}`), t).toBe(true)
+      }
+      for (const c of ['drum_kit', 'guitar_amp', 'bass_amp', 'keyboard', 'other']) {
+        expect(has(`rider.rig.backline.categories.${c}`), c).toBe(true)
+      }
+      for (const w of ['instrument', 'vocal', 'iem', 'other']) {
+        expect(has(`rider.rig.wireless.types.${w}`), w).toBe(true)
+      }
+      for (const m of ['mic', 'di', 'micDi']) {
+        expect(has(`rider.rig.inputs.micDiOptions.${m}`), m).toBe(true)
+      }
+      for (const s of ['shortBoom', 'tallBoom', 'straight', 'lowTom', 'desk', 'none', 'other']) {
+        expect(has(`rider.rig.inputs.standOptions.${s}`), s).toBe(true)
+      }
+      for (const n of ['channel', 'extraChannel']) {
+        expect(has(`rider.rig.inputs.empty.${n}`), n).toBe(true)
+        expect(has(`rider.rig.inputs.count.${n}`), n).toBe(true)
       }
     })
 

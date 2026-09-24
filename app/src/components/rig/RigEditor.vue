@@ -61,13 +61,13 @@ const emit = defineEmits<{
 
 type Tab = 'inputs' | 'monitors' | 'backline' | 'power' | 'wireless' | 'foh'
 
-const TABS: { key: Tab; label: string; icon: string; fields: RigField[] }[] = [
-  { key: 'inputs',   label: 'Inputs',   icon: '🎙️', fields: ['inputs', 'signal_chain_type'] },
-  { key: 'monitors', label: 'Monitors', icon: '🔊', fields: ['monitors'] },
-  { key: 'backline', label: 'Backline', icon: '🥁', fields: ['backline'] },
-  { key: 'power',    label: 'Power',    icon: '⚡', fields: ['power'] },
-  { key: 'wireless', label: 'Wireless', icon: '📡', fields: ['wireless'] },
-  { key: 'foh',      label: 'FOH notes', icon: '🎛️', fields: ['foh_notes'] },
+const TABS: { key: Tab; icon: string; fields: RigField[] }[] = [
+  { key: 'inputs',   icon: '🎙️', fields: ['inputs', 'signal_chain_type'] },
+  { key: 'monitors', icon: '🔊', fields: ['monitors'] },
+  { key: 'backline', icon: '🥁', fields: ['backline'] },
+  { key: 'power',    icon: '⚡', fields: ['power'] },
+  { key: 'wireless', icon: '📡', fields: ['wireless'] },
+  { key: 'foh',      icon: '🎛️', fields: ['foh_notes'] },
 ]
 
 const activeTab = ref<Tab>('inputs')
@@ -111,21 +111,21 @@ function revertActive() {
         @click="activeTab = tab.key"
       >
         <span class="tab-icon">{{ tab.icon }}</span>
-        {{ tab.label }}
-        <span v-if="tabOverridden(tab.key)" class="override-dot" title="Changed for this gig" />
+        {{ $t(`rider.rig.tabs.${tab.key}`) }}
+        <span v-if="tabOverridden(tab.key)" class="override-dot" :title="$t('rider.rig.gig.changed')" />
       </button>
     </div>
 
     <div class="rig-body">
       <div v-if="isPlacement" class="inherit-bar" :class="{ 'inherit-bar--changed': activeOverridden }">
         <template v-if="activeOverridden">
-          <span class="inherit-text">Changed for this gig — differs from “{{ baseName }}”</span>
+          <span class="inherit-text">{{ $t('rider.rig.gig.changedFrom', { name: baseName }) }}</span>
           <button type="button" class="btn-revert" @click="revertActive">
-            Revert to saved rig
+            {{ $t('rider.rig.gig.revert') }}
           </button>
         </template>
         <span v-else class="inherit-text">
-          {{ hasBase ? `Inherited from “${baseName}”` : 'No saved rig linked — edits apply to this gig only' }}
+          {{ hasBase ? $t('rider.rig.gig.inherited', { name: baseName }) : $t('rider.rig.gig.noSavedRig') }}
         </span>
       </div>
 
@@ -165,13 +165,13 @@ function revertActive() {
 
       <div v-else-if="activeTab === 'foh'" class="rig-section">
         <div class="rig-hint">
-          Anything the FOH engineer should know that does not fit the other sections.
+          {{ $t('rider.rig.foh.hint') }}
         </div>
         <textarea
           :value="modelValue.foh_notes"
           class="foh-textarea"
           rows="8"
-          placeholder="e.g. heavy reverb on the last song, no compression on the lead vocal…"
+          :placeholder="$t('rider.rig.foh.placeholder')"
           @input="emit('change', 'foh_notes', ($event.target as HTMLTextAreaElement).value)"
         />
       </div>
