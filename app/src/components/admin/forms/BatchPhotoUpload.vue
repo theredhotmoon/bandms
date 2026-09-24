@@ -90,11 +90,11 @@ function submit() {
     <!-- Album metadata -->
     <div class="album-meta">
       <div class="meta-full">
-        <label class="field-label">Album title <span style="color:#f87171;">*</span></label>
-        <input v-model="meta.title" class="field-input" placeholder="e.g. Rudeboy 2026-05-08" />
+        <label class="field-label">{{ $t('media.batchUpload.albumTitle') }} <span style="color:#f87171;">*</span></label>
+        <input v-model="meta.title" class="field-input" :placeholder="$t('media.batchUpload.albumTitlePlaceholder')" />
       </div>
       <div class="meta-full">
-        <label class="field-label">Slug URL</label>
+        <label class="field-label">{{ $t('common.fields.slug') }}</label>
         <SlugInput
           v-model="meta.slug_en"
           v-model:modelValuePl="meta.slug_pl"
@@ -104,38 +104,38 @@ function submit() {
       </div>
       <div class="meta-row">
         <div class="meta-field">
-          <label class="field-label">Concert</label>
+          <label class="field-label">{{ $t('media.batchUpload.concert') }}</label>
           <select v-model="meta.concert_id" class="field-input">
-            <option value="">— none —</option>
+            <option value="">{{ $t('media.batchUpload.none') }}</option>
             <option v-for="c in concerts" :key="c.id" :value="String(c.id)">
               {{ c.date }} — {{ c.venue?.name }}
             </option>
           </select>
         </div>
         <div class="meta-field">
-          <label class="field-label">Venue</label>
+          <label class="field-label">{{ $t('media.batchUpload.venue') }}</label>
           <select v-model="meta.venue_id" class="field-input">
-            <option value="">— none —</option>
+            <option value="">{{ $t('media.batchUpload.none') }}</option>
             <option v-for="v in venues" :key="v.id" :value="String(v.id)">{{ v.name }}</option>
           </select>
         </div>
       </div>
       <div class="meta-row">
         <div class="meta-field">
-          <label class="field-label">Taken at</label>
+          <label class="field-label">{{ $t('media.batchUpload.takenAt') }}</label>
           <input v-model="meta.taken_at" type="datetime-local" class="field-input" />
         </div>
         <div class="meta-field">
-          <label class="field-label">Publish at</label>
+          <label class="field-label">{{ $t('media.batchUpload.publishAt') }}</label>
           <input v-model="meta.published_at" type="datetime-local" class="field-input" />
         </div>
       </div>
       <div>
-        <label class="field-label">Description</label>
-        <textarea v-model="meta.description" class="field-input" rows="2" placeholder="Optional notes about this album" />
+        <label class="field-label">{{ $t('media.batchUpload.description') }}</label>
+        <textarea v-model="meta.description" class="field-input" rows="2" :placeholder="$t('media.batchUpload.descriptionPlaceholder')" />
       </div>
       <div v-if="tags.length">
-        <label class="field-label">Tags</label>
+        <label class="field-label">{{ $t('media.batchUpload.tags') }}</label>
         <div class="checkbox-list">
           <label v-for="t in tags" :key="t.id" class="checkbox-item">
             <input type="checkbox" :checked="meta.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -145,7 +145,7 @@ function submit() {
       </div>
     </div>
 
-    <div class="section-divider">Photos</div>
+    <div class="section-divider">{{ $t('media.batchUpload.photos') }}</div>
 
     <ImageDropZone :uploading="uploading" @change="pendingFiles = $event" />
 
@@ -154,16 +154,16 @@ function submit() {
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: progressPct + '%' }" />
       </div>
-      <span class="progress-label">Uploading… {{ progressPct }}%</span>
+      <span class="progress-label">{{ $t('media.batchUpload.uploadingPct', { pct: progressPct }) }}</span>
     </div>
 
     <!-- Footer -->
     <div class="flex gap-2 justify-end pt-2">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost" :disabled="uploading">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost" :disabled="uploading">{{ $t('common.actions.cancel') }}</button>
       <button type="button" :disabled="!canUpload" class="btn-primary" @click="submit">
         {{ uploading
-          ? 'Uploading…'
-          : `Create album (${pendingFiles.length} photo${pendingFiles.length !== 1 ? 's' : ''})` }}
+          ? $t('media.batchUpload.uploading')
+          : $t('media.batchUpload.create', pendingFiles.length, { named: { n: pendingFiles.length } }) }}
       </button>
     </div>
   </div>

@@ -60,7 +60,6 @@ describe('i18n catalogues', () => {
       // Compilation alone is not quite enough: `a@b` throws, but some shapes
       // resolve to a *linked message* instead — silently rendering something
       // other than the text that was written. Require the escape everywhere.
-      //
       const offenders = all
         .filter(({ value }) => /(?<!\{')@(?!'\})/.test(value))
         .map(({ key, value }) => `${key}: ${value}`)
@@ -92,6 +91,10 @@ describe('i18n catalogues', () => {
         'band.setups.waiting',
         'media.releases.uploadPhotos',
         'media.releases.photosAdded',
+        'media.videos.syncResult',
+        'media.photos.photoCount',
+        'media.photos.albumCreated',
+        'media.batchUpload.create',
       ])
 
       const offenders = all
@@ -181,6 +184,14 @@ describe('i18n catalogues', () => {
       for (const n of ['channel', 'extraChannel']) {
         expect(has(`rider.rig.inputs.empty.${n}`), n).toBe(true)
         expect(has(`rider.rig.inputs.count.${n}`), n).toBe(true)
+      }
+    })
+
+    it('media.videos.hosts covers every videoHost() return', () => {
+      // videoHost() returns a key now, not a label — YouTube and Vimeo are
+      // brand names but the fallback is a generic noun that translates.
+      for (const h of ['youtube', 'vimeo', 'other']) {
+        expect(has(`media.videos.hosts.${h}`), h).toBe(true)
       }
     })
 

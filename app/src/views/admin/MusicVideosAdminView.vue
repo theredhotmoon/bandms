@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
@@ -32,7 +33,7 @@ async function doRetrieveMetadata() {
       form.title = meta.title
     }
   } catch (e) {
-    reportSaveError(e, 'Could not retrieve metadata')
+    reportSaveError(e, t('media.videos.metaFailed'))
   }
 }
 
@@ -55,9 +56,9 @@ const lastSyncedAt = computed(() => {
 async function doSyncViews() {
   try {
     const result = await syncViews.mutateAsync()
-    toast.success(`Synced ${result.updated} video${result.updated === 1 ? '' : 's'} · ${result.total_views.toLocaleString()} total views`)
+    toast.success(t('media.videos.syncResult', result.updated, { named: { n: result.updated, views: result.total_views.toLocaleString() } }))
   } catch (e) {
-    reportSaveError(e, 'Failed to sync YouTube views')
+    reportSaveError(e, t('media.videos.syncFailed'))
   }
 }
 
@@ -65,9 +66,9 @@ async function doFetchPreview(id: number) {
   fetchingPreviewId.value = id
   try {
     await previewFetch.mutateAsync(id)
-    toast.success('Preview fetched')
+    toast.success(t('media.videos.previewFetched'))
   } catch (e) {
-    reportSaveError(e, 'Could not fetch preview for this URL')
+    reportSaveError(e, t('media.videos.previewFailed'))
   } finally {
     fetchingPreviewId.value = null
   }
@@ -97,6 +98,7 @@ const filteredData = computed(() => {
   return rows
 })
 
+const { t } = useI18n()
 const tc = useTableControls<MusicVideo>({
   data: filteredData,
   searchFn: (v, q) => v.title.toLowerCase().includes(q) || v.video_url.toLowerCase().includes(q),
@@ -143,14 +145,14 @@ async function submit() {
   try {
     if (editing.value) {
       await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Music video updated')
+      toast.success(t('media.videos.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Music video added')
+      toast.success(t('media.videos.added'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Failed to save music video')
+    reportSaveError(e, t('media.videos.saveFailed'))
   }
 }
 
@@ -164,9 +166,9 @@ async function confirmDelete() {
   confirmLoading.value = true
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Music video deleted')
+    toast.success(t('media.videos.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete music video')
+    reportSaveError(e, t('media.videos.deleteFailed'))
   } finally {
     confirmLoading.value = false
     confirmOpen.value    = false
@@ -174,10 +176,10 @@ async function confirmDelete() {
   }
 }
 
-function videoHost(url: string): string {
-  if (url.includes('youtu')) return 'YouTube'
-  if (url.includes('vimeo')) return 'Vimeo'
-  return 'Video'
+function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
+  if (url.includes('youtu')) return 'youtube'
+  if (url.includes('vimeo')) return 'vimeo'
+  return 'other'
 }
 </script>
 
@@ -186,15 +188,15 @@ function videoHost(url: string): string {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Music Videos</h1>
-          <p class="text-xs mt-0.5" style="color:#334155;">YouTube and Vimeo links shown on your EPK.</p>
+          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.videos.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:#334155;">{{ $t('media.videos.subtitle') }}</p>
         </div>
         <div class="header-right">
           <!-- Total views stat -->
           <div v-if="totalViews > 0" class="views-stat">
             <span class="views-stat-num">{{ totalViews.toLocaleString() }}</span>
-            <span class="views-stat-label">total views</span>
-            <span v-if="lastSyncedAt" class="views-stat-ts">· synced {{ lastSyncedAt }}</span>
+            <span class="views-stat-label">{{ $t('media.videos.totalViewsLabel') }}</span>
+            <span v-if="lastSyncedAt" class="views-stat-ts">{{ $t('media.videos.syncedAt', { at: lastSyncedAt }) }}</span>
           </div>
           <button
             class="btn-sync"
@@ -205,40 +207,40 @@ function videoHost(url: string): string {
               <path d="M23 4v6h-6M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
             </svg>
-            {{ syncViews.isPending.value ? 'Syncing…' : 'Sync YouTube views' }}
+            {{ syncViews.isPending.value ? $t('media.videos.syncing') : $t('media.videos.syncViews') }}
           </button>
-          <button @click="openCreate" class="btn-add-primary">+ Add video</button>
+          <button @click="openCreate" class="btn-add-primary">{{ $t('media.videos.add') }}</button>
         </div>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load music videos.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('media.videos.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
               <select v-model="filterStatus" class="filter-select">
-                <option value="">All statuses</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
+                <option value="">{{ $t('media.videos.allStatuses') }}</option>
+                <option value="published">{{ $t('media.videos.published') }}</option>
+                <option value="draft">{{ $t('media.videos.draft') }}</option>
               </select>
             </template>
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!(query.data.value?.length)">No music videos yet. Add YouTube or Vimeo URLs to showcase your work.</span>
-            <span v-else>No videos match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('media.videos.empty') }}</span>
+            <span v-else>{{ $t('media.videos.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <th class="th" style="width:5rem;">Preview</th>
-                <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">URL / Channel</th>
-                <SortHeader label="Published" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="Views" sort-key="view_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
-                <SortHeader label="Order" sort-key="sort_order" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="4rem" @sort="tc.toggleSort" />
-                <th class="th text-right" style="width:12rem;">Actions</th>
+                <th class="th" style="width:5rem;">{{ $t('media.videos.columns.preview') }}</th>
+                <SortHeader :label="$t('media.videos.columns.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('media.videos.columns.url') }}</th>
+                <SortHeader :label="$t('media.videos.columns.published')" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('media.videos.columns.views')" sort-key="view_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('media.videos.columns.order')" sort-key="sort_order" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="4rem" @sort="tc.toggleSort" />
+                <th class="th text-right" style="width:12rem;">{{ $t('media.videos.columns.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -256,7 +258,7 @@ function videoHost(url: string): string {
                 </td>
                 <td class="td">
                   <a :href="v.video_url" target="_blank" rel="noopener noreferrer" class="url-link">
-                    {{ videoHost(v.video_url) }} ↗
+                    {{ $t(`media.videos.hosts.${videoHost(v.video_url)}`) }} ↗
                   </a>
                 </td>
                 <td class="td" style="color:#475569; font-size:0.75rem;">{{ v.published_at ?? '—' }}</td>
@@ -270,9 +272,9 @@ function videoHost(url: string): string {
                     @click="doFetchPreview(v.id)"
                     :disabled="fetchingPreviewId === v.id"
                     class="btn-preview"
-                  >{{ fetchingPreviewId === v.id ? '…' : 'Preview' }}</button>
-                  <button @click="openEdit(v)" class="btn-edit">Edit</button>
-                  <button @click="requestDelete(v.id)" class="btn-delete">Delete</button>
+                  >{{ fetchingPreviewId === v.id ? '…' : $t('media.videos.preview') }}</button>
+                  <button @click="openEdit(v)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="requestDelete(v.id)" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -294,15 +296,15 @@ function videoHost(url: string): string {
 
     <AdminModal
       :open="showModal"
-      :title="editing ? 'Edit video' : 'Add video'"
+      :title="editing ? $t('media.videos.modalEdit') : $t('media.videos.modalNew')"
       max-width="32rem"
       @close="closeModal"
     >
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
-          <label class="field-label">YouTube / Vimeo URL <span class="field-req">*</span></label>
+          <label class="field-label">{{ $t('media.videos.url') }} <span class="field-req">*</span></label>
           <div class="url-row">
-            <input v-model="form.video_url" required type="url" class="field-input url-input" placeholder="https://youtu.be/…" />
+            <input v-model="form.video_url" required type="url" class="field-input url-input" :placeholder="$t('media.videos.urlPlaceholder')" />
             <button
               type="button"
               class="btn-retrieve"
@@ -316,7 +318,7 @@ function videoHost(url: string): string {
               <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
               </svg>
-              {{ retrieveMetadata.isPending.value ? 'Retrieving…' : 'Retrieve data' }}
+              {{ retrieveMetadata.isPending.value ? $t('media.videos.retrieving') : $t('media.videos.retrieve') }}
             </button>
           </div>
         </div>
@@ -329,30 +331,30 @@ function videoHost(url: string): string {
             <div class="meta-details">
               <span v-if="retrievedMeta.channel_name" class="meta-chip">{{ retrievedMeta.channel_name }}</span>
               <span v-if="retrievedMeta.duration" class="meta-chip">{{ retrievedMeta.duration }}</span>
-              <span v-if="retrievedMeta.view_count !== null" class="meta-chip">{{ retrievedMeta.view_count?.toLocaleString() }} views</span>
-              <span v-if="retrievedMeta.view_count === null && retrievedMeta.provider_name" class="meta-chip meta-chip--dim">No API key — views not retrieved</span>
+              <span v-if="retrievedMeta.view_count !== null" class="meta-chip">{{ $t('media.videos.views', { n: retrievedMeta.view_count?.toLocaleString() }) }}</span>
+              <span v-if="retrievedMeta.view_count === null && retrievedMeta.provider_name" class="meta-chip meta-chip--dim">{{ $t('media.videos.noApiKey') }}</span>
             </div>
           </div>
         </div>
 
         <div>
-          <label class="field-label">Title <span class="field-req">*</span></label>
-          <input v-model="form.title" required class="field-input" placeholder="Video title" />
+          <label class="field-label">{{ $t('media.videos.videoTitle') }} <span class="field-req">*</span></label>
+          <input v-model="form.title" required class="field-input" :placeholder="$t('media.videos.videoTitlePlaceholder')" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="field-label">Published date</label>
+            <label class="field-label">{{ $t('media.videos.publishedDate') }}</label>
             <input v-model="form.published_at" type="date" class="field-input" />
           </div>
           <div>
-            <label class="field-label">Sort order</label>
+            <label class="field-label">{{ $t('media.videos.sortOrder') }}</label>
             <input v-model="form.sort_order" type="number" min="0" class="field-input" />
           </div>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">Cancel</button>
+          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
-            {{ (create.isPending.value || update.isPending.value) ? 'Saving…' : 'Save' }}
+            {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>
         </div>
       </form>
@@ -360,7 +362,7 @@ function videoHost(url: string): string {
 
     <ConfirmDialog
       :open="confirmOpen"
-      message="This music video will be permanently deleted."
+      :message="$t('media.videos.deleteConfirm')"
       :loading="confirmLoading"
       @confirm="confirmDelete"
       @cancel="confirmOpen = false"

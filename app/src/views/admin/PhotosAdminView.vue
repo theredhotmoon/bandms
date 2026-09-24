@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -22,6 +23,7 @@ const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
 const { query: tagsQ } = useTags()
 const { token } = useAuth()
+const { t } = useI18n()
 const queryClient = useQueryClient()
 
 // ── Batch upload ──────────────────────────────────────────────
@@ -50,10 +52,10 @@ async function handleBatchUpload(
       batchProgress.value = p
     })
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
-    toast.success(`Album "${album.title}" created with ${album.photos.length} photo${album.photos.length !== 1 ? 's' : ''}`)
+    toast.success(t('media.photos.albumCreated', album.photos.length, { named: { title: album.title, n: album.photos.length } }))
     showBatch.value = false
   } catch (e) {
-    reportSaveError(e, 'Upload failed')
+    reportSaveError(e, t('media.photos.uploadFailed'))
   } finally {
     batchUploading.value = false
     batchProgress.value = null
@@ -107,10 +109,10 @@ async function saveEdit() {
   }
   try {
     await update.mutateAsync({ id: editAlbum.value.id, payload })
-    toast.success('Album updated')
+    toast.success(t('media.photos.updated'))
     showEdit.value = false
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -157,9 +159,9 @@ async function saveOrder() {
       order: localPhotos.value.map((p) => p.id),
     })
     originalOrder.value = localPhotos.value.map((p) => p.id)
-    toast.success('Order saved')
+    toast.success(t('media.photos.orderSaved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save order')
+    reportSaveError(e, t('media.photos.orderFailed'))
   }
 }
 
@@ -170,9 +172,9 @@ async function toggleEpk(photo: AlbumPhoto) {
     const refreshed = query.data.value?.find((a: Album) => a.id === viewAlbum.value?.id) ?? viewAlbum.value
     viewAlbum.value = refreshed ?? null
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value
-    toast.success(photo.epk_featured ? 'Removed from EPK' : 'Added to EPK')
+    toast.success(photo.epk_featured ? t('media.photos.removedFromEpk') : t('media.photos.addedToEpk'))
   } catch (e) {
-    reportSaveError(e, 'Failed to update EPK status')
+    reportSaveError(e, t('media.photos.epkFailed'))
   }
 }
 
@@ -185,9 +187,9 @@ async function deletePhoto(albumId: number, photoId: number) {
     viewAlbum.value = refreshed
     localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)
-    toast.success('Photo removed')
+    toast.success(t('media.photos.photoRemoved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to remove photo')
+    reportSaveError(e, t('media.photos.photoRemoveFailed'))
   } finally {
     deletingPhotoId.value = null
   }
@@ -200,9 +202,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Album deleted')
+    toast.success(t('media.photos.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('media.photos.deleteFailed')) }
 }
 </script>
 
@@ -210,24 +212,24 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Photo Albums</h1>
-        <button @click="showBatch = true" class="btn-add-primary">+ New Album</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.photos.title') }}</h1>
+        <button @click="showBatch = true" class="btn-add-primary">{{ $t('media.photos.newAlbum') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">Loading…</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">Failed to load albums.</div>
-        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">No albums yet.</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('media.photos.loadFailed') }}</div>
+        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('media.photos.empty') }}</div>
         <table v-else class="w-full">
           <thead>
             <tr style="border-bottom:1px solid #222222;">
               <th class="th" style="width:60px;"></th>
-              <th class="th">Album</th>
-              <th class="th">Concert / Venue</th>
-              <th class="th">Tags</th>
-              <th class="th">Photos</th>
-              <th class="th">Published</th>
-              <th class="th text-right">Actions</th>
+              <th class="th">{{ $t('media.photos.columns.album') }}</th>
+              <th class="th">{{ $t('media.photos.columns.concertVenue') }}</th>
+              <th class="th">{{ $t('media.photos.columns.tags') }}</th>
+              <th class="th">{{ $t('media.photos.columns.photos') }}</th>
+              <th class="th">{{ $t('media.photos.columns.published') }}</th>
+              <th class="th text-right">{{ $t('media.photos.columns.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -255,15 +257,15 @@ async function confirmDelete() {
               </td>
               <td class="td text-sm" style="color:#94a3b8;">
                 <button class="photo-count-btn" @click="openPhotos(album)">
-                  {{ album.photo_count }} photo{{ album.photo_count !== 1 ? 's' : '' }}
+                  {{ $t('media.photos.photoCount', album.photo_count, { named: { n: album.photo_count } }) }}
                 </button>
               </td>
               <td class="td text-xs" :style="album.published_at ? 'color:#34d399;' : 'color:#475569;'">
-                {{ album.published_at ? album.published_at.slice(0,10) : 'Draft' }}
+                {{ album.published_at ? album.published_at.slice(0,10) : $t('media.photos.draft') }}
               </td>
               <td class="td text-right">
-                <button @click="openEdit(album)" class="btn-edit">Edit</button>
-                <button @click="confirmId = album.id" class="btn-delete">Delete</button>
+                <button @click="openEdit(album)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                <button @click="confirmId = album.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
               </td>
             </tr>
           </tbody>
@@ -272,7 +274,7 @@ async function confirmDelete() {
     </div>
 
     <!-- Batch upload / new album modal -->
-    <AdminModal :open="showBatch" title="New Photo Album" max-width="64rem" @close="showBatch = false">
+    <AdminModal :open="showBatch" :title="$t('media.photos.modalNew')" max-width="64rem" @close="showBatch = false">
       <BatchPhotoUpload
         :venues="venuesQ.data.value ?? []"
         :concerts="concertsQ.data.value ?? []"
@@ -285,47 +287,47 @@ async function confirmDelete() {
     </AdminModal>
 
     <!-- Edit album metadata modal -->
-    <AdminModal :open="showEdit" title="Edit album" max-width="42rem" @close="showEdit = false">
+    <AdminModal :open="showEdit" :title="$t('media.photos.modalEdit')" max-width="42rem" @close="showEdit = false">
       <form @submit.prevent="saveEdit" class="flex flex-col gap-4">
         <div>
-          <label class="field-label">Title <span style="color:#f87171;">*</span></label>
+          <label class="field-label">{{ $t('media.photos.albumTitle') }} <span style="color:#f87171;">*</span></label>
           <input v-model="editForm.title" required class="field-input" />
           <p v-if="fieldErrors.title" class="field-error">{{ fieldErrors.title[0] }}</p>
         </div>
         <div>
-          <label class="field-label">Description</label>
+          <label class="field-label">{{ $t('media.photos.description') }}</label>
           <textarea v-model="editForm.description" class="field-input" rows="2" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="field-label">Concert</label>
+            <label class="field-label">{{ $t('media.photos.concert') }}</label>
             <select v-model="editForm.concert_id" class="field-input">
-              <option value="">— none —</option>
+              <option value="">{{ $t('media.photos.none') }}</option>
               <option v-for="c in concertsQ.data.value" :key="c.id" :value="String(c.id)">
                 {{ c.date }} — {{ c.venue?.name }}
               </option>
             </select>
           </div>
           <div>
-            <label class="field-label">Venue</label>
+            <label class="field-label">{{ $t('media.photos.venue') }}</label>
             <select v-model="editForm.venue_id" class="field-input">
-              <option value="">— none —</option>
+              <option value="">{{ $t('media.photos.none') }}</option>
               <option v-for="v in venuesQ.data.value" :key="v.id" :value="String(v.id)">{{ v.name }}</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="field-label">Taken at</label>
+            <label class="field-label">{{ $t('media.photos.takenAt') }}</label>
             <input v-model="editForm.taken_at" type="datetime-local" class="field-input" />
           </div>
           <div>
-            <label class="field-label">Publish at</label>
+            <label class="field-label">{{ $t('media.photos.publishAt') }}</label>
             <input v-model="editForm.published_at" type="datetime-local" class="field-input" />
           </div>
         </div>
         <div v-if="tagsQ.data.value?.length">
-          <label class="field-label">Tags</label>
+          <label class="field-label">{{ $t('media.photos.tags') }}</label>
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
               <input type="checkbox" :checked="editForm.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -334,16 +336,16 @@ async function confirmDelete() {
           </div>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" @click="showEdit = false" class="btn-ghost">Cancel</button>
+          <button type="button" @click="showEdit = false" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="update.isPending.value" class="btn-primary">
-            {{ update.isPending.value ? 'Saving…' : 'Save' }}
+            {{ update.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>
         </div>
       </form>
     </AdminModal>
 
     <!-- Photo grid modal -->
-    <AdminModal :open="showPhotos" :title="viewAlbum?.title ?? 'Photos'" max-width="64rem" @close="showPhotos = false">
+    <AdminModal :open="showPhotos" :title="viewAlbum?.title ?? $t('media.photos.photos')" max-width="64rem" @close="showPhotos = false">
       <div v-if="viewAlbum">
         <div class="photos-grid">
           <div
@@ -364,7 +366,7 @@ async function confirmDelete() {
               <button
                 class="photo-epk"
                 :class="{ 'photo-epk--on': photo.epk_featured }"
-                :title="photo.epk_featured ? 'Remove from EPK' : 'Add to EPK'"
+                :title="photo.epk_featured ? $t('media.photos.removeFromEpk') : $t('media.photos.addToEpk')"
                 @click.stop="toggleEpk(photo)"
               >★</button>
               <button
@@ -374,15 +376,15 @@ async function confirmDelete() {
               >✕</button>
             </div>
           </div>
-          <div v-if="!localPhotos.length" class="py-8 text-center text-sm" style="color:#475569;">No photos in this album.</div>
+          <div v-if="!localPhotos.length" class="py-8 text-center text-sm" style="color:#475569;">{{ $t('media.photos.noPhotos') }}</div>
         </div>
         <div v-if="orderDirty" class="reorder-bar">
-          <span class="reorder-hint">Drag photos to reorder</span>
+          <span class="reorder-hint">{{ $t('media.photos.dragToReorder') }}</span>
           <button @click="saveOrder" :disabled="reorderPhotos.isPending.value" class="btn-primary">
-            {{ reorderPhotos.isPending.value ? 'Saving…' : 'Save order' }}
+            {{ reorderPhotos.isPending.value ? $t('common.actions.saving') : $t('media.photos.saveOrder') }}
           </button>
         </div>
-        <div v-else-if="localPhotos.length" class="reorder-hint-idle">Drag photos to reorder</div>
+        <div v-else-if="localPhotos.length" class="reorder-hint-idle">{{ $t('media.photos.dragToReorder') }}</div>
       </div>
     </AdminModal>
 
