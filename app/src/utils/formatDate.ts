@@ -28,7 +28,20 @@ export function formatShortDate(date: string | null | undefined, locale: string)
   // helpers replaced produced "08 May 2026", and `en` through Intl gives
   // "May 8, 2026". That is what `en` means to the platform, and delegating
   // the choice is the point of the change.
-  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  //
+  // `timeZone: 'UTC'` is load-bearing, not tidiness. These are date-only
+  // values — a gig date, a photo's taken_at day — and `new Date('2026-05-08')`
+  // parses as UTC midnight. Rendering that in the viewer's zone shows the day
+  // BEFORE for every admin at a negative offset: "May 7" for a 8 May gig,
+  // across the setlist sidebar, the concert picker and every setlist.fm row.
+  // The hand-rolled formatters this replaced split the string and were
+  // structurally incapable of shifting, so the bug arrived with the helper.
+  return parsed.toLocaleDateString(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 }
 
 /** `245` → `4:05`. Seconds are data; the colon is not copy in any locale. */

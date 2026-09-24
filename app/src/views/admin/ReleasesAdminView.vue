@@ -57,7 +57,13 @@ const filteredData = computed(() => {
 
 const tc = useTableControls<ReleaseSummary>({
   data: filteredData,
-  searchFn: (r, q) => r.title.toLowerCase().includes(q) || r.type.toLowerCase().includes(q),
+  // Match the label the reader can see as well as the stored value. With
+  // only the latter, a Polish admin typing "singiel" got "no matches" while
+  // Singiel rows sat visibly in the table.
+  searchFn: (r, q) =>
+    r.title.toLowerCase().includes(q) ||
+    r.type.toLowerCase().includes(q) ||
+    t(`media.releases.types.${r.type}`).toLowerCase().includes(q),
   defaultSort: 'release_date',
   defaultDir: 'desc',
 })

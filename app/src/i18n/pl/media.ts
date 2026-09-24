@@ -101,7 +101,6 @@ export default {
     allStatuses: 'Wszystkie statusy',
     published: 'Opublikowane',
     draft: 'Szkic',
-    totalViews: 'łącznie wyświetleń: {n}',
     totalViewsLabel: 'wyświetleń łącznie',
     syncedAt: '· zsynchronizowano {at}',
     syncing: 'Synchronizowanie…',

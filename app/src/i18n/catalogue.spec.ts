@@ -191,6 +191,14 @@ describe('i18n catalogues', () => {
       }
     })
 
+    it('setlists.setlistEditor.transitions covers every SetlistTransition', () => {
+      // Built as a template literal in two places — the badge and the
+      // <select> — which check-i18n-keys cannot see, and which the
+      // `key: string` typing does not constrain either.
+      for (const tr of ['none', 'pause', 'segue', 'talk', 'end']) {
+        expect(has(`setlists.setlistEditor.transitions.${tr}`), tr).toBe(true)
+      }
+    })
     it('media.videos.hosts covers every videoHost() return', () => {
       // videoHost() returns a key now, not a label — YouTube and Vimeo are
       // brand names but the fallback is a generic noun that translates.

@@ -25,6 +25,23 @@ describe('formatShortDate', () => {
     expect(out).toContain('2026')
   })
 
+  it('renders the calendar day, not the viewer time zone', () => {
+    // A date-only value parses as UTC midnight. Formatted in the viewer's
+    // zone, every admin west of Greenwich would see the day BEFORE — "May 7"
+    // for an 8 May gig. This assertion is the one that would have caught it:
+    // the test above passes in Warsaw and in UTC CI and fails in New York,
+    // which is worse than no assertion because it reads as coverage.
+    const TZ = process.env.TZ
+    try {
+      for (const tz of ['UTC', 'Europe/Warsaw', 'America/Los_Angeles', 'Pacific/Honolulu']) {
+        process.env.TZ = tz
+        expect(formatShortDate('2026-05-08', 'en'), tz).toBe('May 8, 2026')
+      }
+    } finally {
+      process.env.TZ = TZ
+    }
+  })
+
   it('returns empty for null, undefined and empty string', () => {
     expect(formatShortDate(null, 'en')).toBe('')
     expect(formatShortDate(undefined, 'en')).toBe('')

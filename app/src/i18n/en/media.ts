@@ -103,7 +103,6 @@ export default {
     allStatuses: 'All statuses',
     published: 'Published',
     draft: 'Draft',
-    totalViews: '{n} total views',
     totalViewsLabel: 'total views',
     syncedAt: '· synced {at}',
     syncing: 'Syncing…',

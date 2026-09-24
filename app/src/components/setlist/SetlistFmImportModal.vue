@@ -41,6 +41,11 @@ async function doSearchArtist() {
 
 async function pickArtist(artist: SetlistFmArtist) {
   selectedArtist.value = artist
+  // Clear before the await. The step switches immediately, so a stale array
+  // would be counted under the new artist's name — "Artist – 12 setlists"
+  // above "Loading setlists…", or the previous artist's rows if the fetch
+  // fails. The old static "– setlists" heading could not be wrong.
+  setlists.value = []
   loadingSets.value = true
   step.value = 'setlists'
   try {
