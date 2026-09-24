@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, reactive, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useBandLogos } from '@/composables/useBandLogos'
 import { reportSaveError } from '@/utils/formErrors'
 import type { BandLogo, BandLogoPayload, LogoVariant, LogoBackground } from '@/types/bandLogo'
-import { LOGO_VARIANT_LABELS, LOGO_BACKGROUND_LABELS } from '@/types/bandLogo'
+import { LOGO_VARIANTS, LOGO_BACKGROUNDS } from '@/types/bandLogo'
+
+const { t } = useI18n()
 
 // ── Props / emits ─────────────────────────────────────────────────────────────
 
@@ -43,11 +46,11 @@ const ALLOWED   = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 
 function pickFile(file: File) {
   if (!ALLOWED.includes(file.type)) {
-    toast.error('Unsupported file type. Use PNG, JPG, WebP, or SVG.')
+    toast.error(t('band.logos.badType'))
     return
   }
   if (file.size > MAX_BYTES) {
-    toast.error('File exceeds 4 MB limit.')
+    toast.error(t('band.logos.tooLarge'))
     return
   }
   pendingFile.value = file
@@ -89,10 +92,10 @@ async function doUpload() {
         version_label: uploadForm.version_label || null,
       },
     })
-    toast.success('Logo uploaded')
+    toast.success(t('band.logos.uploaded'))
     cancelPending()
   } catch (e) {
-    reportSaveError(e, 'Upload failed')
+    reportSaveError(e, t('band.logos.uploadFailed'))
   }
 }
 
@@ -123,10 +126,10 @@ function cancelEdit() {
 async function saveEdit(id: number) {
   try {
     await update.mutateAsync({ id, payload: { ...editForm } })
-    toast.success('Logo updated')
+    toast.success(t('band.logos.updated'))
     editingId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to save changes')
+    reportSaveError(e, t('band.logos.saveFailed'))
   }
 }
 
@@ -135,9 +138,9 @@ async function saveEdit(id: number) {
 async function doSetDefault(id: number) {
   try {
     await setDefault.mutateAsync(id)
-    toast.success('Default logo updated')
+    toast.success(t('band.logos.defaultUpdated'))
   } catch (e) {
-    reportSaveError(e, 'Failed to set default')
+    reportSaveError(e, t('band.logos.defaultFailed'))
   }
 }
 
@@ -146,9 +149,9 @@ async function doSetDefault(id: number) {
 async function toggleDeprecated(logo: BandLogo) {
   try {
     await update.mutateAsync({ id: logo.id, payload: { is_deprecated: !logo.is_deprecated } })
-    toast.success(logo.is_deprecated ? 'Logo restored' : 'Logo marked as deprecated')
+    toast.success(logo.is_deprecated ? t('band.logos.restored') : t('band.logos.deprecatedToast'))
   } catch (e) {
-    reportSaveError(e, 'Failed to update status')
+    reportSaveError(e, t('band.logos.statusFailed'))
   }
 }
 
@@ -167,10 +170,10 @@ function cancelDelete() {
 async function doDelete(id: number) {
   try {
     await remove.mutateAsync(id)
-    toast.success('Logo deleted')
+    toast.success(t('band.logos.deleted'))
     confirmDeleteId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to delete logo')
+    reportSaveError(e, t('band.logos.deleteFailed'))
   }
 }
 
@@ -202,13 +205,13 @@ const activeLogos = computed(() =>
 function formatBytes(bytes: number | null): string {
   if (bytes === null) return '—'
   if (bytes < 1024)       return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB` // i18n-ignore: unit
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB` // i18n-ignore: unit
 }
 
 function formatDims(logo: BandLogo): string {
-  if (logo.is_vector) return 'Vector'
-  if (logo.width && logo.height) return `${logo.width} × ${logo.height} px`
+  if (logo.is_vector) return t('band.logos.vector')
+  if (logo.width && logo.height) return t('band.logos.dimensions', { w: logo.width, h: logo.height })
   return '—'
 }
 
@@ -222,7 +225,7 @@ function isAnyUpdatePending(id: number): boolean {
 
     <!-- ── Upload area ──────────────────────────────────────────────────────── -->
     <section class="blm-section">
-      <h3 class="blm-section-title">Upload a logo</h3>
+      <h3 class="blm-section-title">{{ $t('band.logos.upload') }}</h3>
 
       <div v-if="!pendingFile">
         <div
@@ -237,8 +240,8 @@ function isAnyUpdatePending(id: number): boolean {
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          <span class="blm-drop-label">Drop logo here or click to browse</span>
-          <span class="blm-drop-hint">PNG, JPG, WebP, SVG — max 4 MB</span>
+          <span class="blm-drop-label">{{ $t('band.logos.dropzone') }}</span>
+          <span class="blm-drop-hint">{{ $t('band.logos.dropzoneHint') }}</span>
           <input
             ref="fileInput"
             type="file"
@@ -257,39 +260,39 @@ function isAnyUpdatePending(id: number): boolean {
 
         <div class="blm-upload-fields">
           <div class="blm-field">
-            <label class="field-label">Label <span class="blm-optional">(optional)</span></label>
-            <input v-model="uploadForm.label" class="field-input" placeholder="e.g. Primary full-colour" />
+            <label class="field-label">{{ $t('band.logos.label') }} <span class="blm-optional">{{ $t('content.pitch.optional') }}</span></label>
+            <input v-model="uploadForm.label" class="field-input" :placeholder="$t('band.logos.labelPlaceholder')" />
           </div>
 
           <div class="blm-field-row">
             <div class="blm-field">
-              <label class="field-label">Variant</label>
+              <label class="field-label">{{ $t('band.logos.variant') }}</label>
               <select v-model="uploadForm.variant" class="field-input">
-                <option v-for="(label, key) in LOGO_VARIANT_LABELS" :key="key" :value="key">{{ label }}</option>
+                <option v-for="key in LOGO_VARIANTS" :key="key" :value="key">{{ $t(`band.logos.variants.${key}`) }}</option>
               </select>
             </div>
             <div class="blm-field">
-              <label class="field-label">Background</label>
+              <label class="field-label">{{ $t('band.logos.background') }}</label>
               <select v-model="uploadForm.background" class="field-input">
-                <option v-for="(label, key) in LOGO_BACKGROUND_LABELS" :key="key" :value="key">{{ label }}</option>
+                <option v-for="key in LOGO_BACKGROUNDS" :key="key" :value="key">{{ $t(`band.logos.backgrounds.${key}`) }}</option>
               </select>
             </div>
           </div>
 
           <div class="blm-field">
-            <label class="field-label">Version label <span class="blm-optional">(optional)</span></label>
-            <input v-model="uploadForm.version_label" class="field-input" placeholder="e.g. v2 2024" />
+            <label class="field-label">{{ $t('band.logos.versionLabel') }} <span class="blm-optional">{{ $t('content.pitch.optional') }}</span></label>
+            <input v-model="uploadForm.version_label" class="field-input" :placeholder="$t('band.logos.versionPlaceholder')" />
           </div>
 
           <div class="blm-upload-actions">
-            <button type="button" class="btn-ghost" @click="cancelPending">Cancel</button>
+            <button type="button" class="btn-ghost" @click="cancelPending">{{ $t('common.actions.cancel') }}</button>
             <button
               type="button"
               class="btn-primary"
               :disabled="upload.isPending.value"
               @click="doUpload"
             >
-              {{ upload.isPending.value ? 'Uploading…' : 'Upload logo' }}
+              {{ upload.isPending.value ? $t('band.logos.uploading') : $t('band.logos.uploadButton') }}
             </button>
           </div>
         </div>
@@ -299,13 +302,13 @@ function isAnyUpdatePending(id: number): boolean {
     <!-- ── Logo grid ────────────────────────────────────────────────────────── -->
     <section class="blm-section">
       <h3 class="blm-section-title">
-        Logos
+        {{ $t('band.logos.title') }}
         <span v-if="list.data.value" class="blm-count">{{ list.data.value.length }}</span>
       </h3>
 
-      <div v-if="list.isPending.value" class="blm-loading">Loading logos…</div>
-      <div v-else-if="list.isError.value" class="blm-error">Failed to load logos.</div>
-      <div v-else-if="!list.data.value?.length" class="blm-empty">No logos uploaded yet.</div>
+      <div v-if="list.isPending.value" class="blm-loading">{{ $t('band.logos.loading') }}</div>
+      <div v-else-if="list.isError.value" class="blm-error">{{ $t('band.logos.loadFailed') }}</div>
+      <div v-else-if="!list.data.value?.length" class="blm-empty">{{ $t('band.logos.empty') }}</div>
 
       <div v-else class="blm-grid">
         <div
@@ -322,10 +325,10 @@ function isAnyUpdatePending(id: number): boolean {
             <div class="blm-badges">
               <span v-if="logo.is_default" class="blm-badge blm-badge--default">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                DEFAULT
+                {{ $t('band.logos.badgeDefault') }}
               </span>
-              <span v-if="logo.is_vector" class="blm-badge blm-badge--vector">SVG</span>
-              <span v-if="logo.is_deprecated" class="blm-badge blm-badge--deprecated">DEPRECATED</span>
+              <span v-if="logo.is_vector" class="blm-badge blm-badge--vector">SVG</span> <!-- i18n-ignore: file format acronym -->
+              <span v-if="logo.is_deprecated" class="blm-badge blm-badge--deprecated">{{ $t('band.logos.badgeDeprecated') }}</span>
             </div>
           </div>
 
@@ -333,8 +336,8 @@ function isAnyUpdatePending(id: number): boolean {
           <div class="blm-card-body">
             <!-- Meta chips -->
             <div class="blm-chips">
-              <span class="blm-chip">{{ LOGO_VARIANT_LABELS[logo.variant] }}</span>
-              <span class="blm-chip">{{ LOGO_BACKGROUND_LABELS[logo.background] }}</span>
+              <span class="blm-chip">{{ $t(`band.logos.variants.${logo.variant}`) }}</span>
+              <span class="blm-chip">{{ $t(`band.logos.backgrounds.${logo.background}`) }}</span>
             </div>
 
             <!-- Label / version -->
@@ -355,11 +358,11 @@ function isAnyUpdatePending(id: number): boolean {
                 type="button"
                 class="blm-action-btn blm-action-btn--star"
                 :disabled="logo.is_default || logo.is_deprecated || setDefault.isPending.value"
-                :title="logo.is_default ? 'Already default' : 'Set as default'"
+                :title="logo.is_default ? $t('band.logos.alreadyDefault') : $t('band.logos.setDefault')"
                 @click="doSetDefault(logo.id)"
               >
                 <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                Default
+                {{ $t('band.logos.isDefault') }}
               </button>
 
               <button
@@ -369,7 +372,7 @@ function isAnyUpdatePending(id: number): boolean {
                 :disabled="isAnyUpdatePending(logo.id)"
                 @click="toggleDeprecated(logo)"
               >
-                {{ logo.is_deprecated ? 'Restore' : 'Deprecate' }}
+                {{ logo.is_deprecated ? $t('band.logos.restore') : $t('band.logos.deprecate') }}
               </button>
 
               <button
@@ -378,7 +381,7 @@ function isAnyUpdatePending(id: number): boolean {
                 :disabled="isAnyUpdatePending(logo.id)"
                 @click="editingId === logo.id ? cancelEdit() : openEdit(logo)"
               >
-                {{ editingId === logo.id ? 'Cancel' : 'Edit' }}
+                {{ editingId === logo.id ? $t('common.actions.cancel') : $t('common.actions.edit') }}
               </button>
 
               <button
@@ -387,51 +390,51 @@ function isAnyUpdatePending(id: number): boolean {
                 :disabled="remove.isPending.value"
                 @click="askDelete(logo.id)"
               >
-                Delete
+                {{ $t('common.actions.delete') }}
               </button>
             </div>
 
             <!-- Delete confirm -->
             <div v-else class="blm-confirm-delete">
-              <span class="blm-confirm-text">Delete this logo?</span>
+              <span class="blm-confirm-text">{{ $t('band.logos.confirmDelete') }}</span>
               <button type="button" class="blm-action-btn blm-action-btn--delete" :disabled="remove.isPending.value" @click="doDelete(logo.id)">
-                {{ remove.isPending.value ? 'Deleting…' : 'Yes, delete' }}
+                {{ remove.isPending.value ? $t('common.actions.deleting') : $t('band.logos.confirmYes') }}
               </button>
-              <button type="button" class="blm-action-btn" @click="cancelDelete">Cancel</button>
+              <button type="button" class="blm-action-btn" @click="cancelDelete">{{ $t('common.actions.cancel') }}</button>
             </div>
 
             <!-- Inline edit form -->
             <div v-if="editingId === logo.id" class="blm-edit-form">
               <div class="blm-field">
-                <label class="field-label">Label</label>
-                <input v-model="editForm.label" class="field-input field-input--sm" placeholder="e.g. Primary full-colour" />
+                <label class="field-label">{{ $t('band.logos.label') }}</label>
+                <input v-model="editForm.label" class="field-input field-input--sm" :placeholder="$t('band.logos.labelPlaceholder')" />
               </div>
               <div class="blm-field-row">
                 <div class="blm-field">
-                  <label class="field-label">Variant</label>
+                  <label class="field-label">{{ $t('band.logos.variant') }}</label>
                   <select v-model="editForm.variant" class="field-input field-input--sm">
-                    <option v-for="(lbl, key) in LOGO_VARIANT_LABELS" :key="key" :value="key">{{ lbl }}</option>
+                    <option v-for="key in LOGO_VARIANTS" :key="key" :value="key">{{ $t(`band.logos.variants.${key}`) }}</option>
                   </select>
                 </div>
                 <div class="blm-field">
-                  <label class="field-label">Background</label>
+                  <label class="field-label">{{ $t('band.logos.background') }}</label>
                   <select v-model="editForm.background" class="field-input field-input--sm">
-                    <option v-for="(lbl, key) in LOGO_BACKGROUND_LABELS" :key="key" :value="key">{{ lbl }}</option>
+                    <option v-for="key in LOGO_BACKGROUNDS" :key="key" :value="key">{{ $t(`band.logos.backgrounds.${key}`) }}</option>
                   </select>
                 </div>
               </div>
               <div class="blm-field">
-                <label class="field-label">Version label</label>
-                <input v-model="editForm.version_label" class="field-input field-input--sm" placeholder="e.g. v2 2024" />
+                <label class="field-label">{{ $t('band.logos.versionLabel') }}</label>
+                <input v-model="editForm.version_label" class="field-input field-input--sm" :placeholder="$t('band.logos.versionPlaceholder')" />
               </div>
               <div class="blm-field">
-                <label class="field-label">Notes</label>
-                <textarea v-model="editForm.notes" class="field-input field-input--sm" rows="2" placeholder="Internal notes…" />
+                <label class="field-label">{{ $t('band.logos.notes') }}</label>
+                <textarea v-model="editForm.notes" class="field-input field-input--sm" rows="2" :placeholder="$t('band.logos.notesPlaceholder')" />
               </div>
               <div class="blm-edit-actions">
-                <button type="button" class="btn-ghost btn-ghost--sm" @click="cancelEdit">Cancel</button>
+                <button type="button" class="btn-ghost btn-ghost--sm" @click="cancelEdit">{{ $t('common.actions.cancel') }}</button>
                 <button type="button" class="btn-primary btn-primary--sm" :disabled="isAnyUpdatePending(logo.id)" @click="saveEdit(logo.id)">
-                  {{ isAnyUpdatePending(logo.id) ? 'Saving…' : 'Save' }}
+                  {{ isAnyUpdatePending(logo.id) ? $t('common.actions.saving') : $t('common.actions.save') }}
                 </button>
               </div>
             </div>
@@ -442,14 +445,14 @@ function isAnyUpdatePending(id: number): boolean {
 
     <!-- ── Context pins ─────────────────────────────────────────────────────── -->
     <section class="blm-section blm-pins-section">
-      <h3 class="blm-section-title">Context-specific logo overrides</h3>
-      <p class="blm-pins-hint">Each context falls back to the global default when not set.</p>
+      <h3 class="blm-section-title">{{ $t('band.logos.pinsTitle') }}</h3>
+      <p class="blm-pins-hint">{{ $t('band.logos.pinsHint') }}</p>
 
       <div class="blm-pins-list">
         <div class="blm-pin-row">
-          <label class="blm-pin-label">EPK logo</label>
+          <label class="blm-pin-label">{{ $t('band.logos.pinEpk') }}</label>
           <select v-model="pins.epk_logo_id" class="field-input blm-pin-select">
-            <option :value="null">— Use default —</option>
+            <option :value="null">{{ $t('band.logos.useDefault') }}</option>
             <option v-for="l in activeLogos" :key="l.id" :value="l.id">
               {{ l.label ?? l.original_name }}
               <template v-if="l.version_label"> · {{ l.version_label }}</template>
@@ -458,9 +461,9 @@ function isAnyUpdatePending(id: number): boolean {
         </div>
 
         <div class="blm-pin-row">
-          <label class="blm-pin-label">Tech Rider logo</label>
+          <label class="blm-pin-label">{{ $t('band.logos.pinRider') }}</label>
           <select v-model="pins.tech_rider_logo_id" class="field-input blm-pin-select">
-            <option :value="null">— Use default —</option>
+            <option :value="null">{{ $t('band.logos.useDefault') }}</option>
             <option v-for="l in activeLogos" :key="l.id" :value="l.id">
               {{ l.label ?? l.original_name }}
               <template v-if="l.version_label"> · {{ l.version_label }}</template>
@@ -469,9 +472,9 @@ function isAnyUpdatePending(id: number): boolean {
         </div>
 
         <div class="blm-pin-row">
-          <label class="blm-pin-label">Website logo</label>
+          <label class="blm-pin-label">{{ $t('band.logos.pinWebsite') }}</label>
           <select v-model="pins.website_logo_id" class="field-input blm-pin-select">
-            <option :value="null">— Use default —</option>
+            <option :value="null">{{ $t('band.logos.useDefault') }}</option>
             <option v-for="l in activeLogos" :key="l.id" :value="l.id">
               {{ l.label ?? l.original_name }}
               <template v-if="l.version_label"> · {{ l.version_label }}</template>
@@ -487,7 +490,7 @@ function isAnyUpdatePending(id: number): boolean {
           :disabled="savingPins"
           @click="savePins"
         >
-          {{ savingPins ? 'Saving…' : 'Save pins' }}
+          {{ savingPins ? $t('common.actions.saving') : $t('band.logos.savePins') }}
         </button>
       </div>
     </section>

@@ -12,17 +12,19 @@ defineEmits<{
 
 <template>
   <div class="about-variant-row">
-    <label class="field-label" for="about-bio-variant">Shown on public About page</label>
+    <label class="field-label" for="about-bio-variant">{{ $t('band.profile.bio.aboutVariantLabel') }}</label>
     <select
       id="about-bio-variant"
       :value="modelValue"
       class="field-input about-variant-select"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as BioVariant)"
     >
-      <option value="short">One-liner</option>
-      <option value="medium">Short</option>
-      <option value="long">Long</option>
-      <option value="full">Full</option>
+      <!-- The same four labels the Bio tab's variant tabs use — one set of
+           strings, so the tab and this selector can never drift apart. -->
+      <option value="short">{{ $t('band.profile.bio.variants.short') }}</option>
+      <option value="medium">{{ $t('band.profile.bio.variants.medium') }}</option>
+      <option value="long">{{ $t('band.profile.bio.variants.long') }}</option>
+      <option value="full">{{ $t('band.profile.bio.variants.full') }}</option>
     </select>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -19,6 +20,8 @@ import type { BioVariant } from '@/types/bandProfile'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
+
+const { t } = useI18n()
 
 const { query, update, syncFb } = useBandProfile()
 const { query: releasesQ } = useReleases()
@@ -48,11 +51,11 @@ const snapshotReason    = ref('')
 async function createSnapshot() {
   try {
     await createVersion.mutateAsync({ release_reason: snapshotReason.value || null })
-    toast.success('EPK snapshot created — review it on the Dashboard')
+    toast.success(t('band.profile.epk.created'))
     showSnapshotModal.value = false
     snapshotReason.value = ''
   } catch (e) {
-    reportSaveError(e, 'Failed to create snapshot')
+    reportSaveError(e, t('band.profile.epk.createFailed'))
   }
 }
 
@@ -188,9 +191,9 @@ async function saveProfile() {
     saved.value = true
     markClean()
     setTimeout(() => { saved.value = false }, 2000)
-    toast.success('Profile saved')
+    toast.success(t('band.profile.saved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save', fieldErrors)
+    reportSaveError(e, t('band.profile.saveFailed'), fieldErrors)
   } finally {
     saving.value = false
   }
@@ -199,18 +202,18 @@ async function saveProfile() {
 async function saveContextPins() {
   try {
     await update.mutateAsync(contextPins)
-    toast.success('Logo settings saved')
+    toast.success(t('band.profile.logoSaved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save logo settings')
+    reportSaveError(e, t('band.profile.logoSaveFailed'))
   }
 }
 
 async function doSyncFb() {
   try {
     const result = await syncFb.mutateAsync()
-    toast.success(`${result.likes.toLocaleString()} Facebook likes synced`)
+    toast.success(t('band.profile.stats.fbSynced', { likes: result.likes.toLocaleString() }))
   } catch (e) {
-    reportSaveError(e, 'Failed to sync Facebook likes')
+    reportSaveError(e, t('band.profile.stats.fbSyncFailed'))
   }
 }
 
@@ -235,9 +238,9 @@ async function saveSocialLinks() {
   savingLinks.value = true
   try {
     await linksSync.mutateAsync(profileLinks.value)
-    toast.success('Social links saved')
+    toast.success(t('band.profile.social.saved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save social links')
+    reportSaveError(e, t('band.profile.social.saveFailed'))
   } finally {
     savingLinks.value = false
   }
@@ -248,12 +251,12 @@ async function saveSocialLinks() {
   <AdminLayout>
     <div class="p-8 max-w-3xl">
       <div class="mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Band Profile</h1>
-        <p class="text-xs mt-0.5" style="color:#475569;">Bio, career info, social links, contacts, stats, and EPK settings.</p>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('band.profile.title') }}</h1>
+        <p class="text-xs mt-0.5" style="color:#475569;">{{ $t('band.profile.subtitle') }}</p>
       </div>
 
-      <div v-if="query.isPending.value" class="py-16 text-center text-sm" style="color:#475569;">Loading…</div>
-      <div v-else-if="query.isError.value" class="py-16 text-center text-sm" style="color:#f87171;">Failed to load profile.</div>
+      <div v-if="query.isPending.value" class="py-16 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="query.isError.value" class="py-16 text-center text-sm" style="color:#f87171;">{{ $t('band.profile.loadFailed') }}</div>
 
       <template v-else>
         <div class="section-tabs mb-6" role="tablist">
@@ -267,10 +270,10 @@ async function saveSocialLinks() {
             :aria-selected="section === s"
             @click="section = s"
           >
-            {{ s === 'bio' ? 'Bio' : s === 'career' ? 'Career' : s === 'social' ? 'Social' : s === 'contacts' ? 'Contacts' : s === 'stats' ? 'Stats' : 'EPK' }}
+            {{ $t(`band.profile.tabs.${s}`) }}
           </button>
           <button key="logo" type="button" role="tab" class="section-tab" :class="{ active: section === 'logo' }" :aria-selected="section === 'logo'" @click="section = 'logo'">
-            Logo
+            {{ $t('band.profile.tabs.logo') }}
           </button>
         </div>
 
@@ -279,13 +282,13 @@ async function saveSocialLinks() {
           <!-- ── BIO ─────────────────────────────────────────── -->
           <template v-if="section === 'bio'">
             <div>
-              <label class="field-label">Band name <span class="field-req">*</span></label>
-              <input v-model="form.name" required class="field-input" placeholder="Your band name" />
+              <label class="field-label">{{ $t('band.profile.bio.name') }} <span class="field-req">*</span></label>
+              <input v-model="form.name" required class="field-input" :placeholder="$t('band.profile.bio.namePlaceholder')" />
               <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name[0] }}</p>
             </div>
 
             <div>
-              <label class="field-label">Bio</label>
+              <label class="field-label">{{ $t('band.profile.bio.label') }}</label>
               <div class="bio-tabs-row">
                 <div class="bio-tabs">
                   <button
@@ -296,51 +299,51 @@ async function saveSocialLinks() {
                     :class="{ active: bioTab === tab, 'has-error': bioTabHasError(tab) }"
                     @click="bioTab = tab"
                   >
-                    {{ tab === 'short' ? 'One-liner' : tab === 'medium' ? 'Short' : tab === 'long' ? 'Long' : 'Full' }}
+                    {{ $t(`band.profile.bio.variants.${tab}`) }}
                   </button>
                 </div>
                 <div class="bio-lang-switcher">
-                  <button type="button" class="bio-lang-btn" :class="{ active: bioLang === 'en' }" @click="bioLang = 'en'">EN</button>
-                  <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button>
+                  <button type="button" class="bio-lang-btn" :class="{ active: bioLang === 'en' }" @click="bioLang = 'en'">EN</button> <!-- i18n-ignore: locale code -->
+                  <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button> <!-- i18n-ignore: locale code -->
                 </div>
               </div>
 
               <AboutBioVariantSelect v-model="form.about_bio_variant" />
 
               <div v-show="bioTab === 'short'" class="bio-panel">
-                <div class="bio-hint">Festival lineups, social media bios, radio intros — 1 sentence, ≤280 chars.</div>
+                <div class="bio-hint">{{ $t('band.profile.bio.shortHint') }}</div>
                 <div class="char-wrap">
                   <textarea v-show="bioLang === 'en'" v-model="form.bio_short_en" class="field-input bio-plain" rows="2"
-                    placeholder="A single punchy sentence that captures your sound…" maxlength="300" />
+                    :placeholder="$t('band.profile.bio.shortPlaceholderEn')" maxlength="300" />
                   <textarea v-show="bioLang === 'pl'" v-model="form.bio_short_pl" class="field-input bio-plain" rows="2"
-                    placeholder="Jedno zdanie oddające Wasze brzmienie…" maxlength="300" />
+                    :placeholder="$t('band.profile.bio.shortPlaceholderPl')" maxlength="300" />
                   <span class="char-count" :class="{ warn: shortChars > 240, over: shortOverLimit }">
-                    {{ shortChars }}&thinsp;/&thinsp;280
+                    {{ shortChars }}&thinsp;/&thinsp;280 <!-- i18n-ignore: digits and thin-space markup -->
                   </span>
                 </div>
                 <p v-if="fieldErrors.bio_short" class="field-error">{{ fieldErrors.bio_short[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'medium'" class="bio-panel">
-                <div class="bio-hint">Event listings, concert programs, booking emails — 2–3 sentences.</div>
+                <div class="bio-hint">{{ $t('band.profile.bio.mediumHint') }}</div>
                 <textarea v-show="bioLang === 'en'" v-model="form.bio_medium_en" class="field-input bio-plain" rows="3"
-                  placeholder="2–3 sentences covering where you're from, your sound, and a key highlight…" />
+                  :placeholder="$t('band.profile.bio.mediumPlaceholderEn')" />
                 <textarea v-show="bioLang === 'pl'" v-model="form.bio_medium_pl" class="field-input bio-plain" rows="3"
-                  placeholder="2–3 zdania o Waszym brzmieniu i kluczowych momentach…" />
+                  :placeholder="$t('band.profile.bio.mediumPlaceholderPl')" />
                 <p v-if="fieldErrors.bio_medium" class="field-error">{{ fieldErrors.bio_medium[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'long'" class="bio-panel">
-                <div class="bio-hint">EPK documents, label/booking agency profiles, magazine features — 2–3 paragraphs.</div>
-                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_long_en" placeholder="Craft the story across 2–3 paragraphs…" />
-                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_long_pl" placeholder="Napisz historię w 2–3 akapitach…" />
+                <div class="bio-hint">{{ $t('band.profile.bio.longHint') }}</div>
+                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_long_en" :placeholder="$t('band.profile.bio.longPlaceholderEn')" />
+                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_long_pl" :placeholder="$t('band.profile.bio.longPlaceholderPl')" />
                 <p v-if="fieldErrors.bio_long" class="field-error">{{ fieldErrors.bio_long[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
-                <div class="bio-hint">Grant applications, full press kit — no length limit. Select above to also show this on the public About page.</div>
-                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" placeholder="Write the full press biography…" />
-                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" placeholder="Napisz pełną biografię prasową…" />
+                <div class="bio-hint">{{ $t('band.profile.bio.fullHint') }}</div>
+                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" :placeholder="$t('band.profile.bio.fullPlaceholderEn')" />
+                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" :placeholder="$t('band.profile.bio.fullPlaceholderPl')" />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>
               </div>
             </div>
@@ -348,18 +351,18 @@ async function saveSocialLinks() {
 
           <!-- ── CAREER ──────────────────────────────────────── -->
           <template v-if="section === 'career'">
-            <div class="section-hint">Used on your EPK, booking profile, and industry pitches.</div>
+            <div class="section-hint">{{ $t('band.profile.careerTab.hint') }}</div>
 
             <div>
-              <label class="field-label">Band level</label>
-              <p class="field-hint" style="margin-bottom:0.625rem;">Sets which career checklist is shown on the dashboard and signals your current stage to the promotion tutor.</p>
+              <label class="field-label">{{ $t('band.profile.careerTab.level') }}</label>
+              <p class="field-hint" style="margin-bottom:0.625rem;">{{ $t('band.profile.careerTab.levelHint') }}</p>
               <div class="career-level-grid">
                 <button
                   v-for="lvl in ([
-                    { value: 1, emoji: '🎸', name: 'Garage Band',  sub: 'Just starting out' },
-                    { value: 2, emoji: '🌿', name: 'Local Band',   sub: 'Building an audience' },
-                    { value: 3, emoji: '🏆', name: 'Pro Band',     sub: 'Industry presence' },
-                    { value: 4, emoji: '⚙️', name: 'Custom',       sub: 'Define your own goals' },
+                    { value: 1, emoji: '🎸' },
+                    { value: 2, emoji: '🌿' },
+                    { value: 3, emoji: '🏆' },
+                    { value: 4, emoji: '⚙️' },
                   ] as const)"
                   :key="lvl.value"
                   type="button"
@@ -368,43 +371,43 @@ async function saveSocialLinks() {
                   @click="form.career_level = lvl.value"
                 >
                   <span class="career-level-emoji">{{ lvl.emoji }}</span>
-                  <span class="career-level-name">{{ lvl.name }}</span>
-                  <span class="career-level-sub">{{ lvl.sub }}</span>
+                  <span class="career-level-name">{{ $t(`band.career.levels.l${lvl.value}.name`) }}</span>
+                  <span class="career-level-sub">{{ $t(`band.career.levels.l${lvl.value}.sub`) }}</span>
                 </button>
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="field-label">Formation year</label>
-                <input v-model="form.formation_year" type="number" min="1900" max="2100" class="field-input" placeholder="e.g. 2018" />
+                <label class="field-label">{{ $t('band.profile.careerTab.formationYear') }}</label>
+                <input v-model="form.formation_year" type="number" min="1900" max="2100" class="field-input" :placeholder="$t('band.profile.careerTab.formationYearPlaceholder')" />
               </div>
               <div>
-                <label class="field-label">Hometown / Base</label>
-                <input v-model="form.hometown" class="field-input" placeholder="e.g. London, UK" />
+                <label class="field-label">{{ $t('band.profile.careerTab.hometown') }}</label>
+                <input v-model="form.hometown" class="field-input" :placeholder="$t('band.profile.careerTab.hometownPlaceholder')" />
               </div>
               <div class="col-span-2">
-                <label class="field-label">Genres</label>
-                <input v-model="form.genres" class="field-input" placeholder="e.g. Ska, Punk, Reggae" />
-                <p class="field-hint">Comma-separated — shown as badges on your EPK.</p>
+                <label class="field-label">{{ $t('band.profile.careerTab.genres') }}</label>
+                <input v-model="form.genres" class="field-input" :placeholder="$t('band.profile.careerTab.genresPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.careerTab.genresHint') }}</p>
               </div>
               <div class="col-span-2">
-                <label class="field-label">For fans of…</label>
-                <input v-model="form.comparable_artists" class="field-input" placeholder="e.g. Rancid, The Specials, Madness" />
-                <p class="field-hint">Comparable artists — helps booking agents and curators place you.</p>
+                <label class="field-label">{{ $t('band.profile.careerTab.comparable') }}</label>
+                <input v-model="form.comparable_artists" class="field-input" :placeholder="$t('band.profile.careerTab.comparablePlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.careerTab.comparableHint') }}</p>
               </div>
             </div>
           </template>
 
           <!-- ── SOCIAL LINKS ──────────────────────────────────── -->
           <template v-if="section === 'social'">
-            <div class="section-hint">Band-level streaming &amp; social profiles — shown publicly on your EPK and Contact page.</div>
-            <div v-if="linksQuery.isPending.value" class="py-4 text-center text-xs" style="color:#475569;">Loading…</div>
+            <div class="section-hint">{{ $t('band.profile.social.hint') }}</div>
+            <div v-if="linksQuery.isPending.value" class="py-4 text-center text-xs" style="color:#475569;">{{ $t('common.state.loading') }}</div>
             <template v-else>
               <SocialLinksEditor v-model="profileLinks" />
               <div class="flex justify-end pt-2">
                 <button type="button" :disabled="savingLinks" class="btn-save" @click="saveSocialLinks">
-                  {{ savingLinks ? 'Saving…' : 'Save social links' }}
+                  {{ savingLinks ? $t('common.actions.saving') : $t('band.profile.social.save') }}
                 </button>
               </div>
             </template>
@@ -412,56 +415,56 @@ async function saveSocialLinks() {
 
           <!-- ── CONTACTS ────────────────────────────────────── -->
           <template v-if="section === 'contacts'">
-            <div class="section-hint">Shown publicly on your EPK — use role-specific addresses, not personal ones.</div>
+            <div class="section-hint">{{ $t('band.profile.contacts.hint') }}</div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="field-label">Booking email</label>
-                <input v-model="form.booking_email" type="email" class="field-input" placeholder="booking@yourband.com" />
-                <p class="field-hint">For venue managers, festival bookers, agents.</p>
+                <label class="field-label">{{ $t('band.profile.contacts.booking') }}</label>
+                <input v-model="form.booking_email" type="email" class="field-input" :placeholder="$t('band.profile.contacts.bookingPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.contacts.bookingHint') }}</p>
               </div>
               <div>
-                <label class="field-label">Press / PR email</label>
-                <input v-model="form.press_email" type="email" class="field-input" placeholder="press@yourband.com" />
-                <p class="field-hint">For journalists, bloggers, playlist curators.</p>
+                <label class="field-label">{{ $t('band.profile.contacts.press') }}</label>
+                <input v-model="form.press_email" type="email" class="field-input" :placeholder="$t('band.profile.contacts.pressPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.contacts.pressHint') }}</p>
               </div>
               <div>
-                <label class="field-label">General contact email</label>
-                <input v-model="form.contact_email" type="email" class="field-input" placeholder="hello@yourband.com" />
-                <p class="field-hint">Shown as the "General" address on the contact page. Defaults to hello@skankingstorks.com if left blank.</p>
+                <label class="field-label">{{ $t('band.profile.contacts.general') }}</label>
+                <input v-model="form.contact_email" type="email" class="field-input" :placeholder="$t('band.profile.contacts.generalPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.contacts.generalHint') }}</p>
               </div>
               <div>
-                <label class="field-label">Tech contact email</label>
-                <input v-model="form.tech_contact_email" type="email" class="field-input" placeholder="tech@yourband.com" />
-                <p class="field-hint">For venue sound engineers — appears in the tech rider header.</p>
+                <label class="field-label">{{ $t('band.profile.contacts.techEmail') }}</label>
+                <input v-model="form.tech_contact_email" type="email" class="field-input" :placeholder="$t('band.profile.contacts.techEmailPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.contacts.techEmailHint') }}</p>
               </div>
               <div>
-                <label class="field-label">Tech contact phone</label>
-                <input v-model="form.tech_contact_phone" type="tel" class="field-input" placeholder="+48 600 000 000" />
-                <p class="field-hint">Direct line for the stage/tour manager on show day.</p>
+                <label class="field-label">{{ $t('band.profile.contacts.techPhone') }}</label>
+                <input v-model="form.tech_contact_phone" type="tel" class="field-input" placeholder="+48 600 000 000" /> <!-- i18n-ignore: a phone-number shape, not prose -->
+                <p class="field-hint">{{ $t('band.profile.contacts.techPhoneHint') }}</p>
               </div>
               <div class="col-span-2">
-                <label class="field-label">Sound engineer description <span style="color:#475569;font-weight:400">(for tech rider cover)</span></label>
+                <label class="field-label">{{ $t('band.profile.contacts.engineer') }} <span style="color:#475569;font-weight:400">{{ $t('band.profile.contacts.engineerSuffix') }}</span></label>
                 <textarea v-model="form.tech_rider_notes" class="field-input" rows="4"
-                  placeholder="Brief description for the sound engineer — e.g. 'We are a 5-piece ska-punk band. Our show is fast-paced and loud. The most important elements are a punchy kick drum and a tight low-end mix. The bassist uses a Sansamp DI — please ensure gain staging is set appropriately.'" />
-                <p class="field-hint">Appears in the cover section of every tech rider you generate. Describe your sound, stage energy, and any key technical considerations.</p>
+                  :placeholder="$t('band.profile.contacts.engineerPlaceholder')" />
+                <p class="field-hint">{{ $t('band.profile.contacts.engineerHint') }}</p>
               </div>
             </div>
           </template>
 
           <!-- ── STATS ───────────────────────────────────────── -->
           <template v-if="section === 'stats'">
-            <div class="section-hint">Enter your current numbers manually — these appear on your EPK as social proof. Update them periodically.</div>
+            <div class="section-hint">{{ $t('band.profile.stats.hint') }}</div>
 
             <!-- Facebook likes live sync -->
             <div class="fb-sync-row">
               <div class="fb-sync-left">
-                <span class="fb-sync-label">Facebook page likes</span>
+                <span class="fb-sync-label">{{ $t('band.profile.stats.fbLikes') }}</span>
                 <span v-if="query.data.value?.facebook_likes != null" class="fb-sync-count">
                   {{ query.data.value.facebook_likes.toLocaleString() }}
                 </span>
-                <span v-else class="fb-sync-none">not synced yet</span>
+                <span v-else class="fb-sync-none">{{ $t('band.profile.stats.fbNotSynced') }}</span>
                 <span v-if="query.data.value?.facebook_likes_synced_at" class="fb-sync-ts">
-                  · synced {{ new Date(query.data.value.facebook_likes_synced_at).toLocaleString() }}
+                  {{ $t('band.profile.stats.fbSyncedAt', { at: new Date(query.data.value.facebook_likes_synced_at).toLocaleString() }) }}
                 </span>
               </div>
               <button
@@ -474,79 +477,80 @@ async function saveSocialLinks() {
                   <path d="M23 4v6h-6M1 20v-6h6"/>
                   <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
                 </svg>
-                {{ syncFb.isPending.value ? 'Syncing…' : 'Sync from Facebook' }}
+                {{ syncFb.isPending.value ? $t('band.profile.stats.fbSyncing') : $t('band.profile.stats.fbSync') }}
               </button>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="field-label">Spotify monthly listeners</label>
-                <input v-model="form.stat_spotify_monthly" type="number" min="0" class="field-input" placeholder="e.g. 50000" />
+                <label class="field-label">{{ $t('band.profile.stats.spotify') }}</label>
+                <input v-model="form.stat_spotify_monthly" type="number" min="0" class="field-input" :placeholder="$t('band.profile.stats.spotifyPlaceholder')" />
               </div>
               <div>
-                <label class="field-label">Instagram followers</label>
-                <input v-model="form.stat_instagram_followers" type="number" min="0" class="field-input" placeholder="e.g. 12000" />
+                <label class="field-label">{{ $t('band.profile.stats.instagram') }}</label>
+                <input v-model="form.stat_instagram_followers" type="number" min="0" class="field-input" :placeholder="$t('band.profile.stats.instagramPlaceholder')" />
               </div>
               <div>
-                <label class="field-label">TikTok followers</label>
-                <input v-model="form.stat_tiktok_followers" type="number" min="0" class="field-input" placeholder="e.g. 8000" />
+                <label class="field-label">{{ $t('band.profile.stats.tiktok') }}</label>
+                <input v-model="form.stat_tiktok_followers" type="number" min="0" class="field-input" :placeholder="$t('band.profile.stats.tiktokPlaceholder')" />
               </div>
               <div>
-                <label class="field-label">YouTube subscribers</label>
-                <input v-model="form.stat_youtube_subscribers" type="number" min="0" class="field-input" placeholder="e.g. 5000" />
+                <label class="field-label">{{ $t('band.profile.stats.youtube') }}</label>
+                <input v-model="form.stat_youtube_subscribers" type="number" min="0" class="field-input" :placeholder="$t('band.profile.stats.youtubePlaceholder')" />
               </div>
               <div>
-                <label class="field-label">Facebook followers (manual)</label>
-                <input v-model="form.stat_facebook_followers" type="number" min="0" class="field-input" placeholder="e.g. 3000" />
+                <label class="field-label">{{ $t('band.profile.stats.facebook') }}</label>
+                <input v-model="form.stat_facebook_followers" type="number" min="0" class="field-input" :placeholder="$t('band.profile.stats.facebookPlaceholder')" />
               </div>
             </div>
           </template>
 
           <!-- ── EPK SETTINGS ────────────────────────────────── -->
           <template v-if="section === 'epk'">
-            <div class="section-hint">
-              Choose which content appears on your public EPK page at <code style="color:#9ca3af;">/epk</code>. Mark individual photos as EPK press shots in the Photos section. Featured press articles are toggled individually in the Press section.
-            </div>
+            <i18n-t keypath="band.profile.epk.hint" tag="div" class="section-hint" scope="global">
+              <template #code><code style="color:#9ca3af;">/epk</code></template> <!-- i18n-ignore: route path -->
+            </i18n-t>
             <div class="grid grid-cols-2 gap-3">
               <div class="col-span-2">
-                <label class="field-label">Featured release</label>
+                <label class="field-label">{{ $t('band.profile.epk.featuredRelease') }}</label>
                 <select v-model="form.epk_release_id" class="field-input">
-                  <option :value="null">— None —</option>
+                  <option :value="null">{{ $t('band.profile.epk.none') }}</option>
                   <option v-for="r in (releasesQ.data.value ?? [])" :key="r.id" :value="r.id">
-                    {{ r.title }} ({{ r.type }}, {{ r.release_date?.slice(0,4) ?? 'no date' }})
+                    {{ r.title }} ({{ r.type }}, {{ r.release_date?.slice(0,4) ?? $t('band.profile.epk.noDate') }})
                   </option>
                 </select>
-                <p class="field-hint">This release's player and streaming links appear on the EPK.</p>
+                <p class="field-hint">{{ $t('band.profile.epk.featuredHint') }}</p>
               </div>
             </div>
 
             <div>
-              <label class="field-label" for="epk-tech-rider">Tech rider &amp; stage plot</label>
+              <label class="field-label" for="epk-tech-rider">{{ $t('band.profile.epk.techRider') }}</label>
               <select id="epk-tech-rider" v-model="form.epk_tech_rider_id" class="field-input" data-testid="epk-tech-rider">
-                <option :value="null">— None —</option>
+                <option :value="null">{{ $t('band.profile.epk.none') }}</option>
                 <option v-for="r in publishableRiders" :key="r.id" :value="r.id">
                   {{ r.name }} (v{{ r.published_version_number }})
                 </option>
               </select>
               <p v-if="fieldErrors.epk_tech_rider_id" class="field-error">{{ fieldErrors.epk_tech_rider_id[0] }}</p>
               <p class="field-hint">
-                Only riders with a published version are listed. The press kit links the rider's permanent page,
-                which always shows its latest published version.
-                <RouterLink :to="riderPageUrl" class="field-hint-link">Manage riders →</RouterLink>
+                {{ $t('band.profile.epk.riderHint') }}
+                <RouterLink :to="riderPageUrl" class="field-hint-link">{{ $t('band.profile.epk.manageRiders') }}</RouterLink>
               </p>
             </div>
 
             <div class="epk-snapshot-section">
               <div>
-                <div class="field-label mb-0.5">EPK Snapshot</div>
-                <p class="field-hint">Create a snapshot of the current EPK content. Once accepted on the Dashboard, it becomes the live version served at <code style="color:#9ca3af;">/epk</code>.</p>
+                <div class="field-label mb-0.5">{{ $t('band.profile.epk.snapshotTitle') }}</div>
+                <i18n-t keypath="band.profile.epk.snapshotHint" tag="p" class="field-hint" scope="global">
+                  <template #code><code style="color:#9ca3af;">/epk</code></template> <!-- i18n-ignore: route path -->
+                </i18n-t>
               </div>
               <div class="epk-snapshot-actions">
                 <button type="button" @click="history.open.value = true" class="btn-history">
-                  Version history
+                  {{ $t('band.profile.epk.versionHistory') }}
                 </button>
                 <button type="button" @click="showSnapshotModal = true" class="btn-snapshot">
-                  Create EPK snapshot
+                  {{ $t('band.profile.epk.createSnapshot') }}
                 </button>
               </div>
             </div>
@@ -554,7 +558,7 @@ async function saveSocialLinks() {
 
           <div v-if="section !== 'social' && section !== 'logo'" class="flex justify-end pt-1">
             <button type="submit" :disabled="saving || !isDirty" class="btn-save" :class="{ 'btn-save--ok': saved }">
-              {{ saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save profile' }}
+              {{ saved ? $t('band.profile.savedBadge') : saving ? $t('common.actions.saving') : $t('band.profile.save') }}
             </button>
           </div>
 
@@ -583,19 +587,19 @@ async function saveSocialLinks() {
       @remove="history.remove"
     />
 
-    <AdminModal :open="showSnapshotModal" title="Create EPK Snapshot" max-width="36rem" @close="showSnapshotModal = false">
+    <AdminModal :open="showSnapshotModal" :title="$t('band.profile.epk.modalTitle')" max-width="36rem" @close="showSnapshotModal = false">
       <form @submit.prevent="createSnapshot" class="flex flex-col gap-4">
         <div class="section-hint">
-          This captures the current state of your EPK (bio, photos, release, press articles, concerts) as a versioned snapshot. Review and publish it from the Dashboard.
+          {{ $t('band.profile.epk.modalHint') }}
         </div>
         <div>
-          <label class="field-label">Reason / notes (optional)</label>
-          <textarea v-model="snapshotReason" class="field-input" rows="3" placeholder="e.g. Updated bio and new album photos added…" />
+          <label class="field-label">{{ $t('band.profile.epk.reason') }}</label>
+          <textarea v-model="snapshotReason" class="field-input" rows="3" :placeholder="$t('band.profile.epk.reasonPlaceholder')" />
         </div>
         <div class="flex gap-2 justify-end">
-          <button type="button" @click="showSnapshotModal = false" class="btn-ghost">Cancel</button>
+          <button type="button" @click="showSnapshotModal = false" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="createVersion.isPending.value" class="btn-primary">
-            {{ createVersion.isPending.value ? 'Creating…' : 'Create snapshot' }}
+            {{ createVersion.isPending.value ? $t('band.profile.epk.creating') : $t('band.profile.epk.create') }}
           </button>
         </div>
       </form>

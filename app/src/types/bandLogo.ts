@@ -33,18 +33,13 @@ export interface BandLogoPayload {
   sort_order?: number
 }
 
-// Human-readable labels for the enum values
-export const LOGO_VARIANT_LABELS: Record<LogoVariant, string> = {
-  full:       'Full logo',
-  icon:       'Icon / Square',
-  horizontal: 'Horizontal',
-  stacked:    'Stacked',
-  wordmark:   'Wordmark (text only)',
-}
-
-export const LOGO_BACKGROUND_LABELS: Record<LogoBackground, string> = {
-  light:       'For light backgrounds',
-  dark:        'For dark backgrounds',
-  transparent: 'Transparent',
-  any:         'Any / Universal',
-}
+// Display order for the pickers. The order is data — it mirrors the backend
+// enum — but the *labels* are copy and live in the i18n catalogue under
+// band.logos.variants / .backgrounds.
+//
+// English labels here were invisible to every i18n guard:
+// check-admin-strings only scans MIGRATED .vue paths, and check-i18n-coverage
+// only flags files that call $t — which a types file never does.
+// BandLogoManager rendered them verbatim in four selects and two chips.
+export const LOGO_VARIANTS: readonly LogoVariant[] = ['full', 'icon', 'horizontal', 'stacked', 'wordmark']
+export const LOGO_BACKGROUNDS: readonly LogoBackground[] = ['light', 'dark', 'transparent', 'any']

@@ -135,6 +135,12 @@ valid `string`), so it ships green and then blanks the component: this took out
 the entire sign-in form while the logged-in dashboard looked fine. Escape it as
 `"your{'@'}email.com"`. The same applies to `|`, which separates plural forms.
 
+**None of the three build guards can see this** — they read `.vue` files, and
+`check-i18n-coverage.mjs` skips `src/i18n` outright. `src/i18n/catalogue.spec.ts`
+is what closes it: it compiles every message in both catalogues through
+vue-i18n, rejects a bare `@`, and asserts an escaped `{'@'}` still renders as a
+plain `@`. It runs in the ordinary vitest suite, not in `pnpm build`.
+
 **Polish needs three plural forms** (`1 koncert / 2 koncerty / 5 koncertów`).
 vue-i18n's default rule is positional and only models two, so `pluralRules.pl`
 in `src/i18n/plural.ts` is wired to `polishPluralIndex()` in
@@ -150,6 +156,10 @@ Each answers a different question, and a red one means something specific:
 | `check-admin-strings.mjs` | a file in `MIGRATED` still has hardcoded text | move it to the catalogue, or append `i18n-ignore` with a reason |
 | `check-i18n-keys.mjs` | a `$t('…')` key has no catalogue entry | fix the typo, or add the key |
 | `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED` | add its path to `MIGRATED` |
+
+A fourth check lives in the test suite rather than the build —
+`src/i18n/catalogue.spec.ts`, which compiles every message and is the only
+thing that catches an unescaped `@` (see above).
 
 **`MIGRATED` is the ratchet.** Adding an area to the sweep means adding its
 paths there, and the coverage guard exists because forgetting that step was the

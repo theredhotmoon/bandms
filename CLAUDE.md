@@ -232,9 +232,53 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 
 - Branch name: `feature/<kebab-description>` for features, `fix/<kebab-description>` for bug fixes.
 - Keep one branch per conversation / logical unit of work.
+- **Commit subjects follow Conventional Commits** — see below.
 - Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
 - Merge via GitHub PR — never `git merge` directly into main locally.
 - **Every PR gets an explicit `/code-review` pass before merging — never merge on raw `git`/`gh` commands, and don't assume another skill covered it.** `/ship`'s pipeline (rebuild → test → changelog → branch → commit → PR) has no review step at all. `git-feature-workflow`'s review step only runs `vue3-review`, and only when the commit touches `.vue`/composable `.ts` files — it silently skips review for an `api/`-only (Laravel/PHP) change, which is most backend work in this repo. So run `/code-review` yourself regardless of which shipping skill you used — don't merge un-reviewed work just because tests are green.
+
+### Commit messages — Conventional Commits
+
+```
+<type>(<scope>): <imperative subject, lower case, no trailing period>
+```
+
+**Do not infer the format from `git log -10`.** The convention held for ~129 of
+the last 200 commits and then lapsed around #111, so the most recent commits are
+the *worst* reference available. Check against the dominant history, or against
+this section, not against whatever happened last. That lapse is exactly how it
+spread: each new commit copied the one above it.
+
+| Part | Rule |
+|---|---|
+| `type` | `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `perf`, `build`, `ci`, `style` |
+| `scope` | optional, lower case, the area touched |
+| subject | imperative (“add”, not “added”/“adds”), ≤ ~72 chars, no full stop |
+| `!` | `feat(api)!:` marks a breaking change |
+
+Scopes actually in use here — prefer an existing one over inventing a synonym:
+
+`web` · `app` · `api` · `admin` · `modules` · `e2e` · `rider` · `i18n` ·
+`deploy` · `caddy` · `availability` · `tickets` · `concerts`
+
+A bare `type:` with no scope is fine when the change is repo-wide — `docs:` is
+the most common commit in this repo and rarely carries one.
+
+```bash
+feat(admin): add a UI language switcher to the admin shell
+fix(app): escape @ in catalogue values so vue-i18n stops throwing
+docs: document the vue-tsc -b vs -p tsconfig.json footgun
+test(e2e): cover the EPK tech-rider selector across a reload
+```
+
+**The body is where this repo carries its value.** Subjects are terse by
+design; the *why*, the root cause, and what was verified go in the body, which
+is where the footgun entries in this file came from. Wrap at ~72 and separate
+it from the subject with a blank line.
+
+PR titles follow the same grammar. A squash merge makes the PR title a commit
+subject on `main`, so a sentence-style PR title lands as a non-conforming
+commit however careful the branch was.
 
 ---
 
