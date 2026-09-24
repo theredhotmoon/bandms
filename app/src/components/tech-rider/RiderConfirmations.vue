@@ -27,9 +27,9 @@ function when(iso: string | null): string {
 <template>
   <div class="confirmations">
     <div class="head">
-      <span class="title">Rig confirmations</span>
+      <span class="title">{{ $t('rider.confirmations.title') }}</span>
       <span v-if="!neverAsked" class="count">
-        {{ confirmed.length }}/{{ confirmations.length }} confirmed
+        {{ $t('rider.confirmations.count', { done: confirmed.length, total: confirmations.length }) }}
       </span>
       <button
         type="button"
@@ -37,13 +37,12 @@ function when(iso: string | null): string {
         :disabled="requesting"
         @click="emit('request')"
       >
-        {{ requesting ? 'Sending…' : neverAsked ? 'Ask the band to confirm' : 'Ask again' }}
+        {{ requesting ? $t('rider.confirmations.sending') : neverAsked ? $t('rider.confirmations.ask') : $t('rider.confirmations.askAgain') }}
       </button>
     </div>
 
     <p v-if="neverAsked" class="hint">
-      Emails everyone in tonight's lineup who can sign in, asking them to check
-      their saved rig. Their answer is recorded against this rider.
+      {{ $t('rider.confirmations.hint') }}
     </p>
 
     <div v-else class="chips">
@@ -53,7 +52,7 @@ function when(iso: string | null): string {
       </span>
       <span v-for="c in waiting" :key="c.id" class="chip chip--waiting">
         {{ c.member_name }}
-        <span class="chip-when">waiting</span>
+        <span class="chip-when">{{ $t('rider.confirmations.waiting') }}</span>
       </span>
     </div>
   </div>

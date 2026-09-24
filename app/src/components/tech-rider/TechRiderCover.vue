@@ -13,7 +13,7 @@ defineProps<Props>()
   <div class="cover">
     <div class="cover-preview">
       <div class="cover-band">{{ profile?.name ?? '—' }}</div>
-      <div class="cover-title">Technical Rider — {{ riderName }}</div>
+      <div class="cover-title">{{ $t('rider.cover.title', { name: riderName }) }}</div>
       <div class="cover-contacts">
         <span v-if="profile?.tech_contact_email">📧 {{ profile.tech_contact_email }}</span>
         <span v-if="profile?.tech_contact_phone">📞 {{ profile.tech_contact_phone }}</span>
@@ -22,27 +22,27 @@ defineProps<Props>()
     </div>
 
     <div class="cover-info">
-      <div class="info-title">Where these come from</div>
-      <p class="info-desc">
-        The tech contact fields and the sound-engineer description are managed in
-        <RouterLink :to="adminUrl('band-profile')" class="info-link">Band Profile → Contacts</RouterLink>
-        and appear on every rider.
-      </p>
+      <div class="info-title">{{ $t('rider.cover.infoTitle') }}</div>
+      <i18n-t keypath="rider.cover.infoDesc" tag="p" class="info-desc" scope="global">
+        <template #link>
+          <RouterLink :to="adminUrl('band-profile')" class="info-link">{{ $t('rider.cover.infoLink') }}</RouterLink>
+        </template>
+      </i18n-t>
       <div class="info-fields">
         <div class="info-row">
-          <span class="info-label">Tech contact email</span>
+          <span class="info-label">{{ $t('rider.cover.techEmail') }}</span>
           <span class="info-val">{{ profile?.tech_contact_email || '—' }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Tech contact phone</span>
+          <span class="info-label">{{ $t('rider.cover.techPhone') }}</span>
           <span class="info-val">{{ profile?.tech_contact_phone || '—' }}</span>
         </div>
         <div class="info-row info-row--wide">
-          <span class="info-label">Sound engineer description</span>
+          <span class="info-label">{{ $t('rider.cover.engineerDesc') }}</span>
           <span class="info-val">{{ profile?.tech_rider_notes || '—' }}</span>
         </div>
       </div>
-      <RouterLink :to="adminUrl('band-profile')" class="btn-go">Edit in Band Profile →</RouterLink>
+      <RouterLink :to="adminUrl('band-profile')" class="btn-go">{{ $t('rider.cover.editInProfile') }}</RouterLink>
     </div>
   </div>
 </template>

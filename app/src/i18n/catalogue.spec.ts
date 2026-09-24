@@ -107,6 +107,7 @@ describe('i18n catalogues', () => {
         'rider.requirements.items',
         'rider.requirements.units',
         'rider.requirements.outletsAcross',
+        'rider.admin.asked',
       ])
 
       const offenders = all
@@ -215,6 +216,15 @@ describe('i18n catalogues', () => {
         'wireless', 'backline', 'power', 'foh',
       ]) {
         expect(has(`rider.stagePlot.views.${v}`), v).toBe(true)
+      }
+    })
+
+    it('rider.admin.tabs covers every Section', () => {
+      // Mirrors `type Section` in TechRiderAdminView.vue. The tab strip builds
+      // its label from the section key, so a name that drifts from the union
+      // prints the dotted keypath across the top of the editor.
+      for (const s of ['stage', 'channels', 'requirements', 'pafoh', 'cover']) {
+        expect(has(`rider.admin.tabs.${s}`), `rider.admin.tabs.${s}`).toBe(true)
       }
     })
 

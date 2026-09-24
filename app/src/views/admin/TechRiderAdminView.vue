@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { reportSaveError } from '@/utils/formErrors'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -25,13 +26,15 @@ import { useRiderConfirmations } from '@/composables/useRiderConfirmations'
 
 type Section = 'stage' | 'channels' | 'requirements' | 'pafoh' | 'cover'
 
-const SECTIONS: { key: Section; label: string; icon: string }[] = [
-  { key: 'stage',        label: 'Stage Plot',   icon: '🎭' },
-  { key: 'channels',     label: 'Channels',     icon: '🎙️' },
-  { key: 'requirements', label: 'Requirements', icon: '🔊' },
-  { key: 'pafoh',        label: 'PA / FOH',     icon: '🎛️' },
-  { key: 'cover',        label: 'Cover',        icon: '📋' },
+const SECTIONS: { key: Section; icon: string }[] = [
+  { key: 'stage',        icon: '🎭' },
+  { key: 'channels',     icon: '🎙️' },
+  { key: 'requirements', icon: '🔊' },
+  { key: 'pafoh',        icon: '🎛️' },
+  { key: 'cover',        icon: '📋' },
 ]
+
+const { t } = useI18n()
 
 const openId = ref<number | null>(null)
 const activeSection = ref<Section>('stage')
@@ -52,7 +55,7 @@ const concerts = computed(() => concertsQ.data.value ?? [])
 // ── Navigation guards around unsaved work ─────────────────────────────────────
 
 function confirmDiscard(): boolean {
-  return !dirty.value || confirm('This rider has unsaved changes. Discard them?')
+  return !dirty.value || confirm(t('rider.admin.discardAsk'))
 }
 
 function openRider(id: number) {
@@ -89,9 +92,9 @@ async function createRider() {
     newName.value = ''
     openId.value = rider.id
     activeSection.value = 'stage'
-    toast.success('Rider created')
+    toast.success(t('rider.admin.created'))
   } catch (e) {
-    reportSaveError(e, 'Failed to create rider')
+    reportSaveError(e, t('rider.admin.createFailed'))
   } finally {
     creating.value = false
   }
@@ -103,9 +106,9 @@ async function confirmDelete() {
     await remove.mutateAsync(confirmDeleteId.value)
     if (openId.value === confirmDeleteId.value) openId.value = null
     confirmDeleteId.value = null
-    toast.success('Rider deleted')
+    toast.success(t('rider.admin.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('rider.admin.deleteFailed'))
   }
 }
 
@@ -115,18 +118,18 @@ async function duplicateRider(id: number) {
     const copy = await duplicate.mutateAsync(id)
     openId.value = copy.id
     activeSection.value = 'stage'
-    toast.success(`Copied to "${copy.name}"`)
+    toast.success(t('rider.admin.duplicated', { name: copy.name }))
   } catch (e) {
-    reportSaveError(e, 'Failed to duplicate this rider')
+    reportSaveError(e, t('rider.admin.duplicateFailed'))
   }
 }
 
 async function setActive(id: number) {
   try {
     await activate.mutateAsync(id)
-    toast.success('Active rider updated')
+    toast.success(t('rider.admin.activeUpdated'))
   } catch (e) {
-    reportSaveError(e, 'Failed to set active rider')
+    reportSaveError(e, t('rider.admin.activeFailed'))
   }
 }
 
@@ -164,9 +167,9 @@ async function publish(notes: string) {
     if (dirty.value && !(await editor.save())) return
     const version = await versions.publish.mutateAsync(notes ? { notes } : {})
     showPublishModal.value = false
-    toast.success(`Published v${version.version_number} — the rider link now serves it`)
+    toast.success(t('rider.admin.published', { n: version.version_number }))
   } catch (e) {
-    reportSaveError(e, 'Failed to publish this rider')
+    reportSaveError(e, t('rider.admin.publishFailed'))
   }
 }
 
@@ -174,7 +177,7 @@ async function compareVersions(olderId: number, newerId: number) {
   try {
     await versions.compare(olderId, newerId)
   } catch (e) {
-    reportSaveError(e, 'Could not load those versions to compare')
+    reportSaveError(e, t('rider.admin.compareFailed'))
   }
 }
 
@@ -190,21 +193,21 @@ async function askForConfirmations() {
     if (result.failed.length) {
       // The requests are recorded either way, so say what happened rather than
       // reporting a blanket failure the band can act on incorrectly.
-      toast.warning(`Asked ${result.requested}, but ${result.failed.length} email(s) could not be sent`)
+      toast.warning(t('rider.admin.askedPartial', { n: result.requested, failed: result.failed.length }))
     } else {
-      toast.success(`Asked ${result.requested} musician${result.requested === 1 ? '' : 's'} to confirm`)
+      toast.success(t('rider.admin.asked', result.requested, { named: { n: result.requested } }))
     }
   } catch (e) {
-    reportSaveError(e, 'Could not send the confirmation requests')
+    reportSaveError(e, t('rider.admin.askFailed'))
   }
 }
 
 async function discardVersion(id: number) {
   try {
     await versions.discard.mutateAsync(id)
-    toast.success('Version deleted')
+    toast.success(t('rider.admin.versionDeleted'))
   } catch (e) {
-    reportSaveError(e, 'Could not delete that version')
+    reportSaveError(e, t('rider.admin.versionDeleteFailed'))
   }
 }
 </script>
@@ -227,12 +230,12 @@ async function discardVersion(id: number) {
       <main class="editor-pane">
         <div v-if="openId === null" class="empty-state">
           <div class="empty-icon">🎛️</div>
-          <div class="empty-title">No rider open</div>
-          <p class="empty-hint">Select a rider from the sidebar, or create a new one.</p>
-          <button type="button" class="btn-primary-lg" @click="showNewModal = true">Create first rider</button>
+          <div class="empty-title">{{ $t('rider.admin.noneOpen') }}</div>
+          <p class="empty-hint">{{ $t('rider.admin.noneOpenHint') }}</p>
+          <button type="button" class="btn-primary-lg" @click="showNewModal = true">{{ $t('rider.admin.createFirst') }}</button>
         </div>
 
-        <div v-else-if="editor.riderQ.isPending.value" class="empty-state">Loading rider…</div>
+        <div v-else-if="editor.riderQ.isPending.value" class="empty-state">{{ $t('rider.admin.loadingOne') }}</div>
 
         <template v-else-if="editor.riderQ.data.value">
           <!-- Top bar -->
@@ -241,41 +244,41 @@ async function discardVersion(id: number) {
               <input
                 :value="draft.name"
                 class="title-input"
-                placeholder="Rider name"
+                :placeholder="$t('rider.admin.name')"
                 @input="patch('name', ($event.target as HTMLInputElement).value)"
               />
               <div class="topbar-meta">
-                <span v-if="draft.is_active" class="badge-active">Active</span>
-                <span v-else class="meta-dim">Not active</span>
+                <span v-if="draft.is_active" class="badge-active">{{ $t('rider.admin.active') }}</span>
+                <span v-else class="meta-dim">{{ $t('rider.admin.notActive') }}</span>
                 <button type="button" class="version-chip" @click="showVersionsModal = true">
                   <template v-if="versions.published.value">
-                    v{{ versions.published.value.version_number }} published
+                    {{ $t('rider.admin.versionPublished', { n: versions.published.value.version_number }) }}
                   </template>
-                  <template v-else>Never published</template>
+                  <template v-else>{{ $t('rider.admin.neverPublished') }}</template>
                 </button>
                 <select
                   :value="draft.concert_id ?? ''"
                   class="concert-select"
                   @change="patch('concert_id', Number(($event.target as HTMLSelectElement).value) || null)"
                 >
-                  <option value="">No concert linked</option>
+                  <option value="">{{ $t('rider.admin.noConcert') }}</option>
                   <option v-for="c in concerts" :key="c.id" :value="c.id">
-                    {{ c.date }} — {{ c.venue?.name ?? 'Unknown venue' }}
+                    {{ c.date }} — {{ c.venue?.name ?? $t('rider.admin.unknownVenue') }}
                   </option>
                 </select>
               </div>
             </div>
 
             <div class="topbar-actions">
-              <span v-if="dirty" class="dirty-hint">Unsaved changes</span>
-              <button type="button" class="btn-ghost" @click="openPreview">Preview / PDF</button>
+              <span v-if="dirty" class="dirty-hint">{{ $t('rider.admin.unsaved') }}</span>
+              <button type="button" class="btn-ghost" @click="openPreview">{{ $t('rider.admin.preview') }}</button>
               <button
                 type="button"
                 class="btn-publish"
                 :disabled="versions.publish.isPending.value"
                 @click="showPublishModal = true"
               >
-                Publish v{{ versions.nextNumber.value }}
+                {{ $t('rider.admin.publishVersion', { n: versions.nextNumber.value }) }}
               </button>
               <button
                 type="button"
@@ -284,7 +287,7 @@ async function discardVersion(id: number) {
                 :disabled="editor.saving.value || !dirty"
                 @click="editor.save"
               >
-                {{ editor.saved.value ? 'Saved ✓' : editor.saving.value ? 'Saving…' : 'Save rider' }}
+                {{ editor.saved.value ? $t('rider.admin.savedBadge') : editor.saving.value ? $t('common.actions.saving') : $t('rider.admin.save') }}
               </button>
             </div>
           </div>
@@ -299,7 +302,7 @@ async function discardVersion(id: number) {
               :class="{ active: activeSection === s.key }"
               @click="activeSection = s.key"
             >
-              <span class="tab-icon">{{ s.icon }}</span>{{ s.label }}
+              <span class="tab-icon">{{ s.icon }}</span>{{ $t(`rider.admin.tabs.${s.key}`) }}
               <span v-if="s.key === 'channels'" class="tab-count">{{ resolved.inputs.length }}</span>
             </button>
           </div>
@@ -319,14 +322,14 @@ async function discardVersion(id: number) {
                     <span v-else>{{ (m.first_name[0] ?? '') + (m.last_name[0] ?? '') }}</span>
                   </div>
                   <div
-                    v-for="t in draft.gig_lineup.temp_musicians"
-                    :key="t.id"
+                    v-for="tm in draft.gig_lineup.temp_musicians"
+                    :key="tm.id"
                     class="lineup-avatar lineup-avatar--guest"
-                    :title="t.name"
-                  >{{ t.name[0]?.toUpperCase() }}</div>
+                    :title="tm.name"
+                  >{{ tm.name[0]?.toUpperCase() }}</div>
                 </div>
                 <button type="button" class="btn-ghost btn-ghost--sm" @click="showLineupModal = true">
-                  ✏️ Edit lineup
+                  {{ $t('rider.admin.editLineup') }}
                 </button>
               </div>
 
@@ -422,7 +425,7 @@ async function discardVersion(id: number) {
       @clear-diff="versions.clearDiff"
     />
 
-    <AdminModal :open="showLineupModal" title="Tonight's Lineup" max-width="38rem" @close="showLineupModal = false">
+    <AdminModal :open="showLineupModal" :title="$t('rider.admin.lineupTitle')" max-width="38rem" @close="showLineupModal = false">
       <StagePlotMemberSelector
         :model-value="draft.gig_lineup"
         :band-members="members"
@@ -431,33 +434,30 @@ async function discardVersion(id: number) {
       />
     </AdminModal>
 
-    <AdminModal :open="showNewModal" title="New Rider" max-width="28rem" @close="showNewModal = false">
+    <AdminModal :open="showNewModal" :title="$t('rider.admin.newTitle')" max-width="28rem" @close="showNewModal = false">
       <form class="modal-form" @submit.prevent="createRider">
         <div>
-          <label class="field-label">Rider name</label>
-          <input v-model="newName" class="field-input" placeholder="e.g. Festival rider, Club show" autofocus />
-          <p class="field-hint">
-            Riders reference each musician's saved rig, so a new one is ready as soon
-            as you place people on the stage plot.
-          </p>
+          <label class="field-label">{{ $t('rider.admin.name') }}</label>
+          <input v-model="newName" class="field-input" :placeholder="$t('rider.admin.namePlaceholder')" autofocus />
+          <p class="field-hint">{{ $t('rider.admin.newHint') }}</p>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showNewModal = false">Cancel</button>
+          <button type="button" class="btn-ghost" @click="showNewModal = false">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="!newName.trim() || creating">
-            {{ creating ? 'Creating…' : 'Create' }}
+            {{ creating ? $t('rider.admin.creating') : $t('common.actions.create') }}
           </button>
         </div>
       </form>
     </AdminModal>
 
-    <AdminModal :open="confirmDeleteId !== null" title="Delete rider?" max-width="24rem" @close="confirmDeleteId = null">
+    <AdminModal :open="confirmDeleteId !== null" :title="$t('rider.admin.deleteTitle')" max-width="24rem" @close="confirmDeleteId = null">
       <div class="modal-form">
         <p class="confirm-text">
-          This deletes the rider and its stage plot. The musicians' saved rigs are not affected.
+          {{ $t('rider.admin.deleteMessage') }}
         </p>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="confirmDeleteId = null">Cancel</button>
-          <button type="button" class="btn-danger" @click="confirmDelete">Delete</button>
+          <button type="button" class="btn-ghost" @click="confirmDeleteId = null">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-danger" @click="confirmDelete">{{ $t('common.actions.delete') }}</button>
         </div>
       </div>
     </AdminModal>

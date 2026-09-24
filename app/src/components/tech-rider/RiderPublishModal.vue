@@ -8,6 +8,7 @@
  * to the link the venue already has.
  */
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { RiderCompleteness } from '@bandms/rider-core'
 import type { TechRiderVersion } from '@bandms/rider-core'
@@ -27,6 +28,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: []; publish: [notes: string] }>()
 
+const { t } = useI18n()
+
 const notes = ref('')
 
 // A fresh dialog every time: last publish's note must not ride along silently
@@ -44,7 +47,7 @@ watch(() => props.open, (open) => { if (open) notes.value = '' })
 const fatal = computed<string[]>(() =>
   props.channelCount
     ? []
-    : ['The channel list is empty — the engineer would get a blank input sheet.'],
+    : [t('rider.publish.warnNoChannels')],
 )
 
 /**
@@ -59,10 +62,10 @@ const warnings = computed<string[]>(() => {
   const out: string[] = []
 
   if (!props.completeness.total) {
-    out.push('No musicians are placed on the stage plot.')
+    out.push(t('rider.publish.warnNoMusicians'))
   }
   for (const status of props.completeness.statuses.filter((s) => !s.complete)) {
-    out.push(`${status.name} has no ${status.missing.join(', ')}.`)
+    out.push(t('rider.publish.warnMemberMissing', { name: status.name, missing: status.missing.join(', ') }))
   }
 
   return out
@@ -75,73 +78,71 @@ const ready = computed(() => !blocked.value && warnings.value.length === 0)
 <template>
   <AdminModal
     :open="open"
-    :title="`Publish v${nextNumber}`"
+    :title="$t('rider.publish.title', { n: nextNumber })"
     max-width="32rem"
     @close="emit('close')"
   >
     <div class="publish-form">
-      <p class="lede">
-        This freezes the rider as it stands now. The public link keeps serving
-        <strong>v{{ nextNumber }}</strong> even if a musician edits their saved rig afterwards.
-      </p>
+      <i18n-t keypath="rider.publish.lead" tag="p" class="lede" scope="global">
+        <template #n><strong>v{{ nextNumber }}</strong></template>
+      </i18n-t>
 
       <div class="summary">
         <div class="summary-item">
           <span class="summary-value">{{ completeness.total }}</span>
-          <span class="summary-label">musicians</span>
+          <span class="summary-label">{{ $t('rider.publish.musicians') }}</span>
         </div>
         <div class="summary-item">
           <span class="summary-value" :class="{ 'summary-value--stop': blocked }">{{ channelCount }}</span>
-          <span class="summary-label">channels</span>
+          <span class="summary-label">{{ $t('rider.publish.channels') }}</span>
         </div>
         <div class="summary-item">
           <span class="summary-value" :class="{ 'summary-value--warn': !ready }">
             {{ completeness.complete }}/{{ completeness.total }}
           </span>
-          <span class="summary-label">rigs ready</span>
+          <span class="summary-label">{{ $t('rider.publish.rigsReady') }}</span>
         </div>
       </div>
 
       <div v-if="blocked" class="stop">
-        <div class="stop-title">Can't publish yet</div>
+        <div class="stop-title">{{ $t('rider.publish.blockedTitle') }}</div>
         <ul class="stop-list">
           <li v-for="(reason, i) in fatal" :key="i">{{ reason }}</li>
         </ul>
         <p class="stop-hint">
-          Place a musician on the stage plot, or add an extra channel under Channels.
+          {{ $t('rider.publish.blockedHint') }}
         </p>
       </div>
 
       <div v-if="warnings.length" class="warn">
-        <div class="warn-title">{{ blocked ? 'Also missing' : 'Publish anyway?' }}</div>
+        <div class="warn-title">{{ blocked ? $t('rider.publish.alsoMissing') : $t('rider.publish.publishAnywayAsk') }}</div>
         <ul class="warn-list">
           <li v-for="(warning, i) in warnings" :key="i">{{ warning }}</li>
         </ul>
       </div>
 
       <p v-if="current" class="note-line">
-        v{{ current.version_number }} becomes archived, but its own link keeps working —
-        anyone you already sent it to still sees exactly what they were sent.
+        {{ $t('rider.publish.archiveNote', { n: current.version_number }) }}
       </p>
 
       <p v-if="dirty" class="note-line note-line--dirty">
-        Your unsaved changes are saved first, so v{{ nextNumber }} includes them.
+        {{ $t('rider.publish.savesFirst', { n: nextNumber }) }}
       </p>
 
       <div>
-        <label class="field-label" for="publish-notes">What changed? <span class="optional">(optional)</span></label>
+        <label class="field-label" for="publish-notes">{{ $t('rider.publish.whatChanged') }} <span class="optional">{{ $t('rider.publish.optional') }}</span></label>
         <input
           id="publish-notes"
           v-model="notes"
           class="field-input"
-          placeholder="e.g. Added talkback + moved Ola stage left"
+          :placeholder="$t('rider.publish.whatChangedPlaceholder')"
           maxlength="1000"
         />
-        <p class="field-hint">Shown in the version history so you can tell v{{ nextNumber }} from v{{ nextNumber - 1 }}.</p>
+        <p class="field-hint">{{ $t('rider.publish.whatChangedHint', { a: nextNumber, b: nextNumber - 1 }) }}</p>
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-ghost" @click="emit('close')">Cancel</button>
+        <button type="button" class="btn-ghost" @click="emit('close')">{{ $t('common.actions.cancel') }}</button>
         <button
           type="button"
           class="btn-primary"
@@ -149,7 +150,7 @@ const ready = computed(() => !blocked.value && warnings.value.length === 0)
           :title="blocked ? fatal[0] : undefined"
           @click="emit('publish', notes.trim())"
         >
-          {{ publishing ? 'Publishing…' : ready ? `Publish v${nextNumber}` : `Publish v${nextNumber} anyway` }}
+          {{ publishing ? $t('rider.publish.publishing') : ready ? $t('rider.publish.publish', { n: nextNumber }) : $t('rider.publish.publishAnyway', { n: nextNumber }) }}
         </button>
       </div>
     </div>
