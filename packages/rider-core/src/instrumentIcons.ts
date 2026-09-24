@@ -570,11 +570,24 @@ export const INSTRUMENT_ICON_GROUPS: { group: InstrumentGroup; icons: Instrument
   }, [])
 
 /** Case-insensitive search over label + keywords + type. */
-export function searchInstrumentIcons(term: string): InstrumentIconDef[] {
+/**
+ * `labels` lets a caller search the names it is actually showing.
+ *
+ * Without it the picker matched only `def.label`, which is English — so a
+ * Polish panel listed "Wokal prowadzący" and typing "wokal" found nothing,
+ * leaving the translated empty-state as the one Polish string on screen. The
+ * English label and the keywords are still matched as well, because an
+ * engineer who knows the kit by its English name should keep finding it.
+ */
+export function searchInstrumentIcons(
+  term: string,
+  labels?: Readonly<Record<string, string>>,
+): InstrumentIconDef[] {
   const q = term.trim().toLowerCase()
   if (!q) return INSTRUMENT_ICON_CATALOG
   return INSTRUMENT_ICON_CATALOG.filter(def =>
     def.label.toLowerCase().includes(q) ||
+    (labels?.[def.type] ?? '').toLowerCase().includes(q) ||
     def.type.replace(/_/g, ' ').includes(q) ||
     def.keywords.some(k => k.includes(q)),
   )

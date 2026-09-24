@@ -9,6 +9,7 @@
 import { computed, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { useI18n } from 'vue-i18n'
+import { enumLabel } from '@/utils/enumLabel'
 import { useUiLang } from '@/composables/useUiLang'
 import PlacementModal from './PlacementModal.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
@@ -41,6 +42,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
+
+// A stored value — see enumLabel().
+const chainLabel = (v: string) => enumLabel(t, `rider.rig.chains.${v}.label`, v)
 
 const emit = defineEmits<{
   'update:modelValue': [StagePlacement[]]
@@ -598,7 +602,7 @@ function cardBorderClass(item: StagePlacement): string {
             <template v-else-if="stageView === 'signal_chain'">
               <div v-if="rigFor(item).inputs.length" class="text-center">
                 <div class="text-sm font-bold text-white">{{ rigFor(item).inputs.length }}</div>
-                <div class="text-[10px] text-zinc-400">{{ $t('rider.stagePlot.chLabel') }} · {{ $t(`rider.rig.chains.${rigFor(item).signal_chain_type}.label`) }}</div>
+                <div class="text-[10px] text-zinc-400">{{ $t('rider.stagePlot.chLabel') }} · {{ chainLabel(rigFor(item).signal_chain_type) }}</div>
               </div>
               <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
             </template>

@@ -231,6 +231,8 @@ export default {
   },
   placement: {
     musician: 'Musician',
+    guestName: '{name} (guest)',
+    defaultTag: '(default)',
     discardAsk: 'Discard this gig’s changes and go back to “{name}”?',
     switchAsk: 'Switching rigs discards this gig’s changes. Continue?',
     stagePosition: '{name} — stage position',
@@ -406,6 +408,14 @@ export default {
   completeness: {
     ready: '{done}/{total} ready',
     missing: 'no {items}',
+    // placementStatus() returns these as stable keys, never as prose —
+    // rider-core has no catalogue and must not invent English for a
+    // sentence the admin then wraps in Polish.
+    gaps: {
+      instrument: 'instrument',
+      inputs: 'inputs',
+      monitor: 'monitor',
+    },
   },
   confirmations: {
     title: 'Rig confirmations',
@@ -452,7 +462,7 @@ export default {
     warnNoMusicians: 'No musicians are placed on the stage plot.',
     warnMemberMissing: '{name} has no {missing}.',
     title: 'Publish v{n}',
-    lead: 'This freezes the rider as it stands now. The public link keeps serving v{n} even if a musician edits their saved rig afterwards.',
+    lead: 'This freezes the rider as it stands now. The public link keeps serving {n} even if a musician edits their saved rig afterwards.',
     musicians: 'musicians',
     channels: 'channels',
     rigsReady: 'rigs ready',

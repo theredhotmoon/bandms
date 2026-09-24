@@ -7,6 +7,8 @@
  * better together than behind four tabs, and it makes the derived-plus-extras
  * pattern obvious by repetition.
  */
+import { useI18n } from 'vue-i18n'
+import { enumLabel } from '@/utils/enumLabel'
 import RigMonitors from '@/components/rig/RigMonitors.vue'
 import RigBackline from '@/components/rig/RigBackline.vue'
 import RigWireless from '@/components/rig/RigWireless.vue'
@@ -22,6 +24,12 @@ interface Props {
   extraWireless: WirelessSpec[]
   powerNotes: PowerNotes
 }
+const { t } = useI18n()
+
+// Stored values — see enumLabel().
+const backlineLabel = (v: string) => enumLabel(t, `rider.rig.backline.categories.${v}`, v)
+const wirelessLabel = (v: string) => enumLabel(t, `rider.rig.wireless.types.${v}`, v)
+
 defineProps<Props>()
 
 const emit = defineEmits<{
@@ -103,7 +111,7 @@ const emit = defineEmits<{
         <tbody>
           <tr v-for="item in resolved.backline" :key="item.key">
             <td>{{ item.name || '—' }}</td>
-            <td class="cell-dim">{{ $t(`rider.rig.backline.categories.${item.category}`) }}</td>
+            <td class="cell-dim">{{ backlineLabel(item.category) }}</td>
             <td class="cell-dim">{{ item.brand_preference || '—' }}</td>
             <td class="cell-dim">{{ item.specs || '—' }}</td>
             <td><RiderSourceBadge :source="item.source" clickable @open="emit('open', $event)" /></td>
@@ -207,7 +215,7 @@ const emit = defineEmits<{
         </thead>
         <tbody>
           <tr v-for="unit in resolved.wireless" :key="unit.key">
-            <td>{{ $t(`rider.rig.wireless.types.${unit.type}`) }}</td>
+            <td>{{ wirelessLabel(unit.type) }}</td>
             <td>{{ unit.brand_model || '—' }}</td>
             <td class="cell-dim">{{ unit.frequency_band || '—' }}</td>
             <td class="cell-dim">

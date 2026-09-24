@@ -1,4 +1,4 @@
-import type { RiderSheetLabels, InstrumentLabels } from './types'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
 
 /**
  * Polish instrument names.
@@ -40,6 +40,18 @@ export const PL_INSTRUMENT_LABELS: InstrumentLabels = {
   di_box: 'DI-box',
   rack: 'Rack',
   custom: 'Własny',
+}
+
+export const PL_INSTRUMENT_GROUPS: InstrumentGroupLabels = {
+  'Vocals': 'Wokal',
+  'Guitars & Bass': 'Gitary i bas',
+  'Keys': 'Instrumenty klawiszowe',
+  'Brass & Wind': 'Instrumenty dęte',
+  'Strings': 'Instrumenty smyczkowe',
+  'Percussion': 'Perkusja',
+  'Electronic': 'Elektronika',
+  'Stage gear': 'Sprzęt sceniczny',
+  'Other': 'Inne',
 }
 
 /**

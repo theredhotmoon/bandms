@@ -44,6 +44,23 @@ export function formatShortDate(date: string | null | undefined, locale: string)
   })
 }
 
+/**
+ * Day and month, no year — for a chip where the year is noise (a rig
+ * confirmation that happened this run of shows).
+ *
+ * Same two rules as formatShortDate: the locale is passed in rather than left
+ * `undefined` (which means the *browser's*, not the app's), and `month` is
+ * `'long'` because Polish takes the genitive — "8 maja", not "8 maj".
+ * `timeZone: 'UTC'` for the same reason too: a date-only value parses as UTC
+ * midnight and renders as the previous day west of Greenwich.
+ */
+export function formatDayMonth(date: string | null | undefined, locale: string): string {
+  if (!date) return ''
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return date
+  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
+}
+
 /** `245` → `4:05`. Seconds are data; the colon is not copy in any locale. */
 export function formatDuration(seconds: number | null | undefined): string {
   if (!seconds) return ''

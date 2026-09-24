@@ -10,6 +10,8 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
+import { formatShortDate } from '@/utils/formatDate'
+import { useUiLang } from '@/composables/useUiLang'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { TechRiderVersion } from '@bandms/rider-core'
 import type { RiderDiff } from '@/utils/riderDiff'
@@ -31,6 +33,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 /**
  * The version published immediately before this one, if any.
@@ -58,11 +61,16 @@ async function copyLink(version: TechRiderVersion) {
   }
 }
 
+/**
+ * `undefined` as the locale means the *browser's*, so a Polish admin on an
+ * English browser read English dates here whatever the UI switcher said. And
+ * month:'short' is the Polish genitive trap formatShortDate() documents —
+ * CLDR's abbreviated May is the nominative "maj", so eleven months looked
+ * right and the twelfth did not.
+ */
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
+  return formatShortDate(iso, uiLang.value)
 }
 </script>
 

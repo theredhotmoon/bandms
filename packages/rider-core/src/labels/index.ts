@@ -1,10 +1,10 @@
-import type { RiderSheetLabels, InstrumentLabels } from './types'
-import { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS } from './en'
-import { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS } from './pl'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
+import { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS } from './en'
+import { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS } from './pl'
 
-export type { RiderSheetLabels, InstrumentLabels } from './types'
-export { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS } from './en'
-export { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS } from './pl'
+export type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
+export { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS } from './en'
+export { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS } from './pl'
 
 const SHEETS: Record<string, RiderSheetLabels> = {
   en: EN_RIDER_SHEET_LABELS,
@@ -34,6 +34,16 @@ export function riderSheetLabels(locale: string): RiderSheetLabels {
 /** Instrument names alone, for surfaces that render a palette but no sheet. */
 export function instrumentLabels(locale: string): InstrumentLabels {
   return INSTRUMENTS[locale] ?? EN_INSTRUMENT_LABELS
+}
+
+const GROUPS: Record<string, InstrumentGroupLabels> = {
+  en: EN_INSTRUMENT_GROUPS,
+  pl: PL_INSTRUMENT_GROUPS,
+}
+
+/** Icon-picker group headings. */
+export function instrumentGroupLabels(locale: string): InstrumentGroupLabels {
+  return GROUPS[locale] ?? EN_INSTRUMENT_GROUPS
 }
 
 /** Substitute `{token}` placeholders — `showFileValue`, `unknownMember`. */

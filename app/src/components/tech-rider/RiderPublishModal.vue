@@ -9,6 +9,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gapWords as toWords } from '@/utils/riderGaps'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { RiderCompleteness } from '@bandms/rider-core'
 import type { TechRiderVersion } from '@bandms/rider-core'
@@ -29,6 +30,8 @@ const props = defineProps<{
 const emit = defineEmits<{ close: []; publish: [notes: string] }>()
 
 const { t } = useI18n()
+
+const gapWords = (missing: string[]) => toWords(missing, t)
 
 const notes = ref('')
 
@@ -65,7 +68,7 @@ const warnings = computed<string[]>(() => {
     out.push(t('rider.publish.warnNoMusicians'))
   }
   for (const status of props.completeness.statuses.filter((s) => !s.complete)) {
-    out.push(t('rider.publish.warnMemberMissing', { name: status.name, missing: status.missing.join(', ') }))
+    out.push(t('rider.publish.warnMemberMissing', { name: status.name, missing: gapWords(status.missing) }))
   }
 
   return out

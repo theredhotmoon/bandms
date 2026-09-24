@@ -216,6 +216,8 @@ export default {
   },
   placement: {
     musician: 'Muzyk',
+    guestName: '{name} (gość)',
+    defaultTag: '(domyślny)',
     discardAsk: 'Odrzucić zmiany na ten koncert i wrócić do „{name}”?',
     switchAsk: 'Zmiana rigu odrzuci zmiany na ten koncert. Kontynuować?',
     stagePosition: '{name} — pozycja na scenie',
@@ -391,6 +393,11 @@ export default {
   completeness: {
     ready: 'gotowe: {done}/{total}',
     missing: 'brak: {items}',
+    gaps: {
+      instrument: 'instrumentu',
+      inputs: 'wejść',
+      monitor: 'odsłuchu',
+    },
   },
   confirmations: {
     title: 'Potwierdzenia rigów',
@@ -436,7 +443,7 @@ export default {
     warnNoMusicians: 'Na planie sceny nie ustawiono żadnych muzyków.',
     warnMemberMissing: '{name} nie ma: {missing}.',
     title: 'Opublikuj v{n}',
-    lead: 'To zamraża ridera w obecnym stanie. Publiczny link będzie serwował v{n}, nawet jeśli muzyk później zmieni swój zapisany rig.',
+    lead: 'To zamraża ridera w obecnym stanie. Publiczny link będzie serwował {n}, nawet jeśli muzyk później zmieni swój zapisany rig.',
     musicians: 'muzycy',
     channels: 'kanały',
     rigsReady: 'gotowe rigi',

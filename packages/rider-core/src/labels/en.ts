@@ -1,4 +1,4 @@
-import type { RiderSheetLabels, InstrumentLabels } from './types'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
 import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
 
 /**
@@ -10,12 +10,31 @@ import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
  */
 export const EN_INSTRUMENT_LABELS: InstrumentLabels = INSTRUMENT_TYPE_LABELS
 
+/** Identity map: the catalogue's `group` is already the English heading. */
+export const EN_INSTRUMENT_GROUPS: InstrumentGroupLabels = {
+  'Vocals': 'Vocals',
+  'Guitars & Bass': 'Guitars & Bass',
+  'Keys': 'Keys',
+  'Brass & Wind': 'Brass & Wind',
+  'Strings': 'Strings',
+  'Percussion': 'Percussion',
+  'Electronic': 'Electronic',
+  'Stage gear': 'Stage gear',
+  'Other': 'Other',
+}
+
 /**
  * The sheet in English — and the schema every other bundle is checked against.
  *
- * Chain, wireless and backline wording is kept identical to the admin's
- * `rider.rig.*` catalogue on purpose: the band configures a rig under one set
- * of words and must not read it back under another.
+ * `chains` is word-for-word the admin's `rider.rig.chains.*.label`, because
+ * the signal chain is the thing a band picks once and then reads back off the
+ * printed sheet; two wordings for that is a real hazard.
+ *
+ * `wirelessTypes` and `backlineCategories` deliberately are **not**. The admin
+ * renders them in a dropdown, where "IEM pack (wireless monitor)" earns its
+ * length; the sheet renders them in a table cell an engineer scans, where
+ * "IEM" is the useful string. The register differs, not the meaning — and it
+ * already differed in English before these bundles existed.
  */
 export const EN_RIDER_SHEET_LABELS: RiderSheetLabels = {
   toolbar: {

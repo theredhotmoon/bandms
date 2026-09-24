@@ -160,3 +160,13 @@ export interface RiderSheetLabels {
  * resolver that turns a placement into a named channel.
  */
 export type InstrumentLabels = Readonly<Record<StagePlotItemType, string>>
+
+/**
+ * Headings in the icon picker, keyed by the catalogue's English `group`.
+ *
+ * Keyed by the English string rather than a slug because that string *is* the
+ * grouping in `INSTRUMENT_ICON_CATALOG` — introducing a parallel slug would be
+ * a second list to keep in step for no gain. An unknown group falls back to
+ * its key, which is at least the English heading.
+ */
+export type InstrumentGroupLabels = Readonly<Record<string, string>>

@@ -15,6 +15,9 @@ import { describe, it, expect } from 'vitest'
 import { EN_RIDER_SHEET_LABELS } from './en'
 import { PL_RIDER_SHEET_LABELS } from './pl'
 import { riderSheetLabels, instrumentLabels, fillLabel } from './index'
+import { EN_INSTRUMENT_GROUPS } from './en'
+import { PL_INSTRUMENT_GROUPS } from './pl'
+import { INSTRUMENT_ICON_CATALOG, searchInstrumentIcons } from '../instrumentIcons'
 
 type Leaf = { key: string; value: string }
 
@@ -84,6 +87,29 @@ describe('rider sheet labels', () => {
     const pl = new Map(leaves(PL_RIDER_SHEET_LABELS).map((l) => [l.key, l.value]))
     const differing = en.filter(({ key, value }) => pl.get(key) !== value)
     expect(differing.length / en.length).toBeGreaterThan(0.6)
+  })
+
+  it('the icon-picker groups cover every group in the catalogue', () => {
+    // Keyed by the catalogue's English `group` string, so a new group (or a
+    // renamed one) silently falls back to English rather than failing a type
+    // check — this is what notices instead.
+    const groups = [...new Set(INSTRUMENT_ICON_CATALOG.map((d) => d.group))]
+    for (const g of groups) {
+      expect(EN_INSTRUMENT_GROUPS[g], `en: ${g}`).toBeTruthy()
+      expect(PL_INSTRUMENT_GROUPS[g], `pl: ${g}`).toBeTruthy()
+    }
+    expect(Object.keys(EN_INSTRUMENT_GROUPS).sort()).toEqual(groups.sort())
+  })
+
+  it('searchInstrumentIcons matches the names actually on screen', () => {
+    // Without the labels argument the picker matched only English, so a Polish
+    // panel listing "Wokal prowadzacy" found nothing for "wokal" and showed
+    // the translated empty state as the one Polish string on the page.
+    const pl = PL_RIDER_SHEET_LABELS.instruments
+    expect(searchInstrumentIcons('wokal', pl).map((d) => d.type)).toContain('vocalist')
+    // The English name still matches, for an engineer who knows the kit by it.
+    expect(searchInstrumentIcons('drum kit', pl).map((d) => d.type)).toContain('drums')
+    expect(searchInstrumentIcons('zzzznope', pl)).toHaveLength(0)
   })
 
   it('an unknown locale prints English rather than nothing', () => {

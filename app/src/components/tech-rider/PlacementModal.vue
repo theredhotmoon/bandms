@@ -56,7 +56,7 @@ const { uiLang } = useUiLang()
 const instNames = computed(() => instrumentLabels(uiLang.value))
 
 const displayName = computed(() => {
-  if (props.tempMusician) return `${props.tempMusician.name} (guest)`
+  if (props.tempMusician) return t('rider.placement.guestName', { name: props.tempMusician.name })
   if (props.member) return props.member.nickname ?? `${props.member.first_name} ${props.member.last_name}`
   return t('rider.placement.musician')
 })
@@ -185,7 +185,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
         >
           <option value="">{{ $t('rider.placement.noSavedRig') }}</option>
           <option v-for="s in memberSetups" :key="s.id" :value="s.id">
-            {{ s.name }}{{ s.is_default ? ' (default)' : '' }}
+            {{ s.name }}{{ s.is_default ? ' ' + $t('rider.placement.defaultTag') : '' }}
           </option>
         </select>
         <p class="picker-hint">

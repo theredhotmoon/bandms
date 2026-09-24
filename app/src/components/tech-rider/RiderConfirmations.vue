@@ -7,6 +7,8 @@
  * at it recently". A rig saved in March scores 100% and may still be wrong.
  */
 import type { RiderConfirmation } from '@/types/riderConfirmation'
+import { formatDayMonth } from '@/utils/formatDate'
+import { useUiLang } from '@/composables/useUiLang'
 
 defineProps<{
   confirmations: RiderConfirmation[]
@@ -18,9 +20,12 @@ defineProps<{
 
 const emit = defineEmits<{ request: [] }>()
 
+const { uiLang } = useUiLang()
+
+/** Chrome locale, and month:'long' — see formatDayMonth(). */
 function when(iso: string | null): string {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  return formatDayMonth(iso, uiLang.value)
 }
 </script>
 

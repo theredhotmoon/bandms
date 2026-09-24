@@ -2,7 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import type { StagePlotItemType } from '@bandms/rider-core'
-import { INSTRUMENT_ICON_GROUPS, instrumentIcon, searchInstrumentIcons } from '@bandms/rider-core'
+import { INSTRUMENT_ICON_GROUPS, instrumentGroupLabels, instrumentIcon, instrumentLabels, searchInstrumentIcons } from '@bandms/rider-core'
+import { useUiLang } from '@/composables/useUiLang'
 
 interface Props {
   modelValue: StagePlotItemType | null
@@ -44,14 +45,23 @@ const popRef    = ref<HTMLElement | null>(null)
 const searchRef = ref<HTMLInputElement | null>(null)
 const popoverStyle = ref<Record<string, string>>({})
 
+const { uiLang } = useUiLang()
+
+// The picker must show the same words as the row that opens it, which reads
+// instrumentLabels(). Left on the catalogue's English `label` it showed
+// "Lead Vocals" under an English heading next to a Polish "Wokal prowadzacy".
+const instNames  = computed(() => instrumentLabels(uiLang.value))
+const groupNames = computed(() => instrumentGroupLabels(uiLang.value))
+
 const current = computed(() => (props.modelValue ? instrumentIcon(props.modelValue) : null))
+const currentLabel = computed(() => (props.modelValue ? instNames.value[props.modelValue] : null))
 
 // Groups filtered by the search term; empty groups are dropped.
 const groups = computed(() => {
-  const matches = new Set(searchInstrumentIcons(search.value).map(d => d.type))
+  const matches = new Set(searchInstrumentIcons(search.value, instNames.value).map(d => d.type))
   return INSTRUMENT_ICON_GROUPS
     .map(g => ({
-      group: g.group,
+      group: groupNames.value[g.group] ?? g.group,
       icons: g.icons.filter(i => matches.has(i.type) && !props.excludeTypes.includes(i.type)),
     }))
     .filter(g => g.icons.length > 0)
@@ -153,7 +163,7 @@ onBeforeUnmount(() => {
         <svg v-else class="w-[18px] h-[18px] text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m6-6H6" />
         </svg>
-        <span v-if="!iconOnly" class="truncate">{{ current?.label ?? (placeholder || $t('rider.iconPicker.pick')) }}</span>
+        <span v-if="!iconOnly" class="truncate">{{ currentLabel ?? (placeholder || $t('rider.iconPicker.pick')) }}</span>
       </span>
       <svg v-if="!iconOnly" class="w-3.5 h-3.5 flex-shrink-0 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -193,7 +203,7 @@ onBeforeUnmount(() => {
             type="button"
             role="option"
             :aria-selected="def.type === modelValue"
-            :title="def.label"
+            :title="instNames[def.type]"
             class="flex flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors"
             :class="def.type === modelValue
               ? 'border-zinc-300 bg-zinc-800 text-white'
@@ -201,7 +211,7 @@ onBeforeUnmount(() => {
             @click="select(def.type)"
           >
             <InstrumentIcon :type="def.type" :size="24" />
-            <span class="w-full truncate text-center text-[9px] leading-tight">{{ def.label }}</span>
+            <span class="w-full truncate text-center text-[9px] leading-tight">{{ instNames[def.type] }}</span>
           </button>
         </div>
       </div>
