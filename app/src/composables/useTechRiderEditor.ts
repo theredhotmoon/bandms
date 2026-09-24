@@ -10,6 +10,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import { updateMemberSetup } from '@/api/bandMemberSetups'
 import { reportSaveError } from '@/utils/formErrors'
 import { useAuth } from './useAuth'
@@ -26,7 +27,7 @@ import { defaultGigLineup } from '@bandms/rider-core'
 import type { TechRiderPayload } from '@bandms/rider-core'
 import { defaultPaFoh, defaultPowerNotes } from '@bandms/rider-core'
 import { resolveRider, riderCompleteness } from '@bandms/rider-core'
-import { unnamedChannelMessage } from '@/utils/rigValidation'
+import { unnamedChannelProblem } from '@/utils/rigValidation'
 import type { ChannelGroup } from '@/utils/rigValidation'
 import type { ResolvableRider } from '@bandms/rider-core'
 import { placementName } from '@bandms/rider-core'
@@ -52,6 +53,7 @@ function emptyDraft(): RiderDraft {
 }
 
 export function useTechRiderEditor(openId: Ref<number | null>) {
+  const { t } = useI18n()
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
@@ -150,24 +152,24 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     const temps = draft.gig_lineup?.temp_musicians ?? []
 
     return [
-      { label: 'Extra channels', inputs: draft.extra_inputs },
+      { label: t('rider.editor.extraChannels'), inputs: draft.extra_inputs },
       ...draft.placements
         .filter((p) => p.overrides?.inputs !== undefined)
         .map((p) => ({
-          label: `${placementName(p, members.value, temps)}'s channels`,
+          label: t('rider.editor.memberChannels', { name: placementName(p, members.value, temps) }),
           inputs: p.overrides?.inputs,
         })),
     ]
   })
 
   /** Blocks the save when a channel has no name; null when the rider is sendable. */
-  const blockingProblem = computed(() => unnamedChannelMessage(channelGroups.value))
+  const blockingProblem = computed(() => unnamedChannelProblem(channelGroups.value))
 
   async function save(): Promise<boolean> {
     if (openId.value === null) return false
 
     if (blockingProblem.value) {
-      toast.error(blockingProblem.value)
+      toast.error(t(blockingProblem.value.key, blockingProblem.value.params))
       return false
     }
 
@@ -177,10 +179,10 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       markClean()
       saved.value = true
       setTimeout(() => { saved.value = false }, 2000)
-      toast.success('Rider saved')
+      toast.success(t('rider.editor.saved'))
       return true
     } catch (e) {
-      reportSaveError(e, 'Failed to save rider')
+      reportSaveError(e, t('rider.editor.saveFailed'))
       return false
     } finally {
       saving.value = false
@@ -202,11 +204,11 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     if (member == null) return
 
     const temps = draft.gig_lineup?.temp_musicians ?? []
-    const problem = unnamedChannelMessage([
-      { label: `${placementName(placement, members.value, temps)}'s channels`, inputs: placement.overrides?.inputs },
+    const problem = unnamedChannelProblem([
+      { label: t('rider.editor.memberChannels', { name: placementName(placement, members.value, temps) }), inputs: placement.overrides?.inputs },
     ])
     if (problem) {
-      toast.error(problem)
+      toast.error(t(problem.key, problem.params))
       return
     }
 
@@ -227,9 +229,9 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
 
       await queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
       await queryClient.invalidateQueries({ queryKey: ['member-setups', member] })
-      toast.success('Saved to the member\'s rig — remember to save the rider too')
+      toast.success(t('rider.editor.promoted'))
     } catch (e) {
-      reportSaveError(e, 'Could not save to the saved rig')
+      reportSaveError(e, t('rider.editor.promoteFailed'))
     } finally {
       promoting.value = false
     }

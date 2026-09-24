@@ -160,4 +160,12 @@ export default {
       },
     },
   },
+  editor: {
+    extraChannels: "Kanały dodatkowe",
+    memberChannels: "Kanały: {name}",
+    saved: "Rider zapisany",
+    saveFailed: "Nie udało się zapisać ridera",
+    promoted: "Zapisano w rigu tej osoby — pamiętaj, aby zapisać też ridera",
+    promoteFailed: "Nie udało się zapisać w zapisanym rigu",
+  },
 }

@@ -84,7 +84,9 @@ const MIGRATED = [
   'views/admin/MyProfileView.vue',
   'views/admin/MySetupsView.vue',
   'components/admin/forms/BandMemberForm.vue',
-  'components/band-member',  'views/admin/BandProfileAdminView.vue',
+  'components/band-member',
+  'composables/useTechRiderEditor.ts',
+  'views/admin/BandProfileAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
 ]

@@ -5,7 +5,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { hasUnnamedChannels, unnamedChannelMessage, unnamedChannels } from './rigValidation'
+import { hasUnnamedChannels, unnamedChannelProblem, unnamedChannels } from './rigValidation'
+import en from '../i18n/en'
 import { input } from '@bandms/rider-core/testing'
 
 describe('unnamedChannels', () => {
@@ -36,45 +37,62 @@ describe('unnamedChannels', () => {
   })
 })
 
-describe('unnamedChannelMessage', () => {
+describe('unnamedChannelProblem', () => {
   it('returns null when every group is fine', () => {
-    expect(unnamedChannelMessage([
+    expect(unnamedChannelProblem([
       { label: 'Extra channels', inputs: [input({ instrument: 'Talkback' })] },
       { label: "Marek's channels", inputs: [] },
     ])).toBeNull()
   })
 
   it('names the row and the section when one channel is unnamed', () => {
-    const message = unnamedChannelMessage([
+    expect(unnamedChannelProblem([
       { label: 'Extra channels', inputs: [input({ instrument: 'Talkback' }), input({ instrument: '' })] },
-    ])
-
-    expect(message).toBe('Row 2 of Extra channels needs an instrument name before this can be saved.')
+    ])).toEqual({
+      key: 'band.setups.unnamedOne',
+      params: { row: 2, label: 'Extra channels' },
+    })
   })
 
   it('counts and locates them when several are unnamed', () => {
-    const message = unnamedChannelMessage([
+    expect(unnamedChannelProblem([
       { label: 'Extra channels', inputs: [input({ instrument: '' })] },
       { label: "Marek's channels", inputs: [input({ instrument: 'Kick' }), input({ instrument: '' })] },
-    ])
-
-    expect(message).toBe(
-      '2 channels still need an instrument name: Extra channels (1); Marek\'s channels (2).',
-    )
+    ])).toEqual({
+      key: 'band.setups.unnamedMany',
+      params: { total: 2, where: "Extra channels (1); Marek's channels (2)" },
+    })
   })
 
-  it('leaves clean groups out of the message', () => {
-    const message = unnamedChannelMessage([
+  it('leaves clean groups out of the problem', () => {
+    const problem = unnamedChannelProblem([
       { label: 'Fine', inputs: [input({ instrument: 'Kick' })] },
       { label: 'Broken', inputs: [input({ instrument: '' })] },
     ])
 
-    expect(message).toBe('Row 1 of Broken needs an instrument name before this can be saved.')
-    expect(message).not.toContain('Fine')
+    expect(problem).toEqual({ key: 'band.setups.unnamedOne', params: { row: 1, label: 'Broken' } })
+    expect(JSON.stringify(problem)).not.toContain('Fine')
   })
 
   it('has nothing to say about a rider with no channels at all', () => {
-    expect(unnamedChannelMessage([{ label: 'Extra channels', inputs: [] }])).toBeNull()
-    expect(unnamedChannelMessage([])).toBeNull()
+    expect(unnamedChannelProblem([{ label: 'Extra channels', inputs: [] }])).toBeNull()
+    expect(unnamedChannelProblem([])).toBeNull()
+  })
+
+  it('returns keys that exist in the catalogue', () => {
+    // The whole point of the key/params shape is that the caller translates.
+    // A key that does not resolve would render as a dotted path in a toast,
+    // and check-i18n-keys cannot see it — the caller passes a variable.
+    const keys = new Set(flatKeys(en))
+    expect(keys.has('band.setups.unnamedOne')).toBe(true)
+    expect(keys.has('band.setups.unnamedMany')).toBe(true)
   })
 })
+
+function flatKeys(node: unknown, prefix = ''): string[] {
+  if (typeof node === 'string') return [prefix]
+  if (node && typeof node === 'object') {
+    return Object.entries(node).flatMap(([k, v]) => flatKeys(v, prefix ? `${prefix}.${k}` : k))
+  }
+  return []
+}

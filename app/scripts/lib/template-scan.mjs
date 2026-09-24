@@ -141,10 +141,31 @@ export function mustacheHits(tpl, offset) {
   const re = /\{\{([\s\S]*?)\}\}/g
   let m
   while ((m = re.exec(tpl)) !== null) {
+    const line = offset + countLines(tpl.slice(0, m.index)) - 1
     const hits = copyLiterals(m[1])
-    if (hits.length) out.push({ line: offset + countLines(tpl.slice(0, m.index)) - 1, hits })
+    if (hits.length) out.push({ line, hits })
+    else if (bareKeypath(m[1])) out.push({ line, hits: [`${m[1].trim()} — looks like a translation key with no $t()`] })
   }
   return out
+}
+
+/**
+ * A mustache whose whole body is a quoted dotted key and nothing else.
+ *
+ * `{{ ('band.setups.title') }}` renders the key itself on screen, and every
+ * guard passes it: `looksLikeCopy` deliberately rejects a dotted path (it is a
+ * key, not prose), `check-i18n-keys` only resolves literal `$t('…')`
+ * references, and `vue-tsc` sees a valid string expression.
+ *
+ * It shipped exactly once, in the PR that added this check — four of them in
+ * one file, because a shell-escaped `$t` collapsed to nothing in a migration
+ * script and the output looked plausible. A person reviewing the diff sees
+ * mustaches full of catalogue keys either way.
+ */
+function bareKeypath(expr) {
+  const s = expr.trim().replace(/^\(+|\)+$/g, '').trim()
+  const lit = s.match(/^'([^']+)'$|^"([^"]+)"$|^`([^`]+)`$/)
+  return !!lit && KEYPATH.test(lit[1] ?? lit[2] ?? lit[3])
 }
 
 /**

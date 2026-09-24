@@ -52,8 +52,9 @@ export default {
       replace: 'Replace',
     },
     inputs: {
-      // `micDi` and `stand` are `|`-joined option lists in the template, not
-      // plural forms — they are split on the pipe by the component.
+      // These five are the table's column headers. The option lists they head
+      // live in `micDiOptions` / `standOptions` below, keyed so the stored
+      // value stays English while the label translates.
       instrument: 'Instrument / source',
       micDi: 'Mic / DI',
       model: 'Model',
@@ -170,5 +171,13 @@ export default {
         other: 'Other',
       },
     },
+  },
+  editor: {
+    extraChannels: "Extra channels",
+    memberChannels: "{name}'s channels",
+    saved: "Rider saved",
+    saveFailed: "Failed to save rider",
+    promoted: "Saved to the member's rig — remember to save the rider too",
+    promoteFailed: "Could not save to the saved rig",
   },
 }

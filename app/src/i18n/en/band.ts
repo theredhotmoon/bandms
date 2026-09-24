@@ -444,6 +444,8 @@ export default {
     confirmFailed: 'Could not record your confirmation',
     thisGig: 'this gig',
     thisRig: 'this rig',
+    unnamedOne: "Row {row} of {label} needs an instrument name before this can be saved.",
+    unnamedMany: "Channels still needing an instrument name ({total}): {where}.",
     saved: 'Setup saved',
     saveFailed: 'Failed to save setup',
     created: 'Setup created',

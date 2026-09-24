@@ -14,7 +14,7 @@ import type { Instrument } from '@bandms/rider-core'
 import type { RigField, RigSpec } from '@bandms/rider-core'
 import { defaultRigSpec } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
-import { unnamedChannelMessage } from '@/utils/rigValidation'
+import { unnamedChannelProblem } from '@/utils/rigValidation'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 
@@ -88,14 +88,14 @@ const saved = ref(false)
  * here rather than left to the 422, which cannot say which row it meant.
  */
 const blockingProblem = computed(() =>
-  unnamedChannelMessage([{ label: name.value || t('band.setups.thisRig'), inputs: rig.value.inputs }]),
+  unnamedChannelProblem([{ label: name.value || t('band.setups.thisRig'), inputs: rig.value.inputs }]),
 )
 
 async function save() {
   if (openId.value === null) return
 
   if (blockingProblem.value) {
-    toast.error(blockingProblem.value)
+    toast.error(t(blockingProblem.value.key, blockingProblem.value.params))
     return
   }
 

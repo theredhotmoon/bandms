@@ -43,8 +43,8 @@ const myMember = computed(() =>
   <AdminLayout>
     <div class="my-setups-shell">
       <div class="page-header">
-        <div class="page-title">{{ ('band.setups.title') }}</div>
-        <div class="page-subtitle">{{ ('band.setups.subtitle') }}</div>
+        <div class="page-title">{{ $t('band.setups.title') }}</div>
+        <div class="page-subtitle">{{ $t('band.setups.subtitle') }}</div>
       </div>
 
       <div v-if="pending.length" class="confirm-banner">
@@ -65,9 +65,9 @@ const myMember = computed(() =>
         </div>
       </div>
 
-      <div v-if="query.isPending.value" class="state-msg">{{ ('common.state.loading') }}</div>
+      <div v-if="query.isPending.value" class="state-msg">{{ $t('common.state.loading') }}</div>
       <div v-else-if="!myMember" class="state-msg">
-        {{ ('band.myProfile.notLinked') }}
+        {{ $t('band.myProfile.notLinked') }}
       </div>
       <MemberSetupsPanel v-else :key="myMember.id" :member="myMember" />
     </div>

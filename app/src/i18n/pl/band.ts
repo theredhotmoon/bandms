@@ -440,6 +440,8 @@ export default {
     confirmFailed: 'Nie udało się zapisać potwierdzenia',
     thisGig: 'ten koncert',
     thisRig: 'ten rig',
+    unnamedOne: "Wiersz {row} w „{label}” wymaga nazwy instrumentu przed zapisem.",
+    unnamedMany: "Kanały wymagające nazwy instrumentu ({total}): {where}.",
     saved: 'Zestaw zapisany',
     saveFailed: 'Nie udało się zapisać zestawu',
     created: 'Zestaw utworzony',
