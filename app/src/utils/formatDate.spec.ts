@@ -9,6 +9,16 @@ describe('formatShortDate', () => {
     expect(formatShortDate('2026-05-08', 'pl')).not.toContain('May')
   })
 
+  it('uses the Polish genitive, not the nominative', () => {
+    // "8 maja", not "8 maj". This is why the helper asks for month: 'long' —
+    // CLDR's abbreviated Polish May is the bare word "maj", so the short form
+    // reads wrong for exactly one month of the year and looks perfect for the
+    // other eleven.
+    expect(formatShortDate('2026-05-08', 'pl')).toContain('maja')
+    expect(formatShortDate('2026-09-08', 'pl')).toContain('września')
+    expect(formatShortDate('2026-01-08', 'pl')).toContain('stycznia')
+  })
+
   it('includes the day and the year', () => {
     const out = formatShortDate('2026-05-08', 'en')
     expect(out).toContain('8')

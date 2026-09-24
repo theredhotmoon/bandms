@@ -17,7 +17,18 @@ export function formatShortDate(date: string | null | undefined, locale: string)
   // An unparseable string is a data problem, not a formatting one — return it
   // untouched rather than rendering "Invalid Date" at the reader.
   if (Number.isNaN(parsed.getTime())) return date
-  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+  // `month: 'long'`, not 'short'. Polish dates take the genitive — "8 maja",
+  // not "8 maj" — and CLDR's abbreviated form gives the nominative for May
+  // specifically, because the Polish abbreviation for that month *is* the
+  // whole word. Eleven months would have looked fine and the twelfth would
+  // have read wrong, which is the worst kind of bug to ship: invisible to
+  // anyone testing in January.
+  //
+  // This also changes the English rendering: the hand-rolled version these
+  // helpers replaced produced "08 May 2026", and `en` through Intl gives
+  // "May 8, 2026". That is what `en` means to the platform, and delegating
+  // the choice is the point of the change.
+  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 /** `245` → `4:05`. Seconds are data; the colon is not copy in any locale. */
