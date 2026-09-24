@@ -90,6 +90,8 @@ describe('i18n catalogues', () => {
         'rider.rig.inputs.count.extraChannel',
         'rider.rig.inputs.needsName',
         'band.setups.waiting',
+        'media.releases.uploadPhotos',
+        'media.releases.photosAdded',
       ])
 
       const offenders = all
@@ -179,6 +181,13 @@ describe('i18n catalogues', () => {
       for (const n of ['channel', 'extraChannel']) {
         expect(has(`rider.rig.inputs.empty.${n}`), n).toBe(true)
         expect(has(`rider.rig.inputs.count.${n}`), n).toBe(true)
+      }
+    })
+
+    it('media.releases.types covers every ReleaseType', () => {
+      // Built at render time in both the list filter and the form select.
+      for (const rt of ['LP', 'EP', 'single', 'compilation']) {
+        expect(has(`media.releases.types.${rt}`), rt).toBe(true)
       }
     })
 
