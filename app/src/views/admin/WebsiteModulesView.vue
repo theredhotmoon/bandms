@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
@@ -8,6 +9,27 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
+
+const { t } = useI18n()
+
+/**
+ * Class lists live here, not inline in `:class`.
+ *
+ * A space-separated Tailwind list looks exactly like copy to the string lint
+ * (two letters, an inner space), and the usual escape hatch does not work in a
+ * template: an `i18n-ignore` comment inside a tag's attribute list breaks the
+ * tag. Naming the expression removes the literal from the template and reads
+ * better anyway.
+ */
+const badgeClass = (on: boolean) =>
+  on ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500' // i18n-ignore: CSS classes
+
+const editIconClass = (editing: boolean) =>
+  editing ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400' // i18n-ignore: CSS classes
+
+const inputBorderClass = (hasError: boolean) =>
+  hasError ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500' // i18n-ignore: CSS classes
+
 
 const { query, toggleModule, updateSettings, reorder } = useWebsiteModules()
 
@@ -208,7 +230,7 @@ async function saveEdit(slug: string) {
   } catch (e) {
     // Field-level errors render inline next to the offending input; anything
     // else would otherwise vanish, leaving the form looking like it saved.
-    reportSaveError(e, 'Could not save the module', fieldErrors)
+    reportSaveError(e, t('pages.modules.saveFailed'), fieldErrors)
   }
 }
 </script>
@@ -217,14 +239,14 @@ async function saveEdit(slug: string) {
   <AdminLayout>
   <div class="p-6 max-w-3xl mx-auto">
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-white">Website Modules</h1>
-      <p class="text-sm text-zinc-500 mt-1">Drag rows to set the nav order. Order takes effect after a rebuild.</p>
+      <h1 class="text-2xl font-bold text-white">{{ $t('pages.modules.title') }}</h1>
+      <p class="text-sm text-zinc-500 mt-1">{{ $t('pages.modules.lead') }}</p>
     </div>
 
-    <div v-if="query.isLoading.value" class="text-zinc-500">Loading…</div>
+    <div v-if="query.isLoading.value" class="text-zinc-500">{{ $t('common.state.loading') }}</div>
 
     <div v-else-if="query.isError.value" class="text-red-400">
-      Failed to load modules. Check the API connection.
+      {{ $t('pages.modules.loadFailed') }}
     </div>
 
     <div v-else class="flex flex-col gap-2">
@@ -278,16 +300,16 @@ async function saveEdit(slug: string) {
           <span
             v-if="!ALWAYS_ON_MODULES.has(mod.slug)"
             class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
-            :class="mod.enabled ? 'bg-teal-900 text-teal-300' : 'bg-zinc-800 text-zinc-500'"
+            :class="badgeClass(mod.enabled)"
           >
-            {{ mod.enabled ? 'Live' : 'Off' }}
+            {{ mod.enabled ? $t('pages.modules.live') : $t('pages.modules.off') }}
           </span>
 
           <!-- Edit button -->
           <button
             class="flex-shrink-0 p-1 rounded transition-colors"
-            :class="editingSlug === mod.slug ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400'"
-            :aria-label="`Edit ${mod.display_name} settings`"
+            :class="editIconClass(editingSlug === mod.slug)"
+            :aria-label="$t('pages.modules.editSettings', { name: mod.display_name })"
             @click="editingSlug === mod.slug ? cancelEdit() : startEdit(mod)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -305,7 +327,7 @@ async function saveEdit(slug: string) {
               :disabled="toggleModule.isPending.value"
               @change="toggleModule.mutate({ slug: mod.slug, enabled: !mod.enabled })"
             />
-            {{ mod.enabled ? 'Enabled' : 'Disabled' }}
+            {{ mod.enabled ? $t('pages.modules.enabled') : $t('pages.modules.disabled') }}
           </label>
         </div>
 
@@ -314,10 +336,10 @@ async function saveEdit(slug: string) {
 
           <!-- Custom name inputs -->
           <div class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Custom name</span>
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.customName') }}</span>
             <div class="flex flex-col gap-2">
               <div class="flex items-center gap-2">
-                <span class="lang-badge">EN</span>
+                <span class="lang-badge">EN</span> <!-- i18n-ignore: ISO 639-1 code -->
                 <input
                   v-model="draftNameEn"
                   type="text"
@@ -327,7 +349,7 @@ async function saveEdit(slug: string) {
                 />
               </div>
               <div class="flex items-center gap-2">
-                <span class="lang-badge lang-badge--pl">PL</span>
+                <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: ISO 639-1 code -->
                 <input
                   v-model="draftNamePl"
                   type="text"
@@ -344,13 +366,10 @@ async function saveEdit(slug: string) {
                regenerate button, since this field exists to break the
                label→URL coupling regenerating would reintroduce. hintEn/Pl
                carry the resolved path preview instead. -->
-          <p v-if="!isPageModule" class="text-xs text-zinc-500">
-            This module is site chrome, not a page — it has no URL. Switching it off
-            hides it from the public site.
-          </p>
+          <p v-if="!isPageModule" class="text-xs text-zinc-500">{{ $t('pages.modules.chromeNote') }}</p>
 
           <div v-if="isPageModule" class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">URL slug</span>
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.urlSlug') }}</span>
             <SlugInput
               v-model="draftSlugEn"
               v-model:modelValuePl="draftSlugPl"
@@ -363,10 +382,11 @@ async function saveEdit(slug: string) {
               :hintEn="previewPath(mod, 'en', draftSlugEn)"
               :hintPl="previewPath(mod, 'pl', draftSlugPl)"
             />
-            <span class="text-xs text-zinc-600">
-              Lowercase letters, numbers and dashes. Leave empty to serve under
-              <code class="text-zinc-500">/{{ mod.slug }}</code>. Changing this moves the page — old links stop working.
-            </span>
+            <!-- <i18n-t>, not a parameter: {path} is a <code> element, and an
+                 interpolated parameter renders as escaped plain text. -->
+            <i18n-t keypath="pages.modules.slugHint" tag="span" class="text-xs text-zinc-600" scope="global">
+              <template #path><code class="text-zinc-500">/{{ mod.slug }}</code></template>
+            </i18n-t>
           </div>
 
           <!-- Page copy. Which fields appear comes from the @bandms/site-copy
@@ -374,7 +394,7 @@ async function saveEdit(slug: string) {
                module gains a field there without a migration. Grouped by page
                section; a group's <details> keeps the form scannable. -->
           <div v-if="settingsFields.length > 0" class="flex flex-col gap-3" data-testid="page-copy">
-            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Page copy</span>
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.pageCopy') }}</span>
 
             <details
               v-for="(group, gi) in settingsGroups"
@@ -406,7 +426,7 @@ async function saveEdit(slug: string) {
                           :placeholder="field.placeholder(locale)"
                           :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
                           class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-y"
-                          :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                          :class="inputBorderClass(!!fieldErrors[`settings.${field.key}.${locale}`])"
                         />
                         <input
                           v-else
@@ -417,7 +437,7 @@ async function saveEdit(slug: string) {
                           :placeholder="field.placeholder(locale)"
                           :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
                           class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                          :class="fieldErrors[`settings.${field.key}.${locale}`] ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500'"
+                          :class="inputBorderClass(!!fieldErrors[`settings.${field.key}.${locale}`])"
                         />
                       </div>
                       <span v-if="fieldErrors[`settings.${field.key}.${locale}`]" class="text-xs text-red-400 pl-10">
@@ -430,12 +450,7 @@ async function saveEdit(slug: string) {
               </div>
             </details>
 
-            <span class="text-xs text-zinc-600">
-              The greyed text in each box is what the site shows now. Type to replace it;
-              leaving a box empty keeps the default for that language. Where there is no
-              default at all, the other language's text is used. Changes appear on the
-              public site after a rebuild.
-            </span>
+            <span class="text-xs text-zinc-600">{{ $t('pages.modules.pageCopyHint') }}</span>
           </div>
 
           <!-- Section visibility. Which toggles appear comes from
@@ -443,7 +458,7 @@ async function saveEdit(slug: string) {
                same additive-and-safe rule as page copy. Independent of the
                module's own `enabled` switch, which controls the whole page. -->
           <div v-if="visibilityFields.length > 0" class="flex flex-col gap-2">
-            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Section visibility</span>
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.visibility') }}</span>
 
             <label
               v-for="field in visibilityFields"
@@ -458,24 +473,22 @@ async function saveEdit(slug: string) {
                 class="mt-0.5 rounded border-zinc-700 bg-zinc-800 text-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
               />
               <span class="flex flex-col gap-0.5">
-                <span>{{ field.label }}</span>
-                <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
+                <span>{{ $t(`pages.visibility.${mod.slug}.${field.key}`) }}</span>
+                <span v-if="field.help" class="text-xs text-zinc-600">{{ $t(`pages.visibility.${mod.slug}.${field.key}_help`) }}</span>
               </span>
             </label>
 
-            <span class="text-xs text-zinc-600">
-              Changes appear on the public site after a rebuild.
-            </span>
+            <span class="text-xs text-zinc-600">{{ $t('pages.modules.rebuildNote') }}</span>
           </div>
 
           <!-- Per-page select (list modules only) -->
           <div v-if="isPageModule && LIST_SLUGS.has(mod.slug)" class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Items per page</span>
+            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.perPage') }}</span>
             <select
               v-model="draftPerPage"
               class="w-44 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors"
             >
-              <option :value="null">Default</option>
+              <option :value="null">{{ $t('pages.modules.perPageDefault') }}</option>
               <option v-for="n in PER_PAGE_OPTIONS" :key="n" :value="n">{{ n }}</option>
             </select>
           </div>
@@ -486,14 +499,14 @@ async function saveEdit(slug: string) {
               class="px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
               @click="cancelEdit"
             >
-              Cancel
+              {{ $t('common.actions.cancel') }}
             </button>
             <button
               class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="updateSettings.isPending.value || !isDirty"
               @click="saveEdit(mod.slug)"
             >
-              {{ updateSettings.isPending.value ? 'Saving…' : 'Save' }}
+              {{ updateSettings.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
             </button>
           </div>
         </div>

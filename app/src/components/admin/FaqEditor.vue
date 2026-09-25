@@ -75,12 +75,17 @@ function submit() {
 }
 
 const INPUT_BASE =
-  'flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors'
+  'flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors' // i18n-ignore: CSS classes
+
+/** The textarea variant — same classes plus a resize affordance. */
+function textareaClass(key: string) {
+  return `${inputClass(key)} resize-y` // i18n-ignore: CSS classes
+}
 
 function inputClass(key: string) {
   return props.errors[key]
     ? `${INPUT_BASE} border-red-500`
-    : `${INPUT_BASE} border-zinc-700 focus:border-teal-500`
+    : `${INPUT_BASE} border-zinc-700 focus:border-teal-500` // i18n-ignore: CSS classes
 }
 
 // Every key this form renders inline. Anything else — a bare `question` or
@@ -112,14 +117,14 @@ const otherErrors = computed(() =>
 
     <div class="flex flex-wrap items-end gap-3">
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-zinc-600" for="faq-module">Subpage</label>
+        <label class="text-xs text-zinc-600" for="faq-module">{{ $t('pages.faqs.subpage') }}</label>
         <select
           id="faq-module"
           v-model="draftModule"
           class="w-52 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors"
         >
           <option v-for="m in modules" :key="m.slug" :value="m.slug">
-            {{ m.custom_name?.en || m.display_name }}{{ m.enabled ? '' : ' (off)' }}
+            {{ m.custom_name?.en || m.display_name }}{{ m.enabled ? '' : ' ' + $t('pages.faqs.moduleOff') }}
           </option>
         </select>
         <span v-if="errors['module_slug']" class="text-xs text-red-400">{{ errors['module_slug'][0] }}</span>
@@ -127,12 +132,12 @@ const otherErrors = computed(() =>
 
       <label class="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer select-none pb-1.5">
         <input v-model="published" type="checkbox" class="w-4 h-4 rounded accent-teal-500" />
-        Published
+        {{ $t('pages.faqs.published') }}
       </label>
     </div>
 
     <div class="flex flex-col gap-1">
-      <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Question</span>
+      <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.question') }}</span>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
           <div class="trans-row">
@@ -154,7 +159,7 @@ const otherErrors = computed(() =>
     </div>
 
     <div class="flex flex-col gap-1">
-      <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Answer</span>
+      <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.answer') }}</span>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
           <div class="trans-row trans-row--top">
@@ -165,7 +170,7 @@ const otherErrors = computed(() =>
               rows="4"
               maxlength="4000"
               :aria-invalid="Boolean(errors[`answer.${l}`])"
-              :class="`${inputClass(`answer.${l}`)} resize-y`"
+              :class="textareaClass(`answer.${l}`)"
             />
           </div>
           <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400 pl-10">
@@ -175,10 +180,7 @@ const otherErrors = computed(() =>
       </div>
     </div>
 
-    <span class="text-xs text-zinc-600">
-      A question with only one language filled in still shows on the other — the public
-      site falls back rather than rendering an empty row. Changes appear after a rebuild.
-    </span>
+    <span class="text-xs text-zinc-600">{{ $t('pages.faqs.editorHint') }}</span>
 
     <div class="flex justify-end gap-2 pt-1">
       <button
@@ -186,14 +188,14 @@ const otherErrors = computed(() =>
         class="px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
         @click="emit('cancel')"
       >
-        Cancel
+        {{ $t('common.actions.cancel') }}
       </button>
       <button
         type="submit"
         class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="pending || !isDirty"
       >
-        {{ pending ? 'Saving…' : 'Save' }}
+        {{ pending ? $t('common.actions.saving') : $t('common.actions.save') }}
       </button>
     </div>
   </form>

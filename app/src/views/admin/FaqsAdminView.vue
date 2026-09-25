@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -8,6 +9,13 @@ import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
+
+const { t } = useI18n()
+
+/** See WebsiteModulesView: a class list is not copy, but it reads as one. */
+const editIconClass = (editing: boolean) =>
+  editing ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400' // i18n-ignore: CSS classes
+
 
 const { query, create, update, remove, reorder } = useFaqs()
 const { query: modulesQuery } = useWebsiteModules()
@@ -59,29 +67,29 @@ async function save(payload: FaqPayload) {
   try {
     if (editing.value === 'new') {
       await create.mutateAsync(payload)
-      toast.success('Question added')
+      toast.success(t('pages.faqs.added'))
     } else if (typeof editing.value === 'number') {
       await update.mutateAsync({ id: editing.value, payload })
-      toast.success('Question saved')
+      toast.success(t('pages.faqs.saved'))
     }
     // Follow the entry if it was moved to another subpage, so it does not
     // appear to vanish on save.
     if (payload.module_slug) activeSlug.value = payload.module_slug
     editing.value = null
   } catch (e) {
-    reportSaveError(e, 'Could not save the question', fieldErrors)
+    reportSaveError(e, t('pages.faqs.saveFailed'), fieldErrors)
   }
 }
 
 async function destroy(faq: Faq) {
-  const label = faq.question?.en || faq.question?.pl || 'this question'
-  if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return
+  const label = faq.question?.en || faq.question?.pl || t('pages.faqs.thisQuestion')
+  if (!window.confirm(t('pages.faqs.deleteAsk', { title: label }))) return
   try {
     await remove.mutateAsync(faq.id)
     if (editing.value === faq.id) cancelEdit()
-    toast.success('Question deleted')
+    toast.success(t('pages.faqs.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Could not delete the question')
+    reportSaveError(e, t('pages.faqs.deleteFailed'))
   }
 }
 
@@ -135,18 +143,15 @@ function onDragEnd() {
     <div class="p-6 max-w-3xl mx-auto">
       <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 class="text-2xl font-bold text-white">FAQ</h1>
-          <p class="text-sm text-zinc-500 mt-1">
-            Questions are grouped by the subpage they appear on. A page with no questions
-            shows no FAQ block at all.
-          </p>
+          <h1 class="text-2xl font-bold text-white">{{ $t('pages.faqs.title') }}</h1>
+          <p class="text-sm text-zinc-500 mt-1">{{ $t('pages.faqs.lead') }}</p>
         </div>
         <button
           class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50"
           :disabled="editing === 'new'"
           @click="startEdit('new')"
         >
-          + Add question
+          {{ $t('pages.faqs.add') }}
         </button>
       </div>
 
@@ -171,17 +176,15 @@ function onDragEnd() {
         </button>
       </div>
 
-      <div v-if="query.isLoading.value" class="text-zinc-500">Loading…</div>
+      <div v-if="query.isLoading.value" class="text-zinc-500">{{ $t('common.state.loading') }}</div>
 
-      <div v-else-if="query.isError.value" class="text-red-400">
-        Failed to load questions. Check the API connection.
-      </div>
+      <div v-else-if="query.isError.value" class="text-red-400">{{ $t('pages.faqs.loadFailed') }}</div>
 
       <template v-else>
         <!-- New-entry form -->
         <div v-if="editing === 'new'" class="rounded-xl border border-teal-700 bg-zinc-900 overflow-hidden mb-3">
           <div class="px-4 py-2 text-xs font-semibold text-teal-400 uppercase tracking-wider">
-            New question
+            {{ $t('pages.faqs.newQuestion') }}
           </div>
           <FaqEditor
             :faq="null"
@@ -195,8 +198,7 @@ function onDragEnd() {
         </div>
 
         <p v-if="visible.length === 0 && editing !== 'new'" class="text-sm text-zinc-500 py-6">
-          No questions for this subpage yet. Add one and it will appear in an FAQ block
-          at the bottom of that page.
+          {{ $t('pages.faqs.emptyGroup') }}
         </p>
 
         <div v-else class="flex flex-col gap-2">
@@ -235,9 +237,9 @@ function onDragEnd() {
                 <span
                   class="font-semibold text-sm block truncate"
                   :class="faq.is_published ? 'text-white' : 'text-zinc-500'"
-                >{{ faq.question?.en || faq.question?.pl || '(untitled)' }}</span>
+                >{{ faq.question?.en || faq.question?.pl || $t('pages.faqs.untitled') }}</span>
                 <span v-if="!faq.question?.pl || !faq.question?.en" class="text-xs text-amber-500/80">
-                  {{ faq.question?.en ? 'No Polish translation' : 'No English translation' }}
+                  {{ faq.question?.en ? $t('pages.faqs.noPl') : $t('pages.faqs.noEn') }}
                 </span>
               </div>
 
@@ -249,16 +251,16 @@ function onDragEnd() {
                     : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'
                 "
                 :disabled="update.isPending.value"
-                :title="faq.is_published ? 'Hide from the public site' : 'Show on the public site'"
+                :title="faq.is_published ? $t('pages.faqs.hideFromSite') : $t('pages.faqs.showOnSite')"
                 @click="togglePublished(faq)"
               >
-                {{ faq.is_published ? 'Live' : 'Draft' }}
+                {{ faq.is_published ? $t('pages.faqs.live') : $t('pages.faqs.draft') }}
               </button>
 
               <button
                 class="flex-shrink-0 p-1 rounded transition-colors"
-                :class="editing === faq.id ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400'"
-                :aria-label="`Edit question ${i + 1}`"
+                :class="editIconClass(editing === faq.id)"
+                :aria-label="$t('pages.faqs.editQuestion', { n: i + 1 })"
                 @click="editing === faq.id ? cancelEdit() : startEdit(faq.id)"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -269,7 +271,7 @@ function onDragEnd() {
 
               <button
                 class="flex-shrink-0 p-1 rounded text-zinc-600 hover:text-red-400 transition-colors"
-                :aria-label="`Delete question ${i + 1}`"
+                :aria-label="$t('pages.faqs.deleteQuestion', { n: i + 1 })"
                 :disabled="remove.isPending.value"
                 @click="destroy(faq)"
               >

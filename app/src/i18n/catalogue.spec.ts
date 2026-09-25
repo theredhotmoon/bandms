@@ -17,6 +17,7 @@ import { describe, it, expect } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import en from './en'
 import pl from './pl'
+import { MODULE_VISIBILITY_SCHEMA } from '@/config/moduleSettings'
 
 type Leaf = { key: string; value: string }
 
@@ -108,6 +109,8 @@ describe('i18n catalogues', () => {
         'rider.requirements.units',
         'rider.requirements.outletsAcross',
         'rider.admin.asked',
+        'pages.heroImages.pictureCount',
+        'pages.heroImages.uploaded',
       ])
 
       const offenders = all
@@ -216,6 +219,20 @@ describe('i18n catalogues', () => {
         'wireless', 'backline', 'power', 'foh',
       ]) {
         expect(has(`rider.stagePlot.views.${v}`), v).toBe(true)
+      }
+    })
+
+    it('pages.visibility covers every MODULE_VISIBILITY_SCHEMA field', () => {
+      // WebsiteModulesView builds `pages.visibility.<slug>.<key>` (plus a
+      // `_help` sibling) at render time, so no guard can resolve it — the
+      // schema carries keys now, and the words live in the catalogue.
+      for (const [slug, fields] of Object.entries(MODULE_VISIBILITY_SCHEMA)) {
+        for (const f of fields) {
+          expect(has(`pages.visibility.${slug}.${f.key}`), `${slug}.${f.key}`).toBe(true)
+          if (f.help) {
+            expect(has(`pages.visibility.${slug}.${f.key}_help`), `${slug}.${f.key}_help`).toBe(true)
+          }
+        }
       }
     })
 
