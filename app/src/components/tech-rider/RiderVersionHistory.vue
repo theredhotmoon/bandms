@@ -150,7 +150,7 @@ function formatDate(iso: string | null): string {
         </p>
 
         <div v-for="section in diff.sections" :key="section.title" class="diff-section">
-          <div class="diff-section-title">{{ section.title }}</div>
+          <div class="diff-section-title">{{ $t(`rider.diff.sections.${section.title}`) }}</div>
           <ul class="diff-list">
             <li v-for="(entry, j) in section.entries" :key="j" class="diff-entry">
               <span class="diff-mark" :class="`diff-mark--${entry.kind}`">

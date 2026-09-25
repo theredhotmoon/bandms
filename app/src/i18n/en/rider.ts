@@ -480,6 +480,53 @@ export default {
     publish: 'Publish v{n}',
     publishAnyway: 'Publish v{n} anyway',
   },
+  diff: {
+    sections: {
+      channels: 'Channels',
+      monitors: 'Monitors',
+      backline: 'Backline',
+      wireless: 'RF / Wireless',
+      power: 'Power',
+    },
+    // Counts in the one-line summary: "+2 channels · 1 monitor changed".
+    counts: {
+      channels: '{n} channel | {n} channels',
+      monitors: '{n} monitor | {n} monitors',
+      backline: '{n} backline item | {n} backline items',
+      wireless: '{n} RF unit | {n} RF units',
+      power: '{n} power position | {n} power positions',
+      other: '{n} change | {n} changes',
+    },
+    /** Field names inside a changed row: "IEM model: X → Y". */
+    fields: {
+      instrument: 'instrument',
+      micDi: 'mic/DI',
+      model: 'model',
+      stand: 'stand',
+      notes: 'notes',
+      type: 'type',
+      config: 'config',
+      mix: 'mix',
+      iemPack: 'IEM pack',
+      iemModel: 'IEM model',
+      iemFrequency: 'IEM frequency',
+      category: 'category',
+      brand: 'brand',
+      specs: 'specs',
+      band: 'freq. band',
+      unit: 'unit',
+      outlets: 'outlets',
+    },
+    values: {
+      own: 'own',
+      provided: 'provided',
+    },
+    /** A channel whose instrument has no name yet. */
+    unnamed: 'Unnamed',
+    monitorFallback: 'Monitor',
+    /** Suffix on the changed-count, e.g. "1 monitor changed". */
+    changed: 'changed',
+  },
   versions: {
     copied: 'Link to v{n} copied',
     copyFailed: 'Could not copy the link',

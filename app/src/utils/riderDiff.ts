@@ -60,7 +60,7 @@ interface Row {
   fields: Record<string, string>
 }
 
-function diffRows(before: Row[], after: Row[]): DiffEntry[] {
+function diffRows(before: Row[], after: Row[], t: DiffTranslator): DiffEntry[] {
   const beforeByKey = new Map(before.map((r) => [r.key, r]))
   const afterByKey = new Map(after.map((r) => [r.key, r]))
   const entries: DiffEntry[] = []
@@ -76,7 +76,7 @@ function diffRows(before: Row[], after: Row[]): DiffEntry[] {
 
     const changes = Object.keys(row.fields)
       .filter((field) => old.fields[field] !== row.fields[field])
-      .map((field) => `${field}: ${old.fields[field] || '—'} → ${row.fields[field] || '—'}`)
+      .map((field) => `${t(`rider.diff.fields.${field}`)}: ${old.fields[field] || '—'} → ${row.fields[field] || '—'}`)
 
     if (changes.length) {
       entries.push({ kind: 'changed', label: row.label, source: row.source, changes })
@@ -94,14 +94,14 @@ function diffRows(before: Row[], after: Row[]): DiffEntry[] {
 
 // ── Turning a resolved rider into comparable rows ─────────────────────────────
 
-function channelRows(rider: ResolvedRider): Row[] {
+function channelRows(rider: ResolvedRider, t: DiffTranslator): Row[] {
   return rider.inputs.map((row) => ({
     key: row.key,
-    label: `${row.channel} · ${row.instrument || 'Unnamed'}`,
+    label: `${row.channel} · ${row.instrument || t('rider.diff.unnamed')}`,
     source: row.source.name,
     fields: {
       instrument: row.instrument,
-      'mic/DI': row.mic_di,
+      micDi: row.mic_di,
       model: row.mic_model,
       stand: row.stand_type,
       notes: row.notes,
@@ -109,26 +109,26 @@ function channelRows(rider: ResolvedRider): Row[] {
   }))
 }
 
-function monitorRows(rider: ResolvedRider): Row[] {
+function monitorRows(rider: ResolvedRider, t: DiffTranslator): Row[] {
   return rider.monitors.map((mon) => ({
     key: mon.key,
-    label: mon.label || 'Monitor',
+    label: mon.label || t('rider.diff.monitorFallback'),
     source: mon.source.name,
     fields: {
       type: mon.type,
       config: mon.config,
       mix: mon.mix_description,
-      'IEM pack': mon.iem_own_pack ? 'own' : 'provided',
-      'IEM model': mon.iem_transmitter_model,
-      'IEM frequency': mon.iem_frequency,
+      iemPack: t(`rider.diff.values.${mon.iem_own_pack ? 'own' : 'provided'}`),
+      iemModel: mon.iem_transmitter_model,
+      iemFrequency: mon.iem_frequency,
     },
   }))
 }
 
-function backlineRows(rider: ResolvedRider): Row[] {
+function backlineRows(rider: ResolvedRider, t: DiffTranslator): Row[] {
   return rider.backline.map((item) => ({
     key: item.key,
-    label: item.name || item.category.replace(/_/g, ' '),
+    label: item.name || t(`rider.rig.backline.categories.${item.category}`),
     source: item.source.name,
     fields: {
       category: item.category,
@@ -139,7 +139,7 @@ function backlineRows(rider: ResolvedRider): Row[] {
   }))
 }
 
-function wirelessRows(rider: ResolvedRider): Row[] {
+function wirelessRows(rider: ResolvedRider, t: DiffTranslator): Row[] {
   return rider.wireless.map((unit) => ({
     key: unit.key,
     label: unit.brand_model || unit.type,
@@ -148,7 +148,7 @@ function wirelessRows(rider: ResolvedRider): Row[] {
       type: unit.type,
       model: unit.brand_model,
       band: unit.frequency_band,
-      unit: unit.own_unit ? 'own' : 'provided',
+      unit: t(`rider.diff.values.${unit.own_unit ? 'own' : 'provided'}`),
       notes: unit.notes,
     },
   }))
@@ -186,22 +186,40 @@ export function resolveSnapshot(
 
 // ── The diff ──────────────────────────────────────────────────────────────────
 
-const NOUNS: Record<string, [string, string]> = {
-  Channels: ['channel', 'channels'],
-  Monitors: ['monitor', 'monitors'],
-  Backline: ['backline item', 'backline items'],
-  'RF / Wireless': ['RF unit', 'RF units'],
-  Power: ['power position', 'power positions'],
+/**
+ * Section keys, not titles. They used to be the English words themselves —
+ * rendered straight into the version-diff modal by RiderVersionHistory, and
+ * used to look up a two-form noun table for the summary. Both were English in
+ * a Polish panel, and two forms cannot express a Polish plural at all:
+ * "5 kanały" instead of "5 kanałów".
+ *
+ * The catalogue owns the words now, and vue-i18n owns the plural rule.
+ */
+export type RiderDiffSectionKey = 'channels' | 'monitors' | 'backline' | 'wireless' | 'power'
+
+const COUNT_KEYS = new Set<string>(['channels', 'monitors', 'backline', 'wireless', 'power'])
+
+function plural(t: DiffTranslator, key: string, n: number): string {
+  const path = `rider.diff.counts.${COUNT_KEYS.has(key) ? key : 'other'}`
+  return t(path, n, { named: { n } })
 }
 
-function plural(title: string, n: number): string {
-  const [one, many] = NOUNS[title] ?? ['change', 'changes']
-  return `${n} ${n === 1 ? one : many}`
+/**
+ * The subset of vue-i18n's `t` this util needs.
+ *
+ * Passed in rather than imported: app/vitest.config.ts runs `environment:
+ * 'node'`, and anything reaching useI18n() here would pull in localStorage at
+ * module load. Same reason riderGaps.ts takes one. See app/CLAUDE.md.
+ */
+export interface DiffTranslator {
+  (key: string): string
+  (key: string, n: number, opts: { named: { n: number } }): string
 }
 
 export function diffRiders(
   before: PublishedRider,
   after: PublishedRider,
+  t: DiffTranslator,
   labels: ResolverLabels = EN_RESOLVER_LABELS,
   instrumentNames?: InstrumentLabels,
 ): RiderDiff {
@@ -211,18 +229,18 @@ export function diffRiders(
   const b = resolveSnapshot(after, labels, instrumentNames)
 
   const sections: RiderDiffSection[] = [
-    { title: 'Channels', entries: diffRows(channelRows(a), channelRows(b)) },
-    { title: 'Monitors', entries: diffRows(monitorRows(a), monitorRows(b)) },
-    { title: 'Backline', entries: diffRows(backlineRows(a), backlineRows(b)) },
-    { title: 'RF / Wireless', entries: diffRows(wirelessRows(a), wirelessRows(b)) },
-    { title: 'Power', entries: diffRows(powerRows(a), powerRows(b)) },
+    { title: 'channels', entries: diffRows(channelRows(a, t), channelRows(b, t), t) },
+    { title: 'monitors', entries: diffRows(monitorRows(a, t), monitorRows(b, t), t) },
+    { title: 'backline', entries: diffRows(backlineRows(a, t), backlineRows(b, t), t) },
+    { title: 'wireless', entries: diffRows(wirelessRows(a, t), wirelessRows(b, t), t) },
+    { title: 'power', entries: diffRows(powerRows(a), powerRows(b), t) },
   ].filter((section) => section.entries.length > 0)
 
   return {
     from: before.version.version_number,
     to: after.version.version_number,
     sections,
-    summary: summarise(sections),
+    summary: summarise(sections, t),
     identical: sections.length === 0,
   }
 }
@@ -233,7 +251,7 @@ export function diffRiders(
  * Counts per section rather than per row, because "what moved" is the question
  * being asked at a glance — the sections below answer "how".
  */
-function summarise(sections: RiderDiffSection[]): string {
+function summarise(sections: RiderDiffSection[], t: DiffTranslator): string {
   const parts: string[] = []
 
   for (const section of sections) {
@@ -241,9 +259,9 @@ function summarise(sections: RiderDiffSection[]): string {
     const removed = section.entries.filter((e) => e.kind === 'removed').length
     const changed = section.entries.filter((e) => e.kind === 'changed').length
 
-    if (added) parts.push(`+${plural(section.title, added)}`)
-    if (removed) parts.push(`−${plural(section.title, removed)}`)
-    if (changed) parts.push(`${plural(section.title, changed)} changed`)
+    if (added) parts.push(`+${plural(t, section.title, added)}`)
+    if (removed) parts.push(`−${plural(t, section.title, removed)}`)
+    if (changed) parts.push(`${plural(t, section.title, changed)} ${t('rider.diff.changed', changed, { named: { n: changed } })}`)
   }
 
   return parts.join(' · ')

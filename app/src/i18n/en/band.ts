@@ -472,6 +472,15 @@ export default {
     savedBadge: 'Saved ✓',
     save: 'Save setup',
   },
+  calendar: {
+    title: 'Band Calendar',
+    lead: 'All active members’ Google Calendars in one view.',
+    // {link} is a <strong>, so this is an <i18n-t> keypath rather than a
+    // parameter — an interpolated parameter renders as escaped plain text.
+    noCalendars: 'No active members have a Calendar URL configured. Add one under {link}.',
+    noCalendarsLink: 'Band Members',
+    noEvents: 'No events – make sure members have a Calendar URL set in their profile.',
+  },
   gear: {
     // The two {ownGear} / {backline} slots carry <strong> markup, so this is
     // an <i18n-t> keypath, not a plain $t.

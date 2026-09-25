@@ -18,12 +18,14 @@ import {
 import type { TechRiderVersion, TechRiderVersionPayload } from '@bandms/rider-core'
 import { diffRiders } from '@/utils/riderDiff'
 import { instrumentLabels, riderSheetLabels } from '@bandms/rider-core'
+import { useI18n } from 'vue-i18n'
 import { useUiLang } from './useUiLang'
 import type { RiderDiff } from '@/utils/riderDiff'
 import { useAuth } from './useAuth'
 
 /** Pass a Ref<number | null>; the query is disabled while the id is null. */
 export function useTechRiderVersions(riderId: Ref<number | null>) {
+  const { t } = useI18n()
   const { uiLang } = useUiLang()
   const { token } = useAuth()
   const queryClient = useQueryClient()
@@ -72,7 +74,7 @@ export function useTechRiderVersions(riderId: Ref<number | null>) {
         fetchTechRiderVersion(token.value!, newerId),
       ])
       diff.value = diffRiders(
-        before, after,
+        before, after, t,
         riderSheetLabels(uiLang.value).resolver, instrumentLabels(uiLang.value),
       )
     } finally {

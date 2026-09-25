@@ -4,8 +4,13 @@
  * a promise that nothing moved.
  */
 
+import { createI18n } from 'vue-i18n'
+import en from '@/i18n/en'
+import pl from '@/i18n/pl'
+import { pluralRules } from '@/i18n/plural'
 import { describe, expect, it } from 'vitest'
 import { diffRiders, resolveSnapshot } from './riderDiff'
+import type { DiffTranslator } from './riderDiff'
 import {
   backline,
   input,
@@ -18,6 +23,16 @@ import {
   wireless,
 } from '@bandms/rider-core/testing'
 
+/**
+ * The real catalogue and the real plural rule — a stub translator would agree
+ * with whatever the code did, and the whole point of this change was that a
+ * two-form English table cannot express a Polish plural.
+ */
+function translator(locale: 'en' | 'pl' = 'en') {
+  const i18n = createI18n({ legacy: false, locale, messages: { en, pl }, pluralRules })
+  return i18n.global.t as unknown as DiffTranslator
+}
+
 /** Two versions of a rider whose single musician plays the given channels. */
 function versions(before: ReturnType<typeof setup>, after: ReturnType<typeof setup>) {
   const draft = rider({ placements: [placement({ id: 'p1', setup_id: 1, band_member_id: 1 })] })
@@ -25,6 +40,7 @@ function versions(before: ReturnType<typeof setup>, after: ReturnType<typeof set
   return diffRiders(
     snapshot(1, draft, [before]),
     snapshot(2, draft, [after]),
+    translator(),
   )
 }
 
@@ -51,7 +67,7 @@ describe('diffRiders', () => {
       setup(1, { inputs: [input({ id: 'a1' }), input({ id: 'a2', instrument: 'Snare' })] }),
     )
 
-    const channels = diff.sections.find((s) => s.title === 'Channels')!
+    const channels = diff.sections.find((s) => s.title === 'channels')!
     expect(channels.entries).toHaveLength(1)
     expect(channels.entries[0].kind).toBe('added')
     expect(channels.entries[0].label).toContain('Snare')
@@ -64,7 +80,7 @@ describe('diffRiders', () => {
       setup(1, { inputs: [input({ id: 'a1' })] }),
     )
 
-    const channels = diff.sections.find((s) => s.title === 'Channels')!
+    const channels = diff.sections.find((s) => s.title === 'channels')!
     expect(channels.entries[0].kind).toBe('removed')
     expect(diff.summary).toBe('−1 channel')
   })
@@ -78,7 +94,7 @@ describe('diffRiders', () => {
       setup(1, { inputs: [input({ id: 'a1', mic_di: 'Mic+DI' })] }),
     )
 
-    const channels = diff.sections.find((s) => s.title === 'Channels')!
+    const channels = diff.sections.find((s) => s.title === 'channels')!
     expect(channels.entries).toHaveLength(1)
     expect(channels.entries[0].kind).toBe('changed')
     expect(channels.entries[0].changes).toEqual(['mic/DI: Mic → Mic+DI'])
@@ -106,7 +122,7 @@ describe('diffRiders', () => {
       channel_order: ['p1:a2', 'p1:a1'],
     })
 
-    const diff = diffRiders(snapshot(1, before, [rig]), snapshot(2, after, [rig]))
+    const diff = diffRiders(snapshot(1, before, [rig]), snapshot(2, after, [rig]), translator())
 
     expect(diff.identical).toBe(true)
   })
@@ -117,7 +133,7 @@ describe('diffRiders', () => {
       setup(1, { monitors: [monitor({ id: 'm1', type: 'iem' })] }),
     )
 
-    const monitors = diff.sections.find((s) => s.title === 'Monitors')!
+    const monitors = diff.sections.find((s) => s.title === 'monitors')!
     expect(monitors.entries[0].changes).toEqual(['type: wedge → iem'])
   })
 
@@ -133,7 +149,7 @@ describe('diffRiders', () => {
       }),
     )
 
-    expect(diff.sections.map((s) => s.title)).toEqual(['Backline', 'RF / Wireless'])
+    expect(diff.sections.map((s) => s.title)).toEqual(['backline', 'wireless'])
   })
 
   it('reports a change in outlets as a power change', () => {
@@ -142,7 +158,7 @@ describe('diffRiders', () => {
       setup(1, { power: { outlets_needed: 4, notes: '' } }),
     )
 
-    const power = diff.sections.find((s) => s.title === 'Power')!
+    const power = diff.sections.find((s) => s.title === 'power')!
     expect(power.entries[0].changes).toEqual(['outlets: 2 → 4'])
   })
 
@@ -175,6 +191,7 @@ describe('diffRiders', () => {
     const diff = diffRiders(
       snapshot(1, before, [setup(1, { inputs: [input({ id: 'a1', mic_di: 'Mic' })] })], [member({ id: 4, nickname: 'Marek' })]),
       snapshot(2, before, [setup(1, { inputs: [input({ id: 'a1', mic_di: 'DI' })] })], [member({ id: 4, nickname: 'Marek' })]),
+      translator(),
     )
 
     expect(diff.sections[0].entries[0].source).toBe('Marek')
@@ -197,5 +214,35 @@ describe('resolveSnapshot', () => {
     const resolved = resolveSnapshot(snapshot(1, rider(), []))
 
     expect(resolved.inputs).toEqual([])
+  })
+
+  it('counts in Polish with three forms, not two', () => {
+    // The point of the change. The old NOUNS table was [one, many] — two
+    // slots, which cannot express a Polish plural: 2-4 take a different form
+    // from 5+, so a two-form table renders "5 kanały" where "5 kanałów" is
+    // correct. vue-i18n + pluralRules.pl own that now.
+    const pl = translator('pl')
+    const draft = rider({ placements: [placement({ id: 'p1', setup_id: 1, band_member_id: 1 })] })
+    const chans = (n: number) =>
+      setup(1, { inputs: Array.from({ length: n }, (_, i) => input({ id: `c${i}` })) })
+
+    const one = diffRiders(snapshot(1, draft, [chans(0)]), snapshot(2, draft, [chans(1)]), pl)
+    const few = diffRiders(snapshot(1, draft, [chans(0)]), snapshot(2, draft, [chans(3)]), pl)
+    const many = diffRiders(snapshot(1, draft, [chans(0)]), snapshot(2, draft, [chans(5)]), pl)
+
+    expect(one.summary).toBe('+1 kanał')
+    expect(few.summary).toBe('+3 kanały')
+    expect(many.summary).toBe('+5 kanałów')
+  })
+
+  it('translates the field name inside a changed row', () => {
+    // "mikrofon/DI: Mic → DI" — the field name used to be the raw object key.
+    const draft = rider({ placements: [placement({ id: 'p1', setup_id: 1, band_member_id: 1 })] })
+    const diff = diffRiders(
+      snapshot(1, draft, [setup(1, { inputs: [input({ id: 'a1', mic_di: 'Mic' })] })]),
+      snapshot(2, draft, [setup(1, { inputs: [input({ id: 'a1', mic_di: 'DI' })] })]),
+      translator('pl'),
+    )
+    expect(diff.sections[0].entries[0].changes[0]).toContain('mikrofon/DI')
   })
 })
