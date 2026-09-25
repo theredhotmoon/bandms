@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { formatShortDate, formatDuration } from './formatDate'
+import { describe, it, expect, afterEach } from 'vitest'
+import { formatShortDate, formatDayMonth, formatDuration } from './formatDate'
 
 describe('formatShortDate', () => {
   it('formats in the locale it is given', () => {
@@ -64,5 +64,31 @@ describe('formatDuration', () => {
     expect(formatDuration(null)).toBe('')
     expect(formatDuration(undefined)).toBe('')
     expect(formatDuration(0)).toBe('')
+  })
+})
+
+describe("formatShortDate — kind: 'instant'", () => {
+  const TZ = process.env.TZ
+
+  afterEach(() => { process.env.TZ = TZ })
+
+  it('keeps a timestamp on its local calendar day', () => {
+    // published_at is a `datetime`, not a date-only column. Pinned to UTC, a
+    // version published at 00:30 Warsaw (22:30Z the day before) showed the
+    // WRONG day in the version history. The UTC pin is right for date-only
+    // values and wrong here, which is why the caller states which it has.
+    const lateEvening = '2026-05-08T22:30:00Z'
+
+    process.env.TZ = 'Europe/Warsaw'
+    expect(formatShortDate(lateEvening, 'pl-PL', 'instant')).toContain('9')
+    // ...and the date-only rule would have said the 8th.
+    expect(formatShortDate(lateEvening, 'pl-PL')).toContain('8')
+  })
+
+  it('formatDayMonth takes the same argument', () => {
+    process.env.TZ = 'Europe/Warsaw'
+    const out = formatDayMonth('2026-05-08T22:30:00Z', 'pl-PL', 'instant')
+    expect(out).toContain('9')
+    expect(out).not.toContain('2026')
   })
 })

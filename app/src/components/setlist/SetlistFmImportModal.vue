@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { useI18n } from 'vue-i18n'
 import { useSetlistFmSearch, useSetlists } from '@/composables/useSetlists'
 import type { SetlistFmArtist, SetlistFmSetlist } from '@/types/setlist'
@@ -92,7 +93,7 @@ function parseDate(d: string): string {
   return d
 }
 
-const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), locale.value) || d : '—')
+const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), dateLocale(locale.value)) || d : '—')
 </script>
 
 <template>
@@ -139,7 +140,16 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), loca
       <template v-else-if="step === 'setlists'">
         <div class="modal-body">
           <button type="button" class="btn-back" @click="step = 'search'">{{ $t('setlists.setlistFm.back') }}</button>
-          <div class="section-title">{{ selectedArtist?.name }} – {{ $t('setlists.setlistFm.setlistCount', setlists.length, { named: { n: setlists.length } }) }}</div>
+          <!--
+            The count is suppressed while loading, not merely kept fresh.
+            pickArtist() clears the array before awaiting, so an ungated count
+            reads "0 setlists" directly above "Loading setlists…" — a false
+            zero, which is the same lie as a stale one in the other direction.
+          -->
+          <div class="section-title">
+            {{ selectedArtist?.name }}
+            <template v-if="!loadingSets">– {{ $t('setlists.setlistFm.setlistCount', setlists.length, { named: { n: setlists.length } }) }}</template>
+          </div>
           <div v-if="loadingSets" class="loading-note">{{ $t('setlists.setlistFm.loading') }}</div>
           <div v-else-if="!setlists.length" class="empty-note">{{ $t('setlists.setlistFm.noSetlists') }}</div>
           <div v-else class="results-list">

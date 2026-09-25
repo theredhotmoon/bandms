@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { formatShortDate, formatDuration as formatDur } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { useI18n } from 'vue-i18n'
 import { useSetlist } from '@/composables/useSetlists'
 import { useSongs } from '@/composables/useSongs'
@@ -67,7 +68,7 @@ function concertLabel(c: { id: number; date: string; venue?: { name: string } | 
   return `${formatDate(c.date)} — ${c.venue?.name ?? t('setlists.setlistEditor.unknownVenue')}`
 }
 
-const formatDate = (d: string | null) => formatShortDate(d, locale.value) || '—'
+const formatDate = (d: string | null) => formatShortDate(d, dateLocale(locale.value)) || '—'
 
 // ── Song list ─────────────────────────────────────────────────────────────────
 

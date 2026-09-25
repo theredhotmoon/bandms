@@ -11,7 +11,22 @@
  * composable here would die on `localStorage.getItem is not a function`. The
  * caller has the locale from `useI18n()` and hands it over.
  */
-export function formatShortDate(date: string | null | undefined, locale: string): string {
+/**
+ * Which kind of value is being formatted — and therefore which timezone rule
+ * applies. A date-only column ("2026-05-08") parses as UTC midnight and must
+ * be *read back* in UTC or it renders as the previous day west of Greenwich.
+ * A timestamp ("2026-05-08 19:34:21") is a real instant and belongs in the
+ * reader's zone: pinning it to UTC moves a 00:30 Warsaw publish to the day
+ * before. Passing the wrong one is an off-by-one-day bug either way, which is
+ * why this is an explicit argument rather than a guess about the string.
+ */
+export type DateKind = 'date' | 'instant'
+
+export function formatShortDate(
+  date: string | null | undefined,
+  locale: string,
+  kind: DateKind = 'date',
+): string {
   if (!date) return ''
   const parsed = new Date(date)
   // An unparseable string is a data problem, not a formatting one — return it
@@ -37,10 +52,10 @@ export function formatShortDate(date: string | null | undefined, locale: string)
   // The hand-rolled formatters this replaced split the string and were
   // structurally incapable of shifting, so the bug arrived with the helper.
   return parsed.toLocaleDateString(locale, {
+    ...(kind === 'date' ? { timeZone: 'UTC' as const } : {}),
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    timeZone: 'UTC',
   })
 }
 
@@ -54,11 +69,19 @@ export function formatShortDate(date: string | null | undefined, locale: string)
  * `timeZone: 'UTC'` for the same reason too: a date-only value parses as UTC
  * midnight and renders as the previous day west of Greenwich.
  */
-export function formatDayMonth(date: string | null | undefined, locale: string): string {
+export function formatDayMonth(
+  date: string | null | undefined,
+  locale: string,
+  kind: DateKind = 'date',
+): string {
   if (!date) return ''
   const parsed = new Date(date)
   if (Number.isNaN(parsed.getTime())) return date
-  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  return parsed.toLocaleDateString(locale, {
+    ...(kind === 'date' ? { timeZone: 'UTC' as const } : {}),
+    day: 'numeric',
+    month: 'long',
+  })
 }
 
 /** `245` → `4:05`. Seconds are data; the colon is not copy in any locale. */

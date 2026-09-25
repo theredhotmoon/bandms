@@ -11,6 +11,8 @@ import type { Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
+import { instrumentLabels, riderSheetLabels } from '@bandms/rider-core'
+import { useUiLang } from './useUiLang'
 import { updateMemberSetup } from '@/api/bandMemberSetups'
 import { reportSaveError } from '@/utils/formErrors'
 import { useAuth } from './useAuth'
@@ -54,6 +56,7 @@ function emptyDraft(): RiderDraft {
 
 export function useTechRiderEditor(openId: Ref<number | null>) {
   const { t } = useI18n()
+  const { uiLang } = useUiLang()
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
@@ -133,7 +136,12 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
     power_notes: draft.power_notes,
   }))
 
-  const resolved = computed(() => resolveRider(resolvable.value, setups.value, members.value))
+  // The same bundle the sheet uses, so a source reads identically in the
+  // editor and on the printed document.
+  const resolved = computed(() => resolveRider(
+    resolvable.value, setups.value, members.value,
+    riderSheetLabels(uiLang.value).resolver, instrumentLabels(uiLang.value),
+  ))
   const completeness = computed(() => riderCompleteness(resolvable.value, setups.value, members.value))
 
   // ── Save ────────────────────────────────────────────────────────────────────
@@ -156,7 +164,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       ...draft.placements
         .filter((p) => p.overrides?.inputs !== undefined)
         .map((p) => ({
-          label: t('rider.editor.memberChannels', { name: placementName(p, members.value, temps) }),
+          label: t('rider.editor.memberChannels', { name: placementName(p, members.value, temps, riderSheetLabels(uiLang.value).resolver) }),
           inputs: p.overrides?.inputs,
         })),
     ]
@@ -205,7 +213,7 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
 
     const temps = draft.gig_lineup?.temp_musicians ?? []
     const problem = unnamedChannelProblem([
-      { label: t('rider.editor.memberChannels', { name: placementName(placement, members.value, temps) }), inputs: placement.overrides?.inputs },
+      { label: t('rider.editor.memberChannels', { name: placementName(placement, members.value, temps, riderSheetLabels(uiLang.value).resolver) }), inputs: placement.overrides?.inputs },
     ])
     if (problem) {
       toast.error(t(problem.key, problem.params))

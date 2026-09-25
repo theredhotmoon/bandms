@@ -12,6 +12,7 @@ import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import { formatShortDate } from '@/utils/formatDate'
 import { useUiLang } from '@/composables/useUiLang'
+import { dateLocale } from '@/locales'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import type { TechRiderVersion } from '@bandms/rider-core'
 import type { RiderDiff } from '@/utils/riderDiff'
@@ -70,7 +71,7 @@ async function copyLink(version: TechRiderVersion) {
  */
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return formatShortDate(iso, uiLang.value)
+  return formatShortDate(iso, dateLocale(uiLang.value), 'instant')
 }
 </script>
 

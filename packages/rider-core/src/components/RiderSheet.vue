@@ -82,7 +82,7 @@ const setups = computed(() =>
 
 const resolved = computed(() => {
   if (!rider.value) return null
-  return resolveRider(rider.value, setups.value, members.value)
+  return resolveRider(rider.value, setups.value, members.value, t.value.resolver, t.value.instruments)
 })
 
 function rigFor(item: StagePlacement) {
@@ -109,11 +109,11 @@ function findMember(id: number | null): RiderMember | null {
 function memberDisplayName(item: StagePlacement): string {
   if (item.temp_id) {
     const guest = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
-    return guest ? guest.name : t.value.common.guest
+    return guest ? guest.name : t.value.resolver.guest
   }
   const m = findMember(item.band_member_id)
   if (m) return m.nickname ?? `${m.first_name} ${m.last_name}`
-  return fillLabel(t.value.common.unknownMember, { id: item.band_member_id ?? '?' })
+  return fillLabel(t.value.resolver.unknownMember, { id: item.band_member_id ?? '?' })
 }
 
 function memberInitials(item: StagePlacement): string {
@@ -129,7 +129,7 @@ function memberInitials(item: StagePlacement): string {
 function memberRole(item: StagePlacement): string {
   if (item.temp_id) {
     const guest = rider.value?.gig_lineup?.temp_musicians?.find((m: GigTempMusician) => m.id === item.temp_id)
-    return guest?.role || t.value.common.guest
+    return guest?.role || t.value.resolver.guest
   }
   return findMember(item.band_member_id)?.role ?? ''
 }

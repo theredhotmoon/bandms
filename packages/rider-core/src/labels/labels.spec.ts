@@ -53,7 +53,9 @@ describe('rider sheet labels', () => {
       // literal `{fromat}` on the rider rather than failing anywhere.
       const KNOWN: Record<string, string[]> = {
         'paFoh.showFileValue': ['format'],
-        'common.unknownMember': ['id'],
+        // Filled by riderResolver.ts, not by the sheet — same fillLabel().
+        'resolver.guestNamed': ['name'],
+        'resolver.unknownMember': ['id'],
       }
       const wrong: string[] = []
       for (const { key, value } of leaves(bundle)) {

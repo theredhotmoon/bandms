@@ -18,6 +18,8 @@ import {
   riderCompleteness,
 } from './riderResolver'
 import type { ResolvedInput } from './riderResolver'
+import { EN_RESOLVER_LABELS } from './labels/en'
+import { PL_RESOLVER_LABELS } from './labels/pl'
 import {
   backline,
   input,
@@ -421,5 +423,37 @@ describe('riderCompleteness', () => {
 
     expect(result.total).toBe(0)
     expect(result.pct).toBe(0)
+  })
+})
+
+describe('resolver labels', () => {
+  // These words reach a reader twice over: RiderSourceBadge prints
+  // source.name/detail in the admin's From column, and the sheet uses
+  // source.name as the musician column of its monitor, wireless and backline
+  // tables. Hardcoded in the package they printed "Production / Added on the
+  // rider" under fully translated Polish headings.
+  it('an extra channel names its owner in the given language', () => {
+    const r = rider({ extra_inputs: [{ id: 'x1', instrument: 'Talkback', mic_di: 'Mic', mic_model: '', stand_type: '', notes: '' }] })
+
+    const en = resolveRider(r, {}, [])
+    expect(en.inputs.at(-1)!.source.name).toBe('Production')
+    expect(en.inputs.at(-1)!.source.detail).toBe('Added on the rider')
+
+    const pl = resolveRider(r, {}, [], PL_RESOLVER_LABELS)
+    expect(pl.inputs.at(-1)!.source.name).toBe('Produkcja')
+    expect(pl.inputs.at(-1)!.source.detail).toBe('Dodane na riderze')
+  })
+
+  it('defaults to English so a fixture or spec needs no bundle', () => {
+    expect(EN_RESOLVER_LABELS.production).toBe('Production')
+    expect(placementName({ ...placement(), temp_id: null, band_member_id: 999 } as never, [], [])).toBe('Member #999')
+  })
+
+  it('names a guest in the given language', () => {
+    const p = { ...placement(), temp_id: 't1', band_member_id: null } as never
+    const temps = [{ id: 't1', name: 'Ola', role: '' }] as never
+    expect(placementName(p, [], temps)).toBe('Ola (guest)')
+    expect(placementName(p, [], temps, PL_RESOLVER_LABELS)).toBe('Ola (gość)')
+    expect(placementName(p, [], [], PL_RESOLVER_LABELS)).toBe('Gość')
   })
 })

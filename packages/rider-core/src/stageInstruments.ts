@@ -65,7 +65,9 @@ export function resolveStageInstruments(
   return [{
     id:       `${item.id}-inferred`,
     type,
-    label:    member.main_instrument?.name ?? member.role ?? labels[type],
+    // `|| type` for the same reason the branch above carries it: `type` comes
+    // from the DB's stage_plot_type, which no compiler constrains.
+    label:    member.main_instrument?.name ?? member.role ?? labels[type] ?? type,
     inferred: true,
   }]
 }

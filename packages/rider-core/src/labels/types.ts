@@ -138,11 +138,20 @@ export interface RiderSheetLabels {
     readonly no: string
     /** Stands in for an empty cell. */
     readonly none: string
-    /** A lineup guest with no name on record. */
-    readonly guest: string
-    /** Carries `{id}` — a placement pointing at a member who is not in the payload. */
-    readonly unknownMember: string
   }
+
+  /**
+   * The words `riderResolver.ts` puts inside a `RigSource`.
+   *
+   * They are here rather than in the resolver because both surfaces print
+   * them: `RiderSourceBadge` shows `source.name`/`source.detail` in the
+   * admin's From column, and the sheet uses `source.name` as the musician
+   * column of its monitor, wireless and backline tables. Hardcoded in the
+   * package, a Polish rider read "Production / Added on the rider" under
+   * fully translated headings — the same defect `riderGaps.ts` fixed for
+   * `placementStatus().missing`, one layer down.
+   */
+  readonly resolver: ResolverLabels
 
   /** Persisted enum values the sheet prints. Keys are the stored values. */
   readonly chains: Readonly<Record<SignalChainType, string>>
@@ -150,6 +159,20 @@ export interface RiderSheetLabels {
   readonly backlineCategories: Readonly<Record<BacklineCategory, string>>
   readonly micDi: Readonly<Record<MicDiChoice, string>>
   readonly instruments: InstrumentLabels
+}
+
+/** Every string `resolveRider()` can put in front of a reader. */
+export interface ResolverLabels {
+  /** A lineup guest with no name on record. */
+  readonly guest: string
+  /** Carries `{name}`. */
+  readonly guestNamed: string
+  /** Carries `{id}` — a placement pointing at a member not in the payload. */
+  readonly unknownMember: string
+  readonly noSavedRig: string
+  /** The owner of a channel that belongs to the production, not a musician. */
+  readonly production: string
+  readonly addedOnRider: string
 }
 
 /**

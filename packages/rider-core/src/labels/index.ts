@@ -2,9 +2,9 @@ import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from '
 import { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS } from './en'
 import { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS } from './pl'
 
-export type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
-export { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS } from './en'
-export { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS } from './pl'
+export type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
+export { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS, EN_RESOLVER_LABELS } from './en'
+export { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS, PL_RESOLVER_LABELS } from './pl'
 
 const SHEETS: Record<string, RiderSheetLabels> = {
   en: EN_RIDER_SHEET_LABELS,

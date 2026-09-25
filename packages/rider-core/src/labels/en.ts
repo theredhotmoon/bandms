@@ -1,4 +1,4 @@
-import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
 import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
 
 /**
@@ -9,6 +9,16 @@ import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
  * palette the band picks from.
  */
 export const EN_INSTRUMENT_LABELS: InstrumentLabels = INSTRUMENT_TYPE_LABELS
+
+/** Also the default for `resolveRider()` when no bundle is passed. */
+export const EN_RESOLVER_LABELS: ResolverLabels = {
+  guest: 'Guest',
+  guestNamed: '{name} (guest)',
+  unknownMember: 'Member #{id}',
+  noSavedRig: 'No saved rig',
+  production: 'Production',
+  addedOnRider: 'Added on the rider',
+}
 
 /** Identity map: the catalogue's `group` is already the English heading. */
 export const EN_INSTRUMENT_GROUPS: InstrumentGroupLabels = {
@@ -131,9 +141,8 @@ export const EN_RIDER_SHEET_LABELS: RiderSheetLabels = {
     yes: 'Yes',
     no: 'No',
     none: '—',
-    guest: 'Guest',
-    unknownMember: 'Member #{id}',
   },
+  resolver: EN_RESOLVER_LABELS,
   chains: {
     modeler_mono: 'Modeler / Profiler — Mono',
     modeler_stereo: 'Modeler / Profiler — Stereo',

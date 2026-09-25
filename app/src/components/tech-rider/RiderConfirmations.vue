@@ -9,6 +9,7 @@
 import type { RiderConfirmation } from '@/types/riderConfirmation'
 import { formatDayMonth } from '@/utils/formatDate'
 import { useUiLang } from '@/composables/useUiLang'
+import { dateLocale } from '@/locales'
 
 defineProps<{
   confirmations: RiderConfirmation[]
@@ -25,7 +26,7 @@ const { uiLang } = useUiLang()
 /** Chrome locale, and month:'long' — see formatDayMonth(). */
 function when(iso: string | null): string {
   if (!iso) return ''
-  return formatDayMonth(iso, uiLang.value)
+  return formatDayMonth(iso, dateLocale(uiLang.value), 'instant')
 }
 </script>
 

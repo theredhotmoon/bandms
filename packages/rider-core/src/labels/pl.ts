@@ -1,4 +1,4 @@
-import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
 
 /**
  * Polish instrument names.
@@ -40,6 +40,15 @@ export const PL_INSTRUMENT_LABELS: InstrumentLabels = {
   di_box: 'DI-box',
   rack: 'Rack',
   custom: 'Własny',
+}
+
+export const PL_RESOLVER_LABELS: ResolverLabels = {
+  guest: 'Gość',
+  guestNamed: '{name} (gość)',
+  unknownMember: 'Muzyk #{id}',
+  noSavedRig: 'Brak zapisanego rigu',
+  production: 'Produkcja',
+  addedOnRider: 'Dodane na riderze',
 }
 
 export const PL_INSTRUMENT_GROUPS: InstrumentGroupLabels = {
@@ -158,9 +167,8 @@ export const PL_RIDER_SHEET_LABELS: RiderSheetLabels = {
     yes: 'Tak',
     no: 'Nie',
     none: '—',
-    guest: 'Gość',
-    unknownMember: 'Muzyk #{id}',
   },
+  resolver: PL_RESOLVER_LABELS,
   chains: {
     modeler_mono: 'Modeler / profiler — mono',
     modeler_stereo: 'Modeler / profiler — stereo',
