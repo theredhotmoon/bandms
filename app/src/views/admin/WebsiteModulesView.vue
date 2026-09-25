@@ -9,8 +9,11 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
 import { LOCALES, DEFAULT_LOCALE } from '@/locales'
+import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
+import { useUiLang } from '@/composables/useUiLang'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 /**
  * Class lists live here, not inline in `:class`.
@@ -404,13 +407,13 @@ async function saveEdit(slug: string) {
               :data-copy-group="group.group"
             >
               <summary class="flex items-center justify-between gap-3 cursor-pointer select-none px-3 py-2 text-sm text-zinc-300">
-                <span>{{ group.group }}</span>
-                <span class="text-xs text-zinc-600">{{ group.fields.length }} {{ group.fields.length === 1 ? 'field' : 'fields' }}</span>
+                <span>{{ copyFieldGroup(group.group, uiLang) }}</span>
+                <span class="text-xs text-zinc-600">{{ $t('pages.modules.fieldCount', group.fields.length, { named: { n: group.fields.length } }) }}</span>
               </summary>
 
               <div class="flex flex-col gap-3 px-3 pb-3 pt-1 border-t border-zinc-800">
                 <div v-for="field in group.fields" :key="field.key" class="flex flex-col gap-1">
-                  <span class="text-xs text-zinc-400">{{ field.label }}</span>
+                  <span class="text-xs text-zinc-400">{{ copyFieldLabel(field, uiLang) }}</span>
                   <div class="trans-group">
                     <div v-for="locale in LOCALES" :key="locale" class="flex flex-col gap-1">
                       <div class="trans-row" :class="{ 'trans-row--top': field.type === 'textarea' }">
@@ -445,7 +448,7 @@ async function saveEdit(slug: string) {
                       </span>
                     </div>
                   </div>
-                  <span v-if="field.help" class="text-xs text-zinc-600">{{ field.help }}</span>
+                  <span v-if="field.help" class="text-xs text-zinc-600">{{ copyFieldHelp(field, uiLang) }}</span>
                 </div>
               </div>
             </details>

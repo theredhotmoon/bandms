@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { verifyMagicLink } from '@/api/fan'
 import { useFanAccount } from '@/composables/useFanAccount'
+
+const { t } = useI18n()
 
 const props = defineProps<{ devLink: string }>()
 const { setSession } = useFanAccount()
@@ -17,18 +20,18 @@ async function handleVerify() {
     const result = await verifyMagicLink(token)
     setSession(result.token, result.fan)
   } catch {
-    errorMessage.value = 'Sign-in link invalid or expired. Please request a new one.'
+    errorMessage.value = t('fan.login.linkInvalid')
   }
 }
 </script>
 
 <template>
   <div class="fmls-card">
-    <h2>Check your email</h2>
-    <p>We sent a magic link to your email address.</p>
+    <h2>{{ $t('fan.login.sentTitle') }}</h2>
+    <p>{{ $t('fan.login.sentBody') }}</p>
     <p class="fmls-dev">
-      <strong>Dev mode:</strong>
-      <a :href="devLink" @click.prevent="handleVerify" class="fmls-link">Click here to sign in</a>
+      <strong>{{ $t('fan.login.devMode') }}</strong>
+      <a :href="devLink" @click.prevent="handleVerify" class="fmls-link">{{ $t('fan.login.devSignIn') }}</a>
     </p>
     <p v-if="errorMessage" role="alert" class="fmls-error">{{ errorMessage }}</p>
   </div>

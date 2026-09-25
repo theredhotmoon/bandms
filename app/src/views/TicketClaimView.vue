@@ -48,39 +48,39 @@ onMounted(async () => {
     <div class="tcv-card">
       <!-- Loading -->
       <p v-if="state === 'loading'" class="tcv-msg" role="status" aria-live="polite">
-        Claiming your ticket…
+        {{ $t('fan.claim.claiming') }}
       </p>
 
       <!-- Success -->
       <template v-else-if="state === 'success'">
-        <h1 class="tcv-heading">Ticket claimed!</h1>
-        <p class="tcv-sub">Your new ticket UUID: <code class="tcv-code">{{ newUuid }}</code></p>
+        <h1 class="tcv-heading">{{ $t('fan.claim.claimed') }}</h1>
+        <p class="tcv-sub">{{ $t('fan.claim.newUuid') }} <code class="tcv-code">{{ newUuid }}</code></p>
         <TicketDownloadCard v-if="newUuid" :uuid="newUuid" />
       </template>
 
       <!-- Already claimed -->
       <template v-else-if="state === 'already_claimed'">
-        <h1 class="tcv-heading tcv-heading--error">Already claimed</h1>
-        <p class="tcv-sub">This transfer link has already been used.</p>
+        <h1 class="tcv-heading tcv-heading--error">{{ $t('fan.claim.alreadyTitle') }}</h1>
+        <p class="tcv-sub">{{ $t('fan.claim.alreadyBody') }}</p>
       </template>
 
       <!-- Expired -->
       <template v-else-if="state === 'expired'">
-        <h1 class="tcv-heading tcv-heading--error">Transfer expired</h1>
-        <p class="tcv-sub">This claim link has expired. Please ask the sender to initiate a new transfer.</p>
+        <h1 class="tcv-heading tcv-heading--error">{{ $t('fan.claim.expiredTitle') }}</h1>
+        <p class="tcv-sub">{{ $t('fan.claim.expiredBody') }}</p>
       </template>
 
       <!-- Invalid token -->
       <template v-else-if="state === 'invalid'">
-        <h1 class="tcv-heading tcv-heading--error">Invalid link</h1>
-        <p class="tcv-sub">This claim link is not valid.</p>
+        <h1 class="tcv-heading tcv-heading--error">{{ $t('fan.claim.invalidTitle') }}</h1>
+        <p class="tcv-sub">{{ $t('fan.claim.invalidBody') }}</p>
       </template>
 
       <!-- Generic error -->
       <template v-else>
-        <h1 class="tcv-heading tcv-heading--error">Something went wrong</h1>
+        <h1 class="tcv-heading tcv-heading--error">{{ $t('fan.claim.errorTitle') }}</h1>
         <p v-if="errorMsg" class="tcv-sub">{{ errorMsg }}</p>
-        <p v-else class="tcv-sub">Please try again later.</p>
+        <p v-else class="tcv-sub">{{ $t('fan.claim.errorBody') }}</p>
       </template>
     </div>
   </main>

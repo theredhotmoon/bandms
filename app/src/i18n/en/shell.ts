@@ -13,6 +13,17 @@ export default {
     more: 'Settings',
     pageconfig: 'Page Configuration',
   },
+    titles: {
+      fanAccount: 'My Account',
+      ticketClaim: 'Claim Ticket',
+      techRider: 'Tech Rider',
+      concertTickets: 'Concert Tickets',
+      fanAccounts: 'Fan Accounts',
+      doorCheck: 'Door Check',
+      websiteModules: 'Website Modules',
+      faqs: 'FAQ',
+      heroImages: 'Hero Images',
+    },
   nav: {
     dashboard: 'Dashboard',
     myProfile: 'My Profile',
