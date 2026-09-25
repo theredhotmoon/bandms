@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, computed, watch, reactive } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
@@ -22,8 +23,11 @@ import { useAuth } from '@/composables/useAuth'
 import { reportSaveError } from '@/utils/formErrors'
 import { uploadShopPhoto, deleteShopPhoto, reorderShopPhotos } from '@/api/shop'
 import type { ShopItemPayload, ShopItemPhoto, ShopItemSummary, ShopCategory } from '@/types/shop'
-import { SHOP_ITEM_TYPE_LABELS } from '@/types/shop'
 import type { PostFilters } from '@/api/posts'
+
+const { t } = useI18n()
+
+const CURRENCY_PLACEHOLDER = 'USD' // i18n-ignore: ISO 4217 code
 
 const { token } = useAuth()
 const qc = useQueryClient()
@@ -61,8 +65,18 @@ const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId   = ref<number | null>(null)
 
 const fullItem  = useShopItem(editingId)
+
+/**
+ * The type badge's inline style. Extracted because a CSS declaration list is
+ * not copy but reads as one to the string lint, and the usual marker cannot go
+ * inside a tag's attribute list without breaking the tag.
+ */
+function typeBadgeStyle(type: string): string {
+  const c = TYPE_COLOURS[type] ?? '#888'
+  return `background:${c}22; color:${c}; border-color:${c}44;` // i18n-ignore: CSS
+}
 const modalTitle = computed(() =>
-  isCreating.value ? 'New shop item' : (fullItem.data.value?.name ?? 'Edit item'),
+  isCreating.value ? t('more.shop.modalNew') : (fullItem.data.value?.name ?? t('more.shop.modalEdit')),
 )
 
 function openCreate() {
@@ -92,14 +106,14 @@ async function handleSubmit(payload: ShopItemPayload) {
   try {
     if (isCreating.value) {
       await create.mutateAsync(payload)
-      toast.success('Item created')
+      toast.success(t('more.shop.created'))
     } else {
       await update.mutateAsync({ id: editingId.value!, payload })
-      toast.success('Item updated')
+      toast.success(t('more.shop.updated'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -107,10 +121,10 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Item deleted')
+    toast.success(t('more.shop.deleted'))
     confirmId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('common.state.deleteFailed'))
   }
 }
 
@@ -151,9 +165,9 @@ async function savePhotoOrder() {
   try {
     await reorderShopPhotos(token.value!, editingId.value, localPhotos.value.map((p) => p.id))
     originalOrder.value = localPhotos.value.map((p) => p.id)
-    toast.success('Order saved')
+    toast.success(t('more.shop.orderSaved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save order')
+    reportSaveError(e, t('more.shop.orderFailed'))
   }
 }
 
@@ -168,9 +182,9 @@ async function onPhotoFileChange(e: Event) {
       originalOrder.value = localPhotos.value.map((p) => p.id)
     }
     await qc.invalidateQueries({ queryKey: ['shop-item', editingId] })
-    toast.success('Photo(s) uploaded')
+    toast.success(t('more.shop.photosUploaded', files.length, { named: { n: files.length } }))
   } catch (e) {
-    reportSaveError(e, 'Upload failed')
+    reportSaveError(e, t('more.shop.uploadFailed'))
   } finally {
     photoUploading.value = false
     if (photoInput.value) photoInput.value.value = ''
@@ -185,7 +199,7 @@ async function deletePhoto(photoId: number) {
     originalOrder.value = localPhotos.value.map((p) => p.id)
     await qc.invalidateQueries({ queryKey: ['shop-item', editingId] })
   } catch (e) {
-    reportSaveError(e, 'Failed to delete photo')
+    reportSaveError(e, t('more.shop.photoDeleteFailed'))
   }
 }
 
@@ -221,24 +235,24 @@ async function saveCategory() {
   try {
     if (editingCategory.value) {
       await categoriesQ.update.mutateAsync({ id: editingCategory.value.id, payload })
-      toast.success('Category updated')
+      toast.success(t('more.shop.categoryUpdated'))
     } else {
       await categoriesQ.create.mutateAsync(payload)
-      toast.success('Category created')
+      toast.success(t('more.shop.categoryCreated'))
     }
     openNewCategory()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', categoryFieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), categoryFieldErrors)
   }
 }
 
 async function deleteCategory(id: number) {
   try {
     await categoriesQ.remove.mutateAsync(id)
-    toast.success('Category deleted')
+    toast.success(t('more.shop.categoryDeleted'))
     if (editingCategory.value?.id === id) openNewCategory()
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('common.state.deleteFailed'))
   }
 }
 
@@ -267,10 +281,10 @@ function removeCurrency(c: string) {
 async function saveCurrencySettings() {
   try {
     await saveCurrencies.mutateAsync(currencyList.value)
-    toast.success('Currencies saved')
+    toast.success(t('more.shop.currenciesSaved'))
     showCurrencyModal.value = false
   } catch (e) {
-    reportSaveError(e, 'Failed to save currencies')
+    reportSaveError(e, t('more.shop.currenciesFailed'))
   }
 }
 
@@ -289,35 +303,35 @@ const TYPE_COLOURS: Record<string, string> = {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Shop</h1>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.shop.title') }}</h1>
         <div class="flex gap-2">
-          <button @click="showCategoriesModal = true; openNewCategory()" class="btn-currencies">Categories</button>
-          <button @click="openCurrencyModal" class="btn-currencies">Currencies</button>
-          <button @click="openCreate" class="btn-add-primary">+ Add item</button>
+          <button @click="showCategoriesModal = true; openNewCategory()" class="btn-currencies">{{ $t('more.shop.categories') }}</button>
+          <button @click="openCurrencyModal" class="btn-currencies">{{ $t('more.shop.currencies') }}</button>
+          <button @click="openCreate" class="btn-add-primary">{{ $t('more.shop.addItem') }}</button>
         </div>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">Loading…</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">Failed to load shop items.</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('more.shop.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
           <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
-            <span v-if="!(query.data.value?.length)">No items yet. Add the first one above.</span>
-            <span v-else>No items match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('more.shop.empty') }}</span>
+            <span v-else>{{ $t('more.shop.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <th class="th" style="width:3rem;">Photo</th>
-                <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="Type" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
-                <th class="th" style="width:10rem;">Price</th>
-                <th class="th" style="width:6rem;">Status</th>
-                <SortHeader label="Stock" sort-key="stock_quantity" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
-                <th class="th" style="width:12rem;">Categories</th>
-                <th class="th text-right">Actions</th>
+                <th class="th" style="width:3rem;">{{ $t('more.shop.cols.photo') }}</th>
+                <SortHeader :label="$t('more.shop.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.shop.cols.type')" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
+                <th class="th" style="width:10rem;">{{ $t('more.shop.cols.price') }}</th>
+                <th class="th" style="width:6rem;">{{ $t('more.shop.cols.status') }}</th>
+                <SortHeader :label="$t('more.shop.cols.stock')" sort-key="stock_quantity" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
+                <th class="th" style="width:12rem;">{{ $t('more.shop.cols.categories') }}</th>
+                <th class="th text-right">{{ $t('more.shop.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -329,8 +343,8 @@ const TYPE_COLOURS: Record<string, string> = {
                 <td class="td font-medium" style="color:#e2e8f0;">{{ item.name }}</td>
                 <td class="td">
                   <span class="type-badge"
-                    :style="`background:${TYPE_COLOURS[item.type] ?? '#888'}22; color:${TYPE_COLOURS[item.type] ?? '#888'}; border-color:${TYPE_COLOURS[item.type] ?? '#888'}44;`">
-                    {{ SHOP_ITEM_TYPE_LABELS[item.type] }}
+                    :style="typeBadgeStyle(item.type)">
+                    {{ $t(`more.shop.types.${item.type}`) }}
                   </span>
                 </td>
                 <td class="td" style="color:#64748b;">
@@ -340,9 +354,9 @@ const TYPE_COLOURS: Record<string, string> = {
                   <span v-if="!item.prices.length" style="color:#334155;">—</span>
                 </td>
                 <td class="td">
-                  <span v-if="item.is_presale" class="status-badge status-presale">Pre-sale</span>
-                  <span v-else-if="item.is_available" class="status-badge status-available">Available</span>
-                  <span v-else class="status-badge status-unavailable">Hidden</span>
+                  <span v-if="item.is_presale" class="status-badge status-presale">{{ $t('more.shop.status.preSale') }}</span>
+                  <span v-else-if="item.is_available" class="status-badge status-available">{{ $t('more.shop.status.available') }}</span>
+                  <span v-else class="status-badge status-unavailable">{{ $t('more.shop.status.hidden') }}</span>
                 </td>
                 <td class="td" style="color:#64748b;">
                   {{ item.stock_quantity !== null ? item.stock_quantity : '∞' }}
@@ -352,8 +366,8 @@ const TYPE_COLOURS: Record<string, string> = {
                   <span v-for="cat in item.categories ?? []" :key="cat.id" class="cat-chip">{{ cat.name }}</span>
                 </td>
                 <td class="td text-right">
-                  <button @click="openEdit(item)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = item.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(item)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = item.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -376,7 +390,7 @@ const TYPE_COLOURS: Record<string, string> = {
     <!-- ── Item modal ──────────────────────────────────────────── -->
     <AdminModal :open="showModal" :title="modalTitle" max-width="52rem" @close="closeModal">
       <div v-if="!isCreating && fullItem.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
-        Loading item…
+        {{ $t('more.shop.loadingItem') }}
       </div>
       <template v-else>
         <ShopItemForm
@@ -397,7 +411,7 @@ const TYPE_COLOURS: Record<string, string> = {
 
         <!-- Photos — edit only -->
         <template v-if="!isCreating && fullItem.data.value">
-          <div class="photos-divider">Photos</div>
+          <div class="photos-divider">{{ $t('more.shop.photos.title') }}</div>
 
           <div v-if="localPhotos.length" class="rp-grid">
             <div
@@ -411,17 +425,17 @@ const TYPE_COLOURS: Record<string, string> = {
               @dragend="onPhotoDragEnd"
             >
               <img :src="photo.url" :alt="photo.alt_text ?? ''" class="rp-thumb" />
-              <button type="button" class="rp-del" @click.stop="deletePhoto(photo.id)" title="Delete">✕</button>
+              <button type="button" class="rp-del" @click.stop="deletePhoto(photo.id)" :title="$t('common.actions.delete')">✕</button>
             </div>
           </div>
-          <p v-else class="rp-empty">No photos yet.</p>
+          <p v-else class="rp-empty">{{ $t('more.shop.photos.empty') }}</p>
 
           <div v-if="orderDirty" class="rp-order-row">
-            <button type="button" class="rp-btn-save" @click="savePhotoOrder">Save order</button>
+            <button type="button" class="rp-btn-save" @click="savePhotoOrder">{{ $t('more.shop.photos.saveOrder') }}</button>
           </div>
 
           <div class="rp-add">
-            <div class="rp-add-title">Add photos</div>
+            <div class="rp-add-title">{{ $t('more.shop.photos.add') }}</div>
             <div class="rp-upload-row">
               <input ref="photoInput" type="file" accept="image/*" multiple class="hidden" @change="onPhotoFileChange" />
               <button
@@ -430,7 +444,7 @@ const TYPE_COLOURS: Record<string, string> = {
                 class="rp-btn-upload"
                 @click="photoInput?.click()"
               >
-                {{ photoUploading ? 'Uploading…' : 'Choose photos' }}
+                {{ photoUploading ? $t('more.shop.photos.uploading') : $t('more.shop.photos.choose') }}
               </button>
             </div>
           </div>
@@ -439,10 +453,10 @@ const TYPE_COLOURS: Record<string, string> = {
     </AdminModal>
 
     <!-- ── Categories modal ─────────────────────────────────────── -->
-    <AdminModal :open="showCategoriesModal" title="Shop categories" max-width="36rem" @close="showCategoriesModal = false">
+    <AdminModal :open="showCategoriesModal" :title="$t('more.shop.cats.modalTitle')" max-width="36rem" @close="showCategoriesModal = false">
       <div class="cat-modal">
         <div class="cat-list">
-          <div v-if="!categories.length" class="cat-empty">No categories yet. Create one below.</div>
+          <div v-if="!categories.length" class="cat-empty">{{ $t('more.shop.cats.empty') }}</div>
           <div
             v-for="cat in categories"
             :key="cat.id"
@@ -452,60 +466,60 @@ const TYPE_COLOURS: Record<string, string> = {
           >
             <span class="cat-name">{{ cat.name }}</span>
             <span v-if="cat.description" class="cat-desc">{{ cat.description }}</span>
-            <button type="button" class="cat-del" @click.stop="deleteCategory(cat.id)" title="Delete">✕</button>
+            <button type="button" class="cat-del" @click.stop="deleteCategory(cat.id)" :title="$t('common.actions.delete')">✕</button>
           </div>
         </div>
 
-        <div class="cat-form-title">{{ editingCategory ? 'Edit category' : 'New category' }}</div>
+        <div class="cat-form-title">{{ editingCategory ? $t('more.shop.cats.editTitle') : $t('more.shop.cats.newTitle') }}</div>
 
         <div class="field">
-          <label class="field-label">Name *</label>
+          <label class="field-label">{{ $t('more.shop.cats.name') }}</label>
           <input
             v-model="categoryForm.name"
             type="text"
             class="field-input"
             :class="{ 'field-input--error': categoryFieldErrors.name }"
-            placeholder="e.g. Limited Editions"
+            :placeholder="$t('more.shop.cats.namePlaceholder')"
             @keydown.enter.prevent="saveCategory"
           />
           <span v-if="categoryFieldErrors.name?.[0]" class="field-error">{{ categoryFieldErrors.name[0] }}</span>
         </div>
 
         <div class="field">
-          <label class="field-label">Description</label>
-          <input v-model="categoryForm.description" type="text" class="field-input" placeholder="Optional" />
+          <label class="field-label">{{ $t('more.shop.cats.description') }}</label>
+          <input v-model="categoryForm.description" type="text" class="field-input" :placeholder="$t('more.shop.optional')" />
         </div>
 
         <div class="field" style="max-width:8rem;">
-          <label class="field-label">Sort order</label>
+          <label class="field-label">{{ $t('more.shop.cats.sortOrder') }}</label>
           <input v-model="categoryForm.sort_order" type="number" min="0" step="1" class="field-input" />
         </div>
 
         <div class="cat-actions">
-          <button v-if="editingCategory" type="button" @click="openNewCategory" class="btn-cancel-sm">New</button>
+          <button v-if="editingCategory" type="button" @click="openNewCategory" class="btn-cancel-sm">{{ $t('more.shop.cats.startNew') }}</button>
           <button
             type="button"
             :disabled="categoriesQ.create.isPending.value || categoriesQ.update.isPending.value"
             @click="saveCategory"
             class="btn-save-sm"
           >
-            {{ (categoriesQ.create.isPending.value || categoriesQ.update.isPending.value) ? 'Saving…' : (editingCategory ? 'Save changes' : 'Create') }}
+            {{ (categoriesQ.create.isPending.value || categoriesQ.update.isPending.value) ? $t('common.actions.saving') : (editingCategory ? $t('more.shop.cats.saveChanges') : $t('common.actions.create')) }}
           </button>
         </div>
       </div>
     </AdminModal>
 
     <!-- ── Currency settings modal ─────────────────────────────── -->
-    <AdminModal :open="showCurrencyModal" title="Shop currencies" max-width="24rem" @close="showCurrencyModal = false">
+    <AdminModal :open="showCurrencyModal" :title="$t('more.shop.currency.modalTitle')" max-width="24rem" @close="showCurrencyModal = false">
       <div class="currency-modal">
-        <p class="currency-hint">Set the currencies available for pricing. Items will show a price field for each enabled currency.</p>
+        <p class="currency-hint">{{ $t('more.shop.currency.lead') }}</p>
 
         <div class="currency-chips">
           <span v-for="c in currencyList" :key="c" class="currency-chip">
             {{ c }}
             <button type="button" @click="removeCurrency(c)" class="currency-chip-rm">✕</button>
           </span>
-          <span v-if="!currencyList.length" class="currency-empty">No currencies added yet.</span>
+          <span v-if="!currencyList.length" class="currency-empty">{{ $t('more.shop.currency.empty') }}</span>
         </div>
 
         <div class="currency-add-row">
@@ -514,16 +528,16 @@ const TYPE_COLOURS: Record<string, string> = {
             type="text"
             maxlength="3"
             class="field-input currency-input"
-            placeholder="USD"
+            :placeholder="CURRENCY_PLACEHOLDER"
             @keydown.enter.prevent="addCurrency"
           />
-          <button type="button" @click="addCurrency" class="btn-add-currency">Add</button>
+          <button type="button" @click="addCurrency" class="btn-add-currency">{{ $t('common.actions.add') }}</button>
         </div>
 
         <div class="currency-actions">
-          <button type="button" @click="showCurrencyModal = false" class="btn-cancel-sm">Cancel</button>
+          <button type="button" @click="showCurrencyModal = false" class="btn-cancel-sm">{{ $t('common.actions.cancel') }}</button>
           <button type="button" :disabled="saveCurrencies.isPending.value" @click="saveCurrencySettings" class="btn-save-sm">
-            {{ saveCurrencies.isPending.value ? 'Saving…' : 'Save' }}
+            {{ saveCurrencies.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>
         </div>
       </div>
@@ -531,7 +545,7 @@ const TYPE_COLOURS: Record<string, string> = {
 
     <ConfirmDialog
       :open="confirmId !== null"
-      message="This item and all its photos will be permanently deleted."
+      :message="$t('more.shop.deleteConfirm')"
       :loading="remove.isPending.value"
       @confirm="confirmDelete"
       @cancel="confirmId = null"

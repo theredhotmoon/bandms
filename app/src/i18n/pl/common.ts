@@ -32,6 +32,10 @@ export default {
     type: 'Typ',
     urlPlaceholder: 'https://…',
   },
+  /** Shared across every yes/no badge and toggle summary. */
+  yes: 'Tak',
+  no: 'Nie',
+
   state: {
     loading: 'Ładowanie…',
     somethingWentWrong: 'Coś poszło nie tak',

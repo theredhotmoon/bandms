@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { useUiLang } from '@/composables/useUiLang'
+import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useAuth } from '@/composables/useAuth'
 import { fetchFanAccountsAdmin } from '@/api/admin'
 import type { AdminFanAccount } from '@/types/ticket'
+
+const { uiLang } = useUiLang()
 
 const { token } = useAuth()
 
@@ -23,31 +28,36 @@ const rows = computed<AdminFanAccount[]>(() => {
   )
 })
 
+/**
+ * Three bugs in the line this replaces: a hardcoded 'en-GB' (so the column
+ * stayed English in a Polish panel), month:'short' (the Polish genitive trap
+ * — "8 maj" for May), and no timezone rule for what is a timestamp.
+ */
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return formatShortDate(iso, dateLocale(uiLang.value), 'instant')
 }
 </script>
 
 <template>
   <AdminLayout>
     <div class="p-8 max-w-4xl">
-      <h1 class="text-lg font-semibold mb-4" style="color:#e2e8f0;">Fan Accounts</h1>
+      <h1 class="text-lg font-semibold mb-4" style="color:#e2e8f0;">{{ $t('more.fanAccounts.title') }}</h1>
 
-      <input v-model="search" type="search" placeholder="Search by email or name…" class="search-input mb-4" />
+      <input v-model="search" type="search" :placeholder="$t('more.fanAccounts.search')" class="search-input mb-4" />
 
-      <div v-if="isPending" class="state-msg">Loading…</div>
-      <div v-else-if="isError" class="state-msg" style="color:#f87171;">Failed to load fan accounts.</div>
-      <div v-else-if="!rows.length" class="state-msg">No fan accounts found.</div>
+      <div v-if="isPending" class="state-msg">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="isError" class="state-msg" style="color:#f87171;">{{ $t('more.fanAccounts.loadFailed') }}</div>
+      <div v-else-if="!rows.length" class="state-msg">{{ $t('more.fanAccounts.empty') }}</div>
 
       <div v-else class="table-card">
         <table class="w-full">
           <thead>
             <tr style="border-bottom:1px solid #222222;">
-              <th class="th">Email</th>
-              <th class="th">Name</th>
-              <th class="th">Tickets</th>
-              <th class="th">Newsletter</th>
-              <th class="th">Joined</th>
+              <th class="th">{{ $t('more.fanAccounts.cols.email') }}</th>
+              <th class="th">{{ $t('more.fanAccounts.cols.name') }}</th>
+              <th class="th">{{ $t('more.fanAccounts.cols.tickets') }}</th>
+              <th class="th">{{ $t('more.fanAccounts.cols.newsletter') }}</th>
+              <th class="th">{{ $t('more.fanAccounts.cols.joined') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -57,7 +67,7 @@ function formatDate(iso: string) {
               <td class="td" style="color:#94a3b8;font-variant-numeric:tabular-nums;">{{ f.tickets_count }}</td>
               <td class="td">
                 <span class="newsletter-badge" :class="f.newsletter_subscribed ? 'badge-yes' : 'badge-no'">
-                  {{ f.newsletter_subscribed ? 'Yes' : 'No' }}
+                  {{ f.newsletter_subscribed ? $t('common.yes') : $t('common.no') }}
                 </span>
               </td>
               <td class="td" style="color:#64748b;font-size:0.75rem;">{{ formatDate(f.created_at) }}</td>

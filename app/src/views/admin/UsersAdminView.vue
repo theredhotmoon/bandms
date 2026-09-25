@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { useUiLang } from '@/composables/useUiLang'
+import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { ref, reactive, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -10,17 +14,24 @@ import { useAuth } from '@/composables/useAuth'
 import type { ManagedUser, UserPayload } from '@/types/user'
 import type { UserRole } from '@/types/auth'
 
+const { t } = useI18n()
+const { uiLang } = useUiLang()
+
+/** Inline style, not copy — see the note in ShopAdminView. */
+function roleBadgeStyle(role: UserRole) {
+  const c = ROLE_COLORS[role]
+  return { color: c, background: c + '18', borderColor: c + '30' }
+}
+
 const { list, create, update, remove } = useUsers()
 const { query: membersQ } = useBandMembers()
 const { user: currentUser } = useAuth()
 
 const bandMembers = computed(() => membersQ.data.value ?? [])
 
-const ROLES: { value: UserRole; label: string; desc: string }[] = [
-  { value: 'admin',     label: 'Admin',     desc: 'Full access to all features' },
-  { value: 'member',   label: 'Member',    desc: 'Own profile + stage setups' },
-  { value: 'publisher', label: 'Publisher', desc: 'Posts and content management' },
-]
+// The words live in the catalogue, keyed by the stored value; the order here
+// is the order the radio cards appear in.
+const ROLES: UserRole[] = ['admin', 'member', 'publisher']
 
 // ── Add modal ─────────────────────────────────────────────────────────────────
 
@@ -64,9 +75,9 @@ async function submitAdd() {
   try {
     await create.mutateAsync({ ...addForm })
     showAdd.value = false
-    toast.success('User created')
+    toast.success(t('more.users.created'))
   } catch (e) {
-    reportSaveError(e, 'Failed to create user')
+    reportSaveError(e, t('more.users.createFailed'))
   } finally {
     adding.value = false
   }
@@ -125,9 +136,9 @@ async function submitEdit() {
   try {
     await update.mutateAsync({ id: editingId.value, payload })
     showEdit.value = false
-    toast.success('User updated')
+    toast.success(t('more.users.updated'))
   } catch (e) {
-    reportSaveError(e, 'Failed to update user')
+    reportSaveError(e, t('more.users.updateFailed'))
   } finally {
     saving.value = false
   }
@@ -142,9 +153,9 @@ async function confirmDelete() {
   try {
     await remove.mutateAsync(confirmDeleteId.value)
     confirmDeleteId.value = null
-    toast.success('User deleted')
+    toast.success(t('more.users.deleted'))
   } catch (e) {
-    reportSaveError(e, 'Failed to delete user')
+    reportSaveError(e, t('more.users.deleteFailed'))
   }
 }
 
@@ -162,57 +173,57 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <div class="page-wrap">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Users</h1>
-          <div class="page-sub">Admin can create and manage all system users</div>
+          <h1 class="page-title">{{ $t('more.users.title') }}</h1>
+          <div class="page-sub">{{ $t('more.users.lead') }}</div>
         </div>
-        <button type="button" class="btn-add-primary" @click="openAdd">+ Add User</button>
+        <button type="button" class="btn-add-primary" @click="openAdd">{{ $t('more.users.add') }}</button>
       </div>
 
-      <div v-if="list.isPending.value" class="empty-state">Loading…</div>
-      <div v-else-if="list.isError.value" class="empty-state" style="color:#f87171;">Failed to load users.</div>
+      <div v-if="list.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="list.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.users.loadFailed') }}</div>
 
       <div v-else class="table-card">
         <table style="width:100%; border-collapse:collapse;">
           <thead>
             <tr>
-              <th class="th">Name</th>
-              <th class="th">Email</th>
-              <th class="th">Role</th>
-              <th class="th">Band Member</th>
-              <th class="th">Created</th>
-              <th class="th" style="text-align:right;">Actions</th>
+              <th class="th">{{ $t('more.users.cols.name') }}</th>
+              <th class="th">{{ $t('more.users.cols.email') }}</th>
+              <th class="th">{{ $t('more.users.cols.role') }}</th>
+              <th class="th">{{ $t('more.users.cols.bandMember') }}</th>
+              <th class="th">{{ $t('more.users.cols.created') }}</th>
+              <th class="th" style="text-align:right;">{{ $t('more.users.cols.actions') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="u in (list.data.value ?? [])" :key="u.id" class="table-row">
               <td class="td" style="color:#e2e8f0; font-weight:600;">
                 {{ u.first_name }} {{ u.last_name }}
-                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:#888888;margin-left:0.4rem;">(you)</span>
+                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:#888888;margin-left:0.4rem;">{{ $t('more.users.you') }}</span>
               </td>
               <td class="td" style="color:#94a3b8;">{{ u.email }}</td>
               <td class="td">
-                <span class="role-badge" :style="{ color: ROLE_COLORS[u.role as UserRole], background: ROLE_COLORS[u.role as UserRole]+'18', borderColor: ROLE_COLORS[u.role as UserRole]+'30' }">
-                  {{ u.role }}
+                <span class="role-badge" :style="roleBadgeStyle(u.role as UserRole)">
+                  {{ $t(`more.users.roles.${u.role}`) }}
                 </span>
               </td>
               <td class="td" style="color:#64748b;">
                 <span v-if="u.band_member">{{ u.band_member.first_name }} {{ u.band_member.last_name }}</span>
                 <span v-else>—</span>
               </td>
-              <td class="td" style="color:#475569;">{{ new Date(u.created_at).toLocaleDateString() }}</td>
+              <td class="td" style="color:#475569;">{{ formatShortDate(u.created_at, dateLocale(uiLang), 'instant') }}</td>
               <td class="td" style="text-align:right;">
-                <button type="button" class="btn-edit" @click="openEdit(u.id)">Edit</button>
+                <button type="button" class="btn-edit" @click="openEdit(u.id)">{{ $t('common.actions.edit') }}</button>
                 <button
                   type="button"
                   class="btn-delete"
                   :disabled="u.id === currentUser?.id"
-                  :title="u.id === currentUser?.id ? 'Cannot delete your own account' : 'Delete'"
+                  :title="u.id === currentUser?.id ? $t('more.users.cannotDeleteSelf') : $t('common.actions.delete')"
                   @click="confirmDeleteId = u.id"
-                >Delete</button>
+                >{{ $t('common.actions.delete') }}</button>
               </td>
             </tr>
             <tr v-if="(list.data.value ?? []).length === 0">
-              <td colspan="6" class="empty-state">No users yet.</td>
+              <td colspan="6" class="empty-state">{{ $t('more.users.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -220,12 +231,12 @@ const ROLE_COLORS: Record<UserRole, string> = {
     </div>
 
     <!-- Add modal -->
-    <AdminModal :open="showAdd" title="Add User" max-width="30rem" @close="showAdd = false">
+    <AdminModal :open="showAdd" :title="$t('more.users.addTitle')" max-width="30rem" @close="showAdd = false">
       <form class="modal-form" @submit.prevent="submitAdd">
         <div>
-          <label class="field-label">Band member <span style="color:#475569;font-weight:400;">(optional — auto-fills name &amp; email)</span></label>
+          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="addForm.band_member_id" class="field-input">
-            <option :value="null">— Enter manually —</option>
+            <option :value="null">{{ $t('more.users.form.enterManually') }}</option>
             <option v-for="m in bandMembers" :key="m.id" :value="m.id">
               {{ m.first_name }} {{ m.last_name }}
             </option>
@@ -233,52 +244,52 @@ const ROLE_COLORS: Record<UserRole, string> = {
         </div>
         <div class="field-row">
           <div>
-            <label class="field-label">First name</label>
+            <label class="field-label">{{ $t('more.users.form.firstName') }}</label>
             <input v-model="addForm.first_name" class="field-input" required :disabled="!!addForm.band_member_id" />
           </div>
           <div>
-            <label class="field-label">Last name</label>
+            <label class="field-label">{{ $t('more.users.form.lastName') }}</label>
             <input v-model="addForm.last_name" class="field-input" required :disabled="!!addForm.band_member_id" />
           </div>
         </div>
         <div>
-          <label class="field-label">Email</label>
+          <label class="field-label">{{ $t('more.users.form.email') }}</label>
           <input v-model="addForm.email" type="email" class="field-input" required autocomplete="off" :disabled="!!addForm.band_member_id" />
         </div>
         <div>
-          <label class="field-label">Role</label>
+          <label class="field-label">{{ $t('more.users.form.role') }}</label>
           <div class="role-grid">
-            <label v-for="r in ROLES" :key="r.value" class="role-card" :class="{ 'role-card--active': addForm.role === r.value }">
-              <input v-model="addForm.role" type="radio" :value="r.value" style="display:none;" />
-              <span class="role-card-name">{{ r.label }}</span>
-              <span class="role-card-desc">{{ r.desc }}</span>
+            <label v-for="r in ROLES" :key="r" class="role-card" :class="{ 'role-card--active': addForm.role === r }">
+              <input v-model="addForm.role" type="radio" :value="r" style="display:none;" />
+              <span class="role-card-name">{{ $t(`more.users.roles.${r}`) }}</span>
+              <span class="role-card-desc">{{ $t(`more.users.roleDesc.${r}`) }}</span>
             </label>
           </div>
         </div>
         <div class="field-row">
           <div>
-            <label class="field-label">Password</label>
+            <label class="field-label">{{ $t('more.users.form.password') }}</label>
             <input v-model="addForm.password" type="password" class="field-input" required autocomplete="new-password" />
           </div>
           <div>
-            <label class="field-label">Confirm password</label>
+            <label class="field-label">{{ $t('more.users.form.confirmPassword') }}</label>
             <input v-model="addForm.password_confirmation" type="password" class="field-input" required autocomplete="new-password" />
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showAdd = false">Cancel</button>
-          <button type="submit" class="btn-primary" :disabled="adding">{{ adding ? 'Creating…' : 'Create user' }}</button>
+          <button type="button" class="btn-ghost" @click="showAdd = false">{{ $t('common.actions.cancel') }}</button>
+          <button type="submit" class="btn-primary" :disabled="adding">{{ adding ? $t('more.users.form.creating') : $t('more.users.form.createUser') }}</button>
         </div>
       </form>
     </AdminModal>
 
     <!-- Edit modal -->
-    <AdminModal :open="showEdit" title="Edit User" max-width="30rem" @close="showEdit = false">
+    <AdminModal :open="showEdit" :title="$t('more.users.editTitle')" max-width="30rem" @close="showEdit = false">
       <form class="modal-form" @submit.prevent="submitEdit">
         <div>
-          <label class="field-label">Band member <span style="color:#475569;font-weight:400;">(optional — auto-fills name &amp; email)</span></label>
+          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="editForm.band_member_id" class="field-input">
-            <option :value="null">— None —</option>
+            <option :value="null">{{ $t('more.users.form.none') }}</option>
             <option v-for="m in bandMembers" :key="m.id" :value="m.id">
               {{ m.first_name }} {{ m.last_name }}
             </option>
@@ -286,54 +297,54 @@ const ROLE_COLORS: Record<UserRole, string> = {
         </div>
         <div class="field-row">
           <div>
-            <label class="field-label">First name</label>
+            <label class="field-label">{{ $t('more.users.form.firstName') }}</label>
             <input v-model="editForm.first_name" class="field-input" required :disabled="!!editForm.band_member_id" />
           </div>
           <div>
-            <label class="field-label">Last name</label>
+            <label class="field-label">{{ $t('more.users.form.lastName') }}</label>
             <input v-model="editForm.last_name" class="field-input" required :disabled="!!editForm.band_member_id" />
           </div>
         </div>
         <div>
-          <label class="field-label">Email</label>
+          <label class="field-label">{{ $t('more.users.form.email') }}</label>
           <input v-model="editForm.email" type="email" class="field-input" required :disabled="!!editForm.band_member_id" />
         </div>
         <div>
-          <label class="field-label">Role</label>
+          <label class="field-label">{{ $t('more.users.form.role') }}</label>
           <div class="role-grid">
-            <label v-for="r in ROLES" :key="r.value" class="role-card" :class="{ 'role-card--active': editForm.role === r.value }">
-              <input v-model="editForm.role" type="radio" :value="r.value" style="display:none;" />
-              <span class="role-card-name">{{ r.label }}</span>
-              <span class="role-card-desc">{{ r.desc }}</span>
+            <label v-for="r in ROLES" :key="r" class="role-card" :class="{ 'role-card--active': editForm.role === r }">
+              <input v-model="editForm.role" type="radio" :value="r" style="display:none;" />
+              <span class="role-card-name">{{ $t(`more.users.roles.${r}`) }}</span>
+              <span class="role-card-desc">{{ $t(`more.users.roleDesc.${r}`) }}</span>
             </label>
           </div>
         </div>
         <div class="field-row">
           <div>
-            <label class="field-label">New password <span style="color:#475569;font-weight:400;">(leave blank to keep)</span></label>
+            <label class="field-label">{{ $t('more.users.form.newPassword') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.newPasswordHint') }}</span></label>
             <input v-model="editForm.password" type="password" class="field-input" autocomplete="new-password" />
           </div>
           <div>
-            <label class="field-label">Confirm new password</label>
+            <label class="field-label">{{ $t('more.users.form.confirmNewPassword') }}</label>
             <input v-model="editForm.password_confirmation" type="password" class="field-input" autocomplete="new-password" />
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showEdit = false">Cancel</button>
-          <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save changes' }}</button>
+          <button type="button" class="btn-ghost" @click="showEdit = false">{{ $t('common.actions.cancel') }}</button>
+          <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? $t('common.actions.saving') : $t('more.users.form.saveChanges') }}</button>
         </div>
       </form>
     </AdminModal>
 
     <!-- Confirm delete -->
-    <AdminModal :open="confirmDeleteId !== null" title="Delete user?" max-width="24rem" @close="confirmDeleteId = null">
+    <AdminModal :open="confirmDeleteId !== null" :title="$t('more.users.deleteTitle')" max-width="24rem" @close="confirmDeleteId = null">
       <div class="modal-form">
         <p style="font-size:0.875rem;color:#94a3b8;line-height:1.6;">
-          This will permanently delete the user account. The band member profile (if any) will not be affected.
+          {{ $t('more.users.deleteMessage') }}
         </p>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="confirmDeleteId = null">Cancel</button>
-          <button type="button" class="btn-danger" @click="confirmDelete">Delete</button>
+          <button type="button" class="btn-ghost" @click="confirmDeleteId = null">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-danger" @click="confirmDelete">{{ $t('common.actions.delete') }}</button>
         </div>
       </div>
     </AdminModal>

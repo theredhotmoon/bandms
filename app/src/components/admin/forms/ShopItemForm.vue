@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { reactive, ref, watch } from 'vue'
 import type { ShopItem, ShopItemPayload, ShopCategory, ShopItemVariant } from '@/types/shop'
 import type { Tag } from '@/types/tag'
@@ -10,6 +11,10 @@ import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useShop } from '@/composables/useShop'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+
+const { t } = useI18n()
+
+const URL_PLACEHOLDER = 'https://…' // i18n-ignore: URL scheme
 
 const props = defineProps<{
   initial?: ShopItem | null
@@ -179,7 +184,7 @@ function handleSubmit() {
     .map(([currency, amt]) => ({ currency, amount: Number(amt) }))
 
   if (builtPrices.length === 0 && Object.keys(prices).length > 0) {
-    localPriceError.value = 'At least one price is required.'
+    localPriceError.value = t('more.shop.form.priceRequired')
     return
   }
   localPriceError.value = null
@@ -211,15 +216,15 @@ function handleSubmit() {
   <form @submit.prevent="handleSubmit" class="shop-form">
 
     <!-- ── Info ─────────────────────────────────────────────────── -->
-    <div class="section-label">Info</div>
+    <div class="section-label">{{ $t('more.shop.form.info') }}</div>
     <div class="field">
-      <label class="field-label">Name *</label>
-      <input v-model="form.name" type="text" class="field-input" :class="{ 'field-input--error': err('name') }" placeholder="e.g. Debut LP — Limited Edition" />
+      <label class="field-label">{{ $t('more.shop.form.name') }}</label>
+      <input v-model="form.name" type="text" class="field-input" :class="{ 'field-input--error': err('name') }" :placeholder="$t('more.shop.form.namePlaceholder')" />
       <span v-if="err('name')" class="field-error">{{ err('name') }}</span>
     </div>
 
     <div class="field">
-      <label class="field-label">Slug URL</label>
+      <label class="field-label">{{ $t('more.shop.form.slug') }}</label>
       <SlugInput
         v-model="form.slug_en"
         v-model:modelValuePl="form.slug_pl"
@@ -231,8 +236,8 @@ function handleSubmit() {
     </div>
 
     <div class="field">
-      <label class="field-label">Categories</label>
-      <div v-if="!categories.length" class="empty-hint">No categories yet. Add some via the Categories button.</div>
+      <label class="field-label">{{ $t('more.shop.form.categories') }}</label>
+      <div v-if="!categories.length" class="empty-hint">{{ $t('more.shop.form.noCategories') }}</div>
       <div v-else class="chips-wrap">
         <label
           v-for="cat in categories" :key="cat.id"
@@ -246,15 +251,15 @@ function handleSubmit() {
     </div>
 
     <div class="field">
-      <label class="field-label">Description</label>
-      <textarea v-model="form.description" class="field-textarea" rows="4" placeholder="Describe the item…" />
+      <label class="field-label">{{ $t('more.shop.form.description') }}</label>
+      <textarea v-model="form.description" class="field-textarea" rows="4" :placeholder="$t('more.shop.form.descriptionPlaceholder')" />
       <span v-if="err('description')" class="field-error">{{ err('description') }}</span>
     </div>
 
     <!-- ── Pricing ───────────────────────────────────────────────── -->
-    <div class="section-label">Pricing</div>
+    <div class="section-label">{{ $t('more.shop.form.pricing') }}</div>
     <div v-if="!currencies.length" class="empty-hint">
-      No currencies configured. Set up currencies in Band Profile → Shop Settings first.
+      {{ $t('more.shop.form.noCurrencies') }}
     </div>
     <template v-else>
       <div class="price-grid">
@@ -266,7 +271,7 @@ function handleSubmit() {
             min="0"
             step="0.01"
             class="field-input price-input"
-            :placeholder="`Amount in ${c}`"
+            :placeholder="$t('more.shop.form.amountIn', { currency: c })"
           />
         </div>
       </div>
@@ -275,50 +280,50 @@ function handleSubmit() {
     </template>
 
     <!-- ── Inventory ─────────────────────────────────────────────── -->
-    <div class="section-label">Inventory</div>
+    <div class="section-label">{{ $t('more.shop.form.inventory') }}</div>
     <div class="form-row two-col">
       <div class="field">
-        <label class="field-label">Stock quantity <span class="field-hint">(leave blank for unlimited)</span></label>
-        <input v-model="form.stock_quantity" type="number" min="0" step="1" class="field-input" placeholder="Unlimited" />
+        <label class="field-label">{{ $t('more.shop.form.stock') }} <span class="field-hint">{{ $t('more.shop.form.stockHint') }}</span></label>
+        <input v-model="form.stock_quantity" type="number" min="0" step="1" class="field-input" :placeholder="$t('more.shop.form.unlimited')" />
         <span v-if="err('stock_quantity')" class="field-error">{{ err('stock_quantity') }}</span>
       </div>
       <div class="field">
-        <label class="field-label">Sort order</label>
+        <label class="field-label">{{ $t('more.shop.form.sortOrder') }}</label>
         <input v-model="form.sort_order" type="number" min="0" step="1" class="field-input" />
       </div>
     </div>
 
     <div class="field">
-      <label class="field-label">External purchase URL</label>
-      <input v-model="form.purchase_url" type="url" class="field-input" placeholder="https://…" />
+      <label class="field-label">{{ $t('more.shop.form.externalUrl') }}</label>
+      <input v-model="form.purchase_url" type="url" class="field-input" :placeholder="URL_PLACEHOLDER" />
       <span v-if="err('purchase_url')" class="field-error">{{ err('purchase_url') }}</span>
     </div>
 
     <div class="toggles-row">
       <label class="toggle-label">
         <input v-model="form.is_available" type="checkbox" class="toggle-cb" />
-        <span class="toggle-text">Available for sale</span>
+        <span class="toggle-text">{{ $t('more.shop.form.availableForSale') }}</span>
       </label>
       <label class="toggle-label">
         <input v-model="form.is_presale" type="checkbox" class="toggle-cb" />
-        <span class="toggle-text">Pre-sale</span>
+        <span class="toggle-text">{{ $t('more.shop.form.preSale') }}</span>
       </label>
     </div>
 
     <div v-if="form.is_presale" class="field">
-      <label class="field-label">Ships at</label>
+      <label class="field-label">{{ $t('more.shop.form.shipsAt') }}</label>
       <input v-model="form.presale_ships_at" type="date" class="field-input" />
       <span v-if="err('presale_ships_at')" class="field-error">{{ err('presale_ships_at') }}</span>
     </div>
 
     <!-- ── Variants ──────────────────────────────────────────────── -->
-    <div class="section-label">Variants</div>
-    <div v-if="!itemId" class="empty-hint">Save the item first to add size/color variants.</div>
+    <div class="section-label">{{ $t('more.shop.variants.title') }}</div>
+    <div v-if="!itemId" class="empty-hint">{{ $t('more.shop.variants.saveFirst') }}</div>
     <template v-else>
       <!-- Existing variants -->
       <div v-if="initial?.variants?.length" class="variant-table">
         <div class="variant-row variant-row--head">
-          <span>Name</span><span>Value</span><span>Stock</span><span></span>
+          <span>{{ $t('more.shop.variants.name') }}</span><span>{{ $t('more.shop.variants.value') }}</span><span>{{ $t('more.shop.variants.stock') }}</span><span></span>
         </div>
         <template v-for="v in initial.variants" :key="v.id">
           <!-- View row -->
@@ -327,40 +332,40 @@ function handleSubmit() {
             <span class="variant-cell">{{ v.value }}</span>
             <span class="variant-cell variant-stock">{{ v.stock_quantity !== null ? v.stock_quantity : '∞' }}</span>
             <span class="variant-cell variant-actions">
-              <button type="button" class="vbtn vbtn--edit" @click="startEditVariant(v)">Edit</button>
-              <button type="button" class="vbtn vbtn--del" @click="handleDeleteVariant(v.id)" :disabled="removeVariant.isPending.value">Del</button>
+              <button type="button" class="vbtn vbtn--edit" @click="startEditVariant(v)">{{ $t('common.actions.edit') }}</button>
+              <button type="button" class="vbtn vbtn--del" @click="handleDeleteVariant(v.id)" :disabled="removeVariant.isPending.value">{{ $t('more.shop.variants.del') }}</button>
             </span>
           </div>
           <!-- Edit row -->
           <div v-else class="variant-row variant-row--editing">
-            <input v-model="editVariantForm.name"           type="text"   class="field-input variant-inp" placeholder="Name" />
-            <input v-model="editVariantForm.value"          type="text"   class="field-input variant-inp" placeholder="Value" />
+            <input v-model="editVariantForm.name"           type="text"   class="field-input variant-inp" :placeholder="$t('more.shop.variants.name')" />
+            <input v-model="editVariantForm.value"          type="text"   class="field-input variant-inp" :placeholder="$t('more.shop.variants.value')" />
             <input v-model="editVariantForm.stock_quantity" type="number" class="field-input variant-inp variant-inp--stock" placeholder="∞" min="0" />
             <span class="variant-cell variant-actions">
-              <button type="button" class="vbtn vbtn--save" @click="handleSaveVariant(v.id)" :disabled="editVariant.isPending.value">Save</button>
-              <button type="button" class="vbtn vbtn--cancel" @click="cancelEditVariant">Cancel</button>
+              <button type="button" class="vbtn vbtn--save" @click="handleSaveVariant(v.id)" :disabled="editVariant.isPending.value">{{ $t('common.actions.save') }}</button>
+              <button type="button" class="vbtn vbtn--cancel" @click="cancelEditVariant">{{ $t('common.actions.cancel') }}</button>
             </span>
           </div>
         </template>
       </div>
-      <div v-else class="empty-hint">No variants yet. Use the form below to add sizes or colors.</div>
+      <div v-else class="empty-hint">{{ $t('more.shop.variants.empty') }}</div>
 
       <!-- Add new variant -->
       <div class="variant-add-row">
-        <input v-model="newVariant.name"           type="text"   class="field-input variant-inp" placeholder="Name (e.g. Size)" />
-        <input v-model="newVariant.value"          type="text"   class="field-input variant-inp" placeholder="Value (e.g. M)" />
-        <input v-model="newVariant.stock_quantity" type="number" class="field-input variant-inp variant-inp--stock" placeholder="Stock (blank=∞)" min="0" />
+        <input v-model="newVariant.name"           type="text"   class="field-input variant-inp" :placeholder="$t('more.shop.variants.namePlaceholder')" />
+        <input v-model="newVariant.value"          type="text"   class="field-input variant-inp" :placeholder="$t('more.shop.variants.valuePlaceholder')" />
+        <input v-model="newVariant.stock_quantity" type="number" class="field-input variant-inp variant-inp--stock" :placeholder="$t('more.shop.variants.stockPlaceholder')" min="0" />
         <button
           type="button"
           class="vbtn vbtn--add"
           :disabled="!newVariant.name.trim() || !newVariant.value.trim() || addVariant.isPending.value"
           @click="handleAddVariant"
-        >Add</button>
+        >{{ $t('common.actions.add') }}</button>
       </div>
     </template>
 
     <!-- ── Links ─────────────────────────────────────────────────── -->
-    <div class="section-label">Links</div>
+    <div class="section-label">{{ $t('more.shop.form.links') }}</div>
     <EntityRelationsPanel
       :tags="tags"
       :releases="releases"
@@ -376,9 +381,9 @@ function handleSubmit() {
 
     <!-- ── Actions ────────────────────────────────────────────────── -->
     <div class="form-actions">
-      <button type="button" @click="emit('cancel')" class="btn-cancel">Cancel</button>
+      <button type="button" @click="emit('cancel')" class="btn-cancel">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !isDirty" class="btn-submit">
-        {{ loading ? 'Saving…' : (initial ? 'Save changes' : 'Create item') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('more.shop.form.saveChanges') : $t('more.shop.form.createItem')) }}
       </button>
     </div>
   </form>

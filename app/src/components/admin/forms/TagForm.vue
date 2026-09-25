@@ -38,11 +38,11 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
-      <label class="field-label">Name <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
         <div v-for="l in LOCALES" :key="l" class="trans-row">
           <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
-          <input v-model="form.name[l]" class="field-input flex-1" placeholder="Tag name" />
+          <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.tags.namePlaceholder')" />
         </div>
       </div>
       <template v-for="l in LOCALES" :key="`name-err-${l}`">
@@ -51,7 +51,7 @@ function submit() {
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
     <div>
-      <label class="field-label">Slug URL</label>
+      <label class="field-label">{{ $t('more.tags.slug') }}</label>
       <SlugInput
         v-model="form.slug_en"
         v-model:modelValuePl="form.slug_pl"
@@ -63,9 +63,9 @@ function submit() {
       <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>
