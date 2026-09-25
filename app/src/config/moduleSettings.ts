@@ -79,25 +79,21 @@ export function settingsGroupsFor(slug: string): { group: string; fields: Module
  * renders as a checkbox.
  */
 export interface ModuleVisibilityField {
-  /** Key inside the visibility bag. Must match what the Astro section reads. */
+  /**
+   * Key inside the visibility bag. Must match what the Astro section reads —
+   * and now also names the catalogue entry, `pages.visibility.<slug>.<key>`
+   * (with `_help` appended for the hint). The label and help text used to sit
+   * here as English; they are form copy, not shape.
+   */
   key: string
-  label: string
-  /** Say what the toggle hides, not what the field is. */
-  help?: string
+  /** Whether the toggle has a `<key>_help` entry to render under it. */
+  help?: boolean
 }
 
 export const MODULE_VISIBILITY_SCHEMA: Record<string, ModuleVisibilityField[]> = {
   about: [
-    {
-      key: 'show_stats',
-      label: 'Band in numbers',
-      help: 'The stats grid (monthly listeners, shows played, years on stage…) on the public About page. Still hidden automatically when there is nothing to show.',
-    },
-    {
-      key: 'show_members',
-      label: 'Band members',
-      help: 'The line-up grid on the public About page.',
-    },
+    { key: 'show_stats', help: true },
+    { key: 'show_members', help: true },
   ],
 }
 

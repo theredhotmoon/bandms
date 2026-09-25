@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { useLang } from '@/composables/useLang'
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -9,6 +11,17 @@ import { reportSaveError } from '@/utils/formErrors'
 import { scopeSet, hasOwnSet } from '@/utils/heroImageScopes'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import type { HeroImage } from '@/types/heroImage'
+
+const { t } = useI18n()
+const { lang } = useLang()
+
+/** See WebsiteModulesView: a class list is not copy, but it looks like it. */
+const scopeClass = (on: boolean) =>
+  on ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:bg-zinc-800' // i18n-ignore: CSS classes
+
+const uploadLabelClass = (pending: boolean) =>
+  pending ? 'opacity-50 cursor-not-allowed' : '' // i18n-ignore: CSS classes
+
 
 const { query, upload, update, reorder, remove } = useHeroImages()
 const { query: modulesQ } = useWebsiteModules()
@@ -37,14 +50,19 @@ const NO_HERO_MODULES = new Set(['tech-rider'])
  * pictures unreachable.
  */
 const scopes = computed(() => [
-  { key: 'main', label: 'Main', hint: 'Used by every page that has none of its own' },
-  { key: 'home', label: 'Homepage', hint: '' },
+  { key: 'main', label: t('pages.heroImages.scopeMain'), hint: t('pages.heroImages.scopeMainHint') },
+  { key: 'home', label: t('pages.heroImages.scopeHome'), hint: '' },
   ...(modulesQ.data.value?.data ?? [])
     .filter(m => !NON_PAGE_MODULES.has(m.slug) && !NO_HERO_MODULES.has(m.slug))
     .map(m => ({
       key: m.slug,
-      label: m.display_name,
-      hint: m.enabled ? '' : 'module currently switched off',
+      // The band's own name for the module, in the *content* locale — this is
+      // their text, not chrome, so it follows useLang() rather than useUiLang().
+      // `display_name` is the fallback and is a plain untranslated column:
+      // only custom_name and custom_slug are $translatable on WebsiteModule,
+      // so nothing resolves it server-side.
+      label: m.custom_name?.[lang.value] || m.display_name,
+      hint: m.enabled ? '' : t('pages.heroImages.scopeOffHint'),
     })),
 ])
 
@@ -65,9 +83,9 @@ async function onFilesChosen(e: Event) {
       scope: selected.value,
       files: files.map(file => ({ file, caption: '' })),
     })
-    toast.success(files.length === 1 ? 'Picture uploaded' : `${files.length} pictures uploaded`)
+    toast.success(t('pages.heroImages.uploaded', files.length, { named: { n: files.length } }))
   } catch (e) {
-    reportSaveError(e, 'Upload failed')
+    reportSaveError(e, t('pages.heroImages.uploadFailed'))
   } finally {
     if (fileInput.value) fileInput.value.value = ''
   }
@@ -90,7 +108,7 @@ async function saveCaption(image: HeroImage, value: string) {
   try {
     await update.mutateAsync({ id: image.id, payload: { caption: value || null } })
   } catch (e) {
-    reportSaveError(e, 'Could not save caption')
+    reportSaveError(e, t('pages.heroImages.captionFailed'))
   }
 }
 
@@ -98,7 +116,7 @@ async function toggleActive(image: HeroImage) {
   try {
     await update.mutateAsync({ id: image.id, payload: { active: !image.active } })
   } catch (e) {
-    reportSaveError(e, 'Could not update')
+    reportSaveError(e, t('pages.heroImages.updateFailed'))
   }
 }
 
@@ -116,24 +134,26 @@ async function move(index: number, delta: number) {
   try {
     await reorder.mutateAsync({ scope: selected.value, order })
   } catch (e) {
-    reportSaveError(e, 'Could not reorder')
+    reportSaveError(e, t('pages.heroImages.reorderFailed'))
   }
 }
 
 async function removeImage(image: HeroImage) {
   try {
     await remove.mutateAsync(image.id)
-    toast.success('Picture removed')
+    toast.success(t('pages.heroImages.removed'))
   } catch (e) {
-    reportSaveError(e, 'Could not remove picture')
+    reportSaveError(e, t('pages.heroImages.removeFailed'))
   }
 }
 
 /** Count shown beside each scope, or the inheritance note. */
 function scopeSummary(key: string): string {
-  if (!hasOwnSet(sets.value, key)) return key === 'main' ? 'none set' : 'inherits Main'
+  if (!hasOwnSet(sets.value, key)) {
+    return key === 'main' ? t('pages.heroImages.noneSet') : t('pages.heroImages.inheritsMain')
+  }
   const n = scopeSet(sets.value, key).filter(h => h.active).length
-  return n === 1 ? '1 picture' : `${n} pictures`
+  return t('pages.heroImages.pictureCount', n, { named: { n } })
 }
 
 </script>
@@ -142,17 +162,11 @@ function scopeSummary(key: string): string {
   <AdminLayout>
     <div class="p-6 max-w-5xl mx-auto">
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-white">Hero Images</h1>
-        <p class="text-sm text-zinc-500 mt-1">
-          Pictures shown behind a page's title. With more than one active picture, one
-          is chosen at random on each visit. A page with none of its own uses Main.
-          Uploaded here directly — never from the photo gallery.
-        </p>
+        <h1 class="text-2xl font-bold text-white">{{ $t('pages.heroImages.title') }}</h1>
+        <p class="text-sm text-zinc-500 mt-1">{{ $t('pages.heroImages.lead') }}</p>
       </div>
 
-      <p v-if="query.isError.value" class="text-sm text-red-400 mb-4">
-        Could not load hero images.
-      </p>
+      <p v-if="query.isError.value" class="text-sm text-red-400 mb-4">{{ $t('pages.heroImages.loadFailed') }}</p>
 
       <div class="grid gap-6 md:grid-cols-[240px_1fr]">
         <!-- Scopes -->
@@ -161,7 +175,7 @@ function scopeSummary(key: string): string {
             <button
               type="button"
               class="w-full text-left px-3 py-2 rounded-lg transition-colors"
-              :class="selected === s.key ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:bg-zinc-800'"
+              :class="scopeClass(selected === s.key)"
               @click="selected = s.key"
             >
               <span class="font-semibold">{{ s.label }}</span>
@@ -174,8 +188,8 @@ function scopeSummary(key: string): string {
         <!-- Selected scope -->
         <div>
           <p v-if="current.length === 0" class="text-sm text-zinc-500 mb-4">
-            No pictures yet.
-            <template v-if="selected !== 'main'">This page uses the Main set.</template>
+            {{ $t('pages.heroImages.empty') }}
+            <template v-if="selected !== 'main'">{{ $t('pages.heroImages.usesMain') }}</template>
           </p>
 
           <ul v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
@@ -190,11 +204,11 @@ function scopeSummary(key: string): string {
                 :alt="image.caption ?? ''"
                 class="w-full h-28 object-cover"
               />
-              <div v-else class="w-full h-28 grid place-items-center text-xs text-zinc-500">no file</div>
+              <div v-else class="w-full h-28 grid place-items-center text-xs text-zinc-500">{{ $t('pages.heroImages.noFile') }}</div>
 
               <input
                 :value="captionFor(image)"
-                placeholder="Caption (optional)"
+                :placeholder="$t('pages.heroImages.caption')"
                 class="w-full bg-transparent border-0 border-b border-zinc-700 text-xs text-zinc-300 px-2 py-1 focus:outline-none focus:border-teal-500"
                 @input="captionDrafts[image.id] = ($event.target as HTMLInputElement).value"
                 @blur="saveCaption(image, captionFor(image))"
@@ -203,15 +217,15 @@ function scopeSummary(key: string): string {
               <div class="flex items-center gap-1 p-2 text-xs">
                 <button
                   type="button" class="px-2 py-1 rounded bg-zinc-700 disabled:opacity-40 text-white"
-                  :disabled="i === 0 || reorder.isPending.value" aria-label="Move earlier" @click="move(i, -1)"
+                  :disabled="i === 0 || reorder.isPending.value" :aria-label="$t('pages.heroImages.moveEarlier')" @click="move(i, -1)"
                 >←</button>
                 <button
                   type="button" class="px-2 py-1 rounded bg-zinc-700 disabled:opacity-40 text-white"
-                  :disabled="i === current.length - 1 || reorder.isPending.value" aria-label="Move later" @click="move(i, 1)"
+                  :disabled="i === current.length - 1 || reorder.isPending.value" :aria-label="$t('pages.heroImages.moveLater')" @click="move(i, 1)"
                 >→</button>
                 <label class="ml-auto flex items-center gap-1 cursor-pointer select-none text-zinc-400">
                   <input type="checkbox" :checked="image.active" @change="toggleActive(image)" />
-                  Active
+                  {{ $t('pages.heroImages.active') }}
                 </label>
               </div>
               <div class="p-2 pt-0">
@@ -219,16 +233,16 @@ function scopeSummary(key: string): string {
                   type="button" class="w-full px-2 py-1 rounded text-red-400 hover:bg-zinc-700"
                   :disabled="remove.isPending.value"
                   @click="removeImage(image)"
-                >Remove</button>
+                >{{ $t('pages.heroImages.remove') }}</button>
               </div>
             </li>
           </ul>
 
           <label
             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-semibold cursor-pointer"
-            :class="{ 'opacity-50 cursor-not-allowed': upload.isPending.value }"
+            :class="uploadLabelClass(upload.isPending.value)"
           >
-            {{ upload.isPending.value ? 'Uploading…' : '+ Upload pictures' }}
+            {{ upload.isPending.value ? $t('pages.heroImages.uploading') : $t('pages.heroImages.upload') }}
             <input
               ref="fileInput" type="file" accept="image/*" multiple class="hidden"
               :disabled="upload.isPending.value"
@@ -236,9 +250,7 @@ function scopeSummary(key: string): string {
             />
           </label>
 
-          <p v-if="!autoRebuild" class="text-xs text-zinc-500 mt-3">
-            The public site is static — hero changes appear after a rebuild.
-          </p>
+          <p v-if="!autoRebuild" class="text-xs text-zinc-500 mt-3">{{ $t('pages.heroImages.rebuildNote') }}</p>
         </div>
       </div>
     </div>
