@@ -116,7 +116,7 @@ function onClipSelect(value: string) {
              host post form with this block's id still 0. -->
         <input v-model="newClipUrl" type="url" class="field-input flex-1" :placeholder="$t('common.clips.urlPlaceholder')"
                data-testid="new-clip-url" @keydown.enter.prevent="attachNewClip" />
-        <span v-if="newClipUrl" class="provider-badge">{{ providerLabel(detectProvider(newClipUrl)) }}</span>
+        <span v-if="newClipUrl" class="provider-badge">{{ providerLabel(detectProvider(newClipUrl), $t('common.link')) }}</span>
       </div>
       <ClipCategoryPicker v-model="newClipCategory" />
       <div class="flex gap-2 items-center">

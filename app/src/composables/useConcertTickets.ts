@@ -23,7 +23,10 @@ export function useConcertTickets(concertId: Ref<number | null>) {
   })
 
   function requireAuth(): { token: string; concertId: number } {
-    if (!token.value || !concertId.value) throw new Error('Not authenticated')
+    // No message on purpose: saveErrorMessage returns error.message ahead of
+    // the caller's fallback, so an English string here would beat the
+    // translated text. This fires on a missing session, not a user action.
+    if (!token.value || !concertId.value) throw new Error()
     return { token: token.value, concertId: concertId.value }
   }
 

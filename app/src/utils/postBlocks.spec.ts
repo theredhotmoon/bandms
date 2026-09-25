@@ -50,11 +50,14 @@ describe('defaultPayload', () => {
 
 describe('providerLabel', () => {
   it('labels each provider for the badge', () => {
-    expect(providerLabel('youtube')).toBe('YouTube')
-    expect(providerLabel('vimeo')).toBe('Vimeo')
-    expect(providerLabel('instagram')).toBe('Instagram')
-    expect(providerLabel('tiktok')).toBe('TikTok')
-    expect(providerLabel('link')).toBe('Link')
+    expect(providerLabel('youtube', 'Link')).toBe('YouTube')
+    expect(providerLabel('vimeo', 'Link')).toBe('Vimeo')
+    expect(providerLabel('instagram', 'Link')).toBe('Instagram')
+    expect(providerLabel('tiktok', 'Link')).toBe('TikTok')
+    // `link` is no longer in the brand table — it is an ordinary word, so
+    // the caller supplies it translated and any unknown host gets it too.
+    expect(providerLabel('link', 'Link')).toBe('Link')
+    expect(providerLabel('link', 'Odnośnik')).toBe('Odnośnik')
   })
 })
 
@@ -99,8 +102,8 @@ describe('detectProvider — facebook and audio', () => {
     expect(detectProvider('https://music.apple.com/pl/album/x/1')).toBe('apple_music')
   })
   it('labels them and knows which are audio', () => {
-    expect(providerLabel('facebook')).toBe('Facebook')
-    expect(providerLabel('apple_music')).toBe('Apple Music')
+    expect(providerLabel('facebook', 'Link')).toBe('Facebook')
+    expect(providerLabel('apple_music', 'Link')).toBe('Apple Music')
     expect(isAudioProvider('spotify')).toBe(true)
     expect(isAudioProvider('youtube')).toBe(false)
   })

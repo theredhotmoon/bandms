@@ -24,13 +24,19 @@ export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
   }
 }
 
-const PROVIDER_LABELS: Record<EmbedProviderName, string> = {
+/**
+ * Brand names, which are the same in every language — except `link`, which is
+ * an ordinary word describing a plain URL. It is not in this table for that
+ * reason: the caller passes the translated string in.
+ */
+const PROVIDER_LABELS: Partial<Record<EmbedProviderName, string>> = {
   youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',
-  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music', link: 'Link',
+  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music',
 }
 
-export function providerLabel(p: EmbedProviderName): string {
-  return PROVIDER_LABELS[p] ?? 'Link'
+/** `genericLabel` is what an unrecognised host (or a bare link) reads as. */
+export function providerLabel(p: EmbedProviderName, genericLabel: string): string {
+  return PROVIDER_LABELS[p] ?? genericLabel
 }
 
 /** Must mirror EmbedProvider::AUDIO. Audio players are fixed-height frames. */

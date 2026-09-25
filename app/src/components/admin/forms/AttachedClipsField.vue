@@ -75,7 +75,7 @@ function categoryLabel(value: string): string {
     <template v-else>
       <div v-if="clips.length" class="links-list">
         <div v-for="clip in clips" :key="clip.id" class="link-row" data-testid="attached-clip">
-          <span class="link-label">{{ categoryLabel(clip.category) }} · {{ providerLabel(clip.provider) }}</span>
+          <span class="link-label">{{ categoryLabel(clip.category) }} · {{ providerLabel(clip.provider, $t('common.link')) }}</span>
           <a :href="clip.url" target="_blank" rel="noopener" class="link-url">{{ clip.title ?? clip.url }}</a>
           <button type="button" class="remove-btn" :disabled="detach.isPending.value" :title="$t('common.clips.detach')" @click="remove(clip)">×</button>
         </div>
@@ -85,7 +85,7 @@ function categoryLabel(value: string): string {
       <div class="link-add-row mt-2">
         <input v-model="url" type="url" class="field-input link-url-input" :placeholder="$t('common.clips.urlPlaceholder')"
                data-testid="attached-clip-url" @keydown.enter.prevent="add" />
-        <span v-if="url" class="provider-badge">{{ providerLabel(detectProvider(url)) }}</span>
+        <span v-if="url" class="provider-badge">{{ providerLabel(detectProvider(url), $t('common.link')) }}</span>
         <button type="button" class="btn-add-link" :disabled="create.isPending.value || !url.trim()" @click="add">{{ $t('common.clips.add') }}</button>
       </div>
     </template>

@@ -32,6 +32,9 @@ export default {
     type: 'Type',
     urlPlaceholder: 'https://…',
   },
+  /** A plain URL, where a recognised host would name its brand. */
+  link: 'Link',
+
   /** Shared across every yes/no badge and toggle summary. */
   yes: 'Yes',
   no: 'No',
