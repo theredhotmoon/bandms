@@ -7,14 +7,14 @@ const props = defineProps<{ uuid: string }>()
     <div class="tdc-qr-wrap">
       <img
         :src="`/api/tickets/${props.uuid}/qr`"
-        :alt="`QR code for ticket ${props.uuid}`"
+        :alt="$t('fan.tickets.qrAlt', { uuid: props.uuid })"
         class="tdc-qr"
         width="200"
         height="200"
       />
     </div>
 
-    <p class="tdc-ref">Ticket <span class="tdc-uuid">{{ props.uuid.slice(0, 8) }}</span></p>
+    <p class="tdc-ref">{{ $t('fan.tickets.ticketRef') }} <span class="tdc-uuid">{{ props.uuid.slice(0, 8) }}</span></p>
 
     <div class="tdc-links">
       <a
@@ -22,21 +22,21 @@ const props = defineProps<{ uuid: string }>()
         target="_blank"
         rel="noopener noreferrer"
         class="tdc-btn"
-      >Download PDF</a>
+      >{{ $t('fan.tickets.downloadPdf') }}</a>
 
       <a
         :href="`/api/tickets/${props.uuid}/wallet/apple`"
         target="_blank"
         rel="noopener noreferrer"
         class="tdc-btn tdc-btn--outline"
-      >Add to Apple Wallet</a>
+      >{{ $t('fan.tickets.appleWallet') }}</a>
 
       <a
         :href="`/api/tickets/${props.uuid}/wallet/google`"
         target="_blank"
         rel="noopener noreferrer"
         class="tdc-btn tdc-btn--outline"
-      >Add to Google Wallet</a>
+      >{{ $t('fan.tickets.googleWallet') }}</a>
     </div>
   </div>
 </template>

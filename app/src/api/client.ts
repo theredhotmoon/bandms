@@ -44,12 +44,20 @@ export async function handleResponse<T>(response: Response): Promise<T> {
     throw new ApiError(422, body.message ?? 'Validation failed')
   }
 
-  let message = response.statusText
+  // Deliberately NOT response.statusText. saveErrorMessage returns
+  // ApiError.message ahead of the caller's fallback, so seeding it with an
+  // HTTP reason phrase ("Internal Server Error") means a Polish admin reads
+  // that instead of the translated text the call site passed — the same
+  // defect as the frontend literals this replaced, one branch higher. An
+  // empty message lets the fallback through; a real body.message is worth
+  // showing, because Laravel's is specific ("You cannot delete your own
+  // account.") where a reason phrase never is.
+  let message = ''
   try {
     const body = (await response.json()) as { message?: string }
     if (body.message) message = body.message
   } catch {
-    // keep statusText
+    // No JSON body — the caller's translated fallback is the better answer.
   }
 
   throw new ApiError(response.status, message)
@@ -75,10 +83,10 @@ export function saveErrorMessage(error: unknown, fallback: string): string {
     return error.message
   }
 
-  // Not every endpoint goes through handleResponse — a few (music-video
-  // metadata/sync, the Facebook-likes sync) do their own fetch and throw a
-  // plain Error carrying the backend's message. Falling back to the generic
-  // string here would silently drop that message instead of showing it.
+  // The Facebook-likes sync still does its own fetch and throws a plain Error
+  // carrying the backend's message; dropping it for the generic string would
+  // hide the only useful detail. (music-video metadata/sync used to be here
+  // too and now goes through handleResponse.)
   if (error instanceof Error && error.message) {
     return error.message
   }

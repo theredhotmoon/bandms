@@ -1,0 +1,63 @@
+export default {
+  account: {
+    title: 'Moje konto',
+    signOut: 'Wyloguj się',
+    myTickets: 'Moje bilety',
+    orderHistory: 'Historia zamówień',
+  },
+
+  tickets: {
+    loading: 'Wczytywanie biletów…',
+    loadFailed: 'Nie udało się wczytać biletów.',
+    empty: 'Brak biletów.',
+    unknownVenue: 'Nieznane miejsce',
+    transfer: 'Przekaż',
+    transferStarted: 'Przekazanie rozpoczęte! Odbiorca otrzyma link do odbioru.',
+    devLink: 'Link deweloperski:',
+    recipientEmail: 'E-mail odbiorcy',
+    recipientPlaceholder: "odbiorca{'@'}przyklad.com",
+    sending: 'Wysyłanie…',
+    sendTransfer: 'Wyślij przekazanie',
+    transferFailed: 'Nie udało się przekazać biletu.',
+    ticketRef: 'Bilet',
+    downloadPdf: 'Pobierz PDF',
+    appleWallet: 'Dodaj do Apple Wallet',
+    googleWallet: 'Dodaj do Google Wallet',
+    qrAlt: 'Kod QR biletu {uuid}',
+  },
+
+  login: {
+    title: 'Moje konto',
+    lead: 'Podaj swój e-mail, aby otrzymać link do logowania.',
+    email: 'Adres e-mail',
+    sending: 'Wysyłanie…',
+    send: 'Wyślij link do logowania',
+    failed: 'Coś poszło nie tak.',
+    sentTitle: 'Sprawdź swoją skrzynkę',
+    sentBody: 'Wysłaliśmy link do logowania na twój adres e-mail.',
+    devMode: 'Tryb deweloperski:',
+    devSignIn: 'Kliknij tutaj, aby się zalogować',
+    linkInvalid: 'Link do logowania jest nieprawidłowy lub wygasł. Poproś o nowy.',
+  },
+
+  orders: {
+    loading: 'Wczytywanie zamówień…',
+    loadFailed: 'Nie udało się wczytać zamówień.',
+    empty: 'Brak zamówień.',
+    pdf: 'PDF',
+  },
+
+  claim: {
+    claiming: 'Odbieranie biletu…',
+    claimed: 'Bilet odebrany!',
+    newUuid: 'UUID twojego nowego biletu:',
+    alreadyTitle: 'Już odebrany',
+    alreadyBody: 'Ten link do przekazania został już wykorzystany.',
+    expiredTitle: 'Przekazanie wygasło',
+    expiredBody: 'Ten link do odbioru wygasł. Poproś nadawcę o rozpoczęcie nowego przekazania.',
+    invalidTitle: 'Nieprawidłowy link',
+    invalidBody: 'Ten link do odbioru jest nieprawidłowy.',
+    errorTitle: 'Coś poszło nie tak',
+    errorBody: 'Spróbuj ponownie później.',
+  },
+}

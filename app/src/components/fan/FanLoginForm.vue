@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { requestMagicLink } from '@/api/fan'
 import { ApiValidationError } from '@/api/client'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'magic-link-sent': [devLink: string]
@@ -21,7 +24,7 @@ async function handleSubmit() {
     if (err instanceof ApiValidationError) {
       errorMessage.value = Object.values(err.errors).flat().join(' ')
     } else {
-      errorMessage.value = err instanceof Error ? err.message : 'Something went wrong.'
+      errorMessage.value = err instanceof Error ? err.message : t('fan.login.failed')
     }
   } finally {
     isLoading.value = false
@@ -31,10 +34,10 @@ async function handleSubmit() {
 
 <template>
   <div class="flf-card">
-    <h1>My Account</h1>
-    <p>Enter your email to receive a magic sign-in link.</p>
+    <h1>{{ $t('fan.login.title') }}</h1>
+    <p>{{ $t('fan.login.lead') }}</p>
     <form @submit.prevent="handleSubmit" class="flf-form">
-      <label for="fan-email" class="flf-label">Email address</label>
+      <label for="fan-email" class="flf-label">{{ $t('fan.login.email') }}</label>
       <input
         id="fan-email"
         v-model="email"
@@ -47,7 +50,7 @@ async function handleSubmit() {
       />
       <p v-if="errorMessage" class="flf-error" role="alert">{{ errorMessage }}</p>
       <button type="submit" class="flf-btn" :disabled="isLoading">
-        {{ isLoading ? 'Sending…' : 'Send magic link' }}
+        {{ isLoading ? $t('fan.login.sending') : $t('fan.login.send') }}
       </button>
     </form>
   </div>

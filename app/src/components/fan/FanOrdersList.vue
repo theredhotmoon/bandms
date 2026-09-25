@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { useUiLang } from '@/composables/useUiLang'
+import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanOrders } from '@/api/fan'
+
+const { uiLang } = useUiLang()
 
 const { token } = useFanAccount()
 const { data: orders, isPending, isError } = useQuery({
@@ -14,14 +19,14 @@ const { data: orders, isPending, isError } = useQuery({
 
 <template>
   <section class="fol-section">
-    <p v-if="isPending" class="fol-state">Loading orders…</p>
-    <p v-else-if="isError" class="fol-state fol-state--error" role="alert">Failed to load orders.</p>
-    <p v-else-if="!orders || orders.length === 0" class="fol-state">No orders yet.</p>
+    <p v-if="isPending" class="fol-state">{{ $t('fan.orders.loading') }}</p>
+    <p v-else-if="isError" class="fol-state fol-state--error" role="alert">{{ $t('fan.orders.loadFailed') }}</p>
+    <p v-else-if="!orders || orders.length === 0" class="fol-state">{{ $t('fan.orders.empty') }}</p>
     <ul v-else class="fol-list">
       <li v-for="order in orders" :key="order.uuid" class="fol-item">
         <div class="fol-header">
           <time class="fol-date" :datetime="order.created_at">
-            {{ new Date(order.created_at).toLocaleDateString() }}
+            {{ formatShortDate(order.created_at, dateLocale(uiLang), 'instant') }}
           </time>
           <span class="fol-status">{{ order.status }}</span>
           <span class="fol-total">{{ order.currency }} {{ Number(order.total).toFixed(2) }}</span>
@@ -39,7 +44,7 @@ const { data: orders, isPending, isError } = useQuery({
                 class="fol-pdf-link"
                 target="_blank"
                 rel="noopener"
-              >PDF</a>
+              >{{ $t('fan.orders.pdf') }}</a>
             </template>
           </li>
         </ul>

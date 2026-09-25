@@ -26,9 +26,9 @@ function onMagicLinkSent(link: string) {
 
     <template v-else>
       <div class="fa-header">
-        <h1>My Account</h1>
+        <h1>{{ $t('fan.account.title') }}</h1>
         <p>{{ fan!.email }}</p>
-        <button class="fa-logout" type="button" @click="clearSession">Sign out</button>
+        <button class="fa-logout" type="button" @click="clearSession">{{ $t('fan.account.signOut') }}</button>
       </div>
 
       <div class="fa-tabs" role="tablist">
@@ -39,7 +39,7 @@ function onMagicLinkSent(link: string) {
           :class="{ 'fa-tab--active': activeTab === 'tickets' }"
           type="button"
           @click="activeTab = 'tickets'"
-        >My Tickets</button>
+        >{{ $t('fan.account.myTickets') }}</button>
         <button
           role="tab"
           :aria-selected="activeTab === 'orders'"
@@ -47,7 +47,7 @@ function onMagicLinkSent(link: string) {
           :class="{ 'fa-tab--active': activeTab === 'orders' }"
           type="button"
           @click="activeTab = 'orders'"
-        >Order History</button>
+        >{{ $t('fan.account.orderHistory') }}</button>
       </div>
 
       <FanTicketsList v-if="activeTab === 'tickets'" />

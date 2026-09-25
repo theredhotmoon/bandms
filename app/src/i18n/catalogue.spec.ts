@@ -112,6 +112,13 @@ describe('i18n catalogues', () => {
         'pages.heroImages.pictureCount',
         'pages.heroImages.uploaded',
         'more.shop.photosUploaded',
+        'pages.modules.fieldCount',
+        'rider.diff.counts.channels',
+        'rider.diff.counts.monitors',
+        'rider.diff.counts.backline',
+        'rider.diff.counts.wireless',
+        'rider.diff.counts.power',
+        'rider.diff.counts.other',
       ])
 
       const offenders = all

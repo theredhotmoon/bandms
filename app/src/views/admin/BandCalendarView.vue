@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import FullCalendar from '@fullcalendar/vue3'
@@ -12,6 +13,8 @@ import { useAuth } from '@/composables/useAuth'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { API_BASE, authHeaders } from '@/api/client'
 import type { BandMember } from '@bandms/rider-core'
+
+const { t } = useI18n()
 
 const { token } = useAuth()
 const { query: membersQuery } = useBandMembers()
@@ -68,7 +71,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
   headerToolbar: {
-    left:   'prev,next today',
+    left:   'prev,next today', // i18n-ignore: FullCalendar button ids, not copy
     center: 'title',
     right:  'dayGridMonth,timeGridWeek,listMonth',
   },
@@ -92,7 +95,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
   eventDisplay: 'block',
   displayEventTime: true,
-  noEventsContent: 'No events – make sure members have a Calendar URL set in their profile.',
+  noEventsContent: t('band.calendar.noEvents'),
 }))
 </script>
 
@@ -101,8 +104,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   <div class="cal-page">
     <div class="cal-header">
       <div>
-        <h1 class="cal-title">Band Calendar</h1>
-        <p class="cal-sub">All active members' Google Calendars in one view.</p>
+        <h1 class="cal-title">{{ $t('band.calendar.title') }}</h1>
+        <p class="cal-sub">{{ $t('band.calendar.lead') }}</p>
       </div>
     </div>
 
@@ -115,7 +118,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       </div>
     </div>
     <div v-else-if="!membersQuery.isPending.value" class="cal-notice">
-      No active members have a Calendar URL configured. Add one under <strong>Band Members</strong>.
+      <i18n-t keypath="band.calendar.noCalendars" scope="global">
+        <template #link><strong>{{ $t('band.calendar.noCalendarsLink') }}</strong></template>
+      </i18n-t>
     </div>
 
     <!-- Calendar -->

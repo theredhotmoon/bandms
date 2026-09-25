@@ -13,6 +13,7 @@ export default {
     chromeNote: 'Ten moduł to element interfejsu strony, nie podstrona — nie ma własnego adresu URL. Wyłączenie go ukrywa go na stronie publicznej.',
     urlSlug: 'Adres URL (slug)',
     slugHint: 'Małe litery, cyfry i myślniki. Zostaw puste, aby serwować pod {path}. Zmiana przenosi stronę — stare linki przestają działać.',
+    fieldCount: '{n} pole | {n} pola | {n} pól',
     pageCopy: 'Teksty na stronie',
     pageCopyHint: 'Szary tekst w każdym polu to treść, którą strona pokazuje teraz. Wpisz coś, aby ją zastąpić; puste pole zachowuje wartość domyślną dla tego języka. Gdy nie ma żadnej wartości domyślnej, używany jest tekst z drugiego języka. Zmiany pojawią się na stronie publicznej po przebudowie.',
     visibility: 'Widoczność sekcji',

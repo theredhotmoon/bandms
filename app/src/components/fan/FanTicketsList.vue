@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
@@ -6,6 +7,8 @@ import { fetchFanTickets, initiateTransfer } from '@/api/fan'
 import { ApiValidationError } from '@/api/client'
 import TicketDownloadCard from '@/components/TicketDownloadCard.vue'
 import type { FanTicket } from '@/types/fan'
+
+const { t } = useI18n()
 
 const { token } = useFanAccount()
 const { data: tickets, isPending, isError } = useQuery({
@@ -58,7 +61,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
     } else if (err instanceof Error) {
       transferError.value[uuid] = err.message
     } else {
-      transferError.value[uuid] = 'Transfer failed.'
+      transferError.value[uuid] = t('fan.tickets.transferFailed')
     }
   } finally {
     transferLoading.value[uuid] = false
@@ -68,13 +71,13 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
 
 <template>
   <section class="ftl-section">
-    <p v-if="isPending" class="ftl-state">Loading tickets…</p>
-    <p v-else-if="isError" class="ftl-state ftl-state--error" role="alert">Failed to load tickets.</p>
-    <p v-else-if="!tickets || tickets.length === 0" class="ftl-state">No tickets yet.</p>
+    <p v-if="isPending" class="ftl-state">{{ $t('fan.tickets.loading') }}</p>
+    <p v-else-if="isError" class="ftl-state ftl-state--error" role="alert">{{ $t('fan.tickets.loadFailed') }}</p>
+    <p v-else-if="!tickets || tickets.length === 0" class="ftl-state">{{ $t('fan.tickets.empty') }}</p>
     <ul v-else class="ftl-list">
       <li v-for="ticket in tickets" :key="ticket.uuid" class="ftl-item">
         <div class="ftl-info">
-          <p class="ftl-venue">{{ ticket.venue ?? 'Unknown venue' }}</p>
+          <p class="ftl-venue">{{ ticket.venue ?? $t('fan.tickets.unknownVenue') }}</p>
           <p class="ftl-date">{{ ticket.concert_date ?? '' }}</p>
           <p class="ftl-type">{{ ticket.ticket_type ?? '' }}</p>
           <p class="ftl-holder">{{ ticket.holder_name }}</p>
@@ -87,14 +90,14 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
         <div v-if="ticket.status === 'active'" class="ftl-transfer">
           <template v-if="!transferOpen[ticket.uuid]">
             <button class="ftl-transfer-btn" type="button" @click="openTransfer(ticket)">
-              Transfer
+              {{ $t('fan.tickets.transfer') }}
             </button>
           </template>
           <template v-else>
             <div v-if="transferResult[ticket.uuid]" class="ftl-transfer-success" role="status">
-              Transfer initiated! Recipient will receive a claim link.
+              {{ $t('fan.tickets.transferStarted') }}
               <br />
-              Dev link:
+              {{ $t('fan.tickets.devLink') }}
               <a
                 :href="transferResult[ticket.uuid]!.link"
                 target="_blank"
@@ -104,7 +107,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
             </div>
             <form v-else class="ftl-transfer-form" @submit.prevent="sendTransfer(ticket)">
               <label :for="`transfer-email-${ticket.uuid}`" class="ftl-transfer-label">
-                Recipient email
+                {{ $t('fan.tickets.recipientEmail') }}
               </label>
               <input
                 :id="`transfer-email-${ticket.uuid}`"
@@ -112,7 +115,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
                 type="email"
                 autocomplete="email"
                 class="ftl-transfer-input"
-                placeholder="recipient@example.com"
+                :placeholder="$t('fan.tickets.recipientPlaceholder')"
                 required
               />
               <p v-if="transferError[ticket.uuid]" class="ftl-transfer-error" role="alert">
@@ -124,7 +127,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
                   class="ftl-transfer-btn ftl-transfer-btn--primary"
                   :disabled="transferLoading[ticket.uuid]"
                 >
-                  {{ transferLoading[ticket.uuid] ? 'Sending…' : 'Send transfer' }}
+                  {{ transferLoading[ticket.uuid] ? $t('fan.tickets.sending') : $t('fan.tickets.sendTransfer') }}
                 </button>
                 <button
                   type="button"
@@ -132,7 +135,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
                   :disabled="transferLoading[ticket.uuid]"
                   @click="closeTransfer(ticket.uuid)"
                 >
-                  Cancel
+                  {{ $t('common.actions.cancel') }}
                 </button>
               </div>
             </form>

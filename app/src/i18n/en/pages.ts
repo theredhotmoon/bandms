@@ -24,6 +24,7 @@ export default {
     // `{path}` is a <code> element, so this is an <i18n-t> keypath rather than
     // a parameter — a slot renders markup, an interpolation escapes it.
     slugHint: 'Lowercase letters, numbers and dashes. Leave empty to serve under {path}. Changing this moves the page — old links stop working.',
+    fieldCount: '{n} field | {n} fields',
     pageCopy: 'Page copy',
     pageCopyHint: 'The greyed text in each box is what the site shows now. Type to replace it; leaving a box empty keeps the default for that language. Where there is no default at all, the other language’s text is used. Changes appear on the public site after a rebuild.',
     visibility: 'Section visibility',

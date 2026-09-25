@@ -468,6 +468,13 @@ export default {
     savedBadge: 'Zapisano ✓',
     save: 'Zapisz zestaw',
   },
+  calendar: {
+    title: 'Kalendarz zespołu',
+    lead: 'Kalendarze Google wszystkich aktywnych członków w jednym widoku.',
+    noCalendars: 'Żaden aktywny członek nie ma ustawionego adresu kalendarza. Dodaj go w {link}.',
+    noCalendarsLink: 'Członkowie zespołu',
+    noEvents: 'Brak wydarzeń – sprawdź, czy członkowie mają ustawiony adres kalendarza w profilu.',
+  },
   gear: {
     hint: 'Określcie preferowany lub oczekiwany sprzęt tej osoby — mikrofony, wzmacniacze, DI itp. Oznaczcie każdą pozycję jako {ownGear} (przywozi ją ze sobą) albo {backline} (musi zapewnić klub lub organizator). Te preferencje pojawiają się w szczegółach planu sceny.',
     ownGear: 'Własny sprzęt',

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import type { UserRole } from '@/types/auth'
+import { routeTitle } from '@/utils/documentTitle'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -270,23 +271,11 @@ router.beforeEach((to) => {
   }
 })
 
-// Per-page <title> updates (WCAG 2.4.2)
-const ROUTE_TITLES: Record<string, string> = {
-  'fan-account': 'My Account — Skanking Storks',
-  'ticket-claim': 'Claim Ticket — Skanking Storks',
-  'tech-rider-preview': 'Tech Rider — Skanking Storks',
-  'tech-rider-preview-id': 'Tech Rider — Skanking Storks',
-  'admin-concert-tickets': 'Concert Tickets — Admin',
-  'admin-fan-accounts': 'Fan Accounts — Admin',
-  'admin-door': 'Door Check — Admin',
-  'admin-website-modules': 'Website Modules — Admin',
-  'admin-faqs': 'FAQ — Admin',
-  'admin-hero-images': 'Hero Images — Admin',
-}
-
+// Per-page <title> updates (WCAG 2.4.2). The map and the band-name suffix
+// live in utils/documentTitle.ts — this file cannot reach the catalogue at
+// module scope, and the suffix was a hardcoded band name.
 router.afterEach((to) => {
-  const name = typeof to.name === 'string' ? to.name : ''
-  document.title = ROUTE_TITLES[name] ?? 'Skanking Storks'
+  document.title = routeTitle(typeof to.name === 'string' ? to.name : '')
 })
 
 export default router

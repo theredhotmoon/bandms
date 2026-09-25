@@ -13,6 +13,17 @@ export default {
     more: 'Ustawienia',
     pageconfig: 'Konfiguracja strony',
   },
+    titles: {
+      fanAccount: 'Moje konto',
+      ticketClaim: 'Odbierz bilet',
+      techRider: 'Rider techniczny',
+      concertTickets: 'Bilety na koncert',
+      fanAccounts: 'Konta fanów',
+      doorCheck: 'Kontrola przy wejściu',
+      websiteModules: 'Moduły strony',
+      faqs: 'FAQ',
+      heroImages: 'Zdjęcia nagłówkowe',
+    },
   nav: {
     dashboard: 'Pulpit',
     myProfile: 'Mój profil',
