@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useLang } from '@/composables/useLang'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -11,6 +12,8 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
 
 const { t } = useI18n()
+// Module names are the band's content, so they follow the content locale.
+const { lang } = useLang()
 
 /** See WebsiteModulesView: a class list is not copy, but it reads as one. */
 const editIconClass = (editing: boolean) =>
@@ -168,7 +171,7 @@ function onDragEnd() {
           "
           @click="activeSlug = m.slug"
         >
-          {{ m.custom_name?.en || m.display_name }}
+          {{ m.custom_name?.[lang] || m.display_name }}
           <span
             class="ml-1.5"
             :class="activeSlug === m.slug ? 'text-teal-200' : 'text-zinc-600'"

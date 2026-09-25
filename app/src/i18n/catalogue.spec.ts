@@ -234,6 +234,21 @@ describe('i18n catalogues', () => {
           }
         }
       }
+
+      // And the other direction. `help` is a boolean now, so a field written
+      // without it renders no hint however much text the catalogue holds —
+      // green lint, green build, and a toggle silently missing its
+      // explanation. Only this notices.
+      const declared = new Set(
+        Object.entries(MODULE_VISIBILITY_SCHEMA).flatMap(([slug, fields]) =>
+          fields.flatMap((f) => [
+            `pages.visibility.${slug}.${f.key}`,
+            ...(f.help ? [`pages.visibility.${slug}.${f.key}_help`] : []),
+          ]),
+        ),
+      )
+      const orphans = [...keys].filter((k) => k.startsWith('pages.visibility.') && !declared.has(k))
+      expect(orphans, 'not rendered by any schema field: ' + orphans.join(', ')).toEqual([])
     })
 
     it('rider.admin.tabs covers every Section', () => {

@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useLang } from '@/composables/useLang'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
 import { LOCALES, DEFAULT_LOCALE, emptyBag, type Lang as Locale } from '@/locales'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+
+// Module names are the band's content, so they follow the content locale.
+const { lang } = useLang()
 
 interface Props {
   /** The entry being edited, or null when creating. */
@@ -124,7 +128,7 @@ const otherErrors = computed(() =>
           class="w-52 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors"
         >
           <option v-for="m in modules" :key="m.slug" :value="m.slug">
-            {{ m.custom_name?.en || m.display_name }}{{ m.enabled ? '' : ' ' + $t('pages.faqs.moduleOff') }}
+            {{ m.custom_name?.[lang] || m.display_name }}{{ m.enabled ? '' : ' ' + $t('pages.faqs.moduleOff') }}
           </option>
         </select>
         <span v-if="errors['module_slug']" class="text-xs text-red-400">{{ errors['module_slug'][0] }}</span>

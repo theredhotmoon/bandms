@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useLang } from '@/composables/useLang'
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -12,6 +13,7 @@ import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import type { HeroImage } from '@/types/heroImage'
 
 const { t } = useI18n()
+const { lang } = useLang()
 
 /** See WebsiteModulesView: a class list is not copy, but it looks like it. */
 const scopeClass = (on: boolean) =>
@@ -54,9 +56,12 @@ const scopes = computed(() => [
     .filter(m => !NON_PAGE_MODULES.has(m.slug) && !NO_HERO_MODULES.has(m.slug))
     .map(m => ({
       key: m.slug,
-      // The module's own name, already resolved for the content locale by the
-      // API — not chrome, so it is not translated here.
-      label: m.display_name,
+      // The band's own name for the module, in the *content* locale — this is
+      // their text, not chrome, so it follows useLang() rather than useUiLang().
+      // `display_name` is the fallback and is a plain untranslated column:
+      // only custom_name and custom_slug are $translatable on WebsiteModule,
+      // so nothing resolves it server-side.
+      label: m.custom_name?.[lang.value] || m.display_name,
       hint: m.enabled ? '' : t('pages.heroImages.scopeOffHint'),
     })),
 ])
