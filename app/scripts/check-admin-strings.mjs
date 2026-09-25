@@ -108,6 +108,8 @@ const MIGRATED = [
   'views/admin/TechRiderAdminView.vue',
   'views/admin/WebsiteModulesView.vue',
   'views/admin/HeroImagesAdminView.vue',
+  'views/admin/ShopAdminView.vue',
+  'components/admin/forms/ShopItemForm.vue',
   'views/admin/FaqsAdminView.vue',
   'components/admin/FaqEditor.vue',
   'config/moduleSettings.ts',

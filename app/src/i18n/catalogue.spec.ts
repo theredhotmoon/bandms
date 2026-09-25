@@ -111,6 +111,7 @@ describe('i18n catalogues', () => {
         'rider.admin.asked',
         'pages.heroImages.pictureCount',
         'pages.heroImages.uploaded',
+        'more.shop.photosUploaded',
       ])
 
       const offenders = all
@@ -219,6 +220,14 @@ describe('i18n catalogues', () => {
         'wireless', 'backline', 'power', 'foh',
       ]) {
         expect(has(`rider.stagePlot.views.${v}`), v).toBe(true)
+      }
+    })
+
+    it('more.shop.types covers every ShopItemType', () => {
+      // Built as a template literal from the stored value in the table's type
+      // badge, so check-i18n-keys cannot see it.
+      for (const t of ['record', 'apparel', 'accessory', 'ticket', 'bundle', 'other']) {
+        expect(has(`more.shop.types.${t}`), t).toBe(true)
       }
     })
 

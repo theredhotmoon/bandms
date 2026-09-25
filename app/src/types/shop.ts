@@ -8,15 +8,6 @@ export interface ShopCategory {
 
 export type ShopItemType = 'record' | 'apparel' | 'accessory' | 'ticket' | 'bundle' | 'other'
 
-export const SHOP_ITEM_TYPE_LABELS: Record<ShopItemType, string> = {
-  record:    'Record',
-  apparel:   'Apparel',
-  accessory: 'Accessory',
-  ticket:    'Ticket',
-  bundle:    'Bundle',
-  other:     'Other',
-}
-
 export interface ShopItemPrice {
   currency: string
   amount: number
