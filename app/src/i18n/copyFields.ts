@@ -12,8 +12,13 @@ import { COPY_FIELD_PL } from './copyFields.pl'
  * **Keyed by the English string, not by `<module>.<field>`.** `'Heading'`
  * appears 24 times and means the same thing every time; keying by value turns
  * 407 fields into 315 translations, and a new field reusing existing wording
- * is translated the moment it is added. A field that genuinely needs different
- * Polish in its own context gets an entry in `BY_FIELD`, which wins.
+ * is translated the moment it is added.
+ *
+ * The cost is the converse: one English string cannot take two different
+ * Polish words in two contexts. That has not happened yet — these are short
+ * form labels, not prose — and the fix when it does is a by-field map
+ * consulted ahead of this one. Deliberately not written until something needs
+ * it, rather than shipped as an empty hook.
  *
  * **The registry stays the English source of truth** rather than growing
  * `label: { en, pl }`. `packages/site-copy` is shared with `web/`, which never

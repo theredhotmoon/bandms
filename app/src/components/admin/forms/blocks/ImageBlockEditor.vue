@@ -52,22 +52,22 @@ async function onFile(e: Event) {
 
     <div class="trans-group">
       <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code for the per-locale content field -->
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="bag('alt').en ?? ''" @input="set('alt', { ...bag('alt'), en: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.image.altEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code -->
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="bag('alt').pl ?? ''" @input="set('alt', { ...bag('alt'), pl: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.image.altPl')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code for the per-locale content field -->
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="bag('caption').en ?? ''" @input="set('caption', { ...bag('caption'), en: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.image.captionEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code -->
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="bag('caption').pl ?? ''" @input="set('caption', { ...bag('caption'), pl: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.image.captionPl')" />
       </div>

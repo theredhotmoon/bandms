@@ -6,7 +6,7 @@
  * is `publish`, which has to save the draft first — publishing a rider while
  * unsaved edits sit in the form would freeze the wrong sheet, silently.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import {
@@ -64,6 +64,16 @@ export function useTechRiderVersions(riderId: Ref<number | null>) {
    */
   const diff = ref<RiderDiff | null>(null)
   const diffing = ref(false)
+
+  /**
+   * A computed diff is baked in the locale it was built with — field names,
+   * values and the whole summary are resolved strings — while the modal
+   * renders its section headings reactively through $t. Switching language
+   * with the modal open would otherwise leave Polish headings over English
+   * row detail. Dropping the diff is honest about that: the reader sees the
+   * comparison gone rather than a half-translated one, and re-runs it.
+   */
+  watch(uiLang, () => { diff.value = null })
 
   async function compare(olderId: number, newerId: number): Promise<void> {
     diffing.value = true

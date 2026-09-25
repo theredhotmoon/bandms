@@ -36,8 +36,19 @@ export interface DiffEntry {
   changes: string[]
 }
 
+export const SECTION_KEYS = ['channels', 'monitors', 'backline', 'wireless', 'power'] as const
+
+export type RiderDiffSectionKey = (typeof SECTION_KEYS)[number]
+
 export interface RiderDiffSection {
-  title: string
+  /**
+   * A catalogue key, not display text — the component renders
+   * `rider.diff.sections.<title>`. Typed as the union rather than `string`
+   * because a typo ('wireles') would otherwise compile, pass check-i18n-keys
+   * (the keypath is built at render time, so it cannot see it) and print the
+   * literal `rider.diff.sections.wireles` into the modal.
+   */
+  title: RiderDiffSectionKey
   entries: DiffEntry[]
 }
 
@@ -195,9 +206,8 @@ export function resolveSnapshot(
  *
  * The catalogue owns the words now, and vue-i18n owns the plural rule.
  */
-export type RiderDiffSectionKey = 'channels' | 'monitors' | 'backline' | 'wireless' | 'power'
 
-const COUNT_KEYS = new Set<string>(['channels', 'monitors', 'backline', 'wireless', 'power'])
+const COUNT_KEYS = new Set<string>(SECTION_KEYS)
 
 function plural(t: DiffTranslator, key: string, n: number): string {
   const path = `rider.diff.counts.${COUNT_KEYS.has(key) ? key : 'other'}`
@@ -228,13 +238,15 @@ export function diffRiders(
   const a = resolveSnapshot(before, labels, instrumentNames)
   const b = resolveSnapshot(after, labels, instrumentNames)
 
-  const sections: RiderDiffSection[] = [
+  const all: RiderDiffSection[] = [
     { title: 'channels', entries: diffRows(channelRows(a, t), channelRows(b, t), t) },
     { title: 'monitors', entries: diffRows(monitorRows(a, t), monitorRows(b, t), t) },
     { title: 'backline', entries: diffRows(backlineRows(a, t), backlineRows(b, t), t) },
     { title: 'wireless', entries: diffRows(wirelessRows(a, t), wirelessRows(b, t), t) },
     { title: 'power', entries: diffRows(powerRows(a), powerRows(b), t) },
-  ].filter((section) => section.entries.length > 0)
+  ]
+
+  const sections = all.filter((section) => section.entries.length > 0)
 
   return {
     from: before.version.version_number,

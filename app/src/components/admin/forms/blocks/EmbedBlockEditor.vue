@@ -28,12 +28,12 @@ function set(key: string, value: unknown) {
     </div>
     <div v-if="detected === 'link' && !hideLabel" class="trans-group">
       <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code for the per-locale content field -->
+        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
         <input :value="label.en ?? ''" @input="set('label', { ...label, en: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextEn')" />
       </div>
       <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: ISO 639-1 code --> <!-- i18n-ignore: language code -->
+        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
         <input :value="label.pl ?? ''" @input="set('label', { ...label, pl: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextPl')" />
       </div>
