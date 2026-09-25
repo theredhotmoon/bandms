@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Band, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
+
+const { t } = useI18n()
+
+const URL_PLACEHOLDER = 'https://…' // i18n-ignore: URL scheme
 
 const props = defineProps<{
   initial?: Band | null
@@ -67,7 +72,7 @@ function toggleAuthor(id: number) {
 }
 
 function contactDetail(a: AuthorSummary): string {
-  return a.email || a.phone || a.whatsapp || 'no contact details'
+  return a.email || a.phone || a.whatsapp || t('more.bands.form.noDetails')
 }
 
 function submit() {
@@ -82,35 +87,35 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
-      <label class="field-label">Name <span style="color:#f87171;">*</span></label>
-      <input v-model="form.name" required class="field-input" placeholder="Band name" />
+      <label class="field-label">{{ $t('more.bands.form.name') }} <span style="color:#f87171;">*</span></label>
+      <input v-model="form.name" required class="field-input" :placeholder="$t('more.bands.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
 
     <div>
-      <label class="field-label">Website</label>
-      <input v-model="form.website" type="url" class="field-input" placeholder="https://…" />
+      <label class="field-label">{{ $t('more.bands.form.website') }}</label>
+      <input v-model="form.website" type="url" class="field-input" :placeholder="URL_PLACEHOLDER" />
       <p v-if="errors?.website" class="field-error">{{ errors.website[0] }}</p>
     </div>
 
     <!-- Contact people -->
     <div>
       <label class="field-label">
-        Contact people
+        {{ $t('more.bands.form.contacts') }}
         <span v-if="authorIds.length" class="contact-count">{{ authorIds.length }}</span>
       </label>
 
       <p v-if="!authors.length" class="contact-empty">
-        No authors or contacts on file yet.
-        <RouterLink :to="{ name: 'admin-authors' }" class="contact-link">Add one first</RouterLink>
-        and it will show up here.
+        {{ $t('more.bands.form.noAuthors') }}
+        <RouterLink :to="{ name: 'admin-authors' }" class="contact-link">{{ $t('more.bands.form.addOneFirst') }}</RouterLink>
+        {{ $t('more.bands.form.andItShows') }}
       </p>
 
       <template v-else>
         <p v-if="selectedAuthors.length" class="contact-chips">
           <span v-for="a in selectedAuthors" :key="a.id" class="contact-chip">
             {{ a.name }}
-            <button type="button" class="chip-x" :aria-label="`Remove ${a.name}`" @click="toggleAuthor(a.id)">×</button>
+            <button type="button" class="chip-x" :aria-label="$t('more.bands.form.remove', { name: a.name })" @click="toggleAuthor(a.id)">×</button>
           </span>
         </p>
 
@@ -119,11 +124,11 @@ function submit() {
           v-model="contactSearch"
           type="text"
           class="field-input contact-search"
-          placeholder="Search contacts…"
+          :placeholder="$t('more.bands.form.searchContacts')"
         />
 
         <div class="contact-list">
-          <p v-if="!filteredAuthors.length" class="contact-none">No contacts match “{{ contactSearch }}”.</p>
+          <p v-if="!filteredAuthors.length" class="contact-none">{{ $t('more.bands.form.noContactMatch', { query: contactSearch }) }}</p>
           <label v-for="a in filteredAuthors" :key="a.id" class="contact-item">
             <input
               type="checkbox"
@@ -141,9 +146,9 @@ function submit() {
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update' : 'Create') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
   </form>

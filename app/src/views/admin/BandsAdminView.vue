@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -14,6 +15,8 @@ import { useAuthors } from '@/composables/useAuthors'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Band, BandPayload } from '@/types/band'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = useBands()
 const { query: authorsQuery } = useAuthors()
@@ -58,14 +61,14 @@ async function handleSubmit(payload: BandPayload) {
   try {
     if (editing.value) {
       await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Band updated')
+      toast.success(t('more.bands.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Band created')
+      toast.success(t('more.bands.created'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -73,9 +76,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Band deleted')
+    toast.success(t('more.bands.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 </script>
 
@@ -84,31 +87,31 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Other Bands</h1>
-          <p class="text-xs mt-0.5" style="color:#475569;">Bands you share the stage with — used on concert listings.</p>
+          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.bands.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:#475569;">{{ $t('more.bands.lead') }}</p>
         </div>
-        <button @click="openCreate" class="btn-add-primary">+ Add band</button>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('more.bands.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load bands.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.bands.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!tc.rawTotal.value">No bands yet. Add one above.</span>
-            <span v-else>No bands match your search.</span>
+            <span v-if="!tc.rawTotal.value">{{ $t('more.bands.empty') }}</span>
+            <span v-else>{{ $t('more.bands.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Website</th>
-                <th class="th">Contact</th>
-                <SortHeader label="Gigs" sort-key="gigs_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="7rem" @sort="tc.toggleSort" />
-                <SortHeader label="Last gig" sort-key="last_gig_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="9rem" @sort="tc.toggleSort" />
-                <th class="th text-right">Actions</th>
+                <SortHeader :label="$t('more.bands.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('more.bands.cols.website') }}</th>
+                <th class="th">{{ $t('more.bands.cols.contact') }}</th>
+                <SortHeader :label="$t('more.bands.cols.gigs')" sort-key="gigs_count" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="7rem" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.bands.cols.lastGig')" sort-key="last_gig_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="9rem" @sort="tc.toggleSort" />
+                <th class="th text-right">{{ $t('more.bands.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -123,8 +126,8 @@ async function confirmDelete() {
                   <div v-if="band.contacts?.length" class="contact-cell">
                     <span v-for="c in band.contacts" :key="c.id" class="contact-pill">
                       <span class="contact-pill-name">{{ c.name }}</span>
-                      <a v-if="c.email" :href="`mailto:${c.email}`" class="contact-action" :title="c.email">Email</a>
-                      <a v-else-if="c.phone" :href="`tel:${c.phone}`" class="contact-action" :title="c.phone">Call</a>
+                      <a v-if="c.email" :href="`mailto:${c.email}`" class="contact-action" :title="c.email">{{ $t('more.bands.email') }}</a>
+                      <a v-else-if="c.phone" :href="`tel:${c.phone}`" class="contact-action" :title="c.phone">{{ $t('more.bands.call') }}</a>
                     </span>
                   </div>
                   <span v-else style="color:#475569;">—</span>
@@ -135,9 +138,9 @@ async function confirmDelete() {
                 </td>
                 <td class="td" style="color:#94a3b8; font-size:0.75rem;">{{ band.last_gig_at ?? '—' }}</td>
                 <td class="td text-right">
-                  <button @click="sendMessage(band)" class="btn-message">Message</button>
-                  <button @click="openEdit(band)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = band.id" class="btn-delete">Delete</button>
+                  <button @click="sendMessage(band)" class="btn-message">{{ $t('more.bands.message') }}</button>
+                  <button @click="openEdit(band)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = band.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -157,7 +160,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit band' : 'New band'" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('more.bands.editTitle') : $t('more.bands.newTitle')" @close="closeModal">
       <BandForm
         :initial="editing"
         :authors="authorsQuery.data.value ?? []"

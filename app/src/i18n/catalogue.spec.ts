@@ -223,6 +223,15 @@ describe('i18n catalogues', () => {
       }
     })
 
+    it('more.users.roles and roleDesc cover every UserRole', () => {
+      // Both are built from the stored value: the badge in the table and the
+      // radio cards in both modals.
+      for (const r of ['admin', 'member', 'publisher']) {
+        expect(has(`more.users.roles.${r}`), r).toBe(true)
+        expect(has(`more.users.roleDesc.${r}`), `${r} desc`).toBe(true)
+      }
+    })
+
     it('more.shop.types covers every ShopItemType', () => {
       // Built as a template literal from the stored value in the table's type
       // badge, so check-i18n-keys cannot see it.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -16,6 +17,8 @@ import { guessInstrumentType } from '@bandms/rider-core'
 import { reportSaveError } from '@/utils/formErrors'
 import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
 
+const { t } = useI18n()
+
 const { query, create, update, remove } = useInstruments()
 
 const showModal = ref(false)
@@ -27,7 +30,11 @@ const confirmId      = ref<number | null>(null)
 const confirmLoading = ref(false)
 const filterCategory = ref('')
 
-const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other']
+// i18n-ignore: these are seeds for a free-text column, not chrome. They get
+// STORED in instruments.category, so translating them would have a Polish
+// admin create 'Smyczkowe' where an English one created 'Strings' — two
+// categories for one thing. Same rule as utils/signalChainPresets.ts.
+const CATEGORY_SUGGESTIONS = ['Strings', 'Brass', 'Woodwind', 'Percussion', 'Keys', 'Electronic', 'Vocal', 'Other'] // i18n-ignore: stored data seeds, see above
 
 // Icon suggestion derived from the registry's default-locale name —
 // guessInstrumentType's keyword catalogue only matches English terms, and
@@ -79,14 +86,14 @@ async function submit() {
   try {
     if (editing.value) {
       await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Instrument updated')
+      toast.success(t('more.instruments.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Instrument added')
+      toast.success(t('more.instruments.added'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Failed to save instrument', fieldErrors)
+    reportSaveError(e, t('more.instruments.saveFailed'), fieldErrors)
   }
 }
 
@@ -97,8 +104,8 @@ async function confirmDelete() {
   confirmLoading.value = true
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Instrument deleted')
-  } catch (e) { reportSaveError(e, 'Failed to delete instrument') }
+    toast.success(t('more.instruments.deleted'))
+  } catch (e) { reportSaveError(e, t('more.instruments.deleteFailed')) }
   finally { confirmLoading.value = false; confirmOpen.value = false; confirmId.value = null }
 }
 </script>
@@ -108,36 +115,36 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Instruments</h1>
-          <p class="text-xs mt-0.5" style="color:#334155;">Define instruments and assign them to band members.</p>
+          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.instruments.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:#334155;">{{ $t('more.instruments.lead') }}</p>
         </div>
-        <button @click="openCreate" class="btn-add-primary">+ Add instrument</button>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('more.instruments.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load instruments.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.instruments.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
               <select v-if="allCategories.length" v-model="filterCategory" class="filter-select">
-                <option value="">All categories</option>
+                <option value="">{{ $t('more.instruments.allCategories') }}</option>
                 <option v-for="cat in allCategories" :key="cat" :value="cat">{{ cat }}</option>
               </select>
             </template>
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!(query.data.value?.length)">No instruments yet. Add your first instrument to start tagging band members.</span>
-            <span v-else>No instruments match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('more.instruments.empty') }}</span>
+            <span v-else>{{ $t('more.instruments.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="Category" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th">Stage icon</th>
-                <th class="th text-right" style="width:8rem;">Actions</th>
+                <SortHeader :label="$t('more.instruments.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.instruments.cols.category')" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th">{{ $t('more.instruments.cols.stageIcon') }}</th>
+                <th class="th text-right" style="width:8rem;">{{ $t('more.instruments.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -152,8 +159,8 @@ async function confirmDelete() {
                   <span v-else style="color:#334155; font-size:0.75rem;">—</span>
                 </td>
                 <td class="td text-right">
-                  <button @click="openEdit(i)" class="btn-edit">Edit</button>
-                  <button @click="requestDelete(i.id)" class="btn-delete">Delete</button>
+                  <button @click="openEdit(i)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="requestDelete(i.id)" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -173,14 +180,14 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit instrument' : 'Add instrument'" max-width="28rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('more.instruments.editTitle') : $t('more.instruments.addTitle')" max-width="28rem" @close="closeModal">
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
-          <label class="field-label">Name <span class="field-req">*</span></label>
+          <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
           <div class="trans-group">
             <div v-for="l in LOCALES" :key="l" class="trans-row">
               <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
-              <input v-model="form.name[l]" class="field-input flex-1" placeholder="Guitar, Bass, Drums…" />
+              <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.instruments.namePlaceholder')" />
             </div>
           </div>
           <template v-for="l in LOCALES" :key="`name-err-${l}`">
@@ -189,18 +196,18 @@ async function confirmDelete() {
           <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name[0] }}</p>
         </div>
         <div>
-          <label class="field-label">Category</label>
-          <input v-model="form.category" class="field-input" list="category-suggestions" placeholder="Strings, Brass, Percussion…" />
+          <label class="field-label">{{ $t('more.instruments.category') }}</label>
+          <input v-model="form.category" class="field-input" list="category-suggestions" :placeholder="$t('more.instruments.categoryPlaceholder')" />
           <datalist id="category-suggestions">
             <option v-for="c in CATEGORY_SUGGESTIONS" :key="c" :value="c" />
           </datalist>
         </div>
         <div>
-          <label class="field-label">Stage plot icon</label>
+          <label class="field-label">{{ $t('more.instruments.stagePlotIcon') }}</label>
           <InstrumentIconPicker
             :model-value="form.stage_plot_type ?? null"
             clearable
-            placeholder="— Not mapped —"
+            :placeholder="$t('more.instruments.notMapped')"
             @update:model-value="form.stage_plot_type = $event"
           />
           <button
@@ -210,13 +217,13 @@ async function confirmDelete() {
             @click="form.stage_plot_type = suggestedType"
           >
             <InstrumentIcon :type="suggestedType" :size="16" />
-            Use suggested icon for "{{ form.name[DEFAULT_LOCALE].trim() }}"
+            {{ $t('more.instruments.useSuggested', { name: form.name[DEFAULT_LOCALE].trim() }) }}
           </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">Cancel</button>
+          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
-            {{ (create.isPending.value || update.isPending.value) ? 'Saving…' : 'Save' }}
+            {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>
         </div>
       </form>
@@ -224,7 +231,7 @@ async function confirmDelete() {
 
     <ConfirmDialog
       :open="confirmOpen"
-      message="This instrument will be permanently deleted and unlinked from all band members."
+      :message="$t('more.instruments.deleteMessage')"
       :loading="confirmLoading"
       @confirm="confirmDelete"
       @cancel="confirmOpen = false"

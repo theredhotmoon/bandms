@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -12,6 +13,8 @@ import { useTags } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Tag, TagPayload } from '@/types/tag'
+
+const { t } = useI18n()
 
 const { query, create, update, remove } = useTags()
 
@@ -35,14 +38,14 @@ async function handleSubmit(payload: TagPayload) {
   try {
     if (editing.value) {
       await update.mutateAsync({ id: editing.value.id, payload })
-      toast.success('Tag updated')
+      toast.success(t('more.tags.updated'))
     } else {
       await create.mutateAsync(payload)
-      toast.success('Tag created')
+      toast.success(t('more.tags.created'))
     }
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -50,9 +53,9 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Tag deleted')
+    toast.success(t('more.tags.deleted'))
     confirmId.value = null
-  } catch (e) { reportSaveError(e, 'Failed to delete') }
+  } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 </script>
 
@@ -60,26 +63,26 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Tags</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add tag</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.tags.title') }}</h1>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('more.tags.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="empty-state">Loading…</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">Failed to load tags.</div>
+        <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.tags.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!tc.rawTotal.value">No tags yet.</span>
-            <span v-else>No tags match your search.</span>
+            <span v-if="!tc.rawTotal.value">{{ $t('more.tags.empty') }}</span>
+            <span v-else>{{ $t('more.tags.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <SortHeader label="Name" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="Slug" sort-key="slug_en" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <th class="th text-right">Actions</th>
+                <SortHeader :label="$t('more.tags.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug_en" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <th class="th text-right">{{ $t('more.tags.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -87,8 +90,8 @@ async function confirmDelete() {
                 <td class="td font-medium" style="color:#e2e8f0;">{{ tag.name }}</td>
                 <td class="td text-xs font-mono" style="color:#64748b;">{{ tag.slug_en }}</td>
                 <td class="td text-right">
-                  <button @click="openEdit(tag)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = tag.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = tag.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -108,7 +111,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? 'Edit tag' : 'New tag'" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('more.tags.editTitle') : $t('more.tags.newTitle')" @close="closeModal">
       <TagForm :initial="editing" :loading="create.isPending.value || update.isPending.value" :errors="fieldErrors" @submit="handleSubmit" @cancel="closeModal" />
     </AdminModal>
 
