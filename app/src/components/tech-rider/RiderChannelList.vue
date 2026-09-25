@@ -29,9 +29,9 @@ const emit = defineEmits<{
 }>()
 
 const counts = computed(() => {
-  const mic = props.rows.filter((r) => r.mic_di === 'Mic').length
-  const di = props.rows.filter((r) => r.mic_di === 'DI').length
-  const both = props.rows.filter((r) => r.mic_di === 'Mic+DI').length
+  const mic = props.rows.filter((r) => r.mic_di === 'Mic').length // i18n-ignore: persisted MicDiChoice
+  const di = props.rows.filter((r) => r.mic_di === 'DI').length // i18n-ignore: persisted MicDiChoice
+  const both = props.rows.filter((r) => r.mic_di === 'Mic+DI').length // i18n-ignore: persisted MicDiChoice
   return {
     total: props.rows.length,
     // A Mic+DI channel occupies two desk inputs.
@@ -65,27 +65,27 @@ function resetOrder() {
     <div class="stat-row">
       <div class="stat">
         <span class="stat-val">{{ counts.total }}</span>
-        <span class="stat-label">channels</span>
+        <span class="stat-label">{{ $t('rider.channels.channels') }}</span>
       </div>
       <div class="stat">
         <span class="stat-val">{{ counts.deskInputs }}</span>
-        <span class="stat-label">desk inputs</span>
+        <span class="stat-label">{{ $t('rider.channels.deskInputs') }}</span>
       </div>
       <div class="stat stat--dim">
         <span class="stat-val">{{ counts.mic }}</span>
-        <span class="stat-label">mic</span>
+        <span class="stat-label">{{ $t('rider.channels.mic') }}</span>
       </div>
       <div class="stat stat--dim">
         <span class="stat-val">{{ counts.di }}</span>
-        <span class="stat-label">DI</span>
+        <span class="stat-label">{{ $t('rider.channels.di') }}</span>
       </div>
       <div class="stat stat--dim">
         <span class="stat-val">{{ counts.both }}</span>
-        <span class="stat-label">mic + DI</span>
+        <span class="stat-label">{{ $t('rider.channels.micDi') }}</span>
       </div>
       <div class="stat-spacer" />
       <button v-if="channelOrder.length" type="button" class="btn-reset" @click="resetOrder">
-        Reset to stage order
+        {{ $t('rider.channels.resetOrder') }}
       </button>
     </div>
 
@@ -95,18 +95,18 @@ function resetOrder() {
         <thead>
           <tr>
             <th class="col-ch">#</th>
-            <th class="col-instr">Instrument / source</th>
-            <th class="col-micdi">Mic / DI</th>
-            <th class="col-model">Model</th>
-            <th class="col-stand">Stand</th>
-            <th class="col-notes">Notes</th>
-            <th class="col-from">From</th>
+            <th class="col-instr">{{ $t('rider.channels.cols.instrument') }}</th>
+            <th class="col-micdi">{{ $t('rider.channels.cols.micDi') }}</th>
+            <th class="col-model">{{ $t('rider.channels.cols.model') }}</th>
+            <th class="col-stand">{{ $t('rider.channels.cols.stand') }}</th>
+            <th class="col-notes">{{ $t('rider.channels.cols.notes') }}</th>
+            <th class="col-from">{{ $t('rider.channels.cols.from') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="!rows.length">
             <td colspan="7" class="empty-row">
-              No channels yet. Place musicians on the stage plot — their saved rigs fill this in.
+              {{ $t('rider.channels.empty') }}
             </td>
           </tr>
           <tr v-for="(row, idx) in rows" :key="row.key" class="data-row">
@@ -114,8 +114,8 @@ function resetOrder() {
               <div class="ch-cell">
                 <span class="ch-num">{{ row.channel }}</span>
                 <div class="move-btns">
-                  <button type="button" class="move-btn" title="Move up" @click="move(idx, -1)">▲</button>
-                  <button type="button" class="move-btn" title="Move down" @click="move(idx, 1)">▼</button>
+                  <button type="button" class="move-btn" :title="$t('rider.channels.moveUp')" @click="move(idx, -1)">▲</button>
+                  <button type="button" class="move-btn" :title="$t('rider.channels.moveDown')" @click="move(idx, 1)">▼</button>
                 </div>
               </div>
             </td>
@@ -137,11 +137,8 @@ function resetOrder() {
     <!-- Extras -->
     <div class="extras">
       <div class="extras-header">
-        <span class="extras-title">Extra channels</span>
-        <span class="extras-hint">
-          Talkback, playback, spare vocal — anything that belongs to the production
-          rather than to a musician.
-        </span>
+        <span class="extras-title">{{ $t('rider.channels.extraTitle') }}</span>
+        <span class="extras-hint">{{ $t('rider.channels.extraHint') }}</span>
       </div>
       <RigInputsTable
         :model-value="extras"

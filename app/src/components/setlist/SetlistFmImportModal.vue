@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
+import { useI18n } from 'vue-i18n'
 import { useSetlistFmSearch, useSetlists } from '@/composables/useSetlists'
 import type { SetlistFmArtist, SetlistFmSetlist } from '@/types/setlist'
 import { reportSaveError } from '@/utils/formErrors'
 
+const { t, locale } = useI18n()
 const emit = defineEmits<{ close: []; imported: [setlistId: number] }>()
 
 type Step = 'search' | 'setlists' | 'confirm'
@@ -30,7 +34,7 @@ async function doSearchArtist() {
     artists.value = await searchArtist.mutateAsync(artistQuery.value.trim())
     step.value = 'search'
   } catch (e) {
-    reportSaveError(e, 'Failed to search setlist.fm')
+    reportSaveError(e, t('setlists.setlistFm.searchFailed'))
   } finally {
     searching.value = false
   }
@@ -38,13 +42,18 @@ async function doSearchArtist() {
 
 async function pickArtist(artist: SetlistFmArtist) {
   selectedArtist.value = artist
+  // Clear before the await. The step switches immediately, so a stale array
+  // would be counted under the new artist's name — "Artist – 12 setlists"
+  // above "Loading setlists…", or the previous artist's rows if the fetch
+  // fails. The old static "– setlists" heading could not be wrong.
+  setlists.value = []
   loadingSets.value = true
   step.value = 'setlists'
   try {
     const res = await fetchArtistSetlists.mutateAsync({ mbid: artist.mbid })
     setlists.value = res.data
   } catch (e) {
-    reportSaveError(e, 'Failed to load setlists')
+    reportSaveError(e, t('setlists.setlistFm.loadFailed'))
   } finally {
     loadingSets.value = false
   }
@@ -53,8 +62,8 @@ async function pickArtist(artist: SetlistFmArtist) {
 function pickSetlist(s: SetlistFmSetlist) {
   selectedSet.value = s
   importName.value = selectedArtist.value?.name
-    ? `${selectedArtist.value.name} – ${s.event_date ?? 'Unknown date'}`
-    : (s.event_date ?? 'Imported setlist')
+    ? `${selectedArtist.value.name} – ${s.event_date ?? ''}`.trim().replace(/–\s*$/, '').trim()
+    : (s.event_date ?? t('setlists.setlistFm.imported'))
   step.value = 'confirm'
 }
 
@@ -68,10 +77,10 @@ async function doImport() {
       event_date:   selectedSet.value.event_date ? parseDate(selectedSet.value.event_date) : null,
       songs:        selectedSet.value.songs.map(s => ({ title: s.title, is_encore: s.is_encore })),
     })
-    toast.success(`Imported "${result.name}"`)
+    toast.success(t('setlists.setlistFm.importedNamed', { name: result.name }))
     emit('imported', result.id)
   } catch (e) {
-    reportSaveError(e, 'Import failed')
+    reportSaveError(e, t('setlists.setlistFm.importFailed'))
   } finally {
     importing.value = false
   }
@@ -84,17 +93,7 @@ function parseDate(d: string): string {
   return d
 }
 
-function formatDate(d: string | null): string {
-  if (!d) return '—'
-  const parts = d.split('-')
-  if (parts.length === 3) return `${parts[0]} ${monthName(parts[1])} ${parts[2]}`
-  return d
-}
-
-function monthName(m: string): string {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return months[parseInt(m, 10) - 1] ?? m
-}
+const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), dateLocale(locale.value)) || d : '—')
 </script>
 
 <template>
@@ -102,7 +101,7 @@ function monthName(m: string): string {
     <div class="modal-card">
 
       <div class="modal-header">
-        <span class="modal-title">Import from setlist.fm</span>
+        <span class="modal-title">{{ $t('setlists.setlistFm.title') }}</span>
         <button type="button" class="btn-close" @click="emit('close')">✕</button>
       </div>
 
@@ -113,12 +112,12 @@ function monthName(m: string): string {
             <input
               v-model="artistQuery"
               class="field-input"
-              placeholder="Artist name…"
+              :placeholder="$t('setlists.setlistFm.artistPlaceholder')"
               @keydown.enter="doSearchArtist"
               autofocus
             />
             <button type="button" class="btn-primary" :disabled="!artistQuery.trim() || searching" @click="doSearchArtist">
-              {{ searching ? 'Searching…' : 'Search' }}
+              {{ searching ? $t('setlists.setlistFm.searching') : $t('setlists.setlistFm.search') }}
             </button>
           </div>
           <div v-if="artists.length" class="results-list">
@@ -133,17 +132,26 @@ function monthName(m: string): string {
               <span class="result-arrow">›</span>
             </button>
           </div>
-          <div v-else-if="!searching && artistQuery" class="empty-note">No results yet — press Search.</div>
+          <div v-else-if="!searching && artistQuery" class="empty-note">{{ $t('setlists.setlistFm.noResults') }}</div>
         </div>
       </template>
 
       <!-- Step: pick setlist -->
       <template v-else-if="step === 'setlists'">
         <div class="modal-body">
-          <button type="button" class="btn-back" @click="step = 'search'">← Back</button>
-          <div class="section-title">{{ selectedArtist?.name }} – setlists</div>
-          <div v-if="loadingSets" class="loading-note">Loading setlists…</div>
-          <div v-else-if="!setlists.length" class="empty-note">No setlists found.</div>
+          <button type="button" class="btn-back" @click="step = 'search'">{{ $t('setlists.setlistFm.back') }}</button>
+          <!--
+            The count is suppressed while loading, not merely kept fresh.
+            pickArtist() clears the array before awaiting, so an ungated count
+            reads "0 setlists" directly above "Loading setlists…" — a false
+            zero, which is the same lie as a stale one in the other direction.
+          -->
+          <div class="section-title">
+            {{ selectedArtist?.name }}
+            <template v-if="!loadingSets">– {{ $t('setlists.setlistFm.setlistCount', setlists.length, { named: { n: setlists.length } }) }}</template>
+          </div>
+          <div v-if="loadingSets" class="loading-note">{{ $t('setlists.setlistFm.loading') }}</div>
+          <div v-else-if="!setlists.length" class="empty-note">{{ $t('setlists.setlistFm.noSetlists') }}</div>
           <div v-else class="results-list">
             <button
               v-for="s in setlists"
@@ -156,7 +164,7 @@ function monthName(m: string): string {
                 <span class="result-name">{{ formatDate(s.event_date) }}</span>
                 <span class="result-venue">{{ s.venue }}</span>
               </div>
-              <span class="result-count">{{ s.song_count }} songs</span>
+              <span class="result-count">{{ $t('setlists.setlistFm.songCount', s.song_count, { named: { n: s.song_count } }) }}</span>
             </button>
           </div>
         </div>
@@ -165,18 +173,18 @@ function monthName(m: string): string {
       <!-- Step: confirm -->
       <template v-else>
         <div class="modal-body">
-          <button type="button" class="btn-back" @click="step = 'setlists'">← Back</button>
+          <button type="button" class="btn-back" @click="step = 'setlists'">{{ $t('setlists.setlistFm.back') }}</button>
           <div class="confirm-block">
             <div class="field-group">
-              <label class="field-label">Setlist name</label>
-              <input v-model="importName" class="field-input" placeholder="Name for this setlist" />
+              <label class="field-label">{{ $t('setlists.setlistFm.name') }}</label>
+              <input v-model="importName" class="field-input" :placeholder="$t('setlists.setlistFm.namePlaceholder')" />
             </div>
             <div class="songs-preview">
-              <div class="songs-preview-title">{{ selectedSet?.songs.length }} songs to import:</div>
+              <div class="songs-preview-title">{{ $t('setlists.setlistFm.toImport', selectedSet?.songs.length ?? 0, { named: { n: selectedSet?.songs.length ?? 0 } }) }}</div>
               <div v-for="(s, i) in selectedSet?.songs" :key="i" class="preview-song">
                 <span class="preview-pos">{{ i + 1 }}</span>
                 <span class="preview-title">{{ s.title }}</span>
-                <span v-if="s.is_encore" class="preview-encore">ENCORE</span>
+                <span v-if="s.is_encore" class="preview-encore">{{ $t('setlists.setlistFm.encoreBadge') }}</span>
               </div>
             </div>
             <button
@@ -185,7 +193,7 @@ function monthName(m: string): string {
               :disabled="!importName.trim() || importing"
               @click="doImport"
             >
-              {{ importing ? 'Importing…' : 'Import setlist' }}
+              {{ importing ? $t('setlists.setlistFm.importing') : $t('setlists.setlistFm.import') }}
             </button>
           </div>
         </div>

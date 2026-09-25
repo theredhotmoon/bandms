@@ -60,7 +60,6 @@ describe('i18n catalogues', () => {
       // Compilation alone is not quite enough: `a@b` throws, but some shapes
       // resolve to a *linked message* instead — silently rendering something
       // other than the text that was written. Require the escape everywhere.
-      //
       const offenders = all
         .filter(({ value }) => /(?<!\{')@(?!'\})/.test(value))
         .map(({ key, value }) => `${key}: ${value}`)
@@ -74,13 +73,12 @@ describe('i18n catalogues', () => {
       // silently returns only the first branch — `'Bio | EPK'` renders as
       // `"Bio"`, with nothing reported anywhere. Verified against vue-i18n.
       //
-      // So it is allowlisted per key, not waved through per character: these
-      // two are genuine plural forms, and any new pipe has to be justified
-      // here rather than shipping truncated.
-      // Every key here is a real plural form, checked by eye against both
-      // catalogues. The list is deliberately explicit rather than a naming
-      // convention: a pipe silently truncates, so adding one should cost a
-      // line in a test and a moment's thought, not nothing.
+      // So it is allowlisted per key, not waved through per character. Every
+      // key below is a real plural form, checked against both catalogues. The
+      // list is deliberately explicit rather than a naming convention: a pipe
+      // truncates silently, so adding one should cost a line in a test and a
+      // moment's thought, not nothing. It grows with the sweep, and that is
+      // the friction working rather than a sign it needs automating.
       const PLURALS = new Set([
         'common.rebuild.pendingChanges',
         'content.newsletter.subscribers',
@@ -90,6 +88,26 @@ describe('i18n catalogues', () => {
         'rider.rig.inputs.count.extraChannel',
         'rider.rig.inputs.needsName',
         'band.setups.waiting',
+        'media.releases.uploadPhotos',
+        'media.releases.photosAdded',
+        'media.videos.syncResult',
+        'media.photos.photoCount',
+        'media.photos.albumCreated',
+        'media.batchUpload.create',
+        'setlists.setlists.songCount',
+        'setlists.setlistEditor.songCount',
+        'setlists.setlistFm.setlistCount',
+        'setlists.setlistFm.songCount',
+        'setlists.setlistFm.toImport',
+        'rider.stagePlot.units',
+        'rider.stagePlot.outlets',
+        'rider.placement.sectionsChanged',
+        'rider.lineup.inLineup',
+        'rider.requirements.sends',
+        'rider.requirements.items',
+        'rider.requirements.units',
+        'rider.requirements.outletsAcross',
+        'rider.admin.asked',
       ])
 
       const offenders = all
@@ -179,6 +197,49 @@ describe('i18n catalogues', () => {
       for (const n of ['channel', 'extraChannel']) {
         expect(has(`rider.rig.inputs.empty.${n}`), n).toBe(true)
         expect(has(`rider.rig.inputs.count.${n}`), n).toBe(true)
+      }
+    })
+
+    it('setlists.setlistEditor.transitions covers every SetlistTransition', () => {
+      // Built as a template literal in two places — the badge and the
+      // <select> — which check-i18n-keys cannot see, and which the
+      // `key: string` typing does not constrain either.
+      for (const tr of ['none', 'pause', 'segue', 'talk', 'end']) {
+        expect(has(`setlists.setlistEditor.transitions.${tr}`), tr).toBe(true)
+      }
+    })
+    it('rider.stagePlot.views covers every StageView', () => {
+      // Built as a template literal in the view switcher and again for the
+      // per-card tooltips, so check-i18n-keys cannot see either.
+      for (const v of [
+        'members', 'instruments', 'signal_chain', 'monitor',
+        'wireless', 'backline', 'power', 'foh',
+      ]) {
+        expect(has(`rider.stagePlot.views.${v}`), v).toBe(true)
+      }
+    })
+
+    it('rider.admin.tabs covers every Section', () => {
+      // Mirrors `type Section` in TechRiderAdminView.vue. The tab strip builds
+      // its label from the section key, so a name that drifts from the union
+      // prints the dotted keypath across the top of the editor.
+      for (const s of ['stage', 'channels', 'requirements', 'pafoh', 'cover']) {
+        expect(has(`rider.admin.tabs.${s}`), `rider.admin.tabs.${s}`).toBe(true)
+      }
+    })
+
+    it('media.videos.hosts covers every videoHost() return', () => {
+      // videoHost() returns a key now, not a label — YouTube and Vimeo are
+      // brand names but the fallback is a generic noun that translates.
+      for (const h of ['youtube', 'vimeo', 'other']) {
+        expect(has(`media.videos.hosts.${h}`), h).toBe(true)
+      }
+    })
+
+    it('media.releases.types covers every ReleaseType', () => {
+      // Built at render time in both the list filter and the form select.
+      for (const rt of ['LP', 'EP', 'single', 'compilation']) {
+        expect(has(`media.releases.types.${rt}`), rt).toBe(true)
       }
     })
 

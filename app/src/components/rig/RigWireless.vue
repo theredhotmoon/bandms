@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { WirelessSpec, WirelessType } from '@bandms/rider-core'
+import { enumLabel } from '@/utils/enumLabel'
 import { defaultWirelessSpec } from '@bandms/rider-core'
 
 interface Props { modelValue: WirelessSpec[] }
 const props = defineProps<Props>()
 const emit = defineEmits<{ 'update:modelValue': [value: WirelessSpec[]] }>()
+
+const { t } = useI18n()
+
+// A stored value, so it needs the raw-value floor — see enumLabel(). The
+// <option> list below is built from TYPES and cannot miss, so it uses $t.
+const wirelessLabel = (v: string) => enumLabel(t, `rider.rig.wireless.types.${v}`, v)
 
 const TYPES: WirelessType[] = ['instrument', 'vocal', 'iem', 'other']
 
@@ -35,7 +43,7 @@ function patch(id: string, changes: Partial<WirelessSpec>) {
     <div v-else class="item-list">
       <div v-for="(unit, idx) in units" :key="unit.id" class="item-card">
         <div class="item-header">
-          <span class="item-title">#{{ idx + 1 }} — {{ $t(`rider.rig.wireless.types.${unit.type}`) }}</span>
+          <span class="item-title">#{{ idx + 1 }} — {{ wirelessLabel(unit.type) }}</span>
           <button type="button" class="btn-remove" @click="remove(unit.id)">{{ $t('rider.rig.wireless.remove') }}</button>
         </div>
 

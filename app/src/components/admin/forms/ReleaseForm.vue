@@ -16,21 +16,25 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+// i18n-ignore block: `label` is a brand name and `color` is that brand's
+// hex — neither translates. `key` is the persisted ReleasePlatform.
 const PLATFORMS: { key: ReleasePlatform; label: string; color: string }[] = [
-  { key: 'spotify',     label: 'Spotify',     color: '#1db954' },
-  { key: 'apple_music', label: 'Apple Music', color: '#fc3c44' },
-  { key: 'bandcamp',    label: 'Bandcamp',    color: '#1da0c3' },
-  { key: 'youtube',     label: 'YouTube',     color: '#ff0000' },
-  { key: 'instagram',   label: 'Instagram',   color: '#e1306c' },
+  { key: 'spotify',     label: 'Spotify',     color: '#1db954' }, // i18n-ignore: brand
+  { key: 'apple_music', label: 'Apple Music', color: '#fc3c44' }, // i18n-ignore: brand
+  { key: 'bandcamp',    label: 'Bandcamp',    color: '#1da0c3' }, // i18n-ignore: brand
+  { key: 'youtube',     label: 'YouTube',     color: '#ff0000' }, // i18n-ignore: brand
+  { key: 'instagram',   label: 'Instagram',   color: '#e1306c' }, // i18n-ignore: brand
 ]
 
-const TYPES: ReleaseType[] = ['LP', 'EP', 'single', 'compilation']
+const TYPES: ReleaseType[] = ['LP', 'EP', 'single', 'compilation'] // i18n-ignore: persisted ReleaseType values
 
+// International pitch notation, stored verbatim in track.musical_key. It is
+// data, and it is the same notation a Polish engineer reads.
 const MUSICAL_KEYS = [
-  'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F',
-  'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
-  'Cm', 'C#m', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm',
-  'F#m', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm',
+  'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', // i18n-ignore: pitch notation
+  'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B', // i18n-ignore: pitch notation
+  'Cm', 'C#m', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', // i18n-ignore: pitch notation
+  'F#m', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm', // i18n-ignore: pitch notation
 ]
 
 // ── Cover image ───────────────────────────────────────────────
@@ -243,7 +247,7 @@ function handleSubmit() {
     <!-- Cover + basic info -->
     <div class="grid grid-cols-[8rem_1fr] gap-4 mb-5">
       <div>
-        <label class="field-label">Cover</label>
+        <label class="field-label">{{ $t('media.releaseForm.cover') }}</label>
         <div
           class="cover-drop"
           :class="{ 'has-image': !!displayCover }"
@@ -251,33 +255,33 @@ function handleSubmit() {
           @dragover.prevent
           @drop="onCoverDrop"
         >
-          <img v-if="displayCover" :src="displayCover" class="cover-img" alt="Cover" />
+          <img v-if="displayCover" :src="displayCover" class="cover-img" :alt="$t('media.releaseForm.cover')" />
           <div v-else class="cover-placeholder">
             <svg class="cover-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <span class="cover-hint">Click or drop</span>
+            <span class="cover-hint">{{ $t('media.releaseForm.coverDrop') }}</span>
           </div>
         </div>
-        <button v-if="displayCover" type="button" class="btn-add mt-1" @click.stop="removeCover">Remove</button>
+        <button v-if="displayCover" type="button" class="btn-add mt-1" @click.stop="removeCover">{{ $t('media.releaseForm.coverRemove') }}</button>
         <input ref="coverInput" type="file" accept="image/*" style="display:none" @change="onCoverInputChange" />
       </div>
 
       <div class="flex flex-col gap-3">
         <div>
-          <label class="field-label">Title <span class="field-req">*</span></label>
+          <label class="field-label">{{ $t('media.releaseForm.title') }} <span class="field-req">*</span></label>
           <div class="trans-group">
             <div class="trans-row">
-              <span class="lang-badge">EN</span>
-              <input v-model="form.title_en" required class="field-input flex-1" placeholder="Release title" />
+              <span class="lang-badge">EN</span> <!-- i18n-ignore: locale code -->
+              <input v-model="form.title_en" required class="field-input flex-1" :placeholder="$t('media.releaseForm.titlePlaceholderEn')" />
             </div>
             <div class="trans-row">
-              <span class="lang-badge lang-badge--pl">PL</span>
-              <input v-model="form.title_pl" class="field-input flex-1" placeholder="Tytuł wydawnictwa" />
+              <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: locale code -->
+              <input v-model="form.title_pl" class="field-input flex-1" :placeholder="$t('media.releaseForm.titlePlaceholderPl')" />
             </div>
           </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
         </div>
         <div>
-          <label class="field-label">Slug URL</label>
+          <label class="field-label">{{ $t('common.fields.slug') }}</label>
           <SlugInput
             v-model="form.slug_en"
             v-model:modelValuePl="form.slug_pl"
@@ -290,13 +294,13 @@ function handleSubmit() {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="field-label">Type</label>
+            <label class="field-label">{{ $t('media.releaseForm.type') }}</label>
             <select v-model="form.type" class="field-input">
-              <option v-for="t in TYPES" :key="t" :value="t">{{ t.toUpperCase() }}</option>
+              <option v-for="rt in TYPES" :key="rt" :value="rt">{{ $t(`media.releases.types.${rt}`) }}</option>
             </select>
           </div>
           <div>
-            <label class="field-label">Release date</label>
+            <label class="field-label">{{ $t('media.releaseForm.releaseDate') }}</label>
             <input v-model="form.release_date" type="date" class="field-input" />
           </div>
         </div>
@@ -304,11 +308,11 @@ function handleSubmit() {
           <label class="toggle-row">
             <input type="checkbox" v-model="form.is_upcoming" class="toggle-check" />
             <span class="toggle-track"><span class="toggle-thumb" /></span>
-            <span class="toggle-label">Upcoming — show pre-save button</span>
+            <span class="toggle-label">{{ $t('media.releaseForm.upcoming') }}</span>
           </label>
           <div v-if="form.is_upcoming" class="mt-2">
-            <label class="field-label">Pre-save URL</label>
-            <input v-model="form.presave_url" type="url" class="field-input" placeholder="https://distrokid.com/hyperfollow/…" />
+            <label class="field-label">{{ $t('media.releaseForm.presaveUrl') }}</label>
+            <input v-model="form.presave_url" type="url" class="field-input" :placeholder="$t('media.releaseForm.presavePlaceholder')" />
           </div>
         </div>
       </div>
@@ -316,25 +320,25 @@ function handleSubmit() {
 
     <!-- Label name -->
     <div class="mb-4">
-      <label class="field-label">Record label</label>
-      <input v-model="form.label_name" class="field-input" placeholder="e.g. Rough Trade, Epitaph, self-released…" />
+      <label class="field-label">{{ $t('media.releaseForm.label') }}</label>
+      <input v-model="form.label_name" class="field-input" :placeholder="$t('media.releaseForm.labelPlaceholder')" />
       <p v-if="errors?.label_name" class="field-error">{{ errors.label_name[0] }}</p>
     </div>
 
     <!-- Description -->
     <div class="mb-5">
-      <label class="field-label">Description</label>
+      <label class="field-label">{{ $t('media.releaseForm.description') }}</label>
       <div class="trans-group">
         <div class="trans-row trans-row--top">
-          <span class="lang-badge" style="margin-top:0.5rem;">EN</span>
+          <span class="lang-badge" style="margin-top:0.5rem;">EN</span> <!-- i18n-ignore: locale code -->
           <div class="flex-1">
-            <RichEditor v-model="form.description_en" placeholder="Optional release notes or liner notes…" />
+            <RichEditor v-model="form.description_en" :placeholder="$t('media.releaseForm.descriptionPlaceholderEn')" />
           </div>
         </div>
         <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl" style="margin-top:0.5rem;">PL</span>
+          <span class="lang-badge lang-badge--pl" style="margin-top:0.5rem;">PL</span> <!-- i18n-ignore: locale code -->
           <div class="flex-1">
-            <RichEditor v-model="form.description_pl" placeholder="Opcjonalne notatki o wydawnictwie…" />
+            <RichEditor v-model="form.description_pl" :placeholder="$t('media.releaseForm.descriptionPlaceholderPl')" />
           </div>
         </div>
       </div>
@@ -342,12 +346,12 @@ function handleSubmit() {
 
     <!-- Streaming links -->
     <div class="mb-5">
-      <div class="section-title">Streaming links</div>
+      <div class="section-title">{{ $t('media.releaseForm.streaming') }}</div>
       <div class="flex flex-col gap-2">
         <div v-for="p in PLATFORMS" :key="p.key" class="platform-row">
           <span class="platform-dot" :style="`background:${p.color};`" />
           <span class="platform-name">{{ p.label }}</span>
-          <input v-model="form.links[p.key]" class="field-input flex-1" :placeholder="`${p.label} URL…`" />
+          <input v-model="form.links[p.key]" class="field-input flex-1" :placeholder="$t('media.releaseForm.urlPlaceholder', { platform: p.label })" />
         </div>
       </div>
     </div>
@@ -355,75 +359,75 @@ function handleSubmit() {
     <!-- Tracks -->
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <div class="section-title" style="margin-bottom:0;">Tracks</div>
-        <button type="button" class="btn-add" @click="addTrack">+ Add track</button>
+        <div class="section-title" style="margin-bottom:0;">{{ $t('media.releaseForm.tracks') }}</div>
+        <button type="button" class="btn-add" @click="addTrack">{{ $t('media.releaseForm.addTrack') }}</button>
       </div>
       <div class="flex flex-col gap-2">
         <div v-for="(track, i) in tracks" :key="i" class="track-block">
           <div class="track-header">
             <span class="track-num">{{ i + 1 }}</span>
-            <input v-model="track.title" class="field-input flex-1" :placeholder="`Track ${i + 1} title`" />
+            <input v-model="track.title" class="field-input flex-1" :placeholder="$t('media.releaseForm.trackTitle', { n: i + 1 })" />
             <input v-model="track.duration" class="field-input track-dur" placeholder="3:42" />
             <button type="button" class="track-toggle-btn" :class="{ 'track-toggle-btn--has': track.showMeta }"
-              @click="track.showMeta = !track.showMeta">Meta</button>
+              @click="track.showMeta = !track.showMeta">{{ $t('media.releaseForm.tabMeta') }}</button>
             <button type="button" class="track-toggle-btn" :class="{ 'track-toggle-btn--has': track.showLyrics }"
-              @click="track.showLyrics = !track.showLyrics">Lyrics</button>
+              @click="track.showLyrics = !track.showLyrics">{{ $t('media.releaseForm.tabLyrics') }}</button>
             <button type="button" class="track-toggle-btn" :class="{ 'track-toggle-btn--has': track.showLinks }"
-              @click="track.showLinks = !track.showLinks">Links</button>
+              @click="track.showLinks = !track.showLinks">{{ $t('media.releaseForm.tabLinks') }}</button>
             <button type="button" class="track-remove" @click="removeTrack(i)">✕</button>
           </div>
 
           <div v-if="track.showMeta" class="track-panel">
             <div class="grid grid-cols-3 gap-2 mb-2">
               <div>
-                <label class="field-label">BPM</label>
+                <label class="field-label">{{ $t('media.releaseForm.bpm') }}</label>
                 <input v-model="track.bpm" type="number" min="1" max="400" class="field-input" placeholder="120" />
               </div>
               <div>
-                <label class="field-label">Key</label>
+                <label class="field-label">{{ $t('media.releaseForm.key') }}</label>
                 <select v-model="track.musical_key" class="field-input">
                   <option value="">—</option>
                   <option v-for="k in MUSICAL_KEYS" :key="k" :value="k">{{ k }}</option>
                 </select>
               </div>
               <div>
-                <label class="field-label">ISRC</label>
-                <input v-model="track.isrc" class="field-input" placeholder="USRC12345678" />
+                <label class="field-label">{{ $t('media.releaseForm.isrc') }}</label>
+                <input v-model="track.isrc" class="field-input" :placeholder="$t('media.releaseForm.isrcPlaceholder')" />
               </div>
             </div>
             <div class="mb-2">
-              <label class="field-label">Mood tags</label>
-              <input v-model="track.mood_tags" class="field-input" placeholder="dark, energetic, melancholic…" />
+              <label class="field-label">{{ $t('media.releaseForm.moodTags') }}</label>
+              <input v-model="track.mood_tags" class="field-input" :placeholder="$t('media.releaseForm.moodPlaceholder')" />
             </div>
             <div class="mb-2">
-              <label class="field-label">Sync placements</label>
-              <input v-model="track.sync_placements" class="field-input" placeholder="Netflix S2E4, Nike ad…" />
+              <label class="field-label">{{ $t('media.releaseForm.sync') }}</label>
+              <input v-model="track.sync_placements" class="field-input" :placeholder="$t('media.releaseForm.syncPlaceholder')" />
             </div>
             <div class="flex gap-4">
               <label class="toggle-row toggle-row--small">
                 <input type="checkbox" v-model="track.explicit" class="toggle-check" />
                 <span class="toggle-track"><span class="toggle-thumb" /></span>
-                <span class="toggle-label">Explicit</span>
+                <span class="toggle-label">{{ $t('media.releaseForm.explicit') }}</span>
               </label>
               <label class="toggle-row toggle-row--small">
                 <input type="checkbox" v-model="track.stems_available" class="toggle-check" />
                 <span class="toggle-track"><span class="toggle-thumb" /></span>
-                <span class="toggle-label">Stems available</span>
+                <span class="toggle-label">{{ $t('media.releaseForm.stems') }}</span>
               </label>
             </div>
           </div>
 
           <div v-if="track.showLyrics" class="track-panel">
-            <label class="field-label" style="margin-bottom:0.25rem;">Lyrics</label>
-            <textarea v-model="track.lyrics" class="lyrics-textarea" placeholder="Paste lyrics here…" rows="8" />
+            <label class="field-label" style="margin-bottom:0.25rem;">{{ $t('media.releaseForm.lyrics') }}</label>
+            <textarea v-model="track.lyrics" class="lyrics-textarea" :placeholder="$t('media.releaseForm.lyricsPlaceholder')" rows="8" />
           </div>
 
           <div v-if="track.showLinks" class="track-panel track-links-panel">
-            <div class="track-links-hint">Per-track streaming links (optional)</div>
+            <div class="track-links-hint">{{ $t('media.releaseForm.trackLinks') }}</div>
             <div v-for="p in PLATFORMS" :key="p.key" class="platform-row platform-row--compact">
               <span class="platform-dot" :style="`background:${p.color};`" />
               <span class="platform-name">{{ p.label }}</span>
-              <input v-model="track.links[p.key]" class="field-input flex-1" :placeholder="`${p.label} URL…`" />
+              <input v-model="track.links[p.key]" class="field-input flex-1" :placeholder="$t('media.releaseForm.urlPlaceholder', { platform: p.label })" />
             </div>
           </div>
         </div>
@@ -432,9 +436,9 @@ function handleSubmit() {
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">Cancel</button>
+      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !canSave" class="btn-primary">
-        {{ loading ? 'Saving…' : (initial ? 'Update release' : 'Create release') }}
+        {{ loading ? $t('common.actions.saving') : (initial ? $t('media.releaseForm.update') : $t('media.releaseForm.create')) }}
       </button>
     </div>
 

@@ -12,8 +12,9 @@
 
 import type { RiderMember } from './types/bandMember'
 import type { StagePlacement } from './types/stagePlot'
-import { INSTRUMENT_TYPE_LABELS } from './types/stagePlot'
 import type { StagePlotItemType } from './types/instrumentType'
+import type { InstrumentLabels } from './labels/types'
+import { EN_INSTRUMENT_LABELS } from './labels/en'
 import { guessInstrumentType } from './instrumentIcons'
 
 export interface DisplayInstrument {
@@ -31,15 +32,26 @@ export function memberMainInstrumentType(member: RiderMember): StagePlotItemType
   return inst.stage_plot_type ?? guessInstrumentType(inst.name)
 }
 
+/**
+ * `labels` is optional and defaults to English so the resolver keeps working
+ * for callers that render no instrument names of their own — the completeness
+ * check, the version diff, the fixtures. Every surface that *prints* a name
+ * passes its own map. A band member's typed-in instrument name is never
+ * translated; only the fallback to the catalogue's generic label is.
+ */
 export function resolveStageInstruments(
   item: StagePlacement,
   members: RiderMember[],
+  labels: InstrumentLabels = EN_INSTRUMENT_LABELS,
 ): DisplayInstrument[] {
   if (item.instruments?.length) {
     return item.instruments.map(i => ({
       id:       i.id,
       type:     i.type,
-      label:    i.label || INSTRUMENT_TYPE_LABELS[i.type],
+      // `|| i.type` is the floor: a published snapshot can hold an
+      // instrument type added after it was frozen, and a blank cell in a
+      // patch list is worse than a raw key an engineer can still read.
+      label:    i.label || labels[i.type] || i.type,
       inferred: false,
     }))
   }
@@ -53,7 +65,9 @@ export function resolveStageInstruments(
   return [{
     id:       `${item.id}-inferred`,
     type,
-    label:    member.main_instrument?.name ?? member.role ?? INSTRUMENT_TYPE_LABELS[type],
+    // `|| type` for the same reason the branch above carries it: `type` comes
+    // from the DB's stage_plot_type, which no compiler constrains.
+    label:    member.main_instrument?.name ?? member.role ?? labels[type] ?? type,
     inferred: true,
   }]
 }
@@ -81,8 +95,9 @@ export interface InstrumentBadge extends DisplayInstrument {
 export function instrumentBadgesFor(
   item: StagePlacement,
   members: RiderMember[],
+  labels: InstrumentLabels = EN_INSTRUMENT_LABELS,
 ): InstrumentBadge[] {
-  const list = resolveStageInstruments(item, members).slice(0, 3)
+  const list = resolveStageInstruments(item, members, labels).slice(0, 3)
   const offsets = BADGE_OFFSETS[list.length] ?? []
   return list.map((inst, i) => ({ ...inst, dx: offsets[i][0], dy: offsets[i][1] }))
 }

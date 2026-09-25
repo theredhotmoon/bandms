@@ -18,6 +18,8 @@
  */
 
 import type { SetupLookup } from '@bandms/rider-core'
+import type { ResolverLabels, InstrumentLabels } from '@bandms/rider-core'
+import { EN_RESOLVER_LABELS } from '@bandms/rider-core'
 import type { PublishedRider } from '@bandms/rider-core'
 import { resolveRider } from '@bandms/rider-core'
 import type { ResolvedRider } from '@bandms/rider-core'
@@ -170,12 +172,16 @@ function powerRows(rider: ResolvedRider): Row[] {
  * A snapshot resolves against the setups frozen inside it, never against the
  * live library — that is the whole point of having frozen it.
  */
-export function resolveSnapshot(snapshot: PublishedRider): ResolvedRider {
+export function resolveSnapshot(
+  snapshot: PublishedRider,
+  labels: ResolverLabels = EN_RESOLVER_LABELS,
+  instrumentNames?: InstrumentLabels,
+): ResolvedRider {
   const setups: SetupLookup = Object.fromEntries(
     Object.entries(snapshot.rider.referenced_setups ?? {}).map(([id, s]) => [Number(id), s]),
   )
 
-  return resolveRider(snapshot.rider, setups, snapshot.members ?? [])
+  return resolveRider(snapshot.rider, setups, snapshot.members ?? [], labels, instrumentNames)
 }
 
 // ── The diff ──────────────────────────────────────────────────────────────────
@@ -193,9 +199,16 @@ function plural(title: string, n: number): string {
   return `${n} ${n === 1 ? one : many}`
 }
 
-export function diffRiders(before: PublishedRider, after: PublishedRider): RiderDiff {
-  const a = resolveSnapshot(before)
-  const b = resolveSnapshot(after)
+export function diffRiders(
+  before: PublishedRider,
+  after: PublishedRider,
+  labels: ResolverLabels = EN_RESOLVER_LABELS,
+  instrumentNames?: InstrumentLabels,
+): RiderDiff {
+  // Both sides resolve with the same bundle: a locale change must not read as
+  // a change to the rider.
+  const a = resolveSnapshot(before, labels, instrumentNames)
+  const b = resolveSnapshot(after, labels, instrumentNames)
 
   const sections: RiderDiffSection[] = [
     { title: 'Channels', entries: diffRows(channelRows(a), channelRows(b)) },

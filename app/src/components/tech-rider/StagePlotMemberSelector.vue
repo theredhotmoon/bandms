@@ -21,6 +21,10 @@ function isAvailable(memberId: number): boolean {
   return entry ? entry.is_available : true
 }
 
+/** Avatar colours — CSS classes, not copy. */
+const avatarClass = (id: number) =>
+  isAvailable(id) ? 'bg-zinc-600 text-white' : 'bg-zinc-700 text-zinc-400' // i18n-ignore: CSS classes
+
 function toggleMember(memberId: number) {
   const wasAvailable = isAvailable(memberId)
   const existing     = props.modelValue.regular_members.find(m => m.band_member_id === memberId)
@@ -82,13 +86,13 @@ function initials(m: BandMember): string {
   <div class="flex flex-col gap-6">
     <!-- Header -->
     <div>
-      <h3 class="text-base font-semibold text-white">Who's playing at this gig?</h3>
-      <p class="text-xs text-zinc-400 mt-0.5">Toggle members off if they won't be attending. Add replacement musicians as needed.</p>
+      <h3 class="text-base font-semibold text-white">{{ $t('rider.lineup.title') }}</h3>
+      <p class="text-xs text-zinc-400 mt-0.5">{{ $t('rider.lineup.hint') }}</p>
     </div>
 
     <!-- Band members grid -->
     <div>
-      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Band members</p>
+      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">{{ $t('rider.lineup.bandMembers') }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button
           v-for="member in currentMembers"
@@ -103,7 +107,7 @@ function initials(m: BandMember): string {
           <!-- Avatar -->
           <div
             class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
-            :class="isAvailable(member.id) ? 'bg-zinc-600 text-white' : 'bg-zinc-700 text-zinc-400'"
+            :class="avatarClass(member.id)"
           >
             <img
               v-if="member.photo"
@@ -120,7 +124,7 @@ function initials(m: BandMember): string {
               {{ member.nickname ?? `${member.first_name} ${member.last_name}` }}
             </div>
             <div class="text-xs truncate" :class="isAvailable(member.id) ? 'text-zinc-400' : 'text-zinc-600'">
-              {{ member.role ?? 'Musician' }}
+              {{ member.role ?? $t('rider.lineup.musician') }}
             </div>
           </div>
 
@@ -139,7 +143,7 @@ function initials(m: BandMember): string {
 
     <!-- Temp musicians -->
     <div>
-      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Temporary / Replacement musicians</p>
+      <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">{{ $t('rider.lineup.temporary') }}</p>
 
       <!-- Existing temp musicians -->
       <div v-if="modelValue.temp_musicians.length" class="space-y-2 mb-3">
@@ -153,9 +157,9 @@ function initials(m: BandMember): string {
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-sm font-medium text-amber-200">{{ temp.name }}</div>
-            <div class="text-xs text-amber-400/70">{{ temp.role || 'Replacement' }}</div>
+            <div class="text-xs text-amber-400/70">{{ temp.role || $t('rider.lineup.replacement') }}</div>
           </div>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 font-medium mr-1">GUEST</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 font-medium mr-1">{{ $t('rider.lineup.guestBadge') }}</span>
           <button
             type="button"
             class="text-zinc-500 hover:text-red-400 transition-colors p-1"
@@ -173,14 +177,14 @@ function initials(m: BandMember): string {
         <input
           v-model="tempName"
           type="text"
-          placeholder="Full name"
+          :placeholder="$t('rider.lineup.fullName')"
           class="w-full px-3 py-2 text-sm bg-zinc-900/60 border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
         <input
           v-model="tempRole"
           type="text"
-          placeholder="Role / Position (e.g. Guitar, Bass)"
+          :placeholder="$t('rider.lineup.rolePlaceholder')"
           class="w-full px-3 py-2 text-sm bg-zinc-900/60 border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400"
           @keyup.enter="addTempMusician"
         />
@@ -190,12 +194,12 @@ function initials(m: BandMember): string {
             :disabled="!tempName.trim()"
             class="flex-1 py-1.5 text-sm font-medium rounded-md bg-zinc-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-zinc-900 transition-colors"
             @click="addTempMusician"
-          >Add musician</button>
+          >{{ $t('rider.lineup.addMusician') }}</button>
           <button
             type="button"
             class="px-3 py-1.5 text-sm text-zinc-400 hover:text-white rounded-md border border-zinc-700 transition-colors"
             @click="showTempForm = false; tempName = ''; tempRole = ''"
-          >Cancel</button>
+          >{{ $t('common.actions.cancel') }}</button>
         </div>
       </div>
 
@@ -208,22 +212,22 @@ function initials(m: BandMember): string {
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Add temporary musician
+        {{ $t('rider.lineup.addTemporary') }}
       </button>
     </div>
 
     <!-- Summary + close -->
     <div class="flex items-center justify-between pt-2 border-t border-zinc-700/50">
-      <span class="text-sm text-zinc-400">
-        <span class="font-medium text-white">{{ availableCount }}</span> musician{{ availableCount !== 1 ? 's' : '' }} in tonight's lineup
-      </span>
+      <i18n-t keypath="rider.lineup.inLineup" tag="span" class="text-sm text-zinc-400" :plural="availableCount" scope="global">
+        <template #n><span class="font-medium text-white">{{ availableCount }}</span></template>
+      </i18n-t>
       <button
         type="button"
         :disabled="availableCount === 0"
         class="px-4 py-2 text-sm font-semibold rounded-lg bg-zinc-200 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-zinc-900 transition-colors"
         @click="emit('close')"
       >
-        Done — place on stage →
+        {{ $t('rider.lineup.donePlace') }}
       </button>
     </div>
   </div>

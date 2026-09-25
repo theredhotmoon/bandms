@@ -52,11 +52,22 @@ export const OTHER_DIRECTIVE = /(?:@|v-on:|v-bind:|:)([A-Za-z0-9_.-]+)="([^"]*)"
  * Without that, `:style="\`width:${pct}%\`"` reads as copy because the
  * identifier supplies the letters. Real copy survives it — `\`v${n} deleted\``
  * becomes "v deleted", which still has a space and letters.
+ *
+ * A *truncated* `${` is stripped too, and that second pass is load-bearing.
+ * LITERAL cannot parse a nested template literal: given
+ * `\`${a}${b ? \` — ${b}\` : ''}\`` it matches from the outer backtick to the
+ * first inner one, so the captured text ends mid-interpolation as `${b ? `.
+ * That has two letters and an inner space, so `looksLikeCopy` calls it copy —
+ * which reported `RiderSheet.vue` as unmigrated when every string in it had
+ * already moved to a prop. Anything from a surviving `${` onward is the head
+ * of an expression, never text a reader sees.
  */
 export function copyLiterals(expr) {
   LITERAL.lastIndex = 0
   return [...expr.matchAll(LITERAL)]
-    .map(m => (m[1] ?? m[2] ?? m[3] ?? '').replace(/\$\{[^}]*\}/g, ''))
+    .map(m => (m[1] ?? m[2] ?? m[3] ?? '')
+      .replace(/\$\{[^}]*\}/g, '')
+      .replace(/\$\{[\s\S]*$/, ''))
     .filter(looksLikeCopy)
 }
 

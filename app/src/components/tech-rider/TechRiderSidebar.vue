@@ -21,12 +21,12 @@ defineEmits<{
 <template>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1 class="sidebar-title">Tech Riders</h1>
-      <button type="button" class="btn-new" title="New rider" @click="$emit('new')">+</button>
+      <h1 class="sidebar-title">{{ $t('rider.sidebar.title') }}</h1>
+      <button type="button" class="btn-new" :title="$t('rider.sidebar.newRider')" @click="$emit('new')">+</button>
     </div>
 
-    <div v-if="loading" class="sidebar-state">Loading…</div>
-    <div v-else-if="error" class="sidebar-state sidebar-state--err">Failed to load</div>
+    <div v-if="loading" class="sidebar-state">{{ $t('common.state.loading') }}</div>
+    <div v-else-if="error" class="sidebar-state sidebar-state--err">{{ $t('rider.sidebar.loadFailed') }}</div>
 
     <div v-else class="rider-list">
       <div
@@ -39,7 +39,7 @@ defineEmits<{
         <div class="rider-info">
           <span class="rider-name">{{ r.name }}</span>
           <div class="rider-badges">
-            <span v-if="r.is_active" class="badge-active">Active</span>
+            <span v-if="r.is_active" class="badge-active">{{ $t('rider.sidebar.active') }}</span>
             <span v-if="r.published_version_number" class="badge-published">
               v{{ r.published_version_number }}
             </span>
@@ -51,26 +51,26 @@ defineEmits<{
             v-if="!r.is_active"
             type="button"
             class="act-btn"
-            title="Set as active rider"
+            :title="$t('rider.sidebar.setActive')"
             @click.stop="$emit('activate', r.id)"
           >✓</button>
           <button
             type="button"
             class="act-btn"
-            title="Duplicate this rider"
+            :title="$t('rider.sidebar.duplicate')"
             @click.stop="$emit('duplicate', r.id)"
           >⧉</button>
           <button
             type="button"
             class="act-btn act-btn--del"
-            title="Delete"
+            :title="$t('common.actions.delete')"
             @click.stop="$emit('delete', r.id)"
           >✕</button>
         </div>
       </div>
 
       <div v-if="!riders.length" class="sidebar-state">
-        No riders yet.<br>Click + to create one.
+        {{ $t('rider.sidebar.empty') }}<br>{{ $t('rider.sidebar.emptyHint') }}
       </div>
     </div>
   </aside>

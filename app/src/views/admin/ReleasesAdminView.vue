@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -22,8 +23,11 @@ import {
   reorderReleasePhotos,
 } from '@/api/releases'
 import type { UploadProgress } from '@/api/releases'
-import type { Release, ReleaseSummary, ReleasePayload, ReleasePhoto } from '@/types/release'
+import type { Release, ReleaseSummary, ReleasePayload, ReleasePhoto, ReleaseType } from '@/types/release'
 import { reportSaveError } from '@/utils/formErrors'
+
+/** Display order of the filter; the values are the persisted ReleaseType. */
+const RELEASE_TYPES: ReleaseType[] = ['LP', 'EP', 'single', 'compilation'] // i18n-ignore: persisted ReleaseType values
 
 const TYPE_BADGE: Record<string, string> = {
   LP:          '#888888',
@@ -32,8 +36,16 @@ const TYPE_BADGE: Record<string, string> = {
   compilation: '#b45309',
 }
 
+/** CSS for the type badge — a colour, not copy. */
+const typeBadgeStyle = (type: string) => ({
+  background: `${TYPE_BADGE[type]}22`,
+  color: TYPE_BADGE[type],
+  borderColor: `${TYPE_BADGE[type]}44`,
+})
+
 const { query, create, update, remove } = useReleases()
 const { token } = useAuth()
+const { t } = useI18n()
 const queryClient = useQueryClient()
 
 const filterType = ref('')
@@ -45,7 +57,13 @@ const filteredData = computed(() => {
 
 const tc = useTableControls<ReleaseSummary>({
   data: filteredData,
-  searchFn: (r, q) => r.title.toLowerCase().includes(q) || r.type.toLowerCase().includes(q),
+  // Match the label the reader can see as well as the stored value. With
+  // only the latter, a Polish admin typing "singiel" got "no matches" while
+  // Singiel rows sat visibly in the table.
+  searchFn: (r, q) =>
+    r.title.toLowerCase().includes(q) ||
+    r.type.toLowerCase().includes(q) ||
+    t(`media.releases.types.${r.type}`).toLowerCase().includes(q),
   defaultSort: 'release_date',
   defaultDir: 'desc',
 })
@@ -59,7 +77,7 @@ const confirmId    = ref<number | null>(null)
 
 const fullRecord   = useRelease(editingId)
 const modalTitle   = computed(() =>
-  isCreating.value ? 'New release' : (fullRecord.data.value?.title ?? 'Edit release'),
+  isCreating.value ? t('media.releases.modalNew') : (fullRecord.data.value?.title ?? t('media.releases.modalEdit')),
 )
 
 function openCreate() {
@@ -108,10 +126,10 @@ async function handleSubmit(payload: ReleasePayload, coverFile: File | null, del
       await queryClient.invalidateQueries({ queryKey: ['releases'] })
     }
 
-    toast.success(isCreating.value ? 'Release created' : 'Release updated')
+    toast.success(isCreating.value ? t('media.releases.created') : t('media.releases.updated'))
     closeModal()
   } catch (e) {
-    reportSaveError(e, 'Something went wrong', fieldErrors)
+    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }
 }
 
@@ -119,10 +137,10 @@ async function confirmDelete() {
   if (confirmId.value == null) return
   try {
     await remove.mutateAsync(confirmId.value)
-    toast.success('Release deleted')
+    toast.success(t('media.releases.deleted'))
     confirmId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to delete')
+    reportSaveError(e, t('media.releases.deleteFailed'))
   }
 }
 
@@ -167,9 +185,9 @@ async function savePhotoOrder() {
   try {
     await reorderReleasePhotos(token.value!, editingId.value, localPhotos.value.map((p) => p.id))
     originalOrder.value = localPhotos.value.map((p) => p.id)
-    toast.success('Order saved')
+    toast.success(t('media.releases.orderSaved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save order')
+    reportSaveError(e, t('media.releases.orderFailed'))
   }
 }
 
@@ -181,7 +199,7 @@ async function deletePhoto(photoId: number) {
     originalOrder.value = localPhotos.value.map((p) => p.id)
     await queryClient.invalidateQueries({ queryKey: ['releases'] })
   } catch (e) {
-    reportSaveError(e, 'Failed to delete photo')
+    reportSaveError(e, t('media.releases.photoDeleteFailed'))
   }
 }
 
@@ -199,9 +217,10 @@ async function uploadPhotos() {
     pendingPhotos.value = []
     dropZoneRef.value?.clear()
     await queryClient.invalidateQueries({ queryKey: ['releases'] })
-    toast.success(`${updated.photos?.length ?? 0} photos added`)
+    const added = updated.photos?.length ?? 0
+    toast.success(t('media.releases.photosAdded', added, { named: { n: added } }))
   } catch (e) {
-    reportSaveError(e, 'Upload failed')
+    reportSaveError(e, t('media.releases.uploadFailed'))
   } finally {
     photoUploading.value = false
     photoProgress.value  = null
@@ -213,38 +232,35 @@ async function uploadPhotos() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">Releases</h1>
-        <button @click="openCreate" class="btn-add-primary">+ Add release</button>
+        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.releases.title') }}</h1>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('media.releases.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">Loading…</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">Failed to load releases.</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('media.releases.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
               <select v-model="filterType" class="filter-select">
-                <option value="">All types</option>
-                <option value="LP">LP</option>
-                <option value="EP">EP</option>
-                <option value="single">Single</option>
-                <option value="compilation">Compilation</option>
+                <option value="">{{ $t('media.releases.allTypes') }}</option>
+                <option v-for="rt in RELEASE_TYPES" :key="rt" :value="rt">{{ $t(`media.releases.types.${rt}`) }}</option>
               </select>
             </template>
           </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
-            <span v-if="!(query.data.value?.length)">No releases yet. Add the first one above.</span>
-            <span v-else>No releases match your search.</span>
+            <span v-if="!(query.data.value?.length)">{{ $t('media.releases.empty') }}</span>
+            <span v-else>{{ $t('media.releases.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid #222222;">
-                <th class="th" style="width:3.5rem;">Cover</th>
-                <SortHeader label="Title" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader label="Type" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
-                <SortHeader label="Released" sort-key="release_date" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="8rem" @sort="tc.toggleSort" />
-                <th class="th text-right">Actions</th>
+                <th class="th" style="width:3.5rem;">{{ $t('media.releases.columns.cover') }}</th>
+                <SortHeader :label="$t('media.releases.columns.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('media.releases.columns.type')" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('media.releases.columns.released')" sort-key="release_date" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="8rem" @sort="tc.toggleSort" />
+                <th class="th text-right">{{ $t('media.releases.columns.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -255,12 +271,12 @@ async function uploadPhotos() {
                 </td>
                 <td class="td font-medium" style="color:#e2e8f0;">{{ r.title }}</td>
                 <td class="td">
-                  <span class="type-badge" :style="`background:${TYPE_BADGE[r.type]}22; color:${TYPE_BADGE[r.type]}; border-color:${TYPE_BADGE[r.type]}44;`">{{ r.type }}</span>
+                  <span class="type-badge" :style="typeBadgeStyle(r.type)">{{ $t(`media.releases.types.${r.type}`) }}</span>
                 </td>
                 <td class="td" style="color:#64748b;">{{ r.release_date ?? '—' }}</td>
                 <td class="td text-right">
-                  <button @click="openEdit(r)" class="btn-edit">Edit</button>
-                  <button @click="confirmId = r.id" class="btn-delete">Delete</button>
+                  <button @click="openEdit(r)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
+                  <button @click="confirmId = r.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -282,7 +298,7 @@ async function uploadPhotos() {
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="56rem" @close="closeModal">
       <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
-        Loading release…
+        {{ $t('media.releases.loadingOne') }}
       </div>
       <template v-else>
         <ReleaseForm
@@ -295,7 +311,7 @@ async function uploadPhotos() {
 
         <!-- Photos section — edit only -->
         <template v-if="!isCreating && fullRecord.data.value">
-          <div class="photos-divider">Release Photos</div>
+          <div class="photos-divider">{{ $t('media.releases.photos') }}</div>
 
           <div v-if="localPhotos.length" class="rp-grid">
             <div
@@ -315,19 +331,19 @@ async function uploadPhotos() {
                 class="rp-thumb"
               />
               <div v-else class="rp-thumb-placeholder">♪</div>
-              <button type="button" class="rp-del" @click.stop="deletePhoto(photo.id)" title="Delete">✕</button>
+              <button type="button" class="rp-del" @click.stop="deletePhoto(photo.id)" :title="$t('common.actions.delete')">✕</button>
               <div v-if="photo.caption" class="rp-caption">{{ photo.caption }}</div>
             </div>
           </div>
-          <p v-else class="rp-empty">No additional photos yet.</p>
+          <p v-else class="rp-empty">{{ $t('media.releases.photosEmpty') }}</p>
 
           <div v-if="orderDirty" class="rp-order-row">
-            <button type="button" class="rp-btn-save" @click="savePhotoOrder">Save order</button>
+            <button type="button" class="rp-btn-save" @click="savePhotoOrder">{{ $t('media.releases.saveOrder') }}</button>
           </div>
 
           <!-- Add photos -->
           <div class="rp-add">
-            <div class="rp-add-title">Add photos</div>
+            <div class="rp-add-title">{{ $t('media.releases.addPhotos') }}</div>
             <ImageDropZone
               ref="dropZoneRef"
               :uploading="photoUploading"
@@ -337,7 +353,7 @@ async function uploadPhotos() {
               <div class="rp-progress-bar">
                 <div class="rp-progress-fill" :style="`width:${photoProgress?.percent ?? 0}%`" />
               </div>
-              <span class="rp-progress-label">Uploading… {{ photoProgress?.percent ?? 0 }}%</span>
+              <span class="rp-progress-label">{{ $t('media.releases.uploadingPct', { pct: photoProgress?.percent ?? 0 }) }}</span>
             </div>
             <div class="flex justify-end pt-2">
               <button
@@ -347,8 +363,8 @@ async function uploadPhotos() {
                 @click="uploadPhotos"
               >
                 {{ photoUploading
-                  ? 'Uploading…'
-                  : `Upload ${pendingPhotos.length} photo${pendingPhotos.length !== 1 ? 's' : ''}` }}
+                  ? $t('media.releases.uploading')
+                  : $t('media.releases.uploadPhotos', pendingPhotos.length, { named: { n: pendingPhotos.length } }) }}
               </button>
             </div>
           </div>
@@ -358,7 +374,7 @@ async function uploadPhotos() {
 
     <ConfirmDialog
       :open="confirmId !== null"
-      message="This release and all its tracks will be permanently deleted."
+      :message="$t('media.releases.deleteConfirm')"
       :loading="remove.isPending.value"
       @confirm="confirmDelete"
       @cancel="confirmId = null"

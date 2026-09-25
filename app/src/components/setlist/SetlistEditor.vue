@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
+import { formatShortDate, formatDuration as formatDur } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
+import { useI18n } from 'vue-i18n'
 import { useSetlist } from '@/composables/useSetlists'
 import { useSongs } from '@/composables/useSongs'
 import { useConcerts } from '@/composables/useConcerts'
@@ -9,6 +12,8 @@ import type { Song } from '@/types/song'
 import { reportSaveError } from '@/utils/formErrors'
 
 const props = defineProps<{ setlistId: number }>()
+
+const { t, locale } = useI18n()
 
 const openId = computed(() => props.setlistId)
 const { query, update, addItem, updateItem, removeItem, reorder } = useSetlist(openId)
@@ -45,9 +50,9 @@ async function saveMeta() {
     })
     savedMeta.value = true
     setTimeout(() => { savedMeta.value = false }, 2000)
-    toast.success('Setlist saved')
+    toast.success(t('setlists.setlistEditor.saved'))
   } catch (e) {
-    reportSaveError(e, 'Failed to save')
+    reportSaveError(e, t('setlists.setlistEditor.saveFailed'))
   } finally {
     savingMeta.value = false
   }
@@ -60,16 +65,10 @@ const selectedConcert = computed(() => {
 })
 
 function concertLabel(c: { id: number; date: string; venue?: { name: string } | null }): string {
-  const venue = c.venue?.name ?? 'Unknown venue'
-  return `${formatDate(c.date)} — ${venue}`
+  return `${formatDate(c.date)} — ${c.venue?.name ?? t('setlists.setlistEditor.unknownVenue')}`
 }
 
-function formatDate(d: string | null): string {
-  if (!d) return '—'
-  const [y, m, day] = d.split('-')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${day} ${months[parseInt(m, 10) - 1]} ${y}`
-}
+const formatDate = (d: string | null) => formatShortDate(d, dateLocale(locale.value)) || '—'
 
 // ── Song list ─────────────────────────────────────────────────────────────────
 
@@ -83,17 +82,12 @@ function effectiveDuration(item: SetlistItem): number | null {
   return item.override_duration_sec ?? item.song?.duration_sec ?? null
 }
 
-function formatDuration(sec: number | null): string {
-  if (!sec) return '—'
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
+const formatDuration = (sec: number | null) => formatDur(sec) || '—'
 
 function totalDurationLabel(items: SetlistItem[]): string | null {
   const total = items.reduce((acc, it) => acc + (effectiveDuration(it) ?? 0), 0)
   if (!total) return null
-  return `${Math.floor(total / 60)} min`
+  return t('setlists.setlists.minutes', { n: Math.floor(total / 60) })
 }
 
 // Reorder
@@ -105,7 +99,7 @@ async function moveItem(items: SetlistItem[], fromIdx: number, dir: -1 | 1) {
   try {
     await reorder.mutateAsync(newOrder)
   } catch (e) {
-    reportSaveError(e, 'Reorder failed')
+    reportSaveError(e, t('setlists.setlistEditor.reorderFailed'))
   }
 }
 
@@ -120,7 +114,7 @@ async function patchItem(itemId: number, patch: Partial<{
   try {
     await updateItem.mutateAsync({ itemId, payload: patch })
   } catch (e) {
-    reportSaveError(e, 'Failed to update')
+    reportSaveError(e, t('setlists.setlistEditor.updateFailed'))
   }
 }
 
@@ -134,7 +128,7 @@ async function doRemoveItem() {
     if (expandedItemId.value === confirmRemoveId.value) expandedItemId.value = null
     confirmRemoveId.value = null
   } catch (e) {
-    reportSaveError(e, 'Failed to remove')
+    reportSaveError(e, t('setlists.setlistEditor.removeFailed'))
   }
 }
 
@@ -157,9 +151,9 @@ async function addExistingSong(song: Song) {
     await addItem.mutateAsync({ song_id: song.id, is_encore: false })
     showAddSong.value = false
     addSongFilter.value = ''
-    toast.success(`Added "${song.title}"`)
+    toast.success(t('setlists.setlistEditor.songAdded', { title: song.title }))
   } catch (e) {
-    reportSaveError(e, 'Failed to add song')
+    reportSaveError(e, t('setlists.setlistEditor.addFailed'))
   }
 }
 
@@ -172,28 +166,29 @@ async function addNewSong() {
     await addItem.mutateAsync({ song_id: song.id, is_encore: false })
     addSongNewTitle.value = ''
     showAddSong.value = false
-    toast.success(`Created & added "${song.title}"`)
+    toast.success(t('setlists.setlistEditor.songCreated', { title: song.title }))
   } catch (e) {
-    reportSaveError(e, 'Failed to create song')
+    reportSaveError(e, t('setlists.setlistEditor.createFailed'))
   } finally {
     addingNew.value = false
   }
 }
 
-const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
-  { value: '',       label: '— none —' },
-  { value: 'pause',  label: 'Pause' },
-  { value: 'segue',  label: 'Segue (no gap)' },
-  { value: 'talk',   label: 'Talk to audience' },
-  { value: 'end',    label: 'End of set' },
+/** Persisted values; '' is "no transition" and has the key `none`. */
+const TRANSITIONS: { value: SetlistTransition | ''; key: string }[] = [
+  { value: '',       key: 'none' },
+  { value: 'pause',  key: 'pause' },
+  { value: 'segue',  key: 'segue' },
+  { value: 'talk',   key: 'talk' },
+  { value: 'end',    key: 'end' },
 ]
 </script>
 
 <template>
   <div class="editor-root">
 
-    <div v-if="query.isPending.value" class="state-msg">Loading…</div>
-    <div v-else-if="query.isError.value" class="state-msg state-err">Failed to load setlist.</div>
+    <div v-if="query.isPending.value" class="state-msg">{{ $t('common.state.loading') }}</div>
+    <div v-else-if="query.isError.value" class="state-msg state-err">{{ $t('setlists.setlistEditor.loadFailed') }}</div>
 
     <template v-else-if="query.data.value">
 
@@ -210,26 +205,26 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
             :class="{ 'btn-save--ok': savedMeta }"
             :disabled="savingMeta"
             @click="saveMeta"
-          >{{ savedMeta ? 'Saved ✓' : savingMeta ? 'Saving…' : 'Save' }}</button>
+          >{{ savedMeta ? $t('setlists.setlistEditor.savedBadge') : savingMeta ? $t('common.actions.saving') : $t('setlists.setlistEditor.save') }}</button>
         </div>
       </div>
 
       <!-- Meta fields -->
       <div class="meta-grid">
         <div class="field-group col-span-2">
-          <label class="field-label">Setlist name</label>
-          <input v-model="metaForm.name" class="field-input" placeholder="e.g. Summer festival 2026" />
+          <label class="field-label">{{ $t('setlists.setlistEditor.name') }}</label>
+          <input v-model="metaForm.name" class="field-input" :placeholder="$t('setlists.setlistEditor.namePlaceholder')" />
         </div>
 
         <!-- Concert picker -->
         <div class="field-group col-span-2">
-          <label class="field-label">Assign to gig <span class="opt">(optional — assigns date & venue)</span></label>
+          <label class="field-label">{{ $t('setlists.setlistEditor.assign') }} <span class="opt">{{ $t('setlists.setlistEditor.assignHint') }}</span></label>
           <select
             :value="metaForm.concert_id ?? ''"
             class="field-input"
             @change="metaForm.concert_id = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null"
           >
-            <option value="">— Preset (no gig assigned) —</option>
+            <option value="">{{ $t('setlists.setlistEditor.noGig') }}</option>
             <option
               v-for="c in concertsQuery.data.value ?? []"
               :key="c.id"
@@ -240,25 +235,25 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
           <!-- Resolved info when concert selected -->
           <div v-if="selectedConcert" class="concert-info">
             <span class="concert-info-chip">📅 {{ formatDate(selectedConcert.date) }}</span>
-            <span class="concert-info-chip">📍 {{ selectedConcert.venue?.name ?? 'Unknown venue' }}</span>
+            <span class="concert-info-chip">📍 {{ selectedConcert.venue?.name ?? $t('setlists.setlistEditor.unknownVenue') }}</span>
           </div>
           <div v-else class="preset-note">
-            This setlist is saved as a preset — assign it to a gig to set date &amp; venue.
+            {{ $t('setlists.setlistEditor.presetHint') }}
           </div>
         </div>
       </div>
 
       <!-- Song list -->
       <div class="song-list-header">
-        <span class="section-title">Running order</span>
+        <span class="section-title">{{ $t('setlists.setlistEditor.runningOrder') }}</span>
         <span v-if="query.data.value.items.length" class="song-count">
-          {{ query.data.value.items.length }} songs
+          {{ $t('setlists.setlistEditor.songCount', query.data.value.items.length, { named: { n: query.data.value.items.length } }) }}
         </span>
       </div>
 
       <div class="song-list">
         <div v-if="!query.data.value.items.length" class="empty-songs">
-          No songs yet — add one below.
+          {{ $t('setlists.setlistEditor.noSongs') }}
         </div>
 
         <div
@@ -273,10 +268,10 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
             <div class="song-info" @click="toggleExpand(item.id)">
               <span class="song-title">{{ item.song?.title ?? '…' }}</span>
               <div class="song-badges">
-                <span v-if="item.is_encore" class="badge-encore">ENCORE</span>
-                <span v-if="item.transition" class="badge-transition">{{ item.transition }}</span>
-                <span v-if="item.lighting_cue" class="badge-cue" title="Has lighting cue">💡</span>
-                <span v-if="item.sound_note" class="badge-cue" title="Has sound note">🎛️</span>
+                <span v-if="item.is_encore" class="badge-encore">{{ $t('setlists.setlistEditor.encoreBadge') }}</span>
+                <span v-if="item.transition" class="badge-transition">{{ $t(`setlists.setlistEditor.transitions.${item.transition}`) }}</span>
+                <span v-if="item.lighting_cue" class="badge-cue" :title="$t('setlists.setlistEditor.hasLightingCue')">💡</span>
+                <span v-if="item.sound_note" class="badge-cue" :title="$t('setlists.setlistEditor.hasSoundNote')">🎛️</span>
               </div>
             </div>
 
@@ -286,14 +281,14 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
               <button
                 type="button"
                 class="btn-icon"
-                title="Move up"
+                :title="$t('setlists.setlistEditor.moveUp')"
                 :disabled="idx === 0"
                 @click="moveItem(query.data.value!.items, idx, -1)"
               >↑</button>
               <button
                 type="button"
                 class="btn-icon"
-                title="Move down"
+                :title="$t('setlists.setlistEditor.moveDown')"
                 :disabled="idx === query.data.value!.items.length - 1"
                 @click="moveItem(query.data.value!.items, idx, 1)"
               >↓</button>
@@ -301,13 +296,13 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
                 type="button"
                 class="btn-icon btn-expand"
                 :class="{ active: expandedItemId === item.id }"
-                title="Edit details"
+                :title="$t('setlists.setlistEditor.editDetails')"
                 @click="toggleExpand(item.id)"
               >✎</button>
               <button
                 type="button"
                 class="btn-icon btn-remove"
-                title="Remove"
+                :title="$t('setlists.setlistEditor.remove')"
                 @click="confirmRemoveId = item.id"
               >✕</button>
             </div>
@@ -317,7 +312,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
           <div v-if="expandedItemId === item.id" class="song-expanded">
             <div class="exp-grid">
               <div class="field-group">
-                <label class="field-label">Encore</label>
+                <label class="field-label">{{ $t('setlists.setlistEditor.encore') }}</label>
                 <button
                   type="button"
                   class="toggle"
@@ -329,45 +324,45 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
               </div>
 
               <div class="field-group">
-                <label class="field-label">Transition after song</label>
+                <label class="field-label">{{ $t('setlists.setlistEditor.transition') }}</label>
                 <select
                   :value="item.transition ?? ''"
                   class="field-input"
                   @change="patchItem(item.id, { transition: ($event.target as HTMLSelectElement).value as SetlistTransition || null })"
                 >
-                  <option v-for="t in TRANSITIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
+                  <option v-for="tr in TRANSITIONS" :key="tr.value" :value="tr.value">{{ $t(`setlists.setlistEditor.transitions.${tr.key}`) }}</option>
                 </select>
               </div>
 
               <div class="field-group col-span-2">
-                <label class="field-label">Lighting cue <span class="opt">(optional)</span></label>
+                <label class="field-label">{{ $t('setlists.setlistEditor.lightingCue') }} <span class="opt">{{ $t('setlists.setlistEditor.optional') }}</span></label>
                 <input
                   :value="item.lighting_cue"
                   class="field-input"
-                  placeholder="e.g. Red wash, strobe on drop"
+                  :placeholder="$t('setlists.setlistEditor.lightingPlaceholder')"
                   @blur="patchItem(item.id, { lighting_cue: ($event.target as HTMLInputElement).value })"
                 />
               </div>
 
               <div class="field-group col-span-2">
-                <label class="field-label">Sound note <span class="opt">(optional)</span></label>
+                <label class="field-label">{{ $t('setlists.setlistEditor.soundNote') }} <span class="opt">{{ $t('setlists.setlistEditor.optional') }}</span></label>
                 <input
                   :value="item.sound_note"
                   class="field-input"
-                  placeholder="e.g. Add reverb, boost low-mids"
+                  :placeholder="$t('setlists.setlistEditor.soundPlaceholder')"
                   @blur="patchItem(item.id, { sound_note: ($event.target as HTMLInputElement).value })"
                 />
               </div>
 
               <div class="field-group">
-                <label class="field-label">Override duration (sec) <span class="opt">(optional)</span></label>
+                <label class="field-label">{{ $t('setlists.setlistEditor.overrideDuration') }} <span class="opt">{{ $t('setlists.setlistEditor.optional') }}</span></label>
                 <input
                   :value="item.override_duration_sec ?? ''"
                   type="number"
                   min="1"
                   max="7200"
                   class="field-input"
-                  placeholder="e.g. 245"
+                  :placeholder="$t('setlists.setlistEditor.overridePlaceholder')"
                   @blur="patchItem(item.id, { override_duration_sec: ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null })"
                 />
               </div>
@@ -379,14 +374,14 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
       <!-- Add song panel -->
       <div class="add-section">
         <button type="button" class="btn-add-song" @click="showAddSong = !showAddSong">
-          + Add song
+          {{ $t('setlists.setlistEditor.addSong') }}
         </button>
 
         <div v-if="showAddSong" class="add-panel">
           <input
             v-model="addSongFilter"
             class="field-input"
-            placeholder="Search song library…"
+            :placeholder="$t('setlists.setlistEditor.searchLibrary')"
             autofocus
           />
           <div class="add-song-list">
@@ -400,13 +395,13 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
               <span>{{ s.title }}</span>
               <span class="add-song-dur">{{ formatDuration(s.duration_sec) }}</span>
             </button>
-            <div v-if="!filteredSongs.length" class="add-song-empty">No matching songs in library.</div>
+            <div v-if="!filteredSongs.length" class="add-song-empty">{{ $t('setlists.setlistEditor.noMatch') }}</div>
           </div>
           <div class="add-new-row">
             <input
               v-model="addSongNewTitle"
               class="field-input"
-              placeholder="Or type new song title to create…"
+              :placeholder="$t('setlists.setlistEditor.createNew')"
               @keydown.enter="addNewSong"
             />
             <button
@@ -414,7 +409,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
               class="btn-create-song"
               :disabled="!addSongNewTitle.trim() || addingNew"
               @click="addNewSong"
-            >{{ addingNew ? '…' : 'Create & add' }}</button>
+            >{{ addingNew ? '…' : $t('setlists.setlistEditor.createAdd') }}</button>
           </div>
         </div>
       </div>
@@ -422,22 +417,22 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
       <!-- Notes tabs -->
       <div class="notes-section">
         <div class="notes-tabs">
-          <button type="button" class="notes-tab" :class="{ active: noteTab === 'foh' }" @click="noteTab = 'foh'">🎛️ FOH notes</button>
-          <button type="button" class="notes-tab" :class="{ active: noteTab === 'lighting' }" @click="noteTab = 'lighting'">💡 Lighting notes</button>
+          <button type="button" class="notes-tab" :class="{ active: noteTab === 'foh' }" @click="noteTab = 'foh'">{{ $t('setlists.setlistEditor.tabFoh') }}</button>
+          <button type="button" class="notes-tab" :class="{ active: noteTab === 'lighting' }" @click="noteTab = 'lighting'">{{ $t('setlists.setlistEditor.tabLighting') }}</button>
         </div>
         <textarea
           v-if="noteTab === 'foh'"
           v-model="metaForm.foh_notes"
           class="notes-textarea"
           rows="4"
-          placeholder="Global FOH / PA notes for this show — mix preferences, effects, etc."
+          :placeholder="$t('setlists.setlistEditor.fohHint')"
         />
         <textarea
           v-else
           v-model="metaForm.lighting_notes"
           class="notes-textarea"
           rows="4"
-          placeholder="Global lighting notes — colour palette, effects, general mood, etc."
+          :placeholder="$t('setlists.setlistEditor.lightingHint')"
         />
       </div>
 
@@ -449,7 +444,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
           :class="{ 'btn-save--ok': savedMeta }"
           :disabled="savingMeta"
           @click="saveMeta"
-        >{{ savedMeta ? 'Saved ✓' : savingMeta ? 'Saving…' : 'Save setlist' }}</button>
+        >{{ savedMeta ? $t('setlists.setlistEditor.savedBadge') : savingMeta ? $t('common.actions.saving') : $t('setlists.setlistEditor.saveSetlist') }}</button>
       </div>
 
     </template>
@@ -457,11 +452,11 @@ const TRANSITIONS: { value: SetlistTransition | ''; label: string }[] = [
     <!-- Confirm remove item -->
     <div v-if="confirmRemoveId !== null" class="confirm-overlay" @click.self="confirmRemoveId = null">
       <div class="confirm-card">
-        <div class="confirm-title">Remove song?</div>
-        <p class="confirm-text">This removes the song from this setlist (not from the library).</p>
+        <div class="confirm-title">{{ $t('setlists.setlistEditor.removeTitle') }}</div>
+        <p class="confirm-text">{{ $t('setlists.setlistEditor.removeMessage') }}</p>
         <div class="confirm-actions">
-          <button type="button" class="btn-ghost" @click="confirmRemoveId = null">Cancel</button>
-          <button type="button" class="btn-danger" @click="doRemoveItem">Remove</button>
+          <button type="button" class="btn-ghost" @click="confirmRemoveId = null">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-danger" @click="doRemoveItem">{{ $t('setlists.setlistEditor.remove') }}</button>
         </div>
       </div>
     </div>

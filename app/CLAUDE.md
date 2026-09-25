@@ -161,6 +161,12 @@ A fourth check lives in the test suite rather than the build —
 `src/i18n/catalogue.spec.ts`, which compiles every message and is the only
 thing that catches an unescaped `@` (see above).
 
+**All four stop at `app/`.** The printed rider sheet is a Vue component in
+`@bandms/rider-core` that takes its ~150 strings as a prop, so it satisfies
+every one of them while holding no translations at all. Its own bundles are
+checked by `packages/rider-core/src/labels/labels.spec.ts`; see *The sheet's
+words are a required prop* in the root `CLAUDE.md`.
+
 **The coverage guard asks two different questions**, and the second one exists
 because the first has a blind spot. A component that renders *no* translations
 matches nothing in `RENDERS`, so the "translates but unguarded" check cannot

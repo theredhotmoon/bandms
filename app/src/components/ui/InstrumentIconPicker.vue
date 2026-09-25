@@ -2,7 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import type { StagePlotItemType } from '@bandms/rider-core'
-import { INSTRUMENT_ICON_GROUPS, instrumentIcon, searchInstrumentIcons } from '@bandms/rider-core'
+import { INSTRUMENT_ICON_GROUPS, instrumentGroupLabels, instrumentIcon, instrumentLabels, searchInstrumentIcons } from '@bandms/rider-core'
+import { useUiLang } from '@/composables/useUiLang'
 
 interface Props {
   modelValue: StagePlotItemType | null
@@ -18,10 +19,15 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   clearable:   false,
   iconOnly:    false,
-  placeholder:  'Pick an icon',
+  placeholder:  '',
   disabled:     false,
   excludeTypes: () => [],
 })
+
+/** Layout classes, not copy — extracted so the string lint is not asked to
+ * judge 'w-full justify-between' as a sentence, and because an HTML comment
+ * cannot live inside a tag's attribute list. */
+const triggerClass = computed(() => (props.iconOnly ? 'justify-center' : 'w-full justify-between')) // i18n-ignore: CSS classes
 
 const emit = defineEmits<{
   'update:modelValue': [StagePlotItemType | null]
@@ -39,14 +45,23 @@ const popRef    = ref<HTMLElement | null>(null)
 const searchRef = ref<HTMLInputElement | null>(null)
 const popoverStyle = ref<Record<string, string>>({})
 
+const { uiLang } = useUiLang()
+
+// The picker must show the same words as the row that opens it, which reads
+// instrumentLabels(). Left on the catalogue's English `label` it showed
+// "Lead Vocals" under an English heading next to a Polish "Wokal prowadzacy".
+const instNames  = computed(() => instrumentLabels(uiLang.value))
+const groupNames = computed(() => instrumentGroupLabels(uiLang.value))
+
 const current = computed(() => (props.modelValue ? instrumentIcon(props.modelValue) : null))
+const currentLabel = computed(() => (props.modelValue ? instNames.value[props.modelValue] : null))
 
 // Groups filtered by the search term; empty groups are dropped.
 const groups = computed(() => {
-  const matches = new Set(searchInstrumentIcons(search.value).map(d => d.type))
+  const matches = new Set(searchInstrumentIcons(search.value, instNames.value).map(d => d.type))
   return INSTRUMENT_ICON_GROUPS
     .map(g => ({
-      group: g.group,
+      group: groupNames.value[g.group] ?? g.group,
       icons: g.icons.filter(i => matches.has(i.type) && !props.excludeTypes.includes(i.type)),
     }))
     .filter(g => g.icons.length > 0)
@@ -103,7 +118,7 @@ function onAncestorScroll(e: Event) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') open.value = false
+  if (e.key === 'Escape') open.value = false // i18n-ignore: KeyboardEvent.key name
 }
 
 watch(open, async (isOpen) => {
@@ -137,7 +152,7 @@ onBeforeUnmount(() => {
     <button
       type="button"
       class="flex items-center gap-2 rounded-md border border-zinc-600 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-      :class="iconOnly ? 'justify-center' : 'w-full justify-between'"
+      :class="triggerClass"
       :disabled="disabled"
       :aria-expanded="open"
       aria-haspopup="listbox"
@@ -148,7 +163,7 @@ onBeforeUnmount(() => {
         <svg v-else class="w-[18px] h-[18px] text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m6-6H6" />
         </svg>
-        <span v-if="!iconOnly" class="truncate">{{ current?.label ?? placeholder }}</span>
+        <span v-if="!iconOnly" class="truncate">{{ currentLabel ?? (placeholder || $t('rider.iconPicker.pick')) }}</span>
       </span>
       <svg v-if="!iconOnly" class="w-3.5 h-3.5 flex-shrink-0 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -168,7 +183,7 @@ onBeforeUnmount(() => {
         ref="searchRef"
         v-model="search"
         type="text"
-        placeholder="Search instruments…"
+        :placeholder="$t('rider.iconPicker.search')"
         class="mb-2 w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
       />
 
@@ -177,7 +192,7 @@ onBeforeUnmount(() => {
         type="button"
         class="mb-2 w-full rounded-md px-2 py-1.5 text-left text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
         @click="select(null)"
-      >— Not mapped —</button>
+      >{{ $t('rider.iconPicker.notMapped') }}</button>
 
       <div v-for="g in groups" :key="g.group" class="mb-2 last:mb-0">
         <p class="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
@@ -188,7 +203,7 @@ onBeforeUnmount(() => {
             type="button"
             role="option"
             :aria-selected="def.type === modelValue"
-            :title="def.label"
+            :title="instNames[def.type]"
             class="flex flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors"
             :class="def.type === modelValue
               ? 'border-zinc-300 bg-zinc-800 text-white'
@@ -196,13 +211,13 @@ onBeforeUnmount(() => {
             @click="select(def.type)"
           >
             <InstrumentIcon :type="def.type" :size="24" />
-            <span class="w-full truncate text-center text-[9px] leading-tight">{{ def.label }}</span>
+            <span class="w-full truncate text-center text-[9px] leading-tight">{{ instNames[def.type] }}</span>
           </button>
         </div>
       </div>
 
       <p v-if="!groups.length" class="px-1 py-3 text-center text-xs text-zinc-500">
-        No instrument matches "{{ search }}".
+        {{ $t('rider.iconPicker.noMatch', { query: search }) }}
       </p>
     </div>
     </Teleport>

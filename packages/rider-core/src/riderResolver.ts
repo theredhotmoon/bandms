@@ -26,6 +26,9 @@ import type {
 import { defaultRigSpec, RIG_FIELDS } from './types/rig'
 import type { GigTempMusician, StagePlacement } from './types/stagePlot'
 import { resolveStageInstruments } from './stageInstruments'
+import type { ResolverLabels, InstrumentLabels } from './labels/types'
+import { EN_RESOLVER_LABELS } from './labels/en'
+import { fillLabel } from './labels/index'
 
 // ── Where a resolved row came from ────────────────────────────────────────────
 
@@ -163,13 +166,14 @@ export function placementName(
   placement: StagePlacement,
   members: RiderMember[],
   temps: GigTempMusician[],
+  labels: ResolverLabels = EN_RESOLVER_LABELS,
 ): string {
   if (placement.temp_id) {
     const temp = temps.find((t) => t.id === placement.temp_id)
-    return temp ? `${temp.name} (guest)` : 'Guest'
+    return temp ? fillLabel(labels.guestNamed, { name: temp.name }) : labels.guest
   }
   const member = members.find((m) => m.id === placement.band_member_id)
-  if (!member) return `Member #${placement.band_member_id ?? '?'}`
+  if (!member) return fillLabel(labels.unknownMember, { id: placement.band_member_id ?? '?' })
   return member.nickname ?? `${member.first_name} ${member.last_name}`
 }
 
@@ -177,14 +181,16 @@ function placementDetail(
   placement: StagePlacement,
   members: RiderMember[],
   setups: SetupLookup,
+  labels: ResolverLabels,
+  instrumentNames?: InstrumentLabels,
 ): string {
   const setup = placement.setup_id != null ? setups[placement.setup_id] : undefined
   if (setup) return setup.name
 
-  const instruments = resolveStageInstruments(placement, members)
+  const instruments = resolveStageInstruments(placement, members, instrumentNames)
   if (instruments.length) return instruments.map((i) => i.label).join(' + ')
 
-  return 'No saved rig'
+  return labels.noSavedRig
 }
 
 function sourceFor(
@@ -193,22 +199,26 @@ function sourceFor(
   members: RiderMember[],
   temps: GigTempMusician[],
   setups: SetupLookup,
+  labels: ResolverLabels,
+  instrumentNames?: InstrumentLabels,
 ): RigSource {
   return {
     kind: placement.temp_id ? 'guest' : 'member',
     placementId: placement.id,
-    name: placementName(placement, members, temps),
-    detail: placementDetail(placement, members, setups),
+    name: placementName(placement, members, temps, labels),
+    detail: placementDetail(placement, members, setups, labels, instrumentNames),
     overridden: isOverridden(placement, field),
   }
 }
 
-const EXTRA_SOURCE: RigSource = {
-  kind: 'extra',
-  placementId: null,
-  name: 'Production',
-  detail: 'Added on the rider',
-  overridden: false,
+function extraSource(labels: ResolverLabels): RigSource {
+  return {
+    kind: 'extra',
+    placementId: null,
+    name: labels.production,
+    detail: labels.addedOnRider,
+    overridden: false,
+  }
 }
 
 /** Stable key for a resolved row — survives reordering and re-resolution. */
@@ -222,7 +232,16 @@ export function resolveRider(
   rider: ResolvableRider,
   setups: SetupLookup,
   members: RiderMember[],
+  /**
+   * Optional and English by default, so a caller with no locale to hand — a
+   * fixture, a spec — still gets a readable result. Every surface that shows
+   * a source to a person passes its own bundle: the sheet, the editor, and
+   * the version diff, whose rows carry `source.name` into the history modal.
+   */
+  labels: ResolverLabels = EN_RESOLVER_LABELS,
+  instrumentNames?: InstrumentLabels,
 ): ResolvedRider {
+  const EXTRA_SOURCE = extraSource(labels)
   const temps = rider.gig_lineup?.temp_musicians ?? []
   const placements = rider.placements ?? []
 
@@ -234,7 +253,7 @@ export function resolveRider(
 
   for (const placement of placements) {
     const rig = resolveRig(placement, setups)
-    const src = (field: RigField) => sourceFor(placement, field, members, temps, setups)
+    const src = (field: RigField) => sourceFor(placement, field, members, temps, setups, labels, instrumentNames)
 
     for (const row of rig.inputs) {
       inputs.push({ ...row, key: rowKey(placement.id, row.id), channel: 0, source: src('inputs') })

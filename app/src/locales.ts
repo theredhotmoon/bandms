@@ -16,11 +16,19 @@ type LocaleMeta = {
   readonly name: string
   readonly nativeName: string
   readonly shortLabel: string
+  /**
+   * BCP-47 tag for `Intl`, which is not the same thing as the locale code.
+   * Bare `'en'` means US conventions — "May 8, 2026" — while this app has
+   * always shown day-first. `web/src/lib/locales.ts` declares the same field
+   * for the same reason; the two must agree, or one rider's version date
+   * renders one way in the band's preview and another in the venue's copy.
+   */
+  readonly dateLocale: string
 }
 
 const REGISTRY = {
-  en: { name: 'English', nativeName: 'English', shortLabel: 'EN' },
-  pl: { name: 'Polish', nativeName: 'Polski', shortLabel: 'PL' },
+  en: { name: 'English', nativeName: 'English', shortLabel: 'EN', dateLocale: 'en-GB' },
+  pl: { name: 'Polish', nativeName: 'Polski', shortLabel: 'PL', dateLocale: 'pl-PL' },
 } as const satisfies Record<string, LocaleMeta>
 
 export type Lang = keyof typeof REGISTRY
@@ -43,6 +51,18 @@ export function nativeName(locale: Lang): string {
 /** Tab-strip label. */
 export function shortLabel(locale: Lang): string {
   return REGISTRY[locale]?.shortLabel ?? locale.toUpperCase()
+}
+
+/**
+ * What `Intl` should be handed — never the bare locale code.
+ *
+ * Takes a plain string and narrows, because the commonest caller is
+ * `useI18n().locale`, which vue-i18n types as `string`. Forcing each call site
+ * to reach for the typed `uiLang` instead would be the kind of friction that
+ * gets solved with a cast.
+ */
+export function dateLocale(locale: string): string {
+  return isLocale(locale) ? REGISTRY[locale].dateLocale : REGISTRY[DEFAULT_LOCALE].dateLocale
 }
 
 /**

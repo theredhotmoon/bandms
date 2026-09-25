@@ -81,8 +81,8 @@ defineExpose({ clear })
       @click="fileInput?.click()"
     >
       <span class="drop-icon">⬆</span>
-      <span class="drop-label">Drop images here or click to browse</span>
-      <span class="drop-hint">Supports JPG, PNG, WebP — max 20 MB each</span>
+      <span class="drop-label">{{ $t('media.dropzone.prompt') }}</span>
+      <span class="drop-hint">{{ $t('media.dropzone.hint') }}</span>
       <input ref="fileInput" type="file" accept="image/*" multiple style="display:none" @change="onFileInput" />
     </div>
 
@@ -94,17 +94,17 @@ defineExpose({ clear })
           <div v-else class="card-thumb-placeholder">…</div>
         </div>
         <div class="card-body">
-          <input v-model="entry.caption" class="card-title-input" placeholder="Caption (optional)" />
+          <input v-model="entry.caption" class="card-title-input" :placeholder="$t('media.dropzone.caption')" />
           <div class="card-filename">{{ entry.file.name }}</div>
         </div>
         <div class="card-actions">
-          <button type="button" class="card-btn" :disabled="i === 0 || uploading" @click="moveUp(i)" title="Move up">↑</button>
-          <button type="button" class="card-btn" :disabled="i === entries.length - 1 || uploading" @click="moveDown(i)" title="Move down">↓</button>
-          <button type="button" class="card-btn remove" :disabled="uploading" @click="removeEntry(entry.id)" title="Remove">✕</button>
+          <button type="button" class="card-btn" :disabled="i === 0 || uploading" @click="moveUp(i)" :title="$t('media.dropzone.moveUp')">↑</button>
+          <button type="button" class="card-btn" :disabled="i === entries.length - 1 || uploading" @click="moveDown(i)" :title="$t('media.dropzone.moveDown')">↓</button>
+          <button type="button" class="card-btn remove" :disabled="uploading" @click="removeEntry(entry.id)" :title="$t('media.dropzone.remove')">✕</button>
         </div>
       </div>
     </div>
-    <p v-else class="no-files">No photos selected yet.</p>
+    <p v-else class="no-files">{{ $t('media.dropzone.empty') }}</p>
   </div>
 </template>
 
