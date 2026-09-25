@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { useUiLang } from '@/composables/useUiLang'
+import { formatShortDate } from '@/utils/formatDate'
+import { dateLocale } from '@/locales'
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useAuth } from '@/composables/useAuth'
 import { fetchFanAccountsAdmin } from '@/api/admin'
 import type { AdminFanAccount } from '@/types/ticket'
+
+const { uiLang } = useUiLang()
 
 const { token } = useAuth()
 
@@ -23,8 +28,13 @@ const rows = computed<AdminFanAccount[]>(() => {
   )
 })
 
+/**
+ * Three bugs in the line this replaces: a hardcoded 'en-GB' (so the column
+ * stayed English in a Polish panel), month:'short' (the Polish genitive trap
+ * — "8 maj" for May), and no timezone rule for what is a timestamp.
+ */
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return formatShortDate(iso, dateLocale(uiLang.value), 'instant')
 }
 </script>
 

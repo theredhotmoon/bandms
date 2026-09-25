@@ -99,7 +99,7 @@ export default {
       description: 'Description',
       descriptionPlaceholder: 'Describe the item…',
       pricing: 'Pricing',
-      noCurrencies: 'No currencies configured. Set up currencies in Band Profile → Shop Settings first.',
+      noCurrencies: 'No currencies configured. Add them with the Currencies button above the shop list.',
       /** Carries `{currency}` — the ISO code of the price field beside it. */
       amountIn: 'Amount in {currency}',
       priceRequired: 'At least one price is required.',
@@ -266,9 +266,11 @@ export default {
       namePlaceholder: 'Band name',
       website: 'Website',
       contacts: 'Contact people',
-      noAuthors: 'No authors or contacts on file yet.',
+      // {link} is a RouterLink, so this is an <i18n-t> keypath. It was three
+      // separate keys around the link; a translator could not then reorder the
+      // clause or inflect the link text, which Polish needs.
+      noAuthors: 'No authors or contacts on file yet. {link} and it will show up here.',
       addOneFirst: 'Add one first',
-      andItShows: 'and it will show up here.',
       /** Carries `{query}` — what was typed in the contact search. */
       noContactMatch: 'No contacts match “{query}”.',
       searchContacts: 'Search contacts…',

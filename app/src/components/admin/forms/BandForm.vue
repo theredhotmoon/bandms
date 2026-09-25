@@ -105,11 +105,11 @@ function submit() {
         <span v-if="authorIds.length" class="contact-count">{{ authorIds.length }}</span>
       </label>
 
-      <p v-if="!authors.length" class="contact-empty">
-        {{ $t('more.bands.form.noAuthors') }}
-        <RouterLink :to="{ name: 'admin-authors' }" class="contact-link">{{ $t('more.bands.form.addOneFirst') }}</RouterLink>
-        {{ $t('more.bands.form.andItShows') }}
-      </p>
+      <i18n-t v-if="!authors.length" keypath="more.bands.form.noAuthors" tag="p" class="contact-empty" scope="global">
+        <template #link>
+          <RouterLink :to="{ name: 'admin-authors' }" class="contact-link">{{ $t('more.bands.form.addOneFirst') }}</RouterLink>
+        </template>
+      </i18n-t>
 
       <template v-else>
         <p v-if="selectedAuthors.length" class="contact-chips">
