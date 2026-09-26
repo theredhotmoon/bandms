@@ -28,7 +28,8 @@ const STATUS_COLOR: Record<string, string> = {
 const transferOpen = ref<Record<string, boolean>>({})
 const transferEmail = ref<Record<string, string>>({})
 const transferLoading = ref<Record<string, boolean>>({})
-const transferResult = ref<Record<string, { link: string } | null>>({})
+// `link` is the debug-only dev_link; null in any build with APP_DEBUG off.
+const transferResult = ref<Record<string, { link: string | null } | null>>({})
 const transferError = ref<Record<string, string | null>>({})
 
 function openTransfer(ticket: FanTicket): void {
@@ -53,12 +54,12 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
 
   try {
     const res = await initiateTransfer(token.value!, uuid, email)
-    transferResult.value[uuid] = { link: res.dev_link }
+    transferResult.value[uuid] = { link: res.dev_link ?? null }
   } catch (err) {
     if (err instanceof ApiValidationError) {
       const msgs = Object.values(err.errors).flat()
       transferError.value[uuid] = msgs.join(' ')
-    } else if (err instanceof Error) {
+    } else if (err instanceof Error && err.message) {
       transferError.value[uuid] = err.message
     } else {
       transferError.value[uuid] = t('fan.tickets.transferFailed')
@@ -96,14 +97,19 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
           <template v-else>
             <div v-if="transferResult[ticket.uuid]" class="ftl-transfer-success" role="status">
               {{ $t('fan.tickets.transferStarted') }}
-              <br />
-              {{ $t('fan.tickets.devLink') }}
-              <a
-                :href="transferResult[ticket.uuid]!.link"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="ftl-transfer-link"
-              >{{ transferResult[ticket.uuid]!.link }}</a>
+              <!-- Without this guard, a production transfer printed "Dev link:"
+                   followed by an empty anchor — the API only sends dev_link
+                   under APP_DEBUG. -->
+              <template v-if="transferResult[ticket.uuid]!.link">
+                <br />
+                {{ $t('fan.tickets.devLink') }}
+                <a
+                  :href="transferResult[ticket.uuid]!.link!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="ftl-transfer-link"
+                >{{ transferResult[ticket.uuid]!.link }}</a>
+              </template>
             </div>
             <form v-else class="ftl-transfer-form" @submit.prevent="sendTransfer(ticket)">
               <label :for="`transfer-email-${ticket.uuid}`" class="ftl-transfer-label">

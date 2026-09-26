@@ -7,7 +7,7 @@ import { ApiValidationError } from '@/api/client'
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  'magic-link-sent': [devLink: string]
+  'magic-link-sent': [devLink: string | null]
 }>()
 
 const email = ref('')
@@ -19,12 +19,14 @@ async function handleSubmit() {
   errorMessage.value = null
   try {
     const result = await requestMagicLink(email.value)
-    emit('magic-link-sent', result.dev_link)
+    emit('magic-link-sent', result.dev_link ?? null)
   } catch (err) {
     if (err instanceof ApiValidationError) {
       errorMessage.value = Object.values(err.errors).flat().join(' ')
     } else {
-      errorMessage.value = err instanceof Error ? err.message : t('fan.login.failed')
+      // An empty message means the server sent no body; the translated
+      // fallback is then the only thing that reads as a sentence.
+      errorMessage.value = err instanceof Error && err.message ? err.message : t('fan.login.failed')
     }
   } finally {
     isLoading.value = false

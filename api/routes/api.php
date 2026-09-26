@@ -170,13 +170,28 @@ Route::get('/newsletter/unsubscribe/{token}', [NewsletterSubscriberController::c
 |--------------------------------------------------------------------------
 | Fan auth (public)
 |--------------------------------------------------------------------------
+|
+| These carry an explicit throttle *prefix*, and it is load-bearing.
+| An inline `throttle:5,1` keys its counter on sha1(domain|ip) alone — not on
+| the route — so every inline-throttled endpoint in this file shares one
+| bucket per visitor and only the ceiling differs. A fan who had loaded a few
+| availability months, looked up an order or subscribed to the newsletter had
+| already spent the five attempts sign-in is allowed, and got a 429 before
+| typing anything. Verified against the running stack: three POSTs to
+| /api/presale-codes/validate (limit 30) took magic-link's remaining from 4
+| to 0.
+|
+| The prefix gives each of these its own counter, which is what the declared
+| limits were always meant to mean. The rest of the file still shares one —
+| see the note in TODO.md. FanAuthThrottleTest pins this.
+|
 */
 
 Route::prefix('fan/auth')->group(function () {
     Route::post('magic-link', [FanAccountController::class, 'requestMagicLink'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:5,1,fan-magic-link');
     Route::get('verify', [FanAccountController::class, 'verifyMagicLink'])
-        ->middleware('throttle:20,1');
+        ->middleware('throttle:20,1,fan-verify');
 });
 
 // Fan portal (fan-auth protected)
@@ -189,7 +204,8 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
 });
 
 // Ticket claim — public (recipient may not have an account)
-Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim'])->middleware('throttle:20,1');
+Route::post('/tickets/claim/{token}', [TicketTransferController::class, 'claim'])
+    ->middleware('throttle:20,1,ticket-claim');
 
 // Public presale code validation (BEFORE auth:api group — no auth required)
 Route::post('/presale-codes/validate', [PresaleCodeController::class, 'validate'])->middleware('throttle:30,1');

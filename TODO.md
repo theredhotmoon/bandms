@@ -397,3 +397,26 @@ Eight specs now cover the public Astro site on `:4322` (contact, availability,
 music, gallery, about, release detail, footer, the restyled pages). The **public
 ticket purchase flow still has none** — the one path on that site that takes
 money. Everything else on `:5173` targets the admin SPA.
+
+### Every inline `throttle:` in `routes/api.php` shares one bucket per visitor
+Found 2026-09-25 while adding the first E2E coverage of the fan portal, and
+verified against the running stack: three POSTs to `/api/presale-codes/validate`
+(limit 30) took `/api/fan/auth/magic-link`'s `X-RateLimit-Remaining` from 4 to 0.
+
+Laravel's `ThrottleRequests` keys an inline limit on `sha1(domain|ip)` alone —
+the route is not part of it — so contact, newsletter subscribe/confirm/
+unsubscribe, checkout, order lookup, ticket QR/PDF/wallet, availability and
+presale validation all increment **one** counter per IP, and only the ceiling
+differs per route. The endpoint with the smallest ceiling therefore fails first
+and for reasons that have nothing to do with it: a visitor who browsed a few
+pages could not submit the contact form.
+
+The three fan routes were given an explicit prefix (`throttle:5,1,fan-magic-link`
+and friends) because the fan portal was unusable without it; `FanAuthThrottleTest`
+pins that. **The rest of the file was deliberately left alone** — isolating each
+route makes the aggregate limit per visitor looser, which is a decision about how
+much traffic one IP should get, not a mechanical fix. Worth doing deliberately,
+route by route, with the numbers reconsidered.
+
+Note `TrustProxies` matters here too: behind a proxy that does not set the real
+client IP, every visitor shares one counter.

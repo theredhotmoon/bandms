@@ -6,7 +6,7 @@ import { useFanAccount } from '@/composables/useFanAccount'
 
 const { t } = useI18n()
 
-const props = defineProps<{ devLink: string }>()
+const props = defineProps<{ devLink: string | null }>()
 const { setSession } = useFanAccount()
 
 const errorMessage = ref<string | null>(null)
@@ -15,7 +15,7 @@ const errorMessage = ref<string | null>(null)
 async function handleVerify() {
   errorMessage.value = null
   try {
-    const url = new URL(props.devLink)
+    const url = new URL(props.devLink ?? '')
     const token = url.searchParams.get('token') ?? ''
     const result = await verifyMagicLink(token)
     setSession(result.token, result.fan)
@@ -29,7 +29,11 @@ async function handleVerify() {
   <div class="fmls-card">
     <h2>{{ $t('fan.login.sentTitle') }}</h2>
     <p>{{ $t('fan.login.sentBody') }}</p>
-    <p class="fmls-dev">
+    <!-- The API only returns dev_link under APP_DEBUG. Without this guard the
+         production build printed "Dev mode: Click here to sign in" as an <a>
+         with no href — visible, unclickable, and addressed to the wrong
+         audience. -->
+    <p v-if="devLink" class="fmls-dev">
       <strong>{{ $t('fan.login.devMode') }}</strong>
       <a :href="devLink" @click.prevent="handleVerify" class="fmls-link">{{ $t('fan.login.devSignIn') }}</a>
     </p>
