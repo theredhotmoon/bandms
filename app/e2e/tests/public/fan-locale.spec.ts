@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
-import { seedTicket, type SeededTicket } from '../../fixtures/seed'
 
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
@@ -22,18 +21,20 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
  * Both halves are pinned below: the chrome, and the header the fan API now
  * sends so the server resolves to the same language the page is showing.
  */
+/**
+ * A throwaway address for the sign-in test.
+ *
+ * `requestMagicLink` creates the account when the email is unknown, so there is
+ * nothing to seed — which matters because `seedTicket` shells into the backend
+ * container, and one `docker exec` that times out under load fails every test
+ * in whatever block it runs in. The `e2e-` prefix is what
+ * `PurgeE2eFixtures` matches, so the row it creates is reaped by the teardown
+ * that already runs; the suffix keeps parallel workers from colliding.
+ */
+const fanEmail = () => `e2e-fan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@bandms.test`
+
 test.describe('fan-facing locale', () => {
   failOnPageError()
-
-  // Seeded once, outside any test's own budget. `seedTicket` shells into the
-  // backend container, and under a loaded machine that alone ate most of the
-  // 30s test timeout — the navigation after it then timed out and reported as
-  // a page failure. Every other spec that seeds does it in beforeAll too.
-  let seeded: SeededTicket
-
-  test.beforeAll(() => {
-    seeded = seedTicket()
-  })
 
   // Set the admin's chrome language to English on every navigation. Every
   // assertion that follows is Polish, so a fan page reading this key instead
@@ -119,7 +120,7 @@ test.describe('fan-facing locale', () => {
     )
 
     await page.goto('/account?lang=pl')
-    await page.getByLabel('Adres e-mail').fill(seeded.fan_email)
+    await page.getByLabel('Adres e-mail').fill(fanEmail())
     await page.getByRole('button', { name: 'Wyślij link do logowania' }).click()
 
     expect((await sent).status()).toBe(200)
