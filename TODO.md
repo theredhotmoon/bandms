@@ -397,3 +397,60 @@ Eight specs now cover the public Astro site on `:4322` (contact, availability,
 music, gallery, about, release detail, footer, the restyled pages). The **public
 ticket purchase flow still has none** — the one path on that site that takes
 money. Everything else on `:5173` targets the admin SPA.
+
+### Every inline `throttle:` in `routes/api.php` shares one bucket per visitor
+Found 2026-09-25 while adding the first E2E coverage of the fan portal, and
+verified against the running stack: three POSTs to `/api/presale-codes/validate`
+(limit 30) took `/api/fan/auth/magic-link`'s `X-RateLimit-Remaining` from 4 to 0.
+
+Laravel's `ThrottleRequests` keys an inline limit on `sha1(domain|ip)` alone —
+the route is not part of it — so contact, newsletter subscribe/confirm/
+unsubscribe, checkout, order lookup, ticket QR/PDF/wallet, availability and
+presale validation all increment **one** counter per IP, and only the ceiling
+differs per route. The endpoint with the smallest ceiling therefore fails first
+and for reasons that have nothing to do with it: a visitor who browsed a few
+pages could not submit the contact form.
+
+The three fan routes were given an explicit prefix (`throttle:5,1,fan-magic-link`
+and friends) because the fan portal was unusable without it; `FanAuthThrottleTest`
+pins that. **The rest of the file was deliberately left alone** — isolating each
+route makes the aggregate limit per visitor looser, which is a decision about how
+much traffic one IP should get, not a mechanical fix. Worth doing deliberately,
+route by route, with the numbers reconsidered.
+
+Note `TrustProxies` matters here too: behind a proxy that does not set the real
+client IP, every visitor shares one counter.
+
+### Fan sign-in cannot complete in production — no email is ever sent
+Found 2026-09-26 while adding the first E2E coverage of the fan portal.
+`FanAccountController::requestMagicLink` mints a token, caches it under
+`fan_magic:{token}`, and attaches `dev_link` to the response **only** when
+`config('app.debug')`. It never sends mail. With `APP_DEBUG` off — which is how
+the backend image is built — `/account` renders "Check your email" and no email
+arrives, so a fan can never obtain a session.
+
+Before PR #144 this was *visibly* broken: the page printed "Dev mode: Click here
+to sign in" as an `<a>` with no href. #144 guarded that on `v-if="devLink"`,
+which is the right UI for a real fan and makes the failure silent. **That is the
+trade recorded here, not an accident** — the dead anchor was not a feature.
+
+Consequences to keep in mind until this is built: every authenticated fan
+endpoint (`/fan/me`, tickets, orders, transfer, logout) is unreachable in
+production, which is also what currently hides the mail-amplification shape the
+`fan-transfer` throttle was added for. `e2e/tests/public/fan-locale.spec.ts`
+asserts those routes by shape (401 vs 404) for exactly this reason — it cannot
+sign in.
+
+Needs a Mailable plus the `FRONTEND_URL`-based link (the same shape the
+newsletter confirmation already uses), and then the E2E spec can finish the
+sign-in it currently stops short of.
+
+### A downloaded ticket ignores the locale the page settled on
+Found 2026-09-26, reviewing PR #144. `TicketDownloadCard.vue` builds the QR
+`<img src>` and the PDF / Apple / Google `<a href>` as plain links with no
+`?lang=`, so they carry the *browser's* `Accept-Language` rather than the locale
+the fan page resolved — the page/request split #144 exists to remove, still
+present on the one artifact the fan keeps. `api/resources/views/tickets/pdf.blade.php`
+hardcodes "Venue", "Date" and "Holder" anyway, so fixing the link alone buys
+nothing: this needs the Blade template translated first, then `?lang=` appended
+at the four call sites.

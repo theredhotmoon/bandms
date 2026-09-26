@@ -5,13 +5,18 @@ import FanLoginForm from '@/components/fan/FanLoginForm.vue'
 import FanMagicLinkSent from '@/components/fan/FanMagicLinkSent.vue'
 import FanTicketsList from '@/components/fan/FanTicketsList.vue'
 import FanOrdersList from '@/components/fan/FanOrdersList.vue'
+import { useFanLocale } from '@/composables/useFanLocale'
+
+// Fans never see the admin's language switcher, so these pages resolve
+// their own locale the way the API does — see utils/fanLocale.ts.
+useFanLocale()
 
 const { isLoggedIn, fan, clearSession } = useFanAccount()
 const activeTab = ref<'tickets' | 'orders'>('tickets')
 const devLink = ref<string | null>(null)
 const magicLinkSent = ref(false)
 
-function onMagicLinkSent(link: string) {
+function onMagicLinkSent(link: string | null) {
   devLink.value = link
   magicLinkSent.value = true
 }
@@ -20,7 +25,7 @@ function onMagicLinkSent(link: string) {
 <template>
   <main class="fa-page">
     <template v-if="!isLoggedIn">
-      <FanMagicLinkSent v-if="magicLinkSent" :dev-link="devLink!" />
+      <FanMagicLinkSent v-if="magicLinkSent" :dev-link="devLink" />
       <FanLoginForm v-else @magic-link-sent="onMagicLinkSent" />
     </template>
 

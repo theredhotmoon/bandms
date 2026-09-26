@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ApiError } from '@/api/client'
+import { fanErrorMessage } from '@/utils/fanErrors'
 import { claimTransfer } from '@/api/fan'
 import TicketDownloadCard from '@/components/TicketDownloadCard.vue'
+import { useFanLocale } from '@/composables/useFanLocale'
+
+// Fans never see the admin's language switcher, so these pages resolve
+// their own locale the way the API does — see utils/fanLocale.ts.
+useFanLocale()
 
 type ClaimState = 'loading' | 'success' | 'already_claimed' | 'expired' | 'invalid' | 'error'
 
@@ -25,17 +32,26 @@ onMounted(async () => {
     newUuid.value = res.ticket_uuid
     state.value   = 'success'
   } catch (err) {
-    if (err instanceof Error) {
-      if (err.message.startsWith('409')) {
+    if (err instanceof ApiError) {
+      // Read the status off the error, not out of its text. The message is
+      // now whatever Laravel sent in the fan's own language, so matching on
+      // it would break the moment a translation landed.
+      if (err.status === 409) {
         state.value = 'already_claimed'
-      } else if (err.message.startsWith('410')) {
+      } else if (err.status === 410) {
         state.value = 'expired'
-      } else if (err.message.startsWith('404')) {
+      } else if (err.status === 404) {
         state.value = 'invalid'
       } else {
         state.value  = 'error'
-        errorMsg.value = err.message
+        // '' rather than a translated string: the template's v-else already
+        // prints fan.claim.errorBody, and a 429's "Too Many Attempts." is
+        // English however the request was labelled.
+        errorMsg.value = fanErrorMessage(err, '')
       }
+    } else if (err instanceof Error) {
+      state.value  = 'error'
+      errorMsg.value = fanErrorMessage(err, '')
     } else {
       state.value = 'error'
     }
