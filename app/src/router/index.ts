@@ -245,7 +245,7 @@ router.beforeEach((to) => {
   for (const [key, value] of Object.entries(to.params)) {
     const raw = Array.isArray(value) ? value.join('/') : value
     if (TRAVERSAL_RE.test(raw)) {
-      console.warn(`[router] Blocked suspicious param "${key}": ${raw}`)
+      console.warn(`[router] Blocked suspicious param "${key}": ${raw}`) // i18n-ignore: developer console diagnostic
       // 'admin', not 'home': the SPA no longer serves a public home page, and a
       // name vue-router cannot resolve throws instead of blocking. 'admin' also
       // degrades correctly — it renders the sign-in form when signed out.

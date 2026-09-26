@@ -97,7 +97,7 @@ function categoryLabel(value: string): string {
               <tr v-for="clip in tc.paginated.value" :key="clip.id" class="table-row">
                 <td class="td font-medium" style="color:#e2e8f0;">{{ clip.title ?? clip.url }}</td>
                 <td class="td" style="color:#94a3b8;">{{ categoryLabel(clip.category) }}</td>
-                <td class="td" style="color:#94a3b8;">{{ providerLabel(clip.provider) }}</td>
+                <td class="td" style="color:#94a3b8;">{{ providerLabel(clip.provider, $t('common.link')) }}</td>
                 <td class="td" style="color:#94a3b8;">{{ clip.owners.length }}</td>
                 <td class="td text-xs font-mono" style="color:#64748b;">{{ clip.recorded_on ?? '—' }}</td>
                 <td class="td text-right">

@@ -18,46 +18,24 @@
  * lint if someone adds a literal later.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { coveredBy, isScannable, MIGRATED } from './lib/ratchet.mjs'
 import { copyHits } from './lib/template-scan.mjs'
 import { join, relative, sep, dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+// fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
+// checkout under a path with a space resolves to a directory that does not
+// exist and the walk throws — failing the build CI actually runs.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
-const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 
-/**
- * The MIGRATED entries, read from the string lint so there is one list.
- *
- * The array's end is found by matching brackets, not by the first `]`: a
- * comment or a future nested value inside the region would truncate the list
- * silently, and a *partial* parse does not trip the empty-list check — it just
- * reports already-listed files as gaps, telling you to add what is there.
- */
-function migratedPaths() {
-  const src = readFileSync(LINT, 'utf8')
-  const open = src.indexOf('const MIGRATED = [')
-  if (open === -1) {
-    console.error('✗ i18n coverage: could not find MIGRATED in check-admin-strings.mjs')
-    process.exit(1)
-  }
-  let depth = 0
-  let end = -1
-  for (let i = src.indexOf('[', open); i < src.length; i++) {
-    if (src[i] === '[') depth++
-    else if (src[i] === ']') { depth--; if (depth === 0) { end = i; break } }
-  }
-  if (end === -1) {
-    console.error('✗ i18n coverage: MIGRATED array is unterminated')
-    process.exit(1)
-  }
-  return [...src.slice(open, end).matchAll(/'([^']+)'/g)].map((m) => m[1])
-}
-
-const MIGRATED = migratedPaths()
-// Before the scan, not after: a broken parse must not first report every file
-// in src/ as an uncovered gap.
+// Before the scan, not after: an empty ratchet must not first report every
+// file in src/ as an uncovered gap. Unreachable while ratchet.mjs holds a
+// literal array — which is the point of it being one — but a bad merge that
+// emptied the export would otherwise turn every guard green by having nothing
+// to check.
 if (MIGRATED.length === 0) {
-  console.error('✗ i18n coverage: parsed zero MIGRATED entries — the parser is broken')
+  console.error('✗ i18n coverage: ratchet.mjs exports an empty MIGRATED list')
   process.exit(1)
 }
 
@@ -67,7 +45,7 @@ const walk = (dir) => {
     const p = join(dir, name)
     if (statSync(p).isDirectory()) {
       if (name !== 'i18n') walk(p)
-    } else if (p.endsWith('.vue') || (p.endsWith('.ts') && !p.endsWith('.spec.ts'))) {
+    } else if (isScannable(p)) {
       // Specs are excluded deliberately. A spec that calls useI18n() or
       // asserts on catalogue text would be reported as a gap, and the only
       // remedy this guard offers — add it to MIGRATED — then makes the string
@@ -96,7 +74,7 @@ const RENDERS = /useI18n\s*\(|\$t\s*\(|keypath\s*=|<i18n-t|\bi18n\.global\.t\s*\
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
 const toRel = (abs) => relative(SRC, abs).split(sep).join('/')
-const covered = (rel) => MIGRATED.some((m) => rel === m || rel.startsWith(m + '/'))
+const covered = coveredBy(MIGRATED)
 
 /**
  * Display path. A workspace-package child resolves outside src/, where
@@ -246,7 +224,7 @@ if (gaps.length) {
   console.error(`\n✗ i18n coverage: ${gaps.length} file(s) render translations but are not guarded\n`)
   for (const g of gaps) console.error(`  ${show(g)}`)
   console.error(`
-Add each to MIGRATED in app/scripts/check-admin-strings.mjs. Until then the
+Add each to MIGRATED in app/scripts/lib/ratchet.mjs. Until then the
 string lint never looks at them, so the area they sit in reads as finished
 while they can quietly go back to hardcoded English.
 `)

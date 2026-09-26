@@ -26,7 +26,10 @@ export default defineConfig({
     // rather than a build and has no test runner of its own, so folding it into
     // the admin's suite keeps one command — and one bitmask bit in
     // scripts/test-all.sh — covering every pure-logic module either app stands on.
-    include: ['src/**/*.spec.ts', '../packages/*/src/**/*.spec.ts'],
+    // `scripts/` is here for lib/ratchet.spec.ts. The build guards are
+    // ordinary logic with two dependents, and CLAUDE.md's rule — pure logic
+    // gets a vitest beside the module — applies to them as much as to src/.
+    include: ['src/**/*.spec.ts', 'scripts/**/*.spec.ts', '../packages/*/src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
       include: [

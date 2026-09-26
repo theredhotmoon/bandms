@@ -50,11 +50,24 @@ describe('defaultPayload', () => {
 
 describe('providerLabel', () => {
   it('labels each provider for the badge', () => {
-    expect(providerLabel('youtube')).toBe('YouTube')
-    expect(providerLabel('vimeo')).toBe('Vimeo')
-    expect(providerLabel('instagram')).toBe('Instagram')
-    expect(providerLabel('tiktok')).toBe('TikTok')
-    expect(providerLabel('link')).toBe('Link')
+    expect(providerLabel('youtube', 'Link')).toBe('YouTube')
+    expect(providerLabel('vimeo', 'Link')).toBe('Vimeo')
+    expect(providerLabel('instagram', 'Link')).toBe('Instagram')
+    expect(providerLabel('tiktok', 'Link')).toBe('TikTok')
+    // `link` is no longer in the brand table — it is an ordinary word, so
+    // the caller supplies it translated and any unknown host gets it too.
+    expect(providerLabel('link', 'Link')).toBe('Link')
+    expect(providerLabel('link', 'Odnośnik')).toBe('Odnośnik')
+  })
+
+  it('falls back for a provider the backend knows and the union does not', () => {
+    // `clip.provider` is an unvalidated cast of an API string, so a backend-only
+    // addition — Bandcamp joining EmbedProvider::HOSTS — reaches this function
+    // with no compile error. Without the fallback the badge rendered the
+    // literal "undefined"; the cast is what the `as` here stands in for.
+    const unknown = 'bandcamp' as Parameters<typeof providerLabel>[0]
+    expect(providerLabel(unknown, 'Link')).toBe('Link')
+    expect(providerLabel(unknown, 'Odnośnik')).toBe('Odnośnik')
   })
 })
 
@@ -99,8 +112,8 @@ describe('detectProvider — facebook and audio', () => {
     expect(detectProvider('https://music.apple.com/pl/album/x/1')).toBe('apple_music')
   })
   it('labels them and knows which are audio', () => {
-    expect(providerLabel('facebook')).toBe('Facebook')
-    expect(providerLabel('apple_music')).toBe('Apple Music')
+    expect(providerLabel('facebook', 'Link')).toBe('Facebook')
+    expect(providerLabel('apple_music', 'Link')).toBe('Apple Music')
     expect(isAudioProvider('spotify')).toBe(true)
     expect(isAudioProvider('youtube')).toBe(false)
   })

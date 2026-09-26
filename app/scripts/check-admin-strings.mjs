@@ -27,123 +27,25 @@
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { copyHits } from './lib/template-scan.mjs'
+import { isScannable, MIGRATED } from './lib/ratchet.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+// The same floor check-i18n-coverage has, and this guard runs first.
+// Without it an empty ratchet makes the loop below run zero times and print
+// "✓ 0 migrated path(s), no hardcoded text" — a green tick for having
+// checked nothing. Moving the list out of this file is exactly what makes an
+// accidentally empty export plausible.
+if (MIGRATED.length === 0) {
+  console.error('✗ admin strings: ratchet.mjs exports an empty MIGRATED list')
+  process.exit(1)
+}
 
-/** Paths already migrated, relative to app/src. Extend this in every area PR. */
-const MIGRATED = [
-  'App.vue',
-  'components/admin/AdminLayout.vue',
-  'components/admin/AdminModal.vue',
-  'components/admin/ConfirmDialog.vue',
-  'components/admin/EpkVersionHistory.vue',
-  'components/admin/Pagination.vue',
-  'components/admin/RebuildBar.vue',
-  'components/admin/RebuildSettingsModal.vue',
-  'components/admin/SortHeader.vue',
-  'components/admin/forms/AuthorForm.vue',
-  'components/admin/forms/PostForm.vue',
-  'components/admin/forms/PressReleaseForm.vue',
-  'components/admin/forms/ClipCategoryPicker.vue',
-  'components/admin/forms/SlugInput.vue',
-  'components/admin/forms/AttachedClipsField.vue',
-  'components/admin/forms/SocialLinksEditor.vue',
-  'components/admin/RichEditor.vue',
-  'components/admin/TableToolbar.vue',
-  'components/admin/TicketStatusBadge.vue',
-  'components/admin/UiLangSwitcher.vue',
-  'components/auth/SignInForm.vue',
-  'composables/useEpkVersionHistory.ts',
-  'components/admin/ConcertTicketsManager.vue',
-  'components/admin/forms/ConcertForm.vue',
-  'components/admin/forms/TourForm.vue',
-  'components/admin/forms/VenueForm.vue',
-  'views/admin/ConcertTicketListView.vue',
-  'views/admin/ConcertsAdminView.vue',
-  'views/admin/DoorCheckView.vue',
-  'views/admin/ToursAdminView.vue',
-  'views/admin/VenuesAdminView.vue',
-  'components/admin/forms/PostBlockEditor.vue',
-  'components/admin/forms/blocks',
-  'views/admin/AuthorsAdminView.vue',
-  'views/admin/NewsletterAdminView.vue',
-  'views/admin/PostsAdminView.vue',
-  'views/admin/PressReleasesAdminView.vue',
-  'views/admin/PitchGeneratorView.vue',
-  'views/admin/ClipsAdminView.vue',
-  'components/admin/BandLogoManager.vue',
-  'components/admin/CareerLevelWidget.vue',
-  'components/admin/forms/AboutBioVariantSelect.vue',
-  'components/admin/EntityRelationsPanel.vue',
-  'components/admin/forms/SingleImageUpload.vue',
-  'components/admin/forms/ClipForm.vue',
-  'components/AppNavbar.vue',
-  'components/rig',
-  'views/admin/BandMembersAdminView.vue',
-  'views/admin/MyProfileView.vue',
-  'views/admin/MySetupsView.vue',
-  'components/admin/forms/BandMemberForm.vue',
-  'components/band-member',
-  'views/admin/ReleasesAdminView.vue',
-  'components/admin/forms/ReleaseForm.vue',
-  'components/admin/forms/ImageDropZone.vue',
-  'views/admin/PhotosAdminView.vue',
-  'views/admin/SetlistsAdminView.vue',
-  'components/setlist',
-  'components/ui/InstrumentIconPicker.vue',
-  'components/tech-rider/TechRiderStagePlot.vue',
-  'components/tech-rider/PlacementModal.vue',
-  'components/tech-rider/StagePlotMemberSelector.vue',
-  'components/tech-rider/RiderRequirements.vue',
-  'components/tech-rider/RiderSourceBadge.vue',
-  'components/tech-rider/RiderChannelList.vue',
-  'components/tech-rider/RiderConfirmations.vue',
-  'components/tech-rider/RiderPublishModal.vue',
-  'components/tech-rider/RiderVersionHistory.vue',
-  'components/tech-rider/TechRiderCompleteness.vue',
-  'components/tech-rider/TechRiderCover.vue',
-  'components/tech-rider/TechRiderPaFoh.vue',
-  'components/tech-rider/TechRiderSidebar.vue',
-  'views/admin/TechRiderAdminView.vue',
-  'views/admin/WebsiteModulesView.vue',
-  'views/admin/HeroImagesAdminView.vue',
-  'views/admin/ShopAdminView.vue',
-  'views/admin/UsersAdminView.vue',
-  'views/admin/TagsAdminView.vue',
-  'views/admin/InstrumentsAdminView.vue',
-  'views/admin/BandsAdminView.vue',
-  'components/admin/forms/BandForm.vue',
-  'views/admin/FanAccountsAdminView.vue',
-  'components/admin/forms/TagForm.vue',
-  'components/admin/forms/ShopItemForm.vue',
-  'views/admin/FaqsAdminView.vue',
-  'components/admin/FaqEditor.vue',
-  'config/moduleSettings.ts',
-  'views/TechRiderPreviewView.vue',
-  'views/admin/MusicVideosAdminView.vue',
-  'components/admin/forms/BatchPhotoUpload.vue',
-  'composables/useTechRiderEditor.ts',
-  'utils/documentTitle.ts',
-  'composables/useTechRiderVersions.ts',
-  'utils/riderDiff.ts',
-  'components/rig/RigInputsTable.vue',
-  'components/rig/RigMonitors.vue',
-  'views/admin/BandCalendarView.vue',
-  'components/admin/forms/blocks/ImageBlockEditor.vue',
-  'components/admin/forms/blocks/EmbedBlockEditor.vue',
-  'components/admin/forms/blocks/TextBlockEditor.vue',
-  'views/FanAccountView.vue',
-  'views/TicketClaimView.vue',
-  'components/TicketDownloadCard.vue',
-  'components/fan/FanTicketsList.vue',
-  'components/fan/FanLoginForm.vue',
-  'components/fan/FanMagicLinkSent.vue',
-  'components/fan/FanOrdersList.vue',
-  'views/admin/BandProfileAdminView.vue',
-  'views/admin/AdminDashboard.vue',
-  'views/admin/AdminEntry.vue',
-]
+// fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
+// checkout under a path with a space resolves to a directory that does not
+// exist and the walk throws — failing the build CI actually runs.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
+
 
 
 function filesFor(entry) {
@@ -155,7 +57,7 @@ function filesFor(entry) {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name)
       if (statSync(p).isDirectory()) walk(p)
-      else if (p.endsWith('.vue') || p.endsWith('.ts')) out.push(p)
+      else if (isScannable(p)) out.push(p)
     }
   }
   walk(abs)
