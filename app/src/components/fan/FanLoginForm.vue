@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { requestMagicLink } from '@/api/fan'
-import { ApiValidationError } from '@/api/client'
+import { fanErrorMessage } from '@/utils/fanErrors'
 
 const { t } = useI18n()
 
@@ -21,13 +21,7 @@ async function handleSubmit() {
     const result = await requestMagicLink(email.value)
     emit('magic-link-sent', result.dev_link ?? null)
   } catch (err) {
-    if (err instanceof ApiValidationError) {
-      errorMessage.value = Object.values(err.errors).flat().join(' ')
-    } else {
-      // An empty message means the server sent no body; the translated
-      // fallback is then the only thing that reads as a sentence.
-      errorMessage.value = err instanceof Error && err.message ? err.message : t('fan.login.failed')
-    }
+    errorMessage.value = fanErrorMessage(err, t('fan.login.failed'))
   } finally {
     isLoading.value = false
   }

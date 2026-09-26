@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '@/api/client'
+import { fanErrorMessage } from '@/utils/fanErrors'
 import { claimTransfer } from '@/api/fan'
 import TicketDownloadCard from '@/components/TicketDownloadCard.vue'
 import { useFanLocale } from '@/composables/useFanLocale'
@@ -43,11 +44,14 @@ onMounted(async () => {
         state.value = 'invalid'
       } else {
         state.value  = 'error'
-        errorMsg.value = err.message
+        // '' rather than a translated string: the template's v-else already
+        // prints fan.claim.errorBody, and a 429's "Too Many Attempts." is
+        // English however the request was labelled.
+        errorMsg.value = fanErrorMessage(err, '')
       }
     } else if (err instanceof Error) {
       state.value  = 'error'
-      errorMsg.value = err.message
+      errorMsg.value = fanErrorMessage(err, '')
     } else {
       state.value = 'error'
     }

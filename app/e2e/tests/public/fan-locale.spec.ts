@@ -86,9 +86,6 @@ test.describe('fan-facing locale', () => {
     // worked because the message was seeded with an English reason phrase —
     // the very thing that leaked "500: Internal Server Error" onto a Polish
     // page. Asserting the Polish failure text pins both ends of that change.
-    // Match the POST, not the navigation: the page's own URL contains
-    // /tickets/claim/ too, and that document request carries the browser's
-    // Accept-Language rather than the one the SPA sets.
     // Wait on the *response*, not the request: the heading only appears once
     // the round trip lands, and a 5s assertion racing a loaded Vite proxy
     // reports "element not found" when the page is still on "Odbieranie

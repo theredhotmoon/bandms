@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanTickets, initiateTransfer } from '@/api/fan'
-import { ApiValidationError } from '@/api/client'
+import { fanErrorMessage } from '@/utils/fanErrors'
 import TicketDownloadCard from '@/components/TicketDownloadCard.vue'
 import type { FanTicket } from '@/types/fan'
 
@@ -56,14 +56,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
     const res = await initiateTransfer(token.value!, uuid, email)
     transferResult.value[uuid] = { link: res.dev_link ?? null }
   } catch (err) {
-    if (err instanceof ApiValidationError) {
-      const msgs = Object.values(err.errors).flat()
-      transferError.value[uuid] = msgs.join(' ')
-    } else if (err instanceof Error && err.message) {
-      transferError.value[uuid] = err.message
-    } else {
-      transferError.value[uuid] = t('fan.tickets.transferFailed')
-    }
+    transferError.value[uuid] = fanErrorMessage(err, t('fan.tickets.transferFailed'))
   } finally {
     transferLoading.value[uuid] = false
   }

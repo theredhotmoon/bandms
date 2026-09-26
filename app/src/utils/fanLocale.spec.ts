@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_LOCALE } from '@/locales'
-import { narrowToLocale, resolveFanLocale } from './fanLocale'
+import { activeFanLocale, localeFromQuery, narrowToLocale, resolveFanLocale, setActiveFanLocale } from './fanLocale'
 
 describe('narrowToLocale', () => {
   it('strips the region off a BCP-47 tag', () => {
@@ -45,5 +45,36 @@ describe('resolveFanLocale', () => {
   it('falls back to the registry default when nothing matches', () => {
     expect(resolveFanLocale({})).toBe(DEFAULT_LOCALE)
     expect(resolveFanLocale({ search: '', stored: null, browser: ['de', 'fr'] })).toBe(DEFAULT_LOCALE)
+  })
+})
+
+describe('localeFromQuery', () => {
+  // Only a `?lang=` value represents a *choice*, and only a choice may be
+  // persisted: resolution reads the store before the browser list, so storing a
+  // browser-derived value freezes it and a later browser change can never be
+  // read again.
+  it('reads a supported locale off the query', () => {
+    expect(localeFromQuery('?lang=pl')).toBe('pl')
+    expect(localeFromQuery('?foo=1&lang=en')).toBe('en')
+  })
+
+  it('is null for an absent, empty or unsupported value', () => {
+    expect(localeFromQuery('')).toBeNull()
+    expect(localeFromQuery(undefined)).toBeNull()
+    expect(localeFromQuery('?lang=')).toBeNull()
+    expect(localeFromQuery('?lang=de')).toBeNull()
+  })
+})
+
+describe('activeFanLocale', () => {
+  // One value shared by the chrome and the request headers. They used to be
+  // derived separately — once at mount, and per request — and diverged whenever
+  // only the query changed.
+  it('is null until a fan page publishes one, and null again after', () => {
+    expect(activeFanLocale()).toBeNull()
+    setActiveFanLocale('pl')
+    expect(activeFanLocale()).toBe('pl')
+    setActiveFanLocale(null)
+    expect(activeFanLocale()).toBeNull()
   })
 })

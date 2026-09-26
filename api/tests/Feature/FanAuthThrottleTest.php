@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Cache;
 
 /*
  * The fan sign-in limit must be the fan sign-in limit.
@@ -19,8 +19,14 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 
 beforeEach(function () {
-    RateLimiter::clear('fan-magic-link');
-    RateLimiter::clear('ticket-claim');
+    // Cache::flush, not RateLimiter::clear('fan-magic-link').
+    //
+    // The prefix is only half the key: ThrottleRequests builds
+    // `$prefix . sha1($domain.'|'.$ip)`, so clearing the bare prefix is a no-op.
+    // It looked like it worked because phpunit.xml sets CACHE_STORE=array and
+    // every Pest test boots a fresh app — which made the "still enforces" case
+    // below silently depend on that config rather than on this beforeEach.
+    Cache::flush();
 });
 
 it('does not spend the sign-in limit on unrelated throttled routes', function () {

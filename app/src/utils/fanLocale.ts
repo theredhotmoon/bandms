@@ -35,6 +35,39 @@ export function narrowToLocale(tag: string | null | undefined): Lang | null {
 }
 
 /**
+ * The locale a mounted fan page settled on, or null when none is mounted.
+ *
+ * `withFanLocale` in api/fan.ts used to re-derive the locale from
+ * `window.location.search` on every request while the chrome resolved once in
+ * `onMounted`. The two agreed on a full page load and diverged the moment only
+ * the query changed — Back/Forward between /account?lang=pl and ?lang=en reuses
+ * the component instance, so the page stayed Polish while requests started
+ * announcing English. That is the exact split this whole feature exists to
+ * remove, so there is now one value and the header reads it.
+ */
+let active: Lang | null = null
+
+/** Set by useFanLocale on mount and on every route change; cleared on unmount. */
+export function setActiveFanLocale(locale: Lang | null): void {
+  active = locale
+}
+
+/** Null outside a fan page, where the caller should resolve for itself. */
+export function activeFanLocale(): Lang | null {
+  return active
+}
+
+/**
+ * The locale named by `?lang=`, or null.
+ *
+ * Split out because it is the only source that represents a *choice*. See the
+ * note on writeStoredFanLocale.
+ */
+export function localeFromQuery(search: string | undefined): Lang | null {
+  return narrowToLocale(new URLSearchParams(search ?? '').get('lang'))
+}
+
+/**
  * First match wins:
  *   1. `?lang=` on the URL — explicit, and what a link from the public site or
  *      a ticket email would carry. Same precedence the API gives it.
@@ -47,7 +80,7 @@ export function resolveFanLocale(opts: {
   stored?: string | null
   browser?: readonly string[]
 }): Lang {
-  const fromQuery = narrowToLocale(new URLSearchParams(opts.search ?? '').get('lang'))
+  const fromQuery = localeFromQuery(opts.search)
   if (fromQuery) return fromQuery
 
   const fromStore = narrowToLocale(opts.stored)
@@ -76,7 +109,19 @@ export function readStoredFanLocale(): string | null {
   }
 }
 
-/** Remember it, so the choice survives the next page. Failing to is harmless. */
+/**
+ * Remember an explicit choice, so it survives the next page.
+ *
+ * **Only ever called with a `?lang=` value.** It used to be called with
+ * whatever `resolveFanLocale` returned, which quietly froze the browser's own
+ * preference: resolution reads the store (step 2) *before* the browser list
+ * (step 3), so a fan whose Chrome was English-only on their first visit had
+ * `fan_lang=en` written, and switching Chrome to Polish afterwards could never
+ * take effect — the page stayed English and, worse, started telling the server
+ * so. Nothing the fan ever chose said English.
+ *
+ * Failing to write is harmless; the resolution above still works for this page.
+ */
 export function writeStoredFanLocale(locale: Lang): void {
   try {
     localStorage.setItem(FAN_LANG_STORAGE_KEY, locale)

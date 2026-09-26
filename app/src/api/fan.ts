@@ -1,4 +1,4 @@
-import { readStoredFanLocale, resolveFanLocale } from '@/utils/fanLocale'
+import { activeFanLocale, readStoredFanLocale, resolveFanLocale } from '@/utils/fanLocale'
 import { API_BASE, authHeaders, jsonHeaders, ApiError, ApiValidationError } from './client'
 import type { FanAccount, FanTicket, FanOrder } from '@/types/fan'
 
@@ -34,11 +34,15 @@ export interface VerifyResponse {
  * chrome locale is a different axis entirely.
  */
 function withFanLocale(headers: Record<string, string>): Record<string, string> {
-  return { ...headers, 'Accept-Language': resolveFanLocale({
+  // A mounted fan page publishes what it settled on, so the header cannot
+  // disagree with the words on screen. The fallback covers a call made with no
+  // fan page mounted, where resolving fresh is the best available answer.
+  const locale = activeFanLocale() ?? resolveFanLocale({
     search: typeof window === 'undefined' ? '' : window.location.search,
     stored: readStoredFanLocale(),
     browser: typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]),
-  }) }
+  })
+  return { ...headers, 'Accept-Language': locale }
 }
 
 /**
@@ -53,8 +57,21 @@ async function fanHandleResponse<T>(response: Response): Promise<T> {
   }
 
   if (response.status === 422) {
-    const body = (await response.json()) as { errors: Record<string, string[]> }
-    throw new ApiValidationError(body.errors)
+    const body = (await response.json()) as {
+      errors?: Record<string, string[]>
+      message?: string
+    }
+    // Not every 422 carries a Laravel `errors` bag — the same note client.ts
+    // makes, which this handler was missing. TicketTransferController::initiate
+    // returns a bare `message` for three business rules ("A pending transfer
+    // already exists for this ticket."), so `new ApiValidationError(undefined)`
+    // was thrown and FanTicketsList's `Object.values(err.errors)` then threw a
+    // TypeError from inside its own catch: the form re-enabled with no message
+    // and the real reason never reached the fan.
+    if (body.errors && Object.keys(body.errors).length > 0) {
+      throw new ApiValidationError(body.errors)
+    }
+    throw new ApiError(422, body.message ?? '')
   }
 
   // Deliberately NOT response.statusText, and the status is carried as a

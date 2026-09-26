@@ -1,7 +1,14 @@
-import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { i18n } from '@/i18n'
 import type { Lang } from '@/locales'
-import { readStoredFanLocale, resolveFanLocale, writeStoredFanLocale } from '@/utils/fanLocale'
+import {
+  localeFromQuery,
+  readStoredFanLocale,
+  resolveFanLocale,
+  setActiveFanLocale,
+  writeStoredFanLocale,
+} from '@/utils/fanLocale'
 
 /**
  * Applies the fan-facing locale for as long as a fan page is mounted.
@@ -22,11 +29,21 @@ import { readStoredFanLocale, resolveFanLocale, writeStoredFanLocale } from '@/u
  * localStorage at module load dies on import. See app/CLAUDE.md.
  */
 export function useFanLocale(): void {
+  const route = useRoute()
   let previous: Lang | null = null
 
-  onMounted(() => {
+  /**
+   * Re-run on every route change, not just on mount.
+   *
+   * A navigation that changes only the query reuses this component instance, so
+   * `onMounted` does not fire again — and the request headers *do* follow the
+   * new query. Resolving here and publishing through `setActiveFanLocale` is
+   * what keeps the page and its requests speaking one language.
+   */
+  function apply(): void {
+    const search = window.location.search
     const resolved = resolveFanLocale({
-      search: window.location.search,
+      search,
       stored: readStoredFanLocale(),
       // `languages` is the full ordered preference list; `language` is only
       // the first. A fan whose browser says [pl, en] should get Polish even
@@ -34,13 +51,25 @@ export function useFanLocale(): void {
       browser: navigator.languages ?? [navigator.language],
     })
 
-    previous = i18n.global.locale.value as Lang
     i18n.global.locale.value = resolved
     document.documentElement.lang = resolved
-    writeStoredFanLocale(resolved)
+    setActiveFanLocale(resolved)
+
+    // Persist the *choice* only. Storing a browser-derived value would freeze
+    // it forever, because resolution reads the store before the browser list.
+    const chosen = localeFromQuery(search)
+    if (chosen) writeStoredFanLocale(chosen)
+  }
+
+  onMounted(() => {
+    previous = i18n.global.locale.value as Lang
+    apply()
   })
 
+  watch(() => route.fullPath, apply)
+
   onBeforeUnmount(() => {
+    setActiveFanLocale(null)
     if (previous) {
       i18n.global.locale.value = previous
       document.documentElement.lang = previous

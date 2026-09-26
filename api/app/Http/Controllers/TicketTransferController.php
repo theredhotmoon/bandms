@@ -27,7 +27,7 @@ class TicketTransferController extends Controller
 
         // Ticket must be active
         if ($ticket->status !== 'active') {
-            return response()->json(['message' => 'Only active tickets can be transferred.'], 422);
+            return response()->json(['message' => __('api.fan.ticket_not_active')], 422);
         }
 
         // Fan must own the ticket
@@ -35,12 +35,12 @@ class TicketTransferController extends Controller
             || ($fan->id === $ticket->fan_account_id);
 
         if (! $isOwner) {
-            return response()->json(['message' => 'You do not own this ticket.'], 403);
+            return response()->json(['message' => __('api.fan.ticket_not_owned')], 403);
         }
 
         // Cannot transfer to yourself
         if ($data['to_email'] === $ticket->holder_email) {
-            return response()->json(['message' => 'You cannot transfer a ticket to yourself.'], 422);
+            return response()->json(['message' => __('api.fan.transfer_to_self')], 422);
         }
 
         // No pending transfer already in flight
@@ -50,7 +50,7 @@ class TicketTransferController extends Controller
             ->exists();
 
         if ($hasPending) {
-            return response()->json(['message' => 'A pending transfer already exists for this ticket.'], 422);
+            return response()->json(['message' => __('api.fan.transfer_already_open')], 422);
         }
 
         $claimToken = Str::random(64);
