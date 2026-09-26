@@ -40,6 +40,19 @@ import { readFileSync } from 'node:fs'
  * escapes — the same `BACKSLASH.` rule template-scan.mjs documents as
  * load-bearing.
  */
+/**
+ * Known limitation, and the reason it is acceptable: regex literals.
+ *
+ * This is not a JS lexer. It does not distinguish `/.../` from division, so a
+ * regex containing an *odd* number of quotes — `/[^']/` — starts what looks
+ * like a string and runs off the end. That **throws**, and both guards exit 1
+ * on a throw, so the failure is loud and the list is never silently short.
+ * check-admin-strings.mjs contains no such regex today (checked), and the
+ * MIGRATED array it owns is a flat list of quoted paths where one could not
+ * sensibly appear. Telling regex from division needs full expression context,
+ * which is a large amount of machinery to buy a fail-closed case that is
+ * already fail-closed.
+ */
 function maskNonCode(src) {
   // Two masks, deliberately. `masked` blanks comments *and* strings and is
   // what the brackets and the declaration are found in. `noComments` blanks

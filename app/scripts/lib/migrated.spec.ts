@@ -89,6 +89,16 @@ describe('migratedPaths', () => {
     expect(() => migratedPaths(lint("const MIGRATED = [\n  'A.vue',\n"))).toThrow(/unterminated/)
   })
 
+  it('fails closed, not short, on a regex literal holding an odd quote', () => {
+    // The parser is not a JS lexer and cannot tell `/.../` from division, so
+    // `/[^']/` reads as the start of a string. What matters is the direction of
+    // the failure: it throws, and both guards exit 1 on a throw, so the list is
+    // never silently short. check-admin-strings.mjs has no such regex today.
+    const SLASH = String.fromCharCode(47)
+    const src = 'const RX = ' + SLASH + '[^' + "'" + ']' + SLASH + 'g' + NLQ + wrap("  'A.vue',")
+    expect(() => migratedPaths(lint(src))).toThrow(/unterminated string/)
+  })
+
   it('throws when MIGRATED is absent or empty', () => {
     expect(() => migratedPaths(lint('const OTHER = []\n'))).toThrow(/could not find MIGRATED/)
     expect(() => migratedPaths(lint('const MIGRATED = [\n]\n'))).toThrow(/empty/)
