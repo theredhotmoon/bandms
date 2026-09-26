@@ -22,11 +22,27 @@ export function useConcertTickets(concertId: Ref<number | null>) {
     enabled: computed(() => concertId.value !== null),
   })
 
+  /**
+   * Thrown when there is no session or no concert to act on.
+   *
+   * Carries no message on purpose: saveErrorMessage returns `error.message`
+   * ahead of the caller's fallback, so an English string here would beat the
+   * translated text. The subclass is what makes it debuggable anyway — a bare
+   * `new Error()` reached the console as an empty Error with a stack pointing
+   * only at a mutationFn, and this fires on a programmer/session fault rather
+   * than anything a user did.
+   */
+  class MissingSession extends Error {
+    constructor() {
+      super()
+      // MissingSession.name, not the literal — same string, and the guards
+      // cannot tell a class name from copy when it is quoted.
+      this.name = MissingSession.name
+    }
+  }
+
   function requireAuth(): { token: string; concertId: number } {
-    // No message on purpose: saveErrorMessage returns error.message ahead of
-    // the caller's fallback, so an English string here would beat the
-    // translated text. This fires on a missing session, not a user action.
-    if (!token.value || !concertId.value) throw new Error()
+    if (!token.value || !concertId.value) throw new MissingSession()
     return { token: token.value, concertId: concertId.value }
   }
 

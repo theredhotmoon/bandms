@@ -143,6 +143,14 @@ const MIGRATED = [
   'views/admin/BandProfileAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
+
+  // On the ratchet with line-level `i18n-ignore` rather than exempted whole-file
+  // in check-i18n-complete.mjs. A whole-file exemption took them out of all four
+  // guards: the coverage guard's import walk only follows `.vue` specifiers, so
+  // a `meta: { title: 'Dashboard' }` added to the router, or a second label map
+  // added to postBlocks.ts, would have been invisible to every one of them.
+  'router/index.ts',
+  'utils/postBlocks.ts',
 ]
 
 

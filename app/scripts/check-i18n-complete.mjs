@@ -14,44 +14,64 @@
  * So this walks every source file, skips the ratchet and the exemptions
  * below, and fails on any copy it finds. Adding a view now means adding it to
  * MIGRATED or explaining why not; neither can be forgotten quietly.
+ *
+ * It deliberately does **not** honour `i18n-ignore`: a line-level opt-out in a
+ * file nobody has migrated is not yet meaningful, which is the rule
+ * template-scan.mjs already states. That only works because the ratchet is read
+ * correctly — see lib/migrated.mjs for the version of this that did not.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { copyHits } from './lib/template-scan.mjs'
+import { coveredBy, migratedPaths } from './lib/migrated.mjs'
 
-const SRC = resolve('src')
+// Anchored to this file, not to the cwd, the way all three sibling guards are.
+// `resolve('src')` worked only from app/ and died with ENOENT when a root-level
+// wrapper invoked it — which is the shape scripts/test-all.sh already uses.
+const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+const SRC = resolve(ROOT, 'src')
+const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
+
 const rel = (abs) => relative(SRC, abs).split('\\').join('/')
 
-const MIGRATED = new Set(
-  [...readFileSync('scripts/check-admin-strings.mjs', 'utf8')
-    .matchAll(/^\s*'([^']+\.(?:vue|ts))',/gm)].map((m) => m[1]),
-)
+let onRatchet
+try {
+  onRatchet = coveredBy(migratedPaths(LINT))
+} catch (e) {
+  console.error(`\u2717 i18n completeness: ${e.message}`)
+  process.exit(1)
+}
 
 /**
  * Files whose "copy" is not copy, with the reason. Each one is a decision
  * someone made on purpose, and the reason is the point of the list — an
  * entry without one is how a guard rots into a formality.
+ *
+ * Enforced below: an entry must name a file that exists and still produces at
+ * least one hit. An exemption that has stopped being needed fails the build
+ * instead of quietly licensing whatever English is added to that file next.
  */
 const EXEMPT = new Map([
   ['utils/signalChainPresets.ts', 'rig data seeded into a musician\'s saved setup, not chrome — translating it would put Polish rows on an English rider'],
-  ['router/index.ts', 'route paths and component names'],
   ['locales.ts', 'language names, written in their own language on purpose'],
-  ['utils/postBlocks.ts', 'provider brand names — the one ordinary word in that table, Link, was moved out and is passed in translated'],
   ['utils/formatDate.ts', '"UTC" is an IANA timezone identifier passed to Intl, not text'],
   ['utils/basemap.ts', 'map tile attribution — OpenStreetMap and CARTO require it verbatim'],
 ])
 
-/** Whole trees that carry no user-facing copy. */
-const EXEMPT_DIRS = [
-  // HTTP verbs, header names, `Bearer `, and guards that fire on a
-  // programmer error rather than a user action. The user-facing messages
-  // these files used to throw now go through handleResponse.
-  'api/',
-  // Shapes and unions. A label table here is a bug, and the two that existed
-  // (SHOP_ITEM_TYPE_LABELS, INSTRUMENT_TYPE_LABELS) were moved out.
-  'types/',
-  'i18n/',
-]
+/**
+ * Whole trees that carry no user-facing copy, with the same reason rule.
+ *
+ * A tree exemption hides far more than a file one, so the reason has to be
+ * true of the whole tree. `api/`'s used to claim every message it threw went
+ * through handleResponse; bandProfile.ts still threw its own English literal,
+ * which reached a Polish admin through saveErrorMessage. Fixed there rather
+ * than papered over here.
+ */
+const EXEMPT_DIRS = new Map([
+  ['api/', 'HTTP verbs, header names, `Bearer `, and param guards that fire on a programmer error rather than a user action — every message a user can actually read is thrown empty so the call site\'s translated fallback wins'],
+  ['types/', 'shapes and unions; a label table here is a bug, and the two that existed (SHOP_ITEM_TYPE_LABELS, INSTRUMENT_TYPE_LABELS) were moved out'],
+  ['i18n/', 'the catalogues themselves — src/i18n/catalogue.spec.ts is what checks these'],
+])
 
 const files = []
 ;(function walk(dir) {
@@ -62,12 +82,37 @@ const files = []
   }
 })(SRC)
 
+const hitCount = (r, abs) =>
+  copyHits(readFileSync(abs, 'utf8'), { isTs: r.endsWith('.ts') })
+    .reduce((a, h) => a + h.hits.length, 0)
+
+const byPath = new Map(files.map((abs) => [rel(abs), abs]))
+
+// Every exemption must still be earning its place.
+const stale = []
+for (const [path, reason] of EXEMPT) {
+  if (!reason.trim()) stale.push(`${path} — no reason given`)
+  else if (!byPath.has(path)) stale.push(`${path} — no such file (renamed or deleted?)`)
+  else if (hitCount(path, byPath.get(path)) === 0) stale.push(`${path} — no copy left to exempt`)
+}
+for (const [dir, reason] of EXEMPT_DIRS) {
+  if (!reason.trim()) stale.push(`${dir} — no reason given`)
+}
+if (stale.length) {
+  console.error('\n\u2717 i18n completeness: the exemption list has rotted\n')
+  for (const s of stale) console.error(`  ${s}`)
+  console.error(`
+Remove the entry. An exemption for copy that is no longer there licenses
+whatever English is added to that file next, which is the opposite of the point.
+`)
+  process.exit(1)
+}
+
 const offenders = []
 let checked = 0
 
-for (const abs of files) {
-  const r = rel(abs)
-  if (MIGRATED.has(r) || EXEMPT.has(r) || EXEMPT_DIRS.some((d) => r.startsWith(d))) continue
+for (const [r, abs] of byPath) {
+  if (onRatchet(r) || EXEMPT.has(r) || [...EXEMPT_DIRS.keys()].some((d) => r.startsWith(d))) continue
   checked++
   const hits = copyHits(readFileSync(abs, 'utf8'), { isTs: r.endsWith('.ts') })
   const n = hits.reduce((a, h) => a + h.hits.length, 0)
@@ -82,15 +127,15 @@ if (offenders.length) {
   }
   console.error(`
 Migrate the file and add its path to MIGRATED in
-app/scripts/check-admin-strings.mjs. If its strings are genuinely not chrome —
-data seeded into a record, an ISO code, an HTTP verb — add it to EXEMPT in this
-script *with the reason*, which is what stops the list becoming a dumping
-ground.
+app/scripts/check-admin-strings.mjs — a directory entry there covers its files.
+If its strings are genuinely not chrome — data seeded into a record, an ISO
+code, an HTTP verb — add it to EXEMPT in this script *with the reason*, which is
+what stops the list becoming a dumping ground.
 `)
   process.exit(1)
 }
 
 console.log(
-  `\u2713 i18n completeness: nothing unmigrated (${MIGRATED.size} on the ratchet, ` +
-  `${checked} other file(s) checked, ${EXEMPT.size + EXEMPT_DIRS.length} exemption(s))`,
+  `\u2713 i18n completeness: nothing unmigrated (${migratedPaths(LINT).length} on the ratchet, ` +
+  `${checked} other file(s) checked, ${EXEMPT.size + EXEMPT_DIRS.size} exemption(s))`,
 )

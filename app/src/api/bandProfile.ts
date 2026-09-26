@@ -50,7 +50,14 @@ export async function syncFacebookLikes(token: string): Promise<FacebookSyncResu
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { message?: string }
-    throw new Error(err.message ?? 'Failed to sync Facebook likes')
+    // No frontend literal. saveErrorMessage returns error.message ahead of the
+    // caller's fallback, so seeding one here beat the `fbSyncFailed` translation
+    // that already exists with the same English words — and won whenever the
+    // endpoint replied without a JSON body (a Caddy 502's HTML, or res.json()
+    // rejecting into {}), which is exactly when a Polish admin needed it most.
+    // An empty message lets the fallback through; the backend's own message is
+    // still worth showing when it sends one.
+    throw new Error(err.message ?? '')
   }
   return res.json() as Promise<FacebookSyncResult>
 }

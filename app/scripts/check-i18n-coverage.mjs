@@ -18,6 +18,7 @@
  * lint if someone adds a literal later.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { coveredBy, migratedPaths } from './lib/migrated.mjs'
 import { copyHits } from './lib/template-scan.mjs'
 import { join, relative, sep, dirname, resolve } from 'node:path'
 
@@ -33,27 +34,15 @@ const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
  * silently, and a *partial* parse does not trip the empty-list check — it just
  * reports already-listed files as gaps, telling you to add what is there.
  */
-function migratedPaths() {
-  const src = readFileSync(LINT, 'utf8')
-  const open = src.indexOf('const MIGRATED = [')
-  if (open === -1) {
-    console.error('✗ i18n coverage: could not find MIGRATED in check-admin-strings.mjs')
-    process.exit(1)
-  }
-  let depth = 0
-  let end = -1
-  for (let i = src.indexOf('[', open); i < src.length; i++) {
-    if (src[i] === '[') depth++
-    else if (src[i] === ']') { depth--; if (depth === 0) { end = i; break } }
-  }
-  if (end === -1) {
-    console.error('✗ i18n coverage: MIGRATED array is unterminated')
-    process.exit(1)
-  }
-  return [...src.slice(open, end).matchAll(/'([^']+)'/g)].map((m) => m[1])
-}
 
-const MIGRATED = migratedPaths()
+const MIGRATED = (() => {
+  try {
+    return migratedPaths(LINT)
+  } catch (e) {
+    console.error(`✗ i18n coverage: ${e.message}`)
+    process.exit(1)
+  }
+})()
 // Before the scan, not after: a broken parse must not first report every file
 // in src/ as an uncovered gap.
 if (MIGRATED.length === 0) {
@@ -96,7 +85,7 @@ const RENDERS = /useI18n\s*\(|\$t\s*\(|keypath\s*=|<i18n-t|\bi18n\.global\.t\s*\
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
 const toRel = (abs) => relative(SRC, abs).split(sep).join('/')
-const covered = (rel) => MIGRATED.some((m) => rel === m || rel.startsWith(m + '/'))
+const covered = coveredBy(MIGRATED)
 
 /**
  * Display path. A workspace-package child resolves outside src/, where

@@ -29,14 +29,23 @@ export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
  * an ordinary word describing a plain URL. It is not in this table for that
  * reason: the caller passes the translated string in.
  */
-const PROVIDER_LABELS: Partial<Record<EmbedProviderName, string>> = {
-  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',
-  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music',
+/*
+ * `Exclude<…, 'link'>`, not `Partial<…>`.
+ *
+ * Partial makes adding a provider to the union compile clean and render "Link"
+ * in the badge — no type error, no failing test. CLAUDE.md names Bandcamp as a
+ * pending EmbedProvider::HOSTS addition, so that path is live. Excluding the one
+ * member that genuinely has no brand keeps the rest exhaustive: a new provider
+ * is a compile error here until someone supplies its name.
+ */
+const PROVIDER_LABELS: Record<Exclude<EmbedProviderName, 'link'>, string> = {
+  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', // i18n-ignore: brand names
+  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music', // i18n-ignore: brand names
 }
 
 /** `genericLabel` is what an unrecognised host (or a bare link) reads as. */
 export function providerLabel(p: EmbedProviderName, genericLabel: string): string {
-  return PROVIDER_LABELS[p] ?? genericLabel
+  return p === 'link' ? genericLabel : PROVIDER_LABELS[p]
 }
 
 /** Must mirror EmbedProvider::AUDIO. Audio players are fixed-height frames. */
