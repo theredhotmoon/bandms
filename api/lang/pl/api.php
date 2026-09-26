@@ -11,5 +11,6 @@ return [
         'ticket_not_owned'       => 'Ten bilet nie należy do ciebie.',
         'transfer_to_self'       => 'Nie możesz przekazać biletu sobie.',
         'transfer_already_open'  => 'Ten bilet już czeka na odbiór przez inną osobę.',
+        'session_expired'        => 'Twoja sesja wygasła. Zaloguj się ponownie.',
     ],
 ];

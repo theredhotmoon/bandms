@@ -6,6 +6,7 @@ use App\Models\FanAccount;
 use App\Models\Ticket;
 use App\Models\Venue;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 
 /*
@@ -126,17 +127,56 @@ it('prefers ?lang= over the header, the way SetLocale does', function () {
     expect($response->json('message'))->toBe(__('api.fan.transfer_to_self', [], 'pl'));
 });
 
-it('leaves every fan message translated in both locales', function () {
+it('answers a lapsed session in the language the request asked for', function () {
+    // The ordinary way a fan meets a 401: sessions last 30 days and a cache
+    // flush drops them early. FanAuth aborted with English literals, and
+    // utils/fanErrors.ts prints any 4xx message the server wrote — so this was
+    // "Invalid or expired session." under Polish chrome.
+    $pl = $this->getJson('/api/fan/me', [
+        'Authorization'   => 'Bearer not-a-real-session-token',
+        'Accept-Language' => 'pl',
+    ]);
+
+    $pl->assertStatus(401);
+    expect($pl->json('message'))->toBe(__('api.fan.session_expired', [], 'pl'));
+});
+
+it('answers a missing token in the language the request asked for', function () {
+    $pl = $this->getJson('/api/fan/me', ['Accept-Language' => 'pl']);
+
+    $pl->assertStatus(401);
+    expect($pl->json('message'))->toBe(__('api.unauthenticated', [], 'pl'));
+});
+
+it('does not say which of the two session failures it was', function () {
+    // A caller probing tokens learns nothing: a token with no session and a
+    // session whose account is gone give the same sentence. The fan reads one
+    // instruction either way — sign in again.
+    [$fan, $token] = localeFan('vanished@example.com');
+    $fan->delete();
+
+    $response = $this->getJson('/api/fan/me', ['Authorization' => "Bearer {$token}"]);
+
+    $response->assertStatus(401);
+    expect($response->json('message'))->toBe(__('api.fan.session_expired', [], 'en'));
+});
+
+it('declares every fan message for both locales', function () {
     // The guard that matters: adding a key to lang/en/api.php's `fan` block
-    // without a pl twin (or leaving one equal to the English) is what silently
-    // ships English to a Polish fan.
+    // without a pl twin is what silently ships English to a Polish fan.
+    //
+    // Asserted through Lang::hasForLocale rather than by comparing the two
+    // strings. "pl must differ from en" catches the same omissions but also
+    // fails a translation that is legitimately identical — a proper noun, a
+    // venue name, "OK" — and the only way to pass would be to detune the
+    // Polish copy to satisfy a test.
     $en = __('api.fan', [], 'en');
-    $pl = __('api.fan', [], 'pl');
 
-    expect($en)->toBeArray();
-    expect(array_keys($pl))->toEqualCanonicalizing(array_keys($en));
+    expect($en)->toBeArray()->not->toBeEmpty();
 
-    foreach ($en as $key => $english) {
-        expect($pl[$key])->not->toBe('')->and($pl[$key])->not->toBe($english);
+    foreach (array_keys($en) as $key) {
+        expect(Lang::hasForLocale("api.fan.{$key}", 'pl'))
+            ->toBeTrue("api.fan.{$key} is missing from lang/pl/api.php");
+        expect(trim((string) __("api.fan.{$key}", [], 'pl')))->not->toBe('');
     }
 });

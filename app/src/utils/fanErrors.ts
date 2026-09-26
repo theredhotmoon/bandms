@@ -7,6 +7,11 @@ import { ApiError, ApiValidationError } from '@/api/client'
  * has no `pl` entry — and a 429 is exactly what the fan routes' throttles
  * produce. A 500 is "Server Error" for the same reason. Our own controller
  * messages *are* translated (`__('api.fan.*')`), so those are worth printing.
+ *
+ * 401 is included deliberately: `FanAuth` aborts through `__()` too, so a
+ * lapsed session says so in the fan's language. It was English until the
+ * middleware was wired up — if a 4xx ever gains an untranslated message again,
+ * this predicate is the place that has to know.
  */
 function isOurs(status: number): boolean {
   return status < 500 && status !== 429

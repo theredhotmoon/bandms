@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 
 /*
  * The fan sign-in limit must be the fan sign-in limit.
@@ -18,15 +18,27 @@ use Illuminate\Support\Facades\Cache;
  * part that would silently rot back.
  */
 
+/**
+ * The cache key an inline `throttle:n,m,<prefix>` actually counts against.
+ *
+ * `$prefix . sha1($domain.'|'.$ip)` — the prefix is only half of it, which is
+ * why `RateLimiter::clear('fan-magic-link')` was a no-op. Under Pest the domain
+ * is null and the IP is 127.0.0.1.
+ *
+ * Composed here rather than reaching for `Cache::flush()`: flushing is only
+ * safe because phpunit.xml sets CACHE_STORE=array — the very dependency this
+ * beforeEach exists to remove — and it would also drop the `fan_session:` and
+ * `fan_magic:` keys any future test in this file might seed.
+ */
+function throttleKey(string $prefix): string
+{
+    return $prefix . sha1('|127.0.0.1');
+}
+
 beforeEach(function () {
-    // Cache::flush, not RateLimiter::clear('fan-magic-link').
-    //
-    // The prefix is only half the key: ThrottleRequests builds
-    // `$prefix . sha1($domain.'|'.$ip)`, so clearing the bare prefix is a no-op.
-    // It looked like it worked because phpunit.xml sets CACHE_STORE=array and
-    // every Pest test boots a fresh app — which made the "still enforces" case
-    // below silently depend on that config rather than on this beforeEach.
-    Cache::flush();
+    RateLimiter::clear(throttleKey('fan-magic-link'));
+    RateLimiter::clear(throttleKey('ticket-claim'));
+    RateLimiter::clear(throttleKey('fan-transfer'));
 });
 
 it('does not spend the sign-in limit on unrelated throttled routes', function () {
@@ -48,6 +60,21 @@ it('does not spend the claim limit on unrelated throttled routes', function () {
     // 404 because the token is not real — the point is that it is not a 429.
     $this->postJson('/api/tickets/claim/definitely-not-a-real-token')
         ->assertStatus(404);
+});
+
+it('gives the transfer route a limit of its own', function () {
+    // It had none at all, while dispatching SendTicketTransferNotification on
+    // every call — one session was an unbounded outbound-mail endpoint. The
+    // isolation matters for the same reason as the others: unrelated browsing
+    // must not spend it.
+    foreach (range(1, 25) as $i) {
+        $this->postJson('/api/presale-codes/validate', ['code' => 'nope']);
+    }
+
+    // 401 because there is no session — the point is that it is not a 429, so
+    // the route's own counter was untouched by the 25 calls above.
+    $this->postJson('/api/fan/tickets/00000000-0000-0000-0000-000000000000/transfer')
+        ->assertStatus(401);
 });
 
 it('still enforces the sign-in limit on its own route', function () {

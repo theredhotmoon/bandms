@@ -22,5 +22,6 @@ return [
         'ticket_not_owned'       => 'You do not own this ticket.',
         'transfer_to_self'       => 'You cannot transfer a ticket to yourself.',
         'transfer_already_open'  => 'A pending transfer already exists for this ticket.',
+        'session_expired'        => 'Your session has expired. Please sign in again.',
     ],
 ];

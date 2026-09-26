@@ -199,7 +199,12 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
     Route::get('me', [FanAccountController::class, 'me']);
     Route::get('tickets', [FanAccountController::class, 'tickets']);
     Route::get('orders', [FanAccountController::class, 'orders']);
-    Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate']);
+    // The only fan route that had no throttle at all, and it dispatches
+    // SendTicketTransferNotification on every call — so one session was an
+    // unbounded outbound-mail endpoint (loop `to_email` over a list). Reachable
+    // only once sign-in works, which is the accident that hid it; see TODO.md.
+    Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate'])
+        ->middleware('throttle:20,1,fan-transfer');
     Route::post('auth/logout', [FanAccountController::class, 'logout']);
 });
 
