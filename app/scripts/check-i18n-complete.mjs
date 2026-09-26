@@ -22,13 +22,17 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { copyHits } from './lib/template-scan.mjs'
 import { coveredBy, migratedPaths } from './lib/migrated.mjs'
 
 // Anchored to this file, not to the cwd, the way all three sibling guards are.
 // `resolve('src')` worked only from app/ and died with ENOENT when a root-level
 // wrapper invoked it — which is the shape scripts/test-all.sh already uses.
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+// fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
+// checkout under a path with a space resolves to a directory that does not
+// exist and the walk throws — failing the build CI actually runs.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = resolve(ROOT, 'src')
 const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 
@@ -67,9 +71,12 @@ const EXEMPT = new Map([
  * which reached a Polish admin through saveErrorMessage. Fixed there rather
  * than papered over here.
  */
+// `types/` used to be listed here. The staleness rule above rejected it: the
+// tree produces no hits at all, so the entry suppressed nothing and only
+// reserved the right to. Scanning it instead turns "a label table in types/ is
+// a bug" from a comment into something the build enforces.
 const EXEMPT_DIRS = new Map([
   ['api/', 'HTTP verbs, header names, `Bearer `, and param guards that fire on a programmer error rather than a user action — every message a user can actually read is thrown empty so the call site\'s translated fallback wins'],
-  ['types/', 'shapes and unions; a label table here is a bug, and the two that existed (SHOP_ITEM_TYPE_LABELS, INSTRUMENT_TYPE_LABELS) were moved out'],
   ['i18n/', 'the catalogues themselves — src/i18n/catalogue.spec.ts is what checks these'],
 ])
 
@@ -96,7 +103,12 @@ for (const [path, reason] of EXEMPT) {
   else if (hitCount(path, byPath.get(path)) === 0) stale.push(`${path} — no copy left to exempt`)
 }
 for (const [dir, reason] of EXEMPT_DIRS) {
+  const under = [...byPath.keys()].filter((r) => r.startsWith(dir))
   if (!reason.trim()) stale.push(`${dir} — no reason given`)
+  else if (under.length === 0) stale.push(`${dir} — no such directory (renamed or deleted?)`)
+  else if (!under.some((r) => hitCount(r, byPath.get(r)) > 0)) {
+    stale.push(`${dir} — no copy left to exempt in any file under it`)
+  }
 }
 if (stale.length) {
   console.error('\n\u2717 i18n completeness: the exemption list has rotted\n')

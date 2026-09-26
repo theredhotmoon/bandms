@@ -27,9 +27,13 @@
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { copyHits } from './lib/template-scan.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+// fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
+// checkout under a path with a space resolves to a directory that does not
+// exist and the walk throws — failing the build CI actually runs.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 /** Paths already migrated, relative to app/src. Extend this in every area PR. */
 const MIGRATED = [
@@ -151,6 +155,7 @@ const MIGRATED = [
   // added to postBlocks.ts, would have been invisible to every one of them.
   'router/index.ts',
   'utils/postBlocks.ts',
+  'composables/useConcertTickets.ts',
 ]
 
 

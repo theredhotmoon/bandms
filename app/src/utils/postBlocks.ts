@@ -39,13 +39,27 @@ export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
  * is a compile error here until someone supplies its name.
  */
 const PROVIDER_LABELS: Record<Exclude<EmbedProviderName, 'link'>, string> = {
-  youtube: 'YouTube', vimeo: 'Vimeo', instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', // i18n-ignore: brand names
-  spotify: 'Spotify', soundcloud: 'SoundCloud', apple_music: 'Apple Music', // i18n-ignore: brand names
+  // One entry per line on purpose: `i18n-ignore` exempts a whole line, so five
+  // labels sharing one would let `bandcamp: 'Listen on Bandcamp'` in unseen.
+  youtube: 'YouTube', // i18n-ignore: brand name
+  vimeo: 'Vimeo', // i18n-ignore: brand name
+  instagram: 'Instagram', // i18n-ignore: brand name
+  tiktok: 'TikTok', // i18n-ignore: brand name
+  facebook: 'Facebook', // i18n-ignore: brand name
+  spotify: 'Spotify', // i18n-ignore: brand name
+  soundcloud: 'SoundCloud', // i18n-ignore: brand name
+  apple_music: 'Apple Music', // i18n-ignore: brand name
 }
 
 /** `genericLabel` is what an unrecognised host (or a bare link) reads as. */
 export function providerLabel(p: EmbedProviderName, genericLabel: string): string {
-  return p === 'link' ? genericLabel : PROVIDER_LABELS[p]
+  // Both halves are load-bearing. The `Exclude` above makes a *new union
+  // member* a compile error, but `p` is not always locally derived —
+  // ClipsAdminView and AttachedClipsField pass `clip.provider`, an unvalidated
+  // cast of an API string. A backend-only addition (Bandcamp joining
+  // EmbedProvider::HOSTS) produces no compile error at all, and without the
+  // fallback the badge renders the literal "undefined" where it read "Link".
+  return p === 'link' ? genericLabel : (PROVIDER_LABELS[p] ?? genericLabel)
 }
 
 /** Must mirror EmbedProvider::AUDIO. Audio players are fixed-height frames. */

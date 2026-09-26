@@ -21,8 +21,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { coveredBy, migratedPaths } from './lib/migrated.mjs'
 import { copyHits } from './lib/template-scan.mjs'
 import { join, relative, sep, dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+// fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
+// checkout under a path with a space resolves to a directory that does not
+// exist and the walk throws — failing the build CI actually runs.
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 

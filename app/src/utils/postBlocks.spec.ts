@@ -59,6 +59,16 @@ describe('providerLabel', () => {
     expect(providerLabel('link', 'Link')).toBe('Link')
     expect(providerLabel('link', 'Odnośnik')).toBe('Odnośnik')
   })
+
+  it('falls back for a provider the backend knows and the union does not', () => {
+    // `clip.provider` is an unvalidated cast of an API string, so a backend-only
+    // addition — Bandcamp joining EmbedProvider::HOSTS — reaches this function
+    // with no compile error. Without the fallback the badge rendered the
+    // literal "undefined"; the cast is what the `as` here stands in for.
+    const unknown = 'bandcamp' as Parameters<typeof providerLabel>[0]
+    expect(providerLabel(unknown, 'Link')).toBe('Link')
+    expect(providerLabel(unknown, 'Odnośnik')).toBe('Odnośnik')
+  })
 })
 
 describe('detectProvider', () => {
