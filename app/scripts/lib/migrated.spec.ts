@@ -20,6 +20,11 @@ function lint(body: string): string {
   return p
 }
 
+const DQ = String.fromCharCode(34)
+const BS = String.fromCharCode(92)
+const TICK = String.fromCharCode(96)
+const NLQ = String.fromCharCode(10)
+
 const wrap = (inner: string) => `const MIGRATED = [\n${inner}\n]\n`
 
 describe('migratedPaths', () => {
@@ -53,9 +58,30 @@ describe('migratedPaths', () => {
     expect(migratedPaths(lint(wrap("  'weird]name.vue',\n  'B.vue',")))).toEqual(['weird]name.vue', 'B.vue'])
   })
 
-  it('ignores double-quoted and template strings, which are not paths here', () => {
-    const src = wrap("  'A.vue',\n  // see \"docs\" and `notes`\n  'B.vue',")
-    expect(migratedPaths(lint(src))).toEqual(['A.vue', 'B.vue'])
+  it('reads a double-quoted entry, rather than dropping it silently', () => {
+    // The scanner used to consume a double-quoted string and collect only
+    // single-quoted ones, so one Prettier run with `singleQuote: false` would
+    // drop entries — and unlike every other bug here that one failed *open*,
+    // quietly un-ratcheting whatever it lost.
+    const src = wrap("  'A.vue'," + NLQ + "  " + DQ + "B.vue" + DQ + "," + NLQ + "  'C.vue',")
+    expect(migratedPaths(lint(src))).toEqual(['A.vue', 'B.vue', 'C.vue'])
+  })
+
+  it('handles an escaped quote inside a path', () => {
+    const src = wrap("  'O" + BS + "'Brien.vue'," + NLQ + "  'B.vue',")
+    expect(migratedPaths(lint(src))).toEqual(["O'Brien.vue", 'B.vue'])
+  })
+
+  it('refuses a template literal rather than guessing at it', () => {
+    const src = wrap("  'A.vue'," + NLQ + "  " + TICK + "B.vue" + TICK + ",")
+    expect(() => migratedPaths(lint(src))).toThrow(/template literal/)
+  })
+
+  it('is not fooled by a declaration written inside a comment', () => {
+    // The bracket count used to start from a bracket that was itself commented
+    // out, so a well-formed array was reported as unterminated.
+    const src = "// const MIGRATED = [ see below" + NLQ + wrap("  'A.vue',")
+    expect(migratedPaths(lint(src))).toEqual(['A.vue'])
   })
 
   it('throws rather than returning a short list when the array is unterminated', () => {

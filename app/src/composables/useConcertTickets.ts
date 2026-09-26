@@ -19,8 +19,8 @@ import type { Ref } from 'vue'
  * at a mutationFn.
  *
  * Module scope, and a literal name. Declared inside the composable it was a
- * fresh class object per call, so `instanceof` was useless to any caller; and
- * `MissingSession.name` reads the *minified* identifier in a production build —
+ * fresh class object per call, and `MissingSession.name` reads the *minified*
+ * identifier in a production build —
  * verified: the string does not appear in dist/ at all — which is the one
  * environment where this is worth having.
  */

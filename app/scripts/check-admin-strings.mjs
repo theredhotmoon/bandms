@@ -168,7 +168,11 @@ function filesFor(entry) {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name)
       if (statSync(p).isDirectory()) walk(p)
-      else if (p.endsWith('.vue') || p.endsWith('.ts')) out.push(p)
+      // Specs excluded, matching both sibling guards. A directory entry used
+      // to pull them in, and the only remedy this lint can offer a spec is
+      // "move the assertion into the i18n catalogue" — advice that makes no
+      // sense for a test and which check-i18n-coverage documents at length.
+      else if (p.endsWith('.vue') || (p.endsWith('.ts') && !p.endsWith('.spec.ts'))) out.push(p)
     }
   }
   walk(abs)
