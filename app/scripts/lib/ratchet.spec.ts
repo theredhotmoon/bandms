@@ -36,10 +36,17 @@ describe('MIGRATED', () => {
     expect(dirs).toContain('components/admin/forms/blocks')
   })
 
-  it('does not list a path that another entry already covers', () => {
-    const covered = coveredBy((MIGRATED as string[]).filter((p) => !/\.(vue|ts)$/.test(p)))
-    for (const p of (MIGRATED as string[]).filter((p) => /\.(vue|ts)$/.test(p))) {
-      expect(covered(p), `${p} is already covered by a directory entry`).toBe(false)
+  it('does not list anything another entry already covers', () => {
+    // Each entry against every *other* entry, rather than files-against-
+    // directories. The narrower form missed a directory nested under another
+    // directory — `components/rig/nested` beside `components/rig` — which is
+    // the same redundancy and the same symptom. It also avoids inferring
+    // file-ness from the extension, which would misread a directory named
+    // something.ts.
+    const all = MIGRATED as string[]
+    for (const p of all) {
+      const others = coveredBy(all.filter((m) => m !== p))
+      expect(others(p), `${p} is already covered by another entry`).toBe(false)
     }
   })
 })

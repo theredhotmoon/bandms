@@ -29,19 +29,13 @@ import { fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 
-/**
- * The MIGRATED entries, read from the string lint so there is one list.
- *
- * The array's end is found by matching brackets, not by the first `]`: a
- * comment or a future nested value inside the region would truncate the list
- * silently, and a *partial* parse does not trip the empty-list check — it just
- * reports already-listed files as gaps, telling you to add what is there.
- */
-
-// Before the scan, not after: a broken parse must not first report every file
-// in src/ as an uncovered gap.
+// Before the scan, not after: an empty ratchet must not first report every
+// file in src/ as an uncovered gap. Unreachable while ratchet.mjs holds a
+// literal array — which is the point of it being one — but a bad merge that
+// emptied the export would otherwise turn every guard green by having nothing
+// to check.
 if (MIGRATED.length === 0) {
-  console.error('✗ i18n coverage: parsed zero MIGRATED entries — the parser is broken')
+  console.error('✗ i18n coverage: ratchet.mjs exports an empty MIGRATED list')
   process.exit(1)
 }
 
@@ -230,7 +224,7 @@ if (gaps.length) {
   console.error(`\n✗ i18n coverage: ${gaps.length} file(s) render translations but are not guarded\n`)
   for (const g of gaps) console.error(`  ${show(g)}`)
   console.error(`
-Add each to MIGRATED in app/scripts/check-admin-strings.mjs. Until then the
+Add each to MIGRATED in app/scripts/lib/ratchet.mjs. Until then the
 string lint never looks at them, so the area they sit in reads as finished
 while they can quietly go back to hardcoded English.
 `)

@@ -132,7 +132,7 @@ if (offenders.length) {
   }
   console.error(`
 Migrate the file and add its path to MIGRATED in
-app/scripts/check-admin-strings.mjs — a directory entry there covers its files.
+app/scripts/lib/ratchet.mjs — a directory entry there covers its files.
 If its strings are genuinely not chrome — data seeded into a record, an ISO
 code, an HTTP verb — add it to EXEMPT in this script *with the reason*, which is
 what stops the list becoming a dumping ground.

@@ -31,6 +31,16 @@ import { fileURLToPath } from 'node:url'
 import { copyHits } from './lib/template-scan.mjs'
 import { isScannable, MIGRATED } from './lib/ratchet.mjs'
 
+// The same floor check-i18n-coverage has, and this guard runs first.
+// Without it an empty ratchet makes the loop below run zero times and print
+// "✓ 0 migrated path(s), no hardcoded text" — a green tick for having
+// checked nothing. Moving the list out of this file is exactly what makes an
+// accidentally empty export plausible.
+if (MIGRATED.length === 0) {
+  console.error('✗ admin strings: ratchet.mjs exports an empty MIGRATED list')
+  process.exit(1)
+}
+
 // fileURLToPath, not .pathname: the latter keeps percent-encoding, so a
 // checkout under a path with a space resolves to a directory that does not
 // exist and the walk throws — failing the build CI actually runs.
