@@ -18,13 +18,13 @@
  * It deliberately does **not** honour `i18n-ignore`: a line-level opt-out in a
  * file nobody has migrated is not yet meaningful, which is the rule
  * template-scan.mjs already states. That only works because the ratchet is read
- * correctly — see lib/migrated.mjs for the version of this that did not.
+ * correctly — see lib/ratchet.mjs for the four ways it once was not.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { copyHits } from './lib/template-scan.mjs'
-import { coveredBy, migratedPaths } from './lib/migrated.mjs'
+import { coveredBy, isScannable, MIGRATED } from './lib/ratchet.mjs'
 
 // Anchored to this file, not to the cwd, the way all three sibling guards are.
 // `resolve('src')` worked only from app/ and died with ENOENT when a root-level
@@ -34,17 +34,10 @@ import { coveredBy, migratedPaths } from './lib/migrated.mjs'
 // exist and the walk throws — failing the build CI actually runs.
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = resolve(ROOT, 'src')
-const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 
 const rel = (abs) => relative(SRC, abs).split('\\').join('/')
 
-let onRatchet
-try {
-  onRatchet = coveredBy(migratedPaths(LINT))
-} catch (e) {
-  console.error(`\u2717 i18n completeness: ${e.message}`)
-  process.exit(1)
-}
+const onRatchet = coveredBy(MIGRATED)
 
 /**
  * Files whose "copy" is not copy, with the reason. Each one is a decision
@@ -85,7 +78,7 @@ const files = []
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry)
     if (statSync(p).isDirectory()) walk(p)
-    else if (/\.(vue|ts)$/.test(entry) && !/\.spec\.ts$/.test(entry)) files.push(p)
+    else if (isScannable(entry)) files.push(p)
   }
 })(SRC)
 
@@ -148,6 +141,6 @@ what stops the list becoming a dumping ground.
 }
 
 console.log(
-  `\u2713 i18n completeness: nothing unmigrated (${migratedPaths(LINT).length} on the ratchet, ` +
+  `\u2713 i18n completeness: nothing unmigrated (${MIGRATED.length} on the ratchet, ` +
   `${checked} other file(s) checked, ${EXEMPT.size + EXEMPT_DIRS.size} exemption(s))`,
 )

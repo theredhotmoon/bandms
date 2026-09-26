@@ -18,7 +18,7 @@
  * lint if someone adds a literal later.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { coveredBy, migratedPaths } from './lib/migrated.mjs'
+import { coveredBy, isScannable, MIGRATED } from './lib/ratchet.mjs'
 import { copyHits } from './lib/template-scan.mjs'
 import { join, relative, sep, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -28,7 +28,6 @@ import { fileURLToPath } from 'node:url'
 // exist and the walk throws — failing the build CI actually runs.
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
-const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
 
 /**
  * The MIGRATED entries, read from the string lint so there is one list.
@@ -39,14 +38,6 @@ const LINT = join(ROOT, 'scripts', 'check-admin-strings.mjs')
  * reports already-listed files as gaps, telling you to add what is there.
  */
 
-const MIGRATED = (() => {
-  try {
-    return migratedPaths(LINT)
-  } catch (e) {
-    console.error(`✗ i18n coverage: ${e.message}`)
-    process.exit(1)
-  }
-})()
 // Before the scan, not after: a broken parse must not first report every file
 // in src/ as an uncovered gap.
 if (MIGRATED.length === 0) {
@@ -60,7 +51,7 @@ const walk = (dir) => {
     const p = join(dir, name)
     if (statSync(p).isDirectory()) {
       if (name !== 'i18n') walk(p)
-    } else if (p.endsWith('.vue') || (p.endsWith('.ts') && !p.endsWith('.spec.ts'))) {
+    } else if (isScannable(p)) {
       // Specs are excluded deliberately. A spec that calls useI18n() or
       // asserts on catalogue text would be reported as a gap, and the only
       // remedy this guard offers — add it to MIGRATED — then makes the string
