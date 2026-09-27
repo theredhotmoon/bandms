@@ -1209,13 +1209,22 @@ obscurely: `This workflow run cannot be retried`. A pull-request run has no
 failed jobs to retry — its deploy was skipped, never attempted. Re-run the
 `event=push` run for the merge commit instead.
 
-`notify-failure` in `deploy.yml` files an issue when a push-triggered run ends
-in `failure` **or** `cancelled`, so a repeat of that silent two-day outage
-needs the notifier itself to fail. It reuses one open issue rather than filing one per
-failure; the original incident would have produced six. It also filters pull
-requests out of that lookup — `issues.listForRepo` returns PRs too, so a PR
-labelled `deploy-failure` would otherwise collect the reports in its own thread
-and bury them on merge.
+`notify-failure` in `deploy.yml` files an issue when a push-triggered run has a
+stage that **failed**, so a repeat of that silent two-day outage needs the
+notifier itself to fail. It reuses one open issue rather than filing one per
+failure; the original incident would have produced six. That lookup filters pull
+requests out — `issues.listForRepo` returns PRs too, so a PR labelled
+`deploy-failure` would otherwise collect the reports in its own thread and bury
+them on merge — and it only renames an issue it found *by label*, because one
+matched on title alone might be a person's, and renaming someone's issue out
+from under them is worse than a stale subject line.
+
+**A cancelled run files nothing, deliberately.** `cancelled()` was tried and
+reverted: the `needs` context cannot tell a deploy cancelled before it started
+from one killed mid-script, so the notifier either claimed a half-deployed
+production for a deploy that never connected, or went quiet when it should not
+have. Push runs are never auto-cancelled (`cancel-in-progress` is scoped to
+`pull_request`), so whoever cancelled one already knows.
 
 The issue's wording depends on **where** the run broke, which matters more than
 it sounds: the server script runs `mysql` → backup → `backend` → `web` →
@@ -1259,9 +1268,9 @@ token fails loudly rather than silently — which is what made the 30-day defaul
 dangerous in the first place.
 
 **It has to be a classic PAT.** GitHub's Container registry does not accept a
-fine-grained token for `docker login ghcr.io` - it fails with `denied: denied`,
+fine-grained token for `docker login ghcr.io` — it fails with `denied: denied`,
 the very symptom of this entry, so "use a fine-grained PAT instead" sends you
-back to the top of it. `docs/deployment.md` says classic for the same reason.
+back to the top of it. `docs/deployment.md` §4 specifies classic too.
 
 **`denied: denied` has one other cause**, worth ruling out before regenerating:
 an empty username. The step passes `GITHUB_ACTOR: ${{ github.actor }}`, which is

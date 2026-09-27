@@ -388,12 +388,20 @@ jobs:
     name: Announce a failed deploy
     needs: [test, build-and-push, deploy]
     # `failure()` is needed - the default `success()` would skip this very job
-    # in exactly the case it exists for. `cancelled()` is here too: a cancelled
-    # push run leaves main un-deployed just as surely, and push runs are not
-    # auto-cancelled (cancel-in-progress is scoped to pull_request above), so a
-    # cancellation here is unusual and worth hearing about. Scoped to push so a
-    # red PR, which its author is already looking at, files nothing.
-    if: (failure() || cancelled()) && github.event_name == 'push'
+    # in exactly the case it exists for. Scoped to push so a red PR, which its
+    # author is already looking at, files nothing.
+    #
+    # Deliberately NOT `|| cancelled()`. That was tried and reverted: a run
+    # cancelled before the deploy started is indistinguishable, from the `needs`
+    # context alone, from one killed half way through it - the job results carry
+    # no "did it actually begin" signal - so the notifier either claimed a
+    # half-deployed production for a deploy that never opened an SSH connection,
+    # or stayed silent when it should not have. Getting it right needs the deploy
+    # job to publish a marker on its first step, which is more machinery than a
+    # deliberate human cancellation warrants: push runs are never auto-cancelled
+    # (`cancel-in-progress` is scoped to `pull_request` above), so whoever
+    # cancelled one already knows main is un-deployed.
+    if: failure() && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -407,6 +415,12 @@ jobs:
           # single flaky listForRepo/create/createComment threw out of the step
           # and the incident went unreported. Hardening getLabel by hand covered
           # the least important call.
+          #
+          # This does retry the writes too, and the plugin only exempts 4xx - so
+          # a 502 arriving *after* an issue was created can duplicate it. That is
+          # the right way round for this job: a duplicate issue is loud and
+          # obvious, and someone closes it in two clicks, whereas a swallowed
+          # report is the silent failure the whole job exists to prevent.
           retries: 3
           script: |
             const LABEL = 'deploy-failure'
@@ -423,28 +437,24 @@ jobs:
             // without anyone opening the run first. Cancelled counts: the gate
             // above lets a cancelled run through, and "unknown stage" in a
             // notification subject line is no use to anybody.
-            const broken = Object.entries(results).filter(([, r]) => r === 'failure' || r === 'cancelled')
+            const broken = Object.entries(results).filter(([, r]) => r === 'failure')
 
-            // `cancelled()` is true for the *run*, not for any one job, so a run
-            // cancelled after all three needs had already succeeded lands here
-            // with nothing broken. Filing then would report a failure that did
-            // not happen and - worse - retitle a real open issue to
-            // "(unknown stage)" and append a false comment to it.
+            // Unreachable while the three needs above are this job's only
+            // ancestors - `failure()` cannot be true unless one of them failed -
+            // and kept as a guard because adding a fourth `needs` is exactly how
+            // that stops being true. Filing on an empty set would report a
+            // failure that did not happen and retitle a real issue to match it.
             if (!broken.length) {
-              core.notice('run ended with no failed stage; nothing to report')
+              core.notice('no failed stage among this job\'s needs; nothing to report')
               return
             }
 
             const stage = broken.map(([n]) => n).join(', ')
 
-            // Only claim half-deployment when the deploy actually got to run.
-            // A run cancelled while Tests was still going reports `deploy` as
-            // `cancelled` rather than `skipped` - queued-then-cancelled is not a
-            // dependency skip - and blaming production for a deploy that never
-            // opened an SSH connection is the same lie this paragraph replaced.
+            // Only the deploy stage failing can have left production part-way.
+            // `failure` is unambiguous here in a way `cancelled` was not: the job
+            // ran and its script returned non-zero.
             const deployRan = results['Deploy to Hetzner'] === 'failure'
-              || (results['Deploy to Hetzner'] === 'cancelled'
-                  && results['Build & push images'] === 'success')
 
             // What production looks like now, which depends on how far the
             // deploy got. Saying "production is unchanged" unconditionally would
@@ -479,6 +489,7 @@ jobs:
             ].join("\n")
 
             const TITLE_PREFIX = 'Deploy to production is failing'
+            const OWN_TITLE = /^Deploy to production is failing \([^)]+\)$/
             const title = TITLE_PREFIX + ' (' + stage + ')'
 
             // Ensure the label, tolerating both "already there" and a flaky
@@ -510,20 +521,42 @@ jobs:
             // `labels` would miss a report filed unlabelled by the fallback
             // above: unfindable means a fresh issue per failure, which is exactly
             // the six-issues-per-incident spam this reuse exists to prevent.
-            const open = await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', per_page: 100,
+            // The labelled query first, because it is exact and unbounded by
+            // page size - dropping it in favour of one unfiltered listing meant
+            // reuse only worked while the report stayed among the 100 newest open
+            // issues *and PRs*, and a repo with a hundred open Dependabot PRs
+            // would have gone back to filing one issue per failure.
+            const isIssue = (i) => !i.pull_request
+            const labelled = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
             })
-            const existing = open.data.find((i) => !i.pull_request && (
-              (i.labels || []).some((l) => (l && l.name ? l.name : l) === LABEL)
-              || String(i.title || '').startsWith(TITLE_PREFIX)
-            ))
+            let existing = labelled.data.filter(isIssue)[0]
+            let matchedByLabel = Boolean(existing)
+
+            // Second pass only for the narrow case the label guard above can
+            // produce: a report filed unlabelled because the labels API
+            // misbehaved. Matched on the notifier's own exact title shape rather
+            // than a prefix - "Deploy to production is failing intermittently,
+            // needs a retry step", filed by a person, would otherwise be adopted
+            // as the incident thread.
+            if (!existing) {
+              const all = await github.rest.issues.listForRepo({
+                owner, repo, state: 'open', per_page: 100,
+              })
+              existing = all.data.filter(isIssue)
+                .find((i) => OWN_TITLE.test(String(i.title || '')))
+            }
 
             if (existing) {
               await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body })
               // The title is all a notification email shows, and the issue
               // outlives the stage that opened it: a first Tests failure followed
               // by five deploy failures would otherwise stay titled "(Tests)".
-              if (existing.title !== title) {
+              //
+              // Only for an issue matched by label. One matched by title alone
+              // might still be someone else's, and renaming a person's issue out
+              // from under them is worse than a stale subject line.
+              if (matchedByLabel && existing.title !== title) {
                 await github.rest.issues.update({ owner, repo, issue_number: existing.number, title })
               }
               core.notice('Deploy still failing - commented on #' + existing.number)
