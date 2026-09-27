@@ -402,6 +402,12 @@ jobs:
       - name: File or update the deploy-failure issue
         uses: actions/github-script@v7
         with:
+          # The calls that actually do the reporting were one transient 5xx away
+          # from filing nothing: github-script defaults to retries: 0, so a
+          # single flaky listForRepo/create/createComment threw out of the step
+          # and the incident went unreported. Hardening getLabel by hand covered
+          # the least important call.
+          retries: 3
           script: |
             const LABEL = 'deploy-failure'
             const { owner, repo } = context.repo
@@ -418,8 +424,27 @@ jobs:
             // above lets a cancelled run through, and "unknown stage" in a
             // notification subject line is no use to anybody.
             const broken = Object.entries(results).filter(([, r]) => r === 'failure' || r === 'cancelled')
-            const stage = broken.length ? broken.map(([n]) => n).join(', ') : 'unknown stage'
-            const deployBroke = results['Deploy to Hetzner'] !== 'success' && results['Deploy to Hetzner'] !== 'skipped'
+
+            // `cancelled()` is true for the *run*, not for any one job, so a run
+            // cancelled after all three needs had already succeeded lands here
+            // with nothing broken. Filing then would report a failure that did
+            // not happen and - worse - retitle a real open issue to
+            // "(unknown stage)" and append a false comment to it.
+            if (!broken.length) {
+              core.notice('run ended with no failed stage; nothing to report')
+              return
+            }
+
+            const stage = broken.map(([n]) => n).join(', ')
+
+            // Only claim half-deployment when the deploy actually got to run.
+            // A run cancelled while Tests was still going reports `deploy` as
+            // `cancelled` rather than `skipped` - queued-then-cancelled is not a
+            // dependency skip - and blaming production for a deploy that never
+            // opened an SSH connection is the same lie this paragraph replaced.
+            const deployRan = results['Deploy to Hetzner'] === 'failure'
+              || (results['Deploy to Hetzner'] === 'cancelled'
+                  && results['Build & push images'] === 'success')
 
             // What production looks like now, which depends on how far the
             // deploy got. Saying "production is unchanged" unconditionally would
@@ -428,7 +453,7 @@ jobs:
             // in the second half leaves the new schema live behind the old
             // frontend. That is the one state worth knowing, and the one a
             // blanket reassurance hides.
-            const consequence = deployBroke
+            const consequence = deployRan
               ? [
                   '**Production may be half-deployed.** The server script runs `mysql` -> DB backup ->',
                   '`backend` -> `web` -> `frontend` -> `caddy`, and **the backend step applies the',
@@ -453,7 +478,8 @@ jobs:
               ...consequence,
             ].join("\n")
 
-            const title = 'Deploy to production is failing (' + stage + ')'
+            const TITLE_PREFIX = 'Deploy to production is failing'
+            const title = TITLE_PREFIX + ' (' + stage + ')'
 
             // Ensure the label, tolerating both "already there" and a flaky
             // getLabel. An unguarded createLabel after a 5xx would 422
@@ -475,14 +501,22 @@ jobs:
               }
             }
 
-            // listForRepo returns pull requests as well as issues. A PR carrying
-            // this label - plausibly the very PR fixing the broken deploy - would
-            // otherwise collect the failure history in its thread and get buried
-            // on merge, with no issue ever filed.
+            // Matched on the label *or* the title, and filtered to real issues.
+            //
+            // Two traps here. listForRepo returns pull requests as well as
+            // issues, so a PR carrying this label - plausibly the very PR fixing
+            // the broken deploy - would otherwise collect the failure history in
+            // its thread and get buried on merge. And filtering the *query* on
+            // `labels` would miss a report filed unlabelled by the fallback
+            // above: unfindable means a fresh issue per failure, which is exactly
+            // the six-issues-per-incident spam this reuse exists to prevent.
             const open = await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', labels: LABEL, per_page: 20,
+              owner, repo, state: 'open', per_page: 100,
             })
-            const existing = open.data.filter((i) => !i.pull_request)[0]
+            const existing = open.data.find((i) => !i.pull_request && (
+              (i.labels || []).some((l) => (l && l.name ? l.name : l) === LABEL)
+              || String(i.title || '').startsWith(TITLE_PREFIX)
+            ))
 
             if (existing) {
               await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body })
@@ -496,6 +530,18 @@ jobs:
               core.summary.addRaw('Commented on #' + existing.number + ': ' + title)
             } else {
               const made = await github.rest.issues.create({ owner, repo, labels, title, body })
+              if (!labels.length) {
+                // Best effort: the title match above is what actually guarantees
+                // the next failure finds this issue, but a labelled issue is
+                // easier for a human to filter for.
+                try {
+                  await github.rest.issues.addLabels({
+                    owner, repo, issue_number: made.data.number, labels: [LABEL],
+                  })
+                } catch (e) {
+                  core.warning('filed #' + made.data.number + ' unlabelled: ' + e.message)
+                }
+              }
               core.notice('Deploy failing - filed #' + made.data.number)
               core.summary.addRaw('Filed #' + made.data.number + ': ' + title)
             }

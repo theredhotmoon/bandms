@@ -1210,8 +1210,8 @@ failed jobs to retry — its deploy was skipped, never attempted. Re-run the
 `event=push` run for the merge commit instead.
 
 `notify-failure` in `deploy.yml` files an issue when a push-triggered run ends
-in `failure` **or** `cancelled`, so a silent two-day outage needs the notifier
-itself to be broken. It reuses one open issue rather than filing one per
+in `failure` **or** `cancelled`, so a repeat of that silent two-day outage
+needs the notifier itself to fail. It reuses one open issue rather than filing one per
 failure; the original incident would have produced six. It also filters pull
 requests out of that lookup — `issues.listForRepo` returns PRs too, so a PR
 labelled `deploy-failure` would otherwise collect the reports in its own thread
@@ -1256,8 +1256,12 @@ trades a 30-day outage for a credential that is valid forever if it ever leaks,
 which sits badly beside the decision below not to publish these images at all.
 Now that `notify-failure` files an issue the moment a deploy breaks, a dated
 token fails loudly rather than silently — which is what made the 30-day default
-dangerous in the first place. A fine-grained PAT scoped to just these three
-packages is better still.
+dangerous in the first place.
+
+**It has to be a classic PAT.** GitHub's Container registry does not accept a
+fine-grained token for `docker login ghcr.io` - it fails with `denied: denied`,
+the very symptom of this entry, so "use a fine-grained PAT instead" sends you
+back to the top of it. `docs/deployment.md` says classic for the same reason.
 
 **`denied: denied` has one other cause**, worth ruling out before regenerating:
 an empty username. The step passes `GITHUB_ACTOR: ${{ github.actor }}`, which is
