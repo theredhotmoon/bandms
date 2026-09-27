@@ -371,7 +371,7 @@ jobs:
 
             docker image prune -f
 
-  # ── Announce a broken main ──────────────────────────────────────────────
+  # -- Announce a broken main ---------------------------------------------
   #
   # Six consecutive deploys failed over two days in Sep 2026 and nobody
   # noticed, including the agent that merged twice onto the broken pipeline.
@@ -380,18 +380,20 @@ jobs:
   # deploy (see "A green PR check does not mean it deployed" in CLAUDE.md).
   #
   # So a failure files an issue, which reaches whoever watches the repo through
-  # ordinary notifications and needs no webhook secret.
-  #
-  # It reuses one open issue rather than opening a new one each time: the
-  # original incident would otherwise have produced six. A recurring failure
-  # should be loud once and then accumulate evidence, not bury the first report.
+  # ordinary notifications and needs no webhook secret. It reuses one open issue
+  # rather than opening a new one each time: the original incident would
+  # otherwise have produced six, and a recurring failure should be loud once and
+  # then accumulate evidence rather than bury its own first report.
   notify-failure:
     name: Announce a failed deploy
     needs: [test, build-and-push, deploy]
-    # `failure()` is needed — the default `success()` would skip this very job
-    # in exactly the case it exists for. Scoped to push so a red PR, which the
-    # author is already looking at, does not file anything.
-    if: failure() && github.event_name == 'push'
+    # `failure()` is needed - the default `success()` would skip this very job
+    # in exactly the case it exists for. `cancelled()` is here too: a cancelled
+    # push run leaves main un-deployed just as surely, and push runs are not
+    # auto-cancelled (cancel-in-progress is scoped to pull_request above), so a
+    # cancellation here is unusual and worth hearing about. Scoped to push so a
+    # red PR, which its author is already looking at, files nothing.
+    if: (failure() || cancelled()) && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -403,54 +405,101 @@ jobs:
           script: |
             const LABEL = 'deploy-failure'
             const { owner, repo } = context.repo
-            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`
+            const runUrl = 'https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId
 
-            // Which job actually broke, so the issue says something useful
-            // without anyone opening the run first.
-            const failed = Object.entries({
-              Tests: '${{ needs.test.result }}',
+            const results = {
+              'Tests': '${{ needs.test.result }}',
               'Build & push images': '${{ needs.build-and-push.result }}',
               'Deploy to Hetzner': '${{ needs.deploy.result }}',
-            }).filter(([, r]) => r === 'failure').map(([n]) => n)
+            }
 
-            const stage = failed.length ? failed.join(', ') : 'unknown stage'
+            // Which stage actually broke, so the issue says something useful
+            // without anyone opening the run first. Cancelled counts: the gate
+            // above lets a cancelled run through, and "unknown stage" in a
+            // notification subject line is no use to anybody.
+            const broken = Object.entries(results).filter(([, r]) => r === 'failure' || r === 'cancelled')
+            const stage = broken.length ? broken.map(([n]) => n).join(', ') : 'unknown stage'
+            const deployBroke = results['Deploy to Hetzner'] !== 'success' && results['Deploy to Hetzner'] !== 'skipped'
+
+            // What production looks like now, which depends on how far the
+            // deploy got. Saying "production is unchanged" unconditionally would
+            // be actively misleading: the server script runs mysql -> backup ->
+            // backend (WHICH MIGRATES) -> web -> frontend -> caddy, so a failure
+            // in the second half leaves the new schema live behind the old
+            // frontend. That is the one state worth knowing, and the one a
+            // blanket reassurance hides.
+            const consequence = deployBroke
+              ? [
+                  '**Production may be half-deployed.** The server script runs `mysql` -> DB backup ->',
+                  '`backend` -> `web` -> `frontend` -> `caddy`, and **the backend step applies the',
+                  'migrations**. A failure after that point leaves the new schema live behind the old',
+                  'frontend, so check what actually restarted before assuming either state.',
+                  '',
+                  'If the log ends at `docker login ghcr.io` with `denied: denied`, the `GHCR_TOKEN`',
+                  'secret has expired - see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
+                ]
+              : [
+                  'Nothing was deployed: the run never reached the deploy step, so production is still',
+                  'serving whatever the last successful deploy shipped. Every commit since then is',
+                  'un-deployed.',
+                ]
+
             const body = [
-              `**${stage}** failed on \`${context.ref.replace('refs/heads/', '')}\`.`,
+              '**' + stage + '** did not pass on `' + context.ref.replace('refs/heads/', '') + '`.',
               '',
-              `- Commit: ${context.sha.slice(0, 7)} — ${(context.payload.head_commit?.message ?? '').split('\n')[0]}`,
-              `- Run: ${runUrl}`,
+              '- Commit: ' + context.sha.slice(0, 7) + ' - ' + (context.payload.head_commit?.message ?? '').split("\n")[0],
+              '- Run: ' + runUrl,
               '',
-              'Production is still serving whatever the last **successful** deploy shipped,',
-              'so every commit since then is un-deployed. `Deploy to Hetzner` failing at',
-              '`docker login ghcr.io` with `denied: denied` means the `GHCR_TOKEN` secret',
-              'has expired — see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
-            ].join('\n')
+              ...consequence,
+            ].join("\n")
 
-            // Label first; creating an issue with a label that does not exist
-            // fails the whole step.
+            const title = 'Deploy to production is failing (' + stage + ')'
+
+            // Ensure the label, tolerating both "already there" and a flaky
+            // getLabel. An unguarded createLabel after a 5xx would 422
+            // already_exists and throw the whole step away - and this job is the
+            // last line of defence, so it has to survive one bad API call and
+            // still report something.
+            let labels = [LABEL]
             try {
               await github.rest.issues.getLabel({ owner, repo, name: LABEL })
             } catch {
-              await github.rest.issues.createLabel({
-                owner, repo, name: LABEL, color: 'b60205',
-                description: 'A push to main did not reach production',
-              })
+              try {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: LABEL, color: 'b60205',
+                  description: 'A push to main did not reach production',
+                })
+              } catch (e) {
+                core.warning('could not ensure the ' + LABEL + ' label: ' + e.message)
+                labels = []
+              }
             }
 
+            // listForRepo returns pull requests as well as issues. A PR carrying
+            // this label - plausibly the very PR fixing the broken deploy - would
+            // otherwise collect the failure history in its thread and get buried
+            // on merge, with no issue ever filed.
             const open = await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', labels: LABEL, per_page: 1,
+              owner, repo, state: 'open', labels: LABEL, per_page: 20,
             })
+            const existing = open.data.filter((i) => !i.pull_request)[0]
 
-            if (open.data.length) {
-              await github.rest.issues.createComment({
-                owner, repo, issue_number: open.data[0].number, body,
-              })
-              core.setFailed(`Deploy still failing — commented on #${open.data[0].number}`)
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body })
+              // The title is all a notification email shows, and the issue
+              // outlives the stage that opened it: a first Tests failure followed
+              // by five deploy failures would otherwise stay titled "(Tests)".
+              if (existing.title !== title) {
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, title })
+              }
+              core.notice('Deploy still failing - commented on #' + existing.number)
+              core.summary.addRaw('Commented on #' + existing.number + ': ' + title)
             } else {
-              const made = await github.rest.issues.create({
-                owner, repo, labels: [LABEL],
-                title: `Deploy to production is failing (${stage})`,
-                body,
-              })
-              core.setFailed(`Deploy failing — filed #${made.data.number}`)
+              const made = await github.rest.issues.create({ owner, repo, labels, title, body })
+              core.notice('Deploy failing - filed #' + made.data.number)
+              core.summary.addRaw('Filed #' + made.data.number + ': ' + title)
             }
+            // Deliberately not core.setFailed: the run is already red from the
+            // real failure, and a second red job called "Announce a failed
+            // deploy" makes the job list stop telling you which job broke.
+            await core.summary.write()

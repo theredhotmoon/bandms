@@ -1209,9 +1209,20 @@ obscurely: `This workflow run cannot be retried`. A pull-request run has no
 failed jobs to retry — its deploy was skipped, never attempted. Re-run the
 `event=push` run for the merge commit instead.
 
-`notify-failure` in `deploy.yml` now files an issue when a push-triggered run
-fails, so this cannot go unnoticed for two days again. It reuses one open issue
-rather than filing one per failure; the original incident would have produced six.
+`notify-failure` in `deploy.yml` files an issue when a push-triggered run ends
+in `failure` **or** `cancelled`, so a silent two-day outage needs the notifier
+itself to be broken. It reuses one open issue rather than filing one per
+failure; the original incident would have produced six. It also filters pull
+requests out of that lookup — `issues.listForRepo` returns PRs too, so a PR
+labelled `deploy-failure` would otherwise collect the reports in its own thread
+and bury them on merge.
+
+The issue's wording depends on **where** the run broke, which matters more than
+it sounds: the server script runs `mysql` → backup → `backend` → `web` →
+`frontend` → `caddy`, and the backend step is what applies the migrations. A
+failure in the second half therefore leaves the new schema live behind the old
+frontend, so the issue says *may be half-deployed* rather than reassuring you
+that nothing shipped.
 
 ---
 
@@ -1234,11 +1245,19 @@ is exactly how long the Sep 2026 outage took to arrive: the secret was set on
 The images themselves are fine — `Build & push images` succeeded, so they are
 already in GHCR. Nothing needs rebuilding; the deploy only needs to log in.
 
-**Fix:** a new classic PAT (https://github.com/settings/tokens → *Tokens
-(classic)*) with **`read:packages` and nothing else**, ideally no expiry, then
-`gh secret set GHCR_TOKEN`, then re-run the failed *push* run. `read:packages`
-sits under the `write:packages` heading in that list — do not tick the parent;
-the server only ever pulls.
+**Fix:** a new token with **`read:packages` and nothing else**, then
+`gh secret set GHCR_TOKEN`, then re-run the failed *push* run. A classic PAT
+(https://github.com/settings/tokens → *Tokens (classic)*) is what this secret
+has held; `read:packages` sits under the `write:packages` heading there, so tick
+the child and not the parent — the server only ever pulls.
+
+**Prefer a long expiry over no expiry.** A never-expiring PAT in a repo secret
+trades a 30-day outage for a credential that is valid forever if it ever leaks,
+which sits badly beside the decision below not to publish these images at all.
+Now that `notify-failure` files an issue the moment a deploy breaks, a dated
+token fails loudly rather than silently — which is what made the 30-day default
+dangerous in the first place. A fine-grained PAT scoped to just these three
+packages is better still.
 
 **`denied: denied` has one other cause**, worth ruling out before regenerating:
 an empty username. The step passes `GITHUB_ACTOR: ${{ github.actor }}`, which is
