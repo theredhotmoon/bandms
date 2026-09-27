@@ -1226,6 +1226,10 @@ production for a deploy that never connected, or went quiet when it should not
 have. Push runs are never auto-cancelled (`cancel-in-progress` is scoped to
 `pull_request`), so whoever cancelled one already knows.
 
+The gap that leaves: a cancellation nobody chose — a reclaimed runner, an
+Actions incident, the 6h job limit — goes unreported too. Accepted, because the
+alternative was a notifier claiming production states it cannot observe.
+
 The issue's wording depends on **where** the run broke, which matters more than
 it sounds: the server script runs `mysql` → backup → `backend` → `web` →
 `frontend` → `caddy`, and the backend step is what applies the migrations. A

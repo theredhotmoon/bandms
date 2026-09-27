@@ -401,6 +401,11 @@ jobs:
     # deliberate human cancellation warrants: push runs are never auto-cancelled
     # (`cancel-in-progress` is scoped to `pull_request` above), so whoever
     # cancelled one already knows main is un-deployed.
+    #
+    # The residual gap, stated plainly: a cancellation nobody chose — a reclaimed
+    # runner, an Actions incident, the 6h job limit — also leaves main un-deployed
+    # with nothing filed. Accepted, because the alternative was a notifier that
+    # reported production states it could not actually observe.
     if: failure() && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -434,9 +439,7 @@ jobs:
             }
 
             // Which stage actually broke, so the issue says something useful
-            // without anyone opening the run first. Cancelled counts: the gate
-            // above lets a cancelled run through, and "unknown stage" in a
-            // notification subject line is no use to anybody.
+            // without anyone opening the run first.
             const broken = Object.entries(results).filter(([, r]) => r === 'failure')
 
             // Unreachable while the three needs above are this job's only
@@ -451,10 +454,16 @@ jobs:
 
             const stage = broken.map(([n]) => n).join(', ')
 
-            // Only the deploy stage failing can have left production part-way.
-            // `failure` is unambiguous here in a way `cancelled` was not: the job
-            // ran and its script returned non-zero.
-            const deployRan = results['Deploy to Hetzner'] === 'failure'
+            // Only a failing deploy stage can have left production part-way.
+            //
+            // This says the deploy *job* failed, which is not the same as the
+            // deploy script having reached production: it also fails at
+            // `actions/checkout`, at `scp-action` (wrong SERVER_HOST, server down,
+            // rotated SSH key) and at the GHCR login, all before any container
+            // restarts. Knowing which would need the job to publish a marker on
+            // its first step; until then the body says so instead of sending the
+            // reader to audit production for a failure that never connected.
+            const deployFailed = results['Deploy to Hetzner'] === 'failure'
 
             // What production looks like now, which depends on how far the
             // deploy got. Saying "production is unchanged" unconditionally would
@@ -463,15 +472,18 @@ jobs:
             // in the second half leaves the new schema live behind the old
             // frontend. That is the one state worth knowing, and the one a
             // blanket reassurance hides.
-            const consequence = deployRan
+            const consequence = deployFailed
               ? [
-                  '**Production may be half-deployed.** The server script runs `mysql` -> DB backup ->',
-                  '`backend` -> `web` -> `frontend` -> `caddy`, and **the backend step applies the',
-                  'migrations**. A failure after that point leaves the new schema live behind the old',
-                  'frontend, so check what actually restarted before assuming either state.',
+                  '**Check how far it got before assuming anything about production.** This stage also',
+                  'fails *before* touching the server — at `actions/checkout`, at the `scp`, or at the GHCR',
+                  'login — in which case nothing changed.',
+                  '',
+                  'If it did get into the server script, that runs `mysql` → DB backup → `backend` ARROW',
+                  '`web` → `frontend` → `caddy`, and **the backend step applies the migrations**. A failure',
+                  'after that point leaves the new schema live behind the old frontend.',
                   '',
                   'If the log ends at `docker login ghcr.io` with `denied: denied`, the `GHCR_TOKEN`',
-                  'secret has expired - see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
+                  'secret has expired — see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
                 ]
               : [
                   'Nothing was deployed: the run never reached the deploy step, so production is still',
@@ -489,7 +501,7 @@ jobs:
             ].join("\n")
 
             const TITLE_PREFIX = 'Deploy to production is failing'
-            const OWN_TITLE = /^Deploy to production is failing \([^)]+\)$/
+            const OWN_TITLE = new RegExp('^' + TITLE_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\([^)]+\\)$')
             const title = TITLE_PREFIX + ' (' + stage + ')'
 
             // Ensure the label, tolerating both "already there" and a flaky
@@ -521,17 +533,17 @@ jobs:
             // `labels` would miss a report filed unlabelled by the fallback
             // above: unfindable means a fresh issue per failure, which is exactly
             // the six-issues-per-incident spam this reuse exists to prevent.
-            // The labelled query first, because it is exact and unbounded by
-            // page size - dropping it in favour of one unfiltered listing meant
-            // reuse only worked while the report stayed among the 100 newest open
-            // issues *and PRs*, and a repo with a hundred open Dependabot PRs
-            // would have gone back to filing one issue per failure.
+            // The labelled query first, because it is exact and not bounded by
+            // page size. Replacing it with a single unfiltered listing was tried
+            // and reverted: that listing returns PRs too and does not paginate, so
+            // reuse only held while the report stayed among the 100 newest open
+            // issues and PRs — a repo with a hundred open Dependabot PRs would
+            // have gone back to one fresh issue per failure.
             const isIssue = (i) => !i.pull_request
             const labelled = await github.rest.issues.listForRepo({
               owner, repo, state: 'open', labels: LABEL, per_page: 100,
             })
             let existing = labelled.data.filter(isIssue)[0]
-            let matchedByLabel = Boolean(existing)
 
             // Second pass only for the narrow case the label guard above can
             // produce: a report filed unlabelled because the labels API
@@ -553,10 +565,12 @@ jobs:
               // outlives the stage that opened it: a first Tests failure followed
               // by five deploy failures would otherwise stay titled "(Tests)".
               //
-              // Only for an issue matched by label. One matched by title alone
-              // might still be someone else's, and renaming a person's issue out
-              // from under them is worse than a stale subject line.
-              if (matchedByLabel && existing.title !== title) {
+              // Gated on the title *shape*, not on how the issue was found. An
+              // issue carrying our own exact title is ours to rename whichever
+              // query turned it up; anything else — including a person's
+              // "Deploy keeps failing — tracking" that they labelled themselves to
+              // opt into the filter — gets the comment but keeps its own subject.
+              if (OWN_TITLE.test(String(existing.title || '')) && existing.title !== title) {
                 await github.rest.issues.update({ owner, repo, issue_number: existing.number, title })
               }
               core.notice('Deploy still failing - commented on #' + existing.number)
