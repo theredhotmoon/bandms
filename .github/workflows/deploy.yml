@@ -370,3 +370,229 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
 
             docker image prune -f
+
+  # -- Announce a broken main ---------------------------------------------
+  #
+  # Six consecutive deploys failed over two days in Sep 2026 and nobody
+  # noticed, including the agent that merged twice onto the broken pipeline.
+  # Nothing was watching: a failed run is a red tick on a page you have to go
+  # and look at, and the PR check that *is* visible says nothing about the
+  # deploy (see "A green PR check does not mean it deployed" in CLAUDE.md).
+  #
+  # So a failure files an issue, which reaches whoever watches the repo through
+  # ordinary notifications and needs no webhook secret. It reuses one open issue
+  # rather than opening a new one each time: the original incident would
+  # otherwise have produced six, and a recurring failure should be loud once and
+  # then accumulate evidence rather than bury its own first report.
+  notify-failure:
+    name: Announce a failed deploy
+    needs: [test, build-and-push, deploy]
+    # `failure()` is needed - the default `success()` would skip this very job
+    # in exactly the case it exists for. Scoped to push so a red PR, which its
+    # author is already looking at, files nothing.
+    #
+    # Deliberately NOT `|| cancelled()`. That was tried and reverted: a run
+    # cancelled before the deploy started is indistinguishable, from the `needs`
+    # context alone, from one killed half way through it - the job results carry
+    # no "did it actually begin" signal - so the notifier either claimed a
+    # half-deployed production for a deploy that never opened an SSH connection,
+    # or stayed silent when it should not have. Getting it right needs the deploy
+    # job to publish a marker on its first step, which is more machinery than a
+    # deliberate human cancellation warrants: push runs are never auto-cancelled
+    # (`cancel-in-progress` is scoped to `pull_request` above), so whoever
+    # cancelled one already knows main is un-deployed.
+    #
+    # The residual gap, stated plainly: a cancellation nobody chose — a reclaimed
+    # runner, an Actions incident, the 6h job limit — also leaves main un-deployed
+    # with nothing filed. Accepted, because the alternative was a notifier that
+    # reported production states it could not actually observe.
+    if: failure() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: File or update the deploy-failure issue
+        uses: actions/github-script@v7
+        with:
+          # The calls that actually do the reporting were one transient 5xx away
+          # from filing nothing: github-script defaults to retries: 0, so a
+          # single flaky listForRepo/create/createComment threw out of the step
+          # and the incident went unreported. Hardening getLabel by hand covered
+          # the least important call.
+          #
+          # This does retry the writes too, and the plugin only exempts 4xx - so
+          # a 502 arriving *after* an issue was created can duplicate it. That is
+          # the right way round for this job: a duplicate issue is loud and
+          # obvious, and someone closes it in two clicks, whereas a swallowed
+          # report is the silent failure the whole job exists to prevent.
+          retries: 3
+          script: |
+            const LABEL = 'deploy-failure'
+            const { owner, repo } = context.repo
+            const runUrl = 'https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId
+
+            const results = {
+              'Tests': '${{ needs.test.result }}',
+              'Build & push images': '${{ needs.build-and-push.result }}',
+              'Deploy to Hetzner': '${{ needs.deploy.result }}',
+            }
+
+            // Which stage actually broke, so the issue says something useful
+            // without anyone opening the run first.
+            const broken = Object.entries(results).filter(([, r]) => r === 'failure')
+
+            // Unreachable while the three needs above are this job's only
+            // ancestors - `failure()` cannot be true unless one of them failed -
+            // and kept as a guard because adding a fourth `needs` is exactly how
+            // that stops being true. Filing on an empty set would report a
+            // failure that did not happen and retitle a real issue to match it.
+            if (!broken.length) {
+              core.notice('no failed stage among this job\'s needs; nothing to report')
+              return
+            }
+
+            const stage = broken.map(([n]) => n).join(', ')
+
+            // Only a failing deploy stage can have left production part-way.
+            //
+            // This says the deploy *job* failed, which is not the same as the
+            // deploy script having reached production: it also fails at
+            // `actions/checkout`, at `scp-action` (wrong SERVER_HOST, server down,
+            // rotated SSH key) and at the GHCR login, all before any container
+            // restarts. Knowing which would need the job to publish a marker on
+            // its first step; until then the body says so instead of sending the
+            // reader to audit production for a failure that never connected.
+            const deployFailed = results['Deploy to Hetzner'] === 'failure'
+
+            // What production looks like now, which depends on how far the
+            // deploy got. Saying "production is unchanged" unconditionally would
+            // be actively misleading: the server script runs mysql -> backup ->
+            // backend (WHICH MIGRATES) -> web -> frontend -> caddy, so a failure
+            // in the second half leaves the new schema live behind the old
+            // frontend. That is the one state worth knowing, and the one a
+            // blanket reassurance hides.
+            const consequence = deployFailed
+              ? [
+                  '**Check how far it got before assuming anything about production.** This stage also',
+                  'fails *before* touching the server — at `actions/checkout`, at the `scp`, or at the GHCR',
+                  'login — in which case nothing changed.',
+                  '',
+                  'If it did get into the server script, that runs `mysql` → DB backup → `backend` ARROW',
+                  '`web` → `frontend` → `caddy`, and **the backend step applies the migrations**. A failure',
+                  'after that point leaves the new schema live behind the old frontend.',
+                  '',
+                  'If the log ends at `docker login ghcr.io` with `denied: denied`, the `GHCR_TOKEN`',
+                  'secret has expired — see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
+                ]
+              : [
+                  'Nothing was deployed: the run never reached the deploy step, so production is still',
+                  'serving whatever the last successful deploy shipped. Every commit since then is',
+                  'un-deployed.',
+                ]
+
+            const body = [
+              '**' + stage + '** did not pass on `' + context.ref.replace('refs/heads/', '') + '`.',
+              '',
+              '- Commit: ' + context.sha.slice(0, 7) + ' - ' + (context.payload.head_commit?.message ?? '').split("\n")[0],
+              '- Run: ' + runUrl,
+              '',
+              ...consequence,
+            ].join("\n")
+
+            const TITLE_PREFIX = 'Deploy to production is failing'
+            const OWN_TITLE = new RegExp('^' + TITLE_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\([^)]+\\)$')
+            const title = TITLE_PREFIX + ' (' + stage + ')'
+
+            // Ensure the label, tolerating both "already there" and a flaky
+            // getLabel. An unguarded createLabel after a 5xx would 422
+            // already_exists and throw the whole step away - and this job is the
+            // last line of defence, so it has to survive one bad API call and
+            // still report something.
+            let labels = [LABEL]
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL })
+            } catch {
+              try {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: LABEL, color: 'b60205',
+                  description: 'A push to main did not reach production',
+                })
+              } catch (e) {
+                core.warning('could not ensure the ' + LABEL + ' label: ' + e.message)
+                labels = []
+              }
+            }
+
+            // Matched on the label *or* the title, and filtered to real issues.
+            //
+            // Two traps here. listForRepo returns pull requests as well as
+            // issues, so a PR carrying this label - plausibly the very PR fixing
+            // the broken deploy - would otherwise collect the failure history in
+            // its thread and get buried on merge. And filtering the *query* on
+            // `labels` would miss a report filed unlabelled by the fallback
+            // above: unfindable means a fresh issue per failure, which is exactly
+            // the six-issues-per-incident spam this reuse exists to prevent.
+            // The labelled query first, because it is exact and not bounded by
+            // page size. Replacing it with a single unfiltered listing was tried
+            // and reverted: that listing returns PRs too and does not paginate, so
+            // reuse only held while the report stayed among the 100 newest open
+            // issues and PRs — a repo with a hundred open Dependabot PRs would
+            // have gone back to one fresh issue per failure.
+            const isIssue = (i) => !i.pull_request
+            const labelled = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            })
+            let existing = labelled.data.filter(isIssue)[0]
+
+            // Second pass only for the narrow case the label guard above can
+            // produce: a report filed unlabelled because the labels API
+            // misbehaved. Matched on the notifier's own exact title shape rather
+            // than a prefix - "Deploy to production is failing intermittently,
+            // needs a retry step", filed by a person, would otherwise be adopted
+            // as the incident thread.
+            if (!existing) {
+              const all = await github.rest.issues.listForRepo({
+                owner, repo, state: 'open', per_page: 100,
+              })
+              existing = all.data.filter(isIssue)
+                .find((i) => OWN_TITLE.test(String(i.title || '')))
+            }
+
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body })
+              // The title is all a notification email shows, and the issue
+              // outlives the stage that opened it: a first Tests failure followed
+              // by five deploy failures would otherwise stay titled "(Tests)".
+              //
+              // Gated on the title *shape*, not on how the issue was found. An
+              // issue carrying our own exact title is ours to rename whichever
+              // query turned it up; anything else — including a person's
+              // "Deploy keeps failing — tracking" that they labelled themselves to
+              // opt into the filter — gets the comment but keeps its own subject.
+              if (OWN_TITLE.test(String(existing.title || '')) && existing.title !== title) {
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, title })
+              }
+              core.notice('Deploy still failing - commented on #' + existing.number)
+              core.summary.addRaw('Commented on #' + existing.number + ': ' + title)
+            } else {
+              const made = await github.rest.issues.create({ owner, repo, labels, title, body })
+              if (!labels.length) {
+                // Best effort: the title match above is what actually guarantees
+                // the next failure finds this issue, but a labelled issue is
+                // easier for a human to filter for.
+                try {
+                  await github.rest.issues.addLabels({
+                    owner, repo, issue_number: made.data.number, labels: [LABEL],
+                  })
+                } catch (e) {
+                  core.warning('filed #' + made.data.number + ' unlabelled: ' + e.message)
+                }
+              }
+              core.notice('Deploy failing - filed #' + made.data.number)
+              core.summary.addRaw('Filed #' + made.data.number + ': ' + title)
+            }
+            // Deliberately not core.setFailed: the run is already red from the
+            // real failure, and a second red job called "Announce a failed
+            // deploy" makes the job list stop telling you which job broke.
+            await core.summary.write()

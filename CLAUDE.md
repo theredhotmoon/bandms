@@ -1179,6 +1179,118 @@ takes effect immediately. Land the same edit in the repo.
 
 ---
 
+### A green PR check does not mean it deployed
+
+**Symptom:** a PR shows `Tests  pass`, it merges, and production never changes.
+Nothing looks wrong: the PR's checks are green, `main` has the commit, and
+`docker ps` on the server shows everything up — because it is still running the
+*previous* images.
+
+**Root cause:** `Build & push images` and `Deploy to Hetzner` both carry
+`if: github.event_name == 'push'`, so on a pull request they report **skipping**,
+not passing. The only check a PR actually exercises is `Tests`. The deploy runs
+for the first time *after* the merge, in a separate workflow run on `main`, and
+nothing surfaces its result anywhere you were already looking.
+
+**This is not hypothetical.** Six consecutive deploys failed between 24 and 26
+Sep 2026 — every push from `e41ea42` to `87e853d` — while every PR went green
+and two of them were merged on that basis. Production served `7ab113a` for two
+days. `gh pr checks <n>` printing `Deploy to Hetzner  skipping` is the tell, and
+it reads like a pass at a glance.
+
+**So after merging, check the run on `main`, not the PR:**
+
+```bash
+gh run list --branch main --limit 3   --json databaseId,headSha,event,conclusion   -q '.[] | "\(.databaseId) \(.headSha[0:7]) \(.event) \(.conclusion)"'
+```
+
+**`gh run rerun <id> --failed` on the PR's run does nothing**, and says so
+obscurely: `This workflow run cannot be retried`. A pull-request run has no
+failed jobs to retry — its deploy was skipped, never attempted. Re-run the
+`event=push` run for the merge commit instead.
+
+`notify-failure` in `deploy.yml` files an issue when a push-triggered run has a
+stage that **failed**, so a repeat of that silent two-day outage needs the
+notifier itself to fail. It reuses one open issue rather than filing one per
+failure; the original incident would have produced six. That lookup filters pull
+requests out — `issues.listForRepo` returns PRs too, so a PR labelled
+`deploy-failure` would otherwise collect the reports in its own thread and bury
+them on merge — and it only renames an issue it found *by label*, because one
+matched on title alone might be a person's, and renaming someone's issue out
+from under them is worse than a stale subject line.
+
+**A cancelled run files nothing, deliberately.** `cancelled()` was tried and
+reverted: the `needs` context cannot tell a deploy cancelled before it started
+from one killed mid-script, so the notifier either claimed a half-deployed
+production for a deploy that never connected, or went quiet when it should not
+have. Push runs are never auto-cancelled (`cancel-in-progress` is scoped to
+`pull_request`), so whoever cancelled one already knows.
+
+The gap that leaves: a cancellation nobody chose — a reclaimed runner, an
+Actions incident, the 6h job limit — goes unreported too. Accepted, because the
+alternative was a notifier claiming production states it cannot observe.
+
+The issue's wording depends on **where** the run broke, which matters more than
+it sounds: the server script runs `mysql` → backup → `backend` → `web` →
+`frontend` → `caddy`, and the backend step is what applies the migrations. A
+failure in the second half therefore leaves the new schema live behind the old
+frontend, so the issue says *may be half-deployed* rather than reassuring you
+that nothing shipped.
+
+---
+
+### Deploys fail at the GHCR login — the token expired
+
+**Symptom:** `Tests` and `Build & push images` both pass, `Deploy to Hetzner`
+fails in seconds, and the log's only useful line is:
+
+```
+Error response from daemon: Get "https://ghcr.io/v2/": denied: denied
+```
+
+**Root cause:** the deploy's SSH script runs
+`echo "$GHCR_TOKEN" | docker login ghcr.io` before `docker compose pull`. The
+three images are private, so the pull needs credentials, and `GHCR_TOKEN` is a
+classic PAT. **GitHub's default expiry for a new classic PAT is 30 days**, which
+is exactly how long the Sep 2026 outage took to arrive: the secret was set on
+25 Aug and the last good deploy was 24 Sep 07:53, the first failure 24 Sep 13:45.
+
+The images themselves are fine — `Build & push images` succeeded, so they are
+already in GHCR. Nothing needs rebuilding; the deploy only needs to log in.
+
+**Fix:** a new token with **`read:packages` and nothing else**, then
+`gh secret set GHCR_TOKEN`, then re-run the failed *push* run. A classic PAT
+(https://github.com/settings/tokens → *Tokens (classic)*) is what this secret
+has held; `read:packages` sits under the `write:packages` heading there, so tick
+the child and not the parent — the server only ever pulls.
+
+**Prefer a long expiry over no expiry.** A never-expiring PAT in a repo secret
+trades a 30-day outage for a credential that is valid forever if it ever leaks,
+which sits badly beside the decision below not to publish these images at all.
+Now that `notify-failure` files an issue the moment a deploy breaks, a dated
+token fails loudly rather than silently — which is what made the 30-day default
+dangerous in the first place.
+
+**It has to be a classic PAT.** GitHub's Container registry does not accept a
+fine-grained token for `docker login ghcr.io` — it fails with `denied: denied`,
+the very symptom of this entry, so "use a fine-grained PAT instead" sends you
+back to the top of it. `docs/deployment.md` §4 specifies classic too.
+
+**`denied: denied` has one other cause**, worth ruling out before regenerating:
+an empty username. The step passes `GITHUB_ACTOR: ${{ github.actor }}`, which is
+always populated, so in this repo it is the token — but a `docker login` with an
+empty `-u` fails identically.
+
+**Do not make the packages public to avoid the token.** It does work, and it is
+tempting, and it was considered and rejected: no credentials are at risk
+(`.dockerignore` excludes `.env`, and the image genuinely has none), but the
+`backend` image carries the entire Laravel source — `app/`, `config/`, `routes/`,
+`database/migrations/` — and `frontend` bakes `VITE_ADMIN_PATH`, which makes
+finding a relocated admin panel a `docker pull` and a `grep`. Publishing the
+source is a business decision, not a deploy convenience.
+
+---
+
 ## The public site is themeable — never hardcode a colour, font or radius
 
 `web/src/` is split into a **base** (structure + a plain black-and-white look)
