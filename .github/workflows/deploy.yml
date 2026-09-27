@@ -370,3 +370,87 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate caddy
 
             docker image prune -f
+
+  # ── Announce a broken main ──────────────────────────────────────────────
+  #
+  # Six consecutive deploys failed over two days in Sep 2026 and nobody
+  # noticed, including the agent that merged twice onto the broken pipeline.
+  # Nothing was watching: a failed run is a red tick on a page you have to go
+  # and look at, and the PR check that *is* visible says nothing about the
+  # deploy (see "A green PR check does not mean it deployed" in CLAUDE.md).
+  #
+  # So a failure files an issue, which reaches whoever watches the repo through
+  # ordinary notifications and needs no webhook secret.
+  #
+  # It reuses one open issue rather than opening a new one each time: the
+  # original incident would otherwise have produced six. A recurring failure
+  # should be loud once and then accumulate evidence, not bury the first report.
+  notify-failure:
+    name: Announce a failed deploy
+    needs: [test, build-and-push, deploy]
+    # `failure()` is needed — the default `success()` would skip this very job
+    # in exactly the case it exists for. Scoped to push so a red PR, which the
+    # author is already looking at, does not file anything.
+    if: failure() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: File or update the deploy-failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const LABEL = 'deploy-failure'
+            const { owner, repo } = context.repo
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`
+
+            // Which job actually broke, so the issue says something useful
+            // without anyone opening the run first.
+            const failed = Object.entries({
+              Tests: '${{ needs.test.result }}',
+              'Build & push images': '${{ needs.build-and-push.result }}',
+              'Deploy to Hetzner': '${{ needs.deploy.result }}',
+            }).filter(([, r]) => r === 'failure').map(([n]) => n)
+
+            const stage = failed.length ? failed.join(', ') : 'unknown stage'
+            const body = [
+              `**${stage}** failed on \`${context.ref.replace('refs/heads/', '')}\`.`,
+              '',
+              `- Commit: ${context.sha.slice(0, 7)} — ${(context.payload.head_commit?.message ?? '').split('\n')[0]}`,
+              `- Run: ${runUrl}`,
+              '',
+              'Production is still serving whatever the last **successful** deploy shipped,',
+              'so every commit since then is un-deployed. `Deploy to Hetzner` failing at',
+              '`docker login ghcr.io` with `denied: denied` means the `GHCR_TOKEN` secret',
+              'has expired — see *Deploys fail at the GHCR login* in the root `CLAUDE.md`.',
+            ].join('\n')
+
+            // Label first; creating an issue with a label that does not exist
+            // fails the whole step.
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL })
+            } catch {
+              await github.rest.issues.createLabel({
+                owner, repo, name: LABEL, color: 'b60205',
+                description: 'A push to main did not reach production',
+              })
+            }
+
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: LABEL, per_page: 1,
+            })
+
+            if (open.data.length) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: open.data[0].number, body,
+              })
+              core.setFailed(`Deploy still failing — commented on #${open.data[0].number}`)
+            } else {
+              const made = await github.rest.issues.create({
+                owner, repo, labels: [LABEL],
+                title: `Deploy to production is failing (${stage})`,
+                body,
+              })
+              core.setFailed(`Deploy failing — filed #${made.data.number}`)
+            }
