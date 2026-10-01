@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
-import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel } from '@/locales'
+import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import type { Tag, TagPayload } from '@/types/tag'
 
@@ -16,6 +16,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ submit: [TagPayload]; cancel: [] }>()
+
+// Which locales' slugs are still following their name. Those go to the API as
+// null so it generates them — see TranslatedSlugInput.
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 
 // Laravel keys a bag's errors per locale: `slug.en`, `slug.pl`.
 const slugErrors = computed(() =>
@@ -37,7 +41,9 @@ watch(() => props.initial, (val) => {
 function submit() {
   emit('submit', {
     name: Object.fromEntries(LOCALES.map(l => [l, form.name[l].trim() || null])) as TagPayload['name'],
-    slug: compactBag(form.slug),
+    slug: Object.fromEntries(
+      Object.entries(compactBag(form.slug)).map(([l, v]) => [l, slugAuto.value[l as Lang] ? null : v]),
+    ) as TagPayload['slug'],
   })
 }
 </script>
@@ -61,6 +67,7 @@ function submit() {
       <label class="field-label">{{ $t('more.tags.slug') }}</label>
       <TranslatedSlugInput
         v-model="form.slug"
+        v-model:auto="slugAuto"
         :sources="form.name"
         :errors="slugErrors"
       />

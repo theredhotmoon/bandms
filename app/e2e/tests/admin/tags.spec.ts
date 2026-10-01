@@ -99,34 +99,67 @@ test.describe('Tags Admin', () => {
   // change, including its own generated value coming back, so a slug stopped
   // following the name after the first keystroke. Typing a whole name and
   // seeing the whole slug is what proves it keeps following, per language.
-  test("slugs follow each language's name as it is typed, and save as one bag", async ({ page, request, baseURL }) => {
-    await page.goto('/admin/tags')
-    await page.waitForLoadState('networkidle')
-    await page.getByRole('button', { name: '+ Add tag' }).click()
-    const modal = page.locator('.modal-overlay')
-
-    const stamp = Date.now()
-    await modal.locator('.trans-row[data-locale="en"] input').fill(`E2E Slug Tag ${stamp}`)
-    await modal.locator('.trans-row[data-locale="pl"] input').fill(`Znacznik Ślimak ${stamp}`)
-
-    await expect(modal.locator('.slug-row[data-locale="en"] input')).toHaveValue(`e2e-slug-tag-${stamp}`)
-    await expect(modal.locator('.slug-row[data-locale="pl"] input')).toHaveValue(`znacznik-slimak-${stamp}`)
-
-    const saved = page.waitForResponse(r => r.url().endsWith('/api/tags') && r.request().method() === 'POST')
-    await modal.getByRole('button', { name: /save|create/i }).click()
-    const body = (await (await saved).json()).data
-
-    expect(body.slug).toBe(`e2e-slug-tag-${stamp}`)
-    expect(body.translations.slug).toEqual({ en: `e2e-slug-tag-${stamp}`, pl: `znacznik-slimak-${stamp}` })
-
-    // Clean up through the API — the row's own delete flow is covered above.
+  test("slugs follow each language's name, and the server owns the generated ones", async ({ page, request, baseURL }) => {
     const token = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
       .origins.flatMap((o: { localStorage?: { name: string; value: string }[] }) => o.localStorage ?? [])
       .find((kv: { name: string }) => kv.name === 'auth_token')?.value
-    const res = await request.delete(`${baseURL}/api/tags/${body.id}`, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    })
-    expect(res.ok(), `cleanup delete failed with ${res.status()}`).toBeTruthy()
+    const created: number[] = []
+    const stamp = Date.now()
+
+    const openNew = async () => {
+      await page.getByRole('button', { name: '+ Add tag' }).click()
+      return page.locator('.modal-overlay')
+    }
+    const save = async (modal: ReturnType<typeof page.locator>, method: 'POST' | 'PUT') => {
+      const res = page.waitForResponse(r => r.url().includes('/api/tags') && r.request().method() === method)
+      await modal.getByRole('button', { name: /save|create|update/i }).click()
+      const response = await res
+      expect(response.status(), await response.text()).toBeLessThan(300)
+      return (await response.json()).data
+    }
+
+    try {
+      await page.goto('/admin/tags')
+      await page.waitForLoadState('networkidle')
+
+      // Typing a whole name and seeing the whole slug proves it keeps following.
+      // SlugInput stopped after the first keystroke.
+      let modal = await openNew()
+      await modal.locator('.trans-row[data-locale="en"] input').fill(`E2E Slug Tag ${stamp}`)
+      await modal.locator('.trans-row[data-locale="pl"] input').fill(`Na Zywo ${stamp}`)
+      await expect(modal.locator('.slug-row[data-locale="en"] input')).toHaveValue(`e2e-slug-tag-${stamp}`)
+      await expect(modal.locator('.slug-row[data-locale="pl"] input')).toHaveValue(`na-zywo-${stamp}`)
+      const first = await save(modal, 'POST')
+      created.push(first.id)
+      expect(first.translations.slug).toEqual({ en: `e2e-slug-tag-${stamp}`, pl: `na-zywo-${stamp}` })
+
+      // A second tag whose ENGLISH name is the first one's POLISH name. The
+      // form used to send its preview "na-zywo-…" as an explicit slug, which
+      // the cross-locale rule rejected with a 422; sent as null, the server
+      // suffixes it.
+      modal = await openNew()
+      await modal.locator('.trans-row[data-locale="en"] input').fill(`Na Zywo ${stamp}`)
+      const second = await save(modal, 'POST')
+      created.push(second.id)
+      expect(second.slug).toBe(`na-zywo-${stamp}-2`)
+
+      // Clearing a language's name must release that language's slug. A loaded
+      // slug that is just its name's slug still counts as following the name.
+      const search = page.locator('input[aria-label="Search"]')
+      await search.fill(`E2E Slug Tag ${stamp}`)
+      await page.getByRole('row').filter({ hasText: `E2E Slug Tag ${stamp}` }).getByRole('button', { name: /edit/i }).click()
+      modal = page.locator('.modal-overlay')
+      await modal.locator('.trans-row[data-locale="pl"] input').fill('')
+      const edited = await save(modal, 'PUT')
+      expect(edited.translations.slug.pl).toBeNull()
+    } finally {
+      for (const id of created) {
+        const res = await request.delete(`${baseURL}/api/tags/${id}`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        })
+        expect(res.ok(), `cleanup delete of tag ${id} failed with ${res.status()}`).toBeTruthy()
+      }
+    }
   })
 
   test('modal: open modal then click X close button → modal closes', async ({ page }) => {

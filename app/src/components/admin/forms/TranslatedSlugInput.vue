@@ -14,6 +14,13 @@ import { LOCALES, shortLabel, type Lang, type TranslationBag } from '@/locales'
  * Each locale auto-follows its `sources` entry (usually the title in that
  * language) until the band types a slug of their own; clearing the field hands
  * it back to auto. A locale without a source has no regenerate button.
+ *
+ * `v-model:auto` reports which locales are still following, and a form must
+ * send those as null. The preview here is only a guess: the SERVER owns
+ * generated slugs, because only it can suffix past another record's slug in
+ * any language and drop a slug whose name was cleared. Sending the guess as
+ * an explicit slug skipped both — a 422 for a name the API accepts, and an
+ * orphaned slug that stayed reserved (both caught in #150's review).
  */
 const props = withDefaults(defineProps<{
   modelValue: TranslationBag
@@ -30,7 +37,10 @@ const props = withDefaults(defineProps<{
   errors: () => ({}),
 })
 
-const emit = defineEmits<{ 'update:modelValue': [TranslationBag] }>()
+const emit = defineEmits<{
+  'update:modelValue': [TranslationBag]
+  'update:auto': [Record<Lang, boolean>]
+}>()
 
 const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
@@ -38,12 +48,20 @@ const { order: contentLocales } = useContentLocales()
 const makeSlug = (s: string): string => Slugify(s, { lower: true, strict: true, trim: true })
 
 // What this component last emitted per locale. A value arriving that is NOT
-// one of ours (the record loading, a reset) means the slug was set by hand
-// elsewhere, so that locale stops auto-following. SlugInput flipped to manual
-// on ANY prop change — including its own auto-generated value coming back —
-// so it stopped tracking the title after the first keystroke.
+// one of ours (the record loading, a reset) is judged afresh: it still
+// follows its name if it IS the slug of that name, and is manual otherwise.
+// SlugInput flipped to manual on ANY prop change — including its own value
+// coming back — so it stopped tracking the title after the first keystroke.
 const emitted: Partial<Record<Lang, string>> = {}
-const auto = reactive(Object.fromEntries(LOCALES.map(l => [l, !props.modelValue[l]])) as Record<Lang, boolean>)
+
+const follows = (l: Lang, value: string): boolean =>
+  value === '' || value === makeSlug(props.sources[l] ?? '')
+
+const auto = reactive(
+  Object.fromEntries(LOCALES.map(l => [l, follows(l, props.modelValue[l])])) as Record<Lang, boolean>,
+)
+
+watch(auto, () => emit('update:auto', { ...auto }), { immediate: true })
 
 function set(l: Lang, value: string): void {
   emitted[l] = value
@@ -52,8 +70,7 @@ function set(l: Lang, value: string): void {
 
 for (const l of LOCALES) {
   watch(() => props.modelValue[l], (value) => {
-    if (value && value !== emitted[l]) auto[l] = false
-    if (!value) auto[l] = true
+    if (value !== emitted[l]) auto[l] = follows(l, value)
   })
 
   watch(() => props.sources[l], (source) => {
