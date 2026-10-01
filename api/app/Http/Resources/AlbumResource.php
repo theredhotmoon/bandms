@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,8 +15,10 @@ class AlbumResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug_en'      => $this->slug_en,
-            'slug_pl'      => $this->slug_pl,
+            'slug'         => $this->slugIn(Locales::default()),
+            'translations' => [
+                'slug' => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
+            ],
             'description'  => $this->description,
             'taken_at'     => $this->taken_at,
             'published_at' => $this->published_at,

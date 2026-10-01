@@ -102,3 +102,46 @@ describe('TranslatedSlugColumns', function () {
             ->toBe(['slug_en' => 'rock', 'slug_pl' => 'rok']);
     });
 });
+
+/*
+ * applySlugBag(): the generate-once policy every model but Tag uses.
+ * Exercised through albums, the first table on it.
+ */
+describe('the generate-once slug policy (albums)', function () {
+    beforeEach(fn () => $this->actingAsAdmin());
+
+    it('takes a given slug and clears a blank non-default locale', function () {
+        $album = \App\Models\Album::create(['title' => 'Summer', 'slug' => ['en' => 'summer', 'pl' => 'lato']]);
+
+        $this->putJson("/api/albums/{$album->id}", ['slug' => ['en' => 'summer-2026', 'pl' => '']])
+            ->assertOk()
+            ->assertJsonPath('data.translations.slug', ['en' => 'summer-2026', 'pl' => null]);
+    });
+
+    // The default locale is the record's stable slug: blanking it keeps it.
+    it('never blanks the default locale', function () {
+        $album = \App\Models\Album::create(['title' => 'Summer', 'slug' => ['en' => 'summer']]);
+
+        $this->putJson("/api/albums/{$album->id}", ['slug' => ['en' => '', 'pl' => 'lato']])
+            ->assertOk()
+            ->assertJsonPath('data.translations.slug', ['en' => 'summer', 'pl' => 'lato']);
+    });
+
+    // A partial update must not clear what the client did not mention.
+    it('leaves locales absent from the payload alone', function () {
+        $album = \App\Models\Album::create(['title' => 'Summer', 'slug' => ['en' => 'summer', 'pl' => 'lato']]);
+
+        $this->putJson("/api/albums/{$album->id}", ['title' => 'Renamed'])
+            ->assertOk()
+            ->assertJsonPath('data.translations.slug', ['en' => 'summer', 'pl' => 'lato']);
+    });
+
+    it('rejects a slug another album uses in another language', function () {
+        \App\Models\Album::create(['title' => 'Winter', 'slug' => ['en' => 'winter', 'pl' => 'zima']]);
+        $album = \App\Models\Album::create(['title' => 'Snow', 'slug' => ['en' => 'snow']]);
+
+        $this->putJson("/api/albums/{$album->id}", ['slug' => ['en' => 'zima']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug.en']);
+    });
+});

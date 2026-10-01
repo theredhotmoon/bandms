@@ -1,3 +1,4 @@
+import type { Localized } from './website-module'
 import type { Tag } from './tag'
 
 export interface AlbumVenue {
@@ -22,8 +23,10 @@ export interface AlbumPhoto {
 export interface Album {
   id: number
   title: string
-  slug_en: string
-  slug_pl: string | null
+  /** The default locale's slug — the album's stable key. */
+  slug: string
+  /** Every locale, as stored. */
+  translations: { slug: Localized }
   description: string | null
   taken_at: string | null
   published_at: string | null
@@ -39,8 +42,8 @@ export interface Album {
 
 export interface AlbumPayload {
   title: string
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (default) or cleared (others) by the API. */
+  slug?: Partial<Localized>
   description?: string | null
   venue_id?: number | null
   concert_id?: number | null
@@ -51,8 +54,8 @@ export interface AlbumPayload {
 
 export interface BatchAlbumUploadMeta {
   title: string
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (default) or cleared (others) by the API. */
+  slug?: Partial<Localized>
   description?: string | null
   venue_id?: number | null
   concert_id?: number | null

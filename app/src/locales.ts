@@ -117,3 +117,20 @@ export function compactBag(bag: TranslationBag): Record<Lang, string | null> {
 export function bagHasText(bag: TranslationBag): boolean {
   return LOCALES.some(l => bag[l].trim() !== '')
 }
+
+/**
+ * A slug bag as a form submits it: a locale still auto-following its source
+ * goes as null, so the API generates it.
+ *
+ * The preview a TranslatedSlugInput shows is only a guess — the server is the
+ * one that can suffix past another record's slug in any language. Sending the
+ * guess as an explicit value turned a clash into a 422 (#150's review).
+ */
+export function slugPayload(
+  bag: TranslationBag,
+  auto: Partial<Record<Lang, boolean>>,
+): Record<Lang, string | null> {
+  const out = compactBag(bag)
+  for (const l of LOCALES) if (auto[l]) out[l] = null
+  return out
+}
