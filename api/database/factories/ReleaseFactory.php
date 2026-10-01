@@ -12,7 +12,8 @@ class ReleaseFactory extends Factory
         return [
             'profile_id'   => BandProfile::factory(),
             'title'        => fake()->words(3, true),
-            'type'         => fake()->randomElement(['LP', 'EP', 'Single']),
+            // Must match the releases.type enum exactly — note the lowercase 'single'.
+            'type'         => fake()->randomElement(['LP', 'EP', 'single', 'compilation']),
             'release_date' => fake()->date(),
         ];
     }
