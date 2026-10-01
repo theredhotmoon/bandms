@@ -8,9 +8,15 @@ import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
-import { LOCALES, DEFAULT_LOCALE } from '@/locales'
+import { LOCALES } from '@/locales'
+import { useContentLocales } from '@/composables/useContentLocales'
+import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
 import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
 import { useUiLang } from '@/composables/useUiLang'
+
+// Inputs render in the band's writing order; the registry order stays for
+// building payloads, where order carries no meaning.
+const { order: contentLocales } = useContentLocales()
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
@@ -246,6 +252,8 @@ async function saveEdit(slug: string) {
       <p class="text-sm text-zinc-500 mt-1">{{ $t('pages.modules.lead') }}</p>
     </div>
 
+    <ContentLanguagesCard />
+
     <div v-if="query.isLoading.value" class="text-zinc-500">{{ $t('common.state.loading') }}</div>
 
     <div v-else-if="query.isError.value" class="text-red-400">
@@ -415,9 +423,9 @@ async function saveEdit(slug: string) {
                 <div v-for="field in group.fields" :key="field.key" class="flex flex-col gap-1">
                   <span class="text-xs text-zinc-400">{{ copyFieldLabel(field, uiLang) }}</span>
                   <div class="trans-group">
-                    <div v-for="locale in LOCALES" :key="locale" class="flex flex-col gap-1">
+                    <div v-for="locale in contentLocales" :key="locale" class="flex flex-col gap-1">
                       <div class="trans-row" :class="{ 'trans-row--top': field.type === 'textarea' }">
-                        <label class="lang-badge" :class="{ 'lang-badge--pl': locale !== DEFAULT_LOCALE }" :for="`set-${field.key}-${locale}`">
+                        <label class="lang-badge" :class="`lang-badge--${locale}`" :for="`set-${field.key}-${locale}`">
                           {{ locale.toUpperCase() }}
                         </label>
                         <textarea

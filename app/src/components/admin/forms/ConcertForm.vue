@@ -6,12 +6,25 @@ import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
 import type { Tag } from '@/types/tag'
 
 const { t } = useI18n()
+const { order: contentLocales } = useContentLocales()
+
+// Sample text written in each input's own language — see PostForm.
+const namePlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('shows.concerts.form.eventNamePlaceholderEn'),
+  pl: t('shows.concerts.form.eventNamePlaceholderPl'),
+}))
+const descriptionPlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('shows.concerts.form.descriptionPlaceholderEn'),
+  pl: t('shows.concerts.form.descriptionPlaceholderPl'),
+}))
 
 const props = defineProps<{
   initial?: Concert | null
@@ -69,15 +82,13 @@ function clearPoster() {
 
 // ── Form state ────────────────────────────────────────────────
 const form = reactive({
-  name_en:          '',
-  name_pl:          '',
+  name:             emptyBag(),
   venue_id:         0,
   date:             '',
   doors_open:       '',
   sound_check_time: '',
   start_time:       '',
-  description_en:   '',
-  description_pl:   '',
+  description:      emptyBag(),
   slug_en:          '',
   slug_pl:          '',
   tag_ids:          [] as number[],
@@ -87,10 +98,10 @@ const form = reactive({
 const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
 
 const slugSourceEn = computed(() =>
-  form.name_en || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
+  form.name.en || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
 )
 const slugSourcePl = computed(() =>
-  form.name_pl || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
+  form.name.pl || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
 )
 
 interface LineupEntry {
@@ -122,15 +133,13 @@ const canSave = computed(() => isDirty.value || posterFile.value !== null || pos
 
 watch(() => props.initial, (concert) => {
   if (!concert) {
-    form.name_en          = ''
-    form.name_pl          = ''
+    form.name             = emptyBag()
     form.venue_id         = 0
     form.date             = ''
     form.doors_open       = ''
     form.sound_check_time = ''
     form.start_time       = ''
-    form.description_en   = ''
-    form.description_pl   = ''
+    form.description      = emptyBag()
     form.slug_en          = ''
     form.slug_pl          = ''
     form.tag_ids          = []
@@ -152,10 +161,8 @@ watch(() => props.initial, (concert) => {
   form.doors_open       = toHHMM(concert.doors_open)
   form.sound_check_time = toHHMM(concert.sound_check_time)
   form.start_time       = toHHMM(concert.start_time)
-  form.name_en        = concert.translations?.name?.en ?? concert.name ?? ''
-  form.name_pl        = concert.translations?.name?.pl ?? ''
-  form.description_en = concert.translations?.description?.en ?? concert.description ?? ''
-  form.description_pl = concert.translations?.description?.pl ?? ''
+  form.name           = bagFrom(concert.translations?.name, concert.name)
+  form.description    = bagFrom(concert.translations?.description, concert.description)
   form.slug_en        = concert.slug_en ?? ''
   form.slug_pl        = concert.slug_pl ?? ''
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
@@ -300,12 +307,8 @@ function submit() {
   })
 
   emit('submit', {
-    name: (form.name_en || form.name_pl)
-      ? { en: form.name_en || undefined, pl: form.name_pl || undefined }
-      : null,
-    description: (form.description_en || form.description_pl)
-      ? { en: form.description_en || undefined, pl: form.description_pl || undefined }
-      : null,
+    name: compactBag(form.name),
+    description: compactBag(form.description),
     venue_id:          form.venue_id,
     date:              form.date,
     doors_open:        form.doors_open       || null,
@@ -328,17 +331,14 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
       <div class="trans-group">
-        <div class="trans-row">
-          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code, and these badge the per-column name_en/name_pl fields -->
-          <input v-model="form.name_en" type="text" class="field-input flex-1" :placeholder="$t('shows.concerts.form.eventNamePlaceholderEn')" />
-        </div>
-        <div class="trans-row">
-          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-          <input v-model="form.name_pl" type="text" class="field-input flex-1" :placeholder="$t('shows.concerts.form.eventNamePlaceholderPl')" />
+        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+          <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder[l]" />
         </div>
       </div>
-      <p v-if="errors?.['name.en']" class="field-error">{{ errors['name.en'][0] }}</p>
-      <p v-if="errors?.['name.pl']" class="field-error">{{ errors['name.pl'][0] }}</p>
+      <template v-for="l in contentLocales" :key="`name-err-${l}`">
+        <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
+      </template>
     </div>
 
     <!-- Venue -->
@@ -484,17 +484,14 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('common.fields.description') }}</label>
       <div class="trans-group">
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code, and these badge the per-column name_en/name_pl fields -->
-          <textarea v-model="form.description_en" class="field-input flex-1" rows="2" :placeholder="$t('shows.concerts.form.descriptionPlaceholderEn')" />
-        </div>
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-          <textarea v-model="form.description_pl" class="field-input flex-1" rows="2" :placeholder="$t('shows.concerts.form.descriptionPlaceholderPl')" />
+        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+          <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder[l]" />
         </div>
       </div>
-      <p v-if="errors?.['description.en']" class="field-error">{{ errors['description.en'][0] }}</p>
-      <p v-if="errors?.['description.pl']" class="field-error">{{ errors['description.pl'][0] }}</p>
+      <template v-for="l in contentLocales" :key="`description-err-${l}`">
+        <p v-if="errors?.[`description.${l}`]" class="field-error">{{ errors[`description.${l}`][0] }}</p>
+      </template>
     </div>
 
     <!-- Slug URL -->

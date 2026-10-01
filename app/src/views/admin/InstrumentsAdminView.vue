@@ -16,6 +16,11 @@ import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 import { guessInstrumentType } from '@bandms/rider-core'
 import { reportSaveError } from '@/utils/formErrors'
 import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
+import { useContentLocales } from '@/composables/useContentLocales'
+
+// Inputs render in the band's writing order; the registry order stays for
+// building payloads, where order carries no meaning.
+const { order: contentLocales } = useContentLocales()
 
 const { t } = useI18n()
 
@@ -185,12 +190,12 @@ async function confirmDelete() {
         <div>
           <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
           <div class="trans-group">
-            <div v-for="l in LOCALES" :key="l" class="trans-row">
-              <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
+            <div v-for="l in contentLocales" :key="l" class="trans-row">
+              <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
               <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.instruments.namePlaceholder')" />
             </div>
           </div>
-          <template v-for="l in LOCALES" :key="`name-err-${l}`">
+          <template v-for="l in contentLocales" :key="`name-err-${l}`">
             <p v-if="fieldErrors[`name.${l}`]" class="field-error">{{ fieldErrors[`name.${l}`][0] }}</p>
           </template>
           <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name[0] }}</p>

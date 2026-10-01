@@ -7,6 +7,7 @@ use App\Http\Resources\ReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\Release;
 use App\Models\ReleasePhoto;
+use App\Support\ContentLocales;
 use App\Support\SiteRebuild;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -68,7 +69,7 @@ class ReleaseController extends Controller
 
         $validated['profile_id'] = BandProfile::value('id') ?? 1;
 
-        $titleEn = is_array($validated['title']) ? ($validated['title']['en'] ?? reset($validated['title']) ?? 'release') : $validated['title'];
+        $titleEn = is_array($validated['title']) ? (ContentLocales::firstFilled($validated['title'], 'en') ?? 'release') : $validated['title'];
         $titlePl = is_array($validated['title']) ? ($validated['title']['pl'] ?? null) : null;
         if (empty($validated['slug_en'] ?? null)) {
             $validated['slug_en'] = Release::generateSlug($titleEn, null, 'slug_en');

@@ -75,3 +75,32 @@ export function dateLocale(locale: string): string {
 export function emptyBag(): TranslationBag {
   return Object.fromEntries(LOCALES.map(l => [l, ''])) as TranslationBag
 }
+
+/**
+ * A full draft bag from a stored translation map.
+ *
+ * `legacy` fills the default locale when the map has nothing for it — records
+ * from before a field was translatable carry a plain string beside an empty
+ * `translations` entry, and the forms have always shown that string as English.
+ */
+export function bagFrom(
+  map: Partial<Record<Lang, string | null>> | null | undefined,
+  legacy?: string | null,
+): TranslationBag {
+  const bag = emptyBag()
+  for (const l of LOCALES) bag[l] = map?.[l] ?? ''
+  if (!bag[DEFAULT_LOCALE] && legacy) bag[DEFAULT_LOCALE] = legacy
+  return bag
+}
+
+/**
+ * The bag a form submits: blank locales omitted, `null` when nothing is filled.
+ *
+ * Omitted rather than sent as '' so no locale is privileged — the forms used to
+ * send `{ en: form.title_en, pl: form.title_pl || undefined }`, always carrying
+ * an English key, which is the shape that assumed every band writes English.
+ */
+export function compactBag(bag: TranslationBag): Partial<Record<Lang, string>> | null {
+  const filled = LOCALES.filter(l => bag[l].trim() !== '')
+  return filled.length ? (Object.fromEntries(filled.map(l => [l, bag[l]])) as Partial<Record<Lang, string>>) : null
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\TagResource;
 use App\Models\Tag;
+use App\Support\ContentLocales;
 use App\Support\Locales;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -160,7 +161,7 @@ class TagController extends Controller
     private function applySlugs(Tag $tag, array $data): void
     {
         $translations = $tag->getTranslations('name');
-        $nameEn       = $translations['en'] ?? (reset($translations) ?: 'tag');
+        $nameEn       = ContentLocales::firstFilled($translations, 'en') ?? 'tag';
         $namePl       = $translations['pl'] ?? null;
 
         $tag->slug_en = ($data['slug_en'] ?? null) ?: Tag::generateSlug($nameEn, $tag->id, 'slug_en');

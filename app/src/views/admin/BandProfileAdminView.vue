@@ -19,6 +19,8 @@ import type { SocialLinkPayload } from '@bandms/rider-core'
 import type { BioVariant } from '@/types/bandProfile'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { shortLabel, type Lang } from '@/locales'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
@@ -60,7 +62,16 @@ async function createSnapshot() {
 }
 
 const bioTab  = ref<BioVariant>('short')
-const bioLang = ref<'en' | 'pl'>('en')
+const { order: contentLocales, primary: primaryLocale } = useContentLocales()
+const bioLang = ref<Lang>(primaryLocale.value)
+// The order usually arrives after mount, so open on the band's writing language
+// once it does — but never yank the editor off a tab they picked themselves.
+let bioLangPicked = false
+watch(primaryLocale, (l) => { if (!bioLangPicked) bioLang.value = l })
+function pickBioLang(l: Lang): void {
+  bioLangPicked = true
+  bioLang.value = l
+}
 
 const form = reactive({
   name:          '',
@@ -303,8 +314,11 @@ async function saveSocialLinks() {
                   </button>
                 </div>
                 <div class="bio-lang-switcher">
-                  <button type="button" class="bio-lang-btn" :class="{ active: bioLang === 'en' }" @click="bioLang = 'en'">EN</button> <!-- i18n-ignore: locale code -->
-                  <button type="button" class="bio-lang-btn bio-lang-btn--pl" :class="{ active: bioLang === 'pl' }" @click="bioLang = 'pl'">PL</button> <!-- i18n-ignore: locale code -->
+                  <button
+                    v-for="l in contentLocales" :key="l" type="button"
+                    class="bio-lang-btn" :class="[`bio-lang-btn--${l}`, { active: bioLang === l }]"
+                    :data-locale="l" @click="pickBioLang(l)"
+                  >{{ shortLabel(l) }}</button>
                 </div>
               </div>
 

@@ -6,6 +6,8 @@ import {
   nativeName,
   shortLabel,
   emptyBag,
+  bagFrom,
+  compactBag,
 } from './locales'
 
 describe('admin locale registry', () => {
@@ -44,5 +46,24 @@ describe('admin locale registry', () => {
     const a = emptyBag()
     a.en = 'typed'
     expect(emptyBag().en).toBe('')
+  })
+})
+
+describe('bagFrom / compactBag', () => {
+  it('fills every registered locale, missing ones blank', () => {
+    expect(bagFrom({ pl: 'Tytuł' })).toEqual({ en: '', pl: 'Tytuł' })
+    expect(bagFrom(null)).toEqual({ en: '', pl: '' })
+  })
+
+  it('puts a legacy plain string under the default locale only when it is empty', () => {
+    expect(bagFrom({}, 'Old title')).toEqual({ en: 'Old title', pl: '' })
+    expect(bagFrom({ en: 'New' }, 'Old title')).toEqual({ en: 'New', pl: '' })
+  })
+
+  // A Polish-only title must not be sent with an empty English key — that
+  // shape is what made English the implicit primary language.
+  it('omits blank locales and returns null for an empty bag', () => {
+    expect(compactBag({ en: '  ', pl: 'Tytuł' })).toEqual({ pl: 'Tytuł' })
+    expect(compactBag({ en: '', pl: '' })).toBeNull()
   })
 })

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { shortLabel, type Lang } from '@/locales'
 import { providerLabel, detectProvider, isAudioProvider } from '@/utils/postBlocks'
 
 const props = defineProps<{ payload: Record<string, unknown>; hideLabel?: boolean }>()
@@ -10,7 +13,14 @@ const url = computed(() => (props.payload.url as string) ?? '')
 // Preview only — the server re-detects and stores the provider on save.
 const detected = computed(() => detectProvider(url.value))
 
-const label = computed(() => (props.payload.label ?? {}) as { en?: string; pl?: string })
+const label = computed(() => (props.payload.label ?? {}) as Partial<Record<Lang, string>>)
+
+const { t } = useI18n()
+const { order: contentLocales } = useContentLocales()
+const labelPlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('content.blocks.embed.linkTextEn'),
+  pl: t('content.blocks.embed.linkTextPl'),
+}))
 
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })
@@ -27,15 +37,10 @@ function set(key: string, value: unknown) {
       <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioLabel', { provider: providerLabel(detected, $t('common.link')) }) : providerLabel(detected, $t('common.link')) }}</span>
     </div>
     <div v-if="detected === 'link' && !hideLabel" class="trans-group">
-      <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
-        <input :value="label.en ?? ''" @input="set('label', { ...label, en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextEn')" />
-      </div>
-      <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-        <input :value="label.pl ?? ''" @input="set('label', { ...label, pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.embed.linkTextPl')" />
+      <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+        <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+        <input :value="label[l] ?? ''" @input="set('label', { ...label, [l]: ($event.target as HTMLInputElement).value })"
+               class="field-input flex-1" :placeholder="labelPlaceholder[l]" />
       </div>
     </div>
   </div>

@@ -6,6 +6,8 @@ import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
 import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
@@ -35,13 +37,25 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 
+const { order: contentLocales, isPrimary } = useContentLocales()
+
+// The sample text inside each input is written in that input's language, so it
+// is a per-locale map rather than one string. A third locale is a compile error
+// here, which is the point: it needs its own sample sentence.
+const titlePlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('content.posts.titlePlaceholderEn'),
+  pl: t('content.posts.titlePlaceholderPl'),
+}))
+const introPlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('content.posts.introPlaceholderEn'),
+  pl: t('content.posts.introPlaceholderPl'),
+}))
+
 const form = reactive({
-  title_en: '',
-  title_pl: '',
+  title: emptyBag(),
   slug_en: '',
   slug_pl: '',
-  intro_en: '',
-  intro_pl: '',
+  intro: emptyBag(),
   image: null as string | null,
   published_at: '',
   event_date_display: 'range' as 'range' | 'list',
@@ -66,12 +80,10 @@ const entityLists = computed<RefEntityLists>(() => ({
 const { isDirty, markClean } = useDirtyGuard(() => form)
 
 watch(() => props.initial, (val) => {
-  form.title_en = val?.translations?.title?.en ?? val?.title ?? ''
-  form.title_pl = val?.translations?.title?.pl ?? ''
+  form.title = bagFrom(val?.translations?.title, val?.title)
   form.slug_en = val?.slug_en ?? ''
   form.slug_pl = val?.slug_pl ?? ''
-  form.intro_en = val?.translations?.intro?.en ?? val?.intro ?? ''
-  form.intro_pl = val?.translations?.intro?.pl ?? ''
+  form.intro = bagFrom(val?.translations?.intro, val?.intro)
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   form.event_date_display = val?.event_date_display ?? 'range'
@@ -91,10 +103,12 @@ watch(() => props.initial, (val) => {
 
 function submit() {
   emit('submit', {
-    title: { en: form.title_en, pl: form.title_pl || undefined },
+    // `{}` rather than null when blank: the API requires `title`, and an empty
+    // object fails that rule with a message keyed `title`, which renders below.
+    title: compactBag(form.title) ?? {},
     slug_en: form.slug_en || null,
     slug_pl: form.slug_pl || null,
-    intro: (form.intro_en || form.intro_pl) ? { en: form.intro_en || undefined, pl: form.intro_pl || undefined } : null,
+    intro: compactBag(form.intro),
     image: form.image || null,
     published_at: form.published_at || null,
     event_date_display: form.event_date_display,
@@ -114,13 +128,9 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('common.fields.title') }} <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
-        <div class="trans-row">
-          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
-          <input v-model="form.title_en" required class="field-input flex-1" :placeholder="$t('content.posts.titlePlaceholderEn')" />
-        </div>
-        <div class="trans-row">
-          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-          <input v-model="form.title_pl" class="field-input flex-1" :placeholder="$t('content.posts.titlePlaceholderPl')" />
+        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+          <input v-model="form.title[l]" :required="isPrimary(l)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
         </div>
       </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
@@ -130,8 +140,8 @@ function submit() {
       <SlugInput
         v-model="form.slug_en"
         v-model:modelValuePl="form.slug_pl"
-        :sourceEn="form.title_en"
-        :sourcePl="form.title_pl"
+        :sourceEn="form.title.en"
+        :sourcePl="form.title.pl"
         :bilingual="true"
       />
       <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
@@ -140,13 +150,9 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('content.posts.intro') }}</label>
       <div class="trans-group">
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
-          <textarea v-model="form.intro_en" class="field-input flex-1" rows="2" :placeholder="$t('content.posts.introPlaceholderEn')" />
-        </div>
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-          <textarea v-model="form.intro_pl" class="field-input flex-1" rows="2" :placeholder="$t('content.posts.introPlaceholderPl')" />
+        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+          <textarea v-model="form.intro[l]" class="field-input flex-1" rows="2" :placeholder="introPlaceholder[l]" />
         </div>
       </div>
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>

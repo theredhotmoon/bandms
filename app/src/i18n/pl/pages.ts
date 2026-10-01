@@ -1,5 +1,13 @@
 export default {
   modules: {
+    contentLanguages: {
+      title: 'Języki treści',
+      lead: 'Kolejność, w jakiej piszecie. Pierwszy język jest na górze każdego formularza i jego pola są wymagane; pozostałe to tłumaczenia, które możecie uzupełnić później. Nie zmienia to języka, w którym otwiera się strona publiczna.',
+      primary: 'Piszemy najpierw',
+      moveUp: 'Przesuń {name} w górę',
+      moveDown: 'Przesuń {name} w dół',
+      saveFailed: 'Nie udało się zapisać kolejności języków',
+    },
     title: 'Moduły strony',
     lead: 'Przeciągaj wiersze, aby ustawić kolejność w nawigacji. Kolejność zadziała po przebudowie.',
     loadFailed: 'Nie udało się wczytać modułów. Sprawdź połączenie z API.',

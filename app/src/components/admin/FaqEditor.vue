@@ -3,8 +3,13 @@ import { useLang } from '@/composables/useLang'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
-import { LOCALES, DEFAULT_LOCALE, emptyBag, type Lang as Locale } from '@/locales'
+import { LOCALES, emptyBag, type Lang as Locale } from '@/locales'
+import { useContentLocales } from '@/composables/useContentLocales'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+
+// Inputs render in the band's writing order; the registry order stays for
+// building payloads, where order carries no meaning.
+const { order: contentLocales } = useContentLocales()
 
 // Module names are the band's content, so they follow the content locale.
 const { lang } = useLang()
@@ -143,9 +148,9 @@ const otherErrors = computed(() =>
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.question') }}</span>
       <div class="trans-group">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+        <div v-for="l in contentLocales" :key="l" class="flex flex-col gap-1">
           <div class="trans-row">
-            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
+            <label class="lang-badge" :class="`lang-badge--${l}`" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
             <input
               :id="`faq-q-${l}`"
               v-model="draft.question[l]"
@@ -165,9 +170,9 @@ const otherErrors = computed(() =>
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.answer') }}</span>
       <div class="trans-group">
-        <div v-for="l in LOCALES" :key="l" class="flex flex-col gap-1">
+        <div v-for="l in contentLocales" :key="l" class="flex flex-col gap-1">
           <div class="trans-row trans-row--top">
-            <label class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
+            <label class="lang-badge" :class="`lang-badge--${l}`" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
             <textarea
               :id="`faq-a-${l}`"
               v-model="draft.answer[l]"
