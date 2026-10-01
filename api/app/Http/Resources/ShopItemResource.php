@@ -14,8 +14,12 @@ class ShopItemResource extends JsonResource
         return [
             'id'               => $this->id,
             'name'             => $this->name,
-            'slug_en'          => $this->slug_en,
-            'slug_pl'          => $this->slug_pl,
+            // The default locale's slug: what every public merch URL is built
+            // from, in every language (it was slug_en — same value).
+            'slug'             => $this->slugIn(Locales::default()),
+            'translations'     => [
+                'slug' => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
+            ],
             'type'             => $this->type,
             'description'      => $this->description,
             'is_available'     => $this->is_available,

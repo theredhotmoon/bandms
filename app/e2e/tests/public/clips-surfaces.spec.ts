@@ -118,9 +118,9 @@ test.describe.serial('Public clips — release, merch, EPK', () => {
     // The dev DB has no public merch, so seed one item rather than skip.
     const item = (await (await api(request, 'post', '/api/shop', {
       name: `E2E clip tee ${STAMP}`, is_available: true, prices: [{ currency: 'EUR', amount: 20 }],
-    })).json()).data as { id: number; slug_en: string }
+    })).json()).data as { id: number; slug: string }
     shopItemId = item.id
-    shopSlug = item.slug_en
+    shopSlug = item.slug
 
     for (const [url, category, attach, show_in_epk] of [
       [RELEASE_CLIP_URL, 'studio', [{ type: 'release', id: releaseId }], false],

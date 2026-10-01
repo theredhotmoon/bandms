@@ -3,19 +3,23 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasClips;
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\ShopItemVariant;
+use Spatie\Translatable\HasTranslations;
 
 class ShopItem extends Model
 {
-    use HasFactory, HasSlug, HasClips;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasClips;
+
+    /** Only the slug: an item's name is a plain string. */
+    public array $translatable = ['slug'];
 
     protected $fillable = [
-        'profile_id', 'name', 'slug_en', 'slug_pl', 'type', 'description',
+        'profile_id', 'name', 'slug', 'type', 'description',
         'is_available', 'is_presale', 'presale_ships_at',
         'stock_quantity', 'purchase_url', 'sort_order',
     ];

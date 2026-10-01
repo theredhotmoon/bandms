@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Http\Resources\ShopItemVariantResource;
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,8 +14,9 @@ class ShopItemSummaryResource extends JsonResource
         return [
             'id'               => $this->id,
             'name'             => $this->name,
-            'slug_en'          => $this->slug_en,
-            'slug_pl'          => $this->slug_pl,
+            // The default locale's slug: what every public merch URL is built
+            // from, in every language (it was slug_en — same value).
+            'slug'             => $this->slugIn(Locales::default()),
             'type'             => $this->type,
             'is_available'     => $this->is_available,
             'is_presale'       => $this->is_presale,

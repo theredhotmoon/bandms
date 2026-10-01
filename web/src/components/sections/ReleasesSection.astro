@@ -129,10 +129,10 @@ const galleryVideos = videos.map(v => ({
 // those routes are unbuilt and every card here would be a dead link.
 const shopItems = enabled('merch') ? await getShopItems().catch(() => []) : []
 const releaseIds = new Set(releases.map(r => r.id))
-// Merch routes are generated from slug_en, so an item without one has no page
+// Merch routes are generated from `slug`, so an item without one has no page
 // to link to — including it would emit a 404.
 const physical = shopItems.filter(
-  item => item.slug_en && (item.release_ids ?? []).some(id => releaseIds.has(id)),
+  item => item.slug && (item.release_ids ?? []).some(id => releaseIds.has(id)),
 )
 
 const priceOf = (item: (typeof physical)[number]) => {
@@ -323,7 +323,7 @@ const priceOf = (item: (typeof physical)[number]) => {
         <p class="mu-sub">{t.buySub}</p>
         <div class="mu-merch">
           {physical.map(item => (
-            <a class="mu-merch-card" href={`${href('merch')}/${item.slug_en}`}>
+            <a class="mu-merch-card" href={`${href('merch')}/${item.slug}`}>
               <span class="mu-merch-art">
                 {item.photos?.[0]?.url
                   ? <img src={item.photos[0].url} alt={item.name} loading="lazy" />
