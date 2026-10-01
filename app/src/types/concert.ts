@@ -1,3 +1,4 @@
+import type { TranslationMap } from './shared'
 import type { Venue } from './venue'
 import type { Tag } from './tag'
 import type { Clip } from './clip'
@@ -35,8 +36,8 @@ export interface Concert {
   /** Attached through the clips library — read-only here, written via /api/clips. */
   clips?: Clip[]
   translations?: {
-    name?:        { en?: string | null; pl?: string | null }
-    description?: { en?: string | null; pl?: string | null }
+    name?:        TranslationMap
+    description?: TranslationMap
   }
   created_at: string
   updated_at: string
@@ -54,8 +55,8 @@ export interface ConcertLinkPayload {
 }
 
 export interface ConcertPayload {
-  name?: { en?: string | null; pl?: string | null } | null
-  description?: { en?: string | null; pl?: string | null } | null
+  name?: TranslationMap | null
+  description?: TranslationMap | null
   venue_id: number
   date: string
   slug_en?: string | null

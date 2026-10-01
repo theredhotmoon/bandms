@@ -10,6 +10,24 @@ import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { NON_PAGE_MODULES } from '@/config/moduleSettings'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { nativeName } from '@/locales'
+
+const { order: contentLocales } = useContentLocales()
+
+/** The question in the band's first language that has one — not "en, else pl". */
+function questionLabel(faq: Faq): string | null {
+  for (const l of contentLocales.value) {
+    const q = faq.question?.[l]
+    if (q) return q
+  }
+  return null
+}
+
+/** Every language the question is missing in, named in the band's order. */
+function missingLocales(faq: Faq): string {
+  return contentLocales.value.filter(l => !faq.question?.[l]).map(nativeName).join(', ')
+}
 
 const { t } = useI18n()
 // Module names are the band's content, so they follow the content locale.
@@ -85,7 +103,7 @@ async function save(payload: FaqPayload) {
 }
 
 async function destroy(faq: Faq) {
-  const label = faq.question?.en || faq.question?.pl || t('pages.faqs.thisQuestion')
+  const label = questionLabel(faq) || t('pages.faqs.thisQuestion')
   if (!window.confirm(t('pages.faqs.deleteAsk', { title: label }))) return
   try {
     await remove.mutateAsync(faq.id)
@@ -240,9 +258,9 @@ function onDragEnd() {
                 <span
                   class="font-semibold text-sm block truncate"
                   :class="faq.is_published ? 'text-white' : 'text-zinc-500'"
-                >{{ faq.question?.en || faq.question?.pl || $t('pages.faqs.untitled') }}</span>
-                <span v-if="!faq.question?.pl || !faq.question?.en" class="text-xs text-amber-500/80">
-                  {{ faq.question?.en ? $t('pages.faqs.noPl') : $t('pages.faqs.noEn') }}
+                >{{ questionLabel(faq) || $t('pages.faqs.untitled') }}</span>
+                <span v-if="missingLocales(faq)" class="text-xs text-amber-500/80">
+                  {{ $t('pages.faqs.missingTranslations', { langs: missingLocales(faq) }) }}
                 </span>
               </div>
 

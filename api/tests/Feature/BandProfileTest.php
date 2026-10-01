@@ -441,3 +441,34 @@ describe('PUT /api/band-profile epk_tech_rider_id', function () {
             ->assertJsonPath('data.epk_tech_rider', null);
     });
 });
+
+// The admin now sends every locale of a bio, a cleared one as null. It used to
+// build `{ en: … || undefined }`, omitting the blank locale, and the bio is a
+// translatable column whose setTranslations() merges — so clearing one
+// language returned 200 and kept the old text.
+it('clears one language of a bio sent as null and keeps the other', function () {
+    // createProfile() is a raw DB insert, so the translation bag goes in as JSON.
+    $profile = $this->createProfile(['bio_short' => json_encode(['en' => 'Old English', 'pl' => 'Polski opis'])]);
+    $this->actingAsAdmin();
+
+    $this->putJson('/api/band-profile', ['name' => $profile->name, 'bio_short' => ['en' => null, 'pl' => 'Polski opis']])
+        ->assertOk();
+
+    $fresh = $profile->fresh();
+    expect($fresh->getTranslation('bio_short', 'en', false))->toBe('')
+        ->and($fresh->getTranslation('bio_short', 'pl', false))->toBe('Polski opis');
+});
+
+// Clearing the LAST language: the admin sends an all-null bag. It used to send
+// a bare null, which Spatie applies to the request's current locale only, so a
+// Polish-only bio cleared from an English browser survived.
+it('clears every language of a bio sent as an all-null bag', function () {
+    $profile = $this->createProfile(['bio_short' => json_encode(['pl' => 'Tylko po polsku'])]);
+    $this->actingAsAdmin();
+
+    $this->withHeader('Accept-Language', 'en')
+        ->putJson('/api/band-profile', ['name' => $profile->name, 'bio_short' => ['en' => null, 'pl' => null]])
+        ->assertOk();
+
+    expect($profile->fresh()->getTranslation('bio_short', 'pl', false))->toBe('');
+});

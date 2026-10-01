@@ -3,7 +3,7 @@ import { computed, reactive, watch } from 'vue'
 import EmbedBlockEditor from '@/components/admin/forms/blocks/EmbedBlockEditor.vue'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
-import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
+import { LOCALES, emptyBag } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import type { Clip, ClipAttach, ClipPayload } from '@/types/clip'
 import type { Concert } from '@/types/concert'
@@ -81,7 +81,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
-          <input v-model="form.title[l]" class="field-input flex-1" :placeholder="l === DEFAULT_LOCALE ? $t('band.clips.form.titlePlaceholderEn') : $t('band.clips.form.titlePlaceholderPl')" :data-testid="`clip-title-${l}`" />
+          <input v-model="form.title[l]" class="field-input flex-1" :placeholder="$t('band.clips.form.titlePlaceholder', {}, { locale: l })" :data-testid="`clip-title-${l}`" />
         </div>
       </div>
     </div>

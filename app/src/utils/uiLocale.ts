@@ -6,7 +6,7 @@
  * module load dies on import. Same reason riderDiff, venueGate and
  * heroImageScopes are utils.
  */
-import { DEFAULT_LOCALE, isLocale, type Lang } from '@/locales'
+import { DEFAULT_UI_LOCALE, isUiLocale, type UiLang } from '@/i18n/locales'
 
 /**
  * Deliberately not `site_lang`. That key drives the *content* locale and feeds
@@ -20,8 +20,8 @@ export const UI_LANG_STORAGE_KEY = 'admin_ui_lang'
  * through — a locale dropped from the registry must not pin someone to a
  * language the app no longer renders.
  */
-export function resolveStoredLocale(raw: string | null): Lang {
-  return isLocale(raw) ? raw : DEFAULT_LOCALE
+export function resolveStoredLocale(raw: string | null): UiLang {
+  return isUiLocale(raw) ? raw : DEFAULT_UI_LOCALE
 }
 
 /**
@@ -34,15 +34,15 @@ export function resolveStoredLocale(raw: string | null): Lang {
  * stayed in the old one. Failing to persist is the acceptable outcome: the
  * switch still applies for this session.
  */
-export function readStoredLocale(): Lang {
+export function readStoredLocale(): UiLang {
   try {
     return resolveStoredLocale(localStorage.getItem(UI_LANG_STORAGE_KEY))
   } catch {
-    return DEFAULT_LOCALE
+    return DEFAULT_UI_LOCALE
   }
 }
 
-export function writeStoredLocale(locale: Lang): void {
+export function writeStoredLocale(locale: UiLang): void {
   try {
     localStorage.setItem(UI_LANG_STORAGE_KEY, locale)
   } catch {

@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, isLocale, LOCALES, type Lang } from '@/locales'
+import { DEFAULT_UI_LOCALE, isUiLocale, UI_LOCALES, type UiLang } from '@/i18n/locales'
 
 /**
  * Which language the fan-facing pages render in.
@@ -29,9 +29,9 @@ export const FAN_LANG_STORAGE_KEY = 'fan_lang'
  * region has to come off before it can match. Returns null rather than a
  * default so the caller can keep looking down its list.
  */
-export function narrowToLocale(tag: string | null | undefined): Lang | null {
+export function narrowToLocale(tag: string | null | undefined): UiLang | null {
   const base = (tag ?? '').trim().toLowerCase().split('-')[0]
-  return isLocale(base) ? base : null
+  return isUiLocale(base) ? base : null
 }
 
 /**
@@ -45,15 +45,15 @@ export function narrowToLocale(tag: string | null | undefined): Lang | null {
  * announcing English. That is the exact split this whole feature exists to
  * remove, so there is now one value and the header reads it.
  */
-let active: Lang | null = null
+let active: UiLang | null = null
 
 /** Set by useFanLocale on mount and on every route change; cleared on unmount. */
-export function setActiveFanLocale(locale: Lang | null): void {
+export function setActiveFanLocale(locale: UiLang | null): void {
   active = locale
 }
 
 /** Null outside a fan page, where the caller should resolve for itself. */
-export function activeFanLocale(): Lang | null {
+export function activeFanLocale(): UiLang | null {
   return active
 }
 
@@ -63,7 +63,7 @@ export function activeFanLocale(): Lang | null {
  * Split out because it is the only source that represents a *choice*. See the
  * note on writeStoredFanLocale.
  */
-export function localeFromQuery(search: string | undefined): Lang | null {
+export function localeFromQuery(search: string | undefined): UiLang | null {
   return narrowToLocale(new URLSearchParams(search ?? '').get('lang'))
 }
 
@@ -79,7 +79,7 @@ export function resolveFanLocale(opts: {
   search?: string
   stored?: string | null
   browser?: readonly string[]
-}): Lang {
+}): UiLang {
   const fromQuery = localeFromQuery(opts.search)
   if (fromQuery) return fromQuery
 
@@ -91,7 +91,7 @@ export function resolveFanLocale(opts: {
     if (hit) return hit
   }
 
-  return DEFAULT_LOCALE
+  return DEFAULT_UI_LOCALE
 }
 
 /**
@@ -122,7 +122,7 @@ export function readStoredFanLocale(): string | null {
  *
  * Failing to write is harmless; the resolution above still works for this page.
  */
-export function writeStoredFanLocale(locale: Lang): void {
+export function writeStoredFanLocale(locale: UiLang): void {
   try {
     localStorage.setItem(FAN_LANG_STORAGE_KEY, locale)
   } catch {
@@ -131,4 +131,4 @@ export function writeStoredFanLocale(locale: Lang): void {
 }
 
 /** The locales a fan can be shown, for a future selector. */
-export const FAN_LOCALES: readonly Lang[] = LOCALES
+export const FAN_LOCALES: readonly UiLang[] = UI_LOCALES

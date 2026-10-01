@@ -6,11 +6,11 @@ import type { BandLogo } from './bandLogo'
 import type { TranslationMap } from './shared'
 
 export interface BandProfileTranslations {
-  bio_short:          { en?: string | null; pl?: string | null }
-  bio_medium:         { en?: string | null; pl?: string | null }
-  bio_long:           { en?: string | null; pl?: string | null }
-  bio_full:           { en?: string | null; pl?: string | null }
-  artistic_statement: { en?: string | null; pl?: string | null }
+  bio_short:          TranslationMap
+  bio_medium:         TranslationMap
+  bio_long:           TranslationMap
+  bio_full:           TranslationMap
+  artistic_statement: TranslationMap
 }
 
 // The four bio lengths (Band Profile → Bio tabs); about_bio_variant picks

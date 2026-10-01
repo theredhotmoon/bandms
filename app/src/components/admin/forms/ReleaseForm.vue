@@ -23,14 +23,8 @@ const { t } = useI18n()
 const { order: contentLocales, isPrimary } = useContentLocales()
 
 // Sample text written in each input's own language — see PostForm.
-const titlePlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('media.releaseForm.titlePlaceholderEn'),
-  pl: t('media.releaseForm.titlePlaceholderPl'),
-}))
-const descriptionPlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('media.releaseForm.descriptionPlaceholderEn'),
-  pl: t('media.releaseForm.descriptionPlaceholderPl'),
-}))
+const titlePlaceholder = (l: Lang): string => t('media.releaseForm.titlePlaceholder', {}, { locale: l })
+const descriptionPlaceholder = (l: Lang): string => t('media.releaseForm.descriptionPlaceholder', {}, { locale: l })
 
 // i18n-ignore block: `label` is a brand name and `color` is that brand's
 // hex — neither translates. `key` is the persisted ReleasePlatform.
@@ -217,7 +211,7 @@ function removeTrack(i: number) {
 function handleSubmit() {
   const payload: ReleasePayload = {
     // `{}` when blank, so the API's required rule answers with a `title` error.
-    title:       compactBag(form.title) ?? {},
+    title:       bagHasText(form.title) ? compactBag(form.title) : {},
     slug_en:     form.slug_en || null,
     slug_pl:     form.slug_pl || null,
     type:         form.type,
@@ -280,7 +274,7 @@ function handleSubmit() {
           <div class="trans-group">
             <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
               <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-              <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
+              <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder(l)" />
             </div>
           </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
@@ -337,7 +331,7 @@ function handleSubmit() {
         <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`" style="margin-top:0.5rem;">{{ shortLabel(l) }}</span>
           <div class="flex-1">
-            <RichEditor v-model="form.description[l]" :placeholder="descriptionPlaceholder[l]" />
+            <RichEditor v-model="form.description[l]" :placeholder="descriptionPlaceholder(l)" />
           </div>
         </div>
       </div>

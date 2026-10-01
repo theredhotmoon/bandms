@@ -6,9 +6,9 @@ import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
-import type { WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
+import type { Localized, WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
-import { LOCALES } from '@/locales'
+import { LOCALES, bagFrom, emptyBag, shortLabel, type TranslationBag } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
 import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
@@ -16,7 +16,19 @@ import { useUiLang } from '@/composables/useUiLang'
 
 // Inputs render in the band's writing order; the registry order stays for
 // building payloads, where order carries no meaning.
-const { order: contentLocales } = useContentLocales()
+const { order: contentLocales, primary: primaryLocale } = useContentLocales()
+
+/**
+ * The row's label: the custom name in the band's primary language, with no
+ * fallback to another language. It replaced `custom_name?.en`, which was
+ * single-language too; walking the whole order instead labelled a row
+ * "Kontakt (Contact)" for an English-first band whose English nav still says
+ * "Contact" — the list then described a page nobody visiting in that language
+ * sees.
+ */
+function customNameOf(mod: WebsiteModule): string | null {
+  return mod.custom_name?.[primaryLocale.value] || null
+}
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
@@ -92,8 +104,7 @@ const LIST_SLUGS       = new Set(['posts', 'concerts', 'photos', 'press', 'video
 const PER_PAGE_OPTIONS = [6, 9, 10, 12, 15, 20, 24] as const
 
 const editingSlug  = ref<string | null>(null)
-const draftNameEn  = ref('')
-const draftNamePl  = ref('')
+const draftName    = ref<TranslationBag>(emptyBag())
 const draftSlugEn  = ref('')
 const draftSlugPl  = ref('')
 const draftPerPage = ref<number | null>(null)
@@ -119,7 +130,7 @@ const settingsGroups = computed(() =>
 const draftVisibility = ref<Record<string, boolean>>({})
 
 const { isDirty, markClean } = useDirtyGuard(() => ({
-  name: { en: draftNameEn.value, pl: draftNamePl.value },
+  name: draftName.value,
   slug: { en: draftSlugEn.value, pl: draftSlugPl.value },
   perPage: draftPerPage.value,
   settings: draftSettings.value,
@@ -138,8 +149,7 @@ const isPageModule = computed(() =>
 
 function startEdit(mod: WebsiteModule) {
   editingSlug.value  = mod.slug
-  draftNameEn.value  = mod.custom_name?.en ?? ''
-  draftNamePl.value  = mod.custom_name?.pl ?? ''
+  draftName.value    = bagFrom(mod.custom_name)
   draftSlugEn.value  = mod.custom_slug?.en ?? ''
   draftSlugPl.value  = mod.custom_slug?.pl ?? ''
   draftPerPage.value = mod.per_page ?? null
@@ -215,10 +225,9 @@ async function saveEdit(slug: string) {
     await updateSettings.mutateAsync({
       slug,
       payload: {
-        custom_name: {
-          en: draftNameEn.value.trim() || null,
-          pl: draftNamePl.value.trim() || null,
-        },
+        // Every locale, a blank one as null — an omitted locale would keep its
+        // old name, because the API merges translations.
+        custom_name: Object.fromEntries(LOCALES.map(l => [l, draftName.value[l].trim() || null])) as Localized,
         // Omitted entirely for a chrome module: sending nulls would clear the
         // column, and the API treats an explicit null as "clear this locale".
         ...(isPageModule.value
@@ -298,11 +307,11 @@ async function saveEdit(slug: string) {
             <span
               class="font-semibold text-sm"
               :class="mod.enabled ? 'text-white' : 'text-zinc-500'"
-            >{{ mod.custom_name?.en || mod.display_name }}</span>
-            <span v-if="mod.custom_name?.en" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
+            >{{ customNameOf(mod) || mod.display_name }}</span>
+            <span v-if="customNameOf(mod)" class="ml-1.5 text-xs text-zinc-600">({{ mod.display_name }})</span>
             <!-- No URL hint for chrome rows: /home and /site are not routes.
                  privacy keeps its fixed one, like tech-rider does. -->
-            <span v-if="!NON_PAGE_MODULES.has(mod.slug) || mod.slug === 'privacy'" class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.en, mod.slug) }}</span>
+            <span v-if="!NON_PAGE_MODULES.has(mod.slug) || mod.slug === 'privacy'" class="ml-2 text-xs text-zinc-500">/{{ mod.slug === 'tech-rider' ? 'rider' : effectiveSlug(mod.custom_slug?.[primaryLocale], mod.slug) }}</span>
           </div>
 
           <!-- Status badge. Hidden with the toggle for rows the public build
@@ -349,20 +358,10 @@ async function saveEdit(slug: string) {
           <div class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.customName') }}</span>
             <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-2">
-                <span class="lang-badge">EN</span> <!-- i18n-ignore: ISO 639-1 code -->
+              <div v-for="l in contentLocales" :key="l" class="flex items-center gap-2" :data-locale="l">
+                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
                 <input
-                  v-model="draftNameEn"
-                  type="text"
-                  maxlength="80"
-                  :placeholder="mod.display_name"
-                  class="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 transition-colors"
-                />
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: ISO 639-1 code -->
-                <input
-                  v-model="draftNamePl"
+                  v-model="draftName[l]"
                   type="text"
                   maxlength="80"
                   :placeholder="mod.display_name"

@@ -1,6 +1,7 @@
 import type { Post, PostPayload, PostSummary } from '@/types/post'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 import type { Lang } from '@/composables/useLang'
+import { DEFAULT_LOCALE } from '@/locales'
 
 export interface PaginationMeta {
   current_page: number
@@ -29,7 +30,7 @@ export interface PostFilters {
  * public routes hide drafts (null published_at), and the editor has to see
  * them — its "Draft" filter and the dashboard count would otherwise be empty.
  */
-export async function fetchPosts(token: string, filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
+export async function fetchPosts(token: string, filters: PostFilters = {}, lang: Lang = DEFAULT_LOCALE): Promise<PostListResponse> {
   const res = await fetch(`${API_BASE}/api/admin/posts?${listParams(filters, lang)}`, { headers: authHeaders(token) })
   const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
   return { data: raw.data, meta: raw.meta }
@@ -40,7 +41,7 @@ export async function fetchPosts(token: string, filters: PostFilters = {}, lang:
  * role may not read `/api/admin/posts` (members) — the dashboard's post count
  * needs *a* number, and a 403 would silently make it zero.
  */
-export async function fetchPublicPosts(filters: PostFilters = {}, lang: Lang = 'en'): Promise<PostListResponse> {
+export async function fetchPublicPosts(filters: PostFilters = {}, lang: Lang = DEFAULT_LOCALE): Promise<PostListResponse> {
   const res = await fetch(`${API_BASE}/api/posts?${listParams(filters, lang)}`, { headers: jsonHeaders })
   const raw = await handleResponse<{ data: PostSummary[]; meta?: PaginationMeta }>(res)
   return { data: raw.data, meta: raw.meta }
@@ -55,7 +56,7 @@ function listParams(filters: PostFilters, lang: Lang): URLSearchParams {
   return params
 }
 
-export async function fetchPost(token: string, id: number, lang: Lang = 'en'): Promise<Post> {
+export async function fetchPost(token: string, id: number, lang: Lang = DEFAULT_LOCALE): Promise<Post> {
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/admin/posts/${id}?lang=${lang}`, { headers: authHeaders(token) })
   return handleResponse<PostResponse>(res).then((r) => r.data)

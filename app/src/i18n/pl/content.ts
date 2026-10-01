@@ -89,12 +89,10 @@ export default {
     loadingOne: 'Wczytywanie wpisu…',
     draft: 'Szkic',
     filter: { all: 'Wszystkie statusy', published: 'Opublikowane', draft: 'Szkice' },
-    titlePlaceholderEn: 'Post title',
-    titlePlaceholderPl: 'Tytuł posta',
+    titlePlaceholder: 'Tytuł posta',
     venueTba: 'Do ustalenia',
     intro: 'Wprowadzenie',
-    introPlaceholderEn: 'Short introductory text shown in previews…',
-    introPlaceholderPl: 'Krótki tekst wprowadzający…',
+    introPlaceholder: 'Krótki tekst wprowadzający…',
     publishAt: 'Publikacja',
     eventDateShownAs: 'Data wydarzenia jako',
     dateRange: 'Zakres dat',
@@ -146,24 +144,20 @@ export default {
     // content for THAT field, not for the chrome. See shows.ts for the same
     // rule — do not "fix" them to match the surrounding locale.
     text: {
-      placeholderEn: 'Paragraph text…',
-      placeholderPl: 'Treść akapitu…',
+      placeholder: 'Treść akapitu…',
     },
     image: {
       uploadFailed: 'Nie udało się przesłać zdjęcia',
       remove: 'Usuń zdjęcie',
       uploading: 'Przesyłanie…',
       upload: 'Kliknij, aby przesłać zdjęcie',
-      altEn: 'Alt text (describes the image)',
-      altPl: 'Tekst alternatywny',
-      captionEn: 'Caption (optional)',
-      captionPl: 'Podpis',
+      alt: 'Tekst alternatywny',
+      caption: 'Podpis',
     },
     embed: {
       urlPlaceholder: 'Wklej adres wideo (YouTube, Vimeo, Instagram, TikTok, Facebook) lub audio (Spotify, SoundCloud, Apple Music)',
       audioLabel: 'Audio · {provider}',
-      linkTextEn: 'Link text (optional)',
-      linkTextPl: 'Tekst linku (opcjonalnie)',
+      linkText: 'Tekst linku (opcjonalnie)',
     },
     ref: {
       entity: {

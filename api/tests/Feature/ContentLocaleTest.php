@@ -141,3 +141,15 @@ describe('clearing one language of a title on update', function () {
         expect($release->fresh()->getTranslation('title', 'en', false))->toBe('');
     });
 });
+
+it('clears every language of a post intro sent as an all-null bag', function () {
+    $this->createProfile();
+    $this->actingAsAdmin();
+    $post = \App\Models\Post::factory()->create(['title' => ['en' => 'T'], 'intro' => ['pl' => 'Wstęp']]);
+
+    $this->withHeader('Accept-Language', 'en')
+        ->putJson("/api/posts/{$post->id}", ['title' => ['en' => 'T'], 'intro' => ['en' => null, 'pl' => null]])
+        ->assertOk();
+
+    expect($post->fresh()->getTranslation('intro', 'pl', false))->toBe('');
+});

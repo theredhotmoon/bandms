@@ -89,12 +89,10 @@ export default {
     loadingOne: 'Loading post…',
     draft: 'Draft',
     filter: { all: 'All statuses', published: 'Published', draft: 'Draft' },
-    titlePlaceholderEn: 'Post title',
-    titlePlaceholderPl: 'Tytuł posta',
+    titlePlaceholder: 'Post title',
     venueTba: 'TBA',
     intro: 'Intro',
-    introPlaceholderEn: 'Short introductory text shown in previews…',
-    introPlaceholderPl: 'Krótki tekst wprowadzający…',
+    introPlaceholder: 'Short introductory text shown in previews…',
     publishAt: 'Publish at',
     eventDateShownAs: 'Event date shown as',
     dateRange: 'Date range',
@@ -146,24 +144,20 @@ export default {
     // content for THAT field, not for the chrome. See shows.ts for the same
     // rule — do not "fix" them to match the surrounding locale.
     text: {
-      placeholderEn: 'Paragraph text…',
-      placeholderPl: 'Treść akapitu…',
+      placeholder: 'Paragraph text…',
     },
     image: {
       uploadFailed: 'Image upload failed',
       remove: 'Remove image',
       uploading: 'Uploading…',
       upload: 'Click to upload an image',
-      altEn: 'Alt text (describes the image)',
-      altPl: 'Tekst alternatywny',
-      captionEn: 'Caption (optional)',
-      captionPl: 'Podpis',
+      alt: 'Alt text (describes the image)',
+      caption: 'Caption (optional)',
     },
     embed: {
       urlPlaceholder: 'Paste a video (YouTube, Vimeo, Instagram, TikTok, Facebook) or audio (Spotify, SoundCloud, Apple Music) URL',
       audioLabel: 'Audio · {provider}',
-      linkTextEn: 'Link text (optional)',
-      linkTextPl: 'Tekst linku (opcjonalnie)',
+      linkText: 'Link text (optional)',
     },
     ref: {
       entity: {

@@ -40,16 +40,11 @@ const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 const { order: contentLocales, isPrimary } = useContentLocales()
 
 // The sample text inside each input is written in that input's language, so it
-// is a per-locale map rather than one string. A third locale is a compile error
-// here, which is the point: it needs its own sample sentence.
-const titlePlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('content.posts.titlePlaceholderEn'),
-  pl: t('content.posts.titlePlaceholderPl'),
-}))
-const introPlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('content.posts.introPlaceholderEn'),
-  pl: t('content.posts.introPlaceholderPl'),
-}))
+// is looked up in that language's own admin catalogue rather than the UI
+// language's. A content locale with no admin catalogue falls back to English
+// sample text (vue-i18n's fallbackLocale) — harmless for a placeholder.
+const titlePlaceholder = (l: Lang): string => t('content.posts.titlePlaceholder', {}, { locale: l })
+const introPlaceholder = (l: Lang): string => t('content.posts.introPlaceholder', {}, { locale: l })
 
 const form = reactive({
   title: emptyBag(),
@@ -105,7 +100,7 @@ function submit() {
   emit('submit', {
     // `{}` rather than null when blank: the API requires `title`, and an empty
     // object fails that rule with a message keyed `title`, which renders below.
-    title: compactBag(form.title) ?? {},
+    title: bagHasText(form.title) ? compactBag(form.title) : {},
     slug_en: form.slug_en || null,
     slug_pl: form.slug_pl || null,
     intro: compactBag(form.intro),
@@ -130,7 +125,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
+          <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder(l)" />
         </div>
       </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
@@ -152,7 +147,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <textarea v-model="form.intro[l]" class="field-input flex-1" rows="2" :placeholder="introPlaceholder[l]" />
+          <textarea v-model="form.intro[l]" class="field-input flex-1" rows="2" :placeholder="introPlaceholder(l)" />
         </div>
       </div>
       <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>

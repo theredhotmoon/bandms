@@ -10,6 +10,7 @@ import { riderSheetLabels } from '@bandms/rider-core'
 import type { BandProfile } from '@/types/bandProfile'
 import RiderSheet from '@bandms/rider-core/components/RiderSheet.vue'
 import { useUiLang } from '@/composables/useUiLang'
+import { DEFAULT_LOCALE } from '@/locales'
 
 /**
  * The band's own preview of a tech rider — opened from the editor's topbar.
@@ -51,7 +52,7 @@ onMounted(async () => {
         ? fetchTechRider(parseInt(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id, 10))
         : fetchActiveTechRider(),
       fetchBandMembers().catch(() => [] as BandMember[]),
-      fetchBandProfile('en').catch(() => null),
+      fetchBandProfile(DEFAULT_LOCALE).catch(() => null),
     ])
     rider.value   = riderData
     members.value = membersData
