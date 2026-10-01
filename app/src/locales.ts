@@ -79,9 +79,13 @@ export function emptyBag(): TranslationBag {
 /**
  * A full draft bag from a stored translation map.
  *
- * `legacy` fills the default locale when the map has nothing for it — records
- * from before a field was translatable carry a plain string beside an empty
- * `translations` entry, and the forms have always shown that string as English.
+ * `legacy` is used ONLY when the map holds nothing in any locale — a record
+ * from before the field was translatable, whose plain string the forms have
+ * always shown as the default locale. It must not fill a single empty locale:
+ * the API's resolved field (`val.bio_short`, `val.title`) is the text in
+ * whichever `?lang=` the editor fetched, so filling an empty English slot from
+ * it put the Polish bio into the English box after the band cleared English —
+ * and the next save wrote it there for real.
  */
 export function bagFrom(
   map: Partial<Record<Lang, string | null>> | null | undefined,
@@ -89,25 +93,24 @@ export function bagFrom(
 ): TranslationBag {
   const bag = emptyBag()
   for (const l of LOCALES) bag[l] = map?.[l] ?? ''
-  if (!bag[DEFAULT_LOCALE] && legacy) bag[DEFAULT_LOCALE] = legacy
+  if (legacy && !bagHasText(bag)) bag[DEFAULT_LOCALE] = legacy
   return bag
 }
 
 /**
- * The bag a form submits: every registered locale, blank ones as `null`, or
- * `null` for the whole field when nothing is filled.
+ * The bag a form submits: every registered locale, a blank one as `null`.
  *
- * Every key is sent, a cleared one as null, because the API's
- * setTranslations() MERGES: a locale left out of the payload keeps its old
- * text, so "delete the English title, save" would return 200 and change
- * nothing. (An earlier cut omitted blanks and did exactly that.) Null rather
- * than '' so no locale is privileged — the forms used to send
- * `{ en: form.title_en, pl: form.title_pl || undefined }`, always carrying an
- * English string, the shape that assumed every band writes English.
+ * Every key, always — never omitted and never collapsed to a bare `null`:
+ * - the API's setTranslations() MERGES, so an omitted locale keeps its old text
+ *   and "clear the English title, save" returned 200 and changed nothing;
+ * - a bare `null` is applied by Spatie to the REQUEST's locale only, so
+ *   clearing the last language (a Polish-only bio, from an English browser)
+ *   cleared `en` — already empty — and kept the Polish text.
+ * Both were caught in review (#147, #149). A required field that is entirely
+ * blank sends `{}` at the call site instead, so the API's `required` answers.
  */
-export function compactBag(bag: TranslationBag): Record<Lang, string | null> | null {
-  const out = Object.fromEntries(LOCALES.map(l => [l, bag[l].trim() !== '' ? bag[l] : null])) as Record<Lang, string | null>
-  return LOCALES.some(l => out[l] !== null) ? out : null
+export function compactBag(bag: TranslationBag): Record<Lang, string | null> {
+  return Object.fromEntries(LOCALES.map(l => [l, bag[l].trim() !== '' ? bag[l] : null])) as Record<Lang, string | null>
 }
 
 /** True when any locale of the bag holds text. */

@@ -100,7 +100,7 @@ function submit() {
   emit('submit', {
     // `{}` rather than null when blank: the API requires `title`, and an empty
     // object fails that rule with a message keyed `title`, which renders below.
-    title: compactBag(form.title) ?? {},
+    title: bagHasText(form.title) ? compactBag(form.title) : {},
     slug_en: form.slug_en || null,
     slug_pl: form.slug_pl || null,
     intro: compactBag(form.intro),

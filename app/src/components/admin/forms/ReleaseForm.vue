@@ -211,7 +211,7 @@ function removeTrack(i: number) {
 function handleSubmit() {
   const payload: ReleasePayload = {
     // `{}` when blank, so the API's required rule answers with a `title` error.
-    title:       compactBag(form.title) ?? {},
+    title:       bagHasText(form.title) ? compactBag(form.title) : {},
     slug_en:     form.slug_en || null,
     slug_pl:     form.slug_pl || null,
     type:         form.type,
