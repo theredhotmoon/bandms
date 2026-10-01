@@ -34,5 +34,16 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 3px; }
 
+/* ── Native selects in the dark admin shell ─────── */
+/* Safety net for any <select> whose component forgot its styles: preflight
+   makes it inherit the shell's light text, while the OS draws the open list
+   on white — light-on-white. A dark color-scheme makes the UA draw it dark.
+   AdminModal teleports to <body>, outside .admin-shell, and it is where most
+   forms live, so its overlay is listed too. */
+.admin-shell select,
+.modal-overlay select { color-scheme: dark; }
+.admin-shell select option,
+.modal-overlay select option { background: #141414; color: #e2e8f0; }
+
 /* ── Page offset for admin pages that still use AppNavbar ── */
 .page-offset { padding-top: 56px; }

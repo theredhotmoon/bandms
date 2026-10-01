@@ -29,6 +29,10 @@ defineEmits<{
   </div>
 </template>
 
+<!-- form-styles.css is scoped, so the parent view's copy never reaches this
+     component's <select>: without its own import the class is inert and the
+     open list renders white-on-white. -->
+<style scoped src="../form-styles.css" />
 <style scoped>
 .about-variant-row {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
