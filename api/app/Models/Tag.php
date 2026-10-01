@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,11 +10,11 @@ use Spatie\Translatable\HasTranslations;
 
 class Tag extends Model
 {
-    use HasFactory, HasSlug, HasTranslations;
+    use HasFactory, HasTranslatedSlug, HasTranslations;
 
-    public array $translatable = ['name'];
+    public array $translatable = ['name', 'slug'];
 
-    protected $fillable = ['name', 'slug_en', 'slug_pl'];
+    protected $fillable = ['name', 'slug'];
 
     public function posts(): BelongsToMany
     {

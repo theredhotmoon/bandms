@@ -71,7 +71,7 @@ describe('GET /api/posts', function () {
     });
 
     it('filters by tag_id', function () {
-        $tag  = Tag::factory()->create(['name' => 'Live', 'slug_en' => 'live']);
+        $tag  = Tag::factory()->create(['name' => 'Live', 'slug' => ['en' => 'live']]);
         $post = Post::factory()->create(['title' => 'Live Show']);
         Post::factory()->create(['title' => 'Studio Notes']);
         $post->tags()->attach($tag);
@@ -163,7 +163,7 @@ describe('POST /api/posts', function () {
 
     it('creates a post with tags', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Live', 'slug_en' => 'live']);
+        $tag = Tag::factory()->create(['name' => 'Live', 'slug' => ['en' => 'live']]);
 
         $this->postJson('/api/posts', ['title' => 'Tagged Post', 'tag_ids' => [$tag->id]])
             ->assertCreated()
@@ -264,8 +264,8 @@ describe('PUT /api/posts/{post}', function () {
     it('syncs tags on update', function () {
         $this->actingAsAdmin();
         $post   = Post::factory()->create();
-        $oldTag = Tag::factory()->create(['name' => 'Old', 'slug_en' => 'old']);
-        $newTag = Tag::factory()->create(['name' => 'New', 'slug_en' => 'new']);
+        $oldTag = Tag::factory()->create(['name' => 'Old', 'slug' => ['en' => 'old']]);
+        $newTag = Tag::factory()->create(['name' => 'New', 'slug' => ['en' => 'new']]);
         $post->tags()->attach($oldTag);
 
         $this->putJson("/api/posts/{$post->id}", ['tag_ids' => [$newTag->id]])->assertSuccessful();

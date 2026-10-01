@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
-import { LOCALES, emptyBag } from '@/locales'
+import { computed, reactive, watch } from 'vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import type { Tag, TagPayload } from '@/types/tag'
 
@@ -17,25 +17,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [TagPayload]; cancel: [] }>()
 
+// Laravel keys a bag's errors per locale: `slug.en`, `slug.pl`.
+const slugErrors = computed(() =>
+  Object.fromEntries(LOCALES.map(l => [l, props.errors?.[`slug.${l}`]?.[0]])),
+)
+
 const form = reactive({
   name: emptyBag(),
-  slug_en: '',
-  slug_pl: '',
+  slug: emptyBag(),
 })
 
 watch(() => props.initial, (val) => {
   for (const l of LOCALES) {
     form.name[l] = val?.translations?.name[l] ?? ''
   }
-  form.slug_en = val?.slug_en ?? ''
-  form.slug_pl = val?.slug_pl ?? ''
+  form.slug = bagFrom(val?.translations?.slug)
 }, { immediate: true })
 
 function submit() {
   emit('submit', {
     name: Object.fromEntries(LOCALES.map(l => [l, form.name[l].trim() || null])) as TagPayload['name'],
-    slug_en: form.slug_en || null,
-    slug_pl: form.slug_pl || null,
+    slug: compactBag(form.slug),
   })
 }
 </script>
@@ -45,8 +47,8 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
+        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
           <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.tags.namePlaceholder')" />
         </div>
       </div>
@@ -57,15 +59,12 @@ function submit() {
     </div>
     <div>
       <label class="field-label">{{ $t('more.tags.slug') }}</label>
-      <SlugInput
-        v-model="form.slug_en"
-        v-model:modelValuePl="form.slug_pl"
-        :sourceEn="form.name.en"
-        :sourcePl="form.name.pl"
-        :bilingual="true"
+      <TranslatedSlugInput
+        v-model="form.slug"
+        :sources="form.name"
+        :errors="slugErrors"
       />
-      <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
-      <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
+      <p v-if="errors?.slug" class="field-error">{{ errors.slug[0] }}</p>
     </div>
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>

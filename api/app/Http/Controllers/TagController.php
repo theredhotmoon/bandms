@@ -71,9 +71,9 @@ class TagController extends Controller
     {
         $rules = [
             'name'     => ['required', 'array', $this->localeKeysOnly()],
-            'slug_en'  => ['nullable', 'string', 'max:100', Rule::unique('tags', 'slug_en')->ignore($tag)],
-            'slug_pl'  => ['nullable', 'string', 'max:100', Rule::unique('tags', 'slug_pl')->ignore($tag)],
         ];
+
+        $rules += Tag::translatedSlugRules($tag?->id, 100);
 
         foreach (Locales::codes() as $code) {
             $rules["name.{$code}"] = [
@@ -152,19 +152,28 @@ class TagController extends Controller
     /**
      * Regenerated on every save, matching this controller's pre-existing
      * behaviour of re-slugging on rename (unlike Post, which only
-     * auto-generates on create). slug_en always gets a value — from the
-     * English name, or the first filled locale if English is blank — so it
-     * can anchor the public filter key and, later, a URL. slug_pl tracks
-     * whether a Polish name exists, including clearing it when one no longer
-     * does. An explicit slug in the payload wins over auto-generation.
+     * auto-generates on create). An explicit slug in the payload wins.
+     *
+     * The default locale always gets a value — from its own name, or the first
+     * filled one — because it is the tag's stable key: the public site filters
+     * on it in every language. Every other locale has a slug exactly when it
+     * has a name, including losing it when the name is cleared.
      */
     private function applySlugs(Tag $tag, array $data): void
     {
-        $translations = $tag->getTranslations('name');
-        $nameEn       = ContentLocales::firstFilled($translations, 'en') ?? 'tag';
-        $namePl       = $translations['pl'] ?? null;
+        $names   = $tag->getTranslations('name');
+        $given   = $data['slug'] ?? [];
+        $default = Locales::default();
 
-        $tag->slug_en = ($data['slug_en'] ?? null) ?: Tag::generateSlug($nameEn, $tag->id, 'slug_en');
-        $tag->slug_pl = ($data['slug_pl'] ?? null) ?: ($namePl ? Tag::generateSlug($namePl, $tag->id, 'slug_pl') : null);
+        foreach (Locales::codes() as $code) {
+            $slug = ($given[$code] ?? null)
+                ?: (filled($names[$code] ?? null) ? Tag::generateTranslatedSlug($names[$code], $tag->id) : null);
+
+            if ($code === $default && !$slug) {
+                $slug = Tag::generateTranslatedSlug(ContentLocales::firstFilled($names, $default) ?? 'tag', $tag->id);
+            }
+
+            $slug ? $tag->setTranslation('slug', $code, $slug) : $tag->forgetTranslation('slug', $code);
+        }
     }
 }

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import fs from 'node:fs'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -91,6 +92,41 @@ test.describe('Tags Admin', () => {
 
     await expect(page.locator('[data-sonner-toast]')).toContainText('Tag deleted', { timeout: 8000 })
     await expect(page.getByRole('cell', { name: editedTagName })).not.toBeVisible({ timeout: 8000 })
+  })
+
+  // Tag slugs are one translated bag now (translated-slug series), edited with
+  // TranslatedSlugInput. Its predecessor flipped to "manual" on any prop
+  // change, including its own generated value coming back, so a slug stopped
+  // following the name after the first keystroke. Typing a whole name and
+  // seeing the whole slug is what proves it keeps following, per language.
+  test("slugs follow each language's name as it is typed, and save as one bag", async ({ page, request, baseURL }) => {
+    await page.goto('/admin/tags')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: '+ Add tag' }).click()
+    const modal = page.locator('.modal-overlay')
+
+    const stamp = Date.now()
+    await modal.locator('.trans-row[data-locale="en"] input').fill(`E2E Slug Tag ${stamp}`)
+    await modal.locator('.trans-row[data-locale="pl"] input').fill(`Znacznik Ślimak ${stamp}`)
+
+    await expect(modal.locator('.slug-row[data-locale="en"] input')).toHaveValue(`e2e-slug-tag-${stamp}`)
+    await expect(modal.locator('.slug-row[data-locale="pl"] input')).toHaveValue(`znacznik-slimak-${stamp}`)
+
+    const saved = page.waitForResponse(r => r.url().endsWith('/api/tags') && r.request().method() === 'POST')
+    await modal.getByRole('button', { name: /save|create/i }).click()
+    const body = (await (await saved).json()).data
+
+    expect(body.slug).toBe(`e2e-slug-tag-${stamp}`)
+    expect(body.translations.slug).toEqual({ en: `e2e-slug-tag-${stamp}`, pl: `znacznik-slimak-${stamp}` })
+
+    // Clean up through the API — the row's own delete flow is covered above.
+    const token = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
+      .origins.flatMap((o: { localStorage?: { name: string; value: string }[] }) => o.localStorage ?? [])
+      .find((kv: { name: string }) => kv.name === 'auth_token')?.value
+    const res = await request.delete(`${baseURL}/api/tags/${body.id}`, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+    expect(res.ok(), `cleanup delete failed with ${res.status()}`).toBeTruthy()
   })
 
   test('modal: open modal then click X close button → modal closes', async ({ page }) => {

@@ -13,8 +13,8 @@ describe('GET /api/tags', function () {
     });
 
     it('returns tags ordered by name', function () {
-        Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
-        Tag::factory()->create(['name' => 'Acoustic', 'slug_en' => 'acoustic']);
+        Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
+        Tag::factory()->create(['name' => 'Acoustic', 'slug' => ['en' => 'acoustic']]);
 
         $this->getJson('/api/tags')
             ->assertSuccessful()
@@ -23,7 +23,7 @@ describe('GET /api/tags', function () {
     });
 
     it('resolves the name for the requested locale, falling back when untranslated', function () {
-        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug' => ['en' => 'rock']]);
 
         $this->getJson("/api/tags/{$tag->id}?lang=pl")
             ->assertSuccessful()
@@ -31,7 +31,7 @@ describe('GET /api/tags', function () {
 
         // Only 'en' was ever set for this one — 'pl' falls back rather than
         // rendering an empty pill on the public site.
-        $onlyEnglish = Tag::factory()->create(['name' => 'Blues', 'slug_en' => 'blues']);
+        $onlyEnglish = Tag::factory()->create(['name' => 'Blues', 'slug' => ['en' => 'blues']]);
 
         $this->getJson("/api/tags/{$onlyEnglish->id}?lang=pl")
             ->assertSuccessful()
@@ -39,7 +39,7 @@ describe('GET /api/tags', function () {
     });
 
     it('includes the raw per-locale translations bag for the admin editor', function () {
-        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug' => ['en' => 'rock']]);
 
         $this->getJson("/api/tags/{$tag->id}")
             ->assertSuccessful()
@@ -52,11 +52,11 @@ describe('GET /api/tags', function () {
 
 describe('GET /api/tags/{tag}', function () {
     it('returns the tag', function () {
-        $tag = Tag::factory()->create(['name' => 'Blues', 'slug_en' => 'blues']);
+        $tag = Tag::factory()->create(['name' => 'Blues', 'slug' => ['en' => 'blues']]);
 
         $this->getJson("/api/tags/{$tag->id}")
             ->assertSuccessful()
-            ->assertJsonPath('data.slug_en', 'blues');
+            ->assertJsonPath('data.slug', 'blues');
     });
 
     it('returns 404 for a non-existent tag', function () {
@@ -77,31 +77,31 @@ describe('POST /api/tags', function () {
         $this->postJson('/api/tags', ['name' => ['en' => 'Test']])->assertForbidden();
     });
 
-    it('creates a tag and auto-generates slug_en', function () {
+    it('creates a tag and auto-generates its default-locale slug', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/tags', ['name' => ['en' => 'Live Music']])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Live Music')
-            ->assertJsonPath('data.slug_en', 'live-music')
-            ->assertJsonPath('data.slug_pl', null);
+            ->assertJsonPath('data.slug', 'live-music')
+            ->assertJsonPath('data.translations.slug.pl', null);
     });
 
-    it('also generates slug_pl when a Polish name is given', function () {
+    it('also generates a Polish slug when a Polish name is given', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/tags', ['name' => ['en' => 'Live Music', 'pl' => 'Muzyka na żywo']])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'live-music')
-            ->assertJsonPath('data.slug_pl', 'muzyka-na-zywo');
+            ->assertJsonPath('data.slug', 'live-music')
+            ->assertJsonPath('data.translations.slug.pl', 'muzyka-na-zywo');
     });
 
-    it('generates slug_en from whichever locale is filled when English is blank', function () {
+    it('generates the default-locale slug from whichever name is filled when English is blank', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/tags', ['name' => ['pl' => 'Akustyczny']])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'akustyczny');
+            ->assertJsonPath('data.slug', 'akustyczny');
     });
 
     it('validates name is required', function () {
@@ -122,7 +122,7 @@ describe('POST /api/tags', function () {
 
     it('validates name.en must be unique per locale', function () {
         $this->actingAsAdmin();
-        Tag::factory()->create(['name' => 'Metal', 'slug_en' => 'metal']);
+        Tag::factory()->create(['name' => 'Metal', 'slug' => ['en' => 'metal']]);
 
         $this->postJson('/api/tags', ['name' => ['en' => 'Metal']])
             ->assertUnprocessable()
@@ -131,7 +131,7 @@ describe('POST /api/tags', function () {
 
     it('allows the same word in different locales across two tags', function () {
         $this->actingAsAdmin();
-        Tag::factory()->create(['name' => ['en' => 'Live', 'pl' => 'Na żywo'], 'slug_en' => 'live']);
+        Tag::factory()->create(['name' => ['en' => 'Live', 'pl' => 'Na żywo'], 'slug' => ['en' => 'live']]);
 
         $this->postJson('/api/tags', ['name' => ['en' => 'Na żywo']])
             ->assertCreated();
@@ -142,13 +142,13 @@ describe('POST /api/tags', function () {
 
 describe('PUT /api/tags/{tag}', function () {
     it('returns 401 without authentication', function () {
-        $tag = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'Y']])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $tag = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'Y']])->assertForbidden();
@@ -156,23 +156,23 @@ describe('PUT /api/tags/{tag}', function () {
 
     it('renames a tag and updates its slug', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Old', 'slug_en' => 'old']);
+        $tag = Tag::factory()->create(['name' => 'Old', 'slug' => ['en' => 'old']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'New Name']])
             ->assertSuccessful()
-            ->assertJsonPath('data.slug_en', 'new-name');
+            ->assertJsonPath('data.slug', 'new-name');
     });
 
     it('allows keeping the same name on update', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Blues', 'slug_en' => 'blues']);
+        $tag = Tag::factory()->create(['name' => 'Blues', 'slug' => ['en' => 'blues']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'Blues']])->assertSuccessful();
     });
 
     it('updates only the given locale, leaving the other untouched', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'Rock Music']])
             ->assertSuccessful()
@@ -182,12 +182,12 @@ describe('PUT /api/tags/{tag}', function () {
 
     it('clears one locale via an explicit empty string without wiping the other', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => ['en' => 'Rock', 'pl' => 'Rock (PL)'], 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => 'Rock', 'pl' => '']])
             ->assertSuccessful()
             ->assertJsonPath('data.translations.name.pl', null)
-            ->assertJsonPath('data.slug_pl', null);
+            ->assertJsonPath('data.translations.slug.pl', null);
     });
 
     it('returns 404 for a non-existent tag', function () {
@@ -201,13 +201,13 @@ describe('PUT /api/tags/{tag}', function () {
 
 describe('DELETE /api/tags/{tag}', function () {
     it('returns 401 without authentication', function () {
-        $tag = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
 
         $this->deleteJson("/api/tags/{$tag->id}")->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $tag = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->deleteJson("/api/tags/{$tag->id}")->assertForbidden();
@@ -215,7 +215,7 @@ describe('DELETE /api/tags/{tag}', function () {
 
     it('deletes a tag', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
 
         $this->deleteJson("/api/tags/{$tag->id}")->assertNoContent();
 
@@ -224,7 +224,7 @@ describe('DELETE /api/tags/{tag}', function () {
 
     it('detaches from posts but keeps the posts', function () {
         $this->actingAsAdmin();
-        $tag  = Tag::factory()->create(['name' => 'X', 'slug_en' => 'x']);
+        $tag  = Tag::factory()->create(['name' => 'X', 'slug' => ['en' => 'x']]);
         $post = Post::factory()->create();
         $post->tags()->attach($tag);
 

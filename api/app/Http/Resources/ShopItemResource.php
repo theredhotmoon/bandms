@@ -37,7 +37,7 @@ class ShopItemResource extends JsonResource
             'tags'             => $this->tags->map(fn ($t) => [
                 'id'      => $t->id,
                 'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
-                'slug_en' => $t->slug_en,
+                'slug'    => $t->slugIn(Locales::default()),
             ])->values(),
             'release_ids'      => $this->releases->pluck('id')->values(),
             'concert_ids'      => $this->concerts->pluck('id')->values(),
