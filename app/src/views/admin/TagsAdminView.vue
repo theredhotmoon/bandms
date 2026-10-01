@@ -25,7 +25,7 @@ const confirmId = ref<number | null>(null)
 
 const tc = useTableControls<Tag>({
   data: query.data,
-  searchFn: (t, q) => t.name.toLowerCase().includes(q) || t.slug_en.toLowerCase().includes(q),
+  searchFn: (t, q) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
   defaultSort: 'name',
 })
 
@@ -81,14 +81,14 @@ async function confirmDelete() {
             <thead>
               <tr style="border-bottom:1px solid #222222;">
                 <SortHeader :label="$t('more.tags.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug_en" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('more.tags.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="tag in tc.paginated.value" :key="tag.id" class="table-row">
                 <td class="td font-medium" style="color:#e2e8f0;">{{ tag.name }}</td>
-                <td class="td text-xs font-mono" style="color:#64748b;">{{ tag.slug_en }}</td>
+                <td class="td text-xs font-mono" style="color:#64748b;">{{ tag.slug }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = tag.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

@@ -101,7 +101,7 @@ describe('PUT /api/posts/{post} — validation', function () {
 describe('PUT /api/tags/{tag} — validation', function () {
     it('rejects a name.en exceeding 100 characters', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => str_repeat('a', 101)]])
             ->assertUnprocessable()
@@ -110,7 +110,7 @@ describe('PUT /api/tags/{tag} — validation', function () {
 
     it('accepts a name.en of exactly 100 characters', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => str_repeat('a', 100)]])
             ->assertSuccessful();
@@ -118,7 +118,7 @@ describe('PUT /api/tags/{tag} — validation', function () {
 
     it('rejects an empty name object (no locale filled)', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['en' => '', 'pl' => '']])
             ->assertUnprocessable()
@@ -127,7 +127,7 @@ describe('PUT /api/tags/{tag} — validation', function () {
 
     it('rejects omitting name entirely (name is required on update)', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", [])
             ->assertUnprocessable()
@@ -136,7 +136,7 @@ describe('PUT /api/tags/{tag} — validation', function () {
 
     it('rejects a name payload with an unregistered locale key', function () {
         $this->actingAsAdmin();
-        $tag = Tag::factory()->create(['name' => 'Rock', 'slug_en' => 'rock']);
+        $tag = Tag::factory()->create(['name' => 'Rock', 'slug' => ['en' => 'rock']]);
 
         $this->putJson("/api/tags/{$tag->id}", ['name' => ['de' => 'Rock']])
             ->assertUnprocessable()

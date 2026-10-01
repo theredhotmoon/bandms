@@ -23,7 +23,7 @@ class PressReleaseSummaryResource extends JsonResource
             'tags'            => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($t) => [
                 'id'      => $t->id,
                 'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
-                'slug_en' => $t->slug_en,
+                'slug'    => $t->slugIn(Locales::default()),
             ])),
             'concerts_count'  => $this->concerts_count ?? 0,
             'posts_count'     => $this->posts_count ?? 0,

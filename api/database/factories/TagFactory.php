@@ -13,7 +13,7 @@ class TagFactory extends Factory
 
         return [
             'name'    => ['en' => ucfirst($name)],
-            'slug_en' => Str::slug($name),
+            'slug'    => ['en' => Str::slug($name)],
         ];
     }
 }
