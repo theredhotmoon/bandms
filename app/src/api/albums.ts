@@ -69,8 +69,11 @@ export function batchCreateAlbum(
   return new Promise((resolve, reject) => {
     const body = new FormData()
     body.append('title', meta.title)
-    if (meta.slug_en)            body.append('slug_en', meta.slug_en)
-    if (meta.slug_pl)            body.append('slug_pl', meta.slug_pl)
+    // Multipart has no nested objects: the bag goes as slug[en], slug[pl], …
+    // A null (auto-generated) locale is simply not sent.
+    for (const [locale, slug] of Object.entries(meta.slug ?? {})) {
+      if (slug) body.append(`slug[${locale}]`, slug)
+    }
     if (meta.description)        body.append('description', meta.description)
     if (meta.venue_id != null)   body.append('venue_id', String(meta.venue_id))
     if (meta.concert_id != null) body.append('concert_id', String(meta.concert_id))

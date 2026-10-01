@@ -92,6 +92,44 @@ trait HasTranslatedSlug
         return $rules;
     }
 
+    /**
+     * Apply a submitted slug bag under the generate-once policy (every model
+     * except Tag, which re-slugs on rename by design):
+     *
+     * - a filled locale is taken as given;
+     * - a blank NON-default locale is cleared — the band removed it;
+     * - the default locale is never blanked: it is the record's stable slug,
+     *   so blank keeps the existing one, and a record with none gets one
+     *   generated from `$source` (usually its title).
+     *
+     * A locale absent from `$given` is left exactly as it is, so a partial
+     * update cannot clear a slug the client did not mention.
+     */
+    public function applySlugBag(?array $given, ?string $source): void
+    {
+        $given   = $given ?? [];
+        $default = Locales::default();
+
+        foreach (Locales::codes() as $code) {
+            if (! array_key_exists($code, $given)) {
+                continue;
+            }
+
+            $value = is_string($given[$code]) ? trim($given[$code]) : '';
+
+            if ($value !== '') {
+                $this->setTranslation('slug', $code, $value);
+            } elseif ($code !== $default) {
+                $this->forgetTranslation('slug', $code);
+            }
+        }
+
+        if ($this->slugIn($default) === null) {
+            $this->setTranslation('slug', $default,
+                static::generateTranslatedSlug($source ?: 'item', $this->getKey()));
+        }
+    }
+
     /** The slug in one locale, without Spatie's fallback to another. */
     public function slugIn(string $locale): ?string
     {

@@ -3,17 +3,21 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasClips;
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 class Album extends Model
 {
-    use HasSlug, HasClips;
+    use HasTranslatedSlug, HasTranslations, HasClips;
 
-    protected $fillable = ['title', 'slug_en', 'slug_pl', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at'];
+    /** Only the slug: an album's title is a plain string. */
+    public array $translatable = ['slug'];
+
+    protected $fillable = ['title', 'slug', 'description', 'venue_id', 'concert_id', 'taken_at', 'published_at'];
 
     protected function casts(): array
     {

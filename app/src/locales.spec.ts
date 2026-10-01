@@ -9,6 +9,7 @@ import {
   bagFrom,
   compactBag,
   bagHasText,
+  slugPayload,
 } from './locales'
 
 describe('admin locale registry', () => {
@@ -79,5 +80,14 @@ describe('bagFrom / compactBag', () => {
   it('reports whether any locale holds text', () => {
     expect(bagHasText({ ...emptyBag(), en: ' ' })).toBe(false)
     expect(bagHasText({ ...emptyBag(), pl: 'x' })).toBe(true)
+  })
+})
+
+describe('slugPayload', () => {
+  // A locale still following its name goes as null so the API generates it —
+  // only the server can suffix past another record's slug (#150's review).
+  it('sends auto-following locales as null and manual ones as typed', () => {
+    expect(slugPayload({ ...emptyBag(), en: 'na-zywo', pl: 'moj-slug' }, { en: true, pl: false }))
+      .toEqual({ ...nullBag(), pl: 'moj-slug' })
   })
 })

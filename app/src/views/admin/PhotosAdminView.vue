@@ -16,6 +16,7 @@ import { batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
 import { togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
+import type { Localized } from '@/types/website-module'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { query, update, remove, reorderPhotos } = useAlbums()
@@ -35,8 +36,7 @@ async function handleBatchUpload(
   files: { file: File; caption: string }[],
   meta: {
     title: string
-    slug_en: string | null
-    slug_pl: string | null
+    slug: Partial<Localized>
     description: string | null
     venue_id: number | null
     concert_id: number | null

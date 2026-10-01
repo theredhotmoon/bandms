@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
-import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import type { Tag, TagPayload } from '@/types/tag'
 
@@ -41,9 +41,7 @@ watch(() => props.initial, (val) => {
 function submit() {
   emit('submit', {
     name: Object.fromEntries(LOCALES.map(l => [l, form.name[l].trim() || null])) as TagPayload['name'],
-    slug: Object.fromEntries(
-      Object.entries(compactBag(form.slug)).map(([l, v]) => [l, slugAuto.value[l as Lang] ? null : v]),
-    ) as TagPayload['slug'],
+    slug: slugPayload(form.slug, slugAuto.value),
   })
 }
 </script>

@@ -35,8 +35,6 @@ class AlbumController extends Controller
     {
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'slug_en'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_en')],
-            'slug_pl'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_pl')],
             'description'  => 'nullable|string',
             'venue_id'     => 'nullable|integer|exists:venues,id',
             'concert_id'   => 'nullable|integer|exists:concerts,id',
@@ -48,18 +46,18 @@ class AlbumController extends Controller
             'files.*'      => 'required|image|max:20480',
             'captions'     => 'nullable|array',
             'captions.*'   => 'nullable|string|max:255',
-        ]);
+        ] + Album::translatedSlugRules());
 
-        $album = Album::create([
+        $album = new Album([
             'title'        => $data['title'],
-            'slug_en'      => ($data['slug_en'] ?? null) ?: Album::generateSlug($data['title'], null, 'slug_en'),
-            'slug_pl'      => ($data['slug_pl'] ?? null) ?: null,
             'description'  => $data['description'] ?? null,
             'venue_id'     => $data['venue_id'] ?? null,
             'concert_id'   => $data['concert_id'] ?? null,
             'taken_at'     => $data['taken_at'] ?? null,
             'published_at' => $data['published_at'] ?? null,
         ]);
+        $album->applySlugBag($data['slug'] ?? null, $data['title']);
+        $album->save();
 
         if (!empty($data['tag_ids'])) {
             $album->tags()->sync($data['tag_ids']);
@@ -84,8 +82,6 @@ class AlbumController extends Controller
     {
         $data = $request->validate([
             'title'        => 'sometimes|required|string|max:255',
-            'slug_en'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_en')->ignore($album->id)],
-            'slug_pl'      => ['nullable', 'string', 'max:255', Rule::unique('albums', 'slug_pl')->ignore($album->id)],
             'description'  => 'nullable|string',
             'venue_id'     => 'nullable|integer|exists:venues,id',
             'concert_id'   => 'nullable|integer|exists:concerts,id',
@@ -93,9 +89,13 @@ class AlbumController extends Controller
             'published_at' => 'nullable|date',
             'tag_ids'      => 'nullable|array',
             'tag_ids.*'    => 'integer|exists:tags,id',
-        ]);
+        ] + Album::translatedSlugRules($album->id));
 
-        $album->update(Arr::except($data, ['tag_ids']));
+        $album->fill(Arr::except($data, ['tag_ids', 'slug']));
+        if (array_key_exists('slug', $data)) {
+            $album->applySlugBag($data['slug'], $album->title);
+        }
+        $album->save();
 
         if (array_key_exists('tag_ids', $data)) {
             $album->tags()->sync($data['tag_ids'] ?? []);

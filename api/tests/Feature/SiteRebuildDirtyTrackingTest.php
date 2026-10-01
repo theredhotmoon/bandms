@@ -205,7 +205,7 @@ use App\Models\Release;
 //   2. There is no `Album::factory()` or `MusicVideo::factory()`
 //      (`database/factories/` has only ReleaseFactory and PressReleaseFactory).
 //      `tests/Feature/AlbumTest.php` and `tests/Feature/PhotoTest.php` build
-//      albums with plain `Album::create(['title' => ..., 'slug_en' => ...])`,
+//      albums with plain `Album::create(['title' => ..., 'slug' => [...]])`,
 //      so the same convention is used here for the photo test.
 //   3. `music_videos.profile_id` is a non-nullable FK to `band_profiles`
 //      (`2026_05_09_000006_create_music_videos_table.php`), and
@@ -234,7 +234,7 @@ it('marks photos dirty when a photo caption is updated', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     Passport::actingAs($admin);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
-    $album = Album::create(['title' => 'Test Album', 'slug_en' => 'test-album']);
+    $album = Album::create(['title' => 'Test Album', 'slug' => ['en' => 'test-album']]);
     $photo = $album->photos()->create(['image' => 'photos/a.jpg', 'sort_order' => 0]);
 
     $this->putJson("/api/photos/{$photo->id}", ['caption' => 'New caption'])->assertOk();

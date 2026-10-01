@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import ImageDropZone from './ImageDropZone.vue'
-import SlugInput from './SlugInput.vue'
+import TranslatedSlugInput from './TranslatedSlugInput.vue'
+import { DEFAULT_LOCALE, emptyBag, slugPayload, type Lang } from '@/locales'
+import type { Localized } from '@/types/website-module'
 import type { Concert } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Tag } from '@/types/tag'
@@ -18,8 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   upload: [files: { file: File; caption: string }[], meta: {
     title: string
-    slug_en: string | null
-    slug_pl: string | null
+    slug: Partial<Localized>
     description: string | null
     venue_id: number | null
     concert_id: number | null
@@ -31,11 +32,11 @@ const emit = defineEmits<{
 }>()
 
 const pendingFiles = ref<{ file: File; caption: string }[]>([])
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 
 const meta = reactive({
   title:        '',
-  slug_en:      '',
-  slug_pl:      '',
+  slug:         emptyBag(),
   description:  '',
   venue_id:     '' as string,
   concert_id:   '' as string,
@@ -71,8 +72,7 @@ function submit() {
     pendingFiles.value,
     {
       title:        meta.title.trim(),
-      slug_en:      meta.slug_en || null,
-      slug_pl:      meta.slug_pl || null,
+      slug:         slugPayload(meta.slug, slugAuto.value),
       description:  meta.description.trim() || null,
       venue_id:     meta.venue_id ? parseInt(meta.venue_id) : null,
       concert_id:   meta.concert_id ? parseInt(meta.concert_id) : null,
@@ -95,11 +95,12 @@ function submit() {
       </div>
       <div class="meta-full">
         <label class="field-label">{{ $t('common.fields.slug') }}</label>
-        <SlugInput
-          v-model="meta.slug_en"
-          v-model:modelValuePl="meta.slug_pl"
-          :sourceEn="meta.title"
-          :bilingual="true"
+        <!-- An album title is one string, not translated, so only the default
+             locale's slug follows it; other locales are typed by hand. -->
+        <TranslatedSlugInput
+          v-model="meta.slug"
+          v-model:auto="slugAuto"
+          :sources="{ [DEFAULT_LOCALE]: meta.title }"
         />
       </div>
       <div class="meta-row">
