@@ -8,6 +8,7 @@ import {
   emptyBag,
   bagFrom,
   compactBag,
+  bagHasText,
 } from './locales'
 
 describe('admin locale registry', () => {
@@ -60,10 +61,15 @@ describe('bagFrom / compactBag', () => {
     expect(bagFrom({ en: 'New' }, 'Old title')).toEqual({ en: 'New', pl: '' })
   })
 
-  // A Polish-only title must not be sent with an empty English key — that
-  // shape is what made English the implicit primary language.
-  it('omits blank locales and returns null for an empty bag', () => {
-    expect(compactBag({ en: '  ', pl: 'Tytuł' })).toEqual({ pl: 'Tytuł' })
+  // Every locale is sent, a blank one as null: the API merges translations,
+  // so an omitted locale would keep its old text and a clear could never save.
+  it('sends blank locales as null and returns null for an empty bag', () => {
+    expect(compactBag({ en: '  ', pl: 'Tytuł' })).toEqual({ en: null, pl: 'Tytuł' })
     expect(compactBag({ en: '', pl: '' })).toBeNull()
+  })
+
+  it('reports whether any locale holds text', () => {
+    expect(bagHasText({ en: ' ', pl: '' })).toBe(false)
+    expect(bagHasText({ en: '', pl: 'x' })).toBe(true)
   })
 })

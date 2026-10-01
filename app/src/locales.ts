@@ -94,13 +94,23 @@ export function bagFrom(
 }
 
 /**
- * The bag a form submits: blank locales omitted, `null` when nothing is filled.
+ * The bag a form submits: every registered locale, blank ones as `null`, or
+ * `null` for the whole field when nothing is filled.
  *
- * Omitted rather than sent as '' so no locale is privileged — the forms used to
- * send `{ en: form.title_en, pl: form.title_pl || undefined }`, always carrying
- * an English key, which is the shape that assumed every band writes English.
+ * Every key is sent, a cleared one as null, because the API's
+ * setTranslations() MERGES: a locale left out of the payload keeps its old
+ * text, so "delete the English title, save" would return 200 and change
+ * nothing. (An earlier cut omitted blanks and did exactly that.) Null rather
+ * than '' so no locale is privileged — the forms used to send
+ * `{ en: form.title_en, pl: form.title_pl || undefined }`, always carrying an
+ * English string, the shape that assumed every band writes English.
  */
-export function compactBag(bag: TranslationBag): Partial<Record<Lang, string>> | null {
-  const filled = LOCALES.filter(l => bag[l].trim() !== '')
-  return filled.length ? (Object.fromEntries(filled.map(l => [l, bag[l]])) as Partial<Record<Lang, string>>) : null
+export function compactBag(bag: TranslationBag): Record<Lang, string | null> | null {
+  const out = Object.fromEntries(LOCALES.map(l => [l, bag[l].trim() !== '' ? bag[l] : null])) as Record<Lang, string | null>
+  return LOCALES.some(l => out[l] !== null) ? out : null
+}
+
+/** True when any locale of the bag holds text. */
+export function bagHasText(bag: TranslationBag): boolean {
+  return LOCALES.some(l => bag[l].trim() !== '')
 }

@@ -61,6 +61,18 @@ test.describe('Content languages', () => {
     await expect(slugRows.first()).toHaveAttribute('data-locale', 'pl')
   })
 
+  // An older English-only post must stay saveable after a band switches to
+  // Polish-first: the primary field is required only while every language is
+  // blank, not unconditionally.
+  test('a title in any language satisfies the requirement', async ({ page }) => {
+    await serveOrder(page, ['pl', 'en'])
+    await page.goto('/admin/posts')
+    await page.getByRole('button', { name: '+ Add post' }).click()
+
+    await page.getByPlaceholder('Post title').fill('English only')
+    await expect(page.getByPlaceholder('Tytuł posta')).not.toHaveAttribute('required', '')
+  })
+
   test('the default order keeps today\'s English-first forms', async ({ page }) => {
     await serveOrder(page, ['en', 'pl'])
     await page.goto('/admin/posts')
@@ -73,6 +85,10 @@ test.describe('Content languages', () => {
   test('the band bio opens on the band\'s writing language', async ({ page }) => {
     await serveOrder(page, ['pl', 'en'])
     await page.goto('/admin/band-profile')
+    // The profile renders "Loading…" until /api/band-profile answers, which
+    // can take several seconds on a cold dev backend — wait for the network
+    // the way band-profile.spec.ts does rather than on the 5 s default.
+    await page.waitForLoadState('networkidle')
 
     const tabs = page.locator('.bio-lang-switcher [data-locale]')
     await expect(tabs.first()).toHaveAttribute('data-locale', 'pl')

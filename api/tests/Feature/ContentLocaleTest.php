@@ -110,3 +110,31 @@ describe('slug generation for a title written only in the primary language', fun
             ->assertJsonPath('data.slug_en', 'new-record');
     });
 });
+
+// The admin sends every registered locale on save, a blank one as null.
+// Omitting it instead (the first cut of compactBag) cannot clear anything:
+// Spatie's setTranslations() merges, so a missing locale keeps its old text
+// and "I deleted the English title" saves as a 200 that changed nothing.
+describe('clearing one language of a title on update', function () {
+    beforeEach(function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+    });
+
+    it('clears a post title locale sent as null', function () {
+        $post = \App\Models\Post::factory()->create(['title' => ['en' => 'Old title', 'pl' => 'Nowy']]);
+
+        $this->putJson("/api/posts/{$post->id}", ['title' => ['en' => null, 'pl' => 'Nowy']])->assertOk();
+
+        expect($post->fresh()->getTranslation('title', 'en', false))->toBe('')
+            ->and($post->fresh()->getTranslation('title', 'pl', false))->toBe('Nowy');
+    });
+
+    it('clears a release title locale sent as null', function () {
+        $release = \App\Models\Release::factory()->create(['title' => ['en' => 'Old title', 'pl' => 'Debiut']]);
+
+        $this->putJson("/api/releases/{$release->id}", ['title' => ['en' => null, 'pl' => 'Debiut'], 'type' => $release->type])->assertOk();
+
+        expect($release->fresh()->getTranslation('title', 'en', false))->toBe('');
+    });
+});

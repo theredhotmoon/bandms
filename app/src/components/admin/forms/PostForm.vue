@@ -7,7 +7,7 @@ import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { bagFrom, bagHasText, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
 import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
@@ -130,7 +130,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.title[l]" :required="isPrimary(l)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
+          <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
         </div>
       </div>
       <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>

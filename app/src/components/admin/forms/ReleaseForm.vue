@@ -5,7 +5,7 @@ import SlugInput from '@/components/admin/forms/SlugInput.vue'
 import { useI18n } from 'vue-i18n'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { bagFrom, bagHasText, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -280,7 +280,7 @@ function handleSubmit() {
           <div class="trans-group">
             <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
               <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-              <input v-model="form.title[l]" :required="isPrimary(l)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
+              <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
             </div>
           </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>

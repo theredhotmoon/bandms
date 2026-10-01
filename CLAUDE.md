@@ -1430,9 +1430,15 @@ marks nothing dirty. Reads always return a full permutation of the registry
 (`normalise()` / `normaliseContentOrder()` append unmentioned locales), so a
 language added after the band saved their order still gets an input everywhere.
 
-**A form never sends `en: ''` any more.** `compactBag()` omits blank locales;
-the old `{ en: form.title_en, pl: … || undefined }` always carried an English
-key, which is the shape that made English the implicit primary. Server-side,
+**A form sends every locale, a blank one as `null` — never omits it.**
+`compactBag()` returns `{en: null, pl: 'Tytuł'}`, not `{pl: 'Tytuł'}`: the
+API's `setTranslations()` merges, so an omitted locale *keeps its old text*,
+and "clear the English title, save" returned 200 and changed nothing. (The
+first cut of this PR omitted blanks and did exactly that — caught in review.)
+The old `{ en: form.title_en, pl: … || undefined }` had the opposite flaw,
+always carrying an English string. Only the primary's field is `required`,
+and only while **every** locale is blank, so an English-only post written
+before a band switched to Polish-first stays saveable. Server-side,
 `ContentLocales::firstFilled($bag, 'en')` replaced `$bag['en'] ?? reset($bag)`,
 which for a Polish-only post fell through two nulls and slugged it `post`,
 `post-2`, `post-3`…
