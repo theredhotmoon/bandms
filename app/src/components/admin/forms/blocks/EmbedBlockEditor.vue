@@ -17,10 +17,7 @@ const label = computed(() => (props.payload.label ?? {}) as Partial<Record<Lang,
 
 const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
-const labelPlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('content.blocks.embed.linkTextEn'),
-  pl: t('content.blocks.embed.linkTextPl'),
-}))
+const labelPlaceholder = (l: Lang): string => t('content.blocks.embed.linkText', {}, { locale: l })
 
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })
@@ -40,7 +37,7 @@ function set(key: string, value: unknown) {
       <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
         <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
         <input :value="label[l] ?? ''" @input="set('label', { ...label, [l]: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="labelPlaceholder[l]" />
+               class="field-input flex-1" :placeholder="labelPlaceholder(l)" />
       </div>
     </div>
   </div>

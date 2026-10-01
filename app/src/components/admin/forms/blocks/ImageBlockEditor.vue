@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { uploadPostBlockImage } from '@/api/postBlocks'
 import { useAuth } from '@/composables/useAuth'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -22,10 +22,11 @@ type BagKey = 'alt' | 'caption'
 const bag = (key: BagKey) => (props.payload[key] ?? {}) as Partial<Record<Lang, string>>
 
 // All alt rows, then all caption rows — the grouping the editor always had.
-const placeholders = computed<Record<BagKey, Record<Lang, string>>>(() => ({
-  alt:     { en: t('content.blocks.image.altEn'),     pl: t('content.blocks.image.altPl') },
-  caption: { en: t('content.blocks.image.captionEn'), pl: t('content.blocks.image.captionPl') },
-}))
+// Sample text in the input's own language (see PostForm).
+const placeholders: Record<BagKey, (l: Lang) => string> = {
+  alt:     (l) => t('content.blocks.image.alt', {}, { locale: l }),
+  caption: (l) => t('content.blocks.image.caption', {}, { locale: l }),
+}
 const BAG_KEYS: BagKey[] = ['alt', 'caption']
 
 function set(key: string, value: unknown) {
@@ -67,7 +68,7 @@ async function onFile(e: Event) {
         <div v-for="l in contentLocales" :key="`${key}-${l}`" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
           <input :value="bag(key)[l] ?? ''" @input="set(key, { ...bag(key), [l]: ($event.target as HTMLInputElement).value })"
-                 class="field-input flex-1" :placeholder="placeholders[key][l]" />
+                 class="field-input flex-1" :placeholder="placeholders[key](l)" />
         </div>
       </template>
     </div>

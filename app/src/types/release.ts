@@ -54,8 +54,8 @@ export interface ReleaseSummary {
   created_at: string
   updated_at: string
   translations?: {
-    title:       { en?: string | null; pl?: string | null }
-    description?: { en?: string | null; pl?: string | null }
+    title:       TranslationMap
+    description?: TranslationMap
   }
 }
 

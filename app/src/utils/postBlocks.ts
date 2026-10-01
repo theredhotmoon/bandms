@@ -1,4 +1,5 @@
 import type { PostBlockType, EmbedProviderName, PostBlockDraft } from '@/types/post'
+import { emptyBag } from '@/locales'
 
 /**
  * Lives in utils/, not a composable, so vitest can import it: the admin's test
@@ -17,9 +18,9 @@ export function move<T>(list: T[], from: number, to: number): T[] {
 
 export function defaultPayload(type: PostBlockType): PostBlockDraft['payload'] {
   switch (type) {
-    case 'text':  return { body: { en: '', pl: '' } }
-    case 'image': return { path: '', alt: { en: '', pl: '' }, caption: { en: '', pl: '' } }
-    case 'embed': return { url: '', label: { en: '', pl: '' } }
+    case 'text':  return { body: emptyBag() }
+    case 'image': return { path: '', alt: emptyBag(), caption: emptyBag() }
+    case 'embed': return { url: '', label: emptyBag() }
     case 'ref':   return { entity: 'concert', id: 0 }
   }
 }

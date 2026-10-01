@@ -9,7 +9,7 @@ export type EmbedProviderName =
 export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item' | 'clip'
 
 interface BlockBase { id: number; position: number }
-type Bag = { en?: string | null; pl?: string | null }
+type Bag = TranslationMap
 
 export interface TextBlock extends BlockBase {
   type: 'text'
@@ -74,8 +74,8 @@ export interface PostSummary {
   created_at: string
   updated_at: string
   translations?: {
-    title: { en?: string | null; pl?: string | null }
-    intro: { en?: string | null; pl?: string | null }
+    title: TranslationMap
+    intro: TranslationMap
   }
 }
 
@@ -88,8 +88,8 @@ export interface Post extends PostSummary {
   press_releases: PostPressRelease[]
   concerts: { id: number; date: string }[]
   translations?: {
-    title: { en?: string | null; pl?: string | null }
-    intro: { en?: string | null; pl?: string | null }
+    title: TranslationMap
+    intro: TranslationMap
   }
 }
 

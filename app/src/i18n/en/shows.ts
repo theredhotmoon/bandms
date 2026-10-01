@@ -30,8 +30,7 @@ export default {
       // content for THAT field, not for the chrome. The English field shows an
       // English example in both UI languages. Do not "fix" these to match the
       // surrounding locale — it would change what the hint means.
-      eventNamePlaceholderEn: 'e.g. Summer Ska Festival 2026 (optional)',
-      eventNamePlaceholderPl: 'np. Letni Festiwal Ska 2026',
+      eventNamePlaceholder: 'e.g. Summer Ska Festival 2026 (optional)',
       selectVenue: 'Select a venue…',
       noCoords: 'No map coordinates set for this venue.',
       doorsOpen: 'Doors open',
@@ -47,8 +46,7 @@ export default {
       setTimeTitle: 'Approximate set time',
       removeFromLineup: 'Remove from lineup',
       dropBands: 'Drop bands here to build the lineup',
-      descriptionPlaceholderEn: 'Optional description…',
-      descriptionPlaceholderPl: 'Opcjonalny opis…',
+      descriptionPlaceholder: 'Optional description…',
       slug: 'Slug URL',
       noTags: 'No tags available.',
       links: 'Links',

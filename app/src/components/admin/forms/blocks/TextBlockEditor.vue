@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { shortLabel, type Lang } from '@/locales'
@@ -10,10 +9,7 @@ const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
 
-const placeholder = computed<Record<Lang, string>>(() => ({
-  en: t('content.blocks.text.placeholderEn'),
-  pl: t('content.blocks.text.placeholderPl'),
-}))
+const placeholder = (l: Lang): string => t('content.blocks.text.placeholder', {}, { locale: l })
 
 const body = () => (props.payload.body ?? {}) as Partial<Record<Lang, string>>
 
@@ -29,7 +25,7 @@ function set(locale: Lang, value: string) {
       <textarea
         :value="body()[l] ?? ''"
         @input="set(l, ($event.target as HTMLTextAreaElement).value)"
-        class="field-input flex-1" rows="5" :placeholder="placeholder[l]"
+        class="field-input flex-1" rows="5" :placeholder="placeholder(l)"
       />
     </div>
   </div>

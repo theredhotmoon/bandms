@@ -20,7 +20,7 @@ import type { BioVariant } from '@/types/bandProfile'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { shortLabel, type Lang } from '@/locales'
+import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
@@ -75,14 +75,10 @@ function pickBioLang(l: Lang): void {
 
 const form = reactive({
   name:          '',
-  bio_short_en:  '',
-  bio_short_pl:  '',
-  bio_medium_en: '',
-  bio_medium_pl: '',
-  bio_long_en:   '',
-  bio_long_pl:   '',
-  bio_full_en:   '',
-  bio_full_pl:   '',
+  bio_short:     emptyBag(),
+  bio_medium:    emptyBag(),
+  bio_long:      emptyBag(),
+  bio_full:      emptyBag(),
   about_bio_variant: 'medium' as BioVariant,
   formation_year:      '' as string | number,
   hometown:            '',
@@ -121,14 +117,10 @@ watch(
   (val) => {
     if (!val) return
     form.name          = val.name       ?? ''
-    form.bio_short_en  = val.translations?.bio_short?.en  ?? val.bio_short  ?? ''
-    form.bio_short_pl  = val.translations?.bio_short?.pl  ?? ''
-    form.bio_medium_en = val.translations?.bio_medium?.en ?? val.bio_medium ?? ''
-    form.bio_medium_pl = val.translations?.bio_medium?.pl ?? ''
-    form.bio_long_en   = val.translations?.bio_long?.en   ?? val.bio_long   ?? ''
-    form.bio_long_pl   = val.translations?.bio_long?.pl   ?? ''
-    form.bio_full_en   = val.translations?.bio_full?.en   ?? val.bio_full   ?? ''
-    form.bio_full_pl   = val.translations?.bio_full?.pl   ?? ''
+    form.bio_short     = bagFrom(val.translations?.bio_short,  val.bio_short)
+    form.bio_medium    = bagFrom(val.translations?.bio_medium, val.bio_medium)
+    form.bio_long      = bagFrom(val.translations?.bio_long,   val.bio_long)
+    form.bio_full      = bagFrom(val.translations?.bio_full,   val.bio_full)
     form.about_bio_variant  = val.about_bio_variant  ?? 'medium'
     form.formation_year     = val.formation_year     ?? ''
     form.hometown           = val.hometown           ?? ''
@@ -156,7 +148,7 @@ watch(
   { immediate: true },
 )
 
-const shortChars     = computed(() => (bioLang.value === 'en' ? form.bio_short_en : form.bio_short_pl).length)
+const shortChars     = computed(() => form.bio_short[bioLang.value].length)
 const shortOverLimit = computed(() => shortChars.value > 280)
 const bioTabHasError = (tab: BioVariant) => !!(fieldErrors.value[`bio_${tab}`])
 
@@ -171,14 +163,13 @@ async function saveProfile() {
   try {
     await update.mutateAsync({
       name:       form.name || undefined,
-      bio_short:  (form.bio_short_en || form.bio_short_pl)
-        ? { en: form.bio_short_en || undefined, pl: form.bio_short_pl || undefined } : null,
-      bio_medium: (form.bio_medium_en || form.bio_medium_pl)
-        ? { en: form.bio_medium_en || undefined, pl: form.bio_medium_pl || undefined } : null,
-      bio_long:   (form.bio_long_en || form.bio_long_pl)
-        ? { en: form.bio_long_en || undefined, pl: form.bio_long_pl || undefined } : null,
-      bio_full:   (form.bio_full_en || form.bio_full_pl)
-        ? { en: form.bio_full_en || undefined, pl: form.bio_full_pl || undefined } : null,
+      // compactBag sends a cleared locale as null. The old `|| undefined`
+      // omitted it, and the API's setTranslations() merges, so clearing one
+      // language of a bio returned 200 and kept the old text.
+      bio_short:  compactBag(form.bio_short),
+      bio_medium: compactBag(form.bio_medium),
+      bio_long:   compactBag(form.bio_long),
+      bio_full:   compactBag(form.bio_full),
       about_bio_variant: form.about_bio_variant,
       formation_year:      numOrNull(form.formation_year),
       hometown:            form.hometown            || null,
@@ -327,10 +318,9 @@ async function saveSocialLinks() {
               <div v-show="bioTab === 'short'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.shortHint') }}</div>
                 <div class="char-wrap">
-                  <textarea v-show="bioLang === 'en'" v-model="form.bio_short_en" class="field-input bio-plain" rows="2"
-                    :placeholder="$t('band.profile.bio.shortPlaceholderEn')" maxlength="300" />
-                  <textarea v-show="bioLang === 'pl'" v-model="form.bio_short_pl" class="field-input bio-plain" rows="2"
-                    :placeholder="$t('band.profile.bio.shortPlaceholderPl')" maxlength="300" />
+                  <textarea v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_short[l]"
+                    class="field-input bio-plain" rows="2" maxlength="300" :data-locale="l"
+                    :placeholder="$t('band.profile.bio.shortPlaceholder', {}, { locale: l })" />
                   <span class="char-count" :class="{ warn: shortChars > 240, over: shortOverLimit }">
                     {{ shortChars }}&thinsp;/&thinsp;280 <!-- i18n-ignore: digits and thin-space markup -->
                   </span>
@@ -340,24 +330,23 @@ async function saveSocialLinks() {
 
               <div v-show="bioTab === 'medium'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.mediumHint') }}</div>
-                <textarea v-show="bioLang === 'en'" v-model="form.bio_medium_en" class="field-input bio-plain" rows="3"
-                  :placeholder="$t('band.profile.bio.mediumPlaceholderEn')" />
-                <textarea v-show="bioLang === 'pl'" v-model="form.bio_medium_pl" class="field-input bio-plain" rows="3"
-                  :placeholder="$t('band.profile.bio.mediumPlaceholderPl')" />
+                <textarea v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_medium[l]"
+                  class="field-input bio-plain" rows="3" :data-locale="l"
+                  :placeholder="$t('band.profile.bio.mediumPlaceholder', {}, { locale: l })" />
                 <p v-if="fieldErrors.bio_medium" class="field-error">{{ fieldErrors.bio_medium[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'long'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.longHint') }}</div>
-                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_long_en" :placeholder="$t('band.profile.bio.longPlaceholderEn')" />
-                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_long_pl" :placeholder="$t('band.profile.bio.longPlaceholderPl')" />
+                <RichEditor v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_long[l]"
+                  :placeholder="$t('band.profile.bio.longPlaceholder', {}, { locale: l })" />
                 <p v-if="fieldErrors.bio_long" class="field-error">{{ fieldErrors.bio_long[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.fullHint') }}</div>
-                <RichEditor v-show="bioLang === 'en'" v-model="form.bio_full_en" :placeholder="$t('band.profile.bio.fullPlaceholderEn')" />
-                <RichEditor v-show="bioLang === 'pl'" v-model="form.bio_full_pl" :placeholder="$t('band.profile.bio.fullPlaceholderPl')" />
+                <RichEditor v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_full[l]"
+                  :placeholder="$t('band.profile.bio.fullPlaceholder', {}, { locale: l })" />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>
               </div>
             </div>

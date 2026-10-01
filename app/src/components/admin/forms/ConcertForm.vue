@@ -17,14 +17,8 @@ const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
 
 // Sample text written in each input's own language — see PostForm.
-const namePlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('shows.concerts.form.eventNamePlaceholderEn'),
-  pl: t('shows.concerts.form.eventNamePlaceholderPl'),
-}))
-const descriptionPlaceholder = computed<Record<Lang, string>>(() => ({
-  en: t('shows.concerts.form.descriptionPlaceholderEn'),
-  pl: t('shows.concerts.form.descriptionPlaceholderPl'),
-}))
+const namePlaceholder = (l: Lang): string => t('shows.concerts.form.eventNamePlaceholder', {}, { locale: l })
+const descriptionPlaceholder = (l: Lang): string => t('shows.concerts.form.descriptionPlaceholder', {}, { locale: l })
 
 const props = defineProps<{
   initial?: Concert | null
@@ -333,7 +327,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder[l]" />
+          <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder(l)" />
         </div>
       </div>
       <template v-for="l in contentLocales" :key="`name-err-${l}`">
@@ -486,7 +480,7 @@ function submit() {
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder[l]" />
+          <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder(l)" />
         </div>
       </div>
       <template v-for="l in contentLocales" :key="`description-err-${l}`">

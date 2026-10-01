@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { i18n } from '@/i18n'
-import type { Lang } from '@/locales'
+import type { UiLang } from '@/i18n/locales'
 import {
   localeFromQuery,
   readStoredFanLocale,
@@ -30,7 +30,7 @@ import {
  */
 export function useFanLocale(): void {
   const route = useRoute()
-  let previous: Lang | null = null
+  let previous: UiLang | null = null
 
   /**
    * Re-run on every route change, not just on mount.
@@ -62,7 +62,7 @@ export function useFanLocale(): void {
   }
 
   onMounted(() => {
-    previous = i18n.global.locale.value as Lang
+    previous = i18n.global.locale.value as UiLang
     apply()
   })
 

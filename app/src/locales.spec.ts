@@ -50,6 +50,9 @@ describe('admin locale registry', () => {
   })
 })
 
+// Built from the registry so a new locale does not break these fixtures.
+const nullBag = () => Object.fromEntries(LOCALES.map(l => [l, null]))
+
 describe('bagFrom / compactBag', () => {
   it('fills every registered locale, missing ones blank', () => {
     expect(bagFrom({ pl: 'Tytuł' })).toEqual({ en: '', pl: 'Tytuł' })
@@ -64,12 +67,12 @@ describe('bagFrom / compactBag', () => {
   // Every locale is sent, a blank one as null: the API merges translations,
   // so an omitted locale would keep its old text and a clear could never save.
   it('sends blank locales as null and returns null for an empty bag', () => {
-    expect(compactBag({ en: '  ', pl: 'Tytuł' })).toEqual({ en: null, pl: 'Tytuł' })
-    expect(compactBag({ en: '', pl: '' })).toBeNull()
+    expect(compactBag({ ...emptyBag(), en: '  ', pl: 'Tytuł' })).toEqual({ ...nullBag(), pl: 'Tytuł' })
+    expect(compactBag(emptyBag())).toBeNull()
   })
 
   it('reports whether any locale holds text', () => {
-    expect(bagHasText({ en: ' ', pl: '' })).toBe(false)
-    expect(bagHasText({ en: '', pl: 'x' })).toBe(true)
+    expect(bagHasText({ ...emptyBag(), en: ' ' })).toBe(false)
+    expect(bagHasText({ ...emptyBag(), pl: 'x' })).toBe(true)
   })
 })

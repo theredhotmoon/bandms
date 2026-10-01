@@ -5,7 +5,8 @@
  * the E2E spec a stable handle.
  */
 import { useI18n } from 'vue-i18n'
-import { LOCALES, isLocale, nativeName } from '@/locales'
+import { nativeName } from '@/locales'
+import { UI_LOCALES, isUiLocale } from '@/i18n/locales'
 import { useUiLang } from '@/composables/useUiLang'
 
 const { t } = useI18n()
@@ -13,7 +14,7 @@ const { uiLang, setUiLang } = useUiLang()
 
 function onChange(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
-  if (isLocale(value)) setUiLang(value)
+  if (isUiLocale(value)) setUiLang(value)
 }
 </script>
 
@@ -26,7 +27,7 @@ function onChange(event: Event): void {
       :value="uiLang"
       @change="onChange"
     >
-      <option v-for="locale in LOCALES" :key="locale" :value="locale">
+      <option v-for="locale in UI_LOCALES" :key="locale" :value="locale">
         {{ nativeName(locale) }}
       </option>
     </select>
