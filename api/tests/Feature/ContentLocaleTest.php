@@ -130,10 +130,13 @@ describe('clearing one language of a title on update', function () {
             ->and($post->fresh()->getTranslation('title', 'pl', false))->toBe('Nowy');
     });
 
+    // 'type' is fixed rather than echoed from the factory: ReleaseFactory picks
+    // 'Single' a third of the time, which update()'s `in:...,single,...` rule
+    // rejects, so echoing it made this test fail one run in three.
     it('clears a release title locale sent as null', function () {
         $release = \App\Models\Release::factory()->create(['title' => ['en' => 'Old title', 'pl' => 'Debiut']]);
 
-        $this->putJson("/api/releases/{$release->id}", ['title' => ['en' => null, 'pl' => 'Debiut'], 'type' => $release->type])->assertOk();
+        $this->putJson("/api/releases/{$release->id}", ['title' => ['en' => null, 'pl' => 'Debiut'], 'type' => 'LP'])->assertOk();
 
         expect($release->fresh()->getTranslation('title', 'en', false))->toBe('');
     });
