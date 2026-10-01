@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
-import { LOCALES, DEFAULT_LOCALE, emptyBag } from '@/locales'
+import { LOCALES, emptyBag } from '@/locales'
+import { useContentLocales } from '@/composables/useContentLocales'
 import type { Tag, TagPayload } from '@/types/tag'
+
+// Inputs render in the band's writing order; the registry order stays for
+// building payloads, where order carries no meaning.
+const { order: contentLocales } = useContentLocales()
 
 const props = defineProps<{
   initial?: Tag | null
@@ -40,12 +45,12 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:#f87171;">*</span></label>
       <div class="trans-group">
-        <div v-for="l in LOCALES" :key="l" class="trans-row">
-          <span class="lang-badge" :class="{ 'lang-badge--pl': l !== DEFAULT_LOCALE }">{{ l.toUpperCase() }}</span>
+        <div v-for="l in contentLocales" :key="l" class="trans-row">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
           <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.tags.namePlaceholder')" />
         </div>
       </div>
-      <template v-for="l in LOCALES" :key="`name-err-${l}`">
+      <template v-for="l in contentLocales" :key="`name-err-${l}`">
         <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
       </template>
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>

@@ -8,6 +8,14 @@
  */
 export default {
   modules: {
+    contentLanguages: {
+      title: 'Content languages',
+      lead: 'The order you write in. The first language comes first in every form and its fields are required; the others are translations you can fill in later. This does not change which language the public site opens in.',
+      primary: 'Written first',
+      moveUp: 'Move {name} up',
+      moveDown: 'Move {name} down',
+      saveFailed: 'Could not save the language order',
+    },
     title: 'Website Modules',
     lead: 'Drag rows to set the nav order. Order takes effect after a rebuild.',
     loadFailed: 'Failed to load modules. Check the API connection.',

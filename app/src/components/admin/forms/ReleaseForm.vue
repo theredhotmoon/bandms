@@ -2,7 +2,10 @@
 import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import { useI18n } from 'vue-i18n'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { bagFrom, bagHasText, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -15,6 +18,19 @@ const emit = defineEmits<{
   submit: [payload: ReleasePayload, coverFile: File | null, deleteCover: boolean]
   cancel: []
 }>()
+
+const { t } = useI18n()
+const { order: contentLocales, isPrimary } = useContentLocales()
+
+// Sample text written in each input's own language — see PostForm.
+const titlePlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('media.releaseForm.titlePlaceholderEn'),
+  pl: t('media.releaseForm.titlePlaceholderPl'),
+}))
+const descriptionPlaceholder = computed<Record<Lang, string>>(() => ({
+  en: t('media.releaseForm.descriptionPlaceholderEn'),
+  pl: t('media.releaseForm.descriptionPlaceholderPl'),
+}))
 
 // i18n-ignore block: `label` is a brand name and `color` is that brand's
 // hex — neither translates. `key` is the persisted ReleasePlatform.
@@ -110,14 +126,12 @@ function emptyTrack(sort_order = 0): TrackRow {
 
 // ── Form ──────────────────────────────────────────────────────
 const form = reactive({
-  title_en:     '',
-  title_pl:     '',
+  title:        emptyBag(),
   slug_en:      '',
   slug_pl:      '',
   type:         'single' as ReleaseType,
   release_date: '',
-  description_en: '',
-  description_pl: '',
+  description:  emptyBag(),
   is_upcoming:  false,
   presave_url:  '',
   label_name:   '',
@@ -133,14 +147,12 @@ watch(
   () => props.initial,
   (val) => {
     if (!val) {
-      form.title_en       = ''
-      form.title_pl       = ''
+      form.title          = emptyBag()
       form.slug_en        = ''
       form.slug_pl        = ''
       form.type           = 'single'
       form.release_date   = ''
-      form.description_en = ''
-      form.description_pl = ''
+      form.description    = emptyBag()
       form.is_upcoming    = false
       form.presave_url    = ''
       form.label_name     = ''
@@ -152,14 +164,12 @@ watch(
       markClean()
       return
     }
-    form.title_en       = val.translations?.title?.en ?? val.title
-    form.title_pl       = val.translations?.title?.pl ?? ''
+    form.title          = bagFrom(val.translations?.title, val.title)
     form.slug_en        = val.slug_en ?? ''
     form.slug_pl        = val.slug_pl ?? ''
     form.type           = val.type
     form.release_date   = val.release_date ?? ''
-    form.description_en = val.translations?.description?.en ?? val.description ?? ''
-    form.description_pl = val.translations?.description?.pl ?? ''
+    form.description    = bagFrom(val.translations?.description, val.description)
     form.is_upcoming    = val.is_upcoming
     form.presave_url    = val.presave_url ?? ''
     form.label_name     = val.label_name ?? ''
@@ -206,14 +216,13 @@ function removeTrack(i: number) {
 
 function handleSubmit() {
   const payload: ReleasePayload = {
-    title:       { en: form.title_en, pl: form.title_pl || undefined },
+    // `{}` when blank, so the API's required rule answers with a `title` error.
+    title:       compactBag(form.title) ?? {},
     slug_en:     form.slug_en || null,
     slug_pl:     form.slug_pl || null,
     type:         form.type,
     release_date: form.release_date || null,
-    description: (form.description_en || form.description_pl)
-      ? { en: form.description_en || undefined, pl: form.description_pl || undefined }
-      : null,
+    description: compactBag(form.description),
     is_upcoming:  form.is_upcoming,
     presave_url:  form.is_upcoming ? (form.presave_url || null) : null,
     label_name:   form.label_name || null,
@@ -269,13 +278,9 @@ function handleSubmit() {
         <div>
           <label class="field-label">{{ $t('media.releaseForm.title') }} <span class="field-req">*</span></label>
           <div class="trans-group">
-            <div class="trans-row">
-              <span class="lang-badge">EN</span> <!-- i18n-ignore: locale code -->
-              <input v-model="form.title_en" required class="field-input flex-1" :placeholder="$t('media.releaseForm.titlePlaceholderEn')" />
-            </div>
-            <div class="trans-row">
-              <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: locale code -->
-              <input v-model="form.title_pl" class="field-input flex-1" :placeholder="$t('media.releaseForm.titlePlaceholderPl')" />
+            <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+              <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder[l]" />
             </div>
           </div>
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
@@ -285,8 +290,8 @@ function handleSubmit() {
           <SlugInput
             v-model="form.slug_en"
             v-model:modelValuePl="form.slug_pl"
-            :sourceEn="form.title_en"
-            :sourcePl="form.title_pl"
+            :sourceEn="form.title.en"
+            :sourcePl="form.title.pl"
             :bilingual="true"
           />
           <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
@@ -329,16 +334,10 @@ function handleSubmit() {
     <div class="mb-5">
       <label class="field-label">{{ $t('media.releaseForm.description') }}</label>
       <div class="trans-group">
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge" style="margin-top:0.5rem;">EN</span> <!-- i18n-ignore: locale code -->
+        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`" style="margin-top:0.5rem;">{{ shortLabel(l) }}</span>
           <div class="flex-1">
-            <RichEditor v-model="form.description_en" :placeholder="$t('media.releaseForm.descriptionPlaceholderEn')" />
-          </div>
-        </div>
-        <div class="trans-row trans-row--top">
-          <span class="lang-badge lang-badge--pl" style="margin-top:0.5rem;">PL</span> <!-- i18n-ignore: locale code -->
-          <div class="flex-1">
-            <RichEditor v-model="form.description_pl" :placeholder="$t('media.releaseForm.descriptionPlaceholderPl')" />
+            <RichEditor v-model="form.description[l]" :placeholder="descriptionPlaceholder[l]" />
           </div>
         </div>
       </div>

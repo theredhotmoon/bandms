@@ -6,6 +6,9 @@ import {
   nativeName,
   shortLabel,
   emptyBag,
+  bagFrom,
+  compactBag,
+  bagHasText,
 } from './locales'
 
 describe('admin locale registry', () => {
@@ -44,5 +47,29 @@ describe('admin locale registry', () => {
     const a = emptyBag()
     a.en = 'typed'
     expect(emptyBag().en).toBe('')
+  })
+})
+
+describe('bagFrom / compactBag', () => {
+  it('fills every registered locale, missing ones blank', () => {
+    expect(bagFrom({ pl: 'Tytuł' })).toEqual({ en: '', pl: 'Tytuł' })
+    expect(bagFrom(null)).toEqual({ en: '', pl: '' })
+  })
+
+  it('puts a legacy plain string under the default locale only when it is empty', () => {
+    expect(bagFrom({}, 'Old title')).toEqual({ en: 'Old title', pl: '' })
+    expect(bagFrom({ en: 'New' }, 'Old title')).toEqual({ en: 'New', pl: '' })
+  })
+
+  // Every locale is sent, a blank one as null: the API merges translations,
+  // so an omitted locale would keep its old text and a clear could never save.
+  it('sends blank locales as null and returns null for an empty bag', () => {
+    expect(compactBag({ en: '  ', pl: 'Tytuł' })).toEqual({ en: null, pl: 'Tytuł' })
+    expect(compactBag({ en: '', pl: '' })).toBeNull()
+  })
+
+  it('reports whether any locale holds text', () => {
+    expect(bagHasText({ en: ' ', pl: '' })).toBe(false)
+    expect(bagHasText({ en: '', pl: 'x' })).toBe(true)
   })
 })

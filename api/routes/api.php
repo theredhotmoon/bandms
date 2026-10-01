@@ -34,6 +34,7 @@ use App\Http\Controllers\BandMemberSetupController;
 use App\Http\Controllers\BandLogoController;
 use App\Http\Controllers\BandProfileController;
 use App\Http\Controllers\ConcertController;
+use App\Http\Controllers\ContentLocaleController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\MusicVideoController;
@@ -227,6 +228,11 @@ Route::middleware('auth:api')->group(function () {
     // ── Any authenticated user: venues read ────────────────────────────────
     Route::get('/venues', [VenueController::class, 'index'])->name('api.venues.index');
     Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('api.venues.show');
+
+    // ── Any authenticated user: the band's content-language order ──────────
+    // Read by every translated form, publishers' post editor included, so it
+    // cannot sit behind role:admin. Changing it is admin-only (below).
+    Route::get('/admin/content-locales', [ContentLocaleController::class, 'show'])->name('api.admin.content-locales.show');
 
     // ── Member + Admin: own BandMember record & setups ─────────────────────
 
@@ -523,6 +529,7 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/admin/modules/reorder', [WebsiteModuleController::class, 'reorder'])->name('api.admin.modules.reorder');
         Route::put('/admin/modules/{slug}', [WebsiteModuleController::class, 'update'])->name('api.admin.modules.update');
         Route::put('/admin/site/settings', [SiteRebuildController::class, 'updateSettings'])->name('api.admin.site.settings');
+        Route::put('/admin/content-locales', [ContentLocaleController::class, 'update'])->name('api.admin.content-locales.update');
         Route::post('/admin/site/rebuild', [SiteRebuildController::class, 'rebuild'])->name('api.admin.site.rebuild');
         Route::get('/admin/site/rebuild/status', [SiteRebuildController::class, 'rebuildStatus'])->name('api.admin.site.rebuild.status');
 

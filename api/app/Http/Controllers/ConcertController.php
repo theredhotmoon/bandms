@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ConcertResource;
 use App\Models\Concert;
 use App\Models\Venue;
+use App\Support\ContentLocales;
 use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,7 +41,7 @@ class ConcertController extends Controller
         $data = $request->validate($this->rules(), $this->messages());
 
         if (empty($data['slug_en'] ?? null)) {
-            $source = $data['name']['en'] ?? null;
+            $source = ContentLocales::firstFilled($data['name'] ?? [], 'en');
             if (empty($source)) {
                 $venueName = Venue::find($data['venue_id'])?->name ?? 'concert';
                 $source = $venueName . ' ' . $data['date'];

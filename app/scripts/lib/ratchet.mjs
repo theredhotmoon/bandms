@@ -29,6 +29,7 @@
 export const MIGRATED = [
   'App.vue',
   'components/admin/AdminLayout.vue',
+  'components/admin/ContentLanguagesCard.vue',
   'components/admin/AdminModal.vue',
   'components/admin/ConfirmDialog.vue',
   'components/admin/EpkVersionHistory.vue',

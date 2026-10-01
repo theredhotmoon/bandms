@@ -1,30 +1,35 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { shortLabel, type Lang } from '@/locales'
+
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 
-const body = () => (props.payload.body ?? {}) as { en?: string; pl?: string }
+const { t } = useI18n()
+const { order: contentLocales } = useContentLocales()
 
-function set(locale: 'en' | 'pl', value: string) {
+const placeholder = computed<Record<Lang, string>>(() => ({
+  en: t('content.blocks.text.placeholderEn'),
+  pl: t('content.blocks.text.placeholderPl'),
+}))
+
+const body = () => (props.payload.body ?? {}) as Partial<Record<Lang, string>>
+
+function set(locale: Lang, value: string) {
   emit('update:payload', { ...props.payload, body: { ...body(), [locale]: value } })
 }
 </script>
 
 <template>
   <div class="trans-group">
-    <div class="trans-row trans-row--top">
-      <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
+    <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+      <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
       <textarea
-        :value="body().en ?? ''"
-        @input="set('en', ($event.target as HTMLTextAreaElement).value)"
-        class="field-input flex-1" rows="5" :placeholder="$t('content.blocks.text.placeholderEn')"
-      />
-    </div>
-    <div class="trans-row trans-row--top">
-      <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-      <textarea
-        :value="body().pl ?? ''"
-        @input="set('pl', ($event.target as HTMLTextAreaElement).value)"
-        class="field-input flex-1" rows="5" :placeholder="$t('content.blocks.text.placeholderPl')"
+        :value="body()[l] ?? ''"
+        @input="set(l, ($event.target as HTMLTextAreaElement).value)"
+        class="field-input flex-1" rows="5" :placeholder="placeholder[l]"
       />
     </div>
   </div>

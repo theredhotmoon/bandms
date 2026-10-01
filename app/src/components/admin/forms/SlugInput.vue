@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Slugify from 'slugify'
+import { useI18n } from 'vue-i18n'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { shortLabel, type Lang } from '@/locales'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -74,53 +77,67 @@ function regeneratePl() {
   autoPl.value = true
   emit('update:modelValuePl', props.sourcePl ? makeSlug(props.sourcePl) : '')
 }
+
+// The props stay per-column because the slugs ARE per-column (slug_en,
+// slug_pl) until those become a translatable bag; only the row order follows
+// the band's content order. A third locale is a compile error in this map.
+interface SlugRow {
+  value: string
+  source: string | undefined
+  placeholder: string
+  hint: string | undefined
+  error: string | undefined
+  regenTitle: string
+  onInput: (e: Event) => void
+  regenerate: () => void
+}
+
+const { t } = useI18n()
+const { order: contentLocales } = useContentLocales()
+
+const byLocale = computed<Record<Lang, SlugRow>>(() => ({
+  en: {
+    value: props.modelValue, source: props.sourceEn, placeholder: props.placeholderEn,
+    hint: props.hintEn, error: props.errorEn, regenTitle: t('common.slug.autoGenerate'),
+    onInput: onEnInput, regenerate: regenerateEn,
+  },
+  pl: {
+    value: props.modelValuePl ?? '', source: props.sourcePl, placeholder: props.placeholderPl,
+    hint: props.hintPl, error: props.errorPl, regenTitle: t('common.slug.autoGeneratePl'),
+    onInput: onPlInput, regenerate: regeneratePl,
+  },
+}))
+
+// `bilingual: false` has only ever meant "the English slug alone".
+const rows = computed(() =>
+  (props.bilingual ? contentLocales.value : (['en'] as Lang[])).map(locale => ({ locale, ...byLocale.value[locale] })),
+)
 </script>
 
 <template>
   <div class="slug-wrap">
-    <div class="slug-row">
-      <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-column slug_en field -->
-      <div class="slug-input-wrap flex-1">
-        <input
-          :value="modelValue"
-          @input="onEnInput"
-          class="field-input slug-field"
-          :class="{ 'field-input--error': errorEn }"
-          :placeholder="placeholderEn"
-          :maxlength="maxlength"
-          :aria-invalid="Boolean(errorEn)"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button v-if="sourceEn !== undefined" type="button" class="slug-regen" @click="regenerateEn" :title="$t('common.slug.autoGenerate')">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-        </button>
+    <template v-for="row in rows" :key="row.locale">
+      <div class="slug-row" :data-locale="row.locale">
+        <span class="lang-badge" :class="`lang-badge--${row.locale}`">{{ shortLabel(row.locale) }}</span>
+        <div class="slug-input-wrap flex-1">
+          <input
+            :value="row.value"
+            @input="row.onInput"
+            class="field-input slug-field"
+            :class="{ 'field-input--error': row.error }"
+            :placeholder="row.placeholder"
+            :maxlength="maxlength"
+            :aria-invalid="Boolean(row.error)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button v-if="row.source !== undefined" type="button" class="slug-regen" @click="row.regenerate" :title="row.regenTitle">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+          </button>
+        </div>
       </div>
-    </div>
-    <p v-if="errorEn" class="field-error">{{ errorEn }}</p>
-    <p v-else-if="hintEn" class="field-hint">{{ hintEn }}</p>
-    <div v-if="bilingual" class="slug-row">
-      <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-      <div class="slug-input-wrap flex-1">
-        <input
-          :value="modelValuePl ?? ''"
-          @input="onPlInput"
-          class="field-input slug-field"
-          :class="{ 'field-input--error': errorPl }"
-          :placeholder="placeholderPl"
-          :maxlength="maxlength"
-          :aria-invalid="Boolean(errorPl)"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button v-if="sourcePl !== undefined" type="button" class="slug-regen" @click="regeneratePl" :title="$t('common.slug.autoGeneratePl')">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-        </button>
-      </div>
-    </div>
-    <template v-if="bilingual">
-      <p v-if="errorPl" class="field-error">{{ errorPl }}</p>
-      <p v-else-if="hintPl" class="field-hint">{{ hintPl }}</p>
+      <p v-if="row.error" class="field-error">{{ row.error }}</p>
+      <p v-else-if="row.hint" class="field-hint">{{ row.hint }}</p>
     </template>
   </div>
 </template>

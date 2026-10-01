@@ -1408,6 +1408,50 @@ client sent. It always redirects to `/en/`, is unreachable in production (nginx
 answers `/` first), and exists only as a `pnpm dev`/`pnpm preview` fallback — not
 something to check the redirect's language behaviour against.
 
+### Which language the band writes first is a setting, not the registry order
+
+Three different "first language" questions, three different answers — keep
+them apart:
+
+| Question | Answered by |
+|---|---|
+| Which locale is `x-default`, the root redirect, the fallback? | `default` in the registry |
+| Which language is the admin's own chrome in? | `useUiLang()`, per user |
+| Which language does the band write in first? | `content_locale_order` in `site_settings` |
+
+The third is `App\Support\ContentLocales` server-side and
+`useContentLocales()` in the admin, edited on the *Website modules* page. It
+orders every translated input group, makes **only the first language's**
+title required, and is the slug source when the English title is blank. A
+Polish band writes Polish and keeps English as the site default for bookers.
+
+**It is never read by the public site**, so changing it needs no rebuild and
+marks nothing dirty. Reads always return a full permutation of the registry
+(`normalise()` / `normaliseContentOrder()` append unmentioned locales), so a
+language added after the band saved their order still gets an input everywhere.
+
+**A form sends every locale, a blank one as `null` — never omits it.**
+`compactBag()` returns `{en: null, pl: 'Tytuł'}`, not `{pl: 'Tytuł'}`: the
+API's `setTranslations()` merges, so an omitted locale *keeps its old text*,
+and "clear the English title, save" returned 200 and changed nothing. (The
+first cut of this PR omitted blanks and did exactly that — caught in review.)
+The old `{ en: form.title_en, pl: … || undefined }` had the opposite flaw,
+always carrying an English string. Only the primary's field is `required`,
+and only while **every** locale is blank, so an English-only post written
+before a band switched to Polish-first stays saveable. Server-side,
+`ContentLocales::firstFilled($bag, 'en')` replaced `$bag['en'] ?? reset($bag)`,
+which for a Polish-only post fell through two nulls and slugged it `post`,
+`post-2`, `post-3`…
+
+**E2E must not write this row.** It decides which title is `required`, so a
+spec that saves Polish-first fails every parallel spec filling only the English
+title. `content-languages.spec.ts` serves the order through `page.route`.
+
+Still per-column, deliberately, until the slug migration: `slug_en`/`slug_pl`
+(so `SlugInput` keeps `modelValue`/`modelValuePl` and only *orders* its rows),
+and the per-locale sample-text placeholders, which are `Record<Lang, string>`
+maps so a third locale is a compile error at each one.
+
 ### The fallback policy is *declared*, never scanned
 
 Each locale gets an ordered `fallbacks` list; resolution walks

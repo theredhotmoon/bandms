@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { uploadPostBlockImage } from '@/api/postBlocks'
 import { useAuth } from '@/composables/useAuth'
+import { useContentLocales } from '@/composables/useContentLocales'
+import { shortLabel, type Lang } from '@/locales'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
@@ -14,7 +16,17 @@ const { token } = useAuth()
 const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const bag = (key: 'alt' | 'caption') => (props.payload[key] ?? {}) as { en?: string; pl?: string }
+const { order: contentLocales } = useContentLocales()
+
+type BagKey = 'alt' | 'caption'
+const bag = (key: BagKey) => (props.payload[key] ?? {}) as Partial<Record<Lang, string>>
+
+// All alt rows, then all caption rows — the grouping the editor always had.
+const placeholders = computed<Record<BagKey, Record<Lang, string>>>(() => ({
+  alt:     { en: t('content.blocks.image.altEn'),     pl: t('content.blocks.image.altPl') },
+  caption: { en: t('content.blocks.image.captionEn'), pl: t('content.blocks.image.captionPl') },
+}))
+const BAG_KEYS: BagKey[] = ['alt', 'caption']
 
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })
@@ -51,26 +63,13 @@ async function onFile(e: Event) {
     </div>
 
     <div class="trans-group">
-      <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
-        <input :value="bag('alt').en ?? ''" @input="set('alt', { ...bag('alt'), en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.image.altEn')" />
-      </div>
-      <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-        <input :value="bag('alt').pl ?? ''" @input="set('alt', { ...bag('alt'), pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.image.altPl')" />
-      </div>
-      <div class="trans-row">
-        <span class="lang-badge">EN</span> <!-- i18n-ignore: language code for the per-locale content field -->
-        <input :value="bag('caption').en ?? ''" @input="set('caption', { ...bag('caption'), en: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.image.captionEn')" />
-      </div>
-      <div class="trans-row">
-        <span class="lang-badge lang-badge--pl">PL</span> <!-- i18n-ignore: language code -->
-        <input :value="bag('caption').pl ?? ''" @input="set('caption', { ...bag('caption'), pl: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="$t('content.blocks.image.captionPl')" />
-      </div>
+      <template v-for="key in BAG_KEYS" :key="key">
+        <div v-for="l in contentLocales" :key="`${key}-${l}`" class="trans-row" :data-locale="l">
+          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+          <input :value="bag(key)[l] ?? ''" @input="set(key, { ...bag(key), [l]: ($event.target as HTMLInputElement).value })"
+                 class="field-input flex-1" :placeholder="placeholders[key][l]" />
+        </div>
+      </template>
     </div>
   </div>
 </template>

@@ -54,8 +54,8 @@ export interface ConcertLinkPayload {
 }
 
 export interface ConcertPayload {
-  name?: { en?: string; pl?: string } | null
-  description?: { en?: string; pl?: string } | null
+  name?: { en?: string | null; pl?: string | null } | null
+  description?: { en?: string | null; pl?: string | null } | null
   venue_id: number
   date: string
   slug_en?: string | null

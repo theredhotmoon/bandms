@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\PostSummaryResource;
 use App\Models\Post;
+use App\Support\ContentLocales;
 use App\Support\PostBlockSync;
 use App\Support\SiteRebuild;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,7 +82,7 @@ class PostController extends Controller
         // transaction is exactly the shape that provokes it, and Laravel's
         // built-in retry is the standard fix rather than surfacing it as a 500.
         $post = DB::transaction(function () use ($data) {
-            $titleEn = is_array($data['title']) ? ($data['title']['en'] ?? reset($data['title']) ?? 'post') : $data['title'];
+            $titleEn = is_array($data['title']) ? (ContentLocales::firstFilled($data['title'], 'en') ?? 'post') : $data['title'];
             $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
 
             $post = Post::create([
