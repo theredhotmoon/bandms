@@ -1,0 +1,636 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T19:11:53+00:00",
+  "title": "Design System: BandMS Admin",
+  "extensions": {
+    "colorMeta": {
+      "signal-teal": {
+        "role": "primary",
+        "displayName": "Signal Teal",
+        "canonical": "var(--c-0d9488)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#0f2d2a",
+          "#0f4a45",
+          "#0f6760",
+          "#308882",
+          "#73ada9",
+          "#b5d2d0",
+          "#f7f7f7"
+        ]
+      },
+      "signal-teal-bright": {
+        "role": "primary",
+        "displayName": "Signal Teal Bright",
+        "canonical": "var(--c-14b8a6)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#0e302d",
+          "#0d514a",
+          "#0c7267",
+          "#2d9388",
+          "#70b4ad",
+          "#b4d6d2",
+          "#f7f7f7"
+        ]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Page",
+        "canonical": "var(--c-0a0a0a)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#0e0e0e",
+          "#0c0c0c",
+          "#0b0b0b",
+          "#2c2c2c",
+          "#707070",
+          "#b4b4b4",
+          "#f7f7f7"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "var(--c-111111)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#101010",
+          "#101010",
+          "#111111",
+          "#323232",
+          "#747474",
+          "#b6b6b6",
+          "#f7f7f7"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "var(--c-141414)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#111111",
+          "#121212",
+          "#131313",
+          "#343434",
+          "#757575",
+          "#b6b6b6",
+          "#f7f7f7"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover",
+        "canonical": "var(--c-1a1a1a)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#121212",
+          "#151515",
+          "#181818",
+          "#3a3a3a",
+          "#797979",
+          "#b8b8b8",
+          "#f7f7f7"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected",
+        "canonical": "var(--c-1f1f1f)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#151515",
+          "#1a1a1a",
+          "#1f1f1f",
+          "#404040",
+          "#7d7d7d",
+          "#bababa",
+          "#f7f7f7"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "var(--c-222222)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#161616",
+          "#1c1c1c",
+          "#232323",
+          "#444444",
+          "#808080",
+          "#bcbcbc",
+          "#f7f7f7"
+        ]
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "Control Border",
+        "canonical": "var(--c-2a2a2a)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#171717",
+          "#1f1f1f",
+          "#262626",
+          "#474747",
+          "#828282",
+          "#bdbdbd",
+          "#f7f7f7"
+        ]
+      },
+      "control-border-strong": {
+        "role": "neutral",
+        "displayName": "Control Border, Strong",
+        "canonical": "var(--c-333333)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#1a1a1a",
+          "#242424",
+          "#2e2e2e",
+          "#4f4f4f",
+          "#878787",
+          "#bfbfbf",
+          "#f7f7f7"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "var(--c-e2e8f0)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#4b4d4f",
+          "#888b90",
+          "#c4c9d0",
+          "#e5eaf1",
+          "#ebeff3",
+          "#f1f3f5",
+          "#f7f7f7"
+        ]
+      },
+      "ink-max": {
+        "role": "neutral",
+        "displayName": "Ink Max",
+        "canonical": "var(--c-ffffff)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#545454",
+          "#989898",
+          "#dddddd",
+          "#fefefe",
+          "#fcfcfc",
+          "#fafafa",
+          "#f7f7f7"
+        ]
+      },
+      "ink-strong": {
+        "role": "neutral",
+        "displayName": "Ink Strong",
+        "canonical": "var(--c-d0d0d0)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#464646",
+          "#7d7d7d",
+          "#b4b4b4",
+          "#d6d6d6",
+          "#e1e1e1",
+          "#ececec",
+          "#f7f7f7"
+        ]
+      },
+      "ink-body": {
+        "role": "neutral",
+        "displayName": "Ink Body",
+        "canonical": "var(--c-c0c0c0)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#424242",
+          "#747474",
+          "#a7a7a7",
+          "#c8c8c8",
+          "#d8d8d8",
+          "#e8e8e8",
+          "#f7f7f7"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "var(--c-94a3b8)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#353940",
+          "#5b6470",
+          "#818ea0",
+          "#a2afc1",
+          "#bfc7d3",
+          "#dbdfe5",
+          "#f7f7f7"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "var(--c-64748b)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#32363c",
+          "#555c68",
+          "#788394",
+          "#9aa4b5",
+          "#b9c0cb",
+          "#d8dce1",
+          "#f7f7f7"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "var(--c-888888)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#363636",
+          "#5d5d5d",
+          "#848484",
+          "#a5a5a5",
+          "#c0c0c0",
+          "#dcdcdc",
+          "#f7f7f7"
+        ]
+      },
+      "button-primary-bg": {
+        "role": "neutral",
+        "displayName": "Primary Button Fill",
+        "canonical": "var(--c-e8e8e8)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#4d4d4d",
+          "#8b8b8b",
+          "#c9c9c9",
+          "#eaeaea",
+          "#efefef",
+          "#f3f3f3",
+          "#f7f7f7"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "OK",
+        "canonical": "var(--c-34d399)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#1a4737",
+          "#247f5e",
+          "#2fb785",
+          "#50d8a6",
+          "#88e3c1",
+          "#c0eddc",
+          "#f7f7f7"
+        ]
+      },
+      "ok-ground": {
+        "role": "tertiary",
+        "displayName": "OK Ground",
+        "canonical": "var(--c-14532d)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#112318",
+          "#123620",
+          "#134929",
+          "#346a4a",
+          "#759984",
+          "#b6c8be",
+          "#f7f7f7"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Warn",
+        "canonical": "var(--c-fbbf24)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#534215",
+          "#96741b",
+          "#d9a621",
+          "#fac742",
+          "#f9d77f",
+          "#f8e7bb",
+          "#f7f7f7"
+        ]
+      },
+      "warn-ground": {
+        "role": "tertiary",
+        "displayName": "Warn Ground",
+        "canonical": "var(--c-1a1740)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#12111d",
+          "#15142b",
+          "#181639",
+          "#3a375a",
+          "#79778f",
+          "#b8b7c3",
+          "#f7f7f7"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger",
+        "canonical": "var(--c-f87171)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#522b2b",
+          "#944747",
+          "#d76363",
+          "#f88484",
+          "#f8abab",
+          "#f8d1d1",
+          "#f7f7f7"
+        ]
+      },
+      "danger-ground": {
+        "role": "tertiary",
+        "displayName": "Danger Ground",
+        "canonical": "var(--c-2d1212)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#181010",
+          "#201111",
+          "#291212",
+          "#4a3333",
+          "#847474",
+          "#beb6b6",
+          "#f7f7f7"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Info",
+        "canonical": "var(--c-60a5fa)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#263a52",
+          "#3d6595",
+          "#5490d8",
+          "#76b1fa",
+          "#a1c8f9",
+          "#cce0f8",
+          "#f7f7f7"
+        ]
+      },
+      "info-ground": {
+        "role": "tertiary",
+        "displayName": "Info Ground",
+        "canonical": "var(--c-1e3a5f)",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#131b26",
+          "#18283d",
+          "#1c3454",
+          "#3d5575",
+          "#7b8ba0",
+          "#b9c1cc",
+          "#f7f7f7"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Dashboard stat figures only; tabular numerals."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The page title — applied to every bare <h1> inside .main-content-body."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Widget titles; modal titles at weight 600."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inputs and prose; the admin shell's base size. Prose steps to 1.55 leading."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Nav items, table cells, buttons, checklist items; 600 for the primary action."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase 11px: group headers, column headers, badges. The size floor."
+      }
+    },
+    "shadows": [
+      {
+        "name": "modal",
+        "value": "0 24px 64px rgba(0,0,0,0.6)",
+        "purpose": "The dialog panel — the one surface that floats above the page."
+      },
+      {
+        "name": "drawer",
+        "value": "0 12px 40px rgba(0,0,0,0.45)",
+        "purpose": "The sidebar when it slides in as a drawer below 1024px."
+      },
+      {
+        "name": "input-inset",
+        "value": "inset 0 1.5px 3px rgba(0,0,0,0.35)",
+        "purpose": "Recess on text inputs and checkbox lists: 'this takes input'."
+      },
+      {
+        "name": "focus-halo",
+        "value": "0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent)",
+        "purpose": "Focused inputs and the hovered primary button; theme-relative."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-exit",
+        "value": "cubic-bezier(0.2, 0, 0, 1)",
+        "purpose": "Drawer slide and progress-bar scale; 220–400ms."
+      },
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Modal panel entrance, 220ms."
+      },
+      {
+        "name": "duration-state",
+        "value": "120ms",
+        "purpose": "Hover/colour transitions on nav items, buttons and rows (100–150ms)."
+      },
+      {
+        "name": "duration-modal-leave",
+        "value": "150ms",
+        "purpose": "Modal exit, ease-in."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one bright neutral: Ink on a near-white fill. Every create/save action.",
+      "html": "<button class=\"ds-btn-primary\">+ Add concert</button>",
+      "css": ".ds-btn-primary{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;padding:.5rem 1.25rem;border-radius:.5rem;font-size:.8125rem;font-weight:600;cursor:pointer;background:var(--c-e8e8e8,#e8e8e8);border:none;color:var(--c-111111,#111);transition:background 150ms,box-shadow 150ms}.ds-btn-primary:hover{background:var(--c-ffffff,#fff);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-ffffff,#fff) 15%,transparent)}.ds-btn-primary:focus-visible{outline:2px solid var(--c-e2e8f0,#e2e8f0);outline-offset:2px}.ds-btn-primary:disabled{opacity:.5;cursor:not-allowed}"
+    },
+    {
+      "name": "Rebuild Button",
+      "kind": "button",
+      "refersTo": "button-rebuild",
+      "description": "The only teal control: publishes the public site. White label is a deliberate literal.",
+      "html": "<button class=\"ds-btn-rebuild\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 1 1-3-6.7\"/><polyline points=\"21 3 21 9 15 9\"/></svg> Rebuild Public Site</button>",
+      "css": ".ds-btn-rebuild{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:.5rem;font-size:.8125rem;font-weight:600;cursor:pointer;background:var(--c-0d9488,#0f766e);border:none;color:#fff;transition:background 120ms}.ds-btn-rebuild:hover{background:var(--c-14b8a6,#0b8276)}.ds-btn-rebuild:focus-visible{outline:2px solid var(--c-e2e8f0,#e2e8f0);outline-offset:2px}.ds-btn-rebuild:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action: outlined, quiet until hovered.",
+      "html": "<button class=\"ds-btn-ghost\">All versions</button>",
+      "css": ".ds-btn-ghost{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;padding:.5rem 1rem;border-radius:.5rem;font-size:.8125rem;font-weight:500;cursor:pointer;background:transparent;border:1px solid var(--c-333333,#333);color:var(--c-aaaaaa,#aaa);transition:background 150ms,border-color 150ms,color 150ms}.ds-btn-ghost:hover{background:var(--c-1a1a1a,#1a1a1a);border-color:var(--c-444444,#444);color:var(--c-e2e8f0,#e2e8f0)}.ds-btn-ghost:focus-visible{outline:2px solid var(--c-e2e8f0,#e2e8f0);outline-offset:2px}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive actions stay outlined so they never compete with the primary.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;padding:.3125rem .625rem;border-radius:.375rem;font-size:.75rem;font-weight:500;cursor:pointer;background:transparent;border:1px solid var(--c-2d1212,#2d1212);color:var(--c-f87171,#f87171);transition:background 120ms}.ds-btn-danger:hover{background:var(--c-2d1010,#2d1010)}.ds-btn-danger:focus-visible{outline:2px solid var(--c-e2e8f0,#e2e8f0);outline-offset:2px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Recessed field on Card with a faint inset shadow; focus adds a translucent halo.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Venue <span class=\"ds-req\">*</span></span><input class=\"ds-input\" placeholder=\"Select a venue…\"></label>",
+      "css": ".ds-field{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;display:block}.ds-field-label{display:block;font-size:.75rem;font-weight:600;color:var(--c-c0c0c0,#c0c0c0);margin-bottom:.375rem;letter-spacing:.01em}.ds-req{color:var(--c-f87171,#f87171)}.ds-input{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;display:block;width:100%;padding:.5625rem .75rem;border-radius:.5rem;border:1px solid var(--c-2a2a2a,#2a2a2a);background:var(--c-141414,#141414);color:var(--c-e2e8f0,#e2e8f0);font-size:.875rem;line-height:1.5;outline:none;box-shadow:inset 0 1.5px 3px rgba(0,0,0,.35);transition:border-color 150ms,box-shadow 150ms}.ds-input::placeholder{color:var(--c-64748b,#8a96aa)}.ds-input:hover:not(:focus){border-color:var(--c-3a3a3a,#3a3a3a)}.ds-input:focus{border-color:var(--c-aaaaaa,#aaa);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-ffffff,#fff) 16%,transparent),inset 0 1.5px 3px rgba(0,0,0,.35)}"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Group header, resting item, and the active item with its inset Ink Max bar.",
+      "html": "<nav class=\"ds-nav\"><div class=\"ds-nav-group\">Shows</div><a class=\"ds-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"/><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/></svg>Concerts</a><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z\"/><path d=\"M15 11a3 3 0 11-6 0 3 3 0 016 0z\"/></svg>Venues</a></nav>",
+      "css": ".ds-nav{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;width:15.5rem;padding:.75rem .625rem;background:var(--c-111111,#111);border-right:1px solid var(--c-222222,#262626);display:flex;flex-direction:column;gap:.125rem}.ds-nav-group{padding:.5rem .75rem;font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c-888888,#979797)}.ds-nav-item{display:flex;align-items:center;gap:.625rem;padding:.5rem .75rem;border-radius:.375rem;font-size:.8125rem;font-weight:500;line-height:1.4;color:var(--c-aaaaaa,#aaa);text-decoration:none;box-shadow:inset 2px 0 0 transparent;transition:background 120ms,color 120ms,box-shadow 120ms}.ds-nav-item svg{width:1rem;height:1rem;opacity:.8}.ds-nav-item:hover{background:var(--c-1a1a1a,#1a1a1a);color:var(--c-e2e8f0,#e2e8f0)}.ds-nav-item:hover svg{opacity:1}.ds-nav-item--active{background:var(--c-1f1f1f,#222);color:var(--c-ffffff,#fff);font-weight:600;box-shadow:inset 2px 0 0 var(--c-ffffff,#fff)}.ds-nav-item--active svg{opacity:1}.ds-nav-item:focus-visible{outline:2px solid var(--c-e2e8f0,#e2e8f0);outline-offset:2px}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Uppercase 11px label: status ink on its tinted ground. Colour means state.",
+      "html": "<span class=\"ds-badge ds-badge--ok\">Active</span> <span class=\"ds-badge ds-badge--warn\">Pending review</span> <span class=\"ds-badge ds-badge--info\">Scanned</span> <span class=\"ds-badge ds-badge--pl\">PL</span>",
+      "css": ".ds-badge{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ds-badge--ok{background:var(--c-052e16,#052e16);color:var(--c-4ade80,#4ade80)}.ds-badge--warn{background:var(--c-1a1740,#1a1740);color:var(--c-fbbf24,#fbbf24);border-radius:9999px;letter-spacing:.08em}.ds-badge--info{background:var(--c-0c1a2e,#0c1a2e);color:var(--c-60a5fa,#60a5fa)}.ds-badge--pl{background:var(--c-3f1010,#3f1010);color:var(--c-f87171,#f87171);width:2rem;text-align:center;padding:.2rem .45rem}"
+    },
+    {
+      "name": "Stat Strip",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "One container, hairline-divided figures in one ink; each cell links to its section.",
+      "html": "<nav class=\"ds-stat-strip\"><a class=\"ds-stat-cell\" href=\"#\"><span class=\"ds-stat-figure\">4</span><span class=\"ds-stat-label\">Concerts</span></a><a class=\"ds-stat-cell\" href=\"#\"><span class=\"ds-stat-figure\">3</span><span class=\"ds-stat-label\">Venues</span></a><a class=\"ds-stat-cell\" href=\"#\"><span class=\"ds-stat-figure\">0</span><span class=\"ds-stat-label\">Tours</span></a></nav>",
+      "css": ".ds-stat-strip{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--c-222222,#262626);border:1px solid var(--c-222222,#262626);border-radius:.75rem;overflow:hidden}.ds-stat-cell{display:flex;flex-direction:column;gap:.25rem;padding:1rem 1.25rem;background:var(--c-141414,#141414);text-decoration:none;transition:background 120ms}.ds-stat-cell:hover{background:var(--c-1a1a1a,#1a1a1a)}.ds-stat-figure{font-size:1.75rem;font-weight:700;line-height:1;letter-spacing:-.015em;color:var(--c-e2e8f0,#e2e8f0);font-variant-numeric:tabular-nums lining-nums}.ds-stat-label{font-size:.75rem;font-weight:500;color:var(--c-94a3b8,#94a3b8);transition:color 120ms}.ds-stat-cell:hover .ds-stat-label{color:var(--c-e2e8f0,#e2e8f0)}"
+    },
+    {
+      "name": "Table Row",
+      "kind": "custom",
+      "refersTo": "table-card",
+      "description": "Column header rule, 13px cells with tabular numerals, row buttons at the right.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Date</th><th>Name</th><th>Doors / Start</th><th>Actions</th></tr></thead><tbody><tr><td class=\"ds-td-primary\">2026-12-31</td><td class=\"ds-td-strong\">New Year Ska Party</td><td class=\"ds-td-meta\">19:00 <span class=\"ds-sep\">/</span> <span class=\"ds-td-primary\">20:00</span></td><td class=\"ds-td-actions\"><button class=\"ds-btn-row\">Edit</button><button class=\"ds-btn-row ds-btn-row--danger\">Delete</button></td></tr></tbody></table>",
+      "css": ".ds-table{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;width:100%;border-collapse:collapse;background:var(--c-111111,#111);border:1px solid var(--c-222222,#262626);border-radius:.75rem;overflow:hidden;font-variant-numeric:tabular-nums lining-nums}.ds-table th{padding:.625rem 1rem;text-align:left;font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--c-888888,#979797);border-bottom:1px solid var(--c-222222,#262626);white-space:nowrap}.ds-table td{padding:.75rem 1rem;font-size:.8125rem;line-height:1.4;vertical-align:middle}.ds-table tbody tr{transition:background 100ms}.ds-table tbody tr:hover{background:var(--c-181818,#181818)}.ds-td-primary{color:var(--c-e2e8f0,#e2e8f0);font-weight:500}.ds-td-strong{color:var(--c-d0d0d0,#d0d0d0)}.ds-td-meta{font-size:.75rem;color:var(--c-94a3b8,#94a3b8)}.ds-sep{color:var(--c-475569,#8390a3)}.ds-td-actions{text-align:right;white-space:nowrap}.ds-btn-row{font-family:'Archivo Variable','Archivo',ui-sans-serif,system-ui,sans-serif;padding:.3125rem .625rem;border-radius:.375rem;font-size:.75rem;font-weight:500;cursor:pointer;background:transparent;border:1px solid var(--c-333333,#333);color:var(--c-c0c0c0,#c0c0c0);margin-left:.375rem;transition:background 120ms,border-color 120ms}.ds-btn-row:hover{background:var(--c-2a2a2a,#2a2a2a);border-color:var(--c-666666,#8c8c8c);color:var(--c-e2e8f0,#e2e8f0)}.ds-btn-row--danger{border-color:var(--c-2d1212,#2d1212);color:var(--c-f87171,#f87171)}.ds-btn-row--danger:hover{background:var(--c-2d1010,#2d1010);border-color:var(--c-2d1212,#2d1212);color:var(--c-f87171,#f87171)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Backstage Console",
+    "overview": "The admin is the mixing desk behind the band's public site: a dark surface\nwhere every control is readable at a glance, nothing glows unless it means\nsomething, and the one coloured light on the desk is the *go* button. It is\nsharp, technical and fast. The band is here between rehearsal and load-in to\nadd a show, publish a press kit or fix a slug, and the interface should\ndisappear into that task — scanability, consistency and native expectations\noutrank expression. Brand lives in precise details: the hairline that divides a\nstat strip, the tabular numerals in a date column, the caret that matches the\ntheme.\n\nDensity is high but never cramped: a 14px body on 1.4 leading, 13px controls,\n11px uppercase labels, and nothing smaller than that anywhere. Depth is tonal,\nnot cast: page → panel → card → control step up in lightness, and a shadow\nappears only when something actually floats (a modal, the phone drawer).\nColour is monochrome plus one teal; the status greens, ambers, reds and blues\nare vocabulary for *state*, never decoration. The light theme is the same desk\nunder house lights — the same tokens, re-pointed — so a component that is\nright in one theme is right in both, and a raw hex anywhere is a bug.",
+    "keyCharacteristics": [
+      "Monochrome surfaces with a single accent (Signal Teal) reserved for the rebuild action and the theme switch.",
+      "One typeface (Archivo, self-hosted) and one role scale for the whole panel; 11px floor.",
+      "Tonal depth: four surface steps and hairline borders; shadows only on floating layers.",
+      "Every text token clears 4.5:1 on every surface it sits on, in both themes — enforced at build time.",
+      "Theme-aware browser surfaces: caret, selection, focus ring, scrollbar and `<select>` lists all follow the palette.",
+      "Sidebar + content shell; the sidebar becomes an off-canvas drawer below 1024px."
+    ],
+    "rules": [
+      {
+        "name": "The One Light Rule",
+        "body": "Signal Teal appears on exactly two controls: the rebuild button and the theme switch. Nothing else in the chrome is saturated. A new primary action is Ink on `--c-e8e8e8`, not teal.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Raw Hex Rule",
+        "body": "Every admin style uses `var(--c-…)`. `scripts/check-admin-colours.mjs` fails the build on a literal colour; the only sanctioned literal is `#fff` on a saturated button, marked `token-lint-ignore`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Floor Rule",
+        "body": "Every token used as text clears 4.5:1 on the darkest hover surface in dark mode (`#1a1a1a`) and the lightest in light mode (`#efeff1`). `scripts/check-admin-contrast.mjs` pins 32 text tokens × 5 surfaces × 2 themes. Retune a value in the palette, never per component.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Means State Rule",
+        "body": "Green, amber, red and blue say what a thing *is* (live, pending, destructive, informational). They never colour a count, a heading or a tile for variety — the dashboard's six figures are all Ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Eleven Pixel Floor Rule",
+        "body": "`--fs-2xs` (11px) is the smallest size in the panel. A design that needs smaller text needs less text.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Face Rule",
+        "body": "No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Tables, stat figures and anything with `.tabular-nums` use lining tabular numerals so dates and counts align in columns.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-At-Rest Rule",
+        "body": "No card, table, input or button carries a drop shadow at rest. If two surfaces need separating, step the tone or draw a hairline.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Only-Floating-Things-Cast Rule",
+        "body": "A shadow means the element is above the page and can be dismissed. Modals and the drawer qualify; dropdown-like panels inside the page do not.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do reference a `--c-*` token for every colour and a `--fs-*` token for every size; both lints run in `pnpm build`.",
+      "Do step tone (Page → Panel → Card → Hover) or draw a 1px Hairline to separate surfaces.",
+      "Do keep primary actions neutral (Ink on `--c-e8e8e8`) and outline destructive ones in Danger.",
+      "Do mirror a column header in its cell (`19:00 / 20:00`) and use tabular numerals for anything that aligns.",
+      "Do draw icons as inline outline SVGs at stroke-width 2 with round caps; checklist marks included.",
+      "Do write a white label on a teal/blue/red button as a literal `#fff` with `token-lint-ignore` — the neutral ramp inverts in light mode.",
+      "Do verify a new text token with `node scripts/check-admin-contrast.mjs` before using it as text.",
+      "Do style page titles with a bare `<h1>`; the shell rule carries the role."
+    ],
+    "donts": [
+      "Don't use Signal Teal on anything other than the rebuild action and the theme switch.",
+      "Don't colour counts, headings or tiles with status hues for variety; status colour means state.",
+      "Don't put a drop shadow on a card, table, input or button at rest.",
+      "Don't add a coloured side border (`border-left: 3px …`) to a card, callout or list item; use a tinted ground with a matching 1px edge.",
+      "Don't use emoji or Unicode glyphs (✓ ○ 🚪) as icons in chrome.",
+      "Don't render anything below 11px or use a second typeface.",
+      "Don't animate `width`, `height` or `padding`; progress bars scale with `transform: scaleX()` from `transform-origin: left`.",
+      "Don't build an admin URL by hand — `adminUrl()` is the only source — or add a route the Caddy `@spa` matcher does not list."
+    ]
+  }
+}
