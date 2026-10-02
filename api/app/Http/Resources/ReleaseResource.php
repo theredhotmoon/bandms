@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,8 +14,8 @@ class ReleaseResource extends JsonResource
             'id'           => $this->id,
             'profile_id'   => $this->profile_id,
             'title'        => $this->title,
-            'slug_en'      => $this->slug_en,
-            'slug_pl'      => $this->slug_pl,
+            // Releases are routed by id; the slug is the default locale's.
+            'slug'         => $this->slugIn(Locales::default()),
             'type'         => $this->type,
             'release_date' => $this->release_date?->format('Y-m-d'),
             'cover_image'  => $this->cover_image ? '/storage/' . $this->cover_image : null,
@@ -25,6 +26,7 @@ class ReleaseResource extends JsonResource
             'translations' => [
                 'title'       => $this->getTranslations('title'),
                 'description' => $this->getTranslations('description'),
+                'slug'        => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
             'links'        => $this->whenLoaded('links', fn () => $this->links->map(fn ($l) => [
                 'id'       => $l->id,

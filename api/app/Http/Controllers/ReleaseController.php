@@ -8,12 +8,13 @@ use App\Models\BandProfile;
 use App\Models\Release;
 use App\Models\ReleasePhoto;
 use App\Support\ContentLocales;
+use App\Support\Locales;
 use App\Support\SiteRebuild;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class ReleaseController extends Controller
 {
@@ -37,8 +38,6 @@ class ReleaseController extends Controller
             'title'                           => 'required',
             'title.en'                        => 'nullable|string|max:255',
             'title.pl'                        => 'nullable|string|max:255',
-            'slug_en'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_en')],
-            'slug_pl'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_pl')],
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
             'description'                     => 'nullable',
@@ -65,20 +64,19 @@ class ReleaseController extends Controller
             'tracks.*.links'                  => 'nullable|array',
             'tracks.*.links.*.platform'       => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'tracks.*.links.*.url'            => 'required|url|max:500',
-        ]);
+        ] + Release::translatedSlugRules());
 
         $validated['profile_id'] = BandProfile::value('id') ?? 1;
 
-        $titleEn = is_array($validated['title']) ? (ContentLocales::firstFilled($validated['title'], 'en') ?? 'release') : $validated['title'];
-        $titlePl = is_array($validated['title']) ? ($validated['title']['pl'] ?? null) : null;
-        if (empty($validated['slug_en'] ?? null)) {
-            $validated['slug_en'] = Release::generateSlug($titleEn, null, 'slug_en');
-        }
-        if (empty($validated['slug_pl'] ?? null) && $titlePl) {
-            $validated['slug_pl'] = Release::generateSlug($titlePl, null, 'slug_pl');
-        }
+        $titles = is_array($validated['title']) ? $validated['title'] : [Locales::default() => $validated['title']];
 
-        $release = Release::create($validated);
+        $release = new Release(Arr::except($validated, ['slug']));
+        $release->applySlugBag(
+            $validated['slug'] ?? null,
+            ContentLocales::firstFilled($titles, Locales::default()) ?? 'release',
+            $titles,
+        );
+        $release->save();
 
         foreach ($request->input('links', []) as $link) {
             $release->links()->create($link);
@@ -106,8 +104,6 @@ class ReleaseController extends Controller
             'title'                           => 'required',
             'title.en'                        => 'nullable|string|max:255',
             'title.pl'                        => 'nullable|string|max:255',
-            'slug_en'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_en')->ignore($release->id)],
-            'slug_pl'                         => ['nullable', 'string', 'max:255', Rule::unique('releases', 'slug_pl')->ignore($release->id)],
             'type'                            => 'required|in:LP,EP,single,compilation',
             'release_date'                    => 'nullable|date',
             'description'                     => 'nullable',
@@ -134,9 +130,15 @@ class ReleaseController extends Controller
             'tracks.*.links'                  => 'nullable|array',
             'tracks.*.links.*.platform'       => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'tracks.*.links.*.url'            => 'required|url|max:500',
-        ]);
+        ] + Release::translatedSlugRules($release->id));
 
-        $release->update($validated);
+        // Slugs through applySlugBag(): this used to update() the raw columns,
+        // so a payload carrying slug_en: null nulled the release's slug.
+        $release->fill(Arr::except($validated, ['slug']));
+        if (array_key_exists('slug', $validated)) {
+            $release->applySlugBag($validated['slug'], ContentLocales::firstFilled($release->getTranslations('title'), Locales::default()));
+        }
+        $release->save();
 
         $release->links()->delete();
         foreach ($request->input('links', []) as $link) {

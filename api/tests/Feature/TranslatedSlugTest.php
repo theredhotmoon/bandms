@@ -145,3 +145,37 @@ describe('the generate-once slug policy (albums)', function () {
             ->assertJsonValidationErrors(['slug.en']);
     });
 });
+
+describe('release slugs', function () {
+    beforeEach(function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+    });
+
+    // On create every titled locale gets a slug from its own title, as the
+    // slug_en/slug_pl code always did for Polish.
+    it('generates a slug per titled locale on create', function () {
+        $this->postJson('/api/releases', ['title' => ['en' => 'Debut', 'pl' => 'Debiut'], 'type' => 'LP'])
+            ->assertCreated()
+            ->assertJsonPath('data.translations.slug', ['en' => 'debut', 'pl' => 'debiut']);
+    });
+
+    // update() used to write the raw columns, so a payload carrying a null
+    // English slug wiped the release's slug. The default is never blanked now.
+    it('keeps the default slug when an update sends it blank', function () {
+        $release = \App\Models\Release::factory()->create(['title' => ['en' => 'Debut'], 'slug' => ['en' => 'debut'], 'type' => 'LP']);
+
+        $this->putJson("/api/releases/{$release->id}", ['title' => ['en' => 'Debut'], 'type' => 'LP', 'slug' => ['en' => null]])
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'debut');
+    });
+
+    // Adding a Polish title later must not invent a Polish URL.
+    it('does not generate a Polish slug when a Polish title is added on update', function () {
+        $release = \App\Models\Release::factory()->create(['title' => ['en' => 'Debut'], 'slug' => ['en' => 'debut'], 'type' => 'LP']);
+
+        $this->putJson("/api/releases/{$release->id}", ['title' => ['en' => 'Debut', 'pl' => 'Debiut'], 'type' => 'LP'])
+            ->assertOk()
+            ->assertJsonPath('data.translations.slug.pl', null);
+    });
+});

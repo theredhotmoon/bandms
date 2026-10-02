@@ -98,10 +98,10 @@ describe('slug generation for a title written only in the primary language', fun
             ->assertJsonPath('data.slug_pl', 'nowa-plyta');
     });
 
-    it('builds a release\'s slug_en from the Polish title instead of "release"', function () {
+    it('builds a release\'s default slug from the Polish title instead of "release"', function () {
         $this->postJson('/api/releases', ['title' => ['en' => '', 'pl' => 'Debiut'], 'type' => 'LP'])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'debiut');
+            ->assertJsonPath('data.slug', 'debiut');
     });
 
     it('still prefers the English title for slug_en when both exist', function () {

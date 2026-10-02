@@ -111,10 +111,22 @@ trait HasTranslatedSlug
      * A locale absent from `$given` is left exactly as it is, so a partial
      * update cannot clear a slug the client did not mention.
      */
-    public function applySlugBag(?array $given, ?string $source): void
+    public function applySlugBag(?array $given, ?string $source, array $localeSources = []): void
     {
         $given   = $given ?? [];
         $default = Locales::default();
+
+        // On CREATE only, a non-default locale with no slug given gets one from
+        // its own title, as Release and Post always did for Polish. Never on
+        // update: adding a Polish title later must not invent a Polish URL the
+        // band did not ask for.
+        if (! $this->exists) {
+            foreach ($localeSources as $code => $text) {
+                if ($code !== $default && blank($given[$code] ?? null) && filled($text)) {
+                    $given[$code] = static::generateTranslatedSlug($text);
+                }
+            }
+        }
 
         foreach (Locales::codes() as $code) {
             if (! array_key_exists($code, $given)) {

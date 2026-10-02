@@ -42,8 +42,8 @@ export interface ReleaseSummary {
   id: number
   profile_id: number
   title: string
-  slug_en: string | null
-  slug_pl: string | null
+  /** The default locale's slug. Releases are routed by id, not by this. */
+  slug: string | null
   type: ReleaseType
   release_date: string | null
   cover_image: string | null
@@ -56,6 +56,7 @@ export interface ReleaseSummary {
   translations?: {
     title:       TranslationMap
     description?: TranslationMap
+    slug?:       TranslationMap
   }
 }
 
@@ -93,8 +94,8 @@ export interface ReleaseLinkPayload {
 
 export interface ReleasePayload {
   title: string | TranslationMap
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (default) or cleared (others) by the API. */
+  slug?: TranslationMap
   type: ReleaseType
   release_date: string | null
   description: string | TranslationMap | null
