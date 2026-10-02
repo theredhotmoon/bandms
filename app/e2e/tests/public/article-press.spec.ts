@@ -129,7 +129,7 @@ test.describe.serial('Article — press coverage', () => {
     })
     const postBody = (await post.json()).data
     postId = postBody.id
-    postSlug = postBody.slug_en
+    postSlug = postBody.slug
 
     const bare = await api(request, 'post', '/api/posts', {
       title: { en: `E2E No Press ${Date.now()}` },
@@ -138,7 +138,7 @@ test.describe.serial('Article — press coverage', () => {
     })
     const bareBody = (await bare.json()).data
     barePostId = bareBody.id
-    barePostSlug = bareBody.slug_en
+    barePostSlug = bareBody.slug
 
     await rebuildAndWait(request, Date.now())
   })

@@ -117,7 +117,7 @@ test.describe.serial('Public clips', () => {
       blocks: [{ type: 'ref', payload: { entity: 'clip', id: clipId } }],
     })).json()).data
     postId = post.id
-    postSlug = post.slug_en
+    postSlug = post.slug
 
     await rebuildAndWait(request, Date.now())
   })

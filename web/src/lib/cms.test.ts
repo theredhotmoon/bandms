@@ -21,8 +21,7 @@ function stubPagedFetch(total: number, perPage = 12) {
     const start = (page - 1) * perPage
     const data = Array.from({ length: Math.max(0, Math.min(perPage, total - start)) }, (_, i) => ({
       id: start + i + 1,
-      slug_en: `post-${start + i + 1}`,
-      slug_pl: null,
+      slug: `post-${start + i + 1}`,
     }))
     return {
       ok: true,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,8 +13,9 @@ class PostResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug_en'      => $this->slug_en,
-            'slug_pl'      => $this->slug_pl,
+            // The default locale's slug. A post's URL is per language — the
+            // public site resolves translations.slug down the locale chain.
+            'slug'         => $this->slugIn(Locales::default()),
             'intro'        => $this->intro,
             'image'        => $this->image,
             'published_at' => $this->published_at,
@@ -27,6 +29,7 @@ class PostResource extends JsonResource
             'translations' => [
                 'title'   => $this->getTranslations('title'),
                 'intro'   => $this->getTranslations('intro'),
+                'slug'    => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
             // resolve() is batched deliberately (one query per ref entity type,
             // not per block) — it must be called once for the whole post, not

@@ -106,8 +106,8 @@ test.describe.serial('Public news — slug-based routing', () => {
     })
     const bilingualBody = (await bilingual.json()).data
     bilingualId = bilingualBody.id
-    bilingualSlugEn = bilingualBody.slug_en
-    bilingualSlugPl = bilingualBody.slug_pl
+    bilingualSlugEn = bilingualBody.slug
+    bilingualSlugPl = bilingualBody.translations.slug.pl
 
     const enOnly = await api(request, 'post', '/api/posts', {
       title: { en: `E2E Slug No PL ${stamp}` },
@@ -116,7 +116,7 @@ test.describe.serial('Public news — slug-based routing', () => {
     })
     const enOnlyBody = (await enOnly.json()).data
     enOnlyId = enOnlyBody.id
-    enOnlySlugEn = enOnlyBody.slug_en
+    enOnlySlugEn = enOnlyBody.slug
 
     await rebuildAndWait(request, Date.now())
   })
@@ -127,7 +127,7 @@ test.describe.serial('Public news — slug-based routing', () => {
   })
 
   test('a bilingual post is served under its own slug in each locale', async ({ page }) => {
-    // The point of this fixture: without a real Polish title, slug_pl would be
+    // The point of this fixture: without a real Polish title, the Polish slug would be
     // null and this assertion would be meaningless — it must actually differ.
     expect(bilingualSlugPl).toBeTruthy()
     expect(bilingualSlugPl).not.toBe(bilingualSlugEn)
@@ -139,7 +139,7 @@ test.describe.serial('Public news — slug-based routing', () => {
     await expect(page.locator('.art-title')).toHaveText(`E2E Slug PL ${stamp}`)
   })
 
-  test('a post with no Polish title is reachable under /pl/ via its slug_en', async ({ page }) => {
+  test('a post with no Polish title is reachable under /pl/ via its English slug', async ({ page }) => {
     await page.goto(`${WEB}/pl/${sectionPl}/${enOnlySlugEn}`)
     await expect(page.locator('.art-title')).toHaveText(`E2E Slug No PL ${stamp}`)
   })
@@ -158,8 +158,8 @@ test.describe.serial('Public news — slug-based routing', () => {
    * The listing test above could not see it: two call sites, one covered.
    *
    * Checked per locale, because the template is locale-parameterised and
-   * postSlug resolves differently under pl (`slug_pl || slug_en`) — a
-   * regression that hardcoded slug_en would pass an /en-only test.
+   * postSlug resolves differently under pl (the Polish slug, else the English
+   * one) — a regression that hardcoded the English slug would pass an /en-only test.
    */
   for (const { lang, expectedSlug } of [
     { lang: 'en' as const, expectedSlug: () => bilingualSlugEn },

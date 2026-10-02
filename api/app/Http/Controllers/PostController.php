@@ -8,6 +8,7 @@ use App\Http\Resources\PostResource;
 use App\Http\Resources\PostSummaryResource;
 use App\Models\Post;
 use App\Support\ContentLocales;
+use App\Support\Locales;
 use App\Support\PostBlockSync;
 use App\Support\SiteRebuild;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,7 +43,7 @@ class PostController extends Controller
 
     private function listQuery(Request $request): Builder
     {
-        return Post::select(['id', 'title', 'slug_en', 'slug_pl', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
+        return Post::select(['id', 'title', 'slug', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
@@ -82,18 +83,23 @@ class PostController extends Controller
         // transaction is exactly the shape that provokes it, and Laravel's
         // built-in retry is the standard fix rather than surfacing it as a 500.
         $post = DB::transaction(function () use ($data) {
-            $titleEn = is_array($data['title']) ? (ContentLocales::firstFilled($data['title'], 'en') ?? 'post') : $data['title'];
-            $titlePl = is_array($data['title']) ? ($data['title']['pl'] ?? null) : null;
+            $titles = is_array($data['title']) ? $data['title'] : [Locales::default() => $data['title']];
 
-            $post = Post::create([
+            // Every titled locale gets a slug on create, from its own title —
+            // a post's URL is per language (/pl/ serves the Polish slug).
+            $post = new Post([
                 'title'        => $data['title'],
-                'slug_en'      => ($data['slug_en'] ?? null) ?: Post::generateSlug($titleEn, null, 'slug_en'),
-                'slug_pl'      => ($data['slug_pl'] ?? null) ?: ($titlePl ? Post::generateSlug($titlePl, null, 'slug_pl') : null),
                 'intro'        => $data['intro'] ?? null,
                 'image'        => $data['image'] ?? null,
                 'published_at' => $data['published_at'] ?? null,
                 'event_date_display' => $data['event_date_display'] ?? 'range',
             ]);
+            $post->applySlugBag(
+                $data['slug'] ?? null,
+                ContentLocales::firstFilled($titles, Locales::default()) ?? 'post',
+                $titles,
+            );
+            $post->save();
 
             if (! empty($data['tag_ids'])) {
                 $post->tags()->sync($data['tag_ids']);
@@ -145,7 +151,13 @@ class PostController extends Controller
                 $data['event_date_display'] = 'range';
             }
 
-            $post->update(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks']));
+            // Slugs through applySlugBag(): update() wrote the raw columns, so a
+            // payload carrying slug_en: null nulled the post's slug.
+            $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks', 'slug']));
+            if (array_key_exists('slug', $data)) {
+                $post->applySlugBag($data['slug'], ContentLocales::firstFilled($post->getTranslations('title'), Locales::default()));
+            }
+            $post->save();
 
             if (array_key_exists('tag_ids', $data)) {
                 $post->tags()->sync($data['tag_ids'] ?? []);

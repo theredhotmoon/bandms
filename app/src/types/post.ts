@@ -63,8 +63,8 @@ export interface PostBlockDraft {
 export interface PostSummary {
   id: number
   title: string
-  slug_en: string
-  slug_pl: string | null
+  /** The default locale's slug; per-locale ones are in translations.slug. */
+  slug: string
   intro: string | null
   excerpt: string
   published_at: string | null
@@ -76,6 +76,7 @@ export interface PostSummary {
   translations?: {
     title: TranslationMap
     intro: TranslationMap
+    slug?: TranslationMap
   }
 }
 
@@ -90,13 +91,14 @@ export interface Post extends PostSummary {
   translations?: {
     title: TranslationMap
     intro: TranslationMap
+    slug?: TranslationMap
   }
 }
 
 export interface PostPayload {
   title: string | TranslationMap
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (on create) or cleared/kept (on update) by the API. */
+  slug?: TranslationMap
   intro?: string | TranslationMap | null
   image?: string | null
   published_at?: string | null

@@ -86,7 +86,6 @@ export default {
   },
   slug: {
     autoGenerate: 'Auto-generate from title',
-    autoGeneratePl: 'Auto-generate from Polish title',
   },
   social: {
     title: 'Social links',

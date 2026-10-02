@@ -1,3 +1,4 @@
+import type { TranslationBag } from '@/lib/locales'
 import type { Tag } from './tag'
 
 export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item' | 'clip'
@@ -18,8 +19,8 @@ export type PostBlock = TextBlock | ImageBlock | EmbedBlock | RefBlock
 export interface PostSummary {
   id: number
   title: string
-  slug_en: string
-  slug_pl: string | null
+  /** The default locale's slug, never blank. Per-locale URLs: postSlug(). */
+  slug: string
   intro: string | null
   excerpt: string
   published_at: string | null
@@ -29,8 +30,10 @@ export interface PostSummary {
   created_at: string
   updated_at: string
   translations?: {
-    title: { en?: string | null; pl?: string | null }
-    intro: { en?: string | null; pl?: string | null }
+    title: TranslationBag
+    intro: TranslationBag
+    /** One slug per locale — what postSlug() resolves a post's URL from. */
+    slug?: TranslationBag
   }
 }
 
@@ -38,8 +41,10 @@ export interface Post extends PostSummary {
   image: string | null
   blocks: PostBlock[]
   translations?: {
-    title: { en?: string | null; pl?: string | null }
-    intro: { en?: string | null; pl?: string | null }
+    title: TranslationBag
+    intro: TranslationBag
+    /** One slug per locale — what postSlug() resolves a post's URL from. */
+    slug?: TranslationBag
   }
 }
 

@@ -41,7 +41,6 @@ export const MIGRATED = [
   'components/admin/forms/PostForm.vue',
   'components/admin/forms/PressReleaseForm.vue',
   'components/admin/forms/ClipCategoryPicker.vue',
-  'components/admin/forms/SlugInput.vue',
   'components/admin/forms/TranslatedSlugInput.vue',
   'components/admin/forms/AttachedClipsField.vue',
   'components/admin/forms/SocialLinksEditor.vue',

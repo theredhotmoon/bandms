@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, bagHasText, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
 import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
@@ -20,6 +20,9 @@ import type { ShopItemSummary } from '@/types/shop'
 import type { Clip } from '@/types/clip'
 
 const { t } = useI18n()
+
+// Locales whose slug still follows the title — sent as null on create.
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 
 const props = defineProps<{
   initial?: Post | null
@@ -48,8 +51,7 @@ const introPlaceholder = (l: Lang): string => t('content.posts.introPlaceholder'
 
 const form = reactive({
   title: emptyBag(),
-  slug_en: '',
-  slug_pl: '',
+  slug: emptyBag(),
   intro: emptyBag(),
   image: null as string | null,
   published_at: '',
@@ -76,8 +78,7 @@ const { isDirty, markClean } = useDirtyGuard(() => form)
 
 watch(() => props.initial, (val) => {
   form.title = bagFrom(val?.translations?.title, val?.title)
-  form.slug_en = val?.slug_en ?? ''
-  form.slug_pl = val?.slug_pl ?? ''
+  form.slug = bagFrom(val?.translations?.slug)
   form.intro = bagFrom(val?.translations?.intro, val?.intro)
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
@@ -101,8 +102,9 @@ function submit() {
     // `{}` rather than null when blank: the API requires `title`, and an empty
     // object fails that rule with a message keyed `title`, which renders below.
     title: bagHasText(form.title) ? compactBag(form.title) : {},
-    slug_en: form.slug_en || null,
-    slug_pl: form.slug_pl || null,
+    // Auto locales go as null only on create — the API generates slugs then;
+    // on edit the form saves exactly what it shows (#153, #154).
+    slug: slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     intro: compactBag(form.intro),
     image: form.image || null,
     published_at: form.published_at || null,
@@ -132,15 +134,15 @@ function submit() {
     </div>
     <div>
       <label class="field-label">{{ $t('common.fields.slug') }}</label>
-      <SlugInput
-        v-model="form.slug_en"
-        v-model:modelValuePl="form.slug_pl"
-        :sourceEn="form.title.en"
-        :sourcePl="form.title.pl"
-        :bilingual="true"
+      <!-- Posts are routed per language, so each locale's slug is a public
+           URL: a loaded slug stays fixed and nothing auto-fills on edit. -->
+      <TranslatedSlugInput
+        v-model="form.slug"
+        v-model:auto="slugAuto"
+        :sources="form.title"
+        :editing="!!initial"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
       />
-      <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
-      <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
     <div>
       <label class="field-label">{{ $t('content.posts.intro') }}</label>

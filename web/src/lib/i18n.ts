@@ -1,4 +1,4 @@
-import { dateLocale, type Locale, type TranslationBag } from './locales'
+import { dateLocale, resolveTranslation, type Locale, type TranslationBag } from './locales'
 
 export type { Locale }
 
@@ -25,13 +25,21 @@ export function t(
 }
 
 /**
- * Resolves a post's per-locale URL slug. slug_en/slug_pl are plain DB columns
- * (not a translation bag), and slug_pl is null whenever the post has no Polish
- * title — generateSlug() only produces it from a Polish title on save. Falling
- * back to slug_en keeps every post reachable under /pl/ even half-translated.
+ * A post's URL slug in one locale: its slug in that locale, else down that
+ * locale's declared fallback chain, else the default locale's (`post.slug`,
+ * which the API never leaves blank).
+ *
+ * For en/pl this is exactly the old `slug_pl || slug_en` — /pl/ serves the
+ * Polish slug and falls back to the English one, so a half-translated post is
+ * still reachable — and a third locale needs no edit here. The slugs used to be
+ * slug_en/slug_pl columns; they are one translation bag now (translated-slug
+ * series, table 6).
  */
-export function postSlug(post: { slug_en: string; slug_pl?: string | null }, lang: Locale): string {
-  return lang === 'pl' ? (post.slug_pl || post.slug_en) : post.slug_en
+export function postSlug(
+  post: { slug: string; translations?: { slug?: TranslationBag } },
+  lang: Locale,
+): string {
+  return resolveTranslation(post.translations?.slug, lang) ?? post.slug
 }
 
 /**

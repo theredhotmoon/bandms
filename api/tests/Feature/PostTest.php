@@ -150,7 +150,7 @@ describe('POST /api/posts', function () {
 
         $this->postJson('/api/posts', ['title' => 'Hello World Post'])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'hello-world-post');
+            ->assertJsonPath('data.slug', 'hello-world-post');
     });
 
     it('creates a draft when published_at is null', function () {
@@ -219,26 +219,26 @@ describe('POST /api/posts', function () {
             ->assertJsonValidationErrors(['image']);
     });
 
-    // postSlug() on the public site blends slug_en and slug_pl into one
-    // effective namespace per locale (/pl/ serves slug_pl, falling back to
-    // slug_en) — a slug_pl that collides with a *different* post's slug_en
+    // The public site resolves a post's URL per locale (/pl/ serves the Polish
+    // slug, falling back to the English one) — so a Polish slug that collides
+    // with a *different* post's English slug
     // would make one of them unreachable under /pl/ with no build error.
-    it('rejects a slug_pl that collides with another post\'s slug_en', function () {
+    it('rejects a Polish slug that collides with another post\'s English slug', function () {
         $this->actingAsAdmin();
-        Post::factory()->create(['slug_en' => 'shared-slug']);
+        Post::factory()->create(['slug' => ['en' => 'shared-slug']]);
 
-        $this->postJson('/api/posts', ['title' => 'New Post', 'slug_pl' => 'shared-slug'])
+        $this->postJson('/api/posts', ['title' => 'New Post', 'slug' => ['pl' => 'shared-slug']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['slug_pl']);
+            ->assertJsonValidationErrors(['slug.pl']);
     });
 
-    it('rejects a slug_en that collides with another post\'s slug_pl', function () {
+    it('rejects an English slug that collides with another post\'s Polish slug', function () {
         $this->actingAsAdmin();
-        Post::factory()->create(['slug_pl' => 'shared-slug']);
+        Post::factory()->create(['slug' => ['en' => 'other-post', 'pl' => 'shared-slug']]);
 
-        $this->postJson('/api/posts', ['title' => 'New Post', 'slug_en' => 'shared-slug'])
+        $this->postJson('/api/posts', ['title' => 'New Post', 'slug' => ['en' => 'shared-slug']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['slug_en']);
+            ->assertJsonValidationErrors(['slug.en']);
     });
 
 });
@@ -307,21 +307,21 @@ describe('PUT /api/posts/{post}', function () {
         $this->putJson('/api/posts/9999', ['title' => 'X'])->assertNotFound();
     });
 
-    it('rejects updating slug_pl to collide with another post\'s slug_en', function () {
+    it('rejects updating the Polish slug to collide with another post\'s English slug', function () {
         $this->actingAsAdmin();
-        Post::factory()->create(['slug_en' => 'shared-slug']);
+        Post::factory()->create(['slug' => ['en' => 'shared-slug']]);
         $post = Post::factory()->create();
 
-        $this->putJson("/api/posts/{$post->id}", ['slug_pl' => 'shared-slug'])
+        $this->putJson("/api/posts/{$post->id}", ['slug' => ['pl' => 'shared-slug']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['slug_pl']);
+            ->assertJsonValidationErrors(['slug.pl']);
     });
 
-    it('allows a post to keep its own slug_en unchanged on update', function () {
+    it('allows a post to keep its own slug unchanged on update', function () {
         $this->actingAsAdmin();
-        $post = Post::factory()->create(['slug_en' => 'keep-me']);
+        $post = Post::factory()->create(['slug' => ['en' => 'keep-me']]);
 
-        $this->putJson("/api/posts/{$post->id}", ['slug_en' => 'keep-me'])
+        $this->putJson("/api/posts/{$post->id}", ['slug' => ['en' => 'keep-me']])
             ->assertSuccessful();
     });
 });
