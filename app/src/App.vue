@@ -57,9 +57,12 @@ watch(() => route.path, () => {
 
 /* Skip link — visible only on focus (WCAG 2.4.1) */
 .skip-link {
+  /* Parked above the viewport until focused. Opacity alone left a live,
+     invisible z-10000 link at top centre that took taps meant for the admin's
+     mobile top bar. */
   position: fixed;
   top: 0; left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -110%);
   opacity: 0;
   padding: 0.5rem 1.25rem;
   background: #fff;
@@ -72,7 +75,7 @@ watch(() => route.path, () => {
   border-radius: 0 0 4px 4px;
   white-space: nowrap;
 }
-.skip-link:focus { opacity: 1; outline: 3px solid #1f8f7a; outline-offset: 2px; }
+.skip-link:focus { transform: translateX(-50%); opacity: 1; outline: 3px solid #1f8f7a; outline-offset: 2px; }
 
 /* Suppress focus ring on programmatically-focused main wrapper */
 #main-content:focus { outline: none; }

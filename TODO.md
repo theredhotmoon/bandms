@@ -313,20 +313,6 @@ reverted — this wants a reviewed diff per file, not a regex.
 
 ## Other open items
 
-### The invisible skip link catches taps on the admin top bar
-`app/src/App.vue`'s `.skip-link` is hidden with `opacity: 0` only. It stays
-`position: fixed` at top centre with `z-index: 10000`, so it is a live,
-invisible link over the middle of the screen's top edge. Below 1024px that is
-the admin's fixed top bar: a tap there follows the skip link instead of
-reaching the bar. Found while testing #159 — `elementFromPoint` at the top
-centre returned the skip link, not the bar, even with a modal open.
-
-Fix: hide it off-screen until focused (`top: -100%` → `top: 0` on `:focus`, or
-`transform: translate(-50%, -110%)`) instead of fading it, so it takes no
-pointer hits at rest. `pointer-events: none` at rest alone also works. Check
-that it still appears on Tab, and that the public pages the SPA serves (fan
-account, ticket claim) keep it.
-
 ### Try the maintenance page against production, not just dev
 PR #108 added a Caddy `handle_errors` maintenance page (502/503/504 →
 `docker/caddy/maintenance/maintenance.html`), verified only against the local
