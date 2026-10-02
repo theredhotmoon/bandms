@@ -622,7 +622,7 @@ async function saveSocialLinks() {
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .section-tab:hover { color: var(--c-94a3b8); }
-.section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 
 .section-hint {
   font-size: var(--fs-xs); color: var(--c-475569); line-height: 1.5;
@@ -644,7 +644,7 @@ async function saveSocialLinks() {
   transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .bio-tab:hover { color: var(--c-94a3b8); }
-.bio-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.bio-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 .bio-tab.has-error { color: var(--c-f87171); }
 .bio-tab.has-error.active { border-bottom-color: var(--c-f87171); }
 .bio-lang-switcher { display: flex; gap: 0.25rem; padding-bottom: 0.25rem; }
@@ -713,7 +713,7 @@ async function saveSocialLinks() {
   transition: background 120ms, border-color 120ms;
 }
 .career-level-card:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
-.career-level-card--active { background: var(--c-1f1f1f); border-color: var(--c-888888); box-shadow: 0 0 0 1px var(--c-888888); }
+.career-level-card--active { background: var(--c-1f1f1f); border-color: var(--c-888888-line); box-shadow: 0 0 0 1px var(--c-888888-line); }
 .career-level-emoji { font-size: var(--fs-xl); line-height: 1; }
 .career-level-name  { font-size: var(--fs-xs); font-weight: 700; color: var(--c-e2e8f0); }
 .career-level-sub   { font-size: var(--fs-2xs); color: var(--c-475569); text-align: center; }

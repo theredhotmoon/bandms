@@ -295,7 +295,7 @@ const emit = defineEmits<{
   min-width: 10rem; width: 100%;
 }
 .field-input:focus { border-color: var(--c-5154e5); }
-.field-input::placeholder { color: var(--c-1e2a40); }
+.field-input::placeholder { color: var(--c-475569); }
 .toggle-label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; margin-top: 0.35rem; }
 .toggle-input { accent-color: var(--c-888888); width: 0.9rem; height: 0.9rem; cursor: pointer; }
 .toggle-text { font-size: var(--fs-xs); color: var(--c-94a3b8); }

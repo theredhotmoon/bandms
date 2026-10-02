@@ -391,7 +391,7 @@ async function confirmDelete() {
 .member-item--open        { background: var(--c-141414); border-color: var(--c-444444); }
 .member-item--former      { opacity: 0.6; }
 .member-item--former.member-item--open { opacity: 0.85; }
-.member-item--dragging    { opacity: 0.35; border-color: var(--c-888888); cursor: grabbing; }
+.member-item--dragging    { opacity: 0.35; border-color: var(--c-888888-line); cursor: grabbing; }
 .member-item[draggable]   { cursor: grab; }
 
 .item-avatar { flex-shrink: 0; }
@@ -476,7 +476,7 @@ async function confirmDelete() {
   margin-bottom: -1px;
 }
 .detail-tab:hover  { color: var(--c-64748b); }
-.detail-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.detail-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 
 /* Tab content */
 .tab-content {

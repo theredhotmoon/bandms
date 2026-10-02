@@ -488,7 +488,7 @@ function handleSubmit() {
   transition: border-color 150ms, background 150ms;
   min-height: 120px; display: flex; align-items: center; justify-content: center;
 }
-.cover-drop:hover { border-color: var(--c-888888); background: var(--c-141414); }
+.cover-drop:hover { border-color: var(--c-888888-line); background: var(--c-141414); }
 .cover-drop.has-image { border-style: solid; border-color: var(--c-2a2a2a); min-height: 0; }
 .cover-img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: var(--c-0d0d0d); }
 .cover-placeholder { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1.5rem; }
@@ -525,7 +525,7 @@ function handleSubmit() {
   transition: border-color 150ms, box-shadow 150ms;
 }
 .lyrics-textarea:focus {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); /* token-lint-ignore: indigo focus glow, same on both themes */
 }
 </style>

@@ -345,7 +345,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .main-tab:hover { color: var(--c-64748b); }
-.main-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.main-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 
 .split-view { flex: 1; display: flex; overflow: hidden; }
 
@@ -379,7 +379,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   flex: 1; background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.3rem;
   color: var(--c-e2e8f0); font-size: var(--fs-xs); padding: 0.3rem 0.5rem; outline: none; font-family: inherit;
 }
-.new-input:focus { border-color: var(--c-888888); }
+.new-input:focus { border-color: var(--c-888888-line); }
 .btn-create {
   padding: 0.25rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
@@ -408,7 +408,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   padding: 0.05rem 0.3rem;
 }
 .del-btn {
-  background: none; border: none; cursor: pointer; color: var(--c-2a2a2a); font-size: var(--fs-2xs);
+  background: none; border: none; cursor: pointer; color: var(--c-475569); font-size: var(--fs-2xs);
   padding: 0.1rem 0.2rem; transition: color 100ms; flex-shrink: 0; margin-top: 0.1rem;
 }
 .del-btn:hover { color: var(--c-f87171); }
@@ -486,7 +486,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }
-.field-input:focus { border-color: var(--c-888888); }
+.field-input:focus { border-color: var(--c-888888-line); }
 
 .btn-save-song {
   padding: 0.4rem 1rem; border-radius: 0.4rem; font-size: var(--fs-xs); font-weight: 600;

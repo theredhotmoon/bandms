@@ -553,7 +553,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 .blm-drop:hover,
 .blm-drop--active {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   background: var(--c-100e30);
 }
 
@@ -782,7 +782,7 @@ function isAnyUpdatePending(id: number): boolean {
   gap: 0.25rem;
 }
 
-.blm-meta-sep { color: var(--c-2a2a2a); }
+.blm-meta-sep { color: var(--c-2a2a2a); } /* contrast-ignore: decorative "·" separator, the text on both sides carries the meaning */
 
 /* ── Card action buttons ───────────────────────────────────── */
 .blm-card-actions {
@@ -821,7 +821,7 @@ function isAnyUpdatePending(id: number): boolean {
   color: var(--c-fbbf24);
   border-color: var(--c-78350f);
 }
-.blm-action-btn--star:disabled { color: var(--c-92400e); } /* a saturated amber that reads on both themes */
+.blm-action-btn--star:disabled { color: var(--c-92400e); } /* contrast-ignore: disabled control, which WCAG 1.4.3 exempts; a saturated amber that reads on both themes */
 
 .blm-action-btn--deprecate:hover:not(:disabled) {
   background: var(--c-1a1210);

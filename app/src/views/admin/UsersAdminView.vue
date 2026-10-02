@@ -375,7 +375,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   transition: border-color 120ms, background 120ms;
 }
 .role-card:hover        { border-color: var(--c-444444); background: var(--c-12123a); }
-.role-card--active      { border-color: var(--c-888888) !important; background: var(--c-1f1f1f) !important; }
+.role-card--active      { border-color: var(--c-888888-line) !important; background: var(--c-1f1f1f) !important; }
 .role-card-name         { font-size: var(--fs-sm); font-weight: 700; color: var(--c-e2e8f0); }
 .role-card-desc         { font-size: var(--fs-2xs); color: var(--c-475569); line-height: 1.4; }
 .role-card--active .role-card-name { color: var(--c-d0d0d0); }

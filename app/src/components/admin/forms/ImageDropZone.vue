@@ -123,7 +123,7 @@ defineExpose({ clear })
   transition: border-color 0.15s, background 0.15s;
   background: var(--c-0e0c2a);
 }
-.drop-zone.active, .drop-zone:hover { border-color: var(--c-888888); background: var(--c-1a1a1a); }
+.drop-zone.active, .drop-zone:hover { border-color: var(--c-888888-line); background: var(--c-1a1a1a); }
 .drop-icon  { font-size: 1.5rem; line-height: 1; }
 .drop-label { font-size: var(--fs-base); font-weight: 600; color: var(--c-d0d0d0); }
 .drop-hint  { font-size: var(--fs-xs); color: var(--c-475569); }
@@ -148,7 +148,7 @@ defineExpose({ clear })
 }
 .card-order {
   position: absolute; top: 5px; left: 5px;
-  background: color-mix(in srgb, var(--c-888888) 80%, transparent); color: var(--c-ffffff);
+  background: color-mix(in srgb, var(--c-888888-line) 80%, transparent); color: var(--c-ffffff);
   font-size: var(--fs-2xs); font-weight: 700;
   width: 20px; height: 20px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -163,7 +163,7 @@ defineExpose({ clear })
   border-bottom: 1px solid var(--c-2a2a2a); color: var(--c-e2e8f0);
   font-size: var(--fs-xs); padding: 2px 0; outline: none;
 }
-.card-title-input:focus { border-bottom-color: var(--c-888888); }
+.card-title-input:focus { border-bottom-color: var(--c-888888-line); }
 .card-filename { font-size: var(--fs-2xs); color: var(--c-475569); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-actions { display: flex; gap: 3px; padding: 0.35rem 0.5rem; border-top: 1px solid var(--c-252525); }
 .card-btn {

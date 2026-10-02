@@ -475,13 +475,13 @@ async function uploadPhotos() {
 }
 .rp-progress-wrap  { display: flex; flex-direction: column; gap: 0.3rem; }
 .rp-progress-bar   { height: 4px; background: var(--c-252525); border-radius: 9999px; overflow: hidden; }
-.rp-progress-fill  { height: 100%; background: var(--c-888888); border-radius: 9999px; transition: width 0.2s ease; }
+.rp-progress-fill  { height: 100%; background: var(--c-888888-line); border-radius: 9999px; transition: width 0.2s ease; }
 .rp-progress-label { font-size: var(--fs-2xs); color: var(--c-94a3b8); text-align: center; }
 .rp-btn-upload {
   padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: var(--fs-xs);
   font-weight: 600; cursor: pointer; background: var(--c-333333);
-  border: 1px solid var(--c-888888); color: var(--c-ffffff); transition: background 100ms;
+  border: 1px solid var(--c-888888-line); color: var(--c-ffffff); transition: background 100ms;
 }
-.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888); }
+.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888-line); }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 </style>

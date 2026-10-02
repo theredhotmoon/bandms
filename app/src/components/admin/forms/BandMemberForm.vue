@@ -356,7 +356,7 @@ function submit() {
 }
 .main-inst-card:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 .main-inst-card--on {
-  border-color: var(--c-888888); color: var(--c-ffffff);
+  border-color: var(--c-888888-line); color: var(--c-ffffff);
   background: var(--c-2a2a2a);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-ffffff) 15%, transparent);
 }
@@ -373,7 +373,7 @@ function submit() {
   transition: border-color 100ms, color 100ms, background 100ms;
 }
 .instrument-check:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
-.instrument-check--on { border-color: var(--c-888888); color: var(--c-ffffff); background: var(--c-2a2a2a); }
+.instrument-check--on { border-color: var(--c-888888-line); color: var(--c-ffffff); background: var(--c-2a2a2a); }
 
 /* ── Status toggle ──────────────────────────────────────────── */
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
@@ -408,7 +408,7 @@ function submit() {
   display: flex; flex-direction: column; gap: 0.1rem;
   transition: border-color 120ms, background 120ms;
 }
-.aside-drop:hover, .aside-drop--active { border-color: var(--c-888888); background: var(--c-1a1a1a); }
+.aside-drop:hover, .aside-drop--active { border-color: var(--c-888888-line); background: var(--c-1a1a1a); }
 .aside-drop--has { border-style: solid; border-color: var(--c-2a2a2a); }
 .aside-drop-label { font-size: var(--fs-xs); font-weight: 600; color: var(--c-d0d0d0); }
 .aside-drop-hint  { font-size: var(--fs-2xs); color: var(--c-475569); }

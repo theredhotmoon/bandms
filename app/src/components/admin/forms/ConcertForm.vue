@@ -674,7 +674,7 @@ function submit() {
 }
 
 .lineup-panel.drag-over {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   background: var(--c-111111);
 }
 
@@ -734,11 +734,11 @@ function submit() {
 .lineup-item:hover { background: var(--c-1a1a1a); border-color: var(--c-2a2a2a); }
 .lineup-item.is-main {
   background: var(--c-2a2a2a);
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   color: var(--c-d0d0d0);
   cursor: grab;
 }
-.lineup-item.drop-above { border-top: 2px solid var(--c-888888); }
+.lineup-item.drop-above { border-top: 2px solid var(--c-888888-line); }
 
 .drag-dots { font-size: var(--fs-base); color: var(--c-334155); flex-shrink: 0; line-height: 1; }
 .is-main .drag-dots { color: var(--c-888888); }
@@ -787,7 +787,7 @@ function submit() {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
-.play-time-input:focus { border-color: var(--c-888888); }
+.play-time-input:focus { border-color: var(--c-888888-line); }
 
 .remove-btn {
   flex-shrink: 0;
@@ -820,7 +820,7 @@ function submit() {
   align-items: center;
   justify-content: center;
 }
-.poster-drop:hover { border-color: var(--c-888888); background: var(--c-111111); }
+.poster-drop:hover { border-color: var(--c-888888-line); background: var(--c-111111); }
 .poster-drop.has-image { border-style: solid; border-color: var(--c-2a2a2a); min-height: 0; }
 
 .poster-img {
@@ -905,7 +905,7 @@ function submit() {
   transition: border-color 100ms, color 100ms, background 100ms;
 }
 .preset-chip:hover, .preset-chip.active {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   color: var(--c-d0d0d0);
   background: var(--c-1a1a1a);
 }
@@ -928,5 +928,5 @@ function submit() {
   cursor: pointer;
   transition: background 100ms, border-color 100ms;
 }
-.btn-add-link:hover { background: var(--c-2a2a2a); border-color: var(--c-888888); }
+.btn-add-link:hover { background: var(--c-2a2a2a); border-color: var(--c-888888-line); }
 </style>

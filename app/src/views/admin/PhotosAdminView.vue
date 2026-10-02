@@ -399,7 +399,7 @@ async function confirmDelete() {
 
 .cover-cell { width:52px; height:40px; }
 .cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid var(--c-333333); }
-.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:var(--fs-lg); color:var(--c-333333); }
+.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:var(--fs-lg); color:var(--c-333333); } /* contrast-ignore: holds an emoji, which ignores color */
 
 .photo-count-btn {
   color: var(--c-c0c0c0); background: transparent; border: none;
@@ -452,5 +452,5 @@ async function confirmDelete() {
   margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--c-333333);
 }
 .reorder-hint { font-size:var(--fs-xs); color:var(--c-475569); }
-.reorder-hint-idle { margin-top:0.6rem; font-size:var(--fs-xs); color:var(--c-333333); text-align:center; }
+.reorder-hint-idle { margin-top:0.6rem; font-size:var(--fs-xs); color:var(--c-475569); text-align:center; }
 </style>

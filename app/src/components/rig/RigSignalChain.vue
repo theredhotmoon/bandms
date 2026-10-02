@@ -106,7 +106,7 @@ function buildInputs() {
   display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
   padding: 0.55rem 0.875rem;
   background: var(--c-0a0c1e); border: 1px solid var(--c-2a2860); border-radius: 0.5rem;
-  border-left: 3px solid var(--c-888888);
+  border-left: 3px solid var(--c-888888-line);
 }
 .build-icon { font-size: var(--fs-base); flex-shrink: 0; }
 .build-body { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }

@@ -196,7 +196,7 @@ function revertActive() {
   transition: color 120ms, border-color 120ms;
 }
 .rig-tab:hover { color: var(--c-64748b); }
-.rig-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.rig-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 .tab-icon { font-size: var(--fs-base); }
 
 .override-dot {
@@ -231,5 +231,5 @@ function revertActive() {
   resize: vertical; transition: border-color 150ms;
 }
 .foh-textarea:focus { border-color: var(--c-5154e5); }
-.foh-textarea::placeholder { color: var(--c-1e2a40); }
+.foh-textarea::placeholder { color: var(--c-475569); }
 </style>

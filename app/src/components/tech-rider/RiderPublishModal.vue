@@ -185,7 +185,7 @@ const ready = computed(() => !blocked.value && warnings.value.length === 0)
 .stop-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-f87171); margin-bottom: 0.35rem; }
 .stop-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .stop-list li { font-size: var(--fs-xs); color: var(--c-e0a5a5); line-height: 1.5; }
-.stop-hint { font-size: var(--fs-xs); color: var(--c-9a6a6a); margin: 0.4rem 0 0; line-height: 1.5; }
+.stop-hint { font-size: var(--fs-xs); color: var(--c-fca5a5); margin: 0.4rem 0 0; line-height: 1.5; }
 
 .warn {
   border: 1px solid var(--c-78350f); border-radius: 0.5rem;

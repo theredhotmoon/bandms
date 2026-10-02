@@ -328,7 +328,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
 .btn-search {
   padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 500;
-  cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-888888); color: var(--c-d0d0d0);
+  cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-888888-line); color: var(--c-d0d0d0);
   transition: background 120ms; white-space: nowrap; flex-shrink: 0;
 }
 .btn-search:hover:not(:disabled) { background: var(--c-2e2a6e); }

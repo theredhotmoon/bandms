@@ -98,7 +98,7 @@ function cmd(action: () => void) {
   background: var(--c-141414);
 }
 .rich-editor-wrap:focus-within {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
 }
 .toolbar {
   display: flex;

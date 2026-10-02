@@ -184,7 +184,7 @@ function onDragEnd() {
 
 .social-links-editor__handle {
   cursor: grab;
-  color: var(--c-4b5563);
+  color: var(--c-475569);
   display: flex;
   align-items: center;
   flex-shrink: 0;

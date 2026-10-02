@@ -198,8 +198,8 @@ function moveRow(id: string, dir: -1 | 1) {
   border-bottom: 1px solid transparent; padding: 0.1rem 0.25rem;
   transition: border-color 120ms;
 }
-.cell-input:focus { border-bottom-color: var(--c-888888); }
-.cell-input::placeholder { color: var(--c-1e2a40); }
+.cell-input:focus { border-bottom-color: var(--c-888888-line); }
+.cell-input::placeholder { color: var(--c-475569); }
 
 .cell-select {
   width: 100%; background: var(--c-111111); border: none; outline: none;
@@ -207,11 +207,11 @@ function moveRow(id: string, dir: -1 | 1) {
   border-bottom: 1px solid transparent; padding: 0.1rem 0.1rem; appearance: none;
   transition: border-color 120ms;
 }
-.cell-select:focus { border-bottom-color: var(--c-888888); }
+.cell-select:focus { border-bottom-color: var(--c-888888-line); }
 .cell-select option { background: var(--c-141414); }
 
 .del-btn {
-  background: none; border: none; cursor: pointer; color: var(--c-3d1a1a); font-size: var(--fs-xs);
+  background: none; border: none; cursor: pointer; color: var(--c-475569); font-size: var(--fs-xs);
   transition: color 120ms; padding: 0.2rem 0.4rem;
 }
 .del-btn:hover { color: var(--c-f87171); }

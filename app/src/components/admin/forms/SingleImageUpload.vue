@@ -74,7 +74,7 @@ function remove() {
   background: var(--c-0e0c2a);
   transition: border-color 0.15s, background 0.15s;
 }
-.siu-drop.active, .siu-drop:hover { border-color: var(--c-888888); background: var(--c-1a1a1a); }
+.siu-drop.active, .siu-drop:hover { border-color: var(--c-888888-line); background: var(--c-1a1a1a); }
 .siu-icon  { font-size: var(--fs-xl); line-height: 1; }
 .siu-label { font-size: var(--fs-sm); font-weight: 600; color: var(--c-d0d0d0); }
 .siu-hint  { font-size: var(--fs-2xs); color: var(--c-475569); }

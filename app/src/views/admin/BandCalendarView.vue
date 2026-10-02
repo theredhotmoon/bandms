@@ -216,7 +216,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 }
 :deep(.fc-button-primary:hover) { background: var(--c-333333) !important; }
 :deep(.fc-button-primary:not(:disabled).fc-button-active) {
-  background: var(--c-888888) !important; border-color: var(--c-888888) !important;
+  background: var(--c-888888-line) !important; border-color: var(--c-888888-line) !important;
 }
 :deep(.fc-toolbar-title) { font-size: var(--fs-lg) !important; font-weight: 700 !important; color: var(--c-f1f5f9) !important; }
 :deep(.fc-event) { cursor: pointer; border-radius: 3px !important; border: none !important; font-size: var(--fs-xs) !important; }

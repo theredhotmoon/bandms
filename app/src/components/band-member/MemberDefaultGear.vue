@@ -212,7 +212,7 @@ async function save() {
   font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: var(--c-5154e5); }
-.field-input::placeholder { color: var(--c-1e2a40); }
+.field-input::placeholder { color: var(--c-475569); }
 
 .own-gear-row { display: flex; align-items: center; gap: 0.875rem; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
@@ -243,7 +243,7 @@ async function save() {
   background: transparent; border: 1px dashed var(--c-444444); border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
-.btn-add:hover { background: var(--c-1a1a1a); border-color: var(--c-888888); }
+.btn-add:hover { background: var(--c-1a1a1a); border-color: var(--c-888888-line); }
 
 .btn-save {
   padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;

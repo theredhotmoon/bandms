@@ -53,7 +53,7 @@ defineProps<Props>()
 .cover-preview {
   background: var(--c-0d0d0d); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
   padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
-  border-left: 3px solid var(--c-888888);
+  border-left: 3px solid var(--c-888888-line);
 }
 .cover-band { font-size: 1.5rem; font-weight: 800; color: var(--c-e2e8f0); letter-spacing: -.02em; }
 .cover-title { font-size: var(--fs-base); color: var(--c-c0c0c0); font-weight: 600; }

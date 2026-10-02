@@ -496,7 +496,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; key: string }[] = [
   font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }
-.field-input:focus { border-color: var(--c-888888); }
+.field-input:focus { border-color: var(--c-888888-line); }
 .field-input option { background: var(--c-141414); }
 select.field-input {
   appearance: none; -webkit-appearance: none; padding-right: 2rem; cursor: pointer;
@@ -576,7 +576,7 @@ select.field-input {
   background: transparent; border: 1px dashed var(--c-444444); border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
-.btn-add-song:hover { background: var(--c-12103a); border-color: var(--c-888888); }
+.btn-add-song:hover { background: var(--c-12103a); border-color: var(--c-888888-line); }
 
 .add-panel {
   margin-top: 0.5rem; background: var(--c-111111); border: 1px solid var(--c-2a2a2a);
@@ -589,7 +589,7 @@ select.field-input {
   border: 1px solid transparent; cursor: pointer; text-align: left; font-size: var(--fs-sm); color: var(--c-e2e8f0);
   transition: border-color 100ms;
 }
-.add-song-row:hover { border-color: var(--c-888888); }
+.add-song-row:hover { border-color: var(--c-888888-line); }
 .add-song-dur { font-size: var(--fs-2xs); color: var(--c-334155); }
 .add-song-empty { font-size: var(--fs-xs); color: var(--c-334155); text-align: center; padding: 0.75rem 0; }
 .add-new-row { display: flex; gap: 0.5rem; }
@@ -609,14 +609,14 @@ select.field-input {
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
 .notes-tab:hover { color: var(--c-64748b); }
-.notes-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.notes-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 .notes-textarea {
   width: 100%; padding: 0.5rem 0.625rem; border-radius: 0.4rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-141414); color: var(--c-e2e8f0);
   font-size: var(--fs-sm); font-family: inherit; outline: none; resize: vertical;
   transition: border-color 150ms; box-sizing: border-box;
 }
-.notes-textarea:focus { border-color: var(--c-888888); }
+.notes-textarea:focus { border-color: var(--c-888888-line); }
 
 .bottom-bar {
   border-top: 1px solid var(--c-1a1a1a); padding: 0.625rem 1rem;

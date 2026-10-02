@@ -338,7 +338,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
 }
 .icon-btn:hover { border-color: var(--c-555555-line); }
 .btn-remove {
-  background: none; border: none; cursor: pointer; color: var(--c-3d1a1a);
+  background: none; border: none; cursor: pointer; color: var(--c-475569);
   font-size: var(--fs-xs); padding: 0.25rem 0.4rem; flex-shrink: 0;
 }
 .btn-remove:hover { color: var(--c-f87171); }

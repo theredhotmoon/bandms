@@ -232,7 +232,7 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), date
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0);
   font-size: var(--fs-sm); outline: none; font-family: inherit;
 }
-.field-input:focus { border-color: var(--c-888888); }
+.field-input:focus { border-color: var(--c-888888-line); }
 
 .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
 .field-label { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-7c8fa6); }
@@ -253,10 +253,10 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), date
   cursor: pointer; text-align: left; transition: border-color 100ms;
   width: 100%;
 }
-.result-row:hover { border-color: var(--c-888888); }
+.result-row:hover { border-color: var(--c-888888-line); }
 .result-name { font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0); }
 .result-venue { font-size: var(--fs-2xs); color: var(--c-475569); }
-.result-count { font-size: var(--fs-2xs); color: var(--c-4a5568); white-space: nowrap; }
+.result-count { font-size: var(--fs-2xs); color: var(--c-64748b); white-space: nowrap; }
 .result-arrow { color: var(--c-888888); font-size: var(--fs-md); }
 .setlist-row-info { display: flex; flex-direction: column; gap: 0.1rem; }
 

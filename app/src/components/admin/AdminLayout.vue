@@ -18,9 +18,18 @@ defineProps<{ fill?: boolean }>()
 
 // Below the `lg` breakpoint the sidebar is an off-canvas drawer. It closes on
 // every navigation and on Escape, and the scrim is a real button so it is
-// reachable without a pointer.
+// reachable without a pointer. While it is open, <main> is inert, so Tab
+// cycles through the drawer and the top bar rather than the page behind the
+// scrim.
 const menuOpen = ref(false)
-function closeMenu() { menuOpen.value = false }
+const menuButton = ref<HTMLButtonElement | null>(null)
+const sidebar = ref<HTMLElement | null>(null)
+function closeMenu() {
+  // The closed drawer is visibility:hidden, which drops focus to <body> if it
+  // was inside. Hand it back to the control that opened the drawer instead.
+  if (menuOpen.value && sidebar.value?.contains(document.activeElement)) menuButton.value?.focus()
+  menuOpen.value = false
+}
 function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') closeMenu() } // i18n-ignore: KeyboardEvent.key value
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
@@ -94,7 +103,7 @@ watch(() => route.path, (path) => {
 <template>
   <div class="admin-shell" :class="{ 'admin-shell--menu-open': menuOpen, 'admin-shell--fill': fill }">
     <header class="topbar">
-      <button type="button" class="topbar-menu" :aria-expanded="menuOpen" :aria-label="menuOpen ? $t('shell.menu.close') : $t('shell.menu.open')" @click="menuOpen = !menuOpen">
+      <button ref="menuButton" type="button" class="topbar-menu" :aria-expanded="menuOpen" :aria-label="menuOpen ? $t('shell.menu.close') : $t('shell.menu.open')" @click="menuOpen = !menuOpen">
         <svg v-if="!menuOpen" class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
         <svg v-else class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
       </button>
@@ -105,7 +114,7 @@ watch(() => route.path, (path) => {
 
     <button v-if="menuOpen" type="button" class="scrim" :aria-label="$t('shell.menu.close')" @click="closeMenu" />
 
-    <aside class="sidebar">
+    <aside ref="sidebar" class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-mark">
           <span class="logo-band">Band</span><span class="logo-ms">MS</span> <!-- i18n-ignore: product wordmark -->
@@ -340,7 +349,7 @@ watch(() => route.path, (path) => {
       </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" :inert="menuOpen || undefined">
       <RebuildBar />
       <div class="main-content-body">
         <slot />
@@ -618,7 +627,13 @@ watch(() => route.path, (path) => {
   max-width: 96rem;
 }
 
-.admin-shell--fill .main-content { height: 100vh; overflow: hidden; }
+.admin-shell--fill .main-content {
+  /* dvh, not vh: on mobile 100vh is the viewport with the browser toolbar
+     retracted, so the editor's footer would sit underneath it. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
 .admin-shell--fill .main-content-body { min-height: 0; }
 /* A printed rider runs past one page; the viewport clamp would cut it off. */
 @media print {
@@ -632,7 +647,11 @@ watch(() => route.path, (path) => {
   .scrim { display: block; }
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    /* Starts under the top bar, and is sized by top/bottom rather than the
+       base rule's 100vh, which on mobile runs under the browser toolbar and
+       hides the footer (theme, language, sign out). */
+    inset: var(--admin-topbar-h) auto 0 0;
+    height: auto;
     z-index: 50;
     width: min(18rem, 86vw);
     transform: translateX(-100%);
@@ -642,6 +661,10 @@ watch(() => route.path, (path) => {
     transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), visibility 0s linear 220ms;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   }
+  /* While the drawer is open the menu button is its close control, so the
+     bar rises above the drawer (50) and scrim (45). Only then: at rest it
+     must stay under modals, which also sit at 50. */
+  .admin-shell--menu-open .topbar { z-index: 55; }
   .admin-shell--menu-open .sidebar {
     transform: none;
     visibility: visible;
@@ -650,6 +673,7 @@ watch(() => route.path, (path) => {
   .main-content { padding-top: var(--admin-topbar-h); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sidebar, .chevron { transition: none; }
+  /* The open-state selector is more specific, so it has to be named too. */
+  .sidebar, .admin-shell--menu-open .sidebar, .chevron { transition: none; }
 }
 </style>

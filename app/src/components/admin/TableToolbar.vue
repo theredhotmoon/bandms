@@ -71,7 +71,7 @@ defineProps<{
   transition: border-color 150ms;
 }
 .search-input::placeholder { color: var(--c-64748b); }
-.search-input:focus { border-color: var(--c-aaaaaa); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent); }
+.search-input:focus { border-color: var(--c-aaaaaa-line); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent); }
 .search-input::-webkit-search-cancel-button { display: none; }
 
 .result-count {

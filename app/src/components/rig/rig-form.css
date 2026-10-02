@@ -21,7 +21,7 @@
   font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: var(--c-5154e5); }
-.field-input::placeholder { color: var(--c-1e2a40); }
+.field-input::placeholder { color: var(--c-475569); }
 .field-input option { background: var(--c-141414); }
 
 .type-buttons { display: flex; gap: 0.375rem; flex-wrap: wrap; }
@@ -31,7 +31,7 @@
   transition: background 100ms, border-color 100ms, color 100ms;
 }
 .type-btn:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
-.type-btn--on   { background: var(--c-2a2a2a); border-color: var(--c-888888); color: var(--c-d0d0d0); }
+.type-btn--on   { background: var(--c-2a2a2a); border-color: var(--c-888888-line); color: var(--c-d0d0d0); }
 
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle-input { accent-color: var(--c-888888); width: 1rem; height: 1rem; cursor: pointer; }

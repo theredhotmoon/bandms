@@ -600,8 +600,8 @@ const TYPE_COLOURS: Record<string, string> = {
   display: inline-block; padding: 0.15rem 0.5rem;
   border-radius: 0.25rem; border: 1px solid; font-size: var(--fs-2xs); font-weight: 600;
 }
-.status-available   { background: color-mix(in srgb, var(--c-059669) 13%, transparent); color: var(--c-059669); border-color: color-mix(in srgb, var(--c-059669) 27%, transparent); }
-.status-presale     { background: color-mix(in srgb, var(--c-b45309) 13%, transparent); color: var(--c-b45309); border-color: color-mix(in srgb, var(--c-b45309) 27%, transparent); }
+.status-available   { background: color-mix(in srgb, var(--c-34d399) 13%, transparent); color: var(--c-34d399); border-color: color-mix(in srgb, var(--c-34d399) 27%, transparent); }
+.status-presale     { background: color-mix(in srgb, var(--c-fbbf24) 13%, transparent); color: var(--c-fbbf24); border-color: color-mix(in srgb, var(--c-fbbf24) 27%, transparent); }
 .status-unavailable { background: color-mix(in srgb, var(--c-333333) 13%, transparent); color: var(--c-555555); border-color: color-mix(in srgb, var(--c-333333) 27%, transparent); }
 
 /* Photos section */
@@ -636,9 +636,9 @@ const TYPE_COLOURS: Record<string, string> = {
 .rp-upload-row { display: flex; gap: 0.5rem; }
 .rp-btn-upload {
   padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
-  cursor: pointer; background: var(--c-333333); border: 1px solid var(--c-888888); color: var(--c-ffffff);
+  cursor: pointer; background: var(--c-333333); border: 1px solid var(--c-888888-line); color: var(--c-ffffff);
 }
-.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888); }
+.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888-line); }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 .hidden { display: none; }
 

@@ -444,7 +444,7 @@ function handleSubmit() {
   cursor: pointer;
   transition: border-color 120ms, color 120ms, background 120ms;
 }
-.chip-label--on { border-color: var(--c-666666); color: var(--c-e2e8f0); background: var(--c-1f1f1f); }
+.chip-label--on { border-color: var(--c-666666-line); color: var(--c-e2e8f0); background: var(--c-1f1f1f); }
 .chip-cb { display: none; }
 
 /* Pricing */

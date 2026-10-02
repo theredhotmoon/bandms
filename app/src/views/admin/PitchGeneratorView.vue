@@ -285,7 +285,7 @@ async function copyPitch() {
   color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.4rem 0.625rem; outline: none; font-family: inherit;
   transition: border-color 150ms;
 }
-.ctrl-input:focus { border-color: var(--c-888888); }
+.ctrl-input:focus { border-color: var(--c-888888-line); }
 .warning-box {
   font-size: var(--fs-xs); color: var(--c-fbbf24); background: var(--c-1a160a); border: 1px solid var(--c-433410);
   border-radius: 0.375rem; padding: 0.5rem 0.75rem;

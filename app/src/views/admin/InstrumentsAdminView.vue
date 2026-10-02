@@ -261,5 +261,5 @@ async function confirmDelete() {
   font-size: var(--fs-2xs); color: var(--c-94a3b8); background: transparent;
   cursor: pointer; transition: color .15s, border-color .15s;
 }
-.icon-suggestion:hover { color: var(--c-e2e8f0); border-color: var(--c-64748b); }
+.icon-suggestion:hover { color: var(--c-e2e8f0); border-color: var(--c-64748b-line); }
 </style>

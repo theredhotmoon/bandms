@@ -74,6 +74,9 @@ test.describe('Admin Concerts — CRUD flow', () => {
   const concertName = `E2E Concert ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const ourRow = (page: import('@playwright/test').Page) =>
     page.locator('tbody tr').filter({ hasText: concertName })
+  // The table pages at 15 rows, newest date first, so enough leftovers dated
+  // after ours push our row off page 1. Searching by the name pins it there.
+  const showOurRow = (page: import('@playwright/test').Page) => searchTable(page, concertName)
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/concerts')
@@ -122,6 +125,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
     // Toast
     await expectToast(page, 'Concert created')
 
+    await showOurRow(page)
     await expect(ourRow(page)).toHaveCount(1)
     await expect(ourRow(page)).toContainText(futureDate)
   })
@@ -132,6 +136,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
   test('edit concert — modal opens with Edit Concert title, date updated, toast confirms', async ({
     page,
   }) => {
+    await showOurRow(page)
     const row = ourRow(page)
 
     await expect(row).toBeVisible()
@@ -164,6 +169,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
   test('delete concert — cancel keeps row, confirm removes row and shows toast', async ({
     page,
   }) => {
+    await showOurRow(page)
     const row = ourRow(page)
 
     await expect(row).toBeVisible()

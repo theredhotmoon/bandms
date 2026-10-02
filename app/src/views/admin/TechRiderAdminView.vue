@@ -541,7 +541,7 @@ async function discardVersion(id: number) {
   transition: color 120ms, border-color 120ms;
 }
 .section-tab:hover { color: var(--c-64748b); }
-.section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
 .tab-icon { font-size: var(--fs-base); }
 .tab-count {
   font-size: var(--fs-2xs); font-weight: 700; color: var(--c-94a3b8);

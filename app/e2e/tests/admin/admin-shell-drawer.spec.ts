@@ -48,6 +48,56 @@ test.describe('Admin shell — drawer below 1024px', () => {
     await expect(navLink).toBeFocused()
   })
 
+  test('Escape hands focus back to the menu button', async ({ page }) => {
+    await open(page, '/admin')
+
+    await page.locator('.topbar-menu').click()
+    const navLink = page.locator('.sidebar-nav a').first()
+    await navLink.focus()
+    await page.keyboard.press('Escape')
+
+    await expect(navLink).toBeHidden()
+    await expect(page.locator('.topbar-menu')).toBeFocused()
+  })
+
+  test('the menu button stays on top of the open drawer and closes it', async ({ page }) => {
+    await open(page, '/admin')
+
+    const button = page.locator('.topbar-menu')
+    await button.click()
+    await expect(button).toHaveAttribute('aria-expanded', 'true')
+    // A plain click, no force: it fails if the drawer or scrim covers the button.
+    await button.click()
+    await expect(page.locator('.sidebar-nav a').first()).toBeHidden()
+  })
+
+  test('with reduced motion the drawer opens without a transition', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await open(page, '/admin')
+
+    await page.locator('.topbar-menu').click()
+    // App.vue clamps every transition to 0.01ms under reduced motion, so
+    // "instant" is anything under 10ms rather than exactly 0.
+    const duration = await page.locator('.sidebar').evaluate((el) => getComputedStyle(el).transitionDuration)
+    expect(duration.split(',').every((d) => parseFloat(d) < 0.01)).toBe(true)
+  })
+
+  test('rebuild settings modal renders above the top bar', async ({ page }) => {
+    await open(page, '/admin')
+
+    const gear = page.locator('.rebuild-bar .btn-settings')
+    test.skip((await gear.count()) === 0, 'No rebuild bar on this instance')
+    await gear.click()
+
+    // A point inside the top bar, right of centre (App.vue's invisible skip
+    // link sits at top centre); the modal's backdrop must win it.
+    const onTop = await page.evaluate(
+      (x) => document.elementFromPoint(x, 20)?.closest('.modal-backdrop') !== null,
+      TABLET.width - 16,
+    )
+    expect(onTop).toBe(true)
+  })
+
   test('desktop sidebar stays visible', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin')

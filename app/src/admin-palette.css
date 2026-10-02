@@ -143,13 +143,19 @@
   --c-4d3c10: #4d3c10;
   --c-5154e5: #5154e5;
   --c-555555: #8a8a8a;
-  /* Non-text twins of three grey text tokens. The text values were raised to
-     pass 4.5:1, but borders and toggle-switch tracks need the quieter
-     originals: a raised border reads near-black in light mode, and a raised
-     "off" track reads close to "on" in dark mode. Never use these as color. */
+  /* Non-text twins of the grey text tokens the retune raised to pass 4.5:1.
+     They keep the pre-retune values for borders, fills and toggle tracks: a
+     raised border reads near-black in light mode, a raised "off" track reads
+     close to "on" in dark, and a raised fill under a white label loses
+     contrast. Use a twin for any non-text use of these tokens; never as color.
+     check-admin-contrast.mjs fails the build on a non-text use of the base. */
   --c-334155-line: #334155;
   --c-475569-line: #475569;
   --c-555555-line: #555555;
+  --c-64748b-line: #64748b;
+  --c-666666-line: #666666;
+  --c-888888-line: #888888;
+  --c-aaaaaa-line: #aaaaaa;
   --c-5a1a1a: #5a1a1a;
   --c-60a5fa: #60a5fa;
   --c-64748b: #8a96aa;
@@ -336,6 +342,10 @@
   --c-334155-line: #a4b5cd;
   --c-475569-line: #8e9eb4;
   --c-555555-line: #9b9b9b;
+  --c-64748b-line: #64748b;
+  --c-666666-line: #898989;
+  --c-888888-line: #676767;
+  --c-aaaaaa-line: #484848;
   --c-5a1a1a: #ffe9e7;
   --c-60a5fa: #1860af;
   --c-64748b: #53617a;

@@ -67,7 +67,7 @@ const isLight = computed(() => theme.value === 'light')
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 9999px;
-  background: var(--c-888888);
+  background: var(--c-888888-line);
   transition: transform 150ms, background 150ms;
 }
 .theme-switch[aria-checked="true"] .track { background: var(--c-1f8f7a); }

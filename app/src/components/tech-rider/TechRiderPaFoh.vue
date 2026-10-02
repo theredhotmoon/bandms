@@ -119,9 +119,9 @@ function update(field: keyof PaFohRequirements, value: unknown) {
   font-size: var(--fs-base); outline: none; font-family: inherit;
   transition: border-color 150ms; resize: vertical;
 }
-.field-input:focus   { border-color: var(--c-888888); }
+.field-input:focus   { border-color: var(--c-888888-line); }
 .field-input:disabled { opacity: 0.4; cursor: not-allowed; }
-.field-input::placeholder { color: var(--c-2a3050); }
+.field-input::placeholder { color: var(--c-475569); }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle-input { accent-color: var(--c-888888); width: 1rem; height: 1rem; cursor: pointer; }
 .toggle-text  { font-size: var(--fs-sm); color: var(--c-94a3b8); }

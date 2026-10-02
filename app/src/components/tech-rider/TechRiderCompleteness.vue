@@ -61,5 +61,5 @@ const gapWords = (missing: string[]) => toWords(missing, t)
 }
 .gap-chip:hover { background: var(--c-2a2008); }
 .gap-name { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-fbbf24); }
-.gap-missing { font-size: var(--fs-2xs); color: var(--c-a16207); }
+.gap-missing { font-size: var(--fs-2xs); color: var(--c-fbbf24); }
 </style>
