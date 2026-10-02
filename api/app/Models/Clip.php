@@ -57,7 +57,7 @@ class Clip extends Model
     }
 
     /**
-     * Every owner, flattened for the resource: {type, id, label, slug_en?, date?}.
+     * Every owner, flattened for the resource: {type, id, label, slug?, date?}.
      * Relies on the four owner relations being eager-loaded by the caller.
      *
      * @return array<int, array<string, mixed>>
@@ -68,7 +68,7 @@ class Clip extends Model
 
         foreach ($this->concerts as $c) {
             $out[] = ['type' => 'concert', 'id' => $c->id, 'slug' => $c->slugIn(Locales::default()) ?? 'concert-' . $c->id, 'date' => $c->date?->format('Y-m-d'),
-                      'label' => trim(($c->date?->format('Y-m-d') ?? '') . ' — ' . ($c->venue?->name ?? $c->getTranslation('name', 'en') ?? ''), ' —')];
+                      'label' => trim(($c->date?->format('Y-m-d') ?? '') . ' — ' . ($c->venue?->name ?? $c->getTranslation('name', Locales::default()) ?? ''), ' —')];
         }
         foreach ($this->releases as $r) {
             $out[] = ['type' => 'release', 'id' => $r->id, 'label' => $r->title];
