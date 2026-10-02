@@ -476,7 +476,7 @@ function handleSubmit() {
 .toggle-check:checked + .toggle-track { background: var(--c-333333); border-color: var(--c-333333); }
 .toggle-thumb {
   position: absolute; top: 1px; left: 1px; width: 0.625rem; height: 0.625rem;
-  border-radius: 9999px; background: var(--c-475569); transition: transform 150ms, background 150ms;
+  border-radius: 9999px; background: var(--c-475569-line); transition: transform 150ms, background 150ms;
 }
 .toggle-check:checked + .toggle-track .toggle-thumb { transform: translateX(1rem); background: var(--c-ffffff); }
 .toggle-label { font-size: var(--fs-sm); color: var(--c-94a3b8); }

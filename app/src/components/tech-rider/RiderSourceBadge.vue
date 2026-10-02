@@ -43,7 +43,7 @@ defineEmits<{ open: [placementId: string] }>()
 .source-badge--extra { background: var(--c-0f1a14); border-color: var(--c-14361f); }
 
 .source-badge--clickable { cursor: pointer; transition: border-color 100ms, color 100ms; }
-.source-badge--clickable:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
+.source-badge--clickable:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 
 .source-name { font-weight: 600; color: var(--c-94a3b8); }
 .source-badge--guest .source-name { color: var(--c-fbbf24); }

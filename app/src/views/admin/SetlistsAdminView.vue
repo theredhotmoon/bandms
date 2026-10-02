@@ -134,7 +134,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 </script>
 
 <template>
-  <AdminLayout>
+  <AdminLayout fill>
     <div class="setlists-root">
 
       <!-- Main tabs -->
@@ -333,7 +333,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 
 <style scoped>
 .setlists-root {
-  height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  height: 100%; display: flex; flex-direction: column; overflow: hidden;
 }
 
 .main-tabs {

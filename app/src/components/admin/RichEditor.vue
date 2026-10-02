@@ -140,7 +140,7 @@ function cmd(action: () => void) {
 .editor-body :deep(ul), .editor-body :deep(ol) { padding-left: 1.4rem; margin: 0.25rem 0 0.5rem; }
 .editor-body :deep(li) { margin: 0.15rem 0; }
 .editor-body :deep(blockquote) {
-  border-left: 3px solid var(--c-555555); padding-left: 0.75rem;
+  border-left: 3px solid var(--c-555555-line); padding-left: 0.75rem;
   color: var(--c-94a3b8); margin: 0.5rem 0; font-style: italic;
 }
 .editor-body :deep(strong) { color: var(--c-f1f5f9); }

@@ -423,7 +423,7 @@ function handleSubmit() {
   width: 100%;
 }
 .field-input:focus,
-.field-textarea:focus { border-color: var(--c-555555); }
+.field-textarea:focus { border-color: var(--c-555555-line); }
 .field-input--error { border-color: var(--c-f87171) !important; }
 .field-textarea { resize: vertical; min-height: 5rem; }
 .field-error { font-size: var(--fs-xs); color: var(--c-f87171); }
@@ -533,7 +533,7 @@ function handleSubmit() {
 .btn-cancel:hover { background: var(--c-1a1a1a); color: var(--c-94a3b8); }
 .btn-submit {
   padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
-  background: var(--c-333333); border: 1px solid var(--c-555555); color: var(--c-ffffff); cursor: pointer;
+  background: var(--c-333333); border: 1px solid var(--c-555555-line); color: var(--c-ffffff); cursor: pointer;
   transition: background 100ms;
 }
 .btn-submit:hover:not(:disabled) { background: var(--c-444444); }

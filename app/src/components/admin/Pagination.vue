@@ -101,7 +101,7 @@ const pages = computed<(number | '…')[]>(() => {
 .pg-btn:disabled { opacity: 0.3; cursor: default; }
 
 .pg-num { font-variant-numeric: tabular-nums; }
-.pg-num--active { background: var(--c-2a2a2a); border-color: var(--c-555555); color: var(--c-ffffff); }
+.pg-num--active { background: var(--c-2a2a2a); border-color: var(--c-555555-line); color: var(--c-ffffff); }
 
 .pg-ellipsis {
   font-size: var(--fs-xs);

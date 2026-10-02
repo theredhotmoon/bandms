@@ -336,7 +336,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
   background: var(--c-141414); border: 1px solid var(--c-2a2a2a); color: var(--c-c0c0c0); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.icon-btn:hover { border-color: var(--c-555555); }
+.icon-btn:hover { border-color: var(--c-555555-line); }
 .btn-remove {
   background: none; border: none; cursor: pointer; color: var(--c-3d1a1a);
   font-size: var(--fs-xs); padding: 0.25rem 0.4rem; flex-shrink: 0;

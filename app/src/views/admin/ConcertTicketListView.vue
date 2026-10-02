@@ -91,6 +91,6 @@ const filtered = computed<AdminTicket[]>(() => {
   border: 1px solid var(--c-252525); background: var(--c-0d0d0d);
   color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none; min-width: 220px;
 }
-.search-input:focus { border-color: var(--c-334155); }
+.search-input:focus { border-color: var(--c-334155-line); }
 </style>
 <style scoped src="./admin-table.css" />

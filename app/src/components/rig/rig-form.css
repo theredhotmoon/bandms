@@ -30,7 +30,7 @@
   cursor: pointer; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
   transition: background 100ms, border-color 100ms, color 100ms;
 }
-.type-btn:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
+.type-btn:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 .type-btn--on   { background: var(--c-2a2a2a); border-color: var(--c-888888); color: var(--c-d0d0d0); }
 
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }

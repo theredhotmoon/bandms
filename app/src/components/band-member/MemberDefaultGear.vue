@@ -225,7 +225,7 @@ async function save() {
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
-  background: var(--c-475569); transition: transform 200ms, background 200ms;
+  background: var(--c-475569-line); transition: transform 200ms, background 200ms;
 }
 .toggle--on .toggle-thumb { transform: translateX(1.125rem); background: var(--c-c0c0c0); }
 

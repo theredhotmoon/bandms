@@ -10,6 +10,12 @@ import AdminThemeSwitch from './AdminThemeSwitch.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
 
+// `fill` is for full-screen editors (setlists, tech rider) that scroll their
+// own panes. The main column becomes exactly one viewport tall and the slot
+// takes whatever the top bar and rebuild bar leave, so the view sizes itself
+// to 100% of that rather than to 100vh, which cannot know either bar is there.
+defineProps<{ fill?: boolean }>()
+
 // Below the `lg` breakpoint the sidebar is an off-canvas drawer. It closes on
 // every navigation and on Escape, and the scrim is a real button so it is
 // reachable without a pointer.
@@ -86,7 +92,7 @@ watch(() => route.path, (path) => {
 </script>
 
 <template>
-  <div class="admin-shell" :class="{ 'admin-shell--menu-open': menuOpen }">
+  <div class="admin-shell" :class="{ 'admin-shell--menu-open': menuOpen, 'admin-shell--fill': fill }">
     <header class="topbar">
       <button type="button" class="topbar-menu" :aria-expanded="menuOpen" :aria-label="menuOpen ? $t('shell.menu.close') : $t('shell.menu.open')" @click="menuOpen = !menuOpen">
         <svg v-if="!menuOpen" class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
@@ -345,6 +351,9 @@ watch(() => route.path, (path) => {
 
 <style scoped>
 .admin-shell {
+  /* Height of the fixed top bar, 0 where it is hidden; the main column is
+     padded by the same value. */
+  --admin-topbar-h: 0px;
   display: flex;
   min-height: 100vh;
   background: var(--c-0a0a0a);
@@ -357,7 +366,7 @@ watch(() => route.path, (path) => {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 40;
-  height: 3.25rem;
+  height: var(--admin-topbar-h);
   align-items: center;
   gap: 0.5rem;
   padding: 0 0.75rem;
@@ -609,8 +618,16 @@ watch(() => route.path, (path) => {
   max-width: 96rem;
 }
 
+.admin-shell--fill .main-content { height: 100vh; overflow: hidden; }
+.admin-shell--fill .main-content-body { min-height: 0; }
+/* A printed rider runs past one page; the viewport clamp would cut it off. */
+@media print {
+  .admin-shell--fill .main-content { height: auto; overflow: visible; }
+}
+
 /* ── Drawer layout below lg ──────────────────────── */
 @media (max-width: 1023px) {
+  .admin-shell { --admin-topbar-h: 3.25rem; }
   .topbar { display: flex; }
   .scrim { display: block; }
   .sidebar {
@@ -619,11 +636,18 @@ watch(() => route.path, (path) => {
     z-index: 50;
     width: min(18rem, 86vw);
     transform: translateX(-100%);
-    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    /* Off-screen is not hidden: without visibility the closed drawer's links
+       stay in the tab order. The delay lets the slide-out finish first. */
+    visibility: hidden;
+    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), visibility 0s linear 220ms;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   }
-  .admin-shell--menu-open .sidebar { transform: none; }
-  .main-content { padding-top: 3.25rem; }
+  .admin-shell--menu-open .sidebar {
+    transform: none;
+    visibility: visible;
+    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .main-content { padding-top: var(--admin-topbar-h); }
 }
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .chevron { transition: none; }

@@ -921,7 +921,7 @@ function submit() {
   flex-shrink: 0;
   padding: 0.4rem 0.875rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--c-555555);
+  border: 1px solid var(--c-555555-line);
   background: var(--c-2a2a2a);
   color: var(--c-d0d0d0);
   font-size: var(--fs-sm);

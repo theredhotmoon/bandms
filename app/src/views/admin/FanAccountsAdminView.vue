@@ -87,7 +87,7 @@ function formatDate(iso: string) {
   border: 1px solid var(--c-1f1f1f); background: var(--c-0d0d0d);
   color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none;
 }
-.search-input:focus { border-color: var(--c-334155); }
+.search-input:focus { border-color: var(--c-334155-line); }
 .newsletter-badge {
   display: inline-block; padding: 0.15rem 0.5rem;
   border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;

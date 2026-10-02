@@ -665,7 +665,7 @@ const TYPE_COLOURS: Record<string, string> = {
   color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.4375rem 0.625rem;
   outline: none; transition: border-color 120ms; width: 100%;
 }
-.field-input:focus { border-color: var(--c-555555); }
+.field-input:focus { border-color: var(--c-555555-line); }
 .field-input--error { border-color: var(--c-f87171) !important; }
 .field-error { font-size: var(--fs-xs); color: var(--c-f87171); }
 .currency-input { width: 5rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -681,7 +681,7 @@ const TYPE_COLOURS: Record<string, string> = {
 }
 .btn-save-sm {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
-  background: var(--c-333333); border: 1px solid var(--c-555555); color: var(--c-ffffff); cursor: pointer;
+  background: var(--c-333333); border: 1px solid var(--c-555555-line); color: var(--c-ffffff); cursor: pointer;
 }
 .btn-save-sm:hover:not(:disabled) { background: var(--c-444444); }
 .btn-save-sm:disabled { opacity: 0.4; cursor: default; }

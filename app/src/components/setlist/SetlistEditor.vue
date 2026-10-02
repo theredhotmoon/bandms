@@ -548,7 +548,7 @@ select.field-input {
   background: transparent; color: var(--c-475569); cursor: pointer; font-size: var(--fs-2xs);
   display: flex; align-items: center; justify-content: center; transition: all 100ms;
 }
-.btn-icon:hover:not(:disabled) { background: var(--c-141414); color: var(--c-94a3b8); border-color: var(--c-334155); }
+.btn-icon:hover:not(:disabled) { background: var(--c-141414); color: var(--c-94a3b8); border-color: var(--c-334155-line); }
 .btn-icon:disabled { opacity: 0.25; cursor: default; }
 .btn-expand.active { background: var(--c-2a2a2a); color: var(--c-c0c0c0); border-color: var(--c-444444); }
 .btn-remove:hover:not(:disabled) { background: var(--c-450a0a); color: var(--c-f87171); border-color: var(--c-7f1d1d); }
@@ -566,7 +566,7 @@ select.field-input {
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
-  background: var(--c-475569); transition: transform 200ms, background 200ms;
+  background: var(--c-475569-line); transition: transform 200ms, background 200ms;
 }
 .toggle--on .toggle-thumb { transform: translateX(1.125rem); background: var(--c-c0c0c0); }
 

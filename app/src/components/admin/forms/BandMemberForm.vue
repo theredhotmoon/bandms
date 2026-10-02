@@ -354,7 +354,7 @@ function submit() {
   transition: border-color 100ms, color 100ms, background 100ms;
   line-height: 1.2;
 }
-.main-inst-card:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
+.main-inst-card:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 .main-inst-card--on {
   border-color: var(--c-888888); color: var(--c-ffffff);
   background: var(--c-2a2a2a);
@@ -372,7 +372,7 @@ function submit() {
   background: transparent; user-select: none;
   transition: border-color 100ms, color 100ms, background 100ms;
 }
-.instrument-check:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
+.instrument-check:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 .instrument-check--on { border-color: var(--c-888888); color: var(--c-ffffff); background: var(--c-2a2a2a); }
 
 /* ── Status toggle ──────────────────────────────────────────── */
@@ -386,7 +386,7 @@ function submit() {
 .toggle-thumb {
   position: absolute; top: 0.1875rem; left: 0.1875rem;
   width: 1rem; height: 1rem; border-radius: 9999px;
-  background: var(--c-475569); transition: transform 200ms, background 200ms;
+  background: var(--c-475569-line); transition: transform 200ms, background 200ms;
 }
 .toggle--on .toggle-thumb { transform: translateX(1.125rem); background: var(--c-e0e0e0); }
 

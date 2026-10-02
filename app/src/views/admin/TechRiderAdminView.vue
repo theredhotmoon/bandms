@@ -213,7 +213,7 @@ async function discardVersion(id: number) {
 </script>
 
 <template>
-  <AdminLayout>
+  <AdminLayout fill>
     <div class="rider-shell">
       <TechRiderSidebar
         :riders="list.data.value ?? []"
@@ -467,7 +467,7 @@ async function discardVersion(id: number) {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-.rider-shell { display: flex; height: 100vh; overflow: hidden; }
+.rider-shell { display: flex; height: 100%; overflow: hidden; }
 
 .editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 

@@ -163,7 +163,7 @@ function exportCsv() {
   padding: 0.4rem 0.875rem; border-radius: 0.5rem;
   font-size: var(--fs-sm); font-weight: 500;
   background: var(--c-1f1f1f); color: var(--c-94a3b8);
-  border: 1px solid var(--c-334155); cursor: pointer;
+  border: 1px solid var(--c-334155-line); cursor: pointer;
   transition: background 120ms, color 120ms;
 }
 .btn-export:hover { background: var(--c-273549); color: var(--c-e2e8f0); }
@@ -175,7 +175,7 @@ function exportCsv() {
   border: 1px solid var(--c-1f1f1f); background: var(--c-0d0d0d);
   color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none;
 }
-.search-input:focus { border-color: var(--c-334155); }
+.search-input:focus { border-color: var(--c-334155-line); }
 
 .state-msg { color: var(--c-64748b); padding: 2rem 0; font-size: var(--fs-base); }
 .state-msg--error { color: var(--c-f87171); }
@@ -230,7 +230,7 @@ function exportCsv() {
 .btn-confirm-no {
   padding: 0.2rem 0.6rem; border-radius: 0.25rem;
   font-size: var(--fs-xs); font-weight: 600;
-  background: var(--c-1f1f1f); color: var(--c-94a3b8); border: 1px solid var(--c-334155);
+  background: var(--c-1f1f1f); color: var(--c-94a3b8); border: 1px solid var(--c-334155-line);
   cursor: pointer;
   transition: background 100ms;
 }
@@ -251,7 +251,7 @@ function exportCsv() {
 .pagination button {
   padding: 0.35rem 0.75rem; border-radius: 0.375rem;
   background: var(--c-1f1f1f); color: var(--c-94a3b8);
-  border: 1px solid var(--c-334155); cursor: pointer; font-size: var(--fs-sm);
+  border: 1px solid var(--c-334155-line); cursor: pointer; font-size: var(--fs-sm);
   transition: background 100ms;
 }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }

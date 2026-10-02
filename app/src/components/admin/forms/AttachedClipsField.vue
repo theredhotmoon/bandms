@@ -100,7 +100,7 @@ function categoryLabel(value: string): string {
 .link-url { flex: 1; color: var(--c-64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; font-size: var(--fs-xs); }
 .link-add-row { display: flex; gap: 0.5rem; align-items: center; }
 .link-url-input { flex: 1; }
-.btn-add-link { flex-shrink: 0; padding: 0.4rem 0.875rem; border-radius: 0.375rem; border: 1px solid var(--c-555555); background: var(--c-2a2a2a); color: var(--c-d0d0d0); font-size: var(--fs-sm); cursor: pointer; }
+.btn-add-link { flex-shrink: 0; padding: 0.4rem 0.875rem; border-radius: 0.375rem; border: 1px solid var(--c-555555-line); background: var(--c-2a2a2a); color: var(--c-d0d0d0); font-size: var(--fs-sm); cursor: pointer; }
 .btn-add-link:disabled { opacity: .5; cursor: default; }
 .provider-badge { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border-radius: 0.25rem; flex-shrink: 0; background: var(--c-1e3a5f); color: var(--c-60a5fa); text-transform: uppercase; }
 .remove-btn {

@@ -123,7 +123,7 @@ const avgEnhanceScore = computed(() => {
         <p class="page-sub">{{ $t('dashboard.subtitle') }}</p>
       </div>
 
-      <nav class="stat-strip" :aria-label="$t('dashboard.quickActions.title')">
+      <nav class="stat-strip" :aria-label="$t('dashboard.stats.label')">
         <RouterLink
           v-for="s in stats"
           :key="s.label"

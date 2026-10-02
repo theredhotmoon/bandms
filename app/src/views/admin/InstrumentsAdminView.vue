@@ -257,7 +257,7 @@ async function confirmDelete() {
 .icon-suggestion {
   display: inline-flex; align-items: center; gap: 0.375rem;
   margin-top: 0.5rem; padding: 0.25rem 0.5rem;
-  border: 1px solid var(--c-334155); border-radius: 0.375rem;
+  border: 1px solid var(--c-334155-line); border-radius: 0.375rem;
   font-size: var(--fs-2xs); color: var(--c-94a3b8); background: transparent;
   cursor: pointer; transition: color .15s, border-color .15s;
 }
