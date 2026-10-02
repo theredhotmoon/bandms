@@ -145,9 +145,17 @@ test.describe('Shop Admin', () => {
     await nameInput.clear()
     await nameInput.fill(editedItemName)
 
+    const saved = page.waitForResponse(r => /\/api\/shop\/\d+$/.test(r.url()) && r.request().method() === 'PUT')
     await modal.getByRole('button', { name: /save changes/i }).click()
 
     await expect(page.locator('[data-sonner-toast]')).toContainText('Item updated', { timeout: 8000 })
+
+    // Renaming in the admin must not move the public merch URL. The slug input
+    // used to send a loaded slug that matched the name as "auto" (null), and
+    // the API re-slugs on rename when the slug is blank — so correcting a
+    // typo in a name 404'd every link to the item (#152's review). ITEM_NAME
+    // is already slug-shaped, so it is also the slug the item was created with.
+    expect((await (await saved).json()).data.slug).toBe(ITEM_NAME)
     await expect(modal).not.toBeVisible()
   })
 

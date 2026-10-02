@@ -30,6 +30,16 @@ const props = withDefaults(defineProps<{
   hints?: Partial<Record<Lang, string | undefined>>
   errors?: Partial<Record<Lang, string | undefined>>
   maxlength?: number
+  /**
+   * Whether a LOADED slug that equals its name's slug keeps following the name.
+   *
+   * Off by default, and it must stay off for anything with a public URL: a
+   * following slug is sent as null, so renaming the record re-slugs it and
+   * moves the page — every inbound link 404s. #152's review caught exactly
+   * that for merch. Only TagForm turns it on: tags have no URL, and there a
+   * cleared name should release its slug (#150's review).
+   */
+  followLoaded?: boolean
 }>(), {
   sources: () => ({}),
   placeholders: () => ({}),
@@ -48,14 +58,14 @@ const { order: contentLocales } = useContentLocales()
 const makeSlug = (s: string): string => Slugify(s, { lower: true, strict: true, trim: true })
 
 // What this component last emitted per locale. A value arriving that is NOT
-// one of ours (the record loading, a reset) is judged afresh: it still
-// follows its name if it IS the slug of that name, and is manual otherwise.
+// one of ours (the record loading, a reset) is manual — unless it is empty, or
+// `followLoaded` is on and it IS the slug of its name.
 // SlugInput flipped to manual on ANY prop change — including its own value
 // coming back — so it stopped tracking the title after the first keystroke.
 const emitted: Partial<Record<Lang, string>> = {}
 
 const follows = (l: Lang, value: string): boolean =>
-  value === '' || value === makeSlug(props.sources[l] ?? '')
+  value === '' || (props.followLoaded && value === makeSlug(props.sources[l] ?? ''))
 
 const auto = reactive(
   Object.fromEntries(LOCALES.map(l => [l, follows(l, props.modelValue[l])])) as Record<Lang, boolean>,
