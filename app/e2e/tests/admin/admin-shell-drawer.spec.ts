@@ -89,11 +89,10 @@ test.describe('Admin shell — drawer below 1024px', () => {
     test.skip((await gear.count()) === 0, 'No rebuild bar on this instance')
     await gear.click()
 
-    // A point inside the top bar, right of centre (App.vue's invisible skip
-    // link sits at top centre); the modal's backdrop must win it.
+    // A point inside the top bar; the modal's backdrop must win it.
     const onTop = await page.evaluate(
       (x) => document.elementFromPoint(x, 20)?.closest('.modal-backdrop') !== null,
-      TABLET.width - 16,
+      TABLET.width / 2,
     )
     expect(onTop).toBe(true)
   })
