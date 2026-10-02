@@ -56,6 +56,9 @@ offers one text link to the newsletter, and the homepage's Upcoming shows
 block simply disappears (gated on `upcoming.length > 0`).
 
 - Show two buttons instead: **Subscribe to the newsletter** and **Book us**.
+  Registry defaults for the booking button: en "Book us", pl **"Zaproponuj
+  nam koncert"** (as specified). Both are `CopyField`s, so the band can
+  override them.
 - "Book us" opens the **existing** `AvailabilityModal` (today mounted only by
   `ContactSection.astro`). It is a `client:idle` island opened by delegation
   from any `[data-open-availability]` trigger, so the page needs the island
