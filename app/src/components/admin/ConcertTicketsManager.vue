@@ -358,15 +358,15 @@ function fmtPrice(price: number, currency: string): string {
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 
 /* Shared btn classes from parent */
-.btn-add { padding: 6px 12px; border-radius: 5px; font: 600 12px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; }
+.btn-add { padding: 6px 12px; border-radius: 5px; font: 600 12px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-add:hover { background: var(--c-2563eb); }
 .btn-edit { padding: 4px 10px; border-radius: 4px; font-size: 12px; background: var(--c-1e3a5f); color: var(--c-93c5fd); border: 1px solid var(--c-1e3a5f); cursor: pointer; }
-.btn-edit:hover { background: var(--c-1d4ed8); color: #ffffff; }
+.btn-edit:hover { background: var(--c-1d4ed8); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
 .btn-delete { padding: 4px 10px; border-radius: 4px; font-size: 12px; background: var(--c-3f1515); color: var(--c-fca5a5); border: 1px solid var(--c-3f1515); cursor: pointer; }
-.btn-delete:hover { background: var(--c-b91c1c); color: #ffffff; }
+.btn-delete:hover { background: var(--c-b91c1c); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
 .btn-edit-sm { padding: 2px 8px; border-radius: 4px; font-size: 11px; background: var(--c-1e3a5f); color: var(--c-93c5fd); border: none; cursor: pointer; }
 .btn-del-sm { padding: 2px 6px; border-radius: 4px; font-size: 11px; background: var(--c-3f1515); color: var(--c-fca5a5); border: none; cursor: pointer; }
-.btn-primary { padding: 7px 16px; border-radius: 5px; font: 600 13px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; }
+.btn-primary { padding: 7px 16px; border-radius: 5px; font: 600 13px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-primary:hover:not(:disabled) { background: var(--c-2563eb); }
 .btn-primary:disabled { opacity: .5; cursor: default; }
 .btn-ghost { padding: 7px 14px; border-radius: 5px; font: 600 13px/1 system-ui; background: transparent; color: var(--c-94a3b8); border: 1px solid var(--c-2a2a2a); cursor: pointer; }

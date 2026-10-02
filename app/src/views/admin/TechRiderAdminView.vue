@@ -565,7 +565,7 @@ async function discardVersion(id: number) {
   border: 2px solid var(--c-0a0b1a); margin-left: -0.5rem;
 }
 .lineup-avatar:first-child { margin-left: 0; }
-.lineup-avatar--guest { background: var(--c-92400e); color: #fde68a; }
+.lineup-avatar--guest { background: var(--c-92400e); color: #fde68a; } /* token-lint-ignore: pale label on a saturated amber avatar */
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
 .stage-wrapper {

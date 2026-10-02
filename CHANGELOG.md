@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-02 (admin colour lint)
+
+### Added
+- `pnpm build` in `app/` now fails on a hardcoded colour in the admin's styles, which would otherwise stay dark when someone switches to light mode. The error names the file and line; colours that must look the same in both themes carry a `token-lint-ignore` comment saying why.
+
 ## [Unreleased] — 2026-10-02 (admin light mode)
 
 ### Added

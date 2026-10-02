@@ -147,7 +147,7 @@ in `src/i18n/plural.ts` is wired to `polishPluralIndex()` in
 `src/utils/uiLocale.ts` — a util, not a composable, so vitest's `node`
 environment can import it without a `localStorage` shim.
 
-### Three guards run ahead of `vue-tsc` in `pnpm build`
+### Guards run ahead of `vue-tsc` in `pnpm build`
 
 Each answers a different question, and a red one means something specific:
 
@@ -156,12 +156,13 @@ Each answers a different question, and a red one means something specific:
 | `check-admin-strings.mjs` | a file in `MIGRATED` still has hardcoded text | move it to the catalogue, or append `i18n-ignore` with a reason |
 | `check-i18n-keys.mjs` | a `$t('…')` key has no catalogue entry | fix the typo, or add the key |
 | `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED`, **or** a component rendered inside a migrated area shows English while translating nothing | add its path to `MIGRATED` |
+| `check-admin-colours.mjs` | a hardcoded colour (hex, `rgb()`/`hsl()`, `color: white`, `bg-[#…]`) in an admin style | use a `var(--c-…)`, or append `token-lint-ignore` with a reason — see *Admin colours* below |
 
-A fourth check lives in the test suite rather than the build —
+One more check lives in the test suite rather than the build —
 `src/i18n/catalogue.spec.ts`, which compiles every message and is the only
 thing that catches an unescaped `@` (see above).
 
-**All four stop at `app/`.** The printed rider sheet is a Vue component in
+**The i18n checks all stop at `app/`.** The printed rider sheet is a Vue component in
 `@bandms/rider-core` that takes its ~150 strings as a prop, so it satisfies
 every one of them while holding no translations at all. Its own bundles are
 checked by `packages/rider-core/src/labels/labels.spec.ts`; see *The sheet's
@@ -215,10 +216,22 @@ the palette file, never per component.
 
 **A raw hex in an admin style silently ignores the switch** — it renders
 correctly in dark, which is what everyone tests in. Reuse an existing `--c-*`.
-Three deliberate exceptions:
+`scripts/check-admin-colours.mjs` fails `pnpm build` on one, naming the file
+and line. It walks **all** of `src/` minus an explicit `EXCLUDED` list (the
+palette, `style.css`, `App.vue`, the fan pages, the printable rider preview),
+so a new admin folder is checked from its first file. It reads `<style>`
+declaration values, `style`/`:style` attributes and Tailwind `bg-[#…]`-style
+classes — never `<script>`, never comments, never a selector like `#app`.
+Black `rgba(0,0,0,a)` passes (shadows and scrims are theme-neutral), and so
+does `text-[#fff]`, because a marker cannot go inside a tag's class list.
+What counts as a colour is `scripts/lib/colour-scan.mjs`, pinned by its spec.
+
+Three deliberate exceptions. Only the first ever trips the check, and it
+carries `token-lint-ignore: <reason>` on its line (the public site's lint
+uses the same marker):
 
 - **White text on a saturated button** (teal, blue, red) is a literal `#fff`
-  or Tailwind `text-[#fff]`. `var(--c-ffffff)` and `text-white` both turn
+  plus the marker, or Tailwind `text-[#fff]`. `var(--c-ffffff)` and `text-white` both turn
   near-black in light mode, which on a teal button is unreadable.
 - **Tailwind neutrals** (`zinc-*`, `white`) are flipped by overriding
   `--color-zinc-*` in `style.css`, so they need no change.

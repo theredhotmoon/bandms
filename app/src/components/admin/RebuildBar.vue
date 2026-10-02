@@ -111,7 +111,7 @@ function relativeTime(iso: string | null): string {
   padding: 0 0.25rem;
   border-radius: 9999px;
   background: var(--c-14b8a6);
-  color: #ffffff;
+  color: #ffffff; /* token-lint-ignore: white count on the teal pill */
   font-size: 0.625rem;
   font-weight: 700;
 }
@@ -148,7 +148,7 @@ function relativeTime(iso: string | null): string {
   border-radius: 0.5rem;
   border: none;
   background: var(--c-0d9488);
-  color: #ffffff;
+  color: #ffffff; /* token-lint-ignore: white label on the teal button */
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;

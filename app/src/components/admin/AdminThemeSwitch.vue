@@ -71,7 +71,7 @@ const isLight = computed(() => theme.value === 'light')
   transition: transform 150ms, background 150ms;
 }
 .theme-switch[aria-checked="true"] .track { background: var(--c-1f8f7a); }
-.theme-switch[aria-checked="true"] .thumb { transform: translateX(0.75rem); background: #fff; } /* fixed: thumb on the accent track in both themes */
+.theme-switch[aria-checked="true"] .thumb { transform: translateX(0.75rem); background: #fff; } /* token-lint-ignore: white thumb on the teal track in both themes */
 
 @media (prefers-reduced-motion: reduce) {
   .track, .thumb { transition: none; }
