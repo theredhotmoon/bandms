@@ -526,6 +526,6 @@ function handleSubmit() {
 }
 .lyrics-textarea:focus {
   border-color: var(--c-888888);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); /* token-lint-ignore: indigo focus glow, same on both themes */
 }
 </style>

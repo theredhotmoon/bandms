@@ -284,7 +284,7 @@ onUnmounted(() => {
   border-radius: 6px;
   font: 600 14px/1 system-ui;
   background: var(--c-3b82f6);
-  color: #ffffff;
+  color: #ffffff; /* token-lint-ignore: white label on the result colour */
   border: none;
   cursor: pointer;
 }

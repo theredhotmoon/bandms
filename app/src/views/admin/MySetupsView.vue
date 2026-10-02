@@ -102,7 +102,7 @@ const myMember = computed(() =>
 .confirm-gig { font-size: 0.78rem; color: var(--c-e2e8f0); }
 .btn-confirm {
   padding: 0.3rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: var(--c-1d4ed8); border: none; color: #eff6ff;
+  cursor: pointer; background: var(--c-1d4ed8); border: none; color: #eff6ff; /* token-lint-ignore: white label on a saturated blue button */
 }
 .btn-confirm:disabled { opacity: 0.5; cursor: default; }
 </style>
