@@ -28,6 +28,20 @@ it('lets one clip belong to owners of different kinds', function () {
     expect(collect($owners)->firstWhere('type', 'concert')['id'])->toBe($concert->id);
 });
 
+it("labels a venueless concert owner in the default locale, not in 'en'", function () {
+    config(['locales.default' => 'pl']);
+
+    $clip    = Clip::factory()->create();
+    $concert = Concert::factory()->create(['name' => ['en' => 'Summer Fest', 'pl' => 'Letni Fest'], 'date' => '2026-07-04']);
+    $clip->concerts()->attach($concert->id, ['position' => 0]);
+
+    $clip = $clip->fresh()->load(['concerts', 'releases', 'shopItems', 'albums']);
+    // venue_id is NOT NULL, so the name fallback is reachable only without a venue relation.
+    $clip->concerts->first()->setRelation('venue', null);
+
+    expect($clip->ownersList()[0]['label'])->toBe('2026-07-04 — Letni Fest');
+});
+
 it('stores the morph alias, not the class name', function () {
     $clip    = Clip::factory()->create();
     $concert = Concert::factory()->create();
