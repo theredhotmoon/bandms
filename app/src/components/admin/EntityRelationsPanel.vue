@@ -188,7 +188,7 @@ function label(text: string, count: number) {
   border: 1px solid var(--c-222222); border-radius: 0.5rem; overflow: hidden;
 }
 .assoc-title {
-  font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.07em; color: var(--c-555555); padding: 0.5rem 0.875rem;
   background: var(--c-141414); border-bottom: 1px solid var(--c-222222);
 }
@@ -197,16 +197,16 @@ function label(text: string, count: number) {
 .assoc-toggle {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   padding: 0.5rem 0.875rem; background: transparent; border: none; cursor: pointer;
-  color: var(--c-94a3b8); font-size: 0.8rem; font-weight: 500; text-align: left;
+  color: var(--c-94a3b8); font-size: var(--fs-sm); font-weight: 500; text-align: left;
   transition: background 100ms;
 }
 .assoc-toggle:hover { background: var(--c-111111); }
-.assoc-chevron { font-size: 1rem; line-height: 1; transition: transform 200ms; color: var(--c-555555); }
+.assoc-chevron { font-size: var(--fs-md); line-height: 1; transition: transform 200ms; color: var(--c-555555); }
 .assoc-chevron--open { transform: rotate(90deg); }
 .assoc-body { padding: 0.5rem 0.875rem 0.75rem; background: var(--c-141414); }
 .assoc-badge {
   display: inline-block; padding: 0.05rem 0.35rem; border-radius: 0.2rem;
-  background: var(--c-2a2a2a); color: var(--c-aaaaaa); font-size: 0.62rem; font-weight: 600;
+  background: var(--c-2a2a2a); color: var(--c-aaaaaa); font-size: var(--fs-2xs); font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.04em; margin-left: 0.35rem;
 }
 </style>

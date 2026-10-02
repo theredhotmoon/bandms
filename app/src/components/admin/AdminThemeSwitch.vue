@@ -41,7 +41,7 @@ const isLight = computed(() => theme.value === 'light')
   background: var(--c-141414);
   border: 1px solid var(--c-2a2a2a);
   color: var(--c-94a3b8);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
   text-align: left;
 }
@@ -67,7 +67,7 @@ const isLight = computed(() => theme.value === 'light')
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 9999px;
-  background: var(--c-888888);
+  background: var(--c-888888-line);
   transition: transform 150ms, background 150ms;
 }
 .theme-switch[aria-checked="true"] .track { background: var(--c-1f8f7a); }

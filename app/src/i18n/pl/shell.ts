@@ -64,6 +64,10 @@ export default {
     publisher: 'redaktor',
   },
   signOut: 'Wyloguj',
+  menu: {
+    open: 'Otwórz menu',
+    close: 'Zamknij menu',
+  },
   adminLink: 'Panel',
   bandLogoAlt: 'Logo zespołu',
   signIn: {

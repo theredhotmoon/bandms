@@ -173,7 +173,7 @@ function formatDate(iso: string | null): string {
 
 <style scoped>
 .history { display: flex; flex-direction: column; gap: 0.75rem; }
-.empty { font-size: 0.8rem; color: var(--c-64748b); line-height: 1.6; margin: 0; }
+.empty { font-size: var(--fs-sm); color: var(--c-64748b); line-height: 1.6; margin: 0; }
 
 .version-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .version {
@@ -182,15 +182,15 @@ function formatDate(iso: string | null): string {
 }
 .version-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .version-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.version-number { font-size: 0.85rem; font-weight: 700; color: var(--c-e2e8f0); }
+.version-number { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }
 .version-status {
-  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;
   padding: 0.1rem 0.4rem; border-radius: 999px; letter-spacing: 0.03em;
 }
 .is-live { color: var(--c-4ade80); background: var(--c-052e16); }
 .is-archived { color: var(--c-64748b); background: var(--c-17171a); }
-.version-date { font-size: 0.7rem; color: var(--c-475569); }
-.version-notes { font-size: 0.75rem; color: var(--c-94a3b8); margin: 0; line-height: 1.5; }
+.version-date { font-size: var(--fs-2xs); color: var(--c-475569); }
+.version-notes { font-size: var(--fs-xs); color: var(--c-94a3b8); margin: 0; line-height: 1.5; }
 
 .version-actions { display: flex; gap: 0.35rem; align-items: center; flex-shrink: 0; }
 
@@ -198,11 +198,11 @@ function formatDate(iso: string | null): string {
   flex-basis: 100%; display: flex; align-items: center; justify-content: space-between;
   gap: 0.75rem; flex-wrap: wrap; padding-top: 0.5rem; border-top: 1px solid var(--c-1f1f1f);
 }
-.confirm-text { font-size: 0.72rem; color: var(--c-d6bd8b); margin: 0; line-height: 1.5; }
+.confirm-text { font-size: var(--fs-xs); color: var(--c-d6bd8b); margin: 0; line-height: 1.5; }
 .confirm-actions { display: flex; gap: 0.35rem; }
 
 .btn-ghost {
-  padding: 0.25rem 0.6rem; border-radius: 0.375rem; font-size: 0.72rem; font-weight: 500;
+  padding: 0.25rem 0.6rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
   text-decoration: none; display: inline-flex; align-items: center;
 }
@@ -216,34 +216,34 @@ function formatDate(iso: string | null): string {
   border: 1px solid var(--c-1f1f1f); border-radius: 0.5rem; background: var(--c-0a0a0a);
   padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
-.diff--loading { color: var(--c-64748b); font-size: 0.78rem; }
+.diff--loading { color: var(--c-64748b); font-size: var(--fs-xs); }
 .diff-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-.diff-title { font-size: 0.8rem; font-weight: 700; color: var(--c-e2e8f0); }
-.diff-summary { flex: 1; font-size: 0.72rem; color: var(--c-94a3b8); }
-.diff-none { font-size: 0.75rem; color: var(--c-64748b); margin: 0; line-height: 1.55; }
+.diff-title { font-size: var(--fs-sm); font-weight: 700; color: var(--c-e2e8f0); }
+.diff-summary { flex: 1; font-size: var(--fs-xs); color: var(--c-94a3b8); }
+.diff-none { font-size: var(--fs-xs); color: var(--c-64748b); margin: 0; line-height: 1.55; }
 
 .diff-section { display: flex; flex-direction: column; gap: 0.3rem; }
 .diff-section-title {
-  font-size: 0.62rem; font-weight: 700; color: var(--c-475569);
+  font-size: var(--fs-2xs); font-weight: 700; color: var(--c-475569);
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 .diff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
 .diff-entry { display: flex; gap: 0.5rem; align-items: flex-start; }
 .diff-mark {
-  font-weight: 700; font-size: 0.8rem; line-height: 1.4; width: 0.9rem;
+  font-weight: 700; font-size: var(--fs-sm); line-height: 1.4; width: 0.9rem;
   flex-shrink: 0; text-align: center;
 }
 .diff-mark--added { color: var(--c-4ade80); }
 .diff-mark--removed { color: var(--c-f87171); }
 .diff-mark--changed { color: var(--c-fbbf24); }
 .diff-body { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.diff-label { font-size: 0.76rem; color: var(--c-e2e8f0); }
-.diff-source { font-size: 0.66rem; color: var(--c-475569); }
+.diff-label { font-size: var(--fs-xs); color: var(--c-e2e8f0); }
+.diff-source { font-size: var(--fs-2xs); color: var(--c-475569); }
 .diff-changes { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.diff-changes li { font-size: 0.7rem; color: var(--c-94a3b8); font-family: ui-monospace, monospace; }
+.diff-changes li { font-size: var(--fs-2xs); color: var(--c-94a3b8); font-family: ui-monospace, monospace; }
 
 .btn-danger {
-  padding: 0.2rem 0.6rem; border-radius: 0.375rem; font-size: 0.72rem; font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-7f1d1d); border: 1px solid var(--c-991b1b); color: var(--c-fca5a5);
 }
 .btn-danger:disabled { opacity: 0.45; cursor: default; }

@@ -3,6 +3,7 @@ export default {
   welcomeNamed: 'Witaj ponownie, {name}',
   subtitle: 'Panel administracyjny BandMS — zarządzaj wszystkimi treściami poniżej.',
   stats: {
+    label: 'Przegląd treści',
     bands: 'Zespoły',
     releases: 'Wydawnictwa',
     tours: 'Trasy',

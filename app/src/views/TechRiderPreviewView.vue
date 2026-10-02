@@ -96,7 +96,7 @@ const logoUrl = computed(() => {
 <style scoped>
 .preview-loading, .preview-error {
   display: flex; align-items: center; justify-content: center;
-  height: 100vh; font-size: 1rem; color: #64748b;
+  height: 100vh; font-size: var(--fs-md); color: #64748b;
 }
 .preview-error { color: #dc2626; }
 </style>

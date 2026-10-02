@@ -32,7 +32,7 @@ const b = computed(() => {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 0.25rem;
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;

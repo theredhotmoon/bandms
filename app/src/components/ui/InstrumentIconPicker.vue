@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
       >{{ $t('rider.iconPicker.notMapped') }}</button>
 
       <div v-for="g in groups" :key="g.group" class="mb-2 last:mb-0">
-        <p class="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
+        <p class="px-1 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
         <div class="grid grid-cols-4 gap-1">
           <button
             v-for="def in g.icons"

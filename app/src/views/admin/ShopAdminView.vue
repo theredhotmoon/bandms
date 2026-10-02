@@ -558,7 +558,7 @@ const TYPE_COLOURS: Record<string, string> = {
 .btn-currencies {
   padding: 0.375rem 0.875rem;
   border-radius: 0.375rem;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 500;
   background: transparent;
   border: 1px solid var(--c-333333);
@@ -576,37 +576,37 @@ const TYPE_COLOURS: Record<string, string> = {
   width: 2.25rem; height: 2.25rem; border-radius: 0.25rem;
   background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
 }
 
 .type-badge {
   display: inline-block; padding: 0.15rem 0.5rem;
   border-radius: 0.25rem; border: 1px solid;
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em;
+  font-size: var(--fs-2xs); font-weight: 600; letter-spacing: 0.04em;
 }
 
 .price-chip {
-  display: inline-block; font-size: 0.72rem; color: var(--c-64748b);
+  display: inline-block; font-size: var(--fs-xs); color: var(--c-64748b);
   margin-right: 0.25rem; white-space: nowrap;
 }
 
 .cat-chip {
-  display: inline-block; font-size: 0.68rem; font-weight: 500;
+  display: inline-block; font-size: var(--fs-2xs); font-weight: 500;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin: 0.1rem 0.2rem 0.1rem 0;
   background: var(--c-1e1e1e); border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8); white-space: nowrap;
 }
 
 .status-badge {
   display: inline-block; padding: 0.15rem 0.5rem;
-  border-radius: 0.25rem; border: 1px solid; font-size: 0.68rem; font-weight: 600;
+  border-radius: 0.25rem; border: 1px solid; font-size: var(--fs-2xs); font-weight: 600;
 }
-.status-available   { background: color-mix(in srgb, var(--c-059669) 13%, transparent); color: var(--c-059669); border-color: color-mix(in srgb, var(--c-059669) 27%, transparent); }
-.status-presale     { background: color-mix(in srgb, var(--c-b45309) 13%, transparent); color: var(--c-b45309); border-color: color-mix(in srgb, var(--c-b45309) 27%, transparent); }
+.status-available   { background: color-mix(in srgb, var(--c-34d399) 13%, transparent); color: var(--c-34d399); border-color: color-mix(in srgb, var(--c-34d399) 27%, transparent); }
+.status-presale     { background: color-mix(in srgb, var(--c-fbbf24) 13%, transparent); color: var(--c-fbbf24); border-color: color-mix(in srgb, var(--c-fbbf24) 27%, transparent); }
 .status-unavailable { background: color-mix(in srgb, var(--c-333333) 13%, transparent); color: var(--c-555555); border-color: color-mix(in srgb, var(--c-333333) 27%, transparent); }
 
 /* Photos section */
 .photos-divider {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--c-475569); border-top: 1px solid var(--c-252525); margin-top: 1.5rem;
   padding-top: 0.875rem; margin-bottom: 0.75rem;
 }
@@ -621,67 +621,67 @@ const TYPE_COLOURS: Record<string, string> = {
 .rp-del {
   position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%;
   background: color-mix(in srgb, var(--c-141414) 80%, transparent); border: 1px solid var(--c-3a1212); color: var(--c-f87171);
-  font-size: 0.55rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-2xs); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .rp-del:hover { background: var(--c-3f1212); }
-.rp-empty { font-size: 0.8125rem; color: var(--c-475569); padding: 0.5rem 0; }
+.rp-empty { font-size: var(--fs-sm); color: var(--c-475569); padding: 0.5rem 0; }
 .rp-order-row { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .rp-btn-save {
-  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0);
 }
 .rp-btn-save:hover { background: var(--c-333333); }
 .rp-add { margin-top: 0.875rem; display: flex; flex-direction: column; gap: 0.375rem; }
-.rp-add-title { font-size: 0.72rem; font-weight: 600; color: var(--c-475569); text-transform: uppercase; letter-spacing: 0.05em; }
+.rp-add-title { font-size: var(--fs-xs); font-weight: 600; color: var(--c-475569); text-transform: uppercase; letter-spacing: 0.05em; }
 .rp-upload-row { display: flex; gap: 0.5rem; }
 .rp-btn-upload {
-  padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: var(--c-333333); border: 1px solid var(--c-888888); color: var(--c-ffffff);
+  padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
+  cursor: pointer; background: var(--c-333333); border: 1px solid var(--c-888888-line); color: var(--c-ffffff);
 }
-.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888); }
+.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888-line); }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 .hidden { display: none; }
 
 /* Currency modal */
 .currency-modal { display: flex; flex-direction: column; gap: 1rem; }
-.currency-hint { font-size: 0.8rem; color: var(--c-64748b); }
+.currency-hint { font-size: var(--fs-sm); color: var(--c-64748b); }
 .currency-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; min-height: 2rem; }
 .currency-chip {
   display: flex; align-items: center; gap: 0.3rem;
   padding: 0.25rem 0.5rem; border-radius: 0.25rem;
   background: var(--c-1e1e1e); border: 1px solid var(--c-333333);
-  font-size: 0.75rem; font-weight: 600; color: var(--c-94a3b8); letter-spacing: 0.05em;
+  font-size: var(--fs-xs); font-weight: 600; color: var(--c-94a3b8); letter-spacing: 0.05em;
 }
 .currency-chip-rm {
-  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: 0.6rem; padding: 0;
+  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: var(--fs-2xs); padding: 0;
 }
 .currency-chip-rm:hover { color: var(--c-f87171); }
-.currency-empty { font-size: 0.78rem; color: var(--c-334155); }
+.currency-empty { font-size: var(--fs-xs); color: var(--c-334155); }
 .currency-add-row { display: flex; gap: 0.5rem; }
 .field { display: flex; flex-direction: column; gap: 0.25rem; }
-.field-label { font-size: 0.78rem; font-weight: 500; color: var(--c-94a3b8); }
+.field-label { font-size: var(--fs-xs); font-weight: 500; color: var(--c-94a3b8); }
 .field-input {
   background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
-  color: var(--c-e2e8f0); font-size: 0.8125rem; padding: 0.4375rem 0.625rem;
+  color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.4375rem 0.625rem;
   outline: none; transition: border-color 120ms; width: 100%;
 }
-.field-input:focus { border-color: var(--c-555555); }
+.field-input:focus { border-color: var(--c-555555-line); }
 .field-input--error { border-color: var(--c-f87171) !important; }
-.field-error { font-size: 0.72rem; color: var(--c-f87171); }
+.field-error { font-size: var(--fs-xs); color: var(--c-f87171); }
 .currency-input { width: 5rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .btn-add-currency {
-  padding: 0.4rem 0.75rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 0.75rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0); cursor: pointer;
 }
 .btn-add-currency:hover { background: var(--c-333333); }
 .currency-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--c-1e1e1e); }
 .btn-cancel-sm {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
+  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 500;
   background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b); cursor: pointer;
 }
 .btn-save-sm {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  background: var(--c-333333); border: 1px solid var(--c-555555); color: var(--c-ffffff); cursor: pointer;
+  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
+  background: var(--c-333333); border: 1px solid var(--c-555555-line); color: var(--c-ffffff); cursor: pointer;
 }
 .btn-save-sm:hover:not(:disabled) { background: var(--c-444444); }
 .btn-save-sm:disabled { opacity: 0.4; cursor: default; }
@@ -689,7 +689,7 @@ const TYPE_COLOURS: Record<string, string> = {
 /* Categories modal */
 .cat-modal { display: flex; flex-direction: column; gap: 0.875rem; }
 .cat-list { display: flex; flex-direction: column; gap: 0.1875rem; max-height: 12rem; overflow-y: auto; }
-.cat-empty { font-size: 0.78rem; color: var(--c-334155); padding: 0.25rem 0; }
+.cat-empty { font-size: var(--fs-xs); color: var(--c-334155); padding: 0.25rem 0; }
 .cat-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.375rem 0.625rem; border-radius: 0.3rem;
@@ -698,15 +698,15 @@ const TYPE_COLOURS: Record<string, string> = {
 }
 .cat-row:hover { background: var(--c-181818); }
 .cat-row--active { background: var(--c-1a1a1a); border-color: var(--c-333333); }
-.cat-name { font-size: 0.8125rem; font-weight: 500; color: var(--c-d0d0d0); flex: 1; min-width: 0; }
-.cat-desc { font-size: 0.72rem; color: var(--c-475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
+.cat-name { font-size: var(--fs-sm); font-weight: 500; color: var(--c-d0d0d0); flex: 1; min-width: 0; }
+.cat-desc { font-size: var(--fs-xs); color: var(--c-475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
 .cat-del {
-  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: 0.6rem;
+  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: var(--fs-2xs);
   padding: 0.2rem 0.3rem; border-radius: 0.2rem; flex-shrink: 0;
 }
 .cat-del:hover { color: var(--c-f87171); background: var(--c-1a0a0a); }
 .cat-form-title {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
   color: var(--c-475569); border-top: 1px solid var(--c-222222); padding-top: 0.875rem;
 }
 .cat-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.25rem; }

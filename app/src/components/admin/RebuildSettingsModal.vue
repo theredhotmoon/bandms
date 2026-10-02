@@ -50,7 +50,7 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
 }
 
 .modal-title {
-  font-size: 1rem;
+  font-size: var(--fs-md);
   font-weight: 700;
   color: var(--c-e2e8f0);
   margin-bottom: 1rem;
@@ -60,14 +60,14 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   color: var(--c-d0d0d0);
   cursor: pointer;
 }
 
 .modal-hint {
   margin-top: 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: var(--c-777777);
 }
 
@@ -78,7 +78,7 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
   border: none;
   background: var(--c-2a2a2a);
   color: var(--c-e2e8f0);
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 .btn-close:hover {

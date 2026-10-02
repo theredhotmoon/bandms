@@ -74,10 +74,10 @@ function remove() {
   background: var(--c-0e0c2a);
   transition: border-color 0.15s, background 0.15s;
 }
-.siu-drop.active, .siu-drop:hover { border-color: var(--c-888888); background: var(--c-1a1a1a); }
-.siu-icon  { font-size: 1.25rem; line-height: 1; }
-.siu-label { font-size: 0.8rem; font-weight: 600; color: var(--c-d0d0d0); }
-.siu-hint  { font-size: 0.7rem; color: var(--c-475569); }
+.siu-drop.active, .siu-drop:hover { border-color: var(--c-888888-line); background: var(--c-1a1a1a); }
+.siu-icon  { font-size: var(--fs-xl); line-height: 1; }
+.siu-label { font-size: var(--fs-sm); font-weight: 600; color: var(--c-d0d0d0); }
+.siu-hint  { font-size: var(--fs-2xs); color: var(--c-475569); }
 
 .siu-preview {
   position: relative;
@@ -95,7 +95,7 @@ function remove() {
   border: 1px solid var(--c-7f1d1d);
   border-radius: 0.375rem;
   padding: 0.15rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
   line-height: 1.4;
   transition: background 0.12s;

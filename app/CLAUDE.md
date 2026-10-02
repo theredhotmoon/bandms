@@ -157,6 +157,7 @@ Each answers a different question, and a red one means something specific:
 | `check-i18n-keys.mjs` | a `$t('…')` key has no catalogue entry | fix the typo, or add the key |
 | `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED`, **or** a component rendered inside a migrated area shows English while translating nothing | add its path to `MIGRATED` |
 | `check-admin-colours.mjs` | a hardcoded colour (hex, `rgb()`/`hsl()`, `color: white`, `bg-[#…]`) in an admin style | use a `var(--c-…)`, or append `token-lint-ignore` with a reason — see *Admin colours* below |
+| `check-admin-contrast.mjs` | a token used as `color:` is under 4.5:1 on a page surface, or a border/fill uses a token that has a `-line` twin | pick a passing token, use the twin, or `contrast-ignore: <reason>` — see *Admin colours* below |
 
 One more check lives in the test suite rather than the build —
 `src/i18n/catalogue.spec.ts`, which compiles every message and is the only
@@ -208,11 +209,30 @@ The admin has a dark and a light theme (`AdminThemeSwitch` in the sidebar,
 `src/admin-palette.css`, redefined under `<html data-admin-theme="light">`;
 App.vue owns that attribute, the way it owns `<html lang>`.
 
-**Variables are named after their dark-mode value** — `var(--c-2a2a2a)` is
-`#2a2a2a` in dark and its generated counterpart in light. The panel had ~2,400
-hardcoded colours and no tokens, so the conversion was mechanical; the names
-record where each came from rather than claiming a role. Tune a light value in
-the palette file, never per component.
+**Variables are named after their *original* dark-mode value**, and that is a
+history, not a promise. The panel had ~2,400 hardcoded colours and no tokens,
+so the conversion was mechanical and `var(--c-2a2a2a)` started out as
+`#2a2a2a`. The typography/contrast retune (#159) then moved about 25 of them —
+`--c-555555` is `#8a8a8a` in dark now, `--c-334155` is `#7e8a9c`. **Read the
+value in `src/admin-palette.css`; never infer it from the name.** Tune a value
+in the palette file, never per component.
+
+**A raised text token has a `-line` twin for everything that is not text.**
+The retune lifted the grey text ramp to 4.5:1, which made the same tokens far
+too loud as borders, fills and toggle tracks — near-black borders in light
+mode, an "off" switch that read as "on" in dark. So `--c-334155`, `-475569`,
+`-555555`, `-64748b`, `-666666`, `-888888` and `-aaaaaa` each have a
+`--c-<hex>-line` holding the pre-retune value. Use the twin for `border`,
+`background`, `outline`, `box-shadow`, `fill` and `stroke`; use the base for
+`color`.
+
+`scripts/check-admin-contrast.mjs` enforces both halves in `pnpm build`: it
+**scans `src/` for every token used as `color:`** (not a hand-kept list — that
+one claimed to be exhaustive and missed placeholders and delete buttons at
+~1:1) and checks each at 4.5:1 on the five page surfaces, and it fails any
+non-text use of a token that has a twin. A label on a coloured fill goes in its
+`ON_FILL` map; a decorative or disabled one-off takes
+`contrast-ignore: <reason>` on its line.
 
 **A raw hex in an admin style silently ignores the switch** — it renders
 correctly in dark, which is what everyone tests in. Reuse an existing `--c-*`.

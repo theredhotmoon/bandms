@@ -164,7 +164,7 @@ const ready = computed(() => !blocked.value && warnings.value.length === 0)
 <style scoped>
 .publish-form { display: flex; flex-direction: column; gap: 1rem; }
 
-.lede { font-size: 0.8rem; color: var(--c-94a3b8); line-height: 1.6; margin: 0; }
+.lede { font-size: var(--fs-sm); color: var(--c-94a3b8); line-height: 1.6; margin: 0; }
 .lede strong { color: var(--c-e2e8f0); }
 
 .summary {
@@ -172,42 +172,42 @@ const ready = computed(() => !blocked.value && warnings.value.length === 0)
   border: 1px solid var(--c-1f1f1f); border-radius: 0.5rem; background: var(--c-0d0d0d);
 }
 .summary-item { display: flex; flex-direction: column; gap: 0.1rem; }
-.summary-value { font-size: 1.1rem; font-weight: 700; color: var(--c-e2e8f0); line-height: 1; }
+.summary-value { font-size: var(--fs-lg); font-weight: 700; color: var(--c-e2e8f0); line-height: 1; }
 .summary-value--warn { color: var(--c-fbbf24); }
 .summary-value--stop { color: var(--c-f87171); }
-.summary-label { font-size: 0.65rem; color: var(--c-475569); text-transform: uppercase; letter-spacing: 0.04em; }
+.summary-label { font-size: var(--fs-2xs); color: var(--c-475569); text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* A stop, not a nag: this is the one thing that disables the button. */
 .stop {
   border: 1px solid var(--c-991b1b); border-radius: 0.5rem;
   background: var(--c-1c0a0a); padding: 0.7rem 0.9rem;
 }
-.stop-title { font-size: 0.75rem; font-weight: 700; color: var(--c-f87171); margin-bottom: 0.35rem; }
+.stop-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-f87171); margin-bottom: 0.35rem; }
 .stop-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
-.stop-list li { font-size: 0.75rem; color: var(--c-e0a5a5); line-height: 1.5; }
-.stop-hint { font-size: 0.72rem; color: var(--c-9a6a6a); margin: 0.4rem 0 0; line-height: 1.5; }
+.stop-list li { font-size: var(--fs-xs); color: var(--c-e0a5a5); line-height: 1.5; }
+.stop-hint { font-size: var(--fs-xs); color: var(--c-fca5a5); margin: 0.4rem 0 0; line-height: 1.5; }
 
 .warn {
   border: 1px solid var(--c-78350f); border-radius: 0.5rem;
   background: var(--c-1c1207); padding: 0.7rem 0.9rem;
 }
-.warn-title { font-size: 0.75rem; font-weight: 700; color: var(--c-fbbf24); margin-bottom: 0.35rem; }
+.warn-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-fbbf24); margin-bottom: 0.35rem; }
 .warn-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
-.warn-list li { font-size: 0.75rem; color: var(--c-d6bd8b); line-height: 1.5; }
+.warn-list li { font-size: var(--fs-xs); color: var(--c-d6bd8b); line-height: 1.5; }
 
-.note-line { font-size: 0.72rem; color: var(--c-475569); line-height: 1.55; margin: 0; }
+.note-line { font-size: var(--fs-xs); color: var(--c-475569); line-height: 1.55; margin: 0; }
 .note-line--dirty { color: var(--c-94a3b8); }
 
 .optional { color: var(--c-475569); font-weight: 400; }
 
 .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .btn-ghost {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
 }
 .btn-ghost:hover { border-color: var(--c-444444); color: var(--c-94a3b8); }
 .btn-primary {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
 }
 .btn-primary:disabled { opacity: 0.45; cursor: default; }

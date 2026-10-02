@@ -71,7 +71,7 @@ const filtered = computed<AdminTicket[]>(() => {
           </thead>
           <tbody>
             <tr v-for="t in filtered" :key="t.uuid" class="table-row">
-              <td class="td" style="font-family:monospace;font-size:0.75rem;color:var(--c-94a3b8);">{{ t.uuid.slice(0, 8) }}</td>
+              <td class="td" style="font-family:monospace;font-size:var(--fs-xs);color:var(--c-94a3b8);">{{ t.uuid.slice(0, 8) }}</td>
               <td class="td" style="color:var(--c-e2e8f0);">{{ t.holder_name ?? '—' }}</td>
               <td class="td" style="color:var(--c-94a3b8);">{{ t.holder_email ?? '—' }}</td>
               <td class="td"><TicketStatusBadge :status="t.status" /></td>
@@ -85,12 +85,12 @@ const filtered = computed<AdminTicket[]>(() => {
 </template>
 
 <style scoped>
-.state-msg  { color: var(--c-64748b); padding: 2rem 0; font-size: 0.9rem; }
+.state-msg  { color: var(--c-64748b); padding: 2rem 0; font-size: var(--fs-base); }
 .search-input {
   padding: 0.375rem 0.75rem; border-radius: 0.375rem;
   border: 1px solid var(--c-252525); background: var(--c-0d0d0d);
-  color: var(--c-e2e8f0); font-size: 0.875rem; outline: none; min-width: 220px;
+  color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none; min-width: 220px;
 }
-.search-input:focus { border-color: var(--c-334155); }
+.search-input:focus { border-color: var(--c-334155-line); }
 </style>
 <style scoped src="./admin-table.css" />

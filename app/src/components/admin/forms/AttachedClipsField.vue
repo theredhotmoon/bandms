@@ -95,17 +95,17 @@ function categoryLabel(value: string): string {
 <style scoped src="../form-styles.css" />
 <style scoped>
 .links-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.5rem; }
-.link-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.5rem; border-radius: 0.375rem; background: var(--c-141414); border: 1px solid var(--c-252525); font-size: 0.8125rem; }
+.link-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.5rem; border-radius: 0.375rem; background: var(--c-141414); border: 1px solid var(--c-252525); font-size: var(--fs-sm); }
 .link-label { flex-shrink: 0; min-width: 7rem; color: var(--c-d0d0d0); font-weight: 500; }
-.link-url { flex: 1; color: var(--c-64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; font-size: 0.75rem; }
+.link-url { flex: 1; color: var(--c-64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; font-size: var(--fs-xs); }
 .link-add-row { display: flex; gap: 0.5rem; align-items: center; }
 .link-url-input { flex: 1; }
-.btn-add-link { flex-shrink: 0; padding: 0.4rem 0.875rem; border-radius: 0.375rem; border: 1px solid var(--c-555555); background: var(--c-2a2a2a); color: var(--c-d0d0d0); font-size: 0.8125rem; cursor: pointer; }
+.btn-add-link { flex-shrink: 0; padding: 0.4rem 0.875rem; border-radius: 0.375rem; border: 1px solid var(--c-555555-line); background: var(--c-2a2a2a); color: var(--c-d0d0d0); font-size: var(--fs-sm); cursor: pointer; }
 .btn-add-link:disabled { opacity: .5; cursor: default; }
-.provider-badge { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border-radius: 0.25rem; flex-shrink: 0; background: var(--c-1e3a5f); color: var(--c-60a5fa); text-transform: uppercase; }
+.provider-badge { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border-radius: 0.25rem; flex-shrink: 0; background: var(--c-1e3a5f); color: var(--c-60a5fa); text-transform: uppercase; }
 .remove-btn {
   flex-shrink: 0; width: 1.25rem; height: 1.25rem; display: flex; align-items: center; justify-content: center;
-  border-radius: 0.25rem; border: none; background: transparent; color: var(--c-475569); font-size: 1rem; cursor: pointer; line-height: 1;
+  border-radius: 0.25rem; border: none; background: transparent; color: var(--c-475569); font-size: var(--fs-md); cursor: pointer; line-height: 1;
   transition: background 100ms, color 100ms;
 }
 .remove-btn:hover { background: var(--c-3b1212); color: var(--c-f87171); }

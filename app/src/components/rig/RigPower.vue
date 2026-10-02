@@ -56,7 +56,7 @@ function patch(changes: Partial<PowerSpec>) {
 }
 .outlets-btn {
   width: 2rem; height: 2rem; border-radius: 0.375rem; border: 1px solid var(--c-2a2a2a);
-  background: var(--c-141414); color: var(--c-c0c0c0); font-size: 1.2rem; cursor: pointer;
+  background: var(--c-141414); color: var(--c-c0c0c0); font-size: var(--fs-xl); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 100ms, border-color 100ms;
 }

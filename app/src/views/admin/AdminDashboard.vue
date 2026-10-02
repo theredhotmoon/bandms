@@ -63,13 +63,16 @@ async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
   } catch (e) { reportSaveError(e, t('dashboard.career.updateFailed')) }
 }
 
+// One figure per content area, all in the same ink: the counts are navigation,
+// not a status readout, so a colour per tile would be decoration pretending
+// to carry meaning.
 const stats = computed(() => [
-  { label: t('dashboard.stats.bands'), count: bandsQ.data.value?.length, link: adminUrl('bands'), color: 'var(--c-c0c0c0)' },
-  { label: t('dashboard.stats.releases'), count: releasesQ.data.value?.length, link: adminUrl('releases'), color: 'var(--c-f472b6)' },
-  { label: t('dashboard.stats.tours'),    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: 'var(--c-fbbf24)' },
-  { label: t('dashboard.stats.venues'), count: venuesQ.data.value?.length, link: adminUrl('venues'), color: 'var(--c-34d399)' },
-  { label: t('dashboard.stats.concerts'), count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: 'var(--c-fb923c)' },
-  { label: t('dashboard.stats.tags'), count: tagsQ.data.value?.length, link: adminUrl('tags'), color: 'var(--c-22d3ee)' },
+  { label: t('dashboard.stats.bands'),    count: bandsQ.data.value?.length,    link: adminUrl('bands') },
+  { label: t('dashboard.stats.releases'), count: releasesQ.data.value?.length, link: adminUrl('releases') },
+  { label: t('dashboard.stats.tours'),    count: toursQ.data.value?.length,    link: adminUrl('tours') },
+  { label: t('dashboard.stats.venues'),   count: venuesQ.data.value?.length,   link: adminUrl('venues') },
+  { label: t('dashboard.stats.concerts'), count: concertsQ.data.value?.length, link: adminUrl('concerts') },
+  { label: t('dashboard.stats.tags'),     count: tagsQ.data.value?.length,     link: adminUrl('tags') },
 ])
 
 
@@ -112,27 +115,25 @@ const avgEnhanceScore = computed(() => {
 
 <template>
   <AdminLayout>
-    <div class="p-8 max-w-4xl">
+    <div class="p-8 max-w-5xl">
       <div class="mb-8">
-        <h1 class="text-xl font-bold mb-1" style="color:var(--c-e2e8f0);">
+        <h1 class="page-title">
           {{ user ? $t('dashboard.welcomeNamed', { name: user.first_name }) : $t('dashboard.welcome') }}
         </h1>
-        <p class="text-sm" style="color:var(--c-64748b);">{{ $t('dashboard.subtitle') }}</p>
+        <p class="page-sub">{{ $t('dashboard.subtitle') }}</p>
       </div>
 
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
+      <nav class="stat-strip" :aria-label="$t('dashboard.stats.label')">
         <RouterLink
           v-for="s in stats"
           :key="s.label"
           :to="s.link"
-          class="stat-card"
+          class="stat-cell"
         >
-          <div class="text-2xl font-bold tabular-nums mb-1" :style="`color:${s.color};`">
-            {{ s.count ?? '—' }}
-          </div>
-          <div class="text-xs font-medium" style="color:var(--c-94a3b8);">{{ s.label }}</div>
+          <span class="stat-figure">{{ s.count ?? '—' }}</span>
+          <span class="stat-label">{{ s.label }}</span>
         </RouterLink>
-      </div>
+      </nav>
 
       <!-- EPK Versions widget -->
       <div class="readiness-widget" v-if="epk.loaded.value">
@@ -241,7 +242,7 @@ const avgEnhanceScore = computed(() => {
             <div class="enhance-bar-wrap">
               <div
                 class="enhance-bar"
-                :style="`width:${Math.round(s / PR_MAX_SCORE * 100)}%;background:${s / PR_MAX_SCORE >= 0.7 ? 'var(--c-34d399)' : s / PR_MAX_SCORE >= 0.4 ? 'var(--c-fbbf24)' : 'var(--c-f87171)'}`"
+                :style="`transform:scaleX(${(s / PR_MAX_SCORE).toFixed(3)});background:${s / PR_MAX_SCORE >= 0.7 ? 'var(--c-34d399)' : s / PR_MAX_SCORE >= 0.4 ? 'var(--c-fbbf24)' : 'var(--c-f87171)'}`"
               />
             </div>
             <span class="enhance-score">{{ s }}/{{ PR_MAX_SCORE }}</span>
@@ -266,10 +267,10 @@ const avgEnhanceScore = computed(() => {
 
       <section v-if="ticketStats" class="mt-8">
         <h2 class="text-lg font-semibold mb-3" style="color:var(--c-e2e8f0);">{{ $t('dashboard.tickets.title') }}</h2>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div v-for="s in statCards" :key="s.label" class="rounded border p-3 text-center" style="background:var(--c-141414);border-color:var(--c-222222);">
-            <div class="text-2xl font-bold" style="color:var(--c-e2e8f0);">{{ s.value }}</div>
-            <div class="text-xs mt-1" style="color:var(--c-64748b);">{{ s.label }}</div>
+        <div class="stat-strip stat-strip--static">
+          <div v-for="s in statCards" :key="s.label" class="stat-cell">
+            <span class="stat-figure">{{ s.value }}</span>
+            <span class="stat-label">{{ s.label }}</span>
           </div>
         </div>
       </section>
@@ -278,15 +279,44 @@ const avgEnhanceScore = computed(() => {
 </template>
 
 <style scoped>
-.stat-card {
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 1.25rem; border-radius: 0.75rem; text-decoration: none;
-  background: var(--c-1a1a1a); border: 1px solid var(--c-333333);
-  transition: border-color 150ms, background 150ms;
+.page-sub { font-size: var(--fs-sm); color: var(--c-64748b); margin-top: 0.25rem; }
+
+/* One strip of figures with hairline dividers instead of six equal boxes —
+   the counts are one readout, so they share one container. The grid wraps to
+   three per row on a phone; the dividers come from the gap colour showing
+   through, which stays correct at every wrap point. */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--c-222222);
+  border: 1px solid var(--c-222222);
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
-.stat-card:hover { background: var(--c-151535); border-color: var(--c-888888); }
+.stat-strip--static { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stat-cell {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--c-141414);
+  text-decoration: none;
+  transition: background 120ms;
+}
+a.stat-cell:hover { background: var(--c-1a1a1a); }
+a.stat-cell:hover .stat-label { color: var(--c-e2e8f0); }
+.stat-figure {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  letter-spacing: var(--track-title); color: var(--c-e2e8f0);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.stat-label { font-size: var(--fs-xs); font-weight: 500; color: var(--c-94a3b8); transition: color 120ms; }
+@media (max-width: 767px) {
+  .stat-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat-strip--static { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-cell { padding: 0.875rem 1rem; }
+}
 .quick-btn {
-  padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem;
+  padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: var(--fs-sm);
   font-weight: 500; text-decoration: none; color: var(--c-d0d0d0);
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444);
   transition: background 120ms;
@@ -297,7 +327,7 @@ const avgEnhanceScore = computed(() => {
 .epk-header-actions { display: flex; gap: 0.4rem; align-items: center; }
 .epk-create-link {
   background: transparent; cursor: pointer; font-family: inherit; line-height: inherit;
-  font-size: 0.78rem; color: var(--c-c0c0c0); text-decoration: none;
+  font-size: var(--fs-xs); color: var(--c-c0c0c0); text-decoration: none;
   white-space: nowrap; padding: 0.3rem 0.75rem;
   border: 1px solid var(--c-333333); border-radius: 0.375rem;
   transition: background 100ms;
@@ -310,18 +340,18 @@ const avgEnhanceScore = computed(() => {
   border-radius: 0.5rem;
 }
 .epk-pending-badge {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
   padding: 0.2rem 0.5rem; border-radius: 9999px; background: var(--c-1a1740); color: var(--c-fbbf24);
   flex-shrink: 0;
 }
-.epk-pending-meta { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
-.epk-version-num { font-size: 0.85rem; font-weight: 700; color: var(--c-d0d0d0); }
-.epk-pending-date { font-size: 0.75rem; color: var(--c-475569); }
-.epk-pending-reason { font-size: 0.78rem; color: var(--c-94a3b8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.epk-pending-meta { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 12rem; }
+.epk-version-num { font-size: var(--fs-base); font-weight: 700; color: var(--c-d0d0d0); }
+.epk-pending-date { font-size: var(--fs-xs); color: var(--c-475569); }
+.epk-pending-reason { font-size: var(--fs-xs); color: var(--c-94a3b8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .epk-pending-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
 .btn-epk-publish {
-  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-14532d); border: 1px solid var(--c-15803d); color: var(--c-34d399);
   transition: background 100ms;
 }
@@ -329,17 +359,17 @@ const avgEnhanceScore = computed(() => {
 .btn-epk-publish:disabled { opacity: 0.5; cursor: default; }
 
 .btn-epk-discard {
-  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-7f1d1d); color: var(--c-f87171);
   transition: background 100ms;
 }
 .btn-epk-discard:hover:not(:disabled) { background: var(--c-450a0a); }
 .btn-epk-discard:disabled { opacity: 0.5; cursor: default; }
 
-.epk-no-pending { font-size: 0.8125rem; color: var(--c-475569); }
+.epk-no-pending { font-size: var(--fs-sm); color: var(--c-475569); }
 
 /* Career level section heading */
-.readiness-title { font-size: 0.875rem; font-weight: 700; color: var(--c-e2e8f0); }
+.readiness-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }
 
 /* Shared widget shell (used by EPK versions + enhance level) */
 .readiness-widget {
@@ -347,18 +377,19 @@ const avgEnhanceScore = computed(() => {
   border-radius: 0.75rem; padding: 1.25rem 1.5rem;
 }
 .readiness-header {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem;
+  flex-wrap: wrap; margin-bottom: 1.25rem;
 }
-.readiness-sub { font-size: 0.75rem; color: var(--c-475569); margin-top: 0.125rem; }
+.readiness-sub { font-size: var(--fs-xs); color: var(--c-475569); margin-top: 0.125rem; }
 .score-ring { position: relative; width: 3.5rem; height: 3.5rem; flex-shrink: 0; }
 .ring-svg   { width: 100%; height: 100%; }
 .ring-pct   {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 0.7rem; font-weight: 700;
+  font-size: var(--fs-2xs); font-weight: 700;
 }
 
 /* Enhance level widget */
-.enhance-sub { font-size: 0.72rem; color: var(--c-475569); margin-bottom: 0.625rem; }
+.enhance-sub { font-size: var(--fs-xs); color: var(--c-475569); margin-bottom: 0.625rem; }
 .enhance-list { display: flex; flex-direction: column; gap: 0.375rem; }
 .enhance-item {
   display: flex; align-items: center; gap: 0.75rem; padding: 0.375rem 0.5rem;
@@ -366,10 +397,10 @@ const avgEnhanceScore = computed(() => {
 }
 .enhance-item:hover { background: var(--c-1a1a1a); }
 .enhance-bar-wrap { width: 5rem; height: 4px; background: var(--c-222222); border-radius: 2px; flex-shrink: 0; overflow: hidden; }
-.enhance-bar { height: 100%; border-radius: 2px; transition: width 400ms; }
-.enhance-score { font-size: 0.7rem; font-weight: 700; color: var(--c-475569); width: 2.5rem; flex-shrink: 0; }
+.enhance-bar { width: 100%; height: 100%; border-radius: 2px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
+.enhance-score { font-size: var(--fs-2xs); font-weight: 700; color: var(--c-475569); width: 2.5rem; flex-shrink: 0; }
 .enhance-label {
-  font-size: 0.8125rem; color: var(--c-94a3b8); min-width: 0; overflow: hidden;
+  font-size: var(--fs-sm); color: var(--c-94a3b8); min-width: 0; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
 }
 </style>

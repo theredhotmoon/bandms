@@ -66,7 +66,7 @@ watch(() => route.path, () => {
   color: #121212;
   border: 2px solid #121212;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   z-index: 10000;
   text-decoration: none;
   border-radius: 0 0 4px 4px;

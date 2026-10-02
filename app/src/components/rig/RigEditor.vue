@@ -190,14 +190,14 @@ function revertActive() {
 .rig-tabs::-webkit-scrollbar { display: none; }
 .rig-tab {
   display: flex; align-items: center; gap: 0.3rem;
-  padding: 0.45rem 0.8rem; font-size: 0.75rem; font-weight: 500; color: var(--c-475569);
+  padding: 0.45rem 0.8rem; font-size: var(--fs-xs); font-weight: 500; color: var(--c-475569);
   background: transparent; border: none; border-bottom: 2px solid transparent;
   cursor: pointer; white-space: nowrap; margin-bottom: -1px;
   transition: color 120ms, border-color 120ms;
 }
 .rig-tab:hover { color: var(--c-64748b); }
-.rig-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
-.tab-icon { font-size: 0.85rem; }
+.rig-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888-line); }
+.tab-icon { font-size: var(--fs-base); }
 
 .override-dot {
   width: 0.4rem; height: 0.4rem; border-radius: 50%;
@@ -215,10 +215,10 @@ function revertActive() {
   background: var(--c-101010); border: 1px solid var(--c-222222);
 }
 .inherit-bar--changed { background: var(--c-1c1608); border-color: var(--c-4d3c10); }
-.inherit-text { font-size: 0.72rem; color: var(--c-64748b); }
+.inherit-text { font-size: var(--fs-xs); color: var(--c-64748b); }
 .inherit-bar--changed .inherit-text { color: var(--c-fbbf24); }
 .btn-revert {
-  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-4d3c10); color: var(--c-fbbf24);
   white-space: nowrap; transition: background 100ms;
 }
@@ -227,9 +227,9 @@ function revertActive() {
 .foh-textarea {
   width: 100%; padding: 0.6rem 0.75rem; border-radius: 0.4rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0);
-  font-size: 0.8rem; font-family: inherit; line-height: 1.6; outline: none;
+  font-size: var(--fs-sm); font-family: inherit; line-height: 1.6; outline: none;
   resize: vertical; transition: border-color 150ms;
 }
 .foh-textarea:focus { border-color: var(--c-5154e5); }
-.foh-textarea::placeholder { color: var(--c-1e2a40); }
+.foh-textarea::placeholder { color: var(--c-475569); }
 </style>

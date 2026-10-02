@@ -47,7 +47,7 @@ function move(locale: Lang, step: -1 | 1): void {
         <span class="flex-1 text-sm text-white">{{ nativeName(l) }}</span>
         <span
           v-if="i === 0"
-          class="rounded bg-teal-900/60 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-teal-300"
+          class="rounded bg-teal-900/60 px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-teal-300"
         >{{ $t('pages.modules.contentLanguages.primary') }}</span>
         <button
           type="button"

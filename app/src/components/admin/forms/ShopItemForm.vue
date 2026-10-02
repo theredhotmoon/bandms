@@ -395,7 +395,7 @@ function handleSubmit() {
 .shop-form { display: flex; flex-direction: column; gap: 0; }
 
 .section-label {
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -408,7 +408,7 @@ function handleSubmit() {
 .shop-form > .section-label:first-child { border-top: none; margin-top: 0; }
 
 .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
-.field-label { font-size: 0.78rem; font-weight: 500; color: var(--c-94a3b8); }
+.field-label { font-size: var(--fs-xs); font-weight: 500; color: var(--c-94a3b8); }
 .field-hint { font-weight: 400; color: var(--c-475569); }
 .field-input,
 .field-textarea {
@@ -416,17 +416,17 @@ function handleSubmit() {
   border: 1px solid var(--c-2a2a2a);
   border-radius: 0.375rem;
   color: var(--c-e2e8f0);
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   padding: 0.4375rem 0.625rem;
   outline: none;
   transition: border-color 120ms;
   width: 100%;
 }
 .field-input:focus,
-.field-textarea:focus { border-color: var(--c-555555); }
+.field-textarea:focus { border-color: var(--c-555555-line); }
 .field-input--error { border-color: var(--c-f87171) !important; }
 .field-textarea { resize: vertical; min-height: 5rem; }
-.field-error { font-size: 0.72rem; color: var(--c-f87171); }
+.field-error { font-size: var(--fs-xs); color: var(--c-f87171); }
 
 .form-row { display: flex; gap: 0.75rem; }
 .two-col > * { flex: 1; min-width: 0; }
@@ -439,19 +439,19 @@ function handleSubmit() {
   border-radius: 9999px;
   border: 1px solid var(--c-2a2a2a);
   background: var(--c-141414);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: var(--c-64748b);
   cursor: pointer;
   transition: border-color 120ms, color 120ms, background 120ms;
 }
-.chip-label--on { border-color: var(--c-666666); color: var(--c-e2e8f0); background: var(--c-1f1f1f); }
+.chip-label--on { border-color: var(--c-666666-line); color: var(--c-e2e8f0); background: var(--c-1f1f1f); }
 .chip-cb { display: none; }
 
 /* Pricing */
 .price-grid { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.75rem; }
 .price-row { display: flex; align-items: center; gap: 0.5rem; }
 .currency-badge {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--c-94a3b8);
   background: var(--c-1e1e1e);
@@ -468,9 +468,9 @@ function handleSubmit() {
 .toggles-row { display: flex; gap: 1.25rem; margin-bottom: 0.75rem; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle-cb { width: 0.875rem; height: 0.875rem; accent-color: var(--c-888888); cursor: pointer; }
-.toggle-text { font-size: 0.8125rem; color: var(--c-94a3b8); }
+.toggle-text { font-size: var(--fs-sm); color: var(--c-94a3b8); }
 
-.empty-hint { font-size: 0.78rem; color: var(--c-334155); margin-bottom: 0.75rem; }
+.empty-hint { font-size: var(--fs-xs); color: var(--c-334155); margin-bottom: 0.75rem; }
 
 /* Variants */
 .variant-table { display: flex; flex-direction: column; border: 1px solid var(--c-222222); border-radius: 0.375rem; overflow: hidden; margin-bottom: 0.625rem; }
@@ -481,16 +481,16 @@ function handleSubmit() {
   align-items: center;
   padding: 0.375rem 0.5rem;
   border-bottom: 1px solid var(--c-1a1a1a);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--c-94a3b8);
 }
 .variant-row:last-child { border-bottom: none; }
-.variant-row--head { background: var(--c-111111); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-475569); }
+.variant-row--head { background: var(--c-111111); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-475569); }
 .variant-row--editing { background: var(--c-101010); }
 .variant-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .variant-stock { text-align: center; }
 .variant-actions { display: flex; gap: 0.3rem; justify-content: flex-end; }
-.variant-inp { padding: 0.3rem 0.45rem; font-size: 0.775rem; }
+.variant-inp { padding: 0.3rem 0.45rem; font-size: var(--fs-xs); }
 .variant-inp--stock { max-width: 5rem; }
 
 .variant-add-row {
@@ -504,7 +504,7 @@ function handleSubmit() {
 .vbtn {
   padding: 0.25rem 0.55rem;
   border-radius: 0.3rem;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
@@ -526,14 +526,14 @@ function handleSubmit() {
 /* Actions */
 .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 1rem; margin-top: 0.75rem; border-top: 1px solid var(--c-1e1e1e); }
 .btn-cancel {
-  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
+  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 500;
   background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b); cursor: pointer;
   transition: background 100ms, color 100ms;
 }
 .btn-cancel:hover { background: var(--c-1a1a1a); color: var(--c-94a3b8); }
 .btn-submit {
-  padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600;
-  background: var(--c-333333); border: 1px solid var(--c-555555); color: var(--c-ffffff); cursor: pointer;
+  padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
+  background: var(--c-333333); border: 1px solid var(--c-555555-line); color: var(--c-ffffff); cursor: pointer;
   transition: background 100ms;
 }
 .btn-submit:hover:not(:disabled) { background: var(--c-444444); }

@@ -251,7 +251,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
                 </td>
                 <td class="td font-medium" style="color:var(--c-e2e8f0);">
                   {{ v.title }}
-                  <div style="font-size:0.7rem;color:var(--c-475569);font-weight:400;display:flex;gap:0.5rem;margin-top:1px;">
+                  <div style="font-size:var(--fs-2xs);color:var(--c-475569);font-weight:400;display:flex;gap:0.5rem;margin-top:1px;">
                     <span v-if="v.channel_name">{{ v.channel_name }}</span>
                     <span v-if="v.duration">· {{ v.duration }}</span>
                   </div>
@@ -261,7 +261,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
                     {{ $t(`media.videos.hosts.${videoHost(v.video_url)}`) }} ↗
                   </a>
                 </td>
-                <td class="td" style="color:var(--c-475569); font-size:0.75rem;">{{ v.published_at ?? '—' }}</td>
+                <td class="td" style="color:var(--c-475569); font-size:var(--fs-xs);">{{ v.published_at ?? '—' }}</td>
                 <td class="td views-cell">
                   <span v-if="v.view_count !== null" class="views-num">{{ v.view_count.toLocaleString() }}</span>
                   <span v-else class="views-none">—</span>
@@ -374,7 +374,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
 .url-link {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--c-c0c0c0);
   text-decoration: none;
@@ -400,14 +400,14 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: var(--fs-md);
   color: var(--c-334155);
 }
 
 .btn-preview {
   padding: 0.25rem 0.5rem;
   border-radius: 0.3rem;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   background: var(--c-0f2a1e);
   color: var(--c-34d399);
@@ -435,18 +435,18 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   padding: 0.3rem 0.75rem;
 }
 .views-stat-num {
-  font-size: 1rem;
+  font-size: var(--fs-md);
   font-weight: 700;
   color: var(--c-38bdf8);
   letter-spacing: -0.02em;
 }
 .views-stat-label {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   color: var(--c-475569);
   font-weight: 500;
 }
 .views-stat-ts {
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   color: var(--c-334155);
 }
 
@@ -456,7 +456,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
   border-radius: 0.4rem;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   background: var(--c-111111);
   color: var(--c-38bdf8);
@@ -467,7 +467,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 .btn-sync:hover:not(:disabled) { background: var(--c-0f2540); }
 .btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.views-cell { font-size: 0.8rem; }
+.views-cell { font-size: var(--fs-sm); }
 .views-num  { color: var(--c-38bdf8); font-weight: 600; font-variant-numeric: tabular-nums; }
 .views-none { color: var(--c-334155); }
 
@@ -476,7 +476,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 .url-input { flex: 1; min-width: 0; }
 .btn-retrieve {
   display: inline-flex; align-items: center; gap: 0.375rem;
-  padding: 0 0.75rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
+  padding: 0 0.75rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 500;
   white-space: nowrap; cursor: pointer;
   background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: var(--c-475569);
   transition: background 120ms, color 120ms, border-color 120ms;
@@ -499,10 +499,10 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   border-radius: 0.25rem; flex-shrink: 0; display: block; background: var(--c-1a1a1a);
 }
 .meta-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.375rem; }
-.meta-title { font-size: 0.8rem; font-weight: 600; color: var(--c-e2e8f0); line-height: 1.3; }
+.meta-title { font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0); line-height: 1.3; }
 .meta-details { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .meta-chip {
-  font-size: 0.68rem; font-weight: 500; color: var(--c-64748b);
+  font-size: var(--fs-2xs); font-weight: 500; color: var(--c-64748b);
   background: var(--c-1e1e1e); border: 1px solid var(--c-2a2a2a);
   border-radius: 0.25rem; padding: 0.15rem 0.4rem;
 }

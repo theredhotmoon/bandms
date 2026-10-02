@@ -66,7 +66,7 @@ defineEmits<{ close: [] }>()
   border-bottom: 1px solid var(--c-252525);
 }
 .modal-title {
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--c-e2e8f0);
   margin: 0;

@@ -1,10 +1,36 @@
 @import "tailwindcss";
+@import "@fontsource-variable/archivo";
 @import "./admin-palette.css";
 
 @theme {
   --color-ink: #121212;
   --color-paper: #EFE7D6;
   --color-accent: #176b5c;
+}
+
+/* ── Type scale ──────────────────────────────────── */
+/* One role scale for the whole admin. Scoped styles reference these instead
+   of a raw rem so the ramp stays the same on every screen; the floor is 11px
+   (--fs-2xs) — nothing in the panel renders smaller. Line heights are tuned
+   to Archivo's tall x-height: dense UI rows sit at 1.4, prose at 1.55. */
+:root {
+  --fs-2xs: 0.6875rem;  /* 11px — badges, uppercase column headers, metadata */
+  --fs-xs:  0.75rem;    /* 12px — hints, secondary labels */
+  --fs-sm:  0.8125rem;  /* 13px — nav, table cells, buttons */
+  --fs-base: 0.875rem;  /* 14px — inputs, body copy */
+  --fs-md:  1rem;       /* 16px — card titles */
+  --fs-lg:  1.125rem;   /* 18px — section titles */
+  --fs-xl:  1.375rem;   /* 22px — page titles */
+  --fs-2xl: 1.75rem;    /* 28px — dashboard stat figures */
+
+  --lh-tight: 1.2;
+  --lh-ui: 1.4;
+  --lh-prose: 1.55;
+
+  --track-caps: 0.08em; /* uppercase labels */
+  --track-title: -0.015em;
+
+  --font-sans: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ── Global reset / base ─────────────────────────── */
@@ -14,9 +40,24 @@ body {
   background: #EFE7D6;
   color: #121212;
   min-height: 100vh;
-  font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   margin: 0;
+}
+
+/* The admin is a dense Operate surface: 14px body, 1.4 leading. The fan pages
+   the SPA still serves keep the browser's 16px default. */
+.admin-shell,
+.modal-overlay {
+  font-size: var(--fs-base);
+  line-height: var(--lh-ui);
+}
+
+.admin-shell :is(h1, h2, h3),
+.modal-overlay :is(h1, h2, h3) {
+  letter-spacing: var(--track-title);
+  text-wrap: balance;
 }
 
 /* ── Checker pattern helper ──────────────────────── */
@@ -47,6 +88,41 @@ body {
 .admin-shell select option,
 .modal-overlay select option { background: var(--c-141414); color: var(--c-e2e8f0); }
 
+/* ── Browser surfaces inside the admin ───────────── */
+/* The parts nobody draws still carry the theme: the caret, the selection
+   highlight, the focus ring and the scrollbar all default to the UA's own
+   colours, which is the one place the panel used to look assembled rather
+   than built. All of them derive from the palette so they flip with it. */
+.admin-shell,
+.modal-overlay {
+  caret-color: var(--c-e2e8f0);
+  scrollbar-color: var(--c-333333) transparent;
+}
+.admin-shell ::selection,
+.modal-overlay ::selection {
+  background: color-mix(in srgb, var(--c-e2e8f0) 22%, transparent);
+  color: var(--c-ffffff);
+}
+.admin-shell ::-webkit-scrollbar-thumb,
+.modal-overlay ::-webkit-scrollbar-thumb { background: var(--c-333333); }
+.admin-shell ::-webkit-scrollbar-thumb:hover,
+.modal-overlay ::-webkit-scrollbar-thumb:hover { background: var(--c-444444); }
+
+/* One focus ring for every control, drawn only for keyboard focus. Inputs
+   carry their own focus border in form-styles.css, so they are excluded. */
+.admin-shell :is(a, button, [role="button"], [tabindex]):focus-visible,
+.modal-overlay :is(a, button, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--c-e2e8f0);
+  outline-offset: 2px;
+  /* No border-radius here: the outline follows each control's own radius,
+     and setting one would square off round toggles and avatar buttons. */
+}
+
+/* Tables and figures read better with lining, tabular numerals. */
+.admin-shell table,
+.admin-shell .tabular-nums,
+.modal-overlay table { font-variant-numeric: tabular-nums lining-nums; }
+
 /* ── Tailwind neutrals in the light admin theme ──── */
 /* A few admin screens (website modules, FAQs, hero images, the stage plot) are
    styled with zinc-* / white utilities instead of --c-* variables. Tailwind v4
@@ -67,6 +143,23 @@ body {
   --color-zinc-900: oklch(96.7% 0.001 286.375);
   --color-zinc-950: oklch(98.5% 0 0);
 }
+
+/* ── Page titles ─────────────────────────────────── */
+/* Sixteen views write their own `<h1 class="text-lg font-semibold">`; the
+   rest use a scoped class. One unlayered rule gives every page the same
+   title role (22px / 700 / tight tracking) without touching the views. */
+.main-content-body h1 {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-title);
+}
+
+/* ── Page padding scales with the viewport ───────── */
+/* Every admin view wraps itself in `p-8`; on a phone that is a third of the
+   width gone to gutters. Overriding the utility here (unlayered, so it wins
+   over Tailwind's @layer utilities) keeps the 19 views untouched. */
+.main-content-body > .p-8 { padding: clamp(1rem, 1rem + 2vw, 2rem); }
 
 /* ── Page offset for admin pages that still use AppNavbar ── */
 .page-offset { padding-top: 56px; }

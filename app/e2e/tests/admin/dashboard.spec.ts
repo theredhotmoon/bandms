@@ -12,9 +12,16 @@ test.describe('Admin Dashboard', () => {
     await expect(page.locator('h1')).toContainText('Welcome back')
   })
 
+  // The strip once borrowed the "Quick actions" label, so landmark
+  // navigation announced two regions by that name.
+  test('stat strip is its own landmark, not a second "Quick actions"', async ({ page }) => {
+    await expect(page.getByRole('navigation', { name: 'Content at a glance' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Quick actions' })).toHaveCount(0)
+  })
+
   test('all 6 stat cards are visible', async ({ page }) => {
     for (const label of ['Bands', 'Releases', 'Tours', 'Venues', 'Concerts', 'Tags']) {
-      await expect(page.locator('a.stat-card').filter({ hasText: label })).toBeVisible()
+      await expect(page.locator('a.stat-cell').filter({ hasText: label })).toBeVisible()
     }
   })
 

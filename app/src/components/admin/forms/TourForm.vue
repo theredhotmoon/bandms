@@ -221,12 +221,12 @@ function submit() {
 <style scoped src="../form-styles.css" />
 <style scoped>
 .section-title {
-  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--c-34d399); margin-bottom: 0.625rem;
 }
 .count-badge {
   display: inline-block; padding: 0.1rem 0.375rem; border-radius: 0.25rem;
-  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.65rem; font-weight: 700;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: var(--fs-2xs); font-weight: 700;
   text-transform: none; letter-spacing: 0; margin-left: 0.375rem; vertical-align: middle;
 }
 /* Concerts list */
@@ -245,22 +245,22 @@ function submit() {
 .concert-item--selected:hover { background: var(--c-231e5a); }
 .concert-checkbox { accent-color: var(--c-888888); flex-shrink: 0; cursor: pointer; }
 .concert-date {
-  font-size: 0.75rem; font-weight: 600; color: var(--c-c0c0c0);
+  font-size: var(--fs-xs); font-weight: 600; color: var(--c-c0c0c0);
   white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums;
 }
-.concert-venue { font-size: 0.75rem; color: var(--c-e2e8f0); flex: 1; min-width: 0; }
+.concert-venue { font-size: var(--fs-xs); color: var(--c-e2e8f0); flex: 1; min-width: 0; }
 .concert-desc {
-  font-size: 0.7rem; color: var(--c-64748b); max-width: 12rem;
+  font-size: var(--fs-2xs); color: var(--c-64748b); max-width: 12rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* Shared row styles */
 .btn-add-row {
-  padding: 0.25rem 0.625rem; border-radius: 0.375rem; font-size: 0.75rem;
+  padding: 0.25rem 0.625rem; border-radius: 0.375rem; font-size: var(--fs-xs);
   font-weight: 600; cursor: pointer; background: var(--c-2a2a2a);
   border: 1px solid var(--c-444444); color: var(--c-d0d0d0); transition: background 100ms;
 }
 .btn-add-row:hover { background: var(--c-2a2a2a); }
-.empty-hint { font-size: 0.8125rem; color: var(--c-475569); padding: 0.375rem 0; }
+.empty-hint { font-size: var(--fs-sm); color: var(--c-475569); padding: 0.375rem 0; }
 .rows-list { display: flex; flex-direction: column; gap: 0.375rem; }
 .img-row, .link-row {
   display: flex; align-items: center; gap: 0.5rem;
@@ -268,7 +268,7 @@ function submit() {
   background: var(--c-111111); border: 1px solid var(--c-222222);
 }
 .row-num {
-  font-size: 0.7rem; font-weight: 600; color: var(--c-334155);
+  font-size: var(--fs-2xs); font-weight: 600; color: var(--c-334155);
   width: 1.25rem; text-align: right; flex-shrink: 0;
 }
 .caption-input { width: 11rem; flex-shrink: 0; }
@@ -276,14 +276,14 @@ function submit() {
 .move-group { display: flex; gap: 0.125rem; flex-shrink: 0; }
 .move-btn {
   width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid var(--c-222222);
-  background: transparent; color: var(--c-475569); font-size: 0.75rem; cursor: pointer;
+  background: transparent; color: var(--c-475569); font-size: var(--fs-xs); cursor: pointer;
   transition: background 100ms, color 100ms; display: flex; align-items: center; justify-content: center;
 }
 .move-btn:hover:not(:disabled) { background: var(--c-141414); color: var(--c-94a3b8); }
 .move-btn:disabled { opacity: 0.25; cursor: default; }
 .remove-btn {
   width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid var(--c-3a1212);
-  background: transparent; color: var(--c-f87171); font-size: 0.65rem; cursor: pointer;
+  background: transparent; color: var(--c-f87171); font-size: var(--fs-2xs); cursor: pointer;
   transition: background 100ms; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
 }
 .remove-btn:hover { background: var(--c-3f1212); }

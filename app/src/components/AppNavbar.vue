@@ -101,7 +101,7 @@ async function handleLogout() {
 }
 .logo-icon { width: 1.125rem; height: 1.125rem; color: #111; flex-shrink: 0; }
 .nav-band-logo { height: 1.75rem; max-width: 8rem; object-fit: contain; display: block; }
-.logo-text  { font-weight: 700; font-size: 1rem; color: #111; letter-spacing: -0.01em; }
+.logo-text  { font-weight: 700; font-size: var(--fs-md); color: #111; letter-spacing: -0.01em; }
 .logo-accent { color: #111; }
 
 .nav-spacer { flex: 1; }
@@ -118,7 +118,7 @@ async function handleLogout() {
 .btn-admin {
   display: flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.5rem;
-  font-size: 0.8125rem; font-weight: 500;
+  font-size: var(--fs-sm); font-weight: 500;
   background: #f0f0f0; color: #111;
   text-decoration: none; border: 1px solid #ddd;
   transition: background 120ms, border-color 120ms;
@@ -128,7 +128,7 @@ async function handleLogout() {
 .btn-signout {
   display: flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.5rem;
-  font-size: 0.8125rem; font-weight: 500;
+  font-size: var(--fs-sm); font-weight: 500;
   background: transparent; color: #888;
   border: 1px solid transparent; cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -137,7 +137,7 @@ async function handleLogout() {
 
 .btn-signin {
   padding: 0.375rem 0.875rem; border-radius: 0.5rem;
-  font-size: 0.8125rem; font-weight: 600;
+  font-size: var(--fs-sm); font-weight: 600;
   background: #111; color: #fff;
   text-decoration: none;
   transition: background 120ms;

@@ -64,6 +64,10 @@ export default {
     publisher: 'publisher',
   },
   signOut: 'Sign out',
+  menu: {
+    open: 'Open menu',
+    close: 'Close menu',
+  },
   adminLink: 'Admin',
   bandLogoAlt: 'Band logo',
   signIn: {

@@ -198,7 +198,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
             <tr v-for="u in (list.data.value ?? [])" :key="u.id" class="table-row">
               <td class="td" style="color:var(--c-e2e8f0); font-weight:600;">
                 {{ u.first_name }} {{ u.last_name }}
-                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:var(--c-888888);margin-left:0.4rem;">{{ $t('more.users.you') }}</span>
+                <span v-if="u.id === currentUser?.id" style="font-size:var(--fs-2xs);color:var(--c-888888);margin-left:0.4rem;">{{ $t('more.users.you') }}</span>
               </td>
               <td class="td" style="color:var(--c-94a3b8);">{{ u.email }}</td>
               <td class="td">
@@ -339,7 +339,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <!-- Confirm delete -->
     <AdminModal :open="confirmDeleteId !== null" :title="$t('more.users.deleteTitle')" max-width="24rem" @close="confirmDeleteId = null">
       <div class="modal-form">
-        <p style="font-size:0.875rem;color:var(--c-94a3b8);line-height:1.6;">
+        <p style="font-size:var(--fs-base);color:var(--c-94a3b8);line-height:1.6;">
           {{ $t('more.users.deleteMessage') }}
         </p>
         <div class="modal-actions">
@@ -356,11 +356,11 @@ const ROLE_COLORS: Record<UserRole, string> = {
 <style scoped>
 .page-wrap   { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.page-title  { font-size: 1.125rem; font-weight: 700; color: var(--c-e2e8f0); }
-.page-sub    { font-size: 0.8rem; color: var(--c-475569); margin-top: 0.2rem; }
+.page-title  { font-size: var(--fs-lg); font-weight: 700; color: var(--c-e2e8f0); }
+.page-sub    { font-size: var(--fs-sm); color: var(--c-475569); margin-top: 0.2rem; }
 
 .role-badge {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
   padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid;
 }
 
@@ -375,13 +375,13 @@ const ROLE_COLORS: Record<UserRole, string> = {
   transition: border-color 120ms, background 120ms;
 }
 .role-card:hover        { border-color: var(--c-444444); background: var(--c-12123a); }
-.role-card--active      { border-color: var(--c-888888) !important; background: var(--c-1f1f1f) !important; }
-.role-card-name         { font-size: 0.8rem; font-weight: 700; color: var(--c-e2e8f0); }
-.role-card-desc         { font-size: 0.65rem; color: var(--c-475569); line-height: 1.4; }
+.role-card--active      { border-color: var(--c-888888-line) !important; background: var(--c-1f1f1f) !important; }
+.role-card-name         { font-size: var(--fs-sm); font-weight: 700; color: var(--c-e2e8f0); }
+.role-card-desc         { font-size: var(--fs-2xs); color: var(--c-475569); line-height: 1.4; }
 .role-card--active .role-card-name { color: var(--c-d0d0d0); }
 
 .btn-danger {
-  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-7f1d1d); border: 1px solid var(--c-991b1b); color: var(--c-fca5a5);
 }
 .btn-danger:hover { background: var(--c-450a0a); }

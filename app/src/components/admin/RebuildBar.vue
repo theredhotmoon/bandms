@@ -59,11 +59,15 @@ function relativeTime(iso: string | null): string {
       {{ isBuilding ? $t('common.rebuild.rebuilding') : $t('common.rebuild.rebuild') }}
     </button>
 
-    <button type="button" class="btn-settings" :title="$t('common.rebuild.settingsTitle')" @click="showSettings = true">
-      ⚙
+    <button type="button" class="btn-settings" :title="$t('common.rebuild.settingsTitle')" :aria-label="$t('common.rebuild.settingsTitle')" @click="showSettings = true">
+      <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
 
-    <RebuildSettingsModal v-if="showSettings" @close="showSettings = false" />
+    <!-- Teleported: the sticky bar is a z-index 30 stacking context, and a
+         fixed modal left inside it renders under the top bar and drawer. -->
+    <Teleport to="body">
+      <RebuildSettingsModal v-if="showSettings" @close="showSettings = false" />
+    </Teleport>
   </div>
 </template>
 
@@ -76,6 +80,13 @@ function relativeTime(iso: string | null): string {
   border-bottom: 1px solid var(--c-222222);
   background: var(--c-111111);
   flex-shrink: 0;
+  position: sticky;
+  /* Under AdminLayout's fixed top bar; 0 where that bar is hidden. */
+  top: var(--admin-topbar-h, 0px);
+  z-index: 30;
+}
+@media (max-width: 1023px) {
+  .rebuild-bar { padding-inline: 1rem; }
 }
 
 .rebuild-bar-pending {
@@ -91,7 +102,7 @@ function relativeTime(iso: string | null): string {
   border: none;
   background: transparent;
   color: var(--c-999999);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
 }
 .pending-toggle:disabled {
@@ -112,7 +123,7 @@ function relativeTime(iso: string | null): string {
   border-radius: 9999px;
   background: var(--c-14b8a6);
   color: #ffffff; /* token-lint-ignore: white count on the teal pill */
-  font-size: 0.625rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
 }
 
@@ -135,12 +146,13 @@ function relativeTime(iso: string | null): string {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.25rem 0.375rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: var(--c-d0d0d0);
 }
 
 .pending-time {
-  color: var(--c-666666);
+  color: var(--c-888888);
+  font-variant-numeric: tabular-nums;
 }
 
 .btn-rebuild {
@@ -149,7 +161,7 @@ function relativeTime(iso: string | null): string {
   border: none;
   background: var(--c-0d9488);
   color: #ffffff; /* token-lint-ignore: white label on the teal button */
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
   transition: background 120ms;
@@ -163,15 +175,17 @@ function relativeTime(iso: string | null): string {
 }
 
 .btn-settings {
-  padding: 0.375rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
   border-radius: 0.375rem;
   border: none;
   background: transparent;
   color: var(--c-999999);
   cursor: pointer;
-  font-size: 0.875rem;
 }
-.btn-settings:hover {
-  background: var(--c-1a1a1a);
-}
+.btn-settings:hover { color: var(--c-e2e8f0); background: var(--c-1a1a1a); }
+.settings-icon { width: 1rem; height: 1rem; }
 </style>

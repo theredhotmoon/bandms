@@ -98,7 +98,7 @@ function cmd(action: () => void) {
   background: var(--c-141414);
 }
 .rich-editor-wrap:focus-within {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
 }
 .toolbar {
   display: flex;
@@ -113,7 +113,7 @@ function cmd(action: () => void) {
   display: flex; align-items: center; justify-content: center;
   min-width: 1.75rem; height: 1.75rem; padding: 0 0.25rem;
   border-radius: 0.3rem; border: none; background: transparent;
-  color: var(--c-64748b); font-size: 0.8rem; cursor: pointer;
+  color: var(--c-64748b); font-size: var(--fs-sm); cursor: pointer;
   transition: background 100ms, color 100ms;
 }
 .tb-btn:hover { background: var(--c-1f1f1f); color: var(--c-d0d0d0); }
@@ -125,7 +125,7 @@ function cmd(action: () => void) {
   min-height: 8rem;
   padding: 0.75rem;
   color: var(--c-e2e8f0);
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   line-height: 1.65;
   cursor: text;
 }
@@ -133,14 +133,14 @@ function cmd(action: () => void) {
   outline: none;
   min-height: 7rem;
 }
-.editor-body :deep(h2) { font-size: 1.1rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.75rem 0 0.25rem; }
-.editor-body :deep(h3) { font-size: 0.95rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.6rem 0 0.2rem; }
+.editor-body :deep(h2) { font-size: var(--fs-lg); font-weight: 600; color: var(--c-f1f5f9); margin: 0.75rem 0 0.25rem; }
+.editor-body :deep(h3) { font-size: var(--fs-md); font-weight: 600; color: var(--c-f1f5f9); margin: 0.6rem 0 0.2rem; }
 .editor-body :deep(p) { margin: 0 0 0.5rem; }
 .editor-body :deep(p:last-child) { margin-bottom: 0; }
 .editor-body :deep(ul), .editor-body :deep(ol) { padding-left: 1.4rem; margin: 0.25rem 0 0.5rem; }
 .editor-body :deep(li) { margin: 0.15rem 0; }
 .editor-body :deep(blockquote) {
-  border-left: 3px solid var(--c-555555); padding-left: 0.75rem;
+  border-left: 3px solid var(--c-555555-line); padding-left: 0.75rem;
   color: var(--c-94a3b8); margin: 0.5rem 0; font-style: italic;
 }
 .editor-body :deep(strong) { color: var(--c-f1f5f9); }

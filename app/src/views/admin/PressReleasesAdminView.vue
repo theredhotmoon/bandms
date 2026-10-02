@@ -224,21 +224,21 @@ function hostname(url: string): string {
 .og-thumb-placeholder {
   width: 3rem; height: 2.25rem; border-radius: 0.25rem;
   background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
-  display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center; font-size: var(--fs-base);
 }
 .pr-title {
-  font-size: 0.8125rem; font-weight: 500; color: var(--c-e2e8f0);
+  font-size: var(--fs-sm); font-weight: 500; color: var(--c-e2e8f0);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 26rem;
 }
-.pr-site  { font-size: 0.72rem; color: var(--c-475569); margin-top: 1px; }
+.pr-site  { font-size: var(--fs-xs); color: var(--c-475569); margin-top: 1px; }
 .tag-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .epk-badge {
   display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.2rem; margin-right: 0.375rem;
-  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.62rem; font-weight: 700;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: var(--fs-2xs); font-weight: 700;
   letter-spacing: 0.06em; vertical-align: middle;
 }
 .tag-chip {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
-  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.65rem; font-weight: 500;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: var(--fs-2xs); font-weight: 500;
 }
 </style>

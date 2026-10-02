@@ -159,7 +159,7 @@ function initials(m: BandMember): string {
             <div class="text-sm font-medium text-amber-200">{{ temp.name }}</div>
             <div class="text-xs text-amber-400/70">{{ temp.role || $t('rider.lineup.replacement') }}</div>
           </div>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 font-medium mr-1">{{ $t('rider.lineup.guestBadge') }}</span>
+          <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-amber-800/50 text-amber-300 font-medium mr-1">{{ $t('rider.lineup.guestBadge') }}</span>
           <button
             type="button"
             class="text-zinc-500 hover:text-red-400 transition-colors p-1"

@@ -35,7 +35,7 @@ defineEmits<{ open: [placementId: string] }>()
 .source-badge {
   display: inline-flex; align-items: baseline; gap: 0.3rem;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
-  font-size: 0.68rem; line-height: 1.4; white-space: nowrap;
+  font-size: var(--fs-2xs); line-height: 1.4; white-space: nowrap;
   background: var(--c-141414); border: 1px solid var(--c-222222); color: var(--c-64748b);
   font-family: inherit; max-width: 100%; overflow: hidden;
 }
@@ -43,7 +43,7 @@ defineEmits<{ open: [placementId: string] }>()
 .source-badge--extra { background: var(--c-0f1a14); border-color: var(--c-14361f); }
 
 .source-badge--clickable { cursor: pointer; transition: border-color 100ms, color 100ms; }
-.source-badge--clickable:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
+.source-badge--clickable:hover { border-color: var(--c-555555-line); color: var(--c-94a3b8); }
 
 .source-name { font-weight: 600; color: var(--c-94a3b8); }
 .source-badge--guest .source-name { color: var(--c-fbbf24); }

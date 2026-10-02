@@ -515,7 +515,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-section-title {
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--c-94a3b8);
   text-transform: uppercase;
@@ -527,7 +527,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-count {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--c-475569);
   background: var(--c-12122e);
@@ -553,7 +553,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 .blm-drop:hover,
 .blm-drop--active {
-  border-color: var(--c-888888);
+  border-color: var(--c-888888-line);
   background: var(--c-100e30);
 }
 
@@ -564,12 +564,12 @@ function isAnyUpdatePending(id: number): boolean {
   margin-bottom: 0.25rem;
 }
 .blm-drop-label {
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--c-d0d0d0);
 }
 .blm-drop-hint {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   color: var(--c-475569);
 }
 
@@ -625,7 +625,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-optional {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 400;
   color: var(--c-475569);
 }
@@ -696,7 +696,7 @@ function isAnyUpdatePending(id: number): boolean {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  font-size: 0.58rem;
+  font-size: var(--fs-2xs);
   font-weight: 800;
   letter-spacing: 0.06em;
   padding: 0.15rem 0.4rem;
@@ -739,7 +739,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-chip {
-  font-size: 0.6rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--c-888888);
   background: var(--c-1a1a1a);
@@ -750,7 +750,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-card-label {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--c-e2e8f0);
   margin: 0;
@@ -760,13 +760,13 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-card-version {
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
   color: var(--c-c0c0c0);
   margin: 0;
 }
 
 .blm-card-filename {
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   color: var(--c-334155);
   margin: 0;
   overflow: hidden;
@@ -775,14 +775,14 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-card-meta {
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   color: var(--c-475569);
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.blm-meta-sep { color: var(--c-2a2a2a); }
+.blm-meta-sep { color: var(--c-2a2a2a); } /* contrast-ignore: decorative "·" separator, the text on both sides carries the meaning */
 
 /* ── Card action buttons ───────────────────────────────────── */
 .blm-card-actions {
@@ -795,7 +795,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-action-btn {
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
   font-weight: 500;
   padding: 0.2rem 0.5rem;
   border-radius: 0.3rem;
@@ -821,7 +821,7 @@ function isAnyUpdatePending(id: number): boolean {
   color: var(--c-fbbf24);
   border-color: var(--c-78350f);
 }
-.blm-action-btn--star:disabled { color: var(--c-92400e); } /* a saturated amber that reads on both themes */
+.blm-action-btn--star:disabled { color: var(--c-92400e); } /* contrast-ignore: disabled control, which WCAG 1.4.3 exempts; a saturated amber that reads on both themes */
 
 .blm-action-btn--deprecate:hover:not(:disabled) {
   background: var(--c-1a1210);
@@ -863,7 +863,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-confirm-text {
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
   color: var(--c-f87171);
   flex: 1;
   min-width: 0;
@@ -887,7 +887,7 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* Smaller input variant used inside cards */
 .field-input--sm {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   padding: 0.375rem 0.625rem;
 }
 
@@ -900,7 +900,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-pins-hint {
-  font-size: 0.73rem;
+  font-size: var(--fs-xs);
   color: var(--c-475569);
   margin: 0 0 0.75rem;
   line-height: 1.5;
@@ -922,7 +922,7 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-pin-label {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--c-7c8fa6);
   width: 8.5rem;
@@ -943,14 +943,14 @@ function isAnyUpdatePending(id: number): boolean {
 /* ── States ────────────────────────────────────────────────── */
 .blm-loading,
 .blm-empty {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--c-475569);
   padding: 1rem 0;
   text-align: center;
 }
 
 .blm-error {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--c-f87171);
   padding: 1rem 0;
   text-align: center;
@@ -959,11 +959,11 @@ function isAnyUpdatePending(id: number): boolean {
 /* ── Button size overrides ─────────────────────────────────── */
 .btn-primary--sm {
   padding: 0.3rem 0.75rem;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 
 .btn-ghost--sm {
   padding: 0.3rem 0.625rem;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 </style>
