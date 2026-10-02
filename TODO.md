@@ -69,6 +69,45 @@ decide before the first one.
 
 ---
 
+## Hero pictures — a "display probability" per picture
+
+**Status:** idea, requested 2026-10-03. Not started.
+
+Every page's hero backdrop picks one picture from its set — the page's own
+scope (`about`, `concerts`, …) or, failing that, the global `main` set; see
+`resolveHeroImages()` (`web/src/lib/heroImages.ts`). The pick is a uniform
+`Math.random()` in `HeroBackdrop.astro`, on every page load. So a picture the
+band likes less (a "funny one") comes up exactly as often as the best shot.
+
+**Wanted:** an optional weight per hero picture, set by the admin, that can
+only **lower** how often it shows.
+
+- **No value = maximum.** A picture with no weight is as likely as any other
+  unweighted one — today's behaviour, so nothing changes until a band sets one.
+- **A value only reduces.** E.g. a 1–100 scale (or a few named steps: always /
+  often / sometimes / rarely) where empty is treated as 100. A picture at 25
+  shows a quarter as often as an unweighted one.
+- **Weighted random, not a ranking.** Pick with probability `w / Σw` over the
+  page's resolved set; every picture with weight > 0 can still appear. Decide
+  whether 0 is allowed ("keep it in the set but never show it") or whether
+  that is just deleting it.
+- **Applies to every scope**, including the global `main` set. The weight
+  belongs to the `hero_images` row, so a picture keeps it wherever it is
+  used. The override rule ("a page's own set replaces the main set") is
+  unchanged.
+
+**Touches:** a nullable `weight` column on `hero_images` (+ validation, the
+`site-config` resource, `HeroImage` in `web/src/lib/heroImages.ts`), a control
+per picture in `HeroImagesAdminView.vue`, and the pick in `HeroBackdrop.astro`.
+A write marks `hero-images` dirty, like every other hero change.
+
+**Tests:** Pest for the column and validation; a vitest for the weighted pick
+(empty = max, lower = rarer, a seeded RNG so it is deterministic); extend
+`e2e/tests/admin/hero-images.spec.ts` (set and persist a weight) and
+`e2e/tests/public/hero-backdrop.spec.ts` (the weight reaches the page).
+
+---
+
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still
