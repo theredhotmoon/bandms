@@ -2,6 +2,9 @@ export default {
   uiLang: {
     label: 'Język panelu',
   },
+  theme: {
+    light: 'Tryb jasny',
+  },
   brand: {
     subtitle: 'Panel',
   },

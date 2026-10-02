@@ -56,9 +56,9 @@ function categoryLabel(value: string): string {
 .cat-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .link-presets { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .preset-chip {
-  padding: 0.2rem 0.625rem; border-radius: 999px; border: 1px solid #2a2a2a;
-  background: #141414; color: #94a3b8; font-size: 0.75rem; cursor: pointer;
+  padding: 0.2rem 0.625rem; border-radius: 999px; border: 1px solid var(--c-2a2a2a);
+  background: var(--c-141414); color: var(--c-94a3b8); font-size: 0.75rem; cursor: pointer;
   transition: border-color 100ms, color 100ms, background 100ms;
 }
-.preset-chip:hover, .preset-chip.active { border-color: #888888; color: #d0d0d0; background: #1a1a1a; }
+.preset-chip:hover, .preset-chip.active { border-color: var(--c-888888); color: var(--c-d0d0d0); background: var(--c-1a1a1a); }
 </style>

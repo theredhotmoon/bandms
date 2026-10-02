@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./admin-palette.css";
 
 @theme {
   --color-ink: #121212;
@@ -34,16 +35,38 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 3px; }
 
-/* ── Native selects in the dark admin shell ─────── */
-/* Safety net for any <select> whose component forgot its styles: preflight
-   makes it inherit the shell's light text, while the OS draws the open list
-   on white — light-on-white. A dark color-scheme makes the UA draw it dark.
+/* ── Native controls in the admin shell ─────────── */
+/* Preflight makes a <select> inherit the shell's text colour while the OS draws
+   the open list in its own scheme — light-on-white in the dark theme. Matching
+   color-scheme to the active admin theme makes the UA draw it to match.
    AdminModal teleports to <body>, outside .admin-shell, and it is where most
-   forms live, so its overlay is listed too. */
-.admin-shell select,
-.modal-overlay select { color-scheme: dark; }
+   forms live, so its overlay is listed too. Scoped rather than set on :root so
+   the fan pages the SPA still serves keep the browser default. */
+.admin-shell,
+.modal-overlay { color-scheme: var(--admin-color-scheme); }
 .admin-shell select option,
-.modal-overlay select option { background: #141414; color: #e2e8f0; }
+.modal-overlay select option { background: var(--c-141414); color: var(--c-e2e8f0); }
+
+/* ── Tailwind neutrals in the light admin theme ──── */
+/* A few admin screens (website modules, FAQs, hero images, the stage plot) are
+   styled with zinc-* / white utilities instead of --c-* variables. Tailwind v4
+   resolves those through --color-zinc-*, so mirroring the ramp here flips them
+   with everything else. Values are Tailwind's own zinc scale, reversed. A
+   white label on a coloured button is written text-[#fff] so it stays white. */
+:root[data-admin-theme="light"] {
+  --color-white:    oklch(14.1% 0.005 285.823);
+  --color-zinc-50:  oklch(14.1% 0.005 285.823);
+  --color-zinc-100: oklch(21% 0.006 285.885);
+  --color-zinc-200: oklch(27.4% 0.006 286.033);
+  --color-zinc-300: oklch(37% 0.013 285.805);
+  --color-zinc-400: oklch(44.2% 0.017 285.786);
+  --color-zinc-500: oklch(55.2% 0.016 285.938);
+  --color-zinc-600: oklch(70.5% 0.015 286.067);
+  --color-zinc-700: oklch(87.1% 0.006 286.286);
+  --color-zinc-800: oklch(92% 0.004 286.32);
+  --color-zinc-900: oklch(96.7% 0.001 286.375);
+  --color-zinc-950: oklch(98.5% 0 0);
+}
 
 /* ── Page offset for admin pages that still use AppNavbar ── */
 .page-offset { padding-top: 56px; }

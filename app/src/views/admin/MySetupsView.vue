@@ -82,27 +82,27 @@ const myMember = computed(() =>
   height: 100%;
 }
 .page-header { margin-bottom: 1rem; }
-.page-title    { font-size: 1.125rem; font-weight: 700; color: #e2e8f0; }
-.page-subtitle { font-size: 0.8rem; color: #475569; margin-top: 0.25rem; }
-.state-msg { padding: 2rem; color: #475569; font-size: 0.875rem; }
+.page-title    { font-size: 1.125rem; font-weight: 700; color: var(--c-e2e8f0); }
+.page-subtitle { font-size: 0.8rem; color: var(--c-475569); margin-top: 0.25rem; }
+.state-msg { padding: 2rem; color: var(--c-475569); font-size: 0.875rem; }
 
 /* The ask that brought them here from their inbox. */
 .confirm-banner {
-  border: 1px solid #1e3a5f; border-radius: 0.5rem; background: #0b1520;
+  border: 1px solid var(--c-1e3a5f); border-radius: 0.5rem; background: var(--c-0b1520);
   padding: 0.8rem 1rem; margin-bottom: 1rem;
   display: flex; flex-direction: column; gap: 0.5rem;
 }
-.confirm-title { font-size: 0.8rem; font-weight: 700; color: #93c5fd; }
-.confirm-hint { font-size: 0.75rem; color: #94a3b8; margin: 0; line-height: 1.55; max-width: 44rem; }
+.confirm-title { font-size: 0.8rem; font-weight: 700; color: var(--c-93c5fd); }
+.confirm-hint { font-size: 0.75rem; color: var(--c-94a3b8); margin: 0; line-height: 1.55; max-width: 44rem; }
 .confirm-rows { display: flex; flex-direction: column; gap: 0.35rem; }
 .confirm-row {
   display: flex; align-items: center; justify-content: space-between;
   gap: 0.75rem; flex-wrap: wrap;
 }
-.confirm-gig { font-size: 0.78rem; color: #e2e8f0; }
+.confirm-gig { font-size: 0.78rem; color: var(--c-e2e8f0); }
 .btn-confirm {
   padding: 0.3rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
-  cursor: pointer; background: #1d4ed8; border: none; color: #eff6ff;
+  cursor: pointer; background: var(--c-1d4ed8); border: none; color: #eff6ff;
 }
 .btn-confirm:disabled { opacity: 0.5; cursor: default; }
 </style>

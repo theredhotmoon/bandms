@@ -253,12 +253,12 @@ async function saveSocialLinks() {
   <AdminLayout>
     <div class="p-8 max-w-3xl">
       <div class="mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('band.profile.title') }}</h1>
-        <p class="text-xs mt-0.5" style="color:#475569;">{{ $t('band.profile.subtitle') }}</p>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('band.profile.title') }}</h1>
+        <p class="text-xs mt-0.5" style="color:var(--c-475569);">{{ $t('band.profile.subtitle') }}</p>
       </div>
 
-      <div v-if="query.isPending.value" class="py-16 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-      <div v-else-if="query.isError.value" class="py-16 text-center text-sm" style="color:#f87171;">{{ $t('band.profile.loadFailed') }}</div>
+      <div v-if="query.isPending.value" class="py-16 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="query.isError.value" class="py-16 text-center text-sm" style="color:var(--c-f87171);">{{ $t('band.profile.loadFailed') }}</div>
 
       <template v-else>
         <div class="section-tabs mb-6" role="tablist">
@@ -405,7 +405,7 @@ async function saveSocialLinks() {
           <!-- ── SOCIAL LINKS ──────────────────────────────────── -->
           <template v-if="section === 'social'">
             <div class="section-hint">{{ $t('band.profile.social.hint') }}</div>
-            <div v-if="linksQuery.isPending.value" class="py-4 text-center text-xs" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+            <div v-if="linksQuery.isPending.value" class="py-4 text-center text-xs" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
             <template v-else>
               <SocialLinksEditor v-model="profileLinks" />
               <div class="flex justify-end pt-2">
@@ -446,7 +446,7 @@ async function saveSocialLinks() {
                 <p class="field-hint">{{ $t('band.profile.contacts.techPhoneHint') }}</p>
               </div>
               <div class="col-span-2">
-                <label class="field-label">{{ $t('band.profile.contacts.engineer') }} <span style="color:#475569;font-weight:400">{{ $t('band.profile.contacts.engineerSuffix') }}</span></label>
+                <label class="field-label">{{ $t('band.profile.contacts.engineer') }} <span style="color:var(--c-475569);font-weight:400">{{ $t('band.profile.contacts.engineerSuffix') }}</span></label>
                 <textarea v-model="form.tech_rider_notes" class="field-input" rows="4"
                   :placeholder="$t('band.profile.contacts.engineerPlaceholder')" />
                 <p class="field-hint">{{ $t('band.profile.contacts.engineerHint') }}</p>
@@ -511,7 +511,7 @@ async function saveSocialLinks() {
           <!-- ── EPK SETTINGS ────────────────────────────────── -->
           <template v-if="section === 'epk'">
             <i18n-t keypath="band.profile.epk.hint" tag="div" class="section-hint" scope="global">
-              <template #code><code style="color:#9ca3af;">/epk</code></template> <!-- i18n-ignore: route path -->
+              <template #code><code style="color:var(--c-9ca3af);">/epk</code></template> <!-- i18n-ignore: route path -->
             </i18n-t>
             <div class="grid grid-cols-2 gap-3">
               <div class="col-span-2">
@@ -545,7 +545,7 @@ async function saveSocialLinks() {
               <div>
                 <div class="field-label mb-0.5">{{ $t('band.profile.epk.snapshotTitle') }}</div>
                 <i18n-t keypath="band.profile.epk.snapshotHint" tag="p" class="field-hint" scope="global">
-                  <template #code><code style="color:#9ca3af;">/epk</code></template> <!-- i18n-ignore: route path -->
+                  <template #code><code style="color:var(--c-9ca3af);">/epk</code></template> <!-- i18n-ignore: route path -->
                 </i18n-t>
               </div>
               <div class="epk-snapshot-actions">
@@ -614,91 +614,91 @@ async function saveSocialLinks() {
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
 .section-tabs {
-  display: flex; gap: 0.25rem; border-bottom: 1px solid #222222; padding-bottom: 0;
+  display: flex; gap: 0.25rem; border-bottom: 1px solid var(--c-222222); padding-bottom: 0;
 }
 .section-tab {
-  padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 500; color: #64748b;
+  padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--c-64748b);
   background: transparent; border: none; border-bottom: 2px solid transparent;
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
-.section-tab:hover { color: #94a3b8; }
-.section-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
+.section-tab:hover { color: var(--c-94a3b8); }
+.section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
 
 .section-hint {
-  font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a;
+  font-size: 0.75rem; color: var(--c-475569); line-height: 1.5;
+  padding: 0.5rem 0.75rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
   border-radius: 0.375rem;
 }
 
 .bio-tabs-row {
   display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #222222;
+  gap: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--c-222222);
 }
 .bio-tabs {
   display: flex; gap: 0.25rem; padding-bottom: 0;
 }
 .bio-tab {
   padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 500;
-  color: #64748b; background: transparent; border: none;
+  color: var(--c-64748b); background: transparent; border: none;
   border-bottom: 2px solid transparent; cursor: pointer;
   transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
-.bio-tab:hover { color: #94a3b8; }
-.bio-tab.active { color: #d0d0d0; border-bottom-color: #888888; }
-.bio-tab.has-error { color: #f87171; }
-.bio-tab.has-error.active { border-bottom-color: #f87171; }
+.bio-tab:hover { color: var(--c-94a3b8); }
+.bio-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
+.bio-tab.has-error { color: var(--c-f87171); }
+.bio-tab.has-error.active { border-bottom-color: var(--c-f87171); }
 .bio-lang-switcher { display: flex; gap: 0.25rem; padding-bottom: 0.25rem; }
 .bio-lang-btn {
   padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 700;
-  letter-spacing: 0.05em; cursor: pointer; border: 1px solid #2a2a2a;
-  background: transparent; color: #475569;
+  letter-spacing: 0.05em; cursor: pointer; border: 1px solid var(--c-2a2a2a);
+  background: transparent; color: var(--c-475569);
   transition: background 100ms, border-color 100ms, color 100ms;
 }
-.bio-lang-btn:hover { background: #1a1a1a; color: #64748b; }
-.bio-lang-btn.active { background: #1e3a5f; border-color: #1e4a7a; color: #60a5fa; }
-.bio-lang-btn--pl.active { background: #3f1010; border-color: #5a1a1a; color: #f87171; }
+.bio-lang-btn:hover { background: var(--c-1a1a1a); color: var(--c-64748b); }
+.bio-lang-btn.active { background: var(--c-1e3a5f); border-color: var(--c-1e4a7a); color: var(--c-60a5fa); }
+.bio-lang-btn--pl.active { background: var(--c-3f1010); border-color: var(--c-5a1a1a); color: var(--c-f87171); }
 
 .bio-panel { padding-top: 0.25rem; }
-.bio-hint { font-size: 0.7rem; color: #475569; margin-bottom: 0.5rem; line-height: 1.4; }
+.bio-hint { font-size: 0.7rem; color: var(--c-475569); margin-bottom: 0.5rem; line-height: 1.4; }
 .bio-plain { resize: vertical; }
 
 .char-wrap { position: relative; }
 .char-count {
   position: absolute; bottom: 0.5rem; right: 0.6rem;
-  font-size: 0.7rem; color: #475569; pointer-events: none; font-variant-numeric: tabular-nums;
+  font-size: 0.7rem; color: var(--c-475569); pointer-events: none; font-variant-numeric: tabular-nums;
 }
-.char-count.warn { color: #f59e0b; }
-.char-count.over { color: #f87171; }
+.char-count.warn { color: var(--c-f59e0b); }
+.char-count.over { color: var(--c-f87171); }
 
-.field-hint-link { color: #9ca3af; text-decoration: underline; margin-left: 0.25rem; }
-.field-hint-link:hover { color: #d0d0d0; }
+.field-hint-link { color: var(--c-9ca3af); text-decoration: underline; margin-left: 0.25rem; }
+.field-hint-link:hover { color: var(--c-d0d0d0); }
 
 .epk-snapshot-section {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-  padding: 0.875rem 1rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.5rem;
+  padding: 0.875rem 1rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
 }
 .btn-snapshot {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600;
-  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0;
+  cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0);
   white-space: nowrap; transition: background 100ms;
 }
-.btn-snapshot:hover { background: #333333; }
+.btn-snapshot:hover { background: var(--c-333333); }
 .epk-snapshot-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 .btn-history {
   padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
-  cursor: pointer; background: transparent; border: 1px solid #333333; color: #9ca3af;
+  cursor: pointer; background: transparent; border: 1px solid var(--c-333333); color: var(--c-9ca3af);
   white-space: nowrap; transition: background 100ms;
 }
-.btn-history:hover { background: #1f1f1f; color: #d0d0d0; }
+.btn-history:hover { background: var(--c-1f1f1f); color: var(--c-d0d0d0); }
 
 .btn-save {
   padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; background: #e8e8e8; border: none; color: #111111;
+  cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   transition: background 150ms, box-shadow 150ms; min-width: 8rem;
 }
-.btn-save:hover:not(:disabled) { background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); }
+.btn-save:hover:not(:disabled) { background: var(--c-ffffff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 15%, transparent); }
 .btn-save:disabled { opacity: 0.6; cursor: default; }
-.btn-save--ok { background: #e8e8e8 !important; }
+.btn-save--ok { background: var(--c-e8e8e8) !important; }
 
 .career-level-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
@@ -709,34 +709,34 @@ async function saveSocialLinks() {
 .career-level-card {
   display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
   padding: 0.75rem 0.5rem; border-radius: 0.5rem; cursor: pointer;
-  background: #141414; border: 1px solid #2a2a2a;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
   transition: background 120ms, border-color 120ms;
 }
-.career-level-card:hover { background: #1a1a1a; border-color: #444444; }
-.career-level-card--active { background: #1f1f1f; border-color: #888888; box-shadow: 0 0 0 1px #888888; }
+.career-level-card:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
+.career-level-card--active { background: var(--c-1f1f1f); border-color: var(--c-888888); box-shadow: 0 0 0 1px var(--c-888888); }
 .career-level-emoji { font-size: 1.35rem; line-height: 1; }
-.career-level-name  { font-size: 0.78rem; font-weight: 700; color: #e2e8f0; }
-.career-level-sub   { font-size: 0.65rem; color: #475569; text-align: center; }
-.career-level-card--active .career-level-name { color: #d0d0d0; }
-.career-level-card--active .career-level-sub  { color: #888888; }
+.career-level-name  { font-size: 0.78rem; font-weight: 700; color: var(--c-e2e8f0); }
+.career-level-sub   { font-size: 0.65rem; color: var(--c-475569); text-align: center; }
+.career-level-card--active .career-level-name { color: var(--c-d0d0d0); }
+.career-level-card--active .career-level-sub  { color: var(--c-888888); }
 
 .fb-sync-row {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.75rem 1rem; background: #111111; border: 1px solid #222222;
+  padding: 0.75rem 1rem; background: var(--c-111111); border: 1px solid var(--c-222222);
   border-radius: 0.5rem;
 }
 .fb-sync-left { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
-.fb-sync-label { font-size: 0.75rem; font-weight: 600; color: #7c8fa6; }
-.fb-sync-count { font-size: 1rem; font-weight: 700; color: #38bdf8; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.fb-sync-none  { font-size: 0.75rem; color: #334155; }
-.fb-sync-ts    { font-size: 0.65rem; color: #334155; }
+.fb-sync-label { font-size: 0.75rem; font-weight: 600; color: var(--c-7c8fa6); }
+.fb-sync-count { font-size: 1rem; font-weight: 700; color: var(--c-38bdf8); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fb-sync-none  { font-size: 0.75rem; color: var(--c-334155); }
+.fb-sync-ts    { font-size: 0.65rem; color: var(--c-334155); }
 .btn-fb-sync {
   display: inline-flex; align-items: center; gap: 0.375rem;
   padding: 0.375rem 0.75rem; border-radius: 0.4rem; font-size: 0.78rem; font-weight: 500;
-  background: #111111; color: #38bdf8; border: 1px solid #222222; cursor: pointer;
+  background: var(--c-111111); color: var(--c-38bdf8); border: 1px solid var(--c-222222); cursor: pointer;
   transition: background 120ms; white-space: nowrap;
 }
-.btn-fb-sync:hover:not(:disabled) { background: #0f2540; }
+.btn-fb-sync:hover:not(:disabled) { background: var(--c-0f2540); }
 .btn-fb-sync:disabled { opacity: 0.5; cursor: not-allowed; }
 
 </style>

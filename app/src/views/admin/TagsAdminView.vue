@@ -63,13 +63,13 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.tags.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('more.tags.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('more.tags.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.tags.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('more.tags.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
@@ -79,7 +79,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('more.tags.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('more.tags.cols.actions') }}</th>
@@ -87,8 +87,8 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="tag in tc.paginated.value" :key="tag.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0;">{{ tag.name }}</td>
-                <td class="td text-xs font-mono" style="color:#64748b;">{{ tag.slug }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tag.name }}</td>
+                <td class="td text-xs font-mono" style="color:var(--c-64748b);">{{ tag.slug }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = tag.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

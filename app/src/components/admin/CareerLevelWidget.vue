@@ -68,7 +68,7 @@ const LEVELS = computed((): LevelDef[] => {
       name: t('band.career.levels.l1.name'),
       tagline: t('band.career.levels.l1.tagline'),
       emoji: '🎸',
-      color: '#34d399',
+      color: 'var(--c-34d399)',
       sections: [
         {
           name: t('band.career.sections.identity'),
@@ -155,7 +155,7 @@ const LEVELS = computed((): LevelDef[] => {
       name: t('band.career.levels.l2.name'),
       tagline: t('band.career.levels.l2.tagline'),
       emoji: '🌿',
-      color: '#60a5fa',
+      color: 'var(--c-60a5fa)',
       sections: [
         {
           name: t('band.career.sections.releasesMusic'),
@@ -242,7 +242,7 @@ const LEVELS = computed((): LevelDef[] => {
       name: t('band.career.levels.l3.name'),
       tagline: t('band.career.levels.l3.tagline'),
       emoji: '🏆',
-      color: '#f472b6',
+      color: 'var(--c-f472b6)',
       sections: [
         {
           name: t('band.career.sections.ePKPromo'),
@@ -343,7 +343,7 @@ const LEVELS = computed((): LevelDef[] => {
       name: t('band.career.levels.l4.name'),
       tagline: t('band.career.levels.l4.tagline'),
       emoji: '⚙️',
-      color: '#fbbf24',
+      color: 'var(--c-fbbf24)',
       isCustom: true,
       sections: [
         {
@@ -483,11 +483,11 @@ function advanceLevel() {
 
 <style scoped>
 .clw {
-  background: #141414; border: 1px solid #222222; border-radius: 0.75rem; overflow: hidden;
+  background: var(--c-141414); border: 1px solid var(--c-222222); border-radius: 0.75rem; overflow: hidden;
 }
 
 /* ── Tab bar ──────────────────────────────────────────── */
-.clw-header { border-bottom: 1px solid #222222; }
+.clw-header { border-bottom: 1px solid var(--c-222222); }
 .clw-tabs { display: flex; }
 
 .clw-tab {
@@ -497,14 +497,14 @@ function advanceLevel() {
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: background 120ms, border-color 120ms;
 }
-.clw-tab:hover      { background: #1a1a1a; }
-.clw-tab--active    { background: #1f1f1f; border-bottom-color: #ffffff; }
+.clw-tab:hover      { background: var(--c-1a1a1a); }
+.clw-tab--active    { background: var(--c-1f1f1f); border-bottom-color: var(--c-ffffff); }
 .clw-tab--past      { opacity: 0.6; }
 .clw-tab-emoji      { font-size: 1.1rem; line-height: 1; }
-.clw-tab-name       { font-size: 0.72rem; font-weight: 700; color: #e2e8f0; }
-.clw-tab-num        { font-size: 0.6rem; color: #555555; text-transform: uppercase; letter-spacing: 0.06em; }
-.clw-tab--active .clw-tab-name { color: #ffffff; }
-.clw-tab--active .clw-tab-num  { color: #aaaaaa; }
+.clw-tab-name       { font-size: 0.72rem; font-weight: 700; color: var(--c-e2e8f0); }
+.clw-tab-num        { font-size: 0.6rem; color: var(--c-555555); text-transform: uppercase; letter-spacing: 0.06em; }
+.clw-tab--active .clw-tab-name { color: var(--c-ffffff); }
+.clw-tab--active .clw-tab-num  { color: var(--c-aaaaaa); }
 
 /* ── Body ────────────────────────────────────────────── */
 .clw-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
@@ -512,33 +512,33 @@ function advanceLevel() {
 .clw-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .clw-meta-left { flex: 1; min-width: 0; }
 
-.clw-tagline { font-size: 0.8125rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.5rem; }
+.clw-tagline { font-size: 0.8125rem; font-weight: 600; color: var(--c-94a3b8); margin-bottom: 0.5rem; }
 
 .clw-progress-row { display: flex; align-items: center; gap: 0.75rem; }
-.clw-prog-wrap { width: 10rem; height: 5px; background: #222222; border-radius: 3px; overflow: hidden; }
+.clw-prog-wrap { width: 10rem; height: 5px; background: var(--c-222222); border-radius: 3px; overflow: hidden; }
 .clw-prog-bar { height: 100%; border-radius: 3px; transition: width 400ms; }
 .clw-prog-label { font-size: 0.75rem; font-weight: 700; }
 
 .clw-advance-box {
   display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end;
-  padding: 0.625rem 0.875rem; background: #111111; border: 1px solid #2a2a2a;
-  border-radius: 0.5rem; border-left: 3px solid #34d399; flex-shrink: 0;
+  padding: 0.625rem 0.875rem; background: var(--c-111111); border: 1px solid var(--c-2a2a2a);
+  border-radius: 0.5rem; border-left: 3px solid var(--c-34d399); flex-shrink: 0;
 }
-.clw-advance-title { font-size: 0.8rem; font-weight: 700; color: #34d399; }
-.clw-advance-sub   { font-size: 0.7rem; color: #475569; }
+.clw-advance-title { font-size: 0.8rem; font-weight: 700; color: var(--c-34d399); }
+.clw-advance-sub   { font-size: 0.7rem; color: var(--c-475569); }
 .clw-advance-btn {
   margin-top: 0.25rem; padding: 0.3rem 0.875rem; border-radius: 0.375rem;
   font-size: 0.78rem; font-weight: 600; cursor: pointer;
-  background: #14532d; border: 1px solid #15803d; color: #34d399;
+  background: var(--c-14532d); border: 1px solid var(--c-15803d); color: var(--c-34d399);
   transition: background 100ms;
 }
-.clw-advance-btn:hover { background: #166534; }
+.clw-advance-btn:hover { background: var(--c-166534); }
 
 /* ── Sections ────────────────────────────────────────── */
 .clw-section {}
 .clw-section-title {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: #334155; margin-bottom: 0.375rem; padding-left: 0.25rem;
+  color: var(--c-334155); margin-bottom: 0.375rem; padding-left: 0.25rem;
 }
 
 .clw-checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.25rem; }
@@ -547,11 +547,11 @@ function advanceLevel() {
   border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem;
   transition: background 100ms;
 }
-.clw-item:hover { background: #1a1a1a; }
-.clw-check { font-size: 0.75rem; flex-shrink: 0; color: #334155; }
-.clw-item--done .clw-label { color: #64748b; text-decoration: line-through; }
-.clw-item--todo .clw-label { color: #94a3b8; }
-.clw-tip { font-size: 0.68rem; color: #334155; margin-left: auto; text-align: right; max-width: 11rem; line-height: 1.4; }
+.clw-item:hover { background: var(--c-1a1a1a); }
+.clw-check { font-size: 0.75rem; flex-shrink: 0; color: var(--c-334155); }
+.clw-item--done .clw-label { color: var(--c-64748b); text-decoration: line-through; }
+.clw-item--todo .clw-label { color: var(--c-94a3b8); }
+.clw-tip { font-size: 0.68rem; color: var(--c-334155); margin-left: auto; text-align: right; max-width: 11rem; line-height: 1.4; }
 
 /* ── Custom level placeholder ────────────────────────── */
 .clw-custom-placeholder {
@@ -559,25 +559,25 @@ function advanceLevel() {
   padding: 1.5rem 1rem; text-align: center;
 }
 .clw-custom-icon  { font-size: 2rem; line-height: 1; }
-.clw-custom-title { font-size: 0.875rem; font-weight: 700; color: #fbbf24; }
-.clw-custom-sub   { font-size: 0.8rem; color: #475569; max-width: 32rem; line-height: 1.6; }
+.clw-custom-title { font-size: 0.875rem; font-weight: 700; color: var(--c-fbbf24); }
+.clw-custom-sub   { font-size: 0.8rem; color: var(--c-475569); max-width: 32rem; line-height: 1.6; }
 .clw-custom-preview {
   width: 100%; max-width: 28rem; display: flex; flex-direction: column; gap: 0.25rem;
   margin-top: 0.5rem;
 }
 .clw-custom-item {
   display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.75rem;
-  background: #111111; border: 1px dashed #2a2a2a; border-radius: 0.375rem; opacity: 0.5;
+  background: var(--c-111111); border: 1px dashed var(--c-2a2a2a); border-radius: 0.375rem; opacity: 0.5;
 }
-.clw-custom-check { font-size: 0.75rem; color: #334155; }
-.clw-custom-label { font-size: 0.8rem; color: #64748b; font-style: italic; }
+.clw-custom-check { font-size: 0.75rem; color: var(--c-334155); }
+.clw-custom-label { font-size: 0.8rem; color: var(--c-64748b); font-style: italic; }
 
 /* ── Next level peek ─────────────────────────────────── */
 .clw-next-peek {
   display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.5rem 0.75rem; background: #111111; border: 1px solid #1f1f1f;
+  padding: 0.5rem 0.75rem; background: var(--c-111111); border: 1px solid var(--c-1f1f1f);
   border-radius: 0.375rem;
 }
-.clw-next-label { font-size: 0.78rem; font-weight: 600; color: #334155; }
-.clw-next-sub   { font-size: 0.72rem; color: #555555; }
+.clw-next-label { font-size: 0.78rem; font-weight: 600; color: var(--c-334155); }
+.clw-next-sub   { font-size: 0.72rem; color: var(--c-555555); }
 </style>

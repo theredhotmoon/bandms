@@ -201,7 +201,7 @@ const otherErrors = computed(() =>
       </button>
       <button
         type="submit"
-        class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-[#fff] text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="pending || !isDirty"
       >
         {{ pending ? $t('common.actions.saving') : $t('common.actions.save') }}

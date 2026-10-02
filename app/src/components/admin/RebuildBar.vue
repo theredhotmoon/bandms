@@ -73,8 +73,8 @@ function relativeTime(iso: string | null): string {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1.25rem;
-  border-bottom: 1px solid #222222;
-  background: #111111;
+  border-bottom: 1px solid var(--c-222222);
+  background: var(--c-111111);
   flex-shrink: 0;
 }
 
@@ -90,7 +90,7 @@ function relativeTime(iso: string | null): string {
   border-radius: 0.375rem;
   border: none;
   background: transparent;
-  color: #999999;
+  color: var(--c-999999);
   font-size: 0.75rem;
   cursor: pointer;
 }
@@ -99,7 +99,7 @@ function relativeTime(iso: string | null): string {
   opacity: 0.5;
 }
 .pending-toggle:not(:disabled):hover {
-  background: #1a1a1a;
+  background: var(--c-1a1a1a);
 }
 
 .pending-count {
@@ -110,7 +110,7 @@ function relativeTime(iso: string | null): string {
   height: 1.125rem;
   padding: 0 0.25rem;
   border-radius: 9999px;
-  background: #14b8a6;
+  background: var(--c-14b8a6);
   color: #ffffff;
   font-size: 0.625rem;
   font-weight: 700;
@@ -124,8 +124,8 @@ function relativeTime(iso: string | null): string {
   min-width: 12rem;
   padding: 0.5rem;
   border-radius: 0.5rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--c-1a1a1a);
+  border: 1px solid var(--c-2a2a2a);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 20;
 }
@@ -136,18 +136,18 @@ function relativeTime(iso: string | null): string {
   gap: 1rem;
   padding: 0.25rem 0.375rem;
   font-size: 0.75rem;
-  color: #d0d0d0;
+  color: var(--c-d0d0d0);
 }
 
 .pending-time {
-  color: #666666;
+  color: var(--c-666666);
 }
 
 .btn-rebuild {
   padding: 0.375rem 1rem;
   border-radius: 0.5rem;
   border: none;
-  background: #0d9488;
+  background: var(--c-0d9488);
   color: #ffffff;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -155,7 +155,7 @@ function relativeTime(iso: string | null): string {
   transition: background 120ms;
 }
 .btn-rebuild:hover:not(:disabled) {
-  background: #14b8a6;
+  background: var(--c-14b8a6);
 }
 .btn-rebuild:disabled {
   opacity: 0.5;
@@ -167,11 +167,11 @@ function relativeTime(iso: string | null): string {
   border-radius: 0.375rem;
   border: none;
   background: transparent;
-  color: #999999;
+  color: var(--c-999999);
   cursor: pointer;
   font-size: 0.875rem;
 }
 .btn-settings:hover {
-  background: #1a1a1a;
+  background: var(--c-1a1a1a);
 }
 </style>

@@ -491,7 +491,7 @@ function cardBorderClass(item: StagePlacement): string {
       <div
         ref="stageRef"
         class="relative flex-1 rounded-lg overflow-hidden select-none"
-        style="background: linear-gradient(180deg, #1a1a1a 0%, #111111 100%); border: 1px solid #2a2a2a; aspect-ratio: 16/9; min-height: 340px; max-height: 100%;"
+        style="background: linear-gradient(180deg, var(--c-1a1a1a) 0%, var(--c-111111) 100%); border: 1px solid var(--c-2a2a2a); aspect-ratio: 16/9; min-height: 340px; max-height: 100%;"
         @dragover="onStageDragOver"
         @drop="onStageDrop"
       >
@@ -684,7 +684,7 @@ function cardBorderClass(item: StagePlacement): string {
               </button>
               <button
                 type="button"
-                class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-red-700 text-zinc-300 hover:text-white transition-colors"
+                class="w-5 h-5 rounded flex items-center justify-center bg-zinc-700/80 hover:bg-red-700 text-zinc-300 hover:text-[#fff] transition-colors"
                 :title="$t('rider.stagePlot.removeFromStage')"
                 @click.stop="removeItem(item.id)"
               >
@@ -738,7 +738,7 @@ function cardBorderClass(item: StagePlacement): string {
             >{{ $t('common.actions.cancel') }}</button>
             <button
               type="button"
-              class="flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+              class="flex-1 py-2 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-[#fff] transition-colors"
               @click="confirmPlaceAnyway"
             >{{ $t('rider.stagePlot.placeAnyway') }}</button>
           </div>

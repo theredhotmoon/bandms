@@ -120,15 +120,15 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.instruments.title') }}</h1>
-          <p class="text-xs mt-0.5" style="color:#334155;">{{ $t('more.instruments.lead') }}</p>
+          <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('more.instruments.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:var(--c-334155);">{{ $t('more.instruments.lead') }}</p>
         </div>
         <button @click="openCreate" class="btn-add-primary">{{ $t('more.instruments.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.instruments.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('more.instruments.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
@@ -145,7 +145,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('more.instruments.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('more.instruments.cols.category')" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('more.instruments.cols.stageIcon') }}</th>
@@ -154,14 +154,14 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="i in tc.paginated.value" :key="i.id" class="table-row">
-                <td class="td" style="color:#e2e8f0; font-weight:500;">{{ i.name }}</td>
+                <td class="td" style="color:var(--c-e2e8f0); font-weight:500;">{{ i.name }}</td>
                 <td class="td">
                   <span v-if="i.category" class="category-badge">{{ i.category }}</span>
-                  <span v-else style="color:#334155; font-size:0.75rem;">—</span>
+                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">—</span>
                 </td>
                 <td class="td stage-icon-cell">
                   <InstrumentIcon v-if="i.stage_plot_type" :type="i.stage_plot_type" :size="22" />
-                  <span v-else style="color:#334155; font-size:0.75rem;">—</span>
+                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">—</span>
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(i)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
@@ -247,19 +247,19 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-.field-req { color: #f87171; }
+.field-req { color: var(--c-f87171); }
 .category-badge {
   display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px;
   font-size: 0.7rem; font-weight: 600;
-  background: #2a2a2a; color: #c0c0c0;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0);
 }
-.stage-icon-cell { color: #cbd5e1; }
+.stage-icon-cell { color: var(--c-cbd5e1); }
 .icon-suggestion {
   display: inline-flex; align-items: center; gap: 0.375rem;
   margin-top: 0.5rem; padding: 0.25rem 0.5rem;
-  border: 1px solid #334155; border-radius: 0.375rem;
-  font-size: 0.7rem; color: #94a3b8; background: transparent;
+  border: 1px solid var(--c-334155); border-radius: 0.375rem;
+  font-size: 0.7rem; color: var(--c-94a3b8); background: transparent;
   cursor: pointer; transition: color .15s, border-color .15s;
 }
-.icon-suggestion:hover { color: #e2e8f0; border-color: #64748b; }
+.icon-suggestion:hover { color: var(--c-e2e8f0); border-color: var(--c-64748b); }
 </style>

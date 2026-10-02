@@ -72,8 +72,8 @@ const fullItem  = useShopItem(editingId)
  * inside a tag's attribute list without breaking the tag.
  */
 function typeBadgeStyle(type: string): string {
-  const c = TYPE_COLOURS[type] ?? '#888'
-  return `background:${c}22; color:${c}; border-color:${c}44;` // i18n-ignore: CSS
+  const c = TYPE_COLOURS[type] ?? 'var(--c-888888)'
+  return `background:color-mix(in srgb, ${c} 13%, transparent); color:${c}; border-color:color-mix(in srgb, ${c} 27%, transparent);` // i18n-ignore: CSS
 }
 const modalTitle = computed(() =>
   isCreating.value ? t('more.shop.modalNew') : (fullItem.data.value?.name ?? t('more.shop.modalEdit')),
@@ -290,12 +290,12 @@ async function saveCurrencySettings() {
 
 // ── Type badge colours ─────────────────────────────────────────
 const TYPE_COLOURS: Record<string, string> = {
-  record:    '#64748b',
-  apparel:   '#0891b2',
-  accessory: '#059669',
-  ticket:    '#b45309',
-  bundle:    '#7c3aed',
-  other:     '#888888',
+  record:    'var(--c-64748b)',
+  apparel:   'var(--c-0891b2)',
+  accessory: 'var(--c-059669)',
+  ticket:    'var(--c-b45309)',
+  bundle:    'var(--c-7c3aed)',
+  other:     'var(--c-888888)',
 }
 </script>
 
@@ -303,7 +303,7 @@ const TYPE_COLOURS: Record<string, string> = {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.shop.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('more.shop.title') }}</h1>
         <div class="flex gap-2">
           <button @click="showCategoriesModal = true; openNewCategory()" class="btn-currencies">{{ $t('more.shop.categories') }}</button>
           <button @click="openCurrencyModal" class="btn-currencies">{{ $t('more.shop.currencies') }}</button>
@@ -312,18 +312,18 @@ const TYPE_COLOURS: Record<string, string> = {
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('more.shop.loadFailed') }}</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:var(--c-f87171);">{{ $t('more.shop.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
-          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
+          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:var(--c-475569);">
             <span v-if="!(query.data.value?.length)">{{ $t('more.shop.empty') }}</span>
             <span v-else>{{ $t('more.shop.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <th class="th" style="width:3rem;">{{ $t('more.shop.cols.photo') }}</th>
                 <SortHeader :label="$t('more.shop.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('more.shop.cols.type')" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="6rem" @sort="tc.toggleSort" />
@@ -340,29 +340,29 @@ const TYPE_COLOURS: Record<string, string> = {
                   <img v-if="item.cover_photo" :src="item.cover_photo" :alt="item.name" class="cover-thumb" />
                   <div v-else class="cover-placeholder">🛍</div>
                 </td>
-                <td class="td font-medium" style="color:#e2e8f0;">{{ item.name }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ item.name }}</td>
                 <td class="td">
                   <span class="type-badge"
                     :style="typeBadgeStyle(item.type)">
                     {{ $t(`more.shop.types.${item.type}`) }}
                   </span>
                 </td>
-                <td class="td" style="color:#64748b;">
+                <td class="td" style="color:var(--c-64748b);">
                   <span v-for="p in item.prices" :key="p.currency" class="price-chip">
                     {{ p.currency }} {{ Number(p.amount).toFixed(2) }}
                   </span>
-                  <span v-if="!item.prices.length" style="color:#334155;">—</span>
+                  <span v-if="!item.prices.length" style="color:var(--c-334155);">—</span>
                 </td>
                 <td class="td">
                   <span v-if="item.is_presale" class="status-badge status-presale">{{ $t('more.shop.status.preSale') }}</span>
                   <span v-else-if="item.is_available" class="status-badge status-available">{{ $t('more.shop.status.available') }}</span>
                   <span v-else class="status-badge status-unavailable">{{ $t('more.shop.status.hidden') }}</span>
                 </td>
-                <td class="td" style="color:#64748b;">
+                <td class="td" style="color:var(--c-64748b);">
                   {{ item.stock_quantity !== null ? item.stock_quantity : '∞' }}
                 </td>
                 <td class="td">
-                  <span v-if="!item.categories?.length" style="color:#334155;">—</span>
+                  <span v-if="!item.categories?.length" style="color:var(--c-334155);">—</span>
                   <span v-for="cat in item.categories ?? []" :key="cat.id" class="cat-chip">{{ cat.name }}</span>
                 </td>
                 <td class="td text-right">
@@ -389,7 +389,7 @@ const TYPE_COLOURS: Record<string, string> = {
 
     <!-- ── Item modal ──────────────────────────────────────────── -->
     <AdminModal :open="showModal" :title="modalTitle" max-width="52rem" @close="closeModal">
-      <div v-if="!isCreating && fullItem.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
+      <div v-if="!isCreating && fullItem.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">
         {{ $t('more.shop.loadingItem') }}
       </div>
       <template v-else>
@@ -561,20 +561,20 @@ const TYPE_COLOURS: Record<string, string> = {
   font-size: 0.8rem;
   font-weight: 500;
   background: transparent;
-  border: 1px solid #333333;
-  color: #64748b;
+  border: 1px solid var(--c-333333);
+  color: var(--c-64748b);
   cursor: pointer;
   transition: background 100ms, color 100ms;
 }
-.btn-currencies:hover { background: #1a1a1a; color: #94a3b8; }
+.btn-currencies:hover { background: var(--c-1a1a1a); color: var(--c-94a3b8); }
 
 .cover-thumb {
   width: 2.25rem; height: 2.25rem; border-radius: 0.25rem;
-  object-fit: cover; border: 1px solid #222222;
+  object-fit: cover; border: 1px solid var(--c-222222);
 }
 .cover-placeholder {
   width: 2.25rem; height: 2.25rem; border-radius: 0.25rem;
-  background: #1a1a1a; border: 1px solid #222222;
+  background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.875rem;
 }
@@ -586,128 +586,128 @@ const TYPE_COLOURS: Record<string, string> = {
 }
 
 .price-chip {
-  display: inline-block; font-size: 0.72rem; color: #64748b;
+  display: inline-block; font-size: 0.72rem; color: var(--c-64748b);
   margin-right: 0.25rem; white-space: nowrap;
 }
 
 .cat-chip {
   display: inline-block; font-size: 0.68rem; font-weight: 500;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin: 0.1rem 0.2rem 0.1rem 0;
-  background: #1e1e1e; border: 1px solid #2a2a2a; color: #94a3b8; white-space: nowrap;
+  background: var(--c-1e1e1e); border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8); white-space: nowrap;
 }
 
 .status-badge {
   display: inline-block; padding: 0.15rem 0.5rem;
   border-radius: 0.25rem; border: 1px solid; font-size: 0.68rem; font-weight: 600;
 }
-.status-available   { background: #05966922; color: #059669; border-color: #05966944; }
-.status-presale     { background: #b4530922; color: #b45309; border-color: #b4530944; }
-.status-unavailable { background: #33333322; color: #555555; border-color: #33333344; }
+.status-available   { background: color-mix(in srgb, var(--c-059669) 13%, transparent); color: var(--c-059669); border-color: color-mix(in srgb, var(--c-059669) 27%, transparent); }
+.status-presale     { background: color-mix(in srgb, var(--c-b45309) 13%, transparent); color: var(--c-b45309); border-color: color-mix(in srgb, var(--c-b45309) 27%, transparent); }
+.status-unavailable { background: color-mix(in srgb, var(--c-333333) 13%, transparent); color: var(--c-555555); border-color: color-mix(in srgb, var(--c-333333) 27%, transparent); }
 
 /* Photos section */
 .photos-divider {
   font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  color: #475569; border-top: 1px solid #252525; margin-top: 1.5rem;
+  color: var(--c-475569); border-top: 1px solid var(--c-252525); margin-top: 1.5rem;
   padding-top: 0.875rem; margin-bottom: 0.75rem;
 }
 .rp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; }
 .rp-card {
-  position: relative; border: 1px solid #222222; border-radius: 6px; overflow: hidden;
-  cursor: grab; background: #141414; transition: opacity 0.15s;
+  position: relative; border: 1px solid var(--c-222222); border-radius: 6px; overflow: hidden;
+  cursor: grab; background: var(--c-141414); transition: opacity 0.15s;
 }
 .rp-card:active { cursor: grabbing; }
 .rp-dragging { opacity: 0.35; }
 .rp-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
 .rp-del {
   position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%;
-  background: #141414cc; border: 1px solid #3a1212; color: #f87171;
+  background: color-mix(in srgb, var(--c-141414) 80%, transparent); border: 1px solid var(--c-3a1212); color: var(--c-f87171);
   font-size: 0.55rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.rp-del:hover { background: #3f1212; }
-.rp-empty { font-size: 0.8125rem; color: #475569; padding: 0.5rem 0; }
+.rp-del:hover { background: var(--c-3f1212); }
+.rp-empty { font-size: 0.8125rem; color: var(--c-475569); padding: 0.5rem 0; }
 .rp-order-row { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .rp-btn-save {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0;
+  cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0);
 }
-.rp-btn-save:hover { background: #333333; }
+.rp-btn-save:hover { background: var(--c-333333); }
 .rp-add { margin-top: 0.875rem; display: flex; flex-direction: column; gap: 0.375rem; }
-.rp-add-title { font-size: 0.72rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
+.rp-add-title { font-size: 0.72rem; font-weight: 600; color: var(--c-475569); text-transform: uppercase; letter-spacing: 0.05em; }
 .rp-upload-row { display: flex; gap: 0.5rem; }
 .rp-btn-upload {
   padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #333333; border: 1px solid #888888; color: #fff;
+  cursor: pointer; background: var(--c-333333); border: 1px solid var(--c-888888); color: var(--c-ffffff);
 }
-.rp-btn-upload:hover:not(:disabled) { background: #888888; }
+.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888); }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 .hidden { display: none; }
 
 /* Currency modal */
 .currency-modal { display: flex; flex-direction: column; gap: 1rem; }
-.currency-hint { font-size: 0.8rem; color: #64748b; }
+.currency-hint { font-size: 0.8rem; color: var(--c-64748b); }
 .currency-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; min-height: 2rem; }
 .currency-chip {
   display: flex; align-items: center; gap: 0.3rem;
   padding: 0.25rem 0.5rem; border-radius: 0.25rem;
-  background: #1e1e1e; border: 1px solid #333333;
-  font-size: 0.75rem; font-weight: 600; color: #94a3b8; letter-spacing: 0.05em;
+  background: var(--c-1e1e1e); border: 1px solid var(--c-333333);
+  font-size: 0.75rem; font-weight: 600; color: var(--c-94a3b8); letter-spacing: 0.05em;
 }
 .currency-chip-rm {
-  color: #475569; background: none; border: none; cursor: pointer; font-size: 0.6rem; padding: 0;
+  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: 0.6rem; padding: 0;
 }
-.currency-chip-rm:hover { color: #f87171; }
-.currency-empty { font-size: 0.78rem; color: #334155; }
+.currency-chip-rm:hover { color: var(--c-f87171); }
+.currency-empty { font-size: 0.78rem; color: var(--c-334155); }
 .currency-add-row { display: flex; gap: 0.5rem; }
 .field { display: flex; flex-direction: column; gap: 0.25rem; }
-.field-label { font-size: 0.78rem; font-weight: 500; color: #94a3b8; }
+.field-label { font-size: 0.78rem; font-weight: 500; color: var(--c-94a3b8); }
 .field-input {
-  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
-  color: #e2e8f0; font-size: 0.8125rem; padding: 0.4375rem 0.625rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
+  color: var(--c-e2e8f0); font-size: 0.8125rem; padding: 0.4375rem 0.625rem;
   outline: none; transition: border-color 120ms; width: 100%;
 }
-.field-input:focus { border-color: #555555; }
-.field-input--error { border-color: #f87171 !important; }
-.field-error { font-size: 0.72rem; color: #f87171; }
+.field-input:focus { border-color: var(--c-555555); }
+.field-input--error { border-color: var(--c-f87171) !important; }
+.field-error { font-size: 0.72rem; color: var(--c-f87171); }
 .currency-input { width: 5rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .btn-add-currency {
   padding: 0.4rem 0.75rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  background: #2a2a2a; border: 1px solid #444444; color: #d0d0d0; cursor: pointer;
+  background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0); cursor: pointer;
 }
-.btn-add-currency:hover { background: #333333; }
-.currency-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #1e1e1e; }
+.btn-add-currency:hover { background: var(--c-333333); }
+.currency-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--c-1e1e1e); }
 .btn-cancel-sm {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500;
-  background: transparent; border: 1px solid #2a2a2a; color: #64748b; cursor: pointer;
+  background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b); cursor: pointer;
 }
 .btn-save-sm {
   padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  background: #333333; border: 1px solid #555555; color: #fff; cursor: pointer;
+  background: var(--c-333333); border: 1px solid var(--c-555555); color: var(--c-ffffff); cursor: pointer;
 }
-.btn-save-sm:hover:not(:disabled) { background: #444444; }
+.btn-save-sm:hover:not(:disabled) { background: var(--c-444444); }
 .btn-save-sm:disabled { opacity: 0.4; cursor: default; }
 
 /* Categories modal */
 .cat-modal { display: flex; flex-direction: column; gap: 0.875rem; }
 .cat-list { display: flex; flex-direction: column; gap: 0.1875rem; max-height: 12rem; overflow-y: auto; }
-.cat-empty { font-size: 0.78rem; color: #334155; padding: 0.25rem 0; }
+.cat-empty { font-size: 0.78rem; color: var(--c-334155); padding: 0.25rem 0; }
 .cat-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.375rem 0.625rem; border-radius: 0.3rem;
   border: 1px solid transparent; cursor: pointer;
   transition: background 100ms, border-color 100ms;
 }
-.cat-row:hover { background: #181818; }
-.cat-row--active { background: #1a1a1a; border-color: #333333; }
-.cat-name { font-size: 0.8125rem; font-weight: 500; color: #d0d0d0; flex: 1; min-width: 0; }
-.cat-desc { font-size: 0.72rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
+.cat-row:hover { background: var(--c-181818); }
+.cat-row--active { background: var(--c-1a1a1a); border-color: var(--c-333333); }
+.cat-name { font-size: 0.8125rem; font-weight: 500; color: var(--c-d0d0d0); flex: 1; min-width: 0; }
+.cat-desc { font-size: 0.72rem; color: var(--c-475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
 .cat-del {
-  color: #475569; background: none; border: none; cursor: pointer; font-size: 0.6rem;
+  color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: 0.6rem;
   padding: 0.2rem 0.3rem; border-radius: 0.2rem; flex-shrink: 0;
 }
-.cat-del:hover { color: #f87171; background: #1a0a0a; }
+.cat-del:hover { color: var(--c-f87171); background: var(--c-1a0a0a); }
 .cat-form-title {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: #475569; border-top: 1px solid #222222; padding-top: 0.875rem;
+  color: var(--c-475569); border-top: 1px solid var(--c-222222); padding-top: 0.875rem;
 }
 .cat-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.25rem; }
 </style>

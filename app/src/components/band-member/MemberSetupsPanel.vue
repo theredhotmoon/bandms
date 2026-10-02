@@ -287,31 +287,31 @@ function instrumentIconType(inst: Instrument | null) {
 /* List */
 .setups-list {
   width: 15rem; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.25rem;
-  border-right: 1px solid #1a1a1a; padding-right: 0.75rem; overflow-y: auto;
+  border-right: 1px solid var(--c-1a1a1a); padding-right: 0.75rem; overflow-y: auto;
 }
 .list-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.375rem; }
-.list-title { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
+.list-title { font-size: 0.72rem; font-weight: 700; color: var(--c-64748b); text-transform: uppercase; letter-spacing: .05em; }
 .btn-new {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; background: #1a1a1a;
-  border: 1px solid #2a2a2a; color: #c0c0c0; cursor: pointer; font-size: 0.9rem;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; background: var(--c-1a1a1a);
+  border: 1px solid var(--c-2a2a2a); color: var(--c-c0c0c0); cursor: pointer; font-size: 0.9rem;
   display: flex; align-items: center; justify-content: center;
 }
-.btn-new:hover { background: #222222; }
+.btn-new:hover { background: var(--c-222222); }
 
 .new-row { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
 .new-input {
   flex: 1; min-width: 0; padding: 0.3rem 0.5rem; border-radius: 0.3rem;
-  border: 1px solid #2a2a2a; background: #0d0d0d; color: #e2e8f0; font-size: 0.75rem;
+  border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: 0.75rem;
   outline: none; font-family: inherit;
 }
-.new-input:focus { border-color: #5154e5; }
+.new-input:focus { border-color: var(--c-5154e5); }
 .btn-mini {
   padding: 0.3rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 600;
-  background: #e8e8e8; border: none; color: #111111; cursor: pointer;
+  background: var(--c-e8e8e8); border: none; color: var(--c-111111); cursor: pointer;
 }
 .btn-mini:disabled { opacity: 0.4; cursor: default; }
 
-.list-state { padding: 1rem 0.25rem; font-size: 0.75rem; color: #334155; }
+.list-state { padding: 1rem 0.25rem; font-size: 0.75rem; color: var(--c-334155); }
 
 .setup-item {
   display: flex; align-items: center; gap: 0.4rem; width: 100%; text-align: left;
@@ -319,48 +319,48 @@ function instrumentIconType(inst: Instrument | null) {
   background: transparent; border: 1px solid transparent; color: inherit;
   transition: background 100ms, border-color 100ms;
 }
-.setup-item:hover { background: #141414; border-color: #222222; }
-.setup-item--open { background: #141414; border-color: #444444; }
+.setup-item:hover { background: var(--c-141414); border-color: var(--c-222222); }
+.setup-item--open { background: var(--c-141414); border-color: var(--c-444444); }
 .setup-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.setup-name { font-size: 0.78rem; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.setup-meta { font-size: 0.65rem; color: #475569; }
+.setup-name { font-size: 0.78rem; font-weight: 600; color: var(--c-e2e8f0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-meta { font-size: 0.65rem; color: var(--c-475569); }
 .badge-default {
-  font-size: 0.58rem; font-weight: 700; color: #4ade80; background: #052e16;
+  font-size: 0.58rem; font-weight: 700; color: var(--c-4ade80); background: var(--c-052e16);
   padding: 0.1rem 0.35rem; border-radius: 999px; text-transform: uppercase; flex-shrink: 0;
 }
 .item-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
-.mini-action { color: #334155; font-size: 0.7rem; padding: 0.1rem 0.25rem; border-radius: 3px; }
-.mini-action:hover { color: #c0c0c0; background: #222222; }
-.mini-action--del:hover { color: #f87171; background: #2a1010; }
+.mini-action { color: var(--c-334155); font-size: 0.7rem; padding: 0.1rem 0.25rem; border-radius: 3px; }
+.mini-action:hover { color: var(--c-c0c0c0); background: var(--c-222222); }
+.mini-action--del:hover { color: var(--c-f87171); background: var(--c-2a1010); }
 
 /* Editor */
 .setup-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
-.editor-empty { padding: 2rem; color: #334155; font-size: 0.85rem; text-align: center; }
+.editor-empty { padding: 2rem; color: var(--c-334155); font-size: 0.85rem; text-align: center; }
 
 .editor-meta { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .field-group { display: flex; flex-direction: column; gap: 0.25rem; }
-.field-label { font-size: 0.68rem; font-weight: 600; color: #7c8fa6; }
+.field-label { font-size: 0.68rem; font-weight: 600; color: var(--c-7c8fa6); }
 .meta-input {
-  padding: 0.35rem 0.55rem; border-radius: 0.35rem; border: 1px solid #2a2a2a;
-  background: #0d0d0d; color: #e2e8f0; font-size: 0.78rem; outline: none;
+  padding: 0.35rem 0.55rem; border-radius: 0.35rem; border: 1px solid var(--c-2a2a2a);
+  background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: 0.78rem; outline: none;
   font-family: inherit; min-width: 12rem;
 }
-.meta-input:focus { border-color: #5154e5; }
-.meta-input option { background: #141414; }
+.meta-input:focus { border-color: var(--c-5154e5); }
+.meta-input option { background: var(--c-141414); }
 .instrument-tag {
-  display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: #94a3b8;
-  padding: 0.3rem 0.55rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.35rem;
+  display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--c-94a3b8);
+  padding: 0.3rem 0.55rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.35rem;
 }
 
 .editor-footer {
   display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
-  padding-top: 0.75rem; border-top: 1px solid #1a1a1a; flex-shrink: 0;
+  padding-top: 0.75rem; border-top: 1px solid var(--c-1a1a1a); flex-shrink: 0;
 }
-.dirty-hint { font-size: 0.7rem; color: #fbbf24; }
+.dirty-hint { font-size: 0.7rem; color: var(--c-fbbf24); }
 .btn-save {
   padding: 0.4rem 1.1rem; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #e8e8e8; border: none; color: #111111; min-width: 7rem;
+  cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111); min-width: 7rem;
 }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
-.btn-save--ok { background: #166534 !important; color: #dcfce7; }
+.btn-save--ok { background: var(--c-166534) !important; color: var(--c-dcfce7); }
 </style>

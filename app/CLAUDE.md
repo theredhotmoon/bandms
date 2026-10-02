@@ -200,6 +200,36 @@ Since these run only inside `pnpm build`, the CI `Tests` job runs `pnpm build`
 explicitly — without it they fire only on push-to-main, which is the #104/#105
 failure shape.
 
+### Admin colours are `--c-*` variables — never a raw hex
+
+The admin has a dark and a light theme (`AdminThemeSwitch` in the sidebar,
+`useAdminTheme()`, stored as `admin_theme`). Every colour is a variable from
+`src/admin-palette.css`, redefined under `<html data-admin-theme="light">`;
+App.vue owns that attribute, the way it owns `<html lang>`.
+
+**Variables are named after their dark-mode value** — `var(--c-2a2a2a)` is
+`#2a2a2a` in dark and its generated counterpart in light. The panel had ~2,400
+hardcoded colours and no tokens, so the conversion was mechanical; the names
+record where each came from rather than claiming a role. Tune a light value in
+the palette file, never per component.
+
+**A raw hex in an admin style silently ignores the switch** — it renders
+correctly in dark, which is what everyone tests in. Reuse an existing `--c-*`.
+Three deliberate exceptions:
+
+- **White text on a saturated button** (teal, blue, red) is a literal `#fff`
+  or Tailwind `text-[#fff]`. `var(--c-ffffff)` and `text-white` both turn
+  near-black in light mode, which on a teal button is unreadable.
+- **Tailwind neutrals** (`zinc-*`, `white`) are flipped by overriding
+  `--color-zinc-*` in `style.css`, so they need no change.
+- **Brand and data colours** in `<script>` (streaming-service colours, the
+  calendar's event palette) stay hex. A colour that a template turns into a
+  tinted badge uses `color-mix(in srgb, ${c} 13%, transparent)` rather than
+  appending an alpha suffix, because `var(--c-…)22` is not a colour.
+
+`color-scheme` is set on `.admin-shell` and `.modal-overlay` only, so the fan
+pages the SPA still serves keep the browser default.
+
 ### Composables
 - Named `use*`, placed in `src/composables/`.
 - One composable = one logical concern.

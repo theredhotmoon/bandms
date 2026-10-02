@@ -103,7 +103,7 @@ function submit() {
 
     <!-- Name -->
     <div>
-      <label class="field-label">{{ $t('shows.tours.form.name') }} <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('shows.tours.form.name') }} <span style="color:var(--c-f87171);">*</span></label>
       <input v-model="form.name" required class="field-input" :placeholder="$t('shows.tours.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
@@ -140,8 +140,8 @@ function submit() {
         {{ $t('shows.tours.form.concerts') }}
         <span v-if="selectedConcertIds.size" class="count-badge">{{ $t('shows.tours.form.selectedCount', { n: selectedConcertIds.size }) }}</span>
       </div>
-      <div v-if="concertsQuery.isPending.value" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.loadingConcerts') }}</div>
-      <div v-else-if="!concertsQuery.data.value?.length" class="text-xs" style="color:#475569;">{{ $t('shows.tours.form.noConcerts') }}</div>
+      <div v-if="concertsQuery.isPending.value" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.tours.form.loadingConcerts') }}</div>
+      <div v-else-if="!concertsQuery.data.value?.length" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.tours.form.noConcerts') }}</div>
       <div v-else class="concerts-list">
         <label
           v-for="c in concertsQuery.data.value"
@@ -222,69 +222,69 @@ function submit() {
 <style scoped>
 .section-title {
   font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: #34d399; margin-bottom: 0.625rem;
+  letter-spacing: 0.06em; color: var(--c-34d399); margin-bottom: 0.625rem;
 }
 .count-badge {
   display: inline-block; padding: 0.1rem 0.375rem; border-radius: 0.25rem;
-  background: #2a2a2a; color: #c0c0c0; font-size: 0.65rem; font-weight: 700;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.65rem; font-weight: 700;
   text-transform: none; letter-spacing: 0; margin-left: 0.375rem; vertical-align: middle;
 }
 /* Concerts list */
 .concerts-list {
-  max-height: 12rem; overflow-y: auto; border: 1px solid #2a2a2a;
-  border-radius: 0.5rem; background: #141414;
+  max-height: 12rem; overflow-y: auto; border: 1px solid var(--c-2a2a2a);
+  border-radius: 0.5rem; background: var(--c-141414);
 }
 .concert-item {
   display: flex; align-items: center; gap: 0.625rem; cursor: pointer;
-  padding: 0.4rem 0.75rem; border-bottom: 1px solid #141414;
+  padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--c-141414);
   transition: background 100ms;
 }
 .concert-item:last-child { border-bottom: none; }
-.concert-item:hover { background: #141414; }
-.concert-item--selected { background: #2a2a2a; }
-.concert-item--selected:hover { background: #231e5a; }
-.concert-checkbox { accent-color: #888888; flex-shrink: 0; cursor: pointer; }
+.concert-item:hover { background: var(--c-141414); }
+.concert-item--selected { background: var(--c-2a2a2a); }
+.concert-item--selected:hover { background: var(--c-231e5a); }
+.concert-checkbox { accent-color: var(--c-888888); flex-shrink: 0; cursor: pointer; }
 .concert-date {
-  font-size: 0.75rem; font-weight: 600; color: #c0c0c0;
+  font-size: 0.75rem; font-weight: 600; color: var(--c-c0c0c0);
   white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums;
 }
-.concert-venue { font-size: 0.75rem; color: #e2e8f0; flex: 1; min-width: 0; }
+.concert-venue { font-size: 0.75rem; color: var(--c-e2e8f0); flex: 1; min-width: 0; }
 .concert-desc {
-  font-size: 0.7rem; color: #64748b; max-width: 12rem;
+  font-size: 0.7rem; color: var(--c-64748b); max-width: 12rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* Shared row styles */
 .btn-add-row {
   padding: 0.25rem 0.625rem; border-radius: 0.375rem; font-size: 0.75rem;
-  font-weight: 600; cursor: pointer; background: #2a2a2a;
-  border: 1px solid #444444; color: #d0d0d0; transition: background 100ms;
+  font-weight: 600; cursor: pointer; background: var(--c-2a2a2a);
+  border: 1px solid var(--c-444444); color: var(--c-d0d0d0); transition: background 100ms;
 }
-.btn-add-row:hover { background: #2a2a2a; }
-.empty-hint { font-size: 0.8125rem; color: #475569; padding: 0.375rem 0; }
+.btn-add-row:hover { background: var(--c-2a2a2a); }
+.empty-hint { font-size: 0.8125rem; color: var(--c-475569); padding: 0.375rem 0; }
 .rows-list { display: flex; flex-direction: column; gap: 0.375rem; }
 .img-row, .link-row {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.375rem 0.5rem; border-radius: 0.375rem;
-  background: #111111; border: 1px solid #222222;
+  background: var(--c-111111); border: 1px solid var(--c-222222);
 }
 .row-num {
-  font-size: 0.7rem; font-weight: 600; color: #334155;
+  font-size: 0.7rem; font-weight: 600; color: var(--c-334155);
   width: 1.25rem; text-align: right; flex-shrink: 0;
 }
 .caption-input { width: 11rem; flex-shrink: 0; }
 .label-input   { width: 9rem; flex-shrink: 0; }
 .move-group { display: flex; gap: 0.125rem; flex-shrink: 0; }
 .move-btn {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid #222222;
-  background: transparent; color: #475569; font-size: 0.75rem; cursor: pointer;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid var(--c-222222);
+  background: transparent; color: var(--c-475569); font-size: 0.75rem; cursor: pointer;
   transition: background 100ms, color 100ms; display: flex; align-items: center; justify-content: center;
 }
-.move-btn:hover:not(:disabled) { background: #141414; color: #94a3b8; }
+.move-btn:hover:not(:disabled) { background: var(--c-141414); color: var(--c-94a3b8); }
 .move-btn:disabled { opacity: 0.25; cursor: default; }
 .remove-btn {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid #3a1212;
-  background: transparent; color: #f87171; font-size: 0.65rem; cursor: pointer;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid var(--c-3a1212);
+  background: transparent; color: var(--c-f87171); font-size: 0.65rem; cursor: pointer;
   transition: background 100ms; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
 }
-.remove-btn:hover { background: #3f1212; }
+.remove-btn:hover { background: var(--c-3f1212); }
 </style>

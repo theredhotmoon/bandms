@@ -44,22 +44,22 @@ const gapWords = (missing: string[]) => toWords(missing, t)
 
 .bar-row { display: flex; align-items: center; gap: 0.625rem; }
 .bar-track {
-  flex: 1; height: 0.3rem; border-radius: 999px; background: #1a1a1a; overflow: hidden;
+  flex: 1; height: 0.3rem; border-radius: 999px; background: var(--c-1a1a1a); overflow: hidden;
 }
 .bar-fill {
-  height: 100%; border-radius: 999px; background: #4ade80;
+  height: 100%; border-radius: 999px; background: var(--c-4ade80);
   transition: width 200ms ease;
 }
-.bar-label { font-size: 0.7rem; color: #64748b; white-space: nowrap; }
+.bar-label { font-size: 0.7rem; color: var(--c-64748b); white-space: nowrap; }
 
 .gaps { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .gap-chip {
   display: flex; align-items: baseline; gap: 0.3rem;
   padding: 0.15rem 0.45rem; border-radius: 0.3rem; cursor: pointer;
-  background: #1c1608; border: 1px solid #4d3c10; font-family: inherit;
+  background: var(--c-1c1608); border: 1px solid var(--c-4d3c10); font-family: inherit;
   transition: background 100ms;
 }
-.gap-chip:hover { background: #2a2008; }
-.gap-name { font-size: 0.68rem; font-weight: 600; color: #fbbf24; }
-.gap-missing { font-size: 0.65rem; color: #a16207; }
+.gap-chip:hover { background: var(--c-2a2008); }
+.gap-name { font-size: 0.68rem; font-weight: 600; color: var(--c-fbbf24); }
+.gap-missing { font-size: 0.65rem; color: var(--c-a16207); }
 </style>

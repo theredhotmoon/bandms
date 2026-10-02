@@ -41,12 +41,12 @@ function onChange(event: Event): void {
   width: 100%;
   padding: 0.35rem 0.5rem;
   border-radius: 0.375rem;
-  background: #141414;
-  border: 1px solid #2a2a2a;
-  color: #94a3b8;
+  background: var(--c-141414);
+  border: 1px solid var(--c-2a2a2a);
+  color: var(--c-94a3b8);
   font-size: 0.75rem;
   cursor: pointer;
 }
-.ui-lang-select:hover { background: #1a1a1a; color: #e2e8f0; }
-.ui-lang-select:focus-visible { outline: 2px solid #1f8f7a; outline-offset: 1px; }
+.ui-lang-select:hover { background: var(--c-1a1a1a); color: var(--c-e2e8f0); }
+.ui-lang-select:focus-visible { outline: 2px solid var(--c-1f8f7a); outline-offset: 1px; }
 </style>

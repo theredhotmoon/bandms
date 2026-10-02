@@ -68,13 +68,13 @@ function categoryLabel(value: string): string {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('band.clips.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('band.clips.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('band.clips.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('band.clips.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('band.clips.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
@@ -84,7 +84,7 @@ function categoryLabel(value: string): string {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('band.clips.columns.category')" sort-key="category" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('band.clips.columns.provider') }}</th>
@@ -95,11 +95,11 @@ function categoryLabel(value: string): string {
             </thead>
             <tbody>
               <tr v-for="clip in tc.paginated.value" :key="clip.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0;">{{ clip.title ?? clip.url }}</td>
-                <td class="td" style="color:#94a3b8;">{{ categoryLabel(clip.category) }}</td>
-                <td class="td" style="color:#94a3b8;">{{ providerLabel(clip.provider, $t('common.link')) }}</td>
-                <td class="td" style="color:#94a3b8;">{{ clip.owners.length }}</td>
-                <td class="td text-xs font-mono" style="color:#64748b;">{{ clip.recorded_on ?? '—' }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ clip.title ?? clip.url }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ categoryLabel(clip.category) }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ providerLabel(clip.provider, $t('common.link')) }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ clip.owners.length }}</td>
+                <td class="td text-xs font-mono" style="color:var(--c-64748b);">{{ clip.recorded_on ?? '—' }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(clip)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = clip.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

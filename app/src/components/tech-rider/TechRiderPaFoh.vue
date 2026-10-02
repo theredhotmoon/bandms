@@ -106,24 +106,24 @@ function update(field: keyof PaFohRequirements, value: unknown) {
 <style scoped>
 .pafoh-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .section-hint {
-  font-size: 0.75rem; color: #475569; line-height: 1.5;
-  padding: 0.5rem 0.75rem; background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
+  font-size: 0.75rem; color: var(--c-475569); line-height: 1.5;
+  padding: 0.5rem 0.75rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
 }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
 .field-group--wide { grid-column: 1 / -1; }
-.field-label { font-size: 0.75rem; font-weight: 600; color: #7c8fa6; }
+.field-label { font-size: 0.75rem; font-weight: 600; color: var(--c-7c8fa6); }
 .field-input {
   display: block; width: 100%; padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-  border: 1px solid #2a2a2a; background: #141414; color: #e2e8f0;
+  border: 1px solid var(--c-2a2a2a); background: var(--c-141414); color: var(--c-e2e8f0);
   font-size: 0.875rem; outline: none; font-family: inherit;
   transition: border-color 150ms; resize: vertical;
 }
-.field-input:focus   { border-color: #888888; }
+.field-input:focus   { border-color: var(--c-888888); }
 .field-input:disabled { opacity: 0.4; cursor: not-allowed; }
-.field-input::placeholder { color: #2a3050; }
+.field-input::placeholder { color: var(--c-2a3050); }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-.toggle-input { accent-color: #888888; width: 1rem; height: 1rem; cursor: pointer; }
-.toggle-text  { font-size: 0.8rem; color: #94a3b8; }
+.toggle-input { accent-color: var(--c-888888); width: 1rem; height: 1rem; cursor: pointer; }
+.toggle-text  { font-size: 0.8rem; color: var(--c-94a3b8); }
 .mt-1 { margin-top: 0.35rem; }
 </style>

@@ -39,8 +39,8 @@ const isActive = computed(() => props.current === props.sortKey)
   user-select: none;
   transition: color 100ms;
 }
-.sort-th:hover { color: #64748b; }
-.sort-th--active { color: #e2e8f0; }
+.sort-th:hover { color: var(--c-64748b); }
+.sort-th--active { color: var(--c-e2e8f0); }
 
 .sort-inner {
   display: inline-flex;
@@ -51,8 +51,8 @@ const isActive = computed(() => props.current === props.sortKey)
 
 .sort-icon {
   flex-shrink: 0;
-  color: #334155;
+  color: var(--c-334155);
   transition: color 100ms;
 }
-.sort-th--active .sort-icon { color: #e2e8f0; }
+.sort-th--active .sort-icon { color: var(--c-e2e8f0); }
 </style>

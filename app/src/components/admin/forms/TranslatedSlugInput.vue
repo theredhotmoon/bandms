@@ -157,7 +157,7 @@ function regenerate(l: Lang): void {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8125rem;
 }
-.field-input--error { border-color: #f87171 !important; }
+.field-input--error { border-color: var(--c-f87171) !important; }
 .slug-regen {
   position: absolute;
   right: 0.375rem;
@@ -169,10 +169,10 @@ function regenerate(l: Lang): void {
   border: none;
   border-radius: 0.25rem;
   background: transparent;
-  color: #6b7280;
+  color: var(--c-6b7280);
   cursor: pointer;
   transition: color 120ms, background 120ms;
   flex-shrink: 0;
 }
-.slug-regen:hover { color: #60a5fa; background: #1e3a5f33; }
+.slug-regen:hover { color: var(--c-60a5fa); background: color-mix(in srgb, var(--c-1e3a5f) 20%, transparent); }
 </style>

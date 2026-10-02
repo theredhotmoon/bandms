@@ -217,7 +217,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <!-- Name -->
     <div>
-      <label class="field-label">{{ $t('common.fields.name') }} <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('common.fields.name') }} <span style="color:var(--c-f87171);">*</span></label>
       <input v-model="form.name" required class="field-input" :placeholder="$t('shows.venues.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
@@ -293,7 +293,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
           <span>{{ t.name }}</span>
         </label>
-        <p v-if="!tags.length" class="text-xs" style="color:#475569;">{{ $t('shows.venues.form.noTags') }}</p>
+        <p v-if="!tags.length" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.venues.form.noTags') }}</p>
       </div>
     </div>
 
@@ -328,27 +328,27 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
 .btn-search {
   padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
-  cursor: pointer; background: #2a2a2a; border: 1px solid #888888; color: #d0d0d0;
+  cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-888888); color: var(--c-d0d0d0);
   transition: background 120ms; white-space: nowrap; flex-shrink: 0;
 }
-.btn-search:hover:not(:disabled) { background: #2e2a6e; }
+.btn-search:hover:not(:disabled) { background: var(--c-2e2a6e); }
 .btn-search:disabled { opacity: 0.5; cursor: default; }
 
 .search-results {
-  background: #111111; border: 1px solid #2a2a2a; border-radius: 0.5rem;
+  background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
   margin-bottom: 0.375rem; overflow: hidden; display: flex; flex-direction: column;
 }
 .result-item {
-  padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #cbd5e1;
+  padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--c-cbd5e1);
   background: transparent; border: none; text-align: left; cursor: pointer;
-  transition: background 100ms; border-bottom: 1px solid #222222;
+  transition: background 100ms; border-bottom: 1px solid var(--c-222222);
 }
 .result-item:last-child { border-bottom: none; }
-.result-item:hover { background: #1a1a1a; color: #d0d0d0; }
+.result-item:hover { background: var(--c-1a1a1a); color: var(--c-d0d0d0); }
 
 .map-container {
   height: 240px; border-radius: 0.5rem; overflow: hidden;
-  border: 1px solid #2a2a2a; margin-bottom: 0.375rem;
+  border: 1px solid var(--c-2a2a2a); margin-bottom: 0.375rem;
 }
-.map-hint { font-size: 0.7rem; color: #334155; margin: 0; }
+.map-hint { font-size: 0.7rem; color: var(--c-334155); margin: 0; }
 </style>

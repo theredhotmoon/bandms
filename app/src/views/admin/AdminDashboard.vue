@@ -64,12 +64,12 @@ async function handleLevelUpdate(level: 1 | 2 | 3 | 4) {
 }
 
 const stats = computed(() => [
-  { label: t('dashboard.stats.bands'), count: bandsQ.data.value?.length, link: adminUrl('bands'), color: '#c0c0c0' },
-  { label: t('dashboard.stats.releases'), count: releasesQ.data.value?.length, link: adminUrl('releases'), color: '#f472b6' },
-  { label: t('dashboard.stats.tours'),    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: '#fbbf24' },
-  { label: t('dashboard.stats.venues'), count: venuesQ.data.value?.length, link: adminUrl('venues'), color: '#34d399' },
-  { label: t('dashboard.stats.concerts'), count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: '#fb923c' },
-  { label: t('dashboard.stats.tags'), count: tagsQ.data.value?.length, link: adminUrl('tags'), color: '#22d3ee' },
+  { label: t('dashboard.stats.bands'), count: bandsQ.data.value?.length, link: adminUrl('bands'), color: 'var(--c-c0c0c0)' },
+  { label: t('dashboard.stats.releases'), count: releasesQ.data.value?.length, link: adminUrl('releases'), color: 'var(--c-f472b6)' },
+  { label: t('dashboard.stats.tours'),    count: toursQ.data.value?.length,   link: adminUrl('tours'),    color: 'var(--c-fbbf24)' },
+  { label: t('dashboard.stats.venues'), count: venuesQ.data.value?.length, link: adminUrl('venues'), color: 'var(--c-34d399)' },
+  { label: t('dashboard.stats.concerts'), count: concertsQ.data.value?.length, link: adminUrl('concerts'), color: 'var(--c-fb923c)' },
+  { label: t('dashboard.stats.tags'), count: tagsQ.data.value?.length, link: adminUrl('tags'), color: 'var(--c-22d3ee)' },
 ])
 
 
@@ -114,10 +114,10 @@ const avgEnhanceScore = computed(() => {
   <AdminLayout>
     <div class="p-8 max-w-4xl">
       <div class="mb-8">
-        <h1 class="text-xl font-bold mb-1" style="color:#e2e8f0;">
+        <h1 class="text-xl font-bold mb-1" style="color:var(--c-e2e8f0);">
           {{ user ? $t('dashboard.welcomeNamed', { name: user.first_name }) : $t('dashboard.welcome') }}
         </h1>
-        <p class="text-sm" style="color:#64748b;">{{ $t('dashboard.subtitle') }}</p>
+        <p class="text-sm" style="color:var(--c-64748b);">{{ $t('dashboard.subtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
@@ -130,7 +130,7 @@ const avgEnhanceScore = computed(() => {
           <div class="text-2xl font-bold tabular-nums mb-1" :style="`color:${s.color};`">
             {{ s.count ?? '—' }}
           </div>
-          <div class="text-xs font-medium" style="color:#94a3b8;">{{ s.label }}</div>
+          <div class="text-xs font-medium" style="color:var(--c-94a3b8);">{{ s.label }}</div>
         </RouterLink>
       </div>
 
@@ -141,7 +141,7 @@ const avgEnhanceScore = computed(() => {
             <div class="readiness-title">{{ $t('dashboard.epk.title') }}</div>
             <div class="readiness-sub">
               <span v-if="publishedVersion">{{ $t('dashboard.epk.live', { version: publishedVersion.version_number, date: publishedVersion.published_at?.slice(0,10) }) }}</span>
-              <span v-else style="color:#f87171;">{{ $t('dashboard.epk.none') }}</span>
+              <span v-else style="color:var(--c-f87171);">{{ $t('dashboard.epk.none') }}</span>
             </div>
           </div>
           <div class="epk-header-actions">
@@ -171,7 +171,7 @@ const avgEnhanceScore = computed(() => {
           </div>
         </div>
         <div v-else class="epk-no-pending">
-          {{ $t('dashboard.epk.noPendingPrefix') }} <RouterLink :to="adminUrl('band-profile')" style="color:#c0c0c0;">{{ $t('dashboard.epk.noPendingLink') }}</RouterLink> {{ $t('dashboard.epk.noPendingSuffix') }}
+          {{ $t('dashboard.epk.noPendingPrefix') }} <RouterLink :to="adminUrl('band-profile')" style="color:var(--c-c0c0c0);">{{ $t('dashboard.epk.noPendingLink') }}</RouterLink> {{ $t('dashboard.epk.noPendingSuffix') }}
         </div>
       </div>
 
@@ -213,10 +213,10 @@ const avgEnhanceScore = computed(() => {
           </div>
           <div class="score-ring">
             <svg viewBox="0 0 40 40" class="ring-svg">
-              <circle cx="20" cy="20" r="16" fill="none" stroke="#222222" stroke-width="4" />
+              <circle cx="20" cy="20" r="16" fill="none" style="stroke: var(--c-222222)" stroke-width="4" />
               <circle
                 cx="20" cy="20" r="16" fill="none"
-                :stroke="avgEnhanceScore >= 70 ? '#34d399' : avgEnhanceScore >= 40 ? '#fbbf24' : '#f87171'"
+                :style="{ stroke: avgEnhanceScore >= 70 ? 'var(--c-34d399)' : avgEnhanceScore >= 40 ? 'var(--c-fbbf24)' : 'var(--c-f87171)' }"
                 stroke-width="4"
                 stroke-linecap="round"
                 :stroke-dasharray="`${avgEnhanceScore} 100`"
@@ -224,7 +224,7 @@ const avgEnhanceScore = computed(() => {
                 transform="rotate(-90 20 20)"
               />
             </svg>
-            <span class="ring-pct" :style="avgEnhanceScore >= 70 ? 'color:#34d399' : avgEnhanceScore >= 40 ? 'color:#fbbf24' : 'color:#f87171'">
+            <span class="ring-pct" :style="avgEnhanceScore >= 70 ? 'color:var(--c-34d399)' : avgEnhanceScore >= 40 ? 'color:var(--c-fbbf24)' : 'color:var(--c-f87171)'">
               {{ avgEnhanceScore }}%
             </span>
           </div>
@@ -241,7 +241,7 @@ const avgEnhanceScore = computed(() => {
             <div class="enhance-bar-wrap">
               <div
                 class="enhance-bar"
-                :style="`width:${Math.round(s / PR_MAX_SCORE * 100)}%;background:${s / PR_MAX_SCORE >= 0.7 ? '#34d399' : s / PR_MAX_SCORE >= 0.4 ? '#fbbf24' : '#f87171'}`"
+                :style="`width:${Math.round(s / PR_MAX_SCORE * 100)}%;background:${s / PR_MAX_SCORE >= 0.7 ? 'var(--c-34d399)' : s / PR_MAX_SCORE >= 0.4 ? 'var(--c-fbbf24)' : 'var(--c-f87171)'}`"
               />
             </div>
             <span class="enhance-score">{{ s }}/{{ PR_MAX_SCORE }}</span>
@@ -251,7 +251,7 @@ const avgEnhanceScore = computed(() => {
       </div>
 
       <div class="mt-8">
-        <h2 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:#475569;">{{ $t('dashboard.quickActions.title') }}</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--c-475569);">{{ $t('dashboard.quickActions.title') }}</h2>
         <div class="flex flex-wrap gap-2">
           <RouterLink :to="adminUrl('bands')" class="quick-btn">{{ $t('dashboard.quickActions.band') }}</RouterLink>
           <RouterLink :to="adminUrl('venues')" class="quick-btn">{{ $t('dashboard.quickActions.venue') }}</RouterLink>
@@ -265,11 +265,11 @@ const avgEnhanceScore = computed(() => {
       </div>
 
       <section v-if="ticketStats" class="mt-8">
-        <h2 class="text-lg font-semibold mb-3" style="color:#e2e8f0;">{{ $t('dashboard.tickets.title') }}</h2>
+        <h2 class="text-lg font-semibold mb-3" style="color:var(--c-e2e8f0);">{{ $t('dashboard.tickets.title') }}</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div v-for="s in statCards" :key="s.label" class="rounded border p-3 text-center" style="background:#141414;border-color:#222222;">
-            <div class="text-2xl font-bold" style="color:#e2e8f0;">{{ s.value }}</div>
-            <div class="text-xs mt-1" style="color:#64748b;">{{ s.label }}</div>
+          <div v-for="s in statCards" :key="s.label" class="rounded border p-3 text-center" style="background:var(--c-141414);border-color:var(--c-222222);">
+            <div class="text-2xl font-bold" style="color:var(--c-e2e8f0);">{{ s.value }}</div>
+            <div class="text-xs mt-1" style="color:var(--c-64748b);">{{ s.label }}</div>
           </div>
         </div>
       </section>
@@ -281,75 +281,75 @@ const avgEnhanceScore = computed(() => {
 .stat-card {
   display: flex; flex-direction: column; justify-content: center;
   padding: 1.25rem; border-radius: 0.75rem; text-decoration: none;
-  background: #1a1a1a; border: 1px solid #333333;
+  background: var(--c-1a1a1a); border: 1px solid var(--c-333333);
   transition: border-color 150ms, background 150ms;
 }
-.stat-card:hover { background: #151535; border-color: #888888; }
+.stat-card:hover { background: var(--c-151535); border-color: var(--c-888888); }
 .quick-btn {
   padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem;
-  font-weight: 500; text-decoration: none; color: #d0d0d0;
-  background: #2a2a2a; border: 1px solid #444444;
+  font-weight: 500; text-decoration: none; color: var(--c-d0d0d0);
+  background: var(--c-2a2a2a); border: 1px solid var(--c-444444);
   transition: background 120ms;
 }
-.quick-btn:hover { background: #333333; }
+.quick-btn:hover { background: var(--c-333333); }
 
 /* EPK widget */
 .epk-header-actions { display: flex; gap: 0.4rem; align-items: center; }
 .epk-create-link {
   background: transparent; cursor: pointer; font-family: inherit; line-height: inherit;
-  font-size: 0.78rem; color: #c0c0c0; text-decoration: none;
+  font-size: 0.78rem; color: var(--c-c0c0c0); text-decoration: none;
   white-space: nowrap; padding: 0.3rem 0.75rem;
-  border: 1px solid #333333; border-radius: 0.375rem;
+  border: 1px solid var(--c-333333); border-radius: 0.375rem;
   transition: background 100ms;
 }
-.epk-create-link:hover { background: #2a2a2a; }
+.epk-create-link:hover { background: var(--c-2a2a2a); }
 
 .epk-pending {
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  padding: 0.625rem 0.75rem; background: #111111; border: 1px solid #333333;
+  padding: 0.625rem 0.75rem; background: var(--c-111111); border: 1px solid var(--c-333333);
   border-radius: 0.5rem;
 }
 .epk-pending-badge {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  padding: 0.2rem 0.5rem; border-radius: 9999px; background: #1a1740; color: #fbbf24;
+  padding: 0.2rem 0.5rem; border-radius: 9999px; background: var(--c-1a1740); color: var(--c-fbbf24);
   flex-shrink: 0;
 }
 .epk-pending-meta { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
-.epk-version-num { font-size: 0.85rem; font-weight: 700; color: #d0d0d0; }
-.epk-pending-date { font-size: 0.75rem; color: #475569; }
-.epk-pending-reason { font-size: 0.78rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.epk-version-num { font-size: 0.85rem; font-weight: 700; color: var(--c-d0d0d0); }
+.epk-pending-date { font-size: 0.75rem; color: var(--c-475569); }
+.epk-pending-reason { font-size: 0.78rem; color: var(--c-94a3b8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .epk-pending-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
 .btn-epk-publish {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: #14532d; border: 1px solid #15803d; color: #34d399;
+  cursor: pointer; background: var(--c-14532d); border: 1px solid var(--c-15803d); color: var(--c-34d399);
   transition: background 100ms;
 }
-.btn-epk-publish:hover:not(:disabled) { background: #166534; }
+.btn-epk-publish:hover:not(:disabled) { background: var(--c-166534); }
 .btn-epk-publish:disabled { opacity: 0.5; cursor: default; }
 
 .btn-epk-discard {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: transparent; border: 1px solid #7f1d1d; color: #f87171;
+  cursor: pointer; background: transparent; border: 1px solid var(--c-7f1d1d); color: var(--c-f87171);
   transition: background 100ms;
 }
-.btn-epk-discard:hover:not(:disabled) { background: #450a0a; }
+.btn-epk-discard:hover:not(:disabled) { background: var(--c-450a0a); }
 .btn-epk-discard:disabled { opacity: 0.5; cursor: default; }
 
-.epk-no-pending { font-size: 0.8125rem; color: #475569; }
+.epk-no-pending { font-size: 0.8125rem; color: var(--c-475569); }
 
 /* Career level section heading */
-.readiness-title { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
+.readiness-title { font-size: 0.875rem; font-weight: 700; color: var(--c-e2e8f0); }
 
 /* Shared widget shell (used by EPK versions + enhance level) */
 .readiness-widget {
-  margin-top: 2rem; background: #141414; border: 1px solid #222222;
+  margin-top: 2rem; background: var(--c-141414); border: 1px solid var(--c-222222);
   border-radius: 0.75rem; padding: 1.25rem 1.5rem;
 }
 .readiness-header {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;
 }
-.readiness-sub { font-size: 0.75rem; color: #475569; margin-top: 0.125rem; }
+.readiness-sub { font-size: 0.75rem; color: var(--c-475569); margin-top: 0.125rem; }
 .score-ring { position: relative; width: 3.5rem; height: 3.5rem; flex-shrink: 0; }
 .ring-svg   { width: 100%; height: 100%; }
 .ring-pct   {
@@ -358,18 +358,18 @@ const avgEnhanceScore = computed(() => {
 }
 
 /* Enhance level widget */
-.enhance-sub { font-size: 0.72rem; color: #475569; margin-bottom: 0.625rem; }
+.enhance-sub { font-size: 0.72rem; color: var(--c-475569); margin-bottom: 0.625rem; }
 .enhance-list { display: flex; flex-direction: column; gap: 0.375rem; }
 .enhance-item {
   display: flex; align-items: center; gap: 0.75rem; padding: 0.375rem 0.5rem;
   border-radius: 0.375rem; text-decoration: none; transition: background 100ms;
 }
-.enhance-item:hover { background: #1a1a1a; }
-.enhance-bar-wrap { width: 5rem; height: 4px; background: #222222; border-radius: 2px; flex-shrink: 0; overflow: hidden; }
+.enhance-item:hover { background: var(--c-1a1a1a); }
+.enhance-bar-wrap { width: 5rem; height: 4px; background: var(--c-222222); border-radius: 2px; flex-shrink: 0; overflow: hidden; }
 .enhance-bar { height: 100%; border-radius: 2px; transition: width 400ms; }
-.enhance-score { font-size: 0.7rem; font-weight: 700; color: #475569; width: 2.5rem; flex-shrink: 0; }
+.enhance-score { font-size: 0.7rem; font-weight: 700; color: var(--c-475569); width: 2.5rem; flex-shrink: 0; }
 .enhance-label {
-  font-size: 0.8125rem; color: #94a3b8; min-width: 0; overflow: hidden;
+  font-size: 0.8125rem; color: var(--c-94a3b8); min-width: 0; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
 }
 </style>

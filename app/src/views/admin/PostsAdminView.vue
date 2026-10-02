@@ -98,13 +98,13 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('content.posts.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('content.posts.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('content.posts.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('content.posts.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('content.posts.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
@@ -122,7 +122,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.tags') }}</th>
                 <SortHeader :label="$t('common.fields.published')" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
@@ -131,16 +131,16 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="post in tc.paginated.value" :key="post.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0; max-width:16rem;">
+                <td class="td font-medium" style="color:var(--c-e2e8f0); max-width:16rem;">
                   <span class="truncate block">{{ post.title }}</span>
                 </td>
                 <td class="td">
                   <span v-if="post.tags?.length" class="pill-list">
                     <span v-for="t in post.tags" :key="t.id" class="pill pill--tag">{{ t.name }}</span>
                   </span>
-                  <span v-else style="color:#475569;">—</span>
+                  <span v-else style="color:var(--c-475569);">—</span>
                 </td>
-                <td class="td text-xs" :style="post.published_at ? 'color:#34d399;' : 'color:#475569;'">
+                <td class="td text-xs" :style="post.published_at ? 'color:var(--c-34d399);' : 'color:var(--c-475569);'">
                   {{ post.published_at ? post.published_at.slice(0,10) : $t('content.posts.draft') }}
                 </td>
                 <td class="td text-right">
@@ -166,7 +166,7 @@ async function confirmDelete() {
     </div>
 
     <AdminModal :open="showModal" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
-      <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">{{ $t('content.posts.loadingOne') }}</div>
+      <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('content.posts.loadingOne') }}</div>
       <PostForm
         v-else
         :initial="formPost"
@@ -192,6 +192,6 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped>
 .pill-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:#2a2a2a; color:#d0d0d0; white-space:nowrap; }
-.pill--tag { background:#0f2a1e; color:#34d399; }
+.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-2a2a2a); color:var(--c-d0d0d0); white-space:nowrap; }
+.pill--tag { background:var(--c-0f2a1e); color:var(--c-34d399); }
 </style>

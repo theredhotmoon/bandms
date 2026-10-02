@@ -212,17 +212,17 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.photos.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('media.photos.title') }}</h1>
         <button @click="showBatch = true" class="btn-add-primary">{{ $t('media.photos.newAlbum') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('media.photos.loadFailed') }}</div>
-        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('media.photos.empty') }}</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:var(--c-f87171);">{{ $t('media.photos.loadFailed') }}</div>
+        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('media.photos.empty') }}</div>
         <table v-else class="w-full">
           <thead>
-            <tr style="border-bottom:1px solid #222222;">
+            <tr style="border-bottom:1px solid var(--c-222222);">
               <th class="th" style="width:60px;"></th>
               <th class="th">{{ $t('media.photos.columns.album') }}</th>
               <th class="th">{{ $t('media.photos.columns.concertVenue') }}</th>
@@ -241,10 +241,10 @@ async function confirmDelete() {
                 </div>
               </td>
               <td class="td" style="max-width:14rem;">
-                <div class="font-medium truncate" style="color:#e2e8f0;">{{ album.title }}</div>
-                <div v-if="album.taken_at" class="text-xs" style="color:#475569;">{{ album.taken_at.slice(0,10) }}</div>
+                <div class="font-medium truncate" style="color:var(--c-e2e8f0);">{{ album.title }}</div>
+                <div v-if="album.taken_at" class="text-xs" style="color:var(--c-475569);">{{ album.taken_at.slice(0,10) }}</div>
               </td>
-              <td class="td text-sm" style="color:#94a3b8;">
+              <td class="td text-sm" style="color:var(--c-94a3b8);">
                 <span v-if="album.concert">{{ album.concert.date }}</span>
                 <span v-else-if="album.venue">{{ album.venue.name }}</span>
                 <span v-else>—</span>
@@ -253,14 +253,14 @@ async function confirmDelete() {
                 <span v-if="album.tags?.length" class="flex flex-wrap gap-1">
                   <span v-for="t in album.tags" :key="t.id" class="pill">{{ t.name }}</span>
                 </span>
-                <span v-else style="color:#475569;">—</span>
+                <span v-else style="color:var(--c-475569);">—</span>
               </td>
-              <td class="td text-sm" style="color:#94a3b8;">
+              <td class="td text-sm" style="color:var(--c-94a3b8);">
                 <button class="photo-count-btn" @click="openPhotos(album)">
                   {{ $t('media.photos.photoCount', album.photo_count, { named: { n: album.photo_count } }) }}
                 </button>
               </td>
-              <td class="td text-xs" :style="album.published_at ? 'color:#34d399;' : 'color:#475569;'">
+              <td class="td text-xs" :style="album.published_at ? 'color:var(--c-34d399);' : 'color:var(--c-475569);'">
                 {{ album.published_at ? album.published_at.slice(0,10) : $t('media.photos.draft') }}
               </td>
               <td class="td text-right">
@@ -290,7 +290,7 @@ async function confirmDelete() {
     <AdminModal :open="showEdit" :title="$t('media.photos.modalEdit')" max-width="42rem" @close="showEdit = false">
       <form @submit.prevent="saveEdit" class="flex flex-col gap-4">
         <div>
-          <label class="field-label">{{ $t('media.photos.albumTitle') }} <span style="color:#f87171;">*</span></label>
+          <label class="field-label">{{ $t('media.photos.albumTitle') }} <span style="color:var(--c-f87171);">*</span></label>
           <input v-model="editForm.title" required class="field-input" />
           <p v-if="fieldErrors.title" class="field-error">{{ fieldErrors.title[0] }}</p>
         </div>
@@ -376,7 +376,7 @@ async function confirmDelete() {
               >✕</button>
             </div>
           </div>
-          <div v-if="!localPhotos.length" class="py-8 text-center text-sm" style="color:#475569;">{{ $t('media.photos.noPhotos') }}</div>
+          <div v-if="!localPhotos.length" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('media.photos.noPhotos') }}</div>
         </div>
         <div v-if="orderDirty" class="reorder-bar">
           <span class="reorder-hint">{{ $t('media.photos.dragToReorder') }}</span>
@@ -395,18 +395,18 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:#0f2a1e; color:#34d399; white-space:nowrap; }
+.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }
-.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid #333333; }
-.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#333333; }
+.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid var(--c-333333); }
+.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--c-333333); }
 
 .photo-count-btn {
-  color: #c0c0c0; background: transparent; border: none;
+  color: var(--c-c0c0c0); background: transparent; border: none;
   cursor: pointer; font-size: 0.8rem; padding: 0;
   text-decoration: underline; text-underline-offset: 2px;
 }
-.photo-count-btn:hover { color: #d0d0d0; }
+.photo-count-btn:hover { color: var(--c-d0d0d0); }
 
 .photos-grid {
   display: grid;
@@ -417,40 +417,40 @@ async function confirmDelete() {
   padding: 2px;
 }
 .photo-item {
-  background:#0e0c2a; border:1px solid #333333; border-radius:8px;
+  background:var(--c-0e0c2a); border:1px solid var(--c-333333); border-radius:8px;
   overflow:hidden; cursor:grab; position:relative;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
 .photo-item:active { cursor: grabbing; }
-.photo-dragging { opacity: 0.4; box-shadow: 0 0 0 2px #c0c0c0; }
+.photo-dragging { opacity: 0.4; box-shadow: 0 0 0 2px var(--c-c0c0c0); }
 .drag-handle {
   position:absolute; top:4px; left:6px; font-size:0.85rem;
-  color:#475569; pointer-events:none; line-height:1;
+  color:var(--c-475569); pointer-events:none; line-height:1;
 }
 .photo-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
-.photo-placeholder { width:100%; aspect-ratio:4/3; background:#1a1740; display:flex; align-items:center; justify-content:center; color:#475569; }
+.photo-placeholder { width:100%; aspect-ratio:4/3; background:var(--c-1a1740); display:flex; align-items:center; justify-content:center; color:var(--c-475569); }
 .photo-footer { display:flex; align-items:center; justify-content:space-between; padding:0.3rem 0.5rem; gap:0.4rem; }
-.photo-caption { font-size:0.7rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.photo-caption { font-size:0.7rem; color:var(--c-94a3b8); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 .photo-epk {
-  background:transparent; border:none; color:#334155;
+  background:transparent; border:none; color:var(--c-334155);
   cursor:pointer; font-size:0.8rem; padding:2px 4px;
   border-radius:3px; transition:color 0.1s, background 0.1s;
   flex-shrink:0; line-height:1;
 }
-.photo-epk:hover { color:#fbbf24; }
-.photo-epk--on { color:#fbbf24; }
+.photo-epk:hover { color:var(--c-fbbf24); }
+.photo-epk--on { color:var(--c-fbbf24); }
 .photo-remove {
-  background:transparent; border:none; color:#475569;
+  background:transparent; border:none; color:var(--c-475569);
   cursor:pointer; font-size:0.75rem; padding:2px 4px;
   border-radius:3px; transition:color 0.1s, background 0.1s;
   flex-shrink:0;
 }
-.photo-remove:hover:not(:disabled) { color:#f87171; background:#3d1515; }
+.photo-remove:hover:not(:disabled) { color:var(--c-f87171); background:var(--c-3d1515); }
 .photo-remove:disabled { opacity:0.4; cursor:default; }
 .reorder-bar {
   display:flex; align-items:center; justify-content:space-between;
-  margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #333333;
+  margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--c-333333);
 }
-.reorder-hint { font-size:0.75rem; color:#475569; }
-.reorder-hint-idle { margin-top:0.6rem; font-size:0.72rem; color:#333333; text-align:center; }
+.reorder-hint { font-size:0.75rem; color:var(--c-475569); }
+.reorder-hint-idle { margin-top:0.6rem; font-size:0.72rem; color:var(--c-333333); text-align:center; }
 </style>

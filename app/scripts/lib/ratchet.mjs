@@ -48,6 +48,7 @@ export const MIGRATED = [
   'components/admin/TableToolbar.vue',
   'components/admin/TicketStatusBadge.vue',
   'components/admin/UiLangSwitcher.vue',
+  'components/admin/AdminThemeSwitch.vue',
   'components/auth/SignInForm.vue',
   'composables/useEpkVersionHistory.ts',
   'components/admin/ConcertTicketsManager.vue',

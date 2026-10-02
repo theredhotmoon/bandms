@@ -45,14 +45,14 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
   width: 22rem;
   padding: 1.5rem;
   border-radius: 0.75rem;
-  background: #161616;
-  border: 1px solid #2a2a2a;
+  background: var(--c-161616);
+  border: 1px solid var(--c-2a2a2a);
 }
 
 .modal-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--c-e2e8f0);
   margin-bottom: 1rem;
 }
 
@@ -61,14 +61,14 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #d0d0d0;
+  color: var(--c-d0d0d0);
   cursor: pointer;
 }
 
 .modal-hint {
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #777777;
+  color: var(--c-777777);
 }
 
 .btn-close {
@@ -76,12 +76,12 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
   padding: 0.375rem 1rem;
   border-radius: 0.375rem;
   border: none;
-  background: #2a2a2a;
-  color: #e2e8f0;
+  background: var(--c-2a2a2a);
+  color: var(--c-e2e8f0);
   font-size: 0.8125rem;
   cursor: pointer;
 }
 .btn-close:hover {
-  background: #333333;
+  background: var(--c-333333);
 }
 </style>

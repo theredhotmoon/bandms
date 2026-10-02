@@ -97,15 +97,15 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('content.authors.title') }}</h1>
-          <p class="text-xs mt-0.5" style="color:#475569;">{{ $t('content.authors.subtitle') }}</p>
+          <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('content.authors.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:var(--c-475569);">{{ $t('content.authors.subtitle') }}</p>
         </div>
         <button @click="openCreate" class="btn-add-primary">{{ $t('content.authors.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('content.authors.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('content.authors.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
@@ -115,7 +115,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('content.authors.columns.channels') }}</th>
                 <th class="th">{{ $t('content.authors.columns.notes') }}</th>
@@ -125,7 +125,7 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="author in tc.paginated.value" :key="author.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0; max-width:14rem;">{{ author.name }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0); max-width:14rem;">{{ author.name }}</td>
                 <td class="td">
                   <div class="contact-chips">
                     <a v-if="author.email" :href="`mailto:${author.email}`" class="contact-chip contact-chip--email" :title="author.email">{{ $t('content.authors.chip.email') }}</a>
@@ -134,7 +134,7 @@ async function confirmDelete() {
                   </div>
                 </td>
                 <td class="td notes-cell">{{ author.notes ?? '—' }}</td>
-                <td class="td" style="color:#475569; font-size:0.72rem; white-space:nowrap;">
+                <td class="td" style="color:var(--c-475569); font-size:0.72rem; white-space:nowrap;">
                   {{ new Date(author.created_at).toLocaleDateString(uiLang, { day: 'numeric', month: 'short', year: 'numeric' }) }}
                 </td>
                 <td class="td text-right">
@@ -160,13 +160,13 @@ async function confirmDelete() {
     </div>
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="40rem" @close="closeModal">
-      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
+      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
       <!--
         Without this branch a failed fetch renders an empty form that is still
         an *update*: saving it would wipe the contact's details and every
         relation, including the bands just assigned to them.
       -->
-      <div v-else-if="!isCreating && !fullRecord.data.value" class="py-8 text-center text-sm" style="color:#f87171;">
+      <div v-else-if="!isCreating && !fullRecord.data.value" class="py-8 text-center text-sm" style="color:var(--c-f87171);">
         {{ $t('content.authors.loadOneFailed') }}
       </div>
       <AuthorForm
@@ -196,7 +196,7 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped>
 .notes-cell {
-  font-size: 0.72rem; color: #475569;
+  font-size: 0.72rem; color: var(--c-475569);
   max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .contact-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
@@ -205,10 +205,10 @@ async function confirmDelete() {
   font-size: 0.65rem; font-weight: 600; text-decoration: none;
   transition: opacity 100ms;
 }
-.contact-chip--email   { background: #0c1e2e; color: #60a5fa; border: 1px solid #1e3a5f; }
-.contact-chip--phone   { background: #0f2a1e; color: #34d399; border: 1px solid #166534; }
-.contact-chip--whatsapp{ background: #0f2a1e; color: #4ade80; border: 1px solid #166534; }
-.contact-chip--fb      { background: #111740; color: #c0c0c0; border: 1px solid #444444; }
-.contact-chip--ig      { background: #2a0f1e; color: #f472b6; border: 1px solid #831843; }
+.contact-chip--email   { background: var(--c-0c1e2e); color: var(--c-60a5fa); border: 1px solid var(--c-1e3a5f); }
+.contact-chip--phone   { background: var(--c-0f2a1e); color: var(--c-34d399); border: 1px solid var(--c-166534); }
+.contact-chip--whatsapp{ background: var(--c-0f2a1e); color: var(--c-4ade80); border: 1px solid var(--c-166534); }
+.contact-chip--fb      { background: var(--c-111740); color: var(--c-c0c0c0); border: 1px solid var(--c-444444); }
+.contact-chip--ig      { background: var(--c-2a0f1e); color: var(--c-f472b6); border: 1px solid var(--c-831843); }
 .contact-chip:hover    { opacity: 0.8; }
 </style>

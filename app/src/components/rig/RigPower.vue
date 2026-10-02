@@ -51,15 +51,15 @@ function patch(changes: Partial<PowerSpec>) {
 .power-row { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: start; }
 .outlets-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem; }
 .outlets-count {
-  font-size: 1.5rem; font-weight: 800; color: #d0d0d0;
+  font-size: 1.5rem; font-weight: 800; color: var(--c-d0d0d0);
   min-width: 2.5rem; text-align: center;
 }
 .outlets-btn {
-  width: 2rem; height: 2rem; border-radius: 0.375rem; border: 1px solid #2a2a2a;
-  background: #141414; color: #c0c0c0; font-size: 1.2rem; cursor: pointer;
+  width: 2rem; height: 2rem; border-radius: 0.375rem; border: 1px solid var(--c-2a2a2a);
+  background: var(--c-141414); color: var(--c-c0c0c0); font-size: 1.2rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 100ms, border-color 100ms;
 }
-.outlets-btn:hover:not(:disabled) { background: #1a1a1a; border-color: #444444; }
+.outlets-btn:hover:not(:disabled) { background: var(--c-1a1a1a); border-color: var(--c-444444); }
 .outlets-btn:disabled { opacity: 0.3; cursor: default; }
 </style>

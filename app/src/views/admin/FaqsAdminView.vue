@@ -168,7 +168,7 @@ function onDragEnd() {
           <p class="text-sm text-zinc-500 mt-1">{{ $t('pages.faqs.lead') }}</p>
         </div>
         <button
-          class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+          class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-[#fff] text-sm font-semibold transition-colors disabled:opacity-50"
           :disabled="editing === 'new'"
           @click="startEdit('new')"
         >
@@ -184,7 +184,7 @@ function onDragEnd() {
           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
           :class="
             activeSlug === m.slug
-              ? 'bg-teal-600 text-white'
+              ? 'bg-teal-600 text-[#fff]'
               : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
           "
           @click="activeSlug = m.slug"

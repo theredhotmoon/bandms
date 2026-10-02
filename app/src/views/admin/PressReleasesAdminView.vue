@@ -115,23 +115,23 @@ function hostname(url: string): string {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('content.press.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('content.press.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('content.press.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('content.press.loadFailed') }}</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:var(--c-f87171);">{{ $t('content.press.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
-          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
+          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:var(--c-475569);">
             <span v-if="!(query.data.value?.length)">{{ $t('content.press.empty') }}</span>
             <span v-else>{{ $t('content.press.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <th class="th" style="width:3.5rem;">{{ $t('common.fields.image') }}</th>
                 <SortHeader :label="$t('content.press.article')" sort-key="og_title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.tags') }}</th>
@@ -162,7 +162,7 @@ function hostname(url: string): string {
                 </td>
                 <td class="td" style="white-space:nowrap;">
                   <span v-if="pr.featured" class="epk-badge" :title="$t('content.press.featuredTitle')">EPK</span> <!-- i18n-ignore: acronym, same in both languages -->
-                  <span style="color:#64748b;">{{ formatDate(pr.published_at) }}</span>
+                  <span style="color:var(--c-64748b);">{{ formatDate(pr.published_at) }}</span>
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(pr)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
@@ -187,7 +187,7 @@ function hostname(url: string): string {
     </div>
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="52rem" @close="closeModal">
-      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
+      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">
         {{ $t('common.state.loading') }}
       </div>
       <PressReleaseForm
@@ -219,26 +219,26 @@ function hostname(url: string): string {
 <style scoped>
 .og-thumb {
   width: 3rem; height: 2.25rem; border-radius: 0.25rem;
-  object-fit: cover; border: 1px solid #222222;
+  object-fit: cover; border: 1px solid var(--c-222222);
 }
 .og-thumb-placeholder {
   width: 3rem; height: 2.25rem; border-radius: 0.25rem;
-  background: #1a1a1a; border: 1px solid #222222;
+  background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
   display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
 }
 .pr-title {
-  font-size: 0.8125rem; font-weight: 500; color: #e2e8f0;
+  font-size: 0.8125rem; font-weight: 500; color: var(--c-e2e8f0);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 26rem;
 }
-.pr-site  { font-size: 0.72rem; color: #475569; margin-top: 1px; }
+.pr-site  { font-size: 0.72rem; color: var(--c-475569); margin-top: 1px; }
 .tag-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .epk-badge {
   display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.2rem; margin-right: 0.375rem;
-  background: #2a2a2a; color: #c0c0c0; font-size: 0.62rem; font-weight: 700;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.62rem; font-weight: 700;
   letter-spacing: 0.06em; vertical-align: middle;
 }
 .tag-chip {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
-  background: #2a2a2a; color: #c0c0c0; font-size: 0.65rem; font-weight: 500;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: 0.65rem; font-weight: 500;
 }
 </style>

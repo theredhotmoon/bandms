@@ -156,7 +156,7 @@ function onDragEnd() {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #d0d0d0;
+  color: var(--c-d0d0d0);
   margin-bottom: 0.5rem;
 }
 
@@ -179,12 +179,12 @@ function onDragEnd() {
 }
 
 .social-links-editor__row--drag-over {
-  border-top-color: var(--color-accent, #1f8f7a);
+  border-top-color: var(--color-accent, var(--c-1f8f7a));
 }
 
 .social-links-editor__handle {
   cursor: grab;
-  color: #4b5563;
+  color: var(--c-4b5563);
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -206,7 +206,7 @@ function onDragEnd() {
 .social-links-editor__name {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: var(--c-94a3b8);
   width: 7rem;
   flex-shrink: 0;
 }

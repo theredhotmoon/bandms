@@ -517,7 +517,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-section-title {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--c-94a3b8);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0;
@@ -529,9 +529,9 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-count {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #475569;
-  background: #12122e;
-  border: 1px solid #2a2a2a;
+  color: var(--c-475569);
+  background: var(--c-12122e);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 9999px;
   padding: 0 0.45rem;
   line-height: 1.6;
@@ -539,7 +539,7 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Drop zone ─────────────────────────────────────────────── */
 .blm-drop {
-  border: 2px dashed #2a2a2a;
+  border: 2px dashed var(--c-2a2a2a);
   border-radius: 0.625rem;
   padding: 2rem 1.5rem;
   text-align: center;
@@ -548,29 +548,29 @@ function isAnyUpdatePending(id: number): boolean {
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
-  background: #0e0c2a;
+  background: var(--c-0e0c2a);
   transition: border-color 150ms, background 150ms;
 }
 .blm-drop:hover,
 .blm-drop--active {
-  border-color: #888888;
-  background: #100e30;
+  border-color: var(--c-888888);
+  background: var(--c-100e30);
 }
 
 .blm-drop-icon {
   width: 2rem;
   height: 2rem;
-  color: #888888;
+  color: var(--c-888888);
   margin-bottom: 0.25rem;
 }
 .blm-drop-label {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #d0d0d0;
+  color: var(--c-d0d0d0);
 }
 .blm-drop-hint {
   font-size: 0.7rem;
-  color: #475569;
+  color: var(--c-475569);
 }
 
 /* ── Upload form (pending preview) ────────────────────────── */
@@ -578,8 +578,8 @@ function isAnyUpdatePending(id: number): boolean {
   display: flex;
   gap: 1.25rem;
   padding: 1rem;
-  background: #111111;
-  border: 1px solid #2a2a2a;
+  background: var(--c-111111);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.625rem;
 }
 @media (max-width: 560px) {
@@ -590,8 +590,8 @@ function isAnyUpdatePending(id: number): boolean {
   flex-shrink: 0;
   width: 8rem;
   min-height: 6rem;
-  background: #141230;
-  border: 1px solid #2a2a2a;
+  background: var(--c-141230);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -627,7 +627,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-optional {
   font-size: 0.7rem;
   font-weight: 400;
-  color: #475569;
+  color: var(--c-475569);
 }
 
 .blm-upload-actions {
@@ -652,22 +652,22 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Logo card ─────────────────────────────────────────────── */
 .blm-card {
-  background: #111111;
-  border: 1px solid #222222;
+  background: var(--c-111111);
+  border: 1px solid var(--c-222222);
   border-radius: 0.625rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: border-color 150ms;
 }
-.blm-card:hover { border-color: #333333; }
-.blm-card--default { border-color: #78400a; box-shadow: 0 0 0 1px #92400e33; }
+.blm-card:hover { border-color: var(--c-333333); }
+.blm-card--default { border-color: var(--c-78400a); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-92400e) 20%, transparent); }
 .blm-card--deprecated { opacity: 0.55; }
 
 .blm-card-thumb {
   position: relative;
-  background: #141230;
-  border-bottom: 1px solid #222222;
+  background: var(--c-141230);
+  border-bottom: 1px solid var(--c-222222);
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -705,21 +705,21 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-badge--default {
-  background: #78350f;
-  color: #fde68a;
-  border: 1px solid #92400e;
+  background: var(--c-78350f);
+  color: var(--c-fde68a);
+  border: 1px solid var(--c-92400e);
 }
 
 .blm-badge--vector {
-  background: #222222;
-  color: #7dd3fc;
-  border: 1px solid #444444;
+  background: var(--c-222222);
+  color: var(--c-7dd3fc);
+  border: 1px solid var(--c-444444);
 }
 
 .blm-badge--deprecated {
-  background: #450a0a;
-  color: #fca5a5;
-  border: 1px solid #7f1d1d;
+  background: var(--c-450a0a);
+  color: var(--c-fca5a5);
+  border: 1px solid var(--c-7f1d1d);
 }
 
 /* ── Card body ─────────────────────────────────────────────── */
@@ -741,9 +741,9 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-chip {
   font-size: 0.6rem;
   font-weight: 600;
-  color: #888888;
-  background: #1a1a1a;
-  border: 1px solid #252470;
+  color: var(--c-888888);
+  background: var(--c-1a1a1a);
+  border: 1px solid var(--c-252470);
   border-radius: 0.25rem;
   padding: 0.1rem 0.375rem;
   letter-spacing: 0.02em;
@@ -752,7 +752,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-card-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--c-e2e8f0);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -761,13 +761,13 @@ function isAnyUpdatePending(id: number): boolean {
 
 .blm-card-version {
   font-size: 0.68rem;
-  color: #c0c0c0;
+  color: var(--c-c0c0c0);
   margin: 0;
 }
 
 .blm-card-filename {
   font-size: 0.65rem;
-  color: #334155;
+  color: var(--c-334155);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -776,13 +776,13 @@ function isAnyUpdatePending(id: number): boolean {
 
 .blm-card-meta {
   font-size: 0.65rem;
-  color: #475569;
+  color: var(--c-475569);
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.blm-meta-sep { color: #2a2a2a; }
+.blm-meta-sep { color: var(--c-2a2a2a); }
 
 /* ── Card action buttons ───────────────────────────────────── */
 .blm-card-actions {
@@ -791,7 +791,7 @@ function isAnyUpdatePending(id: number): boolean {
   gap: 0.25rem;
   margin-top: 0.375rem;
   padding-top: 0.375rem;
-  border-top: 1px solid #141230;
+  border-top: 1px solid var(--c-141230);
 }
 
 .blm-action-btn {
@@ -800,16 +800,16 @@ function isAnyUpdatePending(id: number): boolean {
   padding: 0.2rem 0.5rem;
   border-radius: 0.3rem;
   cursor: pointer;
-  background: #0e0c2a;
-  border: 1px solid #2a2a2a;
-  color: #64748b;
+  background: var(--c-0e0c2a);
+  border: 1px solid var(--c-2a2a2a);
+  color: var(--c-64748b);
   transition: background 100ms, color 100ms, border-color 100ms;
   line-height: 1.4;
 }
 .blm-action-btn:hover:not(:disabled) {
-  background: #141414;
-  color: #94a3b8;
-  border-color: #252468;
+  background: var(--c-141414);
+  color: var(--c-94a3b8);
+  border-color: var(--c-252468);
 }
 .blm-action-btn:disabled {
   opacity: 0.35;
@@ -817,38 +817,38 @@ function isAnyUpdatePending(id: number): boolean {
 }
 
 .blm-action-btn--star:hover:not(:disabled) {
-  background: #2d1a08;
-  color: #fbbf24;
-  border-color: #78350f;
+  background: var(--c-2d1a08);
+  color: var(--c-fbbf24);
+  border-color: var(--c-78350f);
 }
-.blm-action-btn--star:disabled { color: #78350f; }
+.blm-action-btn--star:disabled { color: var(--c-92400e); } /* a saturated amber that reads on both themes */
 
 .blm-action-btn--deprecate:hover:not(:disabled) {
-  background: #1a1210;
-  color: #fb923c;
-  border-color: #7c2d12;
+  background: var(--c-1a1210);
+  color: var(--c-fb923c);
+  border-color: var(--c-7c2d12);
 }
 
 .blm-action-btn--restore:hover:not(:disabled) {
-  background: #0f2a1a;
-  color: #4ade80;
-  border-color: #166534;
+  background: var(--c-0f2a1a);
+  color: var(--c-4ade80);
+  border-color: var(--c-166534);
 }
 
 .blm-action-btn--edit:hover:not(:disabled) {
-  background: #2a2a2a;
-  color: #d0d0d0;
-  border-color: #444444;
+  background: var(--c-2a2a2a);
+  color: var(--c-d0d0d0);
+  border-color: var(--c-444444);
 }
 
 .blm-action-btn--delete {
-  color: #f87171;
-  border-color: #3a1212;
+  color: var(--c-f87171);
+  border-color: var(--c-3a1212);
 }
 .blm-action-btn--delete:hover:not(:disabled) {
-  background: #3d1515;
-  color: #fca5a5;
-  border-color: #7f1d1d;
+  background: var(--c-3d1515);
+  color: var(--c-fca5a5);
+  border-color: var(--c-7f1d1d);
 }
 
 /* ── Delete confirm inline ─────────────────────────────────── */
@@ -859,12 +859,12 @@ function isAnyUpdatePending(id: number): boolean {
   flex-wrap: wrap;
   margin-top: 0.375rem;
   padding-top: 0.375rem;
-  border-top: 1px solid #141230;
+  border-top: 1px solid var(--c-141230);
 }
 
 .blm-confirm-text {
   font-size: 0.68rem;
-  color: #f87171;
+  color: var(--c-f87171);
   flex: 1;
   min-width: 0;
 }
@@ -876,7 +876,7 @@ function isAnyUpdatePending(id: number): boolean {
   gap: 0.5rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid #141230;
+  border-top: 1px solid var(--c-141230);
 }
 
 .blm-edit-actions {
@@ -893,15 +893,15 @@ function isAnyUpdatePending(id: number): boolean {
 
 /* ── Context pins ──────────────────────────────────────────── */
 .blm-pins-section {
-  background: #111111;
-  border: 1px solid #2a2a2a;
+  background: var(--c-111111);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.625rem;
   padding: 1rem 1.25rem;
 }
 
 .blm-pins-hint {
   font-size: 0.73rem;
-  color: #475569;
+  color: var(--c-475569);
   margin: 0 0 0.75rem;
   line-height: 1.5;
 }
@@ -924,7 +924,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-pin-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #7c8fa6;
+  color: var(--c-7c8fa6);
   width: 8.5rem;
   flex-shrink: 0;
 }
@@ -944,14 +944,14 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-loading,
 .blm-empty {
   font-size: 0.8rem;
-  color: #475569;
+  color: var(--c-475569);
   padding: 1rem 0;
   text-align: center;
 }
 
 .blm-error {
   font-size: 0.8rem;
-  color: #f87171;
+  color: var(--c-f87171);
   padding: 1rem 0;
   text-align: center;
 }

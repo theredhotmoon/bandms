@@ -84,17 +84,17 @@ function dateRange(tour: TourSummary): string {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('shows.tours.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('shows.tours.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('shows.tours.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('shows.tours.loadFailed') }}</div>
-        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('shows.tours.empty') }}</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:var(--c-f87171);">{{ $t('shows.tours.loadFailed') }}</div>
+        <div v-else-if="!query.data.value?.length" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('shows.tours.empty') }}</div>
         <table v-else class="w-full">
           <thead>
-            <tr style="border-bottom:1px solid #222222;">
+            <tr style="border-bottom:1px solid var(--c-222222);">
               <th class="th" style="width:3rem;">{{ $t('shows.tours.columns.id') }}</th>
               <th class="th" style="width:3rem;">{{ $t('shows.tours.columns.poster') }}</th>
               <th class="th">{{ $t('common.fields.name') }}</th>
@@ -105,13 +105,13 @@ function dateRange(tour: TourSummary): string {
           </thead>
           <tbody>
             <tr v-for="tour in query.data.value" :key="tour.id" class="table-row">
-              <td class="td" style="color:#475569;">{{ tour.id }}</td>
+              <td class="td" style="color:var(--c-475569);">{{ tour.id }}</td>
               <td class="td">
                 <img v-if="tour.poster" :src="tour.poster" :alt="tour.name" class="poster-thumb" />
                 <div v-else class="poster-placeholder">♟</div>
               </td>
-              <td class="td font-medium" style="color:#e2e8f0;">{{ tour.name }}</td>
-              <td class="td" style="color:#64748b; font-size:0.75rem; white-space:nowrap;">{{ dateRange(tour) }}</td>
+              <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tour.name }}</td>
+              <td class="td" style="color:var(--c-64748b); font-size:0.75rem; white-space:nowrap;">{{ dateRange(tour) }}</td>
               <td class="td">
                 <span class="concerts-pill">{{ tour.concerts_count }}</span>
               </td>
@@ -126,7 +126,7 @@ function dateRange(tour: TourSummary): string {
     </div>
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="52rem" @close="closeModal">
-      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
+      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">
         {{ $t('shows.tours.loadingOne') }}
       </div>
       <TourForm
@@ -153,18 +153,18 @@ function dateRange(tour: TourSummary): string {
 <style scoped>
 .poster-thumb {
   width: 2.5rem; height: 2.5rem; border-radius: 0.25rem;
-  object-fit: cover; border: 1px solid #222222;
+  object-fit: cover; border: 1px solid var(--c-222222);
 }
 .poster-placeholder {
   width: 2.5rem; height: 2.5rem; border-radius: 0.25rem;
-  background: #1a1a1a; border: 1px solid #222222;
+  background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.875rem; color: #334155;
+  font-size: 0.875rem; color: var(--c-334155);
 }
 .concerts-pill {
   display: inline-block; min-width: 1.5rem; text-align: center;
   padding: 0.1rem 0.4rem; border-radius: 0.3rem;
-  background: #222222; border: 1px solid #333333;
-  font-size: 0.7rem; font-weight: 600; color: #64748b;
+  background: var(--c-222222); border: 1px solid var(--c-333333);
+  font-size: 0.7rem; font-weight: 600; color: var(--c-64748b);
 }
 </style>

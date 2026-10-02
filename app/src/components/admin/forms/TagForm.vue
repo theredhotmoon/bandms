@@ -49,7 +49,7 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
-      <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:var(--c-f87171);">*</span></label>
       <div class="trans-group">
         <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>

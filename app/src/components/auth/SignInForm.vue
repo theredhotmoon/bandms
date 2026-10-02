@@ -47,7 +47,7 @@ async function handleSubmit() {
 
 <template>
   <form class="space-y-4" @submit.prevent="handleSubmit">
-    <p v-if="generalError" class="field-error rounded px-3 py-2 text-xs" style="background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2);">
+    <p v-if="generalError" class="field-error rounded px-3 py-2 text-xs" style="background: color-mix(in srgb, var(--c-f87171) 8%, transparent); border: 1px solid color-mix(in srgb, var(--c-f87171) 20%, transparent);">
       {{ generalError }}
     </p>
 
