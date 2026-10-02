@@ -212,7 +212,11 @@ function handleSubmit() {
   const payload: ReleasePayload = {
     // `{}` when blank, so the API's required rule answers with a `title` error.
     title:       bagHasText(form.title) ? compactBag(form.title) : {},
-    slug:        slugPayload(form.slug, slugAuto.value),
+    // On edit, send every locale exactly as shown: the API generates a missing
+    // non-default slug on CREATE only, so a previewed Polish slug sent as
+    // null (auto) was dropped — the form showed a slug it never saved (#153's
+    // review). On create, auto locales go as null so the API generates them.
+    slug:        slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     type:         form.type,
     release_date: form.release_date || null,
     description: compactBag(form.description),

@@ -125,6 +125,12 @@ export function bagHasText(bag: TranslationBag): boolean {
  * The preview a TranslatedSlugInput shows is only a guess — the server is the
  * one that can suffix past another record's slug in any language. Sending the
  * guess as an explicit value turned a clash into a 422 (#150's review).
+ *
+ * Pass the auto map ONLY where the API will generate what it receives as null:
+ * on create, or for a model that re-slugs on every save (Tag). On an edit
+ * otherwise, pass `{}` so every locale goes exactly as shown — the API only
+ * fills a missing DEFAULT slug on update, so a previewed non-default slug sent
+ * as null would be dropped while the form displayed it (#153's review).
  */
 export function slugPayload(
   bag: TranslationBag,
