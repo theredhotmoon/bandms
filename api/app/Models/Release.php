@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasClips;
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,11 +12,11 @@ use Spatie\Translatable\HasTranslations;
 
 class Release extends Model
 {
-    use HasFactory, HasSlug, HasTranslations, HasClips;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasClips;
 
-    public array $translatable = ['title', 'description'];
+    public array $translatable = ['title', 'description', 'slug'];
 
-    protected $fillable = ['profile_id', 'title', 'type', 'release_date', 'cover_image', 'description', 'is_upcoming', 'presave_url', 'label_name', 'slug_en', 'slug_pl'];
+    protected $fillable = ['profile_id', 'title', 'type', 'release_date', 'cover_image', 'description', 'is_upcoming', 'presave_url', 'label_name', 'slug'];
 
     protected $casts = [
         'release_date' => 'date:Y-m-d',

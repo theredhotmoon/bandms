@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import { useI18n } from 'vue-i18n'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, bagHasText, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -20,6 +20,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+// Locales whose slug still follows the title — sent as null so the API generates them.
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 const { order: contentLocales, isPrimary } = useContentLocales()
 
 // Sample text written in each input's own language — see PostForm.
@@ -121,8 +124,7 @@ function emptyTrack(sort_order = 0): TrackRow {
 // ── Form ──────────────────────────────────────────────────────
 const form = reactive({
   title:        emptyBag(),
-  slug_en:      '',
-  slug_pl:      '',
+  slug:         emptyBag(),
   type:         'single' as ReleaseType,
   release_date: '',
   description:  emptyBag(),
@@ -142,8 +144,7 @@ watch(
   (val) => {
     if (!val) {
       form.title          = emptyBag()
-      form.slug_en        = ''
-      form.slug_pl        = ''
+      form.slug           = emptyBag()
       form.type           = 'single'
       form.release_date   = ''
       form.description    = emptyBag()
@@ -159,8 +160,7 @@ watch(
       return
     }
     form.title          = bagFrom(val.translations?.title, val.title)
-    form.slug_en        = val.slug_en ?? ''
-    form.slug_pl        = val.slug_pl ?? ''
+    form.slug           = bagFrom(val.translations?.slug)
     form.type           = val.type
     form.release_date   = val.release_date ?? ''
     form.description    = bagFrom(val.translations?.description, val.description)
@@ -212,8 +212,7 @@ function handleSubmit() {
   const payload: ReleasePayload = {
     // `{}` when blank, so the API's required rule answers with a `title` error.
     title:       bagHasText(form.title) ? compactBag(form.title) : {},
-    slug_en:     form.slug_en || null,
-    slug_pl:     form.slug_pl || null,
+    slug:        slugPayload(form.slug, slugAuto.value),
     type:         form.type,
     release_date: form.release_date || null,
     description: compactBag(form.description),
@@ -281,15 +280,14 @@ function handleSubmit() {
         </div>
         <div>
           <label class="field-label">{{ $t('common.fields.slug') }}</label>
-          <SlugInput
-            v-model="form.slug_en"
-            v-model:modelValuePl="form.slug_pl"
-            :sourceEn="form.title.en"
-            :sourcePl="form.title.pl"
-            :bilingual="true"
+          <!-- Each locale follows its own title on a new release; a loaded
+               slug stays fixed (no followLoaded) so a retitle never re-slugs. -->
+          <TranslatedSlugInput
+            v-model="form.slug"
+            v-model:auto="slugAuto"
+            :sources="form.title"
+            :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
           />
-          <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
-          <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
