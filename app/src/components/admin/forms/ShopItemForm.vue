@@ -8,11 +8,16 @@ import type { Concert } from '@/types/concert'
 import type { PostSummary } from '@/types/post'
 import type { MusicVideo } from '@/types/musicVideo'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import { DEFAULT_LOCALE, LOCALES, bagFrom, emptyBag, slugPayload, type Lang } from '@/locales'
 import { useShop } from '@/composables/useShop'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 
 const { t } = useI18n()
+
+// Which locales' slugs still follow the name — sent as null so the API
+// generates them (and re-slugs on rename, as this endpoint always has).
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 
 const URL_PLACEHOLDER = 'https://…' // i18n-ignore: URL scheme
 
@@ -37,8 +42,7 @@ const emit = defineEmits<{
 
 const form = reactive({
   name:              '',
-  slug_en:           '',
-  slug_pl:           '',
+  slug:              emptyBag(),
   description:       '' as string,
   is_available:      true,
   is_presale:        false,
@@ -78,8 +82,7 @@ watch(
   (item) => {
     if (!item) {
       form.name             = ''
-      form.slug_en          = ''
-      form.slug_pl          = ''
+      form.slug             = emptyBag()
       form.description      = ''
       form.is_available     = true
       form.is_presale       = false
@@ -95,8 +98,7 @@ watch(
       form.category_ids     = []
     } else {
       form.name             = item.name
-      form.slug_en          = item.slug_en ?? ''
-      form.slug_pl          = item.slug_pl ?? ''
+      form.slug             = bagFrom(item.translations?.slug)
       form.description      = item.description ?? ''
       form.is_available     = item.is_available
       form.is_presale       = item.is_presale
@@ -191,8 +193,7 @@ function handleSubmit() {
 
   const payload: ShopItemPayload = {
     name:             form.name,
-    slug_en:          form.slug_en || null,
-    slug_pl:          form.slug_pl || null,
+    slug:             slugPayload(form.slug, slugAuto.value),
     description:      form.description || null,
     is_available:     form.is_available,
     is_presale:       form.is_presale,
@@ -225,14 +226,14 @@ function handleSubmit() {
 
     <div class="field">
       <label class="field-label">{{ $t('more.shop.form.slug') }}</label>
-      <SlugInput
-        v-model="form.slug_en"
-        v-model:modelValuePl="form.slug_pl"
-        :sourceEn="form.name"
-        :bilingual="true"
+      <!-- An item name is one untranslated string, so only the default
+           locale's slug follows it; other locales are typed. -->
+      <TranslatedSlugInput
+        v-model="form.slug"
+        v-model:auto="slugAuto"
+        :sources="{ [DEFAULT_LOCALE]: form.name }"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, err(`slug.${l}`)]))"
       />
-      <span v-if="err('slug_en')" class="field-error">{{ err('slug_en') }}</span>
-      <span v-if="err('slug_pl')" class="field-error">{{ err('slug_pl') }}</span>
     </div>
 
     <div class="field">

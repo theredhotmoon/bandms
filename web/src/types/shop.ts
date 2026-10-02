@@ -33,8 +33,11 @@ export interface ShopItemVariant {
 export interface ShopItemSummary {
   id: number
   name: string
-  slug_en: string
-  slug_pl: string | null
+  /**
+   * The default locale's slug — every merch URL is built from it, in every
+   * language. Same value as the old `slug_en`, so no URL moved.
+   */
+  slug: string
   type: ShopItemType
   is_available: boolean
   is_presale: boolean

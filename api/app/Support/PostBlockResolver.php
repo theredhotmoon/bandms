@@ -81,7 +81,7 @@ final class PostBlockResolver
 
             // ShopItem's column is `name`, not `title`.
             'shop_item' => ShopItem::whereIn('id', $ids)->get()
-                ->keyBy('id')->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'slug_en' => $s->slug_en])->all(),
+                ->keyBy('id')->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'slug' => $s->slugIn(Locales::default())])->all(),
 
             'music_video' => MusicVideo::whereIn('id', $ids)->get()
                 ->keyBy('id')->map(fn ($v) => [

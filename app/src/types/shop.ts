@@ -1,3 +1,4 @@
+import type { Localized } from './website-module'
 export interface ShopCategory {
   id: number
   name: string
@@ -31,8 +32,8 @@ export interface ShopItemVariant {
 export interface ShopItemSummary {
   id: number
   name: string
-  slug_en: string
-  slug_pl: string | null
+  /** The default locale's slug — the merch URL in every language. */
+  slug: string
   type: ShopItemType
   is_available: boolean
   is_presale: boolean
@@ -49,6 +50,8 @@ export interface ShopItemSummary {
 }
 
 export interface ShopItem extends ShopItemSummary {
+  /** Every locale's slug, as stored — the edit form's source. */
+  translations: { slug: Localized }
   description: string | null
   photos: ShopItemPhoto[]
   tags: { id: number; name: string; slug: string }[]
@@ -61,8 +64,8 @@ export interface ShopItem extends ShopItemSummary {
 
 export interface ShopItemPayload {
   name: string
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (default) or cleared (others) by the API. */
+  slug?: Partial<Localized>
   description: string | null
   is_available: boolean
   is_presale: boolean

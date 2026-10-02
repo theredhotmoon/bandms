@@ -14,11 +14,11 @@ import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 
 export async function getStaticPaths() {
   const items = await getShopItems()
-  // slug_en is NOT NULL UNIQUE, so the filter is insurance: a missing param
+  // `slug` is always set (the default locale's), so the filter is insurance: a missing param
   // here costs the whole build, not one page.
   return items
-    .filter(i => i.slug_en)
-    .map(i => ({ params: { slug: i.slug_en } }))
+    .filter(i => i.slug)
+    .map(i => ({ params: { slug: i.slug } }))
 }
 
 const { slug } = Astro.params

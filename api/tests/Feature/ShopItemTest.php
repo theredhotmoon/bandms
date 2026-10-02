@@ -22,8 +22,8 @@ describe('GET /api/shop', function () {
     });
 
     it('returns only available items', function () {
-        ShopItem::factory()->create(['name' => 'Available Item', 'slug_en' => 'available-item', 'is_available' => true]);
-        ShopItem::factory()->create(['name' => 'Hidden Item',    'slug_en' => 'hidden-item',    'is_available' => false]);
+        ShopItem::factory()->create(['name' => 'Available Item', 'slug' => ['en' => 'available-item'], 'is_available' => true]);
+        ShopItem::factory()->create(['name' => 'Hidden Item',    'slug' => ['en' => 'hidden-item'],    'is_available' => false]);
 
         $this->getJson('/api/shop')
             ->assertSuccessful()
@@ -32,8 +32,8 @@ describe('GET /api/shop', function () {
     });
 
     it('returns items ordered by sort_order asc', function () {
-        ShopItem::factory()->create(['name' => 'B Item', 'slug_en' => 'b-item', 'sort_order' => 2]);
-        ShopItem::factory()->create(['name' => 'A Item', 'slug_en' => 'a-item', 'sort_order' => 1]);
+        ShopItem::factory()->create(['name' => 'B Item', 'slug' => ['en' => 'b-item'], 'sort_order' => 2]);
+        ShopItem::factory()->create(['name' => 'A Item', 'slug' => ['en' => 'a-item'], 'sort_order' => 1]);
 
         $this->getJson('/api/shop')
             ->assertSuccessful()
@@ -41,7 +41,7 @@ describe('GET /api/shop', function () {
     });
 
     it('returns empty collection when no available items exist', function () {
-        ShopItem::factory()->unavailable()->create(['slug_en' => 'hidden']);
+        ShopItem::factory()->unavailable()->create(['slug' => ['en' => 'hidden']]);
 
         $this->getJson('/api/shop')
             ->assertSuccessful()
@@ -49,7 +49,7 @@ describe('GET /api/shop', function () {
     });
 
     it('includes prices in response', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'item-with-price']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'item-with-price']]);
         $item->prices()->create(['currency' => 'USD', 'amount' => 29.99]);
 
         $data = $this->getJson('/api/shop')->assertSuccessful()->json('data');
@@ -60,7 +60,7 @@ describe('GET /api/shop', function () {
     });
 
     it('includes categories in summary response', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'item-with-cat']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'item-with-cat']]);
         $cat  = ShopCategory::factory()->create();
         $item->categories()->attach($cat->id);
 
@@ -75,7 +75,7 @@ describe('GET /api/shop', function () {
 
 describe('GET /api/shop/{shopItem}', function () {
     it('returns the item', function () {
-        $item = ShopItem::factory()->create(['name' => 'Test Vinyl', 'slug_en' => 'test-vinyl']);
+        $item = ShopItem::factory()->create(['name' => 'Test Vinyl', 'slug' => ['en' => 'test-vinyl']]);
 
         $this->getJson("/api/shop/{$item->id}")
             ->assertSuccessful()
@@ -83,7 +83,7 @@ describe('GET /api/shop/{shopItem}', function () {
     });
 
     it('returns 404 for an unavailable item', function () {
-        $item = ShopItem::factory()->unavailable()->create(['slug_en' => 'hidden-item']);
+        $item = ShopItem::factory()->unavailable()->create(['slug' => ['en' => 'hidden-item']]);
 
         $this->getJson("/api/shop/{$item->id}")->assertNotFound();
     });
@@ -93,7 +93,7 @@ describe('GET /api/shop/{shopItem}', function () {
     });
 
     it('returns full resource with relations', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'full-item']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'full-item']]);
         $tag  = Tag::factory()->create();
         $item->tags()->attach($tag->id);
 
@@ -103,7 +103,7 @@ describe('GET /api/shop/{shopItem}', function () {
     });
 
     it('carries the item clips in pivot order, by id and by slug', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'clip-tee']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'clip-tee']]);
         $a = \App\Models\Clip::factory()->create(['title' => ['en' => 'A']]);
         $b = \App\Models\Clip::factory()->create(['title' => ['en' => 'B']]);
         $item->clips()->attach([$b->id => ['position' => 0], $a->id => ['position' => 1]]);
@@ -134,8 +134,8 @@ describe('GET /api/shop-admin', function () {
 
     it('returns all items including unavailable ones', function () {
         $this->actingAsAdmin();
-        ShopItem::factory()->create(['name' => 'Public',  'slug_en' => 'pub',    'is_available' => true]);
-        ShopItem::factory()->create(['name' => 'Private', 'slug_en' => 'priv',   'is_available' => false]);
+        ShopItem::factory()->create(['name' => 'Public',  'slug' => ['en' => 'pub'],    'is_available' => true]);
+        ShopItem::factory()->create(['name' => 'Private', 'slug' => ['en' => 'priv'],   'is_available' => false]);
 
         $this->getJson('/api/shop-admin')
             ->assertSuccessful()
@@ -144,7 +144,7 @@ describe('GET /api/shop-admin', function () {
 
     it('includes categories in the admin index', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'cat-item']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'cat-item']]);
         $cat  = ShopCategory::factory()->create();
         $item->categories()->attach($cat->id);
 
@@ -176,7 +176,7 @@ describe('POST /api/shop', function () {
             'prices'      => [['currency' => 'USD', 'amount' => 24.99]],
         ])->assertCreated()
           ->assertJsonPath('data.name', 'Debut LP')
-          ->assertJsonPath('data.slug_en', 'debut-lp');
+          ->assertJsonPath('data.slug', 'debut-lp');
 
         $this->assertDatabaseHas('shop_items', ['name' => 'Debut LP']);
     });
@@ -269,14 +269,14 @@ describe('POST /api/shop', function () {
 
     it('generates a unique slug on name collision', function () {
         $this->actingAsAdmin();
-        ShopItem::factory()->create(['name' => 'My Item', 'slug_en' => 'my-item']);
+        ShopItem::factory()->create(['name' => 'My Item', 'slug' => ['en' => 'my-item']]);
 
         $response = $this->postJson('/api/shop', [
             'name'   => 'My Item',
             'prices' => [['currency' => 'USD', 'amount' => 10]],
         ])->assertCreated();
 
-        $slug = $response->json('data.slug_en');
+        $slug = $response->json('data.slug');
 
         expect($slug)->not->toBe('my-item');
         expect($slug)->toStartWith('my-item');
@@ -287,13 +287,13 @@ describe('POST /api/shop', function () {
 
 describe('PUT /api/shop/{shopItem}', function () {
     it('returns 401 without authentication', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'item']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'item']]);
 
         $this->putJson("/api/shop/{$item->id}", ['name' => 'New', 'prices' => []])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'item']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'item']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->putJson("/api/shop/{$item->id}", ['name' => 'New', 'prices' => []])->assertForbidden();
@@ -301,7 +301,7 @@ describe('PUT /api/shop/{shopItem}', function () {
 
     it('updates an item', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['name' => 'Old Name', 'slug_en' => 'old-name']);
+        $item = ShopItem::factory()->create(['name' => 'Old Name', 'slug' => ['en' => 'old-name']]);
 
         $this->putJson("/api/shop/{$item->id}", [
             'name'   => 'New Name',
@@ -314,7 +314,7 @@ describe('PUT /api/shop/{shopItem}', function () {
 
     it('replaces all prices on update', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'item-x']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'item-x']]);
         $item->prices()->create(['currency' => 'USD', 'amount' => 10]);
         $item->prices()->create(['currency' => 'EUR', 'amount' => 9]);
 
@@ -329,7 +329,7 @@ describe('PUT /api/shop/{shopItem}', function () {
 
     it('updates category associations', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'cat-item-u']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'cat-item-u']]);
         $catA = ShopCategory::factory()->create();
         $catB = ShopCategory::factory()->create();
         $item->categories()->attach($catA->id);
@@ -346,14 +346,14 @@ describe('PUT /api/shop/{shopItem}', function () {
 
     it('regenerates slug when name changes', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['name' => 'Old Name', 'slug_en' => 'old-name']);
+        $item = ShopItem::factory()->create(['name' => 'Old Name', 'slug' => ['en' => 'old-name']]);
 
         $response = $this->putJson("/api/shop/{$item->id}", [
             'name'   => 'Completely Different',
             'prices' => [['currency' => 'USD', 'amount' => 10]],
         ])->assertSuccessful();
 
-        expect($response->json('data.slug_en'))->toBe('completely-different');
+        expect($response->json('data.slug'))->toBe('completely-different');
     });
 
     it('returns 404 for a non-existent item', function () {
@@ -367,13 +367,13 @@ describe('PUT /api/shop/{shopItem}', function () {
 
 describe('DELETE /api/shop/{shopItem}', function () {
     it('returns 401 without authentication', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'del-item']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'del-item']]);
 
         $this->deleteJson("/api/shop/{$item->id}")->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'del-item2']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'del-item2']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->deleteJson("/api/shop/{$item->id}")->assertForbidden();
@@ -381,7 +381,7 @@ describe('DELETE /api/shop/{shopItem}', function () {
 
     it('deletes an item', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'to-del']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'to-del']]);
 
         $this->deleteJson("/api/shop/{$item->id}")->assertOk();
 
@@ -399,13 +399,13 @@ describe('DELETE /api/shop/{shopItem}', function () {
 
 describe('POST /api/shop/{shopItem}/photos', function () {
     it('returns 401 without authentication', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'photo-item-1']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'photo-item-1']]);
 
         $this->postJson("/api/shop/{$item->id}/photos", [])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'photo-item-2']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'photo-item-2']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->postJson("/api/shop/{$item->id}/photos", [])->assertForbidden();
@@ -413,7 +413,7 @@ describe('POST /api/shop/{shopItem}/photos', function () {
 
     it('uploads a photo and returns the photo data', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'photo-item-3']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'photo-item-3']]);
         $file = UploadedFile::fake()->create('cover.jpg', 100, 'image/jpeg');
 
         $this->postJson("/api/shop/{$item->id}/photos", ['photo' => $file])
@@ -425,7 +425,7 @@ describe('POST /api/shop/{shopItem}/photos', function () {
 
     it('validates photo is required', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'photo-item-4']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'photo-item-4']]);
 
         $this->postJson("/api/shop/{$item->id}/photos", [])
             ->assertUnprocessable()
@@ -434,7 +434,7 @@ describe('POST /api/shop/{shopItem}/photos', function () {
 
     it('validates photo must be an image', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'photo-item-5']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'photo-item-5']]);
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
         $this->postJson("/api/shop/{$item->id}/photos", ['photo' => $file])
@@ -447,14 +447,14 @@ describe('POST /api/shop/{shopItem}/photos', function () {
 
 describe('DELETE /api/shop/{shopItem}/photos/{photo}', function () {
     it('returns 401 without authentication', function () {
-        $item  = ShopItem::factory()->create(['slug_en' => 'photo-del-1']);
+        $item  = ShopItem::factory()->create(['slug' => ['en' => 'photo-del-1']]);
         $photo = $item->photos()->create(['image' => 'logos/x.jpg', 'sort_order' => 0]);
 
         $this->deleteJson("/api/shop/{$item->id}/photos/{$photo->id}")->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $item  = ShopItem::factory()->create(['slug_en' => 'photo-del-2']);
+        $item  = ShopItem::factory()->create(['slug' => ['en' => 'photo-del-2']]);
         $photo = $item->photos()->create(['image' => 'logos/x.jpg', 'sort_order' => 0]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
@@ -463,7 +463,7 @@ describe('DELETE /api/shop/{shopItem}/photos/{photo}', function () {
 
     it('deletes the photo', function () {
         $this->actingAsAdmin();
-        $item  = ShopItem::factory()->create(['slug_en' => 'photo-del-3']);
+        $item  = ShopItem::factory()->create(['slug' => ['en' => 'photo-del-3']]);
         $photo = $item->photos()->create(['image' => 'logos/x.jpg', 'sort_order' => 0]);
 
         $this->deleteJson("/api/shop/{$item->id}/photos/{$photo->id}")->assertOk();
@@ -473,8 +473,8 @@ describe('DELETE /api/shop/{shopItem}/photos/{photo}', function () {
 
     it('returns 404 when photo does not belong to the item', function () {
         $this->actingAsAdmin();
-        $itemA = ShopItem::factory()->create(['slug_en' => 'photo-del-4a']);
-        $itemB = ShopItem::factory()->create(['slug_en' => 'photo-del-4b']);
+        $itemA = ShopItem::factory()->create(['slug' => ['en' => 'photo-del-4a']]);
+        $itemB = ShopItem::factory()->create(['slug' => ['en' => 'photo-del-4b']]);
         $photo = $itemB->photos()->create(['image' => 'logos/x.jpg', 'sort_order' => 0]);
 
         $this->deleteJson("/api/shop/{$itemA->id}/photos/{$photo->id}")->assertNotFound();
@@ -485,13 +485,13 @@ describe('DELETE /api/shop/{shopItem}/photos/{photo}', function () {
 
 describe('PUT /api/shop/{shopItem}/photos/reorder', function () {
     it('returns 401 without authentication', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'reorder-1']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'reorder-1']]);
 
         $this->putJson("/api/shop/{$item->id}/photos/reorder", ['ids' => []])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $item = ShopItem::factory()->create(['slug_en' => 'reorder-2']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'reorder-2']]);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->putJson("/api/shop/{$item->id}/photos/reorder", ['ids' => []])->assertForbidden();
@@ -499,7 +499,7 @@ describe('PUT /api/shop/{shopItem}/photos/reorder', function () {
 
     it('reorders photos', function () {
         $this->actingAsAdmin();
-        $item   = ShopItem::factory()->create(['slug_en' => 'reorder-3']);
+        $item   = ShopItem::factory()->create(['slug' => ['en' => 'reorder-3']]);
         $photoA = $item->photos()->create(['image' => 'logos/a.jpg', 'sort_order' => 0]);
         $photoB = $item->photos()->create(['image' => 'logos/b.jpg', 'sort_order' => 1]);
 
@@ -513,7 +513,7 @@ describe('PUT /api/shop/{shopItem}/photos/reorder', function () {
 
     it('validates ids is required', function () {
         $this->actingAsAdmin();
-        $item = ShopItem::factory()->create(['slug_en' => 'reorder-4']);
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'reorder-4']]);
 
         $this->putJson("/api/shop/{$item->id}/photos/reorder", [])
             ->assertUnprocessable()
@@ -609,22 +609,21 @@ describe('PUT /api/shop-currencies', function () {
 });
 
 describe('GET /api/shop/by-slug/{slug}', function () {
-    it('serves an available item by its English slug', function () {
+    it('serves an available item by its default-locale slug', function () {
         ShopItem::factory()->create([
-            'slug_en'      => 'tour-tee',
+            'slug'      => ['en' => 'tour-tee'],
             'is_available' => true,
             'is_presale'   => false,
         ]);
 
         $this->getJson('/api/shop/by-slug/tour-tee')
             ->assertOk()
-            ->assertJsonPath('data.slug_en', 'tour-tee');
+            ->assertJsonPath('data.slug', 'tour-tee');
     });
 
     it('serves an item by its Polish slug', function () {
         ShopItem::factory()->create([
-            'slug_en'      => 'tour-tee',
-            'slug_pl'      => 'koszulka-trasowa',
+            'slug'         => ['en' => 'tour-tee', 'pl' => 'koszulka-trasowa'],
             'is_available' => true,
         ]);
 
@@ -637,7 +636,7 @@ describe('GET /api/shop/by-slug/{slug}', function () {
     // is_available || is_presale, which cannot fire. See TODO.md.
     it('404s a presale item that is not yet available', function () {
         ShopItem::factory()->create([
-            'slug_en'      => 'upcoming-vinyl',
+            'slug'      => ['en' => 'upcoming-vinyl'],
             'is_available' => false,
             'is_presale'   => true,
         ]);
@@ -647,7 +646,7 @@ describe('GET /api/shop/by-slug/{slug}', function () {
 
     it('404s an item that is neither available nor presale', function () {
         ShopItem::factory()->create([
-            'slug_en'      => 'retired-hoodie',
+            'slug'      => ['en' => 'retired-hoodie'],
             'is_available' => false,
             'is_presale'   => false,
         ]);
@@ -658,4 +657,30 @@ describe('GET /api/shop/by-slug/{slug}', function () {
     it('404s an unknown slug', function () {
         $this->getJson('/api/shop/by-slug/does-not-exist')->assertNotFound();
     });
+});
+
+// The translated-slug series keeps the update rule this endpoint always had:
+// renaming re-slugs unless a default-locale slug is given explicitly.
+it('keeps an explicit default-locale slug through a rename', function () {
+    $this->actingAsAdmin();
+    $item = ShopItem::factory()->create(['name' => 'Old Name', 'slug' => ['en' => 'old-name', 'pl' => 'stara']]);
+
+    $this->putJson("/api/shop/{$item->id}", [
+        'name'   => 'New Name',
+        'slug'   => ['en' => 'kept-slug'],
+        'prices' => [['currency' => 'USD', 'amount' => 10]],
+    ])->assertSuccessful()
+      ->assertJsonPath('data.translations.slug', ['en' => 'kept-slug', 'pl' => 'stara']);
+});
+
+it('rejects a slug another item uses in another language', function () {
+    $this->actingAsAdmin();
+    ShopItem::factory()->create(['slug' => ['en' => 'tour-tee', 'pl' => 'koszulka']]);
+
+    $this->postJson('/api/shop', [
+        'name'   => 'Another Tee',
+        'slug'   => ['en' => 'koszulka'],
+        'prices' => [['currency' => 'USD', 'amount' => 10]],
+    ])->assertUnprocessable()
+      ->assertJsonValidationErrors(['slug.en']);
 });

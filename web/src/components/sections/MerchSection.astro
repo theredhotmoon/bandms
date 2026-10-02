@@ -59,7 +59,7 @@ const available = items.filter(i => i.is_available || i.is_presale)
           .map(item => {
             const price = preferredPrice(item.prices)
             return (
-              <a href={`/${lang}/${slugMap[lang].merch}/${item.slug_en}`} class="group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5">
+              <a href={`/${lang}/${slugMap[lang].merch}/${item.slug}`} class="group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5">
                 <!-- Cover photo -->
                 <div class="aspect-square overflow-hidden bg-surface-2 relative">
                   {item.cover_photo ? (

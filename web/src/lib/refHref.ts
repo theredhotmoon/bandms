@@ -47,7 +47,7 @@ export function refHref(
     case 'release':
       return data.id ? { href: `/${lang}/${section('releases')}/${data.id}`, external: false } : null
     case 'shop_item':
-      return data.slug_en ? { href: `/${lang}/${section('merch')}/${data.slug_en}`, external: false } : null
+      return data.slug ? { href: `/${lang}/${section('merch')}/${data.slug}`, external: false } : null
     case 'album':
       return { href: `/${lang}/${section('photos')}`, external: false }
     default:

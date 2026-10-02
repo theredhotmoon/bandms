@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ClipOwners;
+use App\Support\Locales;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
@@ -73,7 +74,7 @@ class Clip extends Model
             $out[] = ['type' => 'release', 'id' => $r->id, 'label' => $r->title];
         }
         foreach ($this->shopItems as $s) {
-            $out[] = ['type' => 'shop_item', 'id' => $s->id, 'slug_en' => $s->slug_en, 'label' => $s->name];
+            $out[] = ['type' => 'shop_item', 'id' => $s->id, 'slug' => $s->slugIn(Locales::default()), 'label' => $s->name];
         }
         foreach ($this->albums as $a) {
             $out[] = ['type' => 'album', 'id' => $a->id, 'label' => $a->title];

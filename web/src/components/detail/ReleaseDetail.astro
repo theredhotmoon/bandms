@@ -74,9 +74,9 @@ const photos = (release.photos ?? []).filter(p => p.image_url)
 // Physical formats for this release, gated on the merch module: with it off
 // those routes are unbuilt and the card would be a dead link.
 const shopItems = enabled('merch') ? await getShopItems().catch(() => []) : []
-// slug_en is what the merch routes are built from; without it there is no page.
+// `slug` is what the merch routes are built from; without it there is no page.
 const physical = shopItems.filter(
-  item => item.slug_en && (item.release_ids ?? []).includes(release.id),
+  item => item.slug && (item.release_ids ?? []).includes(release.id),
 )
 
 const structuredData = {
@@ -161,7 +161,7 @@ const structuredData = {
           <div class="rd-physical">
             <span class="rd-physical-label">{t.buy}</span>
             {physical.map(item => (
-              <a class="rd-physical-link" href={`${href('merch')}/${item.slug_en}`}>
+              <a class="rd-physical-link" href={`${href('merch')}/${item.slug}`}>
                 <Icon name="cart" size={17} color="var(--color-accent)" />{item.name}
               </a>
             ))}

@@ -66,6 +66,7 @@ function submit() {
       <TranslatedSlugInput
         v-model="form.slug"
         v-model:auto="slugAuto"
+        follow-loaded
         :sources="form.name"
         :errors="slugErrors"
       />

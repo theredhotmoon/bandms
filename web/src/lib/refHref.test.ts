@@ -22,7 +22,7 @@ describe('refHref', () => {
 
   // The shop's section key is `merch`; /{lang}/shop/... is never built.
   it('builds a shop item href under the merch section', () => {
-    expect(refHref('shop_item', { slug_en: 'tee' }, 'en', slugMap, allOn))
+    expect(refHref('shop_item', { slug: 'tee' }, 'en', slugMap, allOn))
       .toEqual({ href: '/en/shop/tee', external: false })
   })
 

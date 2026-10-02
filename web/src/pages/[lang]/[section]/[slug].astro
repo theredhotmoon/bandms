@@ -26,7 +26,7 @@ export async function getStaticPaths() {
   const paths: object[] = []
 
   // Every locale's path for one item. `slug` is either the same string in every
-  // locale (concerts, merch — keyed on slug_en, there is no slug_pl on those
+  // locale (concerts on slug_en, merch on its default-locale `slug` — there is no per-locale slug on those
   // public routes) or a per-locale resolver (posts — slug_pl under /pl/,
   // falling back to slug_en when the post has no Polish title).
   const alternatesFor = (section: string, slug: string | number | ((lang: Locale) => string)) =>
@@ -70,9 +70,9 @@ export async function getStaticPaths() {
     if (cfg.modules.merch !== false) {
       for (const item of shopItems) {
         paths.push({
-          params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug_en },
-          props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug_en,
-            alternates: alternatesFor('merch', item.slug_en) },
+          params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug },
+          props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug,
+            alternates: alternatesFor('merch', item.slug) },
         })
       }
     }

@@ -28,15 +28,21 @@ use Illuminate\Support\Str;
  */
 trait HasTranslatedSlug
 {
+    /** Records whose slug equals `$slug` in any locale — a by-slug lookup. */
+    public function scopeWhereSlug(Builder $query, string $slug): Builder
+    {
+        return $query->where(function (Builder $q) use ($slug) {
+            foreach (Locales::codes() as $code) {
+                $q->orWhere("slug->{$code}", $slug);
+            }
+        });
+    }
+
     /** Whether any OTHER record uses `$slug` in any locale. */
     public static function slugTaken(string $slug, ?int $ignoreId = null): bool
     {
         return static::query()
-            ->where(function (Builder $q) use ($slug) {
-                foreach (Locales::codes() as $code) {
-                    $q->orWhere("slug->{$code}", $slug);
-                }
-            })
+            ->whereSlug($slug)
             ->when($ignoreId, fn (Builder $q) => $q->whereKeyNot($ignoreId))
             ->exists();
     }
