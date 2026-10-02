@@ -71,7 +71,7 @@ function submit() {
 <template>
   <form @submit.prevent="submit" class="flex flex-col gap-4" data-testid="clip-form">
     <div>
-      <label class="field-label">{{ $t('band.clips.form.url') }} <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('band.clips.form.url') }} <span style="color:var(--c-f87171);">*</span></label>
       <EmbedBlockEditor :payload="embedPayload" hide-label @update:payload="form.url = String($event.url ?? '')" />
       <p v-if="errors?.url" class="field-error">{{ errors.url[0] }}</p>
     </div>
@@ -97,7 +97,7 @@ function submit() {
         <label class="field-label">{{ $t('band.clips.form.recordedOn') }}</label>
         <input v-model="form.recorded_on" type="date" class="field-input" />
       </div>
-      <label class="flex items-center gap-2 pb-2" style="color:#d0d0d0; font-size:0.85rem;">
+      <label class="flex items-center gap-2 pb-2" style="color:var(--c-d0d0d0); font-size:0.85rem;">
         <input v-model="form.show_in_epk" type="checkbox" /> {{ $t('band.clips.form.showInEpk') }}
       </label>
     </div>

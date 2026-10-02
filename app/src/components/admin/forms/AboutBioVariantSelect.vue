@@ -37,7 +37,7 @@ defineEmits<{
 .about-variant-row {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   margin: 0.625rem 0; padding: 0.5rem 0.75rem;
-  background: #141414; border: 1px solid #2a2a2a; border-radius: 0.375rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
 }
 .about-variant-row .field-label { margin: 0; }
 .about-variant-select { width: auto; min-width: 8rem; }

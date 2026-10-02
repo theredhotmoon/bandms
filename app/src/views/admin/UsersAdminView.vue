@@ -20,7 +20,7 @@ const { uiLang } = useUiLang()
 /** Inline style, not copy — see the note in ShopAdminView. */
 function roleBadgeStyle(role: UserRole) {
   const c = ROLE_COLORS[role]
-  return { color: c, background: c + '18', borderColor: c + '30' }
+  return { color: c, background: `color-mix(in srgb, ${c} 9%, transparent)`, borderColor: `color-mix(in srgb, ${c} 19%, transparent)` } // i18n-ignore: CSS
 }
 
 const { list, create, update, remove } = useUsers()
@@ -162,9 +162,9 @@ async function confirmDelete() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin:     '#c0c0c0',
-  member:    '#4ade80',
-  publisher: '#fb923c',
+  admin:     'var(--c-c0c0c0)',
+  member:    'var(--c-4ade80)',
+  publisher: 'var(--c-fb923c)',
 }
 </script>
 
@@ -180,7 +180,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
       </div>
 
       <div v-if="list.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-      <div v-else-if="list.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.users.loadFailed') }}</div>
+      <div v-else-if="list.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('more.users.loadFailed') }}</div>
 
       <div v-else class="table-card">
         <table style="width:100%; border-collapse:collapse;">
@@ -196,21 +196,21 @@ const ROLE_COLORS: Record<UserRole, string> = {
           </thead>
           <tbody>
             <tr v-for="u in (list.data.value ?? [])" :key="u.id" class="table-row">
-              <td class="td" style="color:#e2e8f0; font-weight:600;">
+              <td class="td" style="color:var(--c-e2e8f0); font-weight:600;">
                 {{ u.first_name }} {{ u.last_name }}
-                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:#888888;margin-left:0.4rem;">{{ $t('more.users.you') }}</span>
+                <span v-if="u.id === currentUser?.id" style="font-size:0.65rem;color:var(--c-888888);margin-left:0.4rem;">{{ $t('more.users.you') }}</span>
               </td>
-              <td class="td" style="color:#94a3b8;">{{ u.email }}</td>
+              <td class="td" style="color:var(--c-94a3b8);">{{ u.email }}</td>
               <td class="td">
                 <span class="role-badge" :style="roleBadgeStyle(u.role as UserRole)">
                   {{ $t(`more.users.roles.${u.role}`) }}
                 </span>
               </td>
-              <td class="td" style="color:#64748b;">
+              <td class="td" style="color:var(--c-64748b);">
                 <span v-if="u.band_member">{{ u.band_member.first_name }} {{ u.band_member.last_name }}</span>
                 <span v-else>—</span>
               </td>
-              <td class="td" style="color:#475569;">{{ formatShortDate(u.created_at, dateLocale(uiLang), 'instant') }}</td>
+              <td class="td" style="color:var(--c-475569);">{{ formatShortDate(u.created_at, dateLocale(uiLang), 'instant') }}</td>
               <td class="td" style="text-align:right;">
                 <button type="button" class="btn-edit" @click="openEdit(u.id)">{{ $t('common.actions.edit') }}</button>
                 <button
@@ -234,7 +234,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <AdminModal :open="showAdd" :title="$t('more.users.addTitle')" max-width="30rem" @close="showAdd = false">
       <form class="modal-form" @submit.prevent="submitAdd">
         <div>
-          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
+          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="addForm.band_member_id" class="field-input">
             <option :value="null">{{ $t('more.users.form.enterManually') }}</option>
             <option v-for="m in bandMembers" :key="m.id" :value="m.id">
@@ -287,7 +287,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <AdminModal :open="showEdit" :title="$t('more.users.editTitle')" max-width="30rem" @close="showEdit = false">
       <form class="modal-form" @submit.prevent="submitEdit">
         <div>
-          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
+          <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="editForm.band_member_id" class="field-input">
             <option :value="null">{{ $t('more.users.form.none') }}</option>
             <option v-for="m in bandMembers" :key="m.id" :value="m.id">
@@ -321,7 +321,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
         </div>
         <div class="field-row">
           <div>
-            <label class="field-label">{{ $t('more.users.form.newPassword') }} <span style="color:#475569;font-weight:400;">{{ $t('more.users.form.newPasswordHint') }}</span></label>
+            <label class="field-label">{{ $t('more.users.form.newPassword') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.newPasswordHint') }}</span></label>
             <input v-model="editForm.password" type="password" class="field-input" autocomplete="new-password" />
           </div>
           <div>
@@ -339,7 +339,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     <!-- Confirm delete -->
     <AdminModal :open="confirmDeleteId !== null" :title="$t('more.users.deleteTitle')" max-width="24rem" @close="confirmDeleteId = null">
       <div class="modal-form">
-        <p style="font-size:0.875rem;color:#94a3b8;line-height:1.6;">
+        <p style="font-size:0.875rem;color:var(--c-94a3b8);line-height:1.6;">
           {{ $t('more.users.deleteMessage') }}
         </p>
         <div class="modal-actions">
@@ -356,8 +356,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
 <style scoped>
 .page-wrap   { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.page-title  { font-size: 1.125rem; font-weight: 700; color: #e2e8f0; }
-.page-sub    { font-size: 0.8rem; color: #475569; margin-top: 0.2rem; }
+.page-title  { font-size: 1.125rem; font-weight: 700; color: var(--c-e2e8f0); }
+.page-sub    { font-size: 0.8rem; color: var(--c-475569); margin-top: 0.2rem; }
 
 .role-badge {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
@@ -371,18 +371,18 @@ const ROLE_COLORS: Record<UserRole, string> = {
 .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
 .role-card {
   display: flex; flex-direction: column; gap: 0.2rem; padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem; border: 1px solid #2a2a2a; background: #141414; cursor: pointer;
+  border-radius: 0.5rem; border: 1px solid var(--c-2a2a2a); background: var(--c-141414); cursor: pointer;
   transition: border-color 120ms, background 120ms;
 }
-.role-card:hover        { border-color: #444444; background: #12123a; }
-.role-card--active      { border-color: #888888 !important; background: #1f1f1f !important; }
-.role-card-name         { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; }
-.role-card-desc         { font-size: 0.65rem; color: #475569; line-height: 1.4; }
-.role-card--active .role-card-name { color: #d0d0d0; }
+.role-card:hover        { border-color: var(--c-444444); background: var(--c-12123a); }
+.role-card--active      { border-color: var(--c-888888) !important; background: var(--c-1f1f1f) !important; }
+.role-card-name         { font-size: 0.8rem; font-weight: 700; color: var(--c-e2e8f0); }
+.role-card-desc         { font-size: 0.65rem; color: var(--c-475569); line-height: 1.4; }
+.role-card--active .role-card-name { color: var(--c-d0d0d0); }
 
 .btn-danger {
   padding: 0.4rem 0.9rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; background: #7f1d1d; border: 1px solid #991b1b; color: #fca5a5;
+  cursor: pointer; background: var(--c-7f1d1d); border: 1px solid var(--c-991b1b); color: var(--c-fca5a5);
 }
-.btn-danger:hover { background: #450a0a; }
+.btn-danger:hover { background: var(--c-450a0a); }
 </style>

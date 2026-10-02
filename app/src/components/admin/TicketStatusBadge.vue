@@ -37,8 +37,8 @@ const b = computed(() => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.badge-active      { background: #052e16; color: #4ade80; }
-.badge-transferred { background: #1c1107; color: #fbbf24; }
-.badge-scanned     { background: #0c1a2e; color: #60a5fa; }
-.badge-voided      { background: #1a1a1a; color: #6b7280; }
+.badge-active      { background: var(--c-052e16); color: var(--c-4ade80); }
+.badge-transferred { background: var(--c-1c1107); color: var(--c-fbbf24); }
+.badge-scanned     { background: var(--c-0c1a2e); color: var(--c-60a5fa); }
+.badge-voided      { background: var(--c-1a1a1a); color: var(--c-6b7280); }
 </style>

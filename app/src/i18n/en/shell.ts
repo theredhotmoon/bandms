@@ -2,6 +2,9 @@ export default {
   uiLang: {
     label: 'Panel language',
   },
+  theme: {
+    light: 'Light mode',
+  },
   brand: {
     subtitle: 'Admin',
   },

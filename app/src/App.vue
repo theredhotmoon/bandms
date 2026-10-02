@@ -5,6 +5,7 @@ import { adminUrl } from '@/config/admin'
 import { Toaster } from 'vue-sonner'
 import AppNavbar from '@/components/AppNavbar.vue'
 import { useUiLang } from '@/composables/useUiLang'
+import { useAdminTheme } from '@/composables/useAdminTheme'
 
 const route = useRoute()
 const { uiLang } = useUiLang()
@@ -13,6 +14,11 @@ const { uiLang } = useUiLang()
 // (WCAG 3.1.1). Deliberately the UI axis, not the content axis: an editor
 // proofreading Polish copy in an English panel is reading an English page.
 watch(uiLang, (l) => { document.documentElement.lang = l }, { immediate: true })
+
+// The admin palette (src/admin-palette.css) keys off this attribute. Set during
+// setup, before the first paint, so a light-theme reload never flashes dark.
+const { theme } = useAdminTheme()
+watch(theme, (t) => { document.documentElement.dataset.adminTheme = t }, { immediate: true })
 
 // AppNavbar is the chrome for the handful of non-admin pages the SPA still owns:
 // the fan portal, ticket claim and the tech-rider preview. Everything the public

@@ -96,15 +96,15 @@ function onDrop(to: number) {
    scrollable area, every touch point lands on a row and scrolling the modal
    becomes impossible on touch input. "pinch-zoom" is kept alongside "pan-y" so
    this doesn't trade that bug for blocking pinch-to-zoom on the same rows. */
-.block-row { border: 1px solid #3f3f46; border-radius: 0.5rem; padding: 0.75rem; background: #18181b; touch-action: pan-y pinch-zoom; }
-.block-row--over { border-color: #60a5fa; }
+.block-row { border: 1px solid var(--c-3f3f46); border-radius: 0.5rem; padding: 0.75rem; background: var(--c-18181b); touch-action: pan-y pinch-zoom; }
+.block-row--over { border-color: var(--c-60a5fa); }
 .block-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-.block-grip { cursor: grab; color: #71717a; }
-.block-type { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #a1a1aa; }
-.block-pos { margin-left: auto; font-size: 0.7rem; color: #71717a; }
-.empty-hint { font-size: 0.8rem; color: #71717a; padding: 0.75rem 0; }
+.block-grip { cursor: grab; color: var(--c-71717a); }
+.block-type { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-a1a1aa); }
+.block-pos { margin-left: auto; font-size: 0.7rem; color: var(--c-71717a); }
+.empty-hint { font-size: 0.8rem; color: var(--c-71717a); padding: 0.75rem 0; }
 .block-dangling {
-  font-size: 0.75rem; color: #f87171; background: #3f1212;
+  font-size: 0.75rem; color: var(--c-f87171); background: var(--c-3f1212);
   border-radius: 0.375rem; padding: 0.4rem 0.6rem; margin-bottom: 0.5rem;
 }
 </style>

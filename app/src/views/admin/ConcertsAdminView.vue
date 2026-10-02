@@ -144,7 +144,7 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('shows.concerts.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('shows.concerts.title') }}</h1>
         <button
           @click="openCreate"
           class="btn-add-primary"
@@ -164,7 +164,7 @@ async function confirmDelete() {
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('shows.concerts.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('shows.concerts.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
@@ -182,7 +182,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.date')" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.name') }}</th>
                 <th class="th">{{ $t('shows.concerts.columns.doorsStart') }}</th>
@@ -192,15 +192,15 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="concert in tc.paginated.value" :key="concert.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0;">{{ concert.date }}</td>
-                <td class="td" style="color:#d0d0d0;">{{ concert.name ?? '—' }}</td>
-                <td class="td text-xs" style="color:#94a3b8; font-variant-numeric:tabular-nums;">
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ concert.date }}</td>
+                <td class="td" style="color:var(--c-d0d0d0);">{{ concert.name ?? '—' }}</td>
+                <td class="td text-xs" style="color:var(--c-94a3b8); font-variant-numeric:tabular-nums;">
                   <span v-if="concert.doors_open">🚪 {{ concert.doors_open }}</span>
                   <span v-if="concert.doors_open && concert.start_time"> · </span>
                   <span v-if="concert.start_time">🎸 {{ concert.start_time }}</span>
                   <span v-if="!concert.doors_open && !concert.start_time">—</span>
                 </td>
-                <td class="td" style="color:#94a3b8;">{{ concert.venue?.name ?? '—' }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ concert.venue?.name ?? '—' }}</td>
                 <td class="td text-right">
                   <button
                     class="btn-edit"
@@ -262,16 +262,16 @@ async function confirmDelete() {
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #3f3213;
+  border: 1px solid var(--c-3f3213);
   border-radius: 0.5rem;
-  background: #1c1608;
-  color: #fbbf24;
+  background: var(--c-1c1608);
+  color: var(--c-fbbf24);
   font-size: 0.8125rem;
 }
 .venue-notice-link {
   flex-shrink: 0;
   font-weight: 600;
-  color: #fcd34d;
+  color: var(--c-fcd34d);
   text-decoration: underline;
   background: none;
   border: none;
@@ -279,5 +279,5 @@ async function confirmDelete() {
   font-size: inherit;
   cursor: pointer;
 }
-.venue-notice-link:hover { color: #fef3c7; }
+.venue-notice-link:hover { color: var(--c-fef3c7); }
 </style>

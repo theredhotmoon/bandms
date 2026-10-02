@@ -80,7 +80,7 @@ async function onFile(e: Event) {
 .img-preview { position: relative; display: inline-block; }
 .img-preview-el { max-height: 10rem; border-radius: 0.375rem; display: block; }
 .siu-drop {
-  border: 2px dashed #3f3f46; border-radius: 0.375rem; padding: 1.25rem;
-  text-align: center; cursor: pointer; color: #a1a1aa;
+  border: 2px dashed var(--c-3f3f46); border-radius: 0.375rem; padding: 1.25rem;
+  text-align: center; cursor: pointer; color: var(--c-a1a1aa);
 }
 </style>

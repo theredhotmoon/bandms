@@ -87,15 +87,15 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('more.bands.title') }}</h1>
-          <p class="text-xs mt-0.5" style="color:#475569;">{{ $t('more.bands.lead') }}</p>
+          <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('more.bands.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:var(--c-475569);">{{ $t('more.bands.lead') }}</p>
         </div>
         <button @click="openCreate" class="btn-add-primary">{{ $t('more.bands.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('more.bands.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('more.bands.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
@@ -105,7 +105,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('more.bands.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('more.bands.cols.website') }}</th>
                 <th class="th">{{ $t('more.bands.cols.contact') }}</th>
@@ -116,11 +116,11 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="band in tc.paginated.value" :key="band.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0;">{{ band.name }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ band.name }}</td>
                 <td class="td">
                   <a v-if="band.website" :href="band.website" target="_blank" rel="noopener"
-                     class="text-xs" style="color:#9ca3af;">{{ band.website }}</a>
-                  <span v-else style="color:#475569;">—</span>
+                     class="text-xs" style="color:var(--c-9ca3af);">{{ band.website }}</a>
+                  <span v-else style="color:var(--c-475569);">—</span>
                 </td>
                 <td class="td">
                   <div v-if="band.contacts?.length" class="contact-cell">
@@ -130,13 +130,13 @@ async function confirmDelete() {
                       <a v-else-if="c.phone" :href="`tel:${c.phone}`" class="contact-action" :title="c.phone">{{ $t('more.bands.call') }}</a>
                     </span>
                   </div>
-                  <span v-else style="color:#475569;">—</span>
+                  <span v-else style="color:var(--c-475569);">—</span>
                 </td>
                 <td class="td">
                   <span v-if="band.gigs_count > 0" class="gig-count">{{ band.gigs_count }}</span>
-                  <span v-else style="color:#334155; font-size:0.75rem;">0</span>
+                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">0</span>
                 </td>
-                <td class="td" style="color:#94a3b8; font-size:0.75rem;">{{ band.last_gig_at ?? '—' }}</td>
+                <td class="td" style="color:var(--c-94a3b8); font-size:0.75rem;">{{ band.last_gig_at ?? '—' }}</td>
                 <td class="td text-right">
                   <button @click="sendMessage(band)" class="btn-message">{{ $t('more.bands.message') }}</button>
                   <button @click="openEdit(band)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
@@ -181,21 +181,21 @@ async function confirmDelete() {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.5rem; height: 1.5rem; padding: 0 0.375rem;
   border-radius: 9999px; font-size: 0.7rem; font-weight: 700;
-  background: #2a2a2a; color: #c0c0c0;
+  background: var(--c-2a2a2a); color: var(--c-c0c0c0);
 }
 .contact-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .contact-pill {
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
-  background: #161616; border: 1px solid #262626;
+  background: var(--c-161616); border: 1px solid var(--c-262626);
 }
-.contact-pill-name { font-size: 0.72rem; color: #cbd5e1; }
-.contact-action { font-size: 0.65rem; font-weight: 600; color: #34d399; text-decoration: none; }
+.contact-pill-name { font-size: 0.72rem; color: var(--c-cbd5e1); }
+.contact-action { font-size: 0.65rem; font-weight: 600; color: var(--c-34d399); text-decoration: none; }
 .contact-action:hover { text-decoration: underline; }
 .btn-message {
   padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;
-  background: #0f2a1e; border: 1px solid #166534; color: #34d399; cursor: pointer;
+  background: var(--c-0f2a1e); border: 1px solid var(--c-166534); color: var(--c-34d399); cursor: pointer;
   margin-right: 0.375rem; transition: background 120ms;
 }
-.btn-message:hover { background: #14532d; }
+.btn-message:hover { background: var(--c-14532d); }
 </style>

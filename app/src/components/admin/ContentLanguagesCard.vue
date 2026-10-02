@@ -76,11 +76,11 @@ function move(locale: Lang, step: -1 | 1): void {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 0.375rem;
-  color: #a1a1aa;
+  color: var(--c-a1a1aa);
   background: transparent;
   cursor: pointer;
 }
-.lang-move:hover:not(:disabled) { color: #fff; background: #3f3f46; }
-.lang-move:focus-visible { outline: 2px solid #14b8a6; outline-offset: 1px; }
+.lang-move:hover:not(:disabled) { color: var(--c-ffffff); background: var(--c-3f3f46); }
+.lang-move:focus-visible { outline: 2px solid var(--c-14b8a6); outline-offset: 1px; }
 .lang-move:disabled { opacity: 0.3; cursor: default; }
 </style>

@@ -92,39 +92,39 @@ function cmd(action: () => void) {
 
 <style scoped>
 .rich-editor-wrap {
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.5rem;
   overflow: hidden;
-  background: #141414;
+  background: var(--c-141414);
 }
 .rich-editor-wrap:focus-within {
-  border-color: #888888;
+  border-color: var(--c-888888);
 }
 .toolbar {
   display: flex;
   align-items: center;
   gap: 0.125rem;
   padding: 0.375rem 0.5rem;
-  border-bottom: 1px solid #2a2a2a;
-  background: #111111;
+  border-bottom: 1px solid var(--c-2a2a2a);
+  background: var(--c-111111);
   flex-wrap: wrap;
 }
 .tb-btn {
   display: flex; align-items: center; justify-content: center;
   min-width: 1.75rem; height: 1.75rem; padding: 0 0.25rem;
   border-radius: 0.3rem; border: none; background: transparent;
-  color: #64748b; font-size: 0.8rem; cursor: pointer;
+  color: var(--c-64748b); font-size: 0.8rem; cursor: pointer;
   transition: background 100ms, color 100ms;
 }
-.tb-btn:hover { background: #1f1f1f; color: #d0d0d0; }
-.tb-btn.active { background: #2a2a2a; color: #ffffff; }
+.tb-btn:hover { background: var(--c-1f1f1f); color: var(--c-d0d0d0); }
+.tb-btn.active { background: var(--c-2a2a2a); color: var(--c-ffffff); }
 .tb-divider {
-  width: 1px; height: 1.125rem; background: #2a2a2a; margin: 0 0.25rem; flex-shrink: 0;
+  width: 1px; height: 1.125rem; background: var(--c-2a2a2a); margin: 0 0.25rem; flex-shrink: 0;
 }
 .editor-body {
   min-height: 8rem;
   padding: 0.75rem;
-  color: #e2e8f0;
+  color: var(--c-e2e8f0);
   font-size: 0.875rem;
   line-height: 1.65;
   cursor: text;
@@ -133,20 +133,20 @@ function cmd(action: () => void) {
   outline: none;
   min-height: 7rem;
 }
-.editor-body :deep(h2) { font-size: 1.1rem; font-weight: 600; color: #f1f5f9; margin: 0.75rem 0 0.25rem; }
-.editor-body :deep(h3) { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; margin: 0.6rem 0 0.2rem; }
+.editor-body :deep(h2) { font-size: 1.1rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.75rem 0 0.25rem; }
+.editor-body :deep(h3) { font-size: 0.95rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.6rem 0 0.2rem; }
 .editor-body :deep(p) { margin: 0 0 0.5rem; }
 .editor-body :deep(p:last-child) { margin-bottom: 0; }
 .editor-body :deep(ul), .editor-body :deep(ol) { padding-left: 1.4rem; margin: 0.25rem 0 0.5rem; }
 .editor-body :deep(li) { margin: 0.15rem 0; }
 .editor-body :deep(blockquote) {
-  border-left: 3px solid #555555; padding-left: 0.75rem;
-  color: #94a3b8; margin: 0.5rem 0; font-style: italic;
+  border-left: 3px solid var(--c-555555); padding-left: 0.75rem;
+  color: var(--c-94a3b8); margin: 0.5rem 0; font-style: italic;
 }
-.editor-body :deep(strong) { color: #f1f5f9; }
-.editor-body :deep(em) { color: #c0c0c0; }
+.editor-body :deep(strong) { color: var(--c-f1f5f9); }
+.editor-body :deep(em) { color: var(--c-c0c0c0); }
 .editor-body :deep(p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
-  color: #334155; pointer-events: none; float: left; height: 0;
+  color: var(--c-334155); pointer-events: none; float: left; height: 0;
 }
 </style>

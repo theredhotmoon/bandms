@@ -4,23 +4,23 @@
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  background: #e8e8e8;
+  background: var(--c-e8e8e8);
   border: none;
-  color: #111111;
+  color: var(--c-111111);
   transition: background 120ms;
 }
-.btn-add-primary:hover { background: #ffffff; }
+.btn-add-primary:hover { background: var(--c-ffffff); }
 .btn-add-primary:disabled {
   cursor: not-allowed;
-  background: #2a2a2a;
-  color: #6b6b6b;
+  background: var(--c-2a2a2a);
+  color: var(--c-6b6b6b);
 }
-.btn-add-primary:disabled:hover { background: #2a2a2a; }
+.btn-add-primary:disabled:hover { background: var(--c-2a2a2a); }
 
 .table-card {
   border-radius: 0.75rem;
-  border: 1px solid #222222;
-  background: #111111;
+  border: 1px solid var(--c-222222);
+  background: var(--c-111111);
   overflow: hidden;
 }
 
@@ -31,7 +31,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #555555;
+  color: var(--c-555555);
 }
 
 .td {
@@ -41,11 +41,11 @@
 }
 
 .table-row {
-  border-bottom: 1px solid #1f1f1f;
+  border-bottom: 1px solid var(--c-1f1f1f);
   transition: background 100ms;
 }
 .table-row:last-child { border-bottom: none; }
-.table-row:hover { background: #181818; }
+.table-row:hover { background: var(--c-181818); }
 
 .btn-edit {
   padding: 0.25rem 0.625rem;
@@ -54,12 +54,12 @@
   font-weight: 500;
   cursor: pointer;
   background: transparent;
-  border: 1px solid #333333;
-  color: #9ca3af;
+  border: 1px solid var(--c-333333);
+  color: var(--c-9ca3af);
   margin-right: 0.375rem;
   transition: background 120ms, border-color 120ms;
 }
-.btn-edit:hover { background: #2a2a2a; border-color: #555555; }
+.btn-edit:hover { background: var(--c-2a2a2a); border-color: var(--c-555555); }
 
 .btn-delete {
   padding: 0.25rem 0.625rem;
@@ -68,30 +68,30 @@
   font-weight: 500;
   cursor: pointer;
   background: transparent;
-  border: 1px solid #2d1212;
-  color: #f87171;
+  border: 1px solid var(--c-2d1212);
+  color: var(--c-f87171);
   transition: background 120ms;
 }
-.btn-delete:hover { background: #2d1010; }
+.btn-delete:hover { background: var(--c-2d1010); }
 
 .empty-state {
   padding: 3.5rem 1rem;
   text-align: center;
-  color: #555555;
+  color: var(--c-555555);
   font-size: 0.8125rem;
   line-height: 1.6;
 }
 
 .filter-select {
   padding: 0.3125rem 0.625rem;
-  background: #141414;
-  border: 1px solid #252525;
+  background: var(--c-141414);
+  border: 1px solid var(--c-252525);
   border-radius: 0.375rem;
   font-size: 0.8125rem;
-  color: #888888;
+  color: var(--c-888888);
   outline: none;
   cursor: pointer;
   transition: border-color 150ms;
   white-space: nowrap;
 }
-.filter-select:focus { border-color: #888888; color: #e0e0e0; }
+.filter-select:focus { border-color: var(--c-888888); color: var(--c-e0e0e0); }

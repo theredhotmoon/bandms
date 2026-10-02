@@ -66,12 +66,12 @@ const pages = computed<(number | '…')[]>(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  border-top: 1px solid #1f1f1f;
+  border-top: 1px solid var(--c-1f1f1f);
 }
 
 .pg-info {
   font-size: 0.7rem;
-  color: #334155;
+  color: var(--c-334155);
   font-variant-numeric: tabular-nums;
 }
 
@@ -92,20 +92,20 @@ const pages = computed<(number | '…')[]>(() => {
   border: 1px solid transparent;
   border-radius: 0.3rem;
   font-size: 0.75rem;
-  color: #475569;
+  color: var(--c-475569);
   cursor: pointer;
   transition: all 100ms;
 }
 .pg-btn svg { width: 0.875rem; height: 0.875rem; }
-.pg-btn:hover:not(:disabled) { background: #1a1a1a; border-color: #333333; color: #e2e8f0; }
+.pg-btn:hover:not(:disabled) { background: var(--c-1a1a1a); border-color: var(--c-333333); color: var(--c-e2e8f0); }
 .pg-btn:disabled { opacity: 0.3; cursor: default; }
 
 .pg-num { font-variant-numeric: tabular-nums; }
-.pg-num--active { background: #2a2a2a; border-color: #555555; color: #ffffff; }
+.pg-num--active { background: var(--c-2a2a2a); border-color: var(--c-555555); color: var(--c-ffffff); }
 
 .pg-ellipsis {
   font-size: 0.75rem;
-  color: #334155;
+  color: var(--c-334155);
   width: 1.25rem;
   text-align: center;
 }

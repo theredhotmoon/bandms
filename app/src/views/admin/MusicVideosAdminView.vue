@@ -188,8 +188,8 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.videos.title') }}</h1>
-          <p class="text-xs mt-0.5" style="color:#334155;">{{ $t('media.videos.subtitle') }}</p>
+          <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('media.videos.title') }}</h1>
+          <p class="text-xs mt-0.5" style="color:var(--c-334155);">{{ $t('media.videos.subtitle') }}</p>
         </div>
         <div class="header-right">
           <!-- Total views stat -->
@@ -215,7 +215,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('media.videos.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('media.videos.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
@@ -233,7 +233,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <th class="th" style="width:5rem;">{{ $t('media.videos.columns.preview') }}</th>
                 <SortHeader :label="$t('media.videos.columns.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('media.videos.columns.url') }}</th>
@@ -249,9 +249,9 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
                   <img v-if="v.og_image" :src="v.og_image" class="video-thumb" alt="" />
                   <div v-else class="video-thumb-empty">▶</div>
                 </td>
-                <td class="td font-medium" style="color:#e2e8f0;">
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">
                   {{ v.title }}
-                  <div style="font-size:0.7rem;color:#475569;font-weight:400;display:flex;gap:0.5rem;margin-top:1px;">
+                  <div style="font-size:0.7rem;color:var(--c-475569);font-weight:400;display:flex;gap:0.5rem;margin-top:1px;">
                     <span v-if="v.channel_name">{{ v.channel_name }}</span>
                     <span v-if="v.duration">· {{ v.duration }}</span>
                   </div>
@@ -261,12 +261,12 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
                     {{ $t(`media.videos.hosts.${videoHost(v.video_url)}`) }} ↗
                   </a>
                 </td>
-                <td class="td" style="color:#475569; font-size:0.75rem;">{{ v.published_at ?? '—' }}</td>
+                <td class="td" style="color:var(--c-475569); font-size:0.75rem;">{{ v.published_at ?? '—' }}</td>
                 <td class="td views-cell">
                   <span v-if="v.view_count !== null" class="views-num">{{ v.view_count.toLocaleString() }}</span>
                   <span v-else class="views-none">—</span>
                 </td>
-                <td class="td" style="color:#475569;">{{ v.sort_order }}</td>
+                <td class="td" style="color:var(--c-475569);">{{ v.sort_order }}</td>
                 <td class="td text-right">
                   <button
                     @click="doFetchPreview(v.id)"
@@ -376,12 +376,12 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 .url-link {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #c0c0c0;
+  color: var(--c-c0c0c0);
   text-decoration: none;
   transition: color 120ms;
 }
-.url-link:hover { color: #d0d0d0; }
-.field-req { color: #f87171; }
+.url-link:hover { color: var(--c-d0d0d0); }
+.field-req { color: var(--c-f87171); }
 
 .video-thumb {
   width: 4.5rem;
@@ -389,19 +389,19 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   object-fit: cover;
   border-radius: 0.25rem;
   display: block;
-  background: #1a1a1a;
+  background: var(--c-1a1a1a);
 }
 .video-thumb-empty {
   width: 4.5rem;
   aspect-ratio: 16/9;
   border-radius: 0.25rem;
-  background: #1a1a1a;
-  border: 1px solid #222222;
+  background: var(--c-1a1a1a);
+  border: 1px solid var(--c-222222);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  color: #334155;
+  color: var(--c-334155);
 }
 
 .btn-preview {
@@ -409,14 +409,14 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   border-radius: 0.3rem;
   font-size: 0.72rem;
   font-weight: 500;
-  background: #0f2a1e;
-  color: #34d399;
-  border: 1px solid #065f46;
+  background: var(--c-0f2a1e);
+  color: var(--c-34d399);
+  border: 1px solid var(--c-065f46);
   cursor: pointer;
   margin-right: 0.25rem;
   transition: background 120ms;
 }
-.btn-preview:hover:not(:disabled) { background: #134e35; }
+.btn-preview:hover:not(:disabled) { background: var(--c-134e35); }
 .btn-preview:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .header-right {
@@ -429,25 +429,25 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   display: flex;
   align-items: baseline;
   gap: 0.3rem;
-  background: #111111;
-  border: 1px solid #222222;
+  background: var(--c-111111);
+  border: 1px solid var(--c-222222);
   border-radius: 0.5rem;
   padding: 0.3rem 0.75rem;
 }
 .views-stat-num {
   font-size: 1rem;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--c-38bdf8);
   letter-spacing: -0.02em;
 }
 .views-stat-label {
   font-size: 0.7rem;
-  color: #475569;
+  color: var(--c-475569);
   font-weight: 500;
 }
 .views-stat-ts {
   font-size: 0.65rem;
-  color: #334155;
+  color: var(--c-334155);
 }
 
 .btn-sync {
@@ -458,18 +458,18 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   border-radius: 0.4rem;
   font-size: 0.78rem;
   font-weight: 500;
-  background: #111111;
-  color: #38bdf8;
-  border: 1px solid #222222;
+  background: var(--c-111111);
+  color: var(--c-38bdf8);
+  border: 1px solid var(--c-222222);
   cursor: pointer;
   transition: background 120ms;
 }
-.btn-sync:hover:not(:disabled) { background: #0f2540; }
+.btn-sync:hover:not(:disabled) { background: var(--c-0f2540); }
 .btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .views-cell { font-size: 0.8rem; }
-.views-num  { color: #38bdf8; font-weight: 600; font-variant-numeric: tabular-nums; }
-.views-none { color: #334155; }
+.views-num  { color: var(--c-38bdf8); font-weight: 600; font-variant-numeric: tabular-nums; }
+.views-none { color: var(--c-334155); }
 
 /* Retrieve button + URL row */
 .url-row { display: flex; gap: 0.5rem; align-items: stretch; }
@@ -478,12 +478,12 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
   display: inline-flex; align-items: center; gap: 0.375rem;
   padding: 0 0.75rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
   white-space: nowrap; cursor: pointer;
-  background: #1a1a1a; border: 1px solid #2a2a2a; color: #475569;
+  background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: var(--c-475569);
   transition: background 120ms, color 120ms, border-color 120ms;
   flex-shrink: 0;
 }
-.btn-retrieve--active { border-color: #065f46; color: #34d399; background: #0f2a1e; }
-.btn-retrieve--active:hover:not(:disabled) { background: #134e35; }
+.btn-retrieve--active { border-color: var(--c-065f46); color: var(--c-34d399); background: var(--c-0f2a1e); }
+.btn-retrieve--active:hover:not(:disabled) { background: var(--c-134e35); }
 .btn-retrieve:disabled { opacity: 0.45; cursor: not-allowed; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.8s linear infinite; }
@@ -491,20 +491,20 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 /* Metadata preview card */
 .meta-card {
   display: flex; gap: 0.75rem; align-items: flex-start;
-  background: #111111; border: 1px solid #222222; border-radius: 0.5rem;
+  background: var(--c-111111); border: 1px solid var(--c-222222); border-radius: 0.5rem;
   padding: 0.625rem; overflow: hidden;
 }
 .meta-thumb {
   width: 7rem; aspect-ratio: 16/9; object-fit: cover;
-  border-radius: 0.25rem; flex-shrink: 0; display: block; background: #1a1a1a;
+  border-radius: 0.25rem; flex-shrink: 0; display: block; background: var(--c-1a1a1a);
 }
 .meta-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.375rem; }
-.meta-title { font-size: 0.8rem; font-weight: 600; color: #e2e8f0; line-height: 1.3; }
+.meta-title { font-size: 0.8rem; font-weight: 600; color: var(--c-e2e8f0); line-height: 1.3; }
 .meta-details { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .meta-chip {
-  font-size: 0.68rem; font-weight: 500; color: #64748b;
-  background: #1e1e1e; border: 1px solid #2a2a2a;
+  font-size: 0.68rem; font-weight: 500; color: var(--c-64748b);
+  background: var(--c-1e1e1e); border: 1px solid var(--c-2a2a2a);
   border-radius: 0.25rem; padding: 0.15rem 0.4rem;
 }
-.meta-chip--dim { color: #334155; border-color: #1e1e1e; }
+.meta-chip--dim { color: var(--c-334155); border-color: var(--c-1e1e1e); }
 </style>

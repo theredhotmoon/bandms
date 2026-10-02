@@ -30,17 +30,17 @@ import { reportSaveError } from '@/utils/formErrors'
 const RELEASE_TYPES: ReleaseType[] = ['LP', 'EP', 'single', 'compilation'] // i18n-ignore: persisted ReleaseType values
 
 const TYPE_BADGE: Record<string, string> = {
-  LP:          '#888888',
-  EP:          '#0891b2',
-  single:      '#059669',
-  compilation: '#b45309',
+  LP:          'var(--c-888888)',
+  EP:          'var(--c-0891b2)',
+  single:      'var(--c-059669)',
+  compilation: 'var(--c-b45309)',
 }
 
 /** CSS for the type badge — a colour, not copy. */
 const typeBadgeStyle = (type: string) => ({
-  background: `${TYPE_BADGE[type]}22`,
+  background: `color-mix(in srgb, ${TYPE_BADGE[type]} 13%, transparent)`, // i18n-ignore: CSS
   color: TYPE_BADGE[type],
-  borderColor: `${TYPE_BADGE[type]}44`,
+  borderColor: `color-mix(in srgb, ${TYPE_BADGE[type]} 27%, transparent)`, // i18n-ignore: CSS
 })
 
 const { query, create, update, remove } = useReleases()
@@ -232,13 +232,13 @@ async function uploadPhotos() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('media.releases.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('media.releases.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('media.releases.add') }}</button>
       </div>
 
       <div class="table-card">
-        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:#475569;">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:#f87171;">{{ $t('media.releases.loadFailed') }}</div>
+        <div v-if="query.isPending.value" class="py-12 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
+        <div v-else-if="query.isError.value" class="py-12 text-center text-sm" style="color:var(--c-f87171);">{{ $t('media.releases.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value">
             <template #filters>
@@ -249,13 +249,13 @@ async function uploadPhotos() {
             </template>
           </TableToolbar>
 
-          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:#475569;">
+          <div v-if="!tc.paginated.value.length" class="py-12 text-center text-sm" style="color:var(--c-475569);">
             <span v-if="!(query.data.value?.length)">{{ $t('media.releases.empty') }}</span>
             <span v-else>{{ $t('media.releases.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <th class="th" style="width:3.5rem;">{{ $t('media.releases.columns.cover') }}</th>
                 <SortHeader :label="$t('media.releases.columns.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('media.releases.columns.type')" sort-key="type" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="5rem" @sort="tc.toggleSort" />
@@ -269,11 +269,11 @@ async function uploadPhotos() {
                   <img v-if="r.cover_image" :src="r.cover_image" :alt="r.title" class="cover-thumb" />
                   <div v-else class="cover-placeholder">♪</div>
                 </td>
-                <td class="td font-medium" style="color:#e2e8f0;">{{ r.title }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ r.title }}</td>
                 <td class="td">
                   <span class="type-badge" :style="typeBadgeStyle(r.type)">{{ $t(`media.releases.types.${r.type}`) }}</span>
                 </td>
-                <td class="td" style="color:#64748b;">{{ r.release_date ?? '—' }}</td>
+                <td class="td" style="color:var(--c-64748b);">{{ r.release_date ?? '—' }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(r)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = r.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
@@ -297,7 +297,7 @@ async function uploadPhotos() {
     </div>
 
     <AdminModal :open="showModal" :title="modalTitle" max-width="56rem" @close="closeModal">
-      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:#475569;">
+      <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">
         {{ $t('media.releases.loadingOne') }}
       </div>
       <template v-else>
@@ -389,19 +389,19 @@ async function uploadPhotos() {
   height: 2.5rem;
   border-radius: 0.25rem;
   object-fit: cover;
-  border: 1px solid #222222;
+  border: 1px solid var(--c-222222);
 }
 .cover-placeholder {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.25rem;
-  background: #1a1a1a;
-  border: 1px solid #222222;
+  background: var(--c-1a1a1a);
+  border: 1px solid var(--c-222222);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.875rem;
-  color: #334155;
+  color: var(--c-334155);
 }
 .type-badge {
   display: inline-block;
@@ -419,8 +419,8 @@ async function uploadPhotos() {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #475569;
-  border-top: 1px solid #252525;
+  color: var(--c-475569);
+  border-top: 1px solid var(--c-252525);
   margin-top: 1.5rem;
   padding-top: 0.875rem;
   margin-bottom: 0.75rem;
@@ -432,11 +432,11 @@ async function uploadPhotos() {
 }
 .rp-card {
   position: relative;
-  border: 1px solid #222222;
+  border: 1px solid var(--c-222222);
   border-radius: 6px;
   overflow: hidden;
   cursor: grab;
-  background: #141414;
+  background: var(--c-141414);
   transition: opacity 0.15s;
 }
 .rp-card:active { cursor: grabbing; }
@@ -444,44 +444,44 @@ async function uploadPhotos() {
 .rp-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 .rp-thumb-placeholder {
   width: 100%; aspect-ratio: 4/3; display: flex; align-items: center;
-  justify-content: center; color: #334155; font-size: 1.25rem; background: #1a1a1a;
+  justify-content: center; color: var(--c-334155); font-size: 1.25rem; background: var(--c-1a1a1a);
 }
 .rp-del {
   position: absolute; top: 3px; right: 3px;
   width: 18px; height: 18px; border-radius: 50%;
-  background: #141414cc; border: 1px solid #3a1212;
-  color: #f87171; font-size: 0.55rem; cursor: pointer;
+  background: color-mix(in srgb, var(--c-141414) 80%, transparent); border: 1px solid var(--c-3a1212);
+  color: var(--c-f87171); font-size: 0.55rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 100ms;
 }
-.rp-del:hover { background: #3f1212; }
+.rp-del:hover { background: var(--c-3f1212); }
 .rp-caption {
-  font-size: 0.62rem; color: #475569; padding: 2px 4px;
+  font-size: 0.62rem; color: var(--c-475569); padding: 2px 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.rp-empty { font-size: 0.8125rem; color: #475569; padding: 0.5rem 0; }
+.rp-empty { font-size: 0.8125rem; color: var(--c-475569); padding: 0.5rem 0; }
 .rp-order-row { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .rp-btn-save {
   padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; background: #2a2a2a;
-  border: 1px solid #444444; color: #d0d0d0; transition: background 100ms;
+  font-weight: 600; cursor: pointer; background: var(--c-2a2a2a);
+  border: 1px solid var(--c-444444); color: var(--c-d0d0d0); transition: background 100ms;
 }
-.rp-btn-save:hover { background: #333333; }
+.rp-btn-save:hover { background: var(--c-333333); }
 
 .rp-add { margin-top: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .rp-add-title {
-  font-size: 0.72rem; font-weight: 600; color: #475569;
+  font-size: 0.72rem; font-weight: 600; color: var(--c-475569);
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 .rp-progress-wrap  { display: flex; flex-direction: column; gap: 0.3rem; }
-.rp-progress-bar   { height: 4px; background: #252525; border-radius: 9999px; overflow: hidden; }
-.rp-progress-fill  { height: 100%; background: #888888; border-radius: 9999px; transition: width 0.2s ease; }
-.rp-progress-label { font-size: 0.7rem; color: #94a3b8; text-align: center; }
+.rp-progress-bar   { height: 4px; background: var(--c-252525); border-radius: 9999px; overflow: hidden; }
+.rp-progress-fill  { height: 100%; background: var(--c-888888); border-radius: 9999px; transition: width 0.2s ease; }
+.rp-progress-label { font-size: 0.7rem; color: var(--c-94a3b8); text-align: center; }
 .rp-btn-upload {
   padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; background: #333333;
-  border: 1px solid #888888; color: #fff; transition: background 100ms;
+  font-weight: 600; cursor: pointer; background: var(--c-333333);
+  border: 1px solid var(--c-888888); color: var(--c-ffffff); transition: background 100ms;
 }
-.rp-btn-upload:hover:not(:disabled) { background: #888888; }
+.rp-btn-upload:hover:not(:disabled) { background: var(--c-888888); }
 .rp-btn-upload:disabled { opacity: 0.4; cursor: default; }
 </style>

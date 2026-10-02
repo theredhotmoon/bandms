@@ -68,13 +68,13 @@ async function confirmDelete() {
   <AdminLayout>
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-lg font-semibold" style="color:#e2e8f0;">{{ $t('shows.venues.title') }}</h1>
+        <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('shows.venues.title') }}</h1>
         <button @click="openCreate" class="btn-add-primary">{{ $t('shows.venues.add') }}</button>
       </div>
 
       <div class="table-card">
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
-        <div v-else-if="query.isError.value" class="empty-state" style="color:#f87171;">{{ $t('shows.venues.loadFailed') }}</div>
+        <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('shows.venues.loadFailed') }}</div>
         <template v-else>
           <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
 
@@ -84,7 +84,7 @@ async function confirmDelete() {
           </div>
           <table v-else class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #222222;">
+              <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('shows.venues.form.city')" sort-key="city" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('shows.venues.street') }}</th>
@@ -93,9 +93,9 @@ async function confirmDelete() {
             </thead>
             <tbody>
               <tr v-for="venue in tc.paginated.value" :key="venue.id" class="table-row">
-                <td class="td font-medium" style="color:#e2e8f0;">{{ venue.name }}</td>
-                <td class="td" style="color:#94a3b8;">{{ venue.city ?? '—' }}</td>
-                <td class="td" style="color:#94a3b8;">{{ [venue.street, venue.street_number].filter(Boolean).join(' ') || '—' }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ venue.name }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ venue.city ?? '—' }}</td>
+                <td class="td" style="color:var(--c-94a3b8);">{{ [venue.street, venue.street_number].filter(Boolean).join(' ') || '—' }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(venue)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = venue.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

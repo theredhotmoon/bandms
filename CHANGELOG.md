@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-02 (admin light mode)
+
+### Added
+- **Light mode for the admin panel.** A *Light mode* switch at the bottom of the sidebar flips the whole panel — sidebar, tables, forms and modals — to a light theme. The choice is remembered per browser; dark stays the default.
+
+### Changed
+- Every admin colour is now a `--c-*` variable from `app/src/admin-palette.css` instead of a hardcoded hex, so the light theme is tuned in one file. Dark mode looks exactly as before.
+
 ## [Unreleased] — 2026-09-21 (EPK links the tech rider)
 
 ### Changed

@@ -36,22 +36,22 @@ defineEmits<{ open: [placementId: string] }>()
   display: inline-flex; align-items: baseline; gap: 0.3rem;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
   font-size: 0.68rem; line-height: 1.4; white-space: nowrap;
-  background: #141414; border: 1px solid #222222; color: #64748b;
+  background: var(--c-141414); border: 1px solid var(--c-222222); color: var(--c-64748b);
   font-family: inherit; max-width: 100%; overflow: hidden;
 }
-.source-badge--guest { background: #1a1206; border-color: #3d2a08; }
-.source-badge--extra { background: #0f1a14; border-color: #14361f; }
+.source-badge--guest { background: var(--c-1a1206); border-color: var(--c-3d2a08); }
+.source-badge--extra { background: var(--c-0f1a14); border-color: var(--c-14361f); }
 
 .source-badge--clickable { cursor: pointer; transition: border-color 100ms, color 100ms; }
-.source-badge--clickable:hover { border-color: #555555; color: #94a3b8; }
+.source-badge--clickable:hover { border-color: var(--c-555555); color: var(--c-94a3b8); }
 
-.source-name { font-weight: 600; color: #94a3b8; }
-.source-badge--guest .source-name { color: #fbbf24; }
-.source-badge--extra .source-name { color: #4ade80; }
-.source-detail { color: #475569; overflow: hidden; text-overflow: ellipsis; }
+.source-name { font-weight: 600; color: var(--c-94a3b8); }
+.source-badge--guest .source-name { color: var(--c-fbbf24); }
+.source-badge--extra .source-name { color: var(--c-4ade80); }
+.source-detail { color: var(--c-475569); overflow: hidden; text-overflow: ellipsis; }
 
 .override-dot {
   width: 0.35rem; height: 0.35rem; border-radius: 50%;
-  background: #fbbf24; flex-shrink: 0; align-self: center;
+  background: var(--c-fbbf24); flex-shrink: 0; align-self: center;
 }
 </style>

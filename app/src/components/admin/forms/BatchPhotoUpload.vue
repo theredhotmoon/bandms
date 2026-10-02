@@ -90,7 +90,7 @@ function submit() {
     <!-- Album metadata -->
     <div class="album-meta">
       <div class="meta-full">
-        <label class="field-label">{{ $t('media.batchUpload.albumTitle') }} <span style="color:#f87171;">*</span></label>
+        <label class="field-label">{{ $t('media.batchUpload.albumTitle') }} <span style="color:var(--c-f87171);">*</span></label>
         <input v-model="meta.title" class="field-input" :placeholder="$t('media.batchUpload.albumTitlePlaceholder')" />
       </div>
       <div class="meta-full">
@@ -183,13 +183,13 @@ function submit() {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #475569;
-  border-top: 1px solid #252525;
+  color: var(--c-475569);
+  border-top: 1px solid var(--c-252525);
   padding-top: 0.75rem;
 }
 
 .progress-wrap  { display: flex; flex-direction: column; gap: 0.35rem; }
-.progress-bar   { height: 5px; background: #252525; border-radius: 9999px; overflow: hidden; }
-.progress-fill  { height: 100%; background: #888888; border-radius: 9999px; transition: width 0.2s ease; }
-.progress-label { font-size: 0.72rem; color: #94a3b8; text-align: center; }
+.progress-bar   { height: 5px; background: var(--c-252525); border-radius: 9999px; overflow: hidden; }
+.progress-fill  { height: 100%; background: var(--c-888888); border-radius: 9999px; transition: width 0.2s ease; }
+.progress-label { font-size: 0.72rem; color: var(--c-94a3b8); text-align: center; }
 </style>

@@ -67,7 +67,7 @@ async function handleSubmit(payload: BandMemberPayload) {
   max-width: 52rem;
 }
 .page-header { margin-bottom: 1.5rem; }
-.page-title    { font-size: 1.125rem; font-weight: 700; color: #e2e8f0; }
-.page-subtitle { font-size: 0.8rem; color: #475569; margin-top: 0.25rem; }
-.state-msg { padding: 2rem; color: #475569; font-size: 0.875rem; }
+.page-title    { font-size: 1.125rem; font-weight: 700; color: var(--c-e2e8f0); }
+.page-subtitle { font-size: 0.8rem; color: var(--c-475569); margin-top: 0.25rem; }
+.state-msg { padding: 2rem; color: var(--c-475569); font-size: 0.875rem; }
 </style>

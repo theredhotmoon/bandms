@@ -119,7 +119,7 @@ function submit() {
 
     <!-- URL + fetch -->
     <div>
-      <label class="field-label">{{ $t('content.press.articleUrl') }} <span style="color:#f87171;">*</span></label>
+      <label class="field-label">{{ $t('content.press.articleUrl') }} <span style="color:var(--c-f87171);">*</span></label>
       <div class="url-row">
         <input
           v-model="form.url"
@@ -224,26 +224,26 @@ function submit() {
 .url-row    { display: flex; gap: 0.5rem; align-items: stretch; }
 .btn-fetch {
   padding: 0 0.875rem; border-radius: 0.375rem; font-size: 0.78rem;
-  font-weight: 600; cursor: pointer; background: #2a2a2a; white-space: nowrap;
-  border: 1px solid #444444; color: #d0d0d0; transition: background 100ms; flex-shrink: 0;
+  font-weight: 600; cursor: pointer; background: var(--c-2a2a2a); white-space: nowrap;
+  border: 1px solid var(--c-444444); color: var(--c-d0d0d0); transition: background 100ms; flex-shrink: 0;
 }
-.btn-fetch:hover:not(:disabled) { background: #2a2a2a; }
+.btn-fetch:hover:not(:disabled) { background: var(--c-2a2a2a); }
 .btn-fetch:disabled { opacity: 0.4; cursor: default; }
 
 /* ── OG preview card ─────────────────────────────────────────── */
 .og-preview {
-  border: 1px solid #252525; border-radius: 0.5rem; overflow: hidden;
-  display: flex; gap: 0; background: #141414;
+  border: 1px solid var(--c-252525); border-radius: 0.5rem; overflow: hidden;
+  display: flex; gap: 0; background: var(--c-141414);
 }
 .og-img {
-  width: 130px; flex-shrink: 0; object-fit: cover; background: #141414;
-  border-right: 1px solid #252525;
+  width: 130px; flex-shrink: 0; object-fit: cover; background: var(--c-141414);
+  border-right: 1px solid var(--c-252525);
 }
 .og-body    { padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
-.og-site    { font-size: 0.68rem; font-weight: 600; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; }
-.og-title   { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; line-height: 1.35; }
+.og-site    { font-size: 0.68rem; font-weight: 600; color: var(--c-888888); text-transform: uppercase; letter-spacing: 0.05em; }
+.og-title   { font-size: 0.875rem; font-weight: 600; color: var(--c-e2e8f0); line-height: 1.35; }
 .og-desc    {
-  font-size: 0.78rem; color: #64748b; line-height: 1.5;
+  font-size: 0.78rem; color: var(--c-64748b); line-height: 1.5;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
@@ -251,10 +251,10 @@ function submit() {
 .featured-toggle {
   display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;
   padding: 0.625rem 0.875rem; border-radius: 0.375rem;
-  border: 1px solid #252525; background: #141414;
+  border: 1px solid var(--c-252525); background: var(--c-141414);
 }
-.featured-toggle input[type="checkbox"] { margin-top: 0.1rem; flex-shrink: 0; accent-color: #888888; }
-.featured-label { font-size: 0.8125rem; font-weight: 500; color: #e2e8f0; }
-.featured-hint { font-size: 0.7rem; color: #475569; margin-left: auto; text-align: right; max-width: 22rem; line-height: 1.4; }
+.featured-toggle input[type="checkbox"] { margin-top: 0.1rem; flex-shrink: 0; accent-color: var(--c-888888); }
+.featured-label { font-size: 0.8125rem; font-weight: 500; color: var(--c-e2e8f0); }
+.featured-hint { font-size: 0.7rem; color: var(--c-475569); margin-left: auto; text-align: right; max-width: 22rem; line-height: 1.4; }
 
 </style>

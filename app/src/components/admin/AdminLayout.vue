@@ -6,6 +6,7 @@ import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
 import RebuildBar from './RebuildBar.vue'
 import UiLangSwitcher from './UiLangSwitcher.vue'
+import AdminThemeSwitch from './AdminThemeSwitch.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
 const { t } = useI18n()
@@ -296,6 +297,7 @@ watch(() => route.path, (path) => {
 
       <div class="sidebar-footer">
         <UiLangSwitcher />
+        <AdminThemeSwitch />
         <div v-if="user" class="sidebar-user">
           <div class="user-avatar">{{ (user.first_name?.[0] ?? '') }}{{ (user.last_name?.[0] ?? '') }}</div>
           <div class="user-info">
@@ -323,8 +325,8 @@ watch(() => route.path, (path) => {
 .admin-shell {
   display: flex;
   min-height: 100vh;
-  background: #0a0a0a;
-  color: #e2e8f0;
+  background: var(--c-0a0a0a);
+  color: var(--c-e2e8f0);
 }
 
 /* ── Sidebar ─────────────────────────────────────── */
@@ -333,13 +335,13 @@ watch(() => route.path, (path) => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: #111111;
-  border-right: 1px solid #222222;
+  background: var(--c-111111);
+  border-right: 1px solid var(--c-222222);
 }
 
 .sidebar-logo {
   padding: 1.125rem 1.25rem 1rem;
-  border-bottom: 1px solid #222222;
+  border-bottom: 1px solid var(--c-222222);
 }
 .logo-mark {
   font-size: 1.125rem;
@@ -347,14 +349,14 @@ watch(() => route.path, (path) => {
   letter-spacing: -0.02em;
   line-height: 1;
 }
-.logo-band { color: #e2e8f0; }
-.logo-ms   { color: #ffffff; }
+.logo-band { color: var(--c-e2e8f0); }
+.logo-ms   { color: var(--c-ffffff); }
 .logo-sub {
   font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #555555;
+  color: var(--c-555555);
   margin-top: 0.25rem;
 }
 
@@ -381,7 +383,7 @@ watch(() => route.path, (path) => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #444444;
+  color: var(--c-444444);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -389,11 +391,11 @@ watch(() => route.path, (path) => {
   text-align: left;
 }
 .accordion-header:hover {
-  background: #161616;
-  color: #777777;
+  background: var(--c-161616);
+  color: var(--c-777777);
 }
 .accordion-header--active {
-  color: #888888;
+  color: var(--c-888888);
 }
 
 .accordion-title {
@@ -406,7 +408,7 @@ watch(() => route.path, (path) => {
   width: 0.375rem;
   height: 0.375rem;
   border-radius: 9999px;
-  background: #ffffff;
+  background: var(--c-ffffff);
   flex-shrink: 0;
 }
 
@@ -437,7 +439,7 @@ watch(() => route.path, (path) => {
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #555555;
+  color: var(--c-555555);
   text-decoration: none;
   cursor: pointer;
   border: none;
@@ -448,19 +450,19 @@ watch(() => route.path, (path) => {
   text-align: left;
 }
 .nav-item:hover {
-  background: #1a1a1a;
-  color: #aaaaaa;
+  background: var(--c-1a1a1a);
+  color: var(--c-aaaaaa);
 }
 .nav-item--active {
-  background: #1f1f1f !important;
-  color: #ffffff !important;
-  box-shadow: inset 2px 0 0 #ffffff !important;
+  background: var(--c-1f1f1f) !important;
+  color: var(--c-ffffff) !important;
+  box-shadow: inset 2px 0 0 var(--c-ffffff) !important;
 }
 
 /* ── Footer ──────────────────────────────────────── */
 .sidebar-footer {
   padding: 0.625rem 0.5rem;
-  border-top: 1px solid #222222;
+  border-top: 1px solid var(--c-222222);
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -476,8 +478,8 @@ watch(() => route.path, (path) => {
   width: 1.625rem;
   height: 1.625rem;
   border-radius: 9999px;
-  background: #2a2a2a;
-  color: #c0c0c0;
+  background: var(--c-2a2a2a);
+  color: var(--c-c0c0c0);
   font-size: 0.625rem;
   font-weight: 700;
   display: flex;
@@ -490,7 +492,7 @@ watch(() => route.path, (path) => {
 .user-name {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #d0d0d0;
+  color: var(--c-d0d0d0);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -500,7 +502,7 @@ watch(() => route.path, (path) => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #555555;
+  color: var(--c-555555);
 }
 
 .btn-signout {
@@ -512,14 +514,14 @@ watch(() => route.path, (path) => {
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #666666;
+  color: var(--c-666666);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 120ms, color 120ms;
   text-align: left;
 }
-.btn-signout:hover { background: #1a0a0a; color: #f87171; }
+.btn-signout:hover { background: var(--c-1a0a0a); color: var(--c-f87171); }
 
 /* ── Main ────────────────────────────────────────── */
 .main-content {
