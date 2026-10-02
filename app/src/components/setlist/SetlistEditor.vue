@@ -629,7 +629,7 @@ select.field-input {
 }
 .btn-save:hover:not(:disabled) { background: var(--c-333333); }
 .btn-save:disabled { opacity: 0.55; cursor: default; }
-.btn-save--ok { background: var(--c-166534) !important; }
+.btn-save--ok { background: var(--c-166534) !important; color: var(--c-dcfce7); }
 
 .confirm-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 50;

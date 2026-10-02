@@ -821,7 +821,7 @@ function isAnyUpdatePending(id: number): boolean {
   color: var(--c-fbbf24);
   border-color: var(--c-78350f);
 }
-.blm-action-btn--star:disabled { color: var(--c-78350f); }
+.blm-action-btn--star:disabled { color: var(--c-92400e); } /* a saturated amber that reads on both themes */
 
 .blm-action-btn--deprecate:hover:not(:disabled) {
   background: var(--c-1a1210);
