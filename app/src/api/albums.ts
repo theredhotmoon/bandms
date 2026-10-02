@@ -66,28 +66,54 @@ export function batchCreateAlbum(
   meta: BatchAlbumUploadMeta,
   onProgress: (p: UploadProgress) => void,
 ): Promise<Album> {
+  const body = new FormData()
+  body.append('title', meta.title)
+  // Multipart has no nested objects: the bag goes as slug[en], slug[pl], …
+  // A null (auto-generated) locale is simply not sent.
+  for (const [locale, slug] of Object.entries(meta.slug ?? {})) {
+    if (slug) body.append(`slug[${locale}]`, slug)
+  }
+  if (meta.description)        body.append('description', meta.description)
+  if (meta.venue_id != null)   body.append('venue_id', String(meta.venue_id))
+  if (meta.concert_id != null) body.append('concert_id', String(meta.concert_id))
+  if (meta.taken_at)           body.append('taken_at', meta.taken_at)
+  if (meta.published_at)       body.append('published_at', meta.published_at)
+  meta.tag_ids?.forEach((id) => body.append('tag_ids[]', String(id)))
+  appendFiles(body, files)
+
+  return postWithProgress(token, '/api/albums/batch', body, onProgress)
+}
+
+/** Uploads more photos into an existing album; they go after its last one. */
+export function addAlbumPhotos(
+  token: string,
+  albumId: number,
+  files: { file: File; caption: string }[],
+  onProgress: (p: UploadProgress) => void,
+): Promise<Album> {
+  assertSafeId(albumId)
+  const body = new FormData()
+  appendFiles(body, files)
+  return postWithProgress(token, `/api/albums/${albumId}/photos`, body, onProgress)
+}
+
+function appendFiles(body: FormData, files: { file: File; caption: string }[]): void {
+  files.forEach(({ file, caption }) => {
+    body.append('files[]', file)
+    body.append('captions[]', caption)
+  })
+}
+
+/** XHR rather than fetch: fetch has no upload progress events. */
+function postWithProgress(
+  token: string,
+  path: string,
+  body: FormData,
+  onProgress: (p: UploadProgress) => void,
+): Promise<Album> {
   return new Promise((resolve, reject) => {
-    const body = new FormData()
-    body.append('title', meta.title)
-    // Multipart has no nested objects: the bag goes as slug[en], slug[pl], …
-    // A null (auto-generated) locale is simply not sent.
-    for (const [locale, slug] of Object.entries(meta.slug ?? {})) {
-      if (slug) body.append(`slug[${locale}]`, slug)
-    }
-    if (meta.description)        body.append('description', meta.description)
-    if (meta.venue_id != null)   body.append('venue_id', String(meta.venue_id))
-    if (meta.concert_id != null) body.append('concert_id', String(meta.concert_id))
-    if (meta.taken_at)           body.append('taken_at', meta.taken_at)
-    if (meta.published_at)       body.append('published_at', meta.published_at)
-    meta.tag_ids?.forEach((id) => body.append('tag_ids[]', String(id)))
-
-    files.forEach(({ file, caption }) => {
-      body.append('files[]', file)
-      body.append('captions[]', caption)
-    })
-
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${API_BASE}/api/albums/batch`)
+    xhr.open('POST', `${API_BASE}${path}`)
     xhr.setRequestHeader('Accept', 'application/json')
     xhr.setRequestHeader('Authorization', `Bearer ${token}`)
 

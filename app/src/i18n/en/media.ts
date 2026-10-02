@@ -190,6 +190,9 @@ export default {
     epkFailed: 'Failed to update EPK status',
     photoRemoved: 'Photo removed',
     photoRemoveFailed: 'Failed to remove photo',
+    addPhotos: '+ Add photos',
+    uploadN: 'Upload {n} photo | Upload {n} photos',
+    photosAdded: '{n} photo added | {n} photos added',
   },
   batchUpload: {
     albumTitle: 'Album title',

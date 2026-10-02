@@ -119,6 +119,8 @@ export const MIGRATED = [
   'views/TechRiderPreviewView.vue',
   'views/admin/MusicVideosAdminView.vue',
   'components/admin/forms/BatchPhotoUpload.vue',
+  'components/admin/forms/AlbumAddPhotos.vue',
+  'components/admin/forms/UploadProgressBar.vue',
   'composables/useTechRiderEditor.ts',
   'utils/documentTitle.ts',
   'composables/useTechRiderVersions.ts',

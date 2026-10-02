@@ -7,12 +7,13 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BatchPhotoUpload from '@/components/admin/forms/BatchPhotoUpload.vue'
+import AlbumAddPhotos from '@/components/admin/forms/AlbumAddPhotos.vue'
 import { useAlbums } from '@/composables/useAlbums'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
-import { batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
+import { addAlbumPhotos, batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
 import { togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
@@ -131,7 +132,38 @@ function openPhotos(album: Album) {
   viewAlbum.value = album
   localPhotos.value = [...album.photos]
   originalOrder.value = album.photos.map((p) => p.id)
+  showAddPhotos.value = false
   showPhotos.value = true
+}
+
+// ── Add photos to an existing album ───────────────────────────
+const showAddPhotos = ref(false)
+const addUploading = ref(false)
+const addProgress = ref<UploadProgress | null>(null)
+
+async function handleAddPhotos(files: { file: File; caption: string }[]) {
+  if (!viewAlbum.value) return
+  addUploading.value = true
+  addProgress.value = null
+  try {
+    const album = await addAlbumPhotos(token.value!, viewAlbum.value.id, files, (p) => {
+      addProgress.value = p
+    })
+    // Append only the new photos, so a drag-reorder that has not been saved
+    // yet survives the upload; the server put them after the last one too.
+    const known = new Set(originalOrder.value)
+    const added = album.photos.filter((p) => !known.has(p.id))
+    localPhotos.value = [...localPhotos.value, ...added]
+    originalOrder.value = [...originalOrder.value, ...added.map((p) => p.id)]
+    viewAlbum.value = album
+    await queryClient.invalidateQueries({ queryKey: ['albums'] })
+    toast.success(t('media.photos.photosAdded', added.length, { named: { n: added.length } }))
+    showAddPhotos.value = false
+  } catch (e) {
+    reportSaveError(e, t('media.photos.uploadFailed'))
+  } finally {
+    addUploading.value = false
+  }
 }
 
 function onDragStart(idx: number) {
@@ -347,6 +379,16 @@ async function confirmDelete() {
     <!-- Photo grid modal -->
     <AdminModal :open="showPhotos" :title="viewAlbum?.title ?? $t('media.photos.photos')" max-width="64rem" @close="showPhotos = false">
       <div v-if="viewAlbum">
+        <AlbumAddPhotos
+          v-if="showAddPhotos"
+          :uploading="addUploading"
+          :progress="addProgress"
+          @upload="handleAddPhotos"
+          @cancel="showAddPhotos = false"
+        />
+        <div v-else class="flex justify-end mb-3">
+          <button type="button" class="btn-add-primary" @click="showAddPhotos = true">{{ $t('media.photos.addPhotos') }}</button>
+        </div>
         <div class="photos-grid">
           <div
             v-for="(photo, idx) in localPhotos"
