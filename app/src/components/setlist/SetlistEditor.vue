@@ -470,7 +470,7 @@ const TRANSITIONS: { value: SetlistTransition | ''; key: string }[] = [
 }
 .state-msg {
   display: flex; align-items: center; justify-content: center;
-  height: 100%; font-size: 0.85rem; color: var(--c-475569);
+  height: 100%; font-size: var(--fs-base); color: var(--c-475569);
 }
 .state-err { color: var(--c-f87171); }
 
@@ -478,9 +478,9 @@ const TRANSITIONS: { value: SetlistTransition | ''; key: string }[] = [
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.625rem 1rem; border-bottom: 1px solid var(--c-1a1a1a); background: var(--c-0d0d0d); flex-shrink: 0;
 }
-.topbar-name { font-size: 0.875rem; font-weight: 700; color: var(--c-e2e8f0); }
+.topbar-name { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }
 .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
-.total-dur { font-size: 0.72rem; color: var(--c-475569); }
+.total-dur { font-size: var(--fs-xs); color: var(--c-475569); }
 
 .meta-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem;
@@ -488,12 +488,12 @@ const TRANSITIONS: { value: SetlistTransition | ''; key: string }[] = [
 }
 .col-span-2 { grid-column: span 2; }
 .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
-.field-label { font-size: 0.68rem; font-weight: 600; color: var(--c-7c8fa6); }
+.field-label { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-7c8fa6); }
 .opt { color: var(--c-334155); font-weight: 400; }
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0);
-  font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
+  font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
   box-sizing: border-box;
 }
 .field-input:focus { border-color: var(--c-888888); }
@@ -506,46 +506,46 @@ select.field-input {
 
 .concert-info { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
 .concert-info-chip {
-  font-size: 0.7rem; color: var(--c-d0d0d0); background: var(--c-2a2a2a);
+  font-size: var(--fs-2xs); color: var(--c-d0d0d0); background: var(--c-2a2a2a);
   border: 1px solid var(--c-444444); border-radius: 0.3rem; padding: 0.15rem 0.5rem;
 }
 .preset-note {
-  font-size: 0.68rem; color: var(--c-334155); margin-top: 0.2rem; font-style: italic;
+  font-size: var(--fs-2xs); color: var(--c-334155); margin-top: 0.2rem; font-style: italic;
 }
 
 .song-list-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.5rem 1rem 0.25rem; flex-shrink: 0;
 }
-.section-title { font-size: 0.68rem; font-weight: 700; color: var(--c-475569); text-transform: uppercase; letter-spacing: .06em; }
-.song-count { font-size: 0.68rem; color: var(--c-334155); }
+.section-title { font-size: var(--fs-2xs); font-weight: 700; color: var(--c-475569); text-transform: uppercase; letter-spacing: .06em; }
+.song-count { font-size: var(--fs-2xs); color: var(--c-334155); }
 
 .song-list { display: flex; flex-direction: column; gap: 0.3rem; padding: 0 1rem; flex-shrink: 0; }
-.empty-songs { font-size: 0.78rem; color: var(--c-334155); text-align: center; padding: 1.5rem 0; }
+.empty-songs { font-size: var(--fs-xs); color: var(--c-334155); text-align: center; padding: 1.5rem 0; }
 
 .song-card { background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; overflow: hidden; }
 .song-card--encore { border-color: var(--c-444444); }
 
 .song-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; }
-.song-pos { font-size: 0.65rem; color: var(--c-334155); width: 1.5rem; text-align: right; flex-shrink: 0; }
+.song-pos { font-size: var(--fs-2xs); color: var(--c-334155); width: 1.5rem; text-align: right; flex-shrink: 0; }
 .song-info { flex: 1; min-width: 0; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
-.song-title { font-size: 0.82rem; font-weight: 600; color: var(--c-e2e8f0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-title { font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .song-badges { display: flex; gap: 0.25rem; flex-shrink: 0; }
 .badge-encore {
-  font-size: 0.58rem; font-weight: 700; color: var(--c-c0c0c0);
+  font-size: var(--fs-2xs); font-weight: 700; color: var(--c-c0c0c0);
   background: var(--c-2a2a2a); border-radius: 0.2rem; padding: 0.1rem 0.3rem;
 }
 .badge-transition {
-  font-size: 0.58rem; color: var(--c-475569); background: var(--c-141414);
+  font-size: var(--fs-2xs); color: var(--c-475569); background: var(--c-141414);
   border: 1px solid var(--c-2a2a2a); border-radius: 0.2rem; padding: 0.1rem 0.3rem;
 }
-.badge-cue { font-size: 0.7rem; }
-.song-dur { font-size: 0.68rem; color: var(--c-334155); width: 2.5rem; text-align: right; flex-shrink: 0; }
+.badge-cue { font-size: var(--fs-2xs); }
+.song-dur { font-size: var(--fs-2xs); color: var(--c-334155); width: 2.5rem; text-align: right; flex-shrink: 0; }
 .song-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
 
 .btn-icon {
   width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; border: 1px solid var(--c-2a2a2a);
-  background: transparent; color: var(--c-475569); cursor: pointer; font-size: 0.7rem;
+  background: transparent; color: var(--c-475569); cursor: pointer; font-size: var(--fs-2xs);
   display: flex; align-items: center; justify-content: center; transition: all 100ms;
 }
 .btn-icon:hover:not(:disabled) { background: var(--c-141414); color: var(--c-94a3b8); border-color: var(--c-334155); }
@@ -572,7 +572,7 @@ select.field-input {
 
 .add-section { padding: 0.75rem 1rem; flex-shrink: 0; }
 .btn-add-song {
-  font-size: 0.75rem; font-weight: 600; color: var(--c-c0c0c0);
+  font-size: var(--fs-xs); font-weight: 600; color: var(--c-c0c0c0);
   background: transparent; border: 1px dashed var(--c-444444); border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
@@ -586,15 +586,15 @@ select.field-input {
 .add-song-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.35rem 0.5rem; border-radius: 0.3rem; background: var(--c-0a0a0a);
-  border: 1px solid transparent; cursor: pointer; text-align: left; font-size: 0.8rem; color: var(--c-e2e8f0);
+  border: 1px solid transparent; cursor: pointer; text-align: left; font-size: var(--fs-sm); color: var(--c-e2e8f0);
   transition: border-color 100ms;
 }
 .add-song-row:hover { border-color: var(--c-888888); }
-.add-song-dur { font-size: 0.68rem; color: var(--c-334155); }
-.add-song-empty { font-size: 0.75rem; color: var(--c-334155); text-align: center; padding: 0.75rem 0; }
+.add-song-dur { font-size: var(--fs-2xs); color: var(--c-334155); }
+.add-song-empty { font-size: var(--fs-xs); color: var(--c-334155); text-align: center; padding: 0.75rem 0; }
 .add-new-row { display: flex; gap: 0.5rem; }
 .btn-create-song {
-  padding: 0.4rem 0.75rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600;
+  padding: 0.4rem 0.75rem; border-radius: 0.4rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-c0c0c0);
   white-space: nowrap; transition: background 100ms;
 }
@@ -604,7 +604,7 @@ select.field-input {
 .notes-section { border-top: 1px solid var(--c-1a1a1a); padding: 0.75rem 1rem 0; flex-shrink: 0; }
 .notes-tabs { display: flex; border-bottom: 1px solid var(--c-1a1a1a); margin-bottom: 0.5rem; }
 .notes-tab {
-  padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 500; color: var(--c-475569);
+  padding: 0.35rem 0.75rem; font-size: var(--fs-xs); font-weight: 500; color: var(--c-475569);
   background: transparent; border: none; border-bottom: 2px solid transparent;
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
@@ -613,7 +613,7 @@ select.field-input {
 .notes-textarea {
   width: 100%; padding: 0.5rem 0.625rem; border-radius: 0.4rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-141414); color: var(--c-e2e8f0);
-  font-size: 0.82rem; font-family: inherit; outline: none; resize: vertical;
+  font-size: var(--fs-sm); font-family: inherit; outline: none; resize: vertical;
   transition: border-color 150ms; box-sizing: border-box;
 }
 .notes-textarea:focus { border-color: var(--c-888888); }
@@ -623,7 +623,7 @@ select.field-input {
   display: flex; justify-content: flex-end; background: var(--c-0d0d0d); flex-shrink: 0;
 }
 .btn-save {
-  padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   transition: background 150ms; min-width: 6rem;
 }
@@ -639,16 +639,16 @@ select.field-input {
   background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
   padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
-.confirm-title { font-size: 0.9rem; font-weight: 700; color: var(--c-e2e8f0); }
-.confirm-text  { font-size: 0.8rem; color: var(--c-94a3b8); line-height: 1.5; }
+.confirm-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }
+.confirm-text  { font-size: var(--fs-sm); color: var(--c-94a3b8); line-height: 1.5; }
 .confirm-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .btn-ghost {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 500;
+  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
 }
 .btn-ghost:hover { background: var(--c-111111); }
 .btn-danger {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-7f1d1d); border: 1px solid var(--c-991b1b); color: var(--c-fca5a5);
 }
 .btn-danger:hover { background: var(--c-450a0a); }

@@ -125,8 +125,8 @@ defineExpose({ clear })
 }
 .drop-zone.active, .drop-zone:hover { border-color: var(--c-888888); background: var(--c-1a1a1a); }
 .drop-icon  { font-size: 1.5rem; line-height: 1; }
-.drop-label { font-size: 0.85rem; font-weight: 600; color: var(--c-d0d0d0); }
-.drop-hint  { font-size: 0.72rem; color: var(--c-475569); }
+.drop-label { font-size: var(--fs-base); font-weight: 600; color: var(--c-d0d0d0); }
+.drop-hint  { font-size: var(--fs-xs); color: var(--c-475569); }
 
 .file-grid {
   display: grid;
@@ -149,7 +149,7 @@ defineExpose({ clear })
 .card-order {
   position: absolute; top: 5px; left: 5px;
   background: color-mix(in srgb, var(--c-888888) 80%, transparent); color: var(--c-ffffff);
-  font-size: 0.65rem; font-weight: 700;
+  font-size: var(--fs-2xs); font-weight: 700;
   width: 20px; height: 20px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   z-index: 1;
@@ -161,18 +161,18 @@ defineExpose({ clear })
 .card-title-input {
   width: 100%; background: transparent; border: none;
   border-bottom: 1px solid var(--c-2a2a2a); color: var(--c-e2e8f0);
-  font-size: 0.75rem; padding: 2px 0; outline: none;
+  font-size: var(--fs-xs); padding: 2px 0; outline: none;
 }
 .card-title-input:focus { border-bottom-color: var(--c-888888); }
-.card-filename { font-size: 0.62rem; color: var(--c-475569); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-filename { font-size: var(--fs-2xs); color: var(--c-475569); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-actions { display: flex; gap: 3px; padding: 0.35rem 0.5rem; border-top: 1px solid var(--c-252525); }
 .card-btn {
-  flex: 1; font-size: 0.68rem; padding: 2px 0;
+  flex: 1; font-size: var(--fs-2xs); padding: 2px 0;
   background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); border-radius: 4px;
   color: var(--c-94a3b8); cursor: pointer; transition: background 0.1s, color 0.1s;
 }
 .card-btn:hover:not(:disabled) { background: var(--c-1e1a50); color: var(--c-e2e8f0); }
 .card-btn:disabled { opacity: 0.3; cursor: default; }
 .card-btn.remove:hover:not(:disabled) { background: var(--c-3d1515); color: var(--c-f87171); border-color: var(--c-7f1d1d); }
-.no-files { text-align: center; color: var(--c-475569); font-size: 0.82rem; padding: 0.75rem 0; }
+.no-files { text-align: center; color: var(--c-475569); font-size: var(--fs-sm); padding: 0.75rem 0; }
 </style>

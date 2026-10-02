@@ -14,6 +14,9 @@ importers:
       '@bandms/site-copy':
         specifier: workspace:*
         version: link:../packages/site-copy
+      '@fontsource-variable/archivo':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fullcalendar/core':
         specifier: ^6.1.20
         version: 6.1.21
@@ -967,6 +970,9 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fontsource-variable/archivo@5.3.0':
+    resolution: {integrity: sha512-HogK8FJelrD1o7TlZlkIVtHgc20bO5PZRWE7mUeUTdMN055alznQV6/00J00IBeu8FQAH4s3zW9UJNvKExXf+g==}
 
   '@fullcalendar/core@6.1.21':
     resolution: {integrity: sha512-t3u/+sqh3Iq7TWtUnVLcGDUE6OWZh0UD3c04bI/l7lSLAgAKr3kngBmhHiQD1QXpwC8ZN5iNqG7a7gOVixhSKQ==}
@@ -4296,6 +4302,8 @@ snapshots:
       '@floating-ui/utils': 0.2.12
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fontsource-variable/archivo@5.3.0': {}
 
   '@fullcalendar/core@6.1.21':
     dependencies:

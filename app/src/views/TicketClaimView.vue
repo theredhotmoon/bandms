@@ -135,7 +135,7 @@ onMounted(async () => {
 }
 
 .tcv-sub {
-  font-size: 0.9375rem;
+  font-size: var(--fs-md);
   color: #555;
   margin: 0;
 }
@@ -145,13 +145,13 @@ onMounted(async () => {
   background: #f0f0f0;
   padding: 0.15em 0.35em;
   border-radius: 0.25rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   word-break: break-all;
 }
 
 .tcv-msg {
   color: #555;
-  font-size: 0.9375rem;
+  font-size: var(--fs-md);
   margin: 0;
 }
 </style>

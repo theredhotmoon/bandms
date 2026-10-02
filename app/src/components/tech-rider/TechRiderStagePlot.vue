@@ -377,7 +377,7 @@ function cardBorderClass(item: StagePlacement): string {
 
     <!-- ── Member panel (left) ─────────────────────────────────────────── -->
     <div class="w-52 flex-shrink-0 border-r border-zinc-700/60 bg-zinc-900/40 flex flex-col">
-      <p class="px-3 pt-3 pb-2 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+      <p class="px-3 pt-3 pb-2 text-[0.6875rem] font-semibold text-zinc-400 uppercase tracking-wider">
         {{ $t('rider.stagePlot.dragToPlace') }}
       </p>
 
@@ -399,7 +399,7 @@ function cardBorderClass(item: StagePlacement): string {
         >
           <!-- Avatar -->
           <div
-            class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold overflow-hidden"
+            class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[0.6875rem] font-bold overflow-hidden"
             :class="avatarClass(member.id)"
           >
             <img v-if="member.photo" :src="member.photo" :alt="memberName(member)" class="w-full h-full object-cover" />
@@ -408,7 +408,7 @@ function cardBorderClass(item: StagePlacement): string {
 
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium text-white truncate">{{ memberName(member) }}</div>
-            <div class="text-[10px] text-zinc-400 truncate">{{ member.role ?? $t('rider.stagePlot.musician') }}</div>
+            <div class="text-[0.6875rem] text-zinc-400 truncate">{{ member.role ?? $t('rider.stagePlot.musician') }}</div>
           </div>
 
           <!-- Main instrument icon -->
@@ -429,7 +429,7 @@ function cardBorderClass(item: StagePlacement): string {
               :title="checkProfile(member.id).ok ? $t('rider.stagePlot.profileComplete') : checkProfile(member.id).warnings.join(', ')"
             />
             <!-- On stage count -->
-            <span v-if="memberPositionCount(member.id) > 0" class="text-[10px] text-zinc-400">
+            <span v-if="memberPositionCount(member.id) > 0" class="text-[0.6875rem] text-zinc-400">
               ×{{ memberPositionCount(member.id) }}
             </span>
           </div>
@@ -444,12 +444,12 @@ function cardBorderClass(item: StagePlacement): string {
           :class="{ 'opacity-50': tempPositionCount(temp.id) > 0 }"
           @dragstart="onPanelTempDragStart($event, temp.id)"
         >
-          <div class="w-8 h-8 rounded-full bg-amber-800/60 text-amber-300 flex-shrink-0 flex items-center justify-center text-[11px] font-bold">
+          <div class="w-8 h-8 rounded-full bg-amber-800/60 text-amber-300 flex-shrink-0 flex items-center justify-center text-[0.6875rem] font-bold">
             {{ tempInitials(temp) }}
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium text-amber-200 truncate">{{ temp.name }}</div>
-            <div class="text-[10px] text-amber-400/70">{{ $t('rider.stagePlot.guest') }}</div>
+            <div class="text-[0.6875rem] text-amber-400/70">{{ $t('rider.stagePlot.guest') }}</div>
           </div>
         </div>
 
@@ -461,10 +461,10 @@ function cardBorderClass(item: StagePlacement): string {
 
       <!-- Legend -->
       <div class="px-3 py-2 border-t border-zinc-700/50 space-y-1">
-        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">
+        <div class="flex items-center gap-1.5 text-[0.6875rem] text-zinc-500">
           <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>{{ $t('rider.stagePlot.profileComplete') }}
         </div>
-        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">
+        <div class="flex items-center gap-1.5 text-[0.6875rem] text-zinc-500">
           <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>{{ $t('rider.stagePlot.profileIncomplete') }}
         </div>
       </div>
@@ -479,7 +479,7 @@ function cardBorderClass(item: StagePlacement): string {
           v-for="v in STAGE_VIEWS"
           :key="v.key"
           type="button"
-          class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors"
+          class="flex items-center gap-1 px-2 py-0.5 rounded text-[0.6875rem] font-medium transition-colors"
           :class="stageView === v.key
             ? 'bg-zinc-200 text-zinc-900'
             : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'"
@@ -500,7 +500,7 @@ function cardBorderClass(item: StagePlacement): string {
           <span class="text-zinc-600 text-xs font-medium tracking-[0.3em] uppercase">{{ $t('rider.stagePlot.audience') }}</span>
         </div>
         <div class="absolute inset-x-0 top-0 flex items-center justify-center pt-2 pointer-events-none">
-          <span class="text-zinc-700 text-[10px] uppercase tracking-widest">{{ $t('rider.stagePlot.stageBack') }}</span>
+          <span class="text-zinc-700 text-[0.6875rem] uppercase tracking-widest">{{ $t('rider.stagePlot.stageBack') }}</span>
         </div>
 
         <!-- Drop hint when empty -->
@@ -547,7 +547,7 @@ function cardBorderClass(item: StagePlacement): string {
             </div>
 
             <!-- Name -->
-            <div class="text-[10px] font-medium text-white text-center leading-tight max-w-full truncate w-full">
+            <div class="text-[0.6875rem] font-medium text-white text-center leading-tight max-w-full truncate w-full">
               {{ itemDisplayName(item) }}
             </div>
 
@@ -564,7 +564,7 @@ function cardBorderClass(item: StagePlacement): string {
                 :title="inst.inferred ? $t('rider.stagePlot.fromProfile', { name: inst.label }) : inst.label"
                 :class="inst.inferred ? 'opacity-40' : ''"
               />
-              <span v-if="(item.instruments?.length ?? 0) > 3" class="text-[10px] text-zinc-400 self-end">
+              <span v-if="(item.instruments?.length ?? 0) > 3" class="text-[0.6875rem] text-zinc-400 self-end">
                 +{{ (item.instruments?.length ?? 0) - 3 }}
               </span>
             </div>
@@ -574,14 +574,14 @@ function cardBorderClass(item: StagePlacement): string {
             <!-- members: completeness dots -->
             <template v-if="stageView === 'members'">
               <div class="flex gap-1 justify-center items-center">
-                <span class="text-[11px] transition-opacity" :class="rigFor(item).inputs.length > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.signalChain')">🎙️</span>
-                <span class="text-[11px] transition-opacity" :class="rigFor(item).monitors.length > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.views.monitor')">🔊</span>
-                <span class="text-[11px] transition-opacity" :class="rigFor(item).power.outlets_needed > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.views.power')">⚡</span>
+                <span class="text-[0.6875rem] transition-opacity" :class="rigFor(item).inputs.length > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.signalChain')">🎙️</span>
+                <span class="text-[0.6875rem] transition-opacity" :class="rigFor(item).monitors.length > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.views.monitor')">🔊</span>
+                <span class="text-[0.6875rem] transition-opacity" :class="rigFor(item).power.outlets_needed > 0 ? 'opacity-100' : 'opacity-20'" :title="$t('rider.stagePlot.views.power')">⚡</span>
               </div>
               <div v-if="rigFor(item).wireless.length || backlineNeeded(item) || rigFor(item).foh_notes?.trim()" class="flex gap-1 justify-center">
-                <span v-if="rigFor(item).wireless.length" class="text-[10px]" :title="$t('rider.stagePlot.views.wireless')">📡</span>
-                <span v-if="backlineNeeded(item)" class="text-[10px]" :title="$t('rider.stagePlot.views.backline')">🥁</span>
-                <span v-if="rigFor(item).foh_notes?.trim()" class="text-[10px]" :title="$t('rider.stagePlot.views.foh')">🎛️</span>
+                <span v-if="rigFor(item).wireless.length" class="text-[0.6875rem]" :title="$t('rider.stagePlot.views.wireless')">📡</span>
+                <span v-if="backlineNeeded(item)" class="text-[0.6875rem]" :title="$t('rider.stagePlot.views.backline')">🥁</span>
+                <span v-if="rigFor(item).foh_notes?.trim()" class="text-[0.6875rem]" :title="$t('rider.stagePlot.views.foh')">🎛️</span>
               </div>
             </template>
 
@@ -591,40 +591,40 @@ function cardBorderClass(item: StagePlacement): string {
                 <div
                   v-for="inst in displayInstruments(item).slice(0, 3)"
                   :key="inst.id"
-                  class="text-[10px] truncate"
+                  class="text-[0.6875rem] truncate"
                   :class="instrumentClass(inst.inferred)"
                 >{{ inst.label }}</div>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- signal chain / inputs -->
             <template v-else-if="stageView === 'signal_chain'">
               <div v-if="rigFor(item).inputs.length" class="text-center">
                 <div class="text-sm font-bold text-white">{{ rigFor(item).inputs.length }}</div>
-                <div class="text-[10px] text-zinc-400">{{ $t('rider.stagePlot.chLabel') }} · {{ chainLabel(rigFor(item).signal_chain_type) }}</div>
+                <div class="text-[0.6875rem] text-zinc-400">{{ $t('rider.stagePlot.chLabel') }} · {{ chainLabel(rigFor(item).signal_chain_type) }}</div>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- monitor -->
             <template v-else-if="stageView === 'monitor'">
               <div v-if="rigFor(item).monitors.length" class="flex flex-col items-center gap-0.5">
-                <div v-for="mon in rigFor(item).monitors.slice(0, 3)" :key="mon.id" class="text-[10px] text-zinc-300 truncate w-full text-center">
+                <div v-for="mon in rigFor(item).monitors.slice(0, 3)" :key="mon.id" class="text-[0.6875rem] text-zinc-300 truncate w-full text-center">
                   {{ mon.type === 'wedge' ? '🔊' : '🎧' }} {{ mon.label || (mon.type === 'wedge' ? $t('rider.stagePlot.wedge') : $t('rider.stagePlot.iem')) }}
                 </div>
-                <span v-if="rigFor(item).monitors.length > 3" class="text-[10px] text-zinc-500">+{{ rigFor(item).monitors.length - 3 }}</span>
+                <span v-if="rigFor(item).monitors.length > 3" class="text-[0.6875rem] text-zinc-500">+{{ rigFor(item).monitors.length - 3 }}</span>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- wireless -->
             <template v-else-if="stageView === 'wireless'">
               <div v-if="rigFor(item).wireless.length" class="text-center">
                 <div class="text-sm font-bold text-white">{{ rigFor(item).wireless.length }}</div>
-                <div class="text-[10px] text-zinc-400">{{ $t('rider.stagePlot.units', rigFor(item).wireless.length) }}</div>
+                <div class="text-[0.6875rem] text-zinc-400">{{ $t('rider.stagePlot.units', rigFor(item).wireless.length) }}</div>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- backline -->
@@ -633,27 +633,27 @@ function cardBorderClass(item: StagePlacement): string {
                 <div
                   v-for="bl in rigFor(item).backline.filter(b => b.needed).slice(0, 2)"
                   :key="bl.id"
-                  class="text-[10px] text-zinc-300 truncate w-full"
+                  class="text-[0.6875rem] text-zinc-300 truncate w-full"
                 >{{ bl.name || bl.category }}</div>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- power -->
             <template v-else-if="stageView === 'power'">
               <div v-if="rigFor(item).power.outlets_needed > 0" class="text-center">
                 <div class="text-sm font-bold text-white">{{ rigFor(item).power.outlets_needed }}</div>
-                <div class="text-[10px] text-zinc-400">{{ $t('rider.stagePlot.outlets', rigFor(item).power.outlets_needed) }}</div>
+                <div class="text-[0.6875rem] text-zinc-400">{{ $t('rider.stagePlot.outlets', rigFor(item).power.outlets_needed) }}</div>
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- FOH notes -->
             <template v-else-if="stageView === 'foh'">
-              <div v-if="rigFor(item).foh_notes?.trim()" class="text-[10px] text-zinc-300 text-center line-clamp-3 leading-snug">
+              <div v-if="rigFor(item).foh_notes?.trim()" class="text-[0.6875rem] text-zinc-300 text-center line-clamp-3 leading-snug">
                 {{ rigFor(item).foh_notes.trim() }}
               </div>
-              <div v-else class="text-[10px] text-zinc-600 text-center">—</div>
+              <div v-else class="text-[0.6875rem] text-zinc-600 text-center">—</div>
             </template>
 
             <!-- Action buttons -->
@@ -781,8 +781,8 @@ function cardBorderClass(item: StagePlacement): string {
             {{ $t('rider.stagePlot.qrGenerating') }}
           </div>
           <div class="w-full">
-            <p class="text-[10px] text-zinc-400 text-center mb-1">{{ $t('rider.stagePlot.qrHint') }}</p>
-            <div class="bg-zinc-800 rounded px-2 py-1.5 text-[10px] text-zinc-300 break-all text-center font-mono select-all">
+            <p class="text-[0.6875rem] text-zinc-400 text-center mb-1">{{ $t('rider.stagePlot.qrHint') }}</p>
+            <div class="bg-zinc-800 rounded px-2 py-1.5 text-[0.6875rem] text-zinc-300 break-all text-center font-mono select-all">
               {{ riderPublicUrl }}
             </div>
           </div>

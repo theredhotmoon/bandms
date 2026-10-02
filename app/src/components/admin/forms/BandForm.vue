@@ -160,9 +160,9 @@ function submit() {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.1rem; height: 1.1rem; margin-left: 0.375rem; padding: 0 0.3rem;
   border-radius: 9999px; background: var(--c-2a2a2a); color: var(--c-c0c0c0);
-  font-size: 0.65rem; font-weight: 700;
+  font-size: var(--fs-2xs); font-weight: 700;
 }
-.contact-empty { font-size: 0.75rem; color: var(--c-64748b); line-height: 1.5; }
+.contact-empty { font-size: var(--fs-xs); color: var(--c-64748b); line-height: 1.5; }
 .contact-link { color: var(--c-9ca3af); text-decoration: underline; }
 .contact-link:hover { color: var(--c-e2e8f0); }
 
@@ -171,11 +171,11 @@ function submit() {
   display: inline-flex; align-items: center; gap: 0.3rem;
   padding: 0.15rem 0.3rem 0.15rem 0.5rem; border-radius: 9999px;
   background: var(--c-1c2b22); border: 1px solid var(--c-166534); color: var(--c-34d399);
-  font-size: 0.7rem; font-weight: 600;
+  font-size: var(--fs-2xs); font-weight: 600;
 }
 .chip-x {
   border: none; background: none; color: var(--c-34d399); cursor: pointer;
-  font-size: 0.85rem; line-height: 1; padding: 0 0.15rem;
+  font-size: var(--fs-base); line-height: 1; padding: 0 0.15rem;
 }
 .chip-x:hover { color: var(--c-f87171); }
 
@@ -184,16 +184,16 @@ function submit() {
   max-height: 11rem; overflow-y: auto; padding: 0.25rem 0;
   border: 1px solid var(--c-222222); border-radius: 0.375rem; background: var(--c-0d0d0d);
 }
-.contact-none { font-size: 0.75rem; color: var(--c-475569); padding: 0.5rem 0.875rem; }
+.contact-none { font-size: var(--fs-xs); color: var(--c-475569); padding: 0.5rem 0.875rem; }
 .contact-item {
   display: flex; align-items: center; gap: 0.625rem;
   padding: 0.35rem 0.875rem; cursor: pointer; transition: background 80ms;
 }
 .contact-item:hover { background: var(--c-1a1a1a); }
 .contact-check { accent-color: var(--c-888888); flex-shrink: 0; }
-.contact-name { font-size: 0.78rem; color: var(--c-e2e8f0); flex-shrink: 0; }
+.contact-name { font-size: var(--fs-xs); color: var(--c-e2e8f0); flex-shrink: 0; }
 .contact-meta {
-  font-size: 0.7rem; color: var(--c-475569); margin-left: auto; padding-left: 0.75rem;
+  font-size: var(--fs-2xs); color: var(--c-475569); margin-left: auto; padding-left: 0.75rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 </style>

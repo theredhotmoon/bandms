@@ -100,11 +100,11 @@ function onDrop(to: number) {
 .block-row--over { border-color: var(--c-60a5fa); }
 .block-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .block-grip { cursor: grab; color: var(--c-71717a); }
-.block-type { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-a1a1aa); }
-.block-pos { margin-left: auto; font-size: 0.7rem; color: var(--c-71717a); }
-.empty-hint { font-size: 0.8rem; color: var(--c-71717a); padding: 0.75rem 0; }
+.block-type { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-a1a1aa); }
+.block-pos { margin-left: auto; font-size: var(--fs-2xs); color: var(--c-71717a); }
+.empty-hint { font-size: var(--fs-sm); color: var(--c-71717a); padding: 0.75rem 0; }
 .block-dangling {
-  font-size: 0.75rem; color: var(--c-f87171); background: var(--c-3f1212);
+  font-size: var(--fs-xs); color: var(--c-f87171); background: var(--c-3f1212);
   border-radius: 0.375rem; padding: 0.4rem 0.6rem; margin-bottom: 0.5rem;
 }
 </style>

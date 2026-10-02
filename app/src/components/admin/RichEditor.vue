@@ -113,7 +113,7 @@ function cmd(action: () => void) {
   display: flex; align-items: center; justify-content: center;
   min-width: 1.75rem; height: 1.75rem; padding: 0 0.25rem;
   border-radius: 0.3rem; border: none; background: transparent;
-  color: var(--c-64748b); font-size: 0.8rem; cursor: pointer;
+  color: var(--c-64748b); font-size: var(--fs-sm); cursor: pointer;
   transition: background 100ms, color 100ms;
 }
 .tb-btn:hover { background: var(--c-1f1f1f); color: var(--c-d0d0d0); }
@@ -125,7 +125,7 @@ function cmd(action: () => void) {
   min-height: 8rem;
   padding: 0.75rem;
   color: var(--c-e2e8f0);
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   line-height: 1.65;
   cursor: text;
 }
@@ -133,8 +133,8 @@ function cmd(action: () => void) {
   outline: none;
   min-height: 7rem;
 }
-.editor-body :deep(h2) { font-size: 1.1rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.75rem 0 0.25rem; }
-.editor-body :deep(h3) { font-size: 0.95rem; font-weight: 600; color: var(--c-f1f5f9); margin: 0.6rem 0 0.2rem; }
+.editor-body :deep(h2) { font-size: var(--fs-lg); font-weight: 600; color: var(--c-f1f5f9); margin: 0.75rem 0 0.25rem; }
+.editor-body :deep(h3) { font-size: var(--fs-md); font-weight: 600; color: var(--c-f1f5f9); margin: 0.6rem 0 0.2rem; }
 .editor-body :deep(p) { margin: 0 0 0.5rem; }
 .editor-body :deep(p:last-child) { margin-bottom: 0; }
 .editor-body :deep(ul), .editor-body :deep(ol) { padding-left: 1.4rem; margin: 0.25rem 0 0.5rem; }

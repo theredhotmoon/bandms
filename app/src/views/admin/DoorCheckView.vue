@@ -245,14 +245,14 @@ onUnmounted(() => {
   margin: 0;
 }
 .door-sub {
-  font-size: 14px;
+  font-size: var(--fs-base);
   color: var(--c-64748b);
   margin: -10px 0 0;
 }
 
 .offline-warning {
   background: var(--c-1c1107); color: var(--c-fbbf24); border: 1px solid var(--c-854d0e);
-  border-radius: 6px; padding: 8px 12px; font-size: 13px; margin: 0;
+  border-radius: 6px; padding: 8px 12px; font-size: var(--fs-sm); margin: 0;
 }
 
 .camera-section video {
@@ -301,7 +301,7 @@ onUnmounted(() => {
 }
 .btn-reset:hover { color: var(--c-e2e8f0); }
 
-.error-msg { color: var(--c-f87171); font-size: 13px; margin: 0; }
+.error-msg { color: var(--c-f87171); font-size: var(--fs-sm); margin: 0; }
 
 .result-card {
   border: 2px solid;
@@ -338,7 +338,7 @@ onUnmounted(() => {
 .info-row {
   display: flex;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 .info-label {
   color: var(--c-64748b);
@@ -347,7 +347,7 @@ onUnmounted(() => {
 }
 .info-val { color: var(--c-e2e8f0); }
 
-.reason-text { font-size: 13px; color: var(--c-94a3b8); }
+.reason-text { font-size: var(--fs-sm); color: var(--c-94a3b8); }
 
 .btn-scan {
   padding: 12px 20px;
@@ -364,13 +364,13 @@ onUnmounted(() => {
 
 .scan-log { border: 1px solid var(--c-1f1f1f); border-radius: 8px; overflow: hidden; }
 .log-header {
-  padding: 8px 12px; font-size: 10.5px; font-weight: 700;
+  padding: 8px 12px; font-size: var(--fs-2xs); font-weight: 700;
   text-transform: uppercase; letter-spacing: .07em;
   color: var(--c-475569); background: var(--c-111111);
 }
 .log-entry {
   display: flex; gap: 12px; padding: 6px 12px;
-  font-size: 12.5px; border-top: 1px solid var(--c-1f1f1f);
+  font-size: var(--fs-xs); border-top: 1px solid var(--c-1f1f1f);
 }
 .log-ok   { background: var(--c-0a1a0a); }
 .log-fail { background: var(--c-1a0a0a); }

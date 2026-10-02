@@ -302,30 +302,30 @@ function pickType(id: string, type: StagePlotItemType | null) {
 <style scoped>
 .placement-modal { display: flex; flex-direction: column; gap: 1rem; max-height: 76vh; }
 
-.field-label { font-size: 0.7rem; font-weight: 600; color: var(--c-7c8fa6); }
+.field-label { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-7c8fa6); }
 .field-input {
   padding: 0.4rem 0.6rem; border-radius: 0.35rem; border: 1px solid var(--c-2a2a2a);
-  background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: 0.8rem; outline: none;
+  background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: var(--fs-sm); outline: none;
   font-family: inherit; width: 100%;
 }
 .field-input:focus { border-color: var(--c-5154e5); }
 .field-input option { background: var(--c-141414); }
 
 .rig-picker { display: flex; flex-direction: column; gap: 0.3rem; }
-.picker-hint { font-size: 0.7rem; color: var(--c-475569); line-height: 1.5; }
+.picker-hint { font-size: var(--fs-2xs); color: var(--c-475569); line-height: 1.5; }
 
 .instruments-block { display: flex; flex-direction: column; gap: 0.5rem; }
 .block-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
-.block-title { font-size: 0.75rem; font-weight: 700; color: var(--c-94a3b8); }
+.block-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-94a3b8); }
 .block-actions { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 .quick-add {
-  padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.68rem; font-weight: 600;
+  padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8);
 }
 .quick-add:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
 .quick-add--blank { color: var(--c-64748b); }
 .block-empty {
-  padding: 0.6rem 0.75rem; font-size: 0.72rem; color: var(--c-475569); line-height: 1.5;
+  padding: 0.6rem 0.75rem; font-size: var(--fs-xs); color: var(--c-475569); line-height: 1.5;
   border: 1px dashed var(--c-2a2a2a); border-radius: 0.375rem;
 }
 
@@ -339,7 +339,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
 .icon-btn:hover { border-color: var(--c-555555); }
 .btn-remove {
   background: none; border: none; cursor: pointer; color: var(--c-3d1a1a);
-  font-size: 0.75rem; padding: 0.25rem 0.4rem; flex-shrink: 0;
+  font-size: var(--fs-xs); padding: 0.25rem 0.4rem; flex-shrink: 0;
 }
 .btn-remove:hover { color: var(--c-f87171); }
 .picker-pop {
@@ -352,23 +352,23 @@ function pickType(id: string, type: StagePlotItemType | null) {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid var(--c-1a1a1a); flex-shrink: 0;
 }
-.footer-status { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--c-64748b); }
+.footer-status { display: flex; align-items: center; gap: 0.35rem; font-size: var(--fs-xs); color: var(--c-64748b); }
 .status-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--c-fbbf24); }
 .footer-actions { display: flex; gap: 0.5rem; }
 
 .btn-ghost {
-  padding: 0.4rem 0.8rem; border-radius: 0.35rem; font-size: 0.75rem; font-weight: 600;
+  padding: 0.4rem 0.8rem; border-radius: 0.35rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
 }
 .btn-ghost:hover { color: var(--c-94a3b8); border-color: var(--c-444444); }
 .btn-promote {
-  padding: 0.4rem 0.8rem; border-radius: 0.35rem; font-size: 0.75rem; font-weight: 600;
+  padding: 0.4rem 0.8rem; border-radius: 0.35rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-1c1608); border: 1px solid var(--c-4d3c10); color: var(--c-fbbf24);
 }
 .btn-promote:hover:not(:disabled) { background: var(--c-2a2008); }
 .btn-promote:disabled { opacity: 0.5; cursor: default; }
 .btn-done {
-  padding: 0.4rem 1rem; border-radius: 0.35rem; font-size: 0.75rem; font-weight: 600;
+  padding: 0.4rem 1rem; border-radius: 0.35rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
 }
 </style>

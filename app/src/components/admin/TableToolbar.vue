@@ -55,29 +55,29 @@ defineProps<{
   left: 0.5rem;
   width: 0.8125rem;
   height: 0.8125rem;
-  color: var(--c-334155);
+  color: var(--c-64748b);
   pointer-events: none;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.3125rem 0.625rem 0.3125rem 1.75rem;
+  padding: 0.375rem 0.625rem 0.375rem 1.75rem;
   background: var(--c-141414);
-  border: 1px solid var(--c-252525);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   color: var(--c-e2e8f0);
   outline: none;
   transition: border-color 150ms;
 }
-.search-input::placeholder { color: var(--c-3a3a3a); }
-.search-input:focus { border-color: var(--c-888888); }
+.search-input::placeholder { color: var(--c-64748b); }
+.search-input:focus { border-color: var(--c-aaaaaa); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent); }
 .search-input::-webkit-search-cancel-button { display: none; }
 
 .result-count {
   margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--c-334155);
+  font-size: var(--fs-xs);
+  color: var(--c-888888);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

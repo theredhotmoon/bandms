@@ -86,16 +86,16 @@ defineEmits<{
   display: flex; align-items: center; justify-content: space-between;
   padding: 1rem 1rem 0.625rem; border-bottom: 1px solid var(--c-1a1a1a);
 }
-.sidebar-title { font-size: 0.8125rem; font-weight: 700; color: var(--c-94a3b8); }
+.sidebar-title { font-size: var(--fs-sm); font-weight: 700; color: var(--c-94a3b8); }
 .btn-new {
   width: 1.75rem; height: 1.75rem; border-radius: 0.375rem;
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-c0c0c0);
-  font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-md); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .btn-new:hover { background: var(--c-333333); }
 
 .sidebar-state {
-  padding: 1.5rem 1rem; font-size: 0.8rem; color: var(--c-334155); text-align: center; line-height: 1.6;
+  padding: 1.5rem 1rem; font-size: var(--fs-sm); color: var(--c-334155); text-align: center; line-height: 1.6;
 }
 .sidebar-state--err { color: var(--c-f87171); }
 
@@ -110,25 +110,25 @@ defineEmits<{
 .rider-item--open { background: var(--c-141414); border-color: var(--c-444444); }
 .rider-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .rider-name {
-  font-size: 0.8rem; font-weight: 600; color: var(--c-e2e8f0);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rider-badges { display: flex; align-items: center; gap: 0.4rem; }
 .badge-active {
-  font-size: 0.6rem; font-weight: 700; color: var(--c-4ade80); background: var(--c-052e16);
+  font-size: var(--fs-2xs); font-weight: 700; color: var(--c-4ade80); background: var(--c-052e16);
   padding: 0.1rem 0.4rem; border-radius: 999px; text-transform: uppercase;
 }
-.rider-date { font-size: 0.65rem; color: var(--c-334155); }
+.rider-date { font-size: var(--fs-2xs); color: var(--c-334155); }
 
 .rider-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
 .act-btn {
-  background: none; border: none; cursor: pointer; color: var(--c-334155); font-size: 0.7rem;
+  background: none; border: none; cursor: pointer; color: var(--c-334155); font-size: var(--fs-2xs);
   padding: 0.2rem 0.35rem; border-radius: 3px; transition: color 100ms, background 100ms;
 }
 .act-btn:hover { color: var(--c-c0c0c0); background: var(--c-2a2a2a); }
 .act-btn--del:hover { color: var(--c-f87171); background: var(--c-450a0a); }
 .badge-published {
-  font-size: 0.6rem; font-weight: 700; color: var(--c-94a3b8); background: var(--c-1a1a1a);
+  font-size: var(--fs-2xs); font-weight: 700; color: var(--c-94a3b8); background: var(--c-1a1a1a);
   padding: 0.1rem 0.35rem; border-radius: 999px;
 }
 </style>

@@ -617,7 +617,7 @@ async function saveSocialLinks() {
   display: flex; gap: 0.25rem; border-bottom: 1px solid var(--c-222222); padding-bottom: 0;
 }
 .section-tab {
-  padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--c-64748b);
+  padding: 0.35rem 1rem; font-size: var(--fs-sm); font-weight: 500; color: var(--c-64748b);
   background: transparent; border: none; border-bottom: 2px solid transparent;
   cursor: pointer; transition: color 120ms, border-color 120ms; margin-bottom: -1px;
 }
@@ -625,7 +625,7 @@ async function saveSocialLinks() {
 .section-tab.active { color: var(--c-d0d0d0); border-bottom-color: var(--c-888888); }
 
 .section-hint {
-  font-size: 0.75rem; color: var(--c-475569); line-height: 1.5;
+  font-size: var(--fs-xs); color: var(--c-475569); line-height: 1.5;
   padding: 0.5rem 0.75rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
   border-radius: 0.375rem;
 }
@@ -638,7 +638,7 @@ async function saveSocialLinks() {
   display: flex; gap: 0.25rem; padding-bottom: 0;
 }
 .bio-tab {
-  padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 500;
+  padding: 0.35rem 0.85rem; font-size: var(--fs-xs); font-weight: 500;
   color: var(--c-64748b); background: transparent; border: none;
   border-bottom: 2px solid transparent; cursor: pointer;
   transition: color 120ms, border-color 120ms; margin-bottom: -1px;
@@ -649,7 +649,7 @@ async function saveSocialLinks() {
 .bio-tab.has-error.active { border-bottom-color: var(--c-f87171); }
 .bio-lang-switcher { display: flex; gap: 0.25rem; padding-bottom: 0.25rem; }
 .bio-lang-btn {
-  padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: 0.7rem; font-weight: 700;
+  padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 700;
   letter-spacing: 0.05em; cursor: pointer; border: 1px solid var(--c-2a2a2a);
   background: transparent; color: var(--c-475569);
   transition: background 100ms, border-color 100ms, color 100ms;
@@ -659,13 +659,13 @@ async function saveSocialLinks() {
 .bio-lang-btn--pl.active { background: var(--c-3f1010); border-color: var(--c-5a1a1a); color: var(--c-f87171); }
 
 .bio-panel { padding-top: 0.25rem; }
-.bio-hint { font-size: 0.7rem; color: var(--c-475569); margin-bottom: 0.5rem; line-height: 1.4; }
+.bio-hint { font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.5rem; line-height: 1.4; }
 .bio-plain { resize: vertical; }
 
 .char-wrap { position: relative; }
 .char-count {
   position: absolute; bottom: 0.5rem; right: 0.6rem;
-  font-size: 0.7rem; color: var(--c-475569); pointer-events: none; font-variant-numeric: tabular-nums;
+  font-size: var(--fs-2xs); color: var(--c-475569); pointer-events: none; font-variant-numeric: tabular-nums;
 }
 .char-count.warn { color: var(--c-f59e0b); }
 .char-count.over { color: var(--c-f87171); }
@@ -678,21 +678,21 @@ async function saveSocialLinks() {
   padding: 0.875rem 1rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
 }
 .btn-snapshot {
-  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600;
+  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0);
   white-space: nowrap; transition: background 100ms;
 }
 .btn-snapshot:hover { background: var(--c-333333); }
 .epk-snapshot-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 .btn-history {
-  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500;
+  padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-333333); color: var(--c-9ca3af);
   white-space: nowrap; transition: background 100ms;
 }
 .btn-history:hover { background: var(--c-1f1f1f); color: var(--c-d0d0d0); }
 
 .btn-save {
-  padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
+  padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-size: var(--fs-base); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   transition: background 150ms, box-shadow 150ms; min-width: 8rem;
 }
@@ -714,9 +714,9 @@ async function saveSocialLinks() {
 }
 .career-level-card:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
 .career-level-card--active { background: var(--c-1f1f1f); border-color: var(--c-888888); box-shadow: 0 0 0 1px var(--c-888888); }
-.career-level-emoji { font-size: 1.35rem; line-height: 1; }
-.career-level-name  { font-size: 0.78rem; font-weight: 700; color: var(--c-e2e8f0); }
-.career-level-sub   { font-size: 0.65rem; color: var(--c-475569); text-align: center; }
+.career-level-emoji { font-size: var(--fs-xl); line-height: 1; }
+.career-level-name  { font-size: var(--fs-xs); font-weight: 700; color: var(--c-e2e8f0); }
+.career-level-sub   { font-size: var(--fs-2xs); color: var(--c-475569); text-align: center; }
 .career-level-card--active .career-level-name { color: var(--c-d0d0d0); }
 .career-level-card--active .career-level-sub  { color: var(--c-888888); }
 
@@ -726,13 +726,13 @@ async function saveSocialLinks() {
   border-radius: 0.5rem;
 }
 .fb-sync-left { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
-.fb-sync-label { font-size: 0.75rem; font-weight: 600; color: var(--c-7c8fa6); }
-.fb-sync-count { font-size: 1rem; font-weight: 700; color: var(--c-38bdf8); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.fb-sync-none  { font-size: 0.75rem; color: var(--c-334155); }
-.fb-sync-ts    { font-size: 0.65rem; color: var(--c-334155); }
+.fb-sync-label { font-size: var(--fs-xs); font-weight: 600; color: var(--c-7c8fa6); }
+.fb-sync-count { font-size: var(--fs-md); font-weight: 700; color: var(--c-38bdf8); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fb-sync-none  { font-size: var(--fs-xs); color: var(--c-334155); }
+.fb-sync-ts    { font-size: var(--fs-2xs); color: var(--c-334155); }
 .btn-fb-sync {
   display: inline-flex; align-items: center; gap: 0.375rem;
-  padding: 0.375rem 0.75rem; border-radius: 0.4rem; font-size: 0.78rem; font-weight: 500;
+  padding: 0.375rem 0.75rem; border-radius: 0.4rem; font-size: var(--fs-xs); font-weight: 500;
   background: var(--c-111111); color: var(--c-38bdf8); border: 1px solid var(--c-222222); cursor: pointer;
   transition: background 120ms; white-space: nowrap;
 }

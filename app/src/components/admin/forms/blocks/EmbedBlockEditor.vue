@@ -46,7 +46,7 @@ function set(key: string, value: unknown) {
 <style scoped src="../../form-styles.css" />
 <style scoped>
 .provider-badge {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em;
   padding: 0.25rem 0.5rem; border-radius: 0.25rem; flex-shrink: 0;
   background: var(--c-1e3a5f); color: var(--c-60a5fa); text-transform: uppercase;
 }

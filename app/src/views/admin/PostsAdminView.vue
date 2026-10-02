@@ -192,6 +192,6 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped>
 .pill-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-2a2a2a); color:var(--c-d0d0d0); white-space:nowrap; }
+.pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-2a2a2a); color:var(--c-d0d0d0); white-space:nowrap; }
 .pill--tag { background:var(--c-0f2a1e); color:var(--c-34d399); }
 </style>

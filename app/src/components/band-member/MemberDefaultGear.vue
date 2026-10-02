@@ -161,13 +161,13 @@ async function save() {
 .gear-section { display: flex; flex-direction: column; gap: 1rem; }
 
 .section-hint {
-  font-size: 0.75rem; color: var(--c-475569); line-height: 1.55;
+  font-size: var(--fs-xs); color: var(--c-475569); line-height: 1.55;
   padding: 0.5rem 0.75rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
 }
 .section-hint strong { color: var(--c-d0d0d0); font-weight: 600; }
 
 .no-items {
-  font-size: 0.8rem; color: var(--c-334155); text-align: center;
+  font-size: var(--fs-sm); color: var(--c-334155); text-align: center;
   padding: 2rem 0; border: 1px dashed var(--c-2a2a2a); border-radius: 0.5rem;
 }
 
@@ -183,7 +183,7 @@ async function save() {
 .type-select {
   flex: 1; min-width: 0; padding: 0.35rem 0.6rem; border-radius: 0.375rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0);
-  font-size: 0.8rem; outline: none; cursor: pointer; font-family: inherit;
+  font-size: var(--fs-sm); outline: none; cursor: pointer; font-family: inherit;
   appearance: none; -webkit-appearance: none; padding-right: 1.75rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 0.5rem center;
@@ -193,7 +193,7 @@ async function save() {
 .type-select option { background: var(--c-141414); }
 
 .btn-remove {
-  font-size: 0.68rem; font-weight: 500; color: var(--c-f87171); flex-shrink: 0;
+  font-size: var(--fs-2xs); font-weight: 500; color: var(--c-f87171); flex-shrink: 0;
   background: transparent; border: 1px solid var(--c-7f1d1d); border-radius: 0.25rem;
   cursor: pointer; padding: 0.2rem 0.5rem; transition: background 100ms;
 }
@@ -203,13 +203,13 @@ async function save() {
 .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
 .field-group--wide { grid-column: span 2; }
 
-.field-label { font-size: 0.68rem; font-weight: 600; color: var(--c-7c8fa6); }
+.field-label { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-7c8fa6); }
 .field-opt   { color: var(--c-334155); font-weight: 400; }
 
 .field-input {
   display: block; width: 100%; padding: 0.4rem 0.6rem; border-radius: 0.4rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0);
-  font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 150ms;
+  font-size: var(--fs-sm); outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .field-input:focus { border-color: var(--c-5154e5); }
 .field-input::placeholder { color: var(--c-1e2a40); }
@@ -229,7 +229,7 @@ async function save() {
 }
 .toggle--on .toggle-thumb { transform: translateX(1.125rem); background: var(--c-c0c0c0); }
 
-.toggle-text { font-size: 0.75rem; }
+.toggle-text { font-size: var(--fs-xs); }
 .toggle-text--own      { color: var(--c-c0c0c0); font-weight: 600; }
 .toggle-text--backline { color: var(--c-f59e0b); font-weight: 600; }
 
@@ -239,14 +239,14 @@ async function save() {
 }
 
 .btn-add {
-  font-size: 0.75rem; font-weight: 600; color: var(--c-c0c0c0);
+  font-size: var(--fs-xs); font-weight: 600; color: var(--c-c0c0c0);
   background: transparent; border: 1px dashed var(--c-444444); border-radius: 0.375rem;
   cursor: pointer; padding: 0.375rem 0.875rem; transition: background 100ms, border-color 100ms;
 }
 .btn-add:hover { background: var(--c-1a1a1a); border-color: var(--c-888888); }
 
 .btn-save {
-  padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 1.25rem; border-radius: 0.375rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-888888);
   transition: background 100ms, border-color 100ms, color 100ms;
 }

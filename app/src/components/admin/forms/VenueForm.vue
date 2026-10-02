@@ -327,7 +327,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 .map-search-row .field-input { flex: 1; }
 
 .btn-search {
-  padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
+  padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 500;
   cursor: pointer; background: var(--c-2a2a2a); border: 1px solid var(--c-888888); color: var(--c-d0d0d0);
   transition: background 120ms; white-space: nowrap; flex-shrink: 0;
 }
@@ -339,7 +339,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
   margin-bottom: 0.375rem; overflow: hidden; display: flex; flex-direction: column;
 }
 .result-item {
-  padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--c-cbd5e1);
+  padding: 0.5rem 0.75rem; font-size: var(--fs-sm); color: var(--c-cbd5e1);
   background: transparent; border: none; text-align: left; cursor: pointer;
   transition: background 100ms; border-bottom: 1px solid var(--c-222222);
 }
@@ -350,5 +350,5 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
   height: 240px; border-radius: 0.5rem; overflow: hidden;
   border: 1px solid var(--c-2a2a2a); margin-bottom: 0.375rem;
 }
-.map-hint { font-size: 0.7rem; color: var(--c-334155); margin: 0; }
+.map-hint { font-size: var(--fs-2xs); color: var(--c-334155); margin: 0; }
 </style>

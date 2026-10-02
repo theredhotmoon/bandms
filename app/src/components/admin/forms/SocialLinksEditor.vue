@@ -152,7 +152,7 @@ function onDragEnd() {
 <style scoped src="../form-styles.css" />
 <style scoped>
 .social-links-editor__heading {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -204,7 +204,7 @@ function onDragEnd() {
 }
 
 .social-links-editor__name {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--c-94a3b8);
   width: 7rem;

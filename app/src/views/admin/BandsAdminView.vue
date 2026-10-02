@@ -134,9 +134,9 @@ async function confirmDelete() {
                 </td>
                 <td class="td">
                   <span v-if="band.gigs_count > 0" class="gig-count">{{ band.gigs_count }}</span>
-                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">0</span>
+                  <span v-else style="color:var(--c-334155); font-size:var(--fs-xs);">0</span>
                 </td>
-                <td class="td" style="color:var(--c-94a3b8); font-size:0.75rem;">{{ band.last_gig_at ?? '—' }}</td>
+                <td class="td" style="color:var(--c-94a3b8); font-size:var(--fs-xs);">{{ band.last_gig_at ?? '—' }}</td>
                 <td class="td text-right">
                   <button @click="sendMessage(band)" class="btn-message">{{ $t('more.bands.message') }}</button>
                   <button @click="openEdit(band)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
@@ -180,7 +180,7 @@ async function confirmDelete() {
 .gig-count {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.5rem; height: 1.5rem; padding: 0 0.375rem;
-  border-radius: 9999px; font-size: 0.7rem; font-weight: 700;
+  border-radius: 9999px; font-size: var(--fs-2xs); font-weight: 700;
   background: var(--c-2a2a2a); color: var(--c-c0c0c0);
 }
 .contact-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
@@ -189,11 +189,11 @@ async function confirmDelete() {
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
   background: var(--c-161616); border: 1px solid var(--c-262626);
 }
-.contact-pill-name { font-size: 0.72rem; color: var(--c-cbd5e1); }
-.contact-action { font-size: 0.65rem; font-weight: 600; color: var(--c-34d399); text-decoration: none; }
+.contact-pill-name { font-size: var(--fs-xs); color: var(--c-cbd5e1); }
+.contact-action { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-34d399); text-decoration: none; }
 .contact-action:hover { text-decoration: underline; }
 .btn-message {
-  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: var(--fs-xs); font-weight: 600;
   background: var(--c-0f2a1e); border: 1px solid var(--c-166534); color: var(--c-34d399); cursor: pointer;
   margin-right: 0.375rem; transition: background 120ms;
 }

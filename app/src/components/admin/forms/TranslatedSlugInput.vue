@@ -155,7 +155,7 @@ function regenerate(l: Lang): void {
 .slug-field {
   padding-right: 2.25rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
 }
 .field-input--error { border-color: var(--c-f87171) !important; }
 .slug-regen {

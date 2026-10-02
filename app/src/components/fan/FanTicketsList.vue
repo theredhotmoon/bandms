@@ -154,8 +154,8 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
 .ftl-item { border: 1px solid #e5e5e5; border-radius: 0.75rem; padding: 1.25rem; }
 .ftl-info { margin-bottom: 0.75rem; }
 .ftl-venue { font-weight: 700; margin: 0 0 0.15rem; }
-.ftl-date, .ftl-type, .ftl-holder { margin: 0 0 0.15rem; font-size: 0.875rem; color: #555; }
-.ftl-badge { display: inline-block; padding: 0.15em 0.55em; border-radius: 0.35em; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: #e5e5e5; color: #555; margin-top: 0.35rem; }
+.ftl-date, .ftl-type, .ftl-holder { margin: 0 0 0.15rem; font-size: var(--fs-base); color: #555; }
+.ftl-badge { display: inline-block; padding: 0.15em 0.55em; border-radius: 0.35em; font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: #e5e5e5; color: #555; margin-top: 0.35rem; }
 .ftl-badge--active { background: #d1fae5; color: #065f46; }
 .ftl-badge--scanned { background: #dbeafe; color: #1e3a8a; }
 .ftl-badge--transferred { background: #fef3c7; color: #92400e; }
@@ -166,7 +166,7 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
 .ftl-transfer-btn {
   padding: 0.4rem 0.9rem;
   border-radius: 0.4rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid #ddd;
@@ -179,17 +179,17 @@ async function sendTransfer(ticket: FanTicket): Promise<void> {
 .ftl-transfer-btn--primary:hover:not(:disabled) { background: #333; }
 .ftl-transfer-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .ftl-transfer-form { display: flex; flex-direction: column; gap: 0.5rem; }
-.ftl-transfer-label { font-size: 0.8125rem; font-weight: 600; }
+.ftl-transfer-label { font-size: var(--fs-sm); font-weight: 600; }
 .ftl-transfer-input {
   padding: 0.45rem 0.7rem;
   border: 1px solid #ccc;
   border-radius: 0.4rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   width: 100%;
   box-sizing: border-box;
 }
 .ftl-transfer-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.ftl-transfer-error { color: #c00; font-size: 0.8rem; margin: 0; }
-.ftl-transfer-success { font-size: 0.875rem; color: #065f46; background: #d1fae5; border-radius: 0.4rem; padding: 0.6rem 0.8rem; }
+.ftl-transfer-error { color: #c00; font-size: var(--fs-sm); margin: 0; }
+.ftl-transfer-success { font-size: var(--fs-base); color: #065f46; background: #d1fae5; border-radius: 0.4rem; padding: 0.6rem 0.8rem; }
 .ftl-transfer-link { word-break: break-all; color: #065f46; }
 </style>

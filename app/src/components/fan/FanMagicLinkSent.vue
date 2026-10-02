@@ -45,6 +45,6 @@ async function handleVerify() {
 .fmls-error {
   color: #dc2626;
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
 }
 </style>

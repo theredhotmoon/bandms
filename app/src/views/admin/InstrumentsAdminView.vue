@@ -157,11 +157,11 @@ async function confirmDelete() {
                 <td class="td" style="color:var(--c-e2e8f0); font-weight:500;">{{ i.name }}</td>
                 <td class="td">
                   <span v-if="i.category" class="category-badge">{{ i.category }}</span>
-                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">—</span>
+                  <span v-else style="color:var(--c-334155); font-size:var(--fs-xs);">—</span>
                 </td>
                 <td class="td stage-icon-cell">
                   <InstrumentIcon v-if="i.stage_plot_type" :type="i.stage_plot_type" :size="22" />
-                  <span v-else style="color:var(--c-334155); font-size:0.75rem;">—</span>
+                  <span v-else style="color:var(--c-334155); font-size:var(--fs-xs);">—</span>
                 </td>
                 <td class="td text-right">
                   <button @click="openEdit(i)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
@@ -250,7 +250,7 @@ async function confirmDelete() {
 .field-req { color: var(--c-f87171); }
 .category-badge {
   display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px;
-  font-size: 0.7rem; font-weight: 600;
+  font-size: var(--fs-2xs); font-weight: 600;
   background: var(--c-2a2a2a); color: var(--c-c0c0c0);
 }
 .stage-icon-cell { color: var(--c-cbd5e1); }
@@ -258,7 +258,7 @@ async function confirmDelete() {
   display: inline-flex; align-items: center; gap: 0.375rem;
   margin-top: 0.5rem; padding: 0.25rem 0.5rem;
   border: 1px solid var(--c-334155); border-radius: 0.375rem;
-  font-size: 0.7rem; color: var(--c-94a3b8); background: transparent;
+  font-size: var(--fs-2xs); color: var(--c-94a3b8); background: transparent;
   cursor: pointer; transition: color .15s, border-color .15s;
 }
 .icon-suggestion:hover { color: var(--c-e2e8f0); border-color: var(--c-64748b); }

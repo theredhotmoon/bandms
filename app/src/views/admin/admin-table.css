@@ -1,7 +1,7 @@
 .btn-add-primary {
   padding: 0.4rem 1rem;
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
   background: var(--c-e8e8e8);
@@ -27,16 +27,19 @@
 .th {
   padding: 0.625rem 1rem;
   text-align: left;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--c-555555);
+  letter-spacing: var(--track-caps);
+  color: var(--c-888888);
+  border-bottom: 1px solid var(--c-222222);
+  white-space: nowrap;
 }
 
 .td {
   padding: 0.75rem 1rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
   vertical-align: middle;
 }
 
@@ -48,23 +51,23 @@
 .table-row:hover { background: var(--c-181818); }
 
 .btn-edit {
-  padding: 0.25rem 0.625rem;
+  padding: 0.3125rem 0.625rem;
   border-radius: 0.375rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   cursor: pointer;
   background: transparent;
   border: 1px solid var(--c-333333);
-  color: var(--c-9ca3af);
+  color: var(--c-c0c0c0);
   margin-right: 0.375rem;
   transition: background 120ms, border-color 120ms;
 }
-.btn-edit:hover { background: var(--c-2a2a2a); border-color: var(--c-555555); }
+.btn-edit:hover { background: var(--c-2a2a2a); border-color: var(--c-666666); color: var(--c-e2e8f0); }
 
 .btn-delete {
-  padding: 0.25rem 0.625rem;
+  padding: 0.3125rem 0.625rem;
   border-radius: 0.375rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   cursor: pointer;
   background: transparent;
@@ -77,21 +80,21 @@
 .empty-state {
   padding: 3.5rem 1rem;
   text-align: center;
-  color: var(--c-555555);
-  font-size: 0.8125rem;
-  line-height: 1.6;
+  color: var(--c-888888);
+  font-size: var(--fs-base);
+  line-height: var(--lh-prose);
 }
 
 .filter-select {
-  padding: 0.3125rem 0.625rem;
+  padding: 0.375rem 0.625rem;
   background: var(--c-141414);
-  border: 1px solid var(--c-252525);
+  border: 1px solid var(--c-2a2a2a);
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  color: var(--c-888888);
+  font-size: var(--fs-sm);
+  color: var(--c-c0c0c0);
   outline: none;
   cursor: pointer;
   transition: border-color 150ms;
   white-space: nowrap;
 }
-.filter-select:focus { border-color: var(--c-888888); color: var(--c-e0e0e0); }
+.filter-select:focus { border-color: var(--c-aaaaaa); color: var(--c-e2e8f0); }

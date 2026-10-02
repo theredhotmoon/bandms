@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-02 (admin polish)
+
+### Changed
+- **The admin panel is easier to read in both themes.** Secondary text — hints, table metadata, column headers, the sidebar's group labels — was below the 4.5:1 contrast floor in dark mode and further below it in light mode. The grey ramp was retuned so every text token clears that floor on every surface it sits on, with the hierarchy kept; `pnpm build` now pins those floors (`check-admin-contrast.mjs`).
+- **One type scale for the whole panel.** Archivo is self-hosted (no Google Fonts request, and the CSP no longer allows that origin), the body is 14px with 1.4 leading, and page titles, section headings, column headers and badges each have one size and weight across every screen. Nothing renders smaller than 11px any more.
+- **Light mode is white cards on an off-white page** instead of grey on grey; dark mode's surfaces step more clearly from page to sidebar to card.
+- **The dashboard's six counts are one strip of figures** that link to their sections, in one ink; the career-level checklist stacks each hint under its item instead of squeezing it into a narrow third column; the EPK widget's header wraps on a phone.
+- **The admin works on a phone.** The sidebar becomes a drawer behind a menu button, with an Escape key and a scrim to close it; page gutters scale with the viewport.
+- The caret, text selection, focus ring and scrollbar inside the admin follow the active theme instead of the browser's defaults; `<select>` lists open in the theme's colour scheme.
+- The concerts table prints doors and start times as `19:00 / 20:00` under the *Doors / Start* header instead of emoji.
+
 ## [Unreleased] — 2026-10-02 (admin colour lint)
 
 ### Added

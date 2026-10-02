@@ -69,7 +69,7 @@ const props = defineProps<{ uuid: string }>()
 }
 
 .tdc-ref {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: #888;
   margin: 0;
 }
@@ -91,7 +91,7 @@ const props = defineProps<{ uuid: string }>()
   width: 100%;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   text-align: center;
   text-decoration: none;

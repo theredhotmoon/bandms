@@ -447,20 +447,20 @@ function handleSubmit() {
 .trans-row   { display: flex; align-items: center; gap: 0.5rem; }
 .trans-row--top { align-items: flex-start; }
 .lang-badge {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em;
   padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
   background: var(--c-1e3a5f); color: var(--c-60a5fa); width: 2rem; text-align: center;
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
 .section-title {
-  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--c-64748b); margin-bottom: 0.625rem;
 }
 .platform-row  { display: flex; align-items: center; gap: 0.625rem; }
 .platform-row--compact { gap: 0.5rem; }
 .platform-dot  { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
-.platform-name { font-size: 0.75rem; font-weight: 500; color: var(--c-94a3b8); width: 7rem; flex-shrink: 0; }
+.platform-name { font-size: var(--fs-xs); font-weight: 500; color: var(--c-94a3b8); width: 7rem; flex-shrink: 0; }
 
 .upcoming-block { display: flex; flex-direction: column; justify-content: flex-end; }
 
@@ -479,7 +479,7 @@ function handleSubmit() {
   border-radius: 9999px; background: var(--c-475569); transition: transform 150ms, background 150ms;
 }
 .toggle-check:checked + .toggle-track .toggle-thumb { transform: translateX(1rem); background: var(--c-ffffff); }
-.toggle-label { font-size: 0.8125rem; color: var(--c-94a3b8); }
+.toggle-label { font-size: var(--fs-sm); color: var(--c-94a3b8); }
 
 /* ── Cover drop ──────────────────────────────────────────────── */
 .cover-drop {
@@ -493,22 +493,22 @@ function handleSubmit() {
 .cover-img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: var(--c-0d0d0d); }
 .cover-placeholder { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1.5rem; }
 .cover-icon { width: 2rem; height: 2rem; color: var(--c-334155); }
-.cover-hint { font-size: 0.8125rem; color: var(--c-475569); }
+.cover-hint { font-size: var(--fs-sm); color: var(--c-475569); }
 
 /* ── Tracks ──────────────────────────────────────────────────── */
 .track-block { border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; overflow: hidden; }
 .track-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; background: var(--c-141414); }
-.track-num { font-size: 0.75rem; font-weight: 600; color: var(--c-475569); width: 1.25rem; text-align: center; flex-shrink: 0; }
+.track-num { font-size: var(--fs-xs); font-weight: 600; color: var(--c-475569); width: 1.25rem; text-align: center; flex-shrink: 0; }
 .track-dur { max-width: 5rem; }
 .track-toggle-btn {
-  padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500;
+  padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-475569);
   transition: background 120ms, border-color 120ms, color 120ms; flex-shrink: 0;
 }
 .track-toggle-btn:hover { background: var(--c-16163a); border-color: var(--c-333333); color: var(--c-94a3b8); }
 .track-toggle-btn--has  { border-color: var(--c-333333); color: var(--c-c0c0c0); }
 .track-remove {
-  padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.75rem;
+  padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: var(--fs-xs);
   cursor: pointer; background: transparent; border: 1px solid var(--c-2d1212); color: var(--c-f87171);
   transition: background 120ms; flex-shrink: 0;
 }
@@ -516,11 +516,11 @@ function handleSubmit() {
 
 .track-panel { padding: 0.625rem 0.875rem; border-top: 1px solid var(--c-222222); background: var(--c-111111); }
 .track-links-panel { display: flex; flex-direction: column; gap: 0.375rem; }
-.track-links-hint { font-size: 0.7rem; color: var(--c-475569); margin-bottom: 0.375rem; }
+.track-links-hint { font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.375rem; }
 
 .lyrics-textarea {
   width: 100%; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
-  color: var(--c-e2e8f0); font-size: 0.8125rem; padding: 0.5rem 0.625rem; outline: none;
+  color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.5rem 0.625rem; outline: none;
   font-family: 'Courier New', monospace; line-height: 1.6; resize: vertical;
   transition: border-color 150ms, box-shadow 150ms;
 }

@@ -371,7 +371,7 @@ const totalItems     = computed(() => allItems.value.length)
 const pct            = computed(() => Math.round((doneCount.value / totalItems.value) * 100))
 // CSS, not copy — kept out of the template so the string lint is not asked
 // to judge `width:%; background:` as a sentence.
-const progressStyle = computed(() => ({ width: `${pct.value}%`, background: currentDef.value.color })) // i18n-ignore: CSS
+const progressStyle = computed(() => ({ transform: `scaleX(${pct.value / 100})`, background: currentDef.value.color })) // i18n-ignore: CSS
 
 const readyToAdvance = computed(
   () => !currentDef.value.isCustom && nextDef.value !== null && doneCount.value === totalItems.value
@@ -440,7 +440,7 @@ function advanceLevel() {
         </div>
         <div class="clw-custom-preview">
           <div class="clw-custom-item" v-for="n in 4" :key="n">
-            <span class="clw-custom-check">○</span>
+            <svg class="clw-custom-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/></svg>
             <span class="clw-custom-label">{{ $t('band.career.widget.customGoalItem', { n }) }}</span>
           </div>
         </div>
@@ -462,9 +462,8 @@ function advanceLevel() {
               class="clw-item"
               :class="item.done ? 'clw-item--done' : 'clw-item--todo'"
             >
-              <span class="clw-check" :style="item.done ? `color:${currentDef.color}` : ''">
-                {{ item.done ? '✓' : '○' }}
-              </span>
+              <svg v-if="item.done" class="clw-check" :style="`color:${currentDef.color}`" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.25 8.25l1.9 1.9L10.9 6.3"/></svg>
+              <svg v-else class="clw-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/></svg>
               <span class="clw-label">{{ item.label }}</span>
               <span v-if="!item.done" class="clw-tip">{{ item.tip }}</span>
             </RouterLink>
@@ -500,9 +499,9 @@ function advanceLevel() {
 .clw-tab:hover      { background: var(--c-1a1a1a); }
 .clw-tab--active    { background: var(--c-1f1f1f); border-bottom-color: var(--c-ffffff); }
 .clw-tab--past      { opacity: 0.6; }
-.clw-tab-emoji      { font-size: 1.1rem; line-height: 1; }
-.clw-tab-name       { font-size: 0.72rem; font-weight: 700; color: var(--c-e2e8f0); }
-.clw-tab-num        { font-size: 0.6rem; color: var(--c-555555); text-transform: uppercase; letter-spacing: 0.06em; }
+.clw-tab-emoji      { font-size: var(--fs-lg); line-height: 1; }
+.clw-tab-name       { font-size: var(--fs-xs); font-weight: 700; color: var(--c-e2e8f0); }
+.clw-tab-num        { font-size: var(--fs-2xs); color: var(--c-555555); text-transform: uppercase; letter-spacing: 0.06em; }
 .clw-tab--active .clw-tab-name { color: var(--c-ffffff); }
 .clw-tab--active .clw-tab-num  { color: var(--c-aaaaaa); }
 
@@ -512,23 +511,23 @@ function advanceLevel() {
 .clw-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .clw-meta-left { flex: 1; min-width: 0; }
 
-.clw-tagline { font-size: 0.8125rem; font-weight: 600; color: var(--c-94a3b8); margin-bottom: 0.5rem; }
+.clw-tagline { font-size: var(--fs-sm); font-weight: 600; color: var(--c-94a3b8); margin-bottom: 0.5rem; }
 
 .clw-progress-row { display: flex; align-items: center; gap: 0.75rem; }
 .clw-prog-wrap { width: 10rem; height: 5px; background: var(--c-222222); border-radius: 3px; overflow: hidden; }
-.clw-prog-bar { height: 100%; border-radius: 3px; transition: width 400ms; }
-.clw-prog-label { font-size: 0.75rem; font-weight: 700; }
+.clw-prog-bar { width: 100%; height: 100%; border-radius: 3px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
+.clw-prog-label { font-size: var(--fs-xs); font-weight: 700; }
 
 .clw-advance-box {
   display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end;
-  padding: 0.625rem 0.875rem; background: var(--c-111111); border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.5rem; border-left: 3px solid var(--c-34d399); flex-shrink: 0;
+  padding: 0.625rem 0.875rem; background: var(--c-0f2a1e); border: 1px solid var(--c-14532d);
+  border-radius: 0.5rem; flex-shrink: 0;
 }
-.clw-advance-title { font-size: 0.8rem; font-weight: 700; color: var(--c-34d399); }
-.clw-advance-sub   { font-size: 0.7rem; color: var(--c-475569); }
+.clw-advance-title { font-size: var(--fs-sm); font-weight: 700; color: var(--c-34d399); }
+.clw-advance-sub   { font-size: var(--fs-2xs); color: var(--c-475569); }
 .clw-advance-btn {
   margin-top: 0.25rem; padding: 0.3rem 0.875rem; border-radius: 0.375rem;
-  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-size: var(--fs-xs); font-weight: 600; cursor: pointer;
   background: var(--c-14532d); border: 1px solid var(--c-15803d); color: var(--c-34d399);
   transition: background 100ms;
 }
@@ -537,21 +536,27 @@ function advanceLevel() {
 /* ── Sections ────────────────────────────────────────── */
 .clw-section {}
 .clw-section-title {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
   color: var(--c-334155); margin-bottom: 0.375rem; padding-left: 0.25rem;
 }
 
-.clw-checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.25rem; }
+/* Each item is a two-column grid: the mark, then the label with its tip on
+   the line below. The tip used to sit in a right-aligned third column, which
+   squeezed the label into three lines whenever both were long. */
+.clw-checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.125rem 0.5rem; }
 .clw-item {
-  display: flex; align-items: baseline; gap: 0.5rem; padding: 0.3rem 0.5rem;
-  border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem;
+  display: grid; grid-template-columns: 1rem minmax(0, 1fr); column-gap: 0.5rem; align-items: start;
+  padding: 0.375rem 0.5rem; border-radius: 0.375rem; text-decoration: none;
+  font-size: var(--fs-sm); line-height: var(--lh-ui);
   transition: background 100ms;
 }
 .clw-item:hover { background: var(--c-1a1a1a); }
-.clw-check { font-size: 0.75rem; flex-shrink: 0; color: var(--c-334155); }
-.clw-item--done .clw-label { color: var(--c-64748b); text-decoration: line-through; }
-.clw-item--todo .clw-label { color: var(--c-94a3b8); }
-.clw-tip { font-size: 0.68rem; color: var(--c-334155); margin-left: auto; text-align: right; max-width: 11rem; line-height: 1.4; }
+.clw-check { width: 1rem; height: 1rem; margin-top: 0.125rem; color: var(--c-475569); }
+.clw-label { grid-column: 2; }
+.clw-item--done .clw-label { color: var(--c-64748b); text-decoration: line-through; text-decoration-color: var(--c-475569); }
+.clw-item--todo .clw-label { color: var(--c-d0d0d0); }
+.clw-item--todo:hover .clw-label { color: var(--c-e2e8f0); }
+.clw-tip { grid-column: 2; font-size: var(--fs-xs); color: var(--c-64748b); line-height: var(--lh-ui); margin-top: 0.125rem; }
 
 /* ── Custom level placeholder ────────────────────────── */
 .clw-custom-placeholder {
@@ -559,8 +564,8 @@ function advanceLevel() {
   padding: 1.5rem 1rem; text-align: center;
 }
 .clw-custom-icon  { font-size: 2rem; line-height: 1; }
-.clw-custom-title { font-size: 0.875rem; font-weight: 700; color: var(--c-fbbf24); }
-.clw-custom-sub   { font-size: 0.8rem; color: var(--c-475569); max-width: 32rem; line-height: 1.6; }
+.clw-custom-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-fbbf24); }
+.clw-custom-sub   { font-size: var(--fs-sm); color: var(--c-475569); max-width: 32rem; line-height: 1.6; }
 .clw-custom-preview {
   width: 100%; max-width: 28rem; display: flex; flex-direction: column; gap: 0.25rem;
   margin-top: 0.5rem;
@@ -569,8 +574,8 @@ function advanceLevel() {
   display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.75rem;
   background: var(--c-111111); border: 1px dashed var(--c-2a2a2a); border-radius: 0.375rem; opacity: 0.5;
 }
-.clw-custom-check { font-size: 0.75rem; color: var(--c-334155); }
-.clw-custom-label { font-size: 0.8rem; color: var(--c-64748b); font-style: italic; }
+.clw-custom-check { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--c-475569); }
+.clw-custom-label { font-size: var(--fs-sm); color: var(--c-64748b); font-style: italic; }
 
 /* ── Next level peek ─────────────────────────────────── */
 .clw-next-peek {
@@ -578,6 +583,6 @@ function advanceLevel() {
   padding: 0.5rem 0.75rem; background: var(--c-111111); border: 1px solid var(--c-1f1f1f);
   border-radius: 0.375rem;
 }
-.clw-next-label { font-size: 0.78rem; font-weight: 600; color: var(--c-334155); }
-.clw-next-sub   { font-size: 0.72rem; color: var(--c-555555); }
+.clw-next-label { font-size: var(--fs-xs); font-weight: 600; color: var(--c-334155); }
+.clw-next-sub   { font-size: var(--fs-xs); color: var(--c-555555); }
 </style>

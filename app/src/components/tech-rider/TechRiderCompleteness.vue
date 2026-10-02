@@ -50,7 +50,7 @@ const gapWords = (missing: string[]) => toWords(missing, t)
   height: 100%; border-radius: 999px; background: var(--c-4ade80);
   transition: width 200ms ease;
 }
-.bar-label { font-size: 0.7rem; color: var(--c-64748b); white-space: nowrap; }
+.bar-label { font-size: var(--fs-2xs); color: var(--c-64748b); white-space: nowrap; }
 
 .gaps { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .gap-chip {
@@ -60,6 +60,6 @@ const gapWords = (missing: string[]) => toWords(missing, t)
   transition: background 100ms;
 }
 .gap-chip:hover { background: var(--c-2a2008); }
-.gap-name { font-size: 0.68rem; font-weight: 600; color: var(--c-fbbf24); }
-.gap-missing { font-size: 0.65rem; color: var(--c-a16207); }
+.gap-name { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-fbbf24); }
+.gap-missing { font-size: var(--fs-2xs); color: var(--c-a16207); }
 </style>

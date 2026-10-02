@@ -395,15 +395,15 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-.pill { font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
+.pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }
 .cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid var(--c-333333); }
-.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--c-333333); }
+.cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:var(--fs-lg); color:var(--c-333333); }
 
 .photo-count-btn {
   color: var(--c-c0c0c0); background: transparent; border: none;
-  cursor: pointer; font-size: 0.8rem; padding: 0;
+  cursor: pointer; font-size: var(--fs-sm); padding: 0;
   text-decoration: underline; text-underline-offset: 2px;
 }
 .photo-count-btn:hover { color: var(--c-d0d0d0); }
@@ -424,16 +424,16 @@ async function confirmDelete() {
 .photo-item:active { cursor: grabbing; }
 .photo-dragging { opacity: 0.4; box-shadow: 0 0 0 2px var(--c-c0c0c0); }
 .drag-handle {
-  position:absolute; top:4px; left:6px; font-size:0.85rem;
+  position:absolute; top:4px; left:6px; font-size:var(--fs-base);
   color:var(--c-475569); pointer-events:none; line-height:1;
 }
 .photo-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
 .photo-placeholder { width:100%; aspect-ratio:4/3; background:var(--c-1a1740); display:flex; align-items:center; justify-content:center; color:var(--c-475569); }
 .photo-footer { display:flex; align-items:center; justify-content:space-between; padding:0.3rem 0.5rem; gap:0.4rem; }
-.photo-caption { font-size:0.7rem; color:var(--c-94a3b8); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.photo-caption { font-size:var(--fs-2xs); color:var(--c-94a3b8); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 .photo-epk {
   background:transparent; border:none; color:var(--c-334155);
-  cursor:pointer; font-size:0.8rem; padding:2px 4px;
+  cursor:pointer; font-size:var(--fs-sm); padding:2px 4px;
   border-radius:3px; transition:color 0.1s, background 0.1s;
   flex-shrink:0; line-height:1;
 }
@@ -441,7 +441,7 @@ async function confirmDelete() {
 .photo-epk--on { color:var(--c-fbbf24); }
 .photo-remove {
   background:transparent; border:none; color:var(--c-475569);
-  cursor:pointer; font-size:0.75rem; padding:2px 4px;
+  cursor:pointer; font-size:var(--fs-xs); padding:2px 4px;
   border-radius:3px; transition:color 0.1s, background 0.1s;
   flex-shrink:0;
 }
@@ -451,6 +451,6 @@ async function confirmDelete() {
   display:flex; align-items:center; justify-content:space-between;
   margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--c-333333);
 }
-.reorder-hint { font-size:0.75rem; color:var(--c-475569); }
-.reorder-hint-idle { margin-top:0.6rem; font-size:0.72rem; color:var(--c-333333); text-align:center; }
+.reorder-hint { font-size:var(--fs-xs); color:var(--c-475569); }
+.reorder-hint-idle { margin-top:0.6rem; font-size:var(--fs-xs); color:var(--c-333333); text-align:center; }
 </style>

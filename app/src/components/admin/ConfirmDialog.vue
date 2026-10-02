@@ -30,13 +30,13 @@ defineEmits<{ confirm: []; cancel: [] }>()
 
 <style scoped>
 .btn-ghost {
-  padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
+  padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8);
   transition: background 120ms;
 }
 .btn-ghost:hover { background: var(--c-1a1a1a); }
 .btn-danger {
-  padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 500;
+  padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 500;
   cursor: pointer; background: var(--c-7f1d1d); border: none; color: var(--c-fca5a5);
   transition: background 120ms;
 }

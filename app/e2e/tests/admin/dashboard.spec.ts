@@ -14,7 +14,7 @@ test.describe('Admin Dashboard', () => {
 
   test('all 6 stat cards are visible', async ({ page }) => {
     for (const label of ['Bands', 'Releases', 'Tours', 'Venues', 'Concerts', 'Tags']) {
-      await expect(page.locator('a.stat-card').filter({ hasText: label })).toBeVisible()
+      await expect(page.locator('a.stat-cell').filter({ hasText: label })).toBeVisible()
     }
   })
 

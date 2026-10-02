@@ -97,7 +97,7 @@ function submit() {
         <label class="field-label">{{ $t('band.clips.form.recordedOn') }}</label>
         <input v-model="form.recorded_on" type="date" class="field-input" />
       </div>
-      <label class="flex items-center gap-2 pb-2" style="color:var(--c-d0d0d0); font-size:0.85rem;">
+      <label class="flex items-center gap-2 pb-2" style="color:var(--c-d0d0d0); font-size:var(--fs-base);">
         <input v-model="form.show_in_epk" type="checkbox" /> {{ $t('band.clips.form.showInEpk') }}
       </label>
     </div>

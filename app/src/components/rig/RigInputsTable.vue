@@ -162,11 +162,11 @@ function moveRow(id: string, dir: -1 | 1) {
   border-color: var(--c-991b1b) !important;
   background: var(--c-1c0a0a) !important;
 }
-.needs-name { font-size: 0.7rem; color: var(--c-f87171); }
+.needs-name { font-size: var(--fs-2xs); color: var(--c-f87171); }
 .table-scroll { overflow-x: auto; border-radius: 0.5rem; border: 1px solid var(--c-2a2a2a); }
-.inputs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.inputs-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .inputs-table thead th {
-  background: var(--c-070718); color: var(--c-475569); font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
+  background: var(--c-070718); color: var(--c-475569); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase;
   letter-spacing: .05em; padding: 0.5rem 0.625rem; text-align: left; border-bottom: 1px solid var(--c-2a2a2a);
   white-space: nowrap;
 }
@@ -187,14 +187,14 @@ function moveRow(id: string, dir: -1 | 1) {
 .ch-num { font-weight: 700; color: var(--c-c0c0c0); min-width: 1.4rem; text-align: center; }
 .move-btns { display: flex; flex-direction: column; }
 .move-btn {
-  background: none; border: none; cursor: pointer; color: var(--c-334155); font-size: 0.55rem; padding: 0;
+  background: none; border: none; cursor: pointer; color: var(--c-334155); font-size: var(--fs-2xs); padding: 0;
   line-height: 1; transition: color 100ms;
 }
 .move-btn:hover { color: var(--c-c0c0c0); }
 
 .cell-input {
   width: 100%; background: transparent; border: none; outline: none;
-  color: var(--c-e2e8f0); font-size: 0.8rem; font-family: inherit;
+  color: var(--c-e2e8f0); font-size: var(--fs-sm); font-family: inherit;
   border-bottom: 1px solid transparent; padding: 0.1rem 0.25rem;
   transition: border-color 120ms;
 }
@@ -203,7 +203,7 @@ function moveRow(id: string, dir: -1 | 1) {
 
 .cell-select {
   width: 100%; background: var(--c-111111); border: none; outline: none;
-  color: var(--c-e2e8f0); font-size: 0.8rem; font-family: inherit; cursor: pointer;
+  color: var(--c-e2e8f0); font-size: var(--fs-sm); font-family: inherit; cursor: pointer;
   border-bottom: 1px solid transparent; padding: 0.1rem 0.1rem; appearance: none;
   transition: border-color 120ms;
 }
@@ -211,19 +211,19 @@ function moveRow(id: string, dir: -1 | 1) {
 .cell-select option { background: var(--c-141414); }
 
 .del-btn {
-  background: none; border: none; cursor: pointer; color: var(--c-3d1a1a); font-size: 0.75rem;
+  background: none; border: none; cursor: pointer; color: var(--c-3d1a1a); font-size: var(--fs-xs);
   transition: color 120ms; padding: 0.2rem 0.4rem;
 }
 .del-btn:hover { color: var(--c-f87171); }
 
-.empty-row { text-align: center; color: var(--c-334155); font-size: 0.8rem; padding: 1.5rem; }
+.empty-row { text-align: center; color: var(--c-334155); font-size: var(--fs-sm); padding: 1.5rem; }
 
 .table-footer { display: flex; align-items: center; justify-content: space-between; }
 .btn-add-row {
-  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 600;
+  padding: 0.35rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); color: var(--c-c0c0c0);
   transition: background 100ms, border-color 100ms;
 }
 .btn-add-row:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
-.row-count { font-size: 0.7rem; color: var(--c-334155); }
+.row-count { font-size: var(--fs-2xs); color: var(--c-334155); }
 </style>

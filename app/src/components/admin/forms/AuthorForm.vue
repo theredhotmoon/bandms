@@ -213,13 +213,13 @@ function submit() {
 <style scoped>
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
 .field-req  { color: var(--c-f87171); }
-.hint       { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--c-334155); font-size: 0.65rem; }
-.field-error { font-size: 0.72rem; color: var(--c-f87171); margin-top: 0.2rem; }
+.hint       { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--c-334155); font-size: var(--fs-2xs); }
+.field-error { font-size: var(--fs-xs); color: var(--c-f87171); margin-top: 0.2rem; }
 
 .assoc-section { border: 1px solid var(--c-222222); border-radius: 0.375rem; overflow: hidden; }
 .assoc-toggle {
   width: 100%; display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 500; color: var(--c-94a3b8);
+  padding: 0.5rem 0.75rem; font-size: var(--fs-sm); font-weight: 500; color: var(--c-94a3b8);
   background: var(--c-141414); border: none; cursor: pointer; text-align: left;
   transition: color 120ms;
 }
@@ -238,5 +238,5 @@ function submit() {
 }
 .assoc-item:hover { background: var(--c-1a1a1a); }
 .assoc-check { accent-color: var(--c-888888); flex-shrink: 0; }
-.assoc-text { font-size: 0.78rem; color: var(--c-94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.assoc-text { font-size: var(--fs-xs); color: var(--c-94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

@@ -111,7 +111,7 @@ function dateRange(tour: TourSummary): string {
                 <div v-else class="poster-placeholder">♟</div>
               </td>
               <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tour.name }}</td>
-              <td class="td" style="color:var(--c-64748b); font-size:0.75rem; white-space:nowrap;">{{ dateRange(tour) }}</td>
+              <td class="td" style="color:var(--c-64748b); font-size:var(--fs-xs); white-space:nowrap;">{{ dateRange(tour) }}</td>
               <td class="td">
                 <span class="concerts-pill">{{ tour.concerts_count }}</span>
               </td>
@@ -159,12 +159,12 @@ function dateRange(tour: TourSummary): string {
   width: 2.5rem; height: 2.5rem; border-radius: 0.25rem;
   background: var(--c-1a1a1a); border: 1px solid var(--c-222222);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.875rem; color: var(--c-334155);
+  font-size: var(--fs-base); color: var(--c-334155);
 }
 .concerts-pill {
   display: inline-block; min-width: 1.5rem; text-align: center;
   padding: 0.1rem 0.4rem; border-radius: 0.3rem;
   background: var(--c-222222); border: 1px solid var(--c-333333);
-  font-size: 0.7rem; font-weight: 600; color: var(--c-64748b);
+  font-size: var(--fs-2xs); font-weight: 600; color: var(--c-64748b);
 }
 </style>

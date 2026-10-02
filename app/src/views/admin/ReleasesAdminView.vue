@@ -400,7 +400,7 @@ async function uploadPhotos() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
+  font-size: var(--fs-base);
   color: var(--c-334155);
 }
 .type-badge {
@@ -408,14 +408,14 @@ async function uploadPhotos() {
   padding: 0.15rem 0.5rem;
   border-radius: 0.25rem;
   border: 1px solid;
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
 
 /* ── Photos section ──────────────────────────────────────────── */
 .photos-divider {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -444,25 +444,25 @@ async function uploadPhotos() {
 .rp-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 .rp-thumb-placeholder {
   width: 100%; aspect-ratio: 4/3; display: flex; align-items: center;
-  justify-content: center; color: var(--c-334155); font-size: 1.25rem; background: var(--c-1a1a1a);
+  justify-content: center; color: var(--c-334155); font-size: var(--fs-xl); background: var(--c-1a1a1a);
 }
 .rp-del {
   position: absolute; top: 3px; right: 3px;
   width: 18px; height: 18px; border-radius: 50%;
   background: color-mix(in srgb, var(--c-141414) 80%, transparent); border: 1px solid var(--c-3a1212);
-  color: var(--c-f87171); font-size: 0.55rem; cursor: pointer;
+  color: var(--c-f87171); font-size: var(--fs-2xs); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 100ms;
 }
 .rp-del:hover { background: var(--c-3f1212); }
 .rp-caption {
-  font-size: 0.62rem; color: var(--c-475569); padding: 2px 4px;
+  font-size: var(--fs-2xs); color: var(--c-475569); padding: 2px 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.rp-empty { font-size: 0.8125rem; color: var(--c-475569); padding: 0.5rem 0; }
+.rp-empty { font-size: var(--fs-sm); color: var(--c-475569); padding: 0.5rem 0; }
 .rp-order-row { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .rp-btn-save {
-  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: 0.78rem;
+  padding: 0.3rem 0.875rem; border-radius: 0.375rem; font-size: var(--fs-xs);
   font-weight: 600; cursor: pointer; background: var(--c-2a2a2a);
   border: 1px solid var(--c-444444); color: var(--c-d0d0d0); transition: background 100ms;
 }
@@ -470,15 +470,15 @@ async function uploadPhotos() {
 
 .rp-add { margin-top: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .rp-add-title {
-  font-size: 0.72rem; font-weight: 600; color: var(--c-475569);
+  font-size: var(--fs-xs); font-weight: 600; color: var(--c-475569);
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 .rp-progress-wrap  { display: flex; flex-direction: column; gap: 0.3rem; }
 .rp-progress-bar   { height: 4px; background: var(--c-252525); border-radius: 9999px; overflow: hidden; }
 .rp-progress-fill  { height: 100%; background: var(--c-888888); border-radius: 9999px; transition: width 0.2s ease; }
-.rp-progress-label { font-size: 0.7rem; color: var(--c-94a3b8); text-align: center; }
+.rp-progress-label { font-size: var(--fs-2xs); color: var(--c-94a3b8); text-align: center; }
 .rp-btn-upload {
-  padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: 0.78rem;
+  padding: 0.35rem 1rem; border-radius: 0.375rem; font-size: var(--fs-xs);
   font-weight: 600; cursor: pointer; background: var(--c-333333);
   border: 1px solid var(--c-888888); color: var(--c-ffffff); transition: background 100ms;
 }

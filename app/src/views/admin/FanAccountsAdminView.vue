@@ -70,7 +70,7 @@ function formatDate(iso: string) {
                   {{ f.newsletter_subscribed ? $t('common.yes') : $t('common.no') }}
                 </span>
               </td>
-              <td class="td" style="color:var(--c-64748b);font-size:0.75rem;">{{ formatDate(f.created_at) }}</td>
+              <td class="td" style="color:var(--c-64748b);font-size:var(--fs-xs);">{{ formatDate(f.created_at) }}</td>
             </tr>
           </tbody>
         </table>
@@ -80,17 +80,17 @@ function formatDate(iso: string) {
 </template>
 
 <style scoped>
-.state-msg { color: var(--c-64748b); padding: 2rem 0; font-size: 0.9rem; }
+.state-msg { color: var(--c-64748b); padding: 2rem 0; font-size: var(--fs-base); }
 .search-input {
   display: block; width: 100%; max-width: 360px;
   padding: 0.5rem 0.75rem; border-radius: 0.375rem;
   border: 1px solid var(--c-1f1f1f); background: var(--c-0d0d0d);
-  color: var(--c-e2e8f0); font-size: 0.875rem; outline: none;
+  color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none;
 }
 .search-input:focus { border-color: var(--c-334155); }
 .newsletter-badge {
   display: inline-block; padding: 0.15rem 0.5rem;
-  border-radius: 0.25rem; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;
 }
 .badge-yes { background: var(--c-052e16); color: var(--c-4ade80); }
 .badge-no  { background: var(--c-1a1a1a); color: var(--c-6b7280); }

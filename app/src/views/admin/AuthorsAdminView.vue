@@ -134,7 +134,7 @@ async function confirmDelete() {
                   </div>
                 </td>
                 <td class="td notes-cell">{{ author.notes ?? '—' }}</td>
-                <td class="td" style="color:var(--c-475569); font-size:0.72rem; white-space:nowrap;">
+                <td class="td" style="color:var(--c-475569); font-size:var(--fs-xs); white-space:nowrap;">
                   {{ new Date(author.created_at).toLocaleDateString(uiLang, { day: 'numeric', month: 'short', year: 'numeric' }) }}
                 </td>
                 <td class="td text-right">
@@ -196,13 +196,13 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped>
 .notes-cell {
-  font-size: 0.72rem; color: var(--c-475569);
+  font-size: var(--fs-xs); color: var(--c-475569);
   max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .contact-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .contact-chip {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
-  font-size: 0.65rem; font-weight: 600; text-decoration: none;
+  font-size: var(--fs-2xs); font-weight: 600; text-decoration: none;
   transition: opacity 100ms;
 }
 .contact-chip--email   { background: var(--c-0c1e2e); color: var(--c-60a5fa); border: 1px solid var(--c-1e3a5f); }

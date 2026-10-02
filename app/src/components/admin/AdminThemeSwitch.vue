@@ -41,7 +41,7 @@ const isLight = computed(() => theme.value === 'light')
   background: var(--c-141414);
   border: 1px solid var(--c-2a2a2a);
   color: var(--c-94a3b8);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
   text-align: left;
 }

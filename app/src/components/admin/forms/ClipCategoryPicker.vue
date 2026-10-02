@@ -57,7 +57,7 @@ function categoryLabel(value: string): string {
 .link-presets { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .preset-chip {
   padding: 0.2rem 0.625rem; border-radius: 999px; border: 1px solid var(--c-2a2a2a);
-  background: var(--c-141414); color: var(--c-94a3b8); font-size: 0.75rem; cursor: pointer;
+  background: var(--c-141414); color: var(--c-94a3b8); font-size: var(--fs-xs); cursor: pointer;
   transition: border-color 100ms, color 100ms, background 100ms;
 }
 .preset-chip:hover, .preset-chip.active { border-color: var(--c-888888); color: var(--c-d0d0d0); background: var(--c-1a1a1a); }

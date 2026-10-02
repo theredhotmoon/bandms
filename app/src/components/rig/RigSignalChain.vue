@@ -96,7 +96,7 @@ function buildInputs() {
 .chain-select {
   width: 100%; max-width: 28rem; padding: 0.5rem 0.75rem;
   border-radius: 0.5rem; border: 1px solid var(--c-2a2a2a);
-  background: var(--c-141414); color: var(--c-e2e8f0); font-size: 0.875rem;
+  background: var(--c-141414); color: var(--c-e2e8f0); font-size: var(--fs-base);
   outline: none; font-family: inherit; transition: border-color 150ms;
 }
 .chain-select:focus { border-color: var(--c-5154e5); }
@@ -108,14 +108,14 @@ function buildInputs() {
   background: var(--c-0a0c1e); border: 1px solid var(--c-2a2860); border-radius: 0.5rem;
   border-left: 3px solid var(--c-888888);
 }
-.build-icon { font-size: 0.9rem; flex-shrink: 0; }
+.build-icon { font-size: var(--fs-base); flex-shrink: 0; }
 .build-body { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
-.build-label { font-size: 0.72rem; font-weight: 700; color: var(--c-d0d0d0); }
-.build-desc { font-size: 0.68rem; color: var(--c-475569); }
-.build-warn { font-size: 0.72rem; color: var(--c-64748b); white-space: nowrap; }
+.build-label { font-size: var(--fs-xs); font-weight: 700; color: var(--c-d0d0d0); }
+.build-desc { font-size: var(--fs-2xs); color: var(--c-475569); }
+.build-warn { font-size: var(--fs-xs); color: var(--c-64748b); white-space: nowrap; }
 
 .build-btn {
-  padding: 0.28rem 0.65rem; border-radius: 0.35rem; font-size: 0.72rem;
+  padding: 0.28rem 0.65rem; border-radius: 0.35rem; font-size: var(--fs-xs);
   font-weight: 600; cursor: pointer; border: 1px solid transparent;
   white-space: nowrap; transition: background 120ms;
 }

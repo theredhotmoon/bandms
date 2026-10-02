@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
@@ -9,6 +9,15 @@ import UiLangSwitcher from './UiLangSwitcher.vue'
 import AdminThemeSwitch from './AdminThemeSwitch.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
+
+// Below the `lg` breakpoint the sidebar is an off-canvas drawer. It closes on
+// every navigation and on Escape, and the scrim is a real button so it is
+// reachable without a pointer.
+const menuOpen = ref(false)
+function closeMenu() { menuOpen.value = false }
+function onKeydown(e: KeyboardEvent) { if (e.key === 'Escape') closeMenu() } // i18n-ignore: KeyboardEvent.key value
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
@@ -68,6 +77,7 @@ function toggleGroup(group: GroupId) {
 
 // When navigating to a new route, ensure its group is open
 watch(() => route.path, (path) => {
+  closeMenu()
   const g = groupForRoute(path)
   if (g && !openGroups.value.has(g)) {
     openGroups.value = new Set([...openGroups.value, g])
@@ -76,7 +86,19 @@ watch(() => route.path, (path) => {
 </script>
 
 <template>
-  <div class="admin-shell">
+  <div class="admin-shell" :class="{ 'admin-shell--menu-open': menuOpen }">
+    <header class="topbar">
+      <button type="button" class="topbar-menu" :aria-expanded="menuOpen" :aria-label="menuOpen ? $t('shell.menu.close') : $t('shell.menu.open')" @click="menuOpen = !menuOpen">
+        <svg v-if="!menuOpen" class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        <svg v-else class="topbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+      <RouterLink :to="adminUrl()" class="logo-mark topbar-logo">
+        <span class="logo-band">Band</span><span class="logo-ms">MS</span> <!-- i18n-ignore: product wordmark -->
+      </RouterLink>
+    </header>
+
+    <button v-if="menuOpen" type="button" class="scrim" :aria-label="$t('shell.menu.close')" @click="closeMenu" />
+
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-mark">
@@ -329,12 +351,55 @@ watch(() => route.path, (path) => {
   color: var(--c-e2e8f0);
 }
 
+/* ── Top bar (phones and tablets only) ───────────── */
+.topbar {
+  display: none;
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  height: 3.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  background: var(--c-111111);
+  border-bottom: 1px solid var(--c-222222);
+}
+.topbar-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--c-e2e8f0);
+  cursor: pointer;
+}
+.topbar-menu:hover { background: var(--c-1a1a1a); }
+.topbar-icon { width: 1.25rem; height: 1.25rem; }
+.topbar-logo { text-decoration: none; }
+
+.scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  border: none;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
 /* ── Sidebar ─────────────────────────────────────── */
 .sidebar {
-  width: 15rem;
+  width: 15.5rem;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   background: var(--c-111111);
   border-right: 1px solid var(--c-222222);
 }
@@ -344,30 +409,30 @@ watch(() => route.path, (path) => {
   border-bottom: 1px solid var(--c-222222);
 }
 .logo-mark {
-  font-size: 1.125rem;
+  font-size: var(--fs-lg);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 .logo-band { color: var(--c-e2e8f0); }
 .logo-ms   { color: var(--c-ffffff); }
 .logo-sub {
-  font-size: 0.6rem;
-  font-weight: 700;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--c-555555);
-  margin-top: 0.25rem;
+  letter-spacing: var(--track-caps);
+  color: var(--c-888888);
+  margin-top: 0.375rem;
 }
 
 /* ── Nav ─────────────────────────────────────────── */
 .sidebar-nav {
   flex: 1;
-  padding: 0.625rem 0.5rem;
+  padding: 0.75rem 0.625rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.0625rem;
+  gap: 0.125rem;
 }
 
 /* ── Accordion ───────────────────────────────────── */
@@ -376,14 +441,14 @@ watch(() => route.path, (path) => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0.4375rem 0.875rem;
-  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
   border-radius: 0.375rem;
-  font-size: 0.6875rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--c-444444);
+  letter-spacing: var(--track-caps);
+  color: var(--c-888888);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -392,10 +457,10 @@ watch(() => route.path, (path) => {
 }
 .accordion-header:hover {
   background: var(--c-161616);
-  color: var(--c-777777);
+  color: var(--c-c0c0c0);
 }
 .accordion-header--active {
-  color: var(--c-888888);
+  color: var(--c-c0c0c0);
 }
 
 .accordion-title {
@@ -425,21 +490,22 @@ watch(() => route.path, (path) => {
 .accordion-body {
   display: flex;
   flex-direction: column;
-  gap: 0.0625rem;
+  gap: 0.125rem;
 }
 
 /* ── Nav items ───────────────────────────────────── */
-.nav-icon { width: 0.9375rem; height: 0.9375rem; flex-shrink: 0; }
+.nav-icon { width: 1rem; height: 1rem; flex-shrink: 0; opacity: 0.8; }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  padding: 0.4375rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 500;
-  color: var(--c-555555);
+  line-height: var(--lh-ui);
+  color: var(--c-aaaaaa);
   text-decoration: none;
   cursor: pointer;
   border: none;
@@ -451,17 +517,20 @@ watch(() => route.path, (path) => {
 }
 .nav-item:hover {
   background: var(--c-1a1a1a);
-  color: var(--c-aaaaaa);
+  color: var(--c-e2e8f0);
 }
 .nav-item--active {
   background: var(--c-1f1f1f) !important;
   color: var(--c-ffffff) !important;
+  font-weight: 600;
   box-shadow: inset 2px 0 0 var(--c-ffffff) !important;
 }
+.nav-item--active .nav-icon,
+.nav-item:hover .nav-icon { opacity: 1; }
 
 /* ── Footer ──────────────────────────────────────── */
 .sidebar-footer {
-  padding: 0.625rem 0.5rem;
+  padding: 0.625rem 0.625rem;
   border-top: 1px solid var(--c-222222);
   display: flex;
   flex-direction: column;
@@ -472,16 +541,17 @@ watch(() => route.path, (path) => {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  padding: 0.375rem 0.875rem;
+  padding: 0.5rem 0.75rem;
 }
 .user-avatar {
-  width: 1.625rem;
-  height: 1.625rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 9999px;
   background: var(--c-2a2a2a);
-  color: var(--c-c0c0c0);
-  font-size: 0.625rem;
+  color: var(--c-e2e8f0);
+  font-size: var(--fs-2xs);
   font-weight: 700;
+  letter-spacing: 0.02em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -490,19 +560,19 @@ watch(() => route.path, (path) => {
 }
 .user-info { min-width: 0; flex: 1; }
 .user-name {
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--c-d0d0d0);
+  color: var(--c-e2e8f0);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .user-role {
-  font-size: 0.6rem;
-  font-weight: 700;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--c-555555);
+  color: var(--c-888888);
 }
 
 .btn-signout {
@@ -510,11 +580,11 @@ watch(() => route.path, (path) => {
   align-items: center;
   gap: 0.625rem;
   width: 100%;
-  padding: 0.4375rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--fs-sm);
   font-weight: 500;
-  color: var(--c-666666);
+  color: var(--c-aaaaaa);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -529,11 +599,33 @@ watch(() => route.path, (path) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .main-content-body {
   flex: 1;
-  overflow: auto;
+  width: 100%;
+  /* Tables and forms stop stretching at ultrawide widths; the gutter the
+     view adds (p-8) keeps the content off the sidebar's edge. */
+  max-width: 96rem;
+}
+
+/* ── Drawer layout below lg ──────────────────────── */
+@media (max-width: 1023px) {
+  .topbar { display: flex; }
+  .scrim { display: block; }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    width: min(18rem, 86vw);
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+  .admin-shell--menu-open .sidebar { transform: none; }
+  .main-content { padding-top: 3.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .chevron { transition: none; }
 }
 </style>

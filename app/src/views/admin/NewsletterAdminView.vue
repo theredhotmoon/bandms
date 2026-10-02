@@ -152,16 +152,16 @@ function exportCsv() {
 }
 .header-left { display: flex; align-items: baseline; gap: 0.75rem; }
 .view-title {
-  font-size: 1.375rem; font-weight: 700; color: var(--c-e2e8f0); margin: 0;
+  font-size: var(--fs-xl); font-weight: 700; color: var(--c-e2e8f0); margin: 0;
 }
 .subscriber-count {
-  font-size: 0.8rem; color: var(--c-64748b); font-weight: 500;
+  font-size: var(--fs-sm); color: var(--c-64748b); font-weight: 500;
 }
 
 .btn-export {
   display: inline-flex; align-items: center; gap: 0.4rem;
   padding: 0.4rem 0.875rem; border-radius: 0.5rem;
-  font-size: 0.8125rem; font-weight: 500;
+  font-size: var(--fs-sm); font-weight: 500;
   background: var(--c-1f1f1f); color: var(--c-94a3b8);
   border: 1px solid var(--c-334155); cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -173,22 +173,22 @@ function exportCsv() {
   width: 100%; max-width: 360px;
   padding: 0.5rem 0.75rem; border-radius: 0.5rem;
   border: 1px solid var(--c-1f1f1f); background: var(--c-0d0d0d);
-  color: var(--c-e2e8f0); font-size: 0.875rem; outline: none;
+  color: var(--c-e2e8f0); font-size: var(--fs-base); outline: none;
 }
 .search-input:focus { border-color: var(--c-334155); }
 
-.state-msg { color: var(--c-64748b); padding: 2rem 0; font-size: 0.9rem; }
+.state-msg { color: var(--c-64748b); padding: 2rem 0; font-size: var(--fs-base); }
 .state-msg--error { color: var(--c-f87171); }
 
 .table-wrap { overflow-x: auto; }
 
 .sub-table {
   width: 100%; border-collapse: collapse;
-  font-size: 0.8375rem;
+  font-size: var(--fs-sm);
 }
 .sub-table th {
   text-align: left; padding: 0.5rem 0.75rem;
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.07em; color: var(--c-475569);
   border-bottom: 1px solid var(--c-1f1f1f);
 }
@@ -206,22 +206,22 @@ function exportCsv() {
 .source-badge {
   display: inline-block;
   padding: 0.1rem 0.4rem; border-radius: 0.25rem;
-  font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
   background: var(--c-1f1f1f); color: var(--c-64748b);
 }
 
 .status-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem; border-radius: 0.25rem;
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
 }
 .status-badge--confirmed { background: var(--c-052e16); color: var(--c-4ade80); }
 .status-badge--pending   { background: var(--c-1c1107); color: var(--c-fbbf24); }
 
-.confirm-text  { font-size: 0.78rem; color: var(--c-94a3b8); margin-right: 0.375rem; }
+.confirm-text  { font-size: var(--fs-xs); color: var(--c-94a3b8); margin-right: 0.375rem; }
 .btn-confirm-yes {
   padding: 0.2rem 0.6rem; border-radius: 0.25rem;
-  font-size: 0.75rem; font-weight: 600;
+  font-size: var(--fs-xs); font-weight: 600;
   background: var(--c-7f1d1d); color: var(--c-fca5a5); border: 1px solid var(--c-991b1b);
   cursor: pointer; margin-right: 0.25rem;
   transition: background 100ms;
@@ -229,7 +229,7 @@ function exportCsv() {
 .btn-confirm-yes:hover { background: var(--c-991b1b); }
 .btn-confirm-no {
   padding: 0.2rem 0.6rem; border-radius: 0.25rem;
-  font-size: 0.75rem; font-weight: 600;
+  font-size: var(--fs-xs); font-weight: 600;
   background: var(--c-1f1f1f); color: var(--c-94a3b8); border: 1px solid var(--c-334155);
   cursor: pointer;
   transition: background 100ms;
@@ -246,12 +246,12 @@ function exportCsv() {
 
 .pagination {
   display: flex; align-items: center; gap: 0.75rem;
-  margin-top: 1.5rem; color: var(--c-64748b); font-size: 0.875rem;
+  margin-top: 1.5rem; color: var(--c-64748b); font-size: var(--fs-base);
 }
 .pagination button {
   padding: 0.35rem 0.75rem; border-radius: 0.375rem;
   background: var(--c-1f1f1f); color: var(--c-94a3b8);
-  border: 1px solid var(--c-334155); cursor: pointer; font-size: 0.8125rem;
+  border: 1px solid var(--c-334155); cursor: pointer; font-size: var(--fs-sm);
   transition: background 100ms;
 }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }

@@ -68,24 +68,24 @@ function when(iso: string | null): string {
 .confirmations { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
 
 .head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-.title { font-size: 0.72rem; font-weight: 700; color: var(--c-94a3b8); }
-.count { flex: 1; font-size: 0.7rem; color: var(--c-475569); }
+.title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-94a3b8); }
+.count { flex: 1; font-size: var(--fs-2xs); color: var(--c-475569); }
 
 .btn-ask {
-  padding: 0.25rem 0.6rem; border-radius: 0.375rem; font-size: 0.7rem; font-weight: 600;
+  padding: 0.25rem 0.6rem; border-radius: 0.375rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
 }
 .btn-ask:hover { border-color: var(--c-444444); color: var(--c-94a3b8); }
 .btn-ask:disabled { opacity: 0.5; cursor: default; }
 
-.hint { font-size: 0.7rem; color: var(--c-475569); margin: 0; line-height: 1.5; max-width: 40rem; }
+.hint { font-size: var(--fs-2xs); color: var(--c-475569); margin: 0; line-height: 1.5; max-width: 40rem; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .chip {
   display: inline-flex; align-items: center; gap: 0.3rem;
-  font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 999px;
+  font-size: var(--fs-2xs); padding: 0.15rem 0.45rem; border-radius: 999px;
 }
 .chip--ok { color: var(--c-4ade80); background: var(--c-052e16); }
 .chip--waiting { color: var(--c-94a3b8); background: var(--c-1a1a1a); }
-.chip-when { opacity: 0.7; font-size: 0.62rem; }
+.chip-when { opacity: 0.7; font-size: var(--fs-2xs); }
 </style>
