@@ -288,6 +288,7 @@ function handleSubmit() {
                slug stays fixed (no followLoaded) so a retitle never re-slugs. -->
           <TranslatedSlugInput
             v-model="form.slug"
+            :editing="!!initial"
             v-model:auto="slugAuto"
             :sources="form.title"
             :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"

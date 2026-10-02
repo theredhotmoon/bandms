@@ -19,7 +19,8 @@ export interface ConcertLink {
 export interface Concert {
   id: number
   name: string | null
-  slug_en: string
+  /** The default locale's slug — every concert URL, in every language. Same value as the old `slug_en`. */
+  slug: string
   date: string
   doors_open: string | null
   start_time: string | null

@@ -11,7 +11,7 @@ const allOn: Record<string, boolean> = {}
 
 describe('refHref', () => {
   it('builds a concert href from the locale section slug', () => {
-    expect(refHref('concert', { slug_en: 'gig-1' }, 'pl', slugMap, allOn))
+    expect(refHref('concert', { slug: 'gig-1' }, 'pl', slugMap, allOn))
       .toEqual({ href: '/pl/koncerty/gig-1', external: false })
   })
 
@@ -42,13 +42,13 @@ describe('refHref', () => {
 
   // A disabled module unbuilds its routes, so the link would 404.
   it('returns null when the target module is switched off', () => {
-    expect(refHref('concert', { slug_en: 'gig-1' }, 'en', slugMap, { concerts: false })).toBeNull()
+    expect(refHref('concert', { slug: 'gig-1' }, 'en', slugMap, { concerts: false })).toBeNull()
   })
 
   // getSiteConfig fails open to {} when the API is unreachable mid-build, so an
   // absent key must mean enabled — otherwise one blip strips every reference.
   it('treats an absent module key as enabled', () => {
-    expect(refHref('concert', { slug_en: 'gig-1' }, 'en', slugMap, {})).not.toBeNull()
+    expect(refHref('concert', { slug: 'gig-1' }, 'en', slugMap, {})).not.toBeNull()
   })
 
   it('is unaffected by module state for external targets', () => {

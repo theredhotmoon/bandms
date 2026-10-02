@@ -2,12 +2,12 @@
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
@@ -83,20 +83,22 @@ const form = reactive({
   sound_check_time: '',
   start_time:       '',
   description:      emptyBag(),
-  slug_en:          '',
-  slug_pl:          '',
+  slug:             emptyBag(),
   tag_ids:          [] as number[],
 })
 
 // selectedVenue must be declared before slug sources that depend on it
 const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
 
-const slugSourceEn = computed(() =>
-  form.name.en || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
-)
-const slugSourcePl = computed(() =>
-  form.name.pl || [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
-)
+// Each locale's slug follows its own name, else venue + date — the rule the
+// API uses when it generates them on create.
+const slugSources = computed(() => {
+  const venueDate = [selectedVenue.value?.name, form.date].filter(Boolean).join(' ')
+  return Object.fromEntries(LOCALES.map(l => [l, form.name[l] || venueDate])) as Record<Lang, string>
+})
+
+// Locales whose slug still follows its source — sent as null on create only.
+const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
 
 interface LineupEntry {
   type: 'main' | 'band'
@@ -134,8 +136,7 @@ watch(() => props.initial, (concert) => {
     form.sound_check_time = ''
     form.start_time       = ''
     form.description      = emptyBag()
-    form.slug_en          = ''
-    form.slug_pl          = ''
+    form.slug             = emptyBag()
     form.tag_ids          = []
     links.value           = []
     lineup.value          = [{ type: 'main', play_time: '' }]
@@ -157,8 +158,7 @@ watch(() => props.initial, (concert) => {
   form.start_time       = toHHMM(concert.start_time)
   form.name           = bagFrom(concert.translations?.name, concert.name)
   form.description    = bagFrom(concert.translations?.description, concert.description)
-  form.slug_en        = concert.slug_en ?? ''
-  form.slug_pl        = concert.slug_pl ?? ''
+  form.slug           = bagFrom(concert.translations?.slug)
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
@@ -309,8 +309,9 @@ function submit() {
     sound_check_time:  form.sound_check_time || null,
     start_time:        form.start_time       || null,
     own_sort_order:    ownSortOrder,
-    slug_en:           form.slug_en || null,
-    slug_pl:           form.slug_pl || null,
+    // On edit every locale goes as shown — the API generates only on create,
+    // so a previewed slug sent as null would be dropped (#153's review).
+    slug:              slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     bands:             bandsPayload,
     tag_ids:           form.tag_ids,
     links:             links.value,
@@ -491,15 +492,15 @@ function submit() {
     <!-- Slug URL -->
     <div>
       <label class="field-label">{{ $t('shows.concerts.form.slug') }}</label>
-      <SlugInput
-        v-model="form.slug_en"
-        v-model:modelValuePl="form.slug_pl"
-        :sourceEn="slugSourceEn"
-        :sourcePl="slugSourcePl"
-        :bilingual="true"
+      <!-- A loaded slug stays fixed (no followLoaded): renaming a concert must
+           never move its public page. -->
+      <TranslatedSlugInput
+        v-model="form.slug"
+        :editing="!!initial"
+        v-model:auto="slugAuto"
+        :sources="slugSources"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
       />
-      <p v-if="errors?.slug_en" class="field-error">{{ errors.slug_en[0] }}</p>
-      <p v-if="errors?.slug_pl" class="field-error">{{ errors.slug_pl[0] }}</p>
     </div>
 
     <!-- Tags -->

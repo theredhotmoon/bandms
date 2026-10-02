@@ -43,7 +43,7 @@ export function refHref(
 
   switch (entity) {
     case 'concert':
-      return data.slug_en ? { href: `/${lang}/${section('concerts')}/${data.slug_en}`, external: false } : null
+      return data.slug ? { href: `/${lang}/${section('concerts')}/${data.slug}`, external: false } : null
     case 'release':
       return data.id ? { href: `/${lang}/${section('releases')}/${data.id}`, external: false } : null
     case 'shop_item':

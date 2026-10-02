@@ -8,14 +8,14 @@ use App\Models\Release;
 use App\Support\PostBlockResolver;
 
 it('resolves a concert ref to its identity fields', function () {
-    $concert = Concert::factory()->create(['slug_en' => 'gig-at-the-club']);
+    $concert = Concert::factory()->create(['slug' => ['en' => 'gig-at-the-club']]);
     $post    = Post::factory()->create();
     $block   = PostBlock::factory()->for($post)->ref('concert', $concert->id)->create();
 
     $resolved = PostBlockResolver::resolve(collect([$block]));
 
     expect($resolved[$block->id]['id'])->toBe($concert->id);
-    expect($resolved[$block->id]['slug_en'])->toBe('gig-at-the-club');
+    expect($resolved[$block->id]['slug'])->toBe('gig-at-the-club');
 });
 
 // A dangling ref must resolve, not explode. The Astro build is all-or-nothing:
@@ -68,7 +68,7 @@ it('falls back to the url host when a press release has no og_site_name', functi
 });
 
 it('resolves a clip ref with its embed fields and first concert', function () {
-    $concert = Concert::factory()->create(['slug_en' => 'clip-gig']);
+    $concert = Concert::factory()->create(['slug' => ['en' => 'clip-gig']]);
     $clip    = \App\Models\Clip::factory()->create(['title' => ['en' => 'Encore'], 'category' => 'live']);
     $clip->concerts()->attach($concert->id, ['position' => 0]);
     $post  = Post::factory()->create();
@@ -80,7 +80,7 @@ it('resolves a clip ref with its embed fields and first concert', function () {
     expect($data['embed_id'])->toBe('dQw4w9WgXcQ');
     expect($data['title'])->toBe('Encore');
     expect($data['category'])->toBe('live');
-    expect($data['concert']['slug_en'])->toBe('clip-gig');
+    expect($data['concert']['slug'])->toBe('clip-gig');
     expect($data['concert']['venue']['name'])->toBe($concert->venue->name);
 });
 

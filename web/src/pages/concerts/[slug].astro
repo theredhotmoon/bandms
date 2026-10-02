@@ -14,12 +14,12 @@ import ConcertDetail from '@/components/detail/ConcertDetail.astro'
 
 export async function getStaticPaths() {
   const concerts = await getConcerts()
-  // slug_en is what the localised route is built from; a concert without one
+  // `slug` is what the localised route is built from; a concert without one
   // has no page anywhere, so it is skipped rather than emitted as
   // /concerts/undefined — which would abort the whole build.
   return concerts
-    .filter(c => c.slug_en)
-    .map(c => ({ params: { slug: c.slug_en }, props: { itemId: c.id } }))
+    .filter(c => c.slug)
+    .map(c => ({ params: { slug: c.slug }, props: { itemId: c.id } }))
 }
 
 const { slug } = Astro.params

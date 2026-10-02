@@ -20,8 +20,8 @@ export interface ConcertLink {
 export interface Concert {
   id: number
   name: string | null
-  slug_en: string | null
-  slug_pl: string | null
+  /** The default locale's slug — every concert URL, in every language. */
+  slug: string
   date: string
   doors_open: string | null
   sound_check_time: string | null
@@ -38,6 +38,7 @@ export interface Concert {
   translations?: {
     name?:        TranslationMap
     description?: TranslationMap
+    slug?:        TranslationMap
   }
   created_at: string
   updated_at: string
@@ -59,8 +60,8 @@ export interface ConcertPayload {
   description?: TranslationMap | null
   venue_id: number
   date: string
-  slug_en?: string | null
-  slug_pl?: string | null
+  /** A null locale is generated (on create) or cleared/kept (on update) by the API. */
+  slug?: TranslationMap
   doors_open?: string | null
   sound_check_time?: string | null
   start_time?: string | null

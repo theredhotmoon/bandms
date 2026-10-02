@@ -114,7 +114,7 @@ function getTypeLabel(concert: Concert) {
           <ShowsMap
             concerts={concertsWithCoords.map(c => ({
               id: c.id,
-              href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
+              href: `/${lang}/${slugMap[lang].concerts}/${c.slug}`,
               lat: c.venue.latitude as number,
               lng: c.venue.longitude as number,
               city: c.venue.city,
@@ -151,11 +151,11 @@ function getTypeLabel(concert: Concert) {
             const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
               <div class="gig-row">
-                <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`} aria-label={`${c.venue.city ?? c.venue.name}, ${mo} ${yr}`}>
+                <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug}`} aria-label={`${c.venue.city ?? c.venue.name}, ${mo} ${yr}`}>
                   <span class="date-day">{day}</span>
                   <span class="date-mo">{mo} {yr}</span>
                 </a>
-                <a class="row-main" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>
+                <a class="row-main" href={`/${lang}/${slugMap[lang].concerts}/${c.slug}`}>
                   <span class="city-name">{c.name ?? (c.venue.city ?? c.venue.name)}</span>
                   <span class="venue-line">
                     <span class="venue-name">{c.name ? (c.venue.city ?? c.venue.name) + ' · ' + c.venue.name : c.venue.name}</span>
@@ -192,7 +192,7 @@ function getTypeLabel(concert: Concert) {
                       </a>
                     )
                     : (
-                      <a class="details-btn" href={`/${lang}/${slugMap[lang].concerts}/${c.slug_en}`}>{t.details}</a>
+                      <a class="details-btn" href={`/${lang}/${slugMap[lang].concerts}/${c.slug}`}>{t.details}</a>
                     )
                   }
                 </div>
@@ -221,7 +221,7 @@ function getTypeLabel(concert: Concert) {
             const { day, mo, yr } = fmtDateParts(c.date, lang)
             return {
               id: c.id,
-              href: `/${lang}/${slugMap[lang].concerts}/${c.slug_en}`,
+              href: `/${lang}/${slugMap[lang].concerts}/${c.slug}`,
               date: c.date,
               day, mo, yr: String(yr),
               city: c.venue.city ?? c.venue.name,

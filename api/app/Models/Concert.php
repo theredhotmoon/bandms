@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasClips;
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,11 +14,11 @@ use Spatie\Translatable\HasTranslations;
 
 class Concert extends Model
 {
-    use HasFactory, HasSlug, HasTranslations, HasClips;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasClips;
 
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['name', 'description', 'slug'];
 
-    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'description', 'poster', 'slug_en', 'slug_pl'];
+    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'description', 'poster', 'slug'];
 
     protected function casts(): array
     {

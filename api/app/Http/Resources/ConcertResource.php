@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -13,8 +14,11 @@ class ConcertResource extends JsonResource
         return [
             'id'             => $this->id,
             'name'           => $this->getTranslation('name', 'en'),
-            'slug_en'        => $this->slug_en ?? 'concert-' . $this->id,
-            'slug_pl'        => $this->slug_pl,
+            // The default locale's slug — every concert URL, in every language,
+            // is built from it. The concert-{id} fallback is the URL a concert
+            // without a slug has always been served at; the migration stored
+            // it for those rows, and this keeps it for any created without one.
+            'slug'           => $this->slugIn(Locales::default()) ?? 'concert-' . $this->id,
             'date'           => $this->date?->format('Y-m-d'),
             'doors_open'       => $this->doors_open,
             'sound_check_time' => $this->sound_check_time,
@@ -24,6 +28,7 @@ class ConcertResource extends JsonResource
             'translations'   => [
                 'name'        => $this->getTranslations('name'),
                 'description' => $this->getTranslations('description'),
+                'slug'        => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
             'poster_url'     => $this->poster ? '/storage/' . $this->poster : null,
             'venue'          => new VenueResource($this->whenLoaded('venue')),

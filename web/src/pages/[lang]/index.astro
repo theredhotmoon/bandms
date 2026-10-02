@@ -149,7 +149,7 @@ const structuredData = {
           {upcoming.map(c => {
             const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
-              <a class="gig-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}/${c.slug_en}`}>
+              <a class="gig-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'concerts')}/${c.slug}`}>
                 <div class="gig-date">
                   <span class="gig-day">{day}</span>
                   <span class="gig-mo">{mo} {yr}</span>

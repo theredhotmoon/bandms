@@ -40,6 +40,15 @@ const props = withDefaults(defineProps<{
    * cleared name should release its slug (#150's review).
    */
   followLoaded?: boolean
+  /**
+   * The record already exists. Then no locale auto-follows on its own: an
+   * empty slug stays empty until the band types one or presses regenerate, so
+   * the form only ever saves what it shows. Auto-filling an empty locale on
+   * edit sent a client guess as an explicit slug — skipping the server's
+   * suffixing (a 422 on a field nobody touched) and inventing a non-default
+   * slug on update, which the API deliberately never does (#154's review).
+   */
+  editing?: boolean
 }>(), {
   sources: () => ({}),
   placeholders: () => ({}),
@@ -64,8 +73,11 @@ const makeSlug = (s: string): string => Slugify(s, { lower: true, strict: true, 
 // coming back — so it stopped tracking the title after the first keystroke.
 const emitted: Partial<Record<Lang, string>> = {}
 
-const follows = (l: Lang, value: string): boolean =>
-  value === '' || (props.followLoaded && value === makeSlug(props.sources[l] ?? ''))
+const follows = (l: Lang, value: string): boolean => {
+  if (props.followLoaded) return value === '' || value === makeSlug(props.sources[l] ?? '')
+  if (props.editing) return false
+  return value === ''
+}
 
 const auto = reactive(
   Object.fromEntries(LOCALES.map(l => [l, follows(l, props.modelValue[l])])) as Record<Lang, boolean>,

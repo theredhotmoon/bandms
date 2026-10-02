@@ -4,11 +4,13 @@ import fs from 'node:fs'
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 /**
- * Release slugs are one translated bag (translated-slug series, table 4). Each
- * locale's slug follows its own title while it is auto — but the API only
- * GENERATES a missing non-default slug on create. So on edit the form must send
- * a previewed slug as the value it shows, not as null: #153's review found the
- * Polish slug shown, saved as null, dropped, and gone on reopen.
+ * Release slugs are one translated bag (translated-slug series, table 4).
+ *
+ * On EDIT no slug fills itself in: the API never invents a non-default slug on
+ * update, so a form that previewed one either dropped it (sent as null — #153's
+ * review) or sent a client guess that skipped server suffixing (#154's review).
+ * The rule now: the form saves exactly what it shows, and a missing slug is
+ * filled only when the band presses regenerate.
  */
 function adminToken(): string {
   const state = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
@@ -19,7 +21,7 @@ function adminToken(): string {
   throw new Error('No auth_token in e2e/.auth/admin.json — did the auth setup run?')
 }
 
-test('a Polish slug previewed while editing is the one that is saved', async ({ page, request, baseURL }) => {
+test('on edit a Polish slug appears only on regenerate, and is the one saved', async ({ page, request, baseURL }) => {
   const stamp = Date.now()
   const headers = { Accept: 'application/json', Authorization: `Bearer ${adminToken()}` }
 
@@ -38,8 +40,13 @@ test('a Polish slug previewed while editing is the one that is saved', async ({ 
     await page.locator('tr').filter({ hasText: `E2E Release ${stamp}` }).getByRole('button', { name: /edit/i }).click()
     const modal = page.locator('.modal-overlay')
 
+    const plSlug = modal.locator('.slug-row[data-locale="pl"] input')
     await modal.locator('.trans-row[data-locale="pl"] input').first().fill(`Wydanie ${stamp}`)
-    await expect(modal.locator('.slug-row[data-locale="pl"] input')).toHaveValue(`wydanie-${stamp}`)
+    // Not filled in by itself on an existing release…
+    await expect(plSlug).toHaveValue('')
+    // …but one press of regenerate does it, and that is what is saved.
+    await modal.locator('.slug-row[data-locale="pl"] .slug-regen').click()
+    await expect(plSlug).toHaveValue(`wydanie-${stamp}`)
 
     const saved = page.waitForResponse(r => r.url().endsWith(`/api/releases/${release.id}`) && r.request().method() === 'PUT')
     await modal.getByRole('button', { name: /Update release/i }).click()
