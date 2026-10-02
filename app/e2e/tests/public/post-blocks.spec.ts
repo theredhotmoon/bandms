@@ -92,7 +92,7 @@ test.describe.serial('Public article — content blocks', () => {
     })
     const body = (await res.json()).data
     postId = body.id
-    postSlug = body.slug_en
+    postSlug = body.slug
 
     await rebuildAndWait(request, Date.now())
   })

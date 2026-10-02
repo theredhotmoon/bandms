@@ -1384,11 +1384,11 @@ new error, at `STATIC_SLUGS`. More than one means something drifted back to a
 hardcoded pair. (Two unrelated errors are pre-existing; see *Type-checking
 `web/`*.)
 
-Two things are deliberately still per-locale and **not** registry-driven:
-`slug_en`/`slug_pl` on concerts/releases/posts/albums/shop_items (a third locale
-needs a migration — this is why `PostController` and `ReleaseController` still
-name `'pl'`), and the `defaults: { en, pl }` on every `CopyField` in
-`packages/site-copy` — the UI strings themselves. Those used to be ~23 inline
+One thing is deliberately still per-locale and **not** registry-driven: the
+`defaults: { en, pl }` on every `CopyField` in `packages/site-copy` — the UI
+strings themselves. (URL slugs were the other, until the translated-slug series
+moved them into one `slug` bag per table — see *URL slugs are one translated bag*
+below.) Those used to be ~23 inline
 `T = { en: …, pl: … }` dicts scattered through `web/src`; they are now one
 registry (see *Editable page copy* below), and `resolveCopy()` falls back to
 `en` for a locale with no default, so a third language is additive there too.
@@ -1447,10 +1447,57 @@ which for a Polish-only post fell through two nulls and slugged it `post`,
 spec that saves Polish-first fails every parallel spec filling only the English
 title. `content-languages.spec.ts` serves the order through `page.route`.
 
-Still per-column, deliberately, until the slug migration: `slug_en`/`slug_pl`
-(so `SlugInput` keeps `modelValue`/`modelValuePl` and only *orders* its rows),
-and the per-locale sample-text placeholders, which are `Record<Lang, string>`
-maps so a third locale is a compile error at each one.
+Placeholders are one catalogue key each, resolved in the input's own language
+(`t(key, {}, { locale: l })`); interface languages are their own list,
+`UI_LOCALES` in `app/src/i18n/locales.ts` — a content language does not need
+the admin translated into it. With a throwaway third locale in
+`app/src/locales.ts`, `vue-tsc -b` reports **zero** errors: that is the check
+that the admin is registry-driven, and it should stay at zero.
+
+### URL slugs are one translated bag
+
+Every table with slugs — tags, albums, shop_items, releases, concerts, posts —
+stores one Spatie-translatable `slug` JSON column, `{"en": …, "pl": …}`, where
+there used to be `slug_en`/`slug_pl`. A third language is a key, not a
+migration. The series (#150–#155) moved **no public URL**; each table's PR
+recorded every live URL before its migration and diffed after.
+
+**The API's `slug` is the default locale's slug**, never blank, and is what
+concert and merch URLs are built from in every language (the old `slug_en`
+value). The full bag is `translations.slug`. Posts are the one table routed per
+language: `postSlug()` (`web/src/lib/i18n.ts`) walks `[lang, ...fallbacks]`
+over the bag, which for en/pl is exactly the old `slug_pl || slug_en`.
+
+**`App\Traits\HasTranslatedSlug` owns the rules.** Uniqueness is checked
+across **every locale of every other record** (`slugTaken()`,
+`translatedSlugRules()`), which makes #83's bug — one record's Polish slug equal
+to another's English one, silently shadowing a page — impossible for all six
+tables. There is no DB unique index: MySQL cannot index an arbitrary JSON key
+set. `applySlugBag()` is the generate-once policy: a filled locale is taken, a
+blank non-default one cleared, the default never blanked, an absent one left
+alone; on **create only** each titled locale gets a slug from its own title.
+Tag alone re-slugs on rename. Shop items re-slug on rename when no default slug
+is given — an endpoint behaviour kept as-is, which the admin never triggers.
+
+**`concert-{id}` is data, not a fallback any more.** A concert with no
+`slug_en` was served there; the migration wrote it in, because a missing
+default slug is *generated* on the next save, which would have moved the page.
+
+**The admin input is `TranslatedSlugInput`**, and three review findings shaped
+it — each one a slug the form showed but did not save, or saved but did not
+show:
+
+| Prop | Rule | Why |
+|---|---|---|
+| `v-model:auto` + `slugPayload()` | an auto-following locale goes as **null** on create | the preview is a guess; only the server can suffix past another record's slug in any language (#150) |
+| `followLoaded` (off by default; TagForm only) | a loaded slug equal to its name's slug keeps following | on anything public, a rename would re-slug and 404 every link (#152) |
+| `editing` | on an existing record **nothing auto-fills**; regenerate is explicit | the API never invents a non-default slug on update, so a preview was either dropped or sent as an unchecked guess (#153, #154) |
+
+So on an edit form the band saves exactly what the field shows.
+
+`App\Support\Migrations\TranslatedSlugColumns` is the migration helper the
+six migrations share; migrations re-run on every fresh database, so its
+behaviour is frozen — add a method rather than change one.
 
 ### The fallback policy is *declared*, never scanned
 

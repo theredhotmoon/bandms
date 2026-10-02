@@ -27,8 +27,9 @@ export async function getStaticPaths() {
 
   // Every locale's path for one item. `slug` is either the same string in every
   // locale (concerts and merch on their default-locale `slug` — there is no per-locale slug on those
-  // public routes) or a per-locale resolver (posts — slug_pl under /pl/,
-  // falling back to slug_en when the post has no Polish title).
+  // public routes) or a per-locale resolver (posts — postSlug() walks the
+  // locale's fallback chain over translations.slug, so /pl/ serves the Polish
+  // slug and falls back to the English one).
   const alternatesFor = (section: string, slug: string | number | ((lang: Locale) => string)) =>
     Object.fromEntries(
       LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${typeof slug === 'function' ? slug(l) : slug}`]),

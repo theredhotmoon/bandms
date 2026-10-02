@@ -68,13 +68,13 @@ test.describe.serial('Public news — drafts are not built', () => {
       title: `E2E Draft Post ${stamp}`, intro: 'Not ready yet.',
     })).json()
     draftId = draft.data.id
-    draftSlug = draft.data.slug_en
+    draftSlug = draft.data.slug
 
     const live = await (await authedFetch(request, 'post', '/api/posts', {
       title: `E2E Live Post ${stamp}`, intro: 'Ready.', published_at: new Date().toISOString(),
     })).json()
     liveId = live.data.id
-    liveSlug = live.data.slug_en
+    liveSlug = live.data.slug
 
     // `since` is taken *after* the seed, not at collection time: a build another
     // worker triggered between the two would otherwise pass the >= check having

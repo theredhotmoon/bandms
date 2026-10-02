@@ -91,11 +91,11 @@ describe('slug generation for a title written only in the primary language', fun
     // Before: `$title['en'] ?? reset($title)` found en => null twice over and
     // fell back to the literal 'post', so every Polish-only post got
     // /en/news/post, post-2, post-3...
-    it('builds a post\'s slug_en from the Polish title instead of "post"', function () {
+    it('builds a post\'s default slug from the Polish title instead of "post"', function () {
         $this->postJson('/api/posts', ['title' => ['en' => null, 'pl' => 'Nowa płyta']])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'nowa-plyta')
-            ->assertJsonPath('data.slug_pl', 'nowa-plyta');
+            ->assertJsonPath('data.slug', 'nowa-plyta')
+            ->assertJsonPath('data.translations.slug.pl', 'nowa-plyta');
     });
 
     it('builds a release\'s default slug from the Polish title instead of "release"', function () {
@@ -104,10 +104,10 @@ describe('slug generation for a title written only in the primary language', fun
             ->assertJsonPath('data.slug', 'debiut');
     });
 
-    it('still prefers the English title for slug_en when both exist', function () {
+    it('still prefers the English title for the default slug when both exist', function () {
         $this->postJson('/api/posts', ['title' => ['en' => 'New record', 'pl' => 'Nowa płyta']])
             ->assertCreated()
-            ->assertJsonPath('data.slug_en', 'new-record');
+            ->assertJsonPath('data.slug', 'new-record');
     });
 });
 

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\HasSlug;
+use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +13,11 @@ use Spatie\Translatable\HasTranslations;
 
 class Post extends Model
 {
-    use HasFactory, HasSlug, HasTranslations;
+    use HasFactory, HasTranslatedSlug, HasTranslations;
 
-    public array $translatable = ['title', 'intro'];
+    public array $translatable = ['title', 'intro', 'slug'];
 
-    protected $fillable = ['title', 'slug_en', 'slug_pl', 'intro', 'image', 'published_at', 'event_date_display'];
+    protected $fillable = ['title', 'slug', 'intro', 'image', 'published_at', 'event_date_display'];
 
     protected function casts(): array
     {

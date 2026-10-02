@@ -86,7 +86,6 @@ export default {
   },
   slug: {
     autoGenerate: 'Generuj z tytułu',
-    autoGeneratePl: 'Generuj z polskiego tytułu',
   },
   social: {
     title: 'Linki społecznościowe',

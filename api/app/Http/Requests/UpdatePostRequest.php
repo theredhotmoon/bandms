@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\PostRules;
+use App\Models\Post;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePostRequest extends FormRequest
@@ -25,8 +26,6 @@ class UpdatePostRequest extends FormRequest
     {
         return $this->sharedRules() + $this->blockPayloadRules($this->input('blocks', [])) + [
             'title'   => 'sometimes|required',
-            'slug_en' => ['nullable', 'string', 'max:255', $this->slugCrossUniqueRule($this->route('post')->id)],
-            'slug_pl' => ['nullable', 'string', 'max:255', $this->slugCrossUniqueRule($this->route('post')->id)],
-        ];
+        ] + Post::translatedSlugRules($this->route('post')->id);
     }
 }

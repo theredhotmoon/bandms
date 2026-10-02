@@ -13,7 +13,7 @@ class PostFactory extends Factory
 
         return [
             'title'        => rtrim($title, '.'),
-            'slug_en'      => Str::slug($title),
+            'slug'         => ['en' => Str::slug($title)],
             'image'        => null,
             // Always published by default: the public endpoints hide drafts, so
             // a randomly-null default would make every public GET test flaky.

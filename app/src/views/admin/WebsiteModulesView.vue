@@ -2,13 +2,13 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import SlugInput from '@/components/admin/forms/SlugInput.vue'
+import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Localized, WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
 import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
-import { LOCALES, bagFrom, emptyBag, shortLabel, type TranslationBag } from '@/locales'
+import { LOCALES, bagFrom, emptyBag, shortLabel, type Lang, type TranslationBag } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
 import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
@@ -105,8 +105,7 @@ const PER_PAGE_OPTIONS = [6, 9, 10, 12, 15, 20, 24] as const
 
 const editingSlug  = ref<string | null>(null)
 const draftName    = ref<TranslationBag>(emptyBag())
-const draftSlugEn  = ref('')
-const draftSlugPl  = ref('')
+const draftSlug    = ref<TranslationBag>(emptyBag())
 const draftPerPage = ref<number | null>(null)
 const fieldErrors  = ref<Record<string, string[]>>({})
 
@@ -131,7 +130,7 @@ const draftVisibility = ref<Record<string, boolean>>({})
 
 const { isDirty, markClean } = useDirtyGuard(() => ({
   name: draftName.value,
-  slug: { en: draftSlugEn.value, pl: draftSlugPl.value },
+  slug: draftSlug.value,
   perPage: draftPerPage.value,
   settings: draftSettings.value,
   visibility: draftVisibility.value,
@@ -150,8 +149,7 @@ const isPageModule = computed(() =>
 function startEdit(mod: WebsiteModule) {
   editingSlug.value  = mod.slug
   draftName.value    = bagFrom(mod.custom_name)
-  draftSlugEn.value  = mod.custom_slug?.en ?? ''
-  draftSlugPl.value  = mod.custom_slug?.pl ?? ''
+  draftSlug.value    = bagFrom(mod.custom_slug)
   draftPerPage.value = mod.per_page ?? null
   fieldErrors.value  = {}
 
@@ -189,7 +187,7 @@ function effectiveSlug(stored: string | null | undefined, moduleKey: string) {
 
 // The path shown under each slug input; never blank, so the hint always shows
 // where the page will actually live.
-function previewPath(mod: WebsiteModule, lang: 'en' | 'pl', draft: string) {
+function previewPath(mod: WebsiteModule, lang: Lang, draft: string) {
   return `/${lang}/${effectiveSlug(draft, mod.slug)}`
 }
 
@@ -232,10 +230,7 @@ async function saveEdit(slug: string) {
         // column, and the API treats an explicit null as "clear this locale".
         ...(isPageModule.value
           ? {
-              custom_slug: {
-                en: draftSlugEn.value.trim() || null,
-                pl: draftSlugPl.value.trim() || null,
-              },
+              custom_slug: Object.fromEntries(LOCALES.map(l => [l, draftSlug.value[l].trim() || null])) as Localized,
             }
           : {}),
         per_page: draftPerPage.value,
@@ -371,26 +366,22 @@ async function saveEdit(slug: string) {
             </div>
           </div>
 
-          <!-- URL slug. Uses SlugInput.vue like every other slug field in the
-               admin, but with no sourceEn/sourcePl: that suppresses the
-               regenerate button, since this field exists to break the
-               label→URL coupling regenerating would reintroduce. hintEn/Pl
-               carry the resolved path preview instead. -->
+          <!-- URL slug. TranslatedSlugInput like every other slug field in the
+               admin, but with no `sources`: that suppresses the regenerate
+               button, since this field exists to break the label→URL coupling
+               regenerating would reintroduce. `hints` carry the resolved path
+               preview instead. -->
           <p v-if="!isPageModule" class="text-xs text-zinc-500">{{ $t('pages.modules.chromeNote') }}</p>
 
           <div v-if="isPageModule" class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.urlSlug') }}</span>
-            <SlugInput
-              v-model="draftSlugEn"
-              v-model:modelValuePl="draftSlugPl"
-              :bilingual="true"
-              :placeholderEn="mod.slug"
-              :placeholderPl="mod.slug"
+            <TranslatedSlugInput
+              v-model="draftSlug"
+              editing
               :maxlength="60"
-              :errorEn="fieldErrors['custom_slug.en']?.[0]"
-              :errorPl="fieldErrors['custom_slug.pl']?.[0]"
-              :hintEn="previewPath(mod, 'en', draftSlugEn)"
-              :hintPl="previewPath(mod, 'pl', draftSlugPl)"
+              :placeholders="Object.fromEntries(LOCALES.map(l => [l, mod.slug]))"
+              :errors="Object.fromEntries(LOCALES.map(l => [l, fieldErrors[`custom_slug.${l}`]?.[0]]))"
+              :hints="Object.fromEntries(LOCALES.map(l => [l, previewPath(mod, l, draftSlug[l])]))"
             />
             <!-- <i18n-t>, not a parameter: {path} is a <code> element, and an
                  interpolated parameter renders as escaped plain text. -->

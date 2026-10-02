@@ -2,20 +2,30 @@ import { describe, it, expect } from 'vitest'
 import { postSlug, formatGenreKicker, splitCommaList, formatEventDates, fmtDate, fmtDateShort, fmtDateParts } from './i18n'
 
 describe('postSlug', () => {
-  it('uses slug_en for the en locale', () => {
-    expect(postSlug({ slug_en: 'brass-tour-2026', slug_pl: 'trasa-2026' }, 'en')).toBe('brass-tour-2026')
+  // The URL contract the slug columns had, now over the translations.slug bag:
+  // these four are the same cases, so the migration moved no post URL.
+  const post = (en: string, pl: string | null) => ({ slug: en, translations: { slug: { en, pl } } })
+
+  it('uses the English slug for the en locale', () => {
+    expect(postSlug(post('brass-tour-2026', 'trasa-2026'), 'en')).toBe('brass-tour-2026')
   })
 
-  it('uses slug_pl for the pl locale when present', () => {
-    expect(postSlug({ slug_en: 'brass-tour-2026', slug_pl: 'trasa-2026' }, 'pl')).toBe('trasa-2026')
+  it('uses the Polish slug for the pl locale when present', () => {
+    expect(postSlug(post('brass-tour-2026', 'trasa-2026'), 'pl')).toBe('trasa-2026')
   })
 
-  it('falls back to slug_en for pl when the post has no Polish title/slug', () => {
-    expect(postSlug({ slug_en: 'brass-tour-2026', slug_pl: null }, 'pl')).toBe('brass-tour-2026')
+  it('falls back to the English slug for pl when the post has no Polish slug', () => {
+    expect(postSlug(post('brass-tour-2026', null), 'pl')).toBe('brass-tour-2026')
   })
 
-  it('falls back to slug_en for pl when slug_pl is an empty string', () => {
-    expect(postSlug({ slug_en: 'brass-tour-2026', slug_pl: '' }, 'pl')).toBe('brass-tour-2026')
+  it('falls back to the English slug for pl when the Polish one is an empty string', () => {
+    expect(postSlug(post('brass-tour-2026', ''), 'pl')).toBe('brass-tour-2026')
+  })
+
+  // Snapshots of older API shapes, or a summary built without translations,
+  // still resolve: the default slug is always there.
+  it('falls back to the default slug when there is no bag at all', () => {
+    expect(postSlug({ slug: 'brass-tour-2026' }, 'pl')).toBe('brass-tour-2026')
   })
 })
 

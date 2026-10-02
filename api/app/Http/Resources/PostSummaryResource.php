@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -26,8 +27,9 @@ class PostSummaryResource extends JsonResource
         return [
             'id'           => $this->id,
             'title'        => $this->title,
-            'slug_en'      => $this->slug_en,
-            'slug_pl'      => $this->slug_pl,
+            // The default locale's slug. A post's URL is per language — the
+            // public site resolves translations.slug down the locale chain.
+            'slug'         => $this->slugIn(Locales::default()),
             'intro'        => $this->intro,
             'excerpt'      => $excerpt,
             'published_at' => $this->published_at,
@@ -38,6 +40,7 @@ class PostSummaryResource extends JsonResource
             'translations' => [
                 'title' => $this->getTranslations('title'),
                 'intro' => $this->getTranslations('intro'),
+                'slug'    => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,

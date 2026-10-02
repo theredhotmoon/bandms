@@ -88,7 +88,7 @@ test.describe.serial('Public news post — event date from linked concerts', () 
       const res = await authedFetch(request, 'post', '/api/posts', {
         title, published_at: new Date().toISOString(), concert_ids, event_date_display,
       })
-      return (await res.json()).data.slug_en
+      return (await res.json()).data.slug
     }
 
     singleSlug   = await makePost(`E2E Event Date Single ${stamp}`, [soloConcert])
