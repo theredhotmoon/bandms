@@ -92,4 +92,30 @@ describe('colourHits — Vue SFC', () => {
   it('ignores a slot shorthand that happens to look like hex', () => {
     expect(vue('<template>\n  <Card>\n    <template #add>x</template>\n  </Card>\n</template>')).toEqual([])
   })
+
+  // Regressions from the #158 review — each one a way the first, line-based
+  // scanner either went blind or failed a clean file.
+  it('keeps scanning <style> after accept="image/*" in the template', () => {
+    const src = '<template>\n  <input type="file" accept="image/*" />\n</template>\n<style>\n.zz { color: #123456; }\n</style>'
+    expect(vue(src)).toEqual([{ line: 5, hits: ['#123456'] }])
+  })
+
+  it('does not scan markup inside a multi-line HTML comment', () => {
+    expect(vue('<template>\n  <!--\n  <div class="bg-[#111]" />\n  -->\n  <p />\n</template>')).toEqual([])
+  })
+})
+
+describe('colourHits — values and selectors across lines', () => {
+  it('finds colours in a value that continues onto the next line', () => {
+    expect(css('.a {\n  box-shadow: 0 0 0 1px #333,\n    0 1px 2px #444;\n}')).toEqual([
+      { line: 2, hits: ['#333'] },
+      { line: 3, hits: ['#444'] },
+    ])
+    expect(css('.a {\n  background:\n    #555;\n}')).toEqual([{ line: 3, hits: ['#555'] }])
+  })
+
+  it('never reads a selector on its own line as a colour', () => {
+    expect(css('#add-btn:hover\n{\n  color: var(--c-111111);\n}')).toEqual([])
+    expect(css('@media (min-width: 40rem) {\n  #fade:hover { color: #222; }\n}')).toEqual([{ line: 2, hits: ['#222'] }])
+  })
 })
