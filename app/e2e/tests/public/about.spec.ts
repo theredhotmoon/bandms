@@ -55,7 +55,11 @@ test.describe('About page', () => {
   test('bio renders as separate paragraphs', async ({ page }) => {
     await page.goto(`${WEB}/en/about`)
 
-    const paragraphs = page.locator('.ab-bio')
+    // Plain-text variants (short/medium, and the "coming soon" placeholder)
+    // render as <p class="ab-bio">; RichEditor variants (long/full) render as
+    // one <div class="ab-bio-html">. Accept either — the band chooses which,
+    // and about-bio-variant.spec.ts switches between them while this runs.
+    const paragraphs = page.locator('.ab-bio, .ab-bio-html')
     expect(await paragraphs.count()).toBeGreaterThan(0)
     await expect(paragraphs.first()).not.toBeEmpty()
   })
