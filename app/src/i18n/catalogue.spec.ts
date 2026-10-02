@@ -94,6 +94,8 @@ describe('i18n catalogues', () => {
         'media.videos.syncResult',
         'media.photos.photoCount',
         'media.photos.albumCreated',
+        'media.photos.uploadN',
+        'media.photos.photosAdded',
         'media.batchUpload.create',
         'setlists.setlists.songCount',
         'setlists.setlistEditor.songCount',

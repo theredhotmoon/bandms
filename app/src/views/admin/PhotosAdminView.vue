@@ -143,12 +143,18 @@ const addProgress = ref<UploadProgress | null>(null)
 
 async function handleAddPhotos(files: { file: File; caption: string }[]) {
   if (!viewAlbum.value) return
+  const albumId = viewAlbum.value.id
   addUploading.value = true
   addProgress.value = null
   try {
-    const album = await addAlbumPhotos(token.value!, viewAlbum.value.id, files, (p) => {
+    const album = await addAlbumPhotos(token.value!, albumId, files, (p) => {
       addProgress.value = p
     })
+    await queryClient.invalidateQueries({ queryKey: ['albums'] })
+    toast.success(t('media.photos.photosAdded', files.length, { named: { n: files.length } }))
+    // The grid may have been closed, or switched to another album, while the
+    // upload ran — then these photos are not its photos to show.
+    if (viewAlbum.value?.id !== albumId) return
     // Append only the new photos, so a drag-reorder that has not been saved
     // yet survives the upload; the server put them after the last one too.
     const known = new Set(originalOrder.value)
@@ -156,8 +162,6 @@ async function handleAddPhotos(files: { file: File; caption: string }[]) {
     localPhotos.value = [...localPhotos.value, ...added]
     originalOrder.value = [...originalOrder.value, ...added.map((p) => p.id)]
     viewAlbum.value = album
-    await queryClient.invalidateQueries({ queryKey: ['albums'] })
-    toast.success(t('media.photos.photosAdded', added.length, { named: { n: added.length } }))
     showAddPhotos.value = false
   } catch (e) {
     reportSaveError(e, t('media.photos.uploadFailed'))
@@ -387,7 +391,8 @@ async function confirmDelete() {
           @cancel="showAddPhotos = false"
         />
         <div v-else class="flex justify-end mb-3">
-          <button type="button" class="btn-add-primary" @click="showAddPhotos = true">{{ $t('media.photos.addPhotos') }}</button>
+          <!-- One upload at a time: a second album's upload would share addUploading. -->
+          <button type="button" class="btn-add-primary" :disabled="addUploading" @click="showAddPhotos = true">{{ $t('media.photos.addPhotos') }}</button>
         </div>
         <div class="photos-grid">
           <div
