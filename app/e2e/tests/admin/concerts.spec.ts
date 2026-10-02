@@ -68,8 +68,12 @@ test.describe('Admin Concerts — CRUD flow', () => {
   const futureDay   = String(1 + (parseInt(runSuffix.slice(2, 4)) % 27)).padStart(2, '0')
   const futureDate  = `2099-${futureMonth}-${futureDay}`
   const updatedDate = `2099-${futureMonth}-${String(parseInt(futureDay) + 1).padStart(2, '0')}`
-  // We'll store the created row locator text for later steps
-  let createdRowDate: string
+  // Rows are found by this name, never by date: the date only has ~300
+  // values, and runs that died mid-flow leave 2099 concerts behind. A
+  // leftover sharing the date survives our delete and fails the last step.
+  const concertName = `E2E Concert ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const ourRow = (page: import('@playwright/test').Page) =>
+    page.locator('tbody tr').filter({ hasText: concertName })
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/concerts')
@@ -94,6 +98,8 @@ test.describe('Admin Concerts — CRUD flow', () => {
     // Wait for at least one venue option beyond the disabled placeholder
     await expect(venueSelect.locator('option:not([disabled])')).not.toHaveCount(0, { timeout: 10000 })
 
+    await modal.locator('.trans-row[data-locale="en"] input').first().fill(concertName)
+
     // Fill date
     const dateInput = modal.locator('input[type="date"], input[name="date"]').first()
     await dateInput.fill(futureDate)
@@ -116,9 +122,8 @@ test.describe('Admin Concerts — CRUD flow', () => {
     // Toast
     await expectToast(page, 'Concert created')
 
-    // Row should appear — store the date text for later
-    createdRowDate = futureDate
-    await expect(page.locator('tbody tr').last()).toBeVisible()
+    await expect(ourRow(page)).toHaveCount(1)
+    await expect(ourRow(page)).toContainText(futureDate)
   })
 
   // -------------------------------------------------------------------------
@@ -127,11 +132,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
   test('edit concert — modal opens with Edit Concert title, date updated, toast confirms', async ({
     page,
   }) => {
-    // Find the row that contains our created date
-    const row = page
-      .locator('tbody tr')
-      .filter({ hasText: createdRowDate ?? futureDate })
-      .last()
+    const row = ourRow(page)
 
     await expect(row).toBeVisible()
 
@@ -154,9 +155,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
 
     await expect(modal).not.toBeVisible({ timeout: 8000 })
     await expectToast(page, 'Concert updated')
-
-    // Update stored date for subsequent steps
-    createdRowDate = updatedDate
+    await expect(ourRow(page)).toContainText(updatedDate)
   })
 
   // -------------------------------------------------------------------------
@@ -165,10 +164,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
   test('delete concert — cancel keeps row, confirm removes row and shows toast', async ({
     page,
   }) => {
-    const row = page
-      .locator('tbody tr')
-      .filter({ hasText: createdRowDate ?? updatedDate })
-      .last()
+    const row = ourRow(page)
 
     await expect(row).toBeVisible()
 
@@ -180,26 +176,17 @@ test.describe('Admin Concerts — CRUD flow', () => {
 
     // Dialog gone, row still there
     await expect(page.getByText('Confirm deletion')).not.toBeVisible()
-    await expect(
-      page.locator('tbody tr').filter({ hasText: createdRowDate ?? updatedDate }).last(),
-    ).toBeVisible()
+    await expect(ourRow(page)).toBeVisible()
 
     // --- Confirm path ---
-    const rowAgain = page
-      .locator('tbody tr')
-      .filter({ hasText: createdRowDate ?? updatedDate })
-      .last()
-
-    await rowAgain.getByRole('button', { name: /delete/i }).click()
+    await ourRow(page).getByRole('button', { name: /delete/i }).click()
 
     await confirmDelete(page)
 
     await expectToast(page, 'Concert deleted')
 
     // Row is gone
-    await expect(
-      page.locator('tbody tr').filter({ hasText: createdRowDate ?? updatedDate }),
-    ).toHaveCount(0, { timeout: 8000 })
+    await expect(ourRow(page)).toHaveCount(0, { timeout: 8000 })
   })
 })
 
