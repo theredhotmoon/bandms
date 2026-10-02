@@ -6,105 +6,74 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ## Band member pages — a shareable "postcard" per member — NEXT UP
 
-**Status:** requested 2026-10-03, branch `feature/member-pages`. Start as soon
-as #161 (skip link) is merged.
+Requested 2026-10-03; branch `feature/member-pages`. Today a member is only a
+card + modal on About; **no member has a slug, and nothing in the schema
+points at a member** (no photo, post, concert or clip).
 
-Each band member gets their own public URL: a "postcard" of who they are,
-shareable on its own (a booker, a local paper, the member's own socials) and
-printable as a QR code (merch table, rehearsal-room door, press pack).
+**PR 1 — the page.**
+- URL under About (`/en/about/jan-kowalski`), slug generated once from the
+  name and **never re-slugged on rename** — a printed QR must not go dead.
+  Plain slug or a `HasTranslatedSlug` bag: decide. Gated on the `about` module.
+- Content: photo, name, role, current/former + dates, bio, main instrument,
+  social links. **Instruments/gear: a mockup block only.**
+- Share: copy-link + `navigator.share`, `og:*` with the member's photo,
+  canonical/hreflang per the existing rules.
+- **Printable QR** in the admin per member: SVG/PNG download + an A6 print
+  card. Client-side library, no external service; encodes the *production*
+  URL, never `localhost`.
+- About cards link to the page; copy via `@bandms/site-copy`; marks
+  `band-members` dirty. Tests: Pest (slug, uniqueness, rename keeps it),
+  admin E2E (QR encodes the right URL), public E2E (page, module off → 404).
 
-**What exists today:** `band_members` has name, role, bio, photo, `is_current`,
-`joined_at`/`quit_at`, a main instrument, an instrument list, rig setups and
-social links. Publicly a member is only a card + modal inside the About page
-(`AboutSection.astro`, `MemberGrid.vue`). **No member has a slug or URL**, and
-**nothing else in the schema points at a member** — no photo, post, concert or
-clip knows who is in it.
-
-### 1. The page itself — first PR
-
-- **URL.** A slug per member under the About section, e.g.
-  `/en/about/jan-kowalski`, `/pl/o-nas/jan-kowalski`. Add a slug column and
-  generate it once from the name (never re-slug on rename — the page is meant
-  to be printed, so a moved URL is a dead QR code). Decide whether it is a
-  translated bag via `HasTranslatedSlug` like the six slug tables, or one
-  plain slug (names do not translate). Uniqueness checked like every other
-  slug; `[lang]/[section]/[slug].astro` emits it, gated on the `about` module.
-- **Content now:** photo, name, role, current/former + joined/left, bio, main
-  instrument, social links.
-- **Instruments / gear — mockup only.** A placeholder block with the final
-  layout and a "coming soon" state; the real data (instrument list, default
-  rig) is a later step.
-- **Shareable link.** Copy-link button (+ native `navigator.share` where it
-  exists); proper `og:title`/`og:description`/`og:image` (the member's photo)
-  so the link previews well; canonical + hreflang per the existing rules.
-- **Printable QR code.** In the admin, on the member's row/form: show the QR
-  for the page's absolute URL, download as SVG/PNG, and a print view (A6
-  card: name, role, photo, QR, band name). Generate it client-side (a small
-  QR library, no external service — the CSP stays closed). The QR must
-  encode the *production* URL (`PUBLIC_SITE_URL`/`FRONTEND_URL`), never
-  `localhost`. Optionally also a print stylesheet on the public page itself.
-- **About page** cards link to the member page (keep the modal or replace it
-  — decide).
-- Marks `band-members` dirty, so a rebuild publishes it.
-- Copy strings go in `@bandms/site-copy` (a `member` module or the `about`
-  one), never inline.
-- Tests: Pest (slug generation, uniqueness, rename keeps slug), admin E2E
-  (QR renders, encodes the right URL, download works), public E2E (page
-  renders, each block, disabled `about` module 404s it, hreflang/canonical).
-
-### 2. Later — link the rest of the site to members (one PR each)
-
-Nothing points at a member yet, so each of these needs a relation, an admin
-picker, an API field and a block on the member page. A polymorphic pivot
-(`memberables`, the `clippables` pattern) may serve all of them at once —
-decide before the first one.
-
-- **Instruments & gear:** replace the mockup with the real instrument list and
-  default rig (data already exists).
-- **Photos:** tag the members in a photo; the page shows a gallery of them.
-- **News:** link posts to members; the page lists the related news.
-- **Other entities:** concerts (who played — line-ups change), clips, releases
-  (who played on it), music videos, press releases. Pick per entity whether
-  it is worth a block.
+**Later, one PR each** — each needs a relation, an admin picker and a block.
+Decide first whether one polymorphic pivot (`memberables`, like `clippables`)
+serves them all: real instruments & gear (data exists) · photos (tag members)
+· news · concerts, clips, releases, music videos, press.
 
 ---
 
 ## Hero pictures — a "display probability" per picture
 
-**Status:** idea, requested 2026-10-03. Not started.
+Idea, 2026-10-03. `HeroBackdrop.astro` picks uniformly at random from the
+page's set (`resolveHeroImages()`), so a "funny one" shows as often as the
+best shot.
 
-Every page's hero backdrop picks one picture from its set — the page's own
-scope (`about`, `concerts`, …) or, failing that, the global `main` set; see
-`resolveHeroImages()` (`web/src/lib/heroImages.ts`). The pick is a uniform
-`Math.random()` in `HeroBackdrop.astro`, on every page load. So a picture the
-band likes less (a "funny one") comes up exactly as often as the best shot.
+- Optional `weight` on `hero_images`, set per picture in the admin. **Empty =
+  maximum** (today's behaviour); a value can only **lower** it. Applies in
+  every scope, `main` included; the override rule is unchanged.
+- Weighted random (`w / Σw`), not a ranking. Decide whether 0 ("never show")
+  is allowed.
+- Touches: column + validation + `site-config`, `HeroImage` type,
+  `HeroImagesAdminView.vue`, the pick. Marks `hero-images` dirty. Tests: Pest,
+  vitest for the pick with a seeded RNG, extend both hero E2E specs.
 
-**Wanted:** an optional weight per hero picture, set by the admin, that can
-only **lower** how often it shows.
+---
 
-- **No value = maximum.** A picture with no weight is as likely as any other
-  unweighted one — today's behaviour, so nothing changes until a band sets one.
-- **A value only reduces.** E.g. a 1–100 scale (or a few named steps: always /
-  often / sometimes / rarely) where empty is treated as 100. A picture at 25
-  shows a quarter as often as an unweighted one.
-- **Weighted random, not a ranking.** Pick with probability `w / Σw` over the
-  page's resolved set; every picture with weight > 0 can still appear. Decide
-  whether 0 is allowed ("keep it in the set but never show it") or whether
-  that is just deleting it.
-- **Applies to every scope**, including the global `main` set. The weight
-  belongs to the `hero_images` row, so a picture keeps it wherever it is
-  used. The override rule ("a page's own set replaces the main set") is
-  unchanged.
+## No upcoming gigs → "Subscribe" and "Book us" buttons
 
-**Touches:** a nullable `weight` column on `hero_images` (+ validation, the
-`site-config` resource, `HeroImage` in `web/src/lib/heroImages.ts`), a control
-per picture in `HeroImagesAdminView.vue`, and the pick in `HeroBackdrop.astro`.
-A write marks `hero-images` dirty, like every other hero change.
+Idea, 2026-10-03. With nothing booked, `ConcertsSection.astro`'s empty state
+offers one text link to the newsletter, and the homepage's Upcoming shows
+block simply disappears (gated on `upcoming.length > 0`).
 
-**Tests:** Pest for the column and validation; a vitest for the weighted pick
-(empty = max, lower = rarer, a seeded RNG so it is deterministic); extend
-`e2e/tests/admin/hero-images.spec.ts` (set and persist a weight) and
-`e2e/tests/public/hero-backdrop.spec.ts` (the weight reaches the page).
+- Show two buttons instead: **Subscribe to the newsletter** and **Book us**.
+- "Book us" opens the **existing** `AvailabilityModal` (today mounted only by
+  `ContactSection.astro`). It is a `client:idle` island opened by delegation
+  from any `[data-open-availability]` trigger, so the page needs the island
+  mounted plus a trigger — see *Astro islands cannot share props* in
+  CLAUDE.md. Falling back to a link to the contact page is the cheap option.
+- Decide whether the homepage shows the block empty-with-buttons or keeps
+  hiding it. Gate each button on its module (`newsletter`, `contact`) with
+  `!== false`. Copy in `CONCERTS_COPY`. Public E2E with no upcoming concerts.
+
+---
+
+## Concert page — the poster cannot be opened full size
+
+2026-10-03. `ConcertDetail.astro` renders the poster as a plain `<img>` in
+`.poster-frame`; it cannot be clicked or zoomed. Make it open full size in a
+lightbox (Escape/backdrop to close, focus returned). `GalleryBrowser.vue`
+already has one — reuse or extract it rather than writing a third. Public E2E:
+click opens, Escape closes.
 
 ---
 
