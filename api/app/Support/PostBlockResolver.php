@@ -68,7 +68,7 @@ final class PostBlockResolver
             'concert' => Concert::with('venue')->whereIn('id', $ids)->get()
                 ->keyBy('id')->map(fn ($c) => [
                     'id'      => $c->id,
-                    'slug_en' => $c->slug_en,
+                    'slug'    => $c->slugIn(Locales::default()) ?? 'concert-' . $c->id,
                     'date'    => $c->date?->format('Y-m-d'),
                     'venue'   => $c->venue ? ['id' => $c->venue->id, 'name' => $c->venue->name] : null,
                 ])->all(),
@@ -117,7 +117,7 @@ final class PostBlockResolver
                         'category' => $c->category,
                         'concert'  => $concert ? [
                             'id'      => $concert->id,
-                            'slug_en' => $concert->slug_en,
+                            'slug'    => $concert->slugIn(Locales::default()) ?? 'concert-' . $concert->id,
                             'date'    => $concert->date?->format('Y-m-d'),
                             'venue'   => $concert->venue ? ['id' => $concert->venue->id, 'name' => $concert->venue->name] : null,
                         ] : null,

@@ -179,3 +179,54 @@ describe('release slugs', function () {
             ->assertJsonPath('data.translations.slug.pl', null);
     });
 });
+
+describe('concert slugs', function () {
+    beforeEach(fn () => $this->actingAsAdmin());
+
+    // On create every locale gets a slug — from its own name, else venue +
+    // date — which the admin form always generated client-side for Polish.
+    it('generates every locale on create, from the name or venue + date', function () {
+        $venue = \App\Models\Venue::factory()->create(['name' => 'Klub Pod Jaszczurami']);
+
+        $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2099-06-17', 'name' => ['en' => 'Summer Gig']])
+            ->assertCreated()
+            ->assertJsonPath('data.translations.slug', ['en' => 'summer-gig', 'pl' => 'klub-pod-jaszczurami-2099-06-17']);
+    });
+
+    // update() used to write the raw columns, so clearing a concert's slug in
+    // the admin moved its public page to /concert-{id}.
+    it('keeps the slug when an update sends it blank', function () {
+        $concert = \App\Models\Concert::factory()->create(['slug' => ['en' => 'summer-gig']]);
+
+        $this->putJson("/api/concerts/{$concert->id}", ['slug' => ['en' => null]])
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'summer-gig');
+    });
+
+    // The URL a slug-less concert has always been served at.
+    it('serves concert-{id} for a concert with no slug', function () {
+        $concert = \App\Models\Concert::factory()->create();
+        \Illuminate\Support\Facades\DB::table('concerts')->where('id', $concert->id)->update(['slug' => null]);
+
+        $this->getJson("/api/concerts/{$concert->id}")
+            ->assertOk()
+            ->assertJsonPath('data.slug', "concert-{$concert->id}");
+    });
+});
+
+// The concerts migration writes the concert-{id} fallback in as data, so the
+// first save after it cannot generate a new slug and move the page.
+it('backfills concert-{id} for slug-less concerts in the concerts migration', function () {
+    $migration = require database_path('migrations/2026_10_02_000005_translate_concert_slugs.php');
+    $migration->down();
+
+    $id = \Illuminate\Support\Facades\DB::table('concerts')->insertGetId([
+        'venue_id' => \App\Models\Venue::factory()->create()->id, 'date' => '2099-01-01',
+        'slug_en' => null, 'slug_pl' => null, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $migration->up();
+
+    expect(\Illuminate\Support\Facades\DB::table('concerts')->where('id', $id)->value('slug'))
+        ->toBe(json_encode(['en' => "concert-{$id}"]));
+});

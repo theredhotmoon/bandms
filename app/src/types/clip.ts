@@ -7,9 +7,7 @@ export interface ClipOwner {
   type: ClipOwnerType
   id: number
   label: string
-  /** concert owners: the concert's slug_en (until concerts move to a slug bag). */
-  slug_en?: string
-  /** shop_item owners: the default-locale slug. */
+  /** concert and shop_item owners: the default-locale slug. */
   slug?: string
   date?: string | null
 }

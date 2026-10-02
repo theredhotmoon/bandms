@@ -89,10 +89,10 @@ test.describe.serial('Public clips', () => {
     // default hook timeout under any load.
     test.setTimeout(180_000)
 
-    const concerts = (await (await api(request, 'get', '/api/concerts')).json()).data as { id: number; slug_en: string }[]
+    const concerts = (await (await api(request, 'get', '/api/concerts')).json()).data as { id: number; slug: string }[]
     test.skip(concerts.length === 0, 'No concert to attach to')
     concertId = concerts[0].id
-    concertSlug = concerts[0].slug_en
+    concertSlug = concerts[0].slug
 
     const clip = (await (await api(request, 'post', '/api/clips', {
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',

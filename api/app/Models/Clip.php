@@ -67,7 +67,7 @@ class Clip extends Model
         $out = [];
 
         foreach ($this->concerts as $c) {
-            $out[] = ['type' => 'concert', 'id' => $c->id, 'slug_en' => $c->slug_en, 'date' => $c->date?->format('Y-m-d'),
+            $out[] = ['type' => 'concert', 'id' => $c->id, 'slug' => $c->slugIn(Locales::default()) ?? 'concert-' . $c->id, 'date' => $c->date?->format('Y-m-d'),
                       'label' => trim(($c->date?->format('Y-m-d') ?? '') . ' — ' . ($c->venue?->name ?? $c->getTranslation('name', 'en') ?? ''), ' —')];
         }
         foreach ($this->releases as $r) {
