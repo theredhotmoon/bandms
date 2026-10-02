@@ -20,8 +20,15 @@ return new class extends Migration
     {
         TranslatedSlugColumns::toBag('concerts');
 
-        foreach (DB::table('concerts')->whereNull('slug')->pluck('id') as $id) {
-            DB::table('concerts')->where('id', $id)->update(['slug' => json_encode(['en' => "concert-{$id}"])]);
+        // Every row without an English slug — not only fully empty ones. The old
+        // update path could leave slug_en null with slug_pl set ({"pl": …} now),
+        // and that concert is served at concert-{id} too (#154's review).
+        foreach (DB::table('concerts')->orderBy('id')->get(['id', 'slug']) as $row) {
+            $bag = json_decode((string) $row->slug, true) ?: [];
+            if (blank($bag['en'] ?? null)) {
+                $bag['en'] = "concert-{$row->id}";
+                DB::table('concerts')->where('id', $row->id)->update(['slug' => json_encode($bag)]);
+            }
         }
     }
 

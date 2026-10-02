@@ -496,6 +496,7 @@ function submit() {
            never move its public page. -->
       <TranslatedSlugInput
         v-model="form.slug"
+        :editing="!!initial"
         v-model:auto="slugAuto"
         :sources="slugSources"
         :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"

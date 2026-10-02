@@ -230,6 +230,7 @@ function handleSubmit() {
            locale's slug follows it; other locales are typed. -->
       <TranslatedSlugInput
         v-model="form.slug"
+        :editing="!!initial"
         v-model:auto="slugAuto"
         :sources="{ [DEFAULT_LOCALE]: form.name }"
         :errors="Object.fromEntries(LOCALES.map(l => [l, err(`slug.${l}`)]))"

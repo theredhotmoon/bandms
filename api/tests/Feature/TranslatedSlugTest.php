@@ -230,3 +230,21 @@ it('backfills concert-{id} for slug-less concerts in the concerts migration', fu
     expect(\Illuminate\Support\Facades\DB::table('concerts')->where('id', $id)->value('slug'))
         ->toBe(json_encode(['en' => "concert-{$id}"]));
 });
+
+// #154's review: a concert with slug_pl but NO slug_en (the old update path
+// could leave that) is served at concert-{id} too, so it needs the backfill as
+// much as a fully slug-less one — or its first save moves the page.
+it('backfills concert-{id} for a concert that had only a Polish slug', function () {
+    $migration = require database_path('migrations/2026_10_02_000005_translate_concert_slugs.php');
+    $migration->down();
+
+    $id = \Illuminate\Support\Facades\DB::table('concerts')->insertGetId([
+        'venue_id' => \App\Models\Venue::factory()->create()->id, 'date' => '2099-01-01',
+        'slug_en' => null, 'slug_pl' => 'tylko-polski', 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $migration->up();
+
+    expect(json_decode(\Illuminate\Support\Facades\DB::table('concerts')->where('id', $id)->value('slug'), true))
+        ->toBe(['pl' => 'tylko-polski', 'en' => "concert-{$id}"]);
+});
