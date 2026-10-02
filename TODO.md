@@ -4,6 +4,71 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
+## Band member pages — a shareable "postcard" per member — NEXT UP
+
+**Status:** requested 2026-10-03, branch `feature/member-pages`. Start as soon
+as #161 (skip link) is merged.
+
+Each band member gets their own public URL: a "postcard" of who they are,
+shareable on its own (a booker, a local paper, the member's own socials) and
+printable as a QR code (merch table, rehearsal-room door, press pack).
+
+**What exists today:** `band_members` has name, role, bio, photo, `is_current`,
+`joined_at`/`quit_at`, a main instrument, an instrument list, rig setups and
+social links. Publicly a member is only a card + modal inside the About page
+(`AboutSection.astro`, `MemberGrid.vue`). **No member has a slug or URL**, and
+**nothing else in the schema points at a member** — no photo, post, concert or
+clip knows who is in it.
+
+### 1. The page itself — first PR
+
+- **URL.** A slug per member under the About section, e.g.
+  `/en/about/jan-kowalski`, `/pl/o-nas/jan-kowalski`. Add a slug column and
+  generate it once from the name (never re-slug on rename — the page is meant
+  to be printed, so a moved URL is a dead QR code). Decide whether it is a
+  translated bag via `HasTranslatedSlug` like the six slug tables, or one
+  plain slug (names do not translate). Uniqueness checked like every other
+  slug; `[lang]/[section]/[slug].astro` emits it, gated on the `about` module.
+- **Content now:** photo, name, role, current/former + joined/left, bio, main
+  instrument, social links.
+- **Instruments / gear — mockup only.** A placeholder block with the final
+  layout and a "coming soon" state; the real data (instrument list, default
+  rig) is a later step.
+- **Shareable link.** Copy-link button (+ native `navigator.share` where it
+  exists); proper `og:title`/`og:description`/`og:image` (the member's photo)
+  so the link previews well; canonical + hreflang per the existing rules.
+- **Printable QR code.** In the admin, on the member's row/form: show the QR
+  for the page's absolute URL, download as SVG/PNG, and a print view (A6
+  card: name, role, photo, QR, band name). Generate it client-side (a small
+  QR library, no external service — the CSP stays closed). The QR must
+  encode the *production* URL (`PUBLIC_SITE_URL`/`FRONTEND_URL`), never
+  `localhost`. Optionally also a print stylesheet on the public page itself.
+- **About page** cards link to the member page (keep the modal or replace it
+  — decide).
+- Marks `band-members` dirty, so a rebuild publishes it.
+- Copy strings go in `@bandms/site-copy` (a `member` module or the `about`
+  one), never inline.
+- Tests: Pest (slug generation, uniqueness, rename keeps slug), admin E2E
+  (QR renders, encodes the right URL, download works), public E2E (page
+  renders, each block, disabled `about` module 404s it, hreflang/canonical).
+
+### 2. Later — link the rest of the site to members (one PR each)
+
+Nothing points at a member yet, so each of these needs a relation, an admin
+picker, an API field and a block on the member page. A polymorphic pivot
+(`memberables`, the `clippables` pattern) may serve all of them at once —
+decide before the first one.
+
+- **Instruments & gear:** replace the mockup with the real instrument list and
+  default rig (data already exists).
+- **Photos:** tag the members in a photo; the page shows a gallery of them.
+- **News:** link posts to members; the page lists the related news.
+- **Other entities:** concerts (who played — line-ups change), clips, releases
+  (who played on it), music videos, press releases. Pick per entity whether
+  it is worth a block.
+
+---
+
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still
