@@ -14,7 +14,7 @@
 import { describe, it, expect } from 'vitest'
 import { EN_RIDER_SHEET_LABELS } from './en'
 import { PL_RIDER_SHEET_LABELS } from './pl'
-import { riderSheetLabels, instrumentLabels, fillLabel } from './index'
+import { riderSheetLabels, instrumentLabels, gearTypeLabels, fillLabel } from './index'
 import { EN_INSTRUMENT_GROUPS } from './en'
 import { PL_INSTRUMENT_GROUPS } from './pl'
 import { INSTRUMENT_ICON_CATALOG, searchInstrumentIcons } from '../instrumentIcons'
@@ -129,5 +129,20 @@ describe('rider sheet labels', () => {
     // Visible, not swallowed: a blank where a value belongs reads as "the
     // rider has no engineer", which is a different claim from "we have a bug".
     expect(fillLabel('{nope} here', {})).toBe('{nope} here')
+  })
+})
+
+describe('gearTypeLabels', () => {
+  it('has a non-empty name for every gear type in every language', () => {
+    for (const locale of ['en', 'pl']) {
+      const labels = gearTypeLabels(locale)
+      expect(Object.keys(labels).sort()).toEqual(Object.keys(gearTypeLabels('en')).sort())
+      for (const value of Object.values(labels)) expect(value.trim()).not.toBe('')
+    }
+  })
+
+  it('translates Polish and falls back to English for an unknown locale', () => {
+    expect(gearTypeLabels('pl').amp_head).toBe('Głowa wzmacniacza')
+    expect(gearTypeLabels('de').amp_head).toBe('Amp Head')
   })
 })

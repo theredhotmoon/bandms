@@ -503,7 +503,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Takes {from} and {to}.': 'Przyjmuje {from} i {to}.',
   'Instruments & gear heading': 'Nagłówek „Instrumenty i sprzęt”',
   'Instruments & gear: placeholder': 'Instrumenty i sprzęt: zastępczy tekst',
-  'Shown until the full gear list is published.': 'Widoczny, dopóki pełna lista sprzętu nie zostanie opublikowana.',
+  'Shown while the member has no gear listed in the admin.': 'Widoczny, dopóki członek zespołu nie ma sprzętu w panelu.',
   'Social links heading': 'Nagłówek linków społecznościowych',
   '"Link copied" confirmation': 'Potwierdzenie „Link skopiowany”',
   // ── Concerts → empty state ──────────────────────────────────────────────

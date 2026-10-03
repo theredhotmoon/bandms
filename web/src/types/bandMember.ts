@@ -11,6 +11,13 @@ export interface MemberInstrument {
   category: string | null
 }
 
+export interface MemberGearItem {
+  id: string
+  type: import('@bandms/rider-core').DefaultGearItemType
+  label: string
+  brand_model: string
+}
+
 export interface MemberPhoto {
   id: number
   url: string
@@ -40,6 +47,11 @@ export interface BandMember {
    * an API predating member tagging omits it.
    */
   photos?: MemberPhoto[]
+  /**
+   * The member's own gear. The API sends more (notes, own_gear) than the page
+   * shows: those are tech-rider details, not part of a public postcard.
+   */
+  default_gear?: MemberGearItem[]
   created_at: string
   updated_at: string
 }

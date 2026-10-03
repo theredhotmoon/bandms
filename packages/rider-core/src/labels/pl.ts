@@ -1,4 +1,4 @@
-import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels, GearTypeLabels } from './types'
 
 /**
  * Polish instrument names.
@@ -206,4 +206,19 @@ export const PL_RIDER_SHEET_LABELS: RiderSheetLabels = {
     'Mic+DI': 'Mikrofon + DI',
   },
   instruments: PL_INSTRUMENT_LABELS,
+}
+
+/** Default-gear type names — the same wording as the admin's gear editor. */
+export const PL_GEAR_TYPE_LABELS: GearTypeLabels = {
+  microphone: 'Mikrofon',
+  amp_head: 'Głowa wzmacniacza',
+  amp_combo: 'Combo',
+  cabinet: 'Kolumna',
+  di_box: 'DI-box',
+  keyboard: 'Instrument klawiszowy / syntezator',
+  drum_kit: 'Perkusja',
+  drum_hardware: 'Osprzęt perkusyjny',
+  pedal_board: 'Pedalboard',
+  wireless_system: 'System bezprzewodowy',
+  other: 'Inne',
 }

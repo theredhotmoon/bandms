@@ -1,8 +1,8 @@
-import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels } from './types'
-import { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS } from './en'
-import { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS } from './pl'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, GearTypeLabels } from './types'
+import { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS, EN_GEAR_TYPE_LABELS } from './en'
+import { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS, PL_GEAR_TYPE_LABELS } from './pl'
 
-export type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
+export type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels, GearTypeLabels } from './types'
 export { EN_RIDER_SHEET_LABELS, EN_INSTRUMENT_LABELS, EN_INSTRUMENT_GROUPS, EN_RESOLVER_LABELS } from './en'
 export { PL_RIDER_SHEET_LABELS, PL_INSTRUMENT_LABELS, PL_INSTRUMENT_GROUPS, PL_RESOLVER_LABELS } from './pl'
 
@@ -44,6 +44,16 @@ const GROUPS: Record<string, InstrumentGroupLabels> = {
 /** Icon-picker group headings. */
 export function instrumentGroupLabels(locale: string): InstrumentGroupLabels {
   return GROUPS[locale] ?? EN_INSTRUMENT_GROUPS
+}
+
+const GEAR_TYPES: Record<string, GearTypeLabels> = {
+  en: EN_GEAR_TYPE_LABELS,
+  pl: PL_GEAR_TYPE_LABELS,
+}
+
+/** Default-gear type names, for the public member page. Falls back to English. */
+export function gearTypeLabels(locale: string): GearTypeLabels {
+  return GEAR_TYPES[locale] ?? EN_GEAR_TYPE_LABELS
 }
 
 /** Substitute `{token}` placeholders — `showFileValue`, `unknownMember`. */

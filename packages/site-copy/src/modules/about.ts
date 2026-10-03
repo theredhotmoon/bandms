@@ -121,7 +121,7 @@ export const ABOUT_COPY = defineCopy([
   },
   {
     key: 'memberGearSoon', label: 'Instruments & gear: placeholder', group: 'Member page', maxLength: 120,
-    help: 'Shown until the full gear list is published.',
+    help: 'Shown while the member has no gear listed in the admin.',
     defaults: { en: 'The full rig is coming soon.', pl: 'Pełna lista sprzętu już wkrótce.' },
   },
   {
