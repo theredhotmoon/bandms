@@ -56,8 +56,8 @@ const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(
 // `||`, not `??`: a bio saved as '' would otherwise give an empty description.
 const description = member.bio?.slice(0, 160) || [member.role, profile.name].filter(Boolean).join(' · ')
 // Structured data needs an absolute URL; the API strips the host from photos.
-const site = (Astro.site?.toString() ?? Astro.url.origin).replace(/\/$/, '')
-const photoUrl = member.photo ? (member.photo.startsWith('http') ? member.photo : `${site}${member.photo}`) : null
+const origin = (Astro.site?.toString() ?? Astro.url.origin).replace(/\/$/, '')
+const photoUrl = member.photo ? (member.photo.startsWith('http') ? member.photo : `${origin}${member.photo}`) : null
 
 const structuredData = {
   '@context': 'https://schema.org',
