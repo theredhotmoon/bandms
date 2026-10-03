@@ -57,6 +57,7 @@ class WebsiteModuleController extends Controller
                     'id'      => $h->id,
                     'url'     => '/storage/' . $h->image,
                     'caption' => $h->caption,
+                    'weight'  => $h->weight,
                 ])->values()->all())
             // A scope left empty by the active filter is dropped too, so
             // "present but unusable" never reaches the resolver as a

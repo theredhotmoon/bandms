@@ -18,23 +18,6 @@ serves them all: real instruments & gear (data exists) · photos (tag members)
 
 ---
 
-## Hero pictures — a "display probability" per picture
-
-Idea, 2026-10-03. `HeroBackdrop.astro` picks uniformly at random from the
-page's set (`resolveHeroImages()`), so a "funny one" shows as often as the
-best shot.
-
-- Optional `weight` on `hero_images`, set per picture in the admin. **Empty =
-  maximum** (today's behaviour); a value can only **lower** it. Applies in
-  every scope, `main` included; the override rule is unchanged.
-- Weighted random (`w / Σw`), not a ranking. Decide whether 0 ("never show")
-  is allowed.
-- Touches: column + validation + `site-config`, `HeroImage` type,
-  `HeroImagesAdminView.vue`, the pick. Marks `hero-images` dirty. Tests: Pest,
-  vitest for the pick with a seeded RNG, extend both hero E2E specs.
-
----
-
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still

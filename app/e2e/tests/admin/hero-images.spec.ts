@@ -225,6 +225,34 @@ test.describe('Hero Images Admin', () => {
     await expect(page.locator('li.opacity-40')).toHaveCount(dimmedBefore)
   })
 
+  // .last(): this spec's own probe picture, never a real one on the shared DB.
+  // The probe is deleted by the cleanup above, so the weight needs no restore.
+  test('sets a display weight and it persists across a reload', async ({ page }) => {
+    await page.goto('/admin/hero-images')
+    await page.waitForLoadState('networkidle')
+
+    const weight = page.getByTestId('hero-weight').last()
+    await expect(weight).toHaveValue('100')
+
+    const [res] = await Promise.all([
+      page.waitForResponse(r => /\/api\/admin\/hero-images\/\d+$/.test(r.url()) && r.request().method() === 'PATCH'),
+      weight.selectOption('25'),
+    ])
+    expect(res.ok()).toBeTruthy()
+    expect(JSON.parse(res.request().postData() ?? '{}')).toEqual({ weight: 25 })
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('hero-weight').last()).toHaveValue('25')
+
+    // Back to Normal is stored as null, not 100.
+    const [reset] = await Promise.all([
+      page.waitForResponse(r => /\/api\/admin\/hero-images\/\d+$/.test(r.url()) && r.request().method() === 'PATCH'),
+      page.getByTestId('hero-weight').last().selectOption('100'),
+    ])
+    expect(JSON.parse(reset.request().postData() ?? '{}')).toEqual({ weight: null })
+  })
+
   test('removes a picture', async ({ page }) => {
     await page.goto('/admin/hero-images')
     await page.waitForLoadState('networkidle')

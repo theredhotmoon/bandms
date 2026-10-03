@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class HeroImage extends Model
 {
-    protected $fillable = ['scope', 'image', 'caption', 'position', 'active'];
+    protected $fillable = ['scope', 'image', 'caption', 'position', 'active', 'weight'];
 
     protected $casts = [
         'position' => 'integer',
         'active'   => 'boolean',
+        'weight'   => 'integer',
     ];
 
     /**

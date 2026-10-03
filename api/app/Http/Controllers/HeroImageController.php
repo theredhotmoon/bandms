@@ -60,12 +60,15 @@ class HeroImageController extends Controller
         return response()->json(['data' => (object) $this->allScopes()]);
     }
 
-    /** Partial update of one row — caption and/or active. */
+    /** Partial update of one row — caption, active and/or display weight. */
     public function patch(Request $request, HeroImage $heroImage): JsonResponse
     {
         $data = $request->validate([
             'caption' => 'sometimes|nullable|string|max:255',
             'active'  => 'sometimes|boolean',
+            // 1–100; null puts it back to maximum. 0 is not allowed: a picture
+            // that should never show is one to remove from the set.
+            'weight'  => 'sometimes|nullable|integer|between:1,100',
         ]);
 
         $heroImage->update($data);

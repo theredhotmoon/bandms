@@ -3,9 +3,9 @@ import { scopeSet, hasOwnSet } from './heroImageScopes'
 import type { HeroImageSets } from '@/types/heroImage'
 
 const SETS: HeroImageSets = {
-  main: [{ id: 1, url: '/storage/a.jpg', caption: null, position: 0, active: true }],
+  main: [{ id: 1, url: '/storage/a.jpg', caption: null, position: 0, active: true, weight: null }],
   contact: [],
-  about: [{ id: 2, url: '/storage/b.jpg', caption: null, position: 0, active: false }],
+  about: [{ id: 2, url: '/storage/b.jpg', caption: null, position: 0, active: false, weight: null }],
 }
 
 describe('scopeSet', () => {
