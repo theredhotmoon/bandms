@@ -6,6 +6,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getConcerts, getConcert, getConcertSetlist, getConcertTickets, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { concertLineup } from '@/lib/lineup'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
 import { fmtTime, isUpcoming } from '@/lib/i18n'
@@ -131,6 +132,8 @@ const structuredData = {
 }
 
 // Setlist split
+// Guests *and* our own band, in the order the band arranged them.
+const lineup = concertLineup(concert, profile.name)
 const mainSongs  = setlist?.items.filter(s => !s.is_encore).sort((a,b) => a.position - b.position) ?? []
 const encoreSongs = setlist?.items.filter(s => s.is_encore).sort((a,b) => a.position - b.position) ?? []
 const setTotal   = setlist?.total_duration_sec
@@ -320,7 +323,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     )}
 
     <!-- ── LINE-UP ─────────────────────────────────────────── -->
-    {concert.bands.length > 0 && (
+    {lineup.length > 0 && (
       <section class="sec lineup-sec">
         <div class="sec-head">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -330,8 +333,8 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           <h2 class="sec-title">{t.lineupTitle}</h2>
         </div>
         <div class="lineup-list">
-          {concert.bands.sort((a, b) => a.sort_order - b.sort_order).map((band, i) => (
-            <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`}>
+          {lineup.map((band, i) => (
+            <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
               <span class="lineup-num">{String(i + 1).padStart(2, '0')}</span>
               <div class="lineup-info">
                 <span class="lineup-name">{band.name}</span>
