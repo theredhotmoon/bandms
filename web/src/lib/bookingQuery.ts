@@ -20,6 +20,16 @@ export function bookingQuery(request: BookingRequest): string {
 export function bookingFromQuery(search: string): BookingRequest | null {
   const params = new URLSearchParams(search)
   const date = params.get('booking')
-  if (!date || !DATE.test(date) || Number.isNaN(Date.parse(date))) return null
+  if (!date || !DATE.test(date) || !isRealDate(date)) return null
   return { date, unavailable: params.get('unavailable') === '1' }
+}
+
+/**
+ * A day that exists. Date.parse alone is not enough: it rolls 2026-02-31
+ * over to 3 March, and the form would then offer a date nobody picked.
+ */
+function isRealDate(date: string): boolean {
+  const [y, m, d] = date.split('-').map(Number)
+  const parsed = new Date(Date.UTC(y, m - 1, d))
+  return parsed.getUTCFullYear() === y && parsed.getUTCMonth() === m - 1 && parsed.getUTCDate() === d
 }

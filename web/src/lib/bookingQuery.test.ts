@@ -17,6 +17,10 @@ describe('bookingQuery', () => {
     expect(bookingFromQuery('')).toBeNull()
     expect(bookingFromQuery('?booking=tomorrow')).toBeNull()
     expect(bookingFromQuery('?booking=2026-13-45')).toBeNull()
+    // Date.parse would roll these over into the next month.
+    expect(bookingFromQuery('?booking=2026-02-31')).toBeNull()
+    expect(bookingFromQuery('?booking=2026-04-31')).toBeNull()
+    expect(bookingFromQuery('?booking=2028-02-29')).toEqual({ date: '2028-02-29', unavailable: false })
     expect(bookingFromQuery('?booking=<script>')).toBeNull()
   })
 
