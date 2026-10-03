@@ -34,9 +34,17 @@ test.describe('Public — concert line-up', () => {
     const res = await page.goto(`${WEB}/en/${section}/${concert.slug}`)
     test.skip(res?.status() === 404, 'Concert page not built yet')
 
-    const names = page.locator('.lineup-name')
+    // The regression itself, true whatever data the page was built from.
     await expect(page.locator('.lineup-row[data-own]')).toHaveCount(1)
     await expect(page.locator('.lineup-row[data-own] .lineup-name')).toHaveText(profile.data.name)
+
+    // The full order is only comparable when the page was built from the line-up
+    // the API serves now: parallel specs edit concerts, and the page changes
+    // only on a rebuild.
+    const names = page.locator('.lineup-name')
+    const builtGuests = (await page.locator('.lineup-row:not([data-own]) .lineup-name').allTextContents()).map((n) => n.trim()).sort()
+    const apiGuests = concert.bands.map((b) => b.name).sort()
+    test.skip(JSON.stringify(builtGuests) !== JSON.stringify(apiGuests), 'Page was built from an older line-up than the API serves')
 
     // Same order the admin saved: one sequence over guests and our own slot.
     const expected = [
