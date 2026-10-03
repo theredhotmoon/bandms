@@ -35,27 +35,6 @@ best shot.
 
 ---
 
-## No upcoming gigs → "Subscribe" and "Book us" buttons
-
-Idea, 2026-10-03. With nothing booked, `ConcertsSection.astro`'s empty state
-offers one text link to the newsletter, and the homepage's Upcoming shows
-block simply disappears (gated on `upcoming.length > 0`).
-
-- Show two buttons instead: **Subscribe to the newsletter** and **Book us**.
-  Registry defaults for the booking button: en "Book us", pl **"Zaproponuj
-  nam koncert"** (as specified). Both are `CopyField`s, so the band can
-  override them.
-- "Book us" opens the **existing** `AvailabilityModal` (today mounted only by
-  `ContactSection.astro`). It is a `client:idle` island opened by delegation
-  from any `[data-open-availability]` trigger, so the page needs the island
-  mounted plus a trigger — see *Astro islands cannot share props* in
-  CLAUDE.md. Falling back to a link to the contact page is the cheap option.
-- Decide whether the homepage shows the block empty-with-buttons or keeps
-  hiding it. Gate each button on its module (`newsletter`, `contact`) with
-  `!== false`. Copy in `CONCERTS_COPY`. Public E2E with no upcoming concerts.
-
----
-
 ## Concert page — the poster cannot be opened full size
 
 2026-10-03. `ConcertDetail.astro` renders the poster as a plain `<img>` in

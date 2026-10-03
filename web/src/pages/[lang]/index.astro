@@ -4,6 +4,7 @@ import { getSlugMap, sectionSlug, LOCALES } from '@/lib/slugs'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import NoGigsCta from '@/components/NoGigsCta.astro'
 import HeroBackdrop from '@/components/HeroBackdrop.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
@@ -166,6 +167,19 @@ const structuredData = {
             )
           })}
         </div>
+      </section>
+    )}
+
+    <!-- Nothing announced: keep the block, with a way to hear about the next
+         gig or to book one, instead of dropping it from the page. -->
+    {concertsEnabled && upcoming.length === 0 && (
+      <section class="sec" data-testid="home-no-gigs">
+        <div class="sec-head-row">
+          <div class="sec-head">
+            <h2 class="sec-title">{t.showsTitle}</h2>
+          </div>
+        </div>
+        <NoGigsCta lang={lang} siteConfig={siteConfig} slugMap={slugMap} />
       </section>
     )}
 

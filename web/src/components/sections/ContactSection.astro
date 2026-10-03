@@ -15,7 +15,7 @@ import Icon from '@/components/Icon.astro'
 import { getBandProfile, getSocialLinks, getSiteConfig, getEpkOptional } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { CONTACT_COPY, fillCopy } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, availabilityCopy } from '@/lib/copy'
 
 interface Props {
   lang?: Locale
@@ -37,21 +37,6 @@ const [profile, socialLinks, siteConfig, slugMap, epk] = await Promise.all([
 // locale, overridden by whatever the band saved in Website Modules → Contact.
 const t = moduleCopy(siteConfig, 'contact', CONTACT_COPY, lang)
 
-// Month and weekday names are locale data, not band copy — they stay here,
-// keyed by the registry so a third locale is a compile error at this table.
-const CALENDAR: Record<Locale, { months: readonly string[]; weekdays: readonly string[] }> = {
-  en: {
-    months: ['January', 'February', 'March', 'April', 'May', 'June',
-             'July', 'August', 'September', 'October', 'November', 'December'],
-    weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-  },
-  pl: {
-    months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-             'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
-    weekdays: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
-  },
-}
-const calendar = CALENDAR[lang] ?? CALENDAR.en
 
 const formReasons = [
   { value: 'general' as const, label: t.reasonGeneral },
@@ -278,16 +263,7 @@ const promo = [
   <!-- client:idle, not client:visible: the modal renders nothing until opened,
        so a visibility trigger would never fire and its document-level click
        listener would never attach. -->
-  <AvailabilityModal client:idle copy={{
-    title: t.calTitle, subtitle: t.calSubtitle,
-    open: t.calOpen, booked: t.calBooked, held: t.calHeld,
-    request: t.calRequest, pickPrompt: t.calPickPrompt, close: t.calClose,
-    prevMonth: t.calPrevMonth, nextMonth: t.calNextMonth,
-    loadError: t.calLoadError, loading: t.calLoading,
-    confirmTitle: t.calConfirmTitle, confirmBody: t.calConfirmBody,
-    confirmYes: t.calConfirmYes, confirmNo: t.calConfirmNo,
-    months: calendar.months, weekdays: calendar.weekdays,
-  }} />
+  <AvailabilityModal client:idle copy={availabilityCopy(siteConfig, lang)} />
   <EpkModal
     client:idle
     copy={{

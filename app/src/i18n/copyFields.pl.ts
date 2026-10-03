@@ -506,4 +506,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Shown until the full gear list is published.': 'Widoczny, dopóki pełna lista sprzętu nie zostanie opublikowana.',
   'Social links heading': 'Nagłówek linków społecznościowych',
   '"Link copied" confirmation': 'Potwierdzenie „Link skopiowany”',
+  // ── Concerts → empty state ──────────────────────────────────────────────
+  'Empty state: booking button': 'Pusty stan: przycisk rezerwacji',
+  'Opens the availability calendar. Shown here and on the homepage when no shows are announced.': 'Otwiera kalendarz dostępności. Widoczny tutaj i na stronie głównej, gdy nie ogłoszono koncertów.',
 }

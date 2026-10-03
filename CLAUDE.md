@@ -1630,7 +1630,7 @@ The server still validates only shape and the 2000-char cap.
 **There is no inline `COPY = { en, pl }` dict in a section any more, and no
 literal English in a template.** The old ~23 dicts are gone; the last two
 places that still hold a locale pair by design are month/weekday names in
-`ContactSection.astro` (calendar data, not band copy) and `nginx.conf`'s
+`web/src/lib/calendarNames.ts` (calendar data, not band copy — shared by every page that mounts the availability calendar) and `nginx.conf`'s
 Accept-Language map. A new hardcoded string in `web/src` is a regression —
 `/pl/concerts` shipped English headings for months because Concerts, Posts and
 Merch had never had a dict at all.

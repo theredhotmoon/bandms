@@ -103,6 +103,11 @@ export const CONCERTS_COPY = defineCopy([
     key: 'emptyLink', label: 'Empty state: newsletter link', group: 'Upcoming shows', maxLength: 60,
     defaults: { en: 'Join the newsletter →', pl: 'Dołącz do newslettera →' },
   },
+  {
+    key: 'emptyBook', label: 'Empty state: booking button', group: 'Upcoming shows', maxLength: 60,
+    help: 'Opens the availability calendar. Shown here and on the homepage when no shows are announced.',
+    defaults: { en: 'Book us', pl: 'Zaproponuj nam koncert' },
+  },
 
   // ── Archive ─────────────────────────────────────────────────────────
   {

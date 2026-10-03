@@ -16,6 +16,7 @@ import { resolveHeroImages } from '@/lib/heroImages'
 import ShowsMap from '@/components/ShowsMap.vue'
 import ShowsArchiveFilter from '@/components/ShowsArchiveFilter.vue'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import NoGigsCta from '@/components/NoGigsCta.astro'
 import { getConcerts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, formatGenreKicker, fmtDateParts } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
@@ -201,12 +202,7 @@ function getTypeLabel(concert: Concert) {
           })}
         </div>
       ) : (
-        <div class="empty-state">
-          <div class="empty-checker" aria-hidden="true"></div>
-          <p class="empty-title">{t.emptyTitle}</p>
-          <p class="empty-sub">{t.emptySub}</p>
-          <a class="empty-link" href={`/${lang}/${slugMap[lang].newsletter}`}>{t.emptyLink}</a>
-        </div>
+        <NoGigsCta lang={lang} siteConfig={siteConfig} slugMap={slugMap} />
       )}
     </section>
 
@@ -494,48 +490,6 @@ function getTypeLabel(concert: Concert) {
     transition: background .15s, color .15s;
   }
   .details-btn:hover { background: var(--ink); color: var(--paper); }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    border: 3px dashed var(--ink);
-    padding: 48px 32px;
-    background: var(--color-surface);
-    margin-top: 26px;
-  }
-  .empty-checker {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 24px;
-    background-image: repeating-conic-gradient(var(--ink) 0% 25%, var(--paper) 0% 50%);
-    background-size: 20px 20px;
-    border: 3px solid var(--ink);
-    box-shadow: 5px 5px 0 var(--acc);
-    transform: rotate(-4deg);
-  }
-  .empty-title {
-    font-family: var(--font-display);
-    font-size: 28px;
-    text-transform: uppercase;
-    margin: 0 0 8px;
-    color: var(--ink);
-  }
-  .empty-sub {
-    font: 500 16px/1.5 var(--font-body);
-    color: var(--color-muted);
-    margin: 0 0 20px;
-  }
-  .empty-link {
-    display: inline-block;
-    background: var(--ink);
-    color: var(--paper);
-    font-family: var(--font-display);
-    font-size: 15px;
-    text-transform: uppercase;
-    padding: 12px 20px;
-    text-decoration: none;
-    box-shadow: 5px 5px 0 var(--acc);
-  }
 
   /* ── Checker strip ─────────────── */
   .checker-strip {

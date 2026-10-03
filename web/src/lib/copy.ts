@@ -1,5 +1,6 @@
 import {
   resolveCopy,
+  CONTACT_COPY,
   MERCH_COPY,
   NEWSLETTER_COPY,
   SITE_COPY,
@@ -7,6 +8,8 @@ import {
   type ResolvedCopy,
 } from '@bandms/site-copy'
 import type { SiteConfig } from './cms'
+import type { Locale } from '@/types/shared'
+import { calendarNames } from './calendarNames'
 
 /**
  * A module's copy for one locale: registry defaults overridden by whatever
@@ -38,6 +41,26 @@ export function siteCopy(siteConfig: SiteConfig, lang: string) {
  * rendered, so editing "Join the list" once changes every copy of the form —
  * only the heading and blurb around it belong to the host page.
  */
+/**
+ * The availability calendar's copy, from the Contact module. Shared because the
+ * calendar is mounted on more than the contact page: the concerts page and the
+ * homepage open it from their "Book us" button when no gigs are announced.
+ */
+export function availabilityCopy(siteConfig: SiteConfig, lang: Locale) {
+  const t = moduleCopy(siteConfig, 'contact', CONTACT_COPY, lang)
+  const calendar = calendarNames(lang)
+  return {
+    title: t.calTitle, subtitle: t.calSubtitle,
+    open: t.calOpen, booked: t.calBooked, held: t.calHeld,
+    request: t.calRequest, pickPrompt: t.calPickPrompt, close: t.calClose,
+    prevMonth: t.calPrevMonth, nextMonth: t.calNextMonth,
+    loadError: t.calLoadError, loading: t.calLoading,
+    confirmTitle: t.calConfirmTitle, confirmBody: t.calConfirmBody,
+    confirmYes: t.calConfirmYes, confirmNo: t.calConfirmNo,
+    months: calendar.months, weekdays: calendar.weekdays,
+  }
+}
+
 export function newsletterFormCopy(siteConfig: SiteConfig, lang: string) {
   const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, lang)
   return {
