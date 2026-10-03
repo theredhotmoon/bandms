@@ -147,3 +147,26 @@ describe('GET /api/band-profile/members — photos', function () {
             ->assertJsonCount(0, 'data.0.photos');
     });
 });
+
+describe('GET /api/band-profile/members — photo order', function () {
+    it('lists featured photos first, then the newest album first, then album order', function () {
+        $member = taggedMember();
+        $old = Album::create(['title' => 'Old', 'taken_at' => '2024-05-01', 'published_at' => now()->subDay()]);
+        $new = Album::create(['title' => 'New', 'taken_at' => '2026-05-01', 'published_at' => now()->subDay()]);
+        $mk = fn (Album $a, int $order, bool $featured = false) => Photo::create([
+            'album_id' => $a->id, 'image' => "photos/{$a->title}{$order}.jpg", 'sort_order' => $order, 'epk_featured' => $featured,
+        ]);
+
+        $oldFirst    = $mk($old, 0);
+        $oldFeatured = $mk($old, 1, true);
+        $newSecond   = $mk($new, 1);
+        $newFirst    = $mk($new, 0);
+        foreach ([$oldFirst, $oldFeatured, $newSecond, $newFirst] as $p) {
+            $p->members()->sync([$member->id]);
+        }
+
+        $ids = collect($this->getJson('/api/band-profile/members')->assertOk()->json('data.0.photos'))->pluck('id')->all();
+
+        expect($ids)->toBe([$oldFeatured->id, $newFirst->id, $newSecond->id, $oldFirst->id]);
+    });
+});

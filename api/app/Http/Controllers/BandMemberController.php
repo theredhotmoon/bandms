@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\BandMemberResource;
+use App\Models\Album;
 use App\Models\BandMember;
 use App\Models\BandProfile;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +27,16 @@ class BandMemberController extends Controller
                 'socialLinks', 'instruments', 'setups', 'mainInstrument',
                 // Only photos the public can see: an album without a
                 // published_at is a draft, the same rule the gallery applies.
+                // Featured (press-kit ★) photos lead, then the newest shoot,
+                // then each album's own order. A subquery, not a join: a join
+                // needs a select('photos.*'), which would drop the pivot column
+                // the eager load matches members on.
                 'photos' => fn ($q) => $q
                     ->whereHas('album', fn ($a) => $a->whereNotNull('published_at'))
-                    ->orderBy('album_id')
-                    ->orderBy('sort_order'),
+                    ->orderByDesc('photos.epk_featured')
+                    ->orderByDesc(Album::select('taken_at')->whereColumn('albums.id', 'photos.album_id'))
+                    ->orderByDesc('photos.album_id')
+                    ->orderBy('photos.sort_order'),
             ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')
