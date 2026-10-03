@@ -3,24 +3,26 @@ import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
-import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig } from '@/lib/cms'
+import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers } from '@/lib/cms'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
 import PostDetail      from '@/components/detail/PostDetail.astro'
 import ReleaseDetail   from '@/components/detail/ReleaseDetail.astro'
 import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
+import MemberDetail    from '@/components/detail/MemberDetail.astro'
 
 export async function getStaticPaths() {
   // One config, not one per locale: `modules` is the enabled map, which the API
   // builds without consulting ?lang=. Fetching it per locale was two requests
   // for the same answer.
-  const [slugMap, cfg, concerts, posts, releases, shopItems] = await Promise.all([
+  const [slugMap, cfg, concerts, posts, releases, shopItems, members] = await Promise.all([
     getSlugMap(),
     getSiteConfig(DEFAULT_LOCALE),
     getConcerts(),
     getAllPosts('en'),
     getReleases('en'),
     getShopItems(),
+    getMembers(DEFAULT_LOCALE),
   ])
 
   const paths: object[] = []
@@ -68,6 +70,19 @@ export async function getStaticPaths() {
       }
     }
 
+    // Member pages live under About and go with it — and with its Members
+    // section: a band that hides that section should not still publish a page
+    // per member. A member with no slug (an API predating it) gets no page
+    // rather than an /about/undefined one.
+    if (cfg.modules.about !== false && cfg.module_config?.about?.visibility?.show_members !== false) {
+      for (const m of members.filter(m => m.slug)) {
+        paths.push({
+          params: { lang, section: slugMap[lang].about ?? 'about', slug: m.slug },
+          props: { sectionType: 'about', lang, itemId: m.id, itemSlug: m.slug,
+            alternates: alternatesFor('about', m.slug) },
+        })
+      }
+    }
     if (cfg.modules.merch !== false) {
       for (const item of shopItems) {
         paths.push({
@@ -97,3 +112,4 @@ const { sectionType, lang, alternates, itemId, itemSlug } = Astro.props
 {sectionType === 'posts'     && <PostDetail      lang={lang} alternates={alternates} itemId={itemId} />}
 {sectionType === 'releases'  && <ReleaseDetail   lang={lang} alternates={alternates} itemId={itemId} />}
 {sectionType === 'merch'     && <MerchItemDetail lang={lang} alternates={alternates} itemSlug={itemSlug} />}
+{sectionType === 'about'     && <MemberDetail    lang={lang} alternates={alternates} itemId={itemId} />}

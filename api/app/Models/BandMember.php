@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class BandMember extends Model
 {
@@ -17,6 +18,7 @@ class BandMember extends Model
         'first_name',
         'nickname',
         'last_name',
+        'slug',
         'bio',
         'photo',
         'role',
@@ -39,6 +41,30 @@ class BandMember extends Model
         'sort_order'   => 'integer',
         'default_gear' => 'array',
     ];
+
+    /**
+     * The slug is the member's public URL, and that URL is printed as a QR
+     * code — so it is generated once, on create, and never follows a rename.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (BandMember $member) {
+            if (blank($member->slug)) {
+                $member->slug = static::uniqueSlug(trim("{$member->first_name} {$member->last_name}"));
+            }
+        });
+    }
+
+    public static function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'member';
+        $slug = $base;
+        for ($n = 2; static::where('slug', $slug)->exists(); $n++) {
+            $slug = "{$base}-{$n}";
+        }
+
+        return $slug;
+    }
 
     public function profile(): BelongsTo
     {

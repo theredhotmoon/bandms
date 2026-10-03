@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BandMemberForm from '@/components/admin/forms/BandMemberForm.vue'
 import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import MemberDefaultGear from '@/components/band-member/MemberDefaultGear.vue'
+import MemberPublicPage from '@/components/band-member/MemberPublicPage.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { reportSaveError } from '@/utils/formErrors'
@@ -19,7 +20,7 @@ const { query: instrumentsQuery } = useInstruments()
 
 // ── Selection ──────────────────────────────────────────────────────────────────
 const openId    = ref<number | null>(null)
-const detailTab = ref<'profile' | 'setups' | 'gear'>('profile')
+const detailTab = ref<'profile' | 'setups' | 'gear' | 'public'>('profile')
 
 const openMember = computed<BandMember | null>(
   () => query.data.value?.find((m: BandMember) => m.id === openId.value) ?? null,
@@ -267,6 +268,13 @@ async function confirmDelete() {
               :class="{ active: detailTab === 'gear' }"
               @click="detailTab = 'gear'"
             >{{ $t('band.members.tabGear') }}</button>
+            <button
+              type="button"
+              class="detail-tab"
+              :class="{ active: detailTab === 'public' }"
+              data-testid="member-tab-public"
+              @click="detailTab = 'public'"
+            >{{ $t('band.members.tabPublic') }}</button>
           </div>
 
           <!-- Tab: Profile -->
@@ -290,6 +298,11 @@ async function confirmDelete() {
           <!-- Tab: Default Gear -->
           <div v-if="detailTab === 'gear'" class="tab-content">
             <MemberDefaultGear :key="openMember.id" :member="openMember" />
+          </div>
+
+          <!-- Tab: Public page — link, QR code, printable card -->
+          <div v-if="detailTab === 'public'" class="tab-content">
+            <MemberPublicPage :key="openMember.id" :member="openMember" />
           </div>
 
         </template>
