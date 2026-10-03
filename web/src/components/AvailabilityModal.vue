@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import ModalShell from '@/components/ModalShell.vue'
 import { useModalTrigger } from '@/composables/useModalTrigger'
 import { requestBookingFor } from '@/stores/booking'
+import { bookingQuery } from '@/lib/bookingQuery'
 
 export interface AvailabilityCopy {
   title: string
@@ -28,7 +29,16 @@ export interface AvailabilityCopy {
   weekdays: readonly string[]
 }
 
-const props = defineProps<{ copy: AvailabilityCopy; maxMonthsAhead?: number }>()
+const props = defineProps<{
+  copy: AvailabilityCopy
+  maxMonthsAhead?: number
+  /**
+   * The contact page, for pages that have no contact form of their own
+   * (concerts, home): a picked date then goes there in the URL instead of
+   * through the store, which only reaches a form on the same page.
+   */
+  contactHref?: string
+}>()
 
 type Status = 'open' | 'held' | 'booked'
 
@@ -220,6 +230,10 @@ function submit() {
 
 function handOff() {
   if (!picked.value) return
+  if (props.contactHref && !document.getElementById('contact-form')) {
+    window.location.assign(`${props.contactHref}${bookingQuery({ date: picked.value, unavailable: pickedUnavailable.value })}#contact-form`)
+    return
+  }
   requestBookingFor(picked.value, pickedUnavailable.value)
   confirming.value = false
   close()

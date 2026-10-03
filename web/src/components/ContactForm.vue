@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { bookingRequest, clearBookingRequest, type BookingRequest } from '@/stores/booking'
+import { bookingRequest, clearBookingRequest, requestBookingFor, type BookingRequest } from '@/stores/booking'
+import { bookingFromQuery } from '@/lib/bookingQuery'
 
 /**
  * Copy is passed in from Astro rather than held here, so the island ships one
@@ -145,6 +146,14 @@ function applyBooking(request: BookingRequest | null) {
 
 onMounted(() => {
   unsubscribe = bookingRequest.subscribe(applyBooking)
+  // A date picked on another page (concerts, home) arrives in the URL.
+  // Applied once, then dropped, so a reload or a shared link does not
+  // re-prefill a form the visitor has already edited.
+  const fromUrl = bookingFromQuery(window.location.search)
+  if (fromUrl) {
+    requestBookingFor(fromUrl.date, fromUrl.unavailable)
+    history.replaceState(null, '', window.location.pathname + window.location.hash)
+  }
 })
 
 onUnmounted(() => {

@@ -1,0 +1,107 @@
+---
+import type { Locale } from '@/types/shared'
+import type { SiteConfig } from '@/lib/cms'
+import type { SlugMap } from '@/lib/slugs'
+import AvailabilityModal from '@/components/AvailabilityModal.vue'
+import { CONCERTS_COPY } from '@bandms/site-copy'
+import { moduleCopy, availabilityCopy } from '@/lib/copy'
+
+/**
+ * What a page shows when the band has no gigs announced: a short message and
+ * two ways forward — subscribe to hear about the next one, or book one.
+ *
+ * "Book us" opens the same availability calendar as the contact page. A date
+ * picked here has no form to fill on this page, so the calendar carries it to
+ * the contact page in the URL (see `contactHref` on AvailabilityModal).
+ *
+ * Each button is gated on its module with `!== false`, the same rule as every
+ * link to a module page: a switched-off module unbuilds its routes.
+ */
+interface Props {
+  lang: Locale
+  siteConfig: SiteConfig
+  slugMap: SlugMap
+}
+
+const { lang, siteConfig, slugMap } = Astro.props
+const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
+const enabled = (slug: string) => siteConfig.modules[slug] !== false
+const href = (slug: string) => `/${lang}/${slugMap[lang]?.[slug] ?? slug}`
+
+const canSubscribe = enabled('newsletter')
+const canBook = enabled('contact')
+---
+
+<div class="no-gigs" data-testid="no-gigs">
+  <div class="no-gigs-checker" aria-hidden="true"></div>
+  <p class="no-gigs-title">{t.emptyTitle}</p>
+  <p class="no-gigs-sub">{t.emptySub}</p>
+
+  {(canSubscribe || canBook) && (
+    <div class="no-gigs-actions">
+      {canSubscribe && (
+        <a class="no-gigs-btn" href={href('newsletter')} data-testid="no-gigs-subscribe">{t.emptyLink}</a>
+      )}
+      {canBook && (
+        <button type="button" class="no-gigs-btn no-gigs-btn--ghost" data-open-availability data-testid="no-gigs-book">
+          {t.emptyBook}
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{canBook && (
+  // client:idle, not client:visible: the modal renders nothing until opened.
+  <AvailabilityModal client:idle copy={availabilityCopy(siteConfig, lang)} contactHref={href('contact')} />
+)}
+
+<style>
+  .no-gigs {
+    --paper: var(--color-page);
+    --ink: var(--color-ink);
+    --acc: var(--color-accent);
+    text-align: center;
+    border: 3px dashed var(--ink);
+    padding: 48px 32px;
+    background: var(--color-surface);
+    margin-top: 26px;
+  }
+  .no-gigs-checker {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background-image: repeating-conic-gradient(var(--ink) 0% 25%, var(--paper) 0% 50%);
+    background-size: 20px 20px;
+    border: 3px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--acc);
+    transform: rotate(-4deg);
+  }
+  .no-gigs-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .no-gigs-sub {
+    font: 500 16px/1.5 var(--font-body);
+    color: var(--color-muted);
+    margin: 0 0 20px;
+  }
+  .no-gigs-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+  .no-gigs-btn {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-display);
+    font-size: 15px;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    text-decoration: none;
+    border: 3px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--acc);
+    cursor: pointer;
+  }
+  .no-gigs-btn--ghost { background: var(--paper); color: var(--ink); }
+</style>
