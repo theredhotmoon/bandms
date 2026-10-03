@@ -20,6 +20,8 @@ defineProps<{
   musicVideos?: MusicVideo[]
   pressReleases?: PressReleaseSummary[]
   shopItems?: ShopItemSummary[]
+  /** Band members, for content that can be about several of them. */
+  members?: readonly { id: number; first_name: string; last_name: string }[]
 }>()
 
 const concertIds      = defineModel<number[]>('concertIds',      { default: () => [] })
@@ -31,8 +33,10 @@ const tagIds          = defineModel<number[]>('tagIds',          { default: () =
 const musicVideoIds   = defineModel<number[]>('musicVideoIds',   { default: () => [] })
 const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
 const shopItemIds     = defineModel<number[]>('shopItemIds',     { default: () => [] })
+const memberIds       = defineModel<number[]>('memberIds',       { default: () => [] })
 
 const expanded = reactive({
+  members:       false,
   concerts:      false,
   posts:         false,
   albums:        false,
@@ -70,6 +74,19 @@ function label(text: string, count: number) {
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="tagIds.includes(t.id)" @change="toggle(tagIds, v => tagIds = v, t.id)" />
           <span>{{ t.name }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="members?.length" class="assoc-section" data-testid="relations-members">
+      <button type="button" class="assoc-toggle" @click="expanded.members = !expanded.members">
+        <span>{{ label($t('common.relations.members'), memberIds.length) }}</span>
+        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.members }">›</span>
+      </button>
+      <div v-if="expanded.members" class="assoc-body checkbox-list">
+        <label v-for="m in members" :key="m.id" class="checkbox-item">
+          <input type="checkbox" :checked="memberIds.includes(m.id)" @change="toggle(memberIds, v => memberIds = v, m.id)" />
+          <span>{{ m.first_name }} {{ m.last_name }}</span>
         </label>
       </div>
     </div>

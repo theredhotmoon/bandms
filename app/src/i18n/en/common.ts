@@ -100,6 +100,7 @@ export default {
   // reads as ambiguous. Same split as band.clips vs common.clips.
   relations: {
     title: 'Link to…',
+    members: 'Band members',
     tags: 'Tags',
     concerts: 'Concerts',
     releases: 'Music releases',

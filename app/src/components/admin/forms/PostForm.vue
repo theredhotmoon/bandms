@@ -34,6 +34,7 @@ const props = defineProps<{
   pressReleases: PressReleaseSummary[]
   shopItems: ShopItemSummary[]
   clips: Clip[]
+  members?: readonly { id: number; first_name: string; last_name: string }[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -58,6 +59,7 @@ const form = reactive({
   event_date_display: 'range' as 'range' | 'list',
   tag_ids: [] as number[],
   concert_ids: [] as number[],
+  member_ids: [] as number[],
   blocks: [] as PostBlockDraft[],
 })
 
@@ -85,6 +87,7 @@ watch(() => props.initial, (val) => {
   form.event_date_display = val?.event_date_display ?? 'range'
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
+  form.member_ids = val?.member_ids ? [...val.member_ids] : []
   form.blocks = (val?.blocks ?? []).map(b => {
     if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
     if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
@@ -111,6 +114,7 @@ function submit() {
     event_date_display: form.event_date_display,
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
+    member_ids: form.member_ids,
     // `url` is a preview-only field on image drafts; strip it before sending.
     blocks: form.blocks.map(b => ({
       type: b.type,
@@ -170,6 +174,8 @@ function submit() {
       :concerts="concerts"
       v-model:tagIds="form.tag_ids"
       v-model:concertIds="form.concert_ids"
+      :members="members"
+      v-model:memberIds="form.member_ids"
     />
 
     <div v-if="form.concert_ids.length > 1">

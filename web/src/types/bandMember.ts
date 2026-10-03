@@ -54,6 +54,8 @@ export interface BandMember {
    * shows: those are tech-rider details, not part of a public postcard.
    */
   default_gear?: MemberGearItem[]
+  /** Ids of the published news this member is linked to, newest first. */
+  post_ids?: number[]
   created_at: string
   updated_at: string
 }

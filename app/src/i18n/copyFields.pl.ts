@@ -517,4 +517,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Above the photos the member is tagged in. Hidden when there are none.': 'Nad zdjęciami, na których oznaczono członka zespołu. Ukryty, gdy ich nie ma.',
   'Photo viewer: "previous" label': 'Podgląd zdjęć: etykieta „poprzednie”',
   'Photo viewer: "next" label': 'Podgląd zdjęć: etykieta „następne”',
+  // ── About → Member page → news ──────────────────────────────────────────
+  'News heading': 'Nagłówek aktualności',
+  'Above the news linked to the member. Hidden when there is none.': 'Nad aktualnościami powiązanymi z członkiem zespołu. Ukryty, gdy ich nie ma.',
 }
