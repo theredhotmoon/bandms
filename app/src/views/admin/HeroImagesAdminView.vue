@@ -130,13 +130,18 @@ function weightOptions(image: HeroImage): number[] {
   return (WEIGHT_STEPS as readonly number[]).includes(current) ? [...WEIGHT_STEPS] : [...WEIGHT_STEPS, current]
 }
 
-async function setWeight(image: HeroImage, value: number) {
+async function setWeight(image: HeroImage, select: HTMLSelectElement) {
   // 100 is stored as null, so "Normal" stays the column's empty default.
+  const value = Number(select.value)
   const weight = value >= 100 ? null : value
   if (weight === image.weight) return
   try {
     await update.mutateAsync({ id: image.id, payload: { weight } })
   } catch (e) {
+    // The select is bound one way, and a failed save leaves image.weight as
+    // it was — so nothing re-renders. Put the stored value back by hand, or
+    // the admin would show a weight the site is not using.
+    select.value = String(image.weight ?? 100)
     reportSaveError(e, t('pages.heroImages.updateFailed'))
   }
 }
@@ -264,7 +269,7 @@ function scopeSummary(key: string): string {
                   :value="image.weight ?? 100"
                   :disabled="update.isPending.value"
                   data-testid="hero-weight"
-                  @change="setWeight(image, Number(($event.target as HTMLSelectElement).value))"
+                  @change="setWeight(image, $event.target as HTMLSelectElement)"
                 >
                   <option v-for="w in weightOptions(image)" :key="w" :value="w">{{ weightLabel(w) }}</option>
                 </select>
