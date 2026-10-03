@@ -109,6 +109,10 @@ class PostController extends Controller
                 $post->concerts()->sync($data['concert_ids']);
             }
 
+            if (! empty($data['member_ids'])) {
+                $post->members()->sync($data['member_ids']);
+            }
+
             PostBlockSync::sync($post, $data['blocks'] ?? []);
 
             return $post;
@@ -118,8 +122,12 @@ class PostController extends Controller
         // — with auto-rebuild on, the admin hides its manual button, so a save
         // had no way at all to reach the public site.
         SiteRebuild::markDirty('posts');
+        // Member pages list the news they are linked to.
+        if (array_key_exists('member_ids', $data)) {
+            SiteRebuild::markDirty('band-members');
+        }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
     }
 
     /**
@@ -136,7 +144,7 @@ class PostController extends Controller
     /** Admin detail — drafts included; what the editor loads. */
     public function adminShow(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
     }
 
     public function update(UpdatePostRequest $request, Post $post): PostResource
@@ -167,14 +175,22 @@ class PostController extends Controller
                 $post->concerts()->sync($data['concert_ids'] ?? []);
             }
 
+            if (array_key_exists('member_ids', $data)) {
+                $post->members()->sync($data['member_ids'] ?? []);
+            }
+
             if (array_key_exists('blocks', $data)) {
                 PostBlockSync::sync($post, $data['blocks'] ?? []);
             }
         }, 3);
 
         SiteRebuild::markDirty('posts');
+        // Member pages list the news they are linked to.
+        if (array_key_exists('member_ids', $data)) {
+            SiteRebuild::markDirty('band-members');
+        }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
     }
 
     public function destroy(Post $post): JsonResponse

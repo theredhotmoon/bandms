@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Photo;
+use App\Models\Post;
 
 /**
  * Which models band members can be linked to, by morph alias.
@@ -17,11 +18,13 @@ final class MemberLinks
 {
     public const MAP = [
         'photo' => Photo::class,
+        'post'  => Post::class,
     ];
 
     /** SiteRebuild area whose baked pages show this kind of content. */
     private const DIRTY = [
         'photo' => 'photos',
+        'post'  => 'posts',
     ];
 
     public static function dirtyArea(string $alias): ?string

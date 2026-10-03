@@ -73,6 +73,12 @@ class BandMember extends Model
         return $this->morphedByMany(Photo::class, 'memberable');
     }
 
+    /** News this member is linked to (a post can be about several members). */
+    public function posts(): MorphToMany
+    {
+        return $this->morphedByMany(Post::class, 'memberable');
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMembers;
 use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Post extends Model
 {
-    use HasFactory, HasTranslatedSlug, HasTranslations;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasMembers;
 
     public array $translatable = ['title', 'intro', 'slug'];
 
