@@ -69,6 +69,8 @@ export default {
     pendingChanges: 'pending change | pending changes',
     rebuild: '↺ Rebuild Public Site',
     rebuilding: 'Rebuilding…',
+    progressDone: 'Website rebuilt',
+    progressFailed: 'Website rebuild failed',
     autoActive: 'Auto-rebuild is active — changes rebuild automatically',
     rebuildTitle: 'Rebuild the public site',
     autoToggle: 'Auto-rebuild on every change',

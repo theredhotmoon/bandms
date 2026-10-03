@@ -51,3 +51,13 @@ it('clears pending areas when a manual rebuild is triggered', function () {
 
     expect(SiteDirtyArea::count())->toBe(0);
 });
+
+it('includes the server clock, so the admin can correct for a skewed browser clock', function () {
+    Http::fake(['http://web:3001/status' => Http::response(['status' => 'building', 'startedAt' => 1, 'finishedAt' => null], 200)]);
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $before = (int) (microtime(true) * 1000);
+    $now = $this->getJson('/api/admin/site/rebuild/status')->assertOk()->json('serverNow');
+
+    expect($now)->toBeInt()->toBeGreaterThanOrEqual($before)->toBeLessThan($before + 5000);
+});

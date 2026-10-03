@@ -47,6 +47,11 @@ class SiteRebuildController extends Controller
 
         return response()->json([
             ...$status,
+            // The server's clock, in the same milliseconds as startedAt (the
+            // webhook runs on this host). The admin estimates progress from
+            // startedAt, and a browser clock off by a minute would otherwise
+            // start the bar part-filled or hold it at zero.
+            'serverNow'    => (int) round(microtime(true) * 1000),
             'autoRebuild'  => SiteSetting::get('auto_rebuild', 'false') === 'true',
             'pendingAreas' => SiteRebuild::pendingAreas(),
         ]);

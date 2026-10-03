@@ -30,6 +30,7 @@ export async function fetchRebuildStatus(token: string): Promise<RebuildStatus> 
     status,
     startedAt: typeof raw.startedAt === 'number' ? raw.startedAt : null,
     finishedAt: typeof raw.finishedAt === 'number' ? raw.finishedAt : null,
+    clockOffset: typeof raw.serverNow === 'number' ? raw.serverNow - Date.now() : 0,
     autoRebuild: raw.autoRebuild === true,
     pendingAreas: Array.isArray(raw.pendingAreas) ? (raw.pendingAreas as PendingArea[]) : [],
   }

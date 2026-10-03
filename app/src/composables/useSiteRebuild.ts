@@ -13,7 +13,13 @@ export function useSiteRebuild() {
     queryKey: REBUILD_QUERY_KEY,
     queryFn: () => fetchRebuildStatus(token.value!),
     enabled: () => token.value !== null,
-    refetchInterval: (query) => (query.state.data?.status === 'building' ? 2000 : 30000),
+    // 'unknown' is the API failing to reach the webhook (a 5 s timeout, a
+    // restart) — often one blip in the middle of a build, so keep checking
+    // briskly rather than dropping to the idle pace.
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status === 'building' ? 2000 : status === 'unknown' ? 5000 : 30000
+    },
     staleTime: 0,
   })
 

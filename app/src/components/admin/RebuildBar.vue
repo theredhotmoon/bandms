@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useSiteRebuild } from '@/composables/useSiteRebuild'
 import { rebuildAreaMessageKey } from '@/config/rebuildAreas'
 import RebuildSettingsModal from './RebuildSettingsModal.vue'
+import RebuildProgressLine from './RebuildProgressLine.vue'
 
 const { isBuilding, autoRebuild, pendingAreas, rebuild } = useSiteRebuild()
 const { t } = useI18n()
@@ -30,6 +31,7 @@ function relativeTime(iso: string | null): string {
 
 <template>
   <div class="rebuild-bar">
+    <RebuildProgressLine />
     <div class="rebuild-bar-pending">
       <button
         type="button"
