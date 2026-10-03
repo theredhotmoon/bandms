@@ -17,12 +17,18 @@ const status = computed(() => statusQuery.data.value)
 // The finish is timed from when this page saw it, not the server's
 // finishedAt: the two clocks can differ, and a page opened after the build
 // should not flash a result nobody was waiting for.
+const now = ref(Date.now())
 const finishedSeenAt = ref<number | null>(null)
 watch(() => status.value?.status, (next, prev) => {
-  if (prev === 'building' && (next === 'done' || next === 'error')) finishedSeenAt.value = Date.now()
+  if (prev === 'building' && (next === 'done' || next === 'error')) {
+    // Advance `now` in the same step: left at the last tick it would sit just
+    // before the finish, the elapsed time would be negative and the result
+    // would never show.
+    finishedSeenAt.value = Date.now()
+    now.value = finishedSeenAt.value
+  }
 })
 
-const now = ref(Date.now())
 const progress = computed(() =>
   rebuildProgress(
     { status: status.value?.status ?? 'unknown', startedAt: status.value?.startedAt ?? null, finishedAt: finishedSeenAt.value },
