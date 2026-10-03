@@ -54,7 +54,7 @@ test.describe.serial('Public — concert poster', () => {
 
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000)
-    const venues = (await (await request.get(`${API}/api/venues`)).json()).data as { id: number }[]
+    const venues = ((await (await request.get(`${API}/api/venues`, { headers: headers() })).json()).data ?? []) as { id: number }[]
     test.skip(venues.length === 0, 'No venue to hold a concert')
 
     // A date far out and random enough not to collide with another run's.
