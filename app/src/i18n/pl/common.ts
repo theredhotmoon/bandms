@@ -69,6 +69,8 @@ export default {
     pendingChanges: 'oczekująca zmiana | oczekujące zmiany | oczekujących zmian',
     rebuild: '↺ Przebuduj stronę',
     rebuilding: 'Przebudowywanie…',
+    progressDone: 'Strona przebudowana',
+    progressFailed: 'Przebudowa strony nie powiodła się',
     autoActive: 'Automatyczne przebudowywanie jest włączone — zmiany publikują się same',
     rebuildTitle: 'Przebuduj stronę publiczną',
     autoToggle: 'Automatyczne przebudowywanie po każdej zmianie',

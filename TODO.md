@@ -80,19 +80,6 @@ click opens, Escape closes.
 
 ---
 
-## Admin — the rebuild progress bar is gone
-
-2026-10-03. #99 moved the Rebuild button into the admin-wide `RebuildBar`
-and deleted the Website-modules page's progress bar with it (an estimate:
-elapsed time against an expected duration, capped at 90% until done, then a
-done/failed state). The bar now shows only "Rebuilding…", so a rebuild's
-progress is invisible. Bring the visual back as a thin line along the
-bottom edge of the sticky rebuild bar, on every admin page: grows while
-building, fills green on done, turns red on error, hidden when idle. Being
-done in the same session as this entry.
-
----
-
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still

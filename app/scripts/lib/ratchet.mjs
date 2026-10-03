@@ -35,6 +35,7 @@ export const MIGRATED = [
   'components/admin/EpkVersionHistory.vue',
   'components/admin/Pagination.vue',
   'components/admin/RebuildBar.vue',
+  'components/admin/RebuildProgressLine.vue',
   'components/admin/RebuildSettingsModal.vue',
   'components/admin/SortHeader.vue',
   'components/admin/forms/AuthorForm.vue',
