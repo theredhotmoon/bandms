@@ -1,0 +1,229 @@
+---
+import type { Locale } from '@/types/shared'
+import type { Alternates } from '@/lib/locales'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ThemeSlot from '@/components/ThemeSlot.astro'
+import Icon from '@/components/Icon.astro'
+import { getMembers, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { ABOUT_COPY, fillCopy } from '@bandms/site-copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
+
+/**
+ * A band member's own page — their "postcard". Shareable on its own and
+ * printed as a QR code from the admin, which is why its URL is the member's
+ * slug and never moves when they are renamed.
+ */
+interface Props {
+  lang: Locale
+  alternates: Alternates
+  itemId: number
+}
+
+const { lang, alternates, itemId } = Astro.props
+
+const [members, profile, siteConfig, slugMap] = await Promise.all([
+  getMembers(lang),
+  getBandProfile(lang),
+  getSiteConfig(lang),
+  getSlugMap(),
+])
+
+const member = members.find((m) => m.id === itemId)!
+const t = moduleCopy(siteConfig, 'about', ABOUT_COPY, lang)
+const site = siteCopy(siteConfig, lang)
+const aboutHref = `/${lang}/${slugMap[lang]?.about ?? 'about'}`
+
+const name = [member.first_name, member.nickname ? `“${member.nickname}”` : null, member.last_name]
+  .filter(Boolean)
+  .join(' ')
+const year = (date: string | null) => (date ? date.slice(0, 4) : null)
+const tenure = member.is_current
+  ? (year(member.joined_at) ? fillCopy(t.memberSince, { year: year(member.joined_at)! }) : null)
+  : (year(member.joined_at) && year(member.quit_at)
+      ? fillCopy(t.memberWas, { from: year(member.joined_at)!, to: year(member.quit_at)! })
+      : t.former)
+
+// Main instrument first, then the rest without repeating it.
+const instruments = [
+  ...(member.main_instrument ? [member.main_instrument.name] : []),
+  ...(member.instruments ?? []).map((i) => i.name).filter((n) => n !== member.main_instrument?.name),
+]
+
+const ICONS = new Set(['instagram', 'facebook', 'youtube', 'spotify', 'bandcamp', 'soundcloud'])
+const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(s.platform) ? s.platform : 'external' }))
+
+const description = member.bio?.slice(0, 160) ?? [member.role, profile.name].filter(Boolean).join(' · ')
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name,
+  ...(member.role ? { jobTitle: member.role } : {}),
+  ...(member.photo ? { image: member.photo } : {}),
+  memberOf: { '@type': 'MusicGroup', name: profile.name },
+  ...(socials.length ? { sameAs: socials.map((s) => s.url) } : {}),
+}
+---
+
+<BaseLayout
+  lang={lang}
+  alternates={alternates}
+  title={name}
+  description={description}
+  image={member.photo}
+  structuredData={structuredData}
+>
+  <section class="md-hero page-x">
+    <ThemeSlot name="hero-backdrop" />
+    <div class="md-hero-in">
+      <nav class="md-crumb" aria-label={site.breadcrumbLabel}>
+        <a href={aboutHref}>{t.memberBack}</a>
+        <span class="md-crumb-sep" aria-hidden="true">→</span>
+        <span class="md-crumb-cur">{name}</span>
+      </nav>
+
+      {member.role && <span class="md-kicker">{member.role}</span>}
+      <h1 class="md-h1" data-testid="member-name">{name}</h1>
+      <p class="md-band">{profile.name}</p>
+      {tenure && <p class="md-tenure" data-testid="member-tenure">{tenure}</p>}
+
+      <div class="md-actions">
+        <button
+          type="button"
+          class="md-share"
+          data-member-share
+          data-copied={t.memberCopied}
+          data-testid="member-share"
+        >
+          <Icon name="external" size={16} color="currentColor" />
+          <span data-share-label>{t.memberShare}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <ThemeSlot name="section-divider" height={16} tone="accent" />
+
+  <section class="md-sec page-x">
+    <div class="md-grid">
+      <div class="md-photo">
+        {member.photo
+          ? <img src={member.photo} alt={name} loading="eager" />
+          : <span class="md-photo-fallback" aria-hidden="true" />}
+      </div>
+
+      <div class="md-body">
+        {member.bio && <p class="md-bio" data-testid="member-bio">{member.bio}</p>}
+
+        {instruments.length > 0 && (
+          <div class="md-plays" data-testid="member-instruments">
+            <span class="md-label">{t.plays}</span>
+            <div class="md-chips">
+              {instruments.map((i) => <span class="md-chip">{i}</span>)}
+            </div>
+          </div>
+        )}
+
+        {socials.length > 0 && (
+          <div class="md-follow">
+            <span class="md-label">{t.memberFollow}</span>
+            <div class="md-socials">
+              {socials.map((s) => (
+                <a class="md-social" href={s.url} target="_blank" rel="noopener" aria-label={s.platform}>
+                  <Icon name={s.icon} size={20} color="currentColor" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- Gear: a placeholder until the rig list is published on the page. -->
+  <section class="md-sec page-x" data-testid="member-gear">
+    <h2 class="md-h2">{t.memberGear}</h2>
+    <div class="md-gear">
+      {[0, 1, 2].map(() => (
+        <div class="md-gear-card" aria-hidden="true">
+          <span class="md-gear-line md-gear-line--wide" />
+          <span class="md-gear-line" />
+        </div>
+      ))}
+      <p class="md-gear-soon">{t.memberGearSoon}</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Share the page: the native sheet where there is one, the clipboard
+  // otherwise. Labels come in through data attributes — a script has no copy.
+  document.querySelectorAll<HTMLButtonElement>('[data-member-share]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const url = window.location.href
+      if (navigator.share) {
+        try { await navigator.share({ title: document.title, url }); return } catch { /* cancelled: fall through */ }
+      }
+      try {
+        await navigator.clipboard.writeText(url)
+        const label = button.querySelector('[data-share-label]')
+        if (label) {
+          const original = label.textContent
+          label.textContent = button.dataset.copied ?? ''
+          setTimeout(() => { label.textContent = original }, 2000)
+        }
+      } catch { /* clipboard blocked: nothing useful to do */ }
+    })
+  })
+</script>
+
+<style>
+  /* The hero is an inverse band, like every detail page's (ReleaseDetail). */
+  .md-hero { position: relative; overflow: hidden; background: var(--color-inverse); color: var(--color-on-inverse); padding-block: 26px 50px; }
+  .md-hero-in { position: relative; }
+  .md-crumb { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 26px; font: 700 12px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: color-mix(in oklab, var(--color-on-inverse) 62%, transparent); }
+  .md-crumb a { color: inherit; }
+  .md-crumb a:hover { color: var(--color-on-inverse); }
+  .md-crumb-sep { color: var(--color-accent); }
+  .md-crumb-cur { color: var(--color-on-inverse); }
+  .md-kicker { display: block; font: 800 13px/1 var(--font-body); letter-spacing: .18em; text-transform: uppercase; color: var(--color-accent); }
+  .md-h1 { margin: 14px 0 0; font-size: 84px; line-height: .86; text-wrap: balance; }
+  .md-band { margin: 14px 0 0; font: 700 18px/1.2 var(--font-body); color: color-mix(in oklab, var(--color-on-inverse) 82%, transparent); }
+  .md-tenure { margin: 8px 0 0; font: 700 13px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in oklab, var(--color-on-inverse) 62%, transparent); }
+  .md-actions { margin-top: 28px; display: flex; gap: 12px; }
+  .md-share {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px;
+    border: 2px solid currentColor; border-radius: var(--radius-card);
+    background: transparent; color: var(--color-on-inverse);
+    font: 800 13px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  }
+  .md-share:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+  .md-sec { padding-top: 56px; padding-bottom: 56px; }
+  .md-grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 48px; align-items: start; }
+  @media (max-width: 760px) { .md-grid { grid-template-columns: 1fr; gap: 28px; } }
+  .md-photo { aspect-ratio: 4 / 5; border-radius: var(--radius-card); overflow: hidden; background: var(--color-surface); box-shadow: var(--shadow-card); }
+  .md-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .md-photo-fallback { display: block; width: 100%; height: 100%; background: var(--color-surface-2); }
+  .md-body { display: flex; flex-direction: column; gap: 28px; }
+  .md-bio { margin: 0; font: 500 19px/1.6 var(--font-body); color: var(--color-body); white-space: pre-line; text-wrap: pretty; }
+  .md-label { display: block; margin-bottom: 10px; font: 800 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--color-subtle); }
+  .md-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .md-chip { padding: 7px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); font: 700 13px/1 var(--font-body); color: var(--color-body); }
+  .md-socials { display: flex; gap: 10px; }
+  .md-social { display: inline-flex; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-card); color: var(--color-body); }
+  .md-social:hover { color: var(--color-accent); border-color: var(--color-accent); }
+
+  .md-h2 { margin: 0 0 24px; font-size: 44px; line-height: 1; }
+  .md-gear { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .md-gear-card { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px dashed var(--color-border); border-radius: var(--radius-card); opacity: .6; }
+  .md-gear-line { display: block; height: 10px; width: 55%; border-radius: var(--radius-pill); background: var(--color-surface-2); }
+  .md-gear-line--wide { width: 85%; }
+  @media (max-width: 760px) {
+    .md-hero { padding-block: 20px 34px; }
+    .md-h1 { font-size: 38px; }
+    .md-sec { padding-block: 32px; }
+  }
+  .md-gear-soon { grid-column: 1 / -1; margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }
+</style>

@@ -48,6 +48,11 @@ export interface BandMember {
   first_name: string
   nickname: string | null
   last_name: string
+  /**
+   * The member's public page, /{lang}/{about}/{slug}. The API always sends it;
+   * optional because rider snapshots and fixtures built before it existed do not.
+   */
+  slug?: string
   bio: string | null
   photo: string | null
   role: string | null

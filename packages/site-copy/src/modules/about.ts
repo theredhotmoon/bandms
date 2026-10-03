@@ -95,6 +95,48 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Close', pl: 'Zamknij' },
   },
 
+  // ── Member page ─────────────────────────────────────────────────────
+  {
+    key: 'memberPage', label: '"Full page" link', group: 'Member page', maxLength: 40,
+    help: "In a member's card on the About page; opens their own page.",
+    defaults: { en: 'Full page', pl: 'Cała strona' },
+  },
+  {
+    key: 'memberBack', label: 'Back link', group: 'Member page', maxLength: 40,
+    defaults: { en: 'All members', pl: 'Wszyscy członkowie' },
+  },
+  {
+    key: 'memberSince', label: 'Current member: joined', group: 'Member page', maxLength: 40,
+    help: 'Takes {year}.',
+    defaults: { en: 'In the band since {year}', pl: 'W zespole od {year}' },
+  },
+  {
+    key: 'memberWas', label: 'Former member: years', group: 'Member page', maxLength: 40,
+    help: 'Takes {from} and {to}.',
+    defaults: { en: 'In the band {from}–{to}', pl: 'W zespole {from}–{to}' },
+  },
+  {
+    key: 'memberGear', label: 'Instruments & gear heading', group: 'Member page', maxLength: 40,
+    defaults: { en: 'Instruments & gear', pl: 'Instrumenty i sprzęt' },
+  },
+  {
+    key: 'memberGearSoon', label: 'Instruments & gear: placeholder', group: 'Member page', maxLength: 120,
+    help: 'Shown until the full gear list is published.',
+    defaults: { en: 'The full rig is coming soon.', pl: 'Pełna lista sprzętu już wkrótce.' },
+  },
+  {
+    key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
+    defaults: { en: 'Follow', pl: 'Obserwuj' },
+  },
+  {
+    key: 'memberShare', label: '"Share" button', group: 'Member page', maxLength: 30,
+    defaults: { en: 'Share', pl: 'Udostępnij' },
+  },
+  {
+    key: 'memberCopied', label: '"Link copied" confirmation', group: 'Member page', maxLength: 40,
+    defaults: { en: 'Link copied', pl: 'Link skopiowany' },
+  },
+
   // ── Press & booking ─────────────────────────────────────────────────
   {
     key: 'press', label: 'Heading', group: 'Press & booking', maxLength: 60,

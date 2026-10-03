@@ -10,6 +10,8 @@ export interface GridMember {
   isCurrent: boolean
   instruments: readonly string[]
   socials: readonly { platform: string; url: string }[]
+  /** The member's own page, or null when there is none to link to. */
+  pageUrl: string | null
 }
 
 export interface MemberGridCopy {
@@ -17,6 +19,7 @@ export interface MemberGridCopy {
   plays: string
   close: string
   view: string
+  page: string
 }
 
 const props = defineProps<{ members: readonly GridMember[]; copy: MemberGridCopy }>()
@@ -132,6 +135,8 @@ onMounted(() => {
             </div>
 
             <p v-if="open.bio" class="mg-bio">{{ open.bio }}</p>
+
+            <a v-if="open.pageUrl" class="mg-page-link" :href="open.pageUrl" data-testid="member-page-link">{{ copy.page }} →</a>
 
             <div v-if="open.socials.length > 0" class="mg-socials">
               <a
@@ -341,6 +346,16 @@ onMounted(() => {
   color: var(--color-body);
   text-wrap: pretty;
 }
+.mg-page-link {
+  display: inline-block;
+  margin-top: 18px;
+  font: 800 12px/1 var(--font-body);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.mg-page-link:hover { text-decoration: underline; }
 
 .mg-socials { display: flex; gap: 12px; margin-top: 22px; }
 .mg-social {

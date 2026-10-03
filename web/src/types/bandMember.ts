@@ -16,6 +16,8 @@ export interface BandMember {
   first_name: string
   nickname: string | null
   last_name: string
+  /** The member's page, /{lang}/{about}/{slug}. Generated once; never follows a rename. */
+  slug: string
   bio: string | null
   photo: string | null
   role: string | null
