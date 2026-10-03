@@ -35,16 +35,6 @@ best shot.
 
 ---
 
-## Concert page — the poster cannot be opened full size
-
-2026-10-03. `ConcertDetail.astro` renders the poster as a plain `<img>` in
-`.poster-frame`; it cannot be clicked or zoomed. Make it open full size in a
-lightbox (Escape/backdrop to close, focus returned). `GalleryBrowser.vue`
-already has one — reuse or extract it rather than writing a third. Public E2E:
-click opens, Escape closes.
-
----
-
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still
