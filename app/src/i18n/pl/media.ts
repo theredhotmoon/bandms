@@ -185,6 +185,9 @@ export default {
     epkFailed: 'Nie udało się zmienić statusu EPK',
     photoRemoved: 'Zdjęcie usunięte',
     photoRemoveFailed: 'Nie udało się usunąć zdjęcia',
+    addPhotos: '+ Dodaj zdjęcia',
+    uploadN: 'Wyślij {n} zdjęcie | Wyślij {n} zdjęcia | Wyślij {n} zdjęć',
+    photosAdded: 'Dodano {n} zdjęcie | Dodano {n} zdjęcia | Dodano {n} zdjęć',
   },
   batchUpload: {
     albumTitle: 'Tytuł albumu',

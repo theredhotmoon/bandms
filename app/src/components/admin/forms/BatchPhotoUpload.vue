@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import ImageDropZone from './ImageDropZone.vue'
+import UploadProgressBar from './UploadProgressBar.vue'
 import TranslatedSlugInput from './TranslatedSlugInput.vue'
 import { DEFAULT_LOCALE, emptyBag, slugPayload, type Lang } from '@/locales'
 import type { Localized } from '@/types/website-module'
@@ -149,14 +150,8 @@ function submit() {
     <div class="section-divider">{{ $t('media.batchUpload.photos') }}</div>
 
     <ImageDropZone :uploading="uploading" @change="pendingFiles = $event" />
-
     <!-- Progress -->
-    <div v-if="uploading" class="progress-wrap">
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: progressPct + '%' }" />
-      </div>
-      <span class="progress-label">{{ $t('media.batchUpload.uploadingPct', { pct: progressPct }) }}</span>
-    </div>
+    <UploadProgressBar v-if="uploading" :percent="progressPct" />
 
     <!-- Footer -->
     <div class="flex gap-2 justify-end pt-2">
@@ -188,8 +183,4 @@ function submit() {
   padding-top: 0.75rem;
 }
 
-.progress-wrap  { display: flex; flex-direction: column; gap: 0.35rem; }
-.progress-bar   { height: 5px; background: var(--c-252525); border-radius: 9999px; overflow: hidden; }
-.progress-fill  { height: 100%; background: var(--c-888888-line); border-radius: 9999px; transition: width 0.2s ease; }
-.progress-label { font-size: var(--fs-xs); color: var(--c-94a3b8); text-align: center; }
 </style>
