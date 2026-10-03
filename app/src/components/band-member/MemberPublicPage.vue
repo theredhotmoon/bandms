@@ -21,6 +21,15 @@ const { query: profileQuery } = useBandProfile()
 const bandName = computed(() => profileQuery.data.value?.name ?? '')
 
 const url = computed(() => memberPageUrl(window.location.origin, modulesQuery.data.value?.data, props.member.slug))
+
+// The page is only built while the About module and its Members section are
+// on. Offering a QR code for a page that does not exist would print a 404.
+// Unknown (modules not loaded, or not readable for this role) counts as
+// published, the same "absent means on" rule the public site uses.
+const published = computed(() => {
+  const about = modulesQuery.data.value?.data?.find((m) => m.slug === 'about')
+  return !about || (about.enabled !== false && about.visibility?.show_members !== false)
+})
 const name = computed(() =>
   [props.member.first_name, props.member.nickname ? `“${props.member.nickname}”` : null, props.member.last_name]
     .filter(Boolean)
@@ -97,13 +106,14 @@ function printCard() {
     <p v-if="!url" class="pp-empty">{{ $t('band.members.publicPage.noSlug') }}</p>
 
     <template v-else>
+      <p v-if="!published" class="pp-warning" data-testid="member-page-unpublished">{{ $t('band.members.publicPage.unpublished') }}</p>
       <div class="pp-link">
         <code class="pp-url" data-testid="member-public-url">{{ url }}</code>
         <button type="button" class="btn-ghost" @click="copyLink">{{ $t('band.members.publicPage.copy') }}</button>
         <a class="btn-ghost" :href="url" target="_blank" rel="noopener">{{ $t('band.members.publicPage.open') }}</a>
       </div>
 
-      <div class="pp-qr-row">
+      <div v-if="published" class="pp-qr-row">
         <img
           v-if="qrPng"
           :src="qrPng"
@@ -125,6 +135,10 @@ function printCard() {
 .public-page { display: flex; flex-direction: column; gap: 1rem; max-width: 46rem; }
 .pp-title { font-size: var(--fs-lg); font-weight: 600; color: var(--c-e2e8f0); margin: 0; }
 .pp-hint, .pp-empty { font-size: var(--fs-sm); color: var(--c-94a3b8); margin: 0; line-height: 1.6; }
+.pp-warning {
+  font-size: var(--fs-sm); line-height: 1.6; margin: 0; padding: 0.625rem 0.75rem; border-radius: 0.375rem;
+  color: var(--c-fbbf24); background: color-mix(in srgb, var(--c-fbbf24) 10%, transparent);
+}
 .pp-link { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .pp-url {
   flex: 1 1 18rem; padding: 0.5rem 0.75rem; border-radius: 0.375rem;

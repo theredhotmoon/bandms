@@ -53,14 +53,18 @@ const instruments = [
 const ICONS = new Set(['instagram', 'facebook', 'youtube', 'spotify', 'bandcamp', 'soundcloud'])
 const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(s.platform) ? s.platform : 'external' }))
 
-const description = member.bio?.slice(0, 160) ?? [member.role, profile.name].filter(Boolean).join(' · ')
+// `||`, not `??`: a bio saved as '' would otherwise give an empty description.
+const description = member.bio?.slice(0, 160) || [member.role, profile.name].filter(Boolean).join(' · ')
+// Structured data needs an absolute URL; the API strips the host from photos.
+const site = (Astro.site?.toString() ?? Astro.url.origin).replace(/\/$/, '')
+const photoUrl = member.photo ? (member.photo.startsWith('http') ? member.photo : `${site}${member.photo}`) : null
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name,
   ...(member.role ? { jobTitle: member.role } : {}),
-  ...(member.photo ? { image: member.photo } : {}),
+  ...(photoUrl ? { image: photoUrl } : {}),
   memberOf: { '@type': 'MusicGroup', name: profile.name },
   ...(socials.length ? { sameAs: socials.map((s) => s.url) } : {}),
 }
@@ -163,7 +167,14 @@ const structuredData = {
     button.addEventListener('click', async () => {
       const url = window.location.href
       if (navigator.share) {
-        try { await navigator.share({ title: document.title, url }); return } catch { /* cancelled: fall through */ }
+        try {
+          await navigator.share({ title: document.title, url })
+          return
+        } catch (e) {
+          // Closing the share sheet is a choice, not a failure: leave the
+          // clipboard alone. Only a sheet that could not open falls back.
+          if (e instanceof DOMException && e.name === 'AbortError') return
+        }
       }
       try {
         await navigator.clipboard.writeText(url)

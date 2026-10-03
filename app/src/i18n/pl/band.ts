@@ -384,6 +384,7 @@ export default {
       title: 'Strona publiczna',
       hint: 'Własna strona tego członka zespołu w serwisie. Udostępnij link albo wydrukuj kod QR — adres nigdy się nie zmienia, nawet po zmianie imienia.',
       noSlug: 'Ten członek zespołu nie ma jeszcze strony publicznej. Zapisz go raz, aby ją utworzyć.',
+      unpublished: 'Tej strony nie ma teraz w serwisie: strona „O nas” albo jej sekcja członków jest wyłączona w modułach strony. Włącz ją, zanim wydrukujesz kod QR.',
       copy: 'Kopiuj link',
       copied: 'Link skopiowany',
       copyFailed: 'Nie udało się skopiować linku',

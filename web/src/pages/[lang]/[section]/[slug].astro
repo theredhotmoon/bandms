@@ -70,9 +70,11 @@ export async function getStaticPaths() {
       }
     }
 
-    // Member pages live under About and go with it. A member with no slug
-    // (an API predating it) gets no page rather than a /about/undefined one.
-    if (cfg.modules.about !== false) {
+    // Member pages live under About and go with it — and with its Members
+    // section: a band that hides that section should not still publish a page
+    // per member. A member with no slug (an API predating it) gets no page
+    // rather than an /about/undefined one.
+    if (cfg.modules.about !== false && cfg.module_config?.about?.visibility?.show_members !== false) {
       for (const m of members.filter(m => m.slug)) {
         paths.push({
           params: { lang, section: slugMap[lang].about ?? 'about', slug: m.slug },

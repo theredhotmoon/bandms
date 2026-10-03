@@ -388,6 +388,7 @@ export default {
       title: 'Public page',
       hint: "This member's own page on the website. Share the link, or print the QR code — the address never changes, even if the member is renamed.",
       noSlug: 'This member has no public page yet. Save the member once to create it.',
+      unpublished: 'This page is not on the website right now: the About page or its Members section is switched off in Website modules. Switch it on before printing a QR code.',
       copy: 'Copy link',
       copied: 'Link copied',
       copyFailed: 'Could not copy the link',
