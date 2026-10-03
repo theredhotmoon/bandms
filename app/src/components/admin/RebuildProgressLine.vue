@@ -14,32 +14,49 @@ const { t } = useI18n()
 const { statusQuery } = useSiteRebuild()
 const status = computed(() => statusQuery.data.value)
 
+// A build is tracked across polls rather than read off one poll's status: a
+// single 'unknown' (the API failing to reach the webhook) mid-build would
+// otherwise hide the line and, worse, lose the building → done step, so the
+// result would never show. `unknown` changes nothing; `idle` ends a build
+// that the webhook has forgotten (it restarted).
+//
 // The finish is timed from when this page saw it, not the server's
-// finishedAt: the two clocks can differ, and a page opened after the build
-// should not flash a result nobody was waiting for.
+// finishedAt, so a page opened after the build does not flash an old result.
 const now = ref(Date.now())
+const inBuild = ref(false)
 const finishedSeenAt = ref<number | null>(null)
-watch(() => status.value?.status, (next, prev) => {
-  if (prev === 'building' && (next === 'done' || next === 'error')) {
+const finishedTone = ref<'done' | 'error'>('done')
+watch(() => status.value?.status, (next) => {
+  if (next === 'building') {
+    inBuild.value = true
+    finishedSeenAt.value = null
+  } else if ((next === 'done' || next === 'error') && inBuild.value) {
+    inBuild.value = false
+    finishedTone.value = next
     // Advance `now` in the same step: left at the last tick it would sit just
     // before the finish, the elapsed time would be negative and the result
     // would never show.
     finishedSeenAt.value = Date.now()
     now.value = finishedSeenAt.value
+  } else if (next === 'idle') {
+    inBuild.value = false
   }
-})
+}, { immediate: true })
 
-const progress = computed(() =>
-  rebuildProgress(
-    { status: status.value?.status ?? 'unknown', startedAt: status.value?.startedAt ?? null, finishedAt: finishedSeenAt.value },
-    now.value,
-  ),
-)
+const progress = computed(() => {
+  const s = status.value
+  // Server time, so the browser's clock cannot skew the estimate.
+  const serverNow = now.value + (s?.clockOffset ?? 0)
+  if (inBuild.value) {
+    return rebuildProgress({ status: 'building', startedAt: s?.startedAt ?? null, finishedAt: null }, serverNow)
+  }
+  return rebuildProgress({ status: finishedSeenAt.value ? finishedTone.value : 'idle', startedAt: null, finishedAt: finishedSeenAt.value }, now.value)
+})
 
 // Tick only while there is something to animate.
 let timer: ReturnType<typeof setInterval> | null = null
 watch(
-  () => status.value?.status === 'building' || finishedSeenAt.value !== null,
+  () => inBuild.value || finishedSeenAt.value !== null,
   (active) => {
     if (active && !timer) timer = setInterval(() => { now.value = Date.now() }, 500)
     if (!active && timer) { clearInterval(timer); timer = null }
@@ -47,7 +64,7 @@ watch(
   { immediate: true },
 )
 watch(() => progress.value.visible, (visible) => {
-  if (!visible && status.value?.status !== 'building') finishedSeenAt.value = null
+  if (!visible && !inBuild.value) finishedSeenAt.value = null
 })
 onUnmounted(() => { if (timer) clearInterval(timer) })
 

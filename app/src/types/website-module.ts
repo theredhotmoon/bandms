@@ -76,6 +76,12 @@ export interface RebuildStatus {
   status: 'idle' | 'building' | 'done' | 'error' | 'unknown'
   startedAt: number | null
   finishedAt: number | null
+  /**
+   * Server clock minus browser clock, in ms, measured when the status arrived.
+   * Add it to Date.now() to compare against startedAt/finishedAt. 0 when the
+   * API predates `serverNow`.
+   */
+  clockOffset: number
   autoRebuild: boolean
   pendingAreas: PendingArea[]
 }
