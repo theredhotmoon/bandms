@@ -71,15 +71,19 @@ test('one unknown poll mid-build does not lose the result', async ({ page }) => 
   // 'unknown' is the API failing to reach the webhook — a blip, not an end.
   const state = await mockStatus(page)
   state.status = 'building'
-  state.startedAt = Date.now()
+  state.startedAt = Date.now() - 20_000
 
   await page.goto('/admin')
   const line = page.getByTestId('rebuild-progress')
   await expect(line).toBeVisible()
 
+  const before = Number(await line.getAttribute('aria-valuenow'))
+  // An 'unknown' poll carries no timestamps; the line must not restart.
   state.status = 'unknown'
+  state.startedAt = null
   await page.waitForTimeout(2500) // at least one poll answers 'unknown'
   await expect(line).toBeVisible()
+  expect(Number(await line.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(before)
 
   state.status = 'done'
   state.finishedAt = Date.now()

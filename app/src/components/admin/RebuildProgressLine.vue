@@ -24,12 +24,16 @@ const status = computed(() => statusQuery.data.value)
 // finishedAt, so a page opened after the build does not flash an old result.
 const now = ref(Date.now())
 const inBuild = ref(false)
+// The last start time a 'building' poll reported. An 'unknown' poll carries
+// none, and reading it off that poll would drop the line back to 0%.
+const buildStartedAt = ref<number | null>(null)
 const finishedSeenAt = ref<number | null>(null)
 const finishedTone = ref<'done' | 'error'>('done')
 watch(() => status.value?.status, (next) => {
   if (next === 'building') {
     inBuild.value = true
     finishedSeenAt.value = null
+    buildStartedAt.value = status.value?.startedAt ?? buildStartedAt.value
   } else if ((next === 'done' || next === 'error') && inBuild.value) {
     inBuild.value = false
     finishedTone.value = next
@@ -43,12 +47,17 @@ watch(() => status.value?.status, (next) => {
   }
 }, { immediate: true })
 
+// A start time can arrive on a later 'building' poll than the first one.
+watch(() => status.value?.startedAt, (startedAt) => {
+  if (startedAt != null && status.value?.status === 'building') buildStartedAt.value = startedAt
+})
+
 const progress = computed(() => {
   const s = status.value
   // Server time, so the browser's clock cannot skew the estimate.
   const serverNow = now.value + (s?.clockOffset ?? 0)
   if (inBuild.value) {
-    return rebuildProgress({ status: 'building', startedAt: s?.startedAt ?? null, finishedAt: null }, serverNow)
+    return rebuildProgress({ status: 'building', startedAt: buildStartedAt.value, finishedAt: null }, serverNow)
   }
   return rebuildProgress({ status: finishedSeenAt.value ? finishedTone.value : 'idle', startedAt: null, finishedAt: finishedSeenAt.value }, now.value)
 })
