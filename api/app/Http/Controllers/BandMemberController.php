@@ -33,6 +33,8 @@ class BandMemberController extends Controller
                 // the eager load matches members on.
                 'photos' => fn ($q) => $q
                     ->whereHas('album', fn ($a) => $a->whereNotNull('published_at'))
+                    // A row with no file would render as a broken image.
+                    ->whereNotNull('photos.image')
                     ->orderByDesc('photos.epk_featured')
                     ->orderByDesc(Album::select('taken_at')->whereColumn('albums.id', 'photos.album_id'))
                     ->orderByDesc('photos.album_id')

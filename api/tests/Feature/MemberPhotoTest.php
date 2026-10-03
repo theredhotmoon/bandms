@@ -170,3 +170,12 @@ describe('GET /api/band-profile/members — photo order', function () {
         expect($ids)->toBe([$oldFeatured->id, $newFirst->id, $newSecond->id, $oldFirst->id]);
     });
 });
+
+it('leaves out a tagged photo that has no image file', function () {
+    $member = taggedMember();
+    $photo = taggablePhoto();
+    $photo->update(['image' => null]);
+    $photo->members()->sync([$member->id]);
+
+    $this->getJson('/api/band-profile/members')->assertOk()->assertJsonCount(0, 'data.0.photos');
+});

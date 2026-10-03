@@ -31,7 +31,18 @@ function toggleOpen() {
   open.value = !open.value
   if (!open.value || !root.value) return
   const r = root.value.getBoundingClientRect()
-  popStyle.value = { top: `${r.top - 6}px`, left: `${Math.max(8, r.right)}px` }
+  // The list is translated -100% left from this point; keep its whole width
+  // (min-width 12rem) on screen.
+  popStyle.value = { top: `${r.top - 6}px`, left: `${Math.max(r.right, POP_MIN_WIDTH + 8)}px` }
+}
+const POP_MIN_WIDTH = 192
+
+// Placed once, against the button: if anything scrolls or resizes, the list
+// would sit over another photo while still saving to this one. Close it.
+function closeOnMove(event: Event) {
+  // Scrolling the list itself (it has a max height) is not a move.
+  if (event.target instanceof Node && pop.value?.contains(event.target)) return
+  open.value = false
 }
 
 const tagged = computed(() => props.members.filter((m) => props.memberIds.includes(m.id)))
@@ -52,10 +63,15 @@ function onKeydown(event: KeyboardEvent) {
 onMounted(() => {
   document.addEventListener('click', onDocumentClick)
   document.addEventListener('keydown', onKeydown)
+  // capture: the photo grid scrolls inside the modal, not the window.
+  window.addEventListener('scroll', closeOnMove, true)
+  window.addEventListener('resize', closeOnMove)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocumentClick)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', closeOnMove, true)
+  window.removeEventListener('resize', closeOnMove)
 })
 </script>
 
