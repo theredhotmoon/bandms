@@ -125,6 +125,19 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'The full rig is coming soon.', pl: 'Pełna lista sprzętu już wkrótce.' },
   },
   {
+    key: 'memberPhotos', label: 'Photos heading', group: 'Member page', maxLength: 40,
+    help: 'Above the photos the member is tagged in. Hidden when there are none.',
+    defaults: { en: 'Photos', pl: 'Zdjęcia' },
+  },
+  {
+    key: 'memberPhotoPrev', label: 'Photo viewer: "previous" label', group: 'Member page', maxLength: 40,
+    defaults: { en: 'Previous photo', pl: 'Poprzednie zdjęcie' },
+  },
+  {
+    key: 'memberPhotoNext', label: 'Photo viewer: "next" label', group: 'Member page', maxLength: 40,
+    defaults: { en: 'Next photo', pl: 'Następne zdjęcie' },
+  },
+  {
     key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
     defaults: { en: 'Follow', pl: 'Obserwuj' },
   },

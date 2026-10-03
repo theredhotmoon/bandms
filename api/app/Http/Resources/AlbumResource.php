@@ -35,6 +35,9 @@ class AlbumResource extends JsonResource
                 'sort_order'   => $p->sort_order,
                 'caption'      => $p->caption,
                 'epk_featured' => (bool) $p->epk_featured,
+                // Who is in it, for the admin's tag picker. Absent unless the
+                // query loaded photos.members.
+                'member_ids'   => $p->relationLoaded('members') ? $p->members->pluck('id')->values() : null,
             ])),
             'photo_count'  => $this->when($photos !== null, fn () => $photos->count(), fn () => $this->photos()->count()),
             'cover_url'    => $this->whenLoaded('photos', fn () =>

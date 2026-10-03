@@ -17,7 +17,7 @@ class AlbumController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        $albums = Album::with(['venue', 'concert', 'tags', 'photos'])
+        $albums = Album::with(['venue', 'concert', 'tags', 'photos.members'])
             ->orderByDesc('taken_at')
             ->orderByDesc('created_at')
             ->get();
@@ -27,7 +27,7 @@ class AlbumController extends Controller
 
     public function show(Album $album): AlbumResource
     {
-        return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
+        return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos.members']));
     }
 
     public function batchStore(Request $request): AlbumResource

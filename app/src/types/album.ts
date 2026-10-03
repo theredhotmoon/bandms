@@ -18,6 +18,8 @@ export interface AlbumPhoto {
   sort_order: number
   caption: string | null
   epk_featured: boolean
+  /** Band members in this photo — any number. Null when the response did not load them. */
+  member_ids?: number[] | null
 }
 
 export interface Album {

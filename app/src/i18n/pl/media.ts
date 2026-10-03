@@ -188,6 +188,11 @@ export default {
     addPhotos: '+ Dodaj zdjęcia',
     uploadN: 'Wyślij {n} zdjęcie | Wyślij {n} zdjęcia | Wyślij {n} zdjęć',
     photosAdded: 'Dodano {n} zdjęcie | Dodano {n} zdjęcia | Dodano {n} zdjęć',
+    membersTitle: 'Kto jest na zdjęciu',
+    membersButton: 'Członkowie zespołu na zdjęciu: {n}',
+    membersNone: 'Oznacz członków zespołu na tym zdjęciu',
+    membersEmpty: 'Brak członków zespołu.',
+    membersFailed: 'Nie udało się zapisać, kto jest na zdjęciu',
   },
   batchUpload: {
     albumTitle: 'Tytuł albumu',

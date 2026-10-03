@@ -4,6 +4,7 @@ import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
+import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
 import { getMembers, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { ABOUT_COPY, fillCopy } from '@bandms/site-copy'
@@ -144,6 +145,18 @@ const structuredData = {
       </div>
     </div>
   </section>
+
+  {(member.photos?.length ?? 0) > 0 && (
+    <section class="md-sec page-x" data-testid="member-photos">
+      <h2 class="md-h2">{t.memberPhotos}</h2>
+      <MemberPhotoGrid
+        client:visible
+        photos={member.photos!}
+        alt={name}
+        copy={{ title: name, close: t.close, prev: t.memberPhotoPrev, next: t.memberPhotoNext }}
+      />
+    </section>
+  )}
 
   <!-- Gear: a placeholder until the rig list is published on the page. -->
   <section class="md-sec page-x" data-testid="member-gear">

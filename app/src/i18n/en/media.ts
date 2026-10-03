@@ -193,6 +193,11 @@ export default {
     addPhotos: '+ Add photos',
     uploadN: 'Upload {n} photo | Upload {n} photos',
     photosAdded: '{n} photo added | {n} photos added',
+    membersTitle: "Who's in it",
+    membersButton: 'Band members in this photo: {n}',
+    membersNone: 'Tag the band members in this photo',
+    membersEmpty: 'No band members yet.',
+    membersFailed: 'Could not save who is in the photo',
   },
   batchUpload: {
     albumTitle: 'Album title',

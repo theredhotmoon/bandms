@@ -22,7 +22,15 @@ class BandMemberController extends Controller
     {
         $members = $this->profile()
             ->members()
-            ->with(['socialLinks', 'instruments', 'setups', 'mainInstrument'])
+            ->with([
+                'socialLinks', 'instruments', 'setups', 'mainInstrument',
+                // Only photos the public can see: an album without a
+                // published_at is a draft, the same rule the gallery applies.
+                'photos' => fn ($q) => $q
+                    ->whereHas('album', fn ($a) => $a->whereNotNull('published_at'))
+                    ->orderBy('album_id')
+                    ->orderBy('sort_order'),
+            ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')
             ->orderBy('joined_at')
