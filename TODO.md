@@ -4,28 +4,14 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
-## Band member pages — a shareable "postcard" per member — NEXT UP
+## Band member pages — link the rest of the site to members
 
-Requested 2026-10-03; branch `feature/member-pages`. Today a member is only a
-card + modal on About; **no member has a slug, and nothing in the schema
-points at a member** (no photo, post, concert or clip).
+Each member has a public page at `/{lang}/{about}/{slug}` (bio, details,
+share button, printable QR in the admin). Its **Instruments & gear** block is
+still a placeholder, and **nothing in the schema points at a member** — no
+photo, post, concert or clip knows who is in it.
 
-**PR 1 — the page.**
-- URL under About (`/en/about/jan-kowalski`), slug generated once from the
-  name and **never re-slugged on rename** — a printed QR must not go dead.
-  Plain slug or a `HasTranslatedSlug` bag: decide. Gated on the `about` module.
-- Content: photo, name, role, current/former + dates, bio, main instrument,
-  social links. **Instruments/gear: a mockup block only.**
-- Share: copy-link + `navigator.share`, `og:*` with the member's photo,
-  canonical/hreflang per the existing rules.
-- **Printable QR** in the admin per member: SVG/PNG download + an A6 print
-  card. Client-side library, no external service; encodes the *production*
-  URL, never `localhost`.
-- About cards link to the page; copy via `@bandms/site-copy`; marks
-  `band-members` dirty. Tests: Pest (slug, uniqueness, rename keeps it),
-  admin E2E (QR encodes the right URL), public E2E (page, module off → 404).
-
-**Later, one PR each** — each needs a relation, an admin picker and a block.
+**One PR each** — each needs a relation, an admin picker and a block.
 Decide first whether one polymorphic pivot (`memberables`, like `clippables`)
 serves them all: real instruments & gear (data exists) · photos (tag members)
 · news · concerts, clips, releases, music videos, press.
