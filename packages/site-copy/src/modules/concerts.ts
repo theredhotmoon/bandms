@@ -195,6 +195,15 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'Poster for {band} at {venue}', pl: 'Plakat {band} w {venue}' },
   },
   {
+    key: 'posterZoom', label: 'Poster: "view full size" label', group: 'Show page', maxLength: 60,
+    help: 'Read by screen readers on the poster, which opens it full size.',
+    defaults: { en: 'View the poster full size', pl: 'Zobacz plakat w pełnym rozmiarze' },
+  },
+  {
+    key: 'posterClose', label: 'Poster: "Close" button', group: 'Show page', maxLength: 30,
+    defaults: { en: 'Close', pl: 'Zamknij' },
+  },
+  {
     key: 'factDoors', label: 'Fact: doors', group: 'Show page', maxLength: 30,
     defaults: { en: 'Doors', pl: 'Drzwi' },
   },

@@ -509,4 +509,8 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── Concerts → empty state ──────────────────────────────────────────────
   'Empty state: booking button': 'Pusty stan: przycisk rezerwacji',
   'Opens the availability calendar. Shown here and on the homepage when no shows are announced.': 'Otwiera kalendarz dostępności. Widoczny tutaj i na stronie głównej, gdy nie ogłoszono koncertów.',
+  // ── Concerts → show page poster ─────────────────────────────────────────
+  'Poster: "view full size" label': 'Plakat: etykieta „pełny rozmiar”',
+  'Read by screen readers on the poster, which opens it full size.': 'Odczytywana przez czytniki ekranu na plakacie, który otwiera go w pełnym rozmiarze.',
+  'Poster: "Close" button': 'Plakat: przycisk „Zamknij”',
 }
