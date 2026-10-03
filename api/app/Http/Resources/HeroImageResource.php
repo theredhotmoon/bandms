@@ -15,6 +15,7 @@ class HeroImageResource extends JsonResource
             'caption'  => $this->caption,
             'position' => $this->position,
             'active'   => $this->active,
+            'weight'   => $this->weight,
         ];
     }
 }

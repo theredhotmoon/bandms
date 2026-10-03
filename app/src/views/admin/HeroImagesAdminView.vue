@@ -112,6 +112,40 @@ async function saveCaption(image: HeroImage, value: string) {
   }
 }
 
+// Named steps rather than a number field: "how often" is a feeling, not a
+// figure. A weight set some other way still shows, as Custom.
+const WEIGHT_STEPS = [100, 75, 50, 25, 10] as const
+function weightLabel(w: number): string {
+  switch (w) {
+    case 100: return t('pages.heroImages.weightNormal')
+    case 75: return t('pages.heroImages.weightOften')
+    case 50: return t('pages.heroImages.weightSometimes')
+    case 25: return t('pages.heroImages.weightRarely')
+    case 10: return t('pages.heroImages.weightVeryRarely')
+    default: return t('pages.heroImages.weightCustom', { n: w })
+  }
+}
+function weightOptions(image: HeroImage): number[] {
+  const current = image.weight ?? 100
+  return (WEIGHT_STEPS as readonly number[]).includes(current) ? [...WEIGHT_STEPS] : [...WEIGHT_STEPS, current]
+}
+
+async function setWeight(image: HeroImage, select: HTMLSelectElement) {
+  // 100 is stored as null, so "Normal" stays the column's empty default.
+  const value = Number(select.value)
+  const weight = value >= 100 ? null : value
+  if (weight === image.weight) return
+  try {
+    await update.mutateAsync({ id: image.id, payload: { weight } })
+  } catch (e) {
+    // The select is bound one way, and a failed save leaves image.weight as
+    // it was — so nothing re-renders. Put the stored value back by hand, or
+    // the admin would show a weight the site is not using.
+    select.value = String(image.weight ?? 100)
+    reportSaveError(e, t('pages.heroImages.updateFailed'))
+  }
+}
+
 async function toggleActive(image: HeroImage) {
   try {
     await update.mutateAsync({ id: image.id, payload: { active: !image.active } })
@@ -228,6 +262,18 @@ function scopeSummary(key: string): string {
                   {{ $t('pages.heroImages.active') }}
                 </label>
               </div>
+              <label class="px-2 pb-2 flex items-center gap-2 text-zinc-400" :title="$t('pages.heroImages.weightHint')">
+                <span class="shrink-0">{{ $t('pages.heroImages.weight') }}</span>
+                <select
+                  class="flex-1 min-w-0 rounded bg-zinc-800 border border-zinc-700 px-1 py-0.5 text-zinc-200"
+                  :value="image.weight ?? 100"
+                  :disabled="update.isPending.value"
+                  data-testid="hero-weight"
+                  @change="setWeight(image, $event.target as HTMLSelectElement)"
+                >
+                  <option v-for="w in weightOptions(image)" :key="w" :value="w">{{ weightLabel(w) }}</option>
+                </select>
+              </label>
               <div class="p-2 pt-0">
                 <button
                   type="button" class="w-full px-2 py-1 rounded text-red-400 hover:bg-zinc-700"

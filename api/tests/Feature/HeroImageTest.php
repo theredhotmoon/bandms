@@ -315,3 +315,51 @@ it('keeps hero images out of module_config so the slug map is unaffected', funct
     expect($response->json('hero_images.main'))->toHaveCount(1);
     expect($response->json('hero_images.home'))->toHaveCount(1);
 });
+
+// ── Display weight ──────────────────────────────────────────────────────────────
+// An optional per-picture weight that can only lower how often it shows. Empty
+// means maximum, which is how every picture behaved before the column existed.
+
+it('has no weight until one is set', function () {
+    heroAdmin();
+    $row = heroRow();
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['caption' => 'x'])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.weight', null);
+});
+
+it('sets a weight between 1 and 100', function () {
+    heroAdmin();
+    $row = heroRow();
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['weight' => 25])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.weight', 25);
+});
+
+it('clears a weight back to maximum with null', function () {
+    heroAdmin();
+    $row = heroRow(['weight' => 10]);
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['weight' => null])
+        ->assertOk()
+        ->assertJsonPath('data.main.0.weight', null);
+});
+
+it('rejects a weight outside 1 to 100', function (mixed $weight) {
+    heroAdmin();
+    $row = heroRow();
+
+    $this->patchJson("/api/admin/hero-images/{$row->id}", ['weight' => $weight])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('weight');
+})->with([0, 101, -5, 'often', 12.5]);
+
+it('serves the weight to the public site', function () {
+    heroRow(['weight' => 40]);
+
+    $this->getJson('/api/site-config?lang=en')
+        ->assertOk()
+        ->assertJsonPath('hero_images.main.0.weight', 40);
+});

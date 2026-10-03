@@ -33,7 +33,7 @@ export function useHeroImages() {
   })
 
   const update = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: { caption?: string | null; active?: boolean } }) =>
+    mutationFn: ({ id, payload }: { id: number; payload: { caption?: string | null; active?: boolean; weight?: number | null } }) =>
       updateHeroImage(token.value!, id, payload),
     onSuccess: onMapResponse,
   })

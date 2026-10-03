@@ -14,6 +14,41 @@ export interface HeroImage {
   id: number
   url: string
   caption: string | null
+  /**
+   * How often this picture shows, 1–100, relative to the others in its set.
+   * Absent or null means 100: weights only ever *lower* a picture's chance.
+   * Optional because an API predating the column omits it.
+   */
+  weight?: number | null
+}
+
+/** The highest weight, and what an unweighted picture counts as. */
+export const MAX_HERO_WEIGHT = 100
+
+/** Each picture's effective weight: null/absent is the maximum, the rest clamped to 1–100. */
+export function heroWeights(images: readonly HeroImage[]): number[] {
+  return images.map((i) =>
+    i.weight == null ? MAX_HERO_WEIGHT : Math.min(MAX_HERO_WEIGHT, Math.max(1, Math.round(i.weight))),
+  )
+}
+
+/**
+ * Picks an index with probability weight / Σweights, given `r` in [0, 1).
+ *
+ * Self-contained on purpose — no imports, no closures, plain ES5 — because
+ * HeroBackdrop ships this function's own source into an `is:inline` script
+ * (`String(pickWeightedIndex)`), which runs before first paint and cannot
+ * import a module. This copy is the tested one; there is no other.
+ */
+export function pickWeightedIndex(weights: number[], r: number): number {
+  var total = 0
+  for (var i = 0; i < weights.length; i++) total += weights[i]
+  var target = r * total
+  for (var j = 0; j < weights.length; j++) {
+    target -= weights[j]
+    if (target < 0) return j
+  }
+  return weights.length - 1
 }
 
 /** The scope every page falls back to when it has no set of its own. */

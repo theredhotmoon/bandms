@@ -9,6 +9,11 @@ export interface HeroImage {
   caption: string | null
   position: number
   active: boolean
+  /**
+   * How often it shows, 1–100, relative to the rest of its set. Null is the
+   * maximum — a weight can only make a picture rarer, never more frequent.
+   */
+  weight: number | null
 }
 
 /** Hero sets keyed by scope: 'main', 'home', or a website module slug. */

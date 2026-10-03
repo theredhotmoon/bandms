@@ -39,7 +39,7 @@ export async function uploadHeroImages(
 export async function updateHeroImage(
   token: string,
   id: number,
-  payload: { caption?: string | null; active?: boolean },
+  payload: { caption?: string | null; active?: boolean; weight?: number | null },
 ): Promise<HeroImagesResponse> {
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/admin/hero-images/${id}`, {

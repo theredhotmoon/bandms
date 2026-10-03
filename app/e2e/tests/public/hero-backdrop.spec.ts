@@ -216,6 +216,12 @@ test.describe.serial('Public hero backdrop — active filter', () => {
       headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
       data: { active: false },
     })
+    // A display weight on the active one, so the build is checked for carrying it.
+    const weighted = await request.patch(`${API}/api/admin/hero-images/${activeId}`, {
+      headers: { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' },
+      data: { weight: 25 },
+    })
+    expect(weighted.ok(), `setting a weight failed with ${weighted.status()}`).toBeTruthy()
 
     await rebuildAndWait(request, Date.now())
   })
@@ -254,5 +260,20 @@ test.describe.serial('Public hero backdrop — active filter', () => {
 
     expect(candidates).toContain(activeUrl)
     expect(candidates).not.toContain(inactiveUrl)
+  })
+
+  test('a display weight reaches the page, aligned with its picture', async ({ request, page }) => {
+    test.skip(!(await pageIsUp(request, '/en/contact')), `${WEB}/en/contact unavailable`)
+
+    await page.goto(`${WEB}/en/contact`)
+
+    const backdrop = page.locator('.hero-backdrop[data-hero-urls]').first()
+    const urls: string[] = JSON.parse((await backdrop.getAttribute('data-hero-urls')) ?? '[]')
+    const weights: number[] = JSON.parse((await backdrop.getAttribute('data-hero-weights')) ?? '[]')
+
+    expect(weights).toHaveLength(urls.length)
+    expect(weights[urls.indexOf(activeUrl!)]).toBe(25)
+    // Any other picture in the set is unweighted, i.e. the maximum.
+    urls.forEach((u, i) => { if (u !== activeUrl) expect(weights[i]).toBe(100) })
   })
 })

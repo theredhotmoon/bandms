@@ -1,5 +1,5 @@
 ---
-import type { HeroImage } from '@/lib/heroImages'
+import { heroWeights, pickWeightedIndex, type HeroImage } from '@/lib/heroImages'
 
 /**
  * A randomly chosen backdrop for a hero section.
@@ -16,31 +16,41 @@ import type { HeroImage } from '@/lib/heroImages'
  * Only the chosen image is ever fetched. The trade-off is that a JS-set
  * background cannot be preloaded, so LCP lands slightly later than a hardcoded
  * <img> would. Accepted: this is decoration behind a dark veil, not content.
+ *
+ * The pick is weighted: a picture the band set to show less often carries a
+ * lower weight (empty = 100). The picking function is lib/heroImages's own
+ * tested pickWeightedIndex, shipped here as source — an inline script cannot
+ * import, and a hand-copied twin would drift.
  */
 interface Props {
   images: HeroImage[]
 }
 
 const { images } = Astro.props
-const urls = images.map(i => i.url).filter(Boolean)
+const usable = images.filter(i => i.url)
+const urls = usable.map(i => i.url)
+const weights = heroWeights(usable)
+const script = `(function () {
+  var pick = ${String(pickWeightedIndex)};
+  document.querySelectorAll('.hero-backdrop[data-hero-urls]').forEach(function (el) {
+    try {
+      var urls = JSON.parse(el.getAttribute('data-hero-urls') || '[]');
+      var weights = JSON.parse(el.getAttribute('data-hero-weights') || '[]');
+      if (!urls.length) return;
+      if (weights.length !== urls.length) weights = urls.map(function () { return 1; });
+      el.style.backgroundImage = 'url("' + urls[pick(weights, Math.random())] + '")';
+    } catch (e) {
+      /* A malformed attribute leaves the plain background — never a blank page. */
+    }
+  });
+})();`
 ---
 
 {urls.length > 0 && (
   <Fragment>
-    <div class="hero-backdrop" data-hero-urls={JSON.stringify(urls)} aria-hidden="true"></div>
+    <div class="hero-backdrop" data-hero-urls={JSON.stringify(urls)} data-hero-weights={JSON.stringify(weights)} aria-hidden="true"></div>
     <div class="hero-backdrop-veil" aria-hidden="true"></div>
-    <script is:inline>
-      document.querySelectorAll('.hero-backdrop[data-hero-urls]').forEach((el) => {
-        try {
-          const urls = JSON.parse(el.getAttribute('data-hero-urls') || '[]')
-          if (!urls.length) return
-          const pick = urls[Math.floor(Math.random() * urls.length)]
-          el.style.backgroundImage = 'url("' + pick + '")'
-        } catch (e) {
-          /* A malformed attribute leaves the plain background — never a blank page. */
-        }
-      })
-    </script>
+    <script is:inline set:html={script} />
   </Fragment>
 )}
 
