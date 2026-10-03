@@ -4,6 +4,95 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ---
 
+## Band member pages — a shareable "postcard" per member — NEXT UP
+
+Requested 2026-10-03; branch `feature/member-pages`. Today a member is only a
+card + modal on About; **no member has a slug, and nothing in the schema
+points at a member** (no photo, post, concert or clip).
+
+**PR 1 — the page.**
+- URL under About (`/en/about/jan-kowalski`), slug generated once from the
+  name and **never re-slugged on rename** — a printed QR must not go dead.
+  Plain slug or a `HasTranslatedSlug` bag: decide. Gated on the `about` module.
+- Content: photo, name, role, current/former + dates, bio, main instrument,
+  social links. **Instruments/gear: a mockup block only.**
+- Share: copy-link + `navigator.share`, `og:*` with the member's photo,
+  canonical/hreflang per the existing rules.
+- **Printable QR** in the admin per member: SVG/PNG download + an A6 print
+  card. Client-side library, no external service; encodes the *production*
+  URL, never `localhost`.
+- About cards link to the page; copy via `@bandms/site-copy`; marks
+  `band-members` dirty. Tests: Pest (slug, uniqueness, rename keeps it),
+  admin E2E (QR encodes the right URL), public E2E (page, module off → 404).
+
+**Later, one PR each** — each needs a relation, an admin picker and a block.
+Decide first whether one polymorphic pivot (`memberables`, like `clippables`)
+serves them all: real instruments & gear (data exists) · photos (tag members)
+· news · concerts, clips, releases, music videos, press.
+
+---
+
+## Hero pictures — a "display probability" per picture
+
+Idea, 2026-10-03. `HeroBackdrop.astro` picks uniformly at random from the
+page's set (`resolveHeroImages()`), so a "funny one" shows as often as the
+best shot.
+
+- Optional `weight` on `hero_images`, set per picture in the admin. **Empty =
+  maximum** (today's behaviour); a value can only **lower** it. Applies in
+  every scope, `main` included; the override rule is unchanged.
+- Weighted random (`w / Σw`), not a ranking. Decide whether 0 ("never show")
+  is allowed.
+- Touches: column + validation + `site-config`, `HeroImage` type,
+  `HeroImagesAdminView.vue`, the pick. Marks `hero-images` dirty. Tests: Pest,
+  vitest for the pick with a seeded RNG, extend both hero E2E specs.
+
+---
+
+## No upcoming gigs → "Subscribe" and "Book us" buttons
+
+Idea, 2026-10-03. With nothing booked, `ConcertsSection.astro`'s empty state
+offers one text link to the newsletter, and the homepage's Upcoming shows
+block simply disappears (gated on `upcoming.length > 0`).
+
+- Show two buttons instead: **Subscribe to the newsletter** and **Book us**.
+  Registry defaults for the booking button: en "Book us", pl **"Zaproponuj
+  nam koncert"** (as specified). Both are `CopyField`s, so the band can
+  override them.
+- "Book us" opens the **existing** `AvailabilityModal` (today mounted only by
+  `ContactSection.astro`). It is a `client:idle` island opened by delegation
+  from any `[data-open-availability]` trigger, so the page needs the island
+  mounted plus a trigger — see *Astro islands cannot share props* in
+  CLAUDE.md. Falling back to a link to the contact page is the cheap option.
+- Decide whether the homepage shows the block empty-with-buttons or keeps
+  hiding it. Gate each button on its module (`newsletter`, `contact`) with
+  `!== false`. Copy in `CONCERTS_COPY`. Public E2E with no upcoming concerts.
+
+---
+
+## Concert page — the poster cannot be opened full size
+
+2026-10-03. `ConcertDetail.astro` renders the poster as a plain `<img>` in
+`.poster-frame`; it cannot be clicked or zoomed. Make it open full size in a
+lightbox (Escape/backdrop to close, focus returned). `GalleryBrowser.vue`
+already has one — reuse or extract it rather than writing a third. Public E2E:
+click opens, Escape closes.
+
+---
+
+## Admin — the rebuild progress bar is gone
+
+2026-10-03. #99 moved the Rebuild button into the admin-wide `RebuildBar`
+and deleted the Website-modules page's progress bar with it (an estimate:
+elapsed time against an expected duration, capped at 90% until done, then a
+done/failed state). The bar now shows only "Rebuilding…", so a rebuild's
+progress is invisible. Bring the visual back as a thin line along the
+bottom edge of the sticky rebuild bar, on every admin page: grows while
+building, fills green on done, turns red on error, hidden when idle. Being
+done in the same session as this entry.
+
+---
+
 ## Point the domain at the server — `skankingstorks.band`
 
 **Status:** domain registered at GoDaddy, nothing configured. The server still
