@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Support\ClipOwners;
+use App\Support\MemberLinks;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -15,9 +16,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Short aliases in clippables.clippable_type — renaming a model class
-        // must not orphan pivot rows. Clips are the only polymorphic relation.
-        Relation::enforceMorphMap(ClipOwners::MAP);
+        // Short aliases in clippables.clippable_type and memberables.memberable_type
+        // — renaming a model class must not orphan pivot rows. One map for both:
+        // a class has a single morph alias app-wide.
+        Relation::enforceMorphMap([...ClipOwners::MAP, ...MemberLinks::MAP]);
 
         $this->configureRateLimiting();
     }

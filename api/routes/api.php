@@ -378,6 +378,7 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/albums/{album}/photos/reorder', [AlbumController::class, 'reorderPhotos'])->name('api.albums.photos.reorder');
 
         Route::match(['POST', 'PUT'], '/photos/{photo}', [PhotoController::class, 'update'])->name('api.photos.update');
+        Route::put('/photos/{photo}/members', [PhotoController::class, 'syncMembers'])->name('api.photos.members.sync');
         Route::delete('/photos/{photo}', [PhotoController::class, 'destroy'])->name('api.photos.destroy');
 
         Route::post('/releases', [ReleaseController::class, 'store'])->name('api.releases.store');

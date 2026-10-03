@@ -16,6 +16,7 @@ class PhotoResource extends JsonResource
             'sort_order' => $this->sort_order,
             'caption'      => $this->caption,
             'epk_featured' => (bool) $this->epk_featured,
+            'member_ids'   => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
             'created_at'   => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

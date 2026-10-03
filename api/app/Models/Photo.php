@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMembers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Photo extends Model
 {
+    use HasMembers;
+
     protected $fillable = ['album_id', 'image', 'sort_order', 'caption', 'epk_featured'];
 
     protected $casts = ['epk_featured' => 'boolean'];

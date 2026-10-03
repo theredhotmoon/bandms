@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 
 class BandMember extends Model
@@ -64,6 +65,12 @@ class BandMember extends Model
         }
 
         return $slug;
+    }
+
+    /** Photos this member is tagged in (many members can share one photo). */
+    public function photos(): MorphToMany
+    {
+        return $this->morphedByMany(Photo::class, 'memberable');
     }
 
     public function profile(): BelongsTo

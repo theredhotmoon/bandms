@@ -48,6 +48,11 @@ class BandMemberResource extends JsonResource
                 'category'       => $i->category,
                 'stage_plot_type'=> $i->stage_plot_type,
             ]),
+            'photos'       => $this->whenLoaded('photos', fn () => $this->photos->map(fn ($p) => [
+                'id'      => $p->id,
+                'url'     => '/storage/' . $p->image,
+                'caption' => $p->caption,
+            ])->values()),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,
