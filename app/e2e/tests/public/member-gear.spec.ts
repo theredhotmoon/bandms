@@ -73,11 +73,11 @@ test.describe.serial('Public — member gear', () => {
   })
 
   test('lists the gear with translated type names and without the notes', async ({ page, request }) => {
-    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json()).data
+    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json())
     test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false,
       'Member pages are not built: About or its Members section is off')
     const en = config?.module_config?.about?.slug ?? 'about'
-    const pl = (await (await request.get(`${API}/api/site-config?lang=pl`)).json()).data?.module_config?.about?.slug ?? 'about'
+    const pl = (await (await request.get(`${API}/api/site-config?lang=pl`)).json())?.module_config?.about?.slug ?? 'about'
 
     await page.goto(`${WEB}/en/${en}/${slug}`)
     const items = page.getByTestId('member-gear-item')
@@ -88,7 +88,7 @@ test.describe.serial('Public — member gear', () => {
     await expect(items.first()).toContainText('Orange Rockerverb 50')
     await expect(page.locator('body')).not.toContainText('SECRET-NOTE')
 
-    await page.goto(`${WEB}/pl/${pl}/${slug}`)
+        await page.goto(`${WEB}/pl/${pl}/${slug}`)
     await expect(page.getByTestId('member-gear-item').first()).toContainText('Głowa wzmacniacza')
   })
 })

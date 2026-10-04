@@ -24,13 +24,13 @@ test.describe('Public — concert line-up', () => {
       request.get(`${API}/api/band-profile?lang=en`).then((r) => r.json()),
       request.get(`${API}/api/site-config?lang=en`).then((r) => r.json()),
     ])
-    test.skip(config.data?.modules?.concerts === false, 'Concerts module is off')
+    test.skip(config?.modules?.concerts === false, 'Concerts module is off')
     const list = concerts.data as ApiConcert[]
     test.skip(list.length === 0, 'No concerts on this instance')
 
     // Prefer a show with guests: it is the one that proves the ordering.
     const concert = list.find((c) => c.bands.length > 0) ?? list[0]
-    const section = config.data?.module_config?.concerts?.slug ?? 'concerts'
+    const section = config?.module_config?.concerts?.slug ?? 'concerts'
     const res = await page.goto(`${WEB}/en/${section}/${concert.slug}`)
     test.skip(res?.status() === 404, 'Concert page not built yet')
 

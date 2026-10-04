@@ -87,7 +87,7 @@ test.describe.serial('Public — concert poster', () => {
   })
 
   test('clicking the poster opens it full size; Escape closes it and returns focus', async ({ page, request }) => {
-    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json()).data
+    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json())
     const section = config?.module_config?.concerts?.slug ?? 'concerts'
     await page.goto(`${WEB}/en/${section}/${slug}`)
 

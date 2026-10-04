@@ -20,10 +20,10 @@ async function firstMember(request: APIRequestContext) {
     request.get(`${API}/api/site-config?lang=en`).then((r) => r.json()),
   ])
   // Hidden Members section → no member pages are built, by design.
-  const published = config.data?.modules?.about !== false
-    && config.data?.module_config?.about?.visibility?.show_members !== false
+  const published = config?.modules?.about !== false
+    && config?.module_config?.about?.visibility?.show_members !== false
   const member = published ? (members.data as Member[]).find((m) => m.slug && m.is_current) ?? null : null
-  const about = config.data?.module_config?.about?.slug ?? 'about'
+  const about = config?.module_config?.about?.slug ?? 'about'
   return { member, aboutPath: `/en/${about}` }
 }
 
