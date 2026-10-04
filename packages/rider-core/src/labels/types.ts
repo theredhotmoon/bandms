@@ -193,3 +193,10 @@ export type InstrumentLabels = Readonly<Record<StagePlotItemType, string>>
  * its key, which is at least the English heading.
  */
 export type InstrumentGroupLabels = Readonly<Record<string, string>>
+
+/**
+ * Names of the default-gear item types (a member's own mics, amps, pedals…),
+ * for the public member page. A Record over the type union, so a new gear type
+ * is a compile error in every language until it has a name.
+ */
+export type GearTypeLabels = Readonly<Record<import('../types/bandMember').DefaultGearItemType, string>>

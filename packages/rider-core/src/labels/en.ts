@@ -1,4 +1,5 @@
-import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels } from './types'
+import { DEFAULT_GEAR_TYPE_LABELS } from '../types/bandMember'
+import type { RiderSheetLabels, InstrumentLabels, InstrumentGroupLabels, ResolverLabels, GearTypeLabels } from './types'
 import { INSTRUMENT_TYPE_LABELS } from '../types/stagePlot'
 
 /**
@@ -181,3 +182,6 @@ export const EN_RIDER_SHEET_LABELS: RiderSheetLabels = {
   },
   instruments: EN_INSTRUMENT_LABELS,
 }
+
+/** Default-gear type names — the English source the admin already shows. */
+export const EN_GEAR_TYPE_LABELS: GearTypeLabels = DEFAULT_GEAR_TYPE_LABELS

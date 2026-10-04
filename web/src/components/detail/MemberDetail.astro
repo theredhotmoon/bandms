@@ -8,6 +8,7 @@ import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
 import { getMembers, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { ABOUT_COPY, fillCopy } from '@bandms/site-copy'
+import { gearTypeLabels } from '@bandms/rider-core'
 import { moduleCopy, siteCopy } from '@/lib/copy'
 
 /**
@@ -50,6 +51,18 @@ const instruments = [
   ...(member.main_instrument ? [member.main_instrument.name] : []),
   ...(member.instruments ?? []).map((i) => i.name).filter((n) => n !== member.main_instrument?.name),
 ]
+
+// The member's own kit, in the visitor's language. Two kinds of item are left
+// out: `own_gear: false` is "backline needed" in the admin — something the
+// venue supplies, not part of their rig — and an item with neither a label
+// nor a model says nothing worth printing. Fields are read defensively: one
+// non-string here would fail the whole static build.
+const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+const gearTypes = gearTypeLabels(lang)
+const gear = (member.default_gear ?? [])
+  .filter((g) => g.own_gear !== false)
+  .map((g) => ({ id: g.id, type: gearTypes[g.type] ?? gearTypes.other, label: text(g.label), model: text(g.brand_model) }))
+  .filter((g) => g.label || g.model)
 
 const ICONS = new Set(['instagram', 'facebook', 'youtube', 'spotify', 'bandcamp', 'soundcloud'])
 const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(s.platform) ? s.platform : 'external' }))
@@ -158,18 +171,22 @@ const structuredData = {
     </section>
   )}
 
-  <!-- Gear: a placeholder until the rig list is published on the page. -->
+  <!-- Gear: the member's own kit, or a "coming soon" line until they add some. -->
   <section class="md-sec page-x" data-testid="member-gear">
     <h2 class="md-h2">{t.memberGear}</h2>
-    <div class="md-gear">
-      {[0, 1, 2].map(() => (
-        <div class="md-gear-card" aria-hidden="true">
-          <span class="md-gear-line md-gear-line--wide" />
-          <span class="md-gear-line" />
-        </div>
-      ))}
+    {gear.length > 0 ? (
+      <ul class="md-gear">
+        {gear.map((g) => (
+          <li class="md-gear-card" data-testid="member-gear-item">
+            <span class="md-gear-type">{g.type}</span>
+            {g.label && <span class="md-gear-label">{g.label}</span>}
+            {g.model && <span class="md-gear-model">{g.model}</span>}
+          </li>
+        ))}
+      </ul>
+    ) : (
       <p class="md-gear-soon">{t.memberGearSoon}</p>
-    </div>
+    )}
   </section>
 </BaseLayout>
 
@@ -240,14 +257,15 @@ const structuredData = {
   .md-social:hover { color: var(--color-accent); border-color: var(--color-accent); }
 
   .md-h2 { margin: 0 0 24px; font-size: 44px; line-height: 1; }
-  .md-gear { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-  .md-gear-card { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px dashed var(--color-border); border-radius: var(--radius-card); opacity: .6; }
-  .md-gear-line { display: block; height: 10px; width: 55%; border-radius: var(--radius-pill); background: var(--color-surface-2); }
-  .md-gear-line--wide { width: 85%; }
+  .md-gear { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .md-gear-card { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface); }
   @media (max-width: 760px) {
     .md-hero { padding-block: 20px 34px; }
     .md-h1 { font-size: 38px; }
     .md-sec { padding-block: 32px; }
   }
-  .md-gear-soon { grid-column: 1 / -1; margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }
+  .md-gear-type { font: 800 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--color-subtle); }
+  .md-gear-label { font: 700 17px/1.3 var(--font-body); color: var(--color-body); }
+  .md-gear-model { font: 500 14px/1.4 var(--font-body); color: var(--color-muted); }
+  .md-gear-soon { margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }
 </style>
