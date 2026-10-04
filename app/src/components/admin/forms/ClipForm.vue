@@ -19,6 +19,7 @@ const props = defineProps<{
   concerts: Concert[]
   releases: ReleaseSummary[]
   shopItems: ShopItemSummary[]
+  members?: readonly { id: number; first_name: string; last_name: string }[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -34,6 +35,7 @@ const form = reactive({
   concertIds: [] as number[],
   releaseIds: [] as number[],
   shopItemIds: [] as number[],
+  memberIds: [] as number[],
 })
 
 watch(() => props.initial, (val) => {
@@ -45,6 +47,7 @@ watch(() => props.initial, (val) => {
   form.concertIds  = val?.owners.filter(o => o.type === 'concert').map(o => o.id) ?? []
   form.releaseIds  = val?.owners.filter(o => o.type === 'release').map(o => o.id) ?? []
   form.shopItemIds = val?.owners.filter(o => o.type === 'shop_item').map(o => o.id) ?? []
+  form.memberIds   = val?.member_ids ? [...val.member_ids] : []
 }, { immediate: true })
 
 // EmbedBlockEditor speaks payload objects; only `url` matters here — the clip
@@ -63,6 +66,7 @@ function submit() {
     category: form.category,
     recorded_on: form.recorded_on || null,
     show_in_epk: form.show_in_epk,
+    member_ids: form.memberIds,
     attach,
   })
 }
@@ -103,8 +107,9 @@ function submit() {
     </div>
 
     <EntityRelationsPanel
-      :concerts="concerts" :releases="releases" :shop-items="shopItems"
+      :concerts="concerts" :releases="releases" :shop-items="shopItems" :members="members"
       v-model:concert-ids="form.concertIds" v-model:release-ids="form.releaseIds" v-model:shop-item-ids="form.shopItemIds"
+      v-model:member-ids="form.memberIds"
     />
 
     <div class="flex gap-2 justify-end pt-1">

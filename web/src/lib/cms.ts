@@ -115,6 +115,10 @@ export const getSocialLinks = () =>
 export const getConcerts = () =>
   get<Concert[]>('/concerts')
 
+/** Every clip, titles in `lang`. The member page picks a member's out of these. */
+export const getClips = (lang: Locale = 'en') =>
+  get<import('@/types/clip').RenderableClip[]>('/clips', { lang })
+
 export const getConcert = (id: number, lang: Locale = 'en') =>
   get<Concert>(`/concerts/${id}`, { lang })
 

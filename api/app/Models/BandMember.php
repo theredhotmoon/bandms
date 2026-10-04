@@ -85,6 +85,12 @@ class BandMember extends Model
         return $this->morphedByMany(Concert::class, 'memberable');
     }
 
+    /** Clips this member appears in. */
+    public function clips(): MorphToMany
+    {
+        return $this->morphedByMany(Clip::class, 'memberable');
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');

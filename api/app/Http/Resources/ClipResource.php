@@ -25,6 +25,7 @@ class ClipResource extends JsonResource
             'category'     => $this->category,
             'recorded_on'  => $this->recorded_on?->format('Y-m-d'),
             'show_in_epk'  => (bool) $this->show_in_epk,
+            'member_ids'   => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
             'translations' => ['title' => $this->getTranslations('title')],
             'owners'       => $this->relationLoaded('concerts') ? $this->ownersList() : [],
         ];

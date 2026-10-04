@@ -6,8 +6,8 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ## Band member pages — link the rest of the site to members
 
-Each member has a public page at `/{lang}/{about}/{slug}`. **Photos, gear, news
-and concerts are linked** (2026-10-03): members are tagged on photos in an album's photo grid,
+Each member has a public page at `/{lang}/{about}/{slug}`. **Photos, gear, news,
+concerts and clips are linked** (2026-10-03): members are tagged on photos in an album's photo grid,
 and the member page shows them.
 
 **Decided: one polymorphic pivot, `memberables`** (like `clippables`). A new
@@ -17,8 +17,8 @@ model, a picker on its admin form (`PhotoMemberTags` is the pattern), a
 `markDirty('band-members')` on change, and a block on `MemberDetail.astro`.
 
 **Still to do, one PR each:**
-- **Clips, releases, music videos, press** — pick per entity whether it is
-  worth a block.
+- **Releases, music videos, press** — pick per entity whether it is worth a
+  block.
 
 ---
 

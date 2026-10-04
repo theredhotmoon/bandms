@@ -15,7 +15,9 @@ use Illuminate\Validation\Rule;
 
 class ClipController extends Controller
 {
-    private const OWNER_RELATIONS = ['concerts.venue', 'releases', 'shopItems', 'albums'];
+    // `members` rides along: the admin's clip form is seeded from these
+    // responses, and without member_ids a save would clear the clip's members.
+    private const OWNER_RELATIONS = ['concerts.venue', 'releases', 'shopItems', 'albums', 'members'];
 
     public function index(): AnonymousResourceCollection
     {
@@ -36,6 +38,7 @@ class ClipController extends Controller
             if (array_key_exists('attach', $data)) {
                 $this->syncOwners($clip, $data['attach']);
             }
+            $this->syncMembers($clip, $data);
 
             return $clip;
         });
@@ -57,6 +60,7 @@ class ClipController extends Controller
             if (array_key_exists('attach', $data)) {
                 $this->syncOwners($clip, $data['attach']);
             }
+            $this->syncMembers($clip, $data);
         });
 
         $clip->unsetRelations();
@@ -108,6 +112,21 @@ class ClipController extends Controller
         }
 
         return ['type' => $data['type'], 'id' => (int) $data['id']];
+    }
+
+    /**
+     * Who is in the clip. Keyed on presence: an explicit [] clears them, a
+     * save that never mentions them leaves them alone. Member pages list
+     * their clips, so only a real change marks them for a rebuild.
+     */
+    private function syncMembers(Clip $clip, array $data): void
+    {
+        if (! array_key_exists('member_ids', $data)) {
+            return;
+        }
+        if (array_filter($clip->members()->sync($data['member_ids'] ?? []))) {
+            SiteRebuild::markDirty('band-members');
+        }
     }
 
     /** Column attributes from a validated payload — never `attach`. */
