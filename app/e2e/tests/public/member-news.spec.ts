@@ -73,7 +73,7 @@ test.describe.serial('Public — member news', () => {
   })
 
   test('lists the linked news, which leads to the post', async ({ page, request }) => {
-    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json()).data
+    const config = (await (await request.get(`${API}/api/site-config?lang=en`)).json())
     test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false,
       'Member pages are not built: About or its Members section is off')
     test.skip(config?.modules?.posts === false, 'Posts module is off, so news is not linked')
