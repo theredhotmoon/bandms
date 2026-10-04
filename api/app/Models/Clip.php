@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMembers;
 use App\Support\ClipOwners;
 use App\Support\Locales;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Clip extends Model
 {
-    use HasFactory, HasTranslations;
+    use HasFactory, HasTranslations, HasMembers;
 
     public array $translatable = ['title'];
 

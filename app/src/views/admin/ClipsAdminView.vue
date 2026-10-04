@@ -11,6 +11,7 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useClips } from '@/composables/useClips'
 import { useConcerts } from '@/composables/useConcerts'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { useReleases } from '@/composables/useReleases'
 import { useShop } from '@/composables/useShop'
 import { useTableControls } from '@/composables/useTableControls'
@@ -23,6 +24,7 @@ const { t } = useI18n()
 
 const { query, create, update, remove } = useClips()
 const { query: concertsQ } = useConcerts()
+const { query: membersQ } = useBandMembers()
 const { query: releasesQ } = useReleases()
 const { query: shopQ }     = useShop()
 
@@ -128,6 +130,7 @@ function categoryLabel(value: string): string {
         :concerts="concertsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
         :shop-items="shopQ.data.value ?? []"
+        :members="membersQ.data.value ?? []"
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"

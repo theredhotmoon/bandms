@@ -523,4 +523,6 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── About → Member page → gigs ──────────────────────────────────────────
   'Gigs heading': 'Nagłówek koncertów',
   'Above the concerts the member played. Hidden when there are none.': 'Nad koncertami, w których grał członek zespołu. Ukryty, gdy ich nie ma.',
+  // ── About → Member page → clips ─────────────────────────────────────────
+  'Above the clips the member appears in. Hidden when there are none.': 'Nad klipami, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
 }

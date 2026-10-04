@@ -22,6 +22,8 @@ export interface Clip {
   category: string
   recorded_on: string | null
   show_in_epk: boolean
+  /** Band members in the clip — any number. */
+  member_ids?: number[]
   translations: { title: TranslationMap }
   owners: ClipOwner[]
 }
@@ -34,6 +36,7 @@ export interface ClipPayload {
   category?: string
   recorded_on?: string | null
   show_in_epk?: boolean
+  member_ids?: number[]
   /** Full owner list — omitted means "leave attachments alone". */
   attach?: ClipAttach[]
 }

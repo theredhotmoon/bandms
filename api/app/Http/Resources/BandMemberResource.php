@@ -57,6 +57,7 @@ class BandMemberResource extends JsonResource
             // their titles, dates and per-language URLs from that list.
             'post_ids'     => $this->whenLoaded('posts', fn () => $this->posts->pluck('id')->values()),
             'concert_ids'  => $this->whenLoaded('concerts', fn () => $this->concerts->pluck('id')->values()),
+            'clip_ids'     => $this->whenLoaded('clips', fn () => $this->clips->pluck('id')->values()),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,

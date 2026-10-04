@@ -35,6 +35,9 @@ class ClipRequest extends FormRequest
             'category'     => 'nullable|string|max:64',
             'recorded_on'  => 'nullable|date_format:Y-m-d',
             'show_in_epk'  => 'nullable|boolean',
+            // Members in the clip. Absent leaves them alone; [] clears them.
+            'member_ids'   => 'sometimes|nullable|array',
+            'member_ids.*' => 'integer|distinct|exists:band_members,id',
             'attach'       => 'sometimes|array',
             'attach.*.type' => ['required', Rule::in(ClipOwners::aliases())],
             'attach.*.id'   => ['required', 'integer', function (string $attribute, mixed $value, \Closure $fail) {

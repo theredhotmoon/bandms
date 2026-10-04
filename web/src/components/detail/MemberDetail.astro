@@ -5,7 +5,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips } from '@/lib/cms'
+import ClipsGrid from '@/components/ClipsGrid.astro'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
 import { ABOUT_COPY, fillCopy } from '@bandms/site-copy'
@@ -25,13 +26,14 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts, allConcerts] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
   getSlugMap(),
   getAllPosts(lang),
   getConcerts(),
+  getClips(lang),
 ])
 
 const member = members.find((m) => m.id === itemId)!
@@ -79,6 +81,14 @@ const gigs = siteConfig.modules.concerts === false ? [] : (member.concert_ids ??
     place: [c.venue?.name, c.venue?.city].filter(Boolean).join(', '),
     href: `${concertsHref}/${c.slug}`,
   }))
+
+// Clips the member appears in, in the API's order (most recent first). Clips
+// have no module of their own — they render on concerts, releases and merch
+// whatever is switched on — so this block is not gated.
+const clipsById = new Map(allClips.map((c) => [c.id, c]))
+const memberClips = (member.clip_ids ?? [])
+  .map((id) => clipsById.get(id))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c))
 
 // The member's own kit, in the visitor's language. Two kinds of item are left
 // out: `own_gear: false` is "backline needed" in the admin — something the
@@ -228,6 +238,12 @@ const structuredData = {
           </li>
         ))}
       </ul>
+    </section>
+  )}
+
+  {memberClips.length > 0 && (
+    <section class="md-sec page-x" data-testid="member-clips">
+      <ClipsGrid clips={memberClips} heading={t.memberClips} copy={site} />
     </section>
   )}
 
