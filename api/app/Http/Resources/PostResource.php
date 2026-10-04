@@ -41,6 +41,7 @@ class PostResource extends JsonResource
                     ->each(fn ($r) => $r->withResolved($resolved));
             }),
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
+            'member_ids'   => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
             // `site` is the publication name, which the Article page renders above
             // each headline and as the attribution on the pull quote. It falls
             // back to the URL's host rather than being omitted: a quote with no

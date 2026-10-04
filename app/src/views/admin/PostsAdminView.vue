@@ -12,6 +12,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { usePosts, usePost } from '@/composables/usePosts'
 import { useTags } from '@/composables/useTags'
 import { useConcerts } from '@/composables/useConcerts'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { useAlbums } from '@/composables/useAlbums'
 import { useReleases } from '@/composables/useReleases'
 import { useMusicVideos } from '@/composables/useMusicVideos'
@@ -27,6 +28,7 @@ const { t } = useI18n()
 const { query, create, update, remove } = usePosts()
 const { query: tagsQ }       = useTags()
 const { query: concertsQ }   = useConcerts()
+const { query: membersQ }    = useBandMembers()
 const { query: albumsQ }     = useAlbums()
 const { query: releasesQ }   = useReleases()
 const { query: musicVideosQ }   = useMusicVideos()
@@ -172,6 +174,7 @@ async function confirmDelete() {
         :initial="formPost"
         :tags="tagsQ.data.value ?? []"
         :concerts="concertsQ.data.value ?? []"
+        :members="membersQ.data.value ?? []"
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
         :musicVideos="musicVideosQ.data.value ?? []"

@@ -88,6 +88,8 @@ export interface Post extends PostSummary {
   blocks: PostBlock[]
   press_releases: PostPressRelease[]
   concerts: { id: number; date: string }[]
+  /** Band members this post is about — any number. */
+  member_ids?: number[]
   translations?: {
     title: TranslationMap
     intro: TranslationMap
@@ -105,5 +107,6 @@ export interface PostPayload {
   event_date_display?: 'range' | 'list'
   tag_ids?: number[]
   concert_ids?: number[]
+  member_ids?: number[]
   blocks?: PostBlockDraft[]
 }

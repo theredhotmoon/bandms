@@ -28,6 +28,8 @@ trait PostRules
             'tag_ids.*'     => 'integer|exists:tags,id',
             'concert_ids'   => 'nullable|array',
             'concert_ids.*' => 'integer|exists:concerts,id',
+            'member_ids'    => 'nullable|array',
+            'member_ids.*'  => 'integer|distinct|exists:band_members,id',
 
             'blocks'                    => 'nullable|array',
             'blocks.*.type'             => ['required', Rule::in(PostBlockType::ALL)],

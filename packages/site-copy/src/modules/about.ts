@@ -138,6 +138,11 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Next photo', pl: 'Następne zdjęcie' },
   },
   {
+    key: 'memberNews', label: 'News heading', group: 'Member page', maxLength: 40,
+    help: 'Above the news linked to the member. Hidden when there is none.',
+    defaults: { en: 'News', pl: 'Aktualności' },
+  },
+  {
     key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
     defaults: { en: 'Follow', pl: 'Obserwuj' },
   },

@@ -96,6 +96,7 @@ export default {
   },
   relations: {
     title: 'Powiąż z…',
+    members: 'Członkowie zespołu',
     tags: 'Tagi',
     concerts: 'Koncerty',
     releases: 'Wydawnictwa',

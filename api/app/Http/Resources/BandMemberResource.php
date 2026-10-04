@@ -53,6 +53,9 @@ class BandMemberResource extends JsonResource
                 'url'     => '/storage/' . $p->image,
                 'caption' => $p->caption,
             ])->values()),
+            // Ids only: the public site already fetches every post and builds
+            // their titles, dates and per-language URLs from that list.
+            'post_ids'     => $this->whenLoaded('posts', fn () => $this->posts->pluck('id')->values()),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,

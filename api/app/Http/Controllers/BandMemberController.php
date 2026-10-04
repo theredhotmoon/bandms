@@ -45,6 +45,8 @@ class BandMemberController extends Controller
                     ->orderByDesc(Album::select('taken_at')->whereColumn('albums.id', 'photos.album_id'))
                     ->orderByDesc('photos.album_id')
                     ->orderBy('photos.sort_order'),
+                // Published news only, newest first — the same rule as /posts.
+                'posts' => fn ($q) => $q->published()->orderByDesc('posts.published_at'),
             ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')
