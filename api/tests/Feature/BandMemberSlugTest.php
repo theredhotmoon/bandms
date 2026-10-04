@@ -90,3 +90,24 @@ describe('default gear validation', function () {
         ]])->assertCreated();
     });
 });
+
+describe('default gear round trip', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    // Laravel drops array keys with no rule from validated data, so every
+    // field the admin sends must have one — or a save silently strips it.
+    // The admin keys, removes and edits gear items by their id.
+    it('keeps every gear field, the item id included, through create and update', function () {
+        $this->actingAsAdmin();
+        $item = ['id' => 'g-42', 'type' => 'amp_head', 'label' => 'Main', 'brand_model' => 'Orange', 'own_gear' => true, 'notes' => 'n'];
+
+        $id = $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'R', 'default_gear' => [$item]])
+            ->assertCreated()
+            ->assertJsonPath('data.default_gear.0', $item)
+            ->json('data.id');
+
+        $this->putJson("/api/band-profile/members/{$id}", ['first_name' => 'G', 'last_name' => 'R', 'default_gear' => [$item]])
+            ->assertOk()
+            ->assertJsonPath('data.default_gear.0', $item);
+    });
+});

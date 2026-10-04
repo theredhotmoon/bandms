@@ -23,7 +23,10 @@ const { isDirty: dirty, markClean } = useDirtyGuard(() => items.value)
 watch(
   () => props.member.default_gear,
   (val) => {
-    items.value = val ? val.map(i => ({ ...i })) : []
+    // An item with no id gets one: saves between #171 and its fix stripped
+    // every id, and Remove/edit match items by id — without this, removing
+    // one item removed them all. The next save stores the new ids.
+    items.value = val ? val.map(i => ({ ...i, id: i.id || crypto.randomUUID() })) : []
     markClean()
   },
   { immediate: true },
