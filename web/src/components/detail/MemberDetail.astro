@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts } from '@/lib/cms'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
 import { ABOUT_COPY, fillCopy } from '@bandms/site-copy'
@@ -25,12 +25,13 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
   getSlugMap(),
   getAllPosts(lang),
+  getConcerts(),
 ])
 
 const member = members.find((m) => m.id === itemId)!
@@ -64,6 +65,20 @@ const news = siteConfig.modules.posts === false ? [] : (member.post_ids ?? [])
   .map((id) => postsById.get(id))
   .filter((p): p is NonNullable<typeof p> => Boolean(p))
   .map((p) => ({ id: p.id, title: p.title, date: fmtDate(p.published_at, lang), href: `${postsHref}/${postSlug(p, lang)}` }))
+
+// Concerts the member played, newest first, each leading to its show page.
+// Gated on the concerts module, like the news above.
+const concertsHref = `/${lang}/${slugMap[lang]?.concerts ?? 'concerts'}`
+const concertsById = new Map(allConcerts.map((c) => [c.id, c]))
+const gigs = siteConfig.modules.concerts === false ? [] : (member.concert_ids ?? [])
+  .map((id) => concertsById.get(id))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c))
+  .map((c) => ({
+    id: c.id,
+    date: fmtDate(c.date, lang),
+    place: [c.venue?.name, c.venue?.city].filter(Boolean).join(', '),
+    href: `${concertsHref}/${c.slug}`,
+  }))
 
 // The member's own kit, in the visitor's language. Two kinds of item are left
 // out: `own_gear: false` is "backline needed" in the admin — something the
@@ -193,6 +208,22 @@ const structuredData = {
             <a class="md-news-row" href={n.href} data-testid="member-news-item">
               <span class="md-news-title">{n.title}</span>
               {n.date && <span class="md-news-date">{n.date}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {gigs.length > 0 && (
+    <section class="md-sec page-x" data-testid="member-gigs">
+      <h2 class="md-h2">{t.memberGigs}</h2>
+      <ul class="md-news">
+        {gigs.map((g) => (
+          <li>
+            <a class="md-news-row" href={g.href} data-testid="member-gig">
+              <span class="md-news-title">{g.place}</span>
+              <span class="md-news-date">{g.date}</span>
             </a>
           </li>
         ))}

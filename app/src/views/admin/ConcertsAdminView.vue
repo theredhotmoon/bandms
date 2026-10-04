@@ -11,6 +11,7 @@ import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useQueryClient } from '@tanstack/vue-query'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { useConcerts } from '@/composables/useConcerts'
 import { useVenues } from '@/composables/useVenues'
 import { useBands } from '@/composables/useBands'
@@ -32,6 +33,7 @@ const { query, create, update, remove } = useConcerts()
 const { query: venuesQ } = useVenues()
 const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()
+const { query: membersQ } = useBandMembers()
 const { token } = useAuth()
 const queryClient = useQueryClient()
 
@@ -239,6 +241,7 @@ async function confirmDelete() {
         :venues="venuesQ.data.value ?? []"
         :bands="bandsQ.data.value ?? []"
         :tags="tagsQ.data.value ?? []"
+        :members="membersQ.data.value ?? []"
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"

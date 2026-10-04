@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasClips;
+use App\Models\Concerns\HasMembers;
 use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Concert extends Model
 {
-    use HasFactory, HasTranslatedSlug, HasTranslations, HasClips;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasClips, HasMembers;
 
     public array $translatable = ['name', 'description', 'slug'];
 

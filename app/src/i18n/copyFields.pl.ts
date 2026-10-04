@@ -520,4 +520,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── About → Member page → news ──────────────────────────────────────────
   'News heading': 'Nagłówek aktualności',
   'Above the news linked to the member. Hidden when there is none.': 'Nad aktualnościami powiązanymi z członkiem zespołu. Ukryty, gdy ich nie ma.',
+  // ── About → Member page → gigs ──────────────────────────────────────────
+  'Gigs heading': 'Nagłówek koncertów',
+  'Above the concerts the member played. Hidden when there are none.': 'Nad koncertami, w których grał członek zespołu. Ukryty, gdy ich nie ma.',
 }

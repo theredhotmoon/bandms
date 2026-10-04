@@ -25,6 +25,8 @@ const props = defineProps<{
   venues: Venue[]
   bands: Band[]
   tags: Tag[]
+  /** Band members, for "who played". */
+  members?: readonly { id: number; first_name: string; last_name: string; is_current: boolean }[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -85,6 +87,7 @@ const form = reactive({
   description:      emptyBag(),
   slug:             emptyBag(),
   tag_ids:          [] as number[],
+  member_ids:       [] as number[],
 })
 
 // selectedVenue must be declared before slug sources that depend on it
@@ -138,6 +141,7 @@ watch(() => props.initial, (concert) => {
     form.description      = emptyBag()
     form.slug             = emptyBag()
     form.tag_ids          = []
+    form.member_ids       = []
     links.value           = []
     lineup.value          = [{ type: 'main', play_time: '' }]
     posterFile.value      = null
@@ -160,6 +164,7 @@ watch(() => props.initial, (concert) => {
   form.description    = bagFrom(concert.translations?.description, concert.description)
   form.slug           = bagFrom(concert.translations?.slug)
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
+  form.member_ids  = concert.member_ids ? [...concert.member_ids] : []
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
   const entries: LineupEntry[] = [
@@ -262,6 +267,17 @@ function removeFromLineup(index: number) {
 }
 
 // ── Tags ──────────────────────────────────────────────────────
+function toggleMember(id: number) {
+  form.member_ids = form.member_ids.includes(id)
+    ? form.member_ids.filter((m) => m !== id)
+    : [...form.member_ids, id]
+}
+
+/** One click for the usual case: everyone currently in the band played. */
+function selectCurrentLineup() {
+  form.member_ids = (props.members ?? []).filter((m) => m.is_current).map((m) => m.id)
+}
+
 function toggleTag(id: number) {
   const idx = form.tag_ids.indexOf(id)
   if (idx === -1) form.tag_ids.push(id)
@@ -314,6 +330,7 @@ function submit() {
     slug:              slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     bands:             bandsPayload,
     tag_ids:           form.tag_ids,
+    member_ids:        form.member_ids,
     links:             links.value,
   }, posterFile.value, posterDelete.value)
 }
@@ -472,6 +489,22 @@ function submit() {
 
           <p v-if="!lineup.length" class="empty-note">{{ $t('shows.concerts.form.dropBands') }}</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Who played: explicit, because line-ups change — an empty list is not "everyone". -->
+    <div v-if="members?.length" data-testid="concert-members">
+      <div class="flex items-center justify-between gap-2">
+        <label class="field-label">{{ $t('shows.concerts.form.whoPlayed') }}</label>
+        <button type="button" class="btn-ghost text-xs" data-testid="concert-members-current" @click="selectCurrentLineup">
+          {{ $t('shows.concerts.form.currentLineup') }}
+        </button>
+      </div>
+      <div class="checkbox-list">
+        <label v-for="m in members" :key="m.id" class="checkbox-item">
+          <input type="checkbox" :checked="form.member_ids.includes(m.id)" @change="toggleMember(m.id)" />
+          <span>{{ m.first_name }} {{ m.last_name }}</span>
+        </label>
       </div>
     </div>
 

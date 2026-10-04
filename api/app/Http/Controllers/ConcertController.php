@@ -19,7 +19,7 @@ class ConcertController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        $concerts = Concert::with(['venue', 'bands', 'tags', 'links'])
+        $concerts = Concert::with(['venue', 'bands', 'tags', 'links', 'members'])
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
@@ -40,7 +40,7 @@ class ConcertController extends Controller
 
         $data = $request->validate($this->rules(), $this->messages());
 
-        $concert = new Concert(Arr::except($data, ['bands', 'tag_ids', 'links', 'slug']));
+        $concert = new Concert(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
         // On create every locale gets a slug, from its own name or venue + date —
         // what the admin form always generated client-side for Polish.
         $venueDate = trim((Venue::find($data['venue_id'])?->name ?? 'concert') . ' ' . $data['date']);
@@ -53,16 +53,17 @@ class ConcertController extends Controller
 
         $this->syncBands($concert, $data['bands'] ?? []);
         $this->syncTags($concert, $data['tag_ids'] ?? null);
+        $this->syncMembers($concert, $data);
         $this->syncLinks($concert, $data['links'] ?? []);
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
     }
 
     public function show(Concert $concert): ConcertResource
     {
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
     }
 
     public function update(Request $request, Concert $concert): ConcertResource
@@ -72,7 +73,7 @@ class ConcertController extends Controller
         // Slugs through applySlugBag(): update() used to write the raw columns,
         // so clearing a concert's slug in the admin quietly moved its public
         // page to /concert-{id}. The default slug is never blanked now.
-        $concert->fill(Arr::except($data, ['bands', 'tag_ids', 'links', 'slug']));
+        $concert->fill(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
         if (array_key_exists('slug', $data)) {
             $concert->applySlugBag($data['slug'], $this->slugSource(
                 $concert->getTranslations('name'), $concert->venue_id, $concert->date?->format('Y-m-d') ?? '',
@@ -82,11 +83,12 @@ class ConcertController extends Controller
 
         $this->syncBands($concert, $data['bands'] ?? []);
         $this->syncTags($concert, $data['tag_ids'] ?? null);
+        $this->syncMembers($concert, $data);
         $this->syncLinks($concert, $data['links'] ?? []);
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
     }
 
     public function destroy(Concert $concert): JsonResponse
@@ -114,7 +116,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
     }
 
     public function destroyPoster(Concert $concert): ConcertResource
@@ -126,7 +128,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips']));
+        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
     }
 
     private function messages(): array
@@ -170,6 +172,9 @@ class ConcertController extends Controller
             'bands.*.play_time'  => 'nullable|date_format:H:i',
             'tag_ids'            => 'nullable|array',
             'tag_ids.*'          => 'integer|exists:tags,id',
+            // Who played. Absent leaves the links alone; [] clears them.
+            'member_ids'         => 'nullable|array',
+            'member_ids.*'       => 'integer|distinct|exists:band_members,id',
             'links'              => 'nullable|array',
             'links.*.label'      => 'required|string|max:255',
             'links.*.url'        => 'required|url|max:500',
@@ -186,6 +191,23 @@ class ConcertController extends Controller
         ])->toArray();
 
         $concert->bands()->sync($sync);
+    }
+
+    /**
+     * Who played. Keyed on presence, not null-ness: an explicit [] clears the
+     * line-up, while a save that never mentions it leaves it alone.
+     */
+    private function syncMembers(Concert $concert, array $data): void
+    {
+        if (array_key_exists('member_ids', $data)) {
+            $changes = $concert->members()->sync($data['member_ids'] ?? []);
+            // Member pages list each member's gigs — but only a changed line-up
+            // touches them. The form always sends member_ids, so marking on
+            // every save would queue a rebuild for an unrelated edit.
+            if (array_filter($changes)) {
+                SiteRebuild::markDirty('band-members');
+            }
+        }
     }
 
     private function syncTags(Concert $concert, ?array $tagIds): void

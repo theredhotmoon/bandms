@@ -143,6 +143,11 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'News', pl: 'Aktualności' },
   },
   {
+    key: 'memberGigs', label: 'Gigs heading', group: 'Member page', maxLength: 40,
+    help: 'Above the concerts the member played. Hidden when there are none.',
+    defaults: { en: 'Gigs', pl: 'Koncerty' },
+  },
+  {
     key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
     defaults: { en: 'Follow', pl: 'Obserwuj' },
   },

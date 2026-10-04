@@ -82,7 +82,8 @@ class PostController extends Controller
         // between two unrelated concurrent inserts into post_blocks — this
         // transaction is exactly the shape that provokes it, and Laravel's
         // built-in retry is the standard fix rather than surfacing it as a 500.
-        $post = DB::transaction(function () use ($data) {
+        $membersChanged = false;
+        $post = DB::transaction(function () use ($data, &$membersChanged) {
             $titles = is_array($data['title']) ? $data['title'] : [Locales::default() => $data['title']];
 
             // Every titled locale gets a slug on create, from its own title —
@@ -110,7 +111,7 @@ class PostController extends Controller
             }
 
             if (! empty($data['member_ids'])) {
-                $post->members()->sync($data['member_ids']);
+                $membersChanged = (bool) array_filter($post->members()->sync($data['member_ids']));
             }
 
             PostBlockSync::sync($post, $data['blocks'] ?? []);
@@ -122,8 +123,9 @@ class PostController extends Controller
         // — with auto-rebuild on, the admin hides its manual button, so a save
         // had no way at all to reach the public site.
         SiteRebuild::markDirty('posts');
-        // Member pages list the news they are linked to.
-        if (array_key_exists('member_ids', $data)) {
+        // Member pages list the news they are linked to — only a changed set
+        // of links touches them (the form always sends member_ids).
+        if ($membersChanged) {
             SiteRebuild::markDirty('band-members');
         }
 
@@ -151,7 +153,8 @@ class PostController extends Controller
     {
         $data = $request->validated();
 
-        DB::transaction(function () use ($data, $post) {
+        $membersChanged = false;
+        DB::transaction(function () use ($data, $post, &$membersChanged) {
             // Validated as nullable (a client may send it only when 2+ concerts
             // are linked), but the column itself is NOT NULL — an explicit null
             // would otherwise reach the database as a constraint violation.
@@ -176,7 +179,7 @@ class PostController extends Controller
             }
 
             if (array_key_exists('member_ids', $data)) {
-                $post->members()->sync($data['member_ids'] ?? []);
+                $membersChanged = (bool) array_filter($post->members()->sync($data['member_ids'] ?? []));
             }
 
             if (array_key_exists('blocks', $data)) {
@@ -185,8 +188,9 @@ class PostController extends Controller
         }, 3);
 
         SiteRebuild::markDirty('posts');
-        // Member pages list the news they are linked to.
-        if (array_key_exists('member_ids', $data)) {
+        // Member pages list the news they are linked to — only a changed set
+        // of links touches them (the form always sends member_ids).
+        if ($membersChanged) {
             SiteRebuild::markDirty('band-members');
         }
 
