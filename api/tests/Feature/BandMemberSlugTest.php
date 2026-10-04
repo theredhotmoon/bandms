@@ -66,3 +66,27 @@ describe('band member slugs', function () {
             ->assertJsonPath('data.slug', 'jan-kowalski');
     });
 });
+
+describe('default gear validation', function () {
+    beforeEach(fn () => $this->createProfile());
+
+    it('rejects a gear item whose fields are not strings or whose type is unknown', function (array $item, string $error) {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'V', 'default_gear' => [$item]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors($error);
+    })->with([
+        'numeric label'  => [['type' => 'amp_head', 'label' => 12], 'default_gear.0.label'],
+        'object model'   => [['type' => 'amp_head', 'brand_model' => ['x' => 1]], 'default_gear.0.brand_model'],
+        'unknown type'   => [['type' => 'spaceship'], 'default_gear.0.type'],
+    ]);
+
+    it('accepts a well-formed gear item', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'V', 'default_gear' => [
+            ['id' => 'a', 'type' => 'amp_head', 'label' => 'Main', 'brand_model' => 'Orange', 'own_gear' => true, 'notes' => ''],
+        ]])->assertCreated();
+    });
+});

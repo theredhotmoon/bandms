@@ -56,7 +56,9 @@ test.describe.serial('Public — member gear', () => {
         default_gear: [
           { id: 'g1', type: 'amp_head', label: 'Main amp', brand_model: 'Orange Rockerverb 50', own_gear: true, notes: 'SECRET-NOTE-do-not-publish' },
           { id: 'g2', type: 'pedal_board', label: '', brand_model: 'Custom board', own_gear: true, notes: '' },
-          { id: 'g3', type: 'microphone', label: '', brand_model: '', own_gear: false, notes: 'empty item, skipped' },
+          { id: 'g3', type: 'microphone', label: '', brand_model: '', own_gear: true, notes: 'empty item, skipped' },
+          // "Backline needed" — the venue supplies it, so it is not their gear.
+          { id: 'g4', type: 'cabinet', label: 'Bass cab', brand_model: 'Ampeg SVT 8x10', own_gear: false, notes: '' },
         ],
       },
     })
@@ -87,6 +89,7 @@ test.describe.serial('Public — member gear', () => {
     await expect(items.first()).toContainText('Main amp')
     await expect(items.first()).toContainText('Orange Rockerverb 50')
     await expect(page.locator('body')).not.toContainText('SECRET-NOTE')
+    await expect(page.locator('body')).not.toContainText('Ampeg SVT 8x10')
 
         await page.goto(`${WEB}/pl/${pl}/${slug}`)
     await expect(page.getByTestId('member-gear-item').first()).toContainText('Głowa wzmacniacza')

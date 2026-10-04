@@ -16,6 +16,8 @@ export interface MemberGearItem {
   type: import('@bandms/rider-core').DefaultGearItemType
   label: string
   brand_model: string
+  /** False means "backline needed": the venue supplies it. */
+  own_gear?: boolean
 }
 
 export interface MemberPhoto {

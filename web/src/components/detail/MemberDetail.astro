@@ -52,12 +52,17 @@ const instruments = [
   ...(member.instruments ?? []).map((i) => i.name).filter((n) => n !== member.main_instrument?.name),
 ]
 
-// Real gear, in the visitor's language. An item with neither a label nor a
-// model says nothing worth printing, so it is skipped.
+// The member's own kit, in the visitor's language. Two kinds of item are left
+// out: `own_gear: false` is "backline needed" in the admin — something the
+// venue supplies, not part of their rig — and an item with neither a label
+// nor a model says nothing worth printing. Fields are read defensively: one
+// non-string here would fail the whole static build.
+const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const gearTypes = gearTypeLabels(lang)
 const gear = (member.default_gear ?? [])
-  .filter((g) => g.label?.trim() || g.brand_model?.trim())
-  .map((g) => ({ id: g.id, type: gearTypes[g.type] ?? gearTypes.other, label: g.label?.trim(), model: g.brand_model?.trim() }))
+  .filter((g) => g.own_gear !== false)
+  .map((g) => ({ id: g.id, type: gearTypes[g.type] ?? gearTypes.other, label: text(g.label), model: text(g.brand_model) }))
+  .filter((g) => g.label || g.model)
 
 const ICONS = new Set(['instagram', 'facebook', 'youtube', 'spotify', 'bandcamp', 'soundcloud'])
 const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(s.platform) ? s.platform : 'external' }))

@@ -14,6 +14,12 @@ use App\Support\SiteRebuild;
 
 class BandMemberController extends Controller
 {
+    /** Mirrors DefaultGearItemType in @bandms/rider-core. */
+    private const GEAR_TYPES = [
+        'microphone', 'amp_head', 'amp_combo', 'cabinet', 'di_box', 'keyboard',
+        'drum_kit', 'drum_hardware', 'pedal_board', 'wireless_system', 'other',
+    ];
+
     private function profile(): BandProfile
     {
         return BandProfile::findOrFail(1);
@@ -71,6 +77,13 @@ class BandMemberController extends Controller
             'instrument_ids.*'        => ['integer', 'exists:instruments,id'],
             'main_instrument_id'      => ['nullable', 'integer', 'exists:instruments,id'],
             'default_gear'            => ['nullable', 'array'],
+            // Each item's fields are typed: the public member page prints them,
+            // and a non-string there would fail the whole static build.
+            'default_gear.*.type'        => ['required', 'string', 'in:' . implode(',', self::GEAR_TYPES)],
+            'default_gear.*.label'       => ['nullable', 'string', 'max:255'],
+            'default_gear.*.brand_model' => ['nullable', 'string', 'max:255'],
+            'default_gear.*.own_gear'    => ['boolean'],
+            'default_gear.*.notes'       => ['nullable', 'string', 'max:2000'],
         ]);
 
         $profile = $this->profile();
@@ -124,6 +137,13 @@ class BandMemberController extends Controller
             'instrument_ids.*'        => ['integer', 'exists:instruments,id'],
             'main_instrument_id'      => ['nullable', 'integer', 'exists:instruments,id'],
             'default_gear'            => ['nullable', 'array'],
+            // Each item's fields are typed: the public member page prints them,
+            // and a non-string there would fail the whole static build.
+            'default_gear.*.type'        => ['required', 'string', 'in:' . implode(',', self::GEAR_TYPES)],
+            'default_gear.*.label'       => ['nullable', 'string', 'max:255'],
+            'default_gear.*.brand_model' => ['nullable', 'string', 'max:255'],
+            'default_gear.*.own_gear'    => ['boolean'],
+            'default_gear.*.notes'       => ['nullable', 'string', 'max:2000'],
         ]);
 
         $member->update($data);
