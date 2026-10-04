@@ -79,6 +79,12 @@ class BandMember extends Model
         return $this->morphedByMany(Post::class, 'memberable');
     }
 
+    /** Concerts this member played (line-ups change, so links are explicit). */
+    public function concerts(): MorphToMany
+    {
+        return $this->morphedByMany(Concert::class, 'memberable');
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');

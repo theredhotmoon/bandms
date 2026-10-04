@@ -14,7 +14,12 @@ trait HasClips
 {
     public static function bootHasClips(): void
     {
-        static::deleting(fn ($model) => $model->clips()->detach());
+        // A block, not an arrow fn: `deleting` is a halting event, and an arrow
+        // fn returns detach()'s row count — a non-null result that stops every
+        // deleting listener registered after this one (HasMembers' included).
+        static::deleting(function ($model): void {
+            $model->clips()->detach();
+        });
     }
 
     public function clips(): MorphToMany

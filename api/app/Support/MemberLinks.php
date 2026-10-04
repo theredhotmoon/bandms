@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Concert;
 use App\Models\Photo;
 use App\Models\Post;
 
@@ -19,12 +20,15 @@ final class MemberLinks
     public const MAP = [
         'photo' => Photo::class,
         'post'  => Post::class,
+        // Same alias as in ClipOwners: one class, one alias, app-wide.
+        'concert' => Concert::class,
     ];
 
     /** SiteRebuild area whose baked pages show this kind of content. */
     private const DIRTY = [
         'photo' => 'photos',
         'post'  => 'posts',
+        'concert' => 'concerts',
     ];
 
     public static function dirtyArea(string $alias): ?string

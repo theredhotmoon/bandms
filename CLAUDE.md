@@ -1965,6 +1965,14 @@ trait, which also detaches on delete because a polymorphic column cannot carry
 an FK. `Album` has the trait but the admin does not offer it: albums have no
 public page.
 
+**A model-event hook in a trait must not return a value.** `deleting` (like
+`creating`, `saving`, `updating`) is a *halting* event: the first listener
+that returns non-null stops every listener after it. `HasClips` used to
+register `fn ($model) => $model->clips()->detach()`, and that arrow fn returns
+`detach()`'s row count — so on any model with clips, `HasMembers`' own
+`deleting` hook never ran and a deleted concert left its member links behind.
+Both hooks are block closures returning `void` now; write new ones the same way.
+
 **Posts are not owners.** A post embeds a clip with a `ref` block
 (`entity: clip`); the block decides where in the article it sits. A clip
 created from the block editor's *Add a new clip…* is a real library row and

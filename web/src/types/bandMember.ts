@@ -56,6 +56,8 @@ export interface BandMember {
   default_gear?: MemberGearItem[]
   /** Ids of the published news this member is linked to, newest first. */
   post_ids?: number[]
+  /** Ids of the concerts the member played, newest first. */
+  concert_ids?: number[]
   created_at: string
   updated_at: string
 }

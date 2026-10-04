@@ -47,6 +47,7 @@ class BandMemberController extends Controller
                     ->orderBy('photos.sort_order'),
                 // Published news only, newest first — the same rule as /posts.
                 'posts' => fn ($q) => $q->published()->orderByDesc('posts.published_at'),
+                'concerts' => fn ($q) => $q->orderByDesc('concerts.date'),
             ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')

@@ -42,6 +42,7 @@ class ConcertResource extends JsonResource
                 ])
             ),
             'tags'  => TagResource::collection($this->whenLoaded('tags')),
+            'member_ids' => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
             'links' => $this->whenLoaded('links', fn () =>
                 $this->links->map(fn ($l) => [
                     'id'    => $l->id,

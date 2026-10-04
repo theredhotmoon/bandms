@@ -26,6 +26,8 @@ export default {
     ticketsModal: 'Bilety — {name}',
     form: {
       eventName: 'Nazwa wydarzenia',
+      whoPlayed: 'Kto grał',
+      currentLineup: 'Obecny skład',
       // The two *En/*Pl placeholders are cross-locale on purpose: each hints at
       // content for THAT field, not for the chrome. The English field shows an
       // English example in both UI languages. Do not "fix" these to match the

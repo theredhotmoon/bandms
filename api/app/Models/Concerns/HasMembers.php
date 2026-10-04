@@ -14,7 +14,11 @@ trait HasMembers
 {
     public static function bootHasMembers(): void
     {
-        static::deleting(fn ($model) => $model->members()->detach());
+        // A block, not an arrow fn — see HasClips: returning detach()'s count
+        // would halt every later deleting listener.
+        static::deleting(function ($model): void {
+            $model->members()->detach();
+        });
     }
 
     public function members(): MorphToMany
