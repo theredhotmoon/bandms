@@ -152,10 +152,12 @@ const { query: membersQuery } = useBandMembers()
 const tagMembers = computed(() =>
   (membersQuery.data.value ?? []).map((m) => ({ id: m.id, name: `${m.first_name} ${m.last_name}` })),
 )
-const taggingPhotoId = ref<number | null>(null)
+// Per photo: one shared id let a second photo's save be unlocked by the
+// first one finishing, and a click then re-sent a stale set.
+const taggingPhotoIds = ref(new Set<number>())
 
 async function setMembers(photo: AlbumPhoto, memberIds: number[]) {
-  taggingPhotoId.value = photo.id
+  taggingPhotoIds.value = new Set(taggingPhotoIds.value).add(photo.id)
   try {
     const saved = await setPhotoMembers(token.value!, photo.id, memberIds)
     const local = localPhotos.value.find((p) => p.id === photo.id)
@@ -164,7 +166,9 @@ async function setMembers(photo: AlbumPhoto, memberIds: number[]) {
   } catch (e) {
     reportSaveError(e, t('media.photos.membersFailed'))
   } finally {
-    taggingPhotoId.value = null
+    const next = new Set(taggingPhotoIds.value)
+    next.delete(photo.id)
+    taggingPhotoIds.value = next
   }
 }
 
@@ -445,7 +449,7 @@ async function confirmDelete() {
               <PhotoMemberTags
                 :member-ids="photo.member_ids ?? []"
                 :members="tagMembers"
-                :saving="taggingPhotoId === photo.id"
+                :saving="taggingPhotoIds.has(photo.id)"
                 @change="setMembers(photo, $event)"
               />
               <button

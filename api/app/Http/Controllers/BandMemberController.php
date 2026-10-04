@@ -79,6 +79,10 @@ class BandMemberController extends Controller
             'default_gear'            => ['nullable', 'array'],
             // Each item's fields are typed: the public member page prints them,
             // and a non-string there would fail the whole static build.
+            // Every field the admin sends needs a rule: Laravel drops array keys
+            // without one from the validated data. The admin keys, removes and
+            // edits gear items by `id`, so losing it broke all three.
+            'default_gear.*.id'          => ['nullable', 'string', 'max:64'],
             'default_gear.*.type'        => ['required', 'string', 'in:' . implode(',', self::GEAR_TYPES)],
             'default_gear.*.label'       => ['nullable', 'string', 'max:255'],
             'default_gear.*.brand_model' => ['nullable', 'string', 'max:255'],
@@ -139,6 +143,10 @@ class BandMemberController extends Controller
             'default_gear'            => ['nullable', 'array'],
             // Each item's fields are typed: the public member page prints them,
             // and a non-string there would fail the whole static build.
+            // Every field the admin sends needs a rule: Laravel drops array keys
+            // without one from the validated data. The admin keys, removes and
+            // edits gear items by `id`, so losing it broke all three.
+            'default_gear.*.id'          => ['nullable', 'string', 'max:64'],
             'default_gear.*.type'        => ['required', 'string', 'in:' . implode(',', self::GEAR_TYPES)],
             'default_gear.*.label'       => ['nullable', 'string', 'max:255'],
             'default_gear.*.brand_model' => ['nullable', 'string', 'max:255'],
