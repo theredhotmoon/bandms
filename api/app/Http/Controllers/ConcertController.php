@@ -200,9 +200,13 @@ class ConcertController extends Controller
     private function syncMembers(Concert $concert, array $data): void
     {
         if (array_key_exists('member_ids', $data)) {
-            $concert->members()->sync($data['member_ids'] ?? []);
-            // Member pages list the gigs each member played.
-            SiteRebuild::markDirty('band-members');
+            $changes = $concert->members()->sync($data['member_ids'] ?? []);
+            // Member pages list each member's gigs — but only a changed line-up
+            // touches them. The form always sends member_ids, so marking on
+            // every save would queue a rebuild for an unrelated edit.
+            if (array_filter($changes)) {
+                SiteRebuild::markDirty('band-members');
+            }
         }
     }
 

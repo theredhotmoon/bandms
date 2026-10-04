@@ -96,3 +96,16 @@ describe('GET /api/band-profile/members — concerts', function () {
             ->assertJsonPath('data.0.concert_ids', [$newer->id, $older->id]);
     });
 });
+
+it('marks member pages dirty only when the line-up actually changes', function () {
+    $this->actingAsAdmin();
+    $member = gigMember();
+    $concert = gigConcert();
+
+    $this->putJson("/api/concerts/{$concert->id}", ['member_ids' => [$member->id]])->assertOk();
+    expect(\App\Models\SiteDirtyArea::where('area', 'band-members')->exists())->toBeTrue();
+
+    \App\Models\SiteDirtyArea::query()->delete();
+    $this->putJson("/api/concerts/{$concert->id}", ['member_ids' => [$member->id], 'start_time' => '21:00'])->assertOk();
+    expect(\App\Models\SiteDirtyArea::where('area', 'band-members')->exists())->toBeFalse();
+});
