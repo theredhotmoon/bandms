@@ -6,15 +6,23 @@ Open work, most important first. Each item says enough to pick it up cold.
 
 ## Band member pages — link the rest of the site to members
 
-Each member has a public page at `/{lang}/{about}/{slug}` (bio, details,
-share button, printable QR in the admin). Its **Instruments & gear** block is
-still a placeholder, and **nothing in the schema points at a member** — no
-photo, post, concert or clip knows who is in it.
+Each member has a public page at `/{lang}/{about}/{slug}`. **Photos are
+linked** (2026-10-03): members are tagged on photos in an album's photo grid,
+and the member page shows them.
 
-**One PR each** — each needs a relation, an admin picker and a block.
-Decide first whether one polymorphic pivot (`memberables`, like `clippables`)
-serves them all: real instruments & gear (data exists) · photos (tag members)
-· news · concerts, clips, releases, music videos, press.
+**Decided: one polymorphic pivot, `memberables`** (like `clippables`). A new
+link is one alias in `App\Support\MemberLinks::MAP` (aliases are data —
+never rename one; a model in both maps keeps one alias), `HasMembers` on the
+model, a picker on its admin form (`PhotoMemberTags` is the pattern), a
+`markDirty('band-members')` on change, and a block on `MemberDetail.astro`.
+
+**Still to do, one PR each:**
+- **Instruments & gear** — replace the placeholder with the real instrument
+  list and default rig (data exists; no pivot needed).
+- **News** — link posts to members; the page lists related news.
+- **Concerts** — who played each show (line-ups change).
+- **Clips, releases, music videos, press** — pick per entity whether it is
+  worth a block.
 
 ---
 

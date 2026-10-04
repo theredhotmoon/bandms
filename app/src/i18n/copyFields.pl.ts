@@ -513,4 +513,8 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Poster: "view full size" label': 'Plakat: etykieta „pełny rozmiar”',
   'Read by screen readers on the poster, which opens it full size.': 'Odczytywana przez czytniki ekranu na plakacie, który otwiera go w pełnym rozmiarze.',
   'Poster: "Close" button': 'Plakat: przycisk „Zamknij”',
+  // ── About → Member page → photos ────────────────────────────────────────
+  'Above the photos the member is tagged in. Hidden when there are none.': 'Nad zdjęciami, na których oznaczono członka zespołu. Ukryty, gdy ich nie ma.',
+  'Photo viewer: "previous" label': 'Podgląd zdjęć: etykieta „poprzednie”',
+  'Photo viewer: "next" label': 'Podgląd zdjęć: etykieta „następne”',
 }

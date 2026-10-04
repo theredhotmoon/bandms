@@ -38,6 +38,26 @@ class PhotoController extends Controller
         return new PhotoResource($photo->load('album'));
     }
 
+    /**
+     * Who is in this photo. Replaces the whole set — the admin sends every
+     * member it shows as checked, and an empty list clears them all.
+     */
+    public function syncMembers(Request $request, Photo $photo): PhotoResource
+    {
+        $data = $request->validate([
+            'member_ids'   => 'present|array',
+            'member_ids.*' => 'integer|distinct|exists:band_members,id',
+        ]);
+
+        $photo->members()->sync($data['member_ids']);
+
+        // The album pages carry nothing about members, but each member's own
+        // page lists their photos.
+        SiteRebuild::markDirty('band-members');
+
+        return new PhotoResource($photo->load(['album', 'members']));
+    }
+
     public function destroy(Photo $photo): JsonResponse
     {
         if ($photo->image) {

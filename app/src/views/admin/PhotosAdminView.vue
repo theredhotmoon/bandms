@@ -8,13 +8,15 @@ import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BatchPhotoUpload from '@/components/admin/forms/BatchPhotoUpload.vue'
 import AlbumAddPhotos from '@/components/admin/forms/AlbumAddPhotos.vue'
+import PhotoMemberTags from '@/components/admin/PhotoMemberTags.vue'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { useAlbums } from '@/composables/useAlbums'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
 import { addAlbumPhotos, batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
-import { togglePhotoEpkFeatured } from '@/api/photos'
+import { setPhotoMembers, togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
 import type { Localized } from '@/types/website-module'
@@ -128,12 +130,42 @@ const orderDirty = computed(() =>
   localPhotos.value.map((p) => p.id).join(',') !== originalOrder.value.join(','),
 )
 
+/**
+ * The grid's own copies of an album's photos. The query cache hands out
+ * read-only objects, so editing one in place (a tag change) would be silently
+ * refused and the grid would keep showing the old value.
+ */
+function copyPhotos(photos: readonly AlbumPhoto[]): AlbumPhoto[] {
+  return photos.map((p) => ({ ...p, member_ids: p.member_ids ? [...p.member_ids] : p.member_ids }))
+}
+
 function openPhotos(album: Album) {
   viewAlbum.value = album
-  localPhotos.value = [...album.photos]
+  localPhotos.value = copyPhotos(album.photos)
   originalOrder.value = album.photos.map((p) => p.id)
   showAddPhotos.value = false
   showPhotos.value = true
+}
+
+// ── Who is in each photo ──────────────────────────────────────
+const { query: membersQuery } = useBandMembers()
+const tagMembers = computed(() =>
+  (membersQuery.data.value ?? []).map((m) => ({ id: m.id, name: `${m.first_name} ${m.last_name}` })),
+)
+const taggingPhotoId = ref<number | null>(null)
+
+async function setMembers(photo: AlbumPhoto, memberIds: number[]) {
+  taggingPhotoId.value = photo.id
+  try {
+    const saved = await setPhotoMembers(token.value!, photo.id, memberIds)
+    const local = localPhotos.value.find((p) => p.id === photo.id)
+    if (local) local.member_ids = saved
+    await queryClient.invalidateQueries({ queryKey: ['albums'] })
+  } catch (e) {
+    reportSaveError(e, t('media.photos.membersFailed'))
+  } finally {
+    taggingPhotoId.value = null
+  }
 }
 
 // ── Add photos to an existing album ───────────────────────────
@@ -207,7 +239,7 @@ async function toggleEpk(photo: AlbumPhoto) {
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
     const refreshed = query.data.value?.find((a: Album) => a.id === viewAlbum.value?.id) ?? viewAlbum.value
     viewAlbum.value = refreshed ?? null
-    localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value
+    localPhotos.value = refreshed?.photos ? copyPhotos(refreshed.photos) : localPhotos.value
     toast.success(photo.epk_featured ? t('media.photos.removedFromEpk') : t('media.photos.addedToEpk'))
   } catch (e) {
     reportSaveError(e, t('media.photos.epkFailed'))
@@ -221,7 +253,7 @@ async function deletePhoto(albumId: number, photoId: number) {
     await queryClient.invalidateQueries({ queryKey: ['albums'] })
     const refreshed = query.data.value?.find((a: Album) => a.id === albumId) ?? viewAlbum.value
     viewAlbum.value = refreshed
-    localPhotos.value = refreshed?.photos ? [...refreshed.photos] : localPhotos.value.filter((p) => p.id !== photoId)
+    localPhotos.value = refreshed?.photos ? copyPhotos(refreshed.photos) : localPhotos.value.filter((p) => p.id !== photoId)
     originalOrder.value = localPhotos.value.map((p) => p.id)
     toast.success(t('media.photos.photoRemoved'))
   } catch (e) {
@@ -410,6 +442,12 @@ async function confirmDelete() {
             <div v-else class="photo-placeholder">—</div>
             <div class="photo-footer">
               <span class="photo-caption">{{ photo.caption || '—' }}</span>
+              <PhotoMemberTags
+                :member-ids="photo.member_ids ?? []"
+                :members="tagMembers"
+                :saving="taggingPhotoId === photo.id"
+                @change="setMembers(photo, $event)"
+              />
               <button
                 class="photo-epk"
                 :class="{ 'photo-epk--on': photo.epk_featured }"

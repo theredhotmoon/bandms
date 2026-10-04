@@ -11,6 +11,12 @@ export interface MemberInstrument {
   category: string | null
 }
 
+export interface MemberPhoto {
+  id: number
+  url: string
+  caption: string | null
+}
+
 export interface BandMember {
   id: number
   first_name: string
@@ -29,6 +35,11 @@ export interface BandMember {
   main_instrument: MemberInstrument | null
   instruments: MemberInstrument[]
   social_links: SocialLink[]
+  /**
+   * Photos the member is tagged in, from published albums only. Optional:
+   * an API predating member tagging omits it.
+   */
+  photos?: MemberPhoto[]
   created_at: string
   updated_at: string
 }
