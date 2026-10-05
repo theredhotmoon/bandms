@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases, getMusicVideos } from '@/lib/cms'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
@@ -26,7 +26,7 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases, allVideos] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
@@ -35,6 +35,7 @@ const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, a
   getConcerts(),
   getClips(lang),
   getReleases(lang),
+  getMusicVideos(),
 ])
 
 const member = members.find((m) => m.id === itemId)!
@@ -105,6 +106,14 @@ const discography = siteConfig.modules.releases === false ? [] : (member.release
     cover: r.cover_image,
     href: `${releasesHref}/${r.id}`,
   }))
+
+// Music videos the member appears in, newest first. The API sends published
+// ones only; each opens the video itself. Gated on the videos module.
+const videosById = new Map(allVideos.map((v) => [v.id, v]))
+const videos = siteConfig.modules.videos === false ? [] : (member.music_video_ids ?? [])
+  .map((id) => videosById.get(id))
+  .filter((v): v is NonNullable<typeof v> => Boolean(v))
+  .map((v) => ({ id: v.id, title: v.title, thumb: v.og_image, href: v.video_url }))
 
 // The member's own kit, in the visitor's language. Two kinds of item are left
 // out: `own_gear: false` is "backline needed" in the admin — something the
@@ -282,6 +291,24 @@ const structuredData = {
     </section>
   )}
 
+  {videos.length > 0 && (
+    <section class="md-sec page-x" data-testid="member-videos">
+      <h2 class="md-h2">{t.memberVideos}</h2>
+      <ul class="md-releases">
+        {videos.map((v) => (
+          <li>
+            <a class="md-release" href={v.href} target="_blank" rel="noopener" data-testid="member-video">
+              <span class="md-release-cover md-video-thumb">
+                {v.thumb ? <img src={v.thumb} alt="" loading="lazy" /> : <span class="md-photo-fallback" aria-hidden="true" />}
+              </span>
+              <span class="md-release-title">{v.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   <!-- Gear: the member's own kit, or a "coming soon" line until they add some. -->
   <section class="md-sec page-x" data-testid="member-gear">
     <h2 class="md-h2">{t.memberGear}</h2>
@@ -388,6 +415,7 @@ const structuredData = {
   .md-release-cover { display: block; aspect-ratio: 1; border-radius: var(--radius-card); overflow: hidden; background: var(--color-surface-2); box-shadow: var(--shadow-card); }
   .md-release-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .md-release:hover .md-release-title { color: var(--color-accent); }
+  .md-video-thumb { aspect-ratio: 16 / 9; }
   .md-release-title { font: 700 16px/1.3 var(--font-body); }
   .md-release-year { font: 600 13px/1 var(--font-body); color: var(--color-muted); }
   .md-gear-soon { margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }

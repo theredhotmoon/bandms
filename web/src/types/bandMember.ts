@@ -62,6 +62,8 @@ export interface BandMember {
   clip_ids?: number[]
   /** Ids of the releases the member played on, newest first. */
   release_ids?: number[]
+  /** Ids of the published music videos the member appears in, newest first. */
+  music_video_ids?: number[]
   created_at: string
   updated_at: string
 }

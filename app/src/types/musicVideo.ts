@@ -12,6 +12,8 @@ export interface MusicVideo {
   duration: string | null
   view_count: number | null
   views_synced_at: string | null
+  /** Band members in the video — any number. */
+  member_ids?: number[] | null
   created_at: string
   updated_at: string
 }
@@ -44,4 +46,5 @@ export interface MusicVideoPayload {
   channel_name?: string | null
   view_count?: number | null
   duration?: string | null
+  member_ids?: number[]
 }

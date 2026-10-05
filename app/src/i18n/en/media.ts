@@ -141,6 +141,7 @@ export default {
     videoTitlePlaceholder: 'Video title',
     publishedDate: 'Published date',
     sortOrder: 'Sort order',
+    whoIsIn: "Who's in it",
     updated: 'Music video updated',
     added: 'Music video added',
     saveFailed: 'Failed to save music video',

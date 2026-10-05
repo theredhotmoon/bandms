@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import MemberPicker from '@/components/admin/forms/MemberPicker.vue'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
@@ -74,6 +76,8 @@ async function doFetchPreview(id: number) {
   }
 }
 
+const { query: membersQ } = useBandMembers()
+
 const showModal = ref(false)
 const editing   = ref<MusicVideo | null>(null)
 
@@ -82,6 +86,7 @@ const form = reactive<MusicVideoPayload>({
   video_url:    '',
   published_at: null,
   sort_order:   0,
+  member_ids:   [],
 })
 
 watch(() => form.video_url, () => { retrievedMeta.value = null })
@@ -111,6 +116,7 @@ function openCreate() {
   form.video_url      = ''
   form.published_at   = null
   form.sort_order     = query.data.value?.length ?? 0
+  form.member_ids     = []
   retrievedMeta.value = null
   showModal.value     = true
 }
@@ -121,6 +127,7 @@ function openEdit(v: MusicVideo) {
   form.video_url      = v.video_url
   form.published_at   = v.published_at
   form.sort_order     = v.sort_order
+  form.member_ids     = v.member_ids ? [...v.member_ids] : []
   retrievedMeta.value = null
   showModal.value     = true
 }
@@ -134,6 +141,7 @@ async function submit() {
     video_url:    form.video_url,
     published_at: form.published_at || null,
     sort_order:   Number(form.sort_order),
+    member_ids:   form.member_ids ?? [],
     ...(meta ? {
       og_title:     meta.title,
       og_image:     meta.thumbnail_url,
@@ -351,6 +359,12 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
             <input v-model="form.sort_order" type="number" min="0" class="field-input" />
           </div>
         </div>
+        <MemberPicker
+          v-model="form.member_ids!"
+          :members="membersQ.data.value ?? []"
+          :label="$t('media.videos.whoIsIn')"
+          testid="video-members"
+        />
         <div class="flex gap-2 justify-end pt-1">
           <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
