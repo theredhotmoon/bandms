@@ -31,6 +31,7 @@ class PressReleaseResource extends PressReleaseSummaryResource
                 'id'   => $t->id,
                 'name' => $t->name,
             ])),
+            'member_ids' => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
         ]);
     }
 }

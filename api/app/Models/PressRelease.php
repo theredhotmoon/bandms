@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMembers;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class PressRelease extends Model
 {
-    use HasFactory;
+    use HasFactory, HasMembers;
 
     protected $fillable = [
         'profile_id', 'url', 'og_title', 'og_description', 'og_image', 'og_site_name', 'published_at', 'featured',

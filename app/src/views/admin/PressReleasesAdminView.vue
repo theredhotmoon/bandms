@@ -18,6 +18,7 @@ import { useAlbums } from '@/composables/useAlbums'
 import { useTours } from '@/composables/useTours'
 import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
+import { useBandMembers } from '@/composables/useBandMembers'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 
@@ -38,6 +39,7 @@ const tc = useTableControls<PressReleaseSummary>({
 })
 
 const { query: concertsQ }  = useConcerts()
+const { query: membersQ }   = useBandMembers()
 const { query: albumsQ }    = useAlbums()
 const { query: toursQ }     = useTours()
 const { query: tagsQ }      = useTags()
@@ -200,6 +202,7 @@ function hostname(url: string): string {
         :releases="releasesQ.data.value ?? []"
         :tours="toursQ.data.value ?? []"
         :tags="tagsQ.data.value ?? []"
+        :members="membersQ.data.value ?? []"
         @submit="handleSubmit"
         @cancel="closeModal"
       />

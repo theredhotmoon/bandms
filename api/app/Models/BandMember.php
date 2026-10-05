@@ -103,6 +103,12 @@ class BandMember extends Model
         return $this->morphedByMany(MusicVideo::class, 'memberable');
     }
 
+    /** Press articles about this member — interviews, reviews singling them out. */
+    public function pressReleases(): MorphToMany
+    {
+        return $this->morphedByMany(PressRelease::class, 'memberable');
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');
