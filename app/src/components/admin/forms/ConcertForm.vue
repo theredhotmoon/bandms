@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MemberPicker from './MemberPicker.vue'
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
@@ -267,17 +268,6 @@ function removeFromLineup(index: number) {
 }
 
 // ── Tags ──────────────────────────────────────────────────────
-function toggleMember(id: number) {
-  form.member_ids = form.member_ids.includes(id)
-    ? form.member_ids.filter((m) => m !== id)
-    : [...form.member_ids, id]
-}
-
-/** One click for the usual case: everyone currently in the band played. */
-function selectCurrentLineup() {
-  form.member_ids = (props.members ?? []).filter((m) => m.is_current).map((m) => m.id)
-}
-
 function toggleTag(id: number) {
   const idx = form.tag_ids.indexOf(id)
   if (idx === -1) form.tag_ids.push(id)
@@ -493,20 +483,12 @@ function submit() {
     </div>
 
     <!-- Who played: explicit, because line-ups change — an empty list is not "everyone". -->
-    <div v-if="members?.length" data-testid="concert-members">
-      <div class="flex items-center justify-between gap-2">
-        <label class="field-label">{{ $t('shows.concerts.form.whoPlayed') }}</label>
-        <button type="button" class="btn-ghost text-xs" data-testid="concert-members-current" @click="selectCurrentLineup">
-          {{ $t('shows.concerts.form.currentLineup') }}
-        </button>
-      </div>
-      <div class="checkbox-list">
-        <label v-for="m in members" :key="m.id" class="checkbox-item">
-          <input type="checkbox" :checked="form.member_ids.includes(m.id)" @change="toggleMember(m.id)" />
-          <span>{{ m.first_name }} {{ m.last_name }}</span>
-        </label>
-      </div>
-    </div>
+    <MemberPicker
+      v-model="form.member_ids"
+      :members="members ?? []"
+      :label="$t('shows.concerts.form.whoPlayed')"
+      testid="concert-members"
+    />
 
     <!-- Description -->
     <div>

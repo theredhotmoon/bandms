@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases } from '@/lib/cms'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
@@ -26,7 +26,7 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
@@ -34,6 +34,7 @@ const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips] =
   getAllPosts(lang),
   getConcerts(),
   getClips(lang),
+  getReleases(lang),
 ])
 
 const member = members.find((m) => m.id === itemId)!
@@ -89,6 +90,21 @@ const clipsById = new Map(allClips.map((c) => [c.id, c]))
 const memberClips = (member.clip_ids ?? [])
   .map((id) => clipsById.get(id))
   .filter((c): c is NonNullable<typeof c> => Boolean(c))
+
+// Releases the member played on, newest first, each leading to its page.
+// Gated on the releases module: a switched-off module unbuilds those pages.
+const releasesHref = `/${lang}/${slugMap[lang]?.releases ?? 'releases'}`
+const releasesById = new Map(allReleases.map((r) => [r.id, r]))
+const discography = siteConfig.modules.releases === false ? [] : (member.release_ids ?? [])
+  .map((id) => releasesById.get(id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r))
+  .map((r) => ({
+    id: r.id,
+    title: r.title,
+    year: r.release_date ? r.release_date.slice(0, 4) : '',
+    cover: r.cover_image,
+    href: `${releasesHref}/${r.id}`,
+  }))
 
 // The member's own kit, in the visitor's language. Two kinds of item are left
 // out: `own_gear: false` is "backline needed" in the admin — something the
@@ -247,6 +263,25 @@ const structuredData = {
     </section>
   )}
 
+  {discography.length > 0 && (
+    <section class="md-sec page-x" data-testid="member-releases">
+      <h2 class="md-h2">{t.memberReleases}</h2>
+      <ul class="md-releases">
+        {discography.map((r) => (
+          <li>
+            <a class="md-release" href={r.href} data-testid="member-release">
+              <span class="md-release-cover">
+                {r.cover ? <img src={r.cover} alt="" loading="lazy" /> : <span class="md-photo-fallback" aria-hidden="true" />}
+              </span>
+              <span class="md-release-title">{r.title}</span>
+              {r.year && <span class="md-release-year">{r.year}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   <!-- Gear: the member's own kit, or a "coming soon" line until they add some. -->
   <section class="md-sec page-x" data-testid="member-gear">
     <h2 class="md-h2">{t.memberGear}</h2>
@@ -348,5 +383,12 @@ const structuredData = {
   .md-news-row:hover .md-news-title { color: var(--color-accent); }
   .md-news-title { font: 700 18px/1.35 var(--font-body); }
   .md-news-date { flex-shrink: 0; font: 600 13px/1 var(--font-body); color: var(--color-muted); }
+  .md-releases { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+  .md-release { display: flex; flex-direction: column; gap: 6px; color: var(--color-body); text-decoration: none; }
+  .md-release-cover { display: block; aspect-ratio: 1; border-radius: var(--radius-card); overflow: hidden; background: var(--color-surface-2); box-shadow: var(--shadow-card); }
+  .md-release-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .md-release:hover .md-release-title { color: var(--color-accent); }
+  .md-release-title { font: 700 16px/1.3 var(--font-body); }
+  .md-release-year { font: 600 13px/1 var(--font-body); color: var(--color-muted); }
   .md-gear-soon { margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }
 </style>

@@ -121,6 +121,7 @@ export const MIGRATED = [
   'views/admin/MusicVideosAdminView.vue',
   'components/admin/forms/BatchPhotoUpload.vue',
   'components/admin/forms/AlbumAddPhotos.vue',
+  'components/admin/forms/MemberPicker.vue',
   'components/admin/PhotoMemberTags.vue',
   'components/admin/forms/UploadProgressBar.vue',
   'composables/useTechRiderEditor.ts',

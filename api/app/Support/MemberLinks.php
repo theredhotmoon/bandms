@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Clip;
 use App\Models\Concert;
+use App\Models\Release;
 use App\Models\Photo;
 use App\Models\Post;
 
@@ -24,6 +25,8 @@ final class MemberLinks
         // Same alias as in ClipOwners: one class, one alias, app-wide.
         'concert' => Concert::class,
         'clip'    => Clip::class,
+        // Same alias as in ClipOwners.
+        'release' => Release::class,
     ];
 
     /** SiteRebuild area whose baked pages show this kind of content. */
@@ -32,6 +35,7 @@ final class MemberLinks
         'post'  => 'posts',
         'concert' => 'concerts',
         'clip'    => 'band-members',
+        'release' => 'releases',
     ];
 
     public static function dirtyArea(string $alias): ?string

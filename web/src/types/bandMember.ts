@@ -60,6 +60,8 @@ export interface BandMember {
   concert_ids?: number[]
   /** Ids of the clips the member appears in, most recently recorded first. */
   clip_ids?: number[]
+  /** Ids of the releases the member played on, newest first. */
+  release_ids?: number[]
   created_at: string
   updated_at: string
 }

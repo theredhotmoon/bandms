@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MemberPicker from './MemberPicker.vue'
 import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
@@ -10,6 +11,8 @@ import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/ty
 
 const props = defineProps<{
   initial?: Release | null
+  /** Band members, for "who played on it". */
+  members?: readonly { id: number; first_name: string; last_name: string; is_current: boolean }[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -131,6 +134,7 @@ const form = reactive({
   is_upcoming:  false,
   presave_url:  '',
   label_name:   '',
+  member_ids:   [] as number[],
   links:        emptyLinks(),
 })
 
@@ -151,6 +155,7 @@ watch(
       form.is_upcoming    = false
       form.presave_url    = ''
       form.label_name     = ''
+      form.member_ids     = []
       form.links          = emptyLinks()
       tracks.value        = [emptyTrack(0)]
       coverFile.value     = null
@@ -167,6 +172,7 @@ watch(
     form.is_upcoming    = val.is_upcoming
     form.presave_url    = val.presave_url ?? ''
     form.label_name     = val.label_name ?? ''
+    form.member_ids     = val.member_ids ? [...val.member_ids] : []
     const lm = emptyLinks()
     for (const l of val.links) lm[l.platform] = l.url
     form.links = lm
@@ -223,6 +229,7 @@ function handleSubmit() {
     is_upcoming:  form.is_upcoming,
     presave_url:  form.is_upcoming ? (form.presave_url || null) : null,
     label_name:   form.label_name || null,
+    member_ids:   form.member_ids,
     links: PLATFORMS
       .filter(p => form.links[p.key])
       .map(p => ({ platform: p.key, url: form.links[p.key] })),
@@ -326,6 +333,15 @@ function handleSubmit() {
       <input v-model="form.label_name" class="field-input" :placeholder="$t('media.releaseForm.labelPlaceholder')" />
       <p v-if="errors?.label_name" class="field-error">{{ errors.label_name[0] }}</p>
     </div>
+
+    <!-- Who played on it -->
+    <MemberPicker
+      v-model="form.member_ids"
+      :members="members ?? []"
+      :label="$t('media.releaseForm.whoPlayed')"
+      testid="release-members"
+      class="mb-4"
+    />
 
     <!-- Description -->
     <div class="mb-5">

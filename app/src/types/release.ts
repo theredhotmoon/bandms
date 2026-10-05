@@ -50,6 +50,8 @@ export interface ReleaseSummary {
   is_upcoming: boolean
   presave_url: string | null
   label_name: string | null
+  /** Band members who played on it — any number. Sent by the single-release endpoint. */
+  member_ids?: number[]
   links: ReleaseLink[]
   created_at: string
   updated_at: string
@@ -102,6 +104,7 @@ export interface ReleasePayload {
   is_upcoming: boolean
   presave_url: string | null
   label_name: string | null
+  member_ids?: number[]
   links: ReleaseLinkPayload[]
   tracks: ReleaseTrackPayload[]
 }
