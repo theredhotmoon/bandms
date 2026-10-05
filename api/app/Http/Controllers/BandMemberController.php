@@ -50,6 +50,9 @@ class BandMemberController extends Controller
                 'concerts' => fn ($q) => $q->orderByDesc('concerts.date'),
                 'clips' => fn ($q) => $q->orderByDesc('clips.recorded_on')->orderByDesc('clips.id'),
                 'releases' => fn ($q) => $q->orderByDesc('releases.release_date')->orderByDesc('releases.id'),
+                // Published only: a video with no published_at is a draft.
+                'musicVideos' => fn ($q) => $q->whereNotNull('music_videos.published_at')
+                    ->orderByDesc('music_videos.published_at')->orderByDesc('music_videos.id'),
             ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')

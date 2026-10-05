@@ -136,6 +136,7 @@ export default {
     videoTitlePlaceholder: 'Tytuł teledysku',
     publishedDate: 'Data publikacji',
     sortOrder: 'Kolejność',
+    whoIsIn: 'Kto występuje',
     updated: 'Teledysk zaktualizowany',
     added: 'Teledysk dodany',
     saveFailed: 'Nie udało się zapisać teledysku',

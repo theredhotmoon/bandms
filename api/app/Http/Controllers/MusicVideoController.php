@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Arr;
 use App\Models\BandProfile;
 use App\Models\MusicVideo;
 use App\Support\SiteRebuild;
@@ -13,7 +14,9 @@ class MusicVideoController extends Controller
 {
     public function index(): JsonResponse
     {
-        $items = MusicVideo::where('profile_id', 1)->orderBy('sort_order')->orderBy('id')->get();
+        // `members` rides along: the admin form is seeded from this list, and
+        // without member_ids a save would clear the video's members.
+        $items = MusicVideo::with('members')->where('profile_id', 1)->orderBy('sort_order')->orderBy('id')->get();
         return response()->json(['data' => $items->map(fn ($v) => $this->format($v))]);
     }
 
@@ -29,10 +32,15 @@ class MusicVideoController extends Controller
             'channel_name' => 'nullable|string|max:255',
             'view_count'   => 'nullable|integer|min:0',
             'duration'     => 'nullable|string|max:20',
+            // Who is in it. Absent leaves them alone; [] clears them.
+            'member_ids'   => 'sometimes|nullable|array',
+            'member_ids.*' => 'integer|distinct|exists:band_members,id',
         ]);
 
         $data['profile_id'] = BandProfile::value('id') ?? 1;
-        $item = MusicVideo::create($data);
+        $item = MusicVideo::create(Arr::except($data, ['member_ids']));
+        $this->syncMembers($item, $data);
+        $item->load('members');
 
         SiteRebuild::markDirty('music-videos');
 
@@ -51,9 +59,14 @@ class MusicVideoController extends Controller
             'channel_name' => 'nullable|string|max:255',
             'view_count'   => 'nullable|integer|min:0',
             'duration'     => 'nullable|string|max:20',
+            // Who is in it. Absent leaves them alone; [] clears them.
+            'member_ids'   => 'sometimes|nullable|array',
+            'member_ids.*' => 'integer|distinct|exists:band_members,id',
         ]);
 
-        $musicVideo->update($data);
+        $musicVideo->update(Arr::except($data, ['member_ids']));
+        $this->syncMembers($musicVideo, $data);
+        $musicVideo->load('members');
 
         SiteRebuild::markDirty('music-videos');
 
@@ -162,6 +175,21 @@ class MusicVideoController extends Controller
         return response()->json(['data' => $this->format($musicVideo->fresh())]);
     }
 
+    /**
+     * Who is in the video. Keyed on presence: an explicit [] clears them, a
+     * save that never mentions them leaves them alone. Only a real change
+     * marks member pages for a rebuild.
+     */
+    private function syncMembers(MusicVideo $video, array $data): void
+    {
+        if (! array_key_exists('member_ids', $data)) {
+            return;
+        }
+        if (array_filter($video->members()->sync($data['member_ids'] ?? []))) {
+            SiteRebuild::markDirty('band-members');
+        }
+    }
+
     private function format(MusicVideo $v): array
     {
         return [
@@ -176,6 +204,7 @@ class MusicVideoController extends Controller
             'channel_name'    => $v->channel_name,
             'view_count'      => $v->view_count,
             'duration'        => $v->duration,
+            'member_ids'      => $v->relationLoaded('members') ? $v->members->pluck('id')->values() : null,
             'views_synced_at' => $v->views_synced_at?->toIso8601String(),
             'created_at'      => $v->created_at,
             'updated_at'      => $v->updated_at,

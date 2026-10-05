@@ -59,6 +59,7 @@ class BandMemberResource extends JsonResource
             'concert_ids'  => $this->whenLoaded('concerts', fn () => $this->concerts->pluck('id')->values()),
             'clip_ids'     => $this->whenLoaded('clips', fn () => $this->clips->pluck('id')->values()),
             'release_ids'  => $this->whenLoaded('releases', fn () => $this->releases->pluck('id')->values()),
+            'music_video_ids' => $this->whenLoaded('musicVideos', fn () => $this->musicVideos->pluck('id')->values()),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,

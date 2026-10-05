@@ -528,4 +528,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── About → Member page → releases ──────────────────────────────────────
   'Releases heading': 'Nagłówek wydawnictw',
   'Above the releases the member played on. Hidden when there are none.': 'Nad wydawnictwami, na których grał członek zespołu. Ukryty, gdy ich nie ma.',
+  // ── About → Member page → music videos ──────────────────────────────────
+  'Music videos heading': 'Nagłówek teledysków',
+  'Above the music videos the member appears in. Hidden when there are none.': 'Nad teledyskami, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
 }

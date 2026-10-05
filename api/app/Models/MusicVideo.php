@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMembers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class MusicVideo extends Model
 {
+    use HasMembers;
+
     protected $fillable = ['profile_id', 'title', 'video_url', 'published_at', 'sort_order', 'og_title', 'og_image', 'og_site_name', 'channel_name', 'duration', 'view_count', 'views_synced_at'];
 
     protected $casts = [
