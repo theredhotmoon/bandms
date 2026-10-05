@@ -60,6 +60,7 @@ class BandMemberResource extends JsonResource
             'clip_ids'     => $this->whenLoaded('clips', fn () => $this->clips->pluck('id')->values()),
             'release_ids'  => $this->whenLoaded('releases', fn () => $this->releases->pluck('id')->values()),
             'music_video_ids' => $this->whenLoaded('musicVideos', fn () => $this->musicVideos->pluck('id')->values()),
+            'press_release_ids' => $this->whenLoaded('pressReleases', fn () => $this->pressReleases->pluck('id')->values()),
             'social_links' => $this->socialLinks->map(fn ($l) => [
                 'id'       => $l->id,
                 'platform' => $l->platform,

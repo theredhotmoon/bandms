@@ -22,6 +22,8 @@ const props = defineProps<{
   releases: ReleaseSummary[]
   tours: TourSummary[]
   tags: Tag[]
+  /** Band members, for an article about one or more of them. */
+  members?: readonly { id: number; first_name: string; last_name: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +49,7 @@ const album_ids    = ref<number[]>([])
 const release_ids  = ref<number[]>([])
 const tour_ids     = ref<number[]>([])
 const tag_ids      = ref<number[]>([])
+const member_ids   = ref<number[]>([])
 
 // ── Meta fetch ────────────────────────────────────────────────
 const fetching     = ref(false)
@@ -69,6 +72,7 @@ watch(
     release_ids.value   = val?.releases?.map((r) => r.id) ?? []
     tour_ids.value      = val?.tours?.map((t) => t.id) ?? []
     tag_ids.value       = val?.tags?.map((t) => t.id) ?? []
+    member_ids.value    = val?.member_ids ? [...val.member_ids] : []
     metaPreview.value   = null
     fetchError.value    = ''
   },
@@ -110,6 +114,7 @@ function submit() {
     release_ids:    release_ids.value,
     tour_ids:       tour_ids.value,
     tag_ids:        tag_ids.value,
+    member_ids:     member_ids.value,
   })
 }
 </script>
@@ -193,11 +198,13 @@ function submit() {
       :releases="releases"
       :tours="tours"
       :tags="tags"
+      :members="members"
       v-model:concertIds="concert_ids"
       v-model:albumIds="album_ids"
       v-model:releaseIds="release_ids"
       v-model:tourIds="tour_ids"
       v-model:tagIds="tag_ids"
+      v-model:memberIds="member_ids"
     />
 
     <!-- Featured on EPK -->

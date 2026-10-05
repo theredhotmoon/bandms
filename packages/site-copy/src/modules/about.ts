@@ -163,6 +163,11 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Music videos', pl: 'Teledyski' },
   },
   {
+    key: 'memberPress', label: 'Press coverage heading', group: 'Member page', maxLength: 40,
+    help: 'Above the articles about the member. Hidden when there are none.',
+    defaults: { en: 'In the press', pl: 'W prasie' },
+  },
+  {
     key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
     defaults: { en: 'Follow', pl: 'Obserwuj' },
   },

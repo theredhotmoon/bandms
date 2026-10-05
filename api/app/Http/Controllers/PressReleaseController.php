@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
 class PressReleaseController extends Controller
@@ -33,7 +34,9 @@ class PressReleaseController extends Controller
         // Public route: a linked draft post must not surface here either — the
         // resource emits each post's title and slug. Safe to scope, because the
         // admin's press-release form has no linked-posts picker to prefill.
-        $pressRelease->load(['concerts', 'posts' => fn ($q) => $q->published(), 'albums', 'releases', 'tours', 'tags']);
+        // `members` rides along: the admin form is seeded from this endpoint,
+        // and without member_ids a save would clear the article's members.
+        $pressRelease->load(['concerts', 'posts' => fn ($q) => $q->published(), 'albums', 'releases', 'tours', 'tags', 'members']);
 
         return new PressReleaseResource($pressRelease);
     }
@@ -63,10 +66,11 @@ class PressReleaseController extends Controller
         $validated = $this->validatePayload($request);
         $validated['profile_id'] = BandProfile::value('id') ?? 1;
 
-        $pr = PressRelease::create($validated);
+        $pr = PressRelease::create(Arr::except($validated, ['member_ids']));
         $this->syncRelations($pr, $request);
+        $this->syncMembers($pr, $validated);
 
-        $pr->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags');
+        $pr->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags', 'members');
 
         SiteRebuild::markDirty('press-releases');
 
@@ -76,10 +80,11 @@ class PressReleaseController extends Controller
     public function update(Request $request, PressRelease $pressRelease): PressReleaseResource
     {
         $validated = $this->validatePayload($request);
-        $pressRelease->update($validated);
+        $pressRelease->update(Arr::except($validated, ['member_ids']));
         $this->syncRelations($pressRelease, $request);
+        $this->syncMembers($pressRelease, $validated);
 
-        $pressRelease->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags');
+        $pressRelease->load('concerts', 'posts', 'albums', 'releases', 'tours', 'tags', 'members');
 
         SiteRebuild::markDirty('press-releases');
 
@@ -119,7 +124,25 @@ class PressReleaseController extends Controller
             'tour_ids.*'     => 'integer|exists:tours,id',
             'tag_ids'        => 'nullable|array',
             'tag_ids.*'      => 'integer|exists:tags,id',
+            // Who the article is about. Absent leaves them alone; [] clears them.
+            'member_ids'     => 'sometimes|nullable|array',
+            'member_ids.*'   => 'integer|distinct|exists:band_members,id',
         ]);
+    }
+
+    /**
+     * Who the article is about. Keyed on presence: an explicit [] clears them,
+     * a save that never mentions them leaves them alone. Only a real change
+     * marks member pages for a rebuild.
+     */
+    private function syncMembers(PressRelease $pr, array $data): void
+    {
+        if (! array_key_exists('member_ids', $data)) {
+            return;
+        }
+        if (array_filter($pr->members()->sync($data['member_ids'] ?? []))) {
+            SiteRebuild::markDirty('band-members');
+        }
     }
 
     private function syncRelations(PressRelease $pr, Request $request): void

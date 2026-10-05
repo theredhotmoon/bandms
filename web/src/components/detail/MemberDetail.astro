@@ -5,7 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases, getMusicVideos } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases, getMusicVideos, getPressReleases } from '@/lib/cms'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
@@ -26,7 +26,7 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases, allVideos] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases, allVideos, allPress] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
@@ -36,6 +36,9 @@ const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, a
   getClips(lang),
   getReleases(lang),
   getMusicVideos(),
+  // Same fallback as the Press section: an unreachable list hides the block
+  // rather than failing the whole build.
+  getPressReleases().catch(() => []),
 ])
 
 const member = members.find((m) => m.id === itemId)!
@@ -114,6 +117,20 @@ const videos = siteConfig.modules.videos === false ? [] : (member.music_video_id
   .map((id) => videosById.get(id))
   .filter((v): v is NonNullable<typeof v> => Boolean(v))
   .map((v) => ({ id: v.id, title: v.title, thumb: v.og_image, href: v.video_url }))
+
+// Press articles about the member, in the API's order (newest first, undated
+// last). Each opens the article itself, on the outlet's site. Gated on the
+// press module, like the Press page it mirrors.
+const pressById = new Map(allPress.map((p) => [p.id, p]))
+const press = siteConfig.modules.press === false ? [] : (member.press_release_ids ?? [])
+  .map((id) => pressById.get(id))
+  .filter((p): p is NonNullable<typeof p> => Boolean(p))
+  .map((p) => ({
+    id: p.id,
+    title: p.og_title || p.og_site_name || p.url,
+    meta: [p.og_site_name, fmtDate(p.published_at, lang)].filter(Boolean).join(' · '),
+    href: p.url,
+  }))
 
 // The member's own kit, in the visitor's language. Two kinds of item are left
 // out: `own_gear: false` is "backline needed" in the admin — something the
@@ -302,6 +319,22 @@ const structuredData = {
                 {v.thumb ? <img src={v.thumb} alt="" loading="lazy" /> : <span class="md-photo-fallback" aria-hidden="true" />}
               </span>
               <span class="md-release-title">{v.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {press.length > 0 && (
+    <section class="md-sec page-x" data-testid="member-press">
+      <h2 class="md-h2">{t.memberPress}</h2>
+      <ul class="md-news">
+        {press.map((p) => (
+          <li>
+            <a class="md-news-row" href={p.href} target="_blank" rel="noopener" data-testid="member-press-item">
+              <span class="md-news-title">{p.title}</span>
+              {p.meta && <span class="md-news-date">{p.meta}</span>}
             </a>
           </li>
         ))}

@@ -61,6 +61,8 @@ export interface PressRelease extends PressReleaseSummary {
   albums: PressReleaseAlbum[]
   releases: PressReleaseRelease[]
   tours: PressReleaseTour[]
+  /** Band members the article is about — any number. */
+  member_ids?: number[] | null
 }
 
 export interface PressReleasePayload {
@@ -78,4 +80,5 @@ export interface PressReleasePayload {
   release_ids: number[]
   tour_ids: number[]
   tag_ids: number[]
+  member_ids?: number[]
 }
