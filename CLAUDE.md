@@ -2020,11 +2020,15 @@ stores. The merch fetch passes `lang` for the same reason the release fetch
 does — clip titles resolve per locale; the item's own fields are not
 translated.
 
-**The dev DB has `releases`, `merch` and `epk` switched off**, which is why
-`release-detail`, `music`, `gallery` and `epk-modal` skip most of their cases
-and why `clips-surfaces.spec.ts` enables the three for its run and switches
-them back — with a trailing rebuild, because the served site is what
-visitors (and the next spec) see, not the row.
+**Module state on the dev DB drifts — check it rather than assume it.**
+`releases`, `merch` and `epk` used to be switched off there, which made
+`release-detail`, `music`, `gallery` and `epk-modal` skip most of their cases;
+as of 2026-10-05 every module is on. Specs that depend on a module either skip
+on `modules.<key> === false` or, like `clips-surfaces.spec.ts`, switch it on
+for their run and back after — with a trailing rebuild, because the served
+site is what visitors (and the next spec) see, not the row.
+`curl -s localhost:8081/api/site-config | grep -o '"modules":{[^}]*}'` shows
+the current state.
 
 **Two specs publish EPK versions for real, and they must not overlap.**
 `epk-versions.spec.ts` and `clips-surfaces.spec.ts` each assert on whichever
