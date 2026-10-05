@@ -27,7 +27,6 @@ export default {
     form: {
       eventName: 'Event name',
       whoPlayed: 'Who played',
-      currentLineup: 'Current line-up',
       // The two *En/*Pl placeholders are cross-locale on purpose: each hints at
       // content for THAT field, not for the chrome. The English field shows an
       // English example in both UI languages. Do not "fix" these to match the

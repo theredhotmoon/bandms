@@ -94,6 +94,9 @@ export default {
     dragToReorder: 'Przeciągnij, aby zmienić kolejność',
     urlPlaceholder: 'Adres {platform}…',
   },
+  members: {
+    currentLineup: 'Obecny skład',
+  },
   relations: {
     title: 'Powiąż z…',
     members: 'Członkowie zespołu',

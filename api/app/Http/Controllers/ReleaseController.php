@@ -27,7 +27,7 @@ class ReleaseController extends Controller
 
     public function show(Release $release): ReleaseResource
     {
-        $release->load('tracks.links', 'links', 'photos', 'clips');
+        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
 
         return new ReleaseResource($release);
     }
@@ -49,6 +49,9 @@ class ReleaseController extends Controller
             'links'                           => 'nullable|array',
             'links.*.platform'                => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'links.*.url'                     => 'required|url|max:500',
+            // Who played on it. Absent leaves the links alone; [] clears them.
+            'member_ids'                      => 'sometimes|nullable|array',
+            'member_ids.*'                    => 'integer|distinct|exists:band_members,id',
             'tracks'                          => 'nullable|array',
             'tracks.*.title'                  => 'required|string|max:255',
             'tracks.*.duration'               => 'nullable|string|max:20',
@@ -70,7 +73,7 @@ class ReleaseController extends Controller
 
         $titles = is_array($validated['title']) ? $validated['title'] : [Locales::default() => $validated['title']];
 
-        $release = new Release(Arr::except($validated, ['slug']));
+        $release = new Release(Arr::except($validated, ['slug', 'member_ids']));
         $release->applySlugBag(
             $validated['slug'] ?? null,
             ContentLocales::firstFilled($titles, Locales::default()) ?? 'release',
@@ -91,7 +94,8 @@ class ReleaseController extends Controller
             }
         }
 
-        $release->load('tracks.links', 'links', 'photos', 'clips');
+        $this->syncMembers($release, $validated);
+        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
 
         SiteRebuild::markDirty('releases');
 
@@ -115,6 +119,9 @@ class ReleaseController extends Controller
             'links'                           => 'nullable|array',
             'links.*.platform'                => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'links.*.url'                     => 'required|url|max:500',
+            // Who played on it. Absent leaves the links alone; [] clears them.
+            'member_ids'                      => 'sometimes|nullable|array',
+            'member_ids.*'                    => 'integer|distinct|exists:band_members,id',
             'tracks'                          => 'nullable|array',
             'tracks.*.title'                  => 'required|string|max:255',
             'tracks.*.duration'               => 'nullable|string|max:20',
@@ -134,7 +141,7 @@ class ReleaseController extends Controller
 
         // Slugs through applySlugBag(): this used to update() the raw columns,
         // so a payload carrying slug_en: null nulled the release's slug.
-        $release->fill(Arr::except($validated, ['slug']));
+        $release->fill(Arr::except($validated, ['slug', 'member_ids']));
         if (array_key_exists('slug', $validated)) {
             $release->applySlugBag($validated['slug'], ContentLocales::firstFilled($release->getTranslations('title'), Locales::default()));
         }
@@ -155,7 +162,8 @@ class ReleaseController extends Controller
             }
         }
 
-        $release->load('tracks.links', 'links', 'photos', 'clips');
+        $this->syncMembers($release, $validated);
+        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
 
         SiteRebuild::markDirty('releases');
 
@@ -192,7 +200,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
     }
 
     public function destroyCover(Release $release): ReleaseResource
@@ -204,7 +212,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
     }
 
     public function addPhotos(Request $request, Release $release): ReleaseResource
@@ -229,7 +237,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
     }
 
     public function removePhoto(Release $release, ReleasePhoto $photo): Response
@@ -255,6 +263,21 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
+    }
+
+    /**
+     * Who played on the release. Keyed on presence: an explicit [] clears
+     * them, a save that never mentions them leaves them alone. Member pages
+     * list their releases, so only a real change marks them for a rebuild.
+     */
+    private function syncMembers(Release $release, array $validated): void
+    {
+        if (! array_key_exists('member_ids', $validated)) {
+            return;
+        }
+        if (array_filter($release->members()->sync($validated['member_ids'] ?? []))) {
+            SiteRebuild::markDirty('band-members');
+        }
     }
 }

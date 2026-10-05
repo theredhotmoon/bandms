@@ -91,6 +91,12 @@ class BandMember extends Model
         return $this->morphedByMany(Clip::class, 'memberable');
     }
 
+    /** Releases this member played on. */
+    public function releases(): MorphToMany
+    {
+        return $this->morphedByMany(Release::class, 'memberable');
+    }
+
     public function profile(): BelongsTo
     {
         return $this->belongsTo(BandProfile::class, 'profile_id');

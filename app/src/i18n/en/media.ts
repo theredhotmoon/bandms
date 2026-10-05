@@ -56,6 +56,7 @@ export default {
     presavePlaceholder: 'https://distrokid.com/hyperfollow/…',
     label: 'Record label',
     labelPlaceholder: 'e.g. Rough Trade, Epitaph, self-released…',
+    whoPlayed: 'Who played on it',
     description: 'Description',
     descriptionPlaceholder: 'Optional release notes or liner notes…',
     streaming: 'Streaming links',

@@ -98,6 +98,9 @@ export default {
   // Deliberately worded more fully than shell.nav — "Blog posts" and "Music
   // releases" sit in a list of link targets, where the sidebar's terse "Posts"
   // reads as ambiguous. Same split as band.clips vs common.clips.
+  members: {
+    currentLineup: 'Current line-up',
+  },
   relations: {
     title: 'Link to…',
     members: 'Band members',

@@ -153,6 +153,11 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Clips', pl: 'Klipy' },
   },
   {
+    key: 'memberReleases', label: 'Releases heading', group: 'Member page', maxLength: 40,
+    help: 'Above the releases the member played on. Hidden when there are none.',
+    defaults: { en: 'Discography', pl: 'Dyskografia' },
+  },
+  {
     key: 'memberFollow', label: 'Social links heading', group: 'Member page', maxLength: 40,
     defaults: { en: 'Follow', pl: 'Obserwuj' },
   },

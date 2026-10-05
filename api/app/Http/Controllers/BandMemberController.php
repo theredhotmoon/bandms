@@ -49,6 +49,7 @@ class BandMemberController extends Controller
                 'posts' => fn ($q) => $q->published()->orderByDesc('posts.published_at'),
                 'concerts' => fn ($q) => $q->orderByDesc('concerts.date'),
                 'clips' => fn ($q) => $q->orderByDesc('clips.recorded_on')->orderByDesc('clips.id'),
+                'releases' => fn ($q) => $q->orderByDesc('releases.release_date')->orderByDesc('releases.id'),
             ])
             ->orderBy('is_current', 'desc')
             ->orderBy('sort_order')
