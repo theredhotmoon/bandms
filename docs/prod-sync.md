@@ -92,7 +92,10 @@ push needs no new pull.
    no local content row may point at a prod-only row missing on prod
 5. you type the server host
 6. `scripts/prod-backup-db.sh` runs on the server and must report a
-   **verified** backup — a run that backs nothing up aborts the push
+   **verified** backup — a run that backs nothing up aborts the push. Push
+   backups go to `/opt/bandms/backups/sync/` and only the newest **5** are
+   kept there, so pushing never ages out the 20 backups deploys keep in
+   `/opt/bandms/backups/`
 
 Then: prod `backend` is stopped (Caddy shows the maintenance page for the
 API), **the guard is checked a second time** — a sale during the prompt, the
@@ -107,7 +110,7 @@ rebuilds.
 ## If a push fails part-way
 
 The output names the backup it just made, e.g.
-`/opt/bandms/backups/bandms-20261006-101500.sql.gz`, and **prod `backend` is
+`/opt/bandms/backups/sync/bandms-20261006-101500.sql.gz`, and **prod `backend` is
 left stopped on purpose**. Its entrypoint runs `migrate` and, when
 `band_profiles` is empty, `db:seed` — starting it on a half-loaded database
 would publish a freshly seeded default site. Restore the backup with the steps

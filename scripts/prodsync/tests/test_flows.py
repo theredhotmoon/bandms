@@ -133,7 +133,9 @@ class PushTest(unittest.TestCase):
             self.push(options())
         self.assertIn("different migrations", str(ctx.exception))
 
-    def test_backup_dir_follows_the_remote_dir(self):
+    def test_sync_backups_go_to_their_own_folder_under_the_remote_dir(self):
+        # Own folder, own rotation: the deploy backups' rotation only counts
+        # files directly in backups/, so pushes can never age those out.
         self.cfg = config_from_env({"SYNC_SSH_HOST": "h", "SYNC_REMOTE_DIR": "/srv/band"},
                                    Path(self.tmp.name))
         self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]
@@ -143,8 +145,9 @@ class PushTest(unittest.TestCase):
             flows.push(self.cfg, options(), flows.Reporter())
         commands = [c.args[0][-1] for c in self.run.call_args_list]
         backup = [cmd for cmd in commands if "prod-backup-db.sh" in cmd][0]
-        self.assertIn("BACKUP_DIR=/srv/band/backups", backup)
-        self.assertIn("restore /srv/band/backups/bandms-1.sql.gz", out.getvalue())
+        self.assertIn("BACKUP_DIR=/srv/band/backups/sync", backup)
+        self.assertIn("KEEP=5", backup)
+        self.assertIn("restore /srv/band/backups/sync/bandms-1.sql.gz", out.getvalue())
 
     def test_files_only_push_keeps_the_saved_state(self):
         self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]

@@ -98,6 +98,13 @@ it, the marker check rejects it.
 `/opt/bandms/backups/bandms-YYYYMMDD-HHMMSS.sql.gz` on the Hetzner VM
 (UTC timestamps). Newest **20** retained.
 
+Backups taken by `scripts/sync_db.py push` live apart, in
+`/opt/bandms/backups/sync/`, newest **5** retained. Rotation only counts files
+directly in its own directory (`find -maxdepth 1`), so pushes can never age
+out a deploy's pre-migration backup. The first pushes predate this and wrote to
+the main directory: `bandms-20261006-164910`, `-180443` and `-204428` there are
+pushes, not deploys, and rotate out with the deploy backups.
+
 Override via env vars if ever needed: `BACKUP_DIR`, `MYSQL_CONTAINER`,
 `DB_DATABASE`, `KEEP`, `WAIT_SECS`.
 
