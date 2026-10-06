@@ -89,18 +89,31 @@ push needs no new pull.
    content row missing locally (e.g. a ticket for a concert you deleted), and
    no local content row may point at a prod-only row missing on prod
 5. you type the server host
-6. `scripts/prod-backup-db.sh` runs on the server and must succeed
+6. `scripts/prod-backup-db.sh` runs on the server and must report a
+   **verified** backup — a run that backs nothing up aborts the push
 
 Then: prod `backend` is stopped (Caddy shows the maintenance page for the
-API), the dump is loaded, `backend` is started, uploads are mirrored, the cache
-is cleared and `web` is restarted so the public site rebuilds.
+API), **the guard is checked a second time** — a sale during the prompt, the
+dump or the backup would otherwise be overwritten — the dump is loaded, the new
+fingerprint is recorded while nothing can write, `backend` is started, uploads
+are mirrored, the cache is cleared and `web` is restarted so the public site
+rebuilds.
+
+`--files-only` pushes run the guard too: a new upload in the prod admin adds a
+`photos`/`hero_images` row, and mirroring would delete the file under it.
 
 ## If a push fails part-way
 
 The output names the backup it just made, e.g.
-`/opt/bandms/backups/bandms-20261006-101500.sql.gz`. Restore it with the steps
-in [`database-backup-and-recovery.md`](database-backup-and-recovery.md). The
-script always tries to start prod `backend` again, even after a failure.
+`/opt/bandms/backups/bandms-20261006-101500.sql.gz`, and **prod `backend` is
+left stopped on purpose**. Its entrypoint runs `migrate` and, when
+`band_profiles` is empty, `db:seed` — starting it on a half-loaded database
+would publish a freshly seeded default site. Restore the backup with the steps
+in [`database-backup-and-recovery.md`](database-backup-and-recovery.md), then
+`docker compose -f docker-compose.prod.yml start backend` on the server.
+
+If the second guard check is what stopped the push, nothing was written and
+`backend` is started again automatically.
 
 ## Tests
 

@@ -19,6 +19,23 @@ class ParseEnvTest(unittest.TestCase):
         env = parse_env("export APP_KEY=base64:abc==\n")
         self.assertEqual(env["APP_KEY"], "base64:abc==")
 
+    def test_strips_inline_comments_outside_quotes(self):
+        env = parse_env('SYNC_SSH_USER=deploy                 # default\n'
+                        'A="x # kept" # dropped\n'
+                        'B=pa#ss\n')
+        self.assertEqual(env["SYNC_SSH_USER"], "deploy")
+        self.assertEqual(env["A"], "x # kept")
+        self.assertEqual(env["B"], "pa#ss")
+
+
+class LoadConfigTest(unittest.TestCase):
+    def test_reads_a_file_with_a_utf8_bom(self):
+        import tempfile
+        from prodsync.config import load_config
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, ".env").write_bytes("﻿SYNC_SSH_HOST=h\n".encode("utf-8"))
+            self.assertEqual(load_config(Path(d)).ssh_host, "h")
+
 
 class ConfigFromEnvTest(unittest.TestCase):
     def test_requires_host(self):

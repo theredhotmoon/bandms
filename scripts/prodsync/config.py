@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,8 +23,11 @@ def parse_env(text: str) -> dict[str, str]:
         if key.startswith("export "):
             key = key[len("export "):].strip()
         value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-            value = value[1:-1]
+        if value[:1] in ("'", '"') and value.find(value[0], 1) != -1:
+            value = value[1:value.find(value[0], 1)]
+        else:
+            # `KEY=value   # note` - a # only starts a comment after whitespace
+            value = re.split(r"\s#", value, maxsplit=1)[0].rstrip()
         values[key] = value
     return values
 
@@ -71,4 +75,5 @@ def load_config(repo_root: Path) -> Config:
     path = repo_root / ".env"
     if not path.exists():
         raise ConfigError(f"{path} not found - copy .env.example to .env first")
-    return config_from_env(parse_env(path.read_text(encoding="utf-8")), repo_root)
+    # utf-8-sig: Notepad writes a BOM, which would otherwise glue onto the first key
+    return config_from_env(parse_env(path.read_text(encoding="utf-8-sig")), repo_root)

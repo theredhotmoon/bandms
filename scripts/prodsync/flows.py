@@ -1,6 +1,7 @@
 """pull and push, composed from ops. Every write is preceded by every check."""
 from __future__ import annotations
 
+import shlex
 import tempfile
 import time
 from contextlib import contextmanager
@@ -12,6 +13,12 @@ from .config import Config, Options
 from .side import Side, SyncError, local_side, remote_side, run
 from .state import guard_problem, load_state, migration_problem, parse_backup_name, save_state
 from .tables import classify, new_tables
+
+_REFUSE_HINT = "\n    run pull first (or pass --force to overwrite anyway)"
+
+
+class _NothingWritten(SyncError):
+    """Raised while backend is stopped but before anything was written."""
 
 
 class Reporter:
@@ -51,16 +58,30 @@ def _preflight(rep: Reporter, local: Side, prod: Side) -> None:
         ops.check_running(local, ["mysql", "backend", "web"])
 
 
-def _restart_backend_after(rep: Reporter, side: Side, action: Callable[[], None]) -> None:
-    """Stop backend, run `action`, and always start backend again."""
+def _start_backend(rep: Reporter, side: Side) -> None:
+    with rep.step(f"start {side.name} backend"):
+        run(side.compose_argv("start", "backend"), cwd=side.cwd)
+        ops.wait_healthy(side, "backend")
+
+
+def _with_backend_stopped(rep: Reporter, side: Side, action: Callable[[], None], if_failed: str) -> None:
+    """Stop backend, run `action`, start backend again.
+
+    If `action` fails part-way, backend is left STOPPED: its entrypoint runs
+    `migrate` and, on an empty band_profiles, `db:seed` - starting it on a
+    half-loaded database would turn it into a freshly seeded default site.
+    """
     with rep.step(f"stop {side.name} backend"):
         run(side.compose_argv("stop", "backend"), cwd=side.cwd)
     try:
         action()
-    finally:
-        with rep.step(f"start {side.name} backend"):
-            run(side.compose_argv("start", "backend"), cwd=side.cwd)
-            ops.wait_healthy(side, "backend")
+    except _NothingWritten:
+        _start_backend(rep, side)
+        raise
+    except BaseException:
+        rep.info(f"{side.name} backend left STOPPED on purpose - {if_failed}")
+        raise
+    _start_backend(rep, side)
 
 
 def _publish(rep: Reporter, side: Side) -> None:
@@ -101,12 +122,13 @@ def pull(cfg: Config, opts: Options, rep: Reporter) -> None:
             dump = Path(tmp) / "prod.sql.gz"
             with rep.step("dump prod database"):
                 ops.dump_to(prod, dump, None)
-            rep.info(f"dump: {dump.stat().st_size / 1e6:.1f} MB")
+            rep.info(f"dump: {dump.stat().st_size / 1e3:.0f} KB")
 
             def load() -> None:
                 with rep.step("replace local database"):
                     ops.import_dump(local, dump, recreate=charset)
-            _restart_backend_after(rep, local, load)
+            _with_backend_stopped(rep, local, load,
+                                  "re-run pull, or `docker compose start backend` once the database is sound")
         if opts.files:
             with rep.step("mirror uploads prod -> local"):
                 ops.mirror_files(prod, local)
@@ -122,19 +144,24 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
     local, prod = local_side(cfg), remote_side(cfg)
     _preflight(rep, local, prod)
 
-    content: list[str] = []
+    with rep.step("read local tables"):
+        content, prod_only = classify(ops.list_tables(local))
+    saved = load_state(cfg.state_path, cfg.ssh_host)
+
+    def guard() -> str | None:
+        return guard_problem(saved, ops.fingerprint(prod, content), cfg.ssh_host)
+
+    # Uploads are guarded too: a files-only push would otherwise delete images
+    # added in the prod admin, and those images' rows are content.
+    with rep.step("check prod has not changed since the last pull"):
+        problem = guard()
+    if problem and not opts.force:
+        raise SyncError(problem + _REFUSE_HINT)
+    if problem:
+        rep.info(f"WARNING (--force): {problem}")
+    for name in (new_tables(content, saved) if saved else []):
+        rep.info(f"new table -> treated as content: {name}")
     if opts.db:
-        with rep.step("read local tables"):
-            content, prod_only = classify(ops.list_tables(local))
-        with rep.step("check prod has not changed since the last pull"):
-            saved = load_state(cfg.state_path, cfg.ssh_host)
-            problem = guard_problem(saved, ops.fingerprint(prod, content), cfg.ssh_host)
-        if problem and not opts.force:
-            raise SyncError(problem + "\n    run pull first (or pass --force to overwrite anyway)")
-        if problem:
-            rep.info(f"WARNING (--force): {problem}")
-        for name in (new_tables(content, saved) if saved else []):
-            rep.info(f"new table -> treated as content: {name}")
         with rep.step("compare migrations"):
             problem = migration_problem(ops.migrations(local), ops.migrations(prod))
         if problem:
@@ -165,35 +192,58 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
               " with your local copy.")
     confirm_host(cfg.ssh_host)
 
+    def recheck() -> None:
+        # The first check ran before the prompt, the dump and the backup; a
+        # sale in that window would otherwise be overwritten silently.
+        if opts.force:
+            return
+        with rep.step("re-check prod has not changed"):
+            problem = guard()
+        if problem:
+            raise _NothingWritten(problem + _REFUSE_HINT)
+
+    new_fp: dict | None = None
     with tempfile.TemporaryDirectory(prefix="bandms-sync-") as tmp:
         if opts.db:
             dump = Path(tmp) / "local.sql.gz"
             with rep.step("dump local database"):
                 ops.dump_to(local, dump, None if opts.mode == "full" else content)
                 charset = ops.schema_charset(local) if opts.mode == "full" else None
-            rep.info(f"dump: {dump.stat().st_size / 1e6:.1f} MB")
+            rep.info(f"dump: {dump.stat().st_size / 1e3:.0f} KB")
             with rep.step("back up prod database"):
-                out = run(prod.shell_argv(f"cd {cfg.remote_dir} && ./scripts/prod-backup-db.sh"))
+                # Name the database explicitly: the script otherwise reads
+                # DB_DATABASE from the deploy user's shell, which need not be
+                # the database this push writes to.
+                out = run(prod.shell_argv(
+                    f"cd {shlex.quote(cfg.remote_dir)} && "
+                    f"DB_DATABASE={shlex.quote(ops.database_name(prod))} ./scripts/prod-backup-db.sh"))
             backup = parse_backup_name(out)
-            rep.info(f"prod backup: {cfg.remote_dir}/backups/{backup}" if backup
-                     else "prod backup: none needed (empty database)")
+            if not backup:
+                raise SyncError("prod-backup-db.sh finished without a verified backup - "
+                                "refusing to write to prod. Its output:\n"
+                                + "\n".join(f"    {l}" for l in out.strip().splitlines()))
+            backup_path = f"{cfg.remote_dir}/backups/{backup}"
+            rep.info(f"prod backup: {backup_path}")
 
             def load() -> None:
-                try:
-                    with rep.step("load into prod database"):
-                        ops.import_dump(prod, dump, recreate=charset)
-                except SyncError:
-                    if backup:
-                        rep.info(f"restore from {cfg.remote_dir}/backups/{backup} - "
-                                 "see docs/database-backup-and-recovery.md")
-                    raise
-            _restart_backend_after(rep, prod, load)
+                nonlocal new_fp
+                recheck()
+                with rep.step("load into prod database"):
+                    ops.import_dump(prod, dump, recreate=charset)
+                # Taken while backend is still stopped, so no sale can slip
+                # into the state as "already pulled".
+                with rep.step("fingerprint new prod content"):
+                    new_fp = ops.fingerprint(prod, content)
+            _with_backend_stopped(rep, prod, load,
+                                  f"restore {backup_path} (docs/database-backup-and-recovery.md), then start it")
+        else:
+            recheck()
         if opts.files:
             with rep.step("mirror uploads local -> prod"):
                 ops.mirror_files(local, prod)
 
     _publish(rep, prod)
-    if opts.db:
-        with rep.step("record new prod fingerprint"):
-            save_state(cfg.state_path, cfg.ssh_host, ops.fingerprint(prod, content))
+    if new_fp is not None:
+        save_state(cfg.state_path, cfg.ssh_host, new_fp)
+        rep.info(f"recorded new prod fingerprint in {cfg.state_path.name}")
     print("\npush complete.")
