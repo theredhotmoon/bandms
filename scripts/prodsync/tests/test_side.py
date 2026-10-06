@@ -62,6 +62,19 @@ class RunTest(unittest.TestCase):
             pipe(src, dst)
         self.assertIn("No space left on device", str(ctx.exception))
 
+    def test_child_commands_do_not_consume_the_scripts_stdin(self):
+        # ssh reads stdin even when the remote command does not, which ate the
+        # host the user typed (or piped) for the push confirmation.
+        import subprocess
+        scripts = Path(__file__).resolve().parents[2]
+        probe = ("import sys\n"
+                 "from prodsync.side import run\n"
+                 "run([sys.executable, '-c', 'import sys; sys.stdin.read()'])\n"
+                 "print(sys.stdin.read())")
+        out = subprocess.run([sys.executable, "-c", probe], input=b"203.0.113.5",
+                             cwd=scripts, capture_output=True, check=True).stdout
+        self.assertEqual(out.decode().strip(), "203.0.113.5")
+
     def test_success_returns_stdout(self):
         self.assertEqual(run([sys.executable, "-c", "print('ok')"]).strip(), "ok")
 
