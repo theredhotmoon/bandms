@@ -66,8 +66,15 @@ def remote_side(cfg: Config) -> Side:
     return Side(name="prod", prefix=cfg.remote_prefix, cwd=None, ssh=ssh, remote_dir=cfg.remote_dir)
 
 
+# Children get an empty stdin unless fed on purpose: ssh reads stdin even when
+# the remote command never does, and would swallow what the user types (or
+# pipes) for the push confirmation.
+_NO_STDIN = subprocess.DEVNULL
+
+
 def run(argv: list[str], *, cwd: Path | None = None, input: bytes | None = None) -> str:
-    proc = subprocess.run(argv, cwd=cwd, input=input, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdin = {"input": input} if input is not None else {"stdin": _NO_STDIN}
+    proc = subprocess.run(argv, cwd=cwd, **stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
         raise CommandFailed(argv, proc.returncode, proc.stderr)
     return proc.stdout.decode("utf-8", "replace")
@@ -75,7 +82,7 @@ def run(argv: list[str], *, cwd: Path | None = None, input: bytes | None = None)
 
 def run_to_file(argv: list[str], path: Path, *, cwd: Path | None = None) -> None:
     with open(path, "wb") as out, tempfile.TemporaryFile() as err:
-        code = subprocess.run(argv, cwd=cwd, stdout=out, stderr=err).returncode
+        code = subprocess.run(argv, cwd=cwd, stdin=_NO_STDIN, stdout=out, stderr=err).returncode
         if code != 0:
             err.seek(0)
             raise CommandFailed(argv, code, err.read())
@@ -93,7 +100,8 @@ def pipe(src_argv: list[str], dst_argv: list[str], *,
          src_cwd: Path | None = None, dst_cwd: Path | None = None) -> None:
     """src stdout -> dst stdin, streamed. Both exit codes are checked."""
     with tempfile.TemporaryFile() as src_err, tempfile.TemporaryFile() as dst_err:
-        src = subprocess.Popen(src_argv, cwd=src_cwd, stdout=subprocess.PIPE, stderr=src_err)
+        src = subprocess.Popen(src_argv, cwd=src_cwd, stdin=_NO_STDIN,
+                               stdout=subprocess.PIPE, stderr=src_err)
         dst = subprocess.Popen(dst_argv, cwd=dst_cwd, stdin=src.stdout,
                                stdout=subprocess.DEVNULL, stderr=dst_err)
         src.stdout.close()  # dst owns the read end; src gets SIGPIPE if dst dies

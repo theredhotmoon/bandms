@@ -58,6 +58,14 @@ class ConfirmTest(unittest.TestCase):
     def test_host_tolerates_surrounding_whitespace(self):
         confirm_host("h", read=lambda _: "  h \n")
 
+    def test_closed_stdin_aborts_cleanly(self):
+        def eof(_):
+            raise EOFError
+        with self.assertRaises(SyncError):
+            confirm_host("h", read=eof)
+        with self.assertRaises(SyncError):
+            confirm_yes("?", read=eof)
+
     def test_yes(self):
         confirm_yes("?", read=lambda _: "Y")
         with self.assertRaises(SyncError):

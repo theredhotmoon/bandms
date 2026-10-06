@@ -41,13 +41,20 @@ class Reporter:
         print(f"    {msg}", flush=True)
 
 
+def _ask(read: Callable[[str], str], prompt: str) -> str:
+    try:
+        return read(prompt)
+    except EOFError:
+        raise SyncError("no answer on stdin - aborted, nothing was changed") from None
+
+
 def confirm_yes(prompt: str, read: Callable[[str], str] = input) -> None:
-    if read(prompt).strip().lower() not in ("y", "yes"):
+    if _ask(read, prompt).strip().lower() not in ("y", "yes"):
         raise SyncError("aborted - nothing was changed")
 
 
 def confirm_host(host: str, read: Callable[[str], str] = input) -> None:
-    if read(f"Type the server host ({host}) to continue: ").strip() != host:
+    if _ask(read, f"Type the server host ({host}) to continue: ").strip() != host:
         raise SyncError("host did not match - aborted, nothing was changed")
 
 
