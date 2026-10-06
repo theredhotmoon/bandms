@@ -48,3 +48,7 @@ test-output.txt
 
 # Subagent-driven-development scratch workspace (ledgers, briefs, review packages)
 .superpowers/
+
+# scripts/sync_db.py - fingerprint of prod's content tables from the last pull
+/.sync-state.json
+__pycache__/
