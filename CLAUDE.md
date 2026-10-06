@@ -71,6 +71,18 @@ dependencies on top and swaps in a php-cli entrypoint. That stage also builds it
 own `.env` and runs against **SQLite in-memory**, so it needs neither MySQL nor a
 running stack.
 
+### Syncing with production — `scripts/sync_db.py`
+
+```bash
+python scripts/sync_db.py pull               # prod -> local, 1:1 (DB + storage/app/public)
+python scripts/sync_db.py push --content     # local content -> prod, keeps users/orders/tickets
+python scripts/sync_db.py push --full        # local -> prod, everything (recovery)
+```
+
+A push refuses when prod's content changed since your last pull (a shop sale
+counts — it decrements `stock_quantity`). Pull first. After a pull your local
+admin login is prod's. Details: `docs/prod-sync.md`.
+
 ### Frontend dev server (`app/`)
 
 ```bash
