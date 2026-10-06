@@ -6,6 +6,9 @@ skim the [Quick reference](#quick-reference) first, read the rest when you have
 time.
 
 Companion to [`deployment.md`](deployment.md), which covers the deploy itself.
+A failed `scripts/sync_db.py push` also lands here: it names the backup it took
+and leaves prod `backend` stopped until you restore — see
+[`prod-sync.md`](prod-sync.md).
 
 ---
 

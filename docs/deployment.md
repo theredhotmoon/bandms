@@ -568,6 +568,10 @@ docker logs -f bandms-caddy        # access log, TLS issuance
 > Full detail — verification, restore procedure, rollback caveats and known
 > gaps — lives in **[database-backup-and-recovery.md](database-backup-and-recovery.md)**.
 > This section is the summary.
+>
+> To copy prod's data to your machine, or publish local content to prod, use
+> **[prod-sync.md](prod-sync.md)** (`scripts/sync_db.py`). Every push it makes
+> first takes a backup through the same `prod-backup-db.sh`.
 
 **Every deploy takes one automatically**, immediately before the backend starts
 — which is when migrations run. Everything else about a deploy is reversible by
