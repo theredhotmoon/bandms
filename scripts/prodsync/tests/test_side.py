@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from prodsync.config import config_from_env
-from prodsync.side import CommandFailed, local_side, remote_side, run
+from prodsync.side import CommandFailed, local_side, pipe, remote_side, run
 from prodsync.sql import MYSQL_CLIENT
 
 CFG = config_from_env({"SYNC_SSH_HOST": "203.0.113.5", "SYNC_SSH_KEY": "/k/id"}, Path("/repo"))
@@ -51,6 +51,16 @@ class RunTest(unittest.TestCase):
             run([sys.executable, "-c", "import sys; sys.stderr.write('boom'); sys.exit(3)"])
         self.assertIn("boom", str(ctx.exception))
         self.assertIn("exit 3", str(ctx.exception))
+
+    def test_pipe_reports_the_receiving_side_when_it_fails(self):
+        # the sender then dies of a broken pipe; that is a symptom, not the cause
+        src = [sys.executable, "-c",
+               "import sys\nfor _ in range(4000): sys.stdout.write('x' * 1024)"]
+        dst = [sys.executable, "-c",
+               "import sys; sys.stderr.write('No space left on device'); sys.exit(5)"]
+        with self.assertRaises(CommandFailed) as ctx:
+            pipe(src, dst)
+        self.assertIn("No space left on device", str(ctx.exception))
 
     def test_success_returns_stdout(self):
         self.assertEqual(run([sys.executable, "-c", "print('ok')"]).strip(), "ok")

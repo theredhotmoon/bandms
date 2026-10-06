@@ -148,6 +148,14 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
         content, prod_only = classify(ops.list_tables(local))
     saved = load_state(cfg.state_path, cfg.ssh_host)
 
+    # Before the guard: a table from a not-yet-deployed migration has no
+    # checksum on prod, and would otherwise read as "prod changed - pull
+    # first", advice that wipes the local migration.
+    with rep.step("compare migrations"):
+        problem = migration_problem(ops.migrations(local), ops.migrations(prod))
+    if problem:
+        raise SyncError(problem)
+
     def guard() -> str | None:
         return guard_problem(saved, ops.fingerprint(prod, content), cfg.ssh_host)
 
@@ -162,10 +170,6 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
     for name in (new_tables(content, saved) if saved else []):
         rep.info(f"new table -> treated as content: {name}")
     if opts.db:
-        with rep.step("compare migrations"):
-            problem = migration_problem(ops.migrations(local), ops.migrations(prod))
-        if problem:
-            raise SyncError(problem)
         if opts.mode == "content":
             with rep.step("check prod-only rows keep their parents"):
                 orphans = ops.orphan_problems(local, prod, prod_only)
@@ -210,19 +214,22 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                 ops.dump_to(local, dump, None if opts.mode == "full" else content)
                 charset = ops.schema_charset(local) if opts.mode == "full" else None
             rep.info(f"dump: {dump.stat().st_size / 1e3:.0f} KB")
+            backup_dir = f"{cfg.remote_dir}/backups"
             with rep.step("back up prod database"):
-                # Name the database explicitly: the script otherwise reads
-                # DB_DATABASE from the deploy user's shell, which need not be
-                # the database this push writes to.
+                # Name the database and directory explicitly: the script
+                # otherwise reads DB_DATABASE from the deploy user's shell and
+                # writes to a fixed /opt/bandms/backups, neither of which need
+                # match this push - and the restore hint below must be right.
                 out = run(prod.shell_argv(
                     f"cd {shlex.quote(cfg.remote_dir)} && "
-                    f"DB_DATABASE={shlex.quote(ops.database_name(prod))} ./scripts/prod-backup-db.sh"))
+                    f"DB_DATABASE={shlex.quote(ops.database_name(prod))} "
+                    f"BACKUP_DIR={shlex.quote(backup_dir)} ./scripts/prod-backup-db.sh"))
             backup = parse_backup_name(out)
             if not backup:
                 raise SyncError("prod-backup-db.sh finished without a verified backup - "
                                 "refusing to write to prod. Its output:\n"
                                 + "\n".join(f"    {l}" for l in out.strip().splitlines()))
-            backup_path = f"{cfg.remote_dir}/backups/{backup}"
+            backup_path = f"{backup_dir}/{backup}"
             rep.info(f"prod backup: {backup_path}")
 
             def load() -> None:
@@ -236,6 +243,10 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                     new_fp = ops.fingerprint(prod, content)
             _with_backend_stopped(rep, prod, load,
                                   f"restore {backup_path} (docs/database-backup-and-recovery.md), then start it")
+            # Saved now, not at the end: if the upload copy or the rebuild
+            # fails, the next push must not mistake this write for a prod change.
+            save_state(cfg.state_path, cfg.ssh_host, new_fp)
+            rep.info(f"recorded new prod fingerprint in {cfg.state_path.name}")
         else:
             recheck()
         if opts.files:
@@ -243,7 +254,4 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                 ops.mirror_files(local, prod)
 
     _publish(rep, prod)
-    if new_fp is not None:
-        save_state(cfg.state_path, cfg.ssh_host, new_fp)
-        rep.info(f"recorded new prod fingerprint in {cfg.state_path.name}")
     print("\npush complete.")

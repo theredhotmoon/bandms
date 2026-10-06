@@ -117,6 +117,35 @@ class PushTest(unittest.TestCase):
             self.push(options(db=False, files=True))
         self.ops.mirror_files.assert_not_called()
 
+    def test_state_is_saved_once_the_database_is_loaded_even_if_a_later_step_fails(self):
+        # otherwise the next push mistakes this push's own write for a prod change
+        self.ops.fingerprint.side_effect = [dict(FP), dict(FP), dict(FP_AFTER)]
+        self.ops.mirror_files.side_effect = SyncError("ssh dropped")
+        with self.assertRaises(SyncError):
+            self.push(options(files=True))
+        self.assertEqual(self.saved.call_args[0][2], FP_AFTER)
+
+    def test_migration_mismatch_is_reported_before_the_guard(self):
+        # a not-yet-deployed local table must not read as "prod changed - pull first"
+        self.ops.migrations.side_effect = [["m1", "m2"], ["m1"]]
+        self.ops.fingerprint.side_effect = [{"posts": "1", "new_table": None}]
+        with self.assertRaises(SyncError) as ctx:
+            self.push(options())
+        self.assertIn("different migrations", str(ctx.exception))
+
+    def test_backup_dir_follows_the_remote_dir(self):
+        self.cfg = config_from_env({"SYNC_SSH_HOST": "h", "SYNC_REMOTE_DIR": "/srv/band"},
+                                   Path(self.tmp.name))
+        self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]
+        self.ops.import_dump.side_effect = SyncError("import died")
+        out = io.StringIO()
+        with self.assertRaises(SyncError), contextlib.redirect_stdout(out):
+            flows.push(self.cfg, options(), flows.Reporter())
+        commands = [c.args[0][-1] for c in self.run.call_args_list]
+        backup = [cmd for cmd in commands if "prod-backup-db.sh" in cmd][0]
+        self.assertIn("BACKUP_DIR=/srv/band/backups", backup)
+        self.assertIn("restore /srv/band/backups/bandms-1.sql.gz", out.getvalue())
+
     def test_files_only_push_keeps_the_saved_state(self):
         self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]
         self.push(options(db=False, files=True))

@@ -82,9 +82,11 @@ push needs no new pull.
 ## What a push checks before writing anything
 
 1. prod and local containers are running
-2. the pull-first guard (above)
-3. local and prod have the **same set of migrations** — deploy or migrate first
-   otherwise; not overridable
+2. local and prod have the **same set of migrations** — deploy or migrate first
+   otherwise; not overridable. It runs before the guard, so a table from a
+   migration you have not deployed yet is reported as that, not as "prod
+   changed - pull first" (a pull would wipe the local migration)
+3. the pull-first guard (above)
 4. `--content` only: the **orphan check** — no prod-only row may point at a
    content row missing locally (e.g. a ticket for a concert you deleted), and
    no local content row may point at a prod-only row missing on prod

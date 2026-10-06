@@ -98,9 +98,11 @@ def pipe(src_argv: list[str], dst_argv: list[str], *,
                                stdout=subprocess.DEVNULL, stderr=dst_err)
         src.stdout.close()  # dst owns the read end; src gets SIGPIPE if dst dies
         dst_code, src_code = dst.wait(), src.wait()
-        if src_code != 0:
-            src_err.seek(0)
-            raise CommandFailed(src_argv, src_code, src_err.read())
+        # Receiver first: when it dies, the sender fails with a broken pipe,
+        # which is only the symptom.
         if dst_code != 0:
             dst_err.seek(0)
             raise CommandFailed(dst_argv, dst_code, dst_err.read())
+        if src_code != 0:
+            src_err.seek(0)
+            raise CommandFailed(src_argv, src_code, src_err.read())
