@@ -16,6 +16,12 @@ from .tables import classify, new_tables
 
 _REFUSE_HINT = "\n    run pull first (or pass --force to overwrite anyway)"
 
+# Push backups rotate in their own folder. prod-backup-db.sh prunes with
+# `find -maxdepth 1`, so files under backups/sync/ never count against - or
+# age out - the 20 backups each deploy takes before its migrations.
+SYNC_BACKUP_SUBDIR = "backups/sync"
+SYNC_BACKUP_KEEP = 5
+
 
 class _NothingWritten(SyncError):
     """Raised while backend is stopped but before anything was written."""
@@ -60,7 +66,18 @@ def confirm_host(host: str, read: Callable[[str], str] = input) -> None:
 
 def _preflight(rep: Reporter, local: Side, prod: Side) -> None:
     with rep.step("check prod is reachable and its containers are running"):
-        ops.check_running(prod, ["mysql", "backend", "web"])
+        try:
+            ops.check_running(prod, ["mysql", "backend", "web"])
+        except SyncError as exc:
+            # A failed push leaves backend stopped on a half-loaded database.
+            # Refusing here (--force does not skip it) is what stops a retry
+            # from backing that up and rotating the good copy out of the
+            # SYNC_BACKUP_KEEP newest.
+            if prod.container("backend") not in str(exc):
+                raise
+            raise SyncError(f"{exc}\n    if a failed push left it stopped, restore the newest backup in "
+                            f"{prod.remote_dir}/{SYNC_BACKUP_SUBDIR}/ first "
+                            "(docs/database-backup-and-recovery.md), then start backend") from None
     with rep.step("check local containers are running"):
         ops.check_running(local, ["mysql", "backend", "web"])
 
@@ -221,7 +238,7 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                 ops.dump_to(local, dump, None if opts.mode == "full" else content)
                 charset = ops.schema_charset(local) if opts.mode == "full" else None
             rep.info(f"dump: {dump.stat().st_size / 1e3:.0f} KB")
-            backup_dir = f"{cfg.remote_dir}/backups"
+            backup_dir = f"{cfg.remote_dir}/{SYNC_BACKUP_SUBDIR}"
             with rep.step("back up prod database"):
                 # Name the database and directory explicitly: the script
                 # otherwise reads DB_DATABASE from the deploy user's shell and
@@ -230,7 +247,8 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                 out = run(prod.shell_argv(
                     f"cd {shlex.quote(cfg.remote_dir)} && "
                     f"DB_DATABASE={shlex.quote(ops.database_name(prod))} "
-                    f"BACKUP_DIR={shlex.quote(backup_dir)} ./scripts/prod-backup-db.sh"))
+                    f"BACKUP_DIR={shlex.quote(backup_dir)} KEEP={SYNC_BACKUP_KEEP} "
+                    "./scripts/prod-backup-db.sh"))
             backup = parse_backup_name(out)
             if not backup:
                 raise SyncError("prod-backup-db.sh finished without a verified backup - "

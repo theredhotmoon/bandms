@@ -578,10 +578,12 @@ docker logs -f bandms-caddy        # access log, TLS issuance
 retagging an image; a migration that drops a column is not. If the backup
 cannot be written and verified, the deploy aborts rather than migrating.
 
-Dumps land in `/opt/bandms/backups`, newest 20 retained:
+Dumps land in `/opt/bandms/backups`, newest 20 retained. Backups taken by
+`sync_db.py push` live apart in `/opt/bandms/backups/sync/`, newest 5 retained,
+and never rotate deploy backups out:
 
 ```bash
-ssh deploy@YOUR_SERVER_IP "ls -lh /opt/bandms/backups"
+ssh deploy@YOUR_SERVER_IP "ls -lh /opt/bandms/backups /opt/bandms/backups/sync"
 ```
 
 Run one by hand any time:
