@@ -32,8 +32,10 @@ const panel = ref<HTMLElement | null>(null)
 const header = ref<HTMLElement | null>(null)
 const confirming = ref(false)
 
+// Both sources stay load-bearing: a view-declared `dirty` and a guarded form
+// inside the modal each make it ask, rather than one overriding the other.
 const guard = provideModalGuard(requestClose)
-const isDirty = computed(() => props.dirty ?? guard.dirty.value)
+const isDirty = computed(() => (props.dirty ?? false) || guard.dirty.value)
 const guarded = computed(() => props.dirty !== undefined || guard.registered.value)
 
 // The header's rendered height is published on the panel as --modal-header-h

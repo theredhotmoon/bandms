@@ -49,7 +49,7 @@ const addForm = reactive<UserPayload & { password: string; password_confirmation
 })
 
 const addModal = ref<InstanceType<typeof AdminModal> | null>(null)
-const { isDirty: addDirty, markClean: addClean } = useDirtyGuard(() => addForm)
+const { isDirty: addDirty } = useDirtyGuard(() => addForm, showAdd)
 
 function openAdd() {
   Object.assign(addForm, {
@@ -57,7 +57,6 @@ function openAdd() {
     password: '', password_confirmation: '',
     role: 'member', band_member_id: null,
   })
-  addClean()
   showAdd.value = true
 }
 
@@ -100,7 +99,7 @@ const editForm    = reactive<Partial<UserPayload> & { password: string; password
 })
 
 const editModal = ref<InstanceType<typeof AdminModal> | null>(null)
-const { isDirty: editDirty, markClean: editClean } = useDirtyGuard(() => editForm)
+const { isDirty: editDirty } = useDirtyGuard(() => editForm, showEdit)
 
 function openEdit(userId: number) {
   const u = (list.data.value ?? []).find((x: ManagedUser) => x.id === userId)
@@ -114,7 +113,6 @@ function openEdit(userId: number) {
     role: u.role,
     band_member_id: u.band_member_id,
   })
-  editClean()
   editingId.value = userId
   showEdit.value = true
 }

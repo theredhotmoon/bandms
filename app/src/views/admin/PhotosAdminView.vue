@@ -80,7 +80,7 @@ const editForm = reactive({
 })
 const fieldErrors = ref<Record<string, string[]>>({})
 const editModal = ref<InstanceType<typeof AdminModal> | null>(null)
-const { isDirty: editDirty, markClean: editClean } = useDirtyGuard(() => editForm)
+const { isDirty: editDirty } = useDirtyGuard(() => editForm, showEdit)
 
 function openEdit(album: Album) {
   editAlbum.value = album
@@ -92,7 +92,6 @@ function openEdit(album: Album) {
   editForm.published_at = album.published_at ? album.published_at.slice(0, 16) : ''
   editForm.tag_ids      = album.tags.map((t) => t.id)
   fieldErrors.value     = {}
-  editClean()
   showEdit.value        = true
 }
 

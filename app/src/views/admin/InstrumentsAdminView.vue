@@ -63,7 +63,7 @@ const tc = useTableControls<Instrument>({
 })
 
 const modal = ref<InstanceType<typeof AdminModal> | null>(null)
-const { isDirty, markClean } = useDirtyGuard(() => form)
+const { isDirty } = useDirtyGuard(() => form, showModal)
 
 function openCreate() {
   editing.value        = null
@@ -71,7 +71,6 @@ function openCreate() {
   form.name            = emptyBag()
   form.category        = null
   form.stage_plot_type = null
-  markClean()
   showModal.value      = true
 }
 
@@ -81,7 +80,6 @@ function openEdit(i: Instrument) {
   for (const l of LOCALES) form.name[l] = i.translations?.name[l] ?? ''
   form.category        = i.category
   form.stage_plot_type = i.stage_plot_type ?? null
-  markClean()
   showModal.value      = true
 }
 

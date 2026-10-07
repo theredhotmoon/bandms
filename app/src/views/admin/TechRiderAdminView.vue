@@ -435,7 +435,9 @@ async function discardVersion(id: number) {
       />
     </AdminModal>
 
-    <AdminModal ref="newModal" :open="showNewModal" :dirty="newName.trim() !== ''" :title="$t('rider.admin.newTitle')" max-width="28rem" @close="showNewModal = false">
+    <!-- Discarding must also drop the typed name, or the next "New rider"
+         opens prefilled and already dirty. -->
+    <AdminModal ref="newModal" :open="showNewModal" :dirty="newName.trim() !== ''" :title="$t('rider.admin.newTitle')" max-width="28rem" @close="showNewModal = false; newName = ''">
       <form class="modal-form" @submit.prevent="createRider">
         <div>
           <label class="field-label">{{ $t('rider.admin.name') }}</label>

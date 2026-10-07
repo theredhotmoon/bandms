@@ -275,7 +275,9 @@ in one of two ways, both in `src/composables/useDirtyGuard.ts`:
   nothing. Outside a modal the composable is inert and `cancel` just emits.
 - **A view whose form is inline in the modal body** passes `:dirty` to
   `AdminModal` and routes its Cancel button through a template ref's
-  `requestClose()`.
+  `requestClose()`. Give `useDirtyGuard` the modal's open flag as its second
+  argument so the baseline follows the modal; a `markClean()` placed by hand
+  in every open handler is the omission the bridge exists to prevent.
 
 **Escape only closes a guarded modal.** A modal with neither a `dirty` prop
 nor a registered form gets no Escape key at all, because it cannot know what

@@ -112,7 +112,7 @@ const tc = useTableControls<MusicVideo>({
 })
 
 const modal = ref<InstanceType<typeof AdminModal> | null>(null)
-const { isDirty, markClean } = useDirtyGuard(() => form)
+const { isDirty } = useDirtyGuard(() => form, showModal)
 
 function openCreate() {
   editing.value       = null
@@ -122,7 +122,6 @@ function openCreate() {
   form.sort_order     = query.data.value?.length ?? 0
   form.member_ids     = []
   retrievedMeta.value = null
-  markClean()
   showModal.value     = true
 }
 
@@ -134,7 +133,6 @@ function openEdit(v: MusicVideo) {
   form.sort_order     = v.sort_order
   form.member_ids     = v.member_ids ? [...v.member_ids] : []
   retrievedMeta.value = null
-  markClean()
   showModal.value     = true
 }
 
