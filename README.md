@@ -115,6 +115,63 @@ Output is tee'd to **`rebuild.log`** — share it with Claude if anything fails.
 
 ---
 
+## Syncing data with production
+
+`scripts/sync_db.py` copies the **database** and **uploaded files**
+(`storage/app/public`) between production and your local stack, in either
+direction. Python 3.10+, no packages to install; it needs `ssh` and `docker`
+on PATH and the local stack running.
+
+**One-time setup** — add to the root `.env` (local only, never on the server):
+
+```dotenv
+SYNC_SSH_HOST=YOUR_SERVER_IP
+# optional, these are the defaults:
+SYNC_SSH_USER=deploy
+SYNC_SSH_KEY=~/.ssh/bandms_deploy
+```
+
+### Production → local (`pull`)
+
+```bash
+python scripts/sync_db.py pull --dry-run    # check only, writes nothing
+python scripts/sync_db.py pull              # asks y/N, then replaces local 1:1
+```
+
+Replaces your **entire** local database and uploads with production's. After
+it, your local admin login is production's, and local holds real customer data.
+Keep a dump first if your local DB has anything you want back.
+
+### Local → production (`push`)
+
+```bash
+python scripts/sync_db.py push --content --dry-run   # check only, writes nothing
+python scripts/sync_db.py push --content             # publish local content
+python scripts/sync_db.py push --full                # replace EVERYTHING (recovery only)
+```
+
+- **`--content`** — the normal one. Replaces band content (concerts, posts,
+  releases, shop items, page copy…) and uploads; leaves users, orders, tickets,
+  newsletter subscribers and logins on production untouched.
+- **`--full`** — overwrites every table, logs every user out and loses anything
+  created on production since your last pull. For disaster recovery.
+
+A push asks you to **type the server host** to confirm, and before writing
+anything it requires that production has **not changed since your last pull**
+(a shop sale counts), that both sides are on the same migrations, and that no
+order or ticket would be left pointing at deleted content. It takes a verified
+backup into `/opt/bandms/backups/sync/` (newest 5 kept) first.
+
+**The workflow:** `pull` → edit content locally → `push --content --dry-run` →
+`push --content`. Pull right before you start editing — a pull replaces local
+edits, and a sale on production after your pull blocks the push.
+
+Add `--db-only` or `--files-only` to either direction to move just one of them.
+Full guide, including recovering from a failed push:
+**[docs/prod-sync.md](docs/prod-sync.md)**.
+
+---
+
 ## Testing
 
 ### Backend unit tests (Pest)
