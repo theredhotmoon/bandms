@@ -66,7 +66,18 @@ def confirm_host(host: str, read: Callable[[str], str] = input) -> None:
 
 def _preflight(rep: Reporter, local: Side, prod: Side) -> None:
     with rep.step("check prod is reachable and its containers are running"):
-        ops.check_running(prod, ["mysql", "backend", "web"])
+        try:
+            ops.check_running(prod, ["mysql", "backend", "web"])
+        except SyncError as exc:
+            # A failed push leaves backend stopped on a half-loaded database.
+            # Refusing here (--force does not skip it) is what stops a retry
+            # from backing that up and rotating the good copy out of the
+            # SYNC_BACKUP_KEEP newest.
+            if prod.container("backend") not in str(exc):
+                raise
+            raise SyncError(f"{exc}\n    if a failed push left it stopped, restore the newest backup in "
+                            f"{prod.remote_dir}/{SYNC_BACKUP_SUBDIR}/ first "
+                            "(docs/database-backup-and-recovery.md), then start backend") from None
     with rep.step("check local containers are running"):
         ops.check_running(local, ["mysql", "backend", "web"])
 

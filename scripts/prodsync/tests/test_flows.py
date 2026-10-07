@@ -149,6 +149,19 @@ class PushTest(unittest.TestCase):
         self.assertIn("KEEP=5", backup)
         self.assertIn("restore /srv/band/backups/sync/bandms-1.sql.gz", out.getvalue())
 
+    def test_push_refuses_while_a_failed_push_left_prod_backend_stopped(self):
+        # Only 5 sync backups are kept: retrying (even with --force) against a
+        # half-loaded database would back it up and rotate out the good copy.
+        def stopped(side, services):
+            if side.name == "prod":
+                raise SyncError("prod containers not running: bandms-backend")
+        self.ops.check_running.side_effect = stopped
+        with self.assertRaises(SyncError) as ctx:
+            self.push(options(force=True))
+        self.assertIn("backups/sync", str(ctx.exception))
+        self.ops.dump_to.assert_not_called()
+        self.assertFalse(any("prod-backup-db.sh" in c.args[0][-1] for c in self.run.call_args_list))
+
     def test_files_only_push_keeps_the_saved_state(self):
         self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]
         self.push(options(db=False, files=True))
