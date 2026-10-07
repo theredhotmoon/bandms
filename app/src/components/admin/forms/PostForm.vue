@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, provide, reactive, ref, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
@@ -8,6 +8,8 @@ import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
+import { VISIBLE_LOCALES, loadLocaleView, saveLocaleView, visibleFor, type LocaleView } from '@/utils/editorLocales'
+import { localDateTimeInputValue } from '@/utils/dateInput'
 import type { RefEntityLists } from '@/components/admin/forms/blocks/RefBlockEditor.vue'
 import type { Post, PostPayload, PostBlockDraft } from '@/types/post'
 import type { Tag } from '@/types/tag'
@@ -39,7 +41,7 @@ const props = defineProps<{
   errors?: Record<string, string[]>
 }>()
 
-const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
+const emit = defineEmits<{ submit: [PostPayload]; cancel: []; 'update:dirty': [boolean] }>()
 
 const { order: contentLocales, isPrimary } = useContentLocales()
 
@@ -50,6 +52,19 @@ const { order: contentLocales, isPrimary } = useContentLocales()
 const titlePlaceholder = (l: Lang): string => t('content.posts.titlePlaceholder', {}, { locale: l })
 const introPlaceholder = (l: Lang): string => t('content.posts.introPlaceholder', {}, { locale: l })
 
+// ── Language view ─────────────────────────────────────────────
+// A post is prose, so the writer can work in one language at a time. The
+// title always shows every locale (it is the post's identity and two short
+// inputs); intro and blocks follow the view. Data for a hidden locale is kept.
+const view = ref<LocaleView>(loadLocaleView())
+watch(view, saveLocaleView)
+const visibleLocales = computed<Lang[]>(() => {
+  const chosen = visibleFor(view.value, contentLocales.value)
+  return chosen.length ? chosen : [...contentLocales.value]
+})
+provide(VISIBLE_LOCALES, visibleLocales)
+
+// ── Form state ────────────────────────────────────────────────
 const form = reactive({
   title: emptyBag(),
   slug: emptyBag(),
@@ -77,6 +92,16 @@ const entityLists = computed<RefEntityLists>(() => ({
 }))
 
 const { isDirty, markClean } = useDirtyGuard(() => form)
+watch(isDirty, v => emit('update:dirty', v), { immediate: true })
+
+// ── Status ────────────────────────────────────────────────────
+// `published_at` is a switch, not a timer (any date publishes), so the form
+// shows it as one: Draft / Published, with the date only once it matters.
+const isPublished = computed(() => form.published_at !== '')
+
+function setPublished(published: boolean) {
+  form.published_at = published ? (form.published_at || localDateTimeInputValue()) : ''
+}
 
 watch(() => props.initial, (val) => {
   form.title = bagFrom(val?.translations?.title, val?.title)
@@ -99,6 +124,19 @@ watch(() => props.initial, (val) => {
   })
   markClean()
 }, { immediate: true })
+
+// ── Errors ────────────────────────────────────────────────────
+// A 422 lands under the offending field, which on a long post can be a long
+// way above the button that was just pressed; bring it into view so the
+// click never looks like it did nothing.
+const formEl = ref<HTMLFormElement | null>(null)
+const hasErrors = computed(() => Object.keys(props.errors ?? {}).length > 0)
+
+watch(() => props.errors, async () => {
+  if (!hasErrors.value) return
+  await nextTick()
+  formEl.value?.querySelector('.field-error')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+})
 
 function submit() {
   emit('submit', {
@@ -125,83 +163,211 @@ function submit() {
 </script>
 
 <template>
-  <form @submit.prevent="submit" class="flex flex-col gap-4">
-    <div>
-      <label class="field-label">{{ $t('common.fields.title') }} <span style="color:var(--c-f87171);">*</span></label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder(l)" />
+  <form ref="formEl" @submit.prevent="submit" class="post-form">
+
+    <!-- ── Post: what it is ─────────────────────────────────── -->
+    <section class="pf-section">
+      <h3 class="section-title">{{ $t('content.posts.section.post') }}</h3>
+      <div class="pf-head">
+        <div class="flex flex-col gap-3 min-w-0">
+          <div>
+            <label class="field-label" for="post-title-0">{{ $t('common.fields.title') }} <span class="field-req">*</span></label>
+            <div class="trans-group">
+              <div v-for="(l, idx) in contentLocales" :key="l" class="trans-row" :data-locale="l">
+                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+                <input
+                  v-model="form.title[l]"
+                  :id="idx === 0 ? 'post-title-0' : undefined"
+                  :required="isPrimary(l) && !bagHasText(form.title)"
+                  class="field-input flex-1"
+                  :placeholder="titlePlaceholder(l)"
+                  :aria-label="`${$t('common.fields.title')} ${shortLabel(l)}`"
+                />
+              </div>
+            </div>
+            <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label">{{ $t('content.posts.intro') }}</label>
+            <div class="trans-group">
+              <div v-for="l in visibleLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+                <textarea
+                  v-model="form.intro[l]"
+                  class="field-input flex-1" rows="2"
+                  :placeholder="introPlaceholder(l)"
+                  :aria-label="`${$t('content.posts.intro')} ${shortLabel(l)}`"
+                />
+              </div>
+            </div>
+            <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
+          </div>
+        </div>
+        <div class="pf-cover">
+          <label class="field-label">{{ $t('content.posts.cover') }}</label>
+          <SingleImageUpload v-model="form.image" />
+          <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
         </div>
       </div>
-      <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
-    </div>
-    <div>
-      <label class="field-label">{{ $t('common.fields.slug') }}</label>
-      <!-- Posts are routed per language, so each locale's slug is a public
-           URL: a loaded slug stays fixed and nothing auto-fills on edit. -->
-      <TranslatedSlugInput
-        v-model="form.slug"
-        v-model:auto="slugAuto"
-        :sources="form.title"
-        :editing="!!initial"
-        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
-      />
-    </div>
-    <div>
-      <label class="field-label">{{ $t('content.posts.intro') }}</label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <textarea v-model="form.intro[l]" class="field-input flex-1" rows="2" :placeholder="introPlaceholder(l)" />
+    </section>
+
+    <!-- ── Content: the post itself ─────────────────────────── -->
+    <section class="pf-section">
+      <PostBlockEditor v-model="form.blocks" :entities="entityLists">
+        <template #tools>
+          <div v-if="contentLocales.length > 1" class="segment segment--compact" role="radiogroup" :aria-label="$t('content.posts.localeView')">
+            <label class="segment-option">
+              <input type="radio" name="post-locale-view" value="all" v-model="view" />
+              <span>{{ $t('content.posts.localeViewAll') }}</span>
+            </label>
+            <label v-for="l in contentLocales" :key="l" class="segment-option">
+              <input type="radio" name="post-locale-view" :value="l" v-model="view" />
+              <span>{{ shortLabel(l) }}</span>
+            </label>
+          </div>
+        </template>
+      </PostBlockEditor>
+      <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
+    </section>
+
+    <!-- ── Publishing & links ───────────────────────────────── -->
+    <section class="pf-section">
+      <h3 class="section-title">{{ $t('content.posts.section.publishing') }}</h3>
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="field-label">{{ $t('content.posts.status') }}</label>
+          <div class="pf-status">
+            <div class="segment" role="radiogroup" :aria-label="$t('content.posts.status')">
+              <label class="segment-option">
+                <input type="radio" name="post-status" :checked="!isPublished" @change="setPublished(false)" />
+                <span>{{ $t('content.posts.draft') }}</span>
+              </label>
+              <label class="segment-option">
+                <input type="radio" name="post-status" :checked="isPublished" @change="setPublished(true)" />
+                <span>{{ $t('content.posts.statusPublished') }}</span>
+              </label>
+            </div>
+            <input
+              v-if="isPublished"
+              v-model="form.published_at"
+              type="datetime-local"
+              class="field-input pf-status-date"
+              :aria-label="$t('content.posts.publishedOn')"
+              :title="$t('content.posts.publishedOn')"
+            />
+          </div>
+          <p class="field-hint">{{ isPublished ? $t('content.posts.publishedOnHint') : $t('content.posts.draftHint') }}</p>
+          <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
+        </div>
+
+        <div>
+          <label class="field-label">{{ $t('common.fields.slug') }}</label>
+          <!-- Posts are routed per language, so each locale's slug is a public
+               URL: a loaded slug stays fixed and nothing auto-fills on edit. -->
+          <TranslatedSlugInput
+            v-model="form.slug"
+            v-model:auto="slugAuto"
+            :sources="form.title"
+            :editing="!!initial"
+            :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
+          />
+        </div>
+
+        <EntityRelationsPanel
+          :tags="tags"
+          :concerts="concerts"
+          v-model:tagIds="form.tag_ids"
+          v-model:concertIds="form.concert_ids"
+          :members="members"
+          v-model:memberIds="form.member_ids"
+        />
+
+        <div v-if="form.concert_ids.length > 1">
+          <label class="field-label">{{ $t('content.posts.eventDateShownAs') }}</label>
+          <div class="flex gap-4">
+            <label class="pf-radio">
+              <input type="radio" value="range" v-model="form.event_date_display" />
+              {{ $t('content.posts.dateRange') }}
+            </label>
+            <label class="pf-radio">
+              <input type="radio" value="list" v-model="form.event_date_display" />
+              {{ $t('content.posts.dateList') }}
+            </label>
+          </div>
         </div>
       </div>
-      <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
-    </div>
-    <div>
-      <label class="field-label">{{ $t('common.fields.image') }}</label>
-      <SingleImageUpload v-model="form.image" />
-      <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
-    </div>
-    <div>
-      <label class="field-label">{{ $t('content.posts.publishAt') }}</label>
-      <input v-model="form.published_at" type="datetime-local" class="field-input" />
-      <p v-if="errors?.published_at" class="field-error">{{ errors.published_at[0] }}</p>
-    </div>
+    </section>
 
-    <EntityRelationsPanel
-      :tags="tags"
-      :concerts="concerts"
-      v-model:tagIds="form.tag_ids"
-      v-model:concertIds="form.concert_ids"
-      :members="members"
-      v-model:memberIds="form.member_ids"
-    />
-
-    <div v-if="form.concert_ids.length > 1">
-      <label class="field-label">{{ $t('content.posts.eventDateShownAs') }}</label>
-      <div class="flex gap-4">
-        <label class="flex items-center gap-2 text-sm">
-          <input type="radio" value="range" v-model="form.event_date_display" />
-          {{ $t('content.posts.dateRange') }}
-        </label>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="radio" value="list" v-model="form.event_date_display" />
-          {{ $t('content.posts.dateList') }}
-        </label>
+    <!-- Pinned to the bottom of the scrolling modal, so the save and what it
+         will do are always one glance away however long the post gets. -->
+    <div class="pf-footer">
+      <p class="pf-footer-status" :class="{ 'pf-footer-status--error': hasErrors }" aria-live="polite">
+        {{ hasErrors ? $t('content.posts.checkFields') : (isPublished ? $t('content.posts.footerPublished') : $t('content.posts.footerDraft')) }}
+      </p>
+      <div class="flex gap-2 shrink-0">
+        <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+        <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
+          {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
+        </button>
       </div>
-    </div>
-
-    <PostBlockEditor v-model="form.blocks" :entities="entityLists" />
-    <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
-
-    <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
-      <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
-        {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
-      </button>
     </div>
   </form>
 </template>
 
 <style scoped src="../form-styles.css" />
+<style scoped>
+.post-form { display: flex; flex-direction: column; }
+
+/* Tight inside a section, generous between: a hairline and a step of space
+   is what separates "what the post is" from "the post" from "where it goes". */
+.pf-section + .pf-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--c-222222);
+}
+
+.pf-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12rem;
+  gap: 1rem;
+  align-items: start;
+}
+.pf-cover { min-width: 0; }
+
+.pf-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+.pf-status-date { width: auto; flex: 0 1 14rem; }
+
+.pf-radio {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: var(--fs-sm); color: var(--c-c0c0c0); cursor: pointer;
+}
+.pf-radio input { accent-color: var(--c-ffffff); }
+
+.pf-footer {
+  position: sticky;
+  bottom: -1px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.5rem -1.5rem -1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--c-141414);
+  border-top: 1px solid var(--c-252525);
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+.pf-footer-status {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--c-64748b);
+  line-height: 1.4;
+  min-width: 0;
+}
+.pf-footer-status--error { color: var(--c-f87171); }
+
+@media (max-width: 640px) {
+  .pf-head { grid-template-columns: minmax(0, 1fr); }
+  .pf-footer { margin: 1.25rem -1rem -1.25rem; padding: 0.625rem 1rem; }
+}
+</style>

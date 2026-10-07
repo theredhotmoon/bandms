@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { shortLabel, type Lang } from '@/locales'
 import { providerLabel, detectProvider, isAudioProvider } from '@/utils/postBlocks'
+import { VISIBLE_LOCALES } from '@/utils/editorLocales'
 
 const props = defineProps<{ payload: Record<string, unknown>; hideLabel?: boolean }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -16,7 +17,9 @@ const detected = computed(() => detectProvider(url.value))
 const label = computed(() => (props.payload.label ?? {}) as Partial<Record<Lang, string>>)
 
 const { t } = useI18n()
-const { order: contentLocales } = useContentLocales()
+const { order } = useContentLocales()
+const visible = inject(VISIBLE_LOCALES, null)
+const locales = computed<Lang[]>(() => visible?.value ?? order.value)
 const labelPlaceholder = (l: Lang): string => t('content.blocks.embed.linkText', {}, { locale: l })
 
 function set(key: string, value: unknown) {
@@ -29,12 +32,14 @@ function set(key: string, value: unknown) {
     <div class="flex items-center gap-2">
       <input
         :value="url" @input="set('url', ($event.target as HTMLInputElement).value)"
+        type="url" inputmode="url" autocomplete="off" spellcheck="false"
         class="field-input flex-1" :placeholder="$t('content.blocks.embed.urlPlaceholder')" required
+        :aria-label="$t('content.blocks.kind.embed')"
       />
       <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioLabel', { provider: providerLabel(detected, $t('common.link')) }) : providerLabel(detected, $t('common.link')) }}</span>
     </div>
     <div v-if="detected === 'link' && !hideLabel" class="trans-group">
-      <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+      <div v-for="l in locales" :key="l" class="trans-row" :data-locale="l">
         <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
         <input :value="label[l] ?? ''" @input="set('label', { ...label, [l]: ($event.target as HTMLInputElement).value })"
                class="field-input flex-1" :placeholder="labelPlaceholder(l)" />

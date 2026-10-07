@@ -152,12 +152,15 @@ function regenerate(l: Lang): void {
 .slug-wrap { display: flex; flex-direction: column; gap: 0.375rem; }
 .slug-row  { display: flex; align-items: center; gap: 0.5rem; }
 .slug-input-wrap { position: relative; display: flex; align-items: center; }
+/* One face throughout the panel: a slug reads as a URL through its size and
+   tracking, not through a monospace costume. */
 .slug-field {
   padding-right: 2.25rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--fs-sm);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums lining-nums;
 }
-.field-input--error { border-color: var(--c-f87171) !important; }
+.slug-field.field-input--error { border-color: var(--c-f87171); }
 .slug-regen {
   position: absolute;
   right: 0.375rem;
@@ -169,10 +172,10 @@ function regenerate(l: Lang): void {
   border: none;
   border-radius: 0.25rem;
   background: transparent;
-  color: var(--c-6b7280);
+  color: var(--c-888888);
   cursor: pointer;
   transition: color 120ms, background 120ms;
   flex-shrink: 0;
 }
-.slug-regen:hover { color: var(--c-60a5fa); background: color-mix(in srgb, var(--c-1e3a5f) 20%, transparent); }
+.slug-regen:hover { color: var(--c-e2e8f0); background: var(--c-222222); }
 </style>

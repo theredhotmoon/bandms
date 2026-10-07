@@ -1,5 +1,9 @@
 <script setup lang="ts">
-defineProps<{ open: boolean; message?: string; loading?: boolean }>()
+/**
+ * `title` and `confirmLabel` default to the delete wording; a discard-changes
+ * prompt passes its own so the button names the action it performs.
+ */
+defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean }>()
 defineEmits<{ confirm: []; cancel: [] }>()
 </script>
 
@@ -13,13 +17,13 @@ defineEmits<{ confirm: []; cancel: [] }>()
             <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:var(--c-3f1212);">
               <svg class="w-4 h-4" style="color:var(--c-f87171);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </div>
-            <h3 id="confirm-dialog-title" class="text-sm font-semibold" style="color:var(--c-e2e8f0);">{{ $t('common.confirm.deleteTitle') }}</h3>
+            <h3 id="confirm-dialog-title" class="text-sm font-semibold" style="color:var(--c-e2e8f0);">{{ title ?? $t('common.confirm.deleteTitle') }}</h3>
           </div>
           <p class="text-sm mb-5 leading-relaxed" style="color:var(--c-94a3b8);">{{ message ?? $t('common.confirm.deleteMessage') }}</p>
           <div class="flex gap-2 justify-end">
             <button @click="$emit('cancel')" :disabled="loading" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
             <button @click="$emit('confirm')" :disabled="loading" class="btn-danger">
-              {{ loading ? $t('common.actions.deleting') : $t('common.actions.delete') }}
+              {{ loading ? $t('common.actions.deleting') : (confirmLabel ?? $t('common.actions.delete')) }}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Concert } from '@/types/concert'
 import type { Tag } from '@/types/tag'
 import type { Album } from '@/types/album'
@@ -10,7 +11,7 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 
-defineProps<{
+const props = defineProps<{
   concerts?: Concert[]
   posts?: PostSummary[]
   albums?: Album[]
@@ -35,29 +36,98 @@ const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () =
 const shopItemIds     = defineModel<number[]>('shopItemIds',     { default: () => [] })
 const memberIds       = defineModel<number[]>('memberIds',       { default: () => [] })
 
-const expanded = reactive({
-  members:       false,
-  concerts:      false,
-  posts:         false,
-  albums:        false,
-  releases:      false,
-  tours:         false,
-  tags:          false,
-  musicVideos:   false,
-  pressReleases: false,
-  shopItems:     false,
+const { t } = useI18n()
+
+type SectionKey = 'tags' | 'members' | 'concerts' | 'releases' | 'shopItems' | 'tours' | 'albums' | 'posts' | 'musicVideos' | 'pressReleases'
+
+interface Item { id: number; label: string; badge?: string }
+interface Section {
+  key: SectionKey
+  title: string
+  items: Item[]
+  ids: number[]
+  set: (v: number[]) => void
+  testid?: string
+}
+
+const expanded = reactive<Record<SectionKey, boolean>>({
+  tags: false, members: false, concerts: false, releases: false, shopItems: false,
+  tours: false, albums: false, posts: false, musicVideos: false, pressReleases: false,
 })
 
-function toggle(current: number[], set: (v: number[]) => void, id: number) {
-  const arr = [...current]
+// One list drives the template, so every section gets the same toggle,
+// summary and checkbox list — and the order is the order the forms always had.
+const sections = computed<Section[]>(() => {
+  const out: Section[] = []
+  if (props.tags?.length) out.push({
+    key: 'tags', title: t('common.relations.tags'),
+    items: props.tags.map(x => ({ id: x.id, label: x.name })),
+    ids: tagIds.value, set: v => (tagIds.value = v),
+  })
+  if (props.members?.length) out.push({
+    key: 'members', title: t('common.relations.members'), testid: 'relations-members',
+    items: props.members.map(m => ({ id: m.id, label: `${m.first_name} ${m.last_name}` })),
+    ids: memberIds.value, set: v => (memberIds.value = v),
+  })
+  if (props.concerts?.length) out.push({
+    key: 'concerts', title: t('common.relations.concerts'),
+    items: props.concerts.map(c => ({ id: c.id, label: c.venue?.name ? `${c.date} — ${c.venue.name}` : c.date })),
+    ids: concertIds.value, set: v => (concertIds.value = v),
+  })
+  if (props.releases?.length) out.push({
+    key: 'releases', title: t('common.relations.releases'),
+    items: props.releases.map(r => ({ id: r.id, label: r.title, badge: r.type })),
+    ids: releaseIds.value, set: v => (releaseIds.value = v),
+  })
+  if (props.shopItems?.length) out.push({
+    key: 'shopItems', title: t('common.relations.shopItems'),
+    items: props.shopItems.map(s => ({ id: s.id, label: s.name })),
+    ids: shopItemIds.value, set: v => (shopItemIds.value = v),
+  })
+  if (props.tours?.length) out.push({
+    key: 'tours', title: t('common.relations.tours'),
+    items: props.tours.map(x => ({ id: x.id, label: x.name })),
+    ids: tourIds.value, set: v => (tourIds.value = v),
+  })
+  if (props.albums?.length) out.push({
+    key: 'albums', title: t('common.relations.albums'),
+    items: props.albums.map(a => ({ id: a.id, label: a.title })),
+    ids: albumIds.value, set: v => (albumIds.value = v),
+  })
+  if (props.posts?.length) out.push({
+    key: 'posts', title: t('common.relations.posts'),
+    items: props.posts.map(p => ({ id: p.id, label: p.title })),
+    ids: postIds.value, set: v => (postIds.value = v),
+  })
+  if (props.musicVideos?.length) out.push({
+    key: 'musicVideos', title: t('common.relations.musicVideos'),
+    items: props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
+    ids: musicVideoIds.value, set: v => (musicVideoIds.value = v),
+  })
+  if (props.pressReleases?.length) out.push({
+    key: 'pressReleases', title: t('common.relations.press'),
+    items: props.pressReleases.map(pr => ({ id: pr.id, label: pr.og_title ?? pr.url })),
+    ids: pressReleaseIds.value, set: v => (pressReleaseIds.value = v),
+  })
+  return out
+})
+
+function toggle(section: Section, id: number) {
+  const arr = [...section.ids]
   const i = arr.indexOf(id)
   if (i === -1) arr.push(id)
   else arr.splice(i, 1)
-  set(arr)
+  section.set(arr)
 }
 
 function label(text: string, count: number) {
   return count ? `${text} (${count})` : text
+}
+
+/** What is linked, readable while the section is closed. */
+function summary(section: Section): string {
+  const chosen = section.items.filter(i => section.ids.includes(i.id)).map(i => i.label)
+  return chosen.join(', ')
 }
 </script>
 
@@ -65,136 +135,21 @@ function label(text: string, count: number) {
   <div class="assoc-sections">
     <div class="assoc-title">{{ $t('common.relations.title') }}</div>
 
-    <div v-if="tags?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.tags = !expanded.tags">
-        <span>{{ label($t('common.relations.tags'), tagIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.tags }">›</span>
+    <div v-for="s in sections" :key="s.key" class="assoc-section" :data-testid="s.testid">
+      <button type="button" class="assoc-toggle" :aria-expanded="expanded[s.key]" @click="expanded[s.key] = !expanded[s.key]">
+        <span class="assoc-toggle-text">
+          <span>{{ label(s.title, s.ids.length) }}</span>
+          <span v-if="!expanded[s.key] && s.ids.length" class="assoc-summary">{{ summary(s) }}</span>
+        </span>
+        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded[s.key] }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
-      <div v-if="expanded.tags" class="assoc-body checkbox-list">
-        <label v-for="t in tags" :key="t.id" class="checkbox-item">
-          <input type="checkbox" :checked="tagIds.includes(t.id)" @change="toggle(tagIds, v => tagIds = v, t.id)" />
-          <span>{{ t.name }}</span>
+      <div v-if="expanded[s.key]" class="assoc-body checkbox-list">
+        <label v-for="i in s.items" :key="i.id" class="checkbox-item">
+          <input type="checkbox" :checked="s.ids.includes(i.id)" @change="toggle(s, i.id)" />
+          <span>{{ i.label }} <span v-if="i.badge" class="assoc-badge">{{ i.badge }}</span></span>
         </label>
       </div>
     </div>
-
-    <div v-if="members?.length" class="assoc-section" data-testid="relations-members">
-      <button type="button" class="assoc-toggle" @click="expanded.members = !expanded.members">
-        <span>{{ label($t('common.relations.members'), memberIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.members }">›</span>
-      </button>
-      <div v-if="expanded.members" class="assoc-body checkbox-list">
-        <label v-for="m in members" :key="m.id" class="checkbox-item">
-          <input type="checkbox" :checked="memberIds.includes(m.id)" @change="toggle(memberIds, v => memberIds = v, m.id)" />
-          <span>{{ m.first_name }} {{ m.last_name }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="concerts?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.concerts = !expanded.concerts">
-        <span>{{ label($t('common.relations.concerts'), concertIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.concerts }">›</span>
-      </button>
-      <div v-if="expanded.concerts" class="assoc-body checkbox-list">
-        <label v-for="c in concerts" :key="c.id" class="checkbox-item">
-          <input type="checkbox" :checked="concertIds.includes(c.id)" @change="toggle(concertIds, v => concertIds = v, c.id)" />
-          <span>{{ c.date }}<template v-if="c.venue?.name"> — {{ c.venue.name }}</template></span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="releases?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.releases = !expanded.releases">
-        <span>{{ label($t('common.relations.releases'), releaseIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.releases }">›</span>
-      </button>
-      <div v-if="expanded.releases" class="assoc-body checkbox-list">
-        <label v-for="r in releases" :key="r.id" class="checkbox-item">
-          <input type="checkbox" :checked="releaseIds.includes(r.id)" @change="toggle(releaseIds, v => releaseIds = v, r.id)" />
-          <span>{{ r.title }} <span class="assoc-badge">{{ r.type }}</span></span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="shopItems?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.shopItems = !expanded.shopItems">
-        <span>{{ label($t('common.relations.shopItems'), shopItemIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.shopItems }">›</span>
-      </button>
-      <div v-if="expanded.shopItems" class="assoc-body checkbox-list">
-        <label v-for="s in shopItems" :key="s.id" class="checkbox-item">
-          <input type="checkbox" :checked="shopItemIds.includes(s.id)" @change="toggle(shopItemIds, v => shopItemIds = v, s.id)" />
-          <span>{{ s.name }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="tours?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.tours = !expanded.tours">
-        <span>{{ label($t('common.relations.tours'), tourIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.tours }">›</span>
-      </button>
-      <div v-if="expanded.tours" class="assoc-body checkbox-list">
-        <label v-for="t in tours" :key="t.id" class="checkbox-item">
-          <input type="checkbox" :checked="tourIds.includes(t.id)" @change="toggle(tourIds, v => tourIds = v, t.id)" />
-          <span>{{ t.name }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="albums?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.albums = !expanded.albums">
-        <span>{{ label($t('common.relations.albums'), albumIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.albums }">›</span>
-      </button>
-      <div v-if="expanded.albums" class="assoc-body checkbox-list">
-        <label v-for="a in albums" :key="a.id" class="checkbox-item">
-          <input type="checkbox" :checked="albumIds.includes(a.id)" @change="toggle(albumIds, v => albumIds = v, a.id)" />
-          <span>{{ a.title }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="posts?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.posts = !expanded.posts">
-        <span>{{ label($t('common.relations.posts'), postIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.posts }">›</span>
-      </button>
-      <div v-if="expanded.posts" class="assoc-body checkbox-list">
-        <label v-for="p in posts" :key="p.id" class="checkbox-item">
-          <input type="checkbox" :checked="postIds.includes(p.id)" @change="toggle(postIds, v => postIds = v, p.id)" />
-          <span>{{ p.title }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="musicVideos?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.musicVideos = !expanded.musicVideos">
-        <span>{{ label($t('common.relations.musicVideos'), musicVideoIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.musicVideos }">›</span>
-      </button>
-      <div v-if="expanded.musicVideos" class="assoc-body checkbox-list">
-        <label v-for="v in musicVideos" :key="v.id" class="checkbox-item">
-          <input type="checkbox" :checked="musicVideoIds.includes(v.id)" @change="toggle(musicVideoIds, val => musicVideoIds = val, v.id)" />
-          <span>{{ v.og_title ?? v.title }}</span>
-        </label>
-      </div>
-    </div>
-
-    <div v-if="pressReleases?.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expanded.pressReleases = !expanded.pressReleases">
-        <span>{{ label($t('common.relations.press'), pressReleaseIds.length) }}</span>
-        <span class="assoc-chevron" :class="{ 'assoc-chevron--open': expanded.pressReleases }">›</span>
-      </button>
-      <div v-if="expanded.pressReleases" class="assoc-body checkbox-list">
-        <label v-for="pr in pressReleases" :key="pr.id" class="checkbox-item">
-          <input type="checkbox" :checked="pressReleaseIds.includes(pr.id)" @change="toggle(pressReleaseIds, val => pressReleaseIds = val, pr.id)" />
-          <span>{{ pr.og_title ?? pr.url }}</span>
-        </label>
-      </div>
-    </div>
-
   </div>
 </template>
 
@@ -212,18 +167,24 @@ function label(text: string, count: number) {
 .assoc-section { border-bottom: 1px solid var(--c-222222); }
 .assoc-section:last-child { border-bottom: none; }
 .assoc-toggle {
-  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   padding: 0.5rem 0.875rem; background: transparent; border: none; cursor: pointer;
   color: var(--c-94a3b8); font-size: var(--fs-sm); font-weight: 500; text-align: left;
   transition: background 100ms;
 }
 .assoc-toggle:hover { background: var(--c-111111); }
-.assoc-chevron { font-size: var(--fs-md); line-height: 1; transition: transform 200ms; color: var(--c-555555); }
+.assoc-toggle-text { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.assoc-summary {
+  font-size: var(--fs-xs); font-weight: 400; color: var(--c-64748b);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.assoc-chevron { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform 200ms; color: var(--c-555555); }
 .assoc-chevron--open { transform: rotate(90deg); }
 .assoc-body { padding: 0.5rem 0.875rem 0.75rem; background: var(--c-141414); }
 .assoc-badge {
-  display: inline-block; padding: 0.05rem 0.35rem; border-radius: 0.2rem;
+  display: inline-block; padding: 0.05rem 0.35rem; border-radius: 0.25rem;
   background: var(--c-2a2a2a); color: var(--c-aaaaaa); font-size: var(--fs-2xs); font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.04em; margin-left: 0.35rem;
 }
+@media (prefers-reduced-motion: reduce) { .assoc-chevron { transition: none; } }
 </style>

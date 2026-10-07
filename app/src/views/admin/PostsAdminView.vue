@@ -43,6 +43,11 @@ const confirmId = ref<number | null>(null)
 const isCreating = ref(false)
 const filterStatus = ref<'' | 'published' | 'draft'>('')
 
+// Closing — backdrop, Escape, the ✕ or Cancel — asks first when the form has
+// unsaved changes. A bilingual post is a lot of typing to lose to a stray click.
+const formDirty = ref(false)
+const showDiscard = ref(false)
+
 const editQuery = usePost(editingId)
 const formPost = computed(() => isCreating.value ? null : editQuery.data.value ?? null)
 
@@ -63,12 +68,16 @@ const tc = useTableControls<PostSummary>({
 })
 
 function openCreate() {
-  isCreating.value = true; editingId.value = null; fieldErrors.value = {}; showModal.value = true
+  isCreating.value = true; editingId.value = null; fieldErrors.value = {}; formDirty.value = false; showModal.value = true
 }
 function openEdit(id: number) {
-  isCreating.value = false; editingId.value = id; fieldErrors.value = {}; showModal.value = true
+  isCreating.value = false; editingId.value = id; fieldErrors.value = {}; formDirty.value = false; showModal.value = true
 }
-function closeModal() { showModal.value = false }
+function closeModal() { showModal.value = false; showDiscard.value = false }
+function requestClose() {
+  if (formDirty.value) showDiscard.value = true
+  else closeModal()
+}
 
 async function handleSubmit(payload: PostPayload) {
   fieldErrors.value = {}
@@ -167,7 +176,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="requestClose">
       <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('content.posts.loadingOne') }}</div>
       <PostForm
         v-else
@@ -184,11 +193,20 @@ async function confirmDelete() {
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"
-        @cancel="closeModal"
+        @cancel="requestClose"
+        @update:dirty="formDirty = $event"
       />
     </AdminModal>
 
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
+    <ConfirmDialog
+      :open="showDiscard"
+      :title="$t('content.posts.discardTitle')"
+      :message="$t('content.posts.discardMessage')"
+      :confirm-label="$t('content.posts.discard')"
+      @confirm="closeModal"
+      @cancel="showDiscard = false"
+    />
   </AdminLayout>
 </template>
 
