@@ -243,6 +243,29 @@ test.describe.serial('Admin Posts', () => {
     await modal.getByRole('button', { name: 'Cancel' }).click()
   })
 
+  // The settings rail sits beside the content when the modal has the room,
+  // and falls back below it when it does not — a container query on the
+  // form's own width, so narrowing the viewport is what flips it.
+  test('lays publishing beside the content on desktop and below it when narrow', async ({ page }) => {
+    await page.getByRole('button', { name: '+ Add post' }).click()
+    const main = page.locator('.pf-main')
+    const rail = page.locator('.pf-rail')
+    await expect(rail).toBeVisible()
+
+    const wide = { main: await main.boundingBox(), rail: await rail.boundingBox() }
+    if (!wide.main || !wide.rail) throw new Error('layout columns not found')
+    expect(wide.rail.x).toBeGreaterThanOrEqual(wide.main.x + wide.main.width)
+    expect(Math.abs(wide.rail.y - wide.main.y)).toBeLessThan(4)
+
+    await page.setViewportSize({ width: 720, height: 900 })
+    await expect.poll(async () => {
+      const m = await main.boundingBox(); const r = await rail.boundingBox()
+      return m && r ? r.y >= m.y + m.height - 1 && Math.abs(r.x - m.x) < 4 : false
+    }).toBe(true)
+
+    await page.getByRole('button', { name: 'Cancel' }).click()
+  })
+
   // Reordering used to be pointer-drag only — no path at all for keyboard or
   // touch. The up/down buttons are the accessible path, and the public site
   // renders blocks in saved order, so the order must round-trip.

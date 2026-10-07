@@ -16,7 +16,24 @@ const emit = defineEmits<{ close: [] }>()
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
+const header = ref<HTMLElement | null>(null)
 const confirming = ref(false)
+
+// The header's rendered height is published on the panel as --modal-header-h
+// so content that pins itself under the sticky header (PostForm's settings
+// rail) can offset by the real value — a title that wraps, or a padding
+// retune, changes it, and a hard-coded rem would slide under the header.
+let headerObserver: ResizeObserver | null = null
+function observeHeader() {
+  headerObserver?.disconnect()
+  headerObserver = null
+  if (!header.value || !panel.value || typeof ResizeObserver === 'undefined') return
+  const el = panel.value
+  headerObserver = new ResizeObserver(([entry]) => {
+    el.style.setProperty('--modal-header-h', `${entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height}px`) // i18n-ignore: CSS variable name
+  })
+  headerObserver.observe(header.value)
+}
 
 function requestClose() {
   if (props.dirty) confirming.value = true
@@ -49,19 +66,25 @@ watch(() => props.open, async (open) => {
     opener = document.activeElement
     window.addEventListener('keydown', onKeydown)
     await nextTick()
+    observeHeader()
     const first = panel.value?.querySelector<HTMLElement>(
       'input:not([type=hidden]), textarea, select, button:not(.modal-close)', // i18n-ignore: CSS selector
     )
     ;(first ?? panel.value)?.focus({ preventScroll: true })
   } else {
     confirming.value = false
+    headerObserver?.disconnect()
+    headerObserver = null
     window.removeEventListener('keydown', onKeydown)
     if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
     opener = null
   }
 }, { immediate: true })
 
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  headerObserver?.disconnect()
+})
 </script>
 
 <template>
@@ -78,7 +101,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           tabindex="-1"
           :style="`max-width:${maxWidth ?? '34rem'};`"
         >
-          <div class="modal-header">
+          <div ref="header" class="modal-header">
             <h2 :id="titleId" class="modal-title">{{ title }}</h2>
             <button type="button" @click="requestClose" class="modal-close" :aria-label="$t('common.actions.close')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -168,18 +191,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .modal-close:hover { background: var(--c-222222); color: var(--c-94a3b8); }
 
 /* The body's padding is published as variables so a form that pins its own
-   footer to the panel edge (PostForm) reads the same values instead of
-   repeating them. */
+   footer to the panel edge, or a rail under the header (PostForm), reads the
+   same values instead of repeating them. --modal-header-h is set from a
+   ResizeObserver above. */
 .modal-body {
+  --modal-pad-t: 1.25rem;
   --modal-pad-x: 1.5rem;
   --modal-pad-b: 1.5rem;
-  padding: 1.25rem var(--modal-pad-x) var(--modal-pad-b);
+  padding: var(--modal-pad-t) var(--modal-pad-x) var(--modal-pad-b);
 }
 
 @media (max-width: 640px) {
   .modal-panel { margin: 1rem 0.5rem 0.5rem; width: calc(100% - 1rem); }
   .modal-header { padding: 0.875rem 1rem; }
-  .modal-body { --modal-pad-x: 1rem; --modal-pad-b: 1.25rem; padding-top: 1rem; }
+  .modal-body { --modal-pad-t: 1rem; --modal-pad-x: 1rem; --modal-pad-b: 1.25rem; }
 }
 
 /* ── Transition ──────────────────────────────────── */

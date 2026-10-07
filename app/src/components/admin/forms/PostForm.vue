@@ -171,6 +171,8 @@ function submit() {
 
 <template>
   <form ref="formEl" @submit.prevent="submit" class="post-form">
+   <div class="pf-grid">
+   <div class="pf-main">
 
     <!-- ── Post: what it is ─────────────────────────────────── -->
     <section class="pf-section">
@@ -236,8 +238,13 @@ function submit() {
       </PostBlockEditor>
       <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
     </section>
+   </div>
 
-    <!-- ── Publishing & links ───────────────────────────────── -->
+   <!-- ── Publishing & links: a rail beside the content when there is room,
+        pinned under the header; a last section below it otherwise. A div,
+        not an aside: these are primary inputs, not complementary content,
+        and a landmark inside the dialog would say otherwise. ──────── -->
+   <div class="pf-rail">
     <section class="pf-section">
       <h3 class="section-title">{{ $t('content.posts.section.publishing') }}</h3>
       <div class="flex flex-col gap-4">
@@ -305,6 +312,8 @@ function submit() {
         </div>
       </div>
     </section>
+   </div>
+   </div>
 
     <!-- Pinned to the bottom of the scrolling modal, so the save and what it
          will do are always one glance away however long the post gets. -->
@@ -324,14 +333,60 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
-.post-form { display: flex; flex-direction: column; }
+/* Two named containers: the form decides whether there is room for the rail;
+   the main column decides whether its own cover grid still fits, on the width
+   it is actually laid out in rather than the form's. */
+.post-form {
+  display: flex; flex-direction: column; container: post-form / inline-size;
+  /* 0.75rem padding ×2 + a 13px/1.4 button at 0.5rem padding ×2 + 1px border. */
+  --pf-footer-h: 3.75rem;
+}
+.pf-main { container: post-main / inline-size; }
 
-/* Tight inside a section, generous between: a hairline and a step of space
-   is what separates "what the post is" from "the post" from "where it goes". */
-.pf-section + .pf-section {
+/* One column by default: Post, Content, then Publishing & links, each
+   separated by a hairline and a step of space. */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.pf-main, .pf-rail { min-width: 0; }
+
+.pf-section + .pf-section,
+.pf-rail {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--c-222222);
+}
+
+/* With room for it, the settings become a rail beside the content: the
+   article keeps the full measure, and status, slug and links stay in view
+   while a long post scrolls. Queried on the form's own width, not the
+   viewport, so a narrower modal falls back to one column on its own. */
+@container post-form (min-width: 52rem) {
+  .pf-grid { grid-template-columns: minmax(0, 1fr) 19rem; gap: 2rem; align-items: start; }
+  .pf-rail {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: 2rem;
+    border-left: 1px solid var(--c-222222);
+    /* Fill the row so the hairline runs the full height of the content column. */
+    align-self: stretch;
+  }
+  /* Pinned just under the sticky header, at the header's measured height
+     plus the body's top padding. Capped to the viewport and scrollable
+     inside, so a rail taller than the screen (three expanded relation
+     lists) never traps its own bottom. */
+  .pf-rail .pf-section {
+    --rail-top: calc(var(--modal-header-h, 3.5rem) + var(--modal-pad-t, 1.25rem));
+    position: sticky;
+    top: var(--rail-top);
+    /* The sticky footer below is this form's own (see .pf-footer), so its
+       height is subtracted too or the rail's last rows hide behind it. */
+    max-height: calc(100vh - var(--rail-top) - var(--pf-footer-h) - 0.5rem);
+    max-height: calc(100dvh - var(--rail-top) - var(--pf-footer-h) - 0.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Room for the themed scrollbar without the hairline hugging the inputs. */
+    padding-right: 0.25rem;
+  }
 }
 
 .pf-head {
@@ -341,6 +396,9 @@ function submit() {
   align-items: start;
 }
 .pf-cover { min-width: 0; }
+@container post-main (max-width: 30rem) {
+  .pf-head { grid-template-columns: minmax(0, 1fr); }
+}
 
 .pf-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
 .pf-status-date { width: auto; flex: 0 1 14rem; }
@@ -376,7 +434,6 @@ function submit() {
 .pf-footer-status--error { color: var(--c-f87171); }
 
 @media (max-width: 640px) {
-  .pf-head { grid-template-columns: minmax(0, 1fr); }
   .pf-footer { margin-top: 1.25rem; padding-top: 0.625rem; padding-bottom: 0.625rem; }
 }
 </style>
