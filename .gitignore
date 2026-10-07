@@ -52,3 +52,6 @@ test-output.txt
 # scripts/sync_db.py - fingerprint of prod's content tables from the last pull
 /.sync-state.json
 __pycache__/
+
+# Impeccable critique snapshots (local design-review tooling)
+.impeccable/

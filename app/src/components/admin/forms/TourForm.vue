@@ -220,10 +220,8 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
-.section-title {
-  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--c-34d399); margin-bottom: 0.625rem;
-}
+/* The shared .section-title from form-styles.css, in this form's green. */
+.section-title { color: var(--c-34d399); }
 .count-badge {
   display: inline-block; padding: 0.1rem 0.375rem; border-radius: 0.25rem;
   background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: var(--fs-2xs); font-weight: 700;

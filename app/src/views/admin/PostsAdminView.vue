@@ -43,6 +43,11 @@ const confirmId = ref<number | null>(null)
 const isCreating = ref(false)
 const filterStatus = ref<'' | 'published' | 'draft'>('')
 
+// The modal owns the discard guard; this only bridges the form's dirty state
+// to it, and routes the form's Cancel through the same door as the backdrop.
+const formDirty = ref(false)
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
+
 const editQuery = usePost(editingId)
 const formPost = computed(() => isCreating.value ? null : editQuery.data.value ?? null)
 
@@ -63,10 +68,10 @@ const tc = useTableControls<PostSummary>({
 })
 
 function openCreate() {
-  isCreating.value = true; editingId.value = null; fieldErrors.value = {}; showModal.value = true
+  isCreating.value = true; editingId.value = null; fieldErrors.value = {}; formDirty.value = false; showModal.value = true
 }
 function openEdit(id: number) {
-  isCreating.value = false; editingId.value = id; fieldErrors.value = {}; showModal.value = true
+  isCreating.value = false; editingId.value = id; fieldErrors.value = {}; formDirty.value = false; showModal.value = true
 }
 function closeModal() { showModal.value = false }
 
@@ -167,7 +172,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
+    <AdminModal ref="modal" :open="showModal" :dirty="formDirty" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
       <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('content.posts.loadingOne') }}</div>
       <PostForm
         v-else
@@ -184,7 +189,8 @@ async function confirmDelete() {
         :loading="create.isPending.value || update.isPending.value"
         :errors="fieldErrors"
         @submit="handleSubmit"
-        @cancel="closeModal"
+        @cancel="modal?.requestClose()"
+        @update:dirty="formDirty = $event"
       />
     </AdminModal>
 

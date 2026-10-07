@@ -132,7 +132,7 @@ function onClipSelect(value: string) {
 
 <style scoped src="../../form-styles.css" />
 <style scoped>
-.new-clip { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem; border: 1px dashed var(--c-3f3f46); border-radius: 0.5rem; }
+.new-clip { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem; border: 1px dashed var(--c-2a2a2a); border-radius: 0.5rem; }
 .provider-badge { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border-radius: 0.25rem; flex-shrink: 0; background: var(--c-1e3a5f); color: var(--c-60a5fa); text-transform: uppercase; }
 .btn-attach { flex-shrink: 0; padding: 0.4rem 0.875rem; border-radius: 0.375rem; border: 1px solid var(--c-555555-line); background: var(--c-2a2a2a); color: var(--c-d0d0d0); font-size: var(--fs-sm); cursor: pointer; }
 .btn-attach:disabled { opacity: .5; cursor: default; }

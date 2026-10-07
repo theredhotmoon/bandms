@@ -469,10 +469,7 @@ function handleSubmit() {
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
-.section-title {
-  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--c-64748b); margin-bottom: 0.625rem;
-}
+/* .section-title comes from form-styles.css */
 .platform-row  { display: flex; align-items: center; gap: 0.625rem; }
 .platform-row--compact { gap: 0.5rem; }
 .platform-dot  { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }

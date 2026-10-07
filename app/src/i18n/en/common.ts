@@ -17,6 +17,9 @@ export default {
   confirm: {
     deleteTitle: 'Confirm deletion',
     deleteMessage: 'This record will be permanently deleted. This action cannot be undone.',
+    discardTitle: 'Discard changes?',
+    discardMessage: 'There are unsaved changes. Close without saving them?',
+    discard: 'Discard',
   },
   fields: {
     name: 'Name',

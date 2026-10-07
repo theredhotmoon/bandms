@@ -149,10 +149,14 @@ test.describe.serial('Admin Posts', () => {
   })
 
   // The public site hides posts with no published_at, so the band needs to be
-  // able to withdraw one by clearing the date — not just to set it. A form that
-  // dropped the empty field from its payload would leave the post published.
-  test('sets a publish date, then clears it back to Draft', async ({ page }) => {
-    const publishedAt = page.locator('.modal-overlay input[type="datetime-local"]')
+  // able to withdraw one by switching it back to Draft — not just to publish
+  // it. A form that dropped the empty field from its payload would leave the
+  // post published. Status is a Draft / Published choice; the date input only
+  // exists while Published is selected, and choosing Published fills it with
+  // "now" so the writer never has to type a date to go live.
+  test('publishes with a date, then switches back to Draft', async ({ page }) => {
+    const modal = page.locator('.modal-overlay')
+    const publishedAt = modal.locator('input[type="datetime-local"]')
     const row = () => page.locator('tbody tr').filter({ hasText: updatedTitle })
 
     await searchTable(page, updatedTitle)
@@ -160,6 +164,11 @@ test.describe.serial('Admin Posts', () => {
 
     await row().getByRole('button', { name: 'Edit' }).click()
     await expect(page.locator('input[placeholder="Post title"]')).toHaveValue(updatedTitle)
+    await expect(modal.getByRole('radio', { name: 'Draft' })).toBeChecked()
+    await expect(publishedAt).toHaveCount(0)
+
+    await modal.getByRole('radio', { name: 'Published' }).check()
+    await expect(publishedAt).not.toHaveValue('')   // prefilled with "now"
     await publishedAt.fill('2026-09-01T10:00')
     await page.getByRole('button', { name: 'Update' }).click()
     await expectToast(page, 'Post updated')
@@ -167,10 +176,95 @@ test.describe.serial('Admin Posts', () => {
 
     await row().getByRole('button', { name: 'Edit' }).click()
     await expect(publishedAt).toHaveValue('2026-09-01T10:00')
-    await publishedAt.fill('')
+    await modal.getByRole('radio', { name: 'Draft' }).check()
+    await expect(publishedAt).toHaveCount(0)
     await page.getByRole('button', { name: 'Update' }).click()
     await expectToast(page, 'Post updated')
     await expect(row()).toContainText('Draft')
+  })
+
+  // Closing a dirty form — backdrop, Escape, ✕ or Cancel — must ask first;
+  // a stray click outside the panel used to throw the whole post away.
+  test('asks before discarding unsaved changes, and keeps them on cancel', async ({ page }) => {
+    await page.getByRole('button', { name: '+ Add post' }).click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    // Pristine: closing needs no confirmation.
+    await page.keyboard.press('Escape')
+    await expect(modal).not.toBeVisible()
+
+    await page.getByRole('button', { name: '+ Add post' }).click()
+    await modal.locator('input[placeholder="Post title"]').fill('Unsaved draft')
+    await page.keyboard.press('Escape')
+
+    const discard = page.getByRole('dialog', { name: 'Discard changes?' })
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).not.toBeVisible()
+    await expect(modal).toBeVisible()
+    await expect(modal.locator('input[placeholder="Post title"]')).toHaveValue('Unsaved draft')
+
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Discard' }).click()
+    await expect(modal).not.toBeVisible()
+    await expect(page.getByText('Post created')).toHaveCount(0)
+  })
+
+  // The language view narrows intro and block inputs to one locale for
+  // writing prose, and remembers the choice across a reopen. Hidden locales
+  // keep their text — nothing is cleared by hiding it.
+  test('shows one language at a time in blocks and remembers the choice', async ({ page }) => {
+    const modal = page.locator('.modal-overlay')
+    const firstBlock = () => page.locator('.block-row').first()
+
+    await searchTable(page, postTitle)
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(firstBlock()).toBeVisible()
+    await expect(firstBlock().locator('textarea')).toHaveCount(2)
+
+    await modal.getByRole('radio', { name: 'PL' }).check()
+    await expect(firstBlock().locator('textarea')).toHaveCount(1)
+    await expect(firstBlock().locator('[data-locale="pl"] textarea')).toBeVisible()
+    await expect(modal.locator('textarea[placeholder*="introductory"]')).toHaveCount(0)
+
+    // Pristine form (the view is not post data), so Cancel closes at once.
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+    await expect(modal).not.toBeVisible()
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(firstBlock()).toBeVisible()
+    await expect(modal.getByRole('radio', { name: 'PL' })).toBeChecked()
+    await expect(firstBlock().locator('textarea')).toHaveCount(1)
+
+    await modal.getByRole('radio', { name: 'All' }).check()
+    await expect(firstBlock().locator('textarea')).toHaveCount(2)
+    await expect(firstBlock().locator('[data-locale="en"] textarea')).toHaveValue('First paragraph')
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+  })
+
+  // Reordering used to be pointer-drag only — no path at all for keyboard or
+  // touch. The up/down buttons are the accessible path, and the public site
+  // renders blocks in saved order, so the order must round-trip.
+  test('reorders blocks with the move buttons and saves the new order', async ({ page }) => {
+    await searchTable(page, postTitle)
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(page.locator('.block-row').first()).toBeVisible()
+
+    const rows = page.locator('.block-row')
+    const count = await rows.count()
+    await expect(rows.nth(0).locator('.block-type')).toHaveText('Text')
+    await expect(rows.nth(0).getByRole('button', { name: 'Move up' })).toBeDisabled()
+    await expect(rows.nth(count - 1).getByRole('button', { name: 'Move down' })).toBeDisabled()
+
+    await rows.nth(0).getByRole('button', { name: 'Move down' }).click()
+    await expect(rows.nth(1).locator('.block-type')).toHaveText('Text')
+
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expectToast(page, 'Post updated')
+
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(rows.nth(1).locator('.block-type')).toHaveText('Text')
   })
 
   test('deletes a post and shows "Post deleted" toast', async ({ page }) => {
