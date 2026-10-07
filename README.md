@@ -162,10 +162,12 @@ anything it requires that production has **not changed since your last pull**
 on the same migrations, and — for `--content` — that no order or ticket would
 be left pointing at deleted content.
 
-When the push includes the **database**, it first takes a verified backup of
-it into `/opt/bandms/backups/sync/` (newest 5 kept). **Uploads are never backed
-up**, and `--files-only` makes no backup at all: the upload mirror deletes any
-production file that is not in your local copy, so pull before pushing files.
+Before writing, it backs up what it is about to replace into
+`/opt/bandms/backups/sync/`, each verified and the newest 5 of each kept: the
+**database** as `bandms-<stamp>.sql.gz` when the push includes it, and the
+**uploads** as `uploads-<stamp>.tar.gz` when the push includes files
+(`--files-only` too). The upload mirror deletes any production file that is not
+in your local copy, so that archive is how to get one back.
 
 **The workflow:** `pull` → edit content locally → `push --content --dry-run` →
 `push --content`. Pull right before you start editing — a pull replaces local

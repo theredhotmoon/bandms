@@ -99,7 +99,10 @@ it, the marker check rejects it.
 (UTC timestamps). Newest **20** retained.
 
 Backups taken by `scripts/sync_db.py push` live apart, in
-`/opt/bandms/backups/sync/`, newest **5** retained. Rotation only counts files
+`/opt/bandms/backups/sync/`, newest **5** retained — database dumps
+(`bandms-*.sql.gz`) and, for pushes that include files, archives of
+`storage/app/public` (`uploads-*.tar.gz`), each rotated separately. Restoring
+an upload archive is in [`prod-sync.md`](prod-sync.md#restoring-uploads). Rotation only counts files
 directly in its own directory (`find -maxdepth 1`), so pushes can never age
 out a deploy's pre-migration backup. The first pushes predate this and wrote to
 the main directory: `bandms-20261006-164910`, `-180443` and `-204428` there are
