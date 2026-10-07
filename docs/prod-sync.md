@@ -97,12 +97,21 @@ push needs no new pull.
    the newest **5** are kept there, so pushing never ages out the 20 backups
    deploys keep in `/opt/bandms/backups/`
 
-**The backup is MySQL only.** Uploads (`storage/app/public`) are never backed
-up, and a `--files-only` push takes no backup at all. The upload mirror
-replaces prod's folder with your local one, so any prod file missing locally
-is deleted with no copy kept. The pull-first guard is what protects them: an
-upload in the prod admin adds a content row, so the push refuses until you
-pull — unless you pass `--force`.
+7. when the push includes files (`--files-only` too): prod's
+   `storage/app/public` is archived to
+   `/opt/bandms/backups/sync/uploads-<UTC stamp>.tar.gz`, listed with
+   `tar -tzf` before it is kept, newest **5** kept. It first requires free
+   disk of at least the uploads' size **plus 2 GB**, since the archives share
+   the disk with MySQL and the deploy backups (`not enough disk: …` otherwise).
+   A failed archive aborts the push before anything is written.
+
+The upload mirror replaces prod's folder with your local one, so any prod file
+missing locally is deleted — the archive is the copy. The pull-first guard
+still stops most of that happening: an upload in the prod admin adds a content
+row, so the push refuses until you pull, unless you pass `--force`.
+
+The two rotations are independent: `prod-backup-db.sh` only counts
+`bandms-*.sql.gz`, the upload archive only `uploads-*.tar.gz`.
 
 Then: prod `backend` is stopped (Caddy shows the maintenance page for the
 API), **the guard is checked a second time** — a sale during the prompt, the
@@ -126,6 +135,31 @@ in [`database-backup-and-recovery.md`](database-backup-and-recovery.md), then
 
 If the second guard check is what stopped the push, nothing was written and
 `backend` is started again automatically.
+
+### Restoring uploads
+
+A failed upload mirror names the archive it took. The mirror swaps folders only
+after a complete transfer, so a failure normally leaves prod's uploads intact;
+restore when files are missing after a push that succeeded — one you regret,
+or one forced past the guard:
+
+This is the same extract-then-swap the push itself uses (`UNPACK` in
+`scripts/prodsync/ops.py`): the archive is unpacked beside the live folder and
+replaces it only once the extract is complete, so a dropped connection or a
+mistyped path leaves the current uploads untouched. Never `rm -rf public`
+first.
+
+```bash
+ssh deploy@YOUR_SERVER_IP 'cd /opt/bandms && docker exec -i bandms-backend sh -c "
+  set -e; cd /var/www/html/storage/app; rm -rf .sync-incoming .sync-old; mkdir .sync-incoming
+  tar -xzf - -C .sync-incoming; test -d .sync-incoming/public
+  if [ -d public ]; then mv public .sync-old; fi
+  mv .sync-incoming/public public; rm -rf .sync-old .sync-incoming
+  chown -R www-data:www-data public" < backups/sync/uploads-YYYYMMDD-HHMMSS.tar.gz \
+  && docker compose -f docker-compose.prod.yml restart web'
+```
+
+The last line republishes the public site, which bakes image URLs in.
 
 ## Tests
 

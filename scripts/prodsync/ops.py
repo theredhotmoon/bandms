@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import gzip
+import re
+import shlex
 import time
 from pathlib import Path
 from typing import Iterable
@@ -125,6 +127,46 @@ def wait_healthy(side: Side, service: str, timeout: int = 180) -> None:
 
 def artisan(side: Side, *args: str) -> str:
     return run(side.docker_argv("exec", side.container("backend"), "php", "artisan", *args), cwd=side.cwd)
+
+
+UPLOAD_BACKUP_MIN_FREE_KB = 2 * 1024 * 1024
+
+
+def upload_backup_script(container: str, backup_dir: str, keep: int, stamp: str,
+                         min_free_kb: int = UPLOAD_BACKUP_MIN_FREE_KB) -> str:
+    """Host-side script: archive `container`'s storage/app/public into backup_dir.
+
+    Refuses unless the disk has room for the uploads plus `min_free_kb`: the
+    archive shares it with MySQL and the deploy backups, and filling it would
+    fail their next write. Written to .partial and listed with `tar -tzf`
+    before it is kept, so a dropped stream cannot leave a plausible-looking
+    archive. Rotation keeps the newest `keep` uploads-*.tar.gz; prod-backup-db.sh's
+    own rotation only counts <db>-*.sql.gz, so the two never touch each other's files.
+    """
+    d = shlex.quote(backup_dir)
+    c = shlex.quote(container)
+    name = f"uploads-{stamp}.tar.gz"
+    return (
+        f"set -e; mkdir -p {d}; f={d}/{name}; trap 'rm -f \"$f.partial\"' EXIT; "
+        f"size=$(docker exec {c} du -sk {STORAGE_APP}/public | cut -f1); "
+        f"free=$(df -Pk {d} | awk 'NR==2{{print $4}}'); "
+        f"if [ \"$free\" -lt $((size + {min_free_kb})) ]; then "
+        "echo \"not enough disk: uploads ${size} KB, free ${free} KB, "
+        f"want {min_free_kb} KB to spare\" >&2; exit 1; fi; "
+        f"docker exec {c} {PACK} > \"$f.partial\"; "
+        "tar -tzf \"$f.partial\" > /dev/null; "
+        "mv \"$f.partial\" \"$f\"; "
+        f"ls -1t {d}/uploads-*.tar.gz | tail -n +{keep + 1} | xargs -r rm -f --; "
+        f"echo \"verified: {name}\""
+    )
+
+
+def backup_uploads(side: Side, backup_dir: str, keep: int, stamp: str) -> str | None:
+    """Archive the side's uploads on its host; the archive's name, or None if unverified."""
+    script = upload_backup_script(side.container("backend"), backup_dir, keep, stamp)
+    out = run(side.shell_argv(f"sh -c {shlex.quote(script)}"))
+    match = re.search(r"verified: (\S+)", out)
+    return match.group(1) if match else None
 
 
 def mirror_files(src: Side, dst: Side) -> None:

@@ -38,6 +38,7 @@ class PushTest(unittest.TestCase):
         self.ops.database_name.return_value = "bandms"
         self.ops.dump_to.side_effect = lambda side, path, tables: path.write_bytes(b"x")
         self.backup_output = "[backup] verified: bandms-1.sql.gz (1M)\n"
+        self.ops.backup_uploads.return_value = "uploads-1.tar.gz"
         self.saved = mock.MagicMock()
         patches = [
             mock.patch.object(flows, "ops", self.ops),
@@ -52,7 +53,13 @@ class PushTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def _run(self, argv, **kw):
-        return self.backup_output if "prod-backup-db.sh" in argv[-1] else ""
+        if "prod-backup-db.sh" in argv[-1]:
+            return self.backup_output
+        return ""
+
+    def upload_backup_index(self):
+        hits = [i for i, c in enumerate(self.parent.mock_calls) if c[0] == "ops.backup_uploads"]
+        return hits[0] if hits else None
 
     def push(self, opts):
         with contextlib.redirect_stdout(io.StringIO()):
@@ -161,6 +168,35 @@ class PushTest(unittest.TestCase):
         self.assertIn("backups/sync", str(ctx.exception))
         self.ops.dump_to.assert_not_called()
         self.assertFalse(any("prod-backup-db.sh" in c.args[0][-1] for c in self.run.call_args_list))
+
+    def test_uploads_are_backed_up_before_anything_on_prod_changes(self):
+        self.ops.fingerprint.side_effect = [dict(FP), dict(FP), dict(FP_AFTER)]
+        self.push(options(files=True))
+        backup = self.upload_backup_index()
+        self.assertIsNotNone(backup)
+        self.assertLess(backup, self.compose_calls("stop")[0])
+        self.assertLess(backup, self.index_of("ops.mirror_files"))
+        side, backup_dir, keep, _stamp = self.parent.mock_calls[backup][1]
+        self.assertEqual((side.name, backup_dir, keep), ("prod", "/opt/bandms/backups/sync", 5))
+
+    def test_files_only_push_backs_up_uploads_too(self):
+        self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]
+        self.push(options(db=False, files=True))
+        self.assertLess(self.upload_backup_index(), self.index_of("ops.mirror_files"))
+
+    def test_failed_upload_backup_aborts_before_anything_is_written(self):
+        self.ops.fingerprint.side_effect = [dict(FP)]
+        self.ops.backup_uploads.return_value = None
+        with self.assertRaises(SyncError):
+            self.push(options(files=True))
+        self.ops.mirror_files.assert_not_called()
+        self.ops.import_dump.assert_not_called()
+        self.assertEqual(self.compose_calls("stop"), [])
+
+    def test_db_only_push_does_not_archive_uploads(self):
+        self.ops.fingerprint.side_effect = [dict(FP), dict(FP), dict(FP_AFTER)]
+        self.push(options())
+        self.assertIsNone(self.upload_backup_index())
 
     def test_files_only_push_keeps_the_saved_state(self):
         self.ops.fingerprint.side_effect = [dict(FP), dict(FP)]

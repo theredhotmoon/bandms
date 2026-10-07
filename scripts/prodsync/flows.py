@@ -230,6 +230,19 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
         if problem:
             raise _NothingWritten(problem + _REFUSE_HINT)
 
+    backup_dir = f"{cfg.remote_dir}/{SYNC_BACKUP_SUBDIR}"
+    uploads_path = None
+    if opts.files:
+        # Before any write: the mirror deletes every prod upload missing
+        # locally, and the database backup does not cover files.
+        with rep.step("back up prod uploads"):
+            archive = ops.backup_uploads(prod, backup_dir, SYNC_BACKUP_KEEP,
+                                         time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
+        if not archive:
+            raise SyncError("prod uploads were not archived and verified - refusing to write to prod")
+        uploads_path = f"{backup_dir}/{archive}"
+        rep.info(f"prod uploads backup: {uploads_path}")
+
     new_fp: dict | None = None
     with tempfile.TemporaryDirectory(prefix="bandms-sync-") as tmp:
         if opts.db:
@@ -238,7 +251,6 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
                 ops.dump_to(local, dump, None if opts.mode == "full" else content)
                 charset = ops.schema_charset(local) if opts.mode == "full" else None
             rep.info(f"dump: {dump.stat().st_size / 1e3:.0f} KB")
-            backup_dir = f"{cfg.remote_dir}/{SYNC_BACKUP_SUBDIR}"
             with rep.step("back up prod database"):
                 # Name the database and directory explicitly: the script
                 # otherwise reads DB_DATABASE from the deploy user's shell and
@@ -275,8 +287,13 @@ def push(cfg: Config, opts: Options, rep: Reporter) -> None:
         else:
             recheck()
         if opts.files:
-            with rep.step("mirror uploads local -> prod"):
-                ops.mirror_files(local, prod)
+            try:
+                with rep.step("mirror uploads local -> prod"):
+                    ops.mirror_files(local, prod)
+            except SyncError:
+                rep.info(f"prod uploads can be restored from {uploads_path} "
+                         "(see docs/prod-sync.md)")
+                raise
 
     _publish(rep, prod)
     print("\npush complete.")
