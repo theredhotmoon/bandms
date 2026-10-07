@@ -174,8 +174,10 @@ in your local copy, so that archive is how to get one back.
 edits, and a sale on production after your pull blocks the push.
 
 Add `--db-only` or `--files-only` to either direction to move just one of them.
-Full guide, including recovering from a failed push:
-**[docs/prod-sync.md](docs/prod-sync.md)**.
+**Step-by-step instructions** — first-time setup, publishing your edits,
+pulling without losing local data, checking the server backups, undoing a push,
+and every error message with what to do:
+**[docs/prod-sync.md](docs/prod-sync.md#instructions)**.
 
 ---
 
