@@ -204,7 +204,7 @@ Every push leaves its backups in `/opt/bandms/backups/sync/`, newest 5 of each
 kind; deploys keep theirs, newest 20, one level up.
 
 ```bash
-ssh deploy@YOUR_SERVER_IP "ls -lht /opt/bandms/backups/sync /opt/bandms/backups"
+ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "ls -lht /opt/bandms/backups/sync /opt/bandms/backups"
 ```
 
 A database dump and an uploads archive with the same push share a timestamp
@@ -214,14 +214,14 @@ to within seconds. The name is UTC.
 completion line — a dump cut off half-way is still valid gzip:
 
 ```bash
-ssh deploy@YOUR_SERVER_IP "f=/opt/bandms/backups/sync/bandms-YYYYMMDD-HHMMSS.sql.gz; gzip -t \$f && gzip -dc \$f | tail -1"
+ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "f=/opt/bandms/backups/sync/bandms-YYYYMMDD-HHMMSS.sql.gz; gzip -t \$f && gzip -dc \$f | tail -1"
 # -- Dump completed on 2026-10-06 20:44:29
 ```
 
 **Is an uploads archive usable?** It lists every file:
 
 ```bash
-ssh deploy@YOUR_SERVER_IP "tar -tzf /opt/bandms/backups/sync/uploads-YYYYMMDD-HHMMSS.tar.gz | grep -v '/\$'"
+ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP "tar -tzf /opt/bandms/backups/sync/uploads-YYYYMMDD-HHMMSS.tar.gz | grep -v '/\$'"
 ```
 
 The pushes of 2026-10-06 predate the `sync/` folder: their dumps are
@@ -241,7 +241,7 @@ The backup is a **full** dump of production taken seconds before the push
 wrote anything, so restoring it brings back everything as it was then,
 orders and users included.
 
-On the server (`ssh deploy@YOUR_SERVER_IP`), first prove the backup restores,
+On the server (`ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP`), first prove the backup restores,
 into a scratch database:
 
 ```bash
@@ -291,7 +291,7 @@ leaves production untouched.
 | `prod containers not running: bandms-backend` … `restore the newest backup in …/sync/ first` | a failed push left it stopped, or prod is down | [section 5](#5-undo-a-push-restore-the-production-database); never just start it on a half-loaded database |
 | `no record of a pull from <host> - run pull first` | no pull from this server on this machine | pull, then edit, then push |
 | `prod content changed since the last pull (…): shop_items, …` | a sale or a prod-admin edit since your pull | pull (replaces local edits — save them as in section 3 first), redo the edits, push. `--force` overwrites the change instead |
-| `local and prod are on different migrations` + `only local: …` | your code is ahead of what is deployed | merge and deploy first, or switch to the deployed code |
+| `local and prod are on different migrations` + `only local: …` | your **local database** has migrations production lacks — it compares the two `migrations` tables, so checking out older code does not clear it | merge and deploy them first; or, to give up the local schema, `pull` (replaces the local database with production's) |
 | `… only prod: …` | production is ahead of your checkout | `git pull` on `main`, then `pull` (it brings production's schema with it) |
 | `this push would leave prod rows dangling:` + `1 prod row(s) in presale_codes.concert_id point at concerts.id=7, which is missing locally` | you deleted something a real order, ticket or code points at | the record is still on production: pull, redo your edits without deleting it, push |
 | `not enough disk: uploads … KB, free … KB` | the server is nearly full | free space on the server before pushing files |
@@ -426,7 +426,7 @@ mistyped path leaves the current uploads untouched. Never `rm -rf public`
 first.
 
 ```bash
-ssh deploy@YOUR_SERVER_IP 'cd /opt/bandms && docker exec -i bandms-backend sh -c "
+ssh -i ~/.ssh/bandms_deploy deploy@YOUR_SERVER_IP 'cd /opt/bandms && docker exec -i bandms-backend sh -c "
   set -e; cd /var/www/html/storage/app; rm -rf .sync-incoming .sync-old; mkdir .sync-incoming
   tar -xzf - -C .sync-incoming; test -d .sync-incoming/public
   if [ -d public ]; then mv public .sync-old; fi
