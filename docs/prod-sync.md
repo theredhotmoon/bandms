@@ -91,11 +91,18 @@ push needs no new pull.
    content row missing locally (e.g. a ticket for a concert you deleted), and
    no local content row may point at a prod-only row missing on prod
 5. you type the server host
-6. `scripts/prod-backup-db.sh` runs on the server and must report a
-   **verified** backup — a run that backs nothing up aborts the push. Push
-   backups go to `/opt/bandms/backups/sync/` and only the newest **5** are
-   kept there, so pushing never ages out the 20 backups deploys keep in
-   `/opt/bandms/backups/`
+6. when the push includes the database: `scripts/prod-backup-db.sh` runs on
+   the server and must report a **verified** backup — a run that backs nothing
+   up aborts the push. Push backups go to `/opt/bandms/backups/sync/` and only
+   the newest **5** are kept there, so pushing never ages out the 20 backups
+   deploys keep in `/opt/bandms/backups/`
+
+**The backup is MySQL only.** Uploads (`storage/app/public`) are never backed
+up, and a `--files-only` push takes no backup at all. The upload mirror
+replaces prod's folder with your local one, so any prod file missing locally
+is deleted with no copy kept. The pull-first guard is what protects them: an
+upload in the prod admin adds a content row, so the push refuses until you
+pull — unless you pass `--force`.
 
 Then: prod `backend` is stopped (Caddy shows the maintenance page for the
 API), **the guard is checked a second time** — a sale during the prompt, the

@@ -158,9 +158,14 @@ python scripts/sync_db.py push --full                # replace EVERYTHING (recov
 
 A push asks you to **type the server host** to confirm, and before writing
 anything it requires that production has **not changed since your last pull**
-(a shop sale counts), that both sides are on the same migrations, and that no
-order or ticket would be left pointing at deleted content. It takes a verified
-backup into `/opt/bandms/backups/sync/` (newest 5 kept) first.
+(a shop sale counts; `--force` overrides this one check), that both sides are
+on the same migrations, and — for `--content` — that no order or ticket would
+be left pointing at deleted content.
+
+When the push includes the **database**, it first takes a verified backup of
+it into `/opt/bandms/backups/sync/` (newest 5 kept). **Uploads are never backed
+up**, and `--files-only` makes no backup at all: the upload mirror deletes any
+production file that is not in your local copy, so pull before pushing files.
 
 **The workflow:** `pull` → edit content locally → `push --content --dry-run` →
 `push --content`. Pull right before you start editing — a pull replaces local
