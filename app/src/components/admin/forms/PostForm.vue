@@ -241,9 +241,10 @@ function submit() {
    </div>
 
    <!-- ── Publishing & links: a rail beside the content when there is room,
-        pinned under the header on tall viewports; a last section below it
-        otherwise. ───────────────────────────────────────────────── -->
-   <aside class="pf-rail">
+        pinned under the header; a last section below it otherwise. A div,
+        not an aside: these are primary inputs, not complementary content,
+        and a landmark inside the dialog would say otherwise. ──────── -->
+   <div class="pf-rail">
     <section class="pf-section">
       <h3 class="section-title">{{ $t('content.posts.section.publishing') }}</h3>
       <div class="flex flex-col gap-4">
@@ -311,7 +312,7 @@ function submit() {
         </div>
       </div>
     </section>
-   </aside>
+   </div>
    </div>
 
     <!-- Pinned to the bottom of the scrolling modal, so the save and what it
@@ -332,7 +333,15 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
-.post-form { display: flex; flex-direction: column; container-type: inline-size; }
+/* Two named containers: the form decides whether there is room for the rail;
+   the main column decides whether its own cover grid still fits, on the width
+   it is actually laid out in rather than the form's. */
+.post-form {
+  display: flex; flex-direction: column; container: post-form / inline-size;
+  /* 0.75rem padding ×2 + a 13px/1.4 button at 0.5rem padding ×2 + 1px border. */
+  --pf-footer-h: 3.75rem;
+}
+.pf-main { container: post-main / inline-size; }
 
 /* One column by default: Post, Content, then Publishing & links, each
    separated by a hairline and a step of space. */
@@ -350,7 +359,7 @@ function submit() {
    article keeps the full measure, and status, slug and links stay in view
    while a long post scrolls. Queried on the form's own width, not the
    viewport, so a narrower modal falls back to one column on its own. */
-@container (min-width: 52rem) {
+@container post-form (min-width: 52rem) {
   .pf-grid { grid-template-columns: minmax(0, 1fr) 19rem; gap: 2rem; align-items: start; }
   .pf-rail {
     margin-top: 0;
@@ -361,12 +370,23 @@ function submit() {
     /* Fill the row so the hairline runs the full height of the content column. */
     align-self: stretch;
   }
-  .pf-rail .pf-section { position: sticky; top: 4.75rem; }
-}
-/* A pinned rail taller than the viewport traps its own bottom; let it scroll
-   with the page on short screens. */
-@media (max-height: 44rem) {
-  .pf-rail .pf-section { position: static; }
+  /* Pinned just under the sticky header, at the header's measured height
+     plus the body's top padding. Capped to the viewport and scrollable
+     inside, so a rail taller than the screen (three expanded relation
+     lists) never traps its own bottom. */
+  .pf-rail .pf-section {
+    --rail-top: calc(var(--modal-header-h, 3.5rem) + var(--modal-pad-t, 1.25rem));
+    position: sticky;
+    top: var(--rail-top);
+    /* The sticky footer below is this form's own (see .pf-footer), so its
+       height is subtracted too or the rail's last rows hide behind it. */
+    max-height: calc(100vh - var(--rail-top) - var(--pf-footer-h) - 0.5rem);
+    max-height: calc(100dvh - var(--rail-top) - var(--pf-footer-h) - 0.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Room for the themed scrollbar without the hairline hugging the inputs. */
+    padding-right: 0.25rem;
+  }
 }
 
 .pf-head {
@@ -376,7 +396,7 @@ function submit() {
   align-items: start;
 }
 .pf-cover { min-width: 0; }
-@container (max-width: 36rem) {
+@container post-main (max-width: 30rem) {
   .pf-head { grid-template-columns: minmax(0, 1fr); }
 }
 
