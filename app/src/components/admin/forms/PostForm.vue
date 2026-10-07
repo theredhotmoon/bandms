@@ -171,6 +171,8 @@ function submit() {
 
 <template>
   <form ref="formEl" @submit.prevent="submit" class="post-form">
+   <div class="pf-grid">
+   <div class="pf-main">
 
     <!-- ── Post: what it is ─────────────────────────────────── -->
     <section class="pf-section">
@@ -236,8 +238,12 @@ function submit() {
       </PostBlockEditor>
       <p v-if="errors?.blocks" class="field-error">{{ errors.blocks[0] }}</p>
     </section>
+   </div>
 
-    <!-- ── Publishing & links ───────────────────────────────── -->
+   <!-- ── Publishing & links: a rail beside the content when there is room,
+        pinned under the header on tall viewports; a last section below it
+        otherwise. ───────────────────────────────────────────────── -->
+   <aside class="pf-rail">
     <section class="pf-section">
       <h3 class="section-title">{{ $t('content.posts.section.publishing') }}</h3>
       <div class="flex flex-col gap-4">
@@ -305,6 +311,8 @@ function submit() {
         </div>
       </div>
     </section>
+   </aside>
+   </div>
 
     <!-- Pinned to the bottom of the scrolling modal, so the save and what it
          will do are always one glance away however long the post gets. -->
@@ -324,14 +332,41 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
-.post-form { display: flex; flex-direction: column; }
+.post-form { display: flex; flex-direction: column; container-type: inline-size; }
 
-/* Tight inside a section, generous between: a hairline and a step of space
-   is what separates "what the post is" from "the post" from "where it goes". */
-.pf-section + .pf-section {
+/* One column by default: Post, Content, then Publishing & links, each
+   separated by a hairline and a step of space. */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.pf-main, .pf-rail { min-width: 0; }
+
+.pf-section + .pf-section,
+.pf-rail {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--c-222222);
+}
+
+/* With room for it, the settings become a rail beside the content: the
+   article keeps the full measure, and status, slug and links stay in view
+   while a long post scrolls. Queried on the form's own width, not the
+   viewport, so a narrower modal falls back to one column on its own. */
+@container (min-width: 52rem) {
+  .pf-grid { grid-template-columns: minmax(0, 1fr) 19rem; gap: 2rem; align-items: start; }
+  .pf-rail {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: 2rem;
+    border-left: 1px solid var(--c-222222);
+    /* Fill the row so the hairline runs the full height of the content column. */
+    align-self: stretch;
+  }
+  .pf-rail .pf-section { position: sticky; top: 4.75rem; }
+}
+/* A pinned rail taller than the viewport traps its own bottom; let it scroll
+   with the page on short screens. */
+@media (max-height: 44rem) {
+  .pf-rail .pf-section { position: static; }
 }
 
 .pf-head {
@@ -341,6 +376,9 @@ function submit() {
   align-items: start;
 }
 .pf-cover { min-width: 0; }
+@container (max-width: 36rem) {
+  .pf-head { grid-template-columns: minmax(0, 1fr); }
+}
 
 .pf-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
 .pf-status-date { width: auto; flex: 0 1 14rem; }
@@ -376,7 +414,6 @@ function submit() {
 .pf-footer-status--error { color: var(--c-f87171); }
 
 @media (max-width: 640px) {
-  .pf-head { grid-template-columns: minmax(0, 1fr); }
   .pf-footer { margin-top: 1.25rem; padding-top: 0.625rem; padding-bottom: 0.625rem; }
 }
 </style>

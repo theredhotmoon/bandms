@@ -172,7 +172,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal ref="modal" :open="showModal" :dirty="formDirty" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="44rem" @close="closeModal">
+    <AdminModal ref="modal" :open="showModal" :dirty="formDirty" :title="isCreating ? $t('content.posts.modalNew') : $t('content.posts.modalEdit')" max-width="64rem" @close="closeModal">
       <div v-if="!isCreating && editQuery.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('content.posts.loadingOne') }}</div>
       <PostForm
         v-else
