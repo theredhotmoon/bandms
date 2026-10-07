@@ -4,6 +4,7 @@ import { useUiLang } from '@/composables/useUiLang'
 import { formatShortDate } from '@/utils/formatDate'
 import { dateLocale } from '@/locales'
 import { ref, reactive, computed, watch } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -47,12 +48,16 @@ const addForm = reactive<UserPayload & { password: string; password_confirmation
   band_member_id: null,
 })
 
+const addModal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty: addDirty, markClean: addClean } = useDirtyGuard(() => addForm)
+
 function openAdd() {
   Object.assign(addForm, {
     first_name: '', last_name: '', email: '',
     password: '', password_confirmation: '',
     role: 'member', band_member_id: null,
   })
+  addClean()
   showAdd.value = true
 }
 
@@ -94,6 +99,9 @@ const editForm    = reactive<Partial<UserPayload> & { password: string; password
   role: 'member', band_member_id: null,
 })
 
+const editModal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty: editDirty, markClean: editClean } = useDirtyGuard(() => editForm)
+
 function openEdit(userId: number) {
   const u = (list.data.value ?? []).find((x: ManagedUser) => x.id === userId)
   if (!u) return
@@ -106,6 +114,7 @@ function openEdit(userId: number) {
     role: u.role,
     band_member_id: u.band_member_id,
   })
+  editClean()
   editingId.value = userId
   showEdit.value = true
 }
@@ -231,7 +240,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
     </div>
 
     <!-- Add modal -->
-    <AdminModal :open="showAdd" :title="$t('more.users.addTitle')" max-width="30rem" @close="showAdd = false">
+    <AdminModal ref="addModal" :open="showAdd" :dirty="addDirty" :title="$t('more.users.addTitle')" max-width="30rem" @close="showAdd = false">
       <form class="modal-form" @submit.prevent="submitAdd">
         <div>
           <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
@@ -277,14 +286,14 @@ const ROLE_COLORS: Record<UserRole, string> = {
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showAdd = false">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="addModal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="adding">{{ adding ? $t('more.users.form.creating') : $t('more.users.form.createUser') }}</button>
         </div>
       </form>
     </AdminModal>
 
     <!-- Edit modal -->
-    <AdminModal :open="showEdit" :title="$t('more.users.editTitle')" max-width="30rem" @close="showEdit = false">
+    <AdminModal ref="editModal" :open="showEdit" :dirty="editDirty" :title="$t('more.users.editTitle')" max-width="30rem" @close="showEdit = false">
       <form class="modal-form" @submit.prevent="submitEdit">
         <div>
           <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
@@ -330,7 +339,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showEdit = false">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="editModal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? $t('common.actions.saving') : $t('more.users.form.saveChanges') }}</button>
         </div>
       </form>

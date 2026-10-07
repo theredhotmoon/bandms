@@ -263,6 +263,36 @@ uses the same marker):
 `color-scheme` is set on `.admin-shell` and `.modal-overlay` only, so the fan
 pages the SPA still serves keep the browser default.
 
+### Modal forms carry the discard guard themselves
+
+`AdminModal` owns one "Discard changes?" confirmation for every way out —
+backdrop, ✕, Escape and Cancel. It learns whether there is anything to lose
+in one of two ways, both in `src/composables/useDirtyGuard.ts`:
+
+- **A form component inside the modal** calls
+  `useModalGuard(isDirty, () => emit('cancel'))` and binds the returned
+  `cancel` to its Cancel button. That is the whole wiring; the view adds
+  nothing. Outside a modal the composable is inert and `cancel` just emits.
+- **A view whose form is inline in the modal body** passes `:dirty` to
+  `AdminModal` and routes its Cancel button through a template ref's
+  `requestClose()`.
+
+**Escape only closes a guarded modal.** A modal with neither a `dirty` prop
+nor a registered form gets no Escape key at all, because it cannot know what
+it holds, and Escape is pressed reflexively to dismiss autocomplete.
+
+**`dirty` is declared through `withDefaults(…, { dirty: undefined })`, and
+that default is load-bearing.** Vue casts an *absent* Boolean prop to
+`false` unless a default exists, so without it every modal looked
+declared-and-clean: the bridge was never consulted and Escape closed dirty
+forms at once. That shipped in #185 and was caught only by a harness run.
+A tri-state Boolean prop in this codebase needs that default.
+
+An in-modal popover that consumes Escape (`PhotoMemberTags`,
+`InstrumentIconPicker`, `ConfirmDialog`) must call `preventDefault()`;
+`AdminModal` listens on `window`, which fires after every `document`
+listener, and skips a consumed key.
+
 ### Composables
 - Named `use*`, placed in `src/composables/`.
 - One composable = one logical concern.

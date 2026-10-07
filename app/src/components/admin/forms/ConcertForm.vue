@@ -6,7 +6,7 @@ import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
-import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
@@ -130,6 +130,7 @@ const newLinkUrl   = ref('')
 
 const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, lineup: lineup.value, links: links.value }))
 const canSave = computed(() => isDirty.value || posterFile.value !== null || posterDelete.value)
+const { cancel } = useModalGuard(canSave, () => emit('cancel'))
 
 watch(() => props.initial, (concert) => {
   if (!concert) {
@@ -610,7 +611,7 @@ function submit() {
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !canSave" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>

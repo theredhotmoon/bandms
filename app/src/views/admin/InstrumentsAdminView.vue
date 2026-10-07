@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -61,12 +62,16 @@ const tc = useTableControls<Instrument>({
   defaultSort: 'name',
 })
 
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty, markClean } = useDirtyGuard(() => form)
+
 function openCreate() {
   editing.value        = null
   fieldErrors.value    = {}
   form.name            = emptyBag()
   form.category        = null
   form.stage_plot_type = null
+  markClean()
   showModal.value      = true
 }
 
@@ -76,6 +81,7 @@ function openEdit(i: Instrument) {
   for (const l of LOCALES) form.name[l] = i.translations?.name[l] ?? ''
   form.category        = i.category
   form.stage_plot_type = i.stage_plot_type ?? null
+  markClean()
   showModal.value      = true
 }
 
@@ -185,7 +191,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? $t('more.instruments.editTitle') : $t('more.instruments.addTitle')" max-width="28rem" @close="closeModal">
+    <AdminModal ref="modal" :open="showModal" :dirty="isDirty" :title="editing ? $t('more.instruments.editTitle') : $t('more.instruments.addTitle')" max-width="28rem" @close="closeModal">
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
           <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
@@ -226,7 +232,7 @@ async function confirmDelete() {
           </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="modal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
             {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>

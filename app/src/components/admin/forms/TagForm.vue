@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import { LOCALES, bagFrom, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -31,11 +32,15 @@ const form = reactive({
   slug: emptyBag(),
 })
 
+const { isDirty, markClean } = useDirtyGuard(() => form)
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(() => props.initial, (val) => {
   for (const l of LOCALES) {
     form.name[l] = val?.translations?.name[l] ?? ''
   }
   form.slug = bagFrom(val?.translations?.slug)
+  markClean()
 }, { immediate: true })
 
 function submit() {
@@ -73,7 +78,7 @@ function submit() {
       <p v-if="errors?.slug" class="field-error">{{ errors.slug[0] }}</p>
     </div>
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>

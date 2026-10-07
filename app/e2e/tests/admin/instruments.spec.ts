@@ -15,6 +15,34 @@ test.describe('Instruments Admin', () => {
     await expect(page.getByRole('heading', { name: /instruments/i })).toBeVisible()
   })
 
+  // This form is inline in the view, so the view passes `dirty` to AdminModal
+  // itself — the other half of the guard, next to the form-component path
+  // that releases.spec covers.
+  test('discard guard: an inline modal form asks before dropping typed input', async ({ page }) => {
+    await page.goto('/admin/instruments')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: '+ Add instrument' }).click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(modal).not.toBeVisible()
+
+    await page.getByRole('button', { name: '+ Add instrument' }).click()
+    await modal.locator('.trans-row input').first().fill('Unsaved instrument')
+    const discard = page.getByRole('dialog', { name: 'Discard changes?' })
+
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Cancel' }).click()
+    await expect(modal.locator('.trans-row input').first()).toHaveValue('Unsaved instrument')
+
+    await page.keyboard.press('Escape')
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Discard' }).click()
+    await expect(modal).not.toBeVisible()
+  })
+
   test('create instrument: modal opens, fill name and category, save → toast and row appear', async ({ page }) => {
     await page.goto('/admin/instruments')
     await page.waitForLoadState('networkidle')

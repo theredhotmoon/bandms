@@ -2,6 +2,7 @@
 import MemberPicker from '@/components/admin/forms/MemberPicker.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { computed, reactive, ref, watch } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -110,6 +111,9 @@ const tc = useTableControls<MusicVideo>({
   defaultSort: 'sort_order',
 })
 
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty, markClean } = useDirtyGuard(() => form)
+
 function openCreate() {
   editing.value       = null
   form.title          = ''
@@ -118,6 +122,7 @@ function openCreate() {
   form.sort_order     = query.data.value?.length ?? 0
   form.member_ids     = []
   retrievedMeta.value = null
+  markClean()
   showModal.value     = true
 }
 
@@ -129,6 +134,7 @@ function openEdit(v: MusicVideo) {
   form.sort_order     = v.sort_order
   form.member_ids     = v.member_ids ? [...v.member_ids] : []
   retrievedMeta.value = null
+  markClean()
   showModal.value     = true
 }
 
@@ -303,7 +309,9 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
     </div>
 
     <AdminModal
+      ref="modal"
       :open="showModal"
+      :dirty="isDirty"
       :title="editing ? $t('media.videos.modalEdit') : $t('media.videos.modalNew')"
       max-width="32rem"
       @close="closeModal"
@@ -366,7 +374,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
           testid="video-members"
         />
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="modal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
             {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>
