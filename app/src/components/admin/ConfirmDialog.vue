@@ -1,10 +1,27 @@
 <script setup lang="ts">
+import { onBeforeUnmount, watch } from 'vue'
+
 /**
  * `title` and `confirmLabel` default to the delete wording; a discard-changes
  * prompt passes its own so the button names the action it performs.
  */
-defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean }>()
-defineEmits<{ confirm: []; cancel: [] }>()
+const props = defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean }>()
+const emit = defineEmits<{ confirm: []; cancel: [] }>()
+
+// Escape backs out of the question. preventDefault() marks the key as
+// consumed so a modal underneath (AdminModal listens on window) leaves it be.
+function onKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Escape' || props.loading) return // i18n-ignore: key name, not copy
+  e.preventDefault()
+  emit('cancel')
+}
+
+watch(() => props.open, (open) => {
+  if (open) document.addEventListener('keydown', onKeydown)
+  else document.removeEventListener('keydown', onKeydown)
+}, { immediate: true })
+
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>

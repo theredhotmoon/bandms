@@ -1,19 +1,43 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
+import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 
-const props = defineProps<{ title: string; open: boolean; maxWidth?: string }>()
+/**
+ * `dirty` opts a modal into the discard guard: while it is true, every way out
+ * (backdrop, ✕, Escape, or a consumer calling `requestClose()`) asks before
+ * `close` is emitted. A modal that does not declare it keeps the old
+ * behaviour — backdrop and ✕ close at once — and gets **no** Escape key,
+ * deliberately: a modal that cannot say whether it holds unsaved input must
+ * not gain a keystroke that throws it away, and Escape is routinely pressed
+ * to dismiss a browser autocomplete or an in-modal popover.
+ */
+const props = defineProps<{ title: string; open: boolean; maxWidth?: string; dirty?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
+const confirming = ref(false)
 
-// Escape closes, the same way the backdrop does — the consumer decides whether
-// a dirty form needs a confirmation first, since both paths emit `close`.
+function requestClose() {
+  if (props.dirty) confirming.value = true
+  else emit('close')
+}
+
+function discard() {
+  confirming.value = false
+  emit('close')
+}
+
+defineExpose({ requestClose })
+
+// Listens on `window`, which fires after every document-level handler, so an
+// in-modal popover (member tags, the icon picker, the confirm dialog) that
+// consumed the key with preventDefault() is honoured and only the modal's own
+// Escape reaches here.
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && props.open) { // i18n-ignore: key name, not copy
-    e.stopPropagation()
-    emit('close')
-  }
+  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || props.dirty === undefined) return // i18n-ignore: key name, not copy
+  e.preventDefault()
+  requestClose()
 }
 
 // Focus moves into the dialog on open and back to the opener on close, so a
@@ -23,27 +47,28 @@ let opener: Element | null = null
 watch(() => props.open, async (open) => {
   if (open) {
     opener = document.activeElement
-    document.addEventListener('keydown', onKeydown)
+    window.addEventListener('keydown', onKeydown)
     await nextTick()
     const first = panel.value?.querySelector<HTMLElement>(
       'input:not([type=hidden]), textarea, select, button:not(.modal-close)', // i18n-ignore: CSS selector
     )
     ;(first ?? panel.value)?.focus({ preventScroll: true })
   } else {
-    document.removeEventListener('keydown', onKeydown)
+    confirming.value = false
+    window.removeEventListener('keydown', onKeydown)
     if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
     opener = null
   }
 }, { immediate: true })
 
-onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="open" class="modal-overlay">
-        <div class="modal-backdrop" @click="$emit('close')" />
+        <div class="modal-backdrop" @click="requestClose" />
         <div
           ref="panel"
           class="modal-panel"
@@ -55,7 +80,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         >
           <div class="modal-header">
             <h2 :id="titleId" class="modal-title">{{ title }}</h2>
-            <button type="button" @click="$emit('close')" class="modal-close" :aria-label="$t('common.actions.close')">
+            <button type="button" @click="requestClose" class="modal-close" :aria-label="$t('common.actions.close')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
@@ -66,6 +91,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       </div>
     </Transition>
   </Teleport>
+
+  <ConfirmDialog
+    :open="confirming"
+    :title="$t('common.confirm.discardTitle')"
+    :message="$t('common.confirm.discardMessage')"
+    :confirm-label="$t('common.confirm.discard')"
+    @confirm="discard"
+    @cancel="confirming = false"
+  />
 </template>
 
 <style scoped>
@@ -92,13 +126,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .modal-panel {
   position: relative;
   z-index: 10;
-  width: 100%;
+  width: calc(100% - 2rem);
+  margin: 4rem 1rem 1rem;
   border-radius: 0.75rem;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
   background: var(--c-141414);
   border: 1px solid var(--c-333333);
-  margin: 4rem 1rem 1rem;
-  width: calc(100% - 2rem);
   outline: none;
 }
 
@@ -134,12 +167,19 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 }
 .modal-close:hover { background: var(--c-222222); color: var(--c-94a3b8); }
 
-.modal-body { padding: 1.25rem 1.5rem 1.5rem; }
+/* The body's padding is published as variables so a form that pins its own
+   footer to the panel edge (PostForm) reads the same values instead of
+   repeating them. */
+.modal-body {
+  --modal-pad-x: 1.5rem;
+  --modal-pad-b: 1.5rem;
+  padding: 1.25rem var(--modal-pad-x) var(--modal-pad-b);
+}
 
 @media (max-width: 640px) {
   .modal-panel { margin: 1rem 0.5rem 0.5rem; width: calc(100% - 1rem); }
   .modal-header { padding: 0.875rem 1rem; }
-  .modal-body { padding: 1rem 1rem 1.25rem; }
+  .modal-body { --modal-pad-x: 1rem; --modal-pad-b: 1.25rem; padding-top: 1rem; }
 }
 
 /* ── Transition ──────────────────────────────────── */

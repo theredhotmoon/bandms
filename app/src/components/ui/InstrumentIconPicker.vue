@@ -118,7 +118,10 @@ function onAncestorScroll(e: Event) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') open.value = false // i18n-ignore: KeyboardEvent.key name
+  if (e.key !== 'Escape') return // i18n-ignore: KeyboardEvent.key name
+  // Consumed here: the modal around this popover must not close on the same key.
+  e.preventDefault()
+  open.value = false
 }
 
 watch(open, async (isOpen) => {

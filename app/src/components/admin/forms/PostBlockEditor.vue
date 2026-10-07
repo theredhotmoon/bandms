@@ -33,7 +33,9 @@ async function add(type: PostBlockType) {
   const last = rows?.[rows.length - 1]
   if (!last) return
   last.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  last.querySelector<HTMLElement>('textarea, input, select')?.focus({ preventScroll: true }) // i18n-ignore: CSS selector
+  // The hidden file input of an image block is never focusable; its upload
+  // button is the thing to land on there.
+  last.querySelector<HTMLElement>('textarea, input:not([type=file]), select, .img-drop')?.focus({ preventScroll: true }) // i18n-ignore: CSS selector
 }
 
 function remove(i: number) {
@@ -59,6 +61,21 @@ let dragFrom = -1
 const dragArmed = ref(-1)
 const dragOverIndex = ref(-1)
 
+// Disarm on the pointer going up or being cancelled *anywhere*, not only on
+// the grip: a release that slid off the grip, or a touch that turned into a
+// scroll (pointercancel), would otherwise leave the row draggable for good.
+function arm(i: number) {
+  dragArmed.value = i
+  window.addEventListener('pointerup', disarm, { once: true })
+  window.addEventListener('pointercancel', disarm, { once: true })
+}
+
+function disarm() {
+  dragArmed.value = -1
+  window.removeEventListener('pointerup', disarm)
+  window.removeEventListener('pointercancel', disarm)
+}
+
 function onDrop(to: number) {
   if (dragFrom >= 0) emit('update:modelValue', move(props.modelValue, dragFrom, to))
   endDrag()
@@ -66,8 +83,8 @@ function onDrop(to: number) {
 
 function endDrag() {
   dragFrom = -1
-  dragArmed.value = -1
   dragOverIndex.value = -1
+  disarm()
 }
 
 // Keyboard path for the grip: arrows move the block, and focus follows it
@@ -105,7 +122,7 @@ async function onGripKeydown(e: KeyboardEvent, i: number) {
         <div class="block-head">
           <button type="button" class="block-grip"
                   :aria-label="$t('content.blocks.dragHandle')" :title="$t('content.blocks.dragHandle')"
-                  @pointerdown="dragArmed = i" @pointerup="dragArmed = -1"
+                  @pointerdown="arm(i)"
                   @keydown="onGripKeydown($event, i)">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
           </button>

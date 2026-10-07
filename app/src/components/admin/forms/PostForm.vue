@@ -91,17 +91,23 @@ const entityLists = computed<RefEntityLists>(() => ({
   })),
 }))
 
-const { isDirty, markClean } = useDirtyGuard(() => form)
-watch(isDirty, v => emit('update:dirty', v), { immediate: true })
-
 // ── Status ────────────────────────────────────────────────────
 // `published_at` is a switch, not a timer (any date publishes), so the form
 // shows it as one: Draft / Published, with the date only once it matters.
-const isPublished = computed(() => form.published_at !== '')
+// The flag is its own state rather than "is the date non-empty": a
+// datetime-local input reports '' while any segment is mid-edit, and deriving
+// status from that would unmount the input under the cursor and flip the post
+// to Draft. The date input is `required`, so an incomplete date blocks the
+// save instead of silently unpublishing.
+const isPublished = ref(false)
 
 function setPublished(published: boolean) {
-  form.published_at = published ? (form.published_at || localDateTimeInputValue()) : ''
+  isPublished.value = published
+  if (published && !form.published_at) form.published_at = localDateTimeInputValue()
 }
+
+const { isDirty, markClean } = useDirtyGuard(() => ({ form, published: isPublished.value }))
+watch(isDirty, v => emit('update:dirty', v), { immediate: true })
 
 watch(() => props.initial, (val) => {
   form.title = bagFrom(val?.translations?.title, val?.title)
@@ -109,6 +115,7 @@ watch(() => props.initial, (val) => {
   form.intro = bagFrom(val?.translations?.intro, val?.intro)
   form.image = val?.image ?? null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
+  isPublished.value = !!val?.published_at
   form.event_date_display = val?.event_date_display ?? 'range'
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
@@ -148,7 +155,7 @@ function submit() {
     slug: slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     intro: compactBag(form.intro),
     image: form.image || null,
-    published_at: form.published_at || null,
+    published_at: isPublished.value ? form.published_at || null : null,
     event_date_display: form.event_date_display,
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
@@ -251,6 +258,7 @@ function submit() {
               v-if="isPublished"
               v-model="form.published_at"
               type="datetime-local"
+              required
               class="field-input pf-status-date"
               :aria-label="$t('content.posts.publishedOn')"
               :title="$t('content.posts.publishedOn')"
@@ -351,8 +359,9 @@ function submit() {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: 1.5rem -1.5rem -1.5rem;
-  padding: 0.75rem 1.5rem;
+  /* Bleeds to the panel edge by the modal body's own padding variables. */
+  margin: 1.5rem calc(-1 * var(--modal-pad-x, 1.5rem)) calc(-1 * var(--modal-pad-b, 1.5rem));
+  padding: 0.75rem var(--modal-pad-x, 1.5rem);
   background: var(--c-141414);
   border-top: 1px solid var(--c-252525);
   border-radius: 0 0 0.75rem 0.75rem;
@@ -368,6 +377,6 @@ function submit() {
 
 @media (max-width: 640px) {
   .pf-head { grid-template-columns: minmax(0, 1fr); }
-  .pf-footer { margin: 1.25rem -1rem -1.25rem; padding: 0.625rem 1rem; }
+  .pf-footer { margin-top: 1.25rem; padding-top: 0.625rem; padding-bottom: 0.625rem; }
 }
 </style>

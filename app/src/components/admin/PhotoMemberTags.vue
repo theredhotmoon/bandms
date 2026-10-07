@@ -58,7 +58,10 @@ function onDocumentClick(event: MouseEvent) {
   if (open.value && !root.value?.contains(target) && !pop.value?.contains(target)) open.value = false
 }
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') open.value = false // i18n-ignore: KeyboardEvent.key value
+  if (event.key !== 'Escape' || !open.value) return // i18n-ignore: KeyboardEvent.key value
+  // Consumed here: the modal around this popover must not close on the same key.
+  event.preventDefault()
+  open.value = false
 }
 onMounted(() => {
   document.addEventListener('click', onDocumentClick)

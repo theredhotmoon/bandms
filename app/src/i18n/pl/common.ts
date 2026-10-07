@@ -17,6 +17,9 @@ export default {
   confirm: {
     deleteTitle: 'Potwierdź usunięcie',
     deleteMessage: 'Ten rekord zostanie trwale usunięty. Tej operacji nie można cofnąć.',
+    discardTitle: 'Odrzucić zmiany?',
+    discardMessage: 'Są niezapisane zmiany. Zamknąć bez zapisywania?',
+    discard: 'Odrzuć',
   },
   fields: {
     name: 'Nazwa',

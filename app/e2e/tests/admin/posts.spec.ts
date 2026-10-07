@@ -212,6 +212,37 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.getByText('Post created')).toHaveCount(0)
   })
 
+  // The language view narrows intro and block inputs to one locale for
+  // writing prose, and remembers the choice across a reopen. Hidden locales
+  // keep their text — nothing is cleared by hiding it.
+  test('shows one language at a time in blocks and remembers the choice', async ({ page }) => {
+    const modal = page.locator('.modal-overlay')
+    const firstBlock = () => page.locator('.block-row').first()
+
+    await searchTable(page, postTitle)
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(firstBlock()).toBeVisible()
+    await expect(firstBlock().locator('textarea')).toHaveCount(2)
+
+    await modal.getByRole('radio', { name: 'PL' }).check()
+    await expect(firstBlock().locator('textarea')).toHaveCount(1)
+    await expect(firstBlock().locator('[data-locale="pl"] textarea')).toBeVisible()
+    await expect(modal.locator('textarea[placeholder*="introductory"]')).toHaveCount(0)
+
+    // Pristine form (the view is not post data), so Cancel closes at once.
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+    await expect(modal).not.toBeVisible()
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    await expect(firstBlock()).toBeVisible()
+    await expect(modal.getByRole('radio', { name: 'PL' })).toBeChecked()
+    await expect(firstBlock().locator('textarea')).toHaveCount(1)
+
+    await modal.getByRole('radio', { name: 'All' }).check()
+    await expect(firstBlock().locator('textarea')).toHaveCount(2)
+    await expect(firstBlock().locator('[data-locale="en"] textarea')).toHaveValue('First paragraph')
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+  })
+
   // Reordering used to be pointer-drag only — no path at all for keyboard or
   // touch. The up/down buttons are the accessible path, and the public site
   // renders blocks in saved order, so the order must round-trip.
