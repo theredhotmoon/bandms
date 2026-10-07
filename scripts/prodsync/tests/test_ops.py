@@ -30,6 +30,26 @@ class UploadBackupScriptTest(unittest.TestCase):
     def test_quotes_the_directory(self):
         self.assertIn(shlex.quote("/opt/band ms/backups/sync"), self.script)
 
+    def test_refuses_to_archive_without_room_to_spare(self):
+        # the archive shares the disk with MySQL and deploys; leave a margin
+        script = upload_backup_script("c", "/d", 5, "s", min_free_kb=12345)
+        check = script.index("df -Pk")
+        self.assertLess(check, script.index("docker exec c tar"))
+        self.assertIn("du -sk", script)
+        self.assertIn("+ 12345", script)
+        self.assertIn("exit 1", script)
+
+    def test_default_margin_is_two_gigabytes(self):
+        self.assertIn(f"+ {2 * 1024 * 1024}", self.script)
+
+
+class RestoreScriptTest(unittest.TestCase):
+    def test_restore_swaps_in_the_archive_instead_of_deleting_first(self):
+        from prodsync.ops import UNPACK
+        # extract beside the live folder; only a complete extract replaces it
+        self.assertLess(UNPACK.index("tar -xzf - -C .sync-incoming"), UNPACK.index("mv public .sync-old"))
+        self.assertNotIn("rm -rf public", UNPACK)
+
 
 if __name__ == "__main__":
     unittest.main()
