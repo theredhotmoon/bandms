@@ -58,9 +58,17 @@ test.describe.serial('Public news post — event date from linked concerts', () 
   let venueId: number
   let concertIds: number[] = []
   let singleSlug: string, rangeSlug: string, listSlug: string, noEventSlug: string
+  // The news section's URL segment per locale is whatever the band stored for
+  // the posts module (`news`/`aktualnosci` on the prod-synced dev DB) — read
+  // it the way the site does rather than guess it.
+  const postsSlug: Record<string, string> = {}
 
   test.beforeAll(async ({ request }) => {
     test.setTimeout(180_000)
+    for (const lang of ['en', 'pl']) {
+      const cfg = (await (await request.get(`${API}/api/site-config?lang=${lang}`)).json()) as { module_config?: Record<string, { slug?: string }> }
+      postsSlug[lang] = cfg.module_config?.posts?.slug ?? 'posts'
+    }
     const venues = await (await authedFetch(request, 'get', '/api/venues')).json()
     venueId = venues.data[0].id
 
@@ -106,37 +114,32 @@ test.describe.serial('Public news post — event date from linked concerts', () 
   })
 
   test('a post linked to one concert shows that concert\'s date', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${singleSlug}`)
+    await page.goto(`${WEB}/en/${postsSlug.en}/${singleSlug}`)
     await expect(page.getByText(`Event: ${single('2099-03-05')}`)).toBeVisible()
   })
 
   test('a post linked to two concerts shows a date range', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${rangeSlug}`)
+    await page.goto(`${WEB}/en/${postsSlug.en}/${rangeSlug}`)
     await expect(page.getByText(`Event: ${range('2099-04-10', '2099-04-12')}`)).toBeVisible()
   })
 
   test('a post linked to two concerts can list every date instead', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${listSlug}`)
+    await page.goto(`${WEB}/en/${postsSlug.en}/${listSlug}`)
     await expect(page.getByText(`Event: ${single('2099-05-01')}, ${single('2099-05-03')}`)).toBeVisible()
   })
 
   test('a post with no linked concert shows no event date at all', async ({ page }) => {
-    await page.goto(`${WEB}/en/news/${noEventSlug}`)
+    await page.goto(`${WEB}/en/${postsSlug.en}/${noEventSlug}`)
     await expect(page.getByText(/^Event:/)).toHaveCount(0)
   })
 
   test('the news listing shows the event date on the linked-concert card', async ({ page }) => {
-    await page.goto(`${WEB}/en/news`)
+    await page.goto(`${WEB}/en/${postsSlug.en}`)
     await expect(page.getByText(`Event: ${range('2099-04-10', '2099-04-12')}`)).toBeVisible()
   })
 
-  test('renders the localized label on the Polish locale', async ({ page, request }) => {
-    // The Polish news section lives at whatever slug the band stored for the
-    // posts module (`aktualnosci` on the prod-synced dev DB) — read it rather
-    // than guess, the way the site itself does.
-    const cfg = (await (await request.get(`${API}/api/site-config?lang=pl`)).json()) as { module_config?: Record<string, { slug?: string }> }
-    const plPosts = cfg.module_config?.posts?.slug ?? 'posts'
-    await page.goto(`${WEB}/pl/${plPosts}/${singleSlug}`)
+  test('renders the localized label on the Polish locale', async ({ page }) => {
+    await page.goto(`${WEB}/pl/${postsSlug.pl}/${singleSlug}`)
     await expect(page.getByText(`Wydarzenie: ${plFmt.format(new Date('2099-03-05'))}`)).toBeVisible()
   })
 })

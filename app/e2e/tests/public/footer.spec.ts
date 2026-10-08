@@ -111,15 +111,8 @@ test.describe('Site footer', () => {
       const label = body.module_config?.[slug]?.label
       if (label) expect(labels.map((l) => l.trim())).not.toContain(label)
     }
-
-    // And the invariant itself, independent of how a link got there: every
-    // footer link resolves to a page that was built.
-    const hrefs = await page.locator('footer .ft-nav a').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute('href') ?? ''))
-    for (const href of hrefs) {
-      if (!href.startsWith('/')) continue
-      const res = await request.get(`${WEB}${href}`)
-      expect(res.status(), `footer link ${href}`).toBe(200)
-    }
+    // Whether every link actually resolves is 'every footer link resolves',
+    // directly below.
   })
 
   test('every footer link resolves', async ({ page, request }) => {

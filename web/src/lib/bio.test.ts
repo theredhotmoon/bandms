@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { firstBioWithText, hasBioText } from './bio'
+import { firstBioWithText, hasBioText, stripHtmlText } from './bio'
 
 describe('hasBioText', () => {
   it('treats null, empty and whitespace as blank', () => {
@@ -14,11 +14,19 @@ describe('hasBioText', () => {
     expect(hasBioText('<p></p>')).toBe(false)
     expect(hasBioText('<p></p><p><br></p>')).toBe(false)
     expect(hasBioText('<p>&nbsp;</p>')).toBe(false)
+    expect(hasBioText('<p>&#160;</p><p>&#xa0;</p>')).toBe(false) // token-lint-ignore: HTML entities, not colours
+    expect(hasBioText('<!-- note --><p></p>')).toBe(false)
   })
 
   it('accepts plain text and HTML with text', () => {
     expect(hasBioText('Formed in 2025.')).toBe(true)
     expect(hasBioText('<p>Formed in <strong>2025</strong>.</p>')).toBe(true)
+  })
+})
+
+describe('stripHtmlText', () => {
+  it('returns the visible text with entities and tags gone', () => {
+    expect(stripHtmlText('<p>&nbsp;Formed in <strong>2025</strong>.</p>')).toBe('Formed in 2025 .')
   })
 })
 

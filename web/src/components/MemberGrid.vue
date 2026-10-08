@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { hasBioText } from '@/lib/bio'
 
 export interface GridMember {
   id: number
@@ -134,7 +135,9 @@ onMounted(() => {
               <span v-for="inst in open.instruments" :key="inst" class="mg-chip mg-chip--on">{{ inst }}</span>
             </div>
 
-            <p v-if="open.bio" class="mg-bio">{{ open.bio }}</p>
+            <!-- RichEditor HTML, like the band bio: gate on text, not on the
+                 string, and render it rather than print its tags. -->
+            <div v-if="hasBioText(open.bio)" class="mg-bio" v-html="open.bio" />
 
             <a v-if="open.pageUrl" class="mg-page-link" :href="open.pageUrl" data-testid="member-page-link">{{ copy.page }} →</a>
 

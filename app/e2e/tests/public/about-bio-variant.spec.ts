@@ -1,6 +1,6 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
-import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { adminToken } from '../../fixtures/admin-api'
 
 /**
  * The About page's bio block used to hardcode bio_medium → bio_long →
@@ -16,13 +16,6 @@ const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
 test.use({ storageState: { cookies: [], origins: [] } })
-
-function adminToken(): string {
-  const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed the band profile')
-  return entry.value
-}
 
 async function api(request: APIRequestContext, method: 'get' | 'put', path: string, data?: unknown) {
   const res = await request[method](`${API}${path}`, {
