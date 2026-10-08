@@ -16,6 +16,7 @@ import { getBandProfile, getSocialLinks, getSiteConfig, getEpkOptional } from '@
 import { getSlugMap } from '@/lib/slugs'
 import { CONTACT_COPY, fillCopy } from '@bandms/site-copy'
 import { moduleCopy, availabilityCopy } from '@/lib/copy'
+import { hasBioText } from '@/lib/bio'
 
 interface Props {
   lang?: Locale
@@ -79,7 +80,7 @@ const epkAssets = [
     meta: t.epkBioMeta,
     href: epkPageHref,
     isFile: false,
-    show: Boolean(profile.bio_short || profile.bio_medium || profile.bio_long),
+    show: [profile.bio_short, profile.bio_medium, profile.bio_long].some(hasBioText),
   },
   {
     icon: 'camera',

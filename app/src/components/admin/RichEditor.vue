@@ -13,8 +13,10 @@ const editor = useEditor({
   editorProps: {
     attributes: { spellcheck: 'false' },
   },
+  // A blank document is `<p></p>` to Tiptap; emit '' so the API stores null
+  // and no public page has to decide whether an empty paragraph is a bio.
   onUpdate: ({ editor }) => {
-    emit('update:modelValue', editor.getHTML())
+    emit('update:modelValue', editor.isEmpty ? '' : editor.getHTML())
   },
 })
 

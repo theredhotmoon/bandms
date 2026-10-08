@@ -103,12 +103,16 @@ test.describe('Site footer', () => {
     if (footerLabel) expect(labels.map((l) => l.trim())).not.toContain(footerLabel)
 
     // Nothing disabled may be linked — a dead link is the footgun this repo
-    // documents most.
+    // documents most. `newsletter` is the one exception: [section].astro keeps
+    // its page in ALWAYS_ON whatever the module flag says, and Footer.astro
+    // lists it unconditionally for that reason, so its link is never dead.
     for (const [slug, enabled] of Object.entries(modules)) {
-      if (enabled) continue
+      if (enabled || slug === 'newsletter') continue
       const label = body.module_config?.[slug]?.label
       if (label) expect(labels.map((l) => l.trim())).not.toContain(label)
     }
+    // Whether every link actually resolves is 'every footer link resolves',
+    // directly below.
   })
 
   test('every footer link resolves', async ({ page, request }) => {

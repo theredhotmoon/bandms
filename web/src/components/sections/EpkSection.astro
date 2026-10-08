@@ -13,6 +13,7 @@ import { getEpk, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDate, formatNumber } from '@/lib/i18n'
 import { EPK_COPY } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
+import { firstBioWithText, hasBioText } from '@/lib/bio'
 
 interface Props {
   lang: Locale
@@ -29,8 +30,15 @@ const site = siteCopy(siteConfig, lang)
 // Snapshots published before the builder emitted clips carry no key at all.
 const clips = epk.clips ?? []
 
-const bio = epk.bio_long || epk.bio_medium || epk.bio_short || ''
-const bioParagraphs = bio.replace(/\r\n/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+// bio_long is RichEditor HTML (see AboutSection's HTML_VARIANTS) and renders
+// via set:html; bio_medium/bio_short are plain text split into paragraphs.
+// hasBioText, not a truthy check: a blank editor saves `<p></p>`, which
+// would otherwise stand in for the lengths that hold text — and, rendered
+// through the text path, a written long bio printed its tags literally.
+const bioHtml = hasBioText(epk.bio_long) ? epk.bio_long! : null
+const bioText = bioHtml ? '' : (firstBioWithText([epk.bio_medium, epk.bio_short]) ?? '')
+const bioParagraphs = bioText.replace(/\r\n/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+const hasBio = bioHtml !== null || bioParagraphs.length > 0
 
 const facts = [
   epk.formation_year ? { label: t.formed, value: String(epk.formation_year) } : null,
@@ -82,12 +90,12 @@ const contacts = [
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-  {bioParagraphs.length > 0 && (
+  {hasBio && (
     <section class="epk-sec page-x">
       <SectionHead icon="quote" title={t.bio} size="sm" />
-      <div class="epk-bio">
-        {bioParagraphs.map(paragraph => <p>{paragraph}</p>)}
-      </div>
+      {bioHtml
+        ? <div class="epk-bio" set:html={bioHtml} />
+        : <div class="epk-bio">{bioParagraphs.map(paragraph => <p>{paragraph}</p>)}</div>}
     </section>
   )}
 

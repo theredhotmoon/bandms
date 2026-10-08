@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { bioParagraphs } from '@/lib/bio'
 
 export interface GridMember {
   id: number
@@ -134,7 +135,10 @@ onMounted(() => {
               <span v-for="inst in open.instruments" :key="inst" class="mg-chip mg-chip--on">{{ inst }}</span>
             </div>
 
-            <p v-if="open.bio" class="mg-bio">{{ open.bio }}</p>
+            <!-- RichEditor HTML, but written by the `member` role and not
+                 sanitised server-side — so it is rendered as text paragraphs,
+                 never as markup (and a blank editor's `<p></p>` renders nothing). -->
+            <p v-for="(para, i) in bioParagraphs(open.bio)" :key="i" class="mg-bio">{{ para }}</p>
 
             <a v-if="open.pageUrl" class="mg-page-link" :href="open.pageUrl" data-testid="member-page-link">{{ copy.page }} →</a>
 
