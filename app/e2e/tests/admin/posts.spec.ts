@@ -1,5 +1,5 @@
 import { test, expect, expectToast, confirmDelete, searchTable } from '../../fixtures/test-base'
-import { adminHeaders } from '../../fixtures/admin-api'
+import { adminHeaders, primaryLocale } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -28,17 +28,31 @@ test.describe.serial('Admin Posts', () => {
   // the block to point at, and remove it once the post that referenced it is
   // gone (the delete test runs before afterAll in this serial chain).
   let releaseId: number | null = null
+  // The band's first content language: the title input that is `required`,
+  // the textarea that comes first in a block, and the title's lead locale.
+  let primary = ''
 
   test.beforeAll(async ({ request }) => {
+    primary = await primaryLocale(request)
     const res = await request.post('/api/releases', {
       headers: adminHeaders(),
-      data: { title: { en: `E2E Ref Release ${Date.now()}` }, type: 'single' },
+      data: { title: { [primary]: `E2E Ref Release ${Date.now()}` }, type: 'single' },
     })
     if (!res.ok()) throw new Error(`Seeding the release failed: ${res.status()} ${await res.text()}`)
     releaseId = ((await res.json()) as { data: { id: number } }).data.id
   })
 
+  // A failure anywhere in the chain skips the delete test, which would leave
+  // this file's posts live on the dev DB (and, after a rebuild, on the public
+  // site) with a reference to a release that is about to go. Sweep them by
+  // title first, then drop the release.
   test.afterAll(async ({ request }) => {
+    const list = await request.get('/api/admin/posts', { headers: adminHeaders() })
+    if (list.ok()) {
+      const posts = ((await list.json()) as { data: { id: number; title: string }[] }).data
+      const mine = posts.filter(p => [postTitle, updatedTitle, scrollPostTitle].some(t => p.title?.startsWith(t)))
+      for (const p of mine) await request.delete(`/api/posts/${p.id}`, { headers: adminHeaders() })
+    }
     if (releaseId === null) return
     await request.delete(`/api/releases/${releaseId}`, { headers: adminHeaders() })
   })
@@ -82,7 +96,7 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
     await page.getByRole('button', { name: '+ Text' }).click()
-    await page.locator('.block-row').nth(0).locator('[data-locale="en"] textarea').fill('First paragraph')
+    await page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] textarea`).fill('First paragraph')
 
     await page.getByRole('button', { name: '+ Embed / link' }).click()
     await page.locator('.block-row').nth(1).locator('input').first().fill('https://vimeo.com/76979871')
@@ -110,7 +124,7 @@ test.describe.serial('Admin Posts', () => {
     // Order is the whole feature — assert position, not just presence.
     await expect(page.locator('.block-row').nth(0).locator('.block-type')).toHaveText('Text')
     await expect(page.locator('.block-row').nth(1).locator('.block-type')).toHaveText('Embed / link')
-    await expect(page.locator('.block-row').nth(0).locator('[data-locale="en"] textarea')).toHaveValue('First paragraph')
+    await expect(page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] textarea`)).toHaveValue('First paragraph')
   })
 
   test('removing a block persists the shorter list', async ({ page }) => {
@@ -260,7 +274,7 @@ test.describe.serial('Admin Posts', () => {
 
     await modal.getByRole('radio', { name: 'All' }).check()
     await expect(firstBlock().locator('textarea')).toHaveCount(2)
-    await expect(firstBlock().locator('[data-locale="en"] textarea')).toHaveValue('First paragraph')
+    await expect(firstBlock().locator(`[data-locale="${primary}"] textarea`)).toHaveValue('First paragraph')
     await modal.getByRole('button', { name: 'Cancel' }).click()
   })
 

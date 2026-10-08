@@ -1,5 +1,5 @@
-import fs from 'node:fs'
 import { test, expect, expectToast, searchTable } from '../../fixtures/test-base'
+import { adminToken } from '../../fixtures/admin-api'
 
 /**
  * Linking band members to a clip from the clip form's "Link to…" panel. A
@@ -8,14 +8,6 @@ import { test, expect, expectToast, searchTable } from '../../fixtures/test-base
  */
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
-function adminToken(): string {
-  const state = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  for (const origin of state.origins ?? []) {
-    const entry = (origin.localStorage ?? []).find((kv: { name: string }) => kv.name === 'auth_token')
-    if (entry?.value) return entry.value
-  }
-  throw new Error('No auth_token in e2e/.auth/admin.json — did the auth setup run?')
-}
 const headers = () => ({ Accept: 'application/json', Authorization: `Bearer ${adminToken()}` })
 
 const stamp = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`

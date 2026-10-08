@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import fs from 'node:fs'
+import { adminToken, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -13,20 +13,7 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
  * (multipart `slug[<locale>]`, the auto-follow flag) had no coverage at all.
  */
 
-/** A 1×1 transparent PNG — small, but a real image to Laravel's `image` rule. */
-const TEST_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-  'base64',
-)
 
-function adminToken(): string {
-  const state = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  for (const origin of state.origins ?? []) {
-    const entry = (origin.localStorage ?? []).find((kv: { name: string }) => kv.name === 'auth_token')
-    if (entry?.value) return entry.value
-  }
-  throw new Error('No auth_token in e2e/.auth/admin.json — did the auth setup run?')
-}
 
 test('uploading an album saves the title-following slug and a hand-typed one as one bag', async ({ page, request, baseURL }) => {
   // A batch upload stores the file and creates the photo row server-side; on a

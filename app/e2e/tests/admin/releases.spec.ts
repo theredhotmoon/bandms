@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { primaryLocale } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -136,7 +137,7 @@ test.describe('Releases Admin', () => {
     await expect(page.getByRole('cell', { name: 'Unsaved release' })).toHaveCount(0)
   })
 
-  test('validation: submit without title → browser required constraint fires', async ({ page }) => {
+  test('validation: submit without title → browser required constraint fires', async ({ page, request }) => {
     await page.goto('/admin/releases')
     await page.waitForLoadState('networkidle')
 
@@ -161,9 +162,8 @@ test.describe('Releases Admin', () => {
     // `required` sits on the title input of the band's *first* content
     // language, not on the English one — a Polish-first band (the prod-synced
     // dev DB) requires the Polish title and leaves "Release title" optional.
-    // Locate by the attribute, so the test follows the setting.
-    const titleInput = modal.locator('input[required]')
-    await expect(titleInput).toHaveCount(1)
+    const titleInput = modal.locator(`.trans-row[data-locale="${await primaryLocale(request)}"] input`).first()
+    await expect(titleInput).toHaveAttribute('required', '')
     const isValid = await titleInput.evaluate((el: HTMLInputElement) => el.validity.valid)
     expect(isValid).toBe(false)
 

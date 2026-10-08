@@ -43,7 +43,7 @@ test.describe('Website Modules Admin', () => {
     // The row leads with the band's custom name in their first content
     // language and shows the display name after it in parentheses — so on a
     // Polish-first band this reads "Kontakt (Contact)". Match either form.
-    await expect(page.getByText(/^\(?Contact\)?$/).first()).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText(/^Contact$|^\(Contact\)$/).first()).toBeVisible({ timeout: 8000 })
   })
 
   test('page copy fields appear only for modules that define them', async ({ page }) => {

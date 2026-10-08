@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 import type { APIRequestContext } from '@playwright/test'
+import { adminToken } from '../../fixtures/admin-api'
 
 /**
  * Split out of band-profile.spec.ts (the "tech rider selector" describe under
@@ -16,14 +16,6 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
 
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-// storageState replays cookies only and e2e/.auth/admin.json holds none — an
-// API context built from it is anonymous. Lift the token out and send it.
-function adminToken(): string {
-  const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed riders')
-  return entry.value
-}
 
 async function api(request: APIRequestContext, method: 'get' | 'post' | 'put' | 'delete', path: string, data?: unknown) {
   const res = await request[method](`${API}${path}`, {

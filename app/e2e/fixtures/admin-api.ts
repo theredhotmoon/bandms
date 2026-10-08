@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import type { APIRequestContext } from '@playwright/test'
 
 /**
  * Bearer auth for API calls made from a spec.
@@ -17,11 +18,14 @@ import path from 'path'
  */
 const AUTH_FILE = path.resolve('e2e/.auth/admin.json')
 
+let cachedToken: string | undefined
+
 export function adminToken(): string {
+  if (cachedToken) return cachedToken
   const state = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'))
   for (const origin of state.origins ?? []) {
     const entry = (origin.localStorage ?? []).find((kv: { name: string }) => kv.name === 'auth_token')
-    if (entry?.value) return entry.value
+    if (entry?.value) return (cachedToken = entry.value)
   }
   throw new Error('No auth_token in e2e/.auth/admin.json — did the auth setup run?')
 }
@@ -30,12 +34,22 @@ export function adminHeaders(): Record<string, string> {
   return { Authorization: `Bearer ${adminToken()}`, Accept: 'application/json' }
 }
 
-/** The band's content-language order, primary first — what decides which locale's text the admin renders and requires. */
-export async function contentLocaleOrder(request: { get: (url: string, o: { headers: Record<string, string> }) => Promise<{ ok(): boolean; json(): Promise<unknown> }> }): Promise<string[]> {
+/**
+ * The band's content-language order, primary first. It decides which
+ * locale's text the admin renders in a list, which locale's title input is
+ * `required`, and which locale's textarea comes first in a block — so a spec
+ * that types into or reads "the first language" has to ask rather than
+ * assume English.
+ */
+export async function contentLocaleOrder(request: APIRequestContext): Promise<string[]> {
   const res = await request.get('/api/admin/content-locales', { headers: adminHeaders() })
-  if (!res.ok()) throw new Error('GET /api/admin/content-locales failed')
+  if (!res.ok()) throw new Error(`GET /api/admin/content-locales failed: ${res.status()} ${await res.text()}`)
   const body = (await res.json()) as { data: { order: string[] } }
   return body.data.order
+}
+
+export async function primaryLocale(request: APIRequestContext): Promise<string> {
+  return (await contentLocaleOrder(request))[0]
 }
 
 /** A 1×1 transparent PNG — small enough to embed, real enough to pass Laravel's `image` rule. */

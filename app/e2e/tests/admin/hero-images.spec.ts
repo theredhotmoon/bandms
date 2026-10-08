@@ -1,34 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
-import fs from 'node:fs'
+import { adminToken, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
-
-// Relative to the Playwright cwd (app/), the same way test.use() names it above.
-// __dirname is unavailable — these specs are ESM.
-const AUTH_FILE = 'e2e/.auth/admin.json'
-
-/**
- * The bearer token, read out of the stored auth state.
- *
- * `request.newContext({ storageState })` replays **cookies only**, and this app
- * keeps its token in localStorage — so an API context built that way is
- * anonymous, every call 401s, and a restore that does not check its response
- * silently does nothing.
- */
-function adminToken(): string {
-  const state = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'))
-  for (const origin of state.origins ?? []) {
-    const entry = (origin.localStorage ?? []).find((kv: { name: string }) => kv.name === 'auth_token')
-    if (entry?.value) return entry.value
-  }
-  throw new Error('No auth_token in e2e/.auth/admin.json — did the auth setup run?')
-}
-
-/** A 1×1 transparent PNG — small enough to embed, real enough to pass Laravel's `image` rule. */
-const TEST_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-  'base64',
-)
 
 /**
  * These tests upload real pictures into the shared dev database's `main`

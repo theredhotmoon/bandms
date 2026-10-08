@@ -27,24 +27,24 @@ test.describe('FAQ Admin', () => {
   })
 
   test('page loads with the contact subpage selected and its seeded questions', async ({ page, request }) => {
-    // The create_faqs_table migration seeds four Contact questions, so this
-    // list is never empty on a migrated database — but the admin renders each
-    // question in the band's *first* content language, so on a Polish-first
-    // band the English text is never on screen. Read the seeded row and the
-    // order from the API and expect whichever translation the page will show.
+    // The create_faqs_table migration seeds four Contact questions, but the
+    // band is free to edit or delete them, and the admin renders each
+    // question in the band's *first* content language — so neither the
+    // seeded English text nor any literal can be pinned. Take whatever
+    // Contact question the API holds and expect the translation the page
+    // will show; with none, there is nothing to assert.
     const res = await request.get('/api/admin/faqs', { headers: adminHeaders() })
-    if (!res.ok()) throw new Error('GET /api/admin/faqs failed')
-    const faqs = ((await res.json()) as { data: { question: Record<string, string | null> }[] }).data
-    const seeded = faqs.find(f => f.question?.en === 'How far ahead should we book you?')
-    if (!seeded) throw new Error('The migration-seeded Contact FAQ is missing from this database')
-    const seededText = order.map(l => seeded.question[l]).find(Boolean)
-    if (!seededText) throw new Error('Seeded FAQ has no text in any content language')
+    if (!res.ok()) throw new Error(`GET /api/admin/faqs failed: ${res.status()}`)
+    const faqs = ((await res.json()) as { data: { module_slug: string; question: Record<string, string | null> }[] }).data
+    const contact = faqs.find(f => f.module_slug === 'contact' && order.some(l => f.question?.[l]))
+    test.skip(!contact, 'No Contact question in this database')
+    const shownText = order.map(l => contact!.question[l]).find(Boolean)!
 
     await page.goto('/admin/faqs')
     await page.waitForLoadState('networkidle')
 
     await expect(page.getByRole('heading', { name: 'FAQ', exact: true })).toBeVisible()
-    await expect(page.getByText(seededText)).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText(shownText, { exact: true })).toBeVisible({ timeout: 8000 })
   })
 
   test('create: fills both locales and the row appears', async ({ page }) => {
