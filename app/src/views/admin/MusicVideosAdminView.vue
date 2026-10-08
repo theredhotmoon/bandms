@@ -2,6 +2,7 @@
 import MemberPicker from '@/components/admin/forms/MemberPicker.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { computed, reactive, ref, watch } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -109,6 +110,9 @@ const tc = useTableControls<MusicVideo>({
   searchFn: (v, q) => v.title.toLowerCase().includes(q) || v.video_url.toLowerCase().includes(q),
   defaultSort: 'sort_order',
 })
+
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty } = useDirtyGuard(() => form, showModal)
 
 function openCreate() {
   editing.value       = null
@@ -303,7 +307,9 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
     </div>
 
     <AdminModal
+      ref="modal"
       :open="showModal"
+      :dirty="isDirty"
       :title="editing ? $t('media.videos.modalEdit') : $t('media.videos.modalNew')"
       max-width="32rem"
       @close="closeModal"
@@ -366,7 +372,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
           testid="video-members"
         />
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="modal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
             {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>

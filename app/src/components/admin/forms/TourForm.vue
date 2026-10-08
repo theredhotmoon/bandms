@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import { useConcerts } from '@/composables/useConcerts'
 import type { Tour, TourPayload } from '@/types/tour'
@@ -30,6 +31,16 @@ interface LinkRow  { label: string; url: string }
 const images = ref<ImageRow[]>([])
 const links  = ref<LinkRow[]>([])
 
+// The concert selection is a Set; it is snapshotted as a sorted array so the
+// comparison is by membership, not by insertion order or identity.
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  ...form,
+  concerts: [...selectedConcertIds.value].sort((a, b) => a - b),
+  images: images.value,
+  links: links.value,
+}))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(
   () => props.initial,
   (val) => {
@@ -48,6 +59,7 @@ watch(
     }))
 
     links.value = (val?.links ?? []).map((l) => ({ label: l.label, url: l.url }))
+    markClean()
   },
   { immediate: true },
 )
@@ -209,7 +221,7 @@ function submit() {
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('shows.tours.form.update') : $t('shows.tours.form.create')) }}
       </button>

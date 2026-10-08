@@ -79,6 +79,7 @@ function openPlacement(placementId: string) {
 
 const showLineupModal = ref(false)
 const showNewModal = ref(false)
+const newModal = ref<InstanceType<typeof AdminModal> | null>(null)
 const newName = ref('')
 const creating = ref(false)
 const confirmDeleteId = ref<number | null>(null)
@@ -434,7 +435,9 @@ async function discardVersion(id: number) {
       />
     </AdminModal>
 
-    <AdminModal :open="showNewModal" :title="$t('rider.admin.newTitle')" max-width="28rem" @close="showNewModal = false">
+    <!-- Discarding must also drop the typed name, or the next "New rider"
+         opens prefilled and already dirty. -->
+    <AdminModal ref="newModal" :open="showNewModal" :dirty="newName.trim() !== ''" :title="$t('rider.admin.newTitle')" max-width="28rem" @close="showNewModal = false; newName = ''">
       <form class="modal-form" @submit.prevent="createRider">
         <div>
           <label class="field-label">{{ $t('rider.admin.name') }}</label>
@@ -442,7 +445,7 @@ async function discardVersion(id: number) {
           <p class="field-hint">{{ $t('rider.admin.newHint') }}</p>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" @click="showNewModal = false">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="newModal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="!newName.trim() || creating">
             {{ creating ? $t('rider.admin.creating') : $t('common.actions.create') }}
           </button>

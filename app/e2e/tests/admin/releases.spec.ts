@@ -98,6 +98,44 @@ test.describe('Releases Admin', () => {
   // the form is genuinely dirty and Create becomes enabled, then leaves the
   // title blank and confirms the browser's native `required` validation still
   // blocks the submit.
+  // The release form reports its dirty state to AdminModal through
+  // useModalGuard, so every way out asks first once something was typed.
+  test('discard guard: Escape, backdrop and Cancel ask before dropping a dirty form', async ({ page }) => {
+    await page.goto('/admin/releases')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: '+ Add release' }).click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    // Pristine: Escape closes at once.
+    await page.keyboard.press('Escape')
+    await expect(modal).not.toBeVisible()
+
+    await page.getByRole('button', { name: '+ Add release' }).click()
+    await modal.locator('input[placeholder="Release title"]').fill('Unsaved release')
+    const discard = page.getByRole('dialog', { name: 'Discard changes?' })
+
+    await page.keyboard.press('Escape')
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toHaveCount(0)
+    await expect(modal.locator('input[placeholder="Release title"]')).toHaveValue('Unsaved release')
+
+    // The backdrop is the full overlay with the panel centred over it, so
+    // click a corner the panel cannot cover.
+    await modal.locator('.modal-backdrop').click({ position: { x: 5, y: 5 } })
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toHaveCount(0)
+    await expect(modal.locator('input[placeholder="Release title"]')).toHaveValue('Unsaved release')
+
+    await modal.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Discard' }).click()
+    await expect(modal).not.toBeVisible()
+    await expect(page.getByRole('cell', { name: 'Unsaved release' })).toHaveCount(0)
+  })
+
   test('validation: submit without title → browser required constraint fires', async ({ page }) => {
     await page.goto('/admin/releases')
     await page.waitForLoadState('networkidle')

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import type { Band, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
 
@@ -22,6 +23,9 @@ const form = reactive<{ name: string; website: string }>({ name: '', website: ''
 const authorIds = ref<number[]>([])
 const contactSearch = ref('')
 
+const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, authorIds: authorIds.value }))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(
   () => props.initial,
   (val) => {
@@ -29,6 +33,7 @@ watch(
     form.website    = val?.website ?? ''
     authorIds.value = val?.contacts?.map((c) => c.id) ?? []
     contactSearch.value = ''
+    markClean()
   },
   { immediate: true },
 )
@@ -146,7 +151,7 @@ function submit() {
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>

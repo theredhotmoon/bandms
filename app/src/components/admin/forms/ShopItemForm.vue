@@ -11,7 +11,7 @@ import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import { DEFAULT_LOCALE, LOCALES, bagFrom, emptyBag, slugPayload, type Lang } from '@/locales'
 import { useShop } from '@/composables/useShop'
-import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 
 const { t } = useI18n()
 
@@ -76,6 +76,7 @@ watch(
 )
 
 const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, prices: { ...prices } }))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(
   () => props.initial,
@@ -383,7 +384,7 @@ function handleSubmit() {
 
     <!-- ── Actions ────────────────────────────────────────────────── -->
     <div class="form-actions">
-      <button type="button" @click="emit('cancel')" class="btn-cancel">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-cancel">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !isDirty" class="btn-submit">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('more.shop.form.saveChanges') : $t('more.shop.form.createItem')) }}
       </button>

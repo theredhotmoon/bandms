@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Venue, VenuePayload } from '@/types/venue'
@@ -168,6 +169,9 @@ function pickResult(r: NominatimResult) {
   showResults.value = false
 }
 
+const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, socialLinks: socialLinks.value }))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 // ── Props sync ────────────────────────────────────────────────
 watch(() => props.initial, (val) => {
   form.name            = val?.name            ?? ''
@@ -181,6 +185,7 @@ watch(() => props.initial, (val) => {
   form.longitude       = val?.longitude != null ? String(val.longitude) : ''
   form.tag_ids         = val?.tags?.map(t => t.id) ?? []
   socialLinks.value    = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
+  markClean()
 
   if (lmap && val?.latitude != null) {
     nextTick(() => placeMarker(val.latitude!, val.longitude!))
@@ -301,7 +306,7 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
     <SocialLinksEditor v-model="socialLinks" />
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Author, AuthorPayload } from '@/types/author'
 import type { SocialLinkPayload } from '@bandms/rider-core'
@@ -41,6 +42,16 @@ const concert_ids       = ref<number[]>([])
 const tour_ids          = ref<number[]>([])
 const band_ids          = ref<number[]>([])
 
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  ...form,
+  socialLinks: socialLinks.value,
+  press_release_ids: press_release_ids.value,
+  concert_ids: concert_ids.value,
+  tour_ids: tour_ids.value,
+  band_ids: band_ids.value,
+}))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(
   () => props.initial,
   (val) => {
@@ -54,6 +65,7 @@ watch(
     concert_ids.value       = val?.concerts?.map((c) => c.id)       ?? []
     tour_ids.value          = val?.tours?.map((tour) => tour.id)           ?? []
     band_ids.value          = val?.bands?.map((b) => b.id)           ?? []
+    markClean()
   },
   { immediate: true },
 )
@@ -201,7 +213,7 @@ function submit() {
     <p v-if="bandsError" class="field-error">{{ bandsError }}</p>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" class="btn-ghost" @click="emit('cancel')">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" class="btn-ghost" @click="cancel()">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : $t('common.actions.save') }}
       </button>

@@ -1,23 +1,42 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
+import { provideModalGuard } from '@/composables/useDirtyGuard'
 
 /**
- * `dirty` opts a modal into the discard guard: while it is true, every way out
- * (backdrop, ✕, Escape, or a consumer calling `requestClose()`) asks before
- * `close` is emitted. A modal that does not declare it keeps the old
- * behaviour — backdrop and ✕ close at once — and gets **no** Escape key,
- * deliberately: a modal that cannot say whether it holds unsaved input must
- * not gain a keystroke that throws it away, and Escape is routinely pressed
- * to dismiss a browser autocomplete or an in-modal popover.
+ * The discard guard: while the modal holds unsaved input, every way out
+ * (backdrop, ✕, Escape, Cancel, or a consumer calling `requestClose()`) asks
+ * before `close` is emitted.
+ *
+ * A form component inside the modal reports its state through
+ * `useModalGuard()` (see useDirtyGuard.ts) and needs no wiring in the view.
+ * A view whose form is inline in the modal body passes `dirty` itself.
+ *
+ * A modal with neither keeps the old behaviour — backdrop and ✕ close at
+ * once — and gets **no** Escape key, deliberately: a modal that cannot say
+ * whether it holds unsaved input must not gain a keystroke that throws it
+ * away, and Escape is routinely pressed to dismiss a browser autocomplete or
+ * an in-modal popover.
  */
-const props = defineProps<{ title: string; open: boolean; maxWidth?: string; dirty?: boolean }>()
+// `dirty` is tri-state: undefined means "not declared by the view, ask the
+// forms inside". Vue casts an absent Boolean prop to `false` unless a default
+// is declared, which would make every modal look declared-and-clean.
+const props = withDefaults(
+  defineProps<{ title: string; open: boolean; maxWidth?: string; dirty?: boolean }>(),
+  { dirty: undefined },
+)
 const emit = defineEmits<{ close: [] }>()
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
 const header = ref<HTMLElement | null>(null)
 const confirming = ref(false)
+
+// Both sources stay load-bearing: a view-declared `dirty` and a guarded form
+// inside the modal each make it ask, rather than one overriding the other.
+const guard = provideModalGuard(requestClose)
+const isDirty = computed(() => (props.dirty ?? false) || guard.dirty.value)
+const guarded = computed(() => props.dirty !== undefined || guard.registered.value)
 
 // The header's rendered height is published on the panel as --modal-header-h
 // so content that pins itself under the sticky header (PostForm's settings
@@ -36,7 +55,7 @@ function observeHeader() {
 }
 
 function requestClose() {
-  if (props.dirty) confirming.value = true
+  if (isDirty.value) confirming.value = true
   else emit('close')
 }
 
@@ -52,7 +71,7 @@ defineExpose({ requestClose })
 // consumed the key with preventDefault() is honoured and only the modal's own
 // Escape reaches here.
 function onKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || props.dirty === undefined) return // i18n-ignore: key name, not copy
+  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || !guarded.value) return // i18n-ignore: key name, not copy
   e.preventDefault()
   requestClose()
 }
@@ -73,6 +92,7 @@ watch(() => props.open, async (open) => {
     ;(first ?? panel.value)?.focus({ preventScroll: true })
   } else {
     confirming.value = false
+    guard.reset()
     headerObserver?.disconnect()
     headerObserver = null
     window.removeEventListener('keydown', onKeydown)

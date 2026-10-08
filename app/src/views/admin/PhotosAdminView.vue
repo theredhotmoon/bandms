@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
@@ -78,6 +79,8 @@ const editForm = reactive({
   tag_ids: [] as number[],
 })
 const fieldErrors = ref<Record<string, string[]>>({})
+const editModal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty: editDirty } = useDirtyGuard(() => editForm, showEdit)
 
 function openEdit(album: Album) {
   editAlbum.value = album
@@ -359,7 +362,7 @@ async function confirmDelete() {
     </AdminModal>
 
     <!-- Edit album metadata modal -->
-    <AdminModal :open="showEdit" :title="$t('media.photos.modalEdit')" max-width="42rem" @close="showEdit = false">
+    <AdminModal ref="editModal" :open="showEdit" :dirty="editDirty" :title="$t('media.photos.modalEdit')" max-width="42rem" @close="showEdit = false">
       <form @submit.prevent="saveEdit" class="flex flex-col gap-4">
         <div>
           <label class="field-label">{{ $t('media.photos.albumTitle') }} <span style="color:var(--c-f87171);">*</span></label>
@@ -408,7 +411,7 @@ async function confirmDelete() {
           </div>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" @click="showEdit = false" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" @click="editModal?.requestClose()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="update.isPending.value" class="btn-primary">
             {{ update.isPending.value ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>

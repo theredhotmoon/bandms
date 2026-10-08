@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import EmbedBlockEditor from '@/components/admin/forms/blocks/EmbedBlockEditor.vue'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
@@ -38,6 +39,9 @@ const form = reactive({
   memberIds: [] as number[],
 })
 
+const { isDirty, markClean } = useDirtyGuard(() => form)
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(() => props.initial, (val) => {
   form.url = val?.url ?? ''
   for (const l of LOCALES) form.title[l] = val?.translations?.title?.[l] ?? ''
@@ -48,6 +52,7 @@ watch(() => props.initial, (val) => {
   form.releaseIds  = val?.owners.filter(o => o.type === 'release').map(o => o.id) ?? []
   form.shopItemIds = val?.owners.filter(o => o.type === 'shop_item').map(o => o.id) ?? []
   form.memberIds   = val?.member_ids ? [...val.member_ids] : []
+  markClean()
 }, { immediate: true })
 
 // EmbedBlockEditor speaks payload objects; only `url` matters here — the clip
@@ -113,7 +118,7 @@ function submit() {
     />
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>

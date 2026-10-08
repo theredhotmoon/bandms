@@ -4,7 +4,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import { useI18n } from 'vue-i18n'
-import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
@@ -142,6 +142,7 @@ const tracks = ref<TrackRow[]>([emptyTrack(0)])
 
 const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, tracks: tracks.value }))
 const canSave = computed(() => isDirty.value || coverFile.value !== null || coverDelete.value)
+const { cancel } = useModalGuard(canSave, () => emit('cancel'))
 
 watch(
   () => props.initial,
@@ -448,7 +449,7 @@ function handleSubmit() {
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading || !canSave" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('media.releaseForm.update') : $t('media.releaseForm.create')) }}
       </button>

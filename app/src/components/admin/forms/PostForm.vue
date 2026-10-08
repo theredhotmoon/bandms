@@ -5,7 +5,7 @@ import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
-import { useDirtyGuard } from '@/composables/useDirtyGuard'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import { VISIBLE_LOCALES, loadLocaleView, saveLocaleView, visibleFor, type LocaleView } from '@/utils/editorLocales'
@@ -41,7 +41,7 @@ const props = defineProps<{
   errors?: Record<string, string[]>
 }>()
 
-const emit = defineEmits<{ submit: [PostPayload]; cancel: []; 'update:dirty': [boolean] }>()
+const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 
 const { order: contentLocales, isPrimary } = useContentLocales()
 
@@ -107,7 +107,7 @@ function setPublished(published: boolean) {
 }
 
 const { isDirty, markClean } = useDirtyGuard(() => ({ form, published: isPublished.value }))
-watch(isDirty, v => emit('update:dirty', v), { immediate: true })
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(() => props.initial, (val) => {
   form.title = bagFrom(val?.translations?.title, val?.title)
@@ -322,7 +322,7 @@ function submit() {
         {{ hasErrors ? $t('content.posts.checkFields') : (isPublished ? $t('content.posts.footerPublished') : $t('content.posts.footerDraft')) }}
       </p>
       <div class="flex gap-2 shrink-0">
-        <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+        <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
         <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
           {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
         </button>

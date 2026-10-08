@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref } from 'vue'
+import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -60,6 +61,9 @@ const tc = useTableControls<Instrument>({
   searchFn: (i, q) => i.name.toLowerCase().includes(q) || (i.category ?? '').toLowerCase().includes(q),
   defaultSort: 'name',
 })
+
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
+const { isDirty } = useDirtyGuard(() => form, showModal)
 
 function openCreate() {
   editing.value        = null
@@ -185,7 +189,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? $t('more.instruments.editTitle') : $t('more.instruments.addTitle')" max-width="28rem" @close="closeModal">
+    <AdminModal ref="modal" :open="showModal" :dirty="isDirty" :title="editing ? $t('more.instruments.editTitle') : $t('more.instruments.addTitle')" max-width="28rem" @close="closeModal">
       <form @submit.prevent="submit" class="flex flex-col gap-4">
         <div>
           <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
@@ -226,7 +230,7 @@ async function confirmDelete() {
           </button>
         </div>
         <div class="flex gap-2 justify-end pt-1">
-          <button type="button" class="btn-ghost" @click="closeModal">{{ $t('common.actions.cancel') }}</button>
+          <button type="button" class="btn-ghost" @click="modal?.requestClose()">{{ $t('common.actions.cancel') }}</button>
           <button type="submit" :disabled="create.isPending.value || update.isPending.value" class="btn-primary">
             {{ (create.isPending.value || update.isPending.value) ? $t('common.actions.saving') : $t('common.actions.save') }}
           </button>

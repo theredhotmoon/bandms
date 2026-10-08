@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onUnmounted } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
@@ -63,6 +64,15 @@ onUnmounted(() => { if (photoPreview.value) URL.revokeObjectURL(photoPreview.val
 
 const socialLinks = ref<SocialLinkPayload[]>([])
 
+// A chosen-but-unsaved photo counts as a change too; the File itself is not
+// cloneable, so its name stands in for it.
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  ...form,
+  socialLinks: socialLinks.value,
+  photoFile: photoFile.value?.name ?? null,
+}))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(
   () => props.initial,
   (val) => {
@@ -85,6 +95,7 @@ watch(
     photoPreview.value = ''
 
     socialLinks.value = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
+    markClean()
   },
   { immediate: true },
 )
@@ -307,7 +318,7 @@ function submit() {
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('band.members.form.update') : $t('band.members.form.create')) }}
       </button>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { reactive, ref, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useAuth } from '@/composables/useAuth'
 import { fetchMetaForUrl } from '@/api/press-releases'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
@@ -57,6 +58,17 @@ const fetchError   = ref('')
 const metaPreview  = ref<PressReleaseMeta | null>(null)
 const previewImage = ref<string | null>(null)
 
+const { isDirty, markClean } = useDirtyGuard(() => ({
+  ...form,
+  concert_ids: concert_ids.value,
+  album_ids: album_ids.value,
+  release_ids: release_ids.value,
+  tour_ids: tour_ids.value,
+  tag_ids: tag_ids.value,
+  member_ids: member_ids.value,
+}))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
+
 watch(
   () => props.initial,
   (val) => {
@@ -75,6 +87,7 @@ watch(
     member_ids.value    = val?.member_ids ? [...val.member_ids] : []
     metaPreview.value   = null
     fetchError.value    = ''
+    markClean()
   },
   { immediate: true },
 )
@@ -216,7 +229,7 @@ function submit() {
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('content.press.update') : $t('content.press.create')) }}
       </button>
