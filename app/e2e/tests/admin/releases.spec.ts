@@ -158,12 +158,20 @@ test.describe('Releases Admin', () => {
     // The title input has `required`; the form should not have submitted (modal stays open)
     await expect(modal).toBeVisible()
 
-    // Optionally assert the title input is invalid via the validity API
-    const titleInput = modal.locator('input[placeholder="Release title"]')
+    // `required` sits on the title input of the band's *first* content
+    // language, not on the English one — a Polish-first band (the prod-synced
+    // dev DB) requires the Polish title and leaves "Release title" optional.
+    // Locate by the attribute, so the test follows the setting.
+    const titleInput = modal.locator('input[required]')
+    await expect(titleInput).toHaveCount(1)
     const isValid = await titleInput.evaluate((el: HTMLInputElement) => el.validity.valid)
     expect(isValid).toBe(false)
 
     await modal.locator('button[aria-label="Close"], button:has(svg)').first().click()
+    // The form is dirty (a type was picked), so the X asks before closing.
+    const discard = page.getByRole('dialog', { name: 'Discard changes?' })
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Discard' }).click()
     await expect(modal).not.toBeVisible()
   })
 

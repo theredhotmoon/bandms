@@ -1,4 +1,5 @@
 import { test, expect, expectToast, confirmDelete, searchTable } from '../../fixtures/test-base'
+import { adminHeaders } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -21,6 +22,26 @@ test.describe.serial('Admin Posts', () => {
   const postTitle = `E2E Post ${Date.now()}`
   const updatedTitle = `${postTitle} Updated`
   const scrollPostTitle = `E2E Scroll Post ${Date.now()}`
+
+  // The Reference block lists the band's releases, and the prod-synced dev DB
+  // has none — so "pick the first item" found nothing to pick. Seed one for
+  // the block to point at, and remove it once the post that referenced it is
+  // gone (the delete test runs before afterAll in this serial chain).
+  let releaseId: number | null = null
+
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post('/api/releases', {
+      headers: adminHeaders(),
+      data: { title: { en: `E2E Ref Release ${Date.now()}` }, type: 'single' },
+    })
+    if (!res.ok()) throw new Error(`Seeding the release failed: ${res.status()} ${await res.text()}`)
+    releaseId = ((await res.json()) as { data: { id: number } }).data.id
+  })
+
+  test.afterAll(async ({ request }) => {
+    if (releaseId === null) return
+    await request.delete(`/api/releases/${releaseId}`, { headers: adminHeaders() })
+  })
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/posts')
@@ -61,7 +82,7 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
     await page.getByRole('button', { name: '+ Text' }).click()
-    await page.locator('.block-row').nth(0).locator('textarea').first().fill('First paragraph')
+    await page.locator('.block-row').nth(0).locator('[data-locale="en"] textarea').fill('First paragraph')
 
     await page.getByRole('button', { name: '+ Embed / link' }).click()
     await page.locator('.block-row').nth(1).locator('input').first().fill('https://vimeo.com/76979871')
@@ -89,7 +110,7 @@ test.describe.serial('Admin Posts', () => {
     // Order is the whole feature — assert position, not just presence.
     await expect(page.locator('.block-row').nth(0).locator('.block-type')).toHaveText('Text')
     await expect(page.locator('.block-row').nth(1).locator('.block-type')).toHaveText('Embed / link')
-    await expect(page.locator('.block-row').nth(0).locator('textarea').first()).toHaveValue('First paragraph')
+    await expect(page.locator('.block-row').nth(0).locator('[data-locale="en"] textarea')).toHaveValue('First paragraph')
   })
 
   test('removing a block persists the shorter list', async ({ page }) => {
@@ -252,15 +273,24 @@ test.describe.serial('Admin Posts', () => {
     const rail = page.locator('.pf-rail')
     await expect(rail).toBeVisible()
 
-    const wide = { main: await main.boundingBox(), rail: await rail.boundingBox() }
-    if (!wide.main || !wide.rail) throw new Error('layout columns not found')
-    expect(wide.rail.x).toBeGreaterThanOrEqual(wide.main.x + wide.main.width)
-    expect(Math.abs(wide.rail.y - wide.main.y)).toBeLessThan(4)
+    // Both boxes in one evaluate: the modal's enter transition scales and
+    // slides the panel for ~200 ms, and two separate boundingBox() calls
+    // land in different frames — the rail then reads ~5 px off the column
+    // it is level with. Polled, so the check also outlasts the transition.
+    const columns = () => page.evaluate(() => {
+      const m = document.querySelector('.pf-main')?.getBoundingClientRect()
+      const r = document.querySelector('.pf-rail')?.getBoundingClientRect()
+      return m && r ? { m: { x: m.x, y: m.y, w: m.width, h: m.height }, r: { x: r.x, y: r.y } } : null
+    })
+    await expect.poll(async () => {
+      const c = await columns()
+      return c ? c.r.x >= c.m.x + c.m.w && Math.abs(c.r.y - c.m.y) < 4 : false
+    }).toBe(true)
 
     await page.setViewportSize({ width: 720, height: 900 })
     await expect.poll(async () => {
-      const m = await main.boundingBox(); const r = await rail.boundingBox()
-      return m && r ? r.y >= m.y + m.height - 1 && Math.abs(r.x - m.x) < 4 : false
+      const c = await columns()
+      return c ? c.r.y >= c.m.y + c.m.h - 1 && Math.abs(c.r.x - c.m.x) < 4 : false
     }).toBe(true)
 
     await page.getByRole('button', { name: 'Cancel' }).click()
@@ -321,7 +351,10 @@ test.describe.serial('Admin Posts', () => {
 
     await createBtn.click()
 
-    const titleInput = modal.locator('input[placeholder="Post title"]')
+    // `required` sits on the band's *first* content language's title, which
+    // is the input the form ids `post-title-0` — "Post title" is the English
+    // one and is optional on a Polish-first band.
+    const titleInput = modal.locator('#post-title-0')
     await expect(titleInput).toHaveAttribute('required', '')
     expect(await titleInput.evaluate((el) => (el as HTMLInputElement).validity.valid)).toBe(false)
 
