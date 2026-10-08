@@ -24,6 +24,23 @@ export function hasBioText(value: string | null | undefined): boolean {
   return !!value && stripHtmlText(value) !== ''
 }
 
+/**
+ * An HTML (or plain) bio as plain-text paragraphs, for a surface that must
+ * not render band-supplied markup. Member bios are written by the `member`
+ * role, not only admins, and nothing sanitises them server-side — so the
+ * member panel keeps the paragraph breaks and prints the text, never the
+ * HTML. Block closers and line breaks become paragraph boundaries.
+ */
+export function bioParagraphs(value: string | null | undefined): string[] {
+  if (!value) return []
+  return value
+    .replace(/\r\n/g, '\n')
+    .replace(/<\/(?:p|div|li|h[1-6]|blockquote)>|<br\s*\/?>/gi, '\n')
+    .split(/\n+/)
+    .map(stripHtmlText)
+    .filter(Boolean)
+}
+
 /** The first candidate, in order, that holds text — or null when none does. */
 export function firstBioWithText(candidates: readonly (string | null | undefined)[]): string | null {
   return candidates.find(hasBioText) ?? null
