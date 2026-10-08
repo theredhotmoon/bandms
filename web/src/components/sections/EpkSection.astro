@@ -13,6 +13,7 @@ import { getEpk, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDate, formatNumber } from '@/lib/i18n'
 import { EPK_COPY } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
+import { firstBioWithText } from '@/lib/bio'
 
 interface Props {
   lang: Locale
@@ -29,7 +30,9 @@ const site = siteCopy(siteConfig, lang)
 // Snapshots published before the builder emitted clips carry no key at all.
 const clips = epk.clips ?? []
 
-const bio = epk.bio_long || epk.bio_medium || epk.bio_short || ''
+// firstBioWithText, not `||`: a blank RichEditor saves `<p></p>`, which is
+// truthy and would stand in for the lengths that hold text.
+const bio = firstBioWithText([epk.bio_long, epk.bio_medium, epk.bio_short]) ?? ''
 const bioParagraphs = bio.replace(/\r\n/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
 
 const facts = [

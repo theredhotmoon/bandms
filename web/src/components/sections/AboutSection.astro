@@ -13,6 +13,7 @@ import { getSlugMap } from '@/lib/slugs'
 import { formatNumber, formatGenreKicker, splitCommaList } from '@/lib/i18n'
 import { ABOUT_COPY } from '@bandms/site-copy'
 import { moduleCopy } from '@/lib/copy'
+import { hasBioText } from '@/lib/bio'
 
 interface Props {
   lang: Locale
@@ -63,7 +64,10 @@ const PRIORITY_ORDER: BioVariant[] = [
   profile.about_bio_variant,
   ...(['medium', 'long', 'short', 'full'] as BioVariant[]).filter(v => v !== profile.about_bio_variant),
 ]
-const winningVariant = PRIORITY_ORDER.find(v => bioByVariant[v])
+// hasBioText, not a truthy check: RichEditor saves `<p></p>` for a blank
+// editor, which is a non-empty string and used to win the chain with an
+// empty column — exactly what the chain exists to prevent.
+const winningVariant = PRIORITY_ORDER.find(v => hasBioText(bioByVariant[v]))
 const bio = winningVariant ? bioByVariant[winningVariant]! : ''
 const bioIsHtml = winningVariant ? HTML_VARIANTS.has(winningVariant) : false
 const bioParagraphs = bioIsHtml

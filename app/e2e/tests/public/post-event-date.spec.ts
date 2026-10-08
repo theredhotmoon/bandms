@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { adminToken } from '../../fixtures/admin-api'
 
 /**
  * The public half of "news post event date is derived from linked concerts".
@@ -13,13 +13,6 @@ import { failOnPageError } from '../../fixtures/page-errors'
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
-
-function adminToken(): string {
-  const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json — cannot seed posts/concerts')
-  return entry.value
-}
 
 async function authedFetch(request: import('@playwright/test').APIRequestContext, method: 'get' | 'post' | 'delete', path: string, data?: unknown) {
   return request[method](`${API}${path}`, {
@@ -137,8 +130,13 @@ test.describe.serial('Public news post — event date from linked concerts', () 
     await expect(page.getByText(`Event: ${range('2099-04-10', '2099-04-12')}`)).toBeVisible()
   })
 
-  test('renders the localized label on the Polish locale', async ({ page }) => {
-    await page.goto(`${WEB}/pl/aktu/${singleSlug}`)
+  test('renders the localized label on the Polish locale', async ({ page, request }) => {
+    // The Polish news section lives at whatever slug the band stored for the
+    // posts module (`aktualnosci` on the prod-synced dev DB) — read it rather
+    // than guess, the way the site itself does.
+    const cfg = (await (await request.get(`${API}/api/site-config?lang=pl`)).json()) as { module_config?: Record<string, { slug?: string }> }
+    const plPosts = cfg.module_config?.posts?.slug ?? 'posts'
+    await page.goto(`${WEB}/pl/${plPosts}/${singleSlug}`)
     await expect(page.getByText(`Wydarzenie: ${plFmt.format(new Date('2099-03-05'))}`)).toBeVisible()
   })
 })
