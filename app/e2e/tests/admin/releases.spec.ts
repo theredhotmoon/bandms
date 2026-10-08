@@ -121,6 +121,14 @@ test.describe('Releases Admin', () => {
     await expect(discard).toHaveCount(0)
     await expect(modal.locator('input[placeholder="Release title"]')).toHaveValue('Unsaved release')
 
+    // The backdrop is the full overlay with the panel centred over it, so
+    // click a corner the panel cannot cover.
+    await modal.locator('.modal-backdrop').click({ position: { x: 5, y: 5 } })
+    await expect(discard).toBeVisible()
+    await discard.getByRole('button', { name: 'Cancel' }).click()
+    await expect(discard).toHaveCount(0)
+    await expect(modal.locator('input[placeholder="Release title"]')).toHaveValue('Unsaved release')
+
     await modal.getByRole('button', { name: 'Cancel' }).click()
     await expect(discard).toBeVisible()
     await discard.getByRole('button', { name: 'Discard' }).click()
