@@ -1,5 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { adminToken } from '../../fixtures/admin-api'
 import { confirmDelete, expectToast, searchTable } from '../../fixtures/test-base'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
@@ -12,18 +12,7 @@ const EDITED = `${TITLE} edited`
 // same concert in parallel, and this file's cleanup deletes by url + owner.
 const QUICK_URL = 'https://www.youtube.com/watch?v=9bZkp7q19f0'
 
-/**
- * storageState replays cookies only, and e2e/.auth/admin.json holds none — an
- * API context built from it is anonymous. The token has to be lifted out and
- * sent explicitly. Path is relative to the Playwright cwd (app/): these spec
- * files are ESM, so __dirname does not exist.
- */
-function adminToken(): string {
-  const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))
-  const entry = raw.origins?.[0]?.localStorage?.find((e: { name: string }) => e.name === 'auth_token')
-  if (!entry?.value) throw new Error('No auth_token in e2e/.auth/admin.json')
-  return entry.value
-}
+
 
 async function api(request: APIRequestContext, method: 'get' | 'post' | 'delete', path: string, data?: unknown) {
   const res = await request[method](`${API}${path}`, {

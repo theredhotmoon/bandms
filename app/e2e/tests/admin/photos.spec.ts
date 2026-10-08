@@ -1,4 +1,5 @@
 import { test, expect, expectToast, confirmDelete } from '../../fixtures/test-base'
+import { adminHeaders, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -294,8 +295,32 @@ test.describe('Admin Photos — photo grid inside album', () => {
 
 test.describe.configure({ mode: 'serial' })
 
+// This used to delete "the last album", whichever it was, and skip when there
+// were none. On the seeded dev DB there were none, so it never ran — and the
+// first time it met real albums (a prod pull) it deleted one of the band's,
+// which no restore brings back. It now seeds its own through the API and
+// deletes that one row through the UI.
 test.describe('Admin Photos — album delete flow (serial)', () => {
   const ALBUM_TITLE = `e2e-album-${Date.now()}`
+  let albumId: number | null = null
+
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post('/api/albums/batch', {
+      headers: adminHeaders(),
+      multipart: {
+        title: ALBUM_TITLE,
+        'files[]': { name: 'e2e.png', mimeType: 'image/png', buffer: TEST_PNG },
+      },
+    })
+    if (!res.ok()) throw new Error(`Seeding the album failed: ${res.status()} ${await res.text()}`)
+    albumId = ((await res.json()) as { data: { id: number } }).data.id
+  })
+
+  // Only reached if the test did not get as far as deleting it.
+  test.afterAll(async ({ request }) => {
+    if (albumId === null) return
+    await request.delete(`/api/albums/${albumId}`, { headers: adminHeaders() })
+  })
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/photos')
@@ -303,29 +328,18 @@ test.describe('Admin Photos — album delete flow (serial)', () => {
   })
 
   test('delete album: confirm → "Album deleted" toast and row removed', async ({ page }) => {
-    const rows = page.locator('tbody tr')
-    const count = await rows.count()
-    test.skip(count === 0, 'No albums — skipping delete flow test')
+    const row = page.locator('tbody tr').filter({ hasText: ALBUM_TITLE })
+    await expect(row).toHaveCount(1)
 
-    // Use the last album to avoid disrupting other tests that rely on the first
-    const lastRow = rows.last()
-    const albumTitleText = await lastRow.locator('td').nth(1).textContent()
+    await row.getByRole('button', { name: 'Delete' }).click()
 
-    await lastRow.getByRole('button', { name: 'Delete' }).click()
-
+    // The row's own Delete button is still on the page behind the dialog, so
+    // the confirming click must be scoped to the dialog.
     await expect(page.getByText('Confirm deletion')).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await confirmDelete(page)
 
     await expectToast(page, 'Album deleted')
-
-    // Row for that album must be gone
-    if (albumTitleText?.trim()) {
-      const trimmed = albumTitleText.trim().slice(0, 20)
-      // Either the row is gone or there are fewer rows
-      await page.waitForTimeout(500)
-      const remainingRows = await page.locator('tbody tr').filter({ hasText: trimmed }).count()
-      // Not asserting strict 0 — album title might not be unique; just ensure toast fired
-      expect(remainingRows).toBeGreaterThanOrEqual(0)
-    }
+    await expect(page.locator('tbody tr').filter({ hasText: ALBUM_TITLE })).toHaveCount(0)
+    albumId = null
   })
 })
