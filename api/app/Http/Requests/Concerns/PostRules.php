@@ -24,7 +24,7 @@ trait PostRules
             // A path returned by POST /api/posts/image, never a data URL (the
             // column held base64 until Oct 2026) and never a path into
             // another folder — the controller deletes whatever path it replaces.
-            'image'         => ['nullable', 'string', 'max:255', 'regex:#^post-images/[A-Za-z0-9._-]+$#'],
+            'image'         => ['nullable', 'string', 'max:255', 'regex:#^post-images/[A-Za-z0-9_-]+\.(jpe?g|png|gif|webp)$#i'],
             'published_at'  => 'nullable|date',
             'event_date_display' => ['nullable', Rule::in(['range', 'list'])],
             'tag_ids'       => 'nullable|array',

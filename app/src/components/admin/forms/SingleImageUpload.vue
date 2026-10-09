@@ -2,28 +2,25 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { reportSaveError } from '@/utils/formErrors'
+import type { UploadedImage } from '@/api/client'
 
 /**
  * One picture, uploaded the moment it is picked.
  *
- * The file goes to the server straight away (`upload`) and only its stored
- * `path` is ever submitted with the form; `modelValue` is the preview URL the
- * server returned, or the one the record already had. The field used to read
- * the file as a base64 data URL and submit that, which put the whole picture
+ * The model is the picture itself: `{ url }` for one the record already has
+ * (nothing to submit), `{ path, url }` once a new file has been stored
+ * (`path` is what the form submits), and `null` after Remove. The file goes
+ * to the server through `upload` as soon as it is chosen; the field used to
+ * read it as a base64 data URL and submit that, which put the whole picture
  * into the `posts.image` column and from there into every list response.
  */
-export interface UploadedImage { path: string; url: string }
-
-const emit = defineEmits<{
-  'update:modelValue': [value: string | null]
-  /** The stored path to submit — null once the picture is removed. */
-  uploaded: [value: UploadedImage | null]
-}>()
+export interface ImageField { path?: string; url: string }
 
 const props = defineProps<{
-  modelValue?: string | null
+  modelValue: ImageField | null
   upload: (file: File) => Promise<UploadedImage>
 }>()
+const emit = defineEmits<{ 'update:modelValue': [value: ImageField | null] }>()
 
 const { t } = useI18n()
 const dropActive = ref(false)
@@ -45,9 +42,8 @@ async function send(file: File) {
   if (!file.type.startsWith('image/')) return
   uploading.value = true
   try {
-    const stored = await props.upload(file)
-    emit('update:modelValue', stored.url)
-    emit('uploaded', stored)
+    const { path, url } = await props.upload(file)
+    emit('update:modelValue', { path, url })
   } catch (e) {
     reportSaveError(e, t('common.imageUpload.uploadFailed'))
   } finally {
@@ -58,14 +54,13 @@ async function send(file: File) {
 
 function remove() {
   emit('update:modelValue', null)
-  emit('uploaded', null)
 }
 </script>
 
 <template>
   <div class="siu-wrap">
     <div v-if="modelValue" class="siu-preview">
-      <img :src="modelValue" alt="" class="siu-img" />
+      <img :src="modelValue.url" alt="" class="siu-img" />
       <button type="button" class="siu-remove" @click="remove" :title="$t('common.imageUpload.remove')" :aria-label="$t('common.imageUpload.remove')">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
@@ -89,13 +84,7 @@ function remove() {
       <span class="siu-label">{{ uploading ? $t('common.imageUpload.uploading') : $t('common.imageUpload.dropzone') }}</span>
       <span class="siu-hint">{{ $t('common.imageUpload.hint') }}</span>
     </button>
-    <input
-      ref="fileInput"
-      type="file"
-      accept="image/*"
-      style="display:none"
-      @change="onFileInput"
-    />
+    <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileInput" />
   </div>
 </template>
 

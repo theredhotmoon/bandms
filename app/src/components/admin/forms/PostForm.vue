@@ -2,13 +2,13 @@
 import { useI18n } from 'vue-i18n'
 import { computed, nextTick, provide, reactive, ref, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
-import SingleImageUpload from '@/components/admin/forms/SingleImageUpload.vue'
+import SingleImageUpload, { type ImageField } from '@/components/admin/forms/SingleImageUpload.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { useAuth } from '@/composables/useAuth'
-import { uploadPostImage, type UploadedPostImage } from '@/api/posts'
+import { uploadPostImage } from '@/api/posts'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import { VISIBLE_LOCALES, loadLocaleView, saveLocaleView, visibleFor, type LocaleView } from '@/utils/editorLocales'
 import { localDateTimeInputValue } from '@/utils/dateInput'
@@ -73,8 +73,10 @@ const form = reactive({
   title: emptyBag(),
   slug: emptyBag(),
   intro: emptyBag(),
-  /** Preview URL only; what is submitted is `imagePath`. */
-  image: null as string | null,
+  // `{ url }` as loaded (nothing to submit), `{ path, url }` once a new file
+  // is stored, null after Remove. An untouched picture has no `path`, so the
+  // payload omits `image` and the server leaves it alone.
+  image: null as ImageField | null,
   published_at: '',
   event_date_display: 'range' as 'range' | 'list',
   tag_ids: [] as number[],
@@ -111,23 +113,14 @@ function setPublished(published: boolean) {
   if (published && !form.published_at) form.published_at = localDateTimeInputValue()
 }
 
-// The stored path of a picture picked in this session, null once removed,
-// and undefined while untouched — an omitted `image` leaves the server's
-// alone, so an unchanged post never resends (or re-deletes) its picture.
-const imagePath = ref<string | null | undefined>(undefined)
-function onImageUploaded(stored: UploadedPostImage | null) {
-  imagePath.value = stored?.path ?? null
-}
-
-const { isDirty, markClean } = useDirtyGuard(() => ({ form, imagePath: imagePath.value, published: isPublished.value }))
+const { isDirty, markClean } = useDirtyGuard(() => ({ form, published: isPublished.value }))
 const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(() => props.initial, (val) => {
   form.title = bagFrom(val?.translations?.title, val?.title)
   form.slug = bagFrom(val?.translations?.slug)
   form.intro = bagFrom(val?.translations?.intro, val?.intro)
-  form.image = val?.image ?? null
-  imagePath.value = undefined
+  form.image = val?.image ? { url: val.image } : null
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   isPublished.value = !!val?.published_at
   form.event_date_display = val?.event_date_display ?? 'range'
@@ -168,7 +161,7 @@ function submit() {
     // on edit the form saves exactly what it shows (#153, #154).
     slug: slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     intro: compactBag(form.intro),
-    image: imagePath.value,
+    image: form.image === null ? null : form.image.path,
     published_at: isPublished.value ? form.published_at || null : null,
     event_date_display: form.event_date_display,
     tag_ids: form.tag_ids,
@@ -228,7 +221,7 @@ function submit() {
         </div>
         <div class="pf-cover">
           <label class="field-label">{{ $t('content.posts.cover') }}</label>
-          <SingleImageUpload v-model="form.image" :upload="uploadImage" @uploaded="onImageUploaded" />
+          <SingleImageUpload v-model="form.image" :upload="uploadImage" />
           <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
         </div>
       </div>

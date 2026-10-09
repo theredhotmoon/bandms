@@ -55,6 +55,14 @@ describe('POST /api/posts/image', function () {
         $this->postJson('/api/posts/image', ['image' => UploadedFile::fake()->image('big.jpg')->size(5000)])
             ->assertStatus(422);
     });
+
+    it('rejects an SVG on both image uploads, which would be served inline with any script it carries', function () {
+        Passport::actingAs(User::factory()->create(['role' => 'admin']));
+        $svg = UploadedFile::fake()->createWithContent('x.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+
+        $this->postJson('/api/posts/image', ['image' => $svg])->assertStatus(422);
+        $this->postJson('/api/posts/blocks/image', ['image' => $svg])->assertStatus(422);
+    });
 });
 
 describe('image on a post', function () {
@@ -97,6 +105,14 @@ describe('image on a post', function () {
         $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => 'post-images/../.env'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('image');
+
+        // `..` and `.` are filenames to the old pattern; a path Flysystem
+        // normalises to the disk root must never reach delete().
+        foreach (['post-images/..', 'post-images/.', 'post-images/noext'] as $bad) {
+            $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => $bad])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('image');
+        }
     });
 
     it('deletes the old file when an update replaces the image', function () {
@@ -185,6 +201,35 @@ describe('PostImageFileBackfill', function () {
         PostImageFileBackfill::run();
 
         expect($post->fresh()->image)->toBeNull();
+    });
+
+    it('leaves the row untouched when the disk refuses the write, and reports it', function () {
+        $disk = Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk->shouldReceive('put')->andReturn(false);
+        Storage::shouldReceive('disk')->with('public')->andReturn($disk);
+        $post = Post::factory()->create(['image' => DATA_URL]);
+
+        expect(PostImageFileBackfill::run())->toBe(0);
+        expect($post->fresh()->image)->toBe(DATA_URL);
+        expect(PostImageFileBackfill::remaining())->toBe(1);
+    });
+
+    it('reports nothing remaining once every row is converted', function () {
+        Post::factory()->create(['image' => DATA_URL]);
+        Post::factory()->create(['image' => 'post-images/already.jpg']);
+
+        PostImageFileBackfill::run();
+
+        expect(PostImageFileBackfill::remaining())->toBe(0);
+    });
+
+    it('converts more rows than one chunk holds', function () {
+        for ($i = 0; $i < 120; $i++) {
+            Post::factory()->create(['image' => DATA_URL]);
+        }
+
+        expect(PostImageFileBackfill::run())->toBe(120);
+        expect(PostImageFileBackfill::remaining())->toBe(0);
     });
 
     it('picks the extension from the mime type', function () {

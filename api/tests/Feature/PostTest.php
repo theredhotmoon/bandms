@@ -7,8 +7,6 @@ use App\Models\Tag;
 use App\Models\User;
 use Laravel\Passport\Passport;
 
-// 1×1 transparent PNG as base64 data URL — safe test image fixture.
-const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 // ── GET /api/posts ────────────────────────────────────────────────────────────
 
@@ -114,7 +112,7 @@ describe('GET /api/posts', function () {
 
 describe('GET /api/posts/{post}', function () {
     it('returns the post with full content', function () {
-        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => TEST_IMAGE]);
+        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => 'post-images/detail.jpg']);
 
         $this->getJson("/api/posts/{$post->id}")
             ->assertSuccessful()

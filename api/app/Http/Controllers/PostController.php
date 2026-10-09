@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\Storage;
 class PostController extends Controller
 {
     /**
+     * Raster formats only. `image` alone admits SVG, which is served inline
+     * from the public origin and can carry a script.
+     */
+    private const IMAGE_RULES = ['mimes:jpg,jpeg,png,gif,webp', 'max:4096'];
+
+    /**
      * Public list — published posts only. Drafts (null published_at) never
      * reach the Astro build, which is what reads this.
      */
@@ -165,7 +171,8 @@ class PostController extends Controller
         $data = $request->validated();
 
         $membersChanged = false;
-        DB::transaction(function () use ($data, $post, &$membersChanged) {
+        $replacedImage = null;
+        DB::transaction(function () use ($data, $post, &$membersChanged, &$replacedImage) {
             // Validated as nullable (a client may send it only when 2+ concerts
             // are linked), but the column itself is NOT NULL — an explicit null
             // would otherwise reach the database as a constraint violation.
@@ -173,10 +180,12 @@ class PostController extends Controller
                 $data['event_date_display'] = 'range';
             }
 
-            // A replaced or cleared main image loses its file; an omitted key
-            // leaves both alone, which is how the admin resends an unchanged post.
+            // A replaced or cleared main image loses its file — after the
+            // commit, so a rollback cannot leave the row pointing at nothing.
+            // An omitted key leaves both alone, which is how the admin resends
+            // an unchanged post.
             if (array_key_exists('image', $data) && $post->image && $post->image !== $data['image']) {
-                Storage::disk('public')->delete($post->image);
+                $replacedImage = $post->image;
             }
 
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
@@ -204,6 +213,10 @@ class PostController extends Controller
             }
         }, 3);
 
+        if ($replacedImage) {
+            Storage::disk('public')->delete($replacedImage);
+        }
+
         SiteRebuild::markDirty('posts');
         // Member pages list the news they are linked to — only a changed set
         // of links touches them (the form always sends member_ids).
@@ -216,14 +229,18 @@ class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        foreach (PostBlockSync::imagePaths($post->blocks()->get()->all()) as $path) {
-            Storage::disk('public')->delete($path);
-        }
+        // Files go after the row: a delete that fails must not leave a post
+        // whose pictures are already gone.
+        $paths = PostBlockSync::imagePaths($post->blocks()->get()->all());
         if ($post->image) {
-            Storage::disk('public')->delete($post->image);
+            $paths[] = $post->image;
         }
 
         $post->delete();
+
+        foreach ($paths as $path) {
+            Storage::disk('public')->delete($path);
+        }
 
         SiteRebuild::markDirty('posts');
 
@@ -237,7 +254,7 @@ class PostController extends Controller
      */
     public function uploadBlockImage(Request $request): JsonResponse
     {
-        $request->validate(['image' => 'required|image|max:4096']);
+        $request->validate(['image' => ['required', 'image', ...self::IMAGE_RULES]]);
 
         $path = $request->file('image')->store('post-blocks', 'public');
 
@@ -251,7 +268,7 @@ class PostController extends Controller
      */
     public function uploadImage(Request $request): JsonResponse
     {
-        $request->validate(['image' => 'required|image|max:4096']);
+        $request->validate(['image' => ['required', 'image', ...self::IMAGE_RULES]]);
 
         $path = $request->file('image')->store('post-images', 'public');
 
