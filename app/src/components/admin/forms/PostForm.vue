@@ -7,6 +7,8 @@ import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vu
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
+import { useAuth } from '@/composables/useAuth'
+import { uploadPostImage, type UploadedPostImage } from '@/api/posts'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
 import { VISIBLE_LOCALES, loadLocaleView, saveLocaleView, visibleFor, type LocaleView } from '@/utils/editorLocales'
 import { localDateTimeInputValue } from '@/utils/dateInput'
@@ -44,6 +46,8 @@ const props = defineProps<{
 const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 
 const { order: contentLocales, isPrimary } = useContentLocales()
+const { token } = useAuth()
+const uploadImage = (file: File) => uploadPostImage(token.value!, file)
 
 // The sample text inside each input is written in that input's language, so it
 // is looked up in that language's own admin catalogue rather than the UI
@@ -69,6 +73,7 @@ const form = reactive({
   title: emptyBag(),
   slug: emptyBag(),
   intro: emptyBag(),
+  /** Preview URL only; what is submitted is `imagePath`. */
   image: null as string | null,
   published_at: '',
   event_date_display: 'range' as 'range' | 'list',
@@ -106,7 +111,15 @@ function setPublished(published: boolean) {
   if (published && !form.published_at) form.published_at = localDateTimeInputValue()
 }
 
-const { isDirty, markClean } = useDirtyGuard(() => ({ form, published: isPublished.value }))
+// The stored path of a picture picked in this session, null once removed,
+// and undefined while untouched — an omitted `image` leaves the server's
+// alone, so an unchanged post never resends (or re-deletes) its picture.
+const imagePath = ref<string | null | undefined>(undefined)
+function onImageUploaded(stored: UploadedPostImage | null) {
+  imagePath.value = stored?.path ?? null
+}
+
+const { isDirty, markClean } = useDirtyGuard(() => ({ form, imagePath: imagePath.value, published: isPublished.value }))
 const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(() => props.initial, (val) => {
@@ -114,6 +127,7 @@ watch(() => props.initial, (val) => {
   form.slug = bagFrom(val?.translations?.slug)
   form.intro = bagFrom(val?.translations?.intro, val?.intro)
   form.image = val?.image ?? null
+  imagePath.value = undefined
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   isPublished.value = !!val?.published_at
   form.event_date_display = val?.event_date_display ?? 'range'
@@ -154,7 +168,7 @@ function submit() {
     // on edit the form saves exactly what it shows (#153, #154).
     slug: slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     intro: compactBag(form.intro),
-    image: form.image || null,
+    image: imagePath.value,
     published_at: isPublished.value ? form.published_at || null : null,
     event_date_display: form.event_date_display,
     tag_ids: form.tag_ids,
@@ -214,7 +228,7 @@ function submit() {
         </div>
         <div class="pf-cover">
           <label class="field-label">{{ $t('content.posts.cover') }}</label>
-          <SingleImageUpload v-model="form.image" />
+          <SingleImageUpload v-model="form.image" :upload="uploadImage" @uploaded="onImageUploaded" />
           <p v-if="errors?.image" class="field-error">{{ errors.image[0] }}</p>
         </div>
       </div>

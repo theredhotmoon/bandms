@@ -17,7 +17,7 @@ class PostResource extends JsonResource
             // public site resolves translations.slug down the locale chain.
             'slug'         => $this->slugIn(Locales::default()),
             'intro'        => $this->intro,
-            'image'        => $this->image,
+            'image'        => $this->image ? '/storage/' . $this->image : null,
             'published_at' => $this->published_at,
             'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()
                 ->map(fn ($c) => $c->date->format('Y-m-d'))),

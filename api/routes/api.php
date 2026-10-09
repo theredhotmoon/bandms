@@ -284,6 +284,9 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('role:admin,publisher')
         ->name('api.posts.store');
     // Must precede PUT /posts/{post} — otherwise "blocks" is captured as {post}.
+    Route::post('/posts/image', [PostController::class, 'uploadImage'])
+        ->middleware('role:admin,publisher')
+        ->name('api.posts.image');
     Route::post('/posts/blocks/image', [PostController::class, 'uploadBlockImage'])
         ->middleware('role:admin,publisher')
         ->name('api.posts.blocks.image');

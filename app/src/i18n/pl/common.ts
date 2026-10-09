@@ -117,7 +117,9 @@ export default {
     alt: 'Zdjęcie wpisu',
     remove: 'Usuń zdjęcie',
     dropzone: 'Upuść zdjęcie lub kliknij, aby wybrać',
-    hint: 'JPG, PNG, WebP — maks. 20 MB',
+    hint: 'JPG, PNG, WebP — maks. 4 MB',
+    uploading: 'Wysyłanie…',
+    uploadFailed: 'Nie udało się wysłać zdjęcia',
   },
   clipCategory: {
     live: 'Na żywo',

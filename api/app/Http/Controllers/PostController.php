@@ -42,11 +42,10 @@ class PostController extends Controller
     }
 
     /**
-     * The explicit select is what keeps `image` — a base64 data URL per post —
-     * out of the admin list, which the dashboard and the shop form fetch
-     * unpaginated and never render. The public news page renders it on every
-     * card, so the public list loads it; the summary resource emits the field
-     * only when it was loaded.
+     * The explicit select keeps `image` out of the admin list, which never
+     * renders it. The public news page renders it on every card, so the
+     * public list loads it; the summary resource emits the field only when
+     * it was loaded.
      */
     private function listQuery(Request $request, bool $withImage = false): Builder
     {
@@ -174,6 +173,12 @@ class PostController extends Controller
                 $data['event_date_display'] = 'range';
             }
 
+            // A replaced or cleared main image loses its file; an omitted key
+            // leaves both alone, which is how the admin resends an unchanged post.
+            if (array_key_exists('image', $data) && $post->image && $post->image !== $data['image']) {
+                Storage::disk('public')->delete($post->image);
+            }
+
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
             // payload carrying slug_en: null nulled the post's slug.
             $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks', 'slug']));
@@ -214,6 +219,9 @@ class PostController extends Controller
         foreach (PostBlockSync::imagePaths($post->blocks()->get()->all()) as $path) {
             Storage::disk('public')->delete($path);
         }
+        if ($post->image) {
+            Storage::disk('public')->delete($post->image);
+        }
 
         $post->delete();
 
@@ -232,6 +240,20 @@ class PostController extends Controller
         $request->validate(['image' => 'required|image|max:4096']);
 
         $path = $request->file('image')->store('post-blocks', 'public');
+
+        return response()->json(['path' => $path, 'url' => Storage::url($path)], 201);
+    }
+
+    /**
+     * The post's main image, uploaded ahead of the post for the same reason
+     * as a block image. The returned `path` is what store/update accept in
+     * `image`; `url` is for the editor's preview only.
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate(['image' => 'required|image|max:4096']);
+
+        $path = $request->file('image')->store('post-images', 'public');
 
         return response()->json(['path' => $path, 'url' => Storage::url($path)], 201);
     }

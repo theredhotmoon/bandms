@@ -121,7 +121,9 @@ export default {
     alt: 'Post image',
     remove: 'Remove image',
     dropzone: 'Drop image or click to browse',
-    hint: 'JPG, PNG, WebP — max 20 MB',
+    hint: 'JPG, PNG, WebP — max 4 MB',
+    uploading: 'Uploading…',
+    uploadFailed: 'Image upload failed',
   },
   clipCategory: {
     live: 'Live',

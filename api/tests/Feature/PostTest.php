@@ -31,11 +31,11 @@ describe('GET /api/posts', function () {
         // query selects an explicit column set, so this pins both the column
         // and the resource field — dropping either hides the picture from the
         // list while the detail page keeps showing it.
-        Post::factory()->create(['title' => 'With picture', 'image' => TEST_IMAGE]);
+        Post::factory()->create(['title' => 'With picture', 'image' => 'post-images/pic.jpg']);
 
         $this->getJson('/api/posts')
             ->assertSuccessful()
-            ->assertJsonPath('data.0.image', TEST_IMAGE);
+            ->assertJsonPath('data.0.image', '/storage/post-images/pic.jpg');
     });
 
     it('filters by search term in title', function () {

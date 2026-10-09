@@ -62,6 +62,25 @@ export async function fetchPost(token: string, id: number, lang: Lang = DEFAULT_
   return handleResponse<PostResponse>(res).then((r) => r.data)
 }
 
+export interface UploadedPostImage { path: string; url: string }
+
+/**
+ * The post's main image, uploaded ahead of the post like a block image.
+ * Multipart, so no Content-Type header — the browser sets the boundary.
+ * `path` is what `PostPayload.image` carries; `url` is the editor's preview.
+ */
+export async function uploadPostImage(token: string, file: File): Promise<UploadedPostImage> {
+  const body = new FormData()
+  body.append('image', file)
+
+  const res = await fetch(`${API_BASE}/api/posts/image`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    body,
+  })
+  return handleResponse<UploadedPostImage>(res)
+}
+
 export async function createPost(token: string, payload: PostPayload): Promise<Post> {
   const res = await fetch(`${API_BASE}/api/posts`, {
     method: 'POST',

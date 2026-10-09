@@ -35,7 +35,7 @@ class PostSummaryResource extends JsonResource
             // PostController::listQuery(). A loaded null is still emitted.
             'image'        => $this->when(
                 array_key_exists('image', $this->resource->getAttributes()),
-                fn () => $this->image,
+                fn () => $this->image ? '/storage/' . $this->image : null,
             ),
             'excerpt'      => $excerpt,
             'published_at' => $this->published_at,
