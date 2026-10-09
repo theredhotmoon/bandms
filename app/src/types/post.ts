@@ -66,7 +66,7 @@ export interface PostSummary {
   /** The default locale's slug; per-locale ones are in translations.slug. */
   slug: string
   intro: string | null
-  /** Main image as a data URL. The public list carries it; `/api/admin/posts` omits it. */
+  /** Main image as a `/storage/…` URL. The public list carries it; `/api/admin/posts` omits it. */
   image?: string | null
   excerpt: string
   published_at: string | null
@@ -104,6 +104,10 @@ export interface PostPayload {
   /** A null locale is generated (on create) or cleared/kept (on update) by the API. */
   slug?: TranslationMap
   intro?: string | TranslationMap | null
+  /**
+   * The `path` from uploadPostImage(), null to remove the picture, or absent
+   * to leave it as it is. Never a data URL.
+   */
   image?: string | null
   published_at?: string | null
   event_date_display?: 'range' | 'list'

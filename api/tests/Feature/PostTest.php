@@ -7,8 +7,6 @@ use App\Models\Tag;
 use App\Models\User;
 use Laravel\Passport\Passport;
 
-// 1×1 transparent PNG as base64 data URL — safe test image fixture.
-const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 // ── GET /api/posts ────────────────────────────────────────────────────────────
 
@@ -31,11 +29,11 @@ describe('GET /api/posts', function () {
         // query selects an explicit column set, so this pins both the column
         // and the resource field — dropping either hides the picture from the
         // list while the detail page keeps showing it.
-        Post::factory()->create(['title' => 'With picture', 'image' => TEST_IMAGE]);
+        Post::factory()->create(['title' => 'With picture', 'image' => 'post-images/pic.jpg']);
 
         $this->getJson('/api/posts')
             ->assertSuccessful()
-            ->assertJsonPath('data.0.image', TEST_IMAGE);
+            ->assertJsonPath('data.0.image', '/storage/post-images/pic.jpg');
     });
 
     it('filters by search term in title', function () {
@@ -114,7 +112,7 @@ describe('GET /api/posts', function () {
 
 describe('GET /api/posts/{post}', function () {
     it('returns the post with full content', function () {
-        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => TEST_IMAGE]);
+        $post = Post::factory()->create(['title' => 'Detail Post', 'image' => 'post-images/detail.jpg']);
 
         $this->getJson("/api/posts/{$post->id}")
             ->assertSuccessful()

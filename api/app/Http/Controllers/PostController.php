@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\Storage;
 class PostController extends Controller
 {
     /**
+     * Raster formats only. `image` alone admits SVG, which is served inline
+     * from the public origin and can carry a script.
+     */
+    private const IMAGE_RULES = ['mimes:jpg,jpeg,png,gif,webp', 'max:4096'];
+
+    /**
      * Public list — published posts only. Drafts (null published_at) never
      * reach the Astro build, which is what reads this.
      */
@@ -42,11 +48,10 @@ class PostController extends Controller
     }
 
     /**
-     * The explicit select is what keeps `image` — a base64 data URL per post —
-     * out of the admin list, which the dashboard and the shop form fetch
-     * unpaginated and never render. The public news page renders it on every
-     * card, so the public list loads it; the summary resource emits the field
-     * only when it was loaded.
+     * The explicit select keeps `image` out of the admin list, which never
+     * renders it. The public news page renders it on every card, so the
+     * public list loads it; the summary resource emits the field only when
+     * it was loaded.
      */
     private function listQuery(Request $request, bool $withImage = false): Builder
     {
@@ -166,12 +171,21 @@ class PostController extends Controller
         $data = $request->validated();
 
         $membersChanged = false;
-        DB::transaction(function () use ($data, $post, &$membersChanged) {
+        $replacedImage = null;
+        DB::transaction(function () use ($data, $post, &$membersChanged, &$replacedImage) {
             // Validated as nullable (a client may send it only when 2+ concerts
             // are linked), but the column itself is NOT NULL — an explicit null
             // would otherwise reach the database as a constraint violation.
             if (array_key_exists('event_date_display', $data) && $data['event_date_display'] === null) {
                 $data['event_date_display'] = 'range';
+            }
+
+            // A replaced or cleared main image loses its file — after the
+            // commit, so a rollback cannot leave the row pointing at nothing.
+            // An omitted key leaves both alone, which is how the admin resends
+            // an unchanged post.
+            if (array_key_exists('image', $data) && $post->image && $post->image !== $data['image']) {
+                $replacedImage = $post->image;
             }
 
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
@@ -199,6 +213,10 @@ class PostController extends Controller
             }
         }, 3);
 
+        if ($replacedImage) {
+            Storage::disk('public')->delete($replacedImage);
+        }
+
         SiteRebuild::markDirty('posts');
         // Member pages list the news they are linked to — only a changed set
         // of links touches them (the form always sends member_ids).
@@ -211,11 +229,18 @@ class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        foreach (PostBlockSync::imagePaths($post->blocks()->get()->all()) as $path) {
-            Storage::disk('public')->delete($path);
+        // Files go after the row: a delete that fails must not leave a post
+        // whose pictures are already gone.
+        $paths = PostBlockSync::imagePaths($post->blocks()->get()->all());
+        if ($post->image) {
+            $paths[] = $post->image;
         }
 
         $post->delete();
+
+        foreach ($paths as $path) {
+            Storage::disk('public')->delete($path);
+        }
 
         SiteRebuild::markDirty('posts');
 
@@ -229,9 +254,23 @@ class PostController extends Controller
      */
     public function uploadBlockImage(Request $request): JsonResponse
     {
-        $request->validate(['image' => 'required|image|max:4096']);
+        $request->validate(['image' => ['required', 'image', ...self::IMAGE_RULES]]);
 
         $path = $request->file('image')->store('post-blocks', 'public');
+
+        return response()->json(['path' => $path, 'url' => Storage::url($path)], 201);
+    }
+
+    /**
+     * The post's main image, uploaded ahead of the post for the same reason
+     * as a block image. The returned `path` is what store/update accept in
+     * `image`; `url` is for the editor's preview only.
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate(['image' => ['required', 'image', ...self::IMAGE_RULES]]);
+
+        $path = $request->file('image')->store('post-images', 'public');
 
         return response()->json(['path' => $path, 'url' => Storage::url($path)], 201);
     }

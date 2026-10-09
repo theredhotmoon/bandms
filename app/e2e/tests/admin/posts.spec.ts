@@ -1,5 +1,5 @@
 import { test, expect, expectToast, confirmDelete, searchTable } from '../../fixtures/test-base'
-import { adminHeaders, primaryLocale } from '../../fixtures/admin-api'
+import { adminHeaders, primaryLocale, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -181,6 +181,29 @@ test.describe.serial('Admin Posts', () => {
 
     await expectToast(page, 'Post updated')
     await expect(page.locator('.modal-overlay')).not.toBeVisible()
+  })
+
+  // The main image is uploaded the moment it is picked and the form submits
+  // only the stored path; the preview is the `/storage/…` URL the server
+  // returned, not a data URL read from the file.
+  test('uploads a main image and saves its stored path', async ({ page, request }) => {
+    await searchTable(page, updatedTitle)
+    await page.locator('tbody tr').filter({ hasText: updatedTitle }).getByRole('button', { name: 'Edit' }).click()
+    await expect(page.locator('input[placeholder="Post title"]')).toHaveValue(updatedTitle)
+
+    await page.locator('.pf-cover input[type="file"]').setInputFiles({
+      name: 'e2e-cover.png', mimeType: 'image/png', buffer: TEST_PNG,
+    })
+    await expect(page.locator('.pf-cover .siu-img')).toHaveAttribute('src', /\/storage\/post-images\/.+\.png$/)
+
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expectToast(page, 'Post updated')
+
+    const list = await request.get('/api/admin/posts', { headers: adminHeaders() })
+    const mine = ((await list.json()) as { data: { id: number; title: string }[] }).data.find(p => p.title === updatedTitle)
+    expect(mine).toBeTruthy()
+    const detail = await request.get(`/api/admin/posts/${mine!.id}`, { headers: adminHeaders() })
+    expect(((await detail.json()) as { data: { image: string | null } }).data.image).toMatch(/^\/storage\/post-images\/.+\.png$/)
   })
 
   // The public site hides posts with no published_at, so the band needs to be

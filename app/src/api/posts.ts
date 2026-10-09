@@ -1,5 +1,5 @@
 import type { Post, PostPayload, PostSummary } from '@/types/post'
-import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
+import { uploadImage, type UploadedImage, API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 import type { Lang } from '@/composables/useLang'
 import { DEFAULT_LOCALE } from '@/locales'
 
@@ -60,6 +60,11 @@ export async function fetchPost(token: string, id: number, lang: Lang = DEFAULT_
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/admin/posts/${id}?lang=${lang}`, { headers: authHeaders(token) })
   return handleResponse<PostResponse>(res).then((r) => r.data)
+}
+
+/** The post's main image, uploaded ahead of the post like a block image. */
+export function uploadPostImage(token: string, file: File): Promise<UploadedImage> {
+  return uploadImage(token, '/api/posts/image', file)
 }
 
 export async function createPost(token: string, payload: PostPayload): Promise<Post> {

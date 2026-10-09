@@ -22,8 +22,17 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
-/** The main image is stored as a data URL — exactly what the admin's upload field emits. */
-const IMAGE = `data:image/png;base64,${TEST_PNG.toString('base64')}`
+/** Uploads the 1×1 PNG the way the admin's cover field does and returns the stored path. */
+async function uploadImage(request: APIRequestContext): Promise<string> {
+  const res = await request.post(`${API}/api/posts/image`, {
+    headers: adminHeaders(),
+    multipart: { image: { name: 'e2e-cover.png', mimeType: 'image/png', buffer: TEST_PNG } },
+  })
+  expect(res.status(), await res.text()).toBe(201)
+  return (await res.json()).path as string
+}
+
+const STORED_SRC = /^\/storage\/post-images\/.+\.png$/
 
 test.describe.serial('Public — news main image', () => {
   failOnPageError()
@@ -48,7 +57,7 @@ test.describe.serial('Public — news main image', () => {
         headers: adminHeaders(),
         data: {
           title: Object.fromEntries(locales.map((l) => [l, title])),
-          image: IMAGE,
+          image: await uploadImage(request),
           published_at: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
         },
       })
@@ -90,7 +99,7 @@ test.describe.serial('Public — news main image', () => {
     await openFiltered(page)
     const featured = page.locator('.nf-featured', { hasText: newerTitle })
     await expect(featured).toHaveCount(1)
-    await expect(featured.locator('img.nf-img')).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect(featured.locator('img.nf-img')).toHaveAttribute('src', STORED_SRC)
     await expect(featured.locator('.nf-placeholder')).toHaveCount(0)
   })
 
@@ -98,7 +107,7 @@ test.describe.serial('Public — news main image', () => {
     await openFiltered(page)
     const card = page.locator('.nf-card', { hasText: olderTitle })
     await expect(card).toHaveCount(1)
-    await expect(card.locator('img.nf-img')).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect(card.locator('img.nf-img')).toHaveAttribute('src', STORED_SRC)
     await expect(card.locator('.nf-placeholder')).toHaveCount(0)
   })
 
@@ -114,6 +123,6 @@ test.describe.serial('Public — news main image', () => {
     const more = page.locator('.art-more-card', { hasText: olderTitle })
     await expect(page.locator('.art-more-card').first()).toBeVisible()
     test.skip((await more.count()) === 0, 'newer posts from parallel specs filled the three "more" slots')
-    await expect(more.locator('.art-more-img img')).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect(more.locator('.art-more-img img')).toHaveAttribute('src', STORED_SRC)
   })
 })

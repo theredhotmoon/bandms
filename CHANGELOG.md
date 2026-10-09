@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-09 (post images as files)
+
+### Changed
+- **A post's main image is now a file**, uploaded the moment it is picked in the post editor and served from `/storage/post-images/…`, the way block images and release covers already are. It used to be stored as base64 inside the post row, which made every news list response and the News page carry every picture in full. Existing images are moved to files once by a migration.
+
 ## [Unreleased] — 2026-10-09 (news list images)
 
 ### Fixed

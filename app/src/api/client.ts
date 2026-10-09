@@ -94,6 +94,25 @@ export function saveErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+export interface UploadedImage { path: string; url: string }
+
+/**
+ * One multipart image upload for every `POST …/image` endpoint. No
+ * Content-Type header — the browser sets the boundary. `path` is what the
+ * owning record stores; `url` is for the editor's preview only.
+ */
+export async function uploadImage(token: string, endpoint: string, file: File): Promise<UploadedImage> {
+  const body = new FormData()
+  body.append('image', file)
+
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    body,
+  })
+  return handleResponse<UploadedImage>(res)
+}
+
 export function authHeaders(token: string): Record<string, string> {
   return {
     'Content-Type': 'application/json',
