@@ -2,21 +2,7 @@
 import { ref, computed } from 'vue'
 import { formatEventDates, fmtDateShort } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
-
-interface Tag { id: number; name: string; slug: string }
-
-interface PostSummary {
-  id: number
-  slug: string
-  title: string
-  intro: string | null
-  excerpt: string
-  published_at: string | null
-  created_at: string
-  event_dates: string[]
-  event_date_display: 'range' | 'list'
-  tags: Tag[]
-}
+import type { PostSummary } from '@/types/post'
 
 export interface NewsFilterCopy {
   all: string
@@ -114,7 +100,8 @@ function eventDate(p: PostSummary): string {
     <section v-if="featured" class="nf-featured-wrap">
       <a :href="`${postHrefBase}/${featured.slug}`" class="nf-featured">
         <div class="nf-feat-img">
-          <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
+          <img v-if="featured.image" :src="featured.image" alt="" class="nf-img" loading="eager" />
+          <div v-else class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           <span class="nf-feat-badge" :style="{ background: accent }">{{ copy.featured }}</span>
         </div>
         <div class="nf-feat-body">
@@ -152,7 +139,8 @@ function eventDate(p: PostSummary): string {
           class="nf-card"
         >
           <div class="nf-card-img">
-            <div class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
+            <img v-if="p.image" :src="p.image" alt="" class="nf-img" loading="lazy" />
+            <div v-else class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           </div>
           <div class="nf-card-body">
             <div class="nf-chip-row">
@@ -275,6 +263,15 @@ function eventDate(p: PostSummary): string {
 .nf-placeholder {
   position: absolute;
   inset: 0;
+}
+/* The card's main image — decorative, the title beside it carries the meaning */
+.nf-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .nf-placeholder--dark {
   background: repeating-linear-gradient(

@@ -28,6 +28,7 @@ const summaries = allPosts.map(p => ({
   id: p.id,
   slug: postSlug(p, lang),
   title: p.title,
+  image: p.image,
   date: p.published_at ?? p.created_at,
   tags: p.tags,
 }))
@@ -218,7 +219,9 @@ const postsSection = slugMap[lang].posts ?? 'posts'
           <div class="art-more-grid">
             {more.map(p => (
               <a href={`/${lang}/${postsSection}/${p.slug}`} class="art-more-card">
-                <div class="art-more-img" aria-hidden="true"></div>
+                <div class="art-more-img" aria-hidden="true">
+                  {p.image && <img src={p.image} alt="" loading="lazy" />}
+                </div>
                 <div class="art-more-body">
                   {p.tags.length > 0 && (
                     <span class="art-more-tag">{p.tags[0].name}</span>
@@ -563,6 +566,12 @@ const postsSection = slugMap[lang].posts ?? 'posts'
       var(--color-body) 18px
     );
     flex-shrink: 0;
+  }
+  .art-more-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .art-more-body {
     padding: 14px 16px 16px;

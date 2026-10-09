@@ -59,13 +59,15 @@ export interface PostBlockDraft {
   dangling?: boolean
 }
 
-/** Returned in list responses — no image, content replaced by excerpt. */
+/** Returned in list responses — content replaced by excerpt; blocks omitted. */
 export interface PostSummary {
   id: number
   title: string
   /** The default locale's slug; per-locale ones are in translations.slug. */
   slug: string
   intro: string | null
+  /** Main image as a data URL. The public list carries it; `/api/admin/posts` omits it. */
+  image?: string | null
   excerpt: string
   published_at: string | null
   event_dates: string[]
@@ -82,7 +84,7 @@ export interface PostSummary {
 
 export interface PostPressRelease { id: number; title: string; url: string; site: string | null }
 
-/** Returned in detail response — includes image and ordered content blocks. */
+/** Returned in detail response — always carries the image, plus ordered content blocks. */
 export interface Post extends PostSummary {
   image: string | null
   blocks: PostBlock[]
