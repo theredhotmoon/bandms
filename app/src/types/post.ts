@@ -59,13 +59,15 @@ export interface PostBlockDraft {
   dangling?: boolean
 }
 
-/** Returned in list responses — no image, content replaced by excerpt. */
+/** Returned in list responses — content replaced by excerpt; blocks omitted. */
 export interface PostSummary {
   id: number
   title: string
   /** The default locale's slug; per-locale ones are in translations.slug. */
   slug: string
   intro: string | null
+  /** Main image as a data URL, or null. Also in the list response now. */
+  image: string | null
   excerpt: string
   published_at: string | null
   event_dates: string[]

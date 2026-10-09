@@ -26,6 +26,18 @@ describe('GET /api/posts', function () {
             ->assertJsonPath('data.0.title', 'Newer');
     });
 
+    it('exposes the main image in the list response', function () {
+        // The news list renders each post's main image on its card. The list
+        // query selects an explicit column set, so this pins both the column
+        // and the resource field — dropping either hides the picture from the
+        // list while the detail page keeps showing it.
+        Post::factory()->create(['title' => 'With picture', 'image' => TEST_IMAGE]);
+
+        $this->getJson('/api/posts')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.image', TEST_IMAGE);
+    });
+
     it('filters by search term in title', function () {
         Post::factory()->create(['title' => 'Guitar Lessons Review']);
         Post::factory()->create(['title' => 'Drum Kit Advice']);

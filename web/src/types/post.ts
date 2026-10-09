@@ -22,6 +22,8 @@ export interface PostSummary {
   /** The default locale's slug, never blank. Per-locale URLs: postSlug(). */
   slug: string
   intro: string | null
+  /** Main image, rendered on the list card and as the article hero. */
+  image: string | null
   excerpt: string
   published_at: string | null
   event_dates: string[]
@@ -38,7 +40,6 @@ export interface PostSummary {
 }
 
 export interface Post extends PostSummary {
-  image: string | null
   blocks: PostBlock[]
   translations?: {
     title: TranslationBag

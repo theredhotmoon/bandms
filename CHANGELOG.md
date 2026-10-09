@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-09 (news list images)
+
+### Fixed
+- **A post's main image now shows on the News list** — on the featured card, on every grid card, and on the article page's *More from the blog* cards — where each card drew a striped placeholder regardless of the post. The article page already showed it as its hero; the list endpoint had never been sent the field.
+
 ## [Unreleased] — 2026-10-02 (admin polish)
 
 ### Changed

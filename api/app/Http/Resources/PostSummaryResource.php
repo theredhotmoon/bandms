@@ -31,6 +31,7 @@ class PostSummaryResource extends JsonResource
             // public site resolves translations.slug down the locale chain.
             'slug'         => $this->slugIn(Locales::default()),
             'intro'        => $this->intro,
+            'image'        => $this->image,
             'excerpt'      => $excerpt,
             'published_at' => $this->published_at,
             'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()

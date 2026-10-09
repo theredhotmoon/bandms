@@ -43,7 +43,10 @@ class PostController extends Controller
 
     private function listQuery(Request $request): Builder
     {
-        return Post::select(['id', 'title', 'slug', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
+        // `image` is in the list because the news page renders it on every
+        // card; leaving it out of this select hides it there while the detail
+        // page keeps showing it (the summary resource reads whatever is loaded).
+        return Post::select(['id', 'title', 'slug', 'intro', 'image', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
