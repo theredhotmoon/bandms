@@ -27,7 +27,7 @@ class PostController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        return $this->listResponse($request, $this->listQuery($request)->published());
+        return $this->listResponse($request, $this->listQuery($request, withImage: true)->published());
     }
 
     /**
@@ -41,12 +41,21 @@ class PostController extends Controller
         return $this->listResponse($request, $this->listQuery($request));
     }
 
-    private function listQuery(Request $request): Builder
+    /**
+     * The explicit select is what keeps `image` — a base64 data URL per post —
+     * out of the admin list, which the dashboard and the shop form fetch
+     * unpaginated and never render. The public news page renders it on every
+     * card, so the public list loads it; the summary resource emits the field
+     * only when it was loaded.
+     */
+    private function listQuery(Request $request, bool $withImage = false): Builder
     {
-        // `image` is in the list because the news page renders it on every
-        // card; leaving it out of this select hides it there while the detail
-        // page keeps showing it (the summary resource reads whatever is loaded).
-        return Post::select(['id', 'title', 'slug', 'intro', 'image', 'published_at', 'event_date_display', 'created_at', 'updated_at'])
+        $columns = ['id', 'title', 'slug', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'];
+        if ($withImage) {
+            $columns[] = 'image';
+        }
+
+        return Post::select($columns)
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),

@@ -57,3 +57,54 @@ export const TEST_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
 )
+
+/**
+ * `web` bakes the site once at container start; a record created via the API
+ * never appears until something rebuilds it. Triggers the same rebuild the
+ * admin's manual button uses and polls its status rather than sleeping a
+ * fixed duration — a full Astro build is not a fixed-cost operation.
+ *
+ * `since` guards against a second concurrent spec file's beforeAll: two
+ * workers can each seed and call this within moments of each other, and a
+ * 409 here just means the other worker's rebuild is the one in flight. A
+ * completed build is only accepted if it started at or after `since`, so a
+ * build that read the database before this worker's seed is never trusted.
+ */
+export async function rebuildAndWait(request: APIRequestContext, since: number, apiBase = ''): Promise<void> {
+  const deadline = Date.now() + 180_000
+  while (Date.now() < deadline) {
+    const trigger = await request.post(`${apiBase}/api/admin/site/rebuild`, { headers: adminHeaders() })
+    if (!trigger.ok() && trigger.status() !== 409) throw new Error(`POST /api/admin/site/rebuild → ${trigger.status()}`)
+    while (Date.now() < deadline) {
+      const res = await request.get(`${apiBase}/api/admin/site/rebuild/status`, { headers: adminHeaders() })
+      const body = await res.json()
+      if (body.status === 'error') throw new Error('Public site rebuild failed')
+      if (body.status === 'done') {
+        if ((body.startedAt ?? 0) >= since) return
+        break // a build that started before our seed — trigger another
+      }
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+  }
+  throw new Error('Public site rebuild timed out')
+}
+
+/**
+ * The public URL segment a module is served under for a locale, or null when
+ * the module is switched off (a disabled module unbuilds its routes) or the
+ * site config is unreachable. The slug is per locale and band-editable, so a
+ * spec must ask rather than assume `news`.
+ */
+export async function moduleSectionSlug(
+  request: APIRequestContext,
+  module: string,
+  lang: string,
+  apiBase = '',
+): Promise<string | null> {
+  const res = await request.get(`${apiBase}/api/site-config?lang=${lang}`)
+  if (!res.ok()) return null
+  const body = await res.json()
+  const cfg = body.data ?? body
+  if (cfg.modules?.[module] === false) return null
+  return cfg.module_config?.[module]?.slug ?? module
+}

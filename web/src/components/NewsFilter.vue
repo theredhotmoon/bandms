@@ -2,23 +2,7 @@
 import { ref, computed } from 'vue'
 import { formatEventDates, fmtDateShort } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
-
-interface Tag { id: number; name: string; slug: string }
-
-interface PostSummary {
-  id: number
-  slug: string
-  title: string
-  intro: string | null
-  /** Main image; null draws the striped placeholder. */
-  image: string | null
-  excerpt: string
-  published_at: string | null
-  created_at: string
-  event_dates: string[]
-  event_date_display: 'range' | 'list'
-  tags: Tag[]
-}
+import type { PostSummary } from '@/types/post'
 
 export interface NewsFilterCopy {
   all: string

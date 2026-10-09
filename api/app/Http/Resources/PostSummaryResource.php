@@ -31,7 +31,12 @@ class PostSummaryResource extends JsonResource
             // public site resolves translations.slug down the locale chain.
             'slug'         => $this->slugIn(Locales::default()),
             'intro'        => $this->intro,
-            'image'        => $this->image,
+            // Present on the public list, absent on the admin list — see
+            // PostController::listQuery(). A loaded null is still emitted.
+            'image'        => $this->when(
+                array_key_exists('image', $this->resource->getAttributes()),
+                fn () => $this->image,
+            ),
             'excerpt'      => $excerpt,
             'published_at' => $this->published_at,
             'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()
