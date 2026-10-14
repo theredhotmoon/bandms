@@ -316,7 +316,7 @@ jobs:
             # move of this site's origin.
             sync_secret_env EPR_SITE_ADDRESS "$EPR_SITE_ADDRESS"
 
-            # Now drop all six from the shell, because Compose interpolation
+            # Now drop all seven from the shell, because Compose interpolation
             # reads the shell environment *first* and .env only as a fallback.
             # Every name in `envs:` above arrives here exported whether or not
             # its secret exists: GitHub renders an unset secret as the empty
