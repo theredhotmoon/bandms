@@ -30,7 +30,7 @@
 }
 .field-input:focus {
   border-color: var(--c-aaaaaa-line);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent), inset 0 1.5px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--focus-halo), inset 0 1.5px 3px rgba(0, 0, 0, 0.35);
 }
 .field-input::placeholder { color: var(--c-64748b); }
 .field-input:disabled     { opacity: 0.45; cursor: not-allowed; }

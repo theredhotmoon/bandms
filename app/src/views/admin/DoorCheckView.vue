@@ -375,7 +375,7 @@ onUnmounted(() => {
 .log-ok   { background: var(--c-0a1a0a); }
 .log-fail { background: var(--c-1a0a0a); }
 .log-ts   { color: var(--c-475569); white-space: nowrap; }
-.log-code { font-family: monospace; color: var(--c-94a3b8); }
+.log-code { font-family: var(--font-mono); color: var(--c-94a3b8); }
 .log-ok .log-name   { color: var(--c-4ade80); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .log-fail .log-name { color: var(--c-f87171); flex: 1; }
 </style>

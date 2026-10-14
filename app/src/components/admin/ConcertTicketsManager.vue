@@ -352,13 +352,13 @@ function fmtPrice(price: number, currency: string): string {
 .field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .field-row { display: flex; gap: 10px; }
 .lbl { font: 500 11px/1 system-ui; color: var(--c-94a3b8); text-transform: uppercase; letter-spacing: .04em; }
-.inp { background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem; color: var(--c-e2e8f0); padding: 7px 9px; font-size: var(--fs-sm); width: 100%; box-sizing: border-box; }
+.inp { background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; color: var(--c-e2e8f0); padding: 7px 9px; font-size: var(--fs-sm); width: 100%; box-sizing: border-box; }
 .inp:focus { outline: 2px solid var(--c-3b82f6); border-color: transparent; }
 .err-txt { font-size: var(--fs-2xs); color: var(--c-f87171); margin: 0; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 
 /* Shared btn classes from parent */
-.btn-add { padding: 6px 12px; border-radius: 0.375rem; font: 600 12px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
+.btn-add { padding: 6px 12px; border-radius: 0.5rem; font: 600 12px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-add:hover { background: var(--c-2563eb); }
 .btn-edit { padding: 4px 10px; border-radius: 4px; font-size: var(--fs-xs); background: var(--c-1e3a5f); color: var(--c-93c5fd); border: 1px solid var(--c-1e3a5f); cursor: pointer; }
 .btn-edit:hover { background: var(--c-1d4ed8); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
@@ -366,9 +366,9 @@ function fmtPrice(price: number, currency: string): string {
 .btn-delete:hover { background: var(--c-b91c1c); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
 .btn-edit-sm { padding: 2px 8px; border-radius: 4px; font-size: var(--fs-2xs); background: var(--c-1e3a5f); color: var(--c-93c5fd); border: none; cursor: pointer; }
 .btn-del-sm { padding: 2px 6px; border-radius: 4px; font-size: var(--fs-2xs); background: var(--c-3f1515); color: var(--c-fca5a5); border: none; cursor: pointer; }
-.btn-primary { padding: 7px 16px; border-radius: 0.375rem; font: 600 13px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
+.btn-primary { padding: 7px 16px; border-radius: 0.5rem; font: 600 13px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-primary:hover:not(:disabled) { background: var(--c-2563eb); }
 .btn-primary:disabled { opacity: .5; cursor: default; }
-.btn-ghost { padding: 7px 14px; border-radius: 0.375rem; font: 600 13px/1 system-ui; background: transparent; color: var(--c-94a3b8); border: 1px solid var(--c-2a2a2a); cursor: pointer; }
+.btn-ghost { padding: 7px 14px; border-radius: 0.5rem; font: 600 13px/1 system-ui; background: transparent; color: var(--c-94a3b8); border: 1px solid var(--c-2a2a2a); cursor: pointer; }
 .btn-ghost:hover { color: var(--c-e2e8f0); }
 </style>

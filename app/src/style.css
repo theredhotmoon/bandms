@@ -21,7 +21,7 @@
   --fs-md:  1rem;       /* 16px — card titles */
   --fs-lg:  1.125rem;   /* 18px — section titles */
   --fs-xl:  1.375rem;   /* 22px — page titles */
-  --fs-2xl: 1.75rem;    /* 28px — dashboard stat figures */
+  --fs-2xl: 1.75rem;    /* 28px — display figures: dashboard stats, counters, avatar initials */
 
   --lh-tight: 1.2;
   --lh-ui: 1.4;
@@ -31,10 +31,11 @@
   --track-title: -0.015em;
 
   --font-sans: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  /* Codes a person reads character by character — the door-check ticket
-     input, slugs, URLs — where 0/O and 1/l must not collide. The one
-     exception to the One Face Rule in DESIGN.md: a system stack, never prose.
-     Tailwind's `font-mono` utility reads this same variable. */
+  /* Text whose meaning depends on fixed character width: codes read one
+     character at a time (ticket codes, slugs, URLs, ids — 0/O and 1/l must
+     not collide) and lyrics with chords aligned over syllables by spaces.
+     The one exception to the One Face Rule in DESIGN.md. Tailwind's
+     `font-mono` utility reads this same variable. */
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
   /* Decorative emoji glyphs (empty states, drop zones). They are pictures, so

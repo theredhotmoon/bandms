@@ -659,7 +659,7 @@ watch(() => route.path, (path) => {
        stay in the tab order. The delay lets the slide-out finish first. */
     visibility: hidden;
     transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), visibility 0s linear 220ms;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--shadow-drawer);
   }
   /* While the drawer is open the menu button is its close control, so the
      bar rises above the drawer (50) and scrim (45). Only then: at rest it

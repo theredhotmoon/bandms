@@ -69,11 +69,9 @@ typography:
     lineHeight: 1.4
     letterSpacing: "0.08em"
   code:
-    # The one sanctioned second stack — see The One Face Rule. Codes only.
+    # The one sanctioned second stack — see The One Face Rule. Family only:
+    # size, weight and leading come from the role the text already plays.
     fontFamily: "ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
-    fontSize: "0.875rem"
-    fontWeight: 600
-    lineHeight: 1
 rounded:
   xs: "0.25rem"
   sm: "0.375rem"
@@ -248,7 +246,7 @@ to type.
 ### Hierarchy
 All sizes are the `--fs-*` role tokens in `src/style.css`; scoped styles reference the token, never a raw rem, so the ramp is identical on every screen.
 
-- **Display** (700, 28px / `--fs-2xl`, line-height 1, −0.015em): dashboard stat figures only. Tabular numerals.
+- **Display** (700, 28px / `--fs-2xl`, line-height 1, −0.015em): display figures — dashboard stats, the rig outlet counter, avatar initials. Tabular numerals.
 - **Headline** (700, 22px / `--fs-xl`, 1.2, −0.015em): the page title. One unlayered rule on `.main-content-body h1` applies it, so a view's `<h1>` needs no classes.
 - **Section** (700, 18px / `--fs-lg`): the wordmark and section titles inside a long page.
 - **Title** (700, 16px / `--fs-md`): widget titles (*EPK Versions*, *Band Career Level*), modal titles at 600.
@@ -262,7 +260,7 @@ Decorative emoji are pictures, not type, so they sit outside the ramp — but on
 ### Named Rules
 **The Eleven Pixel Floor Rule.** `--fs-2xs` (11px) is the smallest size in the panel. A design that needs smaller text needs less text.
 
-**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family. The one exception is `--font-mono`, and only for strings a person reads character by character where 0/O and 1/l must not collide — the door-check ticket code, slugs, URLs. Lyrics, generated pitches and other prose stay in Archivo (a `<pre>` needs `font-family: inherit`, or Tailwind's preflight hands it the mono stack).
+**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family. The one exception is `--font-mono` (never a bare `monospace`), and only where fixed character width carries meaning: strings a person reads character by character where 0/O and 1/l must not collide — ticket codes, slugs, URLs, ids — and lyrics, where chords are lined up over syllables with spaces. Generated pitches and other prose stay in Archivo (a `<pre>` needs `font-family: inherit`, or Tailwind's preflight hands it the mono stack).
 
 **The Tabular Rule.** Tables, stat figures and anything with `.tabular-nums` use lining tabular numerals so dates and counts align in columns.
 
@@ -306,10 +304,10 @@ Shadows appear only where something floats above the page:
 
 ### Shadow Vocabulary
 - **Modal panel** (`box-shadow: 0 24px 64px rgba(0,0,0,0.6)`): the dialog, over a `var(--scrim)` backdrop with `backdrop-filter: blur(4px)`.
-- **Scrim** (`--scrim`, `rgba(0,0,0,0.6)` in both themes): every full-screen backdrop — modals, the phone drawer, confirm dialogs. One value; it used to drift between 0.55 and 0.7 per view.
+- **Scrim** (`--scrim`, `rgba(0,0,0,0.6)` in both themes; Tailwind `bg-(--scrim)`): every full-screen backdrop — modals, the phone drawer, confirm dialogs. One value; it used to drift between 0.55 and 0.7 per view.
 - **Floating popover** (`--shadow-float`, `0 8px 24px rgba(0,0,0,0.45)`): a panel laid *over* other content and dismissed by an outside click — the rebuild-settings popover, the photo tag picker, the stage-plot placement menu.
-- **Phone drawer** (`box-shadow: 0 12px 40px rgba(0,0,0,0.45)`): the sidebar when it slides in below 1024px.
-- **Focus halo** (`0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent)`): inputs on focus and the primary button on hover — a translucent ring in the theme's Ink Max, so it reads in both themes.
+- **Phone drawer** (`--shadow-drawer`, `0 12px 40px rgba(0,0,0,0.45)`): the sidebar when it slides in below 1024px.
+- **Focus halo** (`--focus-halo`, `0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent)`): inputs on focus and the primary button on hover — a translucent ring in the theme's Ink Max, so it reads in both themes.
 
 ### Named Rules
 **The Flat-At-Rest Rule.** No card, table, input or button carries a drop shadow at rest. If two surfaces need separating, step the tone or draw a hairline.
