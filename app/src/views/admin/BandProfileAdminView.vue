@@ -696,7 +696,7 @@ async function saveSocialLinks() {
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   transition: background 150ms, box-shadow 150ms; min-width: 8rem;
 }
-.btn-save:hover:not(:disabled) { background: var(--c-ffffff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 15%, transparent); }
+.btn-save:hover:not(:disabled) { background: var(--c-ffffff); box-shadow: var(--focus-halo); }
 .btn-save:disabled { opacity: 0.6; cursor: default; }
 .btn-save--ok { background: var(--c-e8e8e8) !important; }
 

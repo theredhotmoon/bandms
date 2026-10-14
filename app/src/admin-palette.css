@@ -22,6 +22,7 @@
      and a floating layer's shadow is cast, not tinted. Not redefined below. */
   --scrim: rgba(0, 0, 0, 0.6);
   --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6);
   --shadow-drawer: 0 12px 40px rgba(0, 0, 0, 0.45);
   /* Ink Max at 16%, so the ring reads in both themes without a redefinition. */
   --focus-halo: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent);

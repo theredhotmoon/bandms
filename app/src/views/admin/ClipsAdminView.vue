@@ -101,7 +101,7 @@ function categoryLabel(value: string): string {
                 <td class="td" style="color:var(--c-94a3b8);">{{ categoryLabel(clip.category) }}</td>
                 <td class="td" style="color:var(--c-94a3b8);">{{ providerLabel(clip.provider, $t('common.link')) }}</td>
                 <td class="td" style="color:var(--c-94a3b8);">{{ clip.owners.length }}</td>
-                <td class="td text-xs font-mono" style="color:var(--c-64748b);">{{ clip.recorded_on ?? '—' }}</td>
+                <td class="td text-xs tabular-nums" style="color:var(--c-64748b);">{{ clip.recorded_on ?? '—' }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(clip)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = clip.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

@@ -28,7 +28,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-(--scrim) backdrop-blur-sm" @click="$emit('cancel')" />
-      <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" class="relative z-10 w-full max-w-sm rounded-xl shadow-2xl" style="background:var(--c-111111); border:1px solid var(--c-222222);">
+      <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" class="relative z-10 w-full max-w-sm rounded-xl shadow-(--shadow-modal)" style="background:var(--c-111111); border:1px solid var(--c-222222);">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:var(--c-3f1212);">

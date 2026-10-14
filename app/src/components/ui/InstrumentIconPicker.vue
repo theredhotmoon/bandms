@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
     <div
       v-if="open"
       ref="popRef"
-      class="z-[60] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl"
+      class="z-[60] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-(--shadow-float)"
       :style="popoverStyle"
       role="listbox"
     >

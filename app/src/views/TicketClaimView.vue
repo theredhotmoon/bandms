@@ -141,7 +141,7 @@ onMounted(async () => {
 }
 
 .tcv-code {
-  font-family: monospace;
+  font-family: var(--font-mono);
   background: #f0f0f0;
   padding: 0.15em 0.35em;
   border-radius: 0.25rem;

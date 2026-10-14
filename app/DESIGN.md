@@ -303,7 +303,7 @@ one place the system uses a shadow to say "this takes input".
 Shadows appear only where something floats above the page:
 
 ### Shadow Vocabulary
-- **Modal panel** (`box-shadow: 0 24px 64px rgba(0,0,0,0.6)`): the dialog, over a `var(--scrim)` backdrop with `backdrop-filter: blur(4px)`.
+- **Modal panel** (`--shadow-modal`, `0 24px 64px rgba(0,0,0,0.6)`; Tailwind `shadow-(--shadow-modal)`): the dialog, over a `var(--scrim)` backdrop with `backdrop-filter: blur(4px)`.
 - **Scrim** (`--scrim`, `rgba(0,0,0,0.6)` in both themes; Tailwind `bg-(--scrim)`): every full-screen backdrop — modals, the phone drawer, confirm dialogs. One value; it used to drift between 0.55 and 0.7 per view.
 - **Floating popover** (`--shadow-float`, `0 8px 24px rgba(0,0,0,0.45)`): a panel laid *over* other content and dismissed by an outside click — the rebuild-settings popover, the photo tag picker, the stage-plot placement menu.
 - **Phone drawer** (`--shadow-drawer`, `0 12px 40px rgba(0,0,0,0.45)`): the sidebar when it slides in below 1024px.

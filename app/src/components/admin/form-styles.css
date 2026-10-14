@@ -115,7 +115,7 @@ textarea.field-input {
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--c-ffffff);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 15%, transparent);
+  box-shadow: var(--focus-halo);
 }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
