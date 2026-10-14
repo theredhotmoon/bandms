@@ -38,11 +38,8 @@ class ShopItemResource extends JsonResource
                 'alt_text'  => $p->alt_text,
                 'sort_order'=> $p->sort_order,
             ])->values(),
-            'tags'             => $this->tags->map(fn ($t) => [
-                'id'      => $t->id,
-                'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
-                'slug'    => $t->slugIn(Locales::default()),
-            ])->values(),
+            // TagResource, not a hand-built copy — see PressReleaseSummaryResource.
+            'tags'             => TagResource::collection($this->tags),
             'release_ids'      => $this->releases->pluck('id')->values(),
             'concert_ids'      => $this->concerts->pluck('id')->values(),
             'post_ids'         => $this->posts->pluck('id')->values(),

@@ -56,3 +56,13 @@ export function tagTerms(tag: TagNameSource): string[] {
   ]
   return [...new Set(values.filter((v): v is string => !!v).map(v => v.toLowerCase()))]
 }
+
+/**
+ * Every language of a tag's NAME, lowercased: for lists that search other
+ * records by their tags (posts, press releases). Unlike `tagTerms` it skips
+ * slugs, so a row never matches on text its tag pills do not show.
+ */
+export function tagNames(tag: TagNameSource): string[] {
+  const values = [...Object.values(tag.translations?.name ?? {}), tag.name]
+  return [...new Set(values.filter((v): v is string => !!v).map(v => v.toLowerCase()))]
+}

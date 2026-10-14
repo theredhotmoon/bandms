@@ -92,6 +92,19 @@ describe('GET /api/shop/{shopItem}', function () {
         $this->getJson('/api/shop/9999')->assertNotFound();
     });
 
+    // Tags embed through TagResource, so they carry every language of the
+    // name like every other tag embed; the hand-built copy had none.
+    it("embeds every language of each tag's name", function () {
+        $item = ShopItem::factory()->create(['slug' => ['en' => 'tagged-item']]);
+        $tag  = Tag::factory()->create(['name' => ['en' => 'Live', 'pl' => 'Na żywo'], 'slug' => ['en' => 'live']]);
+        $item->tags()->attach($tag->id);
+
+        $this->getJson("/api/shop/{$item->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.tags.0.slug', 'live')
+            ->assertJsonPath('data.tags.0.translations.name', ['en' => 'Live', 'pl' => 'Na żywo']);
+    });
+
     it('returns full resource with relations', function () {
         $item = ShopItem::factory()->create(['slug' => ['en' => 'full-item']]);
         $tag  = Tag::factory()->create();

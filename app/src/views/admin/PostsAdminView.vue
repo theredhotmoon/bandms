@@ -23,7 +23,7 @@ import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
 import { useTagLabel } from '@/composables/useTagLabel'
-import { tagTerms } from '@/utils/localeOrder'
+import { tagNames } from '@/utils/localeOrder'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
@@ -61,7 +61,7 @@ const tc = useTableControls<PostSummary>({
   data: filteredData,
   searchFn: (p, q) =>
     p.title.toLowerCase().includes(q) ||
-    (p.tags ?? []).some(t => tagTerms(t).some(v => v.includes(q))),
+    (p.tags ?? []).some(t => tagNames(t).some(v => v.includes(q))),
   defaultSort: 'published_at',
   defaultDir: 'desc',
 })

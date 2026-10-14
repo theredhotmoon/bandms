@@ -23,7 +23,7 @@ function questionLabel(faq: Faq): string | null {
 
 /** Every language the question is missing in, named in the band's order. */
 function missingLocales(faq: Faq): string {
-  return contentLocales.value.filter(l => !faq.question?.[l]).map(nativeName).join(', ')
+  return contentLocales.value.filter(l => !faq.question?.[l]?.trim()).map(nativeName).join(', ')
 }
 
 const { t } = useI18n()
