@@ -8,7 +8,7 @@
   --color-accent: #176b5c;
 
   /* Text whose meaning depends on fixed character width: codes read one
-     character at a time (ticket codes, slugs, URLs, ids — 0/O and 1/l must
+     character at a time (ticket codes, URLs, ids — 0/O and 1/l must
      not collide) and lyrics with chords aligned over syllables by spaces.
      The one exception to the One Face Rule in DESIGN.md. Declared
      in @theme so it replaces Tailwind's own --font-mono, which the

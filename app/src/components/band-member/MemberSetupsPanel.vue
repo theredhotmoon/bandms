@@ -304,7 +304,7 @@ function instrumentIconType(inst: Instrument | null) {
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: var(--fs-xs);
   outline: none; font-family: inherit;
 }
-.new-input:focus { border-color: var(--c-5154e5); }
+.new-input:focus { border-color: var(--c-888888-line); }
 .btn-mini {
   padding: 0.3rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 600;
   background: var(--c-e8e8e8); border: none; color: var(--c-111111); cursor: pointer;
@@ -345,7 +345,7 @@ function instrumentIconType(inst: Instrument | null) {
   background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: var(--fs-xs); outline: none;
   font-family: inherit; min-width: 12rem;
 }
-.meta-input:focus { border-color: var(--c-5154e5); }
+.meta-input:focus { border-color: var(--c-888888-line); }
 .meta-input option { background: var(--c-141414); }
 .instrument-tag {
   display: flex; align-items: center; gap: 0.35rem; font-size: var(--fs-xs); color: var(--c-94a3b8);

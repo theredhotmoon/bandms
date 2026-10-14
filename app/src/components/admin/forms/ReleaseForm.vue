@@ -432,7 +432,7 @@ function handleSubmit() {
 
           <div v-if="track.showLyrics" class="track-panel">
             <label class="field-label" style="margin-bottom:0.25rem;">{{ $t('media.releaseForm.lyrics') }}</label>
-            <textarea v-model="track.lyrics" class="lyrics-textarea" :placeholder="$t('media.releaseForm.lyricsPlaceholder')" rows="8" />
+            <textarea v-model="track.lyrics" class="field-input lyrics-textarea" :placeholder="$t('media.releaseForm.lyricsPlaceholder')" rows="8" />
           </div>
 
           <div v-if="track.showLinks" class="track-panel track-links-panel">
@@ -532,14 +532,6 @@ function handleSubmit() {
 .track-links-panel { display: flex; flex-direction: column; gap: 0.375rem; }
 .track-links-hint { font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.375rem; }
 
-.lyrics-textarea {
-  width: 100%; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
-  color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.5rem 0.625rem; outline: none;
-  font-family: var(--font-mono); line-height: 1.6; resize: vertical;
-  transition: border-color 150ms, box-shadow 150ms;
-}
-.lyrics-textarea:focus {
-  border-color: var(--c-aaaaaa-line);
-  box-shadow: var(--focus-halo);
-}
+/* Look, hover and focus come from .field-input; only what lyrics need differs. */
+.lyrics-textarea { font-family: var(--font-mono); line-height: 1.6; resize: vertical; }
 </style>

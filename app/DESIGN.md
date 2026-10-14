@@ -260,7 +260,7 @@ Decorative emoji are pictures, not type, so they sit outside the ramp — but on
 ### Named Rules
 **The Eleven Pixel Floor Rule.** `--fs-2xs` (11px) is the smallest size in the panel. A design that needs smaller text needs less text.
 
-**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family. The one exception is `--font-mono` (never a bare `monospace`), and only where fixed character width carries meaning: strings a person reads character by character where 0/O and 1/l must not collide — ticket codes, slugs, URLs, ids — and lyrics, where chords are lined up over syllables with spaces. Generated pitches and other prose stay in Archivo (a `<pre>` needs `font-family: inherit`, or Tailwind's preflight hands it the mono stack).
+**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family. The one exception is `--font-mono` (never a bare `monospace`), and only where fixed character width carries meaning: strings a person reads character by character where 0/O and 1/l must not collide — ticket codes, URLs, ids — and lyrics, where chords are lined up over syllables with spaces. Slugs stay in Archivo: a slug reads as a URL through its size and tracking (`TranslatedSlugInput`), and the slug column shows it the same way. Generated pitches and other prose stay in Archivo (a `<pre>` needs `font-family: inherit`, or Tailwind's preflight hands it the mono stack).
 
 **The Tabular Rule.** Tables, stat figures and anything with `.tabular-nums` use lining tabular numerals so dates and counts align in columns.
 

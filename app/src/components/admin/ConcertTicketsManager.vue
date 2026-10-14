@@ -318,7 +318,7 @@ function fmtPrice(price: number, currency: string): string {
 <style scoped>
 .tkm { display: flex; flex-direction: column; gap: 12px; }
 .tkm-header { display: flex; justify-content: space-between; align-items: center; }
-.tkm-title { font: 600 13px/1 system-ui; color: var(--c-e2e8f0); }
+.tkm-title { font: 600 var(--fs-sm)/1 var(--font-sans); color: var(--c-e2e8f0); }
 .tkm-state { font-size: var(--fs-sm); color: var(--c-64748b); padding: 12px 0; }
 .tkm-state.err { color: var(--c-f87171); }
 
@@ -326,12 +326,12 @@ function fmtPrice(price: number, currency: string): string {
 .type-card { border: 1px solid var(--c-2a2a2a); border-radius: 6px; overflow: hidden; }
 .type-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 12px; background: var(--c-1a1a1a); gap: 10px; }
 .type-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.type-name { font: 600 13px/1 system-ui; color: var(--c-e2e8f0); }
+.type-name { font: 600 var(--fs-sm)/1 var(--font-sans); color: var(--c-e2e8f0); }
 .type-sold { font-size: var(--fs-2xs); color: var(--c-64748b); }
 .type-info { font-size: var(--fs-2xs); color: var(--c-94a3b8); }
 .type-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
-.badge { font: 700 10px/1 system-ui; padding: 3px 7px; border-radius: 4px; letter-spacing: .05em; text-transform: uppercase; }
+.badge { font: 700 var(--fs-2xs)/1 var(--font-sans); padding: 3px 7px; border-radius: 4px; letter-spacing: .05em; text-transform: uppercase; }
 .badge-sale { background: var(--c-14532d); color: var(--c-4ade80); }
 .badge-off  { background: var(--c-2a2a2a); color: var(--c-64748b); }
 
@@ -348,17 +348,17 @@ function fmtPrice(price: number, currency: string): string {
 .btn-add-tier:hover { color: var(--c-e2e8f0); }
 
 .form-panel { border: 1px solid var(--c-2a2a2a); border-radius: 8px; padding: 16px; background: var(--c-111111); margin-top: 4px; display: flex; flex-direction: column; gap: 10px; }
-.form-title { font: 600 13px/1 system-ui; color: var(--c-e2e8f0); margin-bottom: 2px; }
+.form-title { font: 600 var(--fs-sm)/1 var(--font-sans); color: var(--c-e2e8f0); margin-bottom: 2px; }
 .field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .field-row { display: flex; gap: 10px; }
-.lbl { font: 500 11px/1 system-ui; color: var(--c-94a3b8); text-transform: uppercase; letter-spacing: .04em; }
+.lbl { font: 500 var(--fs-2xs)/1 var(--font-sans); color: var(--c-94a3b8); text-transform: uppercase; letter-spacing: .04em; }
 .inp { background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; color: var(--c-e2e8f0); padding: 7px 9px; font-size: var(--fs-sm); width: 100%; box-sizing: border-box; }
-.inp:focus { outline: 2px solid var(--c-3b82f6); border-color: transparent; }
+.inp:focus { outline: none; border-color: var(--c-aaaaaa-line); box-shadow: var(--focus-halo); }
 .err-txt { font-size: var(--fs-2xs); color: var(--c-f87171); margin: 0; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 
 /* Shared btn classes from parent */
-.btn-add { padding: 6px 12px; border-radius: 0.5rem; font: 600 12px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
+.btn-add { padding: 6px 12px; border-radius: 0.5rem; font: 600 var(--fs-xs)/1 var(--font-sans); background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-add:hover { background: var(--c-2563eb); }
 .btn-edit { padding: 4px 10px; border-radius: 4px; font-size: var(--fs-xs); background: var(--c-1e3a5f); color: var(--c-93c5fd); border: 1px solid var(--c-1e3a5f); cursor: pointer; }
 .btn-edit:hover { background: var(--c-1d4ed8); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
@@ -366,9 +366,9 @@ function fmtPrice(price: number, currency: string): string {
 .btn-delete:hover { background: var(--c-b91c1c); color: #ffffff; } /* token-lint-ignore: white label on a saturated button */
 .btn-edit-sm { padding: 2px 8px; border-radius: 4px; font-size: var(--fs-2xs); background: var(--c-1e3a5f); color: var(--c-93c5fd); border: none; cursor: pointer; }
 .btn-del-sm { padding: 2px 6px; border-radius: 4px; font-size: var(--fs-2xs); background: var(--c-3f1515); color: var(--c-fca5a5); border: none; cursor: pointer; }
-.btn-primary { padding: 7px 16px; border-radius: 0.5rem; font: 600 13px/1 system-ui; background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
+.btn-primary { padding: 7px 16px; border-radius: 0.5rem; font: 600 var(--fs-sm)/1 var(--font-sans); background: var(--c-3b82f6); color: #ffffff; border: none; cursor: pointer; } /* token-lint-ignore: white label on a saturated button */
 .btn-primary:hover:not(:disabled) { background: var(--c-2563eb); }
 .btn-primary:disabled { opacity: .5; cursor: default; }
-.btn-ghost { padding: 7px 14px; border-radius: 0.5rem; font: 600 13px/1 system-ui; background: transparent; color: var(--c-94a3b8); border: 1px solid var(--c-2a2a2a); cursor: pointer; }
+.btn-ghost { padding: 7px 14px; border-radius: 0.5rem; font: 600 var(--fs-sm)/1 var(--font-sans); background: transparent; color: var(--c-94a3b8); border: 1px solid var(--c-2a2a2a); cursor: pointer; }
 .btn-ghost:hover { color: var(--c-e2e8f0); }
 </style>
