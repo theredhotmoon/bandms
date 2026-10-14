@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -9,35 +9,15 @@ import TagForm from '@/components/admin/forms/TagForm.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
-import { useTags } from '@/composables/useTags'
+import { useTags, useTagRows, type TagRow } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { tagLabel } from '@/utils/localeOrder'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Tag, TagPayload } from '@/types/tag'
 
 const { t } = useI18n()
 
 const { query, create, update, remove } = useTags()
-const { order: contentLocales } = useContentLocales()
-
-/** A tag as the list shows it: named in the band's first language, like the
- *  FAQ list and the form's first row (the API's `name` follows the request
- *  language, so a Polish-first band saw English and could not find a tag it
- *  had just renamed in Polish). The slug column stays the API's `slug`, the
- *  default locale's — the tag's stable key, the same in every language.
- *  `terms` is every language of the name and slug, lowercased once per data
- *  change rather than on every keystroke, so either spelling finds the tag. */
-type TagRow = Tag & { label: string; terms: string[] }
-const rows = computed<TagRow[] | undefined>(() =>
-  query.data.value?.map(tag => ({
-    ...tag,
-    label: tagLabel(tag, contentLocales.value),
-    terms: [...Object.values(tag.translations.name), ...Object.values(tag.translations.slug)]
-      .filter((v): v is string => !!v)
-      .map(v => v.toLowerCase()),
-  })),
-)
+const rows = useTagRows(query.data)
 
 const showModal = ref(false)
 const editing = ref<Tag | null>(null)

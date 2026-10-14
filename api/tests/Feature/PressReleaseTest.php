@@ -23,6 +23,21 @@ describe('GET /api/press-releases', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.0.og_title', 'New Article');
     });
+
+    // The admin names a tag in the band's first content language, which needs
+    // every language: `name` alone is resolved for the request language, so a
+    // Polish-first band saw English chips on the press list. The hand-built
+    // embed now carries the same `translations.name` bag as TagResource.
+    it("embeds every language of each tag's name", function () {
+        $tag = Tag::factory()->create(['name' => ['en' => 'Live', 'pl' => 'Na żywo'], 'slug' => ['en' => 'live']]);
+        $release = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com', 'published_at' => '2025-01-01']);
+        $release->tags()->attach($tag);
+
+        $this->getJson('/api/press-releases')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.tags.0.name', 'Live')
+            ->assertJsonPath('data.0.tags.0.translations.name', ['en' => 'Live', 'pl' => 'Na żywo']);
+    });
 });
 
 // ── GET /api/press-releases/{pressRelease} ────────────────────────────────────

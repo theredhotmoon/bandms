@@ -408,7 +408,7 @@ async function confirmDelete() {
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
               <input type="checkbox" :checked="editForm.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
-              <span>{{ t.name }}</span>
+              <span>{{ tagName(t) }}</span>
             </label>
           </div>
         </div>

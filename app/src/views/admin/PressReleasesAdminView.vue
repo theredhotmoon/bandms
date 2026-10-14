@@ -22,6 +22,7 @@ import { useBandMembers } from '@/composables/useBandMembers'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
 import { useTagLabel } from '@/composables/useTagLabel'
+import { tagTerms } from '@/utils/localeOrder'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
@@ -35,7 +36,7 @@ const tc = useTableControls<PressReleaseSummary>({
     pr.url.toLowerCase().includes(q) ||
     (pr.og_title ?? '').toLowerCase().includes(q) ||
     (pr.og_site_name ?? '').toLowerCase().includes(q) ||
-    (pr.tags ?? []).some((t: { name: string }) => tagName(t).toLowerCase().includes(q)),
+    (pr.tags ?? []).some(t => tagTerms(t).some(v => v.includes(q))),
   defaultSort: 'published_at',
   defaultDir: 'desc',
 })

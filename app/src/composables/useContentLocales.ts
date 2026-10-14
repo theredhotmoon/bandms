@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchContentLocaleOrder, updateContentLocaleOrder } from '@/api/contentLocales'
 import { LOCALES, type Lang } from '@/locales'
@@ -20,18 +20,9 @@ const QUERY_KEY = ['content-locales']
  * inputs.
  */
 export function useContentLocales() {
-  const { token } = useAuth()
   const queryClient = useQueryClient()
-
-  const query = useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: () => fetchContentLocaleOrder(token.value!),
-    enabled: () => token.value !== null,
-    // Changes only when an admin saves it, and the save writes the cache.
-    staleTime: Infinity,
-  })
-
-  const order = computed<Lang[]>(() => query.data.value ?? [...LOCALES])
+  const { token } = useAuth()
+  const order = useContentLocaleOrder()
   const primary = computed<Lang>(() => order.value[0])
 
   const save = useMutation<Lang[], Error, Lang[]>({
@@ -40,4 +31,22 @@ export function useContentLocales() {
   })
 
   return { order, primary, isPrimary: (l: Lang) => l === primary.value, save }
+}
+
+/**
+ * The order alone, read-only — for surfaces that only display in it (tag
+ * labels in every picker and list). Same query and cache as
+ * `useContentLocales()`, without the save mutation each caller would
+ * otherwise create and never use.
+ */
+export function useContentLocaleOrder(): ComputedRef<Lang[]> {
+  const { token } = useAuth()
+  const query = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: () => fetchContentLocaleOrder(token.value!),
+    enabled: () => token.value !== null,
+    // Changes only when an admin saves it, and the save writes the cache.
+    staleTime: Infinity,
+  })
+  return computed<Lang[]>(() => query.data.value ?? [...LOCALES])
 }

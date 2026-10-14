@@ -24,7 +24,11 @@ export function firstInOrder(
  *  resource. A hand-built embed (press releases) has no translations. */
 export interface TagNameSource {
   name: string
-  translations?: { name?: Partial<Record<Lang, string | null>> | null }
+  slug?: string
+  translations?: {
+    name?: Partial<Record<Lang, string | null>> | null
+    slug?: Partial<Record<Lang, string | null>> | null
+  } | null
 }
 
 /**
@@ -35,4 +39,20 @@ export interface TagNameSource {
  */
 export function tagLabel(tag: TagNameSource, order: readonly Lang[]): string {
   return firstInOrder(tag.translations?.name, order) ?? tag.name
+}
+
+/**
+ * Every language of a tag's name and slug, lowercased, for search. A tag is
+ * findable by any spelling: a Polish-first band still types "live". An embed
+ * without translations falls back to its resolved name and slug, so a
+ * partial tag in the cache narrows the search instead of throwing.
+ */
+export function tagTerms(tag: TagNameSource): string[] {
+  const values = [
+    ...Object.values(tag.translations?.name ?? {}),
+    ...Object.values(tag.translations?.slug ?? {}),
+    tag.name,
+    tag.slug,
+  ]
+  return [...new Set(values.filter((v): v is string => !!v).map(v => v.toLowerCase()))]
 }

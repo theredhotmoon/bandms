@@ -24,6 +24,8 @@ class PressReleaseSummaryResource extends JsonResource
                 'id'      => $t->id,
                 'name'    => Locales::resolve($t->getTranslations('name')) ?? '',
                 'slug'    => $t->slugIn(Locales::default()),
+                // The admin names a tag in the band's first content language.
+                'translations' => ['name' => $t->nameBag()],
             ])),
             'concerts_count'  => $this->concerts_count ?? 0,
             'posts_count'     => $this->posts_count ?? 0,

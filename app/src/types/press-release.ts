@@ -1,4 +1,14 @@
-import type { Tag } from './tag'
+import type { Localized } from './website-module'
+
+/** A tag as PressReleaseSummaryResource embeds it — hand-built, not a full Tag. */
+export interface PressReleaseTag {
+  id: number
+  /** Resolved for the request language — display falls back to it. */
+  name: string
+  /** The default locale's slug — the tag's stable key. */
+  slug: string
+  translations: { name: Localized }
+}
 
 export interface PressReleaseMeta {
   og_title: string | null
@@ -44,7 +54,7 @@ export interface PressReleaseSummary {
   og_site_name: string | null
   published_at: string | null
   featured: boolean
-  tags: Tag[]
+  tags: PressReleaseTag[]
   concerts_count: number
   posts_count: number
   albums_count: number
