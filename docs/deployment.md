@@ -203,6 +203,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `PUBLIC_CARTO_KEY` | optional — the CARTO basemap key. Only needed if you want the *admin panel's* venue map keyed too; see the callout in step 6 for why this is a second place to put the same value. |
 | `PUBLIC_GA_MEASUREMENT_ID` | optional — the GA4 Measurement ID (`G-…`). Unlike every other `PUBLIC_*` var, this one is **deploy-managed**: `deploy.yml` writes it into `/opt/bandms/.env` on every push to `main`, because without this secret there is no way to set it at all for anyone without server SSH access. See the callout in step 6. |
 | `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL`, `SITE_URL` | optional, also deploy-managed the same way as `PUBLIC_GA_MEASUREMENT_ID` — this is the "switch to a domain" move from step 11, done without needing SSH access. Set all five together (`SITE_ADDRESS=yourdomain.com, www.yourdomain.com`, the rest `https://yourdomain.com`) or none — a partial set leaves CORS/Stripe/email pointed at a different origin than Caddy serves. |
+| `EPR_SITE_ADDRESS` | optional, deploy-managed the same way. A **second** hostname this Caddy serves, for the EPR Manager stack running on the same host (e.g. `178-104-25-255.sslip.io`, which needs no DNS record). Unset, that site is off: every request to it is aborted. See "EPR Manager on this Caddy" below. Independent of the five above. |
 
 ---
 
@@ -649,3 +650,35 @@ snapshots — the three cover different failures and none replaces the others.
 - **The rebuild webhook on port 3001 has no authentication.** It is not published
   to the host and not proxied by Caddy, so it is only reachable from inside the
   Docker network. Do not publish that port.
+
+---
+
+## EPR Manager on this Caddy
+
+This host also runs the EPR Manager stack (a separate repository, `epr-manager`, in
+`/opt/epr`). It has no ports 80/443 of its own, so this Caddy terminates HTTPS for it.
+
+```
+browser ──https──▶ bandms-caddy ──edge network──▶ epr-edge (TCP relay) ──▶ EPR backend
+```
+
+- **`edge`** is an external Docker network. Each project's deploy creates it when it is
+  missing (`docker network inspect edge || docker network create edge`), and neither
+  project's `docker compose down` removes it.
+- **Only `caddy` joins `edge` from this project.** On the EPR side only `epr-edge` joins.
+  Both projects call their API service `backend`, and compose registers that name on
+  every network a service joins. If both backends shared a network with Caddy,
+  `reverse_proxy backend:80` could reach the wrong project.
+- **Off until `EPR_SITE_ADDRESS` is set.** While it is unset, or still the
+  `http://epr.localhost` placeholder that compose fills in, the site block aborts every
+  request. A forged `Host` header therefore cannot reach EPR over plain HTTP.
+- **Turning it on:** set the `EPR_SITE_ADDRESS` secret and deploy, or put the line in
+  `/opt/bandms/.env` and run `docker compose -f docker-compose.prod.yml up -d --no-deps
+  --force-recreate caddy`. EPR needs its own `.env` change too; see its
+  `docs/deployment.md`, "Serving it over HTTPS".
+
+Verified locally with real containers, before shipping:
+- this Caddyfile, a fake band backend, the relay and the real EPR image;
+- the band site and its `/api` are unaffected in every state;
+- the disabled state closes the connection;
+- the enabled state serves EPR over HTTPS, with a 308 from HTTP.

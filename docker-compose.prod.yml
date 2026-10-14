@@ -21,6 +21,10 @@ services:
       # that still expects the old one, and the panel renders nothing. Moving
       # the admin path in production means rebuilding the image through CI.
       ADMIN_PATH: "${ADMIN_PATH:-admin}"
+      # The hostname Caddy serves the EPR Manager stack on, e.g.
+      # "178-104-25-255.sslip.io". Unset keeps that site off (see the
+      # Caddyfile). Deploy-managed from the EPR_SITE_ADDRESS secret.
+      EPR_SITE_ADDRESS: "${EPR_SITE_ADDRESS:-http://epr.localhost}"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./docker/caddy/maintenance:/usr/share/caddy/maintenance:ro
@@ -28,6 +32,10 @@ services:
       - caddy-config:/config
     networks:
       - bandms
+      # Shared with the EPR stack on this host; Caddy reaches its epr-edge
+      # relay here. Only caddy joins it — see the Caddyfile for why EPR's
+      # side is a relay and not its backend.
+      - edge
     depends_on:
       - web
       - frontend
@@ -169,6 +177,11 @@ services:
 networks:
   bandms:
     driver: bridge
+  # External so that neither project's `docker compose down` deletes it from
+  # under the other. The deploy creates it when missing.
+  edge:
+    external: true
+    name: edge
 
 volumes:
   bandms-mysql:

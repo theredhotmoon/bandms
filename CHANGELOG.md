@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-14 (EPR Manager site)
+
+### Added
+- **Caddy can also serve the EPR Manager stack that shares this server**, on its own
+  hostname. It is off until the `EPR_SITE_ADDRESS` secret is set, and while off it closes
+  any request for that site.
+  - Caddy reaches EPR over a shared `edge` Docker network, which the deploy creates.
+  - The band site's own routing is unchanged.
+
 ## [Unreleased] — 2026-10-09 (post images as files)
 
 ### Changed
