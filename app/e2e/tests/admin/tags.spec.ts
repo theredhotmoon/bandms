@@ -1,13 +1,42 @@
-import { test, expect } from '@playwright/test'
-import fs from 'node:fs'
+import { test, expect, type Locator } from '@playwright/test'
+import { adminHeaders } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 const UNIQUE_TAG = `e2e-tag-${Date.now()}`
 let editedTagName = `${UNIQUE_TAG}-edited`
 
+// The list shows each tag's `name` as the API resolves it for the request
+// language (?lang=, else Accept-Language). The admin sends no ?lang=, and
+// Playwright's Chromium sends `Accept-Language: en-US`, so the list is English
+// here — and every name these tests type goes into the English row by
+// locale, never `.first()`. TagForm orders its rows by the band's content
+// language, which it only fetches once the modal opens: `.first()` was
+// English until that request landed and Polish after it, so on a
+// Polish-first DB the rename landed in Polish on any slower run, the list
+// never showed it, and "delete" timed out on a row that was not there.
+const nameInput = (modal: Locator) => modal.locator('.trans-row[data-locale="en"] input')
+
 test.describe('Tags Admin', () => {
   test.describe.configure({ mode: 'serial' })
+
+  // A failure before "delete" used to leave the tag behind for good; the dev
+  // DB had collected one `-edited` tag per failed run. Sweep whatever this
+  // run created, whichever step it got to. Match every stored language, not
+  // the resolved `name`: a half-finished rename can sit in one language only.
+  // Delete them all before asserting, so one bad DELETE cannot leak the rest.
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/tags')
+    expect(res.ok(), `GET /api/tags → ${res.status()}`).toBe(true)
+    const tags: { id: number; translations: { name: Record<string, string | null> } }[] = (await res.json()).data
+    const ours = tags.filter(t => Object.values(t.translations.name).some(n => n?.startsWith(UNIQUE_TAG)))
+    const failed: string[] = []
+    for (const tag of ours) {
+      const del = await request.delete(`/api/tags/${tag.id}`, { headers: adminHeaders() })
+      if (!del.ok()) failed.push(`${tag.id} → ${del.status()}`)
+    }
+    expect(failed, 'cleanup DELETE /api/tags/{id} failed').toEqual([])
+  })
 
   test('page loads and shows tags table or empty state', async ({ page }) => {
     await page.goto('/admin/tags')
@@ -31,7 +60,7 @@ test.describe('Tags Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first().fill(UNIQUE_TAG)
+    await nameInput(modal).fill(UNIQUE_TAG)
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
@@ -65,9 +94,7 @@ test.describe('Tags Admin', () => {
     await expect(modal).toBeVisible()
     await expect(modal).toContainText(/edit tag/i)
 
-    const nameInput = modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first()
-    await nameInput.clear()
-    await nameInput.fill(editedTagName)
+    await nameInput(modal).fill(editedTagName)
 
     await modal.getByRole('button', { name: /save|update/i }).click()
 
@@ -100,9 +127,6 @@ test.describe('Tags Admin', () => {
   // following the name after the first keystroke. Typing a whole name and
   // seeing the whole slug is what proves it keeps following, per language.
   test("slugs follow each language's name, and the server owns the generated ones", async ({ page, request, baseURL }) => {
-    const token = JSON.parse(fs.readFileSync('e2e/.auth/admin.json', 'utf-8'))
-      .origins.flatMap((o: { localStorage?: { name: string; value: string }[] }) => o.localStorage ?? [])
-      .find((kv: { name: string }) => kv.name === 'auth_token')?.value
     const created: number[] = []
     const stamp = Date.now()
 
@@ -155,7 +179,7 @@ test.describe('Tags Admin', () => {
     } finally {
       for (const id of created) {
         const res = await request.delete(`${baseURL}/api/tags/${id}`, {
-          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+          headers: adminHeaders(),
         })
         expect(res.ok(), `cleanup delete of tag ${id} failed with ${res.status()}`).toBeTruthy()
       }
