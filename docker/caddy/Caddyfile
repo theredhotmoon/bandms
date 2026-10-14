@@ -116,3 +116,40 @@
 		respond "{err.status_code} {err.status_text}" {err.status_code}
 	}
 }
+
+# ── EPR Manager (a separate project on this host) ───────────────────────────
+# This Caddy owns :80/:443 on the server, so it also terminates HTTPS for the
+# EPR stack next door. Off unless EPR_SITE_ADDRESS is set.
+#
+# "Off" has to be enforced, not just implied by an obscure default hostname: a
+# Host header is whatever the client sends, so with a bare default anyone could
+# send `Host: epr.localhost` to the server's IP and reach EPR over plain HTTP.
+# So the default address is a placeholder no certificate is requested for, and
+# while EPR_SITE_ADDRESS is unset (or the placeholder) every request to it is aborted (connection
+# closed, no response). Verified both ways in a local simulation.
+#
+# To turn it on, set EPR_SITE_ADDRESS to a hostname that resolves to this
+# server, e.g. 178-104-25-255.sslip.io (sslip.io maps the dashed IP back to
+# the IP, so no DNS record is needed). Caddy then gets a Let's Encrypt
+# certificate for it. A hostname-specific site wins over the :80 catch-all
+# above for that host only.
+#
+# epr-edge is EPR's TCP relay on the shared `edge` network, NOT its backend.
+# Both projects name their API service `backend`, and this container sits on
+# both networks, so a shared `backend` name could resolve to either project.
+# reverse_proxy adds X-Forwarded-Proto/For/Host, which EPR trusts
+# (TRUSTED_PROXIES), so its redirects come out as https://.
+{$EPR_SITE_ADDRESS:http://epr.localhost} {
+	# Substituted when the Caddyfile is parsed, so this is a constant: true
+	# exactly when the address is still the placeholder — whether the variable
+	# is unset or docker-compose.prod.yml filled in that same default.
+	@disabled expression `"{$EPR_SITE_ADDRESS:http://epr.localhost}" == "http://epr.localhost"`
+	handle @disabled {
+		abort
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy epr-edge:80
+	}
+}

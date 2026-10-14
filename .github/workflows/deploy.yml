@@ -190,11 +190,12 @@ jobs:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           APP_FRONTEND_URL: ${{ secrets.APP_FRONTEND_URL }}
           SITE_URL: ${{ secrets.SITE_URL }}
+          EPR_SITE_ADDRESS: ${{ secrets.EPR_SITE_ADDRESS }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: deploy
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID,SITE_ADDRESS,APP_URL,FRONTEND_URL,APP_FRONTEND_URL,SITE_URL
+          envs: GHCR_TOKEN,GITHUB_ACTOR,PUBLIC_GA_MEASUREMENT_ID,SITE_ADDRESS,APP_URL,FRONTEND_URL,APP_FRONTEND_URL,SITE_URL,EPR_SITE_ADDRESS
           command_timeout: 15m
           script: |
             set -e
@@ -310,6 +311,11 @@ jobs:
             sync_secret_env APP_FRONTEND_URL "$APP_FRONTEND_URL"
             sync_secret_env SITE_URL "$SITE_URL"
 
+            # The EPR Manager site on this Caddy (docker/caddy/Caddyfile).
+            # Independent of the five above: it is a second hostname, not a
+            # move of this site's origin.
+            sync_secret_env EPR_SITE_ADDRESS "$EPR_SITE_ADDRESS"
+
             # Now drop all six from the shell, because Compose interpolation
             # reads the shell environment *first* and .env only as a fallback.
             # Every name in `envs:` above arrives here exported whether or not
@@ -326,7 +332,12 @@ jobs:
             # its HTTPS certificate to plain HTTP on the next deploy, which is
             # the exact failure this whole change exists to fix. The values are
             # in .env by this point, so unsetting them loses nothing.
-            unset PUBLIC_GA_MEASUREMENT_ID SITE_ADDRESS APP_URL FRONTEND_URL APP_FRONTEND_URL SITE_URL
+            unset PUBLIC_GA_MEASUREMENT_ID SITE_ADDRESS APP_URL FRONTEND_URL APP_FRONTEND_URL SITE_URL EPR_SITE_ADDRESS
+
+            # The network caddy shares with the EPR stack. External, so compose
+            # never creates it; whichever project deploys first does, here or
+            # in EPR's own deploy. Idempotent.
+            docker network inspect edge >/dev/null 2>&1 || docker network create edge
 
             # MySQL is not part of the rolling restart, but it must be running
             # before the backend starts — every command below uses --no-deps, so
