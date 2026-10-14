@@ -204,6 +204,7 @@ GitHub repo → Settings → Secrets and variables → Actions → New repositor
 | `PUBLIC_GA_MEASUREMENT_ID` | optional — the GA4 Measurement ID (`G-…`). Unlike every other `PUBLIC_*` var, this one is **deploy-managed**: `deploy.yml` writes it into `/opt/bandms/.env` on every push to `main`, because without this secret there is no way to set it at all for anyone without server SSH access. See the callout in step 6. |
 | `SITE_ADDRESS`, `APP_URL`, `FRONTEND_URL`, `APP_FRONTEND_URL`, `SITE_URL` | optional, also deploy-managed the same way as `PUBLIC_GA_MEASUREMENT_ID` — this is the "switch to a domain" move from step 11, done without needing SSH access. Set all five together (`SITE_ADDRESS=yourdomain.com, www.yourdomain.com`, the rest `https://yourdomain.com`) or none — a partial set leaves CORS/Stripe/email pointed at a different origin than Caddy serves. |
 | `EPR_SITE_ADDRESS` | optional, deploy-managed the same way. A **second** hostname this Caddy serves, for the EPR Manager stack running on the same host (e.g. `178-104-25-255.sslip.io`, which needs no DNS record). Unset, that site is off: every request to it is aborted. See "EPR Manager on this Caddy" below. Independent of the five above. |
+| `MOVESETTER_SITE_ADDRESS` | optional, deploy-managed the same way. A **third** hostname this Caddy serves, for the MoveSetter stack running on the same host (`/opt/movesetter`; e.g. `movesetter.178-104-25-255.sslip.io`, no DNS record needed). Unset, that site is off: every request to it is aborted. See "MoveSetter on this Caddy" below. |
 
 ---
 
@@ -682,3 +683,25 @@ Verified locally with real containers, before shipping:
 - the band site and its `/api` are unaffected in every state;
 - the disabled state closes the connection;
 - the enabled state serves EPR over HTTPS, with a 308 from HTTP.
+
+## MoveSetter on this Caddy
+
+This host also runs the MoveSetter stack (a separate repository, `movesetters/movesetters`,
+in `/opt/movesetter`): a Laravel API with Reverb WebSockets, a Vue SPA and PostgreSQL behind
+its own nginx ingress. It has no ports 80/443 of its own, so this Caddy terminates HTTPS for
+it, exactly like EPR.
+
+```
+browser ──https/wss──▶ bandms-caddy ──edge network──▶ movesetter-proxy (nginx) ──▶ app / web
+```
+
+- **Only `movesetter-proxy` joins `edge` from that project**, and the name is unique on the
+  host, so there is no `backend`/`app` name collision to relay around (no socat needed).
+- **WebSockets** (`/broadcasting/*`, Reverb) pass through `reverse_proxy` as ordinary
+  upgrades; nothing in this Caddyfile is WebSocket-specific.
+- **Off until `MOVESETTER_SITE_ADDRESS` is set.** While it is unset, or still the
+  `http://movesetter.localhost` placeholder, the site block aborts every request.
+- **Turning it on:** set the `MOVESETTER_SITE_ADDRESS` secret and deploy, or put the line in
+  `/opt/bandms/.env` and run `docker compose -f docker-compose.prod.yml up -d --no-deps
+  --force-recreate caddy`. The MoveSetter side needs its own `.env` (`APP_URL`,
+  `REVERB_ALLOWED_ORIGINS`); see that repository's `docs/deployment.md`.
