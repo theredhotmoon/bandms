@@ -12,7 +12,7 @@ import Pagination from '@/components/admin/Pagination.vue'
 import { useTags } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { firstInOrder } from '@/utils/localeOrder'
+import { tagLabel } from '@/utils/localeOrder'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Tag, TagPayload } from '@/types/tag'
 
@@ -21,24 +21,23 @@ const { t } = useI18n()
 const { query, create, update, remove } = useTags()
 const { order: contentLocales } = useContentLocales()
 
-/** A tag as the list shows it: in the band's first language, like the FAQ list
- *  and the form's first row. `name`/`slug` from the API are the default
- *  locale's, so a Polish-first band would see English and could not find a
- *  tag it had just renamed in Polish. */
-type TagRow = Tag & { label: string; slugLabel: string }
+/** A tag as the list shows it: named in the band's first language, like the
+ *  FAQ list and the form's first row (the API's `name` follows the request
+ *  language, so a Polish-first band saw English and could not find a tag it
+ *  had just renamed in Polish). The slug column stays the API's `slug`, the
+ *  default locale's — the tag's stable key, the same in every language.
+ *  `terms` is every language of the name and slug, lowercased once per data
+ *  change rather than on every keystroke, so either spelling finds the tag. */
+type TagRow = Tag & { label: string; terms: string[] }
 const rows = computed<TagRow[] | undefined>(() =>
   query.data.value?.map(tag => ({
     ...tag,
-    label: firstInOrder(tag.translations.name, contentLocales.value) ?? tag.name,
-    slugLabel: firstInOrder(tag.translations.slug, contentLocales.value) ?? tag.slug,
+    label: tagLabel(tag, contentLocales.value),
+    terms: [...Object.values(tag.translations.name), ...Object.values(tag.translations.slug)]
+      .filter((v): v is string => !!v)
+      .map(v => v.toLowerCase()),
   })),
 )
-
-/** Every language of the name and slug, so either spelling finds the tag. */
-const searchable = (tag: Tag): string[] =>
-  [...Object.values(tag.translations.name), ...Object.values(tag.translations.slug), tag.name, tag.slug]
-    .filter((v): v is string => !!v)
-    .map(v => v.toLowerCase())
 
 const showModal = ref(false)
 const editing = ref<Tag | null>(null)
@@ -47,7 +46,7 @@ const confirmId = ref<number | null>(null)
 
 const tc = useTableControls<TagRow>({
   data: rows,
-  searchFn: (t, q) => searchable(t).some(v => v.includes(q)),
+  searchFn: (t, q) => t.terms.some(v => v.includes(q)),
   defaultSort: 'label',
 })
 
@@ -103,14 +102,14 @@ async function confirmDelete() {
             <thead>
               <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('more.tags.cols.name')" sort-key="label" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
-                <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slugLabel" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('more.tags.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="tag in tc.paginated.value" :key="tag.id" class="table-row">
                 <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tag.label }}</td>
-                <td class="td text-xs" style="color:var(--c-64748b);">{{ tag.slugLabel }}</td>
+                <td class="td text-xs" style="color:var(--c-64748b);">{{ tag.slug }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = tag.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

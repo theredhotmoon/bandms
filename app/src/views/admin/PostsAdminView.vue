@@ -22,7 +22,9 @@ import { useClips } from '@/composables/useClips'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
+import { useTagLabel } from '@/composables/useTagLabel'
 
+const tagName = useTagLabel()
 const { t } = useI18n()
 
 const { query, create, update, remove } = usePosts()
@@ -58,7 +60,7 @@ const tc = useTableControls<PostSummary>({
   data: filteredData,
   searchFn: (p, q) =>
     p.title.toLowerCase().includes(q) ||
-    (p.tags ?? []).some(t => t.name.toLowerCase().includes(q)),
+    (p.tags ?? []).some(t => tagName(t).toLowerCase().includes(q)),
   defaultSort: 'published_at',
   defaultDir: 'desc',
 })
@@ -139,7 +141,7 @@ async function confirmDelete() {
                 </td>
                 <td class="td">
                   <span v-if="post.tags?.length" class="pill-list">
-                    <span v-for="t in post.tags" :key="t.id" class="pill pill--tag">{{ t.name }}</span>
+                    <span v-for="t in post.tags" :key="t.id" class="pill pill--tag">{{ tagName(t) }}</span>
                   </span>
                   <span v-else style="color:var(--c-475569);">—</span>
                 </td>

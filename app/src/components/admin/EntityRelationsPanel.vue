@@ -10,7 +10,9 @@ import type { TourSummary } from '@/types/tour'
 import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
+import { useTagLabel } from '@/composables/useTagLabel'
 
+const tagName = useTagLabel()
 const props = defineProps<{
   concerts?: Concert[]
   posts?: PostSummary[]
@@ -61,7 +63,7 @@ const sections = computed<Section[]>(() => {
   const out: Section[] = []
   if (props.tags?.length) out.push({
     key: 'tags', title: t('common.relations.tags'),
-    items: props.tags.map(x => ({ id: x.id, label: x.name })),
+    items: props.tags.map(x => ({ id: x.id, label: tagName(x) })),
     ids: tagIds.value, set: v => (tagIds.value = v),
   })
   if (props.members?.length) out.push({

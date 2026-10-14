@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { firstInOrder } from './localeOrder'
+import { firstInOrder, tagLabel } from './localeOrder'
 
 describe('firstInOrder', () => {
   it('reads the first language in the band order, not the default locale', () => {
@@ -16,5 +16,18 @@ describe('firstInOrder', () => {
   it('returns null when nothing is filled, so the caller picks the placeholder', () => {
     expect(firstInOrder({ en: '', pl: null }, ['pl', 'en'])).toBeNull()
     expect(firstInOrder(undefined, ['pl', 'en'])).toBeNull()
+  })
+})
+
+describe('tagLabel', () => {
+  const tag = { name: 'Live', translations: { name: { en: 'Live', pl: 'Na żywo' } } }
+
+  it("shows the band's first language, not the request-language name", () => {
+    expect(tagLabel(tag, ['pl', 'en'])).toBe('Na żywo')
+    expect(tagLabel(tag, ['en', 'pl'])).toBe('Live')
+  })
+
+  it('falls back to the resolved name when an embed carries no translations', () => {
+    expect(tagLabel({ name: 'Live' }, ['pl', 'en'])).toBe('Live')
   })
 })

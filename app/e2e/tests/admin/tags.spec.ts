@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test'
-import { adminHeaders, primaryLocale } from '../../fixtures/admin-api'
+import { adminHeaders, contentLocaleOrder } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -14,18 +14,21 @@ let editedTagName = `${UNIQUE_TAG}-edited`
 // it raced (#194). On the Polish-first dev DB this types Polish, which also
 // proves the list reads the band's language — until this fix the list showed
 // the request-language (English) name, and a Polish rename never appeared.
-let primary = 'en'
-/** Ids the slug test created. Swept in afterAll, not in the test's own
- *  `finally`: a timed-out test has its `request` closed before `finally`
- *  runs, which is how two slug runs leaked their tags. */
-const createdIds: number[] = []
+let order: string[] = []
+let primary = ''
+/** The slug test's names carry this stamp. afterAll sweeps by it, not in the
+ *  test's own `finally`: a timed-out test has its `request` closed before
+ *  `finally` runs, which is how two slug runs leaked their tags — and a
+ *  stamp still matches a tag whose POST landed but whose id never came back. */
+const SLUG_STAMP = String(Date.now())
 const nameInput = (modal: Locator) => modal.locator(`.trans-row[data-locale="${primary}"] input`)
 
 test.describe('Tags Admin', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeAll(async ({ request }) => {
-    primary = await primaryLocale(request)
+    order = await contentLocaleOrder(request)
+    primary = order[0]
   })
 
   // A failure before "delete" used to leave the tag behind for good; the dev
@@ -37,8 +40,8 @@ test.describe('Tags Admin', () => {
     const res = await request.get('/api/tags')
     expect(res.ok(), `GET /api/tags → ${res.status()}`).toBe(true)
     const tags: { id: number; translations: { name: Record<string, string | null> } }[] = (await res.json()).data
-    const ours = tags.filter(t =>
-      createdIds.includes(t.id) || Object.values(t.translations.name).some(n => n?.startsWith(UNIQUE_TAG)))
+    const ours = tags.filter(t => Object.values(t.translations.name)
+      .some(n => !!n && (n.startsWith(UNIQUE_TAG) || n.endsWith(SLUG_STAMP))))
     const failed: string[] = []
     for (const tag of ours) {
       const del = await request.delete(`/api/tags/${tag.id}`, { headers: adminHeaders() })
@@ -136,7 +139,7 @@ test.describe('Tags Admin', () => {
   // following the name after the first keystroke. Typing a whole name and
   // seeing the whole slug is what proves it keeps following, per language.
   test("slugs follow each language's name, and the server owns the generated ones", async ({ page }) => {
-    const stamp = Date.now()
+    const stamp = SLUG_STAMP
 
     const openNew = async () => {
       await page.getByRole('button', { name: '+ Add tag' }).click()
@@ -161,7 +164,6 @@ test.describe('Tags Admin', () => {
     await expect(modal.locator('.slug-row[data-locale="en"] input')).toHaveValue(`e2e-slug-tag-${stamp}`)
     await expect(modal.locator('.slug-row[data-locale="pl"] input')).toHaveValue(`na-zywo-${stamp}`)
     const first = await save(modal, 'POST')
-    createdIds.push(first.id)
     expect(first.translations.slug).toEqual({ en: `e2e-slug-tag-${stamp}`, pl: `na-zywo-${stamp}` })
 
     // A second tag whose ENGLISH name is the first one's POLISH name. The
@@ -171,7 +173,6 @@ test.describe('Tags Admin', () => {
     modal = await openNew()
     await modal.locator('.trans-row[data-locale="en"] input').fill(`Na Zywo ${stamp}`)
     const second = await save(modal, 'POST')
-    createdIds.push(second.id)
     expect(second.slug).toBe(`na-zywo-${stamp}-2`)
 
     // Clearing a language's name must release that language's slug. A loaded
@@ -184,11 +185,12 @@ test.describe('Tags Admin', () => {
     // here: this is the assertion that fails without that fix.
     const row = page.locator('tbody tr')
     await expect(row).toHaveCount(1)
-    const shown = primary === 'pl'
-      ? { name: `Na Zywo ${stamp}`, slug: `na-zywo-${stamp}` }
-      : { name: `E2E Slug Tag ${stamp}`, slug: `e2e-slug-tag-${stamp}` }
-    await expect(row.locator('td').nth(0)).toHaveText(shown.name)
-    await expect(row.locator('td').nth(1)).toHaveText(shown.slug)
+    // The name in the first language of the band's order that has one; the
+    // slug column is the stable default-locale slug whatever the order.
+    const names: Record<string, string> = { en: `E2E Slug Tag ${stamp}`, pl: `Na Zywo ${stamp}` }
+    const shownName = order.map(l => names[l]).find(Boolean)
+    await expect(row.locator('td').nth(0)).toHaveText(shownName!)
+    await expect(row.locator('td').nth(1)).toHaveText(first.slug)
     await row.getByRole('button', { name: /edit/i }).click()
     modal = page.locator('.modal-overlay')
     await modal.locator('.trans-row[data-locale="pl"] input').fill('')
