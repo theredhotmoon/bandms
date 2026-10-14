@@ -9,7 +9,7 @@ import TagForm from '@/components/admin/forms/TagForm.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
-import { useTags } from '@/composables/useTags'
+import { useTags, useTagRows, type TagRow } from '@/composables/useTags'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Tag, TagPayload } from '@/types/tag'
@@ -17,16 +17,17 @@ import type { Tag, TagPayload } from '@/types/tag'
 const { t } = useI18n()
 
 const { query, create, update, remove } = useTags()
+const rows = useTagRows(query.data)
 
 const showModal = ref(false)
 const editing = ref<Tag | null>(null)
 const fieldErrors = ref<Record<string, string[]>>({})
 const confirmId = ref<number | null>(null)
 
-const tc = useTableControls<Tag>({
-  data: query.data,
-  searchFn: (t, q) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
-  defaultSort: 'name',
+const tc = useTableControls<TagRow>({
+  data: rows,
+  searchFn: (t, q) => t.terms.some(v => v.includes(q)),
+  defaultSort: 'label',
 })
 
 function openCreate() { editing.value = null; fieldErrors.value = {}; showModal.value = true }
@@ -80,14 +81,14 @@ async function confirmDelete() {
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid var(--c-222222);">
-                <SortHeader :label="$t('more.tags.cols.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
+                <SortHeader :label="$t('more.tags.cols.name')" sort-key="label" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <SortHeader :label="$t('more.tags.cols.slug')" sort-key="slug" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('more.tags.cols.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="tag in tc.paginated.value" :key="tag.id" class="table-row">
-                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tag.name }}</td>
+                <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tag.label }}</td>
                 <td class="td text-xs" style="color:var(--c-64748b);">{{ tag.slug }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>

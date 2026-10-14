@@ -12,21 +12,18 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { Faq, FaqPayload } from '@/types/faq'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { nativeName } from '@/locales'
+import { firstInOrder } from '@/utils/localeOrder'
 
 const { order: contentLocales } = useContentLocales()
 
 /** The question in the band's first language that has one — not "en, else pl". */
 function questionLabel(faq: Faq): string | null {
-  for (const l of contentLocales.value) {
-    const q = faq.question?.[l]
-    if (q) return q
-  }
-  return null
+  return firstInOrder(faq.question, contentLocales.value)
 }
 
 /** Every language the question is missing in, named in the band's order. */
 function missingLocales(faq: Faq): string {
-  return contentLocales.value.filter(l => !faq.question?.[l]).map(nativeName).join(', ')
+  return contentLocales.value.filter(l => !faq.question?.[l]?.trim()).map(nativeName).join(', ')
 }
 
 const { t } = useI18n()

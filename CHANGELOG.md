@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-14 (tags list language)
+
+### Fixed
+- **Tags show in the language the band writes first everywhere in the admin**: the tags list, the tag pickers on concerts, venues, photo uploads and related items, and the tag pills on photos, posts and press releases. This matches the FAQ list; before, tags always showed in English. Pickers are sorted by the name shown. A Polish-first band that renamed a tag in Polish could not see the new name in the list, or find it by searching for it. Search now matches a tag's name or slug in any language.
+
 ## [Unreleased] — 2026-10-14 (admin design drift)
 
 ### Changed

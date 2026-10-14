@@ -22,7 +22,9 @@ import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
 import type { Localized } from '@/types/website-module'
 import { reportSaveError } from '@/utils/formErrors'
+import { useTagLabel } from '@/composables/useTagLabel'
 
+const tagName = useTagLabel()
 const { query, update, remove, reorderPhotos } = useAlbums()
 const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
@@ -326,7 +328,7 @@ async function confirmDelete() {
               </td>
               <td class="td">
                 <span v-if="album.tags?.length" class="flex flex-wrap gap-1">
-                  <span v-for="t in album.tags" :key="t.id" class="pill">{{ t.name }}</span>
+                  <span v-for="t in album.tags" :key="t.id" class="pill">{{ tagName(t) }}</span>
                 </span>
                 <span v-else style="color:var(--c-475569);">—</span>
               </td>
@@ -406,7 +408,7 @@ async function confirmDelete() {
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
               <input type="checkbox" :checked="editForm.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
-              <span>{{ t.name }}</span>
+              <span>{{ tagName(t) }}</span>
             </label>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import type { Tag } from './tag'
 import type { Localized } from './website-module'
 export interface ShopCategory {
   id: number
@@ -54,7 +55,7 @@ export interface ShopItem extends ShopItemSummary {
   translations: { slug: Localized }
   description: string | null
   photos: ShopItemPhoto[]
-  tags: { id: number; name: string; slug: string }[]
+  tags: Tag[]
   release_ids: number[]
   concert_ids: number[]
   post_ids: number[]

@@ -13,7 +13,9 @@ import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } 
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
 import type { Tag } from '@/types/tag'
+import { useTagLabel } from '@/composables/useTagLabel'
 
+const tagName = useTagLabel()
 const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
 
@@ -525,7 +527,7 @@ function submit() {
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
-          <span>{{ t.name }}</span>
+          <span>{{ tagName(t) }}</span>
         </label>
         <p v-if="!tags.length" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.concerts.form.noTags') }}</p>
       </div>

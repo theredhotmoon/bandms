@@ -21,7 +21,10 @@ import { useReleases } from '@/composables/useReleases'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleaseSummary, PressReleasePayload } from '@/types/press-release'
+import { useTagLabel } from '@/composables/useTagLabel'
+import { tagNames } from '@/utils/localeOrder'
 
+const tagName = useTagLabel()
 const { t } = useI18n()
 const { uiLang } = useUiLang()
 
@@ -33,7 +36,7 @@ const tc = useTableControls<PressReleaseSummary>({
     pr.url.toLowerCase().includes(q) ||
     (pr.og_title ?? '').toLowerCase().includes(q) ||
     (pr.og_site_name ?? '').toLowerCase().includes(q) ||
-    (pr.tags ?? []).some((t: { name: string }) => t.name.toLowerCase().includes(q)),
+    (pr.tags ?? []).some(t => tagNames(t).some(v => v.includes(q))),
   defaultSort: 'published_at',
   defaultDir: 'desc',
 })
@@ -159,7 +162,7 @@ function hostname(url: string): string {
                 </td>
                 <td class="td">
                   <div class="tag-chips">
-                    <span v-for="t in pr.tags" :key="t.id" class="tag-chip">{{ t.name }}</span>
+                    <span v-for="t in pr.tags" :key="t.id" class="tag-chip">{{ tagName(t) }}</span>
                   </div>
                 </td>
                 <td class="td" style="white-space:nowrap;">
