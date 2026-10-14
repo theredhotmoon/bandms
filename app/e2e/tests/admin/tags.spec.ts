@@ -1,13 +1,36 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Locator } from '@playwright/test'
 import fs from 'node:fs'
+import { adminHeaders } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 const UNIQUE_TAG = `e2e-tag-${Date.now()}`
 let editedTagName = `${UNIQUE_TAG}-edited`
 
+// The list shows each tag's DEFAULT-locale name (GET /api/tags takes no
+// ?lang=), so every name these tests type goes into the English row by
+// locale, never `.first()`. TagForm orders its rows by the band's content
+// language, which it only fetches once the modal opens: `.first()` was
+// English until that request landed and Polish after it, so on a
+// Polish-first DB the rename landed in Polish on any slower run, the list
+// never showed it, and "delete" timed out on a row that was not there.
+const nameInput = (modal: Locator) => modal.locator('.trans-row[data-locale="en"] input')
+
 test.describe('Tags Admin', () => {
   test.describe.configure({ mode: 'serial' })
+
+  // A failure before "delete" used to leave the tag behind for good; the dev
+  // DB had collected one `-edited` tag per failed run. Sweep whatever this
+  // run created, whichever step it got to.
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/tags')
+    expect(res.ok(), `GET /api/tags → ${res.status()}`).toBe(true)
+    const tags: { id: number; name: string }[] = (await res.json()).data
+    for (const tag of tags.filter(t => t.name.startsWith(UNIQUE_TAG))) {
+      const del = await request.delete(`/api/tags/${tag.id}`, { headers: adminHeaders() })
+      expect(del.ok(), `DELETE /api/tags/${tag.id} → ${del.status()}`).toBe(true)
+    }
+  })
 
   test('page loads and shows tags table or empty state', async ({ page }) => {
     await page.goto('/admin/tags')
@@ -31,7 +54,7 @@ test.describe('Tags Admin', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first().fill(UNIQUE_TAG)
+    await nameInput(modal).fill(UNIQUE_TAG)
 
     await modal.getByRole('button', { name: /save|create/i }).click()
 
@@ -65,9 +88,7 @@ test.describe('Tags Admin', () => {
     await expect(modal).toBeVisible()
     await expect(modal).toContainText(/edit tag/i)
 
-    const nameInput = modal.locator('input[name="name"], input[id="name"], input[placeholder*="name" i]').first()
-    await nameInput.clear()
-    await nameInput.fill(editedTagName)
+    await nameInput(modal).fill(editedTagName)
 
     await modal.getByRole('button', { name: /save|update/i }).click()
 
