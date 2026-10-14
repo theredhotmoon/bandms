@@ -540,7 +540,7 @@ function isAnyUpdatePending(id: number): boolean {
 /* ── Drop zone ─────────────────────────────────────────────── */
 .blm-drop {
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 0.625rem;
+  border-radius: 0.75rem;
   padding: 2rem 1.5rem;
   text-align: center;
   cursor: pointer;
@@ -580,7 +580,7 @@ function isAnyUpdatePending(id: number): boolean {
   padding: 1rem;
   background: var(--c-111111);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.625rem;
+  border-radius: 0.75rem;
 }
 @media (max-width: 560px) {
   .blm-upload-form { flex-direction: column; }
@@ -654,7 +654,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-card {
   background: var(--c-111111);
   border: 1px solid var(--c-222222);
-  border-radius: 0.625rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -798,7 +798,7 @@ function isAnyUpdatePending(id: number): boolean {
   font-size: var(--fs-2xs);
   font-weight: 500;
   padding: 0.2rem 0.5rem;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   cursor: pointer;
   background: var(--c-0e0c2a);
   border: 1px solid var(--c-2a2a2a);
@@ -895,7 +895,7 @@ function isAnyUpdatePending(id: number): boolean {
 .blm-pins-section {
   background: var(--c-111111);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.625rem;
+  border-radius: 0.75rem;
   padding: 1rem 1.25rem;
 }
 

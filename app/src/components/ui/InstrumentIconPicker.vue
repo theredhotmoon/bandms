@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
     <div
       v-if="open"
       ref="popRef"
-      class="z-[60] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl"
+      class="z-[60] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-(--shadow-float)"
       :style="popoverStyle"
       role="listbox"
     >
@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
       >{{ $t('rider.iconPicker.notMapped') }}</button>
 
       <div v-for="g in groups" :key="g.group" class="mb-2 last:mb-0">
-        <p class="px-1 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
+        <p class="px-1 pb-1 text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wider text-zinc-500">{{ g.group }}</p>
         <div class="grid grid-cols-4 gap-1">
           <button
             v-for="def in g.icons"
@@ -214,7 +214,7 @@ onBeforeUnmount(() => {
             @click="select(def.type)"
           >
             <InstrumentIcon :type="def.type" :size="24" />
-            <span class="w-full truncate text-center text-[9px] leading-tight">{{ instNames[def.type] }}</span>
+            <span class="line-clamp-2 w-full break-words hyphens-auto text-center text-[length:var(--fs-2xs)] leading-tight">{{ instNames[def.type] }}</span>
           </button>
         </div>
       </div>

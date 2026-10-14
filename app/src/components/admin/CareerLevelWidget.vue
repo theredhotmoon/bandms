@@ -514,8 +514,8 @@ function advanceLevel() {
 .clw-tagline { font-size: var(--fs-sm); font-weight: 600; color: var(--c-94a3b8); margin-bottom: 0.5rem; }
 
 .clw-progress-row { display: flex; align-items: center; gap: 0.75rem; }
-.clw-prog-wrap { width: 10rem; height: 5px; background: var(--c-222222); border-radius: 3px; overflow: hidden; }
-.clw-prog-bar { width: 100%; height: 100%; border-radius: 3px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
+.clw-prog-wrap { width: 10rem; height: 5px; background: var(--c-222222); border-radius: 9999px; overflow: hidden; }
+.clw-prog-bar { width: 100%; height: 100%; border-radius: 9999px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
 .clw-prog-label { font-size: var(--fs-xs); font-weight: 700; }
 
 .clw-advance-box {
@@ -563,7 +563,7 @@ function advanceLevel() {
   display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
   padding: 1.5rem 1rem; text-align: center;
 }
-.clw-custom-icon  { font-size: 2rem; line-height: 1; }
+.clw-custom-icon  { font-size: var(--fs-glyph-sm); line-height: 1; }
 .clw-custom-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-fbbf24); }
 .clw-custom-sub   { font-size: var(--fs-sm); color: var(--c-475569); max-width: 32rem; line-height: 1.6; }
 .clw-custom-preview {

@@ -240,7 +240,7 @@ onUnmounted(() => {
   gap: 20px;
 }
 .door-title {
-  font: 700 24px/1 system-ui;
+  font: 700 var(--fs-xl)/1 var(--font-sans);
   color: var(--c-e2e8f0);
   margin: 0;
 }
@@ -275,14 +275,14 @@ onUnmounted(() => {
   border-radius: 6px;
   color: var(--c-e2e8f0);
   padding: 10px 14px;
-  font: 600 14px/1 'Courier New', monospace;
+  font: 600 var(--fs-base)/1 var(--font-mono);
   letter-spacing: .06em;
 }
-.code-input:focus { outline: 2px solid var(--c-3b82f6); border-color: transparent; }
+.code-input:focus { outline: none; border-color: var(--c-aaaaaa-line); box-shadow: var(--focus-halo); }
 .btn-check {
   padding: 10px 20px;
   border-radius: 6px;
-  font: 600 14px/1 system-ui;
+  font: 600 var(--fs-base)/1 var(--font-sans);
   background: var(--c-3b82f6);
   color: #ffffff; /* token-lint-ignore: white label on the result colour */
   border: none;
@@ -293,7 +293,7 @@ onUnmounted(() => {
 .btn-reset {
   padding: 10px 14px;
   border-radius: 6px;
-  font: 600 13px/1 system-ui;
+  font: 600 var(--fs-sm)/1 var(--font-sans);
   background: transparent;
   color: var(--c-64748b);
   border: 1px solid var(--c-2a2a2a);
@@ -305,7 +305,7 @@ onUnmounted(() => {
 
 .result-card {
   border: 2px solid;
-  border-radius: 10px;
+  border-radius: 0.75rem;
   padding: 20px;
   background: var(--c-0d0d0d);
   display: flex;
@@ -324,7 +324,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .status-text {
-  font: 800 18px/1 system-ui;
+  font: 800 var(--fs-lg)/1 var(--font-sans);
   letter-spacing: .04em;
 }
 
@@ -351,8 +351,8 @@ onUnmounted(() => {
 
 .btn-scan {
   padding: 12px 20px;
-  border-radius: 7px;
-  font: 700 15px/1 system-ui;
+  border-radius: 0.5rem;
+  font: 700 var(--fs-md)/1 var(--font-sans);
   background: var(--c-14532d);
   color: var(--c-4ade80);
   border: 1px solid var(--c-166534);
@@ -375,7 +375,7 @@ onUnmounted(() => {
 .log-ok   { background: var(--c-0a1a0a); }
 .log-fail { background: var(--c-1a0a0a); }
 .log-ts   { color: var(--c-475569); white-space: nowrap; }
-.log-code { font-family: monospace; color: var(--c-94a3b8); }
+.log-code { font-family: var(--font-mono); color: var(--c-94a3b8); }
 .log-ok .log-name   { color: var(--c-4ade80); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .log-fail .log-name { color: var(--c-f87171); flex: 1; }
 </style>

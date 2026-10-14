@@ -236,7 +236,7 @@ function hostname(url: string): string {
 .pr-site  { font-size: var(--fs-xs); color: var(--c-475569); margin-top: 1px; }
 .tag-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .epk-badge {
-  display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.2rem; margin-right: 0.375rem;
+  display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-right: 0.375rem;
   background: var(--c-2a2a2a); color: var(--c-c0c0c0); font-size: var(--fs-2xs); font-weight: 700;
   letter-spacing: 0.06em; vertical-align: middle;
 }

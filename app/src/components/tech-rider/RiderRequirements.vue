@@ -273,7 +273,7 @@ const emit = defineEmits<{
 .pill--iem { background: var(--c-1a1230); color: var(--c-c4b5fd); }
 .need-tag {
   display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.3rem;
-  border-radius: 0.2rem; background: var(--c-2a1a06); color: var(--c-fbbf24); font-size: var(--fs-2xs); font-weight: 600;
+  border-radius: 0.25rem; background: var(--c-2a1a06); color: var(--c-fbbf24); font-size: var(--fs-2xs); font-weight: 600;
 }
 
 .extras-fold {

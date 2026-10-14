@@ -240,7 +240,7 @@ function formatDate(iso: string | null): string {
 .diff-label { font-size: var(--fs-xs); color: var(--c-e2e8f0); }
 .diff-source { font-size: var(--fs-2xs); color: var(--c-475569); }
 .diff-changes { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.diff-changes li { font-size: var(--fs-2xs); color: var(--c-94a3b8); font-family: ui-monospace, monospace; }
+.diff-changes li { font-size: var(--fs-2xs); color: var(--c-94a3b8); }
 
 .btn-danger {
   padding: 0.2rem 0.6rem; border-radius: 0.375rem; font-size: var(--fs-xs); font-weight: 600;

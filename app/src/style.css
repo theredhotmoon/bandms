@@ -6,6 +6,14 @@
   --color-ink: #121212;
   --color-paper: #EFE7D6;
   --color-accent: #176b5c;
+
+  /* Text whose meaning depends on fixed character width: codes read one
+     character at a time (ticket codes, URLs, ids — 0/O and 1/l must
+     not collide) and lyrics with chords aligned over syllables by spaces.
+     The one exception to the One Face Rule in DESIGN.md. Declared
+     in @theme so it replaces Tailwind's own --font-mono, which the
+     `font-mono` utility and preflight's <pre>/<code> both read. */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
 /* ── Type scale ──────────────────────────────────── */
@@ -21,7 +29,7 @@
   --fs-md:  1rem;       /* 16px — card titles */
   --fs-lg:  1.125rem;   /* 18px — section titles */
   --fs-xl:  1.375rem;   /* 22px — page titles */
-  --fs-2xl: 1.75rem;    /* 28px — dashboard stat figures */
+  --fs-2xl: 1.75rem;    /* 28px — display figures: dashboard stats, counters, avatar initials */
 
   --lh-tight: 1.2;
   --lh-ui: 1.4;
@@ -31,6 +39,11 @@
   --track-title: -0.015em;
 
   --font-sans: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+
+  /* Decorative emoji glyphs (empty states, drop zones). They are pictures, so
+     they sit outside the type ramp — but on two fixed sizes, not one per view. */
+  --fs-glyph: 2.5rem;
+  --fs-glyph-sm: 1.5rem;
 }
 
 /* ── Global reset / base ─────────────────────────── */
@@ -74,7 +87,7 @@ body {
 /* ── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 0.25rem; }
 
 /* ── Native controls in the admin shell ─────────── */
 /* Preflight makes a <select> inherit the shell's text colour while the OS draws

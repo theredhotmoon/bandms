@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--scrim);
   backdrop-filter: blur(4px);
 }
 
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
   width: calc(100% - 2rem);
   margin: 4rem 1rem 1rem;
   border-radius: 0.75rem;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-modal);
   background: var(--c-141414);
   border: 1px solid var(--c-333333);
   outline: none;

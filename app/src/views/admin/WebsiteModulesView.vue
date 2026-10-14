@@ -295,7 +295,7 @@ async function saveEdit(slug: string) {
           </span>
 
           <!-- Position number -->
-          <span class="w-5 text-center text-xs font-mono text-zinc-500 flex-shrink-0">{{ i + 1 }}</span>
+          <span class="w-5 text-center text-xs tabular-nums text-zinc-500 flex-shrink-0">{{ i + 1 }}</span>
 
           <!-- Module info -->
           <div class="flex-1 min-w-0">

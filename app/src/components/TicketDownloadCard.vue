@@ -75,7 +75,7 @@ const props = defineProps<{ uuid: string }>()
 }
 
 .tdc-uuid {
-  font-family: monospace;
+  font-family: var(--font-mono);
   color: #555;
 }
 

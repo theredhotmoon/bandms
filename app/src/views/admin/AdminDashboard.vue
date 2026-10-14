@@ -396,8 +396,8 @@ a.stat-cell:hover .stat-label { color: var(--c-e2e8f0); }
   border-radius: 0.375rem; text-decoration: none; transition: background 100ms;
 }
 .enhance-item:hover { background: var(--c-1a1a1a); }
-.enhance-bar-wrap { width: 5rem; height: 4px; background: var(--c-222222); border-radius: 2px; flex-shrink: 0; overflow: hidden; }
-.enhance-bar { width: 100%; height: 100%; border-radius: 2px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
+.enhance-bar-wrap { width: 5rem; height: 4px; background: var(--c-222222); border-radius: 9999px; flex-shrink: 0; overflow: hidden; }
+.enhance-bar { width: 100%; height: 100%; border-radius: 9999px; transform-origin: left; transition: transform 400ms cubic-bezier(0.2, 0, 0, 1); }
 .enhance-score { font-size: var(--fs-2xs); font-weight: 700; color: var(--c-475569); width: 2.5rem; flex-shrink: 0; }
 .enhance-label {
   font-size: var(--fs-sm); color: var(--c-94a3b8); min-width: 0; overflow: hidden;

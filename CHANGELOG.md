@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-14 (admin design drift)
+
+### Changed
+- **The admin panel follows its own design system again.**
+  - Corners use the documented five-step scale.
+  - Every modal backdrop and floating shadow comes from one token each.
+  - The instrument picker's labels respect the 11px minimum, wrapping to two lines instead of being cut off.
+  - Monospace is kept only where fixed width matters: ticket codes, URLs, and lyrics with chords aligned over syllables.
+  - The tech-rider cover and the rig build banner lose their thick left stripe.
+  - The concert ticket manager and the door-check screen drop the operating-system font and their own pixel sizes for Archivo on the shared type scale, and use the shared focus ring.
+  - `app/DESIGN.md` documents the new tokens and the monospace exception.
+
 ## [Unreleased] — 2026-10-14 (EPR Manager site)
 
 ### Added

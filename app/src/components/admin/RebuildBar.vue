@@ -139,7 +139,7 @@ function relativeTime(iso: string | null): string {
   border-radius: 0.5rem;
   background: var(--c-1a1a1a);
   border: 1px solid var(--c-2a2a2a);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-float);
   z-index: 20;
 }
 

@@ -55,7 +55,7 @@ const gapWords = (missing: string[]) => toWords(missing, t)
 .gaps { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .gap-chip {
   display: flex; align-items: baseline; gap: 0.3rem;
-  padding: 0.15rem 0.45rem; border-radius: 0.3rem; cursor: pointer;
+  padding: 0.15rem 0.45rem; border-radius: 0.25rem; cursor: pointer;
   background: var(--c-1c1608); border: 1px solid var(--c-4d3c10); font-family: inherit;
   transition: background 100ms;
 }

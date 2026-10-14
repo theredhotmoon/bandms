@@ -313,12 +313,12 @@ async function copyPitch() {
 }
 .output-label { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-555555); }
 .copy-btn {
-  padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: var(--fs-xs); font-weight: 600;
+  padding: 0.2rem 0.625rem; border-radius: 0.25rem; font-size: var(--fs-xs); font-weight: 600;
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-d0d0d0); cursor: pointer;
 }
 .copy-btn:hover { background: var(--c-333333); }
 .pitch-text {
-  background: var(--c-0d0d0d); color: var(--c-94a3b8); font-family: 'Courier New', monospace;
+  background: var(--c-0d0d0d); color: var(--c-94a3b8); font-family: inherit;
   font-size: var(--fs-sm); line-height: 1.7; padding: 1rem; margin: 0;
   white-space: pre-wrap; word-break: break-word; min-height: 320px;
 }

@@ -42,7 +42,7 @@ function move(locale: Lang, step: -1 | 1): void {
         class="flex items-center gap-3 rounded-lg bg-zinc-800/60 px-3 py-2"
         :data-locale="l"
       >
-        <span class="w-5 text-center text-xs font-mono text-zinc-500">{{ i + 1 }}</span>
+        <span class="w-5 text-center text-xs tabular-nums text-zinc-500">{{ i + 1 }}</span>
         <span class="text-xs font-bold tracking-wider text-zinc-300">{{ shortLabel(l) }}</span>
         <span class="flex-1 text-sm text-white">{{ nativeName(l) }}</span>
         <span

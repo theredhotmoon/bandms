@@ -490,7 +490,7 @@ async function confirmDelete() {
 .pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }
-.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:5px; border:1px solid var(--c-333333); }
+.cover-thumb { width:52px; height:40px; object-fit:cover; border-radius:0.375rem; border:1px solid var(--c-333333); }
 .cover-empty { width:52px; height:40px; display:flex; align-items:center; justify-content:center; font-size:var(--fs-lg); color:var(--c-333333); } /* contrast-ignore: holds an emoji, which ignores color */
 
 .photo-count-btn {
@@ -526,7 +526,7 @@ async function confirmDelete() {
 .photo-epk {
   background:transparent; border:none; color:var(--c-334155);
   cursor:pointer; font-size:var(--fs-sm); padding:2px 4px;
-  border-radius:3px; transition:color 0.1s, background 0.1s;
+  border-radius:0.25rem; transition:color 0.1s, background 0.1s;
   flex-shrink:0; line-height:1;
 }
 .photo-epk:hover { color:var(--c-fbbf24); }
@@ -534,7 +534,7 @@ async function confirmDelete() {
 .photo-remove {
   background:transparent; border:none; color:var(--c-475569);
   cursor:pointer; font-size:var(--fs-xs); padding:2px 4px;
-  border-radius:3px; transition:color 0.1s, background 0.1s;
+  border-radius:0.25rem; transition:color 0.1s, background 0.1s;
   flex-shrink:0;
 }
 .photo-remove:hover:not(:disabled) { color:var(--c-f87171); background:var(--c-3d1515); }

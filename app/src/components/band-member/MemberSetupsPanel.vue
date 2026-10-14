@@ -292,7 +292,7 @@ function instrumentIconType(inst: Instrument | null) {
 .list-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.375rem; }
 .list-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-64748b); text-transform: uppercase; letter-spacing: .05em; }
 .btn-new {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; background: var(--c-1a1a1a);
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; background: var(--c-1a1a1a);
   border: 1px solid var(--c-2a2a2a); color: var(--c-c0c0c0); cursor: pointer; font-size: var(--fs-base);
   display: flex; align-items: center; justify-content: center;
 }
@@ -300,13 +300,13 @@ function instrumentIconType(inst: Instrument | null) {
 
 .new-row { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
 .new-input {
-  flex: 1; min-width: 0; padding: 0.3rem 0.5rem; border-radius: 0.3rem;
+  flex: 1; min-width: 0; padding: 0.3rem 0.5rem; border-radius: 0.25rem;
   border: 1px solid var(--c-2a2a2a); background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: var(--fs-xs);
   outline: none; font-family: inherit;
 }
-.new-input:focus { border-color: var(--c-5154e5); }
+.new-input:focus { border-color: var(--c-888888-line); }
 .btn-mini {
-  padding: 0.3rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
+  padding: 0.3rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 600;
   background: var(--c-e8e8e8); border: none; color: var(--c-111111); cursor: pointer;
 }
 .btn-mini:disabled { opacity: 0.4; cursor: default; }
@@ -329,7 +329,7 @@ function instrumentIconType(inst: Instrument | null) {
   padding: 0.1rem 0.35rem; border-radius: 999px; text-transform: uppercase; flex-shrink: 0;
 }
 .item-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
-.mini-action { color: var(--c-334155); font-size: var(--fs-2xs); padding: 0.1rem 0.25rem; border-radius: 3px; }
+.mini-action { color: var(--c-334155); font-size: var(--fs-2xs); padding: 0.1rem 0.25rem; border-radius: 0.25rem; }
 .mini-action:hover { color: var(--c-c0c0c0); background: var(--c-222222); }
 .mini-action--del:hover { color: var(--c-f87171); background: var(--c-2a1010); }
 
@@ -345,7 +345,7 @@ function instrumentIconType(inst: Instrument | null) {
   background: var(--c-0d0d0d); color: var(--c-e2e8f0); font-size: var(--fs-xs); outline: none;
   font-family: inherit; min-width: 12rem;
 }
-.meta-input:focus { border-color: var(--c-5154e5); }
+.meta-input:focus { border-color: var(--c-888888-line); }
 .meta-input option { background: var(--c-141414); }
 .instrument-tag {
   display: flex; align-items: center; gap: 0.35rem; font-size: var(--fs-xs); color: var(--c-94a3b8);

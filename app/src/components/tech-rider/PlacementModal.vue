@@ -319,7 +319,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
 .block-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-94a3b8); }
 .block-actions { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 .quick-add {
-  padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
+  padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8);
 }
 .quick-add:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
@@ -345,7 +345,7 @@ function pickType(id: string, type: StagePlotItemType | null) {
 .picker-pop {
   position: absolute; top: 2.3rem; left: 0; z-index: 20;
   background: var(--c-0d0d0d); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
-  padding: 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  padding: 0.5rem; box-shadow: var(--shadow-float);
 }
 
 .modal-footer {

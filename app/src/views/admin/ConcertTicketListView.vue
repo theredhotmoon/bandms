@@ -71,7 +71,7 @@ const filtered = computed<AdminTicket[]>(() => {
           </thead>
           <tbody>
             <tr v-for="t in filtered" :key="t.uuid" class="table-row">
-              <td class="td" style="font-family:monospace;font-size:var(--fs-xs);color:var(--c-94a3b8);">{{ t.uuid.slice(0, 8) }}</td>
+              <td class="td" style="font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--c-94a3b8);">{{ t.uuid.slice(0, 8) }}</td>
               <td class="td" style="color:var(--c-e2e8f0);">{{ t.holder_name ?? '—' }}</td>
               <td class="td" style="color:var(--c-94a3b8);">{{ t.holder_email ?? '—' }}</td>
               <td class="td"><TicketStatusBadge :status="t.status" /></td>

@@ -692,7 +692,7 @@ const TYPE_COLOURS: Record<string, string> = {
 .cat-empty { font-size: var(--fs-xs); color: var(--c-334155); padding: 0.25rem 0; }
 .cat-row {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.375rem 0.625rem; border-radius: 0.3rem;
+  padding: 0.375rem 0.625rem; border-radius: 0.25rem;
   border: 1px solid transparent; cursor: pointer;
   transition: background 100ms, border-color 100ms;
 }
@@ -702,7 +702,7 @@ const TYPE_COLOURS: Record<string, string> = {
 .cat-desc { font-size: var(--fs-xs); color: var(--c-475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10rem; }
 .cat-del {
   color: var(--c-475569); background: none; border: none; cursor: pointer; font-size: var(--fs-2xs);
-  padding: 0.2rem 0.3rem; border-radius: 0.2rem; flex-shrink: 0;
+  padding: 0.2rem 0.3rem; border-radius: 0.25rem; flex-shrink: 0;
 }
 .cat-del:hover { color: var(--c-f87171); background: var(--c-1a0a0a); }
 .cat-form-title {

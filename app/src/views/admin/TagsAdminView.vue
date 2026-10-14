@@ -88,7 +88,7 @@ async function confirmDelete() {
             <tbody>
               <tr v-for="tag in tc.paginated.value" :key="tag.id" class="table-row">
                 <td class="td font-medium" style="color:var(--c-e2e8f0);">{{ tag.name }}</td>
-                <td class="td text-xs font-mono" style="color:var(--c-64748b);">{{ tag.slug }}</td>
+                <td class="td text-xs" style="color:var(--c-64748b);">{{ tag.slug }}</td>
                 <td class="td text-right">
                   <button @click="openEdit(tag)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = tag.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>

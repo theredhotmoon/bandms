@@ -163,7 +163,7 @@ function resetOrder() {
 .stat--dim .stat-val { font-size: var(--fs-base); color: var(--c-94a3b8); font-weight: 600; }
 .stat-spacer { flex: 1; }
 .btn-reset {
-  padding: 0.25rem 0.6rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
+  padding: 0.25rem 0.6rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-2a2a2a); color: var(--c-64748b);
 }
 .btn-reset:hover { border-color: var(--c-444444); color: var(--c-94a3b8); }

@@ -51,7 +51,7 @@ function patch(changes: Partial<PowerSpec>) {
 .power-row { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: start; }
 .outlets-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem; }
 .outlets-count {
-  font-size: 1.5rem; font-weight: 800; color: var(--c-d0d0d0);
+  font-size: var(--fs-2xl); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-d0d0d0);
   min-width: 2.5rem; text-align: center;
 }
 .outlets-btn {

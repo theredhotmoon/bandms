@@ -114,7 +114,7 @@ function cmd(action: () => void) {
 .tb-btn {
   display: flex; align-items: center; justify-content: center;
   min-width: 1.75rem; height: 1.75rem; padding: 0 0.25rem;
-  border-radius: 0.3rem; border: none; background: transparent;
+  border-radius: 0.25rem; border: none; background: transparent;
   color: var(--c-64748b); font-size: var(--fs-sm); cursor: pointer;
   transition: background 100ms, color 100ms;
 }

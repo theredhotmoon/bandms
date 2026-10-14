@@ -193,7 +193,7 @@ async function confirmDelete() {
 .contact-action { font-size: var(--fs-2xs); font-weight: 600; color: var(--c-34d399); text-decoration: none; }
 .contact-action:hover { text-decoration: underline; }
 .btn-message {
-  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: var(--fs-xs); font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 0.25rem; font-size: var(--fs-xs); font-weight: 600;
   background: var(--c-0f2a1e); border: 1px solid var(--c-166534); color: var(--c-34d399); cursor: pointer;
   margin-right: 0.375rem; transition: background 120ms;
 }

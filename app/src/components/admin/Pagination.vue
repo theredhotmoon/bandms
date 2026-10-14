@@ -90,7 +90,7 @@ const pages = computed<(number | '…')[]>(() => {
   justify-content: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   font-size: var(--fs-xs);
   color: var(--c-475569);
   cursor: pointer;
