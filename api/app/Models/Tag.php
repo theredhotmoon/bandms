@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Support\Locales;
 use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,22 +15,6 @@ class Tag extends Model
     public array $translatable = ['name', 'slug'];
 
     protected $fillable = ['name', 'slug'];
-
-    /**
-     * The name in every registered locale, blank as null: what the admin
-     * reads to name a tag in the band's first content language. One shape
-     * for every embed, so a hand-built one cannot drift from TagResource.
-     *
-     * @return array<string, string|null>
-     */
-    public function nameBag(): array
-    {
-        $names = $this->getTranslations('name');
-
-        return collect(Locales::codes())
-            ->mapWithKeys(fn (string $code) => [$code => ($names[$code] ?? null) ?: null])
-            ->all();
-    }
 
     public function posts(): BelongsToMany
     {

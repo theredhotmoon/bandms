@@ -66,3 +66,13 @@ export function tagNames(tag: TagNameSource): string[] {
   const values = [...Object.values(tag.translations?.name ?? {}), tag.name]
   return [...new Set(values.filter((v): v is string => !!v).map(v => v.toLowerCase()))]
 }
+
+/**
+ * Tags in the order a person reads them: by the name they are shown under,
+ * compared in the band's first language. The API sorts by the request
+ * language's name, so once pickers showed Polish names they came out in
+ * English alphabetical order — unsorted to the reader.
+ */
+export function sortTagsByLabel<T extends TagNameSource>(tags: readonly T[], order: readonly Lang[]): T[] {
+  return [...tags].sort((a, b) => tagLabel(a, order).localeCompare(tagLabel(b, order), order[0]))
+}

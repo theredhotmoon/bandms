@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { firstInOrder, tagLabel, tagNames, tagTerms } from './localeOrder'
+import { firstInOrder, sortTagsByLabel, tagLabel, tagNames, tagTerms } from './localeOrder'
 
 describe('firstInOrder', () => {
   it('reads the first language in the band order, not the default locale', () => {
@@ -54,5 +54,22 @@ describe('tagNames', () => {
       translations: { name: { en: 'Live', pl: 'Na żywo' }, slug: { en: 'live', pl: 'na-zywo' } },
     }
     expect(tagNames(tag).sort()).toEqual(['live', 'na żywo'])
+  })
+})
+
+describe('sortTagsByLabel', () => {
+  const tag = (en: string, pl: string) => ({ name: en, translations: { name: { en, pl } } })
+  const tags = [tag('Club', 'Klub'), tag('Festival', 'Festiwal'), tag('Acoustic', 'Akustyczny'), tag('Zine', 'Ćwiczenia')]
+
+  it('orders by the shown name in the band language, with its collation', () => {
+    expect(sortTagsByLabel(tags, ['pl', 'en']).map(t => tagLabel(t, ['pl', 'en'])))
+      .toEqual(['Akustyczny', 'Ćwiczenia', 'Festiwal', 'Klub'])
+    expect(sortTagsByLabel(tags, ['en', 'pl']).map(t => t.name)).toEqual(['Acoustic', 'Club', 'Festival', 'Zine'])
+  })
+
+  it('does not mutate its input', () => {
+    const before = tags.map(t => t.name)
+    sortTagsByLabel(tags, ['pl', 'en'])
+    expect(tags.map(t => t.name)).toEqual(before)
   })
 })

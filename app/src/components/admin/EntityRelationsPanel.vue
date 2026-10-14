@@ -62,7 +62,7 @@ const expanded = reactive<Record<SectionKey, boolean>>({
 const sections = computed<Section[]>(() => {
   const out: Section[] = []
   if (props.tags?.length) out.push({
-    key: 'tags', title: t('common.relations.tags'),
+    key: 'tags', title: t('common.relations.tags'), testid: 'relations-tags',
     items: props.tags.map(x => ({ id: x.id, label: tagName(x) })),
     ids: tagIds.value, set: v => (tagIds.value = v),
   })

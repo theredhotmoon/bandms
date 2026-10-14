@@ -26,8 +26,8 @@ describe('GET /api/press-releases', function () {
 
     // The admin names a tag in the band's first content language, which needs
     // every language: `name` alone is resolved for the request language, so a
-    // Polish-first band saw English chips on the press list. The hand-built
-    // embed now carries the same `translations.name` bag as TagResource.
+    // Polish-first band saw English chips on the press list. Tags embed
+    // through TagResource, which carries the `translations.name` bag.
     it("embeds every language of each tag's name", function () {
         $tag = Tag::factory()->create(['name' => ['en' => 'Live', 'pl' => 'Na żywo'], 'slug' => ['en' => 'live']]);
         $release = PressRelease::create(['profile_id' => 1, 'url' => 'https://example.com', 'published_at' => '2025-01-01']);

@@ -2,7 +2,7 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createTag, deleteTag, fetchTags, updateTag } from '@/api/tags'
 import type { Tag, TagPayload } from '@/types/tag'
-import { tagLabel, tagTerms } from '@/utils/localeOrder'
+import { sortTagsByLabel, tagLabel, tagTerms } from '@/utils/localeOrder'
 import { useAuth } from './useAuth'
 import { useContentLocaleOrder } from './useContentLocales'
 
@@ -10,7 +10,17 @@ export function useTags() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
 
-  const query = useQuery<Tag[]>({ queryKey: ['tags'], queryFn: fetchTags })
+  const order = useContentLocaleOrder()
+
+  // Every picker reads this list, so it is sorted here, by the name each tag
+  // is shown under (tagLabel) — not in the API's request-language order. A
+  // computed `select` is a new function when the band's order changes, so
+  // the cached list re-sorts without a refetch.
+  const query = useQuery<Tag[]>({
+    queryKey: ['tags'],
+    queryFn: fetchTags,
+    select: computed(() => (tags: Tag[]) => sortTagsByLabel(tags, order.value)),
+  })
 
   const create = useMutation({
     mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
