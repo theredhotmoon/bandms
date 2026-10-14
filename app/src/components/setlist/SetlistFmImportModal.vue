@@ -205,7 +205,7 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), date
 
 <style scoped>
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+  position: fixed; inset: 0; background: var(--scrim); z-index: 100;
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .modal-card {
@@ -286,7 +286,7 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), date
 }
 
 .btn-import {
-  padding: 0.5rem 1.25rem; border-radius: 0.45rem; font-size: var(--fs-sm); font-weight: 700;
+  padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 700;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   align-self: flex-end; transition: background 100ms;
 }

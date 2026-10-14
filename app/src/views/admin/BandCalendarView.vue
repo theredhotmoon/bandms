@@ -172,7 +172,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   margin-bottom: 1.25rem;
 }
 .legend-item { display: flex; align-items: center; gap: 0.4rem; }
-.legend-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-dot  { width: 10px; height: 10px; border-radius: 0.25rem; flex-shrink: 0; }
 .legend-name { font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0); }
 .legend-role { font-size: var(--fs-2xs); color: var(--c-64748b); }
 
@@ -219,7 +219,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   background: var(--c-888888-line) !important; border-color: var(--c-888888-line) !important;
 }
 :deep(.fc-toolbar-title) { font-size: var(--fs-lg) !important; font-weight: 700 !important; color: var(--c-f1f5f9) !important; }
-:deep(.fc-event) { cursor: pointer; border-radius: 3px !important; border: none !important; font-size: var(--fs-xs) !important; }
+:deep(.fc-event) { cursor: pointer; border-radius: 0.25rem !important; border: none !important; font-size: var(--fs-xs) !important; }
 :deep(.fc-list-event:hover td) { background: var(--c-1a1a1a) !important; }
 :deep(.fc-list-day-cushion) { background: var(--c-141414) !important; }
 :deep(.fc-list-day-text), :deep(.fc-list-day-side-text) { color: var(--c-94a3b8) !important; text-decoration: none; }
@@ -234,13 +234,13 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 /* ── Event modal ───────────────────────────────────────────── */
 .ev-backdrop {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.6);
+  background: var(--scrim);
   display: flex; align-items: center; justify-content: center;
   padding: 1rem;
 }
 .ev-modal {
   background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.875rem; width: 100%; max-width: 420px;
+  border-radius: 0.75rem; width: 100%; max-width: 420px;
   overflow: hidden; display: flex; flex-direction: column;
 }
 .ev-accent { height: 4px; }

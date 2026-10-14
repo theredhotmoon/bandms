@@ -123,7 +123,7 @@ defineEmits<{
 .rider-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
 .act-btn {
   background: none; border: none; cursor: pointer; color: var(--c-334155); font-size: var(--fs-2xs);
-  padding: 0.2rem 0.35rem; border-radius: 3px; transition: color 100ms, background 100ms;
+  padding: 0.2rem 0.35rem; border-radius: 0.25rem; transition: color 100ms, background 100ms;
 }
 .act-btn:hover { color: var(--c-c0c0c0); background: var(--c-2a2a2a); }
 .act-btn--del:hover { color: var(--c-f87171); background: var(--c-450a0a); }

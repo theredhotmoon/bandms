@@ -218,7 +218,7 @@ function revertActive() {
 .inherit-text { font-size: var(--fs-xs); color: var(--c-64748b); }
 .inherit-bar--changed .inherit-text { color: var(--c-fbbf24); }
 .btn-revert {
-  padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 600;
+  padding: 0.2rem 0.6rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; background: transparent; border: 1px solid var(--c-4d3c10); color: var(--c-fbbf24);
   white-space: nowrap; transition: background 100ms;
 }

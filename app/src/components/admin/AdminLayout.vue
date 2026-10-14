@@ -405,7 +405,7 @@ watch(() => route.path, (path) => {
   z-index: 45;
   border: none;
   padding: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--scrim);
   cursor: pointer;
 }
 

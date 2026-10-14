@@ -163,7 +163,7 @@ function dateRange(tour: TourSummary): string {
 }
 .concerts-pill {
   display: inline-block; min-width: 1.5rem; text-align: center;
-  padding: 0.1rem 0.4rem; border-radius: 0.3rem;
+  padding: 0.1rem 0.4rem; border-radius: 0.25rem;
   background: var(--c-222222); border: 1px solid var(--c-333333);
   font-size: var(--fs-2xs); font-weight: 600; color: var(--c-64748b);
 }

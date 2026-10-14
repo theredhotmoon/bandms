@@ -478,7 +478,7 @@ async function discardVersion(id: number) {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.75rem; text-align: center; padding: 2rem; color: var(--c-475569); font-size: var(--fs-base);
 }
-.empty-icon { font-size: 3rem; }
+.empty-icon { font-size: var(--fs-glyph); }
 .empty-title { font-size: var(--fs-lg); font-weight: 700; color: var(--c-e2e8f0); }
 .empty-hint { max-width: 28rem; }
 .btn-primary-lg {
@@ -507,7 +507,7 @@ async function discardVersion(id: number) {
 .concert-select {
   height: 1.6rem; font-size: var(--fs-xs); padding: 0 0.4rem; max-width: 16rem;
   background: var(--c-0d0d0d); border: 1px solid var(--c-2a2a2a); color: var(--c-94a3b8);
-  border-radius: 0.3rem; cursor: pointer; outline: none; font-family: inherit;
+  border-radius: 0.25rem; cursor: pointer; outline: none; font-family: inherit;
 }
 .concert-select:focus { border-color: var(--c-444444); }
 .concert-select option { background: var(--c-0d0d0d); }

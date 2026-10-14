@@ -361,12 +361,12 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 .sidebar-actions { display: flex; gap: 0.35rem; align-items: center; }
 .btn-import-fm {
   font-size: var(--fs-2xs); font-weight: 600; color: var(--c-c0c0c0); padding: 0.2rem 0.45rem;
-  background: var(--c-2a2a2a); border: 1px solid var(--c-444444); border-radius: 0.3rem;
+  background: var(--c-2a2a2a); border: 1px solid var(--c-444444); border-radius: 0.25rem;
   cursor: pointer; transition: background 100ms;
 }
 .btn-import-fm:hover { background: var(--c-333333); }
 .btn-new-icon {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem;
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-c0c0c0);
   font-size: var(--fs-base); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
@@ -376,12 +376,12 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   display: flex; gap: 0.3rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--c-1a1a1a);
 }
 .new-input {
-  flex: 1; background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.3rem;
+  flex: 1; background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.25rem;
   color: var(--c-e2e8f0); font-size: var(--fs-xs); padding: 0.3rem 0.5rem; outline: none; font-family: inherit;
 }
 .new-input:focus { border-color: var(--c-888888-line); }
 .btn-create {
-  padding: 0.25rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-xs); font-weight: 600;
+  padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
 }
 .btn-create:disabled { opacity: 0.4; cursor: default; }
@@ -404,7 +404,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 .meta-gig { color: var(--c-475569) !important; }
 .meta-preset {
   font-size: var(--fs-2xs) !important; font-weight: 700; color: var(--c-888888) !important;
-  background: var(--c-2a2a2a); border: 1px solid var(--c-444444); border-radius: 0.2rem;
+  background: var(--c-2a2a2a); border: 1px solid var(--c-444444); border-radius: 0.25rem;
   padding: 0.05rem 0.3rem;
 }
 .del-btn {
@@ -418,7 +418,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.5rem; text-align: center; padding: 2rem;
 }
-.empty-icon  { font-size: 2.5rem; }
+.empty-icon  { font-size: var(--fs-glyph); }
 .empty-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }
 .empty-hint  { font-size: var(--fs-sm); color: var(--c-475569); max-width: 24rem; line-height: 1.6; }
 
@@ -459,7 +459,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 .btn-del:hover { background: var(--c-450a0a); }
 
 .song-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+  position: fixed; inset: 0; background: var(--scrim); z-index: 100;
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .song-modal {
@@ -496,7 +496,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
 .btn-save-song:disabled { opacity: 0.4; cursor: default; }
 
 .confirm-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200;
+  position: fixed; inset: 0; background: var(--scrim); z-index: 200;
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {

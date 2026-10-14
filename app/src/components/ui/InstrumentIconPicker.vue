@@ -214,7 +214,7 @@ onBeforeUnmount(() => {
             @click="select(def.type)"
           >
             <InstrumentIcon :type="def.type" :size="24" />
-            <span class="w-full truncate text-center text-[9px] leading-tight">{{ instNames[def.type] }}</span>
+            <span class="w-full truncate text-center text-[length:var(--fs-2xs)] leading-tight">{{ instNames[def.type] }}</span>
           </button>
         </div>
       </div>

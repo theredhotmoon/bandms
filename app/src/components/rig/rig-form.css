@@ -61,7 +61,7 @@
 .btn-add:hover { background: var(--c-1a1a1a); border-color: var(--c-444444); }
 
 .btn-remove {
-  padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 500;
+  padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 500;
   cursor: pointer; background: transparent; border: 1px solid transparent; color: var(--c-475569);
   transition: color 100ms, background 100ms;
 }

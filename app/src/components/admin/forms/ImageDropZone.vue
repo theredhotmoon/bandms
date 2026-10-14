@@ -112,7 +112,7 @@ defineExpose({ clear })
 <style scoped>
 .drop-zone {
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 10px;
+  border-radius: 0.75rem;
   padding: 1.5rem;
   text-align: center;
   cursor: pointer;
@@ -124,7 +124,7 @@ defineExpose({ clear })
   background: var(--c-0e0c2a);
 }
 .drop-zone.active, .drop-zone:hover { border-color: var(--c-888888-line); background: var(--c-1a1a1a); }
-.drop-icon  { font-size: 1.5rem; line-height: 1; }
+.drop-icon  { font-size: var(--fs-glyph-sm); line-height: 1; }
 .drop-label { font-size: var(--fs-base); font-weight: 600; color: var(--c-d0d0d0); }
 .drop-hint  { font-size: var(--fs-xs); color: var(--c-475569); }
 

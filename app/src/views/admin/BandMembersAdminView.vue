@@ -372,7 +372,7 @@ async function confirmDelete() {
   letter-spacing: 0.07em;
 }
 .btn-new {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem;
   background: var(--c-2a2a2a); border: 1px solid var(--c-444444); color: var(--c-c0c0c0);
   font-size: var(--fs-base); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -438,7 +438,7 @@ async function confirmDelete() {
   align-items: center; justify-content: center; gap: 0.625rem;
   text-align: center; padding: 2rem;
 }
-.empty-icon  { font-size: 2.75rem; }
+.empty-icon  { font-size: var(--fs-glyph); }
 .empty-title { font-size: var(--fs-md); font-weight: 700; color: var(--c-e2e8f0); }
 .empty-hint  { font-size: var(--fs-sm); color: var(--c-475569); max-width: 22rem; }
 

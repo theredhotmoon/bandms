@@ -31,6 +31,16 @@
   --track-title: -0.015em;
 
   --font-sans: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  /* Codes a person reads character by character — the door-check ticket
+     input, slugs, URLs — where 0/O and 1/l must not collide. The one
+     exception to the One Face Rule in DESIGN.md: a system stack, never prose.
+     Tailwind's `font-mono` utility reads this same variable. */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Decorative emoji glyphs (empty states, drop zones). They are pictures, so
+     they sit outside the type ramp — but on two fixed sizes, not one per view. */
+  --fs-glyph: 2.5rem;
+  --fs-glyph-sm: 1.5rem;
 }
 
 /* ── Global reset / base ─────────────────────────── */
@@ -74,7 +84,7 @@ body {
 /* ── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(18,18,18,.3); border-radius: 0.25rem; }
 
 /* ── Native controls in the admin shell ─────────── */
 /* Preflight makes a <select> inherit the shell's text colour while the OS draws

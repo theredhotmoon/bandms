@@ -507,7 +507,7 @@ select.field-input {
 .concert-info { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
 .concert-info-chip {
   font-size: var(--fs-2xs); color: var(--c-d0d0d0); background: var(--c-2a2a2a);
-  border: 1px solid var(--c-444444); border-radius: 0.3rem; padding: 0.15rem 0.5rem;
+  border: 1px solid var(--c-444444); border-radius: 0.25rem; padding: 0.15rem 0.5rem;
 }
 .preset-note {
   font-size: var(--fs-2xs); color: var(--c-334155); margin-top: 0.2rem; font-style: italic;
@@ -533,18 +533,18 @@ select.field-input {
 .song-badges { display: flex; gap: 0.25rem; flex-shrink: 0; }
 .badge-encore {
   font-size: var(--fs-2xs); font-weight: 700; color: var(--c-c0c0c0);
-  background: var(--c-2a2a2a); border-radius: 0.2rem; padding: 0.1rem 0.3rem;
+  background: var(--c-2a2a2a); border-radius: 0.25rem; padding: 0.1rem 0.3rem;
 }
 .badge-transition {
   font-size: var(--fs-2xs); color: var(--c-475569); background: var(--c-141414);
-  border: 1px solid var(--c-2a2a2a); border-radius: 0.2rem; padding: 0.1rem 0.3rem;
+  border: 1px solid var(--c-2a2a2a); border-radius: 0.25rem; padding: 0.1rem 0.3rem;
 }
 .badge-cue { font-size: var(--fs-2xs); }
 .song-dur { font-size: var(--fs-2xs); color: var(--c-334155); width: 2.5rem; text-align: right; flex-shrink: 0; }
 .song-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
 
 .btn-icon {
-  width: 1.5rem; height: 1.5rem; border-radius: 0.3rem; border: 1px solid var(--c-2a2a2a);
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; border: 1px solid var(--c-2a2a2a);
   background: transparent; color: var(--c-475569); cursor: pointer; font-size: var(--fs-2xs);
   display: flex; align-items: center; justify-content: center; transition: all 100ms;
 }
@@ -585,7 +585,7 @@ select.field-input {
 .add-song-list { max-height: 12rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.2rem; }
 .add-song-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.35rem 0.5rem; border-radius: 0.3rem; background: var(--c-0a0a0a);
+  padding: 0.35rem 0.5rem; border-radius: 0.25rem; background: var(--c-0a0a0a);
   border: 1px solid transparent; cursor: pointer; text-align: left; font-size: var(--fs-sm); color: var(--c-e2e8f0);
   transition: border-color 100ms;
 }
@@ -623,7 +623,7 @@ select.field-input {
   display: flex; justify-content: flex-end; background: var(--c-0d0d0d); flex-shrink: 0;
 }
 .btn-save {
-  padding: 0.4rem 1.1rem; border-radius: 0.45rem; font-size: var(--fs-sm); font-weight: 600;
+  padding: 0.4rem 1.1rem; border-radius: 0.5rem; font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; background: var(--c-e8e8e8); border: none; color: var(--c-111111);
   transition: background 150ms; min-width: 6rem;
 }
@@ -632,7 +632,7 @@ select.field-input {
 .btn-save--ok { background: var(--c-166534) !important; color: var(--c-dcfce7); }
 
 .confirm-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 50;
+  position: fixed; inset: 0; background: var(--scrim); z-index: 50;
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {

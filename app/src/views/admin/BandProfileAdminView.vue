@@ -649,7 +649,7 @@ async function saveSocialLinks() {
 .bio-tab.has-error.active { border-bottom-color: var(--c-f87171); }
 .bio-lang-switcher { display: flex; gap: 0.25rem; padding-bottom: 0.25rem; }
 .bio-lang-btn {
-  padding: 0.2rem 0.625rem; border-radius: 0.3rem; font-size: var(--fs-2xs); font-weight: 700;
+  padding: 0.2rem 0.625rem; border-radius: 0.25rem; font-size: var(--fs-2xs); font-weight: 700;
   letter-spacing: 0.05em; cursor: pointer; border: 1px solid var(--c-2a2a2a);
   background: transparent; color: var(--c-475569);
   transition: background 100ms, border-color 100ms, color 100ms;

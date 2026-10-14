@@ -535,11 +535,11 @@ function handleSubmit() {
 .lyrics-textarea {
   width: 100%; background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.375rem;
   color: var(--c-e2e8f0); font-size: var(--fs-sm); padding: 0.5rem 0.625rem; outline: none;
-  font-family: 'Courier New', monospace; line-height: 1.6; resize: vertical;
+  line-height: 1.6; resize: vertical;
   transition: border-color 150ms, box-shadow 150ms;
 }
 .lyrics-textarea:focus {
-  border-color: var(--c-888888-line);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); /* token-lint-ignore: indigo focus glow, same on both themes */
+  border-color: var(--c-aaaaaa-line);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent);
 }
 </style>

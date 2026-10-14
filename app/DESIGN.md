@@ -32,6 +32,8 @@ colors:
   danger-ground: "#2d1212"
   info: "#60a5fa"
   info-ground: "#1e3a5f"
+  # Theme-neutral: black in both themes (--scrim in src/admin-palette.css).
+  scrim: "rgba(0, 0, 0, 0.6)"
 typography:
   display:
     fontFamily: "'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif"
@@ -66,6 +68,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.4
     letterSpacing: "0.08em"
+  code:
+    # The one sanctioned second stack — see The One Face Rule. Codes only.
+    fontFamily: "ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: 1
 rounded:
   xs: "0.25rem"
   sm: "0.375rem"
@@ -233,7 +241,7 @@ to type.
 
 **Display Font:** Archivo Variable (self-hosted via `@fontsource-variable/archivo`; fallback ui-sans-serif, system-ui)
 **Body Font:** Archivo Variable (same family)
-**Label/Mono Font:** none — tabular figures come from `font-variant-numeric: tabular-nums lining-nums`, not a monospace face.
+**Label/Mono Font:** none for text — tabular figures come from `font-variant-numeric: tabular-nums lining-nums`, not a monospace face. The single exception is `--font-mono` (a system stack) for *codes*; see The One Face Rule.
 
 **Character:** One grotesk at every size. Archivo's tall x-height carries 13–14px UI text comfortably, which is why the dense rows sit at 1.4 leading rather than 1.5; its wide counters let 11px uppercase labels stay legible at 0.08em tracking. Headings tighten to −0.015em so the bold weight does not splay.
 
@@ -249,10 +257,12 @@ All sizes are the `--fs-*` role tokens in `src/style.css`; scoped styles referen
 - **Small** (12px / `--fs-xs`): hints, secondary labels, row-button text, field labels at 600.
 - **Label** (700, 11px / `--fs-2xs`, uppercase, 0.08em / `--track-caps`): nav-group headers, column headers, badges, metadata captions. The floor — nothing renders smaller.
 
+Decorative emoji are pictures, not type, so they sit outside the ramp — but on two fixed sizes rather than one per view: `--fs-glyph` (2.5rem, empty-state icons) and `--fs-glyph-sm` (1.5rem, drop zones and in-widget placeholders). Never use them for letters or figures; a big number is Display.
+
 ### Named Rules
 **The Eleven Pixel Floor Rule.** `--fs-2xs` (11px) is the smallest size in the panel. A design that needs smaller text needs less text.
 
-**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family.
+**The One Face Rule.** No display pairing, no monospace costume. Hierarchy comes from weight (400 / 500 / 600 / 700) and the fixed rem scale, not from a second family. The one exception is `--font-mono`, and only for strings a person reads character by character where 0/O and 1/l must not collide — the door-check ticket code, slugs, URLs. Lyrics, generated pitches and other prose stay in Archivo (a `<pre>` needs `font-family: inherit`, or Tailwind's preflight hands it the mono stack).
 
 **The Tabular Rule.** Tables, stat figures and anything with `.tabular-nums` use lining tabular numerals so dates and counts align in columns.
 
@@ -295,23 +305,25 @@ one place the system uses a shadow to say "this takes input".
 Shadows appear only where something floats above the page:
 
 ### Shadow Vocabulary
-- **Modal panel** (`box-shadow: 0 24px 64px rgba(0,0,0,0.6)`): the dialog, over a `rgba(0,0,0,.65)` backdrop with `backdrop-filter: blur(4px)`.
+- **Modal panel** (`box-shadow: 0 24px 64px rgba(0,0,0,0.6)`): the dialog, over a `var(--scrim)` backdrop with `backdrop-filter: blur(4px)`.
+- **Scrim** (`--scrim`, `rgba(0,0,0,0.6)` in both themes): every full-screen backdrop — modals, the phone drawer, confirm dialogs. One value; it used to drift between 0.55 and 0.7 per view.
+- **Floating popover** (`--shadow-float`, `0 8px 24px rgba(0,0,0,0.45)`): a panel laid *over* other content and dismissed by an outside click — the rebuild-settings popover, the photo tag picker, the stage-plot placement menu.
 - **Phone drawer** (`box-shadow: 0 12px 40px rgba(0,0,0,0.45)`): the sidebar when it slides in below 1024px.
 - **Focus halo** (`0 0 0 3px color-mix(in srgb, var(--c-ffffff) 16%, transparent)`): inputs on focus and the primary button on hover — a translucent ring in the theme's Ink Max, so it reads in both themes.
 
 ### Named Rules
 **The Flat-At-Rest Rule.** No card, table, input or button carries a drop shadow at rest. If two surfaces need separating, step the tone or draw a hairline.
 
-**The Only-Floating-Things-Cast Rule.** A shadow means the element is above the page and can be dismissed. Modals and the drawer qualify; dropdown-like panels inside the page do not.
+**The Only-Floating-Things-Cast Rule.** A shadow means the element is above the page and can be dismissed. Modals, the drawer and the floating popovers above qualify; a panel that sits in the page flow and pushes content aside does not.
 
 ## Shapes
 
 Gently rounded, with the radius tracking the element's size: 0.25rem on
 badges and checkbox rows, 0.375rem on nav items, row buttons and the modal
 close, 0.5rem on inputs, primary and ghost buttons, 0.75rem on cards, table
-cards and the modal panel, and a full pill on avatars and the pending badge.
+cards, drop zones and the modal panel, and a full pill on avatars, the pending badge and progress bars. Those five are the whole scale — an in-between value (0.3rem, 5px, 10px) is drift, not a choice.
 Borders are 1px Hairline or Control-border; nothing uses a thicker stroke, and
-no element carries a coloured side border — the active nav item's indicator is
+no card carries a thick or coloured side border (a blockquote's quote rule inside rich text is typography, not a card accent) — the active nav item's indicator is
 a 2px *inset* box-shadow in Ink Max, not a border. Containers clip their
 children (`overflow: hidden`) so a header row or a stat cell never pokes past
 the rounded corner.

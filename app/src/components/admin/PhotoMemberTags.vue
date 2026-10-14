@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
   /* Fixed at the button's top-right corner (set in script), opening up-left. */
   position: fixed; transform: translate(-100%, -100%); z-index: 60; min-width: 12rem; max-height: 16rem; overflow-y: auto;
   padding: 0.5rem; border-radius: 0.5rem; background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-float);
 }
 .pmt-title { margin: 0 0 0.35rem; font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-64748b); }
 .pmt-empty { margin: 0; font-size: var(--fs-xs); color: var(--c-94a3b8); }

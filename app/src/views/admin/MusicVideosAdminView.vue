@@ -426,7 +426,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 
 .btn-preview {
   padding: 0.25rem 0.5rem;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   font-size: var(--fs-xs);
   font-weight: 500;
   background: var(--c-0f2a1e);

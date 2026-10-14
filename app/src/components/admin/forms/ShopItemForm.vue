@@ -504,7 +504,7 @@ function handleSubmit() {
 
 .vbtn {
   padding: 0.25rem 0.55rem;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   font-size: var(--fs-xs);
   font-weight: 600;
   cursor: pointer;

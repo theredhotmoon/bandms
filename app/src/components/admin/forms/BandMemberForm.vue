@@ -411,7 +411,7 @@ function submit() {
   width: 100%; height: 100%;
   background: var(--c-2a2a2a); color: var(--c-c0c0c0);
   display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; font-weight: 700;
+  font-size: var(--fs-2xl); font-weight: 700;
 }
 .aside-drop {
   border: 1.5px dashed var(--c-2a2a2a); border-radius: 0.5rem;

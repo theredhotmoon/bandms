@@ -703,7 +703,7 @@ function cardBorderClass(item: StagePlacement): string {
       <div
         v-if="warnPending"
         class="fixed inset-0 z-50 flex items-center justify-center"
-        style="background: rgba(0,0,0,0.6)"
+        style="background: var(--scrim)"
       >
         <div class="bg-zinc-900 border border-amber-700/50 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
           <div class="flex items-center gap-3 mb-4">
@@ -766,7 +766,7 @@ function cardBorderClass(item: StagePlacement): string {
       <div
         v-if="qrItemId"
         class="fixed inset-0 z-50 flex items-center justify-center"
-        style="background: rgba(0,0,0,0.7)"
+        style="background: var(--scrim)"
         @click.self="qrItemId = null"
       >
         <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-72 flex flex-col items-center gap-4 shadow-2xl">

@@ -275,7 +275,7 @@ onUnmounted(() => {
   border-radius: 6px;
   color: var(--c-e2e8f0);
   padding: 10px 14px;
-  font: 600 14px/1 'Courier New', monospace;
+  font: 600 var(--fs-base)/1 var(--font-mono);
   letter-spacing: .06em;
 }
 .code-input:focus { outline: 2px solid var(--c-3b82f6); border-color: transparent; }
@@ -305,7 +305,7 @@ onUnmounted(() => {
 
 .result-card {
   border: 2px solid;
-  border-radius: 10px;
+  border-radius: 0.75rem;
   padding: 20px;
   background: var(--c-0d0d0d);
   display: flex;
@@ -351,7 +351,7 @@ onUnmounted(() => {
 
 .btn-scan {
   padding: 12px 20px;
-  border-radius: 7px;
+  border-radius: 0.5rem;
   font: 700 15px/1 system-ui;
   background: var(--c-14532d);
   color: var(--c-4ade80);
