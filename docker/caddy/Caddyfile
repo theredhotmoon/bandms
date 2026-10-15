@@ -153,3 +153,22 @@
 		reverse_proxy epr-edge:80
 	}
 }
+
+# ── MoveSetter (a separate project on this host, /opt/movesetter) ───────────
+# Same pattern as the EPR block: off until MOVESETTER_SITE_ADDRESS is set, and
+# while off every request to the placeholder host is aborted so a forged Host
+# header cannot reach the stack over plain HTTP. movesetter-proxy is that
+# project's own nginx ingress on the shared `edge` network — its only service
+# there, and uniquely named, so no `backend`/`app` name collision is possible.
+# reverse_proxy carries WebSocket upgrades (Reverb on /broadcasting) as-is.
+{$MOVESETTER_SITE_ADDRESS:http://movesetter.localhost} {
+	@disabled expression `"{$MOVESETTER_SITE_ADDRESS:http://movesetter.localhost}" == "http://movesetter.localhost"`
+	handle @disabled {
+		abort
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy movesetter-proxy:80
+	}
+}

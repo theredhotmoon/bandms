@@ -25,6 +25,9 @@ services:
       # "178-104-25-255.sslip.io". Unset keeps that site off (see the
       # Caddyfile). Deploy-managed from the EPR_SITE_ADDRESS secret.
       EPR_SITE_ADDRESS: "${EPR_SITE_ADDRESS:-http://epr.localhost}"
+      # The hostname Caddy serves the MoveSetter stack on. Unset keeps that site off.
+      # Deploy-managed from the MOVESETTER_SITE_ADDRESS secret.
+      MOVESETTER_SITE_ADDRESS: "${MOVESETTER_SITE_ADDRESS:-http://movesetter.localhost}"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./docker/caddy/maintenance:/usr/share/caddy/maintenance:ro
