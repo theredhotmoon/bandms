@@ -523,7 +523,7 @@ select.field-input {
 .song-list { display: flex; flex-direction: column; gap: 0.3rem; padding: 0 1rem; flex-shrink: 0; }
 .empty-songs { font-size: var(--fs-xs); color: var(--c-334155); text-align: center; padding: 1.5rem 0; }
 
-.song-card { background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; overflow: hidden; }
+.song-card { background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem; overflow: hidden; }
 .song-card--encore { border-color: var(--c-444444); }
 
 .song-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; }

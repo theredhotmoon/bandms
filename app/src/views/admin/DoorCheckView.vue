@@ -362,7 +362,7 @@ onUnmounted(() => {
 .btn-scan:hover:not(:disabled) { background: var(--c-166534); }
 .btn-scan:disabled { opacity: .6; cursor: default; }
 
-.scan-log { border: 1px solid var(--c-1f1f1f); border-radius: 8px; overflow: hidden; }
+.scan-log { border: 1px solid var(--c-1f1f1f); border-radius: 0.75rem; overflow: hidden; }
 .log-header {
   padding: 8px 12px; font-size: var(--fs-2xs); font-weight: 700;
   text-transform: uppercase; letter-spacing: .07em;

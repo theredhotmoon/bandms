@@ -511,7 +511,7 @@ async function confirmDelete() {
   padding: 2px;
 }
 .photo-item {
-  background:var(--c-0e0c2a); border:1px solid var(--c-333333); border-radius:8px;
+  background:var(--c-0e0c2a); border:1px solid var(--c-333333); border-radius:0.75rem;
   overflow:hidden; cursor:grab; position:relative;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
