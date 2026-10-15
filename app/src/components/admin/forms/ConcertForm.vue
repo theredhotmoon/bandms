@@ -639,7 +639,7 @@ function submit() {
 .venue-card {
   margin-top: 0.625rem;
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   background: var(--c-141414);
 }

@@ -612,7 +612,7 @@ const TYPE_COLOURS: Record<string, string> = {
 }
 .rp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; }
 .rp-card {
-  position: relative; border: 1px solid var(--c-222222); border-radius: 6px; overflow: hidden;
+  position: relative; border: 1px solid var(--c-222222); border-radius: 0.75rem; overflow: hidden;
   cursor: grab; background: var(--c-141414); transition: opacity 0.15s;
 }
 .rp-card:active { cursor: grabbing; }

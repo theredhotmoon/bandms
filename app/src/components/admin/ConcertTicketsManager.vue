@@ -323,7 +323,7 @@ function fmtPrice(price: number, currency: string): string {
 .tkm-state.err { color: var(--c-f87171); }
 
 .type-list { display: flex; flex-direction: column; gap: 8px; }
-.type-card { border: 1px solid var(--c-2a2a2a); border-radius: 6px; overflow: hidden; }
+.type-card { border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem; overflow: hidden; }
 .type-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 12px; background: var(--c-1a1a1a); gap: 10px; }
 .type-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .type-name { font: 600 var(--fs-sm)/1 var(--font-sans); color: var(--c-e2e8f0); }
@@ -347,7 +347,7 @@ function fmtPrice(price: number, currency: string): string {
 .btn-add-tier { padding: 5px 12px; font-size: var(--fs-2xs); color: var(--c-94a3b8); background: transparent; border: none; cursor: pointer; text-align: left; }
 .btn-add-tier:hover { color: var(--c-e2e8f0); }
 
-.form-panel { border: 1px solid var(--c-2a2a2a); border-radius: 8px; padding: 16px; background: var(--c-111111); margin-top: 4px; display: flex; flex-direction: column; gap: 10px; }
+.form-panel { border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem; padding: 16px; background: var(--c-111111); margin-top: 4px; display: flex; flex-direction: column; gap: 10px; }
 .form-title { font: 600 var(--fs-sm)/1 var(--font-sans); color: var(--c-e2e8f0); margin-bottom: 2px; }
 .field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .field-row { display: flex; gap: 10px; }
