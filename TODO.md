@@ -454,3 +454,31 @@ present on the one artifact the fan keeps. `api/resources/views/tickets/pdf.blad
 hardcodes "Venue", "Date" and "Holder" anyway, so fixing the link alone buys
 nothing: this needs the Blade template translated first, then `?lang=` appended
 at the four call sites.
+
+### MoveSetter site block in this Caddy — remove when MoveSetter leaves this host
+Added 2026-10-15 in PR #196. This Caddy owns ports 80/443 on the shared Hetzner
+VPS, so the MoveSetter stack (separate repository `movesetters/movesetters`,
+deployed to `/opt/movesetter`) has no way to get HTTPS or WebSockets except
+through a site block here — the same arrangement EPR already uses. The block is
+gated on `MOVESETTER_SITE_ADDRESS` and aborts every request while that is unset,
+so it costs nothing until the secret is set. See "MoveSetter on this Caddy" in
+`docs/deployment.md`.
+
+It stays only as long as MoveSetter runs on this host behind this Caddy. Remove
+it when MoveSetter moves elsewhere, gets its own TLS terminator, or the host-level
+proxy is split out of bandms into a stack shared by all three projects. Removal
+is the exact inverse of #196, five files, nothing else depends on it:
+
+1. `docker/caddy/Caddyfile` — delete the `{$MOVESETTER_SITE_ADDRESS:...}` site block.
+2. `docker-compose.prod.yml` — delete the `MOVESETTER_SITE_ADDRESS` line under the
+   caddy service's `environment`.
+3. `.github/workflows/deploy.yml` — remove `MOVESETTER_SITE_ADDRESS` from the deploy
+   job's `env`, the `envs:` list, the `sync_secret_env` call and the `unset` line.
+4. `.env.prod.example` and `docs/deployment.md` — drop the variable and the
+   "MoveSetter on this Caddy" section.
+5. Delete the `MOVESETTER_SITE_ADDRESS` GitHub secret; the next deploy removes the
+   line from `/opt/bandms/.env` on its own (`sync_secret_env` with an empty value).
+
+Do not remove it while the secret is still set and MoveSetter is still deployed
+here: the next bandms deploy would recreate Caddy without the block and take the
+MoveSetter site down with no error anywhere in this repository.
