@@ -5,7 +5,7 @@
  * The radius scale is xs/sm/md/lg (0.25/0.375/0.5/0.75rem) and the role picks
  * the step: cards, table cards, drop zones and the modal panel take lg. Every
  * value here is on the scale, so a card at 6px or 0.5rem looks deliberate in
- * review — that is how nine cards and five card-like containers drifted to
+ * review — that is how nine cards and seven card-like containers drifted to
  * the input/button radius while the rest stayed at 0.75rem.
  *
  * What counts as a card rule, and which corners count as 0.75rem, is
@@ -46,6 +46,8 @@ const OPTION_TILES = {
 /** Card surfaces whose class does not say so — paths relative to src/. */
 const CONTAINERS = {
   'components/admin/ConcertTicketsManager.vue': ['form-panel'],
+  'components/admin/EntityRelationsPanel.vue': ['assoc-sections'],
+  'components/admin/forms/PostBlockEditor.vue': ['block-row'],
   'components/admin/forms/PressReleaseForm.vue': ['og-preview'],
   'components/admin/forms/ReleaseForm.vue': ['track-block'],
   'views/admin/DoorCheckView.vue': ['scan-log'],

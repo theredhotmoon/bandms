@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-10-15 (card corners)
 
 ### Fixed
-- **Every admin card has the same rounded corner**: ticket types and the ticket form, photo tiles, upload previews, release and merch picture cards, the venue card on a concert, gear and rig items, setlist songs, the video details card, the press-release preview, release tracks and the door-check log now use the 0.75rem corner DESIGN.md gives cards, like the dashboard widgets and tables already did. They had drifted to the smaller input and button corners. A build check now stops a card drifting again.
+- **Every admin card has the same rounded corner**: ticket types and the ticket form, photo tiles, upload previews, release and merch picture cards, the venue card on a concert, gear and rig items, setlist songs, the video details card, the press-release preview, release tracks, the door-check log, post content blocks, the related-items panel, hero-image tiles and page-copy groups now use the 0.75rem corner DESIGN.md gives cards, like the dashboard widgets and tables already did. They had drifted to the smaller input and button corners. A build check now stops a card drifting again.
 
 ## [Unreleased] — 2026-10-14 (tags list language)
 

@@ -159,7 +159,7 @@ function summary(section: Section): string {
 <style scoped>
 .assoc-sections {
   display: flex; flex-direction: column; gap: 0;
-  border: 1px solid var(--c-222222); border-radius: 0.5rem; overflow: hidden;
+  border: 1px solid var(--c-222222); border-radius: 0.75rem; overflow: hidden;
 }
 .assoc-title {
   font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
