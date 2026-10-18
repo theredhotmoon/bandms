@@ -91,6 +91,17 @@ const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)<\/style>/g
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
 
 /**
+ * The stylesheet text in one file: the whole of a .css file, or each <style>
+ * block of a .vue file, as [{ css, base }] where `base` is the offset of
+ * `css` within `source` — so a scanner can map a hit back to a line number.
+ * Shared with radius-scan.mjs so there is one answer to "where is the CSS".
+ */
+export function styleRuns(source, kind) {
+  if (kind === 'css') return [{ css: source, base: 0 }]
+  return [...source.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
+}
+
+/**
  * Scan one file's source. `kind` is 'css' or 'vue'.
  * Returns [{ line, hits }] with 1-based line numbers, in line order.
  */
@@ -99,7 +110,7 @@ export function colourHits(source, kind) {
   if (kind === 'css') {
     scanCss(source, 0, found)
   } else {
-    for (const m of source.matchAll(STYLE_BLOCK)) scanCss(m[2], m.index + m[1].length, found)
+    for (const { css, base } of styleRuns(source, kind)) scanCss(css, base, found)
     scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
   }
 

@@ -8,96 +8,60 @@
  * review — that is how nine cards and five card-like containers drifted to
  * the input/button radius while the rest stayed at 0.75rem.
  *
- * A "card" is any rule whose selector names a class ending in `card`
- * (`.rp-card`, not `.rp-card-thumb` or `.card-btn`), plus the containers in
- * CONTAINERS that play the role under another name. A rule without
- * border-radius is ignored, so a modifier like `.song-card--encore` passes.
- * Scope and exclusions match check-admin-colours.mjs: the fan pages and the
- * printable rider are outside the admin design system.
+ * What counts as a card rule, and which corners count as 0.75rem, is
+ * lib/radius-scan.mjs (pinned by its spec). Which files are admin chrome is
+ * lib/admin-files.mjs, shared with check-admin-colours.mjs: the fan pages and
+ * the printable rider are outside the admin design system.
+ *
+ * Two lists live here because they are design decisions, not parsing:
+ *   - OPTION_TILES: classes named `*-card` that are selectable controls and
+ *     so take the 0.5rem control corner (DESIGN.md, Cards).
+ *   - CONTAINERS: card surfaces whose class does not say `card`. Keyed by
+ *     file, because `form-panel` or `photo-item` is a generic name inside a
+ *     scoped <style>, and another component may use it for something that is
+ *     not a card.
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { adminStyleFiles, posix } from './lib/admin-files.mjs'
+import { CARD_RADIUS, cardRules } from './lib/radius-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
-const CARD_RADIUS = '0.75rem'
-
-const EXCLUDED = [
-  'admin-palette.css',
-  'style.css',
-  'App.vue',
-  'components/AppNavbar.vue',
-  'components/TicketDownloadCard.vue',
-  'components/fan',
-  'views/FanAccountView.vue',
-  'views/TicketClaimView.vue',
-  'views/TechRiderPreviewView.vue',
-]
 
 /** Named `*-card` but a selectable option, so they take the control radius. */
 const OPTION_TILES = new Set(['main-inst-card', 'career-level-card', 'role-card'])
 
-/** Card surfaces whose class does not say so. */
-const CONTAINERS = new Set(['form-panel', 'scan-log', 'photo-item', 'og-preview', 'track-block'])
-
-const posix = (p) => p.split(sep).join('/')
-const violations = []
-
-for (const path of EXCLUDED) {
-  if (!existsSync(join(SRC, path))) violations.push(`src/${path}: excluded path no longer exists — update EXCLUDED`)
+/** Card surfaces whose class does not say so — paths relative to src/. */
+const CONTAINERS = {
+  'components/admin/ConcertTicketsManager.vue': ['form-panel'],
+  'components/admin/forms/PressReleaseForm.vue': ['og-preview'],
+  'components/admin/forms/ReleaseForm.vue': ['track-block'],
+  'views/admin/DoorCheckView.vue': ['scan-log'],
+  'views/admin/PhotosAdminView.vue': ['photo-item'],
 }
 
-const isExcluded = (rel) => EXCLUDED.some((path) => rel === path || rel.startsWith(path + '/'))
-
-const files = []
-const walk = (dir) => {
-  for (const name of readdirSync(dir)) {
-    const abs = join(dir, name)
-    const rel = posix(relative(SRC, abs))
-    if (isExcluded(rel)) continue
-    if (statSync(abs).isDirectory()) walk(abs)
-    else if (/\.(vue|css)$/.test(name)) files.push(abs)
-  }
-}
-walk(SRC)
-
-if (files.length < 50) {
-  console.error(`✗ admin radius: only ${files.length} file(s) found under src/ — the walk is broken`)
+const { files, problems } = adminStyleFiles(SRC)
+if (problems.length) {
+  for (const p of problems) console.error(`✗ admin radius: ${p}`)
   process.exit(1)
 }
 
-/** Blank out everything but CSS (and comments inside it), keeping offsets so line numbers hold. */
-function cssOf(text, kind) {
-  const blank = (s) => s.replace(/[^\n]/g, ' ')
-  let css = text
-  if (kind === 'vue') {
-    css = ''
-    let at = 0
-    for (const m of text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
-      const bodyAt = m.index + m[0].indexOf(m[1])
-      css += blank(text.slice(at, bodyAt)) + m[1]
-      at = bodyAt + m[1].length
-    }
-    css += blank(text.slice(at))
-  }
-  return css.replace(/\/\*[\s\S]*?\*\//g, blank)
+const violations = []
+const rels = new Set(files.map((f) => posix(relative(SRC, f))))
+for (const path of Object.keys(CONTAINERS)) {
+  if (!rels.has(path)) violations.push(`src/${path}: CONTAINERS entry no longer exists — update CONTAINERS`)
 }
 
 let cards = 0
 for (const file of files) {
-  const css = cssOf(readFileSync(file, 'utf8'), file.endsWith('.css') ? 'css' : 'vue')
-  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    const classes = [...m[1].matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((c) => c[1])
-    const card = classes.find((c) => (/(^|-)card$/.test(c) && !OPTION_TILES.has(c)) || CONTAINERS.has(c))
-    if (!card) continue
-    const radius = m[2].match(/border-radius\s*:\s*([^;]+)/)
-    if (!radius) continue
+  const rel = posix(relative(SRC, file))
+  const options = { optionTiles: OPTION_TILES, containers: new Set(CONTAINERS[rel] ?? []) }
+  const kind = file.endsWith('.css') ? 'css' : 'vue'
+  for (const { line, card, radius, ok } of cardRules(readFileSync(file, 'utf8'), kind, options)) {
     cards++
-    if (radius[1].trim() !== CARD_RADIUS) {
-      const line = css.slice(0, m.index + m[0].indexOf(radius[0])).split('\n').length
-      violations.push(`${posix(relative(ROOT, file))}:${line}  .${card} { border-radius: ${radius[1].trim()} }`)
-    }
+    if (!ok) violations.push(`${posix(relative(ROOT, file))}:${line}  .${card} { border-radius: ${radius} }`)
   }
 }
 
@@ -111,7 +75,7 @@ if (violations.length) {
 Cards, table cards, drop zones and the modal panel use ${CARD_RADIUS}; inputs and
 buttons use 0.5rem, row buttons 0.375rem, badges 0.25rem (app/DESIGN.md, Shapes).
 A selectable option tile named *-card takes the control radius — add it to
-OPTION_TILES. A card surface not named *-card belongs in CONTAINERS.`)
+OPTION_TILES. A card surface not named *-card belongs in CONTAINERS, under its file.`)
   process.exit(1)
 }
 
