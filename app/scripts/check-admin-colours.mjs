@@ -28,14 +28,10 @@ const SRC = join(ROOT, 'src')
 // Which files are admin chrome is lib/admin-files.mjs, shared with the radius
 // guard so the two cannot disagree about what they cover. A problem is a
 // stale EXCLUDED entry or a walk that found nothing — the failure shape
-// check-admin-strings guards against too.
+// check-admin-strings guards against too. It is reported alongside the
+// colour violations rather than instead of them, so one run shows everything.
 const { files, problems } = adminStyleFiles(SRC)
-if (problems.length) {
-  for (const p of problems) console.error(`✗ admin colours: ${p}`)
-  process.exit(1)
-}
-
-const violations = []
+const violations = [...problems]
 
 for (const file of files) {
   const kind = file.endsWith('.css') ? 'css' : 'vue'

@@ -107,12 +107,8 @@ export function styleRuns(source, kind) {
  */
 export function colourHits(source, kind) {
   const found = []
-  if (kind === 'css') {
-    scanCss(source, 0, found)
-  } else {
-    for (const { css, base } of styleRuns(source, kind)) scanCss(css, base, found)
-    scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
-  }
+  for (const { css, base } of styleRuns(source, kind)) scanCss(css, base, found)
+  if (kind === 'vue') scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
 
   const lines = source.split('\n')
   const byLine = new Map()

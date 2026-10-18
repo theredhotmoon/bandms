@@ -44,6 +44,20 @@ describe('cardClassOf — which rules style a card', () => {
     expect(cardClassOf('.x-card :is(.a, .b)')).toBeNull()
   })
 
+  it('ignores classes inside :not() and :has(), which name other elements', () => {
+    expect(cardClassOf('.pill:not(.x-card)')).toBeNull()
+    expect(cardClassOf('.list:has(.song-card)')).toBeNull()
+    expect(cardClassOf('.row:not(:is(.a, .x-card))')).toBeNull()
+    expect(cardClassOf('.x-card:not(.flat)')).toBe('x-card')
+    expect(cardClassOf(':is(.x-card, .pill)')).toBe('x-card')
+  })
+
+  it('does not read ~ or + inside an attribute selector as a combinator', () => {
+    expect(cardClassOf('.x-card[data-a~=b]')).toBe('x-card')
+    expect(cardClassOf('.x-card[data-state+="x"]')).toBe('x-card')
+    expect(cardClassOf('.x-card[data-a~=b] .thumb')).toBeNull()
+  })
+
   it('exempts option tiles and admits containers by name', () => {
     const opts = { optionTiles: new Set(['role-card']), containers: new Set(['form-panel']) }
     expect(cardClassOf('.role-card', opts)).toBeNull()
@@ -54,9 +68,13 @@ describe('cardClassOf — which rules style a card', () => {
 
 describe('isCardRadius — equivalent spellings of the 0.75rem corner', () => {
   it('accepts 0.75rem and its equivalents', () => {
-    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75em', '0.75rem !important']) {
+    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75rem !important']) {
       expect(isCardRadius(v), v).toBe(true)
     }
+  })
+
+  it('rejects em, which is only 12px when the font size happens to be 16px', () => {
+    expect(isCardRadius('0.75em')).toBe(false)
   })
 
   it('accepts a card with flat edges, as long as one corner is the card corner', () => {
@@ -98,6 +116,21 @@ describe('cardRules — scanning a stylesheet', () => {
 
   it('skips comments, keeping line numbers true', () => {
     expect(css('/* .old-card { border-radius: 8px } */\n.a-card { border-radius: 0.75rem; }')).toEqual([
+      { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
+    ])
+  })
+
+  it('judges a card that nests its own states, without counting the nested block', () => {
+    const nested = '.a-card {\n  border-radius: 8px;\n  &:hover { opacity: 1 }\n}'
+    expect(css(nested)).toEqual([{ line: 2, card: 'a-card', radius: '8px', ok: false }])
+    // The nested state block is a card rule too, and its own radius is judged.
+    expect(css('.a-card {\n  padding: 0;\n  &.is-open { border-radius: 0.5rem }\n}')).toEqual([
+      { line: 3, card: 'a-card', radius: '0.5rem', ok: false },
+    ])
+  })
+
+  it('does not treat a nested descendant as the card', () => {
+    expect(css('.a-card {\n  border-radius: 0.75rem;\n  .map { border-radius: 4px }\n  img { border-radius: 2px }\n}')).toEqual([
       { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
     ])
   })

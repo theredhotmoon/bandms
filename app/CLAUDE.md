@@ -158,7 +158,7 @@ Each answers a different question, and a red one means something specific:
 | `check-i18n-coverage.mjs` | a file renders translations but is **not** in `MIGRATED`, **or** a component rendered inside a migrated area shows English while translating nothing | add its path to `MIGRATED` |
 | `check-admin-colours.mjs` | a hardcoded colour (hex, `rgb()`/`hsl()`, `color: white`, `bg-[#…]`) in an admin style | use a `var(--c-…)`, or append `token-lint-ignore` with a reason — see *Admin colours* below |
 | `check-admin-contrast.mjs` | a token used as `color:` is under 4.5:1 on a page surface, or a border/fill uses a token that has a `-line` twin | pick a passing token, use the twin, or `contrast-ignore: <reason>` — see *Admin colours* below |
-| `check-admin-radius.mjs` | a `*-card` rule (or a card surface listed in `CONTAINERS`, keyed by file) sets a corner other than 0.75rem — judged on the selector's last compound and the last `border-radius` declaration, so `.x-card .thumb` and a flat-edged `0.75rem 0.75rem 0 0` both pass | use 0.75rem; a selectable option tile named `*-card` goes in `OPTION_TILES` |
+| `check-admin-radius.mjs` | a `*-card` rule (or a card surface listed in `CONTAINERS`) sets a corner other than 0.75rem — judged on the selector's last compound and the last `border-radius` declaration, so `.x-card .thumb` and a flat-edged `0.75rem 0.75rem 0 0` both pass; or a class listed in `CONTAINERS`/`OPTION_TILES` is gone from its file. It reads stylesheets only — a Tailwind `rounded-lg` card is outside it | use 0.75rem; a selectable option tile named `*-card` goes in `OPTION_TILES`, under its file |
 
 One more check lives in the test suite rather than the build —
 `src/i18n/catalogue.spec.ts`, which compiles every message and is the only

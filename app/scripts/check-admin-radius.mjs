@@ -13,13 +13,19 @@
  * lib/admin-files.mjs, shared with check-admin-colours.mjs: the fan pages and
  * the printable rider are outside the admin design system.
  *
- * Two lists live here because they are design decisions, not parsing:
+ * Two lists live here because they are design decisions, not parsing. Both
+ * are keyed by file, because a class name inside a scoped <style> is only
+ * meaningful in that component: `form-panel` elsewhere may not be a card, and
+ * a future `.role-card` elsewhere may not be a control. An entry whose class
+ * the scan never meets fails the build, so a rename cannot quietly drop a
+ * surface from the guard.
  *   - OPTION_TILES: classes named `*-card` that are selectable controls and
  *     so take the 0.5rem control corner (DESIGN.md, Cards).
- *   - CONTAINERS: card surfaces whose class does not say `card`. Keyed by
- *     file, because `form-panel` or `photo-item` is a generic name inside a
- *     scoped <style>, and another component may use it for something that is
- *     not a card.
+ *   - CONTAINERS: card surfaces whose class does not say `card`.
+ *
+ * Blind spot, by design of a stylesheet scan: a card rounded with a Tailwind
+ * utility in its class list (`rounded-lg`) is never seen. Those are few in
+ * the admin and are a template question, not a stylesheet one.
  */
 import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -30,8 +36,12 @@ import { CARD_RADIUS, cardRules } from './lib/radius-scan.mjs'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 
-/** Named `*-card` but a selectable option, so they take the control radius. */
-const OPTION_TILES = new Set(['main-inst-card', 'career-level-card', 'role-card'])
+/** Named `*-card` but a selectable option, so they take the control radius — paths relative to src/. */
+const OPTION_TILES = {
+  'components/admin/forms/BandMemberForm.vue': ['main-inst-card'],
+  'views/admin/BandProfileAdminView.vue': ['career-level-card'],
+  'views/admin/UsersAdminView.vue': ['role-card'],
+}
 
 /** Card surfaces whose class does not say so — paths relative to src/. */
 const CONTAINERS = {
@@ -43,25 +53,35 @@ const CONTAINERS = {
 }
 
 const { files, problems } = adminStyleFiles(SRC)
-if (problems.length) {
-  for (const p of problems) console.error(`✗ admin radius: ${p}`)
-  process.exit(1)
-}
+const violations = [...problems]
 
-const violations = []
-const rels = new Set(files.map((f) => posix(relative(SRC, f))))
-for (const path of Object.keys(CONTAINERS)) {
-  if (!rels.has(path)) violations.push(`src/${path}: CONTAINERS entry no longer exists — update CONTAINERS`)
+const sources = new Map(files.map((f) => [posix(relative(SRC, f)), readFileSync(f, 'utf8')]))
+
+// A listed class that no longer appears in its file is rot: the surface it
+// named has been renamed or removed, and the guard would silently stop
+// covering it (or stop exempting it) while the list still reads as complete.
+for (const [name, list] of [['OPTION_TILES', OPTION_TILES], ['CONTAINERS', CONTAINERS]]) {
+  for (const [path, classes] of Object.entries(list)) {
+    const source = sources.get(path)
+    if (source === undefined) {
+      violations.push(`src/${path}: ${name} entry no longer exists — update ${name}`)
+      continue
+    }
+    for (const cls of classes) {
+      if (!new RegExp(`\\.${cls}(?![\\w-])`).test(source)) {
+        violations.push(`src/${path}: .${cls} is listed in ${name} but the file has no such class — update ${name}`)
+      }
+    }
+  }
 }
 
 let cards = 0
-for (const file of files) {
-  const rel = posix(relative(SRC, file))
-  const options = { optionTiles: OPTION_TILES, containers: new Set(CONTAINERS[rel] ?? []) }
-  const kind = file.endsWith('.css') ? 'css' : 'vue'
-  for (const { line, card, radius, ok } of cardRules(readFileSync(file, 'utf8'), kind, options)) {
+for (const [rel, source] of sources) {
+  const options = { optionTiles: new Set(OPTION_TILES[rel] ?? []), containers: new Set(CONTAINERS[rel] ?? []) }
+  const kind = rel.endsWith('.css') ? 'css' : 'vue'
+  for (const { line, card, radius, ok } of cardRules(source, kind, options)) {
     cards++
-    if (!ok) violations.push(`${posix(relative(ROOT, file))}:${line}  .${card} { border-radius: ${radius} }`)
+    if (!ok) violations.push(`src/${rel}:${line}  .${card} { border-radius: ${radius} }`)
   }
 }
 
@@ -75,7 +95,8 @@ if (violations.length) {
 Cards, table cards, drop zones and the modal panel use ${CARD_RADIUS}; inputs and
 buttons use 0.5rem, row buttons 0.375rem, badges 0.25rem (app/DESIGN.md, Shapes).
 A selectable option tile named *-card takes the control radius — add it to
-OPTION_TILES. A card surface not named *-card belongs in CONTAINERS, under its file.`)
+OPTION_TILES under its file. A card surface not named *-card belongs in
+CONTAINERS, under its file.`)
   process.exit(1)
 }
 
