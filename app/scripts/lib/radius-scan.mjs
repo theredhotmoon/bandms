@@ -7,42 +7,52 @@
  * so cards drift to the 0.5rem control corner without anyone noticing; this
  * scanner is what notices.
  *
- * A scanner, not a CSS parser, in the same shape as colour-scan.mjs. It walks
- * the braces of each stylesheet so nested rules (`.a-card { &:hover { … } }`)
+ * A scanner, not a CSS parser, in the same shape as colour-scan.mjs, whose
+ * helpers it shares for "where is the CSS" and "what is a comment". Strings
+ * and `url(…)` bodies are blanked before the walk, so a `}` inside
+ * `content: "}"` or a data URI cannot close a block early. It then walks the
+ * braces of each stylesheet so nested rules (`.a-card { &:hover { … } }`)
  * and rules inside `@media` are seen as their own blocks, with a nested
  * block's declarations never counted for its parent. For each block it
- * decides whether the rule styles a card and, if so, reads the corner the
- * cascade actually applies:
+ * decides whether the rule styles a card and, if so, resolves the four
+ * corners the cascade actually applies:
  *
  *   - Only the LAST compound of each selector is judged. `.venue-card .map`
  *     styles the map, not the card; `.venue-card.is-open` and `.x-card:hover`
  *     still style the card. A pseudo-element (`.x-card::before`) is its own
- *     box and is never a card. Classes inside `:not(…)` and `:has(…)` name
- *     something other than the styled element and are ignored; `:is(…)` and
- *     `:where(…)` do name it and are kept. A nested selector is resolved
- *     against its parent first (`&` or an implied descendant). In a selector
- *     list, any card member makes the rule a card rule, because the card
- *     really does take that radius.
+ *     box and is never a card. `:deep(…)`, `:global(…)`, `:is(…)` and
+ *     `:where(…)` are looked inside, because they name the styled element;
+ *     `:not(…)` and `:has(…)` are not, because they name something else. A
+ *     nested selector is resolved against its parent first (`&` or an
+ *     implied descendant); a nested at-rule inherits the parent's. In a
+ *     selector list, any card member makes the rule a card rule, because the
+ *     card really does take that radius.
  *   - A class is a card when it ends in `card` (`.rp-card`, not
  *     `.rp-card-thumb` or `.card-btn`) and is not a selectable option tile,
  *     or when the caller names it as a card container under another name.
- *   - The LAST `border-radius` declaration wins, as it does in CSS, and
- *     `!important` is dropped before comparing.
- *   - A value passes when every corner it names is 0.75rem or 0 and at least
- *     one is 0.75rem: `.75rem`, `12px` and `0.75rem 0.75rem 0 0` (a card with
- *     one flat edge against a sibling strip) are all the DESIGN.md corner.
- *     `em` is not accepted — it scales with the element's font size, so it
- *     is only 12px by coincidence.
+ *   - The shorthand and every longhand (`border-top-left-radius`, the logical
+ *     `border-start-start-radius` family) are applied to four corners in
+ *     source order, last declaration per property winning as in CSS, with
+ *     `!important` dropped. Shorthand values are spelt as `0.75rem`,
+ *     `.75rem` or `12px`; `em` is not accepted, because it scales with the
+ *     element's font size and is only 12px by coincidence.
+ *   - The corners pass when all four are 0.75rem, or one EDGE is flat (both
+ *     corners on one side 0, the other two 0.75rem — a card butted against a
+ *     sibling strip). Two square corners on a diagonal, or a fully square
+ *     card, fail. A deliberate exception — a card flush to the viewport edge
+ *     on phones — takes `radius-lint-ignore: <reason>` on the declaration's
+ *     line, the way colour-scan's `token-lint-ignore` works.
  *
  * It reads <style> blocks and .css files only. A card rounded with a Tailwind
  * utility in its class list (`rounded-lg`) is outside what it can see.
  */
-import { styleRuns } from './colour-scan.mjs'
+import { blank, stripCssComments, styleRuns } from './colour-scan.mjs'
 
 export const CARD_RADIUS = '0.75rem'
+export const IGNORE_MARKER = 'radius-lint-ignore'
 const CARD_PX = 12
 
-const blank = (s) => s.replace(/[^\n]/g, ' ')
+/* ── Selectors ─────────────────────────────────────────────────────────── */
 
 /** Split on `isSep` outside parentheses and brackets, so `:is(.a, .b)` and `[data-x~=y]` stay whole. */
 function splitTop(text, isSep) {
@@ -87,6 +97,8 @@ function withoutNegations(compound) {
 }
 
 const PSEUDO_ELEMENT = /::|:(?:before|after)\b/
+/** A compound that is nothing but a wrapper around another selector (list). */
+const WRAPPER = /^:(?:deep|global|is|where)\(([\s\S]*)\)$/
 
 /**
  * The card class a selector (or selector list) styles, or null.
@@ -96,6 +108,13 @@ const PSEUDO_ELEMENT = /::|:(?:before|after)\b/
 export function cardClassOf(selector, { optionTiles = new Set(), containers = new Set() } = {}) {
   for (const one of splitTop(selector, (ch) => ch === ',')) {
     const compound = lastCompound(one)
+    const wrapped = compound.match(WRAPPER)
+    if (wrapped) {
+      // `:deep(.x-card .thumb)` styles the thumb: judge what is inside.
+      const inner = cardClassOf(wrapped[1], { optionTiles, containers })
+      if (inner) return inner
+      continue
+    }
     if (PSEUDO_ELEMENT.test(compound)) continue
     const classes = [...withoutNegations(compound).matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1])
     const card = classes.find((c) => (/(^|-)card$/.test(c) && !optionTiles.has(c)) || containers.has(c))
@@ -103,6 +122,8 @@ export function cardClassOf(selector, { optionTiles = new Set(), containers = ne
   }
   return null
 }
+
+/* ── Corners ───────────────────────────────────────────────────────────── */
 
 /** One length as CSS pixels, or NaN for anything that is not a rem/px length. */
 function px(token) {
@@ -113,30 +134,82 @@ function px(token) {
   return m[2] === 'px' ? n : n * 16
 }
 
-/** The corner sizes a radius value names, in px (NaN for anything unparsable). */
-function sizesOf(value) {
-  return value
-    .replace(/!\s*important/g, '')
-    .split('/')
-    .flatMap((side) => side.trim().split(/\s+/))
-    .filter(Boolean)
-    .map(px)
+/** `border-radius` shorthand → [tl, tr, br, bl]; an elliptical corner whose radii differ is NaN. */
+function expandShorthand(value) {
+  const sides = value.split('/').map((side) => side.trim().split(/\s+/).filter(Boolean).map(px))
+  const four = (t) => {
+    if (t.length === 1) return [t[0], t[0], t[0], t[0]]
+    if (t.length === 2) return [t[0], t[1], t[0], t[1]]
+    if (t.length === 3) return [t[0], t[1], t[2], t[1]]
+    if (t.length === 4) return t
+    return [NaN, NaN, NaN, NaN]
+  }
+  const h = four(sides[0] ?? [])
+  if (sides.length === 1) return h
+  const v = four(sides[1])
+  return h.map((r, i) => (r === v[i] ? r : NaN))
+}
+
+/** Longhand → corner index. Logical names assume horizontal-tb LTR, which the admin is. */
+const CORNER_OF = {
+  'border-top-left-radius': 0,
+  'border-start-start-radius': 0,
+  'border-top-right-radius': 1,
+  'border-start-end-radius': 1,
+  'border-bottom-right-radius': 2,
+  'border-end-end-radius': 2,
+  'border-bottom-left-radius': 3,
+  'border-end-start-radius': 3,
+}
+
+/**
+ * The four corners [tl, tr, br, bl] in px that a sequence of radius
+ * declarations ([property, value] pairs, in source order) resolves to.
+ */
+export function cornersOf(decls) {
+  let corners = [NaN, NaN, NaN, NaN]
+  let set = false
+  for (const [prop, raw] of decls) {
+    const value = raw.replace(/!\s*important/g, '').trim()
+    if (prop === 'border-radius') {
+      corners = expandShorthand(value)
+    } else if (prop in CORNER_OF) {
+      if (!set) corners = [0, 0, 0, 0] // longhands alone: the others are the initial 0
+      corners[CORNER_OF[prop]] = px(value)
+    } else {
+      continue
+    }
+    set = true
+  }
+  return corners
 }
 
 const isCardSize = (s) => Math.abs(s - CARD_PX) < 0.01
 
-/**
- * Whether a set of radius values — the `border-radius` shorthand, or one or
- * more longhands such as `border-top-left-radius` — is the card corner: every
- * corner named is 0.75rem or 0, and at least one is 0.75rem.
- */
-export function isCardRadius(...values) {
-  const sizes = values.flatMap(sizesOf)
-  return sizes.length > 0 && sizes.every((s) => s === 0 || isCardSize(s)) && sizes.some(isCardSize)
+/** All four corners rounded, or one edge flat and the other two rounded. */
+export function isCardCorners([tl, tr, br, bl]) {
+  const c = [tl, tr, br, bl]
+  if (c.some(Number.isNaN)) return false
+  const r = c.map(isCardSize)
+  const z = c.map((s) => s === 0)
+  if (r.every(Boolean)) return true
+  const top = z[0] && z[1] && r[2] && r[3]
+  const bottom = r[0] && r[1] && z[2] && z[3]
+  const left = z[0] && r[1] && r[2] && z[3]
+  const right = r[0] && z[1] && z[2] && r[3]
+  return top || bottom || left || right
 }
 
-/** Shorthand and every physical or logical longhand. */
-const RADIUS_DECL = /(border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius)\s*:\s*([^;]+)/g
+/** Whether a `border-radius` shorthand value alone is the card corner. */
+export function isCardRadius(value) {
+  return isCardCorners(cornersOf([['border-radius', value]]))
+}
+
+/* ── Blocks ────────────────────────────────────────────────────────────── */
+
+/** Quoted strings and unquoted url() bodies, blanked so their braces and semicolons are inert. */
+const blankStrings = (css) =>
+  css.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, blank).replace(/url\(\s*[^)"']*\)/g, (m) => 'url(' + blank(m.slice(4, -1)) + ')')
 
 /**
  * A nested selector as the full selector it stands for. A nested at-rule
@@ -186,36 +259,74 @@ function blocks(css) {
   return out
 }
 
+/** Shorthand and every physical or logical longhand, at a property boundary (not `--x-border-radius`). */
+const RADIUS_DECL = /(?<![\w-])(border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius)\s*:\s*([^;]+)/g
+
+/** 1-based line of an offset, from a newline table built once per file. */
+function lineIndex(source) {
+  const nl = []
+  for (let i = source.indexOf('\n'); i !== -1; i = source.indexOf('\n', i + 1)) nl.push(i)
+  return (offset) => {
+    let lo = 0
+    let hi = nl.length
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (nl[mid] < offset) lo = mid + 1
+      else hi = mid
+    }
+    return lo + 1
+  }
+}
+
+/* ── Scan ──────────────────────────────────────────────────────────────── */
+
 /**
- * Every card rule in one file's source. `kind` is 'css' or 'vue'.
- * Returns [{ line, card, radius, ok }] in source order, one per card rule
- * that sets a border-radius; `line` is 1-based and points at the winning
- * declaration. Rules without a border-radius are not reported, so a modifier
- * like `.song-card--encore { background: … }` is never a violation.
+ * One pass over one file's source. `kind` is 'css' or 'vue'. Returns
+ *   rules   — [{ line, card, radius, ok }] in source order, one per card rule
+ *             that sets a corner; `line` points at the winning declaration.
+ *             Rules without a radius are not reported, so a modifier like
+ *             `.song-card--encore { background: … }` is never a violation,
+ *             and a declaration line carrying IGNORE_MARKER is skipped.
+ *   classes — the Set of listed classes (containers and option tiles) that
+ *             are the last compound of at least one real rule, so a caller
+ *             can tell a list entry that no longer names anything.
  */
-export function cardRules(source, kind, options = {}) {
-  const out = []
+export function scanCards(source, kind, { optionTiles = new Set(), containers = new Set() } = {}) {
+  const rules = []
+  const classes = new Set()
+  const listed = { containers: new Set([...containers, ...optionTiles]) }
+  const lines = source.split('\n')
+  const lineOf = lineIndex(source)
+
   for (const { css, base } of styleRuns(source, kind)) {
-    const clean = css.replace(/\/\*[\s\S]*?\*\//g, blank)
+    const clean = blankStrings(stripCssComments(css))
     for (const { selector, body, bodyAt } of blocks(clean)) {
-      const card = cardClassOf(selector, options)
+      const named = cardClassOf(selector, listed)
+      if (named && (containers.has(named) || optionTiles.has(named))) classes.add(named)
+
+      const card = cardClassOf(selector, { optionTiles, containers })
       if (!card) continue
-      // Last declaration per property wins, as in CSS; a card may set the
-      // shorthand, some longhands, or both.
-      const byProp = new Map()
+      const decls = []
       let last = null
       for (const m of body.matchAll(RADIUS_DECL)) {
-        byProp.set(m[1], m[2].trim())
+        decls.push([m[1], m[2]])
         last = m
       }
       if (!last) continue
-      const values = [...byProp.values()]
+      const line = lineOf(base + bodyAt + last.index)
+      if (lines[line - 1].includes(IGNORE_MARKER)) continue
+      const byProp = new Map(decls)
       const radius = byProp.size === 1 && byProp.has('border-radius')
-        ? values[0]
-        : [...byProp].map(([p, v]) => `${p}: ${v}`).join('; ')
-      const line = source.slice(0, base + bodyAt + last.index).split('\n').length
-      out.push({ line, card, radius, ok: isCardRadius(...values) })
+        ? byProp.get('border-radius').trim()
+        : [...byProp].map(([p, v]) => `${p}: ${v.trim()}`).join('; ')
+      rules.push({ line, card, radius, ok: isCardCorners(cornersOf(decls)) })
     }
   }
-  return out.sort((a, b) => a.line - b.line)
+  rules.sort((a, b) => a.line - b.line)
+  return { rules, classes }
+}
+
+/** The card rules alone — see scanCards. */
+export function cardRules(source, kind, options) {
+  return scanCards(source, kind, options).rules
 }

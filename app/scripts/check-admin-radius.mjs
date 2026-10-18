@@ -31,8 +31,7 @@ import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { adminStyleFiles, posix } from './lib/admin-files.mjs'
-import { styleRuns } from './lib/colour-scan.mjs'
-import { CARD_RADIUS, cardRules } from './lib/radius-scan.mjs'
+import { CARD_RADIUS, IGNORE_MARKER, scanCards } from './lib/radius-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -57,7 +56,7 @@ const CONTAINERS = {
   'components/admin/forms/PostBlockEditor.vue': ['block-row'],
   'components/admin/forms/PressReleaseForm.vue': ['og-preview'],
   'components/admin/forms/ReleaseForm.vue': ['cover-drop', 'track-block'],
-  'components/admin/forms/SingleImageUpload.vue': ['siu-drop'],
+  'components/admin/forms/SingleImageUpload.vue': ['siu-drop', 'siu-preview'],
   'components/admin/forms/blocks/ImageBlockEditor.vue': ['img-drop'],
   'views/admin/DoorCheckView.vue': ['scan-log'],
   'views/admin/PhotosAdminView.vue': ['photo-item'],
@@ -66,37 +65,43 @@ const CONTAINERS = {
 const { files, problems } = adminStyleFiles(SRC)
 const violations = [...problems]
 
-const sources = new Map(files.map((f) => [posix(relative(SRC, f)), readFileSync(f, 'utf8')]))
+const listsOf = (rel) => ({
+  optionTiles: new Set(OPTION_TILES[rel] ?? []),
+  containers: new Set(CONTAINERS[rel] ?? []),
+})
 
-// A listed class that no longer appears in its file is rot: the surface it
-// named has been renamed or removed, and the guard would silently stop
-// covering it (or stop exempting it) while the list still reads as complete.
-for (const [name, list] of [['OPTION_TILES', OPTION_TILES], ['CONTAINERS', CONTAINERS]]) {
-  for (const [path, classes] of Object.entries(list)) {
-    const source = sources.get(path)
-    if (source === undefined) {
-      violations.push(`src/${path}: ${name} entry no longer exists — update ${name}`)
-      continue
-    }
-    // Tested against the file's stylesheets, not the whole file: a surviving
-    // class="…" in the template or a selector string in script is not a rule.
-    const css = styleRuns(source, path.endsWith('.css') ? 'css' : 'vue').map((r) => r.css).join('\n')
-    for (const cls of classes) {
-      if (!new RegExp(`\\.${cls}(?![\\w-])`).test(css)) {
-        violations.push(`src/${path}: .${cls} is listed in ${name} but the file has no such style rule — update ${name}`)
-      }
-    }
+// One pass per file: the card rules to judge, and which listed classes are
+// still the last compound of a real rule.
+let cards = 0
+const seen = new Map()
+for (const file of files) {
+  const rel = posix(relative(SRC, file))
+  const kind = rel.endsWith('.css') ? 'css' : 'vue'
+  const { rules, classes } = scanCards(readFileSync(file, 'utf8'), kind, listsOf(rel))
+  seen.set(rel, classes)
+  for (const { line, card, radius, ok } of rules) {
+    cards++
+    // `radius` is a bare value for the shorthand, or `prop: value; ...` when longhands are involved.
+    if (!ok) violations.push(`src/${rel}:${line}  .${card} { ${radius.includes(':') ? radius : `border-radius: ${radius}`} }`)
   }
 }
 
-let cards = 0
-for (const [rel, source] of sources) {
-  const options = { optionTiles: new Set(OPTION_TILES[rel] ?? []), containers: new Set(CONTAINERS[rel] ?? []) }
-  const kind = rel.endsWith('.css') ? 'css' : 'vue'
-  for (const { line, card, radius, ok } of cardRules(source, kind, options)) {
-    cards++
-    // `radius` is a bare value for the shorthand, or `prop: value; …` when longhands are involved.
-    if (!ok) violations.push(`src/${rel}:${line}  .${card} { ${radius.includes(':') ? radius : `border-radius: ${radius}`} }`)
+// A listed class that no longer heads a rule in its file is rot: the surface
+// it named has been renamed or removed, and the guard would silently stop
+// covering it (or stop exempting it) while the list still reads as complete.
+// A mention in a comment, a template class="..." or a descendant selector
+// does not count — only a rule that styles the class itself.
+for (const [name, list] of [['OPTION_TILES', OPTION_TILES], ['CONTAINERS', CONTAINERS]]) {
+  for (const [path, classes] of Object.entries(list)) {
+    if (!seen.has(path)) {
+      violations.push(`src/${path}: ${name} entry no longer exists — update ${name}`)
+      continue
+    }
+    for (const cls of classes) {
+      if (!seen.get(path).has(cls)) {
+        violations.push(`src/${path}: .${cls} is listed in ${name} but no rule there styles it — update ${name}`)
+      }
+    }
   }
 }
 
@@ -111,7 +116,8 @@ Cards, table cards, drop zones and the modal panel use ${CARD_RADIUS}; inputs an
 buttons use 0.5rem, row buttons 0.375rem, badges 0.25rem (app/DESIGN.md, Shapes).
 A selectable option tile named *-card takes the control radius — add it to
 OPTION_TILES under its file. A card surface not named *-card belongs in
-CONTAINERS, under its file.`)
+CONTAINERS, under its file. A deliberate exception on one declaration (a card
+flush to the viewport edge on phones) takes ${IGNORE_MARKER}: <reason> on its line.`)
   process.exit(1)
 }
 

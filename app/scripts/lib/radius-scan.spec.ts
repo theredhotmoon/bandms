@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { cardClassOf, cardRules, isCardRadius } from './radius-scan.mjs'
+import { cardClassOf, cardRules, cornersOf, isCardCorners, isCardRadius, scanCards } from './radius-scan.mjs'
 
 type Rule = { line: number; card: string; radius: string; ok: boolean }
 const css = (src: string, opts?: object): Rule[] => cardRules(src, 'css', opts)
@@ -25,7 +25,16 @@ describe('cardClassOf — which rules style a card', () => {
     expect(cardClassOf('.venue-card.is-open')).toBe('venue-card')
     expect(cardClassOf('.x-card:hover')).toBe('x-card')
     expect(cardClassOf('.x-card:not(.flat)')).toBe('x-card')
+  })
+
+  it('looks inside :deep(), :global(), :is() and :where() and judges their last compound', () => {
     expect(cardClassOf(':deep(.x-card)')).toBe('x-card')
+    expect(cardClassOf(':deep(.x-card .thumb)')).toBeNull()
+    expect(cardClassOf(':deep(.list .x-card)')).toBe('x-card')
+    expect(cardClassOf(':global(.x-card img)')).toBeNull()
+    expect(cardClassOf(':is(.x-card, .pill)')).toBe('x-card')
+    expect(cardClassOf(':is(.a .x-card .b)')).toBeNull()
+    expect(cardClassOf('.wrap :where(.x-card)')).toBe('x-card')
   })
 
   it('treats a pseudo-element as its own box, not the card', () => {
@@ -48,8 +57,6 @@ describe('cardClassOf — which rules style a card', () => {
     expect(cardClassOf('.pill:not(.x-card)')).toBeNull()
     expect(cardClassOf('.list:has(.song-card)')).toBeNull()
     expect(cardClassOf('.row:not(:is(.a, .x-card))')).toBeNull()
-    expect(cardClassOf('.x-card:not(.flat)')).toBe('x-card')
-    expect(cardClassOf(':is(.x-card, .pill)')).toBe('x-card')
   })
 
   it('does not read ~ or + inside an attribute selector as a combinator', () => {
@@ -68,36 +75,57 @@ describe('cardClassOf — which rules style a card', () => {
 
 describe('isCardRadius — equivalent spellings of the 0.75rem corner', () => {
   it('accepts 0.75rem and its equivalents', () => {
-    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75rem !important']) {
+    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75rem !important', '0.75rem ! important']) {
       expect(isCardRadius(v), v).toBe(true)
+    }
+  })
+
+  it('accepts one flat edge, as long as the other two corners are the card corner', () => {
+    expect(isCardRadius('0.75rem 0.75rem 0 0')).toBe(true)
+    expect(isCardRadius('0 0 12px 12px')).toBe(true)
+    expect(isCardRadius('0 0.75rem 0.75rem 0')).toBe(true)
+    expect(isCardRadius('0.75rem / 0.75rem')).toBe(true)
+  })
+
+  it('rejects two square corners on a diagonal, a fully square card, and every other corner', () => {
+    for (const v of ['0.75rem 0', '0.5rem', '8px', '6px', '999px', '50%', '0', '0 0 0 0', 'inherit', 'var(--radius-card)', '0.75rem 0.5rem', '0.75rem / 0.5rem', '8px ! important']) {
+      expect(isCardRadius(v), v).toBe(false)
     }
   })
 
   it('rejects em, which is only 12px when the font size happens to be 16px', () => {
     expect(isCardRadius('0.75em')).toBe(false)
   })
+})
 
-  it('drops !important with or without a space after the bang', () => {
-    expect(isCardRadius('0.75rem ! important')).toBe(true)
-    expect(isCardRadius('8px ! important')).toBe(false)
+describe('cornersOf — resolving shorthand and longhands in cascade order', () => {
+  it('expands the shorthand like CSS does', () => {
+    expect(cornersOf([['border-radius', '1px 2px 3px 4px']])).toEqual([1, 2, 3, 4])
+    expect(cornersOf([['border-radius', '1px 2px 3px']])).toEqual([1, 2, 3, 2])
+    expect(cornersOf([['border-radius', '1px 2px']])).toEqual([1, 2, 1, 2])
   })
 
-  it('judges a set of longhand values together', () => {
-    expect(isCardRadius('0.75rem', '0.75rem', '0', '0')).toBe(true)
-    expect(isCardRadius('8px', '8px', '8px', '8px')).toBe(false)
-    expect(isCardRadius('0.75rem', '0.5rem')).toBe(false)
+  it('applies longhands over an earlier shorthand, physical and logical', () => {
+    const corners = cornersOf([
+      ['border-radius', '8px'],
+      ['border-top-left-radius', '0.75rem'],
+      ['border-start-end-radius', '0.75rem'],
+      ['border-end-end-radius', '0.75rem'],
+      ['border-bottom-left-radius', '0.75rem'],
+    ])
+    expect(corners).toEqual([12, 12, 12, 12])
+    expect(isCardCorners(corners)).toBe(true)
   })
 
-  it('accepts a card with flat edges, as long as one corner is the card corner', () => {
-    expect(isCardRadius('0.75rem 0.75rem 0 0')).toBe(true)
-    expect(isCardRadius('0 0 12px 12px')).toBe(true)
-    expect(isCardRadius('0.75rem / 0.75rem')).toBe(true)
+  it('treats longhands alone as the other corners being 0', () => {
+    expect(cornersOf([['border-start-start-radius', '0.75rem']])).toEqual([12, 0, 0, 0])
+    // Two top corners rounded is a flat bottom edge; two on a diagonal is not an edge.
+    expect(isCardCorners(cornersOf([['border-top-left-radius', '0.75rem'], ['border-top-right-radius', '12px']]))).toBe(true)
+    expect(isCardCorners(cornersOf([['border-top-left-radius', '0.75rem'], ['border-bottom-right-radius', '12px']]))).toBe(false)
   })
 
-  it('rejects every other corner, including a fully square one', () => {
-    for (const v of ['0.5rem', '8px', '6px', '999px', '50%', '0', '0 0 0 0', 'inherit', 'var(--radius-card)', '0.75rem 0.5rem']) {
-      expect(isCardRadius(v), v).toBe(false)
-    }
+  it('lets a later shorthand reset earlier longhands', () => {
+    expect(cornersOf([['border-top-left-radius', '0'], ['border-radius', '0.75rem']])).toEqual([12, 12, 12, 12])
   })
 })
 
@@ -121,8 +149,29 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(r.line).toBe(3)
   })
 
+  it('reads longhand corners and reports them by property', () => {
+    const all = '.a-card { border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-bottom-left-radius: 8px }'
+    expect(css(all)[0]).toMatchObject({ card: 'a-card', ok: false })
+    expect(css(all)[0].radius).toContain('border-top-left-radius: 8px')
+    expect(css('.a-card { border-radius: 0.75rem; border-bottom-left-radius: 0; border-bottom-right-radius: 0 }')[0].ok).toBe(true)
+    expect(css('.a-card { border-radius: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px }')[0].ok).toBe(true)
+  })
+
+  it('does not mistake a custom property or a vendor prefix for the radius', () => {
+    expect(css('.a-card { border-radius: 0.75rem; --thumb-border-radius: 4px }')).toEqual([
+      { line: 1, card: 'a-card', radius: '0.75rem', ok: true },
+    ])
+    expect(css('.a-card { -webkit-border-radius: 4px; border-radius: 0.75rem }')[0].ok).toBe(true)
+  })
+
+  it('skips a declaration line that carries radius-lint-ignore', () => {
+    const src = '@media (max-width: 480px) {\n  .a-card { border-radius: 0; } /* radius-lint-ignore: flush to the viewport edge */\n}\n.a-card { border-radius: 0.75rem }'
+    expect(css(src)).toEqual([{ line: 4, card: 'a-card', radius: '0.75rem', ok: true }])
+  })
+
   it('does not judge a descendant rule as the card', () => {
     expect(css('.venue-card .map { border-radius: 0.25rem; }')).toEqual([])
+    expect(css(':deep(.rp-card img) { border-radius: 4px; }')).toEqual([])
   })
 
   it('skips comments, keeping line numbers true', () => {
@@ -131,10 +180,17 @@ describe('cardRules — scanning a stylesheet', () => {
     ])
   })
 
+  it('is not derailed by braces inside strings or url()', () => {
+    const src = ".x-card::before { content: '}' }\n.x-card { border-radius: 6px }"
+    expect(css(src)).toEqual([{ line: 2, card: 'x-card', radius: '6px', ok: false }])
+    const uri = '.bg { background: url("data:image/svg+xml;utf8,<svg>{}</svg>") }\n.x-card { border-radius: 6px }'
+    expect(css(uri)).toEqual([{ line: 2, card: 'x-card', radius: '6px', ok: false }])
+    expect(css('.bg { background: url(data:x;{) }\n.x-card { border-radius: 0.75rem }')[0].ok).toBe(true)
+  })
+
   it('judges a card that nests its own states, without counting the nested block', () => {
     const nested = '.a-card {\n  border-radius: 8px;\n  &:hover { opacity: 1 }\n}'
     expect(css(nested)).toEqual([{ line: 2, card: 'a-card', radius: '8px', ok: false }])
-    // The nested state block is a card rule too, and its own radius is judged.
     expect(css('.a-card {\n  padding: 0;\n  &.is-open { border-radius: 0.5rem }\n}')).toEqual([
       { line: 3, card: 'a-card', radius: '0.5rem', ok: false },
     ])
@@ -155,15 +211,6 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(css('.a-card { @media (max-width: 600px) { & { border-radius: 8px } } }')).toEqual([
       { line: 1, card: 'a-card', radius: '8px', ok: false },
     ])
-  })
-
-  it('reads longhand corners, last declaration per property', () => {
-    const all = '.a-card { border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px }'
-    expect(css(all)[0]).toMatchObject({ card: 'a-card', ok: false })
-    expect(css(all)[0].radius).toContain('border-top-left-radius: 8px')
-    expect(css('.a-card { border-radius: 0.75rem; border-bottom-left-radius: 0 }')[0].ok).toBe(true)
-    expect(css('.a-card { border-start-start-radius: 0.75rem }')[0].ok).toBe(true)
-    expect(css('.a-card { border-radius: 0.75rem; border-top-left-radius: 8px; border-top-left-radius: 0 }')[0].ok).toBe(true)
   })
 
   it('reads nested rules inside @media', () => {
@@ -200,9 +247,11 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(vue(sfc)).toEqual([{ line: 4, card: 'x-card', radius: '0.5rem', ok: false }])
   })
 
-  it('ignores a <style> block inside an HTML comment', () => {
+  it('ignores a <style> block inside an HTML comment, and a "<!--" string in script', () => {
     const sfc = '<template>\n<!-- <style>.b-card{border-radius:4px}</style> -->\n<div />\n</template>\n<style>.a-card { border-radius: 0.75rem }</style>'
     expect(vue(sfc)).toEqual([{ line: 5, card: 'a-card', radius: '0.75rem', ok: true }])
+    const tricky = "<script setup>\nconst OPEN = '<!--'\nconst CLOSE = '-->'\n</script>\n<style>.a-card { border-radius: 4px }</style>"
+    expect(vue(tricky)).toEqual([{ line: 5, card: 'a-card', radius: '4px', ok: false }])
   })
 
   it('passes option tiles and containers through to the selector test', () => {
@@ -210,5 +259,13 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(css('.role-card { border-radius: 0.5rem; } .scan-log { border-radius: 0.5rem; }', opts)).toEqual([
       { line: 1, card: 'scan-log', radius: '0.5rem', ok: false },
     ])
+  })
+})
+
+describe('scanCards — which listed classes still name a rule', () => {
+  it('reports a listed class only when it is the last compound of a real rule', () => {
+    const opts = { optionTiles: new Set(['role-card']), containers: new Set(['scan-log', 'gone']) }
+    const src = '/* .gone { } */\n.gone .row { padding: 0 }\n.scan-log { border: 0 }\n.role-card { padding: 0 }'
+    expect([...scanCards(src, 'css', opts).classes].sort()).toEqual(['role-card', 'scan-log'])
   })
 })

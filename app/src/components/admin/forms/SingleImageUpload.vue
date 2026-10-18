@@ -116,7 +116,7 @@ function remove() {
 .siu-preview {
   position: relative;
   display: inline-block;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--c-2a2a2a);
   max-width: 100%;
