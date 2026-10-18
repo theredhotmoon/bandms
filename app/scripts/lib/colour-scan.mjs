@@ -87,18 +87,24 @@ function scanTemplate(text, found) {
   }
 }
 
-const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)<\/style>/g
+// The opening tag must not end in `/>`: a self-closing `<style src="…" />`
+// has no body, and matching it would swallow everything up to the next
+// </style> — including the real block's opening tag.
+const STYLE_BLOCK = /(<style\b(?:[^>/]|\/(?!>))*>)([\s\S]*?)<\/style>/g
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
 
 /**
  * The stylesheet text in one file: the whole of a .css file, or each <style>
  * block of a .vue file, as [{ css, base }] where `base` is the offset of
  * `css` within `source` — so a scanner can map a hit back to a line number.
+ * A <style> inside an HTML comment is commented-out code, not a stylesheet.
  * Shared with radius-scan.mjs so there is one answer to "where is the CSS".
  */
 export function styleRuns(source, kind) {
   if (kind === 'css') return [{ css: source, base: 0 }]
-  return [...source.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
+  const live = source.replace(HTML_COMMENT, blank)
+  return [...live.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
 }
 
 /**

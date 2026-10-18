@@ -113,20 +113,38 @@ function px(token) {
   return m[2] === 'px' ? n : n * 16
 }
 
-/** Whether a `border-radius` value is the card corner. */
-export function isCardRadius(value) {
-  const tokens = value
-    .replace(/!important/g, '')
+/** The corner sizes a radius value names, in px (NaN for anything unparsable). */
+function sizesOf(value) {
+  return value
+    .replace(/!\s*important/g, '')
     .split('/')
     .flatMap((side) => side.trim().split(/\s+/))
     .filter(Boolean)
-  if (tokens.length === 0) return false
-  const sizes = tokens.map(px)
-  return sizes.every((s) => s === 0 || Math.abs(s - CARD_PX) < 0.01) && sizes.some((s) => s !== 0)
+    .map(px)
 }
 
-/** A nested selector as the full selector it stands for. */
+const isCardSize = (s) => Math.abs(s - CARD_PX) < 0.01
+
+/**
+ * Whether a set of radius values — the `border-radius` shorthand, or one or
+ * more longhands such as `border-top-left-radius` — is the card corner: every
+ * corner named is 0.75rem or 0, and at least one is 0.75rem.
+ */
+export function isCardRadius(...values) {
+  const sizes = values.flatMap(sizesOf)
+  return sizes.length > 0 && sizes.every((s) => s === 0 || isCardSize(s)) && sizes.some(isCardSize)
+}
+
+/** Shorthand and every physical or logical longhand. */
+const RADIUS_DECL = /(border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius)\s*:\s*([^;]+)/g
+
+/**
+ * A nested selector as the full selector it stands for. A nested at-rule
+ * (`.a-card { @media (…) { border-radius: 8px } }`) has no selector of its
+ * own: its declarations apply to the parent, so it inherits the parent's.
+ */
 function resolveNested(parent, own) {
+  if (parent && own.trim().startsWith('@')) return parent
   if (!parent || parent.trim().startsWith('@')) return own
   const first = splitTop(parent, (ch) => ch === ',')[0] ?? ''
   return splitTop(own, (ch) => ch === ',')
@@ -182,12 +200,21 @@ export function cardRules(source, kind, options = {}) {
     for (const { selector, body, bodyAt } of blocks(clean)) {
       const card = cardClassOf(selector, options)
       if (!card) continue
-      const decls = [...body.matchAll(/border-radius\s*:\s*([^;]+)/g)]
-      if (decls.length === 0) continue
-      const last = decls[decls.length - 1]
-      const radius = last[1].trim()
+      // Last declaration per property wins, as in CSS; a card may set the
+      // shorthand, some longhands, or both.
+      const byProp = new Map()
+      let last = null
+      for (const m of body.matchAll(RADIUS_DECL)) {
+        byProp.set(m[1], m[2].trim())
+        last = m
+      }
+      if (!last) continue
+      const values = [...byProp.values()]
+      const radius = byProp.size === 1 && byProp.has('border-radius')
+        ? values[0]
+        : [...byProp].map(([p, v]) => `${p}: ${v}`).join('; ')
       const line = source.slice(0, base + bodyAt + last.index).split('\n').length
-      out.push({ line, card, radius, ok: isCardRadius(radius) })
+      out.push({ line, card, radius, ok: isCardRadius(...values) })
     }
   }
   return out.sort((a, b) => a.line - b.line)

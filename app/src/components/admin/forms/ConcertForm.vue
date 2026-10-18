@@ -680,7 +680,7 @@ function submit() {
 .band-pool,
 .lineup-panel {
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   background: var(--c-141414);
   padding: 0.5rem;
   display: flex;
@@ -828,7 +828,7 @@ function submit() {
 /* ── Concert poster ─────────────────────────────────────────── */
 .poster-drop {
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   background: var(--c-141414);
   cursor: pointer;
   overflow: hidden;

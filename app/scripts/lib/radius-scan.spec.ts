@@ -77,6 +77,17 @@ describe('isCardRadius — equivalent spellings of the 0.75rem corner', () => {
     expect(isCardRadius('0.75em')).toBe(false)
   })
 
+  it('drops !important with or without a space after the bang', () => {
+    expect(isCardRadius('0.75rem ! important')).toBe(true)
+    expect(isCardRadius('8px ! important')).toBe(false)
+  })
+
+  it('judges a set of longhand values together', () => {
+    expect(isCardRadius('0.75rem', '0.75rem', '0', '0')).toBe(true)
+    expect(isCardRadius('8px', '8px', '8px', '8px')).toBe(false)
+    expect(isCardRadius('0.75rem', '0.5rem')).toBe(false)
+  })
+
   it('accepts a card with flat edges, as long as one corner is the card corner', () => {
     expect(isCardRadius('0.75rem 0.75rem 0 0')).toBe(true)
     expect(isCardRadius('0 0 12px 12px')).toBe(true)
@@ -135,6 +146,26 @@ describe('cardRules — scanning a stylesheet', () => {
     ])
   })
 
+  it('judges a @media override nested inside the card as the card', () => {
+    const src = '.a-card {\n  border-radius: 0.75rem;\n  @media (max-width: 600px) { border-radius: 8px }\n}'
+    expect(css(src)).toEqual([
+      { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
+      { line: 3, card: 'a-card', radius: '8px', ok: false },
+    ])
+    expect(css('.a-card { @media (max-width: 600px) { & { border-radius: 8px } } }')).toEqual([
+      { line: 1, card: 'a-card', radius: '8px', ok: false },
+    ])
+  })
+
+  it('reads longhand corners, last declaration per property', () => {
+    const all = '.a-card { border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px }'
+    expect(css(all)[0]).toMatchObject({ card: 'a-card', ok: false })
+    expect(css(all)[0].radius).toContain('border-top-left-radius: 8px')
+    expect(css('.a-card { border-radius: 0.75rem; border-bottom-left-radius: 0 }')[0].ok).toBe(true)
+    expect(css('.a-card { border-start-start-radius: 0.75rem }')[0].ok).toBe(true)
+    expect(css('.a-card { border-radius: 0.75rem; border-top-left-radius: 8px; border-top-left-radius: 0 }')[0].ok).toBe(true)
+  })
+
   it('reads nested rules inside @media', () => {
     expect(css('@media (max-width: 600px) {\n  .a-card {\n    border-radius: 8px;\n  }\n}')).toEqual([
       { line: 3, card: 'a-card', radius: '8px', ok: false },
@@ -156,6 +187,22 @@ describe('cardRules — scanning a stylesheet', () => {
       '</style>',
     ].join('\n')
     expect(vue(sfc)).toEqual([{ line: 9, card: 'x-card', radius: '0.5rem', ok: false }])
+  })
+
+  it('does not let a self-closing <style src> swallow the real block', () => {
+    const sfc = [
+      '<template><div /></template>',
+      '<style scoped src="./form-styles.css" />',
+      '<style scoped>',
+      '.x-card { border-radius: 0.5rem; }',
+      '</style>',
+    ].join('\n')
+    expect(vue(sfc)).toEqual([{ line: 4, card: 'x-card', radius: '0.5rem', ok: false }])
+  })
+
+  it('ignores a <style> block inside an HTML comment', () => {
+    const sfc = '<template>\n<!-- <style>.b-card{border-radius:4px}</style> -->\n<div />\n</template>\n<style>.a-card { border-radius: 0.75rem }</style>'
+    expect(vue(sfc)).toEqual([{ line: 5, card: 'a-card', radius: '0.75rem', ok: true }])
   })
 
   it('passes option tiles and containers through to the selector test', () => {

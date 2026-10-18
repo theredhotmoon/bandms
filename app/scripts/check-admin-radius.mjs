@@ -5,7 +5,7 @@
  * The radius scale is xs/sm/md/lg (0.25/0.375/0.5/0.75rem) and the role picks
  * the step: cards, table cards, drop zones and the modal panel take lg. Every
  * value here is on the scale, so a card at 6px or 0.5rem looks deliberate in
- * review — that is how nine cards and seven card-like containers drifted to
+ * review — that is how nine cards, seven card-like containers and five drop zones drifted to
  * the input/button radius while the rest stayed at 0.75rem.
  *
  * What counts as a card rule, and which corners count as 0.75rem, is
@@ -31,6 +31,7 @@ import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { adminStyleFiles, posix } from './lib/admin-files.mjs'
+import { styleRuns } from './lib/colour-scan.mjs'
 import { CARD_RADIUS, cardRules } from './lib/radius-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -43,13 +44,21 @@ const OPTION_TILES = {
   'views/admin/UsersAdminView.vue': ['role-card'],
 }
 
-/** Card surfaces whose class does not say so — paths relative to src/. */
+/**
+ * Card surfaces whose class does not say so — paths relative to src/.
+ * Drop zones are here too: DESIGN.md (Shapes) gives them the card corner.
+ */
 const CONTAINERS = {
   'components/admin/ConcertTicketsManager.vue': ['form-panel'],
   'components/admin/EntityRelationsPanel.vue': ['assoc-sections'],
+  'components/admin/forms/BandMemberForm.vue': ['aside-drop'],
+  'components/admin/forms/ConcertForm.vue': ['band-pool', 'lineup-panel', 'poster-drop'],
+  'components/admin/forms/ImageDropZone.vue': ['drop-zone'],
   'components/admin/forms/PostBlockEditor.vue': ['block-row'],
   'components/admin/forms/PressReleaseForm.vue': ['og-preview'],
-  'components/admin/forms/ReleaseForm.vue': ['track-block'],
+  'components/admin/forms/ReleaseForm.vue': ['cover-drop', 'track-block'],
+  'components/admin/forms/SingleImageUpload.vue': ['siu-drop'],
+  'components/admin/forms/blocks/ImageBlockEditor.vue': ['img-drop'],
   'views/admin/DoorCheckView.vue': ['scan-log'],
   'views/admin/PhotosAdminView.vue': ['photo-item'],
 }
@@ -69,9 +78,12 @@ for (const [name, list] of [['OPTION_TILES', OPTION_TILES], ['CONTAINERS', CONTA
       violations.push(`src/${path}: ${name} entry no longer exists — update ${name}`)
       continue
     }
+    // Tested against the file's stylesheets, not the whole file: a surviving
+    // class="…" in the template or a selector string in script is not a rule.
+    const css = styleRuns(source, path.endsWith('.css') ? 'css' : 'vue').map((r) => r.css).join('\n')
     for (const cls of classes) {
-      if (!new RegExp(`\\.${cls}(?![\\w-])`).test(source)) {
-        violations.push(`src/${path}: .${cls} is listed in ${name} but the file has no such class — update ${name}`)
+      if (!new RegExp(`\\.${cls}(?![\\w-])`).test(css)) {
+        violations.push(`src/${path}: .${cls} is listed in ${name} but the file has no such style rule — update ${name}`)
       }
     }
   }
@@ -83,7 +95,8 @@ for (const [rel, source] of sources) {
   const kind = rel.endsWith('.css') ? 'css' : 'vue'
   for (const { line, card, radius, ok } of cardRules(source, kind, options)) {
     cards++
-    if (!ok) violations.push(`src/${rel}:${line}  .${card} { border-radius: ${radius} }`)
+    // `radius` is a bare value for the shorthand, or `prop: value; …` when longhands are involved.
+    if (!ok) violations.push(`src/${rel}:${line}  .${card} { ${radius.includes(':') ? radius : `border-radius: ${radius}`} }`)
   }
 }
 

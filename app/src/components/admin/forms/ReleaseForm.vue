@@ -497,7 +497,7 @@ function handleSubmit() {
 
 /* ── Cover drop ──────────────────────────────────────────────── */
 .cover-drop {
-  border: 2px dashed var(--c-2a2a2a); border-radius: 0.5rem;
+  border: 2px dashed var(--c-2a2a2a); border-radius: 0.75rem;
   background: var(--c-141414); cursor: pointer; overflow: hidden;
   transition: border-color 150ms, background 150ms;
   min-height: 120px; display: flex; align-items: center; justify-content: center;
