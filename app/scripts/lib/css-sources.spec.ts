@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayReason, strayRules } from './css-sources.mjs'
+import { SENTINELS, classSelectors, isFixture, sentinelIn, sourceDirectives, strayReason, strayRules } from './css-sources.mjs'
 
 describe('classSelectors', () => {
   it('lists class rules at the top level and inside at-rules', () => {
@@ -41,6 +41,12 @@ describe('classSelectors', () => {
 
   it('finds a sentinel behind an escaped bracket in a merged list', () => {
     expect(sentinelIn(classSelectors(".before\\:content-\\[\\'\\(\\'\\],.flex{display:flex}"))).toBe('.flex')
+  })
+
+  it('keeps a selector whose class sits behind an element or attribute compound, as a custom variant emits', () => {
+    expect(classSelectors('[data-admin-theme=light] .light\\:bg-\\[\\#…\\]{x:y}html .x{x:y}[dir=rtl]{x:y}[x="a.b"]{x:y}[x=0.5]{x:y}'))
+      .toEqual(['[data-admin-theme=light] .light\\:bg-\\[\\#…\\]', 'html .x'])
+    expect(strayRules(classSelectors('[data-admin-theme=light] .light\\:bg-\\[\\#…\\]{x:y}'))).toHaveLength(1)
   })
 
   it('keeps a minifier-merged list when any compound in it is a class', () => {
@@ -140,6 +146,19 @@ describe('sourceDirectives', () => {
       '@import "tailwindcss/utilities" auto',
     ])
     expect(sourceDirectives('@import "tailwindcss/theme.css";\n@reference "tailwindcss";').roots).toEqual([])
+  })
+
+  it('reads a source() clause on a @tailwind directive too', () => {
+    expect(sourceDirectives('@tailwind utilities source(none);').roots).toEqual([{ directive: '@tailwind utilities', detection: 'none', base: null }])
+    expect(sourceDirectives('@tailwind utilities source("../../e2e");').roots).toEqual([{ directive: '@tailwind utilities', detection: 'path', base: '../../e2e' }])
+  })
+})
+
+describe('isFixture', () => {
+  it('names the src files the not-globs exclude, and nothing else', () => {
+    expect(isFixture('utils/cssSourcesCanary.spec.ts')).toBe(true)
+    expect(isFixture('a.spec.ts')).toBe(true)
+    for (const p of ['utils/x.ts', 'spec.ts', 'x.spec.tsx', 'components/x.vue', 'x.spec.ts.bak']) expect(isFixture(p)).toBe(false)
   })
 
   it('reads an inline() safelist as a source', () => {

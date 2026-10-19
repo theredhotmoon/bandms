@@ -12,13 +12,17 @@
  *                            offset — template literals included, newlines
  *                            and all.
  *
- * Not a parser. Regular-expression literals are read as plain text, so a
- * quote inside one (`/'/`) opens a string that ends at the next quote on
- * that line; none of the guards' patterns are hurt by that today.
+ * Not a parser. A regular-expression literal is told from division by what
+ * precedes the `/`: an operator, an opening bracket, a keyword-ish word end
+ * (`return`, `=>`) or nothing — the usual heuristic, which is right for the
+ * code the guards read and keeps a `/['"]/` from opening a string.
  */
 import { blank } from './css-walk.mjs'
 
-/** Yields { type, text } pieces of `js`: 'comment', 'string' (quotes included; a template literal spans lines) or 'text'. */
+/** What may precede a `/` that starts a regex literal rather than a division: an operator, an opening bracket, a separator, or nothing. */
+const REGEX_LEAD = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\breturn|\btypeof|=>)\s*$/
+
+/** Yields { type, text } pieces of `js`: 'comment', 'string' (quotes included; a template literal spans lines), 'regex' or 'text'. */
 export function* scriptSegments(js) {
   const n = js.length
   let text = ''
@@ -28,6 +32,24 @@ export function* scriptSegments(js) {
   }
   for (let i = 0; i < n; ) {
     const c = js[i]
+    if (c === '/' && js[i + 1] !== '*' && js[i + 1] !== '/' && REGEX_LEAD.test(text)) {
+      // A regex literal: to the closing `/` outside a character class, flags included.
+      let j = i + 1
+      let inClass = false
+      for (; j < n && js[j] !== '\n'; j++) {
+        if (js[j] === '\\') j++
+        else if (js[j] === '[') inClass = true
+        else if (js[j] === ']') inClass = false
+        else if (js[j] === '/' && !inClass) break
+      }
+      if (js[j] === '/') {
+        while (j + 1 < n && /[a-z]/i.test(js[j + 1])) j++
+        yield* flush()
+        yield { type: 'regex', text: js.slice(i, j + 1) }
+        i = j + 1
+        continue
+      }
+    }
     if (c === '/' && js[i + 1] === '*') {
       yield* flush()
       const e = js.indexOf('*/', i + 2)

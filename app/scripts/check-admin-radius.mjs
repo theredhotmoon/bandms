@@ -55,6 +55,7 @@ import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { adminStyleFiles, isExcluded, kindOf, posix, styleFilesUnder } from './lib/admin-files.mjs'
+import { isFixture } from './lib/css-sources.mjs'
 import {
   CARD_RADIUS, CARD_TOKEN, CARD_VAR, IGNORE_MARKER, TOKEN_SCOPE, UTILITY_CARD,
   scanCards, tokenDefinitions, utilityCardFix, utilityCardLiterals, utilityCardUses,
@@ -109,8 +110,10 @@ let utilityCards = 0
 const seen = new Map()
 // Specs beside the source are fixtures, not chrome: Tailwind does not read
 // them (src/style.css, `@source not`), so a token they quote rounds nothing —
-// and src/utils/cssSourcesCanary.spec.ts quotes one on purpose.
-for (const file of styleFilesUnder(SRC, (rel) => rel.endsWith('.spec.ts'), /\.(vue|css|ts)$/)) {
+// and src/utils/cssSourcesCanary.spec.ts quotes one on purpose. Which files
+// those are is css-sources.mjs's list, the same one check-css-sources.mjs
+// holds style.css to, so the two guards cannot drift apart.
+for (const file of styleFilesUnder(SRC, isFixture, /\.(vue|css|ts)$/)) {
   const rel = posix(relative(SRC, file))
   const kind = rel.endsWith('.ts') ? 'ts' : kindOf(file)
   const source = readFileSync(file, 'utf8')

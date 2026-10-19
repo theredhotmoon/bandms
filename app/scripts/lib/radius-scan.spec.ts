@@ -364,6 +364,14 @@ describe('tokenDefinitions — where --radius-card is set', () => {
     ])
   })
 
+  it('sees a definition after a regex literal that holds a quote', () => {
+    const ts = "const q = /['\"]/g; el.style.setProperty('--radius-card', '0')\nconst re = /it's/; const c = '[--radius-card:4px]'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([
+      { line: 1, value: '0', scope: 'script' },
+      { line: 2, value: '4px', scope: 'script' },
+    ])
+  })
+
   it('does not take a code comment that mentions the class, or a bare mention, for a definition', () => {
     const ts = "// never write a [--radius-card:0] class here\n/* nor '[--radius-card:4px]' */\nconst u = 'https://x.test/a' // don't: [--radius-card:0]\nexport const x = 1"
     expect(tokenDefinitions(ts, 'ts')).toEqual([])

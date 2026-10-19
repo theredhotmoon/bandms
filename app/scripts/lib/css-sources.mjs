@@ -25,7 +25,28 @@
  * The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, the
  * same walk the colour and radius guards read through.
  */
-import { compounds, segments, stripCssComments } from './css-walk.mjs'
+import { blankStrings, compounds, segments, stripCssComments } from './css-walk.mjs'
+
+/**
+ * What src/style.css must declare, paths relative to the stylesheet as
+ * Tailwind reads them: what renders is a source, and the specs beside the
+ * source are fixtures. check-admin-radius.mjs derives its own skip from the
+ * same list (isFixture), so the two guards cannot disagree about which src
+ * files Tailwind reads.
+ */
+export const EXPECTED_SOURCES = [
+  { path: '../src', not: false },
+  { path: '../index.html', not: false },
+  { path: '../src/**/*.spec.ts', not: true },
+]
+
+/** The file-name test behind each `not` glob above, for a path relative to src/. */
+const FIXTURE_TESTS = EXPECTED_SOURCES.filter((s) => s.not).map((s) => {
+  const tail = s.path.slice(s.path.lastIndexOf('/') + 1) // `*.spec.ts`
+  return new RegExp(`${tail.replace(/[.]/g, '\\.').replace(/\*/g, '.*')}$`)
+})
+/** Whether a src-relative path is one Tailwind is told not to read. */
+export const isFixture = (rel) => FIXTURE_TESTS.some((re) => re.test(rel))
 
 export const PLACEHOLDER = '…'
 export const CARD_TOKEN_CLASS = /\\\[--radius-card\\:/
@@ -37,8 +58,11 @@ export const CARD_TOKEN_CLASS = /\\\[--radius-card\\:/
  */
 export const SENTINELS = ['.flex', '.hidden', '.grid', '.rounded-card']
 
-const isClassCompound = (s) => s.startsWith('.') || s.startsWith(':is(.') || s.startsWith(':where(.')
-/** A selector list counts when any compound in it is a class: the minifier merges same-body rules, so `dialog,.rounded-card` is a class rule too. */
+/** A `.` that begins a class name: not escaped, not inside a word (`[x=0.5]`), strings already blanked. */
+const CLASS_DOT = /(^|[^\w\\-])\./
+/** A compound holds a class anywhere in it — `[dir=rtl] .x` and `html .x` as much as `.x` — so a variant that leads with an element or attribute still counts. */
+const isClassCompound = (s) => CLASS_DOT.test(blankStrings(s))
+/** A selector list counts when any compound in it holds a class: the minifier merges same-body rules, so `dialog,.rounded-card` is a class rule too. */
 const isClassSelector = (s) => compounds(s).some(isClassCompound)
 
 /**
@@ -107,8 +131,8 @@ export function strayRules(selectors) {
   return out
 }
 
-/** Every directive that makes a stylesheet emit utilities: the full import, the split `tailwindcss/utilities` import, or a `@tailwind` directive. */
-const ROOT = /@import\s+["'](tailwindcss(?:\/utilities(?:\.css)?)?)["']([^;]*);|@tailwind\s+(\w+)\s*;/g
+/** Every directive that makes a stylesheet emit utilities: the full import, the split `tailwindcss/utilities` import, or a `@tailwind` directive — each with whatever clauses follow it. */
+const ROOT = /@import\s+["'](tailwindcss(?:\/utilities(?:\.css)?)?)["']([^;]*);|@tailwind\s+(\w+)([^;]*);/g
 const SOURCE_CLAUSE = /\bsource\(\s*(none|["'][^"']*["'])\s*\)/
 const SOURCE = /@source\s+(not\s+)?(?:["']([^"']+)["']|inline\(\s*["']([^"']*)["']\s*\))\s*;/g
 
@@ -131,7 +155,7 @@ export function sourceDirectives(css) {
   const clean = stripCssComments(css)
   const roots = [...clean.matchAll(ROOT)].map((m) => {
     const directive = m[1] ? `@import "${m[1]}"` : `@tailwind ${m[3]}`
-    const clause = m[1] ? m[2].match(SOURCE_CLAUSE) : null
+    const clause = (m[1] ? m[2] : m[4]).match(SOURCE_CLAUSE)
     const detection = !clause ? 'auto' : clause[1] === 'none' ? 'none' : 'path'
     return { directive, detection, base: detection === 'path' ? clause[1].slice(1, -1) : null }
   })

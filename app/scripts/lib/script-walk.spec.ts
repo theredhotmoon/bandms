@@ -21,6 +21,16 @@ describe('scriptSegments', () => {
     expect(types("const s = it's\n// c")).toEqual(['text', 'comment'])
   })
 
+  it('reads a regex literal as a regex, so a quote inside it opens no string', () => {
+    expect(types("const q = /['\"]/g; const s = 'x'")).toEqual(['text', 'regex', 'text', 'string'])
+    expect(types("const re = /it's/\nconst c = '[--radius-card:0]'")).toEqual(['text', 'regex', 'text', 'string'])
+    expect(types('x.replace(/a\\/b[/]c/i, "d")')).toEqual(['text', 'regex', 'text', 'string', 'text'])
+  })
+
+  it('reads a division as text', () => {
+    expect(types("const half = total / 2 / count\nconst s = 'x'")).toEqual(['text', 'string'])
+  })
+
   it('honours escapes inside strings', () => {
     expect(types("const s = 'a\\'b' // c")).toEqual(['text', 'string', 'text', 'comment'])
   })

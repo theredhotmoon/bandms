@@ -40,27 +40,22 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { posix, styleFilesUnder } from './lib/admin-files.mjs'
 import { styleRuns } from './lib/colour-scan.mjs'
-import { SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayRules } from './lib/css-sources.mjs'
+import { EXPECTED_SOURCES, SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayRules } from './lib/css-sources.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const STYLE = join(SRC, 'style.css')
 const ASSETS = join(ROOT, 'dist', 'assets')
 
-/** What src/style.css must declare — paths relative to the stylesheet, as Tailwind reads them. */
-const EXPECTED_SOURCES = [
-  { path: '../src', not: false },
-  { path: '../index.html', not: false },
-  { path: '../src/**/*.spec.ts', not: true },
-]
-
 const isGlob = (p) => /[*?{]/.test(p)
-/** A path resolved from the stylesheet's directory; for a glob, the directory before its first wildcard is resolved and the pattern kept. */
-const normalise = (p) => {
+/** The directory a source starts from, resolved from the stylesheet: the path itself, or for a glob the part before its first wildcard. */
+const baseOf = (p) => {
   if (!isGlob(p)) return resolve(dirname(STYLE), p)
   const cut = p.slice(0, p.search(/[*?{]/)).lastIndexOf('/') + 1
-  return `${resolve(dirname(STYLE), p.slice(0, cut) || '.')}/${p.slice(cut)}`
+  return resolve(dirname(STYLE), p.slice(0, cut) || '.')
 }
+/** A path resolved from the stylesheet's directory; for a glob, its base resolved and the pattern kept. */
+const normalise = (p) => (isGlob(p) ? `${baseOf(p)}/${p.slice(p.slice(0, p.search(/[*?{]/)).lastIndexOf('/') + 1)}` : baseOf(p))
 /** A comparable identity: inline lists by their text, paths and globs normalised, so `../src/`, `./../src` and `./../src/**\/*.spec.ts` are the sources they spell. */
 const key = (s) => `${s.not ? 'not ' : ''}${s.inline ? `inline(${s.path})` : normalise(s.path)}`
 const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline("${s.path}")` : `"${s.path}"`};`
@@ -86,9 +81,12 @@ for (const s of sources) {
     ? `src/style.css safelists \`${spell(s)}\` — classes no component writes are exactly what this guard keeps out of the build; style the element instead`
     : `src/style.css names \`${spell(s)}\` — only src/ and index.html render; a new source belongs in EXPECTED_SOURCES here, with the reason`)
 }
+// Every path — plain or glob, positive or not — must start from a directory
+// that exists: Tailwind reads nothing from a path that resolves to nothing
+// and says so nowhere, and a `not` whose base has moved excludes nothing.
 for (const s of sources) {
-  if (s.not || s.inline || isGlob(s.path)) continue
-  if (!existsSync(resolve(dirname(STYLE), s.path))) broken.push(`src/style.css: \`${spell(s)}\` resolves to nothing from src/ — Tailwind reads no file and says nothing; the path is relative to the stylesheet, not to app/`)
+  if (s.inline) continue
+  if (!existsSync(baseOf(s.path))) broken.push(`src/style.css: \`${spell(s)}\` resolves to nothing from src/ — Tailwind reads (or excludes) no file and says nothing; the path is relative to the stylesheet, not to app/`)
 }
 // Tailwind merges @source from every stylesheet the entry imports, each
 // relative to its own file, and the Vite plugin compiles any stylesheet or
@@ -115,10 +113,10 @@ if (broken.length) {
   for (const b of broken) console.error('  ' + b)
   console.error(`
 src/style.css imports Tailwind with \`source(none)\` and names what renders as
-the only sources: \`@source "../src"\`, \`@source "../index.html"\`, and
-\`@source not "../src/**/*.spec.ts"\` for the fixtures beside the source. No
-other stylesheet declares any. This check reads that back before it looks at
-the build.`)
+the only sources, the specs beside the source excluded as fixtures:
+  ${EXPECTED_SOURCES.map(spell).join('\n  ')}
+No other stylesheet declares any. This check reads that back before it looks
+at the build.`)
   process.exit(1)
 }
 
