@@ -55,8 +55,14 @@ const EXPECTED_SOURCES = [
 ]
 
 const isGlob = (p) => /[*?{]/.test(p)
-/** A comparable identity: globs and inline lists by their text, plain paths resolved, so `../src/` and `./../src` are one source. */
-const key = (s) => `${s.not ? 'not ' : ''}${s.inline ? `inline(${s.path})` : isGlob(s.path) ? s.path : resolve(dirname(STYLE), s.path)}`
+/** A path resolved from the stylesheet's directory; for a glob, the directory before its first wildcard is resolved and the pattern kept. */
+const normalise = (p) => {
+  if (!isGlob(p)) return resolve(dirname(STYLE), p)
+  const cut = p.slice(0, p.search(/[*?{]/)).lastIndexOf('/') + 1
+  return `${resolve(dirname(STYLE), p.slice(0, cut) || '.')}/${p.slice(cut)}`
+}
+/** A comparable identity: inline lists by their text, paths and globs normalised, so `../src/`, `./../src` and `./../src/**\/*.spec.ts` are the sources they spell. */
+const key = (s) => `${s.not ? 'not ' : ''}${s.inline ? `inline(${s.path})` : normalise(s.path)}`
 const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline("${s.path}")` : `"${s.path}"`};`
 
 // ── 1. configuration ─────────────────────────────────────────────────────
@@ -91,9 +97,13 @@ for (const s of sources) {
 // check can read it; every other .css and every <style> block declares none.
 for (const file of styleFilesUnder(SRC, () => false, /\.(css|vue)$/)) {
   if (file === STYLE) continue
+  const source = readFileSync(file, 'utf8')
+  // Nothing to find unless one of the three words is there at all — which
+  // today is no file, so the tokenizer runs over none of the ~300 SFCs.
+  if (!/@source|tailwindcss|@tailwind/.test(source)) continue
   const rel = posix(relative(SRC, file))
   const kind = rel.endsWith('.css') ? 'css' : 'vue'
-  for (const { css } of styleRuns(readFileSync(file, 'utf8'), kind)) {
+  for (const { css } of styleRuns(source, kind)) {
     const other = sourceDirectives(css)
     for (const r of other.roots) broken.push(`src/${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only src/style.css imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)
     for (const s of other.sources) broken.push(`src/${rel} declares \`${spell(s)}\` — Tailwind honours it from any stylesheet it compiles, but only src/style.css may name sources`)
@@ -124,14 +134,20 @@ if (files.length === 0) {
   process.exit(1)
 }
 
-const sheets = files.map((file) => ({ file, selectors: classSelectors(readFileSync(join(ASSETS, file), 'utf8')) }))
-// A sentinel is the proof that Tailwind read src/ and that the selector scan
-// reads the minifier's output; a count of rules is not, because the entry
-// stylesheet also holds the palette, the form styles and every unscoped
-// <style>, and the vendored sheets have hundreds of their own.
-const found = sheets.map((s) => ({ ...s, sentinel: sentinelIn(s.selectors) })).find((s) => s.sentinel)
+/** Tailwind's own output carries its utilities layer; a vendored or component sheet that happens to define `.hidden` does not. */
+const TAILWIND_MARK = '@layer utilities'
+const sheets = files.map((file) => {
+  const css = readFileSync(join(ASSETS, file), 'utf8')
+  return { file, tailwind: css.includes(TAILWIND_MARK), selectors: classSelectors(css) }
+})
+// A sentinel in the sheet Tailwind wrote is the proof that it read src/ and
+// that the selector scan reads the minifier's output; a count of rules is
+// not, because that sheet also holds the palette, the form styles and every
+// unscoped <style>, and the vendored sheets have hundreds of their own — and
+// a `.flex` in one of those proves nothing about Tailwind.
+const found = sheets.filter((s) => s.tailwind).map((s) => ({ ...s, sentinel: sentinelIn(s.selectors) })).find((s) => s.sentinel)
 if (!found) {
-  console.error(`✗ css sources: the built CSS cannot be judged\n\n  none of ${SENTINELS.join(', ')} is in any stylesheet under dist/assets — Tailwind emitted no utilities, so it read no source, or the selector scan no longer understands the minifier's output\n`)
+  console.error(`✗ css sources: the built CSS cannot be judged\n\n  none of ${SENTINELS.join(', ')} is in a stylesheet under dist/assets that carries \`${TAILWIND_MARK}\` — Tailwind emitted no utilities, so it read no source, or the selector scan no longer understands the minifier's output\n`)
   console.error(`The configuration in src/style.css reads correctly, so check what this
 Tailwind version makes of \`source(none)\` and the @source lines, then the
 scan in lib/css-sources.mjs against the stylesheet that should hold them.`)

@@ -57,6 +57,7 @@
  */
 import { scriptBlocks, styleRuns, templateText } from './colour-scan.mjs'
 import { blank, blankStrings, stripCssComments } from './css-walk.mjs'
+import { blankScriptComments, scriptStrings } from './script-walk.mjs'
 
 export const CARD_RADIUS = '0.75rem'
 export const CARD_TOKEN = '--radius-card'
@@ -390,13 +391,12 @@ const TOKEN_KEY = new RegExp(String.raw`(['"])${CARD_TOKEN}\1\s*:\s*['"]?\s*([^;
 const TOKEN_SET = new RegExp(String.raw`setProperty\(\s*(['"])${CARD_TOKEN}\1\s*,\s*['"]?\s*([^'")]+)`, 'g')
 /**
  * … or an arbitrary-property class kept as a string constant,
- * `'[--radius-card:4px]'`, bound into a class list later — inside a string
- * literal only, so a code comment that mentions the class in prose is not a
- * definition.
+ * `'[--radius-card:4px]'`, bound into a class list later. Run over the inside
+ * of string literals only (script-walk.mjs), template literals across their
+ * lines included, so a code comment that mentions the class in prose is not
+ * a definition.
  */
-const TOKEN_CLASS = new RegExp(String.raw`(?<=['"\x60][^'"\x60\n]*)\[${CARD_TOKEN}\s*:\s*([^\]]+)\]`, 'g')
-/** Script comments, blanked before the script patterns run: a `//` after whitespace or a line start (not the one in a URL), and `/* … *\/`. */
-const blankScriptComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|[\s;{(,])\/\/[^\n]*/g, (m, lead) => lead + blank(m.slice(lead.length)))
+const TOKEN_CLASS = new RegExp(String.raw`\[${CARD_TOKEN}\s*:\s*([^\]]+)\]`, 'g')
 
 /** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
 export const TOKEN_SCOPE = '@theme static'
@@ -432,7 +432,9 @@ export function tokenDefinitions(source, kind) {
     for (const re of [TOKEN_KEY, TOKEN_SET]) {
       for (const m of clean.matchAll(re)) out.push({ line: lineOf(base + m.index), value: m[2].trim(), scope: 'script' })
     }
-    for (const m of clean.matchAll(TOKEN_CLASS)) out.push({ line: lineOf(base + m.index), value: m[1].trim(), scope: 'script' })
+    for (const { text: str, index } of scriptStrings(text)) {
+      for (const m of str.matchAll(TOKEN_CLASS)) out.push({ line: lineOf(base + index + m.index), value: m[1].trim(), scope: 'script' })
+    }
   }
   if (kind === 'vue') {
     for (const m of templateText(source).matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })

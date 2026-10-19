@@ -356,6 +356,14 @@ describe('tokenDefinitions — where --radius-card is set', () => {
     expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
   })
 
+  it('reads the class string across the lines of a template literal, and past a comment marker inside a string', () => {
+    const ts = "const flat = `p-4 border\n  [--radius-card:4px]`\nconst g = 'src/*'\nel.style.setProperty('--radius-card', '0')\nconst e = '*/'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([
+      { line: 2, value: '4px', scope: 'script' },
+      { line: 4, value: '0', scope: 'script' },
+    ])
+  })
+
   it('does not take a code comment that mentions the class, or a bare mention, for a definition', () => {
     const ts = "// never write a [--radius-card:0] class here\n/* nor '[--radius-card:4px]' */\nconst u = 'https://x.test/a' // don't: [--radius-card:0]\nexport const x = 1"
     expect(tokenDefinitions(ts, 'ts')).toEqual([])
