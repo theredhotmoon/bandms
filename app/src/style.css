@@ -1,6 +1,18 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "@fontsource-variable/archivo";
 @import "./admin-palette.css";
+
+/* Which files Tailwind reads for class names. Left to itself it reads every
+   file under app/ that git does not ignore — the build guards and their specs
+   in scripts/, the Playwright specs in e2e/, CLAUDE.md — and a
+   `[--radius-card:4px]`, a `bg-[#141414]` or a `bg-[#…]` written in one of
+   them as a fixture or an example became a real rule in the shipped
+   stylesheet (#198 added five; the colour guard's spec and the guard table
+   in CLAUDE.md had leaked for longer). Only src/ renders, so only src/ is a
+   source, and its own specs are fixtures too. The `source(none)` that turns
+   detection off sits on the import above. */
+@source "../src";
+@source not "../src/**/*.spec.ts";
 
 @theme {
   --color-ink: #121212;
