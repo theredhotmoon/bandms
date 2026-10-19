@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-10-19 (admin stylesheet sources)
 
 ### Fixed
-- **Test fixtures and documentation examples no longer ship in the admin stylesheet**: Tailwind reads every file under `app/` for class names unless told otherwise, so a `[--radius-card:4px]` in a build-guard spec, a `bg-[#141414]` in another and the `bg-[#…]` example in `app/CLAUDE.md` were each emitted as a real (if unused) rule in production CSS. The admin now names `src/` minus its specs as the only source, and a new post-build check fails if a rule that no component could have produced appears in `dist/` again. Nine dead rules gone; nothing visible changes.
+- **Test fixtures and documentation examples no longer ship in the admin stylesheet**: Tailwind reads every file under `app/` for class names unless told otherwise, so a `[--radius-card:4px]` in a build-guard spec, a `bg-[#141414]` in another and the `bg-[#…]` example in `app/CLAUDE.md` were each emitted as a real (if unused) rule in production CSS. The admin now names `src/` minus its specs as the only source, and a new post-build check fails if a rule that no component could have produced appears in `dist/` again. Twenty-eight dead rules gone — every one checked against `src/` first — and nothing added; nothing visible changes.
 ## [Unreleased] — 2026-10-19 (card corner token)
 
 ### Changed
