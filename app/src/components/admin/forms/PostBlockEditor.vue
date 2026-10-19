@@ -175,7 +175,7 @@ async function onGripKeydown(e: KeyboardEvent, i: number) {
    same rows. Touch users reorder with the up/down buttons instead. */
 .block-row {
   border: 1px solid var(--c-222222);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   padding: 0.625rem 0.75rem 0.75rem;
   background: var(--c-111111);
   touch-action: pan-y pinch-zoom;

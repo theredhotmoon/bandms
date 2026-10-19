@@ -252,7 +252,7 @@ function submit() {
 
 /* ── OG preview card ─────────────────────────────────────────── */
 .og-preview {
-  border: 1px solid var(--c-252525); border-radius: 0.75rem; overflow: hidden;
+  border: 1px solid var(--c-252525); border-radius: var(--radius-card); overflow: hidden;
   display: flex; gap: 0; background: var(--c-141414);
 }
 .og-img {

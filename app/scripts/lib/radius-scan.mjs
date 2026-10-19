@@ -3,9 +3,13 @@
  * check-admin-radius.mjs and its spec.
  *
  * DESIGN.md gives cards, table cards, drop zones and the modal panel a
- * 0.75rem corner. Every value on the radius scale looks deliberate in review,
- * so cards drift to the 0.5rem control corner without anyone noticing; this
- * scanner is what notices.
+ * 0.75rem corner, held in one token: `--radius-card` in src/style.css. Every
+ * value on the radius scale looks deliberate in review, so cards drift to the
+ * 0.5rem control corner without anyone noticing; this scanner is what
+ * notices. A card rule must write `var(--radius-card)` for each rounded
+ * corner — a literal `0.75rem` is the right shape and still fails, because a
+ * literal is one edit away from being the wrong one, and the token is what
+ * makes "the card corner" a single source rather than 40 agreeing numbers.
  *
  * A scanner, not a CSS parser, in the same shape as colour-scan.mjs, whose
  * helpers it shares for "where is the CSS" and "what is a comment". Strings
@@ -33,15 +37,17 @@
  *   - The shorthand and every longhand (`border-top-left-radius`, the logical
  *     `border-start-start-radius` family) are applied to four corners in
  *     source order, last declaration per property winning as in CSS, with
- *     `!important` dropped. Shorthand values are spelt as `0.75rem`,
- *     `.75rem` or `12px`; `em` is not accepted, because it scales with the
- *     element's font size and is only 12px by coincidence.
- *   - The corners pass when all four are 0.75rem, or one EDGE is flat (both
- *     corners on one side 0, the other two 0.75rem — a card butted against a
- *     sibling strip). Two square corners on a diagonal, or a fully square
- *     card, fail. A deliberate exception — a card flush to the viewport edge
- *     on phones — takes `radius-lint-ignore: <reason>` on the declaration's
- *     line, the way colour-scan's `token-lint-ignore` works.
+ *     `!important` dropped. Each length is the token, `0`, or a rem/px
+ *     literal; `em` is not read, because it scales with the element's font
+ *     size and is only 12px by coincidence. Another `var(…)` is unknown and
+ *     fails — the scanner does not resolve custom properties.
+ *   - The corners pass when all four are the card corner, or one EDGE is
+ *     flat (both corners on one side 0, the other two the card corner — a
+ *     card butted against a sibling strip), AND every rounded corner was
+ *     written as the token. Two square corners on a diagonal, or a fully
+ *     square card, fail. A deliberate exception — a card flush to the
+ *     viewport edge on phones — takes `radius-lint-ignore: <reason>` on the
+ *     declaration's line, the way colour-scan's `token-lint-ignore` works.
  *
  * It reads <style> blocks and .css files only. A card rounded with a Tailwind
  * utility in its class list (`rounded-lg`) is outside what it can see.
@@ -49,6 +55,8 @@
 import { blank, stripCssComments, styleRuns } from './colour-scan.mjs'
 
 export const CARD_RADIUS = '0.75rem'
+export const CARD_TOKEN = '--radius-card'
+export const CARD_VAR = `var(${CARD_TOKEN})`
 export const IGNORE_MARKER = 'radius-lint-ignore'
 const CARD_PX = 12
 
@@ -125,29 +133,39 @@ export function cardClassOf(selector, { optionTiles = new Set(), containers = ne
 
 /* ── Corners ───────────────────────────────────────────────────────────── */
 
-/** One length as CSS pixels, or NaN for anything that is not a rem/px length. */
-function px(token) {
-  const m = token.match(/^(\d*\.?\d+)(rem|px)?$/)
-  if (!m) return NaN
+/** `var(--radius-card)`, with any spacing inside the parentheses. */
+const TOKEN_REF = /var\(\s*--radius-card\s*\)/g
+
+/**
+ * One length as { px, token }: its CSS pixels (NaN for anything that is not
+ * the token, `0` or a rem/px literal) and whether it was written as the token.
+ */
+function lengthOf(text) {
+  if (text === CARD_VAR) return { px: CARD_PX, token: true }
+  const m = text.match(/^(\d*\.?\d+)(rem|px)?$/)
+  if (!m) return { px: NaN, token: false }
   const n = Number(m[1])
-  if (!m[2]) return n === 0 ? 0 : NaN
-  return m[2] === 'px' ? n : n * 16
+  if (!m[2]) return { px: n === 0 ? 0 : NaN, token: false }
+  return { px: m[2] === 'px' ? n : n * 16, token: false }
 }
 
-/** `border-radius` shorthand → [tl, tr, br, bl]; an elliptical corner whose radii differ is NaN. */
+const UNKNOWN = { px: NaN, token: false }
+
+/** `border-radius` shorthand → [tl, tr, br, bl]; an elliptical corner whose radii differ is unknown. */
 function expandShorthand(value) {
-  const sides = value.split('/').map((side) => side.trim().split(/\s+/).filter(Boolean).map(px))
+  const sides = value.split('/').map((side) => side.trim().split(/\s+/).filter(Boolean).map(lengthOf))
   const four = (t) => {
     if (t.length === 1) return [t[0], t[0], t[0], t[0]]
     if (t.length === 2) return [t[0], t[1], t[0], t[1]]
     if (t.length === 3) return [t[0], t[1], t[2], t[1]]
     if (t.length === 4) return t
-    return [NaN, NaN, NaN, NaN]
+    return [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN]
   }
   const h = four(sides[0] ?? [])
   if (sides.length === 1) return h
   const v = four(sides[1])
-  return h.map((r, i) => (r === v[i] ? r : NaN))
+  // Both radii of a corner must agree; a token on one axis and a literal on the other is a literal.
+  return h.map((r, i) => (r.px === v[i].px ? { px: r.px, token: r.token && v[i].token } : UNKNOWN))
 }
 
 /** Longhand → corner index. Logical names assume horizontal-tb LTR, which the admin is. */
@@ -162,20 +180,22 @@ const CORNER_OF = {
   'border-end-start-radius': 3,
 }
 
+const ZERO = { px: 0, token: false }
+
 /**
- * The four corners [tl, tr, br, bl] in px that a sequence of radius
+ * The four corners [tl, tr, br, bl] as { px, token } that a sequence of radius
  * declarations ([property, value] pairs, in source order) resolves to.
  */
-export function cornersOf(decls) {
-  let corners = [NaN, NaN, NaN, NaN]
+function resolveCorners(decls) {
+  let corners = [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN]
   let set = false
   for (const [prop, raw] of decls) {
-    const value = raw.replace(/!\s*important/g, '').trim()
+    const value = raw.replace(/!\s*important/g, '').replace(TOKEN_REF, CARD_VAR).trim()
     if (prop === 'border-radius') {
       corners = expandShorthand(value)
     } else if (prop in CORNER_OF) {
-      if (!set) corners = [0, 0, 0, 0] // longhands alone: the others are the initial 0
-      corners[CORNER_OF[prop]] = px(value)
+      if (!set) corners = [ZERO, ZERO, ZERO, ZERO] // longhands alone: the others are the initial 0
+      corners[CORNER_OF[prop]] = lengthOf(value)
     } else {
       continue
     }
@@ -184,9 +204,14 @@ export function cornersOf(decls) {
   return corners
 }
 
+/** The four corners in px — see resolveCorners. */
+export function cornersOf(decls) {
+  return resolveCorners(decls).map((c) => c.px)
+}
+
 const isCardSize = (s) => Math.abs(s - CARD_PX) < 0.01
 
-/** All four corners rounded, or one edge flat and the other two rounded. */
+/** All four corners the card size, or one edge flat and the other two the card size. */
 export function isCardCorners([tl, tr, br, bl]) {
   const c = [tl, tr, br, bl]
   if (c.some(Number.isNaN)) return false
@@ -200,9 +225,22 @@ export function isCardCorners([tl, tr, br, bl]) {
   return top || bottom || left || right
 }
 
-/** Whether a `border-radius` shorthand value alone is the card corner. */
+/**
+ * The verdict on a card rule's radius declarations:
+ *   shape   — the corners are the card shape (all rounded, or one flat edge)
+ *   literal — a rounded corner was written as a number rather than the token
+ *   ok      — shape && !literal: what the build accepts
+ */
+export function judge(decls) {
+  const corners = resolveCorners(decls)
+  const shape = isCardCorners(corners.map((c) => c.px))
+  const literal = shape && corners.some((c) => !c.token && isCardSize(c.px))
+  return { shape, literal, ok: shape && !literal }
+}
+
+/** Whether a `border-radius` shorthand value alone is what a card rule may write. */
 export function isCardRadius(value) {
-  return isCardCorners(cornersOf([['border-radius', value]]))
+  return judge([['border-radius', value]]).ok
 }
 
 /* ── Blocks ────────────────────────────────────────────────────────────── */
@@ -262,6 +300,9 @@ function blocks(css) {
 /** Shorthand and every physical or logical longhand, at a property boundary (not `--x-border-radius`). */
 const RADIUS_DECL = /(?<![\w-])(border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius)\s*:\s*([^;]+)/g
 
+/** A declaration that redefines the token itself, anywhere but src/style.css. */
+export const TOKEN_REDEFINED = /(?<![\w-])--radius-card\s*:/
+
 /** 1-based line of an offset, from a newline table built once per file. */
 function lineIndex(source) {
   const nl = []
@@ -282,9 +323,11 @@ function lineIndex(source) {
 
 /**
  * One pass over one file's source. `kind` is 'css' or 'vue'. Returns
- *   rules   — [{ line, card, radius, ok }] in source order, one per card rule
- *             that sets a corner; `line` points at the winning declaration.
- *             Rules without a radius are not reported, so a modifier like
+ *   rules   — [{ line, card, radius, ok, literal? }] in source order, one per
+ *             card rule that sets a corner; `line` points at the winning
+ *             declaration, and `literal: true` marks a card that has the
+ *             right shape written as a number instead of the token. Rules
+ *             without a radius are not reported, so a modifier like
  *             `.song-card--encore { background: … }` is never a violation,
  *             and a declaration line carrying IGNORE_MARKER is skipped.
  *   classes — the Set of listed classes (containers and option tiles) that
@@ -319,7 +362,8 @@ export function scanCards(source, kind, { optionTiles = new Set(), containers = 
       const radius = byProp.size === 1 && byProp.has('border-radius')
         ? byProp.get('border-radius').trim()
         : [...byProp].map(([p, v]) => `${p}: ${v.trim()}`).join('; ')
-      rules.push({ line, card, radius, ok: isCardCorners(cornersOf(decls)) })
+      const { ok, literal } = judge(decls)
+      rules.push({ line, card, radius, ok, ...(literal && { literal: true }) })
     }
   }
   rules.sort((a, b) => a.line - b.line)

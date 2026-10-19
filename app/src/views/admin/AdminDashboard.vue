@@ -291,7 +291,7 @@ const avgEnhanceScore = computed(() => {
   gap: 1px;
   background: var(--c-222222);
   border: 1px solid var(--c-222222);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
 .stat-strip--static { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -374,7 +374,7 @@ a.stat-cell:hover .stat-label { color: var(--c-e2e8f0); }
 /* Shared widget shell (used by EPK versions + enhance level) */
 .readiness-widget {
   margin-top: 2rem; background: var(--c-141414); border: 1px solid var(--c-222222);
-  border-radius: 0.75rem; padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card); padding: 1.25rem 1.5rem;
 }
 .readiness-header {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem;

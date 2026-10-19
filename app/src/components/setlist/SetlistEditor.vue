@@ -523,7 +523,7 @@ select.field-input {
 .song-list { display: flex; flex-direction: column; gap: 0.3rem; padding: 0 1rem; flex-shrink: 0; }
 .empty-songs { font-size: var(--fs-xs); color: var(--c-334155); text-align: center; padding: 1.5rem 0; }
 
-.song-card { background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem; overflow: hidden; }
+.song-card { background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card); overflow: hidden; }
 .song-card--encore { border-color: var(--c-444444); }
 
 .song-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; }
@@ -580,7 +580,7 @@ select.field-input {
 
 .add-panel {
   margin-top: 0.5rem; background: var(--c-111111); border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
+  border-radius: var(--radius-card); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
 }
 .add-song-list { max-height: 12rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.2rem; }
 .add-song-row {
@@ -636,7 +636,7 @@ select.field-input {
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {
-  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card);
   padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .confirm-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }

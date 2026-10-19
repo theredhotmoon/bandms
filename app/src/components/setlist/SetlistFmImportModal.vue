@@ -209,7 +209,7 @@ const formatDate = (d: string | null) => (d ? formatShortDate(parseDate(d), date
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .modal-card {
-  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card);
   width: 100%; max-width: 30rem; max-height: 85vh;
   display: flex; flex-direction: column; overflow: hidden;
 }

@@ -639,7 +639,7 @@ function submit() {
 .venue-card {
   margin-top: 0.625rem;
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   overflow: hidden;
   background: var(--c-141414);
 }
@@ -680,7 +680,7 @@ function submit() {
 .band-pool,
 .lineup-panel {
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   background: var(--c-141414);
   padding: 0.5rem;
   display: flex;
@@ -828,7 +828,7 @@ function submit() {
 /* ── Concert poster ─────────────────────────────────────────── */
 .poster-drop {
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   background: var(--c-141414);
   cursor: pointer;
   overflow: hidden;

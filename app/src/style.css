@@ -46,6 +46,18 @@
   --fs-glyph-sm: 1.5rem;
 }
 
+/* ── Shapes ──────────────────────────────────────── */
+/* The card corner (DESIGN.md, Shapes): cards, table cards, drop zones and the
+   modal panel. One token, because every step of the radius scale looks
+   deliberate in review, which is how nine cards drifted to the 0.5rem control
+   corner before #197. scripts/check-admin-radius.mjs requires a card rule to
+   write var(--radius-card) — a literal 0.75rem fails the build — and pins this
+   value to the one DESIGN.md names. Inputs, buttons and badges keep their
+   literal 0.5 / 0.375 / 0.25rem: those are not one corner shared by one role. */
+:root {
+  --radius-card: 0.75rem;
+}
+
 /* ── Global reset / base ─────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 

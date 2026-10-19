@@ -177,7 +177,7 @@ async function save() {
 .gear-list { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .gear-card {
-  background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
+  background: var(--c-111111); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card);
   padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 

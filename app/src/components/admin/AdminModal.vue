@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
   z-index: 10;
   width: calc(100% - 2rem);
   margin: 4rem 1rem 1rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-modal);
   background: var(--c-141414);
   border: 1px solid var(--c-333333);
@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--c-252525);
   background: var(--c-141414);
-  border-radius: 0.75rem 0.75rem 0 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 .modal-title {
   font-size: var(--fs-base);
