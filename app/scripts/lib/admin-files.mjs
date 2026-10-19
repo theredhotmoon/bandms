@@ -25,16 +25,19 @@ export const EXCLUDED = {
 
 export const posix = (p) => p.split(sep).join('/')
 
+/** How a guard should read a file: a .css file is a stylesheet; anything else is an SFC with <style> blocks. */
+export const kindOf = (path) => (path.endsWith('.css') ? 'css' : 'vue')
+
 export const isExcluded = (rel) =>
   Object.keys(EXCLUDED).some((path) => rel === path || rel.startsWith(path + '/'))
 
 /**
- * Every .vue and .css file under `src`, as absolute paths, minus those whose
- * src-relative path `skip` returns true for. The admin walk passes isExcluded;
- * a guard that must see the whole SPA (the token-redefinition check) passes
- * only the file it is pinning.
+ * Every .vue and .css file under `src` (or every file matching `ext`), as
+ * absolute paths, minus those whose src-relative path `skip` returns true for.
+ * The admin walk passes isExcluded; a guard that must see the whole SPA (the
+ * token-redefinition check) passes only the file it is pinning.
  */
-export function styleFilesUnder(src, skip = () => false) {
+export function styleFilesUnder(src, skip = () => false, ext = /\.(vue|css)$/) {
   const files = []
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
@@ -42,7 +45,7 @@ export function styleFilesUnder(src, skip = () => false) {
       const rel = posix(relative(src, abs))
       if (skip(rel)) continue
       if (statSync(abs).isDirectory()) walk(abs)
-      else if (/\.(vue|css)$/.test(name)) files.push(abs)
+      else if (ext.test(name)) files.push(abs)
     }
   }
   walk(src)

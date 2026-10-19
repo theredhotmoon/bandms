@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { UTILITY_CARD, cardClassOf, cardRules, cornersOf, isCardCorners, isCardRadius, judge, scanCards, tokenDefinitions, utilityCardLiterals } from './radius-scan.mjs'
+import { TOKEN_SCOPE, UTILITY_CARD, UTILITY_CARD_REF, cardClassOf, cardRules, cornersOf, isCardCorners, isCardRadius, judge, scanCards, tokenDefinitions, utilityCardFix, utilityCardLiterals } from './radius-scan.mjs'
 
 type Rule = { line: number; card: string; radius: string; ok: boolean; literal?: true }
 const css = (src: string, opts?: object): Rule[] => cardRules(src, 'css', opts)
@@ -75,10 +75,11 @@ describe('cardClassOf — which rules style a card', () => {
 })
 
 describe('isCardRadius — what a card rule may write', () => {
-  it('accepts the token, however it is spaced, with or without !important', () => {
-    for (const v of [T, 'var( --radius-card )', `${T} !important`, `${T} ! important`]) {
+  it('accepts the token, however it is spaced, with or without !important or a fallback', () => {
+    for (const v of [T, 'var( --radius-card )', `${T} !important`, `${T} ! important`, 'var(--radius-card, 12px)', 'var(--radius-card,.75rem) var(--radius-card) 0 0']) {
       expect(isCardRadius(v), v).toBe(true)
     }
+    expect(isCardRadius('var(--radius-md, 0.75rem)')).toBe(false)
   })
 
   it('accepts one flat edge, as long as the other two corners are the token', () => {
@@ -293,24 +294,56 @@ describe('scanCards — which listed classes still name a rule', () => {
 })
 
 describe('tokenDefinitions — where --radius-card is set', () => {
-  it('finds every definition with its line and value, in a @theme block or a plain rule', () => {
-    const src = '@theme static {\n  --radius-card: 0.75rem;\n}\n:root[data-admin-theme="light"] {\n  --radius-card: 0.5rem;\n}'
+  it('finds every definition with its line, value and enclosing block', () => {
+    const src = '@theme static {\n  --radius-card: 0.75rem;\n}\n:root[data-admin-theme=light] {\n  --radius-card: 0.5rem;\n}\n@theme {\n  --radius-card: 1rem;\n}'
     expect(tokenDefinitions(src, 'css')).toEqual([
-      { line: 2, value: '0.75rem' },
-      { line: 5, value: '0.5rem' },
+      { line: 2, value: '0.75rem', scope: TOKEN_SCOPE },
+      { line: 5, value: '0.5rem', scope: ':root[data-admin-theme=light]' },
+      { line: 8, value: '1rem', scope: '@theme' },
     ])
+    expect(TOKEN_SCOPE).toBe('@theme static')
   })
 
   it('does not read a comment, a string or a different property as a definition', () => {
     expect(tokenDefinitions('/* --radius-card: 0.75rem */\n.a { border-radius: var(--radius-card) }', 'css')).toEqual([])
     expect(tokenDefinitions('.a::before { content: "--radius-card: 4px" }', 'css')).toEqual([])
     expect(tokenDefinitions('.a { --thumb-radius-card: 4px; --radius-card-x: 2px }', 'css')).toEqual([])
-    expect(tokenDefinitions('.a { --radius-card:4px }', 'css')).toEqual([{ line: 1, value: '4px' }])
+    expect(tokenDefinitions('.a { --radius-card:4px }', 'css')).toEqual([{ line: 1, value: '4px', scope: '.a' }])
   })
 
-  it('reads only the <style> blocks of a .vue file', () => {
-    const sfc = "<script setup>\nconst k = '--radius-card: 0'\n</script>\n<template><!-- --radius-card: 1px --><div /></template>\n<style>\n.x { --radius-card: 4px }\n</style>"
-    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 6, value: '4px' }])
+  it('reads the <style> blocks and the template attributes of a .vue file, not its script or comments', () => {
+    const sfc = [
+      '<script setup>',
+      "const k = '--radius-card: 0'",
+      '</script>',
+      '<template>',
+      '<!-- --radius-card: 1px -->',
+      '<div style="--radius-card: 0" />',
+      '<div :style="{ \'--radius-card\': \'4px\' }" />',
+      '<section class="p-4 [--radius-card:0.5rem] border" />',
+      '</template>',
+      '<style>',
+      '.x { --radius-card: 4px }',
+      '</style>',
+    ].join('\n')
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([
+      { line: 6, value: '0', scope: 'template' },
+      { line: 7, value: '4px', scope: 'template' },
+      { line: 8, value: '0.5rem', scope: 'template' },
+      { line: 11, value: '4px', scope: '.x' },
+    ])
+  })
+})
+
+describe('utilityCardFix — what a rounded-xl should have been', () => {
+  it('keeps the side and the variant prefix', () => {
+    expect(utilityCardFix('rounded-xl')).toBe('rounded-card')
+    expect(utilityCardFix('rounded-t-xl')).toBe('rounded-t-card')
+    expect(utilityCardFix('hover:rounded-tl-xl')).toBe('hover:rounded-tl-card')
+  })
+
+  it('counts the token utility in every side and prefix form', () => {
+    expect('rounded-card md:rounded-card rounded-t-card rounded-cards rounded-xl'.match(UTILITY_CARD_REF)).toEqual(['rounded-card', 'md:rounded-card', 'rounded-t-card'])
   })
 })
 
@@ -338,6 +371,10 @@ describe('utilityCardLiterals — rounded-xl in a class list', () => {
   it('ignores <style> blocks and HTML comments', () => {
     const sfc = '<template>\n<!-- <div class="rounded-xl" /> -->\n<div class="rounded-card" />\n</template>\n<style>\n.rounded-xl { border-radius: 0 }\n</style>'
     expect(utilityCardLiterals(sfc)).toEqual([])
+  })
+
+  it('reads a plain .ts module as script', () => {
+    expect(utilityCardLiterals("export const TILE = 'border rounded-xl p-4'\nexport const OK = 'rounded-card'")).toEqual([{ line: 1, utility: 'rounded-xl' }])
   })
 
   it('names the token utility after the token', () => {

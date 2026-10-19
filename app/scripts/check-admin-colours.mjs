@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { colourHits, IGNORE_MARKER } from './lib/colour-scan.mjs'
-import { adminStyleFiles, posix } from './lib/admin-files.mjs'
+import { adminStyleFiles, kindOf, posix } from './lib/admin-files.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -34,8 +34,7 @@ const { files, problems } = adminStyleFiles(SRC)
 const violations = [...problems]
 
 for (const file of files) {
-  const kind = file.endsWith('.css') ? 'css' : 'vue'
-  for (const { line, hits } of colourHits(readFileSync(file, 'utf8'), kind)) {
+  for (const { line, hits } of colourHits(readFileSync(file, 'utf8'), kindOf(file))) {
     violations.push(`${posix(relative(ROOT, file))}:${line}  ${hits.join(' | ')}`)
   }
 }

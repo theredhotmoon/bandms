@@ -136,8 +136,14 @@ export function cardClassOf(selector, { optionTiles = new Set(), containers = ne
 
 /* ── Corners ───────────────────────────────────────────────────────────── */
 
-/** `var(--radius-card)`, with any spacing inside the parentheses. */
-const TOKEN_REF = new RegExp(String.raw`var\(\s*${CARD_TOKEN}\s*\)`, 'g')
+/**
+ * `var(--radius-card)`, with any spacing inside the parentheses, with or
+ * without a fallback. `var(--radius-card, 12px)` is the token: the guard
+ * keeps the token defined, so the fallback never fires inside the SPA, and a
+ * card that may render outside it (a print sheet, a Teleport target) is
+ * entitled to one.
+ */
+const TOKEN_REF = new RegExp(String.raw`var\(\s*${CARD_TOKEN}\s*(?:,[^()]*)?\)`, 'g')
 
 /**
  * One length as { px, token }: its CSS pixels (NaN for anything that is not
@@ -378,22 +384,39 @@ export function cardRules(source, kind, options) {
 /* ── The token itself ──────────────────────────────────────────────────── */
 
 const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`, 'g')
+/** The same in a template: `style="--radius-card: 0"`, `:style="{ '--radius-card': '0' }"`, `[--radius-card:0.5rem]`. */
+const TOKEN_ATTR = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}['"]?\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
+
+/** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
+export const TOKEN_SCOPE = '@theme static'
 
 /**
- * Every definition of `--radius-card` in a file's stylesheets, as
- * [{ line, value }], with comments and strings blanked first — a comment that
- * quotes the token is not a definition. src/style.css must hold exactly one;
- * any other file holding one would re-round every card inside that scope
- * while each card rule still read as correct.
+ * Every definition of `--radius-card` in a file, as [{ line, value, scope }]:
+ * each stylesheet declaration with the selector or at-rule of the block that
+ * holds it, comments and strings blanked first (a comment that quotes the
+ * token is not a definition; a quoted attribute value inside the scope's
+ * selector comes back as spaces), plus — for a .vue file — each inline `style`
+ * attribute, `:style` binding or arbitrary-property class in the template,
+ * with scope 'template'. src/style.css must hold exactly one, inside
+ * TOKEN_SCOPE; any other definition anywhere would re-round every card inside
+ * its scope while each card rule still read as correct.
  */
 export function tokenDefinitions(source, kind) {
   const lineOf = lineIndex(source)
   const out = []
   for (const { css, base } of styleRuns(source, kind)) {
     const clean = blankStrings(stripCssComments(css))
-    for (const m of clean.matchAll(TOKEN_DECL)) out.push({ line: lineOf(base + m.index), value: m[1].trim() })
+    for (const { selector, body, bodyAt } of blocks(clean)) {
+      for (const m of body.matchAll(TOKEN_DECL)) {
+        out.push({ line: lineOf(base + bodyAt + m.index), value: m[1].trim(), scope: selector.trim() })
+      }
+    }
   }
-  return out
+  if (kind === 'vue') {
+    const template = templateOf(source)
+    for (const m of template.matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })
+  }
+  return out.sort((a, b) => a.line - b.line)
 }
 
 /* ── Utility-styled cards ──────────────────────────────────────────────── */
@@ -407,27 +430,44 @@ export const UTILITY_CARD = `rounded-${CARD_TOKEN.replace(/^--radius-/, '')}`
  * the one radius utility DESIGN.md's scale reserves for cards, so every use
  * of it in the admin is a card that should write `rounded-card`.
  */
-const ROUNDED_XL = /(?<![\w-])((?:[a-z-]+:)*rounded(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?-xl)(?![\w-])/g
+const SIDE = String.raw`(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?`
+const ROUNDED_XL = new RegExp(String.raw`(?<![\w-])((?:[a-z-]+:)*rounded${SIDE}-xl)(?![\w-])`, 'g')
+/** The token's utility in a class list, any side, any variant prefix — for counting what the guard covers. */
+export const UTILITY_CARD_REF = new RegExp(String.raw`(?<![\w-])(?:[a-z-]+:)*rounded${SIDE}-${UTILITY_CARD.slice('rounded-'.length)}(?![\w-])`, 'g')
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
 const HTML_COMMENT = /<!--[\s\S]*?-->/g
 
+/** What `rounded-xl` should have been: the same side, on the token (`rounded-t-xl` → `rounded-t-card`). */
+export function utilityCardFix(utility) {
+  return utility.replace(new RegExp(String.raw`rounded(${SIDE})-xl$`), `rounded$1-${UTILITY_CARD.slice('rounded-'.length)}`)
+}
+
 /**
- * Every `rounded-xl` utility in a .vue file's template and script — class
- * attributes, `:class` bindings and class strings held in script constants —
- * as [{ line, utility }]. <style> blocks and HTML comments are blanked; a
- * script block is scanned as-is, because a class string in a constant is
- * live code and a `//` comment naming the utility is a rare enough false
- * positive to prefer over missing the constant.
+ * A .vue file's template alone, offsets preserved: <style> and <script>
+ * blocks and HTML comments blanked — the scripts first, so a `'<!--'` string
+ * in one cannot open a comment that swallows the template.
+ */
+function templateOf(source) {
+  let live = source
+  for (const { css, base } of styleRuns(source, 'vue')) live = live.slice(0, base) + blank(css) + live.slice(base + css.length)
+  return live.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank)
+}
+
+/**
+ * Every `rounded-xl` utility in a file's template and script — class
+ * attributes, `:class` bindings and class strings held in script constants,
+ * in a .vue file or a plain .ts module — as [{ line, utility }]. <style>
+ * blocks and HTML comments are blanked; script is scanned as-is, because a
+ * class string in a constant is live code and a `//` comment naming the
+ * utility is a rare enough false positive to prefer over missing the constant.
  */
 export function utilityCardLiterals(source) {
   const lineOf = lineIndex(source)
-  let live = source
-  for (const { css, base } of styleRuns(source, 'vue')) live = live.slice(0, base) + blank(css) + live.slice(base + css.length)
   const hits = []
   const scan = (text, base) => {
     for (const m of text.matchAll(ROUNDED_XL)) hits.push({ line: lineOf(base + m.index), utility: m[1] })
   }
-  scan(live.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank), 0)
-  for (const m of live.matchAll(SCRIPT_BLOCK)) scan(m[0], m.index)
+  scan(templateOf(source), 0)
+  for (const m of source.matchAll(SCRIPT_BLOCK)) scan(m[0], m.index)
   return hits.sort((a, b) => a.line - b.line)
 }
