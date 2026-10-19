@@ -22,7 +22,12 @@
  * offset — and therefore every reported line number — stays true.
  */
 
-import { segments } from './css-sources.mjs'
+import { blank, stripCssComments } from './css-walk.mjs'
+
+// The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, shared
+// with the radius and source guards; these two are re-exported so the guards
+// that always read them from here keep one import.
+export { blank, stripCssComments }
 
 export const IGNORE_MARKER = 'token-lint-ignore'
 
@@ -39,21 +44,6 @@ const TW_ARBITRARY = /(?<![\w-])(?:[a-z]+:)*(?:bg|text|border|ring|outline|fill|
  * without breaking the tag, and the class says exactly what it means.
  */
 const PINNED_WHITE = /^(?:[a-z]+:)*text-\[#fff(?:fff)?\]$/
-
-/** Replace every character but newlines with a space, so offsets and line numbers hold. */
-export const blank = (s) => s.replace(/[^\n]/g, ' ')
-
-/**
- * CSS with its comments blanked, offsets kept. One definition for every style
- * guard, on the one CSS walker (css-sources.mjs): a `/*` inside a string or
- * a glob — the `/**\/` of `@source not "../src/**\/*.spec.ts"` — is not a
- * comment, which the regex this used to be got wrong.
- */
-export function stripCssComments(css) {
-  let out = ''
-  for (const s of segments(css)) out += s.type === 'comment' ? blank(s.text) : s.text
-  return out
-}
 
 /** rgba(0,0,0,a) is a shadow or a scrim — the same in either theme. */
 function isBlackFunc(args) {

@@ -9,7 +9,7 @@
  * markdown. src/style.css narrows that with `source(none)` on the import and
  * `@source` lines naming what renders. Two halves here:
  *
- *   - sourceDirectives() reads that configuration back out of the stylesheet,
+ *   - sourceDirectives() reads that configuration back out of a stylesheet,
  *     so the guard can assert it directly — the general check, and the only
  *     one that sees a dropped `@source not` or a path that resolves to
  *     nothing (Tailwind reads no file and says nothing);
@@ -20,76 +20,26 @@
  *     outside any quoted text (`bg-[#…]`, `[--radius-card:…]`,
  *     `rounded-[…px]`), or a class that sets --radius-card
  *     (`[--radius-card:4px]`), which check-admin-radius.mjs rejects in every
- *     src file.
+ *     rendered src file.
+ *
+ * The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, the
+ * same walk the colour and radius guards read through.
  */
+import { compounds, segments, stripCssComments } from './css-walk.mjs'
 
 export const PLACEHOLDER = '…'
 export const CARD_TOKEN_CLASS = /\\\[--radius-card\\:/
-/** A utility src is known to use (check-admin-radius.mjs requires it on every Tailwind-styled card), so its absence means Tailwind read nothing. */
-export const SENTINEL = '.rounded-card'
-
 /**
- * One walk over CSS text, shared by everything here so the character rules
- * cannot drift: yields { type, text } segments where `type` is 'comment',
- * 'string' (quotes included), 'url' (an unquoted url(...) token, which may
- * hold ; or } freely) or 'text'. A backslash escapes the next character
- * anywhere in CSS, so `\'` in an escaped selector never opens a string; a
- * quoted url(" … ") is a string segment after a text segment `url(`.
+ * Utilities the admin cannot render without — any one of them in the built
+ * CSS proves Tailwind read src/ and that the selector scan reads the
+ * minifier's output. A set, not one class, so no single design choice
+ * (every `rounded-card` moving into a stylesheet) can break the proof.
  */
-export function* segments(css) {
-  const n = css.length
-  let text = ''
-  const flush = function* () {
-    if (text) yield { type: 'text', text }
-    text = ''
-  }
-  for (let i = 0; i < n; ) {
-    const c = css[i]
-    if (c === '\\') {
-      text += css.slice(i, i + 2)
-      i += 2
-      continue
-    }
-    if (c === '/' && css[i + 1] === '*') {
-      yield* flush()
-      const e = css.indexOf('*/', i + 2)
-      const j = e < 0 ? n : e + 2
-      yield { type: 'comment', text: css.slice(i, j) }
-      i = j
-      continue
-    }
-    if (c === '"' || c === "'") {
-      yield* flush()
-      let j = i + 1
-      while (j < n && css[j] !== c) j += css[j] === '\\' ? 2 : 1
-      yield { type: 'string', text: css.slice(i, j + 1) }
-      i = j + 1
-      continue
-    }
-    if ((c === 'u' || c === 'U') && css.slice(i, i + 4).toLowerCase() === 'url(' && !/["'\s]/.test(css[i + 4] ?? '')) {
-      yield* flush()
-      const e = css.indexOf(')', i + 4)
-      const j = e < 0 ? n : e + 1
-      yield { type: 'url', text: css.slice(i, j) }
-      i = j
-      continue
-    }
-    text += c
-    i++
-  }
-  yield* flush()
-}
-
-/** Comments removed, everything else — strings, urls, escapes — kept whole. */
-export function stripComments(css) {
-  let out = ''
-  for (const s of segments(css)) if (s.type !== 'comment') out += s.text
-  return out
-}
+export const SENTINELS = ['.flex', '.hidden', '.grid', '.rounded-card']
 
 const isClassCompound = (s) => s.startsWith('.') || s.startsWith(':is(.') || s.startsWith(':where(.')
 /** A selector list counts when any compound in it is a class: the minifier merges same-body rules, so `dialog,.rounded-card` is a class rule too. */
-const isClassSelector = (s) => s.split(',').some((part) => isClassCompound(part.trim()))
+const isClassSelector = (s) => compounds(s).some(isClassCompound)
 
 /**
  * Every class selector in compiled CSS, nested rules included, as strings.
@@ -120,13 +70,13 @@ export function classSelectors(css) {
   return out
 }
 
-/**
- * Whether the sentinel utility is among the selectors. The CSS minifier merges
- * adjacent rules with the same body into one selector list, so `.rounded-card`
- * may sit inside `.x,.rounded-card{…}` — each compound is checked on its own.
- */
-export function hasSentinel(selectors) {
-  return selectors.some((s) => s.split(',').some((part) => part.trim() === SENTINEL))
+/** The sentinel found among the selectors, compound by compound, or null. */
+export function sentinelIn(selectors) {
+  for (const s of selectors) {
+    const hit = compounds(s).find((part) => SENTINELS.includes(part))
+    if (hit) return hit
+  }
+  return null
 }
 
 const ARBITRARY = /\\\[((?:(?!\\\]).)*)\\\]/g
@@ -140,10 +90,10 @@ function placeholderValue(selector) {
   return false
 }
 
-/** Why a selector cannot have come from src/, or null when it can. */
+/** Why a selector cannot have come from a rendered src/ file, or null when it can. */
 export function strayReason(selector) {
   if (placeholderValue(selector)) return `an arbitrary value holding "${PLACEHOLDER}", the documentation placeholder — read from a doc or a spec`
-  if (CARD_TOKEN_CLASS.test(selector)) return 'sets --radius-card from a class, which no src file may do — read from a spec or a doc'
+  if (CARD_TOKEN_CLASS.test(selector)) return 'sets --radius-card from a class, which check-admin-radius.mjs rejects in every rendered src file — read from a spec or a doc'
   return null
 }
 
@@ -163,19 +113,22 @@ const SOURCE = /@source\s+(not\s+)?(?:["']([^"']+)["']|inline\(\s*["']([^"']*)["
 
 /**
  * The Tailwind source configuration a stylesheet declares:
- *   { imported, detection, sources: [{ path, not, inline }] }
- * `detection` is 'none' for `source(none)`, 'auto' for an import with no
- * source() clause (every non-ignored file under the project), or the quoted
- * base path of a `source("…")`; null when tailwindcss is not imported. Other
- * clauses on the import (`prefix()`, `layer()`, `theme()`) are allowed in any
- * order. An `@source inline("…")` safelist is a source too — `inline: true`,
- * with the class list as `path`.
+ *   { imported, detection, base, sources: [{ path, not, inline }] }
+ * `detection` is 'none' for the bare keyword `source(none)`, 'auto' for an
+ * import with no source() clause (every non-ignored file under the project),
+ * or 'path' for `source("…")`, whose quoted value is `base` — and a quoted
+ * "none" is a path named none, not the keyword. Other clauses on the import
+ * (`prefix()`, `layer()`, `theme()`) are allowed in any order. An
+ * `@source inline("…")` safelist is a source too — `inline: true`, with the
+ * class list as `path`. Comments are set aside; a string is read whole, so
+ * the `/**\/` inside a glob is not a comment.
  */
 export function sourceDirectives(css) {
-  const clean = stripComments(css)
+  const clean = stripCssComments(css)
   const imp = clean.match(TAILWIND_IMPORT)
   const clause = imp?.[1].match(SOURCE_CLAUSE)
-  const detection = !imp ? null : !clause ? 'auto' : clause[1] === 'none' ? 'none' : clause[1].slice(1, -1)
+  const detection = !imp ? null : !clause ? 'auto' : clause[1] === 'none' ? 'none' : 'path'
+  const base = detection === 'path' ? clause[1].slice(1, -1) : null
   const sources = [...clean.matchAll(SOURCE)].map((m) => ({ path: m[2] ?? m[3], not: Boolean(m[1]), inline: m[2] === undefined }))
-  return { imported: Boolean(imp), detection, sources }
+  return { imported: Boolean(imp), detection, base, sources }
 }

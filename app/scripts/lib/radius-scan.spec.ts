@@ -349,6 +349,13 @@ describe('tokenDefinitions — where --radius-card is set', () => {
     expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
   })
 
+  it('reads an arbitrary-property class kept as a string in script or a .ts module', () => {
+    const ts = "export const FLAT = 'p-4 [--radius-card:4px] border'\nconst note = 'see [--radius-card] in style.css'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([{ line: 1, value: '4px', scope: 'script' }])
+    const sfc = "<script setup>\nconst cls = ['[--radius-card:0]']\n</script>\n<template><div :class=\"cls\" /></template>"
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
+  })
+
   it('normalises the whitespace of the enclosing block', () => {
     expect(tokenDefinitions('@theme  static {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
     expect(tokenDefinitions('@theme\nstatic {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)

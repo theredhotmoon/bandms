@@ -107,7 +107,10 @@ const listsOf = (rel) => ({
 let cards = 0
 let utilityCards = 0
 const seen = new Map()
-for (const file of styleFilesUnder(SRC, () => false, /\.(vue|css|ts)$/)) {
+// Specs beside the source are fixtures, not chrome: Tailwind does not read
+// them (src/style.css, `@source not`), so a token they quote rounds nothing —
+// and src/utils/cssSourcesCanary.spec.ts quotes one on purpose.
+for (const file of styleFilesUnder(SRC, (rel) => rel.endsWith('.spec.ts'), /\.(vue|css|ts)$/)) {
   const rel = posix(relative(SRC, file))
   const kind = rel.endsWith('.ts') ? 'ts' : kindOf(file)
   const source = readFileSync(file, 'utf8')

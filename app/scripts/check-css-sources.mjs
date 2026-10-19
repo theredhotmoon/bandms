@@ -16,28 +16,34 @@
  * specs, and index.html — as the only sources.
  *
  * Two checks, in order:
- *   1. The configuration, read back out of src/style.css: `source(none)` on
- *      the import, exactly the expected `@source` lines (an `inline()`
- *      safelist counts as a source and is unexpected too), and every positive
- *      path resolving to something. A path that resolves to nothing is the
- *      failure that needs this most — Tailwind reads no file, throws nothing,
- *      and emits zero utilities into a build that is otherwise green.
- *   2. The output in dist/: the sentinel utility src is known to use is
- *      present (so Tailwind read src/ at all, and the selector scan reads
- *      the minifier's output), and no selector has one of the two shapes
- *      only a non-source can produce (lib/css-sources.mjs) — the layer that
- *      still holds if a Tailwind upgrade reads the same configuration
- *      differently. src/utils/cssSourcesCanary.spec.ts carries both shapes
- *      on purpose: it is the one src file Tailwind must not read, so the
- *      `@source not` line is proven here rather than merely present.
+ *   1. The configuration, read back out of src/style.css: the bare keyword
+ *      `source(none)` on the import, exactly the expected `@source` lines (an
+ *      `inline()` safelist counts as a source and is unexpected too), and
+ *      every positive path resolving to something. A path that resolves to
+ *      nothing is the failure that needs this most — Tailwind reads no file,
+ *      throws nothing, and emits zero utilities into a build that is
+ *      otherwise green. Tailwind also honours `@source` in any stylesheet the
+ *      entry imports, so every other .css under src/ must declare none, and
+ *      must not import tailwindcss itself: one file holds the configuration.
+ *   2. The output in dist/: one of the sentinel utilities the admin cannot
+ *      render without is present (so Tailwind read src/ at all, and the
+ *      selector scan reads the minifier's output), and no selector has one of
+ *      the two shapes only a non-source can produce (lib/css-sources.mjs) —
+ *      the layer that still holds if a Tailwind upgrade reads the same
+ *      configuration differently. src/utils/cssSourcesCanary.spec.ts
+ *      carries both shapes on purpose: it is the one src file Tailwind must
+ *      not read, so the `@source not` line is proven here rather than merely
+ *      present.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SENTINEL, classSelectors, hasSentinel, sourceDirectives, strayRules } from './lib/css-sources.mjs'
+import { posix, styleFilesUnder } from './lib/admin-files.mjs'
+import { SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayRules } from './lib/css-sources.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-const STYLE = join(ROOT, 'src', 'style.css')
+const SRC = join(ROOT, 'src')
+const STYLE = join(SRC, 'style.css')
 const ASSETS = join(ROOT, 'dist', 'assets')
 
 /** What src/style.css must declare — paths relative to the stylesheet, as Tailwind reads them. */
@@ -54,9 +60,9 @@ const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline("${s.pa
 
 // ── 1. configuration ─────────────────────────────────────────────────────
 const broken = []
-const { imported, detection, sources } = sourceDirectives(readFileSync(STYLE, 'utf8'))
+const { imported, detection, base, sources } = sourceDirectives(readFileSync(STYLE, 'utf8'))
 if (!imported) broken.push('src/style.css does not import tailwindcss — nothing here can be judged')
-else if (detection !== 'none') broken.push(`src/style.css imports tailwindcss with ${detection === 'auto' ? 'no source() clause' : `source("${detection}")`} — it must be \`source(none)\`, or Tailwind reads every non-ignored file under app/ as a template`)
+else if (detection !== 'none') broken.push(`src/style.css imports tailwindcss with ${detection === 'auto' ? 'no source() clause' : `source("${base}")${base === 'none' ? ' — a quoted "none" is a path named none, not the keyword' : ''}`} — it must be \`source(none)\`, or Tailwind reads every non-ignored file under app/ as a template`)
 const declared = new Set(sources.map(key))
 for (const s of EXPECTED_SOURCES) {
   if (!declared.has(key(s))) broken.push(`src/style.css is missing \`${spell(s)}\``)
@@ -72,6 +78,16 @@ for (const s of sources) {
   if (s.not || s.inline || isGlob(s.path)) continue
   if (!existsSync(resolve(dirname(STYLE), s.path))) broken.push(`src/style.css: \`${spell(s)}\` resolves to nothing from src/ — Tailwind reads no file and says nothing; the path is relative to the stylesheet, not to app/`)
 }
+// Tailwind merges @source from every stylesheet the entry imports, each
+// relative to its own file; one file holds the configuration so this check
+// can read it.
+for (const file of styleFilesUnder(SRC, () => false, /\.css$/)) {
+  if (file === STYLE) continue
+  const rel = posix(relative(SRC, file))
+  const other = sourceDirectives(readFileSync(file, 'utf8'))
+  if (other.imported) broken.push(`src/${rel} imports tailwindcss — only src/style.css does, so the source configuration has one home`)
+  for (const s of other.sources) broken.push(`src/${rel} declares \`${spell(s)}\` — Tailwind honours it from any imported stylesheet, but only src/style.css may name sources`)
+}
 
 if (broken.length) {
   console.error('✗ css sources: the Tailwind source configuration cannot be trusted\n')
@@ -79,8 +95,9 @@ if (broken.length) {
   console.error(`
 src/style.css imports Tailwind with \`source(none)\` and names what renders as
 the only sources: \`@source "../src"\`, \`@source "../index.html"\`, and
-\`@source not "../src/**/*.spec.ts"\` for the fixtures beside the source. This
-check reads that back before it looks at the build.`)
+\`@source not "../src/**/*.spec.ts"\` for the fixtures beside the source. No
+other stylesheet declares any. This check reads that back before it looks at
+the build.`)
   process.exit(1)
 }
 
@@ -97,16 +114,16 @@ if (files.length === 0) {
 }
 
 const sheets = files.map((file) => ({ file, selectors: classSelectors(readFileSync(join(ASSETS, file), 'utf8')) }))
-// The sentinel is the one proof that Tailwind read src/ and that the selector
-// scan understands the minifier's output; a count of rules is not, because
-// the entry stylesheet also holds the palette, the form styles and every
-// unscoped <style>, and the vendored sheets have hundreds of their own.
-const tailwind = sheets.find((s) => hasSentinel(s.selectors))
-if (!tailwind) {
-  console.error(`✗ css sources: the built CSS cannot be judged\n\n  ${SENTINEL} is in no stylesheet under dist/assets — Tailwind emitted no utilities, so it read no source, or the selector scan no longer understands the minifier's output\n`)
+// A sentinel is the proof that Tailwind read src/ and that the selector scan
+// reads the minifier's output; a count of rules is not, because the entry
+// stylesheet also holds the palette, the form styles and every unscoped
+// <style>, and the vendored sheets have hundreds of their own.
+const found = sheets.map((s) => ({ ...s, sentinel: sentinelIn(s.selectors) })).find((s) => s.sentinel)
+if (!found) {
+  console.error(`✗ css sources: the built CSS cannot be judged\n\n  none of ${SENTINELS.join(', ')} is in any stylesheet under dist/assets — Tailwind emitted no utilities, so it read no source, or the selector scan no longer understands the minifier's output\n`)
   console.error(`The configuration in src/style.css reads correctly, so check what this
 Tailwind version makes of \`source(none)\` and the @source lines, then the
-scan in lib/css-sources.mjs against the stylesheet that should hold it.`)
+scan in lib/css-sources.mjs against the stylesheet that should hold them.`)
   process.exit(1)
 }
 
@@ -126,4 +143,4 @@ what this Tailwind version makes of \`source(none)\` and the @source lines.`)
 }
 
 const rules = sheets.reduce((n, s) => n + s.selectors.length, 0)
-console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${SENTINEL} in ${tailwind.file}), ${sources.length} source line(s) as expected`)
+console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected`)

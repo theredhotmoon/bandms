@@ -56,6 +56,7 @@
  * utility. The token's own definitions are tokenDefinitions().
  */
 import { blank, scriptBlocks, stripCssComments, styleRuns, templateText } from './colour-scan.mjs'
+import { blankStrings } from './css-walk.mjs'
 
 export const CARD_RADIUS = '0.75rem'
 export const CARD_TOKEN = '--radius-card'
@@ -254,9 +255,6 @@ export function isCardRadius(value) {
 
 /* ── Blocks ────────────────────────────────────────────────────────────── */
 
-/** Quoted strings and unquoted url() bodies, blanked so their braces and semicolons are inert. */
-const blankStrings = (css) =>
-  css.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, blank).replace(/url\(\s*[^)"']*\)/g, (m) => 'url(' + blank(m.slice(4, -1)) + ')')
 
 /**
  * A nested selector as the full selector it stands for. A nested at-rule
@@ -388,8 +386,10 @@ const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`
 const TOKEN_ATTR = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}['"]?\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
 /** And in script, where a `:style` object usually lives: a quoted `'--radius-card': '0'` key … */
 const TOKEN_KEY = new RegExp(String.raw`(['"])${CARD_TOKEN}\1\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
-/** … or `el.style.setProperty('--radius-card', '0')`. */
+/** … or `el.style.setProperty('--radius-card', '0')` … */
 const TOKEN_SET = new RegExp(String.raw`setProperty\(\s*(['"])${CARD_TOKEN}\1\s*,\s*['"]?\s*([^'")]+)`, 'g')
+/** … or an arbitrary-property class kept as a string constant, `'[--radius-card:4px]'`, bound into a class list later. */
+const TOKEN_CLASS = new RegExp(String.raw`\[${CARD_TOKEN}\s*:\s*([^\]]+)\]`, 'g')
 
 /** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
 export const TOKEN_SCOPE = '@theme static'
@@ -402,8 +402,9 @@ export const TOKEN_SCOPE = '@theme static'
  * selector comes back as spaces), plus — for a .vue file — each inline `style`
  * attribute, `:style` binding or arbitrary-property class in the template,
  * with scope 'template', and — in its <script> blocks, or in a .ts module
- * (`kind` 'ts') — each quoted `'--radius-card'` object key or
- * `setProperty('--radius-card', …)` call, with scope 'script'. src/style.css
+ * (`kind` 'ts') — each quoted `'--radius-card'` object key,
+ * `setProperty('--radius-card', …)` call or `'[--radius-card:…]'` class
+ * string, with scope 'script'. src/style.css
  * must hold exactly one, inside TOKEN_SCOPE; any other definition anywhere
  * would re-round every card inside its scope while each card rule still read
  * as correct.
@@ -423,6 +424,7 @@ export function tokenDefinitions(source, kind) {
     for (const re of [TOKEN_KEY, TOKEN_SET]) {
       for (const m of text.matchAll(re)) out.push({ line: lineOf(base + m.index), value: m[2].trim(), scope: 'script' })
     }
+    for (const m of text.matchAll(TOKEN_CLASS)) out.push({ line: lineOf(base + m.index), value: m[1].trim(), scope: 'script' })
   }
   if (kind === 'vue') {
     for (const m of templateText(source).matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })

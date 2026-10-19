@@ -1,30 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { SENTINEL, classSelectors, hasSentinel, segments, sourceDirectives, strayReason, strayRules, stripComments } from './css-sources.mjs'
-
-const types = (css: string): string[] => [...segments(css)].map((s: { type: string }) => s.type)
-
-describe('segments', () => {
-  it('splits comments, strings, unquoted urls and text, keeping every character', () => {
-    const css = '/* c */.a{content:"x";background:url(a.png)}'
-    expect(types(css)).toEqual(['comment', 'text', 'string', 'text', 'url', 'text'])
-    expect([...segments(css)].map((s: { text: string }) => s.text).join('')).toBe(css)
-  })
-
-  it('treats a quoted url() as text plus a string, so a ) inside the quotes is not its end', () => {
-    expect(types('url("x)y")')).toEqual(['text', 'string', 'text'])
-  })
-})
-
-describe('stripComments', () => {
-  it('removes comments and nothing else', () => {
-    expect(stripComments('a/* x */b"/*"c')).toBe('ab"/*"c')
-  })
-
-  it('does not take the /**/ inside a glob for a comment', () => {
-    expect(stripComments('@source not "../src/**/*.spec.ts";')).toBe('@source not "../src/**/*.spec.ts";')
-  })
-})
+import { SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayReason, strayRules } from './css-sources.mjs'
 
 describe('classSelectors', () => {
   it('lists class rules at the top level and inside at-rules', () => {
@@ -47,9 +23,9 @@ describe('classSelectors', () => {
     expect(classSelectors(".q[data-x='a;b']{x:y}")).toEqual([".q[data-x='a;b']"])
   })
 
-  it('survives a ) inside a quoted url, where the quotes rule', () => {
+  it('survives a ) inside a url, quoted or not', () => {
     expect(classSelectors('.a{background:url("x)y")}.b{x:y}.c{x:y}')).toEqual(['.a', '.b', '.c'])
-    expect(classSelectors(".a{background:url('data:image/svg+xml,<svg fill=\"rgb(0,0,0)\"/>')}.b{x:y}")).toEqual(['.a', '.b'])
+    expect(classSelectors(".a{background:url(data:image/svg+xml,%3Csvg fill='rgb(0,0,0)'%3E)}.b{x:y}.c{x:y}")).toEqual(['.a', '.b', '.c'])
   })
 
   it('does not take an escaped quote in a selector for a string opening', () => {
@@ -58,13 +34,14 @@ describe('classSelectors', () => {
       .toEqual([".after\\:content-\\[\\'…\\'\\]:after", '.x', '.y'])
   })
 
+  it('loses the rule after a stray apostrophe, not the rest of the file', () => {
+    // The string ends at the newline, having eaten .a's closing brace, so .b is read as part of .a; .c is seen again.
+    expect(classSelectors(".a{--note:it's}\n.b{x:y}\n.c{x:y}")).toEqual(['.a', '.c'])
+  })
+
   it('keeps a minifier-merged list when any compound in it is a class', () => {
     expect(classSelectors('dialog,.rounded-card{x:y}[hidden],.\\[--radius-card\\:4px\\]{x:y}html,body{x:y}'))
       .toEqual(['dialog,.rounded-card', '[hidden],.\\[--radius-card\\:4px\\]'])
-  })
-
-  it('reads URL( in any case, as vendored sheets write it', () => {
-    expect(classSelectors('.a{background:URL(data:image/svg+xml;utf8,<svg>{…}</svg>)}.b{x:y}')).toEqual(['.a', '.b'])
   })
 
   it('sees a rule behind a comment, as in an unminified build', () => {
@@ -72,18 +49,17 @@ describe('classSelectors', () => {
   })
 })
 
-describe('hasSentinel', () => {
-  it('finds the sentinel on its own and inside a minifier-merged selector list', () => {
-    expect(hasSentinel(['.rounded-card'])).toBe(true)
-    expect(hasSentinel(['.x,.rounded-card', '.y'])).toBe(true)
-    expect(hasSentinel(['.rounded-card, .x'])).toBe(true)
-    expect(hasSentinel(classSelectors('dialog,.rounded-card{x:y}'))).toBe(true)
-    expect(strayRules(classSelectors('[hidden],.\\[--radius-card\\:4px\\]{x:y}'))).toHaveLength(1)
-    expect(SENTINEL).toBe('.rounded-card')
+describe('sentinelIn', () => {
+  it('finds a sentinel on its own and inside a minifier-merged selector list', () => {
+    expect(sentinelIn(['.rounded-card'])).toBe('.rounded-card')
+    expect(sentinelIn(['.x,.flex', '.y'])).toBe('.flex')
+    expect(sentinelIn(['.hidden, .x'])).toBe('.hidden')
+    expect(sentinelIn(classSelectors('dialog,.grid{x:y}'))).toBe('.grid')
+    expect(SENTINELS).toContain('.rounded-card')
   })
 
-  it('does not take a lookalike for it', () => {
-    expect(hasSentinel(['.rounded-card-note', '.x .rounded-card', '.md\\:rounded-card', '.rounded-cards'])).toBe(false)
+  it('does not take a lookalike for one', () => {
+    expect(sentinelIn(['.rounded-card-note', '.x .flex', '.md\\:hidden', '.grids', '.a:is(.b,.flex)'])).toBeNull()
   })
 })
 
@@ -102,9 +78,10 @@ describe('strayReason', () => {
     expect(strayReason('.truncate-…-note')).toBeNull()
   })
 
-  it('names a class that sets the card token', () => {
+  it('names a class that sets the card token, in a merged list too', () => {
     expect(strayReason('.\\[--radius-card\\:4px\\]')).toMatch(/--radius-card/)
     expect(strayReason('.md\\:\\[--radius-card\\:0\\.5rem\\]')).toMatch(/--radius-card/)
+    expect(strayRules(classSelectors('[hidden],.\\[--radius-card\\:4px\\]{x:y}'))).toHaveLength(1)
   })
 
   it('passes what a component can produce', () => {
@@ -131,14 +108,16 @@ describe('sourceDirectives', () => {
     expect(sourceDirectives(css)).toEqual({
       imported: true,
       detection: 'none',
+      base: null,
       sources: [{ path: '../src', not: false, inline: false }, { path: '../src/**/*.spec.ts', not: true, inline: false }],
     })
   })
 
-  it('reports a bare import as automatic detection and a quoted base as itself', () => {
-    expect(sourceDirectives('@import "tailwindcss";').detection).toBe('auto')
-    expect(sourceDirectives("@import 'tailwindcss' source('../src');").detection).toBe('../src')
-    expect(sourceDirectives('@import "tailwindcss" source( none );').detection).toBe('none')
+  it('reports a bare import as automatic detection and a quoted value as a path — even "none"', () => {
+    expect(sourceDirectives('@import "tailwindcss";')).toMatchObject({ detection: 'auto', base: null })
+    expect(sourceDirectives("@import 'tailwindcss' source('../src');")).toMatchObject({ detection: 'path', base: '../src' })
+    expect(sourceDirectives('@import "tailwindcss" source("none");')).toMatchObject({ detection: 'path', base: 'none' })
+    expect(sourceDirectives('@import "tailwindcss" source( none );')).toMatchObject({ detection: 'none' })
   })
 
   it('allows the other import clauses, in any order', () => {
@@ -154,14 +133,14 @@ describe('sourceDirectives', () => {
     ])
   })
 
-  it('does not take the /**/ inside a glob, or a comment marker inside any string, for a comment', () => {
+  it('does not take the /**/ inside a glob for a comment', () => {
     expect(sourceDirectives('@source not "../src/**/*.spec.ts";').sources).toEqual([{ path: '../src/**/*.spec.ts', not: true, inline: false }])
     expect(sourceDirectives('@source "../a/*b";\n@source "../c";').sources.map((s: { path: string }) => s.path)).toEqual(['../a/*b', '../c'])
   })
 
   it('ignores comments and a missing import', () => {
     expect(sourceDirectives('/* @import "tailwindcss"; @source "../e2e"; */\n@import "tailwindcss" source(none);'))
-      .toEqual({ imported: true, detection: 'none', sources: [] })
-    expect(sourceDirectives('.a{x:y}')).toEqual({ imported: false, detection: null, sources: [] })
+      .toEqual({ imported: true, detection: 'none', base: null, sources: [] })
+    expect(sourceDirectives('.a{x:y}')).toEqual({ imported: false, detection: null, base: null, sources: [] })
   })
 })
