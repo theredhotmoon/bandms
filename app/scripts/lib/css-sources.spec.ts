@@ -34,9 +34,13 @@ describe('classSelectors', () => {
       .toEqual([".after\\:content-\\[\\'…\\'\\]:after", '.x', '.y'])
   })
 
-  it('loses the rule after a stray apostrophe, not the rest of the file', () => {
-    // The string ends at the newline, having eaten .a's closing brace, so .b is read as part of .a; .c is seen again.
-    expect(classSelectors(".a{--note:it's}\n.b{x:y}\n.c{x:y}")).toEqual(['.a', '.c'])
+  it('loses nothing to a stray apostrophe', () => {
+    expect(classSelectors(".a{--note:it's}\n.b{x:y}\n.c{x:y}")).toEqual(['.a', '.b', '.c'])
+    expect(classSelectors(".a{--note:it's} /* } */.b{x:y}")).toEqual(['.a', '.b'])
+  })
+
+  it('finds a sentinel behind an escaped bracket in a merged list', () => {
+    expect(sentinelIn(classSelectors(".before\\:content-\\[\\'\\(\\'\\],.flex{display:flex}"))).toBe('.flex')
   })
 
   it('keeps a minifier-merged list when any compound in it is a class', () => {
@@ -103,27 +107,39 @@ describe('strayRules', () => {
 })
 
 describe('sourceDirectives', () => {
+  const root = (css: string) => sourceDirectives(css).roots[0]
+
   it('reads source(none) and the @source lines, not or otherwise', () => {
     const css = '@import "tailwindcss" source(none);\n@import "./x.css";\n@source "../src";\n@source not "../src/**/*.spec.ts";\n'
     expect(sourceDirectives(css)).toEqual({
-      imported: true,
-      detection: 'none',
-      base: null,
+      roots: [{ directive: '@import "tailwindcss"', detection: 'none', base: null }],
       sources: [{ path: '../src', not: false, inline: false }, { path: '../src/**/*.spec.ts', not: true, inline: false }],
     })
   })
 
   it('reports a bare import as automatic detection and a quoted value as a path — even "none"', () => {
-    expect(sourceDirectives('@import "tailwindcss";')).toMatchObject({ detection: 'auto', base: null })
-    expect(sourceDirectives("@import 'tailwindcss' source('../src');")).toMatchObject({ detection: 'path', base: '../src' })
-    expect(sourceDirectives('@import "tailwindcss" source("none");')).toMatchObject({ detection: 'path', base: 'none' })
-    expect(sourceDirectives('@import "tailwindcss" source( none );')).toMatchObject({ detection: 'none' })
+    expect(root('@import "tailwindcss";')).toMatchObject({ detection: 'auto', base: null })
+    expect(root("@import 'tailwindcss' source('../src');")).toMatchObject({ detection: 'path', base: '../src' })
+    expect(root('@import "tailwindcss" source("none");')).toMatchObject({ detection: 'path', base: 'none' })
+    expect(root('@import "tailwindcss" source( none );')).toMatchObject({ detection: 'none' })
   })
 
   it('allows the other import clauses, in any order', () => {
-    expect(sourceDirectives('@import "tailwindcss" source(none) layer(tw);')).toMatchObject({ imported: true, detection: 'none' })
-    expect(sourceDirectives('@import "tailwindcss" prefix(tw) source(none);')).toMatchObject({ imported: true, detection: 'none' })
-    expect(sourceDirectives('@import "tailwindcss" theme(static) prefix(tw);')).toMatchObject({ imported: true, detection: 'auto' })
+    expect(root('@import "tailwindcss" source(none) layer(tw);')).toMatchObject({ detection: 'none' })
+    expect(root('@import "tailwindcss" prefix(tw) source(none);')).toMatchObject({ detection: 'none' })
+    expect(root('@import "tailwindcss" theme(static) prefix(tw);')).toMatchObject({ detection: 'auto' })
+  })
+
+  it('lists every root: a second import, the split utilities import and a @tailwind directive', () => {
+    const css = '@import "tailwindcss" source(none);\n@import "tailwindcss";\n@tailwind utilities;\n@import "tailwindcss/utilities.css" layer(utilities);\n@import "tailwindcss/utilities";'
+    expect(sourceDirectives(css).roots.map((r: { directive: string; detection: string }) => `${r.directive} ${r.detection}`)).toEqual([
+      '@import "tailwindcss" none',
+      '@import "tailwindcss" auto',
+      '@tailwind utilities auto',
+      '@import "tailwindcss/utilities.css" auto',
+      '@import "tailwindcss/utilities" auto',
+    ])
+    expect(sourceDirectives('@import "tailwindcss/theme.css";\n@reference "tailwindcss";').roots).toEqual([])
   })
 
   it('reads an inline() safelist as a source', () => {
@@ -140,7 +156,7 @@ describe('sourceDirectives', () => {
 
   it('ignores comments and a missing import', () => {
     expect(sourceDirectives('/* @import "tailwindcss"; @source "../e2e"; */\n@import "tailwindcss" source(none);'))
-      .toEqual({ imported: true, detection: 'none', base: null, sources: [] })
-    expect(sourceDirectives('.a{x:y}')).toEqual({ imported: false, detection: null, base: null, sources: [] })
+      .toEqual({ roots: [{ directive: '@import "tailwindcss"', detection: 'none', base: null }], sources: [] })
+    expect(sourceDirectives('.a{x:y}')).toEqual({ roots: [], sources: [] })
   })
 })

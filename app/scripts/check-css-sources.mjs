@@ -39,6 +39,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { posix, styleFilesUnder } from './lib/admin-files.mjs'
+import { styleRuns } from './lib/colour-scan.mjs'
 import { SENTINELS, classSelectors, sentinelIn, sourceDirectives, strayRules } from './lib/css-sources.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -60,9 +61,14 @@ const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline("${s.pa
 
 // ── 1. configuration ─────────────────────────────────────────────────────
 const broken = []
-const { imported, detection, base, sources } = sourceDirectives(readFileSync(STYLE, 'utf8'))
-if (!imported) broken.push('src/style.css does not import tailwindcss — nothing here can be judged')
-else if (detection !== 'none') broken.push(`src/style.css imports tailwindcss with ${detection === 'auto' ? 'no source() clause' : `source("${base}")${base === 'none' ? ' — a quoted "none" is a path named none, not the keyword' : ''}`} — it must be \`source(none)\`, or Tailwind reads every non-ignored file under app/ as a template`)
+const { roots, sources } = sourceDirectives(readFileSync(STYLE, 'utf8'))
+const [root, ...extraRoots] = roots
+if (!root) broken.push('src/style.css does not import tailwindcss — nothing here can be judged')
+else {
+  if (root.directive !== '@import "tailwindcss"') broken.push(`src/style.css starts Tailwind with \`${root.directive}\` — the full \`@import "tailwindcss" source(none)\` is what this check reads`)
+  if (root.detection !== 'none') broken.push(`src/style.css imports tailwindcss with ${root.detection === 'auto' ? 'no source() clause' : `source("${root.base}")${root.base === 'none' ? ' — a quoted "none" is a path named none, not the keyword' : ''}`} — it must be \`source(none)\`, or Tailwind reads every non-ignored file under app/ as a template`)
+}
+for (const r of extraRoots) broken.push(`src/style.css also has \`${r.directive}\` — a second root is a second scan, with its own detection${r.detection === 'auto' ? ' (automatic here)' : ''}; one import holds the configuration`)
 const declared = new Set(sources.map(key))
 for (const s of EXPECTED_SOURCES) {
   if (!declared.has(key(s))) broken.push(`src/style.css is missing \`${spell(s)}\``)
@@ -79,14 +85,19 @@ for (const s of sources) {
   if (!existsSync(resolve(dirname(STYLE), s.path))) broken.push(`src/style.css: \`${spell(s)}\` resolves to nothing from src/ — Tailwind reads no file and says nothing; the path is relative to the stylesheet, not to app/`)
 }
 // Tailwind merges @source from every stylesheet the entry imports, each
-// relative to its own file; one file holds the configuration so this check
-// can read it.
-for (const file of styleFilesUnder(SRC, () => false, /\.css$/)) {
+// relative to its own file, and the Vite plugin compiles any stylesheet or
+// SFC <style> block that starts Tailwind itself as a root of its own, with
+// its own (automatic) detection. One file holds the configuration so this
+// check can read it; every other .css and every <style> block declares none.
+for (const file of styleFilesUnder(SRC, () => false, /\.(css|vue)$/)) {
   if (file === STYLE) continue
   const rel = posix(relative(SRC, file))
-  const other = sourceDirectives(readFileSync(file, 'utf8'))
-  if (other.imported) broken.push(`src/${rel} imports tailwindcss — only src/style.css does, so the source configuration has one home`)
-  for (const s of other.sources) broken.push(`src/${rel} declares \`${spell(s)}\` — Tailwind honours it from any imported stylesheet, but only src/style.css may name sources`)
+  const kind = rel.endsWith('.css') ? 'css' : 'vue'
+  for (const { css } of styleRuns(readFileSync(file, 'utf8'), kind)) {
+    const other = sourceDirectives(css)
+    for (const r of other.roots) broken.push(`src/${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only src/style.css imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)
+    for (const s of other.sources) broken.push(`src/${rel} declares \`${spell(s)}\` — Tailwind honours it from any stylesheet it compiles, but only src/style.css may name sources`)
+  }
 }
 
 if (broken.length) {

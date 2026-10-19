@@ -26,9 +26,10 @@ export const blank = (s) => s.replace(/[^\n]/g, ' ')
  * 'text'. The rules that matter:
  *   - a backslash escapes the next character anywhere, so the `\'` in an
  *     escaped selector such as `.content-\[\'…\'\]` is not a string opening;
- *   - a string ends at its quote or at a newline — CSS calls an unescaped
- *     newline in a string a parse error and ends it there — so a stray
- *     apostrophe in one declaration cannot swallow the rest of the file;
+ *   - a string ends at its quote on the same line — CSS calls an unescaped
+ *     newline in a string a parse error — and a quote with no partner on
+ *     its line is plain text, so a stray apostrophe (`it's`) swallows
+ *     nothing, not even a comment later on that line;
  *   - a quoted url("…") is text `url(` followed by a string, and `URL(` is
  *     url( too.
  */
@@ -55,12 +56,18 @@ export function* segments(css) {
       continue
     }
     if (c === '"' || c === "'") {
-      yield* flush()
       let j = i + 1
       while (j < n && css[j] !== c && css[j] !== '\n') j += css[j] === '\\' ? 2 : 1
-      const closed = css[j] === c
-      yield { type: 'string', text: css.slice(i, closed ? j + 1 : j) }
-      i = closed ? j + 1 : j
+      if (css[j] === c) {
+        yield* flush()
+        yield { type: 'string', text: css.slice(i, j + 1) }
+        i = j + 1
+        continue
+      }
+      // No closing quote on the line: a stray apostrophe (`it's`), which is
+      // plain text — so a comment or a brace later on that line still counts.
+      text += c
+      i++
       continue
     }
     if ((c === 'u' || c === 'U') && css.slice(i, i + 4).toLowerCase() === 'url(' && !/["'\s]/.test(css[i + 4] ?? '')) {
@@ -113,7 +120,15 @@ export function compounds(selector) {
       buf += s.text
       continue
     }
-    for (const c of s.text) {
+    const t = s.text
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i]
+      // An escaped bracket — Tailwind's `content-\[\'\(\'\]` — is a character, not nesting.
+      if (c === '\\') {
+        buf += t.slice(i, i + 2)
+        i++
+        continue
+      }
       if (c === '(' || c === '[') depth++
       else if (c === ')' || c === ']') depth--
       if (c === ',' && depth === 0) {

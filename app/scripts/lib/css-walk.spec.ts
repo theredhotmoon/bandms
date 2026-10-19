@@ -33,10 +33,11 @@ describe('segments', () => {
     expect(types('.a{content:"a\\"b"}')).toEqual(['text', 'string', 'text'])
   })
 
-  it('ends a string at a newline, so a stray apostrophe cannot swallow the rest of the file', () => {
-    const css = ".a{--note:it's}\n.b{color:#fff /* #000 */}"
-    expect(types(css)).toEqual(['text', 'string', 'text', 'comment', 'text'])
+  it('reads a quote with no partner on its line as plain text, so a stray apostrophe swallows nothing', () => {
+    const css = ".a{--note:it's} /* #000 */\n.b{color:#fff /* #000 */}"
+    expect(types(css)).toEqual(['text', 'comment', 'text', 'comment', 'text'])
     expect(join(css)).toBe(css)
+    expect(types("a 'x'\n'y")).toEqual(['text', 'string', 'text'])
   })
 })
 
@@ -50,8 +51,8 @@ describe('stripCssComments', () => {
     expect(stripCssComments('@source not "../src/**/*.spec.ts";')).toBe('@source not "../src/**/*.spec.ts";')
   })
 
-  it('still blanks a comment after a line with a stray apostrophe', () => {
-    expect(stripCssComments(".a{--note:it's}\n.b{color:#fff /* #000 */}")).toBe(".a{--note:it's}\n.b{color:#fff           }")
+  it('still blanks a comment on and after a line with a stray apostrophe', () => {
+    expect(stripCssComments(".a{--note:it's} /* #000 */\n.b{color:#fff /* #000 */}")).toBe(".a{--note:it's}           \n.b{color:#fff           }")
   })
 })
 
@@ -65,14 +66,19 @@ describe('blankStrings', () => {
     expect(blankStrings('url("a)b")')).toBe('url(     )')
   })
 
-  it('ends a string at a newline', () => {
-    expect(blankStrings("a 'x\n.b{}")).toBe('a   \n.b{}')
+  it('leaves a quote with no partner on its line alone', () => {
+    expect(blankStrings("a 'x\n.b{}")).toBe("a 'x\n.b{}")
   })
 })
 
 describe('compounds', () => {
   it('splits a selector list at top-level commas and trims', () => {
     expect(compounds('dialog, .rounded-card ,.x')).toEqual(['dialog', '.rounded-card', '.x'])
+  })
+
+  it('does not count an escaped bracket toward nesting', () => {
+    expect(compounds(".before\\:content-\\[\\'\\(\\'\\],.flex")).toEqual([".before\\:content-\\[\\'\\(\\'\\]", '.flex'])
+    expect(compounds('.\\[x\\],.grid')).toEqual(['.\\[x\\]', '.grid'])
   })
 
   it('does not split inside :is(), :where() or an attribute value', () => {

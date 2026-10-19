@@ -107,28 +107,34 @@ export function strayRules(selectors) {
   return out
 }
 
-const TAILWIND_IMPORT = /@import\s+["']tailwindcss["']([^;]*);/
+/** Every directive that makes a stylesheet emit utilities: the full import, the split `tailwindcss/utilities` import, or a `@tailwind` directive. */
+const ROOT = /@import\s+["'](tailwindcss(?:\/utilities(?:\.css)?)?)["']([^;]*);|@tailwind\s+(\w+)\s*;/g
 const SOURCE_CLAUSE = /\bsource\(\s*(none|["'][^"']*["'])\s*\)/
 const SOURCE = /@source\s+(not\s+)?(?:["']([^"']+)["']|inline\(\s*["']([^"']*)["']\s*\))\s*;/g
 
 /**
  * The Tailwind source configuration a stylesheet declares:
- *   { imported, detection, base, sources: [{ path, not, inline }] }
- * `detection` is 'none' for the bare keyword `source(none)`, 'auto' for an
- * import with no source() clause (every non-ignored file under the project),
- * or 'path' for `source("…")`, whose quoted value is `base` — and a quoted
- * "none" is a path named none, not the keyword. Other clauses on the import
- * (`prefix()`, `layer()`, `theme()`) are allowed in any order. An
+ *   { roots: [{ directive, detection, base }], sources: [{ path, not, inline }] }
+ * A root is any directive that makes the sheet emit utilities — each one is
+ * its own scan: `@import "tailwindcss"`, the split
+ * `@import "tailwindcss/utilities.css"`, or `@tailwind utilities;` — with
+ * `directive` as written. `detection` is 'none' for the bare keyword
+ * `source(none)`, 'auto' for no source() clause (every non-ignored file under
+ * the project), or 'path' for `source("…")`, whose quoted value is `base` —
+ * a quoted "none" is a path named none, not the keyword. Other clauses on an
+ * import (`prefix()`, `layer()`, `theme()`) are allowed in any order. An
  * `@source inline("…")` safelist is a source too — `inline: true`, with the
  * class list as `path`. Comments are set aside; a string is read whole, so
  * the `/**\/` inside a glob is not a comment.
  */
 export function sourceDirectives(css) {
   const clean = stripCssComments(css)
-  const imp = clean.match(TAILWIND_IMPORT)
-  const clause = imp?.[1].match(SOURCE_CLAUSE)
-  const detection = !imp ? null : !clause ? 'auto' : clause[1] === 'none' ? 'none' : 'path'
-  const base = detection === 'path' ? clause[1].slice(1, -1) : null
+  const roots = [...clean.matchAll(ROOT)].map((m) => {
+    const directive = m[1] ? `@import "${m[1]}"` : `@tailwind ${m[3]}`
+    const clause = m[1] ? m[2].match(SOURCE_CLAUSE) : null
+    const detection = !clause ? 'auto' : clause[1] === 'none' ? 'none' : 'path'
+    return { directive, detection, base: detection === 'path' ? clause[1].slice(1, -1) : null }
+  })
   const sources = [...clean.matchAll(SOURCE)].map((m) => ({ path: m[2] ?? m[3], not: Boolean(m[1]), inline: m[2] === undefined }))
-  return { imported: Boolean(imp), detection, base, sources }
+  return { roots, sources }
 }

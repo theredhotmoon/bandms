@@ -22,12 +22,9 @@
  * offset — and therefore every reported line number — stays true.
  */
 
-import { blank, stripCssComments } from './css-walk.mjs'
-
 // The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, shared
-// with the radius and source guards; these two are re-exported so the guards
-// that always read them from here keep one import.
-export { blank, stripCssComments }
+// with the radius and source guards.
+import { blank, stripCssComments } from './css-walk.mjs'
 
 export const IGNORE_MARKER = 'token-lint-ignore'
 
