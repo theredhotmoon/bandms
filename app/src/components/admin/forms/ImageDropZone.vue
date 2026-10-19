@@ -140,7 +140,7 @@ defineExpose({ clear })
 .file-card {
   background: var(--c-0e0c2a);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 8px;
+  border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;

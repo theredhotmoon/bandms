@@ -41,7 +41,7 @@
 /* Repeating item cards (monitors, backline, wireless) */
 .item-list { display: flex; flex-direction: column; gap: 0.625rem; }
 .item-card {
-  border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem;
+  border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
   background: var(--c-0d0d0d); padding: 0.75rem;
   display: flex; flex-direction: column; gap: 0.625rem;
 }

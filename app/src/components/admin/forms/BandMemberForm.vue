@@ -414,7 +414,7 @@ function submit() {
   font-size: var(--fs-2xl); font-weight: 700;
 }
 .aside-drop {
-  border: 1.5px dashed var(--c-2a2a2a); border-radius: 0.5rem;
+  border: 1.5px dashed var(--c-2a2a2a); border-radius: 0.75rem;
   padding: 0.5rem 0.625rem; cursor: pointer; text-align: center;
   display: flex; flex-direction: column; gap: 0.1rem;
   transition: border-color 120ms, background 120ms;

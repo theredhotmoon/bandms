@@ -8,64 +8,30 @@
  * develop in — and simply stays dark when someone switches to light. Nothing
  * else in the build or the tests would notice.
  *
- * Scope is everything under src/ EXCEPT the list below, so a new admin folder
- * is checked from its first file rather than needing to be registered.
- * What counts as a colour lives in lib/colour-scan.mjs.
+ * Scope is everything under src/ EXCEPT the EXCLUDED list in
+ * lib/admin-files.mjs, so a new admin folder is checked from its first file
+ * rather than needing to be registered. What counts as a colour lives in
+ * lib/colour-scan.mjs.
  *
  * For a colour that is genuinely the same in both themes — a white label on a
  * teal button — append `token-lint-ignore` and the reason to that line.
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { colourHits, IGNORE_MARKER } from './lib/colour-scan.mjs'
+import { adminStyleFiles, posix } from './lib/admin-files.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 
-/** Not admin chrome, so not themed. Paths relative to src/. */
-const EXCLUDED = {
-  'admin-palette.css': 'the palette itself — the one place literals belong',
-  'style.css': 'SPA-wide base styles and the Tailwind light-theme overrides',
-  'App.vue': 'SPA root: skip link and chrome shared with the fan pages',
-  'components/AppNavbar.vue': 'navbar of the fan pages',
-  'components/TicketDownloadCard.vue': 'fan ticket card',
-  'components/fan': 'fan portal',
-  'views/FanAccountView.vue': 'fan portal',
-  'views/TicketClaimView.vue': 'fan ticket claim',
-  'views/TechRiderPreviewView.vue': 'printable rider document, black on white by design',
-}
-
-const posix = (p) => p.split(sep).join('/')
-const violations = []
-
-for (const path of Object.keys(EXCLUDED)) {
-  if (!existsSync(join(SRC, path))) {
-    violations.push(`src/${path}: excluded path no longer exists — update EXCLUDED`)
-  }
-}
-
-const isExcluded = (rel) =>
-  Object.keys(EXCLUDED).some((path) => rel === path || rel.startsWith(path + '/'))
-
-const files = []
-const walk = (dir) => {
-  for (const name of readdirSync(dir)) {
-    const abs = join(dir, name)
-    const rel = posix(relative(SRC, abs))
-    if (isExcluded(rel)) continue
-    if (statSync(abs).isDirectory()) walk(abs)
-    else if (/\.(vue|css)$/.test(name)) files.push(abs)
-  }
-}
-walk(SRC)
-
-// A walk that finds nothing would print a green tick for having checked
-// nothing — the failure shape check-admin-strings guards against too.
-if (files.length < 50) {
-  console.error(`✗ admin colours: only ${files.length} file(s) found under src/ — the walk is broken`)
-  process.exit(1)
-}
+// Which files are admin chrome is lib/admin-files.mjs, shared with the radius
+// guard so the two cannot disagree about what they cover. A problem is a
+// stale EXCLUDED entry or a walk that found nothing — the failure shape
+// check-admin-strings guards against too. It is reported alongside the
+// colour violations rather than instead of them, so one run shows everything.
+const { files, problems } = adminStyleFiles(SRC)
+const violations = [...problems]
 
 for (const file of files) {
   const kind = file.endsWith('.css') ? 'css' : 'vue'

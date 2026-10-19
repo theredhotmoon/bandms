@@ -91,7 +91,7 @@ async function onFile(e: Event) {
 .img-drop {
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   width: 100%; padding: 0.875rem 1rem;
-  border: 2px dashed var(--c-2a2a2a); border-radius: 0.375rem;
+  border: 2px dashed var(--c-2a2a2a); border-radius: 0.75rem;
   background: var(--c-141414); color: var(--c-d0d0d0);
   font: inherit; font-size: var(--fs-sm); font-weight: 500; cursor: pointer;
   transition: border-color 150ms, background 150ms;

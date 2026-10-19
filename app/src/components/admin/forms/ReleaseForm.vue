@@ -497,7 +497,7 @@ function handleSubmit() {
 
 /* ── Cover drop ──────────────────────────────────────────────── */
 .cover-drop {
-  border: 2px dashed var(--c-2a2a2a); border-radius: 0.5rem;
+  border: 2px dashed var(--c-2a2a2a); border-radius: 0.75rem;
   background: var(--c-141414); cursor: pointer; overflow: hidden;
   transition: border-color 150ms, background 150ms;
   min-height: 120px; display: flex; align-items: center; justify-content: center;
@@ -510,7 +510,7 @@ function handleSubmit() {
 .cover-hint { font-size: var(--fs-sm); color: var(--c-475569); }
 
 /* ── Tracks ──────────────────────────────────────────────────── */
-.track-block { border: 1px solid var(--c-2a2a2a); border-radius: 0.5rem; overflow: hidden; }
+.track-block { border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem; overflow: hidden; }
 .track-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.625rem; background: var(--c-141414); }
 .track-num { font-size: var(--fs-xs); font-weight: 600; color: var(--c-475569); width: 1.25rem; text-align: center; flex-shrink: 0; }
 .track-dur { max-width: 5rem; }

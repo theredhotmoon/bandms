@@ -38,7 +38,11 @@ const TW_ARBITRARY = /(?<![\w-])(?:[a-z]+:)*(?:bg|text|border|ring|outline|fill|
  */
 const PINNED_WHITE = /^(?:[a-z]+:)*text-\[#fff(?:fff)?\]$/
 
-const blank = (s) => s.replace(/[^\n]/g, ' ')
+/** Replace every character but newlines with a space, so offsets and line numbers hold. */
+export const blank = (s) => s.replace(/[^\n]/g, ' ')
+
+/** CSS with its comments blanked. One definition for every style guard. */
+export const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, blank)
 
 /** rgba(0,0,0,a) is a shadow or a scrim — the same in either theme. */
 function isBlackFunc(args) {
@@ -67,7 +71,7 @@ export function literalsIn(css) {
 
 /** Scan stylesheet text that starts at `base` in the file. */
 function scanCss(text, base, found) {
-  const clean = text.replace(/\/\*[\s\S]*?\*\//g, blank)
+  const clean = stripCssComments(text)
   // Innermost braces are declaration bodies: a rule inside @media nests one
   // level deeper, and a selector is never between braces.
   for (const m of clean.matchAll(/\{([^{}]*)\}/g)) {
@@ -87,8 +91,27 @@ function scanTemplate(text, found) {
   }
 }
 
-const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)<\/style>/g
+// The opening tag must not end in `/>`: a self-closing `<style src="…" />`
+// has no body, and matching it would swallow everything up to the next
+// </style> — including the real block's opening tag.
+const STYLE_BLOCK = /(<style\b(?:[^>/]|\/(?!>))*>)([\s\S]*?)<\/style>/g
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
+
+/**
+ * The stylesheet text in one file: the whole of a .css file, or each <style>
+ * block of a .vue file, as [{ css, base }] where `base` is the offset of
+ * `css` within `source` — so a scanner can map a hit back to a line number.
+ * A <style> inside an HTML comment is commented-out code, not a stylesheet.
+ * <script> is blanked before the comments are, so a `'<!--'` string literal
+ * in script cannot open a "comment" that swallows the real style blocks.
+ * Shared with radius-scan.mjs so there is one answer to "where is the CSS".
+ */
+export function styleRuns(source, kind) {
+  if (kind === 'css') return [{ css: source, base: 0 }]
+  const live = source.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank)
+  return [...live.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
+}
 
 /**
  * Scan one file's source. `kind` is 'css' or 'vue'.
@@ -96,12 +119,8 @@ const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
  */
 export function colourHits(source, kind) {
   const found = []
-  if (kind === 'css') {
-    scanCss(source, 0, found)
-  } else {
-    for (const m of source.matchAll(STYLE_BLOCK)) scanCss(m[2], m.index + m[1].length, found)
-    scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
-  }
+  for (const { css, base } of styleRuns(source, kind)) scanCss(css, base, found)
+  if (kind === 'vue') scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
 
   const lines = source.split('\n')
   const byLine = new Map()
