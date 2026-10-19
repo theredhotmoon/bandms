@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-19 (public stylesheet sources)
+
+### Fixed
+- **The public site’s stylesheet no longer carries the token lint’s own examples**: Tailwind read every file under `web/`, so `text-zinc-400`, `rounded-xl`, `bg-transparent` and `border-none` from the comments in `scripts/check-tokens.mjs` were emitted as rules no page uses. The site now names `src/` (minus its tests) as the only source, and a build check holds that configuration — the same fix the admin got in #199, on the same reader, which moves to `packages/style-guards` so both images carry it. Four dead rules gone, nothing added, nothing visible changes.
+
 ## [Unreleased] — 2026-10-19 (admin stylesheet sources)
 
 ### Fixed

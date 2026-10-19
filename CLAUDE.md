@@ -14,6 +14,7 @@ This is a monorepo with two applications:
 | `app/` | Vue 3 + TypeScript SPA (**admin only** — see below) |
 | `web/` | Astro SSG public site — everything a visitor sees |
 | `packages/rider-core/` | Tech-rider domain code shared by `app/` and `web/` |
+| `packages/style-guards/` | The CSS/script grammar behind the style guards of `app/` and `web/` (plain ESM, imported by path; specs run under `app/`’s vitest) |
 
 `app/`, `web/` and `packages/*` are one **pnpm workspace** (`pnpm-workspace.yaml`)
 with a single root lockfile. Install from the repo root: a `pnpm install` inside
@@ -1318,6 +1319,22 @@ silently makes that element untheme-able.
 
 `pnpm build` runs `scripts/check-tokens.mjs`, which fails on all of the above.
 For a genuinely fixed value, append `token-lint-ignore` on that line.
+
+**Tailwind reads only `web/src` for class names.** Left to itself it reads
+every non-ignored file under `web/`, and the prose examples in
+`scripts/check-tokens.mjs` (`text-zinc-400`, `rounded-xl`) shipped as real,
+dead rules in the public CSS for months. `src/styles/global.css` imports
+Tailwind with `source(none)` and names `../` (src) minus `../**/*.test.ts`;
+`scripts/check-css-sources.mjs`, also in `pnpm build`, holds it to exactly
+those lines and fails any other stylesheet or `<style>` block under `src/`
+that starts a Tailwind root or names a source. A file outside `src/` that
+must be read for classes is a new `@source` line *and* an entry in that
+script’s `EXPECTED_SOURCES`, with the reason. The admin has the same guard
+(`app/CLAUDE.md`, guard table); both read `packages/style-guards`, which is
+where the CSS grammar lives — **not** `app/scripts`, because the web image
+copies `packages/` and `web/` and nothing of `app/` (`web/Dockerfile`), and
+`pnpm build` runs at the public container’s start, so an import the image
+cannot resolve is a crash-looping site.
 
 Primitives (`--ss-ink`, `--ss-teal`) belong **only** in
 `web/src/styles/themes/*.css`. Nothing else may reference them.
