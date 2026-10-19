@@ -46,6 +46,23 @@
   --fs-glyph-sm: 1.5rem;
 }
 
+/* ── Shapes ──────────────────────────────────────── */
+/* The card corner (DESIGN.md, Shapes): cards, table cards, drop zones and the
+   modal panel. One token, because every step of the radius scale looks
+   deliberate in review, which is how nine cards drifted to the 0.5rem control
+   corner before #197. A scoped style writes var(--radius-card); a utility-
+   styled card writes `rounded-card`, which Tailwind derives from this theme
+   key. scripts/check-admin-radius.mjs requires both spellings — a literal
+   0.75rem or `rounded-xl` on a card fails the build — and pins this value to
+   the one DESIGN.md names. `static`, not plain @theme: Tailwind only emits a
+   theme variable it sees used, and it cannot see a var() inside a component's
+   scoped <style>, so without it every card would lose its corner the day the
+   last `rounded-card` left a template. Inputs, buttons and badges keep their
+   literal 0.5 / 0.375 / 0.25rem: those are not one corner shared by one role. */
+@theme static {
+  --radius-card: 0.75rem;
+}
+
 /* ── Global reset / base ─────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 

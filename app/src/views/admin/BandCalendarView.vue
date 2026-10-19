@@ -186,7 +186,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 .cal-wrap {
   background: var(--c-141414);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   padding: 1rem;
   overflow: hidden;
 }
@@ -240,7 +240,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 }
 .ev-modal {
   background: var(--c-141414); border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem; width: 100%; max-width: 420px;
+  border-radius: var(--radius-card); width: 100%; max-width: 420px;
   overflow: hidden; display: flex; flex-direction: column;
 }
 .ev-accent { height: 4px; }

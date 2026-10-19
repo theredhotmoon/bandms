@@ -463,7 +463,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   display: flex; align-items: center; justify-content: center; padding: 1rem;
 }
 .song-modal {
-  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card);
   width: 100%; max-width: 26rem; display: flex; flex-direction: column;
 }
 .song-modal--sm { max-width: 22rem; }
@@ -500,7 +500,7 @@ const formatDur = (sec: number | null) => formatDuration(sec) || '—'
   display: flex; align-items: center; justify-content: center;
 }
 .confirm-card {
-  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: 0.75rem;
+  background: var(--c-141414); border: 1px solid var(--c-2a2a2a); border-radius: var(--radius-card);
   padding: 1.25rem; width: 22rem; display: flex; flex-direction: column; gap: 0.75rem;
 }
 .confirm-title { font-size: var(--fs-base); font-weight: 700; color: var(--c-e2e8f0); }

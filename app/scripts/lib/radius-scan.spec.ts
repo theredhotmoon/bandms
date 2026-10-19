@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { cardClassOf, cardRules, cornersOf, isCardCorners, isCardRadius, scanCards } from './radius-scan.mjs'
+import { TOKEN_SCOPE, UTILITY_CARD, UTILITY_CARD_REF, cardClassOf, cardRules, cornersOf, isCardCorners, isCardRadius, judge, scanCards, tokenDefinitions, utilityCardFix, utilityCardLiterals, utilityCardUses } from './radius-scan.mjs'
 
-type Rule = { line: number; card: string; radius: string; ok: boolean }
+type Rule = { line: number; card: string; radius: string; ok: boolean; literal?: true }
 const css = (src: string, opts?: object): Rule[] => cardRules(src, 'css', opts)
 const vue = (src: string, opts?: object): Rule[] => cardRules(src, 'vue', opts)
+const T = 'var(--radius-card)'
 
 describe('cardClassOf — which rules style a card', () => {
   it('names a *-card class, but not a class that merely contains "card"', () => {
@@ -73,23 +74,32 @@ describe('cardClassOf — which rules style a card', () => {
   })
 })
 
-describe('isCardRadius — equivalent spellings of the 0.75rem corner', () => {
-  it('accepts 0.75rem and its equivalents', () => {
-    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75rem !important', '0.75rem ! important']) {
+describe('isCardRadius — what a card rule may write', () => {
+  it('accepts the token, however it is spaced, with or without !important or a fallback', () => {
+    for (const v of [T, 'var( --radius-card )', `${T} !important`, `${T} ! important`, 'var(--radius-card, 12px)', 'var(--radius-card,.75rem) var(--radius-card) 0 0']) {
       expect(isCardRadius(v), v).toBe(true)
+    }
+    expect(isCardRadius('var(--radius-md, 0.75rem)')).toBe(false)
+  })
+
+  it('accepts one flat edge, as long as the other two corners are the token', () => {
+    expect(isCardRadius(`${T} ${T} 0 0`)).toBe(true)
+    expect(isCardRadius(`0 0 ${T} ${T}`)).toBe(true)
+    expect(isCardRadius(`0 ${T} ${T} 0`)).toBe(true)
+    expect(isCardRadius(`${T} / ${T}`)).toBe(true)
+  })
+
+  it('rejects the literal 0.75rem and its equivalents — the right shape, not the token', () => {
+    for (const v of ['0.75rem', '.75rem', '0.750rem', '12px', '0.75rem !important', '0.75rem 0.75rem 0 0', '0 0 12px 12px', `${T} / 12px`, `${T} 12px`]) {
+      expect(isCardRadius(v), v).toBe(false)
+      expect(judge([['border-radius', v]]), v).toEqual({ shape: true, literal: true, ok: false })
     }
   })
 
-  it('accepts one flat edge, as long as the other two corners are the card corner', () => {
-    expect(isCardRadius('0.75rem 0.75rem 0 0')).toBe(true)
-    expect(isCardRadius('0 0 12px 12px')).toBe(true)
-    expect(isCardRadius('0 0.75rem 0.75rem 0')).toBe(true)
-    expect(isCardRadius('0.75rem / 0.75rem')).toBe(true)
-  })
-
   it('rejects two square corners on a diagonal, a fully square card, and every other corner', () => {
-    for (const v of ['0.75rem 0', '0.5rem', '8px', '6px', '999px', '50%', '0', '0 0 0 0', 'inherit', 'var(--radius-card)', '0.75rem 0.5rem', '0.75rem / 0.5rem', '8px ! important']) {
+    for (const v of [`${T} 0`, '0.5rem', '8px', '6px', '999px', '50%', '0', '0 0 0 0', 'inherit', 'var(--radius-md)', `${T} 0.5rem`, `${T} / 0.5rem`, '8px ! important']) {
       expect(isCardRadius(v), v).toBe(false)
+      expect(judge([['border-radius', v]]).shape, v).toBe(false)
     }
   })
 
@@ -103,29 +113,35 @@ describe('cornersOf — resolving shorthand and longhands in cascade order', () 
     expect(cornersOf([['border-radius', '1px 2px 3px 4px']])).toEqual([1, 2, 3, 4])
     expect(cornersOf([['border-radius', '1px 2px 3px']])).toEqual([1, 2, 3, 2])
     expect(cornersOf([['border-radius', '1px 2px']])).toEqual([1, 2, 1, 2])
+    expect(cornersOf([['border-radius', T]])).toEqual([12, 12, 12, 12])
   })
 
   it('applies longhands over an earlier shorthand, physical and logical', () => {
-    const corners = cornersOf([
+    const decls: [string, string][] = [
       ['border-radius', '8px'],
-      ['border-top-left-radius', '0.75rem'],
-      ['border-start-end-radius', '0.75rem'],
-      ['border-end-end-radius', '0.75rem'],
-      ['border-bottom-left-radius', '0.75rem'],
-    ])
-    expect(corners).toEqual([12, 12, 12, 12])
-    expect(isCardCorners(corners)).toBe(true)
+      ['border-top-left-radius', T],
+      ['border-start-end-radius', T],
+      ['border-end-end-radius', T],
+      ['border-bottom-left-radius', T],
+    ]
+    expect(cornersOf(decls)).toEqual([12, 12, 12, 12])
+    expect(judge(decls)).toEqual({ shape: true, literal: false, ok: true })
   })
 
   it('treats longhands alone as the other corners being 0', () => {
-    expect(cornersOf([['border-start-start-radius', '0.75rem']])).toEqual([12, 0, 0, 0])
+    expect(cornersOf([['border-start-start-radius', T]])).toEqual([12, 0, 0, 0])
     // Two top corners rounded is a flat bottom edge; two on a diagonal is not an edge.
-    expect(isCardCorners(cornersOf([['border-top-left-radius', '0.75rem'], ['border-top-right-radius', '12px']]))).toBe(true)
-    expect(isCardCorners(cornersOf([['border-top-left-radius', '0.75rem'], ['border-bottom-right-radius', '12px']]))).toBe(false)
+    expect(isCardCorners(cornersOf([['border-top-left-radius', T], ['border-top-right-radius', T]]))).toBe(true)
+    expect(isCardCorners(cornersOf([['border-top-left-radius', T], ['border-bottom-right-radius', T]]))).toBe(false)
   })
 
   it('lets a later shorthand reset earlier longhands', () => {
-    expect(cornersOf([['border-top-left-radius', '0'], ['border-radius', '0.75rem']])).toEqual([12, 12, 12, 12])
+    expect(cornersOf([['border-top-left-radius', '0'], ['border-radius', T]])).toEqual([12, 12, 12, 12])
+  })
+
+  it('calls one literal longhand among token corners a literal', () => {
+    expect(judge([['border-radius', T], ['border-top-left-radius', '12px']])).toEqual({ shape: true, literal: true, ok: false })
+    expect(judge([['border-radius', '0.75rem'], ['border-radius', T]])).toEqual({ shape: true, literal: false, ok: true })
   })
 })
 
@@ -134,7 +150,13 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(css('.a-card {\n  padding: 1rem;\n  border-radius: 0.5rem;\n}')).toEqual([
       { line: 3, card: 'a-card', radius: '0.5rem', ok: false },
     ])
-    expect(css('.a-card { border-radius: 0.75rem; }')).toEqual([{ line: 1, card: 'a-card', radius: '0.75rem', ok: true }])
+    expect(css(`.a-card { border-radius: ${T}; }`)).toEqual([{ line: 1, card: 'a-card', radius: T, ok: true }])
+  })
+
+  it('reports a card written with the literal 0.75rem as a literal, so the guard can say so', () => {
+    expect(css('.a-card { border-radius: 0.75rem; }')).toEqual([{ line: 1, card: 'a-card', radius: '0.75rem', ok: false, literal: true }])
+    expect(css('.a-card { border-radius: 0.5rem; }')[0]).not.toHaveProperty('literal')
+    expect(css('.a-card { border-radius: var(--radius-md); }')).toEqual([{ line: 1, card: 'a-card', radius: 'var(--radius-md)', ok: false }])
   })
 
   it('ignores a card rule that sets no radius', () => {
@@ -143,8 +165,8 @@ describe('cardRules — scanning a stylesheet', () => {
   })
 
   it('lets the last border-radius declaration win, as the cascade does', () => {
-    expect(css('.q-card { border-radius: 0.5rem; border-radius: 0.75rem }')[0].ok).toBe(true)
-    const r = css('.q-card {\n  border-radius: 0.75rem;\n  border-radius: 0.5rem;\n}')[0]
+    expect(css(`.q-card { border-radius: 0.5rem; border-radius: ${T} }`)[0].ok).toBe(true)
+    const r = css(`.q-card {\n  border-radius: ${T};\n  border-radius: 0.5rem;\n}`)[0]
     expect(r.ok).toBe(false)
     expect(r.line).toBe(3)
   })
@@ -153,20 +175,21 @@ describe('cardRules — scanning a stylesheet', () => {
     const all = '.a-card { border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-bottom-left-radius: 8px }'
     expect(css(all)[0]).toMatchObject({ card: 'a-card', ok: false })
     expect(css(all)[0].radius).toContain('border-top-left-radius: 8px')
-    expect(css('.a-card { border-radius: 0.75rem; border-bottom-left-radius: 0; border-bottom-right-radius: 0 }')[0].ok).toBe(true)
-    expect(css('.a-card { border-radius: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px }')[0].ok).toBe(true)
+    expect(css(`.a-card { border-radius: ${T}; border-bottom-left-radius: 0; border-bottom-right-radius: 0 }`)[0].ok).toBe(true)
+    expect(css(`.a-card { border-radius: 8px; border-top-left-radius: ${T}; border-top-right-radius: ${T}; border-bottom-right-radius: ${T}; border-bottom-left-radius: ${T} }`)[0].ok).toBe(true)
+    expect(css('.a-card { border-radius: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px }')[0]).toMatchObject({ ok: false, literal: true })
   })
 
   it('does not mistake a custom property or a vendor prefix for the radius', () => {
-    expect(css('.a-card { border-radius: 0.75rem; --thumb-border-radius: 4px }')).toEqual([
-      { line: 1, card: 'a-card', radius: '0.75rem', ok: true },
+    expect(css(`.a-card { border-radius: ${T}; --thumb-border-radius: 4px }`)).toEqual([
+      { line: 1, card: 'a-card', radius: T, ok: true },
     ])
-    expect(css('.a-card { -webkit-border-radius: 4px; border-radius: 0.75rem }')[0].ok).toBe(true)
+    expect(css(`.a-card { -webkit-border-radius: 4px; border-radius: ${T} }`)[0].ok).toBe(true)
   })
 
   it('skips a declaration line that carries radius-lint-ignore', () => {
-    const src = '@media (max-width: 480px) {\n  .a-card { border-radius: 0; } /* radius-lint-ignore: flush to the viewport edge */\n}\n.a-card { border-radius: 0.75rem }'
-    expect(css(src)).toEqual([{ line: 4, card: 'a-card', radius: '0.75rem', ok: true }])
+    const src = `@media (max-width: 480px) {\n  .a-card { border-radius: 0; } /* radius-lint-ignore: flush to the viewport edge */\n}\n.a-card { border-radius: ${T} }`
+    expect(css(src)).toEqual([{ line: 4, card: 'a-card', radius: T, ok: true }])
   })
 
   it('does not judge a descendant rule as the card', () => {
@@ -175,8 +198,8 @@ describe('cardRules — scanning a stylesheet', () => {
   })
 
   it('skips comments, keeping line numbers true', () => {
-    expect(css('/* .old-card { border-radius: 8px } */\n.a-card { border-radius: 0.75rem; }')).toEqual([
-      { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
+    expect(css(`/* .old-card { border-radius: 8px } */\n.a-card { border-radius: ${T}; }`)).toEqual([
+      { line: 2, card: 'a-card', radius: T, ok: true },
     ])
   })
 
@@ -185,7 +208,7 @@ describe('cardRules — scanning a stylesheet', () => {
     expect(css(src)).toEqual([{ line: 2, card: 'x-card', radius: '6px', ok: false }])
     const uri = '.bg { background: url("data:image/svg+xml;utf8,<svg>{}</svg>") }\n.x-card { border-radius: 6px }'
     expect(css(uri)).toEqual([{ line: 2, card: 'x-card', radius: '6px', ok: false }])
-    expect(css('.bg { background: url(data:x;{) }\n.x-card { border-radius: 0.75rem }')[0].ok).toBe(true)
+    expect(css(`.bg { background: url(data:x;{) }\n.x-card { border-radius: ${T} }`)[0].ok).toBe(true)
   })
 
   it('judges a card that nests its own states, without counting the nested block', () => {
@@ -197,15 +220,15 @@ describe('cardRules — scanning a stylesheet', () => {
   })
 
   it('does not treat a nested descendant as the card', () => {
-    expect(css('.a-card {\n  border-radius: 0.75rem;\n  .map { border-radius: 4px }\n  img { border-radius: 2px }\n}')).toEqual([
-      { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
+    expect(css(`.a-card {\n  border-radius: ${T};\n  .map { border-radius: 4px }\n  img { border-radius: 2px }\n}`)).toEqual([
+      { line: 2, card: 'a-card', radius: T, ok: true },
     ])
   })
 
   it('judges a @media override nested inside the card as the card', () => {
-    const src = '.a-card {\n  border-radius: 0.75rem;\n  @media (max-width: 600px) { border-radius: 8px }\n}'
+    const src = `.a-card {\n  border-radius: ${T};\n  @media (max-width: 600px) { border-radius: 8px }\n}`
     expect(css(src)).toEqual([
-      { line: 2, card: 'a-card', radius: '0.75rem', ok: true },
+      { line: 2, card: 'a-card', radius: T, ok: true },
       { line: 3, card: 'a-card', radius: '8px', ok: false },
     ])
     expect(css('.a-card { @media (max-width: 600px) { & { border-radius: 8px } } }')).toEqual([
@@ -248,8 +271,8 @@ describe('cardRules — scanning a stylesheet', () => {
   })
 
   it('ignores a <style> block inside an HTML comment, and a "<!--" string in script', () => {
-    const sfc = '<template>\n<!-- <style>.b-card{border-radius:4px}</style> -->\n<div />\n</template>\n<style>.a-card { border-radius: 0.75rem }</style>'
-    expect(vue(sfc)).toEqual([{ line: 5, card: 'a-card', radius: '0.75rem', ok: true }])
+    const sfc = `<template>\n<!-- <style>.b-card{border-radius:4px}</style> -->\n<div />\n</template>\n<style>.a-card { border-radius: ${T} }</style>`
+    expect(vue(sfc)).toEqual([{ line: 5, card: 'a-card', radius: T, ok: true }])
     const tricky = "<script setup>\nconst OPEN = '<!--'\nconst CLOSE = '-->'\n</script>\n<style>.a-card { border-radius: 4px }</style>"
     expect(vue(tricky)).toEqual([{ line: 5, card: 'a-card', radius: '4px', ok: false }])
   })
@@ -267,5 +290,145 @@ describe('scanCards — which listed classes still name a rule', () => {
     const opts = { optionTiles: new Set(['role-card']), containers: new Set(['scan-log', 'gone']) }
     const src = '/* .gone { } */\n.gone .row { padding: 0 }\n.scan-log { border: 0 }\n.role-card { padding: 0 }'
     expect([...scanCards(src, 'css', opts).classes].sort()).toEqual(['role-card', 'scan-log'])
+  })
+})
+
+describe('tokenDefinitions — where --radius-card is set', () => {
+  it('finds every definition with its line, value and enclosing block', () => {
+    const src = '@theme static {\n  --radius-card: 0.75rem;\n}\n:root[data-admin-theme=light] {\n  --radius-card: 0.5rem;\n}\n@theme {\n  --radius-card: 1rem;\n}'
+    expect(tokenDefinitions(src, 'css')).toEqual([
+      { line: 2, value: '0.75rem', scope: TOKEN_SCOPE },
+      { line: 5, value: '0.5rem', scope: ':root[data-admin-theme=light]' },
+      { line: 8, value: '1rem', scope: '@theme' },
+    ])
+    expect(TOKEN_SCOPE).toBe('@theme static')
+  })
+
+  it('does not read a comment, a string or a different property as a definition', () => {
+    expect(tokenDefinitions('/* --radius-card: 0.75rem */\n.a { border-radius: var(--radius-card) }', 'css')).toEqual([])
+    expect(tokenDefinitions('.a::before { content: "--radius-card: 4px" }', 'css')).toEqual([])
+    expect(tokenDefinitions('.a { --thumb-radius-card: 4px; --radius-card-x: 2px }', 'css')).toEqual([])
+    expect(tokenDefinitions('.a { --radius-card:4px }', 'css')).toEqual([{ line: 1, value: '4px', scope: '.a' }])
+  })
+
+  it('reads the <style> blocks and the template attributes of a .vue file, not its script or comments', () => {
+    const sfc = [
+      '<script setup>',
+      "const k = '--radius-card: 0'",
+      '</script>',
+      '<template>',
+      '<!-- --radius-card: 1px -->',
+      '<div style="--radius-card: 0" />',
+      '<div :style="{ \'--radius-card\': \'4px\' }" />',
+      '<section class="p-4 [--radius-card:0.5rem] border" />',
+      '</template>',
+      '<style>',
+      '.x { --radius-card: 4px }',
+      '</style>',
+    ].join('\n')
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([
+      { line: 6, value: '0', scope: 'template' },
+      { line: 7, value: '4px', scope: 'template' },
+      { line: 8, value: '0.5rem', scope: 'template' },
+      { line: 11, value: '4px', scope: '.x' },
+    ])
+  })
+
+  it('reads a quoted key in script, where a :style object lives, but not a bare mention', () => {
+    const sfc = "<script setup>\nconst panel = { '--radius-card': '0' }\nconst note = '--radius-card: see style.css'\n</script>\n<template><div :style=\"panel\" /></template>"
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
+  })
+
+  it('reads a style map or a setProperty call in a .ts module, and setProperty in SFC script', () => {
+    const ts = "export const FLUSH = { '--radius-card': '0' }\nexport function f(el: HTMLElement) { el.style.setProperty('--radius-card', '4px') }\nconst note = '--radius-card: see style.css'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([
+      { line: 1, value: '0', scope: 'script' },
+      { line: 2, value: '4px', scope: 'script' },
+    ])
+    const sfc = '<script setup>\nonMounted(() => root.value?.style.setProperty("--radius-card", "0"))\n</script>\n<template><div ref="root" /></template>'
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
+  })
+
+  it('normalises the whitespace of the enclosing block', () => {
+    expect(tokenDefinitions('@theme  static {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
+    expect(tokenDefinitions('@theme\nstatic {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
+  })
+})
+
+describe('utilityCardFix — what a rounded-xl should have been', () => {
+  it('keeps the side and the variant prefix', () => {
+    expect(utilityCardFix('rounded-xl')).toBe('rounded-card')
+    expect(utilityCardFix('rounded-t-xl')).toBe('rounded-t-card')
+    expect(utilityCardFix('hover:rounded-tl-xl')).toBe('hover:rounded-tl-card')
+  })
+
+  it('counts the token utility in every side and prefix form', () => {
+    expect('rounded-card md:rounded-card rounded-t-card rounded-cards rounded-xl'.match(UTILITY_CARD_REF)).toEqual(['rounded-card', 'md:rounded-card', 'rounded-t-card'])
+  })
+})
+
+describe('utilityCardLiterals — rounded-xl in a class list', () => {
+  it('finds the utility in class attributes, bindings and script constants, with the file line', () => {
+    const sfc = [
+      '<script setup lang="ts">',
+      "const CARD = 'border rounded-xl p-4'",
+      '</script>',
+      '<template>',
+      '  <div class="rounded-xl bg-zinc-900" />',
+      '  <div :class="[open ? \'rounded-t-xl\' : \'rounded-xl\', \'md:rounded-xl\']" />',
+      '  <div class="rounded-card rounded-lg rounded-2xl" />',
+      '</template>',
+    ].join('\n')
+    expect(utilityCardLiterals(sfc)).toEqual([
+      { line: 2, utility: 'rounded-xl' },
+      { line: 5, utility: 'rounded-xl' },
+      { line: 6, utility: 'rounded-t-xl' },
+      { line: 6, utility: 'rounded-xl' },
+      { line: 6, utility: 'md:rounded-xl' },
+    ])
+  })
+
+  it('ignores <style> blocks and HTML comments', () => {
+    const sfc = '<template>\n<!-- <div class="rounded-xl" /> -->\n<div class="rounded-card" />\n</template>\n<style>\n.rounded-xl { border-radius: 0 }\n</style>'
+    expect(utilityCardLiterals(sfc)).toEqual([])
+  })
+
+  it('reads a plain .ts module raw, so a "<!--" string in it hides nothing', () => {
+    expect(utilityCardLiterals("export const TILE = 'border rounded-xl p-4'\nexport const OK = 'rounded-card'", 'ts')).toEqual([{ line: 1, utility: 'rounded-xl' }])
+    expect(utilityCardLiterals("const a = '<!--'\nexport const T = 'rounded-xl'\nconst b = '-->'", 'ts')).toEqual([{ line: 2, utility: 'rounded-xl' }])
+  })
+
+  it('keeps numeric and bracketed variant prefixes, and reads arbitrary values and @apply', () => {
+    const sfc = [
+      '<template>',
+      '  <div class="2xl:rounded-xl data-[open]:rounded-t-xl rounded-[12px] rounded-[0.75rem] rounded-[.75rem] rounded-[8px]" />',
+      '</template>',
+      '<style scoped>',
+      '.x-card { @apply border rounded-xl p-4; }',
+      '</style>',
+    ].join('\n')
+    expect(utilityCardLiterals(sfc).map((h) => h.utility)).toEqual([
+      '2xl:rounded-xl', 'data-[open]:rounded-t-xl', 'rounded-[12px]', 'rounded-[0.75rem]', 'rounded-[.75rem]', 'rounded-xl',
+    ])
+    expect(utilityCardLiterals(sfc).at(-1)?.line).toBe(5)
+    expect(utilityCardFix('2xl:rounded-xl')).toBe('2xl:rounded-card')
+    expect(utilityCardFix('data-[open]:rounded-t-xl')).toBe('data-[open]:rounded-t-card')
+    expect(utilityCardFix('rounded-[12px]')).toBe('rounded-card')
+  })
+
+  it('names the token utility after the token', () => {
+    expect(UTILITY_CARD).toBe('rounded-card')
+  })
+
+  it('reads @apply in a .css file, but not a selector or comment there', () => {
+    const css = '/* rounded-xl */\n.rounded-xl { border-radius: 0 }\n.table-card { @apply rounded-xl border; }'
+    expect(utilityCardLiterals(css, 'css')).toEqual([{ line: 3, utility: 'rounded-xl' }])
+  })
+
+  it('counts the token utility only where the literal scan reads, so the floor cannot be propped up by comments', () => {
+    const sfc = '<template>\n<!-- rounded-card -->\n<div class="rounded-card md:rounded-t-card" />\n</template>\n<style>\n/* rounded-card */\n.x { @apply rounded-card; }\n</style>'
+    expect(utilityCardUses(sfc)).toBe(3)
+    expect(utilityCardUses("const c = 'rounded-card'", 'ts')).toBe(1)
+    expect(utilityCardUses('/* rounded-card */ .a { border-radius: 0 }', 'css')).toBe(0)
   })
 })

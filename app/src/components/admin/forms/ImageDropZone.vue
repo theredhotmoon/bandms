@@ -112,7 +112,7 @@ defineExpose({ clear })
 <style scoped>
 .drop-zone {
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   text-align: center;
   cursor: pointer;
@@ -140,7 +140,7 @@ defineExpose({ clear })
 .file-card {
   background: var(--c-0e0c2a);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   overflow: hidden;
   display: flex;
   flex-direction: column;

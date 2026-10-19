@@ -3,9 +3,13 @@
  * check-admin-radius.mjs and its spec.
  *
  * DESIGN.md gives cards, table cards, drop zones and the modal panel a
- * 0.75rem corner. Every value on the radius scale looks deliberate in review,
- * so cards drift to the 0.5rem control corner without anyone noticing; this
- * scanner is what notices.
+ * 0.75rem corner, held in one token: `--radius-card` in src/style.css. Every
+ * value on the radius scale looks deliberate in review, so cards drift to the
+ * 0.5rem control corner without anyone noticing; this scanner is what
+ * notices. A card rule must write `var(--radius-card)` for each rounded
+ * corner — a literal `0.75rem` is the right shape and still fails, because a
+ * literal is one edit away from being the wrong one, and the token is what
+ * makes "the card corner" a single source rather than 40 agreeing numbers.
  *
  * A scanner, not a CSS parser, in the same shape as colour-scan.mjs, whose
  * helpers it shares for "where is the CSS" and "what is a comment". Strings
@@ -33,22 +37,29 @@
  *   - The shorthand and every longhand (`border-top-left-radius`, the logical
  *     `border-start-start-radius` family) are applied to four corners in
  *     source order, last declaration per property winning as in CSS, with
- *     `!important` dropped. Shorthand values are spelt as `0.75rem`,
- *     `.75rem` or `12px`; `em` is not accepted, because it scales with the
- *     element's font size and is only 12px by coincidence.
- *   - The corners pass when all four are 0.75rem, or one EDGE is flat (both
- *     corners on one side 0, the other two 0.75rem — a card butted against a
- *     sibling strip). Two square corners on a diagonal, or a fully square
- *     card, fail. A deliberate exception — a card flush to the viewport edge
- *     on phones — takes `radius-lint-ignore: <reason>` on the declaration's
- *     line, the way colour-scan's `token-lint-ignore` works.
+ *     `!important` dropped. Each length is the token, `0`, or a rem/px
+ *     literal; `em` is not read, because it scales with the element's font
+ *     size and is only 12px by coincidence. Another `var(…)` is unknown and
+ *     fails — the scanner does not resolve custom properties.
+ *   - The corners pass when all four are the card corner, or one EDGE is
+ *     flat (both corners on one side 0, the other two the card corner — a
+ *     card butted against a sibling strip), AND every rounded corner was
+ *     written as the token. Two square corners on a diagonal, or a fully
+ *     square card, fail. A deliberate exception — a card flush to the
+ *     viewport edge on phones — takes `radius-lint-ignore: <reason>` on the
+ *     declaration's line, the way colour-scan's `token-lint-ignore` works.
  *
- * It reads <style> blocks and .css files only. A card rounded with a Tailwind
- * utility in its class list (`rounded-lg`) is outside what it can see.
+ * The rule scan reads <style> blocks and .css files. A card rounded with a
+ * Tailwind utility in its class list is a separate, simpler question —
+ * `rounded-xl` is 0.75rem and so always the card corner as a literal — and
+ * utilityCardLiterals() below finds those; `rounded-card` is the token's
+ * utility. The token's own definitions are tokenDefinitions().
  */
-import { blank, stripCssComments, styleRuns } from './colour-scan.mjs'
+import { blank, scriptBlocks, stripCssComments, styleRuns, templateText } from './colour-scan.mjs'
 
 export const CARD_RADIUS = '0.75rem'
+export const CARD_TOKEN = '--radius-card'
+export const CARD_VAR = `var(${CARD_TOKEN})`
 export const IGNORE_MARKER = 'radius-lint-ignore'
 const CARD_PX = 12
 
@@ -125,29 +136,45 @@ export function cardClassOf(selector, { optionTiles = new Set(), containers = ne
 
 /* ── Corners ───────────────────────────────────────────────────────────── */
 
-/** One length as CSS pixels, or NaN for anything that is not a rem/px length. */
-function px(token) {
-  const m = token.match(/^(\d*\.?\d+)(rem|px)?$/)
-  if (!m) return NaN
+/**
+ * `var(--radius-card)`, with any spacing inside the parentheses, with or
+ * without a fallback. `var(--radius-card, 12px)` is the token: the guard
+ * keeps the token defined, so the fallback never fires inside the SPA, and a
+ * card that may render outside it (a print sheet, a Teleport target) is
+ * entitled to one.
+ */
+const TOKEN_REF = new RegExp(String.raw`var\(\s*${CARD_TOKEN}\s*(?:,[^()]*)?\)`, 'g')
+
+/**
+ * One length as { px, token }: its CSS pixels (NaN for anything that is not
+ * the token, `0` or a rem/px literal) and whether it was written as the token.
+ */
+function lengthOf(text) {
+  if (text === CARD_VAR) return { px: CARD_PX, token: true }
+  const m = text.match(/^(\d*\.?\d+)(rem|px)?$/)
+  if (!m) return { px: NaN, token: false }
   const n = Number(m[1])
-  if (!m[2]) return n === 0 ? 0 : NaN
-  return m[2] === 'px' ? n : n * 16
+  if (!m[2]) return { px: n === 0 ? 0 : NaN, token: false }
+  return { px: m[2] === 'px' ? n : n * 16, token: false }
 }
 
-/** `border-radius` shorthand → [tl, tr, br, bl]; an elliptical corner whose radii differ is NaN. */
+const UNKNOWN = { px: NaN, token: false }
+
+/** `border-radius` shorthand → [tl, tr, br, bl]; an elliptical corner whose radii differ is unknown. */
 function expandShorthand(value) {
-  const sides = value.split('/').map((side) => side.trim().split(/\s+/).filter(Boolean).map(px))
+  const sides = value.split('/').map((side) => side.trim().split(/\s+/).filter(Boolean).map(lengthOf))
   const four = (t) => {
     if (t.length === 1) return [t[0], t[0], t[0], t[0]]
     if (t.length === 2) return [t[0], t[1], t[0], t[1]]
     if (t.length === 3) return [t[0], t[1], t[2], t[1]]
     if (t.length === 4) return t
-    return [NaN, NaN, NaN, NaN]
+    return [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN]
   }
   const h = four(sides[0] ?? [])
   if (sides.length === 1) return h
   const v = four(sides[1])
-  return h.map((r, i) => (r === v[i] ? r : NaN))
+  // Both radii of a corner must agree; a token on one axis and a literal on the other is a literal.
+  return h.map((r, i) => (r.px === v[i].px ? { px: r.px, token: r.token && v[i].token } : UNKNOWN))
 }
 
 /** Longhand → corner index. Logical names assume horizontal-tb LTR, which the admin is. */
@@ -162,20 +189,22 @@ const CORNER_OF = {
   'border-end-start-radius': 3,
 }
 
+const ZERO = { px: 0, token: false }
+
 /**
- * The four corners [tl, tr, br, bl] in px that a sequence of radius
+ * The four corners [tl, tr, br, bl] as { px, token } that a sequence of radius
  * declarations ([property, value] pairs, in source order) resolves to.
  */
-export function cornersOf(decls) {
-  let corners = [NaN, NaN, NaN, NaN]
+function resolveCorners(decls) {
+  let corners = [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN]
   let set = false
   for (const [prop, raw] of decls) {
-    const value = raw.replace(/!\s*important/g, '').trim()
+    const value = raw.replace(/!\s*important/g, '').replace(TOKEN_REF, CARD_VAR).trim()
     if (prop === 'border-radius') {
       corners = expandShorthand(value)
     } else if (prop in CORNER_OF) {
-      if (!set) corners = [0, 0, 0, 0] // longhands alone: the others are the initial 0
-      corners[CORNER_OF[prop]] = px(value)
+      if (!set) corners = [ZERO, ZERO, ZERO, ZERO] // longhands alone: the others are the initial 0
+      corners[CORNER_OF[prop]] = lengthOf(value)
     } else {
       continue
     }
@@ -184,9 +213,14 @@ export function cornersOf(decls) {
   return corners
 }
 
+/** The four corners in px — see resolveCorners. */
+export function cornersOf(decls) {
+  return resolveCorners(decls).map((c) => c.px)
+}
+
 const isCardSize = (s) => Math.abs(s - CARD_PX) < 0.01
 
-/** All four corners rounded, or one edge flat and the other two rounded. */
+/** All four corners the card size, or one edge flat and the other two the card size. */
 export function isCardCorners([tl, tr, br, bl]) {
   const c = [tl, tr, br, bl]
   if (c.some(Number.isNaN)) return false
@@ -200,9 +234,22 @@ export function isCardCorners([tl, tr, br, bl]) {
   return top || bottom || left || right
 }
 
-/** Whether a `border-radius` shorthand value alone is the card corner. */
+/**
+ * The verdict on a card rule's radius declarations:
+ *   shape   — the corners are the card shape (all rounded, or one flat edge)
+ *   literal — a rounded corner was written as a number rather than the token
+ *   ok      — shape && !literal: what the build accepts
+ */
+export function judge(decls) {
+  const corners = resolveCorners(decls)
+  const shape = isCardCorners(corners.map((c) => c.px))
+  const literal = shape && corners.some((c) => !c.token && isCardSize(c.px))
+  return { shape, literal, ok: shape && !literal }
+}
+
+/** Whether a `border-radius` shorthand value alone is what a card rule may write. */
 export function isCardRadius(value) {
-  return isCardCorners(cornersOf([['border-radius', value]]))
+  return judge([['border-radius', value]]).ok
 }
 
 /* ── Blocks ────────────────────────────────────────────────────────────── */
@@ -282,9 +329,11 @@ function lineIndex(source) {
 
 /**
  * One pass over one file's source. `kind` is 'css' or 'vue'. Returns
- *   rules   — [{ line, card, radius, ok }] in source order, one per card rule
- *             that sets a corner; `line` points at the winning declaration.
- *             Rules without a radius are not reported, so a modifier like
+ *   rules   — [{ line, card, radius, ok, literal? }] in source order, one per
+ *             card rule that sets a corner; `line` points at the winning
+ *             declaration, and `literal: true` marks a card that has the
+ *             right shape written as a number instead of the token. Rules
+ *             without a radius are not reported, so a modifier like
  *             `.song-card--encore { background: … }` is never a violation,
  *             and a declaration line carrying IGNORE_MARKER is skipped.
  *   classes — the Set of listed classes (containers and option tiles) that
@@ -319,7 +368,8 @@ export function scanCards(source, kind, { optionTiles = new Set(), containers = 
       const radius = byProp.size === 1 && byProp.has('border-radius')
         ? byProp.get('border-radius').trim()
         : [...byProp].map(([p, v]) => `${p}: ${v.trim()}`).join('; ')
-      rules.push({ line, card, radius, ok: isCardCorners(cornersOf(decls)) })
+      const { ok, literal } = judge(decls)
+      rules.push({ line, card, radius, ok, ...(literal && { literal: true }) })
     }
   }
   rules.sort((a, b) => a.line - b.line)
@@ -329,4 +379,121 @@ export function scanCards(source, kind, { optionTiles = new Set(), containers = 
 /** The card rules alone — see scanCards. */
 export function cardRules(source, kind, options) {
   return scanCards(source, kind, options).rules
+}
+
+/* ── The token itself ──────────────────────────────────────────────────── */
+
+const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`, 'g')
+/** The same in a template: `style="--radius-card: 0"`, `:style="{ '--radius-card': '0' }"`, `[--radius-card:0.5rem]`. */
+const TOKEN_ATTR = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}['"]?\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
+/** And in script, where a `:style` object usually lives: a quoted `'--radius-card': '0'` key … */
+const TOKEN_KEY = new RegExp(String.raw`(['"])${CARD_TOKEN}\1\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
+/** … or `el.style.setProperty('--radius-card', '0')`. */
+const TOKEN_SET = new RegExp(String.raw`setProperty\(\s*(['"])${CARD_TOKEN}\1\s*,\s*['"]?\s*([^'")]+)`, 'g')
+
+/** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
+export const TOKEN_SCOPE = '@theme static'
+
+/**
+ * Every definition of `--radius-card` in a file, as [{ line, value, scope }]:
+ * each stylesheet declaration with the selector or at-rule of the block that
+ * holds it, comments and strings blanked first (a comment that quotes the
+ * token is not a definition; a quoted attribute value inside the scope's
+ * selector comes back as spaces), plus — for a .vue file — each inline `style`
+ * attribute, `:style` binding or arbitrary-property class in the template,
+ * with scope 'template', and — in its <script> blocks, or in a .ts module
+ * (`kind` 'ts') — each quoted `'--radius-card'` object key or
+ * `setProperty('--radius-card', …)` call, with scope 'script'. src/style.css
+ * must hold exactly one, inside TOKEN_SCOPE; any other definition anywhere
+ * would re-round every card inside its scope while each card rule still read
+ * as correct.
+ */
+export function tokenDefinitions(source, kind) {
+  const lineOf = lineIndex(source)
+  const out = []
+  for (const { css, base } of styleRuns(source, kind)) {
+    const clean = blankStrings(stripCssComments(css))
+    for (const { selector, body, bodyAt } of blocks(clean)) {
+      for (const m of body.matchAll(TOKEN_DECL)) {
+        out.push({ line: lineOf(base + bodyAt + m.index), value: m[1].trim(), scope: selector.trim().replace(/\s+/g, ' ') })
+      }
+    }
+  }
+  const script = (text, base) => {
+    for (const re of [TOKEN_KEY, TOKEN_SET]) {
+      for (const m of text.matchAll(re)) out.push({ line: lineOf(base + m.index), value: m[2].trim(), scope: 'script' })
+    }
+  }
+  if (kind === 'vue') {
+    for (const m of templateText(source).matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })
+    for (const { text, base } of scriptBlocks(source)) script(text, base)
+  }
+  if (kind === 'ts') script(source, 0)
+  return out.sort((a, b) => a.line - b.line)
+}
+
+/* ── Utility-styled cards ──────────────────────────────────────────────── */
+
+/** The Tailwind utility `--radius-card` yields: `rounded-card`, the card corner in a class list. */
+export const UTILITY_CARD = `rounded-${CARD_TOKEN.replace(/^--radius-/, '')}`
+
+/**
+ * Tailwind's `rounded-xl` (any side, any variant prefix) is 0.75rem — the
+ * card corner as a literal, in a class list rather than a stylesheet. It is
+ * the one radius utility DESIGN.md's scale reserves for cards, so every use
+ * of it in the admin is a card that should write `rounded-card`.
+ */
+const SIDE = String.raw`(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?`
+/** Variant prefixes: `md:`, `2xl:`, `hover:`, `data-[open]:`, `group-hover:`. */
+const VARIANTS = String.raw`(?:(?:[a-z0-9-]+|[a-z-]+\[[^\]]*\]):)*`
+/** The card corner as a literal utility: `rounded-xl`, or an arbitrary value spelling the same length. */
+const XL = String.raw`(?:xl|\[(?:12px|0?\.75rem)\])`
+const ROUNDED_XL = new RegExp(String.raw`(?<![\w-])(${VARIANTS}rounded${SIDE}-${XL})(?![\w-])`, 'g')
+/** The token's utility in a class list, any side, any variant prefix — for counting what the guard covers. */
+export const UTILITY_CARD_REF = new RegExp(String.raw`(?<![\w-])${VARIANTS}rounded${SIDE}-${UTILITY_CARD.slice('rounded-'.length)}(?![\w-])`, 'g')
+const APPLY = /@apply\b[^;}]*/g
+
+/** What the literal should have been: the same variants and side, on the token (`md:rounded-t-xl` → `md:rounded-t-card`). */
+export function utilityCardFix(utility) {
+  return utility.replace(new RegExp(String.raw`rounded(${SIDE})-${XL}$`), `rounded$1-${UTILITY_CARD.slice('rounded-'.length)}`)
+}
+
+/**
+ * Every match of a utility pattern where a class list can live, as
+ * [{ line, utility }]: class attributes and `:class` bindings in a .vue
+ * template (HTML comments blanked), class strings in its <script> blocks or
+ * in a plain .ts module (`kind` 'ts', scanned raw), and `@apply` lines in
+ * any stylesheet — a <style> block or a .css file. Script is scanned as-is,
+ * because a class string in a constant is live code and a `//` comment
+ * naming the utility is a rare enough false positive to prefer over missing
+ * the constant.
+ */
+function utilityHits(source, kind, re) {
+  const lineOf = lineIndex(source)
+  const hits = []
+  const scan = (text, base) => {
+    for (const m of text.matchAll(re)) hits.push({ line: lineOf(base + m.index), utility: m[0] })
+  }
+  if (kind === 'ts') {
+    scan(source, 0)
+    return hits
+  }
+  if (kind === 'vue') {
+    scan(templateText(source), 0)
+    for (const { text, base } of scriptBlocks(source)) scan(text, base)
+  }
+  for (const { css, base } of styleRuns(source, kind)) {
+    for (const m of stripCssComments(css).matchAll(APPLY)) scan(m[0], base + m.index)
+  }
+  return hits.sort((a, b) => a.line - b.line)
+}
+
+/** Every card corner written as a literal utility (`rounded-xl`, `rounded-[12px]`) — see utilityHits. */
+export function utilityCardLiterals(source, kind = 'vue') {
+  return utilityHits(source, kind, ROUNDED_XL)
+}
+
+/** How many times the token's utility is used, in the same places the literal scan reads — the sanity floor for that scan. */
+export function utilityCardUses(source, kind = 'vue') {
+  return utilityHits(source, kind, UTILITY_CARD_REF).length
 }

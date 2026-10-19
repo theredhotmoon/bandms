@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-19 (card corner token)
+
+### Changed
+- **The admin card corner is one value, not 55 matching numbers**: every card, drop zone, modal panel and dashboard widget now reads the `--radius-card` token from `src/style.css` instead of writing `0.75rem` itself — 45 stylesheet declarations as `var(--radius-card)` and 10 Tailwind-styled cards as `rounded-card`. Nothing looks different. The build check that keeps cards on that corner now also rejects a card that writes the number (`0.75rem` or `rounded-xl`), so the corner cannot drift by a typo again, and it fails if the token is defined anywhere but the one place it belongs, or there more than once.
+
 ## [Unreleased] — 2026-10-15 (card corners)
 
 ### Fixed

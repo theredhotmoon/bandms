@@ -318,7 +318,7 @@ Shadows appear only where something floats above the page:
 
 Gently rounded, with the radius tracking the element's size: 0.25rem on
 badges and checkbox rows, 0.375rem on nav items, row buttons and the modal
-close, 0.5rem on inputs, primary and ghost buttons, 0.75rem on cards, table
+close, 0.5rem on inputs, primary and ghost buttons, 0.75rem (`var(--radius-card)`) on cards, table
 cards, drop zones and the modal panel, and a full pill on avatars, the pending badge and progress bars. Those five are the whole scale — an in-between value (0.3rem, 5px, 10px) is drift, not a choice.
 Borders are 1px Hairline or Control-border; nothing uses a thicker stroke, and
 no card carries a thick or coloured side border (a blockquote's quote rule inside rich text is typography, not a card accent) — the active nav item's indicator is
@@ -348,7 +348,7 @@ are SVG circles, not glyphs.
 - **Language badges** (`.lang-badge`): fixed 2rem wide so EN and PL columns align down a bilingual form.
 
 ### Cards / Containers
-- **Corner Style:** 0.75rem — every card, including the small ones repeated in a grid or list (photo tiles, ticket types, gear items, setlist songs) and the ones nested inside a modal. A selectable option tile that happens to be called a card (role, career level, main instrument) is a control and takes 0.5rem. `scripts/check-admin-radius.mjs` holds this in `pnpm build`.
+- **Corner Style:** 0.75rem — every card, including the small ones repeated in a grid or list (photo tiles, ticket types, gear items, setlist songs) and the ones nested inside a modal. A selectable option tile that happens to be called a card (role, career level, main instrument) is a control and takes 0.5rem. The value lives once, as the `--radius-card` theme key in `src/style.css`; a scoped style writes `var(--radius-card)` and a utility-styled card writes `rounded-card` — never the number, never `rounded-xl`: `scripts/check-admin-radius.mjs` fails `pnpm build` on either literal as well as on a drifted corner, and pins the token to this value.
 - **Background:** Card for widgets, modals and the stat strip; Panel for the table card and the sidebar.
 - **Shadow Strategy:** none at rest (see Elevation).
 - **Border:** 1px Hairline.

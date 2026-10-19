@@ -113,6 +113,19 @@ export function styleRuns(source, kind) {
   return [...live.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
 }
 
+/** The <script> blocks of a .vue file, as [{ text, base }] with `base` the offset of `text` in `source`. */
+export function scriptBlocks(source) {
+  return [...source.matchAll(SCRIPT_BLOCK)].map((m) => ({ text: m[0], base: m.index }))
+}
+
+/**
+ * A .vue file's template alone, offsets preserved: <script> and <style>
+ * blocks and HTML comments blanked — the scripts first, so a `'<!--'` string
+ * in one cannot open a comment that swallows the template. One definition
+ * for every guard that reads class lists or attributes.
+ */
+export const templateText = (source) => source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank).replace(HTML_COMMENT, blank)
+
 /**
  * Scan one file's source. `kind` is 'css' or 'vue'.
  * Returns [{ line, hits }] with 1-based line numbers, in line order.
@@ -120,7 +133,7 @@ export function styleRuns(source, kind) {
 export function colourHits(source, kind) {
   const found = []
   for (const { css, base } of styleRuns(source, kind)) scanCss(css, base, found)
-  if (kind === 'vue') scanTemplate(source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank), found)
+  if (kind === 'vue') scanTemplate(templateText(source), found)
 
   const lines = source.split('\n')
   const byLine = new Map()

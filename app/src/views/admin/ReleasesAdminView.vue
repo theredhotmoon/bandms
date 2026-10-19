@@ -436,7 +436,7 @@ async function uploadPhotos() {
 .rp-card {
   position: relative;
   border: 1px solid var(--c-222222);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   overflow: hidden;
   cursor: grab;
   background: var(--c-141414);

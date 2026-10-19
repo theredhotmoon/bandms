@@ -31,7 +31,7 @@ function move(locale: Lang, step: -1 | 1): void {
 </script>
 
 <template>
-  <section class="mb-6 rounded-xl border border-zinc-700 bg-zinc-900 p-4" data-testid="content-languages">
+  <section class="mb-6 rounded-card border border-zinc-700 bg-zinc-900 p-4" data-testid="content-languages">
     <h2 class="text-sm font-semibold text-white">{{ $t('pages.modules.contentLanguages.title') }}</h2>
     <p class="mt-1 text-xs text-zinc-500">{{ $t('pages.modules.contentLanguages.lead') }}</p>
 

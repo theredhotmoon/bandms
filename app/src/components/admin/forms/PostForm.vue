@@ -429,7 +429,7 @@ function submit() {
   padding: 0.75rem var(--modal-pad-x, 1.5rem);
   background: var(--c-141414);
   border-top: 1px solid var(--c-252525);
-  border-radius: 0 0 0.75rem 0.75rem;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
 }
 .pf-footer-status {
   margin: 0;

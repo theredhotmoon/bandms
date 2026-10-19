@@ -94,7 +94,7 @@ function remove() {
 .siu-drop {
   width: 100%;
   border: 2px dashed var(--c-2a2a2a);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   padding: 1.25rem 0.75rem;
   text-align: center;
   cursor: pointer;
@@ -116,7 +116,7 @@ function remove() {
 .siu-preview {
   position: relative;
   display: inline-block;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   overflow: hidden;
   border: 1px solid var(--c-2a2a2a);
   max-width: 100%;

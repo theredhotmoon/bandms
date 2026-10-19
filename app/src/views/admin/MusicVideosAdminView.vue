@@ -511,7 +511,7 @@ function videoHost(url: string): 'youtube' | 'vimeo' | 'other' {
 /* Metadata preview card */
 .meta-card {
   display: flex; gap: 0.75rem; align-items: flex-start;
-  background: var(--c-111111); border: 1px solid var(--c-222222); border-radius: 0.75rem;
+  background: var(--c-111111); border: 1px solid var(--c-222222); border-radius: var(--radius-card);
   padding: 0.625rem; overflow: hidden;
 }
 .meta-thumb {

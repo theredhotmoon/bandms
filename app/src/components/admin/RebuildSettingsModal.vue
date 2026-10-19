@@ -44,7 +44,7 @@ const { autoRebuild, setAutoRebuild } = useSiteRebuild()
 .modal-panel {
   width: 22rem;
   padding: 1.5rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   background: var(--c-161616);
   border: 1px solid var(--c-2a2a2a);
 }

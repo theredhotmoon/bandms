@@ -482,7 +482,7 @@ function advanceLevel() {
 
 <style scoped>
 .clw {
-  background: var(--c-141414); border: 1px solid var(--c-222222); border-radius: 0.75rem; overflow: hidden;
+  background: var(--c-141414); border: 1px solid var(--c-222222); border-radius: var(--radius-card); overflow: hidden;
 }
 
 /* ── Tab bar ──────────────────────────────────────────── */
