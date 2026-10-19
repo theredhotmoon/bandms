@@ -5,7 +5,7 @@
  * The radius scale is xs/sm/md/lg (0.25/0.375/0.5/0.75rem) and the role picks
  * the step: cards, table cards, drop zones and the modal panel take lg. Every
  * value here is on the scale, so a card at 6px or 0.5rem looks deliberate in
- * review — that is how nine cards, seven card-like containers and five drop zones drifted to
+ * review — that is how nine cards, nine card-like containers and five drop zones drifted to
  * the input/button radius while the rest stayed at 0.75rem.
  *
  * What counts as a card rule, and which corners count as 0.75rem, is
@@ -48,6 +48,7 @@ const OPTION_TILES = {
  * Drop zones are here too: DESIGN.md (Shapes) gives them the card corner.
  */
 const CONTAINERS = {
+  'components/admin/BandLogoManager.vue': ['blm-upload-preview-wrap'],
   'components/admin/ConcertTicketsManager.vue': ['form-panel'],
   'components/admin/EntityRelationsPanel.vue': ['assoc-sections'],
   'components/admin/forms/BandMemberForm.vue': ['aside-drop'],
@@ -58,6 +59,7 @@ const CONTAINERS = {
   'components/admin/forms/ReleaseForm.vue': ['cover-drop', 'track-block'],
   'components/admin/forms/SingleImageUpload.vue': ['siu-drop', 'siu-preview'],
   'components/admin/forms/blocks/ImageBlockEditor.vue': ['img-drop'],
+  'components/setlist/SetlistEditor.vue': ['add-panel'],
   'views/admin/DoorCheckView.vue': ['scan-log'],
   'views/admin/PhotosAdminView.vue': ['photo-item'],
 }

@@ -592,7 +592,7 @@ function isAnyUpdatePending(id: number): boolean {
   min-height: 6rem;
   background: var(--c-141230);
   border: 1px solid var(--c-2a2a2a);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
