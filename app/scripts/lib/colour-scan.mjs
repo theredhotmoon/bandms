@@ -22,6 +22,10 @@
  * offset — and therefore every reported line number — stays true.
  */
 
+// The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, shared
+// with the radius and source guards.
+import { blank, stripCssComments } from './css-walk.mjs'
+
 export const IGNORE_MARKER = 'token-lint-ignore'
 
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/g
@@ -37,12 +41,6 @@ const TW_ARBITRARY = /(?<![\w-])(?:[a-z]+:)*(?:bg|text|border|ring|outline|fill|
  * without breaking the tag, and the class says exactly what it means.
  */
 const PINNED_WHITE = /^(?:[a-z]+:)*text-\[#fff(?:fff)?\]$/
-
-/** Replace every character but newlines with a space, so offsets and line numbers hold. */
-export const blank = (s) => s.replace(/[^\n]/g, ' ')
-
-/** CSS with its comments blanked. One definition for every style guard. */
-export const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, blank)
 
 /** rgba(0,0,0,a) is a shadow or a scrim — the same in either theme. */
 function isBlackFunc(args) {

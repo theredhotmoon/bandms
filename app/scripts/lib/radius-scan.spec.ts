@@ -349,6 +349,35 @@ describe('tokenDefinitions — where --radius-card is set', () => {
     expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
   })
 
+  it('reads an arbitrary-property class kept as a string in script or a .ts module', () => {
+    const ts = "export const FLAT = 'p-4 [--radius-card:4px] border'\nconst note = 'see [--radius-card] in style.css'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([{ line: 1, value: '4px', scope: 'script' }])
+    const sfc = "<script setup>\nconst cls = ['[--radius-card:0]']\n</script>\n<template><div :class=\"cls\" /></template>"
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
+  })
+
+  it('reads the class string across the lines of a template literal, and past a comment marker inside a string', () => {
+    const ts = "const flat = `p-4 border\n  [--radius-card:4px]`\nconst g = 'src/*'\nel.style.setProperty('--radius-card', '0')\nconst e = '*/'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([
+      { line: 2, value: '4px', scope: 'script' },
+      { line: 4, value: '0', scope: 'script' },
+    ])
+  })
+
+  it('sees a definition after a regex literal that holds a quote', () => {
+    const ts = "const q = /['\"]/g; el.style.setProperty('--radius-card', '0')\nconst re = /it's/; const c = '[--radius-card:4px]'"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([
+      { line: 1, value: '0', scope: 'script' },
+      { line: 2, value: '4px', scope: 'script' },
+    ])
+  })
+
+  it('does not take a code comment that mentions the class, or a bare mention, for a definition', () => {
+    const ts = "// never write a [--radius-card:0] class here\n/* nor '[--radius-card:4px]' */\nconst u = 'https://x.test/a' // don't: [--radius-card:0]\nexport const x = 1"
+    expect(tokenDefinitions(ts, 'ts')).toEqual([])
+    expect(tokenDefinitions("const note = 'the [--radius-card:0] class'", 'ts')).toEqual([{ line: 1, value: '0', scope: 'script' }])
+  })
+
   it('normalises the whitespace of the enclosing block', () => {
     expect(tokenDefinitions('@theme  static {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
     expect(tokenDefinitions('@theme\nstatic {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
