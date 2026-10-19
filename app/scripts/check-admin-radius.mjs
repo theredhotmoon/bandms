@@ -14,11 +14,11 @@
  * card rule that writes a literal 0.75rem fails here even though the shape
  * is right, so the corner has one source rather than ~45 agreeing numbers.
  * The same for the template side: Tailwind's `rounded-xl` (or
- * `rounded-[12px]`, or an `@apply rounded-xl`) is 0.75rem, the step the
- * scale reserves for cards, so every use of it in an admin .vue or .ts file
- * is a card written as a literal and is told to use `rounded-card` — with
- * its variants and side kept, `md:rounded-t-card`, which Tailwind derives
- * from the same key.
+ * `rounded-[12px]`, or an `@apply rounded-xl` in any stylesheet) is 0.75rem,
+ * the step the scale reserves for cards, so every use of it in an admin
+ * .vue, .css or .ts file is a card written as a literal and is told to use
+ * `rounded-card` — with its variants and side kept, `md:rounded-t-card`,
+ * which Tailwind derives from the same key.
  *
  * What counts as a card rule, and which corners count as the card corner, is
  * lib/radius-scan.mjs (pinned by its spec). Which files are admin chrome is
@@ -41,9 +41,10 @@
  * `:root` yields no `rounded-card` at all. No other file in the SPA may
  * define it, admin chrome or not: App.vue's unscoped <style> and
  * admin-palette.css are global, and a `style="--radius-card: 0"`, a
- * `[--radius-card:4px]` class or a `'--radius-card': '0'` key in a :style
- * object on a view's root would re-round every card beneath it while every
- * rule still read as correct. Comments are not definitions.
+ * `[--radius-card:4px]` class, a `'--radius-card': '0'` key in a :style
+ * object (in the SFC or in a .ts style map) or a `setProperty('--radius-card',
+ * …)` on a view's root would re-round every card beneath it while every rule
+ * still read as correct. Comments are not definitions.
  *
  * Still outside it, by design of a scan that knows classes and not boxes: a
  * utility-styled card sitting on the WRONG step (`rounded-lg`) looks exactly
@@ -55,8 +56,8 @@ import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { adminStyleFiles, isExcluded, kindOf, posix, styleFilesUnder } from './lib/admin-files.mjs'
 import {
-  CARD_RADIUS, CARD_TOKEN, CARD_VAR, IGNORE_MARKER, TOKEN_SCOPE, UTILITY_CARD, UTILITY_CARD_REF,
-  scanCards, tokenDefinitions, utilityCardFix, utilityCardLiterals,
+  CARD_RADIUS, CARD_TOKEN, CARD_VAR, IGNORE_MARKER, TOKEN_SCOPE, UTILITY_CARD,
+  scanCards, tokenDefinitions, utilityCardFix, utilityCardLiterals, utilityCardUses,
 } from './lib/radius-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -108,26 +109,15 @@ let utilityCards = 0
 const seen = new Map()
 for (const file of styleFilesUnder(SRC, () => false, /\.(vue|css|ts)$/)) {
   const rel = posix(relative(SRC, file))
-  const admin = !isExcluded(rel)
+  const kind = rel.endsWith('.ts') ? 'ts' : kindOf(file)
   const source = readFileSync(file, 'utf8')
-
-  if (rel.endsWith('.ts')) {
-    // Class strings also live in .ts modules (class maps, shared tile styles).
-    if (!admin) continue
-    for (const { line, utility } of utilityCardLiterals(source, 'ts')) {
-      violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utilityCardFix(utility)}`)
-    }
-    utilityCards += (source.match(UTILITY_CARD_REF) ?? []).length
-    continue
-  }
-
-  const kind = kindOf(file)
 
   // The token is the single source of the card corner, so its definition is
   // checked rather than trusted: exactly one, in style.css, at DESIGN.md's
   // value, inside the one block Tailwind emits unconditionally. Anywhere
   // else — a second block in style.css, a global <style>, a template
-  // attribute — is a scope in which every card quietly takes another corner.
+  // attribute, a style map in script — is a scope in which every card
+  // quietly takes another corner.
   const defs = tokenDefinitions(source, kind)
   if (rel === TOKEN_FILE) {
     // Judge the one in the right block; everything else is an extra, so a
@@ -146,25 +136,25 @@ for (const file of styleFilesUnder(SRC, () => false, /\.(vue|css|ts)$/)) {
     }
   }
 
-  if (!admin) continue
+  if (isExcluded(rel)) continue
 
   // The admin questions: card rules on the token, listed classes still real,
-  // no card rounded by a literal utility.
-  const { rules, classes } = scanCards(source, kind, listsOf(rel))
-  seen.set(rel, classes)
-  for (const { line, card, radius, ok, literal } of rules) {
-    cards++
-    if (ok) continue
-    // `radius` is a bare value for the shorthand, or `prop: value; ...` when longhands are involved.
-    const decl = radius.includes(':') ? radius : `border-radius: ${radius}`
-    violations.push(`src/${rel}:${line}  .${card} { ${decl} }${literal ? `  — the right corner, but spell it ${CARD_VAR}` : ''}`)
-  }
-  if (kind === 'vue') {
-    for (const { line, utility } of utilityCardLiterals(source)) {
-      violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utilityCardFix(utility)}`)
+  // no card rounded by a literal utility — in a class list or an @apply.
+  if (kind !== 'ts') {
+    const { rules, classes } = scanCards(source, kind, listsOf(rel))
+    seen.set(rel, classes)
+    for (const { line, card, radius, ok, literal } of rules) {
+      cards++
+      if (ok) continue
+      // `radius` is a bare value for the shorthand, or `prop: value; ...` when longhands are involved.
+      const decl = radius.includes(':') ? radius : `border-radius: ${radius}`
+      violations.push(`src/${rel}:${line}  .${card} { ${decl} }${literal ? `  — the right corner, but spell it ${CARD_VAR}` : ''}`)
     }
-    utilityCards += (source.match(UTILITY_CARD_REF) ?? []).length
   }
+  for (const { line, utility } of utilityCardLiterals(source, kind)) {
+    violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utilityCardFix(utility)}`)
+  }
+  utilityCards += utilityCardUses(source, kind)
 }
 
 // A listed class that no longer heads a rule in its file is rot: the surface
@@ -186,7 +176,9 @@ for (const [name, list] of [['OPTION_TILES', OPTION_TILES], ['CONTAINERS', CONTA
   }
 }
 
-// Too few of either means a scan broke, not that every card is right.
+// Too few of either means a scan broke, not that every card is right. The
+// utility count is taken from the same text the literal scan reads, so a
+// scan that went blind cannot be propped up by comments or strings.
 if (cards < 10) violations.push(`only ${cards} card rule(s) found — the style scan is broken`)
 if (utilityCards < 5) violations.push(`only ${utilityCards} ${UTILITY_CARD} utilit(ies) found — the template scan is broken`)
 

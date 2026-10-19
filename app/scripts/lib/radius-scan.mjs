@@ -55,7 +55,7 @@
  * utilityCardLiterals() below finds those; `rounded-card` is the token's
  * utility. The token's own definitions are tokenDefinitions().
  */
-import { blank, stripCssComments, styleRuns } from './colour-scan.mjs'
+import { blank, scriptBlocks, stripCssComments, styleRuns, templateText } from './colour-scan.mjs'
 
 export const CARD_RADIUS = '0.75rem'
 export const CARD_TOKEN = '--radius-card'
@@ -386,8 +386,10 @@ export function cardRules(source, kind, options) {
 const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`, 'g')
 /** The same in a template: `style="--radius-card: 0"`, `:style="{ '--radius-card': '0' }"`, `[--radius-card:0.5rem]`. */
 const TOKEN_ATTR = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}['"]?\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
-/** And in script, where a `:style` object usually lives: a quoted `'--radius-card': '0'` key. */
+/** And in script, where a `:style` object usually lives: a quoted `'--radius-card': '0'` key … */
 const TOKEN_KEY = new RegExp(String.raw`(['"])${CARD_TOKEN}\1\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
+/** … or `el.style.setProperty('--radius-card', '0')`. */
+const TOKEN_SET = new RegExp(String.raw`setProperty\(\s*(['"])${CARD_TOKEN}\1\s*,\s*['"]?\s*([^'")]+)`, 'g')
 
 /** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
 export const TOKEN_SCOPE = '@theme static'
@@ -399,9 +401,12 @@ export const TOKEN_SCOPE = '@theme static'
  * token is not a definition; a quoted attribute value inside the scope's
  * selector comes back as spaces), plus — for a .vue file — each inline `style`
  * attribute, `:style` binding or arbitrary-property class in the template,
- * with scope 'template'. src/style.css must hold exactly one, inside
- * TOKEN_SCOPE; any other definition anywhere would re-round every card inside
- * its scope while each card rule still read as correct.
+ * with scope 'template', and — in its <script> blocks, or in a .ts module
+ * (`kind` 'ts') — each quoted `'--radius-card'` object key or
+ * `setProperty('--radius-card', …)` call, with scope 'script'. src/style.css
+ * must hold exactly one, inside TOKEN_SCOPE; any other definition anywhere
+ * would re-round every card inside its scope while each card rule still read
+ * as correct.
  */
 export function tokenDefinitions(source, kind) {
   const lineOf = lineIndex(source)
@@ -414,13 +419,16 @@ export function tokenDefinitions(source, kind) {
       }
     }
   }
-  if (kind === 'vue') {
-    const template = templateOf(source)
-    for (const m of template.matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })
-    for (const s of source.matchAll(SCRIPT_BLOCK)) {
-      for (const m of s[0].matchAll(TOKEN_KEY)) out.push({ line: lineOf(s.index + m.index), value: m[2].trim(), scope: 'script' })
+  const script = (text, base) => {
+    for (const re of [TOKEN_KEY, TOKEN_SET]) {
+      for (const m of text.matchAll(re)) out.push({ line: lineOf(base + m.index), value: m[2].trim(), scope: 'script' })
     }
   }
+  if (kind === 'vue') {
+    for (const m of templateText(source).matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })
+    for (const { text, base } of scriptBlocks(source)) script(text, base)
+  }
+  if (kind === 'ts') script(source, 0)
   return out.sort((a, b) => a.line - b.line)
 }
 
@@ -443,8 +451,6 @@ const XL = String.raw`(?:xl|\[(?:12px|0?\.75rem)\])`
 const ROUNDED_XL = new RegExp(String.raw`(?<![\w-])(${VARIANTS}rounded${SIDE}-${XL})(?![\w-])`, 'g')
 /** The token's utility in a class list, any side, any variant prefix — for counting what the guard covers. */
 export const UTILITY_CARD_REF = new RegExp(String.raw`(?<![\w-])${VARIANTS}rounded${SIDE}-${UTILITY_CARD.slice('rounded-'.length)}(?![\w-])`, 'g')
-const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
-const HTML_COMMENT = /<!--[\s\S]*?-->/g
 const APPLY = /@apply\b[^;}]*/g
 
 /** What the literal should have been: the same variants and side, on the token (`md:rounded-t-xl` → `md:rounded-t-card`). */
@@ -453,39 +459,41 @@ export function utilityCardFix(utility) {
 }
 
 /**
- * A .vue file's template alone, offsets preserved: <style> and <script>
- * blocks and HTML comments blanked — the scripts first, so a `'<!--'` string
- * in one cannot open a comment that swallows the template.
+ * Every match of a utility pattern where a class list can live, as
+ * [{ line, utility }]: class attributes and `:class` bindings in a .vue
+ * template (HTML comments blanked), class strings in its <script> blocks or
+ * in a plain .ts module (`kind` 'ts', scanned raw), and `@apply` lines in
+ * any stylesheet — a <style> block or a .css file. Script is scanned as-is,
+ * because a class string in a constant is live code and a `//` comment
+ * naming the utility is a rare enough false positive to prefer over missing
+ * the constant.
  */
-function templateOf(source) {
-  let live = source
-  for (const { css, base } of styleRuns(source, 'vue')) live = live.slice(0, base) + blank(css) + live.slice(base + css.length)
-  return live.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank)
-}
-
-/**
- * Every card-corner utility literal in a file, as [{ line, utility }]: class
- * attributes and `:class` bindings in a .vue template, class strings held in
- * its <script> or in a plain .ts module (`kind` 'ts', scanned raw), and an
- * `@apply` inside a <style> block. HTML comments are blanked; script is
- * scanned as-is, because a class string in a constant is live code and a
- * `//` comment naming the utility is a rare enough false positive to prefer
- * over missing the constant.
- */
-export function utilityCardLiterals(source, kind = 'vue') {
+function utilityHits(source, kind, re) {
   const lineOf = lineIndex(source)
   const hits = []
   const scan = (text, base) => {
-    for (const m of text.matchAll(ROUNDED_XL)) hits.push({ line: lineOf(base + m.index), utility: m[1] })
+    for (const m of text.matchAll(re)) hits.push({ line: lineOf(base + m.index), utility: m[0] })
   }
-  if (kind !== 'vue') {
+  if (kind === 'ts') {
     scan(source, 0)
     return hits
   }
-  scan(templateOf(source), 0)
-  for (const m of source.matchAll(SCRIPT_BLOCK)) scan(m[0], m.index)
-  for (const { css, base } of styleRuns(source, 'vue')) {
+  if (kind === 'vue') {
+    scan(templateText(source), 0)
+    for (const { text, base } of scriptBlocks(source)) scan(text, base)
+  }
+  for (const { css, base } of styleRuns(source, kind)) {
     for (const m of stripCssComments(css).matchAll(APPLY)) scan(m[0], base + m.index)
   }
   return hits.sort((a, b) => a.line - b.line)
+}
+
+/** Every card corner written as a literal utility (`rounded-xl`, `rounded-[12px]`) — see utilityHits. */
+export function utilityCardLiterals(source, kind = 'vue') {
+  return utilityHits(source, kind, ROUNDED_XL)
+}
+
+/** How many times the token's utility is used, in the same places the literal scan reads — the sanity floor for that scan. */
+export function utilityCardUses(source, kind = 'vue') {
+  return utilityHits(source, kind, UTILITY_CARD_REF).length
 }
