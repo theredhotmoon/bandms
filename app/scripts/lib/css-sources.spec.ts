@@ -58,6 +58,15 @@ describe('classSelectors', () => {
       .toEqual([".after\\:content-\\[\\'…\\'\\]:after", '.x', '.y'])
   })
 
+  it('keeps a minifier-merged list when any compound in it is a class', () => {
+    expect(classSelectors('dialog,.rounded-card{x:y}[hidden],.\\[--radius-card\\:4px\\]{x:y}html,body{x:y}'))
+      .toEqual(['dialog,.rounded-card', '[hidden],.\\[--radius-card\\:4px\\]'])
+  })
+
+  it('reads URL( in any case, as vendored sheets write it', () => {
+    expect(classSelectors('.a{background:URL(data:image/svg+xml;utf8,<svg>{…}</svg>)}.b{x:y}')).toEqual(['.a', '.b'])
+  })
+
   it('sees a rule behind a comment, as in an unminified build', () => {
     expect(classSelectors('/* header */\n.a {\n  x: y;\n}\n/* ; { */ .b { x: y }')).toEqual(['.a', '.b'])
   })
@@ -68,6 +77,8 @@ describe('hasSentinel', () => {
     expect(hasSentinel(['.rounded-card'])).toBe(true)
     expect(hasSentinel(['.x,.rounded-card', '.y'])).toBe(true)
     expect(hasSentinel(['.rounded-card, .x'])).toBe(true)
+    expect(hasSentinel(classSelectors('dialog,.rounded-card{x:y}'))).toBe(true)
+    expect(strayRules(classSelectors('[hidden],.\\[--radius-card\\:4px\\]{x:y}'))).toHaveLength(1)
     expect(SENTINEL).toBe('.rounded-card')
   })
 

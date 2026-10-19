@@ -23,11 +23,13 @@
  *      failure that needs this most — Tailwind reads no file, throws nothing,
  *      and emits zero utilities into a build that is otherwise green.
  *   2. The output in dist/: the sentinel utility src is known to use is
- *      present (so Tailwind read src/ at all), the stylesheet that holds it
- *      has enough utility rules for the selector scan to be trusted, and no
- *      selector has one of the two shapes only a non-source can produce
- *      (lib/css-sources.mjs) — the layer that still holds if a Tailwind
- *      upgrade reads the same configuration differently.
+ *      present (so Tailwind read src/ at all, and the selector scan reads
+ *      the minifier's output), and no selector has one of the two shapes
+ *      only a non-source can produce (lib/css-sources.mjs) — the layer that
+ *      still holds if a Tailwind upgrade reads the same configuration
+ *      differently. src/utils/cssSourcesCanary.spec.ts carries both shapes
+ *      on purpose: it is the one src file Tailwind must not read, so the
+ *      `@source not` line is proven here rather than merely present.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -95,21 +97,16 @@ if (files.length === 0) {
 }
 
 const sheets = files.map((file) => ({ file, selectors: classSelectors(readFileSync(join(ASSETS, file), 'utf8')) }))
+// The sentinel is the one proof that Tailwind read src/ and that the selector
+// scan understands the minifier's output; a count of rules is not, because
+// the entry stylesheet also holds the palette, the form styles and every
+// unscoped <style>, and the vendored sheets have hundreds of their own.
 const tailwind = sheets.find((s) => hasSentinel(s.selectors))
-// Vue's scoped rules carry [data-v-…]; what is left in Tailwind's own stylesheet is its utilities plus the global stylesheets.
-const utilities = tailwind ? tailwind.selectors.filter((s) => !s.includes('data-v-')).length : 0
-const health = []
-if (!tailwind) health.push(`${SENTINEL} is in no stylesheet under dist/assets — Tailwind emitted no utilities, so it read no source`)
-else if (utilities < 100) health.push(`only ${utilities} non-scoped class rule(s) in ${tailwind.file}, the stylesheet that holds ${SENTINEL} — the selector scan is broken`)
-
-if (health.length) {
-  console.error('✗ css sources: the built CSS cannot be judged\n')
-  for (const h of health) console.error('  ' + h)
-  console.error(`
-The configuration in src/style.css reads correctly, so if Tailwind emitted no
-utilities, check what this Tailwind version makes of \`source(none)\` and the
-@source lines; if it did, the selector scan in lib/css-sources.mjs no longer
-understands the minifier's output.`)
+if (!tailwind) {
+  console.error(`✗ css sources: the built CSS cannot be judged\n\n  ${SENTINEL} is in no stylesheet under dist/assets — Tailwind emitted no utilities, so it read no source, or the selector scan no longer understands the minifier's output\n`)
+  console.error(`The configuration in src/style.css reads correctly, so check what this
+Tailwind version makes of \`source(none)\` and the @source lines, then the
+scan in lib/css-sources.mjs against the stylesheet that should hold it.`)
   process.exit(1)
 }
 
@@ -128,4 +125,5 @@ what this Tailwind version makes of \`source(none)\` and the @source lines.`)
   process.exit(1)
 }
 
-console.log(`✓ css sources: ${utilities} utility rule(s) in ${tailwind.file}, ${files.length} stylesheet(s) clean, ${sources.length} source line(s) as expected`)
+const rules = sheets.reduce((n, s) => n + s.selectors.length, 0)
+console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${SENTINEL} in ${tailwind.file}), ${sources.length} source line(s) as expected`)

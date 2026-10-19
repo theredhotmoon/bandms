@@ -66,7 +66,7 @@ export function* segments(css) {
       i = j + 1
       continue
     }
-    if (c === 'u' && css.startsWith('url(', i) && !/["'\s]/.test(css[i + 4] ?? '')) {
+    if ((c === 'u' || c === 'U') && css.slice(i, i + 4).toLowerCase() === 'url(' && !/["'\s]/.test(css[i + 4] ?? '')) {
       yield* flush()
       const e = css.indexOf(')', i + 4)
       const j = e < 0 ? n : e + 1
@@ -87,7 +87,9 @@ export function stripComments(css) {
   return out
 }
 
-const isClassSelector = (s) => s.startsWith('.') || s.startsWith(':is(.') || s.startsWith(':where(.')
+const isClassCompound = (s) => s.startsWith('.') || s.startsWith(':is(.') || s.startsWith(':where(.')
+/** A selector list counts when any compound in it is a class: the minifier merges same-body rules, so `dialog,.rounded-card` is a class rule too. */
+const isClassSelector = (s) => s.split(',').some((part) => isClassCompound(part.trim()))
 
 /**
  * Every class selector in compiled CSS, nested rules included, as strings.
@@ -140,7 +142,7 @@ function placeholderValue(selector) {
 
 /** Why a selector cannot have come from src/, or null when it can. */
 export function strayReason(selector) {
-  if (placeholderValue(selector)) return `an arbitrary value holding "${PLACEHOLDER}", the documentation placeholder — read from a .md file`
+  if (placeholderValue(selector)) return `an arbitrary value holding "${PLACEHOLDER}", the documentation placeholder — read from a doc or a spec`
   if (CARD_TOKEN_CLASS.test(selector)) return 'sets --radius-card from a class, which no src file may do — read from a spec or a doc'
   return null
 }

@@ -22,6 +22,8 @@
  * offset — and therefore every reported line number — stays true.
  */
 
+import { segments } from './css-sources.mjs'
+
 export const IGNORE_MARKER = 'token-lint-ignore'
 
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/g
@@ -41,8 +43,17 @@ const PINNED_WHITE = /^(?:[a-z]+:)*text-\[#fff(?:fff)?\]$/
 /** Replace every character but newlines with a space, so offsets and line numbers hold. */
 export const blank = (s) => s.replace(/[^\n]/g, ' ')
 
-/** CSS with its comments blanked. One definition for every style guard. */
-export const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, blank)
+/**
+ * CSS with its comments blanked, offsets kept. One definition for every style
+ * guard, on the one CSS walker (css-sources.mjs): a `/*` inside a string or
+ * a glob — the `/**\/` of `@source not "../src/**\/*.spec.ts"` — is not a
+ * comment, which the regex this used to be got wrong.
+ */
+export function stripCssComments(css) {
+  let out = ''
+  for (const s of segments(css)) out += s.type === 'comment' ? blank(s.text) : s.text
+  return out
+}
 
 /** rgba(0,0,0,a) is a shadow or a scrim — the same in either theme. */
 function isBlackFunc(args) {
