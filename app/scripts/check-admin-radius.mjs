@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Keeps admin cards on the 0.75rem corner DESIGN.md gives them — written as
- * the one token that holds it, `var(--radius-card)` from src/style.css.
+ * the one token that holds it: `var(--radius-card)` in a stylesheet,
+ * `rounded-card` in a class list, both from the `@theme` key in src/style.css.
  *
  * The radius scale is xs/sm/md/lg (0.25/0.375/0.5/0.75rem) and the role picks
  * the step: cards, table cards, drop zones and the modal panel take lg. Every
@@ -10,7 +11,10 @@
  * zones drifted to the input/button radius while the rest stayed at 0.75rem
  * (#197). A card rule that writes the token cannot drift by a typo, and a
  * card rule that writes a literal 0.75rem fails here even though the shape
- * is right, so the corner has one source rather than ~40 agreeing numbers.
+ * is right, so the corner has one source rather than ~45 agreeing numbers.
+ * The same for the template side: Tailwind's `rounded-xl` is 0.75rem, the
+ * step the scale reserves for cards, so every use of it in the admin is a
+ * card written as a literal and is told to use `rounded-card`.
  *
  * What counts as a card rule, and which corners count as the card corner, is
  * lib/radius-scan.mjs (pinned by its spec). Which files are admin chrome is
@@ -27,19 +31,17 @@
  *     so take the 0.5rem control corner (DESIGN.md, Cards).
  *   - CONTAINERS: card surfaces whose class does not say `card`.
  *
- * The token itself is pinned too: src/style.css must define it as 0.75rem,
- * and no admin stylesheet may redefine it — `.x { --radius-card: 4px }` would
- * round every card inside `.x` while every rule still reads as correct.
- *
- * Blind spot, by design of a stylesheet scan: a card rounded with a Tailwind
- * utility in its class list (`rounded-lg`) is never seen. Those are few in
- * the admin and are a template question, not a stylesheet one.
+ * The token itself is pinned too: src/style.css must define it exactly once,
+ * as 0.75rem, and no other stylesheet in the SPA may define it — not only the
+ * admin files, because App.vue's unscoped <style> and admin-palette.css are
+ * global and `:root { --radius-card: 4px }` in either would round every card
+ * while every rule still read as correct. Comments are not definitions.
  */
 import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { adminStyleFiles, posix } from './lib/admin-files.mjs'
-import { CARD_RADIUS, CARD_TOKEN, CARD_VAR, IGNORE_MARKER, TOKEN_REDEFINED, scanCards } from './lib/radius-scan.mjs'
+import { adminStyleFiles, posix, styleFilesUnder } from './lib/admin-files.mjs'
+import { CARD_RADIUS, CARD_TOKEN, CARD_VAR, IGNORE_MARKER, UTILITY_CARD, scanCards, tokenDefinitions, utilityCardLiterals } from './lib/radius-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -75,30 +77,40 @@ const CONTAINERS = {
 
 const { files, problems } = adminStyleFiles(SRC)
 const violations = [...problems]
+const kindOf = (rel) => (rel.endsWith('.css') ? 'css' : 'vue')
 
-// The token is the single source of the card corner, so it is checked
-// against DESIGN.md's value here rather than trusted. style.css is not an
-// admin style file (lib/admin-files.mjs excludes it), so it is read directly.
-const tokenDef = readFileSync(join(SRC, TOKEN_FILE), 'utf8').match(new RegExp(`(?<![\\w-])${CARD_TOKEN}\\s*:\\s*([^;]+);`))
-if (!tokenDef) violations.push(`src/${TOKEN_FILE}: ${CARD_TOKEN} is not defined — every card reads it`)
-else if (tokenDef[1].trim() !== CARD_RADIUS) violations.push(`src/${TOKEN_FILE}: ${CARD_TOKEN} is ${tokenDef[1].trim()}, DESIGN.md gives cards ${CARD_RADIUS}`)
+// The token is the single source of the card corner, so its definition is
+// checked rather than trusted: exactly one, in style.css, at DESIGN.md's
+// value. A second definition there (the light-theme block, say) would be a
+// per-theme corner nobody asked for.
+const defs = tokenDefinitions(readFileSync(join(SRC, TOKEN_FILE), 'utf8'), 'css')
+if (defs.length === 0) violations.push(`src/${TOKEN_FILE}: ${CARD_TOKEN} is not defined — every card reads it`)
+for (const { line, value } of defs.slice(1)) violations.push(`src/${TOKEN_FILE}:${line}  defines ${CARD_TOKEN} a second time (${value}) — it is set once`)
+if (defs.length && defs[0].value !== CARD_RADIUS) violations.push(`src/${TOKEN_FILE}:${defs[0].line}  ${CARD_TOKEN} is ${defs[0].value}, DESIGN.md gives cards ${CARD_RADIUS}`)
+
+// Every other stylesheet in the SPA, admin chrome or not: a redefinition in
+// App.vue's global <style> or in the palette reaches every card.
+for (const file of styleFilesUnder(SRC, (rel) => rel === TOKEN_FILE)) {
+  const rel = posix(relative(SRC, file))
+  for (const { line, value } of tokenDefinitions(readFileSync(file, 'utf8'), kindOf(rel))) {
+    violations.push(`src/${rel}:${line}  redefines ${CARD_TOKEN} (${value}) — the card corner is set once, in src/${TOKEN_FILE}`)
+  }
+}
 
 const listsOf = (rel) => ({
   optionTiles: new Set(OPTION_TILES[rel] ?? []),
   containers: new Set(CONTAINERS[rel] ?? []),
 })
 
-// One pass per file: the card rules to judge, and which listed classes are
-// still the last compound of a real rule.
+// One pass per admin file: the card rules to judge, which listed classes are
+// still the last compound of a real rule, and any card rounded by utility.
 let cards = 0
+let utilityCards = 0
 const seen = new Map()
 for (const file of files) {
   const rel = posix(relative(SRC, file))
-  const kind = rel.endsWith('.css') ? 'css' : 'vue'
+  const kind = kindOf(rel)
   const source = readFileSync(file, 'utf8')
-  if (TOKEN_REDEFINED.test(source)) {
-    violations.push(`src/${rel}: redefines ${CARD_TOKEN} — the card corner is set once, in src/${TOKEN_FILE}`)
-  }
   const { rules, classes } = scanCards(source, kind, listsOf(rel))
   seen.set(rel, classes)
   for (const { line, card, radius, ok, literal } of rules) {
@@ -107,6 +119,12 @@ for (const file of files) {
     // `radius` is a bare value for the shorthand, or `prop: value; ...` when longhands are involved.
     const decl = radius.includes(':') ? radius : `border-radius: ${radius}`
     violations.push(`src/${rel}:${line}  .${card} { ${decl} }${literal ? `  — the right corner, but spell it ${CARD_VAR}` : ''}`)
+  }
+  if (kind === 'vue') {
+    for (const { line, utility } of utilityCardLiterals(source)) {
+      violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utility.replace(/rounded(-[a-z]+)?-xl$/, UTILITY_CARD)}`)
+    }
+    utilityCards += (source.match(new RegExp(`(?<![\\w-])(?:[a-z-]+:)*${UTILITY_CARD}(?![\\w-])`, 'g')) ?? []).length
   }
 }
 
@@ -136,10 +154,11 @@ if (violations.length) {
   console.error(`✗ admin radius: ${violations.length} card(s) off ${CARD_VAR}, the ${CARD_RADIUS} corner DESIGN.md gives cards\n`)
   for (const v of violations) console.error('  ' + v)
   console.error(`
-Cards, table cards, drop zones and the modal panel write ${CARD_VAR} (${CARD_RADIUS},
-defined once in src/${TOKEN_FILE}); inputs and buttons use 0.5rem, row buttons
-0.375rem, badges 0.25rem (app/DESIGN.md, Shapes). A literal ${CARD_RADIUS} on a card
-is the right shape and still fails: the token is what keeps the corner one value.
+Cards, table cards, drop zones and the modal panel write ${CARD_VAR} in a
+stylesheet or ${UTILITY_CARD} in a class list (${CARD_RADIUS}, defined once in
+src/${TOKEN_FILE}); inputs and buttons use 0.5rem, row buttons 0.375rem, badges
+0.25rem (app/DESIGN.md, Shapes). A literal ${CARD_RADIUS} or rounded-xl on a card is
+the right shape and still fails: the token is what keeps the corner one value.
 A selectable option tile named *-card takes the control radius — add it to
 OPTION_TILES under its file. A card surface not named *-card belongs in
 CONTAINERS, under its file. A deliberate exception on one declaration (a card
@@ -147,4 +166,4 @@ flush to the viewport edge on phones) takes ${IGNORE_MARKER}: <reason> on its li
   process.exit(1)
 }
 
-console.log(`✓ admin radius: ${cards} card rule(s) in ${files.length} file(s), all ${CARD_VAR}`)
+console.log(`✓ admin radius: ${cards} card rule(s) and ${utilityCards} ${UTILITY_CARD} utilit${utilityCards === 1 ? 'y' : 'ies'} in ${files.length} file(s), all on ${CARD_TOKEN}`)

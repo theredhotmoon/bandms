@@ -229,7 +229,7 @@ function scopeSummary(key: string): string {
           <ul v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
             <li
               v-for="(image, i) in current" :key="image.id"
-              class="rounded-xl overflow-hidden bg-zinc-800"
+              class="rounded-card overflow-hidden bg-zinc-800"
               :class="{ 'opacity-40': !image.active }"
             >
               <img

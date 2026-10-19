@@ -524,7 +524,7 @@ function cardBorderClass(item: StagePlacement): string {
           @dragstart="onItemDragStart($event, item)"
         >
           <div
-            class="relative w-24 flex flex-col items-center gap-1 px-2 py-2 rounded-xl border shadow-lg"
+            class="relative w-24 flex flex-col items-center gap-1 px-2 py-2 rounded-card border shadow-lg"
             :class="[cardBorderClass(item), 'bg-zinc-900/95']"
           >
             <!-- Status dot -->
@@ -705,7 +705,7 @@ function cardBorderClass(item: StagePlacement): string {
         class="fixed inset-0 z-50 flex items-center justify-center"
         style="background: var(--scrim)"
       >
-        <div class="bg-zinc-900 border border-amber-700/50 rounded-xl p-6 max-w-sm w-full mx-4 shadow-(--shadow-modal)">
+        <div class="bg-zinc-900 border border-amber-700/50 rounded-card p-6 max-w-sm w-full mx-4 shadow-(--shadow-modal)">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-amber-900/60 flex items-center justify-center flex-shrink-0">
               <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -769,7 +769,7 @@ function cardBorderClass(item: StagePlacement): string {
         style="background: var(--scrim)"
         @click.self="qrItemId = null"
       >
-        <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-72 flex flex-col items-center gap-4 shadow-(--shadow-modal)">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-card p-6 w-72 flex flex-col items-center gap-4 shadow-(--shadow-modal)">
           <div class="text-sm font-semibold text-white">{{ $t('rider.stagePlot.qrModalTitle') }}</div>
           <img
             v-if="qrDataUrl"

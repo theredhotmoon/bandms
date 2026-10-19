@@ -29,6 +29,27 @@ export const isExcluded = (rel) =>
   Object.keys(EXCLUDED).some((path) => rel === path || rel.startsWith(path + '/'))
 
 /**
+ * Every .vue and .css file under `src`, as absolute paths, minus those whose
+ * src-relative path `skip` returns true for. The admin walk passes isExcluded;
+ * a guard that must see the whole SPA (the token-redefinition check) passes
+ * only the file it is pinning.
+ */
+export function styleFilesUnder(src, skip = () => false) {
+  const files = []
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const abs = join(dir, name)
+      const rel = posix(relative(src, abs))
+      if (skip(rel)) continue
+      if (statSync(abs).isDirectory()) walk(abs)
+      else if (/\.(vue|css)$/.test(name)) files.push(abs)
+    }
+  }
+  walk(src)
+  return files
+}
+
+/**
  * Every .vue and .css file under `src` that is admin chrome, as absolute paths.
  *
  * Returns `{ files, problems }`: a problem is an EXCLUDED entry whose path no
@@ -42,17 +63,7 @@ export function adminStyleFiles(src) {
     if (!existsSync(join(src, path))) problems.push(`src/${path}: excluded path no longer exists — update EXCLUDED`)
   }
 
-  const files = []
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      const abs = join(dir, name)
-      const rel = posix(relative(src, abs))
-      if (isExcluded(rel)) continue
-      if (statSync(abs).isDirectory()) walk(abs)
-      else if (/\.(vue|css)$/.test(name)) files.push(abs)
-    }
-  }
-  walk(src)
+  const files = styleFilesUnder(src, isExcluded)
 
   if (files.length < 50) problems.push(`only ${files.length} file(s) found under src/ — the walk is broken`)
   return { files, problems }

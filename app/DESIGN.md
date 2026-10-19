@@ -348,7 +348,7 @@ are SVG circles, not glyphs.
 - **Language badges** (`.lang-badge`): fixed 2rem wide so EN and PL columns align down a bilingual form.
 
 ### Cards / Containers
-- **Corner Style:** 0.75rem — every card, including the small ones repeated in a grid or list (photo tiles, ticket types, gear items, setlist songs) and the ones nested inside a modal. A selectable option tile that happens to be called a card (role, career level, main instrument) is a control and takes 0.5rem. The value lives once, as `--radius-card` in `src/style.css`, and a card rule writes `var(--radius-card)` — never the number: `scripts/check-admin-radius.mjs` fails `pnpm build` on a literal 0.75rem as well as on a drifted corner, and pins the token to this value.
+- **Corner Style:** 0.75rem — every card, including the small ones repeated in a grid or list (photo tiles, ticket types, gear items, setlist songs) and the ones nested inside a modal. A selectable option tile that happens to be called a card (role, career level, main instrument) is a control and takes 0.5rem. The value lives once, as the `--radius-card` theme key in `src/style.css`; a scoped style writes `var(--radius-card)` and a utility-styled card writes `rounded-card` — never the number, never `rounded-xl`: `scripts/check-admin-radius.mjs` fails `pnpm build` on either literal as well as on a drifted corner, and pins the token to this value.
 - **Background:** Card for widgets, modals and the stat strip; Panel for the table card and the sidebar.
 - **Shadow Strategy:** none at rest (see Elevation).
 - **Border:** 1px Hairline.

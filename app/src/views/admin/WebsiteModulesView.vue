@@ -268,7 +268,7 @@ async function saveEdit(slug: string) {
       <div
         v-for="(mod, i) in localModules"
         :key="mod.slug"
-        class="rounded-xl border bg-zinc-900 transition-colors select-none overflow-hidden"
+        class="rounded-card border bg-zinc-900 transition-colors select-none overflow-hidden"
         :class="{
           'border-zinc-700': mod.enabled,
           'border-zinc-800': !mod.enabled,
@@ -401,7 +401,7 @@ async function saveEdit(slug: string) {
               v-for="(group, gi) in settingsGroups"
               :key="group.group"
               :open="gi === 0"
-              class="copy-group rounded-xl border border-zinc-800 bg-zinc-900/40"
+              class="copy-group rounded-card border border-zinc-800 bg-zinc-900/40"
               :data-copy-group="group.group"
             >
               <summary class="flex items-center justify-between gap-3 cursor-pointer select-none px-3 py-2 text-sm text-zinc-300">

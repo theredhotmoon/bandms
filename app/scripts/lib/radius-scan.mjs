@@ -49,8 +49,11 @@
  *     viewport edge on phones — takes `radius-lint-ignore: <reason>` on the
  *     declaration's line, the way colour-scan's `token-lint-ignore` works.
  *
- * It reads <style> blocks and .css files only. A card rounded with a Tailwind
- * utility in its class list (`rounded-lg`) is outside what it can see.
+ * The rule scan reads <style> blocks and .css files. A card rounded with a
+ * Tailwind utility in its class list is a separate, simpler question —
+ * `rounded-xl` is 0.75rem and so always the card corner as a literal — and
+ * utilityCardLiterals() below finds those; `rounded-card` is the token's
+ * utility. The token's own definitions are tokenDefinitions().
  */
 import { blank, stripCssComments, styleRuns } from './colour-scan.mjs'
 
@@ -134,7 +137,7 @@ export function cardClassOf(selector, { optionTiles = new Set(), containers = ne
 /* ── Corners ───────────────────────────────────────────────────────────── */
 
 /** `var(--radius-card)`, with any spacing inside the parentheses. */
-const TOKEN_REF = /var\(\s*--radius-card\s*\)/g
+const TOKEN_REF = new RegExp(String.raw`var\(\s*${CARD_TOKEN}\s*\)`, 'g')
 
 /**
  * One length as { px, token }: its CSS pixels (NaN for anything that is not
@@ -300,9 +303,6 @@ function blocks(css) {
 /** Shorthand and every physical or logical longhand, at a property boundary (not `--x-border-radius`). */
 const RADIUS_DECL = /(?<![\w-])(border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius)\s*:\s*([^;]+)/g
 
-/** A declaration that redefines the token itself, anywhere but src/style.css. */
-export const TOKEN_REDEFINED = /(?<![\w-])--radius-card\s*:/
-
 /** 1-based line of an offset, from a newline table built once per file. */
 function lineIndex(source) {
   const nl = []
@@ -373,4 +373,61 @@ export function scanCards(source, kind, { optionTiles = new Set(), containers = 
 /** The card rules alone — see scanCards. */
 export function cardRules(source, kind, options) {
   return scanCards(source, kind, options).rules
+}
+
+/* ── The token itself ──────────────────────────────────────────────────── */
+
+const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`, 'g')
+
+/**
+ * Every definition of `--radius-card` in a file's stylesheets, as
+ * [{ line, value }], with comments and strings blanked first — a comment that
+ * quotes the token is not a definition. src/style.css must hold exactly one;
+ * any other file holding one would re-round every card inside that scope
+ * while each card rule still read as correct.
+ */
+export function tokenDefinitions(source, kind) {
+  const lineOf = lineIndex(source)
+  const out = []
+  for (const { css, base } of styleRuns(source, kind)) {
+    const clean = blankStrings(stripCssComments(css))
+    for (const m of clean.matchAll(TOKEN_DECL)) out.push({ line: lineOf(base + m.index), value: m[1].trim() })
+  }
+  return out
+}
+
+/* ── Utility-styled cards ──────────────────────────────────────────────── */
+
+/** The Tailwind utility `--radius-card` yields: `rounded-card`, the card corner in a class list. */
+export const UTILITY_CARD = `rounded-${CARD_TOKEN.replace(/^--radius-/, '')}`
+
+/**
+ * Tailwind's `rounded-xl` (any side, any variant prefix) is 0.75rem — the
+ * card corner as a literal, in a class list rather than a stylesheet. It is
+ * the one radius utility DESIGN.md's scale reserves for cards, so every use
+ * of it in the admin is a card that should write `rounded-card`.
+ */
+const ROUNDED_XL = /(?<![\w-])((?:[a-z-]+:)*rounded(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?-xl)(?![\w-])/g
+const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
+
+/**
+ * Every `rounded-xl` utility in a .vue file's template and script — class
+ * attributes, `:class` bindings and class strings held in script constants —
+ * as [{ line, utility }]. <style> blocks and HTML comments are blanked; a
+ * script block is scanned as-is, because a class string in a constant is
+ * live code and a `//` comment naming the utility is a rare enough false
+ * positive to prefer over missing the constant.
+ */
+export function utilityCardLiterals(source) {
+  const lineOf = lineIndex(source)
+  let live = source
+  for (const { css, base } of styleRuns(source, 'vue')) live = live.slice(0, base) + blank(css) + live.slice(base + css.length)
+  const hits = []
+  const scan = (text, base) => {
+    for (const m of text.matchAll(ROUNDED_XL)) hits.push({ line: lineOf(base + m.index), utility: m[1] })
+  }
+  scan(live.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank), 0)
+  for (const m of live.matchAll(SCRIPT_BLOCK)) scan(m[0], m.index)
+  return hits.sort((a, b) => a.line - b.line)
 }

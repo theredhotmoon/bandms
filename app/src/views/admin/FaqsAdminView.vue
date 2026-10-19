@@ -200,7 +200,7 @@ function onDragEnd() {
 
       <template v-else>
         <!-- New-entry form -->
-        <div v-if="editing === 'new'" class="rounded-xl border border-teal-700 bg-zinc-900 overflow-hidden mb-3">
+        <div v-if="editing === 'new'" class="rounded-card border border-teal-700 bg-zinc-900 overflow-hidden mb-3">
           <div class="px-4 py-2 text-xs font-semibold text-teal-400 uppercase tracking-wider">
             {{ $t('pages.faqs.newQuestion') }}
           </div>
@@ -223,7 +223,7 @@ function onDragEnd() {
           <div
             v-for="(faq, i) in visible"
             :key="faq.id"
-            class="rounded-xl border bg-zinc-900 transition-colors overflow-hidden"
+            class="rounded-card border bg-zinc-900 transition-colors overflow-hidden"
             :class="{
               'border-zinc-700': faq.is_published,
               'border-zinc-800': !faq.is_published,
