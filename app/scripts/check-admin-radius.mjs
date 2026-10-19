@@ -13,10 +13,12 @@
  * (#197). A card rule that writes the token cannot drift by a typo, and a
  * card rule that writes a literal 0.75rem fails here even though the shape
  * is right, so the corner has one source rather than ~45 agreeing numbers.
- * The same for the template side: Tailwind's `rounded-xl` is 0.75rem, the
- * step the scale reserves for cards, so every use of it in an admin .vue or
- * .ts file is a card written as a literal and is told to use `rounded-card`
- * (`rounded-t-card` for a sided one — Tailwind derives those too).
+ * The same for the template side: Tailwind's `rounded-xl` (or
+ * `rounded-[12px]`, or an `@apply rounded-xl`) is 0.75rem, the step the
+ * scale reserves for cards, so every use of it in an admin .vue or .ts file
+ * is a card written as a literal and is told to use `rounded-card` — with
+ * its variants and side kept, `md:rounded-t-card`, which Tailwind derives
+ * from the same key.
  *
  * What counts as a card rule, and which corners count as the card corner, is
  * lib/radius-scan.mjs (pinned by its spec). Which files are admin chrome is
@@ -38,9 +40,15 @@
  * utility uses, and Tailwind cannot see a var() in a scoped <style>; a plain
  * `:root` yields no `rounded-card` at all. No other file in the SPA may
  * define it, admin chrome or not: App.vue's unscoped <style> and
- * admin-palette.css are global, and a `style="--radius-card: 0"` or
- * `[--radius-card:4px]` on a view's root would re-round every card beneath
- * it while every rule still read as correct. Comments are not definitions.
+ * admin-palette.css are global, and a `style="--radius-card: 0"`, a
+ * `[--radius-card:4px]` class or a `'--radius-card': '0'` key in a :style
+ * object on a view's root would re-round every card beneath it while every
+ * rule still read as correct. Comments are not definitions.
+ *
+ * Still outside it, by design of a scan that knows classes and not boxes: a
+ * utility-styled card sitting on the WRONG step (`rounded-lg`) looks exactly
+ * like a utility-styled control, so a template card that drifted to the
+ * control corner is a review question, not a build one.
  */
 import { readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -84,10 +92,10 @@ const CONTAINERS = {
 }
 
 // adminStyleFiles() is still what says which files are admin chrome and
-// whether EXCLUDED has rotted; the walk below reads every stylesheet in the
-// SPA once and asks the admin questions only of the admin ones.
+// whether EXCLUDED has rotted; the one walk below reads every stylesheet and
+// script module in the SPA once and asks the admin questions only of the
+// admin ones.
 const { files: adminFiles, problems } = adminStyleFiles(SRC)
-const admin = new Set(adminFiles)
 const violations = [...problems]
 
 const listsOf = (rel) => ({
@@ -98,10 +106,22 @@ const listsOf = (rel) => ({
 let cards = 0
 let utilityCards = 0
 const seen = new Map()
-for (const file of styleFilesUnder(SRC)) {
+for (const file of styleFilesUnder(SRC, () => false, /\.(vue|css|ts)$/)) {
   const rel = posix(relative(SRC, file))
-  const kind = kindOf(file)
+  const admin = !isExcluded(rel)
   const source = readFileSync(file, 'utf8')
+
+  if (rel.endsWith('.ts')) {
+    // Class strings also live in .ts modules (class maps, shared tile styles).
+    if (!admin) continue
+    for (const { line, utility } of utilityCardLiterals(source, 'ts')) {
+      violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utilityCardFix(utility)}`)
+    }
+    utilityCards += (source.match(UTILITY_CARD_REF) ?? []).length
+    continue
+  }
+
+  const kind = kindOf(file)
 
   // The token is the single source of the card corner, so its definition is
   // checked rather than trusted: exactly one, in style.css, at DESIGN.md's
@@ -110,10 +130,13 @@ for (const file of styleFilesUnder(SRC)) {
   // attribute — is a scope in which every card quietly takes another corner.
   const defs = tokenDefinitions(source, kind)
   if (rel === TOKEN_FILE) {
-    if (defs.length === 0) violations.push(`src/${TOKEN_FILE}: ${CARD_TOKEN} is not defined — every card reads it`)
-    for (const { line, value } of defs.slice(1)) violations.push(`src/${TOKEN_FILE}:${line}  defines ${CARD_TOKEN} a second time (${value}) — it is set once`)
-    if (defs.length) {
-      const { line, value, scope } = defs[0]
+    // Judge the one in the right block; everything else is an extra, so a
+    // stray :root definition above the real one is the line that gets blamed.
+    const canonical = defs.find((d) => d.scope === TOKEN_SCOPE) ?? defs[0]
+    if (!canonical) violations.push(`src/${TOKEN_FILE}: ${CARD_TOKEN} is not defined — every card reads it`)
+    for (const { line, value } of defs.filter((d) => d !== canonical)) violations.push(`src/${TOKEN_FILE}:${line}  defines ${CARD_TOKEN} a second time (${value}) — it is set once`)
+    if (canonical) {
+      const { line, value, scope } = canonical
       if (value !== CARD_RADIUS) violations.push(`src/${TOKEN_FILE}:${line}  ${CARD_TOKEN} is ${value}, DESIGN.md gives cards ${CARD_RADIUS}`)
       if (scope !== TOKEN_SCOPE) violations.push(`src/${TOKEN_FILE}:${line}  ${CARD_TOKEN} sits in \`${scope}\`, not \`${TOKEN_SCOPE}\` — plain @theme drops it when no utility uses it, and :root yields no ${UTILITY_CARD}`)
     }
@@ -123,7 +146,7 @@ for (const file of styleFilesUnder(SRC)) {
     }
   }
 
-  if (!admin.has(file)) continue
+  if (!admin) continue
 
   // The admin questions: card rules on the token, listed classes still real,
   // no card rounded by a literal utility.
@@ -142,17 +165,6 @@ for (const file of styleFilesUnder(SRC)) {
     }
     utilityCards += (source.match(UTILITY_CARD_REF) ?? []).length
   }
-}
-
-// Class strings also live in .ts modules (class maps, shared tile styles), so
-// the utility scan walks those too — admin ones only, like the SFCs.
-for (const file of styleFilesUnder(SRC, isExcluded, /\.ts$/)) {
-  const source = readFileSync(file, 'utf8')
-  const rel = posix(relative(SRC, file))
-  for (const { line, utility } of utilityCardLiterals(source)) {
-    violations.push(`src/${rel}:${line}  ${utility} — the card corner as a Tailwind literal; use ${utilityCardFix(utility)}`)
-  }
-  utilityCards += (source.match(UTILITY_CARD_REF) ?? []).length
 }
 
 // A listed class that no longer heads a rule in its file is rot: the surface

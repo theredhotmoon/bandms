@@ -386,6 +386,8 @@ export function cardRules(source, kind, options) {
 const TOKEN_DECL = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}\s*:\s*([^;}]+)`, 'g')
 /** The same in a template: `style="--radius-card: 0"`, `:style="{ '--radius-card': '0' }"`, `[--radius-card:0.5rem]`. */
 const TOKEN_ATTR = new RegExp(String.raw`(?<![\w-])${CARD_TOKEN}['"]?\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
+/** And in script, where a `:style` object usually lives: a quoted `'--radius-card': '0'` key. */
+const TOKEN_KEY = new RegExp(String.raw`(['"])${CARD_TOKEN}\1\s*:\s*['"]?\s*([^;'"}\]]+)`, 'g')
 
 /** The block a definition must sit in: Tailwind emits an unused `@theme` variable only when it is `static`. */
 export const TOKEN_SCOPE = '@theme static'
@@ -408,13 +410,16 @@ export function tokenDefinitions(source, kind) {
     const clean = blankStrings(stripCssComments(css))
     for (const { selector, body, bodyAt } of blocks(clean)) {
       for (const m of body.matchAll(TOKEN_DECL)) {
-        out.push({ line: lineOf(base + bodyAt + m.index), value: m[1].trim(), scope: selector.trim() })
+        out.push({ line: lineOf(base + bodyAt + m.index), value: m[1].trim(), scope: selector.trim().replace(/\s+/g, ' ') })
       }
     }
   }
   if (kind === 'vue') {
     const template = templateOf(source)
     for (const m of template.matchAll(TOKEN_ATTR)) out.push({ line: lineOf(m.index), value: m[1].trim(), scope: 'template' })
+    for (const s of source.matchAll(SCRIPT_BLOCK)) {
+      for (const m of s[0].matchAll(TOKEN_KEY)) out.push({ line: lineOf(s.index + m.index), value: m[2].trim(), scope: 'script' })
+    }
   }
   return out.sort((a, b) => a.line - b.line)
 }
@@ -431,15 +436,20 @@ export const UTILITY_CARD = `rounded-${CARD_TOKEN.replace(/^--radius-/, '')}`
  * of it in the admin is a card that should write `rounded-card`.
  */
 const SIDE = String.raw`(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?`
-const ROUNDED_XL = new RegExp(String.raw`(?<![\w-])((?:[a-z-]+:)*rounded${SIDE}-xl)(?![\w-])`, 'g')
+/** Variant prefixes: `md:`, `2xl:`, `hover:`, `data-[open]:`, `group-hover:`. */
+const VARIANTS = String.raw`(?:(?:[a-z0-9-]+|[a-z-]+\[[^\]]*\]):)*`
+/** The card corner as a literal utility: `rounded-xl`, or an arbitrary value spelling the same length. */
+const XL = String.raw`(?:xl|\[(?:12px|0?\.75rem)\])`
+const ROUNDED_XL = new RegExp(String.raw`(?<![\w-])(${VARIANTS}rounded${SIDE}-${XL})(?![\w-])`, 'g')
 /** The token's utility in a class list, any side, any variant prefix — for counting what the guard covers. */
-export const UTILITY_CARD_REF = new RegExp(String.raw`(?<![\w-])(?:[a-z-]+:)*rounded${SIDE}-${UTILITY_CARD.slice('rounded-'.length)}(?![\w-])`, 'g')
+export const UTILITY_CARD_REF = new RegExp(String.raw`(?<![\w-])${VARIANTS}rounded${SIDE}-${UTILITY_CARD.slice('rounded-'.length)}(?![\w-])`, 'g')
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
 const HTML_COMMENT = /<!--[\s\S]*?-->/g
+const APPLY = /@apply\b[^;}]*/g
 
-/** What `rounded-xl` should have been: the same side, on the token (`rounded-t-xl` → `rounded-t-card`). */
+/** What the literal should have been: the same variants and side, on the token (`md:rounded-t-xl` → `md:rounded-t-card`). */
 export function utilityCardFix(utility) {
-  return utility.replace(new RegExp(String.raw`rounded(${SIDE})-xl$`), `rounded$1-${UTILITY_CARD.slice('rounded-'.length)}`)
+  return utility.replace(new RegExp(String.raw`rounded(${SIDE})-${XL}$`), `rounded$1-${UTILITY_CARD.slice('rounded-'.length)}`)
 }
 
 /**
@@ -454,20 +464,28 @@ function templateOf(source) {
 }
 
 /**
- * Every `rounded-xl` utility in a file's template and script — class
- * attributes, `:class` bindings and class strings held in script constants,
- * in a .vue file or a plain .ts module — as [{ line, utility }]. <style>
- * blocks and HTML comments are blanked; script is scanned as-is, because a
- * class string in a constant is live code and a `//` comment naming the
- * utility is a rare enough false positive to prefer over missing the constant.
+ * Every card-corner utility literal in a file, as [{ line, utility }]: class
+ * attributes and `:class` bindings in a .vue template, class strings held in
+ * its <script> or in a plain .ts module (`kind` 'ts', scanned raw), and an
+ * `@apply` inside a <style> block. HTML comments are blanked; script is
+ * scanned as-is, because a class string in a constant is live code and a
+ * `//` comment naming the utility is a rare enough false positive to prefer
+ * over missing the constant.
  */
-export function utilityCardLiterals(source) {
+export function utilityCardLiterals(source, kind = 'vue') {
   const lineOf = lineIndex(source)
   const hits = []
   const scan = (text, base) => {
     for (const m of text.matchAll(ROUNDED_XL)) hits.push({ line: lineOf(base + m.index), utility: m[1] })
   }
+  if (kind !== 'vue') {
+    scan(source, 0)
+    return hits
+  }
   scan(templateOf(source), 0)
   for (const m of source.matchAll(SCRIPT_BLOCK)) scan(m[0], m.index)
+  for (const { css, base } of styleRuns(source, 'vue')) {
+    for (const m of stripCssComments(css).matchAll(APPLY)) scan(m[0], base + m.index)
+  }
   return hits.sort((a, b) => a.line - b.line)
 }

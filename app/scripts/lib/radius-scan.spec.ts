@@ -333,6 +333,16 @@ describe('tokenDefinitions — where --radius-card is set', () => {
       { line: 11, value: '4px', scope: '.x' },
     ])
   })
+
+  it('reads a quoted key in script, where a :style object lives, but not a bare mention', () => {
+    const sfc = "<script setup>\nconst panel = { '--radius-card': '0' }\nconst note = '--radius-card: see style.css'\n</script>\n<template><div :style=\"panel\" /></template>"
+    expect(tokenDefinitions(sfc, 'vue')).toEqual([{ line: 2, value: '0', scope: 'script' }])
+  })
+
+  it('normalises the whitespace of the enclosing block', () => {
+    expect(tokenDefinitions('@theme  static {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
+    expect(tokenDefinitions('@theme\nstatic {\n  --radius-card: 0.75rem;\n}', 'css')[0].scope).toBe(TOKEN_SCOPE)
+  })
 })
 
 describe('utilityCardFix — what a rounded-xl should have been', () => {
@@ -373,8 +383,27 @@ describe('utilityCardLiterals — rounded-xl in a class list', () => {
     expect(utilityCardLiterals(sfc)).toEqual([])
   })
 
-  it('reads a plain .ts module as script', () => {
-    expect(utilityCardLiterals("export const TILE = 'border rounded-xl p-4'\nexport const OK = 'rounded-card'")).toEqual([{ line: 1, utility: 'rounded-xl' }])
+  it('reads a plain .ts module raw, so a "<!--" string in it hides nothing', () => {
+    expect(utilityCardLiterals("export const TILE = 'border rounded-xl p-4'\nexport const OK = 'rounded-card'", 'ts')).toEqual([{ line: 1, utility: 'rounded-xl' }])
+    expect(utilityCardLiterals("const a = '<!--'\nexport const T = 'rounded-xl'\nconst b = '-->'", 'ts')).toEqual([{ line: 2, utility: 'rounded-xl' }])
+  })
+
+  it('keeps numeric and bracketed variant prefixes, and reads arbitrary values and @apply', () => {
+    const sfc = [
+      '<template>',
+      '  <div class="2xl:rounded-xl data-[open]:rounded-t-xl rounded-[12px] rounded-[0.75rem] rounded-[.75rem] rounded-[8px]" />',
+      '</template>',
+      '<style scoped>',
+      '.x-card { @apply border rounded-xl p-4; }',
+      '</style>',
+    ].join('\n')
+    expect(utilityCardLiterals(sfc).map((h) => h.utility)).toEqual([
+      '2xl:rounded-xl', 'data-[open]:rounded-t-xl', 'rounded-[12px]', 'rounded-[0.75rem]', 'rounded-[.75rem]', 'rounded-xl',
+    ])
+    expect(utilityCardLiterals(sfc).at(-1)?.line).toBe(5)
+    expect(utilityCardFix('2xl:rounded-xl')).toBe('2xl:rounded-card')
+    expect(utilityCardFix('data-[open]:rounded-t-xl')).toBe('data-[open]:rounded-t-card')
+    expect(utilityCardFix('rounded-[12px]')).toBe('rounded-card')
   })
 
   it('names the token utility after the token', () => {
