@@ -50,18 +50,23 @@
  *      is proven here rather than merely present.
  */
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   EXPECTED_SOURCES, SENTINELS, TAILWIND_MARK, classSelectors, entryProblems, isFixture, sentinelIn, strayRootProblems, strayRules,
 } from './lib/css-sources.mjs'
-import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
+import { posix } from '../../packages/style-guards/src/paths.mjs'
+import { importedCoreNote, scanAdvice, scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const STYLE = join(SRC, 'style.css')
 const ASSETS = join(ROOT, 'dist', 'assets')
 const LABEL = 'src/style.css'
+/** The plugin vite.config.ts runs; the compiler and scanner asked below are the copies it resolves. */
+const PLUGIN = '@tailwindcss/vite'
+/** A stylesheet-relative source path shown from app/, where every other path in a message is. */
+const fromRoot = (p) => posix(relative(ROOT, resolve(dirname(STYLE), p)))
 /** The one src file Tailwind must not read: it quotes both foreign shapes, so the `not` line is proven rather than present. */
 const CANARY = join(SRC, 'utils', 'cssSourcesCanary.spec.ts')
 /** Every tree whose components this build compiles: its own src/, and the shared rider sheet it renders in TechRiderPreviewView. */
@@ -89,11 +94,15 @@ at the build.`)
 // ── 2. the configuration as Tailwind reads it ────────────────────────────
 let scan
 try {
-  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/vite', projectRoot: ROOT })
+  scan = await tailwindScan(STYLE, { plugin: PLUGIN, projectRoot: ROOT })
 } catch (e) {
   console.error(`✗ css sources: Tailwind could not be asked about ${LABEL}\n\n  ${e.message}\n`)
   process.exit(1)
 }
+// Printed before any verdict: when the scan disagrees with the lines, the one
+// version that moved is the first thing the reader should know.
+const note = importedCoreNote(scan)
+if (note) console.warn(`⚠ css sources: ${note}`)
 const read = scanProblems(scan, {
   label: LABEL,
   styleFile: STYLE,
@@ -107,12 +116,7 @@ const read = scanProblems(scan, {
 if (read.length) {
   console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
   for (const r of read) console.error('  ' + r)
-  console.error(`
-The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
-make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that @tailwindcss/vite and the
-tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
-version.`)
+  console.error('\n' + scanAdvice(LABEL))
   process.exit(1)
 }
 
@@ -162,4 +166,4 @@ Tailwind version makes of \`source(none)\` and the @source lines.`)
 }
 
 const rules = sheets.reduce((n, s) => n + s.selectors.length, 0)
-console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/ or index.html, none a spec`)
+console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/ or index.html, none matching ${EXPECTED_SOURCES.filter((s) => s.not).map((s) => fromRoot(s.path)).join(' or ')}`)

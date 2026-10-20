@@ -12,8 +12,8 @@
 import { realpathSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 
-/** Forward slashes, and no `\\?\` prefix. */
-export const posix = (p) => p.split('\\').join('/').replace(/^\/\/\?\//, '')
+/** Forward slashes, and no extended-length prefix: `\\?\C:\x` is `C:/x`, `\\?\UNC\server\share` is `//server/share`. */
+export const posix = (p) => p.split('\\').join('/').replace(/^\/\/\?\/UNC\//i, '//').replace(/^\/\/\?\//, '')
 
 /**
  * The path as the disk knows it — links followed, casing as stored — in

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-20 (tailwind scanner check, follow-up)
+
+### Fixed
+- **The scanner check's proof files are checked to exist**: an excluded file (the admin's canary spec, the public site's `slugs.test.ts`) that had moved would have passed forever while proving nothing; the check now fails naming the stale list, as it already did for a required file.
+- **A `tailwindcss` bump on one side no longer blocks the deploy**: the core the stylesheet imports is the app's own copy and does not change which files are scanned, so a version that drifted from the plugin's is printed as a note instead of failing the image build. The plugin and the three packages it runs stay strict.
+- Package lookup stops at the nearest `package.json`, so a stray manifest above the repo cannot break the guard; messages spell `@source` lines in the stylesheet's own quotes; the success line names the exact `not` globs (`none matching ../**/*.test.ts`) rather than claiming "none a test"; a `\\?\UNC\` network path normalises to `//server/share`; the failure advice is one shared text. Found by the third review round of #201, after its merge.
+
 ## [Unreleased] — 2026-10-20 (tailwind scanner check)
 
 ### Changed

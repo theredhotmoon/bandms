@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { scanProblems, tailwindPackages, tailwindScan, versionProblem } from './tailwind-scan.mjs'
+import { importedCoreNote, scanProblems, tailwindPackages, tailwindScan, versionProblem } from './tailwind-scan.mjs'
 // @ts-expect-error — a plain .mjs build script, no type declarations
 import { fixtureTest } from './css-sources.mjs'
 // @ts-expect-error — a plain .mjs build script, no type declarations
@@ -103,6 +103,8 @@ describe('tailwindScan', () => {
       .toEqual([['../pages', false], ['../index.html', false], ['../pages/**/*.spec.ts', true]])
     expect(s.files.map(rel)).toEqual(['index.html', 'pages/Home.vue', 'pages/notes.md'])
     expect(Object.keys(s.versions)).toHaveLength(4)
+    expect(s.imported).toBeNull()
+    expect(importedCoreNote(s)).toBeNull()
     expect(scanProblems(s, rules())).toEqual([])
   })
 
@@ -124,7 +126,8 @@ describe('tailwindScan', () => {
     expect(s.files.map(rel)).toContain('pages/deep/thing.spec.ts')
     const problems = scanProblems(s, rules())
     expect(problems[0]).toMatch(/automatic detection/)
-    expect(problems).toContainEqual(expect.stringMatching(/^Tailwind reads 2 files outside pages\/ and index\.html, so .*: README\.md, styles\/entry\.css$/))
+    // Which files automatic detection takes beyond README.md is the scanner's business (today it reads .css too); the guard's is to name them as outside.
+    expect(problems).toContainEqual(expect.stringMatching(/^Tailwind reads \d+ files? outside pages\/ and index\.html, so .*README\.md/))
   })
 
   it('reports a named root as the configuration Tailwind read', async () => {
@@ -153,11 +156,13 @@ describe('tailwindScan', () => {
     })).toEqual([])
   })
 
-  it('counts the core the admin stylesheet imports among the versions — the app’s own tailwindcss, not the plugin’s', async () => {
+  it('reports the core the admin stylesheet imports — the app’s own tailwindcss, not the plugin’s — beside the plugin’s versions', async () => {
     // The real admin entry, as the guard calls it: the import resolves from src/ to app/node_modules/tailwindcss.
     const s = await tailwindScan(join(APP, 'src', 'style.css'), { plugin: PLUGIN, projectRoot: APP })
-    expect(Object.keys(s.versions)).toContain('tailwindcss (imported by the stylesheet)')
-    expect(new Set(Object.values(s.versions)).size).toBe(1)
+    expect(s.plugin).toBe(PLUGIN)
+    // Its shape, not its equality with the plugin's: a one-sided bump is a note in the build, and must not become a red suite here.
+    expect(s.imported).toMatch(/^\d+\.\d+\.\d+/)
+    expect(Object.keys(s.versions)).toHaveLength(4)
     expect(s.files.length).toBeGreaterThan(100)
   })
 })
@@ -215,6 +220,33 @@ describe('scanProblems', () => {
     const extra = { ...clean(), sources: [...clean().sources, { base: join(dir, 'styles'), pattern: '../README.md', negated: false }] }
     expect(scanProblems(extra, rules())).toEqual([expect.stringMatching(/a source this check does not expect: `\.\.\/README\.md` from styles\/, which is README\.md/)])
     const missing = { ...clean(), sources: clean().sources.slice(0, 2) }
-    expect(scanProblems(missing, rules())).toEqual([expect.stringMatching(/took no `@source not "\.\.\/pages\/\*\*\/\*\.spec\.ts"`/)])
+    expect(scanProblems(missing, rules())).toEqual([expect.stringMatching(/took no `@source not "\.\.\/pages\/\*\*\/\*\.spec\.ts";`/)])
+  })
+
+  it('spells the lines it asks for in the stylesheet’s own quotes, as the written check does', () => {
+    const missing = { ...clean(), sources: clean().sources.slice(0, 2) }
+    expect(scanProblems(missing, { ...rules(), quote: "'" })).toEqual([expect.stringMatching(/took no `@source not '\.\.\/pages\/\*\*\/\*\.spec\.ts';`/)])
+    const named = { ...clean(), root: { base: join(dir, 'styles'), pattern: '../pages' } }
+    expect(scanProblems(named, { ...rules(), quote: "'" })[0]).toMatch(/source\('\.\.\/pages'\)/)
+  })
+
+  it('refuses an excluded file that is not on disk — a proof file that moved proves nothing', () => {
+    expect(scanProblems(clean(), { ...rules(), excluded: [join(dir, 'pages', 'moved.spec.ts')] }))
+      .toEqual([expect.stringMatching(/^pages\/moved\.spec\.ts is not on disk — the excluded list in this check names a file that moved, so the `@source not` line is no longer proven/)])
+  })
+
+  it('does not count a drifted imported core as a problem — that is a note', () => {
+    expect(scanProblems({ ...clean(), imported: '4.4.0' }, rules())).toEqual([])
+  })
+})
+
+describe('importedCoreNote', () => {
+  it('is silent for no import or the plugin’s version, and a note — not a problem — for another', () => {
+    const base = { plugin: PLUGIN, versions: { [PLUGIN]: '4.3.3', tailwindcss: '4.3.3' } }
+    expect(importedCoreNote(base)).toBeNull()
+    expect(importedCoreNote({ ...base, imported: null })).toBeNull()
+    expect(importedCoreNote({ ...base, imported: '4.3.3' })).toBeNull()
+    expect(importedCoreNote({ ...base, imported: '4.4.0' }))
+      .toMatch(/^the stylesheet imports tailwindcss 4\.4\.0 while @tailwindcss\/vite runs tailwindcss 4\.3\.3 — the build works with the two/)
   })
 })

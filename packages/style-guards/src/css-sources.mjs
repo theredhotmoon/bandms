@@ -50,6 +50,9 @@ import { styleRuns } from './sfc.mjs'
  */
 export const sourceKey = (base, pattern, not) => `${not ? 'not ' : ''}${canonical(resolve(base, pattern))}`
 
+/** An @source line as it is written in a stylesheet that uses `quote` — the one spelling every message quotes. */
+export const spellSource = (s, quote = '"') => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline(${quote}${s.path}${quote})` : `${quote}${s.path}${quote}`};`
+
 /* ── Output ────────────────────────────────────────────────────────────── */
 
 export const PLACEHOLDER = '…'
@@ -208,7 +211,7 @@ function pathsOf(styleFile, quote) {
   const baseOf = (p) => resolve(from, splitGlob(p).dir)
   /** A comparable identity: inline lists by their text, paths and globs by sourceKey(). */
   const key = (s) => (s.inline ? `${s.not ? 'not ' : ''}inline(${s.path})` : sourceKey(from, s.path, s.not))
-  const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline(${quote}${s.path}${quote})` : `${quote}${s.path}${quote}`};`
+  const spell = (s) => spellSource(s, quote)
   return { baseOf, key, spell }
 }
 

@@ -1341,10 +1341,13 @@ without a build: a re-included file is named whatever shape its classes take.
 The compiler and scanner are resolved from `@tailwindcss/postcss`’s **own
 directory** (the admin: `@tailwindcss/vite`’s), not from the app, so they are
 the copies the plugin runs — the plugin pins all three at its version and
-pnpm lays them beside it. The stylesheet’s own `@import 'tailwindcss'`
-resolves from `src/` to the `tailwindcss` the app declares, in the guard as
-in the build, so that copy’s version joins the plugin’s four and the run
-stops before scanning if any differs. Paths are compared canonical (real
+pnpm lays them beside it. Those four must be one version, and the
+run stops before scanning if they are not. The stylesheet’s own
+`@import 'tailwindcss'` resolves from `src/` to the `tailwindcss` the app
+declares, in the guard as in the build; which files are read does not depend
+on it, so a copy that drifted from the plugin is a printed note, not a
+failure — a Dependabot bump of one side alone must not block a deploy that
+works, but upgrade them together. Paths are compared canonical (real
 path, on-disk casing), because the scanner answers that way whatever
 spelling the shell used. A file outside `src/` that must be read for classes is a new `@source`
 line *and* an entry in that script’s `EXPECTED_SOURCES`, with the reason. The

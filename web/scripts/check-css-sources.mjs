@@ -35,15 +35,22 @@
  * reads dist/ there would turn a guard failure into a crash-looping site.
  * Asking the scanner is the general form of that check without the build.
  */
-import { join } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { entryProblems, fixtureTest, strayRootProblems } from '../../packages/style-guards/src/css-sources.mjs'
-import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
+import { posix } from '../../packages/style-guards/src/paths.mjs'
+import { importedCoreNote, scanAdvice, scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const STYLE = join(SRC, 'styles', 'global.css')
 const LABEL = 'src/styles/global.css'
+/** The quote global.css is written in; every message spells a line in it. */
+const QUOTE = "'"
+/** The plugin postcss.config runs; the compiler and scanner asked below are the copies it resolves. */
+const PLUGIN = '@tailwindcss/postcss'
+/** A stylesheet-relative source path shown from web/, where every other path in a message is. */
+const fromRoot = (p) => posix(relative(ROOT, resolve(dirname(STYLE), p)))
 
 /** What global.css must declare — paths relative to it, as Tailwind reads them: src/, minus the tests beside src/lib. */
 const EXPECTED_SOURCES = [
@@ -60,8 +67,8 @@ const TREES = [
 ]
 
 // ── 1. the configuration as written ──────────────────────────────────────
-const { problems, sources, spell } = entryProblems(STYLE, EXPECTED_SOURCES, { label: LABEL, tree: 'web/', quote: "'" })
-const broken = [...problems, ...strayRootProblems(TREES, STYLE, { label: LABEL, quote: "'" })]
+const { problems, sources, spell } = entryProblems(STYLE, EXPECTED_SOURCES, { label: LABEL, tree: 'web/', quote: QUOTE })
+const broken = [...problems, ...strayRootProblems(TREES, STYLE, { label: LABEL, quote: QUOTE })]
 
 if (broken.length) {
   console.error('✗ css sources: the Tailwind source configuration cannot be trusted\n')
@@ -77,11 +84,15 @@ No other stylesheet or <style> block declares any.`)
 // ── 2. the configuration as Tailwind reads it ────────────────────────────
 let scan
 try {
-  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/postcss', projectRoot: ROOT })
+  scan = await tailwindScan(STYLE, { plugin: PLUGIN, projectRoot: ROOT })
 } catch (e) {
   console.error(`✗ css sources: Tailwind could not be asked about ${LABEL}\n\n  ${e.message}\n`)
   process.exit(1)
 }
+// Printed before any verdict: when the scan disagrees with the lines, the one
+// version that moved is the first thing the reader should know.
+const note = importedCoreNote(scan)
+if (note) console.warn(`⚠ css sources: ${note}`)
 const read = scanProblems(scan, {
   label: LABEL,
   styleFile: STYLE,
@@ -91,17 +102,13 @@ const read = scanProblems(scan, {
   isFixture,
   required: [join(SRC, 'layouts', 'BaseLayout.astro'), join(SRC, 'pages', 'index.astro')],
   excluded: [join(SRC, 'lib', 'slugs.test.ts')],
+  quote: QUOTE,
 })
 if (read.length) {
   console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
   for (const r of read) console.error('  ' + r)
-  console.error(`
-The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
-make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that @tailwindcss/postcss and the
-tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
-version.`)
+  console.error('\n' + scanAdvice(LABEL))
   process.exit(1)
 }
 
-console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/, none a test`)
+console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/, none matching ${EXPECTED_SOURCES.filter((s) => s.not).map((s) => fromRoot(s.path)).join(' or ')}`)
