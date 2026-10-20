@@ -42,7 +42,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve } from 'node:path'
-import { sourceKey } from './css-sources.mjs'
+import { sourceKey, spellSource } from './css-sources.mjs'
 import { canonical, posix } from './paths.mjs'
 
 /** What a Tailwind plugin depends on, at its own version. */
@@ -118,9 +118,10 @@ export function tailwindPackages(from, plugin) {
  *   from        — where to resolve the plugin from. The stylesheet itself,
  *                 unless a test's fixture lives outside any project.
  *
- * Returns { root, sources, files, versions, imported }: `imported` is the
- * version of the tailwindcss the stylesheet itself imported, or null for a
- * stylesheet that starts Tailwind with `@tailwind utilities` and imports none.
+ * Returns { plugin, root, sources, files, versions, imported }: `imported` is
+ * the version of the tailwindcss the stylesheet itself imported, or null for
+ * a stylesheet that starts Tailwind with `@tailwind utilities` and imports
+ * none.
  */
 export async function tailwindScan(styleFile, { plugin, projectRoot, from = styleFile } = {}) {
   if (!plugin) throw new Error('tailwindScan: `plugin` is required — @tailwindcss/vite or @tailwindcss/postcss, whichever the build runs')
@@ -142,7 +143,7 @@ export async function tailwindScan(styleFile, { plugin, projectRoot, from = styl
   const detection = root === 'none' ? [] : root === null ? [{ base: projectRoot, pattern: '**/*', negated: false }] : [{ ...root, negated: false }]
   const scanner = new Scanner({ sources: [...detection, ...sources] })
   scanner.scan()
-  return { root, sources, files: scanner.files.map(canonical).sort(), versions, imported: core ? versionIn(core) : null }
+  return { plugin, root, sources, files: scanner.files.map(canonical).sort(), versions, imported: core ? versionIn(core) : null }
 }
 
 /**
@@ -150,17 +151,20 @@ export async function tailwindScan(styleFile, { plugin, projectRoot, from = styl
  * another version than the plugin runs. The build works with the two; the
  * scan's answer is the build's; but they should move together.
  */
-export function importedCoreNote(scan, plugin) {
-  if (scan.imported === null || scan.imported === scan.versions.tailwindcss) return null
-  return `the stylesheet imports tailwindcss ${scan.imported} while ${plugin} runs tailwindcss ${scan.versions.tailwindcss} — the build works with the two, and this check's answer is the build's, but upgrade them together`
+export function importedCoreNote(scan) {
+  if (scan.imported == null || scan.imported === scan.versions.tailwindcss) return null
+  return `the stylesheet imports tailwindcss ${scan.imported} while ${scan.plugin} runs tailwindcss ${scan.versions.tailwindcss} — the build works with the two, and this check's answer is the build's, but upgrade them together`
 }
 
-/** What a failed scan check tells the reader to look at. */
-export const scanAdvice = (label, plugin) => `The lines in ${label} read correctly, yet Tailwind's own compiler and scanner
+/**
+ * What a failed scan check tells the reader to look at. The versions are not
+ * among it: the plugin and the packages it runs were one version, or the
+ * scan would have stopped before it started.
+ */
+export const scanAdvice = (label) => `The lines in ${label} read correctly, yet Tailwind's own compiler and scanner
 make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that ${plugin} and the
-tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
-version.`
+\`source(none)\` and the @source lines — the glob semantics of a \`not\` line
+first — against the files named above.`
 
 const isFile = (p) => statSync(p, { throwIfNoEntry: false })?.isFile() ?? false
 const count = (n, noun) => `${n} ${noun}${n === 1 ? '' : 's'}`
@@ -168,8 +172,9 @@ const count = (n, noun) => `${n} ${noun}${n === 1 ? '' : 's'}`
 /**
  * Holds what Tailwind reads to what renders. Returns the problems, as lines.
  *
- *   scan        — tailwindScan()'s answer: { root, sources, files, versions },
- *                 `files` canonical as that function returns them
+ *   scan        — tailwindScan()'s answer: { plugin, root, sources, files,
+ *                 versions, imported }, `files` canonical as that function
+ *                 returns them; `imported` is not judged here (importedCoreNote)
  *   styleFile   — the entry stylesheet, which `expected` is relative to
  *   expected    — the @source lines as css-sources.mjs holds them, [{ path, not }]
  *   allowed     — the directories (or single files) Tailwind may read, absolute
@@ -187,7 +192,7 @@ export function scanProblems(scan, { label, styleFile, expected, allowed, isFixt
   const show = (c) => posix(relative(root, c)) || '.'
   const rel = (p) => show(canonical(p))
   const some = (paths) => paths.slice(0, SHOWN).map(show).join(', ') + (paths.length > SHOWN ? ` … and ${paths.length - SHOWN} more` : '')
-  const spell = (s) => `@source ${s.not ? 'not ' : ''}${quote}${s.path}${quote}`
+  const spell = (s) => spellSource(s, quote)
 
   const drift = versionProblem(scan.versions)
   if (drift) out.push(drift)

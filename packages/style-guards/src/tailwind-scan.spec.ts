@@ -104,7 +104,7 @@ describe('tailwindScan', () => {
     expect(s.files.map(rel)).toEqual(['index.html', 'pages/Home.vue', 'pages/notes.md'])
     expect(Object.keys(s.versions)).toHaveLength(4)
     expect(s.imported).toBeNull()
-    expect(importedCoreNote(s, PLUGIN)).toBeNull()
+    expect(importedCoreNote(s)).toBeNull()
     expect(scanProblems(s, rules())).toEqual([])
   })
 
@@ -159,9 +159,10 @@ describe('tailwindScan', () => {
   it('reports the core the admin stylesheet imports — the app’s own tailwindcss, not the plugin’s — beside the plugin’s versions', async () => {
     // The real admin entry, as the guard calls it: the import resolves from src/ to app/node_modules/tailwindcss.
     const s = await tailwindScan(join(APP, 'src', 'style.css'), { plugin: PLUGIN, projectRoot: APP })
+    expect(s.plugin).toBe(PLUGIN)
+    // Its shape, not its equality with the plugin's: a one-sided bump is a note in the build, and must not become a red suite here.
     expect(s.imported).toMatch(/^\d+\.\d+\.\d+/)
     expect(Object.keys(s.versions)).toHaveLength(4)
-    expect(importedCoreNote(s, PLUGIN)).toBeNull()
     expect(s.files.length).toBeGreaterThan(100)
   })
 })
@@ -219,12 +220,12 @@ describe('scanProblems', () => {
     const extra = { ...clean(), sources: [...clean().sources, { base: join(dir, 'styles'), pattern: '../README.md', negated: false }] }
     expect(scanProblems(extra, rules())).toEqual([expect.stringMatching(/a source this check does not expect: `\.\.\/README\.md` from styles\/, which is README\.md/)])
     const missing = { ...clean(), sources: clean().sources.slice(0, 2) }
-    expect(scanProblems(missing, rules())).toEqual([expect.stringMatching(/took no `@source not "\.\.\/pages\/\*\*\/\*\.spec\.ts"`/)])
+    expect(scanProblems(missing, rules())).toEqual([expect.stringMatching(/took no `@source not "\.\.\/pages\/\*\*\/\*\.spec\.ts";`/)])
   })
 
-  it('spells the lines it asks for in the stylesheet’s own quotes', () => {
+  it('spells the lines it asks for in the stylesheet’s own quotes, as the written check does', () => {
     const missing = { ...clean(), sources: clean().sources.slice(0, 2) }
-    expect(scanProblems(missing, { ...rules(), quote: "'" })).toEqual([expect.stringMatching(/took no `@source not '\.\.\/pages\/\*\*\/\*\.spec\.ts'`/)])
+    expect(scanProblems(missing, { ...rules(), quote: "'" })).toEqual([expect.stringMatching(/took no `@source not '\.\.\/pages\/\*\*\/\*\.spec\.ts';`/)])
     const named = { ...clean(), root: { base: join(dir, 'styles'), pattern: '../pages' } }
     expect(scanProblems(named, { ...rules(), quote: "'" })[0]).toMatch(/source\('\.\.\/pages'\)/)
   })
@@ -241,10 +242,11 @@ describe('scanProblems', () => {
 
 describe('importedCoreNote', () => {
   it('is silent for no import or the plugin’s version, and a note — not a problem — for another', () => {
-    const base = { versions: { [PLUGIN]: '4.3.3', tailwindcss: '4.3.3' } }
-    expect(importedCoreNote({ ...base, imported: null }, PLUGIN)).toBeNull()
-    expect(importedCoreNote({ ...base, imported: '4.3.3' }, PLUGIN)).toBeNull()
-    expect(importedCoreNote({ ...base, imported: '4.4.0' }, PLUGIN))
+    const base = { plugin: PLUGIN, versions: { [PLUGIN]: '4.3.3', tailwindcss: '4.3.3' } }
+    expect(importedCoreNote(base)).toBeNull()
+    expect(importedCoreNote({ ...base, imported: null })).toBeNull()
+    expect(importedCoreNote({ ...base, imported: '4.3.3' })).toBeNull()
+    expect(importedCoreNote({ ...base, imported: '4.4.0' }))
       .toMatch(/^the stylesheet imports tailwindcss 4\.4\.0 while @tailwindcss\/vite runs tailwindcss 4\.3\.3 — the build works with the two/)
   })
 })
