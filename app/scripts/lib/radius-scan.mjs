@@ -55,9 +55,9 @@
  * utilityCardLiterals() below finds those; `rounded-card` is the token's
  * utility. The token's own definitions are tokenDefinitions().
  */
-import { scriptBlocks, styleRuns, templateText } from './colour-scan.mjs'
-import { blank, blankStrings, stripCssComments } from './css-walk.mjs'
-import { blankScriptComments, scriptStrings } from './script-walk.mjs'
+import { blank, blankStrings, stripCssComments } from '../../../packages/style-guards/src/css-walk.mjs'
+import { blankScriptComments, scriptStrings } from '../../../packages/style-guards/src/script-walk.mjs'
+import { scriptBlocks, styleRuns, templateText } from '../../../packages/style-guards/src/sfc.mjs'
 
 export const CARD_RADIUS = '0.75rem'
 export const CARD_TOKEN = '--radius-card'

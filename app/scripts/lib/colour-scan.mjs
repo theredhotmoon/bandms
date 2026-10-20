@@ -22,9 +22,11 @@
  * offset — and therefore every reported line number — stays true.
  */
 
-// The CSS grammar — strings, comments, urls, escapes — is css-walk.mjs, shared
-// with the radius and source guards.
-import { blank, stripCssComments } from './css-walk.mjs'
+// The CSS grammar — strings, comments, urls, escapes — and the single-file
+// component split are packages/style-guards, shared with the radius and
+// source guards of both frontends.
+import { blank, stripCssComments } from '../../../packages/style-guards/src/css-walk.mjs'
+import { styleRuns, templateText } from '../../../packages/style-guards/src/sfc.mjs'
 
 export const IGNORE_MARKER = 'token-lint-ignore'
 
@@ -88,41 +90,6 @@ function scanTemplate(text, found) {
     if (literalsIn(m[1]).length) found.push({ index: m.index, hit: m[0] })
   }
 }
-
-// The opening tag must not end in `/>`: a self-closing `<style src="…" />`
-// has no body, and matching it would swallow everything up to the next
-// </style> — including the real block's opening tag.
-const STYLE_BLOCK = /(<style\b(?:[^>/]|\/(?!>))*>)([\s\S]*?)<\/style>/g
-const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/g
-const HTML_COMMENT = /<!--[\s\S]*?-->/g
-
-/**
- * The stylesheet text in one file: the whole of a .css file, or each <style>
- * block of a .vue file, as [{ css, base }] where `base` is the offset of
- * `css` within `source` — so a scanner can map a hit back to a line number.
- * A <style> inside an HTML comment is commented-out code, not a stylesheet.
- * <script> is blanked before the comments are, so a `'<!--'` string literal
- * in script cannot open a "comment" that swallows the real style blocks.
- * Shared with radius-scan.mjs so there is one answer to "where is the CSS".
- */
-export function styleRuns(source, kind) {
-  if (kind === 'css') return [{ css: source, base: 0 }]
-  const live = source.replace(SCRIPT_BLOCK, blank).replace(HTML_COMMENT, blank)
-  return [...live.matchAll(STYLE_BLOCK)].map((m) => ({ css: m[2], base: m.index + m[1].length }))
-}
-
-/** The <script> blocks of a .vue file, as [{ text, base }] with `base` the offset of `text` in `source`. */
-export function scriptBlocks(source) {
-  return [...source.matchAll(SCRIPT_BLOCK)].map((m) => ({ text: m[0], base: m.index }))
-}
-
-/**
- * A .vue file's template alone, offsets preserved: <script> and <style>
- * blocks and HTML comments blanked — the scripts first, so a `'<!--'` string
- * in one cannot open a comment that swallows the template. One definition
- * for every guard that reads class lists or attributes.
- */
-export const templateText = (source) => source.replace(SCRIPT_BLOCK, blank).replace(STYLE_BLOCK, blank).replace(HTML_COMMENT, blank)
 
 /**
  * Scan one file's source. `kind` is 'css' or 'vue'.

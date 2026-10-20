@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 
 /* The semantic contract and the base (black & white) look. */
 @import './tokens.css';
@@ -8,3 +8,13 @@
  * hundred bytes and keeps theme choice a runtime attribute rather than a build
  * flag — which is what lets a CMS drive it later without a rebuild. */
 @import './themes/skanking-storks.css';
+
+/* Which files Tailwind reads for class names. Left to itself it reads every
+   file under web/ that git does not ignore — scripts/check-tokens.mjs among
+   them, whose own examples (`text-zinc-400`, `rounded-xl`) were emitted as
+   real rules in the built CSS: dead, since the lint forbids them in src/,
+   but downloaded by every visitor. Only src/ renders, and the tests beside
+   its lib are fixtures. scripts/check-css-sources.mjs holds this block to
+   exactly these lines. */
+@source '../';
+@source not '../**/*.test.ts';

@@ -86,6 +86,16 @@ jobs:
         working-directory: ./app
         run: pnpm build
 
+      # The public site's `pnpm build` runs at container START (web/docker/
+      # start.sh), so a guard in it that fails on main is a crash-looping
+      # site, not a red check. Its two guards read only the source tree, so
+      # they run here on every PR (and again in web/Dockerfile, so the image
+      # build fails before a container ever starts). `astro build` itself
+      # needs the API and stays where it is.
+      - name: Public-site guards and unit tests
+        working-directory: ./web
+        run: node scripts/check-tokens.mjs && node scripts/check-css-sources.mjs && pnpm test:unit
+
   build-and-push:
     name: Build & push images
     needs: test

@@ -7,8 +7,9 @@
  * to one and not the other makes the guards disagree about what they cover.
  * So the list, its reasons and the walk live here once.
  */
-import { readdirSync, statSync, existsSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { existsSync } from 'node:fs'
+import { join, sep } from 'node:path'
+import { filesUnder } from '../../../packages/style-guards/src/css-sources.mjs'
 
 /** Not admin chrome, so not themed. Paths relative to src/, with the reason. */
 export const EXCLUDED = {
@@ -38,18 +39,8 @@ export const isExcluded = (rel) =>
  * token-redefinition check) passes only the file it is pinning.
  */
 export function styleFilesUnder(src, skip = () => false, ext = /\.(vue|css)$/) {
-  const files = []
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      const abs = join(dir, name)
-      const rel = posix(relative(src, abs))
-      if (skip(rel)) continue
-      if (statSync(abs).isDirectory()) walk(abs)
-      else if (ext.test(name)) files.push(abs)
-    }
-  }
-  walk(src)
-  return files
+  // The one walker for the style guards lives with the shared grammar.
+  return filesUnder(src, ext, skip)
 }
 
 /**
