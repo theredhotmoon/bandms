@@ -38,6 +38,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { blankStrings, compounds, segments, stripCssComments } from './css-walk.mjs'
+import { posix } from './paths.mjs'
 import { styleRuns } from './sfc.mjs'
 
 /* ── Output ────────────────────────────────────────────────────────────── */
@@ -257,7 +258,7 @@ export function filesUnder(root, ext, skip = () => false) {
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const abs = join(dir, name)
-      const rel = relative(root, abs).split('\\').join('/')
+      const rel = posix(relative(root, abs))
       if (skip(rel)) continue
       if (statSync(abs).isDirectory()) walk(abs)
       else if (ext.test(name)) out.push(abs)
@@ -288,7 +289,7 @@ export function strayRootProblems(trees, styleFile, { label, quote = '"', exts =
       // Nothing to find unless one of the three words is there at all — which
       // today is no file, so the tokenizer runs over none of the components.
       if (!/@source|tailwindcss|@tailwind/.test(source)) continue
-      const rel = `${tree.label}/${relative(tree.dir, file).split('\\').join('/')}`
+      const rel = `${tree.label}/${posix(relative(tree.dir, file))}`
       for (const { css } of styleRuns(source, rel.endsWith('.css') ? 'css' : 'vue')) {
         const other = sourceDirectives(css)
         for (const r of other.roots) out.push(`${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only ${label} imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)

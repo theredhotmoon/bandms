@@ -15,74 +15,84 @@
  * from them the way both plugins build it, lists the files it reads.
  * scanProblems() then holds that list to the trees that render.
  *
- * The packages are resolved from the stylesheet's own directory by default,
- * so they are the ones the build resolves its plugin from, and the three
- * versions are compared: a scanner one release behind the compiler answers
- * for a build that does not run.
+ * The compiler, the core and the scanner are resolved from the *plugin's* own
+ * directory — `@tailwindcss/vite` for the admin, `@tailwindcss/postcss` for
+ * the public site — not from the app. The plugin pins the three at its own
+ * version, and under pnpm they sit beside it in .pnpm/<plugin>/node_modules,
+ * so what answers here is the copy the build runs even if the app ever
+ * declares a different tailwindcss directly. The four versions are compared
+ * all the same: a scanner one release behind the compiler answers for a
+ * build that does not run.
+ *
+ * compile() runs with @tailwindcss/node's own resolver, which is the PostCSS
+ * plugin's exactly and the Vite plugin's minus Vite's aliases — so an entry
+ * stylesheet must import by relative path or package name, never `@/`.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve } from 'node:path'
+import { canonical, posix } from './paths.mjs'
 
-const PACKAGES = ['tailwindcss', '@tailwindcss/node', '@tailwindcss/oxide']
-
-/** One spelling of a path for comparison: forward slashes. The scanner answers in the platform's. */
-export const slashes = (p) => p.split('\\').join('/')
+/** What a Tailwind plugin depends on, at its own version. */
+const PLUGIN_DEPS = ['tailwindcss', '@tailwindcss/node', '@tailwindcss/oxide']
 
 /**
- * The version of an installed package, found from its entry point upward —
- * `<name>/package.json` is not an exported subpath of @tailwindcss/node.
+ * The installed directory of `name` as Node resolves it from `from`, as a
+ * real path — found by its package.json rather than its entry point, because
+ * @tailwindcss/vite exports no `require` entry and @tailwindcss/node no
+ * `./package.json` subpath.
  */
-function versionOf(req, name) {
-  const entry = req.resolve(name)
-  let dir = dirname(entry)
-  for (;;) {
-    const file = join(dir, 'package.json')
-    if (existsSync(file)) {
-      const pkg = JSON.parse(readFileSync(file, 'utf8'))
-      if (pkg.name === name) return pkg.version
-    }
-    const up = dirname(dir)
-    if (up === dir) throw new Error(`${name}: no package.json of that name above ${entry}`)
-    dir = up
+function packageDir(from, name) {
+  for (const dir of createRequire(from).resolve.paths(name) ?? []) {
+    const candidate = join(dir, name)
+    if (existsSync(join(candidate, 'package.json'))) return realpathSync.native(candidate)
   }
+  throw new Error(`${name} is not installed anywhere ${from} resolves packages from`)
 }
 
-/** The versions of tailwindcss, @tailwindcss/node and @tailwindcss/oxide as Node resolves them from `from`. */
-export function tailwindVersions(from) {
-  const req = createRequire(from)
-  return Object.fromEntries(PACKAGES.map((name) => [name, versionOf(req, name)]))
+const versionIn = (dir) => JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).version
+
+/**
+ * The plugin the build runs, as resolved from `from`, and the compiler, core
+ * and scanner the plugin itself resolves: { dirs, versions }, the plugin
+ * first in each.
+ */
+export function tailwindPackages(from, plugin) {
+  const dirs = { [plugin]: packageDir(from, plugin) }
+  for (const name of PLUGIN_DEPS) dirs[name] = packageDir(join(dirs[plugin], 'package.json'), name)
+  return { dirs, versions: Object.fromEntries(Object.entries(dirs).map(([name, dir]) => [name, versionIn(dir)])) }
 }
 
 /**
  * Compile `styleFile` with Tailwind's own compiler and list the files its own
- * scanner reads for it, as forward-slashed absolute paths, sorted.
+ * scanner reads for it, as canonical posix paths, sorted.
  *
+ *   plugin      — the plugin the build runs: '@tailwindcss/vite' or
+ *                 '@tailwindcss/postcss'. The compiler and scanner are the
+ *                 copies it resolves.
  *   projectRoot — what automatic detection reads when the import carries no
  *                 source() clause: the Vite root for the admin, the PostCSS
  *                 working directory for the public site. Named so the list is
  *                 the build's even when the configuration is wrong.
- *   from        — where to resolve the Tailwind packages from. The stylesheet
- *                 itself, unless a test's fixture lives outside any project.
+ *   from        — where to resolve the plugin from. The stylesheet itself,
+ *                 unless a test's fixture lives outside any project.
  */
-export async function tailwindScan(styleFile, { projectRoot = dirname(styleFile), from = styleFile } = {}) {
-  const req = createRequire(from)
+export async function tailwindScan(styleFile, { plugin, projectRoot = dirname(styleFile), from = styleFile }) {
+  const { dirs, versions } = tailwindPackages(from, plugin)
+  const req = createRequire(join(dirs[plugin], 'package.json'))
   const { compile } = req('@tailwindcss/node')
   const { Scanner } = req('@tailwindcss/oxide')
-  const dependencies = []
-  const { root, sources } = await compile(readFileSync(styleFile, 'utf8'), {
-    base: dirname(styleFile),
-    from: styleFile,
-    onDependency: (p) => dependencies.push(slashes(p)),
-  })
+  const { root, sources } = await compile(readFileSync(styleFile, 'utf8'), { base: dirname(styleFile), onDependency() {} })
   // The scanner's sources as @tailwindcss/vite and @tailwindcss/postcss build
   // them: the root first — nothing, the whole project, or the one named — then
   // every @source line.
   const detection = root === 'none' ? [] : root === null ? [{ base: projectRoot, pattern: '**/*', negated: false }] : [{ ...root, negated: false }]
   const scanner = new Scanner({ sources: [...detection, ...sources] })
   scanner.scan()
-  return { root, sources, files: scanner.files.map(slashes).sort(), dependencies, versions: tailwindVersions(from) }
+  return { root, sources, files: scanner.files.map(canonical).sort(), versions }
 }
+
+const isFile = (p) => statSync(p, { throwIfNoEntry: false })?.isFile() ?? false
 
 /**
  * Holds what Tailwind reads to what renders. Returns the problems, as lines.
@@ -96,38 +106,42 @@ export async function tailwindScan(styleFile, { projectRoot = dirname(styleFile)
  *   excluded    — files that must not be: the proof the `not` lines work
  *   projectRoot — what paths are shown relative to
  *   label       — the stylesheet's name in the messages
+ *
+ * Every path is compared in canonical form (paths.mjs): the scanner answers
+ * with real paths in on-disk casing, whatever spelling the configuration used.
  */
 export function scanProblems(scan, { label, styleFile, expected, allowed, isFixture = () => false, required = [], excluded = [], projectRoot }) {
   const out = []
-  const norm = (p) => slashes(resolve(p))
-  const rel = (p) => slashes(relative(projectRoot, p)) || '.'
+  const root = canonical(projectRoot)
+  const rel = (p) => posix(relative(root, canonical(p))) || '.'
 
   const versions = Object.entries(scan.versions)
   if (new Set(versions.map(([, v]) => v)).size > 1) {
-    out.push(`the Tailwind asked is not one Tailwind: ${versions.map(([name, v]) => `${name} ${v}`).join(', ')} — the three packages must be one version, or the scanner answers for a build that does not run`)
+    out.push(`the Tailwind asked is not one Tailwind: ${versions.map(([name, v]) => `${name} ${v}`).join(', ')} — the plugin and the three packages it runs must be one version, or the scanner answers for a build that does not run`)
   }
 
   if (scan.root === null) out.push(`Tailwind reads ${label} with automatic detection — every non-ignored file under ${rel(projectRoot)}/ is a source; the import must carry \`source(none)\``)
   else if (scan.root !== 'none') out.push(`Tailwind reads ${label} with \`source(${JSON.stringify(scan.root.pattern)})\` from ${rel(scan.root.base)}/ — the import must carry \`source(none)\`, with the sources as @source lines`)
 
   // The sources as Tailwind resolved them against the ones this check expects,
-  // by resolved path, so `./../src` and `../src` are one source either side.
-  const have = new Map(scan.sources.map((s) => [`${s.negated ? 'not ' : ''}${norm(resolve(s.base, s.pattern))}`, s]))
-  const want = new Map(expected.map((s) => [`${s.not ? 'not ' : ''}${norm(resolve(dirname(styleFile), s.path))}`, s]))
+  // by canonical path, so `./../src` and `../src` are one source either side.
+  const have = new Map(scan.sources.map((s) => [`${s.negated ? 'not ' : ''}${canonical(resolve(s.base, s.pattern))}`, s]))
+  const want = new Map(expected.map((s) => [`${s.not ? 'not ' : ''}${canonical(resolve(dirname(styleFile), s.path))}`, s]))
   for (const [key, s] of want) if (!have.has(key)) out.push(`Tailwind took no \`@source ${s.not ? 'not ' : ''}"${s.path}"\` from ${label} — nothing it reads resolves to ${s.not ? 'not ' : ''}${rel(key.replace(/^not /, ''))}`)
   for (const [key, s] of have) if (!want.has(key)) out.push(`Tailwind reads ${label} with a source this check does not expect: \`${s.negated ? 'not ' : ''}${s.pattern}\` from ${rel(s.base)}/, which is ${rel(key.replace(/^not /, ''))}`)
 
-  const dirs = allowed.map(norm)
+  const dirs = allowed.map(canonical)
   const inside = (f) => dirs.some((d) => f === d || f.startsWith(d + '/'))
-  const files = new Set(scan.files.map(norm))
-  const banned = new Set(excluded.map(norm))
+  const where = allowed.map((a) => rel(a) + (isFile(a) ? '' : '/')).join(' and ')
+  const files = new Set(scan.files.map(canonical))
+  const banned = new Set(excluded.map(canonical))
   for (const f of files) {
-    if (!inside(f)) out.push(`Tailwind reads ${rel(f)} — outside ${allowed.map((a) => rel(a) + (f === norm(a) ? '' : '/')).join(' and ')}, so a class-shaped word there is a rule in the build`)
+    if (!inside(f)) out.push(`Tailwind reads ${rel(f)} — outside ${where}, so a class-shaped word there is a rule in the build`)
     else if (banned.has(f)) out.push(`Tailwind reads ${rel(f)} — the file the \`@source not\` line exists to keep out; its fixtures are in the build`)
     else if (isFixture(rel(f))) out.push(`Tailwind reads ${rel(f)} — a fixture by its name, which an \`@source not\` line in ${label} should exclude`)
   }
   for (const f of required) {
-    if (files.has(norm(f))) continue
+    if (files.has(canonical(f))) continue
     out.push(`Tailwind does not read ${rel(f)} — ${files.size ? `${files.size} file(s) read, this not among them` : 'it reads no file at all'}; the sources in ${label} no longer point at what renders`)
   }
   return out

@@ -22,9 +22,10 @@
  *      starting a Tailwind root of its own (each one would be a second scan,
  *      with automatic detection) or naming a source.
  *   2. The configuration, as Tailwind reads it: its own compiler
- *      (@tailwindcss/node) and scanner (@tailwindcss/oxide), resolved from
- *      src/ so they are the build's own, say which files it opens for that
- *      stylesheet. Every one must be under src/, none may be a test, the
+ *      (@tailwindcss/node) and scanner (@tailwindcss/oxide) — the copies
+ *      @tailwindcss/postcss resolves from its own directory, so they are the
+ *      build's, held to the plugin's version — say which files it opens for
+ *      that stylesheet. Every one must be under src/, none may be a test, the
  *      layout must be among them (the scan found the tree that renders) and
  *      src/lib/slugs.test.ts must not be (the `not` line works, in Tailwind's
  *      own glob semantics and not only in this repo's reading of it).
@@ -76,7 +77,7 @@ No other stylesheet or <style> block declares any.`)
 // ── 2. the configuration as Tailwind reads it ────────────────────────────
 let scan
 try {
-  scan = await tailwindScan(STYLE, { projectRoot: ROOT })
+  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/postcss', projectRoot: ROOT })
 } catch (e) {
   console.error(`✗ css sources: Tailwind cannot compile ${LABEL}\n\n  ${e.message}\n`)
   process.exit(1)
@@ -97,8 +98,9 @@ if (read.length) {
   console.error(`
 The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
 make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that one version of tailwindcss,
-@tailwindcss/node and @tailwindcss/oxide is installed.`)
+\`source(none)\` and the @source lines, and that @tailwindcss/postcss and the
+tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
+version.`)
   process.exit(1)
 }
 

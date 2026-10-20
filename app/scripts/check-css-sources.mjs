@@ -27,9 +27,12 @@
  *      no other stylesheet or SFC <style> under src/ starting a Tailwind root
  *      of its own or naming a source.
  *   2. The configuration, as Tailwind reads it: its own compiler
- *      (@tailwindcss/node) and scanner (@tailwindcss/oxide), resolved from
- *      src/ so they are the build's own and held to one version, say which
- *      files it opens for that stylesheet. Every one must be under src/ or be
+ *      (@tailwindcss/node) and scanner (@tailwindcss/oxide) — the copies
+ *      @tailwindcss/vite resolves from its own directory, so they are the
+ *      build's, held to the plugin's version — say which files it opens for
+ *      that stylesheet. (compile() runs with @tailwindcss/node's resolver,
+ *      not Vite's, so src/style.css imports by relative path or package
+ *      name, never by the `@/` alias.) Every one must be under src/ or be
  *      index.html, none may be a spec, App.vue, main.ts and index.html must
  *      be among them (the scan found the tree that renders) and the canary
  *      spec must not be (the `not` line works in Tailwind's glob semantics,
@@ -86,7 +89,7 @@ at the build.`)
 // ── 2. the configuration as Tailwind reads it ────────────────────────────
 let scan
 try {
-  scan = await tailwindScan(STYLE, { projectRoot: ROOT })
+  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/vite', projectRoot: ROOT })
 } catch (e) {
   console.error(`✗ css sources: Tailwind cannot compile ${LABEL}\n\n  ${e.message}\n`)
   process.exit(1)
@@ -107,8 +110,9 @@ if (read.length) {
   console.error(`
 The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
 make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that one version of tailwindcss,
-@tailwindcss/node and @tailwindcss/oxide is installed.`)
+\`source(none)\` and the @source lines, and that @tailwindcss/vite and the
+tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
+version.`)
   process.exit(1)
 }
 

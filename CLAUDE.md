@@ -1330,25 +1330,28 @@ a `RUN` in `web/Dockerfile`, because `pnpm build` runs at the public
 container's *start*, where a first failure is a crash-looping site — holds it to exactly
 those lines and fails any other stylesheet or `<style>` block under `src/`
 that starts a Tailwind root or names a source. It then asks Tailwind itself
-— `@tailwindcss/node`’s compiler and `@tailwindcss/oxide`’s scanner, the
-packages the build runs, resolved from `src/` and held to one version — which
+— `@tailwindcss/node`’s compiler and `@tailwindcss/oxide`’s scanner — which
 files it opens for that stylesheet, and fails on one outside `src/`, a
 `*.test.ts` among them, `src/lib/slugs.test.ts` among them (the `not` line,
-proven in Tailwind’s own glob semantics) or `BaseLayout.astro` missing from
-them (a scan that found some tree, but not the one that renders). That is the
-general form of the output check the admin runs on `dist/`, without a build:
-a re-included file is named whatever shape its classes take. A file outside
-`src/` that must be read for classes is a new `@source` line *and* an entry
-in that script’s `EXPECTED_SOURCES`, with the reason. The admin has the same
-guard (`app/CLAUDE.md`, guard table); both read `packages/style-guards`, which
-is where the CSS grammar and the scanner call live — **not** `app/scripts`,
-because the web image copies `packages/` and `web/` and nothing of `app/`
-(`web/Dockerfile`), and `pnpm build` runs at the public container’s start, so
-an import the image cannot resolve is a crash-looping site. Both apps declare
-`@tailwindcss/node` and `@tailwindcss/oxide` as devDependencies for that
-call, at the same range as `tailwindcss`: they were already installed as the
-Vite and PostCSS plugins’ own dependencies, but a transitive package is not
-resolvable from `web/` under pnpm, and the three must move together.
+proven in Tailwind’s own glob semantics) or `BaseLayout.astro` or
+`pages/index.astro` missing from them (a scan that found some tree, but not
+the one that renders; the `required:` list in the script is the authority).
+That is the general form of the output check the admin runs on `dist/`,
+without a build: a re-included file is named whatever shape its classes take.
+The compiler and scanner are resolved from `@tailwindcss/postcss`’s **own
+directory** (the admin: `@tailwindcss/vite`’s), not from the app, so they are
+the copies the plugin runs — the plugin pins all three at its version and
+pnpm lays them beside it — and the four versions are checked equal; neither
+app declares them directly. Paths are compared canonical (real path, on-disk
+casing), because the scanner answers that way whatever spelling the shell
+used. A file outside `src/` that must be read for classes is a new `@source`
+line *and* an entry in that script’s `EXPECTED_SOURCES`, with the reason. The
+admin has the same guard (`app/CLAUDE.md`, guard table); both read
+`packages/style-guards`, which is where the CSS grammar and the scanner call
+live — **not** `app/scripts`, because the web image copies `packages/` and
+`web/` and nothing of `app/` (`web/Dockerfile`), and `pnpm build` runs at the
+public container’s start, so an import the image cannot resolve is a
+crash-looping site.
 
 Primitives (`--ss-ink`, `--ss-teal`) belong **only** in
 `web/src/styles/themes/*.css`. Nothing else may reference them.
