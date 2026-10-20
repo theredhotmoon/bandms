@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-20 (tailwind scanner check)
+
+### Changed
+- **Both stylesheet-source checks now ask Tailwind itself which files it reads**: the admin's and the public site's `check-css-sources.mjs` run Tailwind's own compiler and scanner (`@tailwindcss/node`, `@tailwindcss/oxide`, the packages the build runs) on the entry stylesheet and fail if any file it opens is outside `src/` (or `index.html` for the admin), if a spec or test is among them, if the canary spec (admin) or `src/lib/slugs.test.ts` (public site) is among them, or if `App.vue`/`main.ts`/`index.html` (admin) or `BaseLayout.astro`/`pages/index.astro` (public site) are missing from them. Until now the checks read the `@source` lines with this repo's own grammar and, for the admin only, looked for two known selector shapes in the built CSS; a `not` glob that Tailwind and this repo resolved differently, or a file type a new Tailwind release starts reading, could put a fixture back into the build in a shape neither saw. Proven by misspelling the `not` glob identically in the stylesheet and the expected list: the written configuration passes and the scan names the fixture. The scanner call lives in `packages/style-guards/src/tailwind-scan.mjs`, with its spec. The compiler and scanner are resolved from the plugin's own directory (`@tailwindcss/vite`, `@tailwindcss/postcss`), so they are the copies the build runs, and paths are compared as the disk knows them, so a project reached through `c:\projects` or a junction passes. No dependency changes. Nothing visible changes.
+
 ## [Unreleased] — 2026-10-19 (public stylesheet sources)
 
 ### Fixed

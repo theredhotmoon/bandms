@@ -16,16 +16,30 @@
  * specs, and index.html — as the only sources (lib/css-sources.mjs holds
  * that list).
  *
- * Two checks, in order, on the shared reader in packages/style-guards:
- *   1. The configuration: the bare keyword `source(none)` on the import,
- *      exactly the expected `@source` lines (an `inline()` safelist counts as
- *      a source and is unexpected too), every path starting from a directory
- *      that exists — a path that resolves to nothing is the failure that
- *      needs this most, since Tailwind reads no file, throws nothing, and
- *      emits zero utilities into a build that is otherwise green — and no
- *      other stylesheet or SFC <style> under src/ starting a Tailwind root of
- *      its own or naming a source.
- *   2. The output in dist/: one of the sentinel utilities the admin cannot
+ * Three checks, in order, on the shared reader and scanner in
+ * packages/style-guards:
+ *   1. The configuration, as written: the bare keyword `source(none)` on the
+ *      import, exactly the expected `@source` lines (an `inline()` safelist
+ *      counts as a source and is unexpected too), every path starting from a
+ *      directory that exists — a path that resolves to nothing is the failure
+ *      that needs this most, since Tailwind reads no file, throws nothing,
+ *      and emits zero utilities into a build that is otherwise green — and
+ *      no other stylesheet or SFC <style> under src/ starting a Tailwind root
+ *      of its own or naming a source.
+ *   2. The configuration, as Tailwind reads it: its own compiler
+ *      (@tailwindcss/node) and scanner (@tailwindcss/oxide) — the copies
+ *      @tailwindcss/vite resolves from its own directory, so they are the
+ *      build's, held to the plugin's version — say which files it opens for
+ *      that stylesheet. (compile() runs with @tailwindcss/node's resolver,
+ *      not Vite's, so src/style.css imports by relative path or package
+ *      name, never by the `@/` alias.) Every one must be under src/ or be
+ *      index.html, none may be a spec, App.vue, main.ts and index.html must
+ *      be among them (the scan found the tree that renders) and the canary
+ *      spec must not be (the `not` line works in Tailwind's glob semantics,
+ *      not only in this repo's reading of it). This is the general form of
+ *      the output check below: a re-included file is named here whatever
+ *      shape its classes take.
+ *   3. The output in dist/: one of the sentinel utilities the admin cannot
  *      render without is present in the sheet that carries Tailwind's own
  *      `@layer utilities` (so Tailwind read src/ at all, and the selector
  *      scan reads the minifier's output), and no selector has one of the two
@@ -39,14 +53,17 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  EXPECTED_SOURCES, SENTINELS, TAILWIND_MARK, classSelectors, entryProblems, sentinelIn, strayRootProblems, strayRules,
+  EXPECTED_SOURCES, SENTINELS, TAILWIND_MARK, classSelectors, entryProblems, isFixture, sentinelIn, strayRootProblems, strayRules,
 } from './lib/css-sources.mjs'
+import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const STYLE = join(SRC, 'style.css')
 const ASSETS = join(ROOT, 'dist', 'assets')
 const LABEL = 'src/style.css'
+/** The one src file Tailwind must not read: it quotes both foreign shapes, so the `not` line is proven rather than present. */
+const CANARY = join(SRC, 'utils', 'cssSourcesCanary.spec.ts')
 /** Every tree whose components this build compiles: its own src/, and the shared rider sheet it renders in TechRiderPreviewView. */
 const TREES = [
   { dir: SRC, label: 'src' },
@@ -69,7 +86,37 @@ at the build.`)
   process.exit(1)
 }
 
-// ── 2. output ────────────────────────────────────────────────────────────
+// ── 2. the configuration as Tailwind reads it ────────────────────────────
+let scan
+try {
+  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/vite', projectRoot: ROOT })
+} catch (e) {
+  console.error(`✗ css sources: Tailwind could not be asked about ${LABEL}\n\n  ${e.message}\n`)
+  process.exit(1)
+}
+const read = scanProblems(scan, {
+  label: LABEL,
+  styleFile: STYLE,
+  expected: EXPECTED_SOURCES,
+  projectRoot: ROOT,
+  allowed: [SRC, join(ROOT, 'index.html')],
+  isFixture,
+  required: [join(SRC, 'App.vue'), join(SRC, 'main.ts'), join(ROOT, 'index.html')],
+  excluded: [CANARY],
+})
+if (read.length) {
+  console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
+  for (const r of read) console.error('  ' + r)
+  console.error(`
+The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
+make something else of them. Check what this Tailwind version does with
+\`source(none)\` and the @source lines, and that @tailwindcss/vite and the
+tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
+version.`)
+  process.exit(1)
+}
+
+// ── 3. output ────────────────────────────────────────────────────────────
 let files = []
 try {
   files = readdirSync(ASSETS).filter((f) => f.endsWith('.css'))
@@ -115,4 +162,4 @@ Tailwind version makes of \`source(none)\` and the @source lines.`)
 }
 
 const rules = sheets.reduce((n, s) => n + s.selectors.length, 0)
-console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected`)
+console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/ or index.html, none a spec`)

@@ -14,9 +14,12 @@
  *     entryProblems() holds the entry file to an expected list of sources,
  *     and strayRootProblems() makes sure no other stylesheet or component
  *     <style> under src/ starts a Tailwind root of its own or names a source
- *     — the general check, and the only one that sees a dropped `@source not`
- *     or a path that resolves to nothing (Tailwind reads no file and says
- *     nothing);
+ *     — the only check that sees a second root in a stylesheet Tailwind
+ *     compiles on its own, or a path that resolves to nothing (Tailwind
+ *     reads no file and says nothing); tailwind-scan.mjs then asks Tailwind's
+ *     own compiler and scanner which files the entry's configuration makes
+ *     it read, which is the general check on a dropped or misspelt
+ *     `@source not`;
  *   - classSelectors() / strayRules() judge built CSS for the two selector
  *     shapes only a non-source can produce, so a Tailwind upgrade that reads
  *     the configuration differently still fails the build with the selector
@@ -35,7 +38,17 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { blankStrings, compounds, segments, stripCssComments } from './css-walk.mjs'
+import { canonical, posix } from './paths.mjs'
 import { styleRuns } from './sfc.mjs'
+
+/**
+ * One identity for a source, written or resolved: `not ` or not, then the
+ * canonical path of `pattern` from `base` — so `./../src/` and `../src` are
+ * one source, as are a junction and the directory behind it. The written
+ * check (pathsOf, below) and the scanner check (tailwind-scan.mjs) both
+ * compare by this, so they cannot disagree about which three lines they saw.
+ */
+export const sourceKey = (base, pattern, not) => `${not ? 'not ' : ''}${canonical(resolve(base, pattern))}`
 
 /* ── Output ────────────────────────────────────────────────────────────── */
 
@@ -193,12 +206,8 @@ function pathsOf(styleFile, quote) {
   const from = dirname(styleFile)
   /** The directory a source starts from, resolved from the stylesheet. */
   const baseOf = (p) => resolve(from, splitGlob(p).dir)
-  /** A comparable identity: inline lists by their text, paths and globs by resolved base plus pattern, so `../src/` and `./../src` are one source. */
-  const key = (s) => {
-    if (s.inline) return `${s.not ? 'not ' : ''}inline(${s.path})`
-    const { rest } = splitGlob(s.path)
-    return `${s.not ? 'not ' : ''}${baseOf(s.path)}${rest ? `/${rest}` : ''}`
-  }
+  /** A comparable identity: inline lists by their text, paths and globs by sourceKey(). */
+  const key = (s) => (s.inline ? `${s.not ? 'not ' : ''}inline(${s.path})` : sourceKey(from, s.path, s.not))
   const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline(${quote}${s.path}${quote})` : `${quote}${s.path}${quote}`};`
   return { baseOf, key, spell }
 }
@@ -254,7 +263,7 @@ export function filesUnder(root, ext, skip = () => false) {
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const abs = join(dir, name)
-      const rel = relative(root, abs).split('\\').join('/')
+      const rel = posix(relative(root, abs))
       if (skip(rel)) continue
       if (statSync(abs).isDirectory()) walk(abs)
       else if (ext.test(name)) out.push(abs)
@@ -285,7 +294,7 @@ export function strayRootProblems(trees, styleFile, { label, quote = '"', exts =
       // Nothing to find unless one of the three words is there at all — which
       // today is no file, so the tokenizer runs over none of the components.
       if (!/@source|tailwindcss|@tailwind/.test(source)) continue
-      const rel = `${tree.label}/${relative(tree.dir, file).split('\\').join('/')}`
+      const rel = `${tree.label}/${posix(relative(tree.dir, file))}`
       for (const { css } of styleRuns(source, rel.endsWith('.css') ? 'css' : 'vue')) {
         const other = sourceDirectives(css)
         for (const r of other.roots) out.push(`${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only ${label} imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)

@@ -45,9 +45,12 @@ COPY packages/ packages/
 COPY web/      web/
 
 # The two guards `pnpm build` runs ahead of `astro build` read only the source
-# tree, so they run here as well: start.sh runs `pnpm build` at every container
-# start, and a guard that first fails there is a crash-looping public site
-# rather than a failed image build.
+# tree (the second also asks the installed Tailwind — the @tailwindcss/node
+# and @tailwindcss/oxide that @tailwindcss/postcss resolves in this image —
+# which files it reads), so they
+# run here as well: start.sh runs `pnpm build` at every container start, and a
+# guard that first fails there is a crash-looping public site rather than a
+# failed image build.
 RUN cd web && node scripts/check-tokens.mjs && node scripts/check-css-sources.mjs
 
 # Nginx + startup scripts

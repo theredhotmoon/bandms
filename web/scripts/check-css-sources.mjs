@@ -9,22 +9,36 @@
  * CSS: dead, since the token lint forbids the first two anywhere in src/, but
  * downloaded by every visitor. src/styles/global.css now imports Tailwind
  * with `source(none)` and names src/ as the only source, minus the tests
- * beside its lib. This holds that configuration to exactly those lines, and
- * makes sure no other stylesheet or component <style> under src/ starts a
- * Tailwind root of its own (each one would be a second scan, with automatic
- * detection) or names a source.
+ * beside its lib.
  *
- * The reader is packages/style-guards — the same one the admin's
- * check-css-sources.mjs uses, with its spec — because both images carry
- * packages/ (web/Dockerfile copies packages/ and web/, nothing of app/), and
- * one reader of `@import`, `@tailwind` and `@source` is better than two that
- * drift. The admin's guard also judges the built CSS; this one does not: the
- * public site is built at container start (web/docker/start.sh), and a check
- * that reads dist/ there would turn a guard failure into a crash-looping site.
+ * Two checks, on packages/style-guards — the same reader and scanner the
+ * admin's check-css-sources.mjs uses, with their specs, because both images
+ * carry packages/ (web/Dockerfile copies packages/ and web/, nothing of app/)
+ * and one reader of `@import`, `@tailwind` and `@source` is better than two
+ * that drift:
+ *   1. The configuration, as written: `source(none)` on the import, exactly
+ *      the expected `@source` lines, every path starting from a directory
+ *      that exists, and no other stylesheet or component <style> under src/
+ *      starting a Tailwind root of its own (each one would be a second scan,
+ *      with automatic detection) or naming a source.
+ *   2. The configuration, as Tailwind reads it: its own compiler
+ *      (@tailwindcss/node) and scanner (@tailwindcss/oxide) — the copies
+ *      @tailwindcss/postcss resolves from its own directory, so they are the
+ *      build's, held to the plugin's version — say which files it opens for
+ *      that stylesheet. Every one must be under src/, none may be a test, the
+ *      layout must be among them (the scan found the tree that renders) and
+ *      src/lib/slugs.test.ts must not be (the `not` line works, in Tailwind's
+ *      own glob semantics and not only in this repo's reading of it).
+ *
+ * The admin's guard also judges the built CSS; this one does not: the public
+ * site is built at container start (web/docker/start.sh), and a check that
+ * reads dist/ there would turn a guard failure into a crash-looping site.
+ * Asking the scanner is the general form of that check without the build.
  */
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { entryProblems, strayRootProblems } from '../../packages/style-guards/src/css-sources.mjs'
+import { entryProblems, fixtureTest, strayRootProblems } from '../../packages/style-guards/src/css-sources.mjs'
+import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -36,6 +50,8 @@ const EXPECTED_SOURCES = [
   { path: '../', not: false },
   { path: '../**/*.test.ts', not: true },
 ]
+/** Whether a path is one Tailwind is told not to read, by the `not` lines above. */
+const isFixture = fixtureTest(EXPECTED_SOURCES)
 
 /** Every tree whose components this build compiles: its own src/, and the shared rider sheet PublicRider.vue renders. */
 const TREES = [
@@ -43,6 +59,7 @@ const TREES = [
   { dir: join(ROOT, '..', 'packages', 'rider-core', 'src'), label: 'packages/rider-core/src' },
 ]
 
+// ── 1. the configuration as written ──────────────────────────────────────
 const { problems, sources, spell } = entryProblems(STYLE, EXPECTED_SOURCES, { label: LABEL, tree: 'web/', quote: "'" })
 const broken = [...problems, ...strayRootProblems(TREES, STYLE, { label: LABEL, quote: "'" })]
 
@@ -57,4 +74,34 @@ No other stylesheet or <style> block declares any.`)
   process.exit(1)
 }
 
-console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}`)
+// ── 2. the configuration as Tailwind reads it ────────────────────────────
+let scan
+try {
+  scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/postcss', projectRoot: ROOT })
+} catch (e) {
+  console.error(`✗ css sources: Tailwind could not be asked about ${LABEL}\n\n  ${e.message}\n`)
+  process.exit(1)
+}
+const read = scanProblems(scan, {
+  label: LABEL,
+  styleFile: STYLE,
+  expected: EXPECTED_SOURCES,
+  projectRoot: ROOT,
+  allowed: [SRC],
+  isFixture,
+  required: [join(SRC, 'layouts', 'BaseLayout.astro'), join(SRC, 'pages', 'index.astro')],
+  excluded: [join(SRC, 'lib', 'slugs.test.ts')],
+})
+if (read.length) {
+  console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
+  for (const r of read) console.error('  ' + r)
+  console.error(`
+The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
+make something else of them. Check what this Tailwind version does with
+\`source(none)\` and the @source lines, and that @tailwindcss/postcss and the
+tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
+version.`)
+  process.exit(1)
+}
+
+console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/, none a test`)

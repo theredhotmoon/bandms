@@ -8,8 +8,11 @@
  * So the list, its reasons and the walk live here once.
  */
 import { existsSync } from 'node:fs'
-import { join, sep } from 'node:path'
+import { join } from 'node:path'
 import { filesUnder } from '../../../packages/style-guards/src/css-sources.mjs'
+
+/** One spelling of a path for every guard: the package's, re-exported for the callers here. */
+export { posix } from '../../../packages/style-guards/src/paths.mjs'
 
 /** Not admin chrome, so not themed. Paths relative to src/, with the reason. */
 export const EXCLUDED = {
@@ -23,8 +26,6 @@ export const EXCLUDED = {
   'views/TicketClaimView.vue': 'fan ticket claim',
   'views/TechRiderPreviewView.vue': 'printable rider document, black on white by design',
 }
-
-export const posix = (p) => p.split(sep).join('/')
 
 /** How a guard should read a file: a .css file is a stylesheet; anything else is an SFC with <style> blocks. */
 export const kindOf = (path) => (path.endsWith('.css') ? 'css' : 'vue')
