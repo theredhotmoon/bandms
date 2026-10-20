@@ -37,8 +37,14 @@ const EXPECTED_SOURCES = [
   { path: '../**/*.test.ts', not: true },
 ]
 
+/** Every tree whose components this build compiles: its own src/, and the shared rider sheet PublicRider.vue renders. */
+const TREES = [
+  { dir: SRC, label: 'src' },
+  { dir: join(ROOT, '..', 'packages', 'rider-core', 'src'), label: 'packages/rider-core/src' },
+]
+
 const { problems, sources, spell } = entryProblems(STYLE, EXPECTED_SOURCES, { label: LABEL, tree: 'web/', quote: "'" })
-const broken = [...problems, ...strayRootProblems(SRC, STYLE, { label: LABEL, quote: "'" })]
+const broken = [...problems, ...strayRootProblems(TREES, STYLE, { label: LABEL, quote: "'" })]
 
 if (broken.length) {
   console.error('✗ css sources: the Tailwind source configuration cannot be trusted\n')
@@ -51,4 +57,4 @@ No other stylesheet or <style> block declares any.`)
   process.exit(1)
 }
 
-console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under src/`)
+console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}`)

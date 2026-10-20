@@ -152,6 +152,10 @@ describe('sourceDirectives', () => {
     expect(sourceDirectives('@tailwind utilities source(none);').roots).toEqual([{ directive: '@tailwind utilities', detection: 'none', base: null }])
     expect(sourceDirectives('@tailwind utilities source("../../e2e");').roots).toEqual([{ directive: '@tailwind utilities', detection: 'path', base: '../../e2e' }])
   })
+
+  it('does not take a v3 @tailwind base or components for a root — they emit no utilities', () => {
+    expect(sourceDirectives('@tailwind base;\n@tailwind components;').roots).toEqual([])
+  })
 })
 
 describe('fixtureTest', () => {
@@ -159,8 +163,15 @@ describe('fixtureTest', () => {
     const isFixture = fixtureTest([{ path: '../src', not: false }, { path: '../src/**/*.spec.ts', not: true }, { path: '../**/*.test.ts', not: true }])
     expect(isFixture('utils/cssSourcesCanary.spec.ts')).toBe(true)
     expect(isFixture('lib/cms.test.ts')).toBe(true)
-    for (const p of ['utils/x.ts', 'spec.ts', 'x.spec.tsx', 'components/x.vue', 'x.spec.ts.bak']) expect(isFixture(p)).toBe(false)
+    expect(isFixture('a.spec.ts')).toBe(true)
+    for (const p of ['utils/x.ts', 'spec.ts', 'x.spec.tsx', 'components/x.vue', 'x.spec.ts.bak', 'deep/dir.spec.ts/file.ts']) expect(isFixture(p)).toBe(false)
     expect(fixtureTest([{ path: '../src', not: false }])('a.spec.ts')).toBe(false)
+  })
+
+  it('refuses a not-source that is not a **/<file pattern>, which would name every file', () => {
+    expect(() => fixtureTest([{ path: '../src/fixtures/**', not: true }])).toThrow(/file pattern/)
+    expect(() => fixtureTest([{ path: '../src/fixtures/*.ts', not: true }])).toThrow(/file pattern/)
+    expect(() => fixtureTest([{ path: '../**/*', not: true }])).toThrow(/file pattern/)
   })
 
   it('reads an inline() safelist as a source', () => {

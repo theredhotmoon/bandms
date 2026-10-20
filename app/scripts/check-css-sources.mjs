@@ -47,10 +47,15 @@ const SRC = join(ROOT, 'src')
 const STYLE = join(SRC, 'style.css')
 const ASSETS = join(ROOT, 'dist', 'assets')
 const LABEL = 'src/style.css'
+/** Every tree whose components this build compiles: its own src/, and the shared rider sheet it renders in TechRiderPreviewView. */
+const TREES = [
+  { dir: SRC, label: 'src' },
+  { dir: join(ROOT, '..', 'packages', 'rider-core', 'src'), label: 'packages/rider-core/src' },
+]
 
 // ── 1. configuration ─────────────────────────────────────────────────────
 const { problems, sources, spell } = entryProblems(STYLE, EXPECTED_SOURCES, { label: LABEL, tree: 'app/' })
-const broken = [...problems, ...strayRootProblems(SRC, STYLE, { label: LABEL, exts: /\.(css|vue)$/ })]
+const broken = [...problems, ...strayRootProblems(TREES, STYLE, { label: LABEL, exts: /\.(css|vue)$/ })]
 
 if (broken.length) {
   console.error('✗ css sources: the Tailwind source configuration cannot be trusted\n')

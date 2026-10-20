@@ -126,8 +126,13 @@ export function strayRules(selectors) {
 
 /* ── Configuration ─────────────────────────────────────────────────────── */
 
-/** Every directive that makes a stylesheet emit utilities: the full import, the split `tailwindcss/utilities` import, or a `@tailwind` directive — each with whatever clauses follow it. */
-const ROOT = /@import\s+["'](tailwindcss(?:\/utilities(?:\.css)?)?)["']([^;]*);|@tailwind\s+(\w+)([^;]*);/g
+/**
+ * Every directive that makes a stylesheet emit utilities: the full import, the
+ * split `tailwindcss/utilities` import, or `@tailwind utilities` — each with
+ * whatever clauses follow it. `@tailwind base` / `components` (v3 leftovers)
+ * emit no utilities and start no scan, so they are not roots.
+ */
+const ROOT = /@import\s+["'](tailwindcss(?:\/utilities(?:\.css)?)?)["']([^;]*);|@tailwind\s+(utilities)([^;]*);/g
 const SOURCE_CLAUSE = /\bsource\(\s*(none|["'][^"']*["'])\s*\)/
 const SOURCE = /@source\s+(not\s+)?(?:["']([^"']+)["']|inline\(\s*["']([^"']*)["']\s*\))\s*;/g
 
@@ -165,27 +170,34 @@ export function sourceDirectives(css) {
  */
 export function fixtureTest(expected) {
   const tests = expected.filter((s) => s.not).map((s) => {
-    const tail = s.path.slice(s.path.lastIndexOf('/') + 1) // `*.spec.ts`
-    return new RegExp(`${tail.replace(/[.]/g, '\\.').replace(/\*/g, '.*')}$`)
+    const parts = s.path.split('/')
+    const tail = parts.pop()
+    // Only `**/<file pattern>` names files wherever they are; a directory glob
+    // (`../src/fixtures/**`) would turn into "every file", and the guard that
+    // skips by this would then skip the whole tree in silence.
+    if (!/[^*?{}]/.test(tail) || parts.at(-1) !== '**') throw new Error(`fixtureTest: a not-source must end in **/<file pattern> to name fixtures by file name — got "${s.path}"`)
+    return new RegExp(`(^|/)${tail.replace(/[.]/g, '\\.').replace(/\*/g, '[^/]*')}$`)
   })
   return (rel) => tests.some((re) => re.test(rel))
 }
 
 const isGlob = (p) => /[*?{]/.test(p)
+/** A source path as { dir, rest }: the directory before its first wildcard (the whole path when it has none) and the pattern after it. */
+function splitGlob(p) {
+  if (!isGlob(p)) return { dir: p, rest: '' }
+  const cut = p.slice(0, p.search(/[*?{]/)).lastIndexOf('/') + 1
+  return { dir: p.slice(0, cut) || '.', rest: p.slice(cut) }
+}
 /** How one entry stylesheet's source paths resolve and read. */
 function pathsOf(styleFile, quote) {
   const from = dirname(styleFile)
-  /** The directory a source starts from: the path itself, or for a glob the part before its first wildcard. */
-  const baseOf = (p) => {
-    if (!isGlob(p)) return resolve(from, p)
-    const cut = p.slice(0, p.search(/[*?{]/)).lastIndexOf('/') + 1
-    return resolve(from, p.slice(0, cut) || '.')
-  }
+  /** The directory a source starts from, resolved from the stylesheet. */
+  const baseOf = (p) => resolve(from, splitGlob(p).dir)
   /** A comparable identity: inline lists by their text, paths and globs by resolved base plus pattern, so `../src/` and `./../src` are one source. */
   const key = (s) => {
     if (s.inline) return `${s.not ? 'not ' : ''}inline(${s.path})`
-    const rest = isGlob(s.path) ? `/${s.path.slice(s.path.slice(0, s.path.search(/[*?{]/)).lastIndexOf('/') + 1)}` : ''
-    return `${s.not ? 'not ' : ''}${baseOf(s.path)}${rest}`
+    const { rest } = splitGlob(s.path)
+    return `${s.not ? 'not ' : ''}${baseOf(s.path)}${rest ? `/${rest}` : ''}`
   }
   const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline(${quote}${s.path}${quote})` : `${quote}${s.path}${quote}`};`
   return { baseOf, key, spell }
@@ -230,37 +242,55 @@ export function entryProblems(styleFile, expected, { label, tree, quote = '"' })
   return { problems: out, sources, spell }
 }
 
-const walk = (dir, test, out = []) => {
-  for (const name of readdirSync(dir)) {
-    const abs = join(dir, name)
-    if (statSync(abs).isDirectory()) walk(abs, test, out)
-    else if (test.test(name)) out.push(abs)
+/**
+ * Every file under `root` whose name matches `ext`, depth first, as absolute
+ * paths; `skip(rel)` sees each entry's posix path relative to `root` and
+ * prunes it (a directory with everything under it) when it returns true. The
+ * one walker for the style guards — the admin's admin-files.mjs reads through
+ * it.
+ */
+export function filesUnder(root, ext, skip = () => false) {
+  const out = []
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const abs = join(dir, name)
+      const rel = relative(root, abs).split('\\').join('/')
+      if (skip(rel)) continue
+      if (statSync(abs).isDirectory()) walk(abs)
+      else if (ext.test(name)) out.push(abs)
+    }
   }
+  walk(root)
   return out
 }
 
 /**
- * Every other stylesheet or component <style> under `srcDir` that starts a
- * Tailwind root of its own or names a source, as messages. Tailwind merges
+ * Every other stylesheet or component <style> in the given trees that starts
+ * a Tailwind root of its own or names a source, as messages. Tailwind merges
  * @source from every stylesheet the entry imports, each relative to its own
  * file, and the bundler plugins compile any stylesheet or <style> block that
  * starts Tailwind as a root with its own (automatic) detection — so one file
- * holds the configuration, and this makes sure of it.
+ * holds the configuration, and this makes sure of it. `trees` is
+ * [{ dir, label }]: the frontend's own src/, plus every shared package tree
+ * whose components it renders (packages/rider-core/src), because a <style>
+ * block there is compiled by the same pipeline.
  */
-export function strayRootProblems(srcDir, styleFile, { label, quote = '"', exts = /\.(css|vue|astro)$/ }) {
+export function strayRootProblems(trees, styleFile, { label, quote = '"', exts = /\.(css|vue|astro)$/ }) {
   const { spell } = pathsOf(styleFile, quote)
   const out = []
-  for (const file of walk(srcDir, exts)) {
-    if (resolve(file) === resolve(styleFile)) continue
-    const source = readFileSync(file, 'utf8')
-    // Nothing to find unless one of the three words is there at all — which
-    // today is no file, so the tokenizer runs over none of the components.
-    if (!/@source|tailwindcss|@tailwind/.test(source)) continue
-    const rel = relative(srcDir, file).split('\\').join('/')
-    for (const { css } of styleRuns(source, rel.endsWith('.css') ? 'css' : 'vue')) {
-      const other = sourceDirectives(css)
-      for (const r of other.roots) out.push(`src/${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only ${label} imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)
-      for (const s of other.sources) out.push(`src/${rel} declares \`${spell(s)}\` — Tailwind honours it from any stylesheet it compiles, but only ${label} may name sources`)
+  for (const tree of trees) {
+    for (const file of filesUnder(tree.dir, exts)) {
+      if (resolve(file) === resolve(styleFile)) continue
+      const source = readFileSync(file, 'utf8')
+      // Nothing to find unless one of the three words is there at all — which
+      // today is no file, so the tokenizer runs over none of the components.
+      if (!/@source|tailwindcss|@tailwind/.test(source)) continue
+      const rel = `${tree.label}/${relative(tree.dir, file).split('\\').join('/')}`
+      for (const { css } of styleRuns(source, rel.endsWith('.css') ? 'css' : 'vue')) {
+        const other = sourceDirectives(css)
+        for (const r of other.roots) out.push(`${rel} starts Tailwind with \`${r.directive}\` — that is a second root with its own scan; only ${label} imports Tailwind, and \`@apply\` in a component needs \`@reference\`, not an import`)
+        for (const s of other.sources) out.push(`${rel} declares \`${spell(s)}\` — Tailwind honours it from any stylesheet it compiles, but only ${label} may name sources`)
+      }
     }
   }
   return out

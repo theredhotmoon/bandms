@@ -1325,7 +1325,9 @@ every non-ignored file under `web/`, and the prose examples in
 `scripts/check-tokens.mjs` (`text-zinc-400`, `rounded-xl`) shipped as real,
 dead rules in the public CSS for months. `src/styles/global.css` imports
 Tailwind with `source(none)` and names `../` (src) minus `../**/*.test.ts`;
-`scripts/check-css-sources.mjs`, also in `pnpm build`, holds it to exactly
+`scripts/check-css-sources.mjs` — in `pnpm build`, in the CI `Tests` job and as
+a `RUN` in `web/Dockerfile`, because `pnpm build` runs at the public
+container's *start*, where a first failure is a crash-looping site — holds it to exactly
 those lines and fails any other stylesheet or `<style>` block under `src/`
 that starts a Tailwind root or names a source. A file outside `src/` that
 must be read for classes is a new `@source` line *and* an entry in that
