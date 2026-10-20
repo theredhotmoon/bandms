@@ -14,9 +14,12 @@
  *     entryProblems() holds the entry file to an expected list of sources,
  *     and strayRootProblems() makes sure no other stylesheet or component
  *     <style> under src/ starts a Tailwind root of its own or names a source
- *     — the general check, and the only one that sees a dropped `@source not`
- *     or a path that resolves to nothing (Tailwind reads no file and says
- *     nothing);
+ *     — the only check that sees a second root in a stylesheet Tailwind
+ *     compiles on its own, or a path that resolves to nothing (Tailwind
+ *     reads no file and says nothing); tailwind-scan.mjs then asks Tailwind's
+ *     own compiler and scanner which files the entry's configuration makes
+ *     it read, which is the general check on a dropped or misspelt
+ *     `@source not`;
  *   - classSelectors() / strayRules() judge built CSS for the two selector
  *     shapes only a non-source can produce, so a Tailwind upgrade that reads
  *     the configuration differently still fails the build with the selector
