@@ -38,8 +38,17 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { blankStrings, compounds, segments, stripCssComments } from './css-walk.mjs'
-import { posix } from './paths.mjs'
+import { canonical, posix } from './paths.mjs'
 import { styleRuns } from './sfc.mjs'
+
+/**
+ * One identity for a source, written or resolved: `not ` or not, then the
+ * canonical path of `pattern` from `base` — so `./../src/` and `../src` are
+ * one source, as are a junction and the directory behind it. The written
+ * check (pathsOf, below) and the scanner check (tailwind-scan.mjs) both
+ * compare by this, so they cannot disagree about which three lines they saw.
+ */
+export const sourceKey = (base, pattern, not) => `${not ? 'not ' : ''}${canonical(resolve(base, pattern))}`
 
 /* ── Output ────────────────────────────────────────────────────────────── */
 
@@ -197,12 +206,8 @@ function pathsOf(styleFile, quote) {
   const from = dirname(styleFile)
   /** The directory a source starts from, resolved from the stylesheet. */
   const baseOf = (p) => resolve(from, splitGlob(p).dir)
-  /** A comparable identity: inline lists by their text, paths and globs by resolved base plus pattern, so `../src/` and `./../src` are one source. */
-  const key = (s) => {
-    if (s.inline) return `${s.not ? 'not ' : ''}inline(${s.path})`
-    const { rest } = splitGlob(s.path)
-    return `${s.not ? 'not ' : ''}${baseOf(s.path)}${rest ? `/${rest}` : ''}`
-  }
+  /** A comparable identity: inline lists by their text, paths and globs by sourceKey(). */
+  const key = (s) => (s.inline ? `${s.not ? 'not ' : ''}inline(${s.path})` : sourceKey(from, s.path, s.not))
   const spell = (s) => `@source ${s.not ? 'not ' : ''}${s.inline ? `inline(${quote}${s.path}${quote})` : `${quote}${s.path}${quote}`};`
   return { baseOf, key, spell }
 }

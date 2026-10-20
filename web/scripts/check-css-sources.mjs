@@ -79,7 +79,7 @@ let scan
 try {
   scan = await tailwindScan(STYLE, { plugin: '@tailwindcss/postcss', projectRoot: ROOT })
 } catch (e) {
-  console.error(`✗ css sources: Tailwind cannot compile ${LABEL}\n\n  ${e.message}\n`)
+  console.error(`✗ css sources: Tailwind could not be asked about ${LABEL}\n\n  ${e.message}\n`)
   process.exit(1)
 }
 const read = scanProblems(scan, {

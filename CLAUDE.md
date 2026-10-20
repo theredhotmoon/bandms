@@ -1341,10 +1341,12 @@ without a build: a re-included file is named whatever shape its classes take.
 The compiler and scanner are resolved from `@tailwindcss/postcss`’s **own
 directory** (the admin: `@tailwindcss/vite`’s), not from the app, so they are
 the copies the plugin runs — the plugin pins all three at its version and
-pnpm lays them beside it — and the four versions are checked equal; neither
-app declares them directly. Paths are compared canonical (real path, on-disk
-casing), because the scanner answers that way whatever spelling the shell
-used. A file outside `src/` that must be read for classes is a new `@source`
+pnpm lays them beside it. The stylesheet’s own `@import 'tailwindcss'`
+resolves from `src/` to the `tailwindcss` the app declares, in the guard as
+in the build, so that copy’s version joins the plugin’s four and the run
+stops before scanning if any differs. Paths are compared canonical (real
+path, on-disk casing), because the scanner answers that way whatever
+spelling the shell used. A file outside `src/` that must be read for classes is a new `@source`
 line *and* an entry in that script’s `EXPECTED_SOURCES`, with the reason. The
 admin has the same guard (`app/CLAUDE.md`, guard table); both read
 `packages/style-guards`, which is where the CSS grammar and the scanner call

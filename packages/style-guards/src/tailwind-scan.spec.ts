@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error — a plain .mjs build script, no type declarations
-import { scanProblems, tailwindPackages, tailwindScan } from './tailwind-scan.mjs'
+import { scanProblems, tailwindPackages, tailwindScan, versionProblem } from './tailwind-scan.mjs'
 // @ts-expect-error — a plain .mjs build script, no type declarations
 import { fixtureTest } from './css-sources.mjs'
 // @ts-expect-error — a plain .mjs build script, no type declarations
@@ -18,7 +18,8 @@ import { canonical } from './paths.mjs'
  * the root form that needs no import resolved. The temp path is taken as the
  * disk knows it (on macOS tmpdir() is /var/…, which is /private/var/…).
  */
-const FROM = fileURLToPath(new URL('../../../app/package.json', import.meta.url))
+const APP = fileURLToPath(new URL('../../../app/', import.meta.url))
+const FROM = join(APP, 'package.json')
 const PLUGIN = '@tailwindcss/vite'
 
 let dir: string
@@ -64,7 +65,7 @@ describe('tailwindPackages', () => {
     const { dirs, versions } = tailwindPackages(FROM, PLUGIN)
     expect(Object.keys(versions)).toEqual([PLUGIN, 'tailwindcss', '@tailwindcss/node', '@tailwindcss/oxide'])
     for (const version of Object.values(versions)) expect(version).toMatch(/^\d+\.\d+\.\d+/)
-    expect(new Set(Object.values(versions)).size).toBe(1)
+    expect(versionProblem(versions)).toBeNull()
     // The three are the copies the plugin asked for — its package.json pins each at an exact version — found through its own directory, and real paths.
     const plugin = JSON.parse(readFileSync(join(dirs[PLUGIN], 'package.json'), 'utf8'))
     for (const name of ['tailwindcss', '@tailwindcss/node', '@tailwindcss/oxide']) {
@@ -74,12 +75,26 @@ describe('tailwindPackages', () => {
     }
   })
 
-  it('says which package is missing when one is', () => {
-    expect(() => tailwindPackages(FROM, '@tailwindcss/no-such-plugin')).toThrow(/@tailwindcss\/no-such-plugin is not installed/)
+  it('says which package is missing when one is, and looks only up the ancestor chain', () => {
+    expect(() => tailwindPackages(FROM, '@tailwindcss/no-such-plugin')).toThrow(/@tailwindcss\/no-such-plugin is not installed in any node_modules above/)
+    expect(() => tailwindPackages(join(dir, 'styles', 'entry.css'), PLUGIN)).toThrow(/is not installed/)
+  })
+})
+
+describe('versionProblem', () => {
+  it('passes one version and names every package when they differ', () => {
+    expect(versionProblem({ a: '4.3.3', b: '4.3.3' })).toBeNull()
+    expect(versionProblem({ [PLUGIN]: '4.3.3', tailwindcss: '4.3.3', '@tailwindcss/oxide': '4.3.2' }))
+      .toMatch(/^the Tailwind asked is not one Tailwind: @tailwindcss\/vite 4\.3\.3, tailwindcss 4\.3\.3, @tailwindcss\/oxide 4\.3\.2 —/)
   })
 })
 
 describe('tailwindScan', () => {
+  it('requires the plugin and the project root', async () => {
+    await expect(tailwindScan(style, { projectRoot: dir, from: FROM })).rejects.toThrow(/`plugin` is required/)
+    await expect(tailwindScan(style, { plugin: PLUGIN, from: FROM })).rejects.toThrow(/`projectRoot` is required/)
+  })
+
   it('lists what the scanner reads for a source(none) stylesheet with @source lines', async () => {
     write(['@tailwind utilities source(none);', '@source "../pages";', '@source "../index.html";', '@source not "../pages/**/*.spec.ts";'])
     const s = await scan()
@@ -87,6 +102,7 @@ describe('tailwindScan', () => {
     expect(s.sources.map((x: { pattern: string; negated: boolean }) => [x.pattern, x.negated]))
       .toEqual([['../pages', false], ['../index.html', false], ['../pages/**/*.spec.ts', true]])
     expect(s.files.map(rel)).toEqual(['index.html', 'pages/Home.vue', 'pages/notes.md'])
+    expect(Object.keys(s.versions)).toHaveLength(4)
     expect(scanProblems(s, rules())).toEqual([])
   })
 
@@ -108,7 +124,7 @@ describe('tailwindScan', () => {
     expect(s.files.map(rel)).toContain('pages/deep/thing.spec.ts')
     const problems = scanProblems(s, rules())
     expect(problems[0]).toMatch(/automatic detection/)
-    expect(problems).toContainEqual(expect.stringMatching(/^Tailwind reads README\.md — outside pages\/ and index\.html, so/))
+    expect(problems).toContainEqual(expect.stringMatching(/^Tailwind reads 2 files outside pages\/ and index\.html, so .*: README\.md, styles\/entry\.css$/))
   })
 
   it('reports a named root as the configuration Tailwind read', async () => {
@@ -136,6 +152,14 @@ describe('tailwindScan', () => {
       projectRoot: shouted,
     })).toEqual([])
   })
+
+  it('counts the core the admin stylesheet imports among the versions — the app’s own tailwindcss, not the plugin’s', async () => {
+    // The real admin entry, as the guard calls it: the import resolves from src/ to app/node_modules/tailwindcss.
+    const s = await tailwindScan(join(APP, 'src', 'style.css'), { plugin: PLUGIN, projectRoot: APP })
+    expect(Object.keys(s.versions)).toContain('tailwindcss (imported by the stylesheet)')
+    expect(new Set(Object.values(s.versions)).size).toBe(1)
+    expect(s.files.length).toBeGreaterThan(100)
+  })
 })
 
 describe('scanProblems', () => {
@@ -159,23 +183,32 @@ describe('scanProblems', () => {
     expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/^the Tailwind asked is not one Tailwind: @tailwindcss\/vite 4\.3\.3, tailwindcss 4\.3\.3, @tailwindcss\/node 4\.3\.3, @tailwindcss\/oxide 4\.3\.2 —/)])
   })
 
-  it('names a file read from outside the allowed trees, and the file among them as a file', () => {
-    const s = { ...clean(), files: [...clean().files, canonical(join(dir, 'scripts', 'guard.mjs'))] }
-    expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/^Tailwind reads scripts\/guard\.mjs — outside pages\/ and index\.html, so/)])
+  it('names the files read from outside the allowed trees in one line, the file among them as a file, and no more than five', () => {
+    const one = { ...clean(), files: [...clean().files, canonical(join(dir, 'scripts', 'guard.mjs'))] }
+    expect(scanProblems(one, rules())).toEqual([expect.stringMatching(/^Tailwind reads 1 file outside pages\/ and index\.html, so .*: scripts\/guard\.mjs$/)])
+    const seven = { ...clean(), files: [...clean().files, ...'abcdefg'.split('').map((n) => canonical(join(dir, 'scripts', `${n}.mjs`)))] }
+    expect(scanProblems(seven, rules())).toEqual([expect.stringMatching(/^Tailwind reads 7 files outside .*: scripts\/a\.mjs, scripts\/b\.mjs, scripts\/c\.mjs, scripts\/d\.mjs, scripts\/e\.mjs … and 2 more$/)])
   })
 
-  it('names a fixture read from inside them, by its name', () => {
+  it('names fixtures read from inside them by name, in one line, and says when every not line was taken', () => {
     const s = { ...clean(), files: [...clean().files, canonical(join(dir, 'pages', 'other.spec.ts'))] }
-    expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/reads pages\/other\.spec\.ts — a fixture by its name/)])
+    expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/^Tailwind reads 1 fixture file by name, which the `@source not` line in styles\/entry\.css should exclude — every not line was taken, so Tailwind reads the glob differently from this check: pages\/other\.spec\.ts$/)])
+    const untaken = { ...s, sources: s.sources.slice(0, 2) }
+    expect(scanProblems(untaken, rules())).toEqual([
+      expect.stringMatching(/^Tailwind took no `@source not/),
+      expect.stringMatching(/^Tailwind reads 1 fixture file by name, which the `@source not` line in styles\/entry\.css should exclude: pages\/other\.spec\.ts$/),
+    ])
   })
 
-  it('names a required file the scan did not reach, with the count', () => {
+  it('names a required file the scan did not reach, with the count — or says it is not on disk', () => {
     const s = { ...clean(), files: [canonical(join(dir, 'index.html'))] }
-    expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/does not read pages\/Home\.vue — 1 file\(s\) read/)])
+    expect(scanProblems(s, rules())).toEqual([expect.stringMatching(/does not read pages\/Home\.vue — 1 file read/)])
     expect(scanProblems({ ...clean(), files: [] }, rules())).toEqual([
       expect.stringMatching(/does not read pages\/Home\.vue — it reads no file at all/),
       expect.stringMatching(/does not read index\.html — it reads no file at all/),
     ])
+    expect(scanProblems(clean(), { ...rules(), required: [join(dir, 'pages', 'Gone.vue')] }))
+      .toEqual([expect.stringMatching(/^pages\/Gone\.vue is not on disk — the required list in this check names a file that moved/)])
   })
 
   it('names a source Tailwind took that the check does not expect, and one it did not take', () => {
