@@ -20,6 +20,7 @@ describe('posix', () => {
   it('turns backslashes into slashes and drops the extended-length prefix', () => {
     expect(posix('C:\\Projects\\x\\y.css')).toBe('C:/Projects/x/y.css')
     expect(posix('\\\\?\\C:\\Projects\\x')).toBe('C:/Projects/x')
+    expect(posix('\\\\?\\UNC\\server\\share\\x')).toBe('//server/share/x')
     expect(posix('/already/posix')).toBe('/already/posix')
   })
 })

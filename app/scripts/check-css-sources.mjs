@@ -55,7 +55,7 @@ import { fileURLToPath } from 'node:url'
 import {
   EXPECTED_SOURCES, SENTINELS, TAILWIND_MARK, classSelectors, entryProblems, isFixture, sentinelIn, strayRootProblems, strayRules,
 } from './lib/css-sources.mjs'
-import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
+import { importedCoreNote, scanAdvice, scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -107,14 +107,11 @@ const read = scanProblems(scan, {
 if (read.length) {
   console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
   for (const r of read) console.error('  ' + r)
-  console.error(`
-The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
-make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that @tailwindcss/vite and the
-tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
-version.`)
+  console.error('\n' + scanAdvice(LABEL, '@tailwindcss/vite'))
   process.exit(1)
 }
+const note = importedCoreNote(scan, '@tailwindcss/vite')
+if (note) console.warn(`⚠ css sources: ${note}`)
 
 // ── 3. output ────────────────────────────────────────────────────────────
 let files = []
@@ -162,4 +159,4 @@ Tailwind version makes of \`source(none)\` and the @source lines.`)
 }
 
 const rules = sheets.reduce((n, s) => n + s.selectors.length, 0)
-console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/ or index.html, none a spec`)
+console.log(`✓ css sources: ${rules} class rule(s) in ${files.length} stylesheet(s) clean (${found.sentinel} in ${found.file}), ${sources.length} source line(s) as expected; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/ or index.html, none matching ${EXPECTED_SOURCES.filter((s) => s.not).map((s) => s.path).join(' or ')}`)

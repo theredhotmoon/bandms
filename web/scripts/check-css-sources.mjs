@@ -38,7 +38,7 @@
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { entryProblems, fixtureTest, strayRootProblems } from '../../packages/style-guards/src/css-sources.mjs'
-import { scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
+import { importedCoreNote, scanAdvice, scanProblems, tailwindScan } from '../../packages/style-guards/src/tailwind-scan.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
@@ -91,17 +91,15 @@ const read = scanProblems(scan, {
   isFixture,
   required: [join(SRC, 'layouts', 'BaseLayout.astro'), join(SRC, 'pages', 'index.astro')],
   excluded: [join(SRC, 'lib', 'slugs.test.ts')],
+  quote: "'",
 })
 if (read.length) {
   console.error(`✗ css sources: Tailwind ${scan.versions.tailwindcss} reads ${LABEL} differently from the lines in it\n`)
   for (const r of read) console.error('  ' + r)
-  console.error(`
-The lines in ${LABEL} read correctly, yet Tailwind's own compiler and scanner
-make something else of them. Check what this Tailwind version does with
-\`source(none)\` and the @source lines, and that @tailwindcss/postcss and the
-tailwindcss, @tailwindcss/node and @tailwindcss/oxide it resolves are one
-version.`)
+  console.error('\n' + scanAdvice(LABEL, '@tailwindcss/postcss'))
   process.exit(1)
 }
+const note = importedCoreNote(scan, '@tailwindcss/postcss')
+if (note) console.warn(`⚠ css sources: ${note}`)
 
-console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/, none a test`)
+console.log(`✓ css sources: ${sources.length} source line(s) in ${LABEL} as expected, no other Tailwind root under ${TREES.map((t) => t.label).join(' or ')}; Tailwind ${scan.versions.tailwindcss} reads ${scan.files.length} file(s), all under src/, none matching ${EXPECTED_SOURCES.filter((s) => s.not).map((s) => s.path).join(' or ')}`)
