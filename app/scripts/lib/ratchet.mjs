@@ -82,6 +82,8 @@ export const MIGRATED = [
   'views/admin/MyProfileView.vue',
   'views/admin/MySetupsView.vue',
   'components/admin/forms/BandMemberForm.vue',
+  'components/admin/forms/InstrumentForm.vue',
+  'components/admin/forms/InstrumentQuickAdd.vue',
   'components/band-member',
   'views/admin/ReleasesAdminView.vue',
   'components/admin/forms/ReleaseForm.vue',

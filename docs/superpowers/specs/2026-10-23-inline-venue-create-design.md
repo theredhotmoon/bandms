@@ -148,7 +148,7 @@ a dead end. Best candidates first.
 | `ConcertForm` venue select | Venue | Venues | **yes** | done in this PR |
 | `RefBlockEditor` (post reference block) | concert, album, release, video, press release, shop item | six pages | **yes** (per block) | **done** for concert, release, press coverage and shop item (`RefQuickAdd`); album and music video are left out because their create flows are inline in their views (a photo upload batch, a URL metadata fetch) and extracting them is its own refactor; the clip entity already has *Add a new clip…* |
 | `BandForm` contacts | Author | Authors | no | **done** (`AuthorQuickAdd`); the *add one first* link that left the modal is gone |
-| `BandMemberForm` instruments | Instrument | Instruments | no | the whole block is hidden when there are none |
+| `BandMemberForm` instruments | Instrument | Instruments | no | **done** (`InstrumentQuickAdd`); the instrument form was extracted from `InstrumentsAdminView` into `InstrumentForm` for it, and the block now shows with a hint when there are none |
 | `ConcertForm` lineup pool | Band | Bands | no | shows "no bands yet" |
 | `BatchPhotoUpload` / album edit | Concert, Venue, Tag | three pages | no | two `<select>`s, same shape as the venue one |
 | `UsersAdminView` add/edit user | Band member | Band members | no | `<select>` |
