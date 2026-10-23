@@ -74,7 +74,7 @@ function submit() {
     <div>
       <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
       <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row">
+        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
           <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
           <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.instruments.namePlaceholder')" />
         </div>

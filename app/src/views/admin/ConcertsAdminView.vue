@@ -29,7 +29,7 @@ import type { Concert, ConcertPayload } from '@/types/concert'
 
 const { t } = useI18n()
 
-const { query, create, update, remove } = useConcerts()
+const { query, create, createWithPoster, update, remove } = useConcerts()
 const { query: venuesQ } = useVenues()
 const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()
@@ -113,20 +113,21 @@ function closeModal() { showModal.value = false }
 async function handleSubmit(payload: ConcertPayload, posterFile: File | null, deletePoster: boolean) {
   fieldErrors.value = {}
   try {
-    let concert: Concert
     if (editing.value) {
-      concert = await update.mutateAsync({ id: editing.value.id, payload })
+      const concert: Concert = await update.mutateAsync({ id: editing.value.id, payload })
+      if (posterFile) {
+        await uploadConcertPoster(token.value!, concert.id, posterFile)
+        await queryClient.invalidateQueries({ queryKey: ['concerts'] })
+      } else if (deletePoster) {
+        await deleteConcertPoster(token.value!, concert.id)
+        await queryClient.invalidateQueries({ queryKey: ['concerts'] })
+      }
       toast.success(t('shows.concerts.updated'))
     } else {
-      concert = await create.mutateAsync(payload)
+      // Create, then the poster, in the composable: a failed poster upload is
+      // its own toast and the concert still closes, never a second Create.
+      await createWithPoster(payload, posterFile)
       toast.success(t('shows.concerts.created'))
-    }
-    if (posterFile) {
-      await uploadConcertPoster(token.value!, concert.id, posterFile)
-      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
-    } else if (deletePoster) {
-      await deleteConcertPoster(token.value!, concert.id)
-      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
     }
     closeModal()
   } catch (e) {

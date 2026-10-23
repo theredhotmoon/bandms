@@ -2,6 +2,7 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createTag, deleteTag, fetchTags, updateTag } from '@/api/tags'
 import type { Tag, TagPayload } from '@/types/tag'
+import { appendToList } from '@/utils/queryCache'
 import { sortTagsByLabel, tagLabel, tagTerms } from '@/utils/localeOrder'
 import { useAuth } from './useAuth'
 import { useContentLocaleOrder } from './useContentLocales'
@@ -17,13 +18,8 @@ export function useCreateTag() {
 
   return useMutation({
     mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
-    // The new row goes into the list at once so a picker can tick it before
-    // the refetch lands (the query's `select` re-sorts it into place); the
-    // refetch is not awaited, since `mutateAsync` resolves after `onSuccess`.
-    onSuccess: (tag) => {
-      queryClient.setQueryData<Tag[]>(['tags'], (old) => [...(old ?? []), tag])
-      void queryClient.invalidateQueries({ queryKey: ['tags'] })
-    },
+    // The query's `select` re-sorts the appended row into place.
+    onSuccess: (tag) => appendToList<Tag>(queryClient, ['tags'], tag),
   })
 }
 

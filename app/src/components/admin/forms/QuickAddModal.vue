@@ -14,16 +14,22 @@ import { reportSaveError } from '@/utils/formErrors'
  *
  * The entity's own form goes in the default slot and is wired to the slot
  * props: `:loading`, `:errors`, `@submit="submit"`, `@cancel="cancel"`.
- * `create` is the create-only mutation's `mutateAsync` (useCreateVenue and
- * friends), which appends the row to the list cache so the host's picker
- * shows it the moment this closes.
+ * `create` takes the form's payload plus the file a form may emit beside it
+ * (a concert's poster, a release's cover; `null` when the form has none) and
+ * is expected to append the row to the list cache — the create-only
+ * composables (useCreateVenue and friends, through `appendToList`) do — so
+ * the host's picker shows the row the moment this closes.
+ *
+ * `cancel` goes through the modal's own close request, so a form that emits
+ * `cancel` directly still gets the "Discard changes?" guard the ✕ and Escape
+ * give it.
  */
 const props = defineProps<{
   buttonLabel: string
   title: string
   testId: string
   successMessage: string
-  create: (payload: TPayload) => Promise<TRecord>
+  create: (payload: TPayload, file: File | null) => Promise<TRecord>
   maxWidth?: string
   /** The toast when the save fails; defaults to the generic one. */
   errorMessage?: string
@@ -35,13 +41,14 @@ defineSlots<{
   default(props: {
     loading: boolean
     errors: Record<string, string[]>
-    submit: (payload: TPayload) => void
+    submit: (payload: TPayload, file?: File | null) => void
     cancel: () => void
   }): unknown
 }>()
 
 const { t } = useI18n()
 
+const modal = ref<InstanceType<typeof AdminModal> | null>(null)
 const open = ref(false)
 const loading = ref(false)
 const fieldErrors = ref<Record<string, string[]>>({})
@@ -51,11 +58,15 @@ function openModal(): void {
   open.value = true
 }
 
-async function submit(payload: TPayload): Promise<void> {
+function cancel(): void {
+  modal.value?.requestClose()
+}
+
+async function submit(payload: TPayload, file: File | null = null): Promise<void> {
   fieldErrors.value = {}
   loading.value = true
   try {
-    const record = await props.create(payload)
+    const record = await props.create(payload, file)
     toast.success(props.successMessage)
     open.value = false
     emit('created', record)
@@ -72,8 +83,8 @@ async function submit(payload: TPayload): Promise<void> {
     {{ buttonLabel }}
   </button>
 
-  <AdminModal :open="open" :title="title" :max-width="maxWidth" @close="open = false">
-    <slot :loading="loading" :errors="fieldErrors" :submit="submit" :cancel="() => { open = false }" />
+  <AdminModal ref="modal" :open="open" :title="title" :max-width="maxWidth" @close="open = false">
+    <slot :loading="loading" :errors="fieldErrors" :submit="submit" :cancel="cancel" />
   </AdminModal>
 </template>
 

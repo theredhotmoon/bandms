@@ -38,7 +38,9 @@ test.describe('Admin Band members — instrument from inside the member form', (
     await expect(inner.getByRole('heading', { name: 'Add instrument' })).toBeVisible()
     await expect(outer).toHaveAttribute('inert', '')
 
-    await inner.locator('.trans-row input').first().fill(INSTRUMENT)
+    // By locale, never `.first()`: the first row is whichever language the
+    // band writes in first.
+    await inner.locator('.trans-row[data-locale="en"] input').fill(INSTRUMENT)
     const created = page.waitForResponse(r => r.url().endsWith('/api/instruments') && r.request().method() === 'POST')
     await inner.getByRole('button', { name: 'Save' }).click()
     instrumentId = ((await (await created).json()) as { data: { id: number } }).data.id

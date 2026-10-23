@@ -15,6 +15,8 @@ const props = defineProps<{
   loading?: boolean
   errors?: Record<string, string[]>
   availableInstruments?: Instrument[]
+  /** The instruments query settled: the "none yet" hint must not show while it loads or after it failed. */
+  instrumentsLoaded?: boolean
 }>()
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
@@ -288,8 +290,8 @@ function submit() {
                  reaches it through the cache append in useCreateInstrument. -->
             <InstrumentQuickAdd @created="pickCreatedInstrument($event.id)" />
           </div>
-          <p v-if="!availableInstruments?.length" class="instruments-hint">{{ $t('band.members.form.noInstruments') }}</p>
-          <template v-else>
+          <p v-if="instrumentsLoaded && !availableInstruments?.length" class="instruments-hint">{{ $t('band.members.form.noInstruments') }}</p>
+          <template v-else-if="availableInstruments?.length">
           <p class="instruments-hint">{{ $t('band.members.form.mainInstrumentHint') }}</p>
           <div class="instruments-grid">
             <button

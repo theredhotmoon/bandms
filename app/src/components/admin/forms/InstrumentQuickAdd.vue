@@ -2,12 +2,14 @@
 import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
 import InstrumentForm from '@/components/admin/forms/InstrumentForm.vue'
 import { useCreateInstrument } from '@/composables/useInstruments'
-import type { Instrument } from '@bandms/rider-core'
+import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
 
 /** "+ New instrument" in the band member form. See QuickAddModal. */
 const emit = defineEmits<{ created: [instrument: Instrument] }>()
 
 const create = useCreateInstrument()
+// The shell's `create` takes (payload, file); the mutation wants the payload alone.
+const createRecord = (payload: InstrumentPayload) => create.mutateAsync(payload)
 </script>
 
 <template>
@@ -18,7 +20,7 @@ const create = useCreateInstrument()
     :error-message="$t('more.instruments.saveFailed')"
     test-id="instrument-quick-add"
     max-width="28rem"
-    :create="create.mutateAsync"
+    :create="createRecord"
     @created="emit('created', $event)"
     v-slot="{ loading, errors, submit, cancel }"
   >

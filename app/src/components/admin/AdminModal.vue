@@ -89,6 +89,8 @@ function onKeydown(e: KeyboardEvent) {
 // Focus moves into the dialog on open and back to the opener on close, so a
 // keyboard user is not left on a button behind the overlay.
 let opener: Element | null = null
+// Where focus goes back to once the overlay is gone — set on close, used in onAfterLeave.
+let restoreTo: Element | null = null
 
 watch(() => props.open, async (open) => {
   if (open) {
@@ -106,20 +108,28 @@ watch(() => props.open, async (open) => {
     guard.reset()
     headerObserver?.disconnect()
     headerObserver = null
-    leaveModal(self)
     window.removeEventListener('keydown', onKeydown)
-    // After the next render: the opener may sit in a modal underneath that
-    // is still `inert` until the stack change reaches the DOM, and an inert
-    // element refuses focus silently. Take the opener first and bail if the
-    // modal reopened meanwhile — the open branch owns focus then, and this
-    // continuation must not yank it back out or null the opener it captured.
-    const previous = opener
+    // The stack and the focus restore wait for the overlay to be gone (see
+    // onAfterLeave): leaving the stack here, while the panel still fades for
+    // 150 ms, would hand the next Escape — a double-tap is common — to the
+    // modal underneath and ask to discard *its* form.
+    restoreTo = opener
     opener = null
-    await nextTick()
-    if (props.open) return
-    if (previous instanceof HTMLElement) previous.focus({ preventScroll: true })
   }
 }, { immediate: true })
+
+async function onAfterLeave() {
+  leaveModal(self)
+  // After the next render: the opener may sit in a modal underneath that is
+  // `inert` until the stack change reaches the DOM, and an inert element
+  // refuses focus silently. Bail if the modal reopened meanwhile — the open
+  // branch owns focus then, and this must not yank it back out.
+  const previous = restoreTo
+  restoreTo = null
+  await nextTick()
+  if (props.open) return
+  if (previous instanceof HTMLElement) previous.focus({ preventScroll: true })
+}
 
 onBeforeUnmount(() => {
   leaveModal(self)
@@ -130,7 +140,7 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <Transition name="modal">
+    <Transition name="modal" @after-leave="onAfterLeave">
       <div v-if="open" class="modal-overlay" :style="{ zIndex }" :inert="!topmost || undefined">
         <div class="modal-backdrop" @click="requestClose" />
         <div

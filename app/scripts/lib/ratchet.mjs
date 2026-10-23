@@ -52,6 +52,8 @@ export const MIGRATED = [
   'components/admin/AdminThemeSwitch.vue',
   'components/auth/SignInForm.vue',
   'composables/useEpkVersionHistory.ts',
+  'composables/useConcerts.ts',
+  'composables/useReleases.ts',
   'components/admin/ConcertTicketsManager.vue',
   'components/admin/forms/ConcertForm.vue',
   'components/admin/forms/TourForm.vue',

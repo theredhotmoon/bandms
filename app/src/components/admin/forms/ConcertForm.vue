@@ -84,7 +84,9 @@ function clearPoster() {
 // ── Form state ────────────────────────────────────────────────
 const form = reactive({
   name:             emptyBag(),
-  venue_id:         0,
+  // '' (not 0) while unset: only an empty-valued option is a placeholder the
+  // browser lets `required` act on — see RefBlockEditor for the full note.
+  venue_id:         '' as number | '',
   date:             '',
   doors_open:       '',
   sound_check_time: '',
@@ -139,7 +141,7 @@ const { cancel } = useModalGuard(canSave, () => emit('cancel'))
 watch(() => props.initial, (concert) => {
   if (!concert) {
     form.name             = emptyBag()
-    form.venue_id         = 0
+    form.venue_id         = ''
     form.date             = ''
     form.doors_open       = ''
     form.sound_check_time = ''
@@ -161,7 +163,7 @@ watch(() => props.initial, (concert) => {
   posterPreview.value = null
   posterDelete.value  = false
   const toHHMM = (t: string | null | undefined) => (t ?? '').slice(0, 5)
-  form.venue_id         = concert.venue?.id ?? 0
+  form.venue_id         = concert.venue?.id ?? ''
   form.date             = concert.date ?? ''
   form.doors_open       = toHHMM(concert.doors_open)
   form.sound_check_time = toHHMM(concert.sound_check_time)
@@ -319,7 +321,7 @@ function submit() {
   emit('submit', {
     name: compactBag(form.name),
     description: compactBag(form.description),
-    venue_id:          form.venue_id,
+    venue_id:          Number(form.venue_id),
     date:              form.date,
     doors_open:        form.doors_open       || null,
     sound_check_time:  form.sound_check_time || null,
@@ -362,7 +364,7 @@ function submit() {
         <VenueQuickAdd :tags="tags" @created="form.venue_id = $event.id" />
       </div>
       <select v-model="form.venue_id" required class="field-input">
-        <option :value="0" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
+        <option value="" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
         <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
       </select>
       <p v-if="errors?.venue_id" class="field-error">{{ errors.venue_id[0] }}</p>

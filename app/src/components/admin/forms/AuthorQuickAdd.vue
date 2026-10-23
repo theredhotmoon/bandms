@@ -2,7 +2,7 @@
 import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
 import AuthorForm from '@/components/admin/forms/AuthorForm.vue'
 import { useCreateAuthor } from '@/composables/useAuthors'
-import type { Author } from '@/types/author'
+import type { Author, AuthorPayload } from '@/types/author'
 
 /**
  * "+ New contact" beside the band form's contact picker. The author form's
@@ -15,6 +15,8 @@ import type { Author } from '@/types/author'
 const emit = defineEmits<{ created: [author: Author] }>()
 
 const create = useCreateAuthor()
+// The shell's `create` takes (payload, file); the mutation wants the payload alone.
+const createRecord = (payload: AuthorPayload) => create.mutateAsync(payload)
 </script>
 
 <template>
@@ -23,7 +25,7 @@ const create = useCreateAuthor()
     :title="$t('content.authors.modalNew')"
     :success-message="$t('content.authors.created')"
     test-id="author-quick-add"
-    :create="create.mutateAsync"
+    :create="createRecord"
     @created="emit('created', $event)"
     v-slot="{ loading, errors, submit, cancel }"
   >

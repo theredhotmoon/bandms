@@ -285,6 +285,7 @@ async function confirmDelete() {
               :loading="update.isPending.value"
               :errors="updateErrors"
               :available-instruments="instrumentsQuery.data.value ?? []"
+        :instruments-loaded="instrumentsQuery.isSuccess.value"
               @submit="handleUpdate"
               @cancel="openId = null"
             />
@@ -321,6 +322,7 @@ async function confirmDelete() {
         :loading="create.isPending.value"
         :errors="createErrors"
         :available-instruments="instrumentsQuery.data.value ?? []"
+        :instruments-loaded="instrumentsQuery.isSuccess.value"
         @submit="handleCreate"
         @cancel="showCreateModal = false; createErrors = {}"
       />

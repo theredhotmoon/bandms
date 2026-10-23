@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createVenue, deleteVenue, fetchVenues, updateVenue } from '@/api/venues'
 import type { Venue, VenuePayload } from '@/types/venue'
+import { appendToList } from '@/utils/queryCache'
 import { useAuth } from './useAuth'
 
 /**
@@ -14,16 +15,7 @@ export function useCreateVenue() {
 
   return useMutation({
     mutationFn: (payload: VenuePayload) => createVenue(token.value!, payload),
-    // The new row goes into the cache at once and the refetch is not awaited:
-    // `mutateAsync` resolves after `onSuccess`, so returning the invalidate
-    // promise would hold "Saving…" until the list came back — through every
-    // retry, when the list fetch is the thing that is failing. Seeding from
-    // `[]` covers that failing-fetch case too, where the list never loaded
-    // and the select would otherwise hold an id with no option behind it.
-    onSuccess: (venue) => {
-      queryClient.setQueryData<Venue[]>(['venues'], (old) => [...(old ?? []), venue])
-      void queryClient.invalidateQueries({ queryKey: ['venues'] })
-    },
+    onSuccess: (venue) => appendToList<Venue>(queryClient, ['venues'], venue),
   })
 }
 

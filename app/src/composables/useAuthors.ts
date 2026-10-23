@@ -2,6 +2,7 @@ import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createAuthor, deleteAuthor, fetchAuthor, fetchAuthors, updateAuthor } from '@/api/authors'
 import type { Author, AuthorSummary, AuthorPayload } from '@/types/author'
+import { appendToList } from '@/utils/queryCache'
 import { useAuth } from './useAuth'
 
 /**
@@ -15,13 +16,9 @@ export function useCreateAuthor() {
 
   return useMutation({
     mutationFn: (payload: AuthorPayload) => createAuthor(token.value!, payload),
-    // The new row goes into the list at once so a picker can tick it before
-    // the refetch lands; the refetch is not awaited (`mutateAsync` resolves
-    // after `onSuccess`, and awaiting it would hold "Saving…" through every
-    // retry when the list fetch is the thing that is failing).
+    // Author writes touch `author_bands`, so the bands list is stale too.
     onSuccess: (author) => {
-      queryClient.setQueryData<AuthorSummary[]>(['authors'], (old) => [...(old ?? []), author])
-      void queryClient.invalidateQueries({ queryKey: ['authors'] })
+      appendToList<AuthorSummary>(queryClient, ['authors'], author)
       void queryClient.invalidateQueries({ queryKey: ['bands'] })
     },
   })

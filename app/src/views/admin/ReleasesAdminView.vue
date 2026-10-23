@@ -44,7 +44,7 @@ const typeBadgeStyle = (type: string) => ({
   borderColor: `color-mix(in srgb, ${TYPE_BADGE[type]} 27%, transparent)`, // i18n-ignore: CSS
 })
 
-const { query, create, update, remove } = useReleases()
+const { query, create, createWithCover, update, remove } = useReleases()
 const { token } = useAuth()
 const { t } = useI18n()
 const queryClient = useQueryClient()
@@ -113,19 +113,19 @@ function closeModal() {
 async function handleSubmit(payload: ReleasePayload, coverFile: File | null, deleteCover: boolean) {
   fieldErrors.value = {}
   try {
-    let result: Release
     if (isCreating.value) {
-      result = await create.mutateAsync(payload)
+      // Create, then the cover, in the composable: a failed cover upload is
+      // its own toast and the release still closes, never a second Create.
+      await createWithCover(payload, coverFile)
     } else {
-      result = await update.mutateAsync({ id: editingId.value!, payload })
-    }
-
-    if (coverFile) {
-      await uploadReleaseCover(token.value!, result.id, coverFile)
-      await queryClient.invalidateQueries({ queryKey: ['releases'] })
-    } else if (deleteCover) {
-      await deleteReleaseCover(token.value!, result.id)
-      await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      const result: Release = await update.mutateAsync({ id: editingId.value!, payload })
+      if (coverFile) {
+        await uploadReleaseCover(token.value!, result.id, coverFile)
+        await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      } else if (deleteCover) {
+        await deleteReleaseCover(token.value!, result.id)
+        await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      }
     }
 
     toast.success(isCreating.value ? t('media.releases.created') : t('media.releases.updated'))

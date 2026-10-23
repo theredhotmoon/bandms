@@ -306,8 +306,15 @@ reference block are the same shape: a button, a
 nested `AdminModal`, the entity's existing form, a create-only mutation
 that appends to the list cache, one `created` emit — `QuickAddModal` is
 that shell, and a new quick-add is the form in its slot plus the
-mutation; `RefQuickAdd` keeps its own because its save is create *then*
-upload and differs per entity). The nested form's `useModalGuard`
+mutation. Its `create` takes `(payload, file)`, so a form that emits a
+file beside its payload (a concert's poster, a release's cover) fits too:
+`RefQuickAdd` hands it `useCreateConcertWithPoster()` and friends, the
+same create-then-upload sequence the concerts and releases pages use, in
+which a failed upload is its own toast and the record still closes —
+never a form left open whose second Create makes a duplicate. The cache
+append is `appendToList()` in `src/utils/queryCache.ts`; every
+`useCreate*()` composable goes through it, so a new list-backed create
+should too.) The nested form's `useModalGuard`
 injects the *nearest* modal, so its discard guard is its own, and
 `src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
 open — decides the rest from open order alone: the topmost answers Escape

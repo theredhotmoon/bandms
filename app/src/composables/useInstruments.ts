@@ -7,6 +7,7 @@ import {
   deleteInstrument,
 } from '@/api/instruments'
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
+import { appendToList } from '@/utils/queryCache'
 
 const QKEY = ['instruments']
 
@@ -21,14 +22,7 @@ export function useCreateInstrument() {
 
   return useMutation({
     mutationFn: (payload: InstrumentPayload) => createInstrument(token.value!, payload),
-    // The new row goes into the list at once so a picker can select it before
-    // the refetch lands; the refetch is not awaited (`mutateAsync` resolves
-    // after `onSuccess`, and awaiting it would hold "Saving…" through every
-    // retry when the list fetch is the thing that is failing).
-    onSuccess: (instrument) => {
-      qc.setQueryData<Instrument[]>(QKEY, (old) => [...(old ?? []), instrument])
-      void qc.invalidateQueries({ queryKey: QKEY })
-    },
+    onSuccess: (instrument) => appendToList<Instrument>(qc, QKEY, instrument),
   })
 }
 

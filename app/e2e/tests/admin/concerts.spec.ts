@@ -429,11 +429,15 @@ test.describe('Admin Concerts — inline venue create', () => {
     await expect(outer).toHaveAttribute('inert', '')
     await expect(inner).not.toHaveAttribute('inert', '')
 
-    // Clean nested modal: Escape closes it and nothing else.
+    // Clean nested modal: Escape closes it and nothing else — and a second
+    // Escape in the same breath, while the nested panel is still fading out,
+    // must not reach the concert modal and ask to discard the concert.
     await inner.locator('input').first().focus()
+    await page.keyboard.press('Escape')
     await page.keyboard.press('Escape')
     await expect(page.locator('.modal-overlay')).toHaveCount(1)
     await expect(outer).toBeVisible()
+    await expect(page.getByRole('dialog').filter({ hasText: 'Discard changes' })).toHaveCount(0)
     await expect(outer).not.toHaveAttribute('inert', '')
     // Focus returns to the button that opened the nested modal.
     await expect(outer.getByTestId('venue-quick-add')).toBeFocused()

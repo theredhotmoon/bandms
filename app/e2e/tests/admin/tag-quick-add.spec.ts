@@ -35,7 +35,7 @@ test.describe('Admin — tag from inside a form', () => {
     await expect(inner.getByRole('heading', { name: 'New tag' })).toBeVisible()
     await expect(outer).toHaveAttribute('inert', '')
 
-    await inner.locator('.trans-row input').first().fill(name)
+    await inner.locator('.trans-row[data-locale="en"] input').fill(name)
     const created = page.waitForResponse(r => r.url().endsWith('/api/tags') && r.request().method() === 'POST')
     await inner.getByRole('button', { name: /create|save/i }).click()
     createdIds.push(((await (await created).json()) as { data: { id: number } }).data.id)

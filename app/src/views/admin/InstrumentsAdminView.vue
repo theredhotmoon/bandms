@@ -44,7 +44,9 @@ const tc = useTableControls<Instrument>({
 
 function openCreate() { editing.value = null; fieldErrors.value = {}; showModal.value = true }
 function openEdit(i: Instrument) { editing.value = i; fieldErrors.value = {}; showModal.value = true }
-function closeModal() { showModal.value = false; editing.value = null }
+// Only the flag: `editing` stays for the 150 ms leave fade, or the form
+// would blank and retitle mid-fade. openCreate/openEdit set it anew.
+function closeModal() { showModal.value = false }
 
 async function submit(payload: InstrumentPayload) {
   fieldErrors.value = {}

@@ -2,7 +2,7 @@
 import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
 import TagForm from '@/components/admin/forms/TagForm.vue'
 import { useCreateTag } from '@/composables/useTags'
-import type { Tag } from '@/types/tag'
+import type { Tag, TagPayload } from '@/types/tag'
 
 /**
  * "+ New tag" beside a tag checkbox list (concert, venue, album, and the
@@ -13,6 +13,8 @@ import type { Tag } from '@/types/tag'
 const emit = defineEmits<{ created: [tag: Tag] }>()
 
 const create = useCreateTag()
+// The shell's `create` takes (payload, file); the mutation wants the payload alone.
+const createRecord = (payload: TagPayload) => create.mutateAsync(payload)
 </script>
 
 <template>
@@ -21,7 +23,7 @@ const create = useCreateTag()
     :title="$t('more.tags.newTitle')"
     :success-message="$t('more.tags.created')"
     test-id="tag-quick-add"
-    :create="create.mutateAsync"
+    :create="createRecord"
     @created="emit('created', $event)"
     v-slot="{ loading, errors, submit, cancel }"
   >
