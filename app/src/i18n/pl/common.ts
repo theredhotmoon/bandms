@@ -23,6 +23,7 @@ export default {
   },
   fields: {
     name: 'Nazwa',
+    newTag: '+ Nowy tag',
     description: 'Opis',
     title: 'Tytuł',
     email: 'E-mail',

@@ -14,14 +14,28 @@ import {
   updateShopVariant,
   deleteShopVariant,
 } from '@/api/shop'
-import type { ShopItemPayload } from '@/types/shop'
+import type { ShopItemPayload, ShopItemSummary } from '@/types/shop'
 import type { ShopItemVariantPayload } from '@/api/shop'
+import { appendToList } from '@/utils/queryCache'
 import { useAuth } from './useAuth'
+
+const SHOP_ITEMS_KEY = ['shop-items']
+
+/** The create mutation on its own (no list observer); appends the row to the list cache. */
+export function useCreateShopItem() {
+  const { token } = useAuth()
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: ShopItemPayload) => createShopItem(token.value!, payload),
+    onSuccess: (item) => appendToList<ShopItemSummary>(qc, SHOP_ITEMS_KEY, item),
+  })
+}
 
 export function useShop() {
   const { token } = useAuth()
   const qc = useQueryClient()
-  const qk = ['shop-items']
+  const qk = SHOP_ITEMS_KEY
   const ckk = ['shop-currencies']
 
   const query = useQuery({
@@ -36,10 +50,7 @@ export function useShop() {
     enabled: computed(() => !!token.value),
   })
 
-  const create = useMutation({
-    mutationFn: (payload: ShopItemPayload) => createShopItem(token.value!, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
-  })
+  const create = useCreateShopItem()
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ShopItemPayload }) =>

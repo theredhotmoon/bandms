@@ -435,6 +435,8 @@ export default {
       mainInstrumentHint: 'Used as icon on the stage plot & tech rider.',
       alsoPlays: 'Also plays',
       alsoPlaysHint: 'Optional. All instruments this member can cover.',
+      newInstrument: '+ New instrument',
+      noInstruments: 'No instruments defined yet. Add one with “+ New instrument”.',
       update: 'Update member',
       create: 'Add member',
     },

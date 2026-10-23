@@ -431,6 +431,8 @@ export default {
       mainInstrumentHint: 'Używany jako ikona na planie sceny i riderze technicznym.',
       alsoPlays: 'Gra także na',
       alsoPlaysHint: 'Opcjonalnie. Wszystkie instrumenty, które ta osoba może obsłużyć.',
+      newInstrument: '+ Nowy instrument',
+      noInstruments: 'Brak zdefiniowanych instrumentów. Dodaj pierwszy przyciskiem „+ Nowy instrument”.',
       update: 'Zapisz zmiany',
       create: 'Dodaj osobę',
     },

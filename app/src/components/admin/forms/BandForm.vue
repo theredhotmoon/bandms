@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
+import AuthorQuickAdd from '@/components/admin/forms/AuthorQuickAdd.vue'
 import type { Band, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
 
@@ -76,6 +77,11 @@ function toggleAuthor(id: number) {
   else authorIds.value.splice(i, 1)
 }
 
+/** A contact just created from this form is ticked, never un-ticked. */
+function pickAuthor(id: number) {
+  if (!authorIds.value.includes(id)) authorIds.value.push(id)
+}
+
 function contactDetail(a: AuthorSummary): string {
   return a.email || a.phone || a.whatsapp || t('more.bands.form.noDetails')
 }
@@ -105,16 +111,17 @@ function submit() {
 
     <!-- Contact people -->
     <div>
-      <label class="field-label">
-        {{ $t('more.bands.form.contacts') }}
-        <span v-if="authorIds.length" class="contact-count">{{ authorIds.length }}</span>
-      </label>
+      <div class="contact-label-row">
+        <label class="field-label">
+          {{ $t('more.bands.form.contacts') }}
+          <span v-if="authorIds.length" class="contact-count">{{ authorIds.length }}</span>
+        </label>
+        <!-- The pool is the view's authors query; the created row reaches it
+             through the cache append in useCreateAuthor, and is ticked here. -->
+        <AuthorQuickAdd @created="pickAuthor($event.id)" />
+      </div>
 
-      <i18n-t v-if="!authors.length" keypath="more.bands.form.noAuthors" tag="p" class="contact-empty" scope="global">
-        <template #link>
-          <RouterLink :to="{ name: 'admin-authors' }" class="contact-link">{{ $t('more.bands.form.addOneFirst') }}</RouterLink>
-        </template>
-      </i18n-t>
+      <p v-if="!authors.length" class="contact-empty">{{ $t('more.bands.form.noAuthors') }}</p>
 
       <template v-else>
         <p v-if="selectedAuthors.length" class="contact-chips">
@@ -167,9 +174,8 @@ function submit() {
   border-radius: 9999px; background: var(--c-2a2a2a); color: var(--c-c0c0c0);
   font-size: var(--fs-2xs); font-weight: 700;
 }
+.contact-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .contact-empty { font-size: var(--fs-xs); color: var(--c-64748b); line-height: 1.5; }
-.contact-link { color: var(--c-9ca3af); text-decoration: underline; }
-.contact-link:hover { color: var(--c-e2e8f0); }
 
 .contact-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem; }
 .contact-chip {

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
+import RefQuickAdd from './RefQuickAdd.vue'
 import { useClips } from '@/composables/useClips'
 import { detectProvider, providerLabel } from '@/utils/postBlocks'
 import { reportSaveError } from '@/utils/formErrors'
@@ -37,6 +38,13 @@ const ENTITY_LABELS = computed<Record<RefEntity, string>>(() => ({
 
 const entity = computed(() => (props.payload.entity as RefEntity) ?? 'concert')
 const items  = computed(() => props.entities[entity.value] ?? [])
+
+// A record just created from this block (RefQuickAdd) is already in `items`:
+// the entity's create mutation appends it to the list cache the host reads,
+// so the id below has an option behind it before any refetch lands.
+function onQuickAdded(id: number) {
+  emit('update:payload', { ...props.payload, id })
+}
 
 function setEntity(value: RefEntity) {
   // Reset the id: an id from the previous list means nothing in the new one.
@@ -97,6 +105,7 @@ function onClipSelect(value: string) {
         <option value="" disabled>{{ $t('content.blocks.ref.chooseItem') }}</option>
         <option v-for="i in items" :key="i.id" :value="i.id">{{ i.label }}</option>
       </select>
+      <RefQuickAdd v-if="entity !== 'clip'" :entity="entity" @created="onQuickAdded" />
 
       <!-- `required` is dropped while the add panel is open so the Attach
            button can be clicked without the browser demanding a selection;

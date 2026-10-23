@@ -11,6 +11,7 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import { useTagLabel } from '@/composables/useTagLabel'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 
 const tagName = useTagLabel()
 const props = defineProps<{
@@ -61,7 +62,9 @@ const expanded = reactive<Record<SectionKey, boolean>>({
 // summary and checkbox list — and the order is the order the forms always had.
 const sections = computed<Section[]>(() => {
   const out: Section[] = []
-  if (props.tags?.length) out.push({
+  // Tags alone are offered even when the list is empty: the section carries
+  // "+ New tag", so an empty list is a reason to show it, not to hide it.
+  if (props.tags) out.push({
     key: 'tags', title: t('common.relations.tags'), testid: 'relations-tags',
     items: props.tags.map(x => ({ id: x.id, label: tagName(x) })),
     ids: tagIds.value, set: v => (tagIds.value = v),
@@ -122,6 +125,11 @@ function toggle(section: Section, id: number) {
   section.set(arr)
 }
 
+/** A record just created from inside a section is ticked, never un-ticked. */
+function pick(section: Section, id: number) {
+  if (!section.ids.includes(id)) section.set([...section.ids, id])
+}
+
 function label(text: string, count: number) {
   return count ? `${text} (${count})` : text
 }
@@ -150,6 +158,7 @@ function summary(section: Section): string {
           <input type="checkbox" :checked="s.ids.includes(i.id)" @change="toggle(s, i.id)" />
           <span>{{ i.label }} <span v-if="i.badge" class="assoc-badge">{{ i.badge }}</span></span>
         </label>
+        <TagQuickAdd v-if="s.key === 'tags'" @created="pick(s, $event.id)" />
       </div>
     </div>
   </div>

@@ -1,13 +1,14 @@
 /**
- * The rule that decides whether "+ Add concert" is a dead end.
+ * The rule that decides what the concerts page says about the venue list.
  *
  * This exists as a pure function because the bug it guards against was two
- * conditions drifting apart: the button disabled on `!hasVenues` while the
- * explanatory notice required `isSuccess`. They agreed on every state except
- * a failed fetch — where the button went dead and the notice stayed hidden,
- * leaving a tooltip blaming a missing venue for what was really a 401 or a
- * proxy blip. Deriving both from one `noVenues` makes that divergence
- * unrepresentable; these tests pin the states down.
+ * conditions drifting apart: "+ Add concert" disabled on `!hasVenues` while
+ * the explanatory notice required `isSuccess`. They agreed on every state
+ * except a failed fetch — where the button went dead and the notice stayed
+ * hidden, leaving a tooltip blaming a missing venue for what was really a
+ * 401 or a proxy blip. The button is no longer disabled at all (the concert
+ * form can create a venue itself), but the notice and the failure message
+ * still derive from one gate, and these tests pin the states down.
  */
 
 import { describe, expect, it } from 'vitest'

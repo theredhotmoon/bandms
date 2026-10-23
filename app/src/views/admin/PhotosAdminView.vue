@@ -8,6 +8,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BatchPhotoUpload from '@/components/admin/forms/BatchPhotoUpload.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import AlbumAddPhotos from '@/components/admin/forms/AlbumAddPhotos.vue'
 import PhotoMemberTags from '@/components/admin/PhotoMemberTags.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
@@ -101,6 +102,11 @@ function toggleTag(id: number) {
   const idx = editForm.tag_ids.indexOf(id)
   if (idx === -1) editForm.tag_ids.push(id)
   else editForm.tag_ids.splice(idx, 1)
+}
+
+/** A tag just created from this form is ticked, never un-ticked. */
+function pickTag(id: number) {
+  if (!editForm.tag_ids.includes(id)) editForm.tag_ids.push(id)
 }
 
 async function saveEdit() {
@@ -403,8 +409,11 @@ async function confirmDelete() {
             <input v-model="editForm.published_at" type="datetime-local" class="field-input" />
           </div>
         </div>
-        <div v-if="tagsQ.data.value?.length">
-          <label class="field-label">{{ $t('media.photos.tags') }}</label>
+        <div>
+          <div class="tag-label-row">
+            <label class="field-label">{{ $t('media.photos.tags') }}</label>
+            <TagQuickAdd @created="pickTag($event.id)" />
+          </div>
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
               <input type="checkbox" :checked="editForm.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -489,6 +498,7 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
+.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }

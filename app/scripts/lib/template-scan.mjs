@@ -224,11 +224,14 @@ export function copyHits(src, { isTs = false } = {}) {
   // computed is exactly as user-facing as one in the template.
   const sStart = src.indexOf('<script')
   const sEnd = src.lastIndexOf('</script>')
+  // The range starts on the line AFTER the opening tag: `<script setup lang="ts"
+  // generic="TPayload, TRecord">` is markup, and judging it as code reported a
+  // generic component's type parameters as copy.
   const range = isTs
     ? [0, lines.length]
     : sStart === -1
       ? null
-      : [countLines(src.slice(0, sStart)) - 1, countLines(src.slice(0, sEnd))]
+      : [countLines(src.slice(0, sStart)), countLines(src.slice(0, sEnd))]
   if (range) {
     for (let i = range[0]; i < range[1]; i++) {
       const l = lines[i]

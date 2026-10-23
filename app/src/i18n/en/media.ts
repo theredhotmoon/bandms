@@ -23,6 +23,7 @@ export default {
       actions: 'Actions',
     },
     created: 'Release created',
+    coverFailed: 'Release saved, but the cover could not be uploaded — add it from the release’s edit form.',
     updated: 'Release updated',
     deleted: 'Release deleted',
     deleteFailed: 'Failed to delete',

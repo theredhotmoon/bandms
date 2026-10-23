@@ -8,6 +8,7 @@ import type { Localized } from '@/types/website-module'
 import type { Concert } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Tag } from '@/types/tag'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import type { UploadProgress } from '@/api/albums'
 import { useTagLabel } from '@/composables/useTagLabel'
 
@@ -63,6 +64,11 @@ function toggleTag(id: number) {
   const idx = meta.tag_ids.indexOf(id)
   if (idx === -1) meta.tag_ids.push(id)
   else meta.tag_ids.splice(idx, 1)
+}
+
+/** A tag just created from this form is ticked, never un-ticked. */
+function pickTag(id: number) {
+  if (!meta.tag_ids.includes(id)) meta.tag_ids.push(id)
 }
 
 const canUpload = computed(() =>
@@ -138,8 +144,11 @@ function submit() {
         <label class="field-label">{{ $t('media.batchUpload.description') }}</label>
         <textarea v-model="meta.description" class="field-input" rows="2" :placeholder="$t('media.batchUpload.descriptionPlaceholder')" />
       </div>
-      <div v-if="tags.length">
-        <label class="field-label">{{ $t('media.batchUpload.tags') }}</label>
+      <div>
+        <div class="tag-label-row">
+          <label class="field-label">{{ $t('media.batchUpload.tags') }}</label>
+          <TagQuickAdd @created="pickTag($event.id)" />
+        </div>
         <div class="checkbox-list">
           <label v-for="t in tags" :key="t.id" class="checkbox-item">
             <input type="checkbox" :checked="meta.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -169,6 +178,7 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .batch-upload  { display: flex; flex-direction: column; gap: 1rem; }
 .album-meta    { display: flex; flex-direction: column; gap: 0.75rem; }
 .meta-full     { display: flex; flex-direction: column; gap: 0.25rem; }

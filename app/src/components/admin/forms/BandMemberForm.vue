@@ -3,6 +3,7 @@ import { reactive, ref, watch, onUnmounted } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import InstrumentQuickAdd from '@/components/admin/forms/InstrumentQuickAdd.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import { guessInstrumentType } from '@bandms/rider-core'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
@@ -14,6 +15,8 @@ const props = defineProps<{
   loading?: boolean
   errors?: Record<string, string[]>
   availableInstruments?: Instrument[]
+  /** The instruments query settled: the "none yet" hint must not show while it loads or after it failed. */
+  instrumentsLoaded?: boolean
 }>()
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
@@ -106,6 +109,15 @@ function selectMainInstrument(id: number) {
   if (!form.instrument_ids.includes(id)) {
     form.instrument_ids.push(id)
   }
+}
+
+/**
+ * An instrument just created from this form: the member's main one if they
+ * have none yet, otherwise one they also play. Never un-selects anything.
+ */
+function pickCreatedInstrument(id: number) {
+  if (form.main_instrument_id == null) selectMainInstrument(id)
+  else if (!form.instrument_ids.includes(id)) form.instrument_ids.push(id)
 }
 
 function toggleAlsoPlays(id: number) {
@@ -269,10 +281,17 @@ function submit() {
         </div>
 
         <!-- Instruments -->
-        <div v-if="availableInstruments?.length">
+        <div>
 
           <!-- Main instrument (single-select radio cards) -->
-          <div class="member-links-heading">{{ $t('band.members.form.mainInstrument') }}</div>
+          <div class="instruments-heading-row">
+            <div class="member-links-heading">{{ $t('band.members.form.mainInstrument') }}</div>
+            <!-- The list is the view's instruments query; the created row
+                 reaches it through the cache append in useCreateInstrument. -->
+            <InstrumentQuickAdd @created="pickCreatedInstrument($event.id)" />
+          </div>
+          <p v-if="instrumentsLoaded && !availableInstruments?.length" class="instruments-hint">{{ $t('band.members.form.noInstruments') }}</p>
+          <template v-else-if="availableInstruments?.length">
           <p class="instruments-hint">{{ $t('band.members.form.mainInstrumentHint') }}</p>
           <div class="instruments-grid">
             <button
@@ -311,6 +330,7 @@ function submit() {
               {{ inst.name }}
             </label>
           </div>
+          </template>
 
         </div>
 
@@ -350,6 +370,7 @@ function submit() {
   min-width: 9rem;
 }
 
+.instruments-heading-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .instruments-grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .instruments-hint {
   font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.375rem; margin-top: -0.25rem;
