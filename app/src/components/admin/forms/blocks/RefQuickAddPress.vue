@@ -12,10 +12,9 @@ import { useTags } from '@/composables/useTags'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PressReleasePayload } from '@/types/press-release'
-import type { RefQuickAddCreated } from './RefQuickAdd.vue'
 
 /** The press-coverage half of RefQuickAdd — the press page's form and save. */
-const emit = defineEmits<{ created: [item: RefQuickAddCreated]; cancel: [] }>()
+const emit = defineEmits<{ created: [id: number]; cancel: [] }>()
 
 const { t } = useI18n()
 const { create } = usePressReleases()
@@ -33,7 +32,7 @@ async function handleSubmit(payload: PressReleasePayload): Promise<void> {
   try {
     const press = await create.mutateAsync(payload)
     toast.success(t('content.press.created'))
-    emit('created', { id: press.id, label: press.og_title ?? press.url })
+    emit('created', press.id)
   } catch (e) {
     reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }

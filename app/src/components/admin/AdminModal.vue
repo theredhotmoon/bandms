@@ -110,10 +110,14 @@ watch(() => props.open, async (open) => {
     window.removeEventListener('keydown', onKeydown)
     // After the next render: the opener may sit in a modal underneath that
     // is still `inert` until the stack change reaches the DOM, and an inert
-    // element refuses focus silently.
-    await nextTick()
-    if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
+    // element refuses focus silently. Take the opener first and bail if the
+    // modal reopened meanwhile — the open branch owns focus then, and this
+    // continuation must not yank it back out or null the opener it captured.
+    const previous = opener
     opener = null
+    await nextTick()
+    if (props.open) return
+    if (previous instanceof HTMLElement) previous.focus({ preventScroll: true })
   }
 }, { immediate: true })
 

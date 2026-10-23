@@ -1,66 +1,31 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { ref } from 'vue'
-import { toast } from 'vue-sonner'
-import AdminModal from '@/components/admin/AdminModal.vue'
+import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
 import VenueForm from '@/components/admin/forms/VenueForm.vue'
 import { useCreateVenue } from '@/composables/useVenues'
-import { reportSaveError } from '@/utils/formErrors'
-import type { Venue, VenuePayload } from '@/types/venue'
+import type { Venue } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 
 /**
- * "+ New venue" beside a venue select: opens the full venue form in a modal
- * stacked over whatever form the select belongs to, creates the venue, and
- * hands it back through `created` so the host can select it. The host form
- * is left exactly as it was — this component never touches it, and the
- * nested AdminModal scopes Escape and the discard guard to the venue form.
- *
- * Tags come in as a prop and the mutation is the create-only composable, so
- * opening the host form costs no extra list fetches.
+ * "+ New venue" beside a venue select. Tags come in as a prop and the
+ * mutation is the create-only composable, so opening the host form costs
+ * no extra list fetches. See QuickAddModal for the shared behaviour.
  */
 defineProps<{ tags: Tag[] }>()
 const emit = defineEmits<{ created: [venue: Venue] }>()
 
-const { t } = useI18n()
 const create = useCreateVenue()
-
-const open = ref(false)
-const fieldErrors = ref<Record<string, string[]>>({})
-
-function openModal(): void {
-  fieldErrors.value = {}
-  open.value = true
-}
-
-async function handleSubmit(payload: VenuePayload): Promise<void> {
-  fieldErrors.value = {}
-  try {
-    const venue = await create.mutateAsync(payload)
-    toast.success(t('shows.venues.created'))
-    open.value = false
-    emit('created', venue)
-  } catch (e) {
-    reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
-  }
-}
 </script>
 
 <template>
-  <button type="button" class="btn-add" data-testid="venue-quick-add" @click="openModal">
-    {{ $t('shows.concerts.form.newVenue') }}
-  </button>
-
-  <AdminModal :open="open" :title="$t('shows.venues.modalNew')" @close="open = false">
-    <VenueForm
-      :initial="null"
-      :tags="tags"
-      :loading="create.isPending.value"
-      :errors="fieldErrors"
-      @submit="handleSubmit"
-      @cancel="open = false"
-    />
-  </AdminModal>
+  <QuickAddModal
+    :button-label="$t('shows.concerts.form.newVenue')"
+    :title="$t('shows.venues.modalNew')"
+    :success-message="$t('shows.venues.created')"
+    test-id="venue-quick-add"
+    :create="create.mutateAsync"
+    @created="emit('created', $event)"
+    v-slot="{ loading, errors, submit, cancel }"
+  >
+    <VenueForm :initial="null" :tags="tags" :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
+  </QuickAddModal>
 </template>
-
-<style scoped src="../form-styles.css" />

@@ -13,7 +13,6 @@ import { useMusicVideos } from '@/composables/useMusicVideos'
 import { reportSaveError } from '@/utils/formErrors'
 import type { PostFilters } from '@/api/posts'
 import type { ShopItemPayload } from '@/types/shop'
-import type { RefQuickAddCreated } from './RefQuickAdd.vue'
 
 /**
  * The shop-item half of RefQuickAdd — the shop page's form and save. Photos
@@ -21,7 +20,7 @@ import type { RefQuickAddCreated } from './RefQuickAdd.vue'
  * item gets its pictures on the Shop page, exactly as a freshly created one
  * does there.
  */
-const emit = defineEmits<{ created: [item: RefQuickAddCreated]; cancel: [] }>()
+const emit = defineEmits<{ created: [id: number]; cancel: [] }>()
 
 const { t } = useI18n()
 const { currenciesQuery, create } = useShop()
@@ -39,7 +38,7 @@ async function handleSubmit(payload: ShopItemPayload): Promise<void> {
   try {
     const item = await create.mutateAsync(payload)
     toast.success(t('more.shop.created'))
-    emit('created', { id: item.id, label: item.name })
+    emit('created', item.id)
   } catch (e) {
     reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
   }

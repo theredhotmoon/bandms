@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
-import RefQuickAdd, { type RefQuickAddCreated } from './RefQuickAdd.vue'
+import RefQuickAdd from './RefQuickAdd.vue'
 import { useClips } from '@/composables/useClips'
 import { detectProvider, providerLabel } from '@/utils/postBlocks'
 import { reportSaveError } from '@/utils/formErrors'
@@ -37,21 +37,13 @@ const ENTITY_LABELS = computed<Record<RefEntity, string>>(() => ({
 }))
 
 const entity = computed(() => (props.payload.entity as RefEntity) ?? 'concert')
+const items  = computed(() => props.entities[entity.value] ?? [])
 
-// A record just created from this block (RefQuickAdd) is listed from the
-// moment it exists: the host's list is a query that refetches after the
-// create, and until it lands the select would hold an id with no option
-// behind it. Once the real row is in the list, the stand-in is dropped by id.
-const justCreated = ref<Partial<Record<RefEntity, RefQuickAddCreated>>>({})
-const items = computed(() => {
-  const list = props.entities[entity.value] ?? []
-  const extra = justCreated.value[entity.value]
-  return extra && !list.some(i => i.id === extra.id) ? [...list, extra] : list
-})
-
-function onQuickAdded(item: RefQuickAddCreated) {
-  justCreated.value = { ...justCreated.value, [entity.value]: item }
-  emit('update:payload', { ...props.payload, id: item.id })
+// A record just created from this block (RefQuickAdd) is already in `items`:
+// the entity's create mutation appends it to the list cache the host reads,
+// so the id below has an option behind it before any refetch lands.
+function onQuickAdded(id: number) {
+  emit('update:payload', { ...props.payload, id })
 }
 
 function setEntity(value: RefEntity) {

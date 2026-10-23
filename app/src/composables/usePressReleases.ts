@@ -19,7 +19,13 @@ export function usePressReleases() {
 
   const create = useMutation({
     mutationFn: (payload: PressReleasePayload) => createPressRelease(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['press-releases'] }),
+    // The new row goes into the list at once (a reference block or picker may
+    // select it before the refetch lands); the refetch is not awaited, since
+    // `mutateAsync` resolves after `onSuccess`.
+    onSuccess: (press) => {
+      queryClient.setQueryData<PressReleaseSummary[]>(['press-releases'], (old) => [...(old ?? []), press])
+      void queryClient.invalidateQueries({ queryKey: ['press-releases'] })
+    },
   })
 
   const update = useMutation({

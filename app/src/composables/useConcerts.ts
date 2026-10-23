@@ -14,7 +14,13 @@ export function useConcerts() {
 
   const create = useMutation({
     mutationFn: (payload: ConcertPayload) => createConcert(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['concerts'] }),
+    // The new row goes into the list at once (a reference block or picker may
+    // select it before the refetch lands); the refetch is not awaited, since
+    // `mutateAsync` resolves after `onSuccess`.
+    onSuccess: (concert) => {
+      queryClient.setQueryData<Concert[]>(['concerts'], (old) => [...(old ?? []), concert])
+      void queryClient.invalidateQueries({ queryKey: ['concerts'] })
+    },
   })
 
   const update = useMutation({

@@ -19,7 +19,13 @@ export function useReleases() {
 
   const create = useMutation({
     mutationFn: (payload: ReleasePayload) => createRelease(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['releases'] }),
+    // The new row goes into the list at once (a reference block or picker may
+    // select it before the refetch lands); the refetch is not awaited, since
+    // `mutateAsync` resolves after `onSuccess`.
+    onSuccess: (release) => {
+      queryClient.setQueryData<ReleaseSummary[]>(qk.value, (old) => [...(old ?? []), release])
+      void queryClient.invalidateQueries({ queryKey: ['releases'] })
+    },
   })
 
   const update = useMutation({

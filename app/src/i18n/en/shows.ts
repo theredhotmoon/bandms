@@ -6,6 +6,7 @@ export default {
     empty: 'No concerts yet.',
     noMatch: 'No concerts match your search.',
     created: 'Concert created',
+    posterFailed: 'Concert saved, but the poster could not be uploaded — add it from the concert’s edit form.',
     updated: 'Concert updated',
     deleted: 'Concert deleted',
     needVenue: 'No venues yet — add one from the concert form, or on the Venues page.',

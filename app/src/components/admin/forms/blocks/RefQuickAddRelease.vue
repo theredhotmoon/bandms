@@ -10,10 +10,9 @@ import { useAuth } from '@/composables/useAuth'
 import { uploadReleaseCover } from '@/api/releases'
 import { reportSaveError } from '@/utils/formErrors'
 import type { ReleasePayload } from '@/types/release'
-import type { RefQuickAddCreated } from './RefQuickAdd.vue'
 
 /** The release half of RefQuickAdd — the releases page's save, cover included. */
-const emit = defineEmits<{ created: [item: RefQuickAddCreated]; cancel: [] }>()
+const emit = defineEmits<{ created: [id: number]; cancel: [] }>()
 
 const { t } = useI18n()
 const { token } = useAuth()
@@ -22,20 +21,32 @@ const { create } = useReleases()
 const { query: membersQ } = useBandMembers()
 
 const fieldErrors = ref<Record<string, string[]>>({})
+const uploading = ref(false)
 
 async function handleSubmit(payload: ReleasePayload, coverFile: File | null): Promise<void> {
   fieldErrors.value = {}
+  let id: number
   try {
-    const release = await create.mutateAsync(payload)
-    if (coverFile) {
-      await uploadReleaseCover(token.value!, release.id, coverFile)
-      await queryClient.invalidateQueries({ queryKey: ['releases'] })
-    }
-    toast.success(t('media.releases.created'))
-    emit('created', { id: release.id, label: release.title })
+    id = (await create.mutateAsync(payload)).id
   } catch (e) {
     reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
+    return
   }
+  // The release exists from here on, whatever happens to the cover — see
+  // RefQuickAddConcert for why a failed upload must not keep the modal open.
+  if (coverFile) {
+    uploading.value = true
+    try {
+      await uploadReleaseCover(token.value!, id, coverFile)
+      await queryClient.invalidateQueries({ queryKey: ['releases'] })
+    } catch (e) {
+      reportSaveError(e, t('media.releases.coverFailed'))
+    } finally {
+      uploading.value = false
+    }
+  }
+  toast.success(t('media.releases.created'))
+  emit('created', id)
 }
 </script>
 
@@ -43,7 +54,7 @@ async function handleSubmit(payload: ReleasePayload, coverFile: File | null): Pr
   <ReleaseForm
     :initial="null"
     :members="membersQ.data.value ?? []"
-    :loading="create.isPending.value"
+    :loading="create.isPending.value || uploading"
     :errors="fieldErrors"
     @submit="handleSubmit"
     @cancel="emit('cancel')"

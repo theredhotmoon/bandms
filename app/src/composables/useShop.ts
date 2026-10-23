@@ -14,7 +14,7 @@ import {
   updateShopVariant,
   deleteShopVariant,
 } from '@/api/shop'
-import type { ShopItemPayload } from '@/types/shop'
+import type { ShopItemPayload, ShopItemSummary } from '@/types/shop'
 import type { ShopItemVariantPayload } from '@/api/shop'
 import { useAuth } from './useAuth'
 
@@ -38,7 +38,13 @@ export function useShop() {
 
   const create = useMutation({
     mutationFn: (payload: ShopItemPayload) => createShopItem(token.value!, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    // The new row goes into the list at once (a reference block or picker may
+    // select it before the refetch lands); the refetch is not awaited, since
+    // `mutateAsync` resolves after `onSuccess`.
+    onSuccess: (item) => {
+      qc.setQueryData<ShopItemSummary[]>(qk, (old) => [...(old ?? []), item])
+      void qc.invalidateQueries({ queryKey: qk })
+    },
   })
 
   const update = useMutation({

@@ -13,14 +13,13 @@ import { useAuth } from '@/composables/useAuth'
 import { uploadConcertPoster } from '@/api/concerts'
 import { reportSaveError } from '@/utils/formErrors'
 import type { ConcertPayload } from '@/types/concert'
-import type { RefQuickAddCreated } from './RefQuickAdd.vue'
 
 /**
- * The concert half of RefQuickAdd: the same form and the same save sequence
- * as the concerts page (create, then the poster), mounted only while the
- * nested modal is open so its list queries do not run under every post.
+ * The concert half of RefQuickAdd: the concerts page's form and save
+ * sequence (create, then the poster), mounted only while the nested modal is
+ * open so its list queries do not run under every post.
  */
-const emit = defineEmits<{ created: [item: RefQuickAddCreated]; cancel: [] }>()
+const emit = defineEmits<{ created: [id: number]; cancel: [] }>()
 
 const { t } = useI18n()
 const { token } = useAuth()
@@ -32,25 +31,33 @@ const { query: tagsQ } = useTags()
 const { query: membersQ } = useBandMembers()
 
 const fieldErrors = ref<Record<string, string[]>>({})
+const uploading = ref(false)
 
 async function handleSubmit(payload: ConcertPayload, posterFile: File | null): Promise<void> {
   fieldErrors.value = {}
+  let id: number
   try {
-    const concert = await create.mutateAsync(payload)
-    if (posterFile) {
-      await uploadConcertPoster(token.value!, concert.id, posterFile)
-      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
-    }
-    toast.success(t('shows.concerts.created'))
-    // Mirrors PostForm's concert label so the row reads the same before and
-    // after the list refetch.
-    emit('created', {
-      id: concert.id,
-      label: `${concert.date} — ${concert.venue?.name ?? t('content.posts.venueTba')}`,
-    })
+    id = (await create.mutateAsync(payload)).id
   } catch (e) {
     reportSaveError(e, t('common.state.somethingWentWrong'), fieldErrors)
+    return
   }
+  // The concert exists from here on, whatever happens to the poster: the
+  // block gets it and the modal closes, so a failed upload cannot be "fixed"
+  // by pressing Create again and making a second concert.
+  if (posterFile) {
+    uploading.value = true
+    try {
+      await uploadConcertPoster(token.value!, id, posterFile)
+      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
+    } catch (e) {
+      reportSaveError(e, t('shows.concerts.posterFailed'))
+    } finally {
+      uploading.value = false
+    }
+  }
+  toast.success(t('shows.concerts.created'))
+  emit('created', id)
 }
 </script>
 
@@ -61,7 +68,7 @@ async function handleSubmit(payload: ConcertPayload, posterFile: File | null): P
     :bands="bandsQ.data.value ?? []"
     :tags="tagsQ.data.value ?? []"
     :members="membersQ.data.value ?? []"
-    :loading="create.isPending.value"
+    :loading="create.isPending.value || uploading"
     :errors="fieldErrors"
     @submit="handleSubmit"
     @cancel="emit('cancel')"

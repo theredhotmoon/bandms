@@ -304,7 +304,10 @@ sits in the concerts view's modal (`AuthorQuickAdd` in `BandForm`,
 `InstrumentQuickAdd` in `BandMemberForm` and `RefQuickAdd` in the post
 reference block are the same shape: a button, a
 nested `AdminModal`, the entity's existing form, a create-only mutation
-that appends to the list cache, one `created` emit). The nested form's `useModalGuard`
+that appends to the list cache, one `created` emit — `QuickAddModal` is
+that shell, and a new quick-add is the form in its slot plus the
+mutation; `RefQuickAdd` keeps its own because its save is create *then*
+upload and differs per entity). The nested form's `useModalGuard`
 injects the *nearest* modal, so its discard guard is its own, and
 `src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
 open — decides the rest from open order alone: the topmost answers Escape

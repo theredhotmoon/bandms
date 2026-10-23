@@ -57,6 +57,7 @@ export const MIGRATED = [
   'components/admin/forms/TourForm.vue',
   'components/admin/forms/VenueForm.vue',
   'components/admin/forms/VenueQuickAdd.vue',
+  'components/admin/forms/QuickAddModal.vue',
   'views/admin/ConcertTicketListView.vue',
   'views/admin/ConcertsAdminView.vue',
   'views/admin/DoorCheckView.vue',
