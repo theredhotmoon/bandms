@@ -6,6 +6,27 @@ import { sortTagsByLabel, tagLabel, tagTerms } from '@/utils/localeOrder'
 import { useAuth } from './useAuth'
 import { useContentLocaleOrder } from './useContentLocales'
 
+/**
+ * The create mutation on its own, for a component that creates tags but
+ * never lists them (TagQuickAdd): `useTags()` would add a second observer on
+ * the list and refetch it on every mount.
+ */
+export function useCreateTag() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
+    // The new row goes into the list at once so a picker can tick it before
+    // the refetch lands (the query's `select` re-sorts it into place); the
+    // refetch is not awaited, since `mutateAsync` resolves after `onSuccess`.
+    onSuccess: (tag) => {
+      queryClient.setQueryData<Tag[]>(['tags'], (old) => [...(old ?? []), tag])
+      void queryClient.invalidateQueries({ queryKey: ['tags'] })
+    },
+  })
+}
+
 export function useTags() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
@@ -22,10 +43,7 @@ export function useTags() {
     select: computed(() => (tags: Tag[]) => sortTagsByLabel(tags, order.value)),
   })
 
-  const create = useMutation({
-    mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
-  })
+  const create = useCreateTag()
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: TagPayload }) =>

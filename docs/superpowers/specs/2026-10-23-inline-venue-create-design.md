@@ -152,7 +152,7 @@ a dead end. Best candidates first.
 | `ConcertForm` lineup pool | Band | Bands | no | shows "no bands yet" |
 | `BatchPhotoUpload` / album edit | Concert, Venue, Tag | three pages | no | two `<select>`s, same shape as the venue one |
 | `UsersAdminView` add/edit user | Band member | Band members | no | `<select>` |
-| Tag checkbox lists (`ConcertForm`, `VenueForm`, `PostForm`, `PressReleaseForm`, `ShopItemForm`) | Tag | Tags | no | a `TagForm` is small; a quick-add would be cheap |
+| Tag checkbox lists (`ConcertForm`, `VenueForm`, `PostForm`, `PressReleaseForm`, `ShopItemForm`, plus the album forms) | Tag | Tags | no | **done** (`TagQuickAdd`): beside the four plain checkbox lists, and inside the relations panel's Tags section, which is now offered even when the list is empty |
 | `EntityRelationsPanel` consumers (clip, post, press release, shop item) | concerts, releases, members… | many | no | empty sections are hidden with no hint at all |
 | `ShopItemForm` categories / currencies | Category, Currency | modals on the same Shop page | no | already same-page; a hint exists |
 | `TourForm` concerts | Concert | Concerts | no | shows "no concerts" |

@@ -6,6 +6,7 @@ import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -278,6 +279,11 @@ function toggleTag(id: number) {
   else form.tag_ids.splice(idx, 1)
 }
 
+/** A tag just created from this form is ticked, never un-ticked. */
+function pickTag(id: number) {
+  if (!form.tag_ids.includes(id)) form.tag_ids.push(id)
+}
+
 function addLink() {
   const label = newLinkLabel.value.trim()
   const url   = newLinkUrl.value.trim()
@@ -529,7 +535,10 @@ function submit() {
 
     <!-- Tags -->
     <div>
-      <label class="field-label">{{ $t('common.fields.tags') }}</label>
+      <div class="tag-label-row">
+        <label class="field-label">{{ $t('common.fields.tags') }}</label>
+        <TagQuickAdd @created="pickTag($event.id)" />
+      </div>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -640,6 +649,9 @@ function submit() {
   background: var(--c-1e3a5f); color: var(--c-60a5fa); width: 2rem; text-align: center;
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
+
+/* ── Tags ───────────────────────────────────────────────────── */
+.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 
 /* ── Venue ──────────────────────────────────────────────────── */
 .venue-label-row {

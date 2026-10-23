@@ -4,6 +4,7 @@ import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
@@ -200,6 +201,11 @@ function toggleTag(id: number) {
   else form.tag_ids.splice(idx, 1)
 }
 
+/** A tag just created from this form is ticked, never un-ticked. */
+function pickTag(id: number) {
+  if (!form.tag_ids.includes(id)) form.tag_ids.push(id)
+}
+
 function submit() {
   emit('submit', {
     name:            form.name,
@@ -294,7 +300,10 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
     <!-- Tags -->
     <div>
-      <label class="field-label">{{ $t('common.fields.tags') }}</label>
+      <div class="tag-label-row">
+        <label class="field-label">{{ $t('common.fields.tags') }}</label>
+        <TagQuickAdd @created="pickTag($event.id)" />
+      </div>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -318,6 +327,8 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+
 /* Address grid: street(flex) | number(fixed) on row 1, postcode(fixed) | city(flex) on row 2 */
 .address-grid {
   display: grid;
