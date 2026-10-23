@@ -300,7 +300,10 @@ listener, and skips a consumed key.
 
 **A modal may open inside another modal**, and nothing else is needed:
 `VenueQuickAdd` renders an `AdminModal` from inside `ConcertForm`, which
-sits in the concerts view's modal. The nested form's `useModalGuard`
+sits in the concerts view's modal (`AuthorQuickAdd` in `BandForm` and
+`RefQuickAdd` in the post reference block are the same shape: a button, a
+nested `AdminModal`, the entity's existing form, a create-only mutation
+that appends to the list cache, one `created` emit). The nested form's `useModalGuard`
 injects the *nearest* modal, so its discard guard is its own, and
 `src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
 open — decides the rest from open order alone: the topmost answers Escape

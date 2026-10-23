@@ -112,6 +112,7 @@ export const MIGRATED = [
   'views/admin/InstrumentsAdminView.vue',
   'views/admin/BandsAdminView.vue',
   'components/admin/forms/BandForm.vue',
+  'components/admin/forms/AuthorQuickAdd.vue',
   'views/admin/FanAccountsAdminView.vue',
   'components/admin/forms/TagForm.vue',
   'components/admin/forms/ShopItemForm.vue',

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
+import RefQuickAdd, { type RefQuickAddCreated } from './RefQuickAdd.vue'
 import { useClips } from '@/composables/useClips'
 import { detectProvider, providerLabel } from '@/utils/postBlocks'
 import { reportSaveError } from '@/utils/formErrors'
@@ -36,7 +37,22 @@ const ENTITY_LABELS = computed<Record<RefEntity, string>>(() => ({
 }))
 
 const entity = computed(() => (props.payload.entity as RefEntity) ?? 'concert')
-const items  = computed(() => props.entities[entity.value] ?? [])
+
+// A record just created from this block (RefQuickAdd) is listed from the
+// moment it exists: the host's list is a query that refetches after the
+// create, and until it lands the select would hold an id with no option
+// behind it. Once the real row is in the list, the stand-in is dropped by id.
+const justCreated = ref<Partial<Record<RefEntity, RefQuickAddCreated>>>({})
+const items = computed(() => {
+  const list = props.entities[entity.value] ?? []
+  const extra = justCreated.value[entity.value]
+  return extra && !list.some(i => i.id === extra.id) ? [...list, extra] : list
+})
+
+function onQuickAdded(item: RefQuickAddCreated) {
+  justCreated.value = { ...justCreated.value, [entity.value]: item }
+  emit('update:payload', { ...props.payload, id: item.id })
+}
 
 function setEntity(value: RefEntity) {
   // Reset the id: an id from the previous list means nothing in the new one.
@@ -97,6 +113,7 @@ function onClipSelect(value: string) {
         <option value="" disabled>{{ $t('content.blocks.ref.chooseItem') }}</option>
         <option v-for="i in items" :key="i.id" :value="i.id">{{ i.label }}</option>
       </select>
+      <RefQuickAdd v-if="entity !== 'clip'" :entity="entity" @created="onQuickAdded" />
 
       <!-- `required` is dropped while the add panel is open so the Attach
            button can be clicked without the browser demanding a selection;

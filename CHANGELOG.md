@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-10-23 (venue from the concert form)
 
 ### Added
+- **A contact person can be created from inside the band form**: *+ New contact* beside the contact picker opens the author form over the band; the new person is listed and ticked on save, and the band's name and other ticks are untouched. The *add one first* link that used to leave the modal is gone.
+- **A post's reference block can create what it points at**: *+ New concert / release / press coverage / shop item* beside the item select opens that entity's own admin form over the post, and the block points at the new record the moment it is saved, before the list has refetched. Photo albums and music videos are not offered, because their create flows (a photo upload, a URL metadata fetch) live inline in their own pages.
 - **A venue can be created from inside the concert form**: a *+ New venue* button beside the venue select opens the full venue form in a modal over the concert, and saving selects the new venue with everything already typed into the concert left as it was. Until now a missing venue meant closing the concert, adding the venue on its own page and starting over, and with no venues at all the *+ Add concert* button was disabled outright. It is enabled now; the notice stays and points at the in-form button.
 
 ### Fixed
