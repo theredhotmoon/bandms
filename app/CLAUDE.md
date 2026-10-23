@@ -300,20 +300,24 @@ listener, and skips a consumed key.
 
 **A modal may open inside another modal**, and nothing else is needed:
 `VenueQuickAdd` renders an `AdminModal` from inside `ConcertForm`, which
-sits in the concerts view's modal. Both teleport to `<body>` at one
-z-index, so the later one paints on top; the nested form's `useModalGuard`
-injects the *nearest* modal, so its discard guard is its own; and
-`src/utils/modalStack.ts` records which open instance is topmost, so only
-that one answers Escape — every open modal listens on `window`, and the
-outer one registered first. **That stack is a plain module on purpose.**
-Top-level code in `<script setup>` runs once per instance, so a "shared"
-array declared there is private to each modal and every one believes it is
-on top; the first cut did exactly that and the nested modal ignored Escape.
+sits in the concerts view's modal. The nested form's `useModalGuard`
+injects the *nearest* modal, so its discard guard is its own, and
+`src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
+open — decides the rest from open order alone: the topmost answers Escape
+(every open modal listens on `window`, and the outer one registered
+first), the ones beneath it are `inert` (Tab cannot walk out of the nested
+modal into the form under it), and each overlay's z-index is its depth
+(so what paints on top never depends on where a `Teleport` landed in
+`<body>`). A quick-add inside a *permanently mounted* host would otherwise
+teleport before a sibling modal opened later and be painted under it.
+**That stack is a plain module on purpose.** Top-level code in
+`<script setup>` runs once per instance, so a "shared" array declared
+there is private to each modal and every one believes it is on top; the
+first cut did exactly that and the nested modal ignored Escape.
 
-The outer modal's own `ConfirmDialog` teleports *before* the nested overlay
-in `<body>`, so if the outer ever asked to discard while a nested modal was
-open the question would sit underneath it. The stack is what prevents that;
-do not add a second way for an outer modal to request close while covered.
+An inert element refuses focus silently, so `AdminModal` restores focus to
+its opener only after `nextTick()` — the opener usually sits in the modal
+underneath, which is inert until the stack change reaches the DOM.
 
 ### Composables
 - Named `use*`, placed in `src/composables/`.

@@ -424,11 +424,19 @@ test.describe('Admin Concerts — inline venue create', () => {
     const inner = page.locator('.modal-overlay').nth(1)
     await expect(inner).toBeVisible()
 
+    // The covered modal is inert, so Tab cannot walk into the concert form
+    // underneath; it comes back the moment the nested modal closes.
+    await expect(outer).toHaveAttribute('inert', '')
+    await expect(inner).not.toHaveAttribute('inert', '')
+
     // Clean nested modal: Escape closes it and nothing else.
     await inner.locator('input').first().focus()
     await page.keyboard.press('Escape')
     await expect(page.locator('.modal-overlay')).toHaveCount(1)
     await expect(outer).toBeVisible()
+    await expect(outer).not.toHaveAttribute('inert', '')
+    // Focus returns to the button that opened the nested modal.
+    await expect(outer.getByTestId('venue-quick-add')).toBeFocused()
     await expect(outer.locator('.trans-row[data-locale="en"] input').first()).toHaveValue(concertName)
 
     // Dirty nested modal: Escape asks, and Discard throws away the venue

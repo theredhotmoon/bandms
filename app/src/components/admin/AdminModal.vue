@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import { provideModalGuard } from '@/composables/useDirtyGuard'
-import { enterModal, isTopmostModal, leaveModal } from '@/utils/modalStack'
+import { enterModal, isTopmostModal, leaveModal, modalDepth } from '@/utils/modalStack'
 
 /**
  * The discard guard: while the modal holds unsaved input, every way out
@@ -28,9 +28,14 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ close: [] }>()
 
-// This instance's place in the shared open-modal stack (src/utils/modalStack):
-// a modal nested in another must be the one that answers Escape.
+// This instance's place in the shared open-modal stack (src/utils/modalStack).
+// The topmost modal answers Escape; the ones under it are `inert`, so Tab
+// and Shift+Tab cannot walk out of a nested modal into the form beneath it,
+// and each paints at a z-index of its depth, so what is on top is decided
+// by open order rather than by where each Teleport happened to land.
 const self = Symbol('admin-modal')
+const topmost = computed(() => isTopmostModal(self))
+const zIndex = computed(() => 50 + Math.max(modalDepth(self), 0))
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
@@ -103,6 +108,10 @@ watch(() => props.open, async (open) => {
     headerObserver = null
     leaveModal(self)
     window.removeEventListener('keydown', onKeydown)
+    // After the next render: the opener may sit in a modal underneath that
+    // is still `inert` until the stack change reaches the DOM, and an inert
+    // element refuses focus silently.
+    await nextTick()
     if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
     opener = null
   }
@@ -118,7 +127,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="open" class="modal-overlay">
+      <div v-if="open" class="modal-overlay" :style="{ zIndex }" :inert="!topmost || undefined">
         <div class="modal-backdrop" @click="requestClose" />
         <div
           ref="panel"
@@ -145,6 +154,7 @@ onBeforeUnmount(() => {
 
   <ConfirmDialog
     :open="confirming"
+    :z-index="zIndex + 1"
     :title="$t('common.confirm.discardTitle')"
     :message="$t('common.confirm.discardMessage')"
     :confirm-label="$t('common.confirm.discard')"

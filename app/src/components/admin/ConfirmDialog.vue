@@ -5,7 +5,9 @@ import { onBeforeUnmount, watch } from 'vue'
  * `title` and `confirmLabel` default to the delete wording; a discard-changes
  * prompt passes its own so the button names the action it performs.
  */
-const props = defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean }>()
+// `zIndex`: a dialog asked by a modal must paint above that modal, and a
+// nested AdminModal sits one step above the base (see utils/modalStack).
+const props = defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean; zIndex?: number }>()
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 
 // Escape backs out of the question. preventDefault() marks the key as
@@ -26,7 +28,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div v-if="open" class="fixed inset-0 flex items-center justify-center p-4" :style="{ zIndex: zIndex ?? 50 }">
       <div class="absolute inset-0 bg-(--scrim) backdrop-blur-sm" @click="$emit('cancel')" />
       <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" class="relative z-10 w-full max-w-sm rounded-card shadow-(--shadow-modal)" style="background:var(--c-111111); border:1px solid var(--c-222222);">
         <div class="p-6">

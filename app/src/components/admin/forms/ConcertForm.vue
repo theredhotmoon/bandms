@@ -353,7 +353,7 @@ function submit() {
         <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
         <!-- The venue list is the view's query; the created row reaches the
              select through the cache append in useVenues.create. -->
-        <VenueQuickAdd @created="form.venue_id = $event.id" />
+        <VenueQuickAdd :tags="tags" @created="form.venue_id = $event.id" />
       </div>
       <select v-model="form.venue_id" required class="field-input">
         <option :value="0" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>

@@ -4,10 +4,10 @@ import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import VenueForm from '@/components/admin/forms/VenueForm.vue'
-import { useVenues } from '@/composables/useVenues'
-import { useTags } from '@/composables/useTags'
+import { useCreateVenue } from '@/composables/useVenues'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Venue, VenuePayload } from '@/types/venue'
+import type { Tag } from '@/types/tag'
 
 /**
  * "+ New venue" beside a venue select: opens the full venue form in a modal
@@ -15,12 +15,15 @@ import type { Venue, VenuePayload } from '@/types/venue'
  * hands it back through `created` so the host can select it. The host form
  * is left exactly as it was — this component never touches it, and the
  * nested AdminModal scopes Escape and the discard guard to the venue form.
+ *
+ * Tags come in as a prop and the mutation is the create-only composable, so
+ * opening the host form costs no extra list fetches.
  */
+defineProps<{ tags: Tag[] }>()
 const emit = defineEmits<{ created: [venue: Venue] }>()
 
 const { t } = useI18n()
-const { create } = useVenues()
-const { query: tagsQ } = useTags()
+const create = useCreateVenue()
 
 const open = ref(false)
 const fieldErrors = ref<Record<string, string[]>>({})
@@ -50,9 +53,8 @@ async function handleSubmit(payload: VenuePayload): Promise<void> {
 
   <AdminModal :open="open" :title="$t('shows.venues.modalNew')" @close="open = false">
     <VenueForm
-      v-if="open"
       :initial="null"
-      :tags="tagsQ.data.value ?? []"
+      :tags="tags"
       :loading="create.isPending.value"
       :errors="fieldErrors"
       @submit="handleSubmit"

@@ -1,7 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import { enterModal, isTopmostModal, leaveModal } from './modalStack'
+import { computed } from 'vue'
+import { enterModal, isTopmostModal, leaveModal, modalDepth } from './modalStack'
 
 describe('modalStack', () => {
+  it('depth counts from the bottom and is -1 for a closed modal', () => {
+    const outer = Symbol('outer')
+    const inner = Symbol('inner')
+    expect(modalDepth(outer)).toBe(-1)
+    enterModal(outer)
+    enterModal(inner)
+    expect(modalDepth(outer)).toBe(0)
+    expect(modalDepth(inner)).toBe(1)
+    leaveModal(inner)
+    leaveModal(outer)
+  })
+
+  it('is reactive, so a computed in a modal follows another modal opening', () => {
+    const outer = Symbol('outer')
+    const inner = Symbol('inner')
+    const outerOnTop = computed(() => isTopmostModal(outer))
+    enterModal(outer)
+    expect(outerOnTop.value).toBe(true)
+    enterModal(inner)
+    expect(outerOnTop.value).toBe(false)
+    leaveModal(inner)
+    expect(outerOnTop.value).toBe(true)
+    leaveModal(outer)
+  })
+
   it('the last modal to open is the only topmost one', () => {
     const outer = Symbol('outer')
     const inner = Symbol('inner')

@@ -23,9 +23,9 @@ export interface VenueQueryState {
 export interface VenueGate {
   /** At least one venue is known to exist. */
   hasVenues: boolean
-  /** Confirmed empty: disable creation and explain why. */
+  /** Confirmed empty: show the notice pointing at the form's own "New venue". */
   noVenues: boolean
-  /** The list could not be loaded; creation stays available as a backstop. */
+  /** The list could not be loaded; say so rather than claim it is empty. */
   venuesFailed: boolean
 }
 

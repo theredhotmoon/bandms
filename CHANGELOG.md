@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A venue can be created from inside the concert form**: a *+ New venue* button beside the venue select opens the full venue form in a modal over the concert, and saving selects the new venue with everything already typed into the concert left as it was. Until now a missing venue meant closing the concert, adding the venue on its own page and starting over, and with no venues at all the *+ Add concert* button was disabled outright. It is enabled now; the notice stays and points at the in-form button.
 
 ### Fixed
-- **Escape in a modal opened over another modal acts on the top one only**: every open modal listened for Escape on `window` and the outer one registered first, so the key pressed inside a nested modal would have asked to discard the outer form. `AdminModal` now keeps a shared stack of open instances (`src/utils/modalStack.ts`) and only the topmost answers. The discard guard already scoped itself through provide/inject and needed no change; `concerts.spec.ts` proves both.
+- **Escape in a modal opened over another modal acts on the top one only**: every open modal listened for Escape on `window` and the outer one registered first, so the key pressed inside a nested modal would have asked to discard the outer form. `AdminModal` now keeps a shared stack of open instances (`src/utils/modalStack.ts`): only the topmost answers Escape, the ones beneath are `inert` so Tab cannot leave the nested modal, and each paints at the z-index of its depth. The discard guard already scoped itself through provide/inject and needed no change; `concerts.spec.ts` proves all of it.
 
 ## [Unreleased] — 2026-10-20 (tailwind scanner check, follow-up)
 
