@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { expectToast, openModal, confirmDelete, searchTable } from '../../fixtures/test-base'
+import { adminHeaders } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -303,20 +304,25 @@ test.describe('Admin Concerts — form validation', () => {
 test.describe('Admin Concerts — venue gate', () => {
   const VENUES = (url: URL) => url.pathname === '/api/venues'
   const ADD = { name: '+ Add concert' }
-  const EMPTY_NOTICE = 'You need at least one venue before you can add a concert.'
+  const EMPTY_NOTICE = 'No venues yet — add one from the concert form, or on the Venues page.'
 
-  test('no venues: create is blocked and explained', async ({ page }) => {
+  test('no venues: create stays open and the notice points at the form', async ({ page }) => {
     await page.route(VENUES, r =>
       r.fulfill({ status: 200, contentType: 'application/json', body: '{"data":[]}' }),
     )
     await page.goto('/admin/concerts')
 
-    await expect(page.getByRole('button', ADD)).toBeDisabled()
+    // The form can create a venue itself now, so an empty list is no longer a
+    // dead end and must not disable the button.
+    await expect(page.getByRole('button', ADD)).toBeEnabled()
     await expect(page.getByText(EMPTY_NOTICE)).toBeVisible()
     await expect(page.getByRole('link', { name: /Go to Venues/ })).toHaveAttribute(
       'href',
       '/admin/venues',
     )
+
+    await page.getByRole('button', ADD).click()
+    await expect(page.locator('.modal-overlay').getByTestId('venue-quick-add')).toBeVisible()
   })
 
   test('failed venues fetch: create stays available, error is named', async ({ page }) => {
@@ -343,5 +349,98 @@ test.describe('Admin Concerts — venue gate', () => {
     await expect(page.getByRole('button', ADD)).toBeEnabled()
     await expect(page.getByText(EMPTY_NOTICE)).toHaveCount(0)
     await expect(page.getByText('Could not load venues')).toHaveCount(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Inline venue create — a venue added from inside the concert modal
+//
+// The whole point is that the concert form survives the detour, so every
+// test types into it first and checks the text is still there afterwards.
+// Both overlays teleport to <body>; `.modal-overlay` is addressed by index
+// because a bare locator is a strict-mode violation while two are open.
+// ---------------------------------------------------------------------------
+
+test.describe('Admin Concerts — inline venue create', () => {
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const concertName = `E2E Inline ${stamp}`
+  const venueName = `E2E Venue ${stamp}`
+  // Deleting the venue cascades to its concerts, so one DELETE cleans up both.
+  const createdVenueIds: number[] = []
+
+  test.afterAll(async ({ request }) => {
+    for (const id of createdVenueIds) {
+      await request.delete(`/api/venues/${id}`, { headers: adminHeaders() })
+    }
+  })
+
+  async function openConcertForm(page: import('@playwright/test').Page) {
+    await page.goto('/admin/concerts')
+    await page.locator('button.btn-add-primary').click()
+    const outer = page.locator('.modal-overlay').nth(0)
+    await expect(outer).toBeVisible()
+    await outer.locator('.trans-row[data-locale="en"] input').first().fill(concertName)
+    return outer
+  }
+
+  test('creates a venue over the concert form and selects it', async ({ page }) => {
+    const outer = await openConcertForm(page)
+    await outer.locator('input[type="date"]').first().fill('2099-06-15')
+
+    await outer.getByTestId('venue-quick-add').click()
+    const inner = page.locator('.modal-overlay').nth(1)
+    await expect(inner).toBeVisible()
+    await expect(inner.getByRole('heading', { name: 'New venue' })).toBeVisible()
+
+    // The venue form's first input is the name.
+    await inner.locator('input').first().fill(venueName)
+    const created = page.waitForResponse(r => r.url().endsWith('/api/venues') && r.request().method() === 'POST')
+    await inner.getByRole('button', { name: 'Create' }).click()
+    const body = (await (await created).json()) as { data: { id: number } }
+    createdVenueIds.push(body.data.id)
+
+    await expectToast(page, 'Venue created')
+    await expect(page.locator('.modal-overlay')).toHaveCount(1)
+
+    // The new venue is selected, and the detour cost nothing.
+    const venueSelect = outer.locator('select').first()
+    await expect(venueSelect.locator('option:checked')).toHaveText(venueName)
+    await expect(outer.locator('.venue-card')).toContainText(venueName)
+    await expect(outer.locator('.trans-row[data-locale="en"] input').first()).toHaveValue(concertName)
+    await expect(outer.locator('input[type="date"]').first()).toHaveValue('2099-06-15')
+
+    // And the concert saves against it.
+    await outer.getByRole('button', { name: /create|save/i }).click()
+    await expectToast(page, 'Concert created')
+    await searchTable(page, concertName)
+    const row = page.locator('tbody tr').filter({ hasText: concertName })
+    await expect(row).toHaveCount(1)
+    await expect(row).toContainText(venueName)
+  })
+
+  test('Escape and the discard guard act on the nested modal only', async ({ page }) => {
+    const outer = await openConcertForm(page)
+    await outer.getByTestId('venue-quick-add').click()
+    const inner = page.locator('.modal-overlay').nth(1)
+    await expect(inner).toBeVisible()
+
+    // Clean nested modal: Escape closes it and nothing else.
+    await inner.locator('input').first().focus()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.modal-overlay')).toHaveCount(1)
+    await expect(outer).toBeVisible()
+    await expect(outer.locator('.trans-row[data-locale="en"] input').first()).toHaveValue(concertName)
+
+    // Dirty nested modal: Escape asks, and Discard throws away the venue
+    // draft alone — the concert's text is untouched.
+    await outer.getByTestId('venue-quick-add').click()
+    await expect(inner).toBeVisible()
+    await inner.locator('input').first().fill('Draft venue')
+    await page.keyboard.press('Escape')
+    const confirm = page.getByRole('dialog').filter({ hasText: 'Discard changes' })
+    await expect(confirm).toBeVisible()
+    await confirm.getByRole('button', { name: 'Discard' }).click()
+    await expect(page.locator('.modal-overlay')).toHaveCount(1)
+    await expect(outer.locator('.trans-row[data-locale="en"] input').first()).toHaveValue(concertName)
   })
 })

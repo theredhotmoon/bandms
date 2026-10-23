@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import { provideModalGuard } from '@/composables/useDirtyGuard'
+import { enterModal, isTopmostModal, leaveModal } from '@/utils/modalStack'
 
 /**
  * The discard guard: while the modal holds unsaved input, every way out
@@ -26,6 +27,10 @@ const props = withDefaults(
   { dirty: undefined },
 )
 const emit = defineEmits<{ close: [] }>()
+
+// This instance's place in the shared open-modal stack (src/utils/modalStack):
+// a modal nested in another must be the one that answers Escape.
+const self = Symbol('admin-modal')
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
@@ -71,7 +76,7 @@ defineExpose({ requestClose })
 // consumed the key with preventDefault() is honoured and only the modal's own
 // Escape reaches here.
 function onKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || !guarded.value) return // i18n-ignore: key name, not copy
+  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || !guarded.value || !isTopmostModal(self)) return // i18n-ignore: key name, not copy
   e.preventDefault()
   requestClose()
 }
@@ -83,6 +88,7 @@ let opener: Element | null = null
 watch(() => props.open, async (open) => {
   if (open) {
     opener = document.activeElement
+    enterModal(self)
     window.addEventListener('keydown', onKeydown)
     await nextTick()
     observeHeader()
@@ -95,6 +101,7 @@ watch(() => props.open, async (open) => {
     guard.reset()
     headerObserver?.disconnect()
     headerObserver = null
+    leaveModal(self)
     window.removeEventListener('keydown', onKeydown)
     if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
     opener = null
@@ -102,6 +109,7 @@ watch(() => props.open, async (open) => {
 }, { immediate: true })
 
 onBeforeUnmount(() => {
+  leaveModal(self)
   window.removeEventListener('keydown', onKeydown)
   headerObserver?.disconnect()
 })

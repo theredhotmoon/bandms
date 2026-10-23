@@ -5,6 +5,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
+import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -348,7 +349,12 @@ function submit() {
 
     <!-- Venue -->
     <div>
-      <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
+      <div class="venue-label-row">
+        <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
+        <!-- The venue list is the view's query; the created row reaches the
+             select through the cache append in useVenues.create. -->
+        <VenueQuickAdd @created="form.venue_id = $event.id" />
+      </div>
       <select v-model="form.venue_id" required class="field-input">
         <option :value="0" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
         <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
@@ -635,7 +641,15 @@ function submit() {
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
-/* ── Venue card ─────────────────────────────────────────────── */
+/* ── Venue ──────────────────────────────────────────────────── */
+.venue-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.venue-label-row .field-label { margin-bottom: 0.375rem; }
+
 .venue-card {
   margin-top: 0.625rem;
   border: 1px solid var(--c-2a2a2a);

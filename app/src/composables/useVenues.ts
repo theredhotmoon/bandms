@@ -15,7 +15,13 @@ export function useVenues() {
 
   const create = useMutation({
     mutationFn: (payload: VenuePayload) => createVenue(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['venues'] }),
+    // Append before invalidating: a form that selects the new venue by id the
+    // moment this resolves (the concert form's "New venue") would otherwise
+    // show an empty select until the refetch lands.
+    onSuccess: (venue) => {
+      queryClient.setQueryData<Venue[]>(['venues'], (old) => (old ? [...old, venue] : old))
+      return queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
   })
 
   const update = useMutation({

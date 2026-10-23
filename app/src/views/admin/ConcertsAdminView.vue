@@ -37,8 +37,10 @@ const { query: membersQ } = useBandMembers()
 const { token } = useAuth()
 const queryClient = useQueryClient()
 
-// Button state and notice both come from one gate so they cannot drift apart.
+// The notice comes from the gate, never from a bare `data.length` check.
 // See src/utils/venueGate.ts for why a failed fetch must not read as "empty".
+// "+ Add concert" is no longer disabled on an empty list: the concert form
+// can create a venue itself (VenueQuickAdd), so the notice only points there.
 const gate = computed(() => venueGate({
   isSuccess: venuesQ.isSuccess.value,
   isError:   venuesQ.isError.value,
@@ -147,12 +149,7 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('shows.concerts.title') }}</h1>
-        <button
-          @click="openCreate"
-          class="btn-add-primary"
-          :disabled="noVenues"
-          :title="noVenues ? $t('shows.concerts.addDisabledTitle') : undefined"
-        >{{ $t('shows.concerts.add') }}</button>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('shows.concerts.add') }}</button>
       </div>
 
       <div v-if="noVenues" class="venue-notice">

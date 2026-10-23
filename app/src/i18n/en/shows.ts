@@ -8,7 +8,7 @@ export default {
     created: 'Concert created',
     updated: 'Concert updated',
     deleted: 'Concert deleted',
-    needVenue: 'You need at least one venue before you can add a concert.',
+    needVenue: 'No venues yet — add one from the concert form, or on the Venues page.',
     goToVenues: 'Go to Venues →',
     venuesLoadFailed: 'Could not load venues — saving a concert may fail until this resolves.',
     retry: 'Retry',
@@ -22,10 +22,10 @@ export default {
     tickets: 'Tickets',
     modalEdit: 'Edit concert',
     modalNew: 'New concert',
-    addDisabledTitle: 'Add a venue before creating a concert',
     ticketsModal: 'Tickets — {name}',
     form: {
       eventName: 'Event name',
+      newVenue: '+ New venue',
       whoPlayed: 'Who played',
       // The two *En/*Pl placeholders are cross-locale on purpose: each hints at
       // content for THAT field, not for the chrome. The English field shows an
