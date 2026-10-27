@@ -20,6 +20,7 @@ class ConcertController extends Controller
     public function index(): AnonymousResourceCollection
     {
         $concerts = Concert::with(['venue', 'bands', 'tags', 'links', 'members'])
+            ->withCount('ticketTypes')
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
@@ -58,12 +59,12 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
+        return $this->present($concert);
     }
 
     public function show(Concert $concert): ConcertResource
     {
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
+        return $this->present($concert);
     }
 
     public function update(Request $request, Concert $concert): ConcertResource
@@ -88,7 +89,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
+        return $this->present($concert);
     }
 
     public function destroy(Concert $concert): JsonResponse
@@ -116,7 +117,7 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
+        return $this->present($concert);
     }
 
     public function destroyPoster(Concert $concert): ConcertResource
@@ -128,7 +129,19 @@ class ConcertController extends Controller
 
         SiteRebuild::markDirty('concerts');
 
-        return new ConcertResource($concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members']));
+        return $this->present($concert);
+    }
+
+    /**
+     * Every single-concert response: the relations and the ticket-type count
+     * the resource reads. One place, so a new field cannot reach some
+     * endpoints and silently miss others (`whenCounted` just drops it).
+     */
+    private function present(Concert $concert): ConcertResource
+    {
+        return new ConcertResource(
+            $concert->load(['venue', 'bands', 'tags', 'links', 'clips', 'members'])->loadCount('ticketTypes')
+        );
     }
 
     private function messages(): array
@@ -178,6 +191,10 @@ class ConcertController extends Controller
             'links'              => 'nullable|array',
             'links.*.label'      => 'required|string|max:255',
             'links.*.url'        => 'required|url|max:500',
+            // An external ticket shop. Independent of our own ticket types:
+            // either, both or neither may exist, and the public page offers
+            // whichever do.
+            'ticket_url'         => 'nullable|url|max:500',
         ] + Concert::translatedSlugRules($concertId);
     }
 

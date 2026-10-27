@@ -71,7 +71,7 @@ describe('image on a post', function () {
     it('accepts an uploaded path on create and serves it as a /storage url', function () {
         $path = storedPostImage();
 
-        $res = $this->postJson('/api/posts', ['title' => ['en' => 'With cover'], 'image' => $path])
+        $res = $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'With cover'], 'image' => $path]))
             ->assertCreated()
             ->assertJsonPath('data.image', '/storage/' . $path);
 
@@ -94,22 +94,22 @@ describe('image on a post', function () {
     });
 
     it('rejects a data url and a path outside post-images', function () {
-        $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => DATA_URL])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'X'], 'image' => DATA_URL]))
             ->assertStatus(422)
             ->assertJsonValidationErrors('image');
 
-        $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => 'release-covers/stolen.jpg'])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'X'], 'image' => 'release-covers/stolen.jpg']))
             ->assertStatus(422)
             ->assertJsonValidationErrors('image');
 
-        $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => 'post-images/../.env'])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'X'], 'image' => 'post-images/../.env']))
             ->assertStatus(422)
             ->assertJsonValidationErrors('image');
 
         // `..` and `.` are filenames to the old pattern; a path Flysystem
         // normalises to the disk root must never reach delete().
         foreach (['post-images/..', 'post-images/.', 'post-images/noext'] as $bad) {
-            $this->postJson('/api/posts', ['title' => ['en' => 'X'], 'image' => $bad])
+            $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'X'], 'image' => $bad]))
                 ->assertStatus(422)
                 ->assertJsonValidationErrors('image');
         }

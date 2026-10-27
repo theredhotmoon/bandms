@@ -1,0 +1,225 @@
+---
+/**
+ * The concerts a news post is linked to: a large card per concert at the end
+ * of the article, and a <dialog> with the concert's details that the card —
+ * and the event date in the article header — open.
+ *
+ * Native <dialog> rather than a Vue island: everything shown is known at build
+ * time, and showModal() gives Esc, focus handling and the backdrop for free.
+ * Triggers anywhere on the page carry data-open-concert="<id>" and are picked
+ * up by delegation, the same pattern as data-open-availability.
+ */
+import type { Locale } from '@/types/shared'
+import type { Concert } from '@/types/concert'
+import { concertLineup } from '@/lib/lineup'
+import { fmtDateParts, fmtTime, isUpcoming } from '@/lib/i18n'
+import { richTextHtml } from '@/lib/richText'
+import { ticketLink } from '@/lib/tickets'
+import { dateLocale } from '@/lib/locales'
+
+interface Copy {
+  kicker: string; open: string; openPage: string; close: string
+  doors: string; onStage: string; lineup: string; headliner: string; support: string
+  venue: string; about: string; buyTickets: string; posterAlt: string
+}
+
+interface Props {
+  concerts: Concert[]
+  bandName: string
+  lang: Locale
+  /** `/{lang}/{section}` of the concerts module, or null when it is switched off. */
+  concertsBase: string | null
+  copy: Copy
+}
+
+const { concerts, bandName, lang, concertsBase, copy } = Astro.props
+
+const rows = concerts.map(c => {
+  const { day, mo, yr } = fmtDateParts(c.date, lang)
+  const weekday = new Date(c.date + 'T00:00:00').toLocaleDateString(dateLocale(lang), { weekday: 'long' })
+  const page = concertsBase ? `${concertsBase}/${c.slug}` : null
+  // The shared rule (lib/tickets), and only for a show still to come.
+  const tickets = isUpcoming(c.date) ? ticketLink(c, page) : null
+  return {
+    c, day, mo, yr, weekday, page, tickets,
+    place: [c.venue.city, c.venue.name].filter(Boolean).join(' · '),
+    address: [
+      [c.venue.street, c.venue.street_number].filter(Boolean).join(' '),
+      [c.venue.postcode, c.venue.city].filter(Boolean).join(' '),
+    ].filter(Boolean).join(', '),
+    lineup: concertLineup(c, bandName),
+    description: richTextHtml(c.description),
+  }
+})
+---
+{rows.length > 0 && (
+  <section class="pc" id="post-concerts" data-testid="post-concerts">
+    {rows.map(r => (
+      <button type="button" class="pc-card" data-open-concert={r.c.id} data-testid="post-concert-card">
+        <span class="pc-date" aria-hidden="true">
+          <span class="pc-day">{r.day}</span>
+          <span class="pc-mo">{`${r.mo} ${r.yr}`}</span>
+        </span>
+        <span class="pc-main">
+          <span class="pc-kicker">{copy.kicker}</span>
+          <span class="pc-title">{r.c.name ?? r.place}</span>
+          <span class="pc-meta">
+            {/* Template strings: Astro drops the whitespace between adjacent expressions. */}
+            {[r.c.name ? r.place : null, r.c.start_time ? `${copy.onStage} ${fmtTime(r.c.start_time)}` : null].filter(Boolean).join(' · ')}
+          </span>
+        </span>
+        <span class="pc-cta">
+          {copy.open}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+    ))}
+
+    {rows.map(r => (
+      <dialog class="pc-dialog" id={`concert-dialog-${r.c.id}`} aria-labelledby={`concert-dialog-title-${r.c.id}`} data-testid="post-concert-dialog">
+        <div class="pc-dlg-head">
+          <div>
+            <p class="pc-kicker">{`${r.weekday}, ${r.day} ${r.mo} ${r.yr}`}</p>
+            <h2 class="pc-dlg-title" id={`concert-dialog-title-${r.c.id}`}>{r.c.name ?? r.place}</h2>
+          </div>
+          <form method="dialog"><button class="pc-x" aria-label={copy.close}>×</button></form>
+        </div>
+
+        <div class="pc-dlg-grid">
+          <div class="pc-dlg-body">
+            <dl class="pc-facts">
+              <div><dt>{copy.venue}</dt><dd>{r.c.venue.name}{r.address && <span class="pc-sub">{r.address}</span>}</dd></div>
+              {r.c.doors_open && <div><dt>{copy.doors}</dt><dd>{fmtTime(r.c.doors_open)}</dd></div>}
+              {r.c.start_time && <div><dt>{copy.onStage}</dt><dd>{fmtTime(r.c.start_time)}</dd></div>}
+            </dl>
+
+            {r.lineup.length > 1 && (
+              <div class="pc-block">
+                <h3 class="pc-h">{copy.lineup}</h3>
+                <ol class="pc-lineup">
+                  {r.lineup.map((b, i) => (
+                    <li data-own={b.own ? '' : undefined}>
+                      <span class="pc-band">{b.name}</span>
+                      <span class="pc-sub">{i === 0 ? copy.headliner : copy.support}{b.play_time && ` · ${fmtTime(b.play_time)}`}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {r.description && (
+              <div class="pc-block">
+                <h3 class="pc-h">{copy.about}</h3>
+                <div class="pc-desc rich-text" set:html={r.description} />
+              </div>
+            )}
+          </div>
+
+          {r.c.poster_url && (
+            <img class="pc-poster" src={r.c.poster_url} alt={copy.posterAlt} loading="lazy" />
+          )}
+        </div>
+
+        <div class="pc-actions">
+          {r.tickets && (
+            <a class="pc-btn pc-btn--accent" href={r.tickets.href} {...(r.tickets.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{copy.buyTickets}</a>
+          )}
+          {r.page && <a class="pc-btn" href={r.page} data-testid="post-concert-page-link">{copy.openPage}</a>}
+        </div>
+      </dialog>
+    ))}
+  </section>
+)}
+
+<script>
+  // One listener for every trigger: the cards here and the header's event date.
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as Element | null)?.closest<HTMLElement>('[data-open-concert]')
+    if (trigger) {
+      const dialog = document.getElementById(`concert-dialog-${trigger.dataset.openConcert}`) as HTMLDialogElement | null
+      dialog?.showModal()
+      return
+    }
+    // A click on the backdrop lands on the <dialog> element itself.
+    const target = e.target as HTMLElement | null
+    if (target instanceof HTMLDialogElement && target.classList.contains('pc-dialog')) target.close()
+  })
+</script>
+
+<style>
+  .pc { display: flex; flex-direction: column; gap: 16px; margin-top: 48px; }
+
+  .pc-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 22px;
+    width: 100%;
+    text-align: left;
+    padding: 20px 24px;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    border: var(--border-width-card) solid var(--color-ink);
+    box-shadow: 6px 6px 0 var(--color-accent);
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .pc-card:hover,
+  .pc-card:focus-visible { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--color-accent); }
+  .pc-date { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+  /* On-inverse, not accent: in the base theme the accent is the ink the card is painted in. */
+  .pc-day { font: 400 44px/1 var(--font-display); color: var(--color-on-inverse); }
+  .pc-mo { font: 800 11px/1.2 var(--font-body); letter-spacing: .1em; text-transform: uppercase; }
+  .pc-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .pc-kicker { margin: 0; font: 800 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+  .pc-card .pc-kicker { color: var(--color-on-inverse); opacity: .7; }
+  .pc-title { font: 400 26px/1.1 var(--font-display); text-transform: var(--display-transform); }
+  .pc-meta { font: 500 14px/1.4 var(--font-body); opacity: .8; }
+  .pc-cta { display: inline-flex; align-items: center; gap: 8px; font: 800 13px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .pc-card { grid-template-columns: auto 1fr; }
+    .pc-cta { grid-column: 1 / -1; }
+  }
+
+  .pc-dialog {
+    /* Preflight zeroes every margin, which removes the UA's margin:auto that
+       centres a modal <dialog>. */
+    margin: auto;
+    width: min(760px, calc(100% - 32px));
+    max-height: calc(100dvh - 48px);
+    padding: 28px;
+    background: var(--color-page);
+    color: var(--color-body);
+    border: 3px solid var(--color-ink);
+    box-shadow: 8px 8px 0 var(--color-ink);
+  }
+  .pc-dialog::backdrop { background: color-mix(in oklab, var(--color-ink) 60%, transparent); }
+  .pc-dlg-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 20px; }
+  .pc-dlg-title { margin: 6px 0 0; font: 400 34px/1.05 var(--font-display); text-transform: var(--display-transform); color: var(--color-ink); }
+  .pc-x { font-size: 28px; line-height: 1; background: none; border: 0; color: var(--color-ink); cursor: pointer; padding: 0 4px; }
+  .pc-dlg-grid { display: grid; grid-template-columns: 1fr auto; gap: 24px; }
+  .pc-dlg-body { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .pc-poster { width: 200px; max-height: 300px; object-fit: contain; align-self: start; border: 2px solid var(--color-ink); }
+  @media (max-width: 640px) {
+    .pc-dlg-grid { grid-template-columns: 1fr; }
+    .pc-poster { width: 100%; max-height: 360px; }
+  }
+  .pc-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin: 0; }
+  .pc-facts dt { font: 800 11px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 6px; }
+  .pc-facts dd { margin: 0; font: 600 16px/1.35 var(--font-body); color: var(--color-ink); }
+  .pc-sub { display: block; font: 500 13px/1.4 var(--font-body); color: var(--color-muted); }
+  .pc-h { margin: 0 0 8px; font: 800 12px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); }
+  .pc-lineup { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .pc-band { font: 700 16px/1.3 var(--font-body); color: var(--color-ink); }
+  .pc-lineup li[data-own] .pc-band { color: var(--color-accent); }
+  .pc-desc { font: 500 16px/1.6 var(--font-body); }
+  .pc-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  .pc-btn {
+    display: inline-flex; align-items: center; padding: 12px 18px;
+    border: 2px solid var(--color-ink); color: var(--color-ink); background: var(--color-surface);
+    font: 800 13px/1 var(--font-body); letter-spacing: .05em; text-transform: uppercase; text-decoration: none;
+    box-shadow: 3px 3px 0 var(--color-ink);
+  }
+  .pc-btn--accent { background: var(--color-accent); color: var(--color-on-accent); }
+</style>

@@ -6,7 +6,8 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
 
 /*
  * Ticket types and their price tiers are edited in ConcertTicketsManager, which
- * opens in a modal from the Tickets button on a concert row.
+ * lives in the Tickets section of the concert's edit modal. (The list's own
+ * Tickets button is a read-only overview — concert-tickets.spec.ts.)
  *
  * The seeded venue name is unique per run, so the concerts search narrows the
  * table to exactly the concert we created rather than depending on whatever
@@ -29,9 +30,9 @@ async function openTicketsFor(page: Page, venueName: string) {
   const row = page.locator('tbody tr').filter({ hasText: venueName })
   await expect(row).toHaveCount(1)
 
-  await row.getByRole('button', { name: 'Tickets' }).click()
+  await row.getByRole('button', { name: 'Edit' }).click()
   await expect(page.locator('.modal-overlay')).toBeVisible()
-  await expect(page.getByRole('button', { name: '+ Add type' })).toBeVisible()
+  await expect(page.getByTestId('concert-tickets').getByRole('button', { name: '+ Add type' })).toBeVisible()
 }
 
 test.describe('Concert ticket types', () => {

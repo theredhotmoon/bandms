@@ -170,6 +170,31 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'Tickets TBA', pl: 'Bilety wkrótce' },
   },
   {
+    key: 'ticketChoiceTitle', label: 'Ticket choice: heading', group: 'Show page', maxLength: 80,
+    help: 'Shown when a show sells tickets here and also links an external ticket shop.',
+    defaults: { en: 'Where would you like to buy?', pl: 'Gdzie chcesz kupić bilety?' },
+  },
+  {
+    key: 'ticketChoiceHere', label: 'Ticket choice: buy here', group: 'Show page', maxLength: 60,
+    defaults: { en: 'Buy here', pl: 'Kup tutaj' },
+  },
+  {
+    key: 'ticketChoiceHereHint', label: 'Ticket choice: buy here, note', group: 'Show page', maxLength: 120,
+    defaults: { en: 'Pay on this site — your tickets arrive by email.', pl: 'Zapłać na tej stronie — bilety przyjdą e-mailem.' },
+  },
+  {
+    key: 'ticketChoiceExternal', label: 'Ticket choice: external shop', group: 'Show page', maxLength: 60,
+    defaults: { en: 'External ticket shop', pl: 'Zewnętrzny sklep z biletami' },
+  },
+  {
+    key: 'ticketChoiceExternalHint', label: 'Ticket choice: external shop, note', group: 'Show page', maxLength: 120,
+    defaults: { en: 'Opens the seller’s site in a new tab.', pl: 'Otwiera stronę sprzedawcy w nowej karcie.' },
+  },
+  {
+    key: 'ticketChoiceClose', label: 'Ticket choice: close', group: 'Show page', maxLength: 40,
+    defaults: { en: 'Close', pl: 'Zamknij' },
+  },
+  {
     key: 'addToCalendar', label: '"Add to calendar" button', group: 'Show page', maxLength: 40,
     defaults: { en: 'Add to calendar', pl: 'Dodaj do kalendarza' },
   },

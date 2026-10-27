@@ -9,6 +9,7 @@ use App\Models\ConcertTicketType;
 use App\Models\OrderItem;
 use App\Models\PromoCode;
 use App\Models\Ticket;
+use App\Support\SiteRebuild;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\JsonResponse;
@@ -80,6 +81,10 @@ class ConcertTicketController extends Controller
 
         $type->load('tiers');
 
+        // The concert page bakes whether we sell tickets at all — it decides
+        // between the external shop, ours, or offering both.
+        SiteRebuild::markDirty('concerts');
+
         $warning = $this->capacityWarning($concert);
 
         $resource = new ConcertTicketTypeResource($type);
@@ -137,6 +142,7 @@ class ConcertTicketController extends Controller
     {
         abort_unless($ticketType->concert_id === $concert->id, 404);
         $ticketType->delete();
+        SiteRebuild::markDirty('concerts');
 
         return response()->json(null, 204);
     }
@@ -241,6 +247,7 @@ class ConcertTicketController extends Controller
             'holder_name'   => $t->holder_name,
             'holder_email'  => $t->holder_email,
             'ticket_type'   => $t->concertTicketType?->name,
+            'purchased_at'  => $t->created_at?->toIso8601String(),
         ]));
     }
 

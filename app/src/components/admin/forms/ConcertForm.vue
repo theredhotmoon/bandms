@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import MemberPicker from './MemberPicker.vue'
 import { useI18n } from 'vue-i18n'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, useId, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import ConcertTicketsManager from '@/components/admin/ConcertTicketsManager.vue'
 import { pushUnique } from '@/utils/pushUnique'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
@@ -96,7 +97,14 @@ const form = reactive({
   slug:             emptyBag(),
   tag_ids:          [] as number[],
   member_ids:       [] as number[],
+  ticket_url:       '',
 })
+
+// The tickets section sits outside the <form> element, and the submit button
+// reaches it through this id. Inside it, ConcertTicketsManager's own buttons
+// (no type → submit), its Enter key and its `required` fields would all have
+// submitted or blocked the concert.
+const formId = useId()
 
 // selectedVenue must be declared before slug sources that depend on it
 const selectedVenue = computed(() => props.venues.find(v => v.id === form.venue_id) ?? null)
@@ -125,7 +133,6 @@ const lineup = ref<LineupEntry[]>([{ type: 'main', play_time: '' }])
 // i18n-ignore: seed values for stored link labels, not UI copy — translating
 // them would make saved data depend on the admin's chrome language.
 const LINK_PRESETS = [
-  { label: 'Buy Tickets', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
   { label: 'Facebook Event', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
   { label: 'Event Info', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
   { label: 'Live Stream', url: '' }, /* i18n-ignore: seed value for a stored link label, not UI copy */
@@ -151,6 +158,7 @@ watch(() => props.initial, (concert) => {
     form.slug             = emptyBag()
     form.tag_ids          = []
     form.member_ids       = []
+    form.ticket_url       = ''
     links.value           = []
     lineup.value          = [{ type: 'main', play_time: '' }]
     posterFile.value      = null
@@ -174,6 +182,7 @@ watch(() => props.initial, (concert) => {
   form.slug           = bagFrom(concert.translations?.slug)
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   form.member_ids  = concert.member_ids ? [...concert.member_ids] : []
+  form.ticket_url  = concert.ticket_url ?? ''
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
   const entries: LineupEntry[] = [
@@ -330,313 +339,391 @@ function submit() {
     tag_ids:           form.tag_ids,
     member_ids:        form.member_ids,
     links:             links.value,
+    ticket_url:        form.ticket_url.trim() || null,
   }, posterFile.value, posterDelete.value)
 }
 </script>
 
 <template>
-  <form @submit.prevent="submit" class="flex flex-col gap-5">
+  <div class="concert-form flex flex-col gap-5">
+    <form :id="formId" @submit.prevent="submit" class="cf-grid">
 
-    <!-- Name -->
-    <div>
-      <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder(l)" />
+      <!-- 1 · What it is -->
+      <div class="cf-col" data-testid="concert-col-about">
+        <!-- Name -->
+        <div>
+          <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
+          <div class="trans-group">
+            <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
+              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+              <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder(l)" />
+            </div>
+          </div>
+          <template v-for="l in contentLocales" :key="`name-err-${l}`">
+            <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
+          </template>
         </div>
-      </div>
-      <template v-for="l in contentLocales" :key="`name-err-${l}`">
-        <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
-      </template>
-    </div>
 
-    <!-- Venue -->
-    <div>
-      <div class="field-label-row">
-        <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
-        <!-- The venue list is the view's query; the created row reaches the
-             select through the cache append in useVenues.create. -->
-        <VenueQuickAdd :tags="tags" @created="form.venue_id = $event.id" />
-      </div>
-      <select v-model="form.venue_id" required class="field-input">
-        <option value="" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
-        <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
-      </select>
-      <p v-if="errors?.venue_id" class="field-error">{{ errors.venue_id[0] }}</p>
-
-      <!-- Venue detail card -->
-      <div v-if="selectedVenue" class="venue-card">
-        <div class="venue-info">
-          <p class="venue-name">{{ selectedVenue.name }}</p>
-          <p v-if="selectedVenue.street || selectedVenue.city" class="venue-addr">
-            {{ [selectedVenue.street, selectedVenue.street_number].filter(Boolean).join(' ') }}
-            <span v-if="selectedVenue.street && selectedVenue.city"> · </span>
-            {{ [selectedVenue.postcode, selectedVenue.city].filter(Boolean).join(' ') }}
-          </p>
-          <p v-if="selectedVenue.additional_info" class="venue-extra">{{ selectedVenue.additional_info }}</p>
-          <p v-if="selectedVenue.latitude == null" class="venue-no-coords">{{ $t('shows.concerts.form.noCoords') }}</p>
-        </div>
-        <div v-if="selectedVenue.latitude != null" class="venue-map-wrap">
-          <VenueMap
-            :latitude="selectedVenue.latitude"
-            :longitude="selectedVenue.longitude"
-            :editable="false"
+        <!-- Slug URL -->
+        <div>
+          <label class="field-label">{{ $t('shows.concerts.form.slug') }}</label>
+          <!-- A loaded slug stays fixed (no followLoaded): renaming a concert must
+               never move its public page. -->
+          <TranslatedSlugInput
+            v-model="form.slug"
+            :editing="!!initial"
+            v-model:auto="slugAuto"
+            :sources="slugSources"
+            :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
           />
         </div>
-      </div>
-    </div>
 
-    <!-- Date + times -->
-    <div class="time-grid">
-      <div>
-        <label class="field-label">{{ $t('common.fields.date') }} <span style="color:var(--c-f87171);">*</span></label>
-        <input v-model="form.date" type="date" required class="field-input" />
-        <p v-if="errors?.date" class="field-error">{{ errors.date[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">{{ $t('shows.concerts.form.doorsOpen') }}</label>
-        <input v-model="form.doors_open" type="time" class="field-input" />
-        <p v-if="errors?.doors_open" class="field-error">{{ errors.doors_open[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">{{ $t('shows.concerts.form.soundCheck') }} <span class="label-note">{{ $t('shows.concerts.form.soundCheckNote') }}</span></label>
-        <input v-model="form.sound_check_time" type="time" class="field-input" />
-        <p v-if="errors?.sound_check_time" class="field-error">{{ errors.sound_check_time[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">{{ $t('shows.concerts.form.showStart') }}</label>
-        <input v-model="form.start_time" type="time" class="field-input" />
-        <p v-if="errors?.start_time" class="field-error">{{ errors.start_time[0] }}</p>
-      </div>
-    </div>
-
-    <!-- Lineup builder -->
-    <div>
-      <label class="field-label">{{ $t('shows.concerts.form.lineup') }}</label>
-      <div class="lineup-cols">
-
-        <!-- Left: available bands -->
-        <div class="band-pool">
-          <p class="panel-title">{{ $t('shows.concerts.form.availableBands') }}</p>
-          <div
-            v-for="band in availableBands"
-            :key="band.id"
-            class="pool-chip"
-            draggable="true"
-            @dragstart="onLeftDragStart($event, band)"
-            @dragend="onDragEnd"
-          >
-            <span class="drag-dots">⠿</span>
-            <span>{{ band.name }}</span>
+        <!-- Description -->
+        <div>
+          <label class="field-label">{{ $t('common.fields.description') }}</label>
+          <div class="trans-group">
+            <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
+              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
+              <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder(l)" />
+            </div>
           </div>
-          <p v-if="!availableBands.length" class="empty-note">
-            {{ bands.length ? $t('shows.concerts.form.allBandsAdded') : $t('shows.concerts.form.noBandsYet') }}
-          </p>
+          <template v-for="l in contentLocales" :key="`description-err-${l}`">
+            <p v-if="errors?.[`description.${l}`]" class="field-error">{{ errors[`description.${l}`][0] }}</p>
+          </template>
         </div>
 
-        <!-- Right: lineup -->
-        <div
-          class="lineup-panel"
-          :class="{ 'drag-over': panelDragOver && dragFrom === 'left' }"
-          @dragenter="onPanelDragEnter"
-          @dragleave="onPanelDragLeave"
-          @dragover="onPanelDragOver"
-          @drop="onPanelDrop"
-        >
-          <p class="panel-title">{{ $t('shows.concerts.form.concertLineup') }} <span class="panel-hint">{{ $t('shows.concerts.form.dragToReorder') }}</span></p>
+        <!-- Links -->
+        <div>
+          <label class="field-label">{{ $t('shows.concerts.form.links') }}</label>
 
-          <div
-            v-for="(item, idx) in lineup"
-            :key="item.type === 'main' ? 'main' : item.id"
-            class="lineup-item"
-            :class="{
-              'is-main':    item.type === 'main',
-              'drop-above': dropHoverIdx === idx,
-            }"
-            draggable="true"
-            @dragstart="onRightDragStart($event, idx)"
-            @dragend="onDragEnd"
-            @dragover="onItemDragOver($event, idx)"
-            @drop="onItemDrop($event, idx)"
-          >
-            <span class="drag-dots">⠿</span>
-            <span class="item-name">
-              {{ item.type === 'main' ? mainBandName : item.name }}
-              <span v-if="item.type === 'main'" class="main-badge">{{ $t('shows.concerts.form.us') }}</span>
-            </span>
-            <span class="item-time">
-              <template v-if="item.type === 'main'">
-                <span class="time-auto" :class="{ dim: !form.start_time }">
-                  {{ form.start_time || '—' }}
-                </span>
-                <span class="time-auto-label">{{ $t('shows.concerts.form.bandStart') }}</span>
-              </template>
-              <input
-                v-else
-                v-model="item.play_time"
-                type="time"
-                class="play-time-input"
-                placeholder="--:--"
-                :title="$t('shows.concerts.form.setTimeTitle')"
-              />
-            </span>
+          <!-- Existing links list -->
+          <div v-if="links.length" class="links-list">
+            <div v-for="(link, idx) in links" :key="idx" class="link-row">
+              <span class="link-label">{{ link.label }}</span>
+              <a :href="link.url" target="_blank" rel="noopener" class="link-url">{{ link.url }}</a>
+              <button type="button" class="remove-btn" @click="removeLink(idx)">×</button>
+            </div>
+          </div>
+
+          <!-- Quick-pick presets -->
+          <div class="link-presets">
             <button
-              v-if="item.type !== 'main'"
+              v-for="p in LINK_PRESETS"
+              :key="p.label"
               type="button"
-              class="remove-btn"
-              :title="$t('shows.concerts.form.removeFromLineup')"
-              @click="removeFromLineup(idx)"
-            >×</button>
+              class="preset-chip"
+              :class="{ active: newLinkLabel === p.label }"
+              @click="addPreset(p)"
+            >{{ p.label }}</button>
           </div>
 
-          <p v-if="!lineup.length" class="empty-note">{{ $t('shows.concerts.form.dropBands') }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Who played: explicit, because line-ups change — an empty list is not "everyone". -->
-    <MemberPicker
-      v-model="form.member_ids"
-      :members="members ?? []"
-      :label="$t('shows.concerts.form.whoPlayed')"
-      testid="concert-members"
-    />
-
-    <!-- Description -->
-    <div>
-      <label class="field-label">{{ $t('common.fields.description') }}</label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder(l)" />
-        </div>
-      </div>
-      <template v-for="l in contentLocales" :key="`description-err-${l}`">
-        <p v-if="errors?.[`description.${l}`]" class="field-error">{{ errors[`description.${l}`][0] }}</p>
-      </template>
-    </div>
-
-    <!-- Slug URL -->
-    <div>
-      <label class="field-label">{{ $t('shows.concerts.form.slug') }}</label>
-      <!-- A loaded slug stays fixed (no followLoaded): renaming a concert must
-           never move its public page. -->
-      <TranslatedSlugInput
-        v-model="form.slug"
-        :editing="!!initial"
-        v-model:auto="slugAuto"
-        :sources="slugSources"
-        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`slug.${l}`]?.[0]]))"
-      />
-    </div>
-
-    <!-- Tags -->
-    <div>
-      <div class="field-label-row">
-        <label class="field-label">{{ $t('common.fields.tags') }}</label>
-        <TagQuickAdd @created="pushUnique(form.tag_ids, $event.id)" />
-      </div>
-      <div class="checkbox-list">
-        <label v-for="t in tags" :key="t.id" class="checkbox-item">
-          <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
-          <span>{{ tagName(t) }}</span>
-        </label>
-        <p v-if="!tags.length" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.concerts.form.noTags') }}</p>
-      </div>
-    </div>
-
-    <!-- Links -->
-    <div>
-      <label class="field-label">{{ $t('shows.concerts.form.links') }}</label>
-
-      <!-- Existing links list -->
-      <div v-if="links.length" class="links-list">
-        <div v-for="(link, idx) in links" :key="idx" class="link-row">
-          <span class="link-label">{{ link.label }}</span>
-          <a :href="link.url" target="_blank" rel="noopener" class="link-url">{{ link.url }}</a>
-          <button type="button" class="remove-btn" @click="removeLink(idx)">×</button>
+          <!-- Add new link row -->
+          <div class="link-add-row">
+            <input
+              v-model="newLinkLabel"
+              class="field-input link-label-input"
+              :placeholder="$t('shows.concerts.form.linkLabelPlaceholder')"
+            />
+            <input
+              v-model="newLinkUrl"
+              type="url"
+              class="field-input link-url-input"
+              :placeholder="$t('common.fields.urlPlaceholder')"
+              @keydown.enter.prevent="addLink"
+            />
+            <button type="button" class="btn-add-link" @click="addLink">{{ $t('common.actions.add') }}</button>
+          </div>
         </div>
       </div>
 
-      <!-- Quick-pick presets -->
-      <div class="link-presets">
-        <button
-          v-for="p in LINK_PRESETS"
-          :key="p.label"
-          type="button"
-          class="preset-chip"
-          :class="{ active: newLinkLabel === p.label }"
-          @click="addPreset(p)"
-        >{{ p.label }}</button>
+      <!-- 2 · Where -->
+      <div class="cf-col" data-testid="concert-col-venue">
+        <!-- Venue -->
+        <div>
+          <div class="field-label-row">
+            <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
+            <!-- The venue list is the view's query; the created row reaches the
+                 select through the cache append in useVenues.create. -->
+            <VenueQuickAdd :tags="tags" @created="form.venue_id = $event.id" />
+          </div>
+          <select v-model="form.venue_id" required class="field-input">
+            <option value="" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
+            <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
+          </select>
+          <p v-if="errors?.venue_id" class="field-error">{{ errors.venue_id[0] }}</p>
+
+          <!-- Venue detail card -->
+          <div v-if="selectedVenue" class="venue-card">
+            <div class="venue-info">
+              <p class="venue-name">{{ selectedVenue.name }}</p>
+              <p v-if="selectedVenue.street || selectedVenue.city" class="venue-addr">
+                {{ [selectedVenue.street, selectedVenue.street_number].filter(Boolean).join(' ') }}
+                <span v-if="selectedVenue.street && selectedVenue.city"> · </span>
+                {{ [selectedVenue.postcode, selectedVenue.city].filter(Boolean).join(' ') }}
+              </p>
+              <p v-if="selectedVenue.additional_info" class="venue-extra">{{ selectedVenue.additional_info }}</p>
+              <p v-if="selectedVenue.latitude == null" class="venue-no-coords">{{ $t('shows.concerts.form.noCoords') }}</p>
+            </div>
+            <div v-if="selectedVenue.latitude != null" class="venue-map-wrap">
+              <VenueMap
+                :latitude="selectedVenue.latitude"
+                :longitude="selectedVenue.longitude"
+                :editable="false"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Clips (saved immediately via the clips API, not with this form) -->
+        <AttachedClipsField owner-type="concert" :owner-id="initial?.id ?? null" />
       </div>
 
-      <!-- Add new link row -->
-      <div class="link-add-row">
-        <input
-          v-model="newLinkLabel"
-          class="field-input link-label-input"
-          :placeholder="$t('shows.concerts.form.linkLabelPlaceholder')"
+      <!-- 3 · When, and who plays -->
+      <div class="cf-col" data-testid="concert-col-when">
+        <!-- Date + times -->
+        <div class="time-grid">
+          <div>
+            <label class="field-label">{{ $t('common.fields.date') }} <span style="color:var(--c-f87171);">*</span></label>
+            <input v-model="form.date" type="date" required class="field-input" />
+            <p v-if="errors?.date" class="field-error">{{ errors.date[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label">{{ $t('shows.concerts.form.doorsOpen') }}</label>
+            <input v-model="form.doors_open" type="time" class="field-input" />
+            <p v-if="errors?.doors_open" class="field-error">{{ errors.doors_open[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label">{{ $t('shows.concerts.form.soundCheck') }} <span class="label-note">{{ $t('shows.concerts.form.soundCheckNote') }}</span></label>
+            <input v-model="form.sound_check_time" type="time" class="field-input" />
+            <p v-if="errors?.sound_check_time" class="field-error">{{ errors.sound_check_time[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label">{{ $t('shows.concerts.form.showStart') }}</label>
+            <input v-model="form.start_time" type="time" class="field-input" />
+            <p v-if="errors?.start_time" class="field-error">{{ errors.start_time[0] }}</p>
+          </div>
+        </div>
+
+        <!-- Lineup builder -->
+        <div>
+          <label class="field-label">{{ $t('shows.concerts.form.lineup') }}</label>
+          <div class="lineup-cols">
+
+            <!-- Left: available bands -->
+            <div class="band-pool">
+              <p class="panel-title">{{ $t('shows.concerts.form.availableBands') }}</p>
+              <div
+                v-for="band in availableBands"
+                :key="band.id"
+                class="pool-chip"
+                draggable="true"
+                @dragstart="onLeftDragStart($event, band)"
+                @dragend="onDragEnd"
+              >
+                <span class="drag-dots">⠿</span>
+                <span>{{ band.name }}</span>
+              </div>
+              <p v-if="!availableBands.length" class="empty-note">
+                {{ bands.length ? $t('shows.concerts.form.allBandsAdded') : $t('shows.concerts.form.noBandsYet') }}
+              </p>
+            </div>
+
+            <!-- Right: lineup -->
+            <div
+              class="lineup-panel"
+              :class="{ 'drag-over': panelDragOver && dragFrom === 'left' }"
+              @dragenter="onPanelDragEnter"
+              @dragleave="onPanelDragLeave"
+              @dragover="onPanelDragOver"
+              @drop="onPanelDrop"
+            >
+              <p class="panel-title">{{ $t('shows.concerts.form.concertLineup') }} <span class="panel-hint">{{ $t('shows.concerts.form.dragToReorder') }}</span></p>
+
+              <div
+                v-for="(item, idx) in lineup"
+                :key="item.type === 'main' ? 'main' : item.id"
+                class="lineup-item"
+                :class="{
+                  'is-main':    item.type === 'main',
+                  'drop-above': dropHoverIdx === idx,
+                }"
+                draggable="true"
+                @dragstart="onRightDragStart($event, idx)"
+                @dragend="onDragEnd"
+                @dragover="onItemDragOver($event, idx)"
+                @drop="onItemDrop($event, idx)"
+              >
+                <span class="drag-dots">⠿</span>
+                <span class="item-name">
+                  {{ item.type === 'main' ? mainBandName : item.name }}
+                  <span v-if="item.type === 'main'" class="main-badge">{{ $t('shows.concerts.form.us') }}</span>
+                </span>
+                <span class="item-time">
+                  <template v-if="item.type === 'main'">
+                    <span class="time-auto" :class="{ dim: !form.start_time }">
+                      {{ form.start_time || '—' }}
+                    </span>
+                    <span class="time-auto-label">{{ $t('shows.concerts.form.bandStart') }}</span>
+                  </template>
+                  <input
+                    v-else
+                    v-model="item.play_time"
+                    type="time"
+                    class="play-time-input"
+                    placeholder="--:--"
+                    :title="$t('shows.concerts.form.setTimeTitle')"
+                  />
+                </span>
+                <button
+                  v-if="item.type !== 'main'"
+                  type="button"
+                  class="remove-btn"
+                  :title="$t('shows.concerts.form.removeFromLineup')"
+                  @click="removeFromLineup(idx)"
+                >×</button>
+              </div>
+
+              <p v-if="!lineup.length" class="empty-note">{{ $t('shows.concerts.form.dropBands') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Who played: explicit, because line-ups change — an empty list is not "everyone". -->
+        <MemberPicker
+          v-model="form.member_ids"
+          :members="members ?? []"
+          :label="$t('shows.concerts.form.whoPlayed')"
+          testid="concert-members"
         />
-        <input
-          v-model="newLinkUrl"
-          type="url"
-          class="field-input link-url-input"
-          :placeholder="$t('common.fields.urlPlaceholder')"
-          @keydown.enter.prevent="addLink"
-        />
-        <button type="button" class="btn-add-link" @click="addLink">{{ $t('common.actions.add') }}</button>
       </div>
-    </div>
 
-    <!-- Clips (saved immediately via the clips API, not with this form) -->
-    <AttachedClipsField owner-type="concert" :owner-id="initial?.id ?? null" />
-
-    <!-- Concert poster -->
-    <div>
-      <label class="field-label">{{ $t('shows.concerts.form.poster') }}</label>
-      <div
-        class="poster-drop"
-        :class="{ 'has-image': displayPoster }"
-        @click="triggerPosterInput"
-        @dragover.prevent
-        @drop="onPosterDrop"
-      >
-        <img v-if="displayPoster" :src="displayPoster" class="poster-img" :alt="$t('shows.concerts.form.posterAlt')" />
-        <div v-else class="poster-placeholder">
-          <svg class="poster-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span class="poster-hint">{{ $t('shows.concerts.form.dropImage') }}</span>
-          <span class="poster-sub">{{ $t('shows.concerts.form.imageHint') }}</span>
+      <!-- 4 · Poster and tags -->
+      <div class="cf-col cf-col--narrow" data-testid="concert-col-aside">
+        <!-- Concert poster -->
+        <div>
+          <label class="field-label">{{ $t('shows.concerts.form.poster') }}</label>
+          <div
+            class="poster-drop"
+            :class="{ 'has-image': displayPoster }"
+            @click="triggerPosterInput"
+            @dragover.prevent
+            @drop="onPosterDrop"
+          >
+            <img v-if="displayPoster" :src="displayPoster" class="poster-img" :alt="$t('shows.concerts.form.posterAlt')" />
+            <div v-else class="poster-placeholder">
+              <svg class="poster-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="poster-hint">{{ $t('shows.concerts.form.dropImage') }}</span>
+              <span class="poster-sub">{{ $t('shows.concerts.form.imageHint') }}</span>
+            </div>
+            <input
+              ref="posterInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              style="display:none"
+              @change="onPosterInputChange"
+            />
+          </div>
+          <div v-if="displayPoster" class="poster-clear-row">
+            <button type="button" class="btn-poster-clear" @click.stop="clearPoster">{{ $t('shows.concerts.form.removePoster') }}</button>
+          </div>
         </div>
-        <input
-          ref="posterInput"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          style="display:none"
-          @change="onPosterInputChange"
-        />
+
+        <!-- Tags -->
+        <div>
+          <div class="field-label-row">
+            <label class="field-label">{{ $t('common.fields.tags') }}</label>
+            <TagQuickAdd @created="pushUnique(form.tag_ids, $event.id)" />
+          </div>
+          <div class="checkbox-list">
+            <label v-for="t in tags" :key="t.id" class="checkbox-item">
+              <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
+              <span>{{ tagName(t) }}</span>
+            </label>
+            <p v-if="!tags.length" class="text-xs" style="color:var(--c-475569);">{{ $t('shows.concerts.form.noTags') }}</p>
+          </div>
+        </div>
       </div>
-      <div v-if="displayPoster" class="poster-clear-row">
-        <button type="button" class="btn-poster-clear" @click.stop="clearPoster">{{ $t('shows.concerts.form.removePoster') }}</button>
+    </form>
+
+    <!-- Tickets: an external shop, our own ticket types, or both. Outside the
+         <form> on purpose — see formId. -->
+    <section class="cf-tickets" data-testid="concert-tickets">
+      <h3 class="cf-section-title">{{ $t('shows.concerts.form.ticketsSection') }}</h3>
+      <div class="cf-tickets-grid">
+        <div>
+          <label class="field-label" for="concert-ticket-url">{{ $t('shows.concerts.form.externalTicketUrl') }}</label>
+          <input
+            id="concert-ticket-url"
+            v-model="form.ticket_url"
+            type="url"
+            :form="formId"
+            class="field-input"
+            :placeholder="$t('common.fields.urlPlaceholder')"
+          />
+          <p class="field-hint">{{ $t('shows.concerts.form.externalTicketUrlHint') }}</p>
+          <p v-if="errors?.ticket_url" class="field-error">{{ errors.ticket_url[0] }}</p>
+        </div>
+        <div>
+          <ConcertTicketsManager v-if="initial" :concert-id="initial.id" />
+          <p v-else class="cf-tickets-later">{{ $t('shows.concerts.form.ticketsSaveFirst') }}</p>
+        </div>
       </div>
-    </div>
+    </section>
 
     <!-- Actions -->
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
-      <button type="submit" :disabled="loading || !canSave" class="btn-primary">
+      <button type="submit" :form="formId" :disabled="loading || !canSave" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}
       </button>
     </div>
-
-  </form>
+  </div>
 </template>
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+/* ── Layout: 30 / 30 / 30 / 10 ─────────────────────────────── */
+.cf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 3fr) minmax(9rem, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.cf-col { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+@media (max-width: 1280px) {
+  .cf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .cf-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Tickets ────────────────────────────────────────────────── */
+.cf-tickets {
+  border-top: 1px solid var(--c-222222);
+  padding-top: 1.25rem;
+}
+.cf-section-title {
+  font-size: var(--fs-sm); font-weight: 600; color: var(--c-e2e8f0);
+  text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.875rem;
+}
+.cf-tickets-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .cf-tickets-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.field-hint { font-size: var(--fs-2xs); color: var(--c-64748b); margin: 0.375rem 0 0; }
+.cf-tickets-later {
+  font-size: var(--fs-sm); color: var(--c-64748b); margin: 0;
+  padding: 0.75rem 1rem; border: 1px dashed var(--c-2a2a2a); border-radius: var(--radius-card);
+}
+
 /* ── Bilingual inputs ───────────────────────────────────────── */
 .trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
 .trans-row   { display: flex; align-items: center; gap: 0.5rem; }
@@ -672,7 +759,7 @@ function submit() {
 /* ── Date / time grid ───────────────────────────────────────── */
 .time-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
 }
 .label-note {
@@ -685,7 +772,7 @@ function submit() {
 /* ── Lineup builder ─────────────────────────────────────────── */
 .lineup-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.625rem;
   min-height: 200px;
 }
@@ -946,8 +1033,9 @@ function submit() {
   gap: 0.5rem;
   align-items: center;
 }
-.link-label-input { flex: 0 0 9rem; }
-.link-url-input   { flex: 1; }
+.link-add-row { flex-wrap: wrap; }
+.link-label-input { flex: 1 1 7rem; }
+.link-url-input   { flex: 3 1 10rem; }
 .btn-add-link {
   flex-shrink: 0;
   padding: 0.4rem 0.875rem;

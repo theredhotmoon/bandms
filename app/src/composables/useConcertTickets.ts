@@ -35,8 +35,13 @@ export function useConcertTickets(concertId: Ref<number | null>) {
   const { token } = useAuth()
   const qc = useQueryClient()
 
-  const qKey = computed(() => ['concert-tickets', concertId.value] as const)
+  // Not 'concert-tickets': ConcertTicketListView caches the *issued* tickets
+  // under that key, a different shape for the same id.
+  const qKey = computed(() => ['concert-ticket-types', concertId.value] as const)
   const invalidate = () => qc.invalidateQueries({ queryKey: qKey.value })
+  // Adding or removing a type changes the concert's ticket_types_count, which
+  // gates the list's Tickets button.
+  const invalidateWithConcerts = () => Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['concerts'] })])
 
   const query = useQuery({
     queryKey: qKey,
@@ -54,7 +59,7 @@ export function useConcertTickets(concertId: Ref<number | null>) {
       const { token: t, concertId: cid } = requireAuth()
       return createTicketType(t, cid, payload)
     },
-    onSuccess: invalidate,
+    onSuccess: invalidateWithConcerts,
   })
 
   const updateType = useMutation({
@@ -70,7 +75,7 @@ export function useConcertTickets(concertId: Ref<number | null>) {
       const { token: t, concertId: cid } = requireAuth()
       return deleteTicketType(t, cid, id)
     },
-    onSuccess: invalidate,
+    onSuccess: invalidateWithConcerts,
   })
 
   const createTier = useMutation({

@@ -1,20 +1,24 @@
 ---
 import type { TextBlock } from '@/types/post'
+import { richTextHtml } from '@/lib/richText'
 interface Props { block: TextBlock }
 const { block } = Astro.props
+// Older blocks hold plain text from a <textarea>; richTextHtml() keeps their
+// line breaks instead of collapsing them into one paragraph.
+const html = richTextHtml(block.body)
 ---
-{block.body && <div class="art-prose" set:html={block.body} />}
+{html && <div class="art-prose rich-text" set:html={html} />}
 
 <style>
-  /* Duplicated from PostDetail.astro's former inline prose styling — Astro
-     scopes a <style> block to elements the file itself renders, not to
-     children rendered by other components, so PostDetail's rules cannot
-     reach markup emitted here. */
+  /* Everything inside .art-prose arrives through set:html, so every
+     descendant rule is :global() — a scoped `.art-prose p` would require an
+     Astro scope attribute the injected <p> never has (see .rich-text in
+     styles/base.css). */
   .art-prose {
     font: 500 18.5px/1.72 var(--font-body);
     color: var(--color-body);
   }
-  .art-prose > p:first-of-type::first-letter {
+  .art-prose > :global(p:first-of-type)::first-letter {
     float: left;
     font-family: var(--font-display);
     font-size: 96px;
@@ -23,17 +27,19 @@ const { block } = Astro.props
     margin-right: 14px;
     margin-top: 6px;
   }
-  .art-prose > p { margin: 0 0 24px; text-wrap: pretty; }
-  .art-prose > p:last-child { margin-bottom: 0; }
-  .art-prose > h2,
-  .art-prose > h3 {
+  .art-prose > :global(p) { margin: 0 0 24px; text-wrap: pretty; }
+  .art-prose > :global(p:last-child) { margin-bottom: 0; }
+  .art-prose > :global(ul),
+  .art-prose > :global(ol) { margin: 0 0 24px; }
+  .art-prose > :global(h2),
+  .art-prose > :global(h3) {
     font-family: var(--font-display);
     text-transform: uppercase;
     margin: 32px 0 12px;
     color: var(--color-ink);
   }
-  .art-prose a { color: var(--color-accent); text-underline-offset: 3px; }
-  .art-prose blockquote {
+  .art-prose :global(a) { color: var(--color-accent); text-underline-offset: 3px; }
+  .art-prose :global(blockquote) {
     margin: 12px 0 30px;
     border-left: 6px solid var(--color-accent);
     padding-left: 26px;

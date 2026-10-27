@@ -114,7 +114,7 @@ it('marks posts dirty on a post creation', function () {
     Passport::actingAs(User::factory()->create(['role' => 'admin']));
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
-    $this->postJson('/api/posts', ['title' => 'A post'])->assertCreated();
+    $this->postJson('/api/posts', $this->validPost(['title' => 'A post']))->assertCreated();
 
     expect(SiteDirtyArea::where('area', 'posts')->exists())->toBeTrue();
 });

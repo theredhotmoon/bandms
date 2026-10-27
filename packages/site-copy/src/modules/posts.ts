@@ -62,6 +62,28 @@ export const POSTS_COPY = defineCopy([
     defaults: { en: 'Share', pl: 'Udostępnij' },
   },
   {
+    key: 'tagsLabel', label: 'Tags: screen-reader label', group: 'Article page', maxLength: 40,
+    help: 'Read out before the tag links under the article header.',
+    defaults: { en: 'Tags', pl: 'Tagi' },
+  },
+  {
+    key: 'concertKicker', label: 'Linked concert: card label', group: 'Article page', maxLength: 40,
+    help: 'Above the concert card at the end of a post linked to a show.',
+    defaults: { en: 'The show', pl: 'Koncert' },
+  },
+  {
+    key: 'concertOpen', label: 'Linked concert: "Show details" button', group: 'Article page', maxLength: 40,
+    defaults: { en: 'Show details', pl: 'Szczegóły' },
+  },
+  {
+    key: 'concertOpenPage', label: 'Linked concert: "Concert page" link', group: 'Article page', maxLength: 40,
+    defaults: { en: 'Go to the concert page', pl: 'Przejdź do strony koncertu' },
+  },
+  {
+    key: 'concertClose', label: 'Linked concert: "Close" button', group: 'Article page', maxLength: 30,
+    defaults: { en: 'Close', pl: 'Zamknij' },
+  },
+  {
     key: 'shareCopied', label: '"Share" button after copying', group: 'Article page', maxLength: 30,
     defaults: { en: 'Copied', pl: 'Skopiowano' },
   },

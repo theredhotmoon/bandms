@@ -24,6 +24,16 @@ export default {
     modalEdit: 'Edytuj koncert',
     modalNew: 'Nowy koncert',
     ticketsModal: 'Bilety — {name}',
+    ticketDetails: {
+      external: 'Zewnętrzny sklep z biletami',
+      noExternal: 'Brak zewnętrznego sklepu.',
+      own: 'Sprzedawane na tej stronie',
+      noOwn: 'Brak rodzajów biletów — nic nie jest tu sprzedawane.',
+      noSales: 'Nie sprzedano jeszcze żadnego biletu.',
+      soldCount: 'Sprzedano: {n}',
+      purchasedAt: 'Kupiono',
+      fullList: 'Pełna lista biletów →',
+    },
     form: {
       eventName: 'Nazwa wydarzenia',
       newVenue: '+ Nowe miejsce',
@@ -61,6 +71,10 @@ export default {
       dropImage: 'Kliknij lub upuść zdjęcie',
       imageHint: 'JPG · PNG · WebP · maks. 4 MB',
       removePoster: 'Usuń plakat',
+      ticketsSection: 'Bilety',
+      externalTicketUrl: 'Zewnętrzny sklep z biletami',
+      externalTicketUrlHint: 'Link do zewnętrznego sprzedawcy biletów. Jeśli bilety są też sprzedawane tutaj, odwiedzający wybiera, gdzie kupić.',
+      ticketsSaveFirst: 'Najpierw zapisz koncert — potem możesz sprzedawać bilety przez tę stronę.',
     },
   },
   tickets: {

@@ -24,8 +24,8 @@ class UpdatePostRequest extends FormRequest
 
     public function rules(): array
     {
-        return $this->sharedRules() + $this->blockPayloadRules($this->input('blocks', [])) + [
-            'title'   => 'sometimes|required',
-        ] + Post::translatedSlugRules($this->route('post')->id);
+        return $this->sharedRules() + $this->blockPayloadRules($this->input('blocks', []))
+            + $this->requiredContentRules(sometimes: true)
+            + Post::translatedSlugRules($this->route('post')->id);
     }
 }

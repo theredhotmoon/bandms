@@ -50,6 +50,11 @@ class ConcertResource extends JsonResource
                     'url'   => $l->url,
                 ])
             ),
+            'ticket_url' => $this->ticket_url,
+            // How many of our own ticket types exist — on sale or not. The
+            // admin gates its Tickets button on it; the public page decides
+            // between the external shop, ours, or a choice of both.
+            'ticket_types_count' => $this->whenCounted('ticketTypes'),
             'clips' => ClipResource::collection($this->whenLoaded('clips')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

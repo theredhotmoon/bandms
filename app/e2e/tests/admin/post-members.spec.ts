@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import { test, expect, expectToast, searchTable } from '../../fixtures/test-base'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * Linking band members to a news post from the post editor's "Link to…"
@@ -29,7 +30,7 @@ test.beforeEach(async ({ request, baseURL }) => {
     expect(res.status(), await res.text()).toBe(201)
     memberIds.push((await res.json()).data.id)
   }
-  const post = await request.post(`${baseURL}/api/posts`, { headers: headers(), data: { title: { en: title } } })
+  const post = await request.post(`${baseURL}/api/posts`, { headers: headers(), data: { ...(await postRequiredFields(request, baseURL)), title: { en: title } } })
   expect(post.status(), await post.text()).toBe(201)
   postId = (await post.json()).data.id
 })

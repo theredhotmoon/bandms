@@ -79,16 +79,10 @@ describe('GET /api/admin/posts', function () {
             ->assertJsonCount(2, 'data');
     });
 
-    it('omits the main image, which the admin list never renders', function () {
-        // Each image is a base64 data URL and the admin fetches the list
-        // unpaginated; the public list carries it (PostTest pins that).
-        $this->actingAsAdmin();
-        Post::factory()->published()->create(['image' => 'data:image/png;base64,AAAA']);
-
-        $this->getJson('/api/admin/posts')
-            ->assertSuccessful()
-            ->assertJsonMissingPath('data.0.image');
-    });
+    // The admin list used to omit the image: each one was a base64 data URL
+    // and the list is unpaginated. Images are file paths since
+    // 2026_10_09_000001, and the list now flags posts without one —
+    // PostAdminListTest pins that.
 
     it('honours the same search filter as the public list', function () {
         $this->actingAsAdmin();

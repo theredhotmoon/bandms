@@ -44,14 +44,18 @@ class PostController extends Controller
      */
     public function adminIndex(Request $request): AnonymousResourceCollection
     {
-        return $this->listResponse($request, $this->listQuery($request));
+        // The admin list now shows whether a post has a cover image and which
+        // languages it is missing; the flag tells the summary resource to
+        // emit the second, which the public list has no use for.
+        $request->attributes->set(PostSummaryResource::ADMIN_LIST, true);
+
+        return $this->listResponse($request, $this->listQuery($request, withImage: true));
     }
 
     /**
-     * The explicit select keeps `image` out of the admin list, which never
-     * renders it. The public news page renders it on every card, so the
-     * public list loads it; the summary resource emits the field only when
-     * it was loaded.
+     * The explicit select keeps the column list deliberate; `image` is opted
+     * into by both lists (the public cards render it, the admin list flags a
+     * post without one). The summary resource emits it only when loaded.
      */
     private function listQuery(Request $request, bool $withImage = false): Builder
     {

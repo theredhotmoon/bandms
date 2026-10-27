@@ -89,6 +89,10 @@ export default {
     bulletList: 'Lista punktowana',
     orderedList: 'Lista numerowana',
     blockquote: 'Cytat',
+    link: 'Link (najpierw zaznacz tekst)',
+    linkPlaceholder: 'https://…',
+    linkApply: 'Zastosuj',
+    linkRemove: 'Usuń link',
   },
   slug: {
     autoGenerate: 'Generuj z tytułu',

@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { expectToast, searchTable } from '../../fixtures/test-base'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -38,7 +39,7 @@ test.describe.serial('Post block — clip', () => {
     const concerts = (await (await api(request, 'get', '/api/concerts')).json()).data as unknown[]
     concertCount = concerts.length
     // No published_at: a draft, which /admin/posts lists and the public build ignores.
-    const res = await api(request, 'post', '/api/posts', { title: { en: TITLE }, blocks: [] })
+    const res = await api(request, 'post', '/api/posts', { ...(await postRequiredFields(request, API)), title: { en: TITLE }, blocks: [] })
     postId = (await res.json()).data.id
   })
 

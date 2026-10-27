@@ -1,6 +1,6 @@
 import { test, expect, searchTable } from '../../fixtures/test-base'
 import type { Locator, Page } from '@playwright/test'
-import { adminHeaders, contentLocaleOrder } from '../../fixtures/admin-api'
+import { adminHeaders, contentLocaleOrder, postRequiredFields } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -46,7 +46,7 @@ test.describe('Tag labels', () => {
     expect(tag.ok(), `POST /api/tags → ${tag.status()} ${await tag.text()}`).toBe(true)
     tagId = (await tag.json()).data.id
 
-    const post = await request.post('/api/posts', { headers: adminHeaders(), data: { title: { en: postTitle }, tag_ids: [tagId] } })
+    const post = await request.post('/api/posts', { headers: adminHeaders(), data: { ...(await postRequiredFields(request)), title: { en: postTitle }, tag_ids: [tagId] } })
     expect(post.ok(), `POST /api/posts → ${post.status()} ${await post.text()}`).toBe(true)
     postId = (await post.json()).data.id
   })

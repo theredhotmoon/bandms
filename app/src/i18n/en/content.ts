@@ -76,6 +76,16 @@ export default {
     optional: '(optional)',
   },
   posts: {
+    list: {
+      image: 'Image',
+      hasImage: 'Has a cover image',
+      noImage: 'None',
+      noImageHint: 'No cover image — the news card shows a placeholder.',
+      translations: 'Translations',
+      complete: '{lang}: complete',
+      missing: '{lang} missing: {parts}',
+      gap: { title: 'title', intro: 'intro', slug: 'slug', blocks: 'text blocks' },
+    },
     title: 'Posts',
     add: '+ Add post',
     loadFailed: 'Failed to load posts.',
@@ -92,6 +102,7 @@ export default {
     titlePlaceholder: 'Post title',
     venueTba: 'TBA',
     intro: 'Intro',
+    tagRequired: 'Pick at least one tag — every post needs one, drafts included.',
     introPlaceholder: 'Short introductory text shown in previews…',
     cover: 'Cover image',
     section: {

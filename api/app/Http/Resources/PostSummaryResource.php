@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 
 class PostSummaryResource extends JsonResource
 {
+    /** Request attribute set by PostController::adminIndex. */
+    public const ADMIN_LIST = 'post_admin_list';
+
     public function toArray(Request $request): array
     {
         // content is gone; the excerpt now comes from the first text block, and
@@ -48,8 +51,37 @@ class PostSummaryResource extends JsonResource
                 'intro' => $this->getTranslations('intro'),
                 'slug'    => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
+            'translation_gaps' => $this->when(
+                (bool) $request->attributes->get(self::ADMIN_LIST),
+                fn () => $this->translationGaps(),
+            ),
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];
+    }
+
+    /**
+     * Per locale, which parts of the post have no text in it: title, intro,
+     * slug, and "blocks" when any text block is blank there. An empty list
+     * means the language is complete. Text blocks only — the list loads no
+     * other block type, and an image's alt text is not what the band means
+     * by "translated".
+     *
+     * @return array<string, list<string>>
+     */
+    private function translationGaps(): array
+    {
+        $filled = fn ($v) => is_string($v) && trim(strip_tags($v)) !== '';
+        $texts  = $this->relationLoaded('blocks') ? $this->blocks->where('type', 'text') : collect();
+
+        return collect(Locales::codes())->mapWithKeys(function (string $code) use ($filled, $texts) {
+            $gaps = [];
+            if (! $filled($this->getTranslation('title', $code, false))) $gaps[] = 'title';
+            if (! $filled($this->getTranslation('intro', $code, false))) $gaps[] = 'intro';
+            if (! $filled($this->slugIn($code))) $gaps[] = 'slug';
+            if ($texts->contains(fn ($b) => ! $filled($b->payload['body'][$code] ?? null))) $gaps[] = 'blocks';
+
+            return [$code => $gaps];
+        })->all();
     }
 }

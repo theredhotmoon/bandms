@@ -91,12 +91,15 @@ function toggle(i: number) {
 }
 .faq-mark.is-open { background: var(--color-accent); color: var(--color-on-accent); }
 
+/* Full width of the accordion, like the question above it — a 760px cap
+   left the answer in half of a full-width section. pre-line keeps the line
+   breaks typed into the plain-text answer field. */
 .faq-a {
   margin: 0 4px 24px;
-  max-width: 760px;
   font: 500 17px/1.6 var(--font-body);
   color: var(--color-body);
   text-wrap: pretty;
+  white-space: pre-line;
 }
 
 @media (max-width: 700px) {

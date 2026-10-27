@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -81,6 +82,7 @@ test.describe.serial('Public article — content blocks', () => {
     test.setTimeout(180_000)
 
     const res = await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E Blocks ${Date.now()}` },
       published_at: new Date().toISOString(),
       blocks: [

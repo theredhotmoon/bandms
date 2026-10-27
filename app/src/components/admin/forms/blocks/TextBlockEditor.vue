@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { shortLabel, type Lang } from '@/locales'
 import { VISIBLE_LOCALES } from '@/utils/editorLocales'
+import RichEditor from '@/components/admin/RichEditor.vue'
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -29,11 +30,15 @@ function set(locale: Lang, value: string) {
   <div class="trans-group">
     <div v-for="l in locales" :key="l" class="trans-row trans-row--top" :data-locale="l">
       <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-      <textarea
-        :value="body()[l] ?? ''"
-        @input="set(l, ($event.target as HTMLTextAreaElement).value)"
-        class="field-input flex-1" rows="5" :placeholder="placeholder(l)"
+      <!-- Bold, italic and links (plus lists/headings) — stored as HTML, which
+           the public TextBlock renders as-is. Blocks written as plain text
+           before this load with their line breaks as paragraphs. -->
+      <RichEditor
+        class="flex-1 min-w-0"
+        :model-value="body()[l] ?? ''"
+        :placeholder="placeholder(l)"
         :aria-label="`${$t('content.blocks.kind.text')} ${shortLabel(l)}`"
+        @update:model-value="set(l, $event)"
       />
     </div>
   </div>

@@ -76,6 +76,16 @@ export default {
     optional: '(opcjonalnie)',
   },
   posts: {
+    list: {
+      image: 'Obraz',
+      hasImage: 'Ma obraz główny',
+      noImage: 'Brak',
+      noImageHint: 'Brak obrazu głównego — karta aktualności pokaże zastępczy.',
+      translations: 'Tłumaczenia',
+      complete: '{lang}: kompletne',
+      missing: '{lang} — brakuje: {parts}',
+      gap: { title: 'tytuł', intro: 'wstęp', slug: 'slug', blocks: 'bloki tekstu' },
+    },
     title: 'Aktualności',
     add: '+ Dodaj wpis',
     loadFailed: 'Nie udało się wczytać wpisów.',
@@ -92,6 +102,7 @@ export default {
     titlePlaceholder: 'Tytuł posta',
     venueTba: 'Do ustalenia',
     intro: 'Wprowadzenie',
+    tagRequired: 'Wybierz co najmniej jeden tag — każdy wpis go potrzebuje, także szkic.',
     introPlaceholder: 'Krótki tekst wprowadzający…',
     cover: 'Zdjęcie główne',
     section: {

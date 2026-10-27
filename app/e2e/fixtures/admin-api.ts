@@ -52,6 +52,40 @@ export async function primaryLocale(request: APIRequestContext): Promise<string>
   return (await contentLocaleOrder(request))[0]
 }
 
+/**
+ * The fields every post needs before the API will save it — an intro and at
+ * least one tag, drafts included. Spread into a seeded post's payload so a
+ * spec spells out only what it is about.
+ *
+ * Uses a tag of its own, found by name and created once: "the first tag" could
+ * be another spec's temporary fixture, deleted mid-run, after which every post
+ * seed in this worker would 422 — a cross-spec failure that is hard to place.
+ * That one tag is the single row this leaves behind.
+ */
+const REQUIRED_TAG = 'E2E required tag'
+
+let requiredTagId: number | undefined
+
+export async function postRequiredFields(
+  request: APIRequestContext,
+  apiBase = '',
+): Promise<{ intro: Record<string, string>; tag_ids: number[] }> {
+  if (requiredTagId === undefined) {
+    const res = await request.get(`${apiBase}/api/tags`, { headers: adminHeaders() })
+    if (!res.ok()) throw new Error(`GET /api/tags failed: ${res.status()} ${await res.text()}`)
+    const tags = ((await res.json()) as { data: { id: number; name: string }[] }).data
+    const mine = tags.find(t => t.name === REQUIRED_TAG)
+    if (mine) {
+      requiredTagId = mine.id
+    } else {
+      const created = await request.post(`${apiBase}/api/tags`, { headers: adminHeaders(), data: { name: { en: REQUIRED_TAG } } })
+      if (!created.ok()) throw new Error(`POST /api/tags failed: ${created.status()} ${await created.text()}`)
+      requiredTagId = ((await created.json()) as { data: { id: number } }).data.id
+    }
+  }
+  return { intro: { en: 'E2E intro' }, tag_ids: [requiredTagId] }
+}
+
 /** A 1×1 transparent PNG — small enough to embed, real enough to pass Laravel's `image` rule. */
 export const TEST_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',

@@ -1,15 +1,20 @@
 <script setup lang="ts">
 // @ts-nocheck — Tiptap Editor type doesn't resolve correctly in this monorepo structure
-import { watch, onBeforeUnmount } from 'vue'
+import { nextTick, ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import { toEditorHtml, normaliseLinkHref } from '@/utils/richText'
 
 const props = defineProps<{ modelValue: string; placeholder?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const editor = useEditor({
-  content: props.modelValue,
-  extensions: [StarterKit],
+  // Fields that used to be <textarea>s hold plain text; parsed as HTML its
+  // line breaks would collapse into one paragraph on the first save.
+  content: toEditorHtml(props.modelValue),
+  // StarterKit v3 bundles Link. openOnClick off: a click in the editor places
+  // the caret, it does not navigate away from an unsaved form.
+  extensions: [StarterKit.configure({ link: { openOnClick: false, autolink: true, defaultProtocol: 'https' } })],
   editorProps: {
     attributes: { spellcheck: 'false' },
   },
@@ -25,7 +30,7 @@ watch(
   (val) => {
     if (!editor.value) return
     if (editor.value.getHTML() !== val) {
-      editor.value.commands.setContent(val ?? '')
+      editor.value.commands.setContent(toEditorHtml(val))
     }
   },
 )
@@ -34,6 +39,39 @@ onBeforeUnmount(() => editor.value?.destroy())
 
 function cmd(action: () => void) {
   action()
+}
+
+// ── Link ──────────────────────────────────────────────────────
+// An inline bar rather than window.prompt: a prompt blocks the page, cannot
+// be styled or translated, and browser automation cannot answer it.
+const linkOpen = ref(false)
+const linkHref = ref('')
+const linkInput = ref<HTMLInputElement | null>(null)
+
+function openLink() {
+  linkHref.value = editor.value?.getAttributes('link').href ?? ''
+  linkOpen.value = true
+  nextTick(() => linkInput.value?.focus())
+}
+
+function applyLink() {
+  const href = normaliseLinkHref(linkHref.value)
+  const ed = editor.value!
+  // Nothing selected and not inside a link: setLink would mark nothing and
+  // the URL would be lost silently. Insert it as its own linked text instead.
+  if (href && ed.state.selection.empty && !ed.isActive('link')) {
+    ed.chain().focus().insertContent({ type: 'text', text: href, marks: [{ type: 'link', attrs: { href } }] }).run()
+  } else {
+    const chain = ed.chain().focus().extendMarkRange('link')
+    if (href) chain.setLink({ href }).run()
+    else chain.unsetLink().run()
+  }
+  linkOpen.value = false
+}
+
+function removeLink() {
+  editor.value!.chain().focus().extendMarkRange('link').unsetLink().run()
+  linkOpen.value = false
 }
 </script>
 
@@ -48,6 +86,13 @@ function cmd(action: () => void) {
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('italic') }"
         @click="cmd(() => editor!.chain().focus().toggleItalic().run())" :title="$t('common.editor.italic')">
         <em>I</em>
+      </button>
+      <button type="button" class="tb-btn" :class="{ active: editor.isActive('link') }"
+        data-testid="editor-link" @click="openLink" :title="$t('common.editor.link')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
       </button>
       <div class="tb-divider" />
       <button type="button" class="tb-btn" :class="{ active: editor.isActive('heading', { level: 2 }) }"
@@ -85,6 +130,22 @@ function cmd(action: () => void) {
           <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
         </svg>
       </button>
+    </div>
+
+    <!-- Link bar -->
+    <div v-if="linkOpen" class="link-bar" data-testid="editor-link-bar">
+      <input
+        ref="linkInput"
+        v-model="linkHref"
+        type="url"
+        class="link-input"
+        :placeholder="$t('common.editor.linkPlaceholder')"
+        :aria-label="$t('common.editor.link')"
+        @keydown.enter.prevent="applyLink"
+        @keydown.esc.prevent="linkOpen = false"
+      />
+      <button type="button" class="link-btn" @click="applyLink">{{ $t('common.editor.linkApply') }}</button>
+      <button v-if="editor?.isActive('link')" type="button" class="link-btn link-btn--danger" @click="removeLink">{{ $t('common.editor.linkRemove') }}</button>
     </div>
 
     <!-- Editor area -->
@@ -146,6 +207,25 @@ function cmd(action: () => void) {
   color: var(--c-94a3b8); margin: 0.5rem 0; font-style: italic;
 }
 .editor-body :deep(strong) { color: var(--c-f1f5f9); }
+.editor-body :deep(a) { color: var(--c-60a5fa); text-decoration: underline; text-underline-offset: 2px; }
+
+.link-bar {
+  display: flex; gap: 0.375rem; align-items: center;
+  padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--c-2a2a2a); background: var(--c-111111);
+}
+.link-input {
+  flex: 1; min-width: 0; padding: 0.3rem 0.5rem; border-radius: 0.25rem;
+  border: 1px solid var(--c-2a2a2a); background: var(--c-141414); color: var(--c-e2e8f0);
+  font-size: var(--fs-sm); outline: none;
+}
+.link-input:focus { border-color: var(--c-888888-line); }
+.link-btn {
+  flex-shrink: 0; padding: 0.3rem 0.625rem; border-radius: 0.25rem; cursor: pointer;
+  border: 1px solid var(--c-555555-line); background: var(--c-2a2a2a); color: var(--c-d0d0d0);
+  font-size: var(--fs-xs);
+}
+.link-btn:hover { border-color: var(--c-888888-line); }
+.link-btn--danger { background: transparent; border-color: var(--c-3f1515); color: var(--c-fca5a5); }
 .editor-body :deep(em) { color: var(--c-c0c0c0); }
 .editor-body :deep(p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);

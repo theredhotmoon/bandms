@@ -22,10 +22,10 @@ describe('posts linked to members', function () {
         $this->actingAsAdmin();
         [$a, $b] = [newsMember('Ania'), newsMember('Bartek')];
 
-        $id = $this->postJson('/api/posts', [
+        $id = $this->postJson('/api/posts', $this->validPost([
             'title' => ['en' => 'Studio diary'],
             'member_ids' => [$a->id, $b->id],
-        ])->assertCreated()->assertJsonPath('data.member_ids', [$a->id, $b->id])->json('data.id');
+        ]))->assertCreated()->assertJsonPath('data.member_ids', [$a->id, $b->id])->json('data.id');
 
         expect(Post::find($id)->members()->pluck('band_members.id')->all())->toEqualCanonicalizing([$a->id, $b->id]);
     });
@@ -56,7 +56,7 @@ describe('posts linked to members', function () {
     it('rejects an unknown member id', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => ['en' => 'x'], 'member_ids' => [999999]])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'x'], 'member_ids' => [999999]]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('member_ids.0');
     });

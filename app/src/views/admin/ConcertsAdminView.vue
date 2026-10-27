@@ -6,7 +6,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import ConcertForm from '@/components/admin/forms/ConcertForm.vue'
-import ConcertTicketsManager from '@/components/admin/ConcertTicketsManager.vue'
+import ConcertTicketsOverview from '@/components/admin/ConcertTicketsOverview.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
@@ -107,6 +107,10 @@ const tc = useTableControls<Concert>({
   defaultSort: 'date',
   defaultDir: 'desc',
 })
+
+// Tickets are set up in the concert form; the list's button only reports, so
+// it shows only when there is something to report.
+const hasTickets = (c: Concert) => !!c.ticket_url || (c.ticket_types_count ?? 0) > 0
 
 function openCreate() { editing.value = null; fieldErrors.value = {}; showModal.value = true }
 function openEdit(c: Concert) { editing.value = c; fieldErrors.value = {}; showModal.value = true }
@@ -213,7 +217,7 @@ async function confirmDelete() {
                     :title="$t('shows.concerts.riderTitle')"
                     @click="createRider(concert)"
                   >{{ $t('shows.concerts.rider') }}</button>
-                  <button @click="ticketsConcert = concert" class="btn-edit">{{ $t('shows.concerts.tickets') }}</button>
+                  <button v-if="hasTickets(concert)" @click="ticketsConcert = concert" class="btn-edit" data-testid="concert-tickets-btn">{{ $t('shows.concerts.tickets') }}</button>
                   <button @click="openEdit(concert)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = concert.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>
@@ -235,7 +239,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="editing ? $t('shows.concerts.modalEdit') : $t('shows.concerts.modalNew')" maxWidth="56rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="editing ? $t('shows.concerts.modalEdit') : $t('shows.concerts.modalNew')" maxWidth="none" @close="closeModal">
       <ConcertForm
         :initial="editing"
         :venues="venuesQ.data.value ?? []"
@@ -252,7 +256,7 @@ async function confirmDelete() {
     <ConfirmDialog :open="confirmId !== null" :loading="remove.isPending.value" @confirm="confirmDelete" @cancel="confirmId = null" />
 
     <AdminModal :open="ticketsConcert !== null" :title="$t('shows.concerts.ticketsModal', { name: ticketsConcert?.name ?? ticketsConcert?.date ?? '' })" maxWidth="52rem" @close="ticketsConcert = null">
-      <ConcertTicketsManager v-if="ticketsConcert" :concert-id="ticketsConcert.id" />
+      <ConcertTicketsOverview v-if="ticketsConcert" :concert="ticketsConcert" />
     </AdminModal>
   </AdminLayout>
 </template>

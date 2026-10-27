@@ -66,8 +66,13 @@ export interface PostSummary {
   /** The default locale's slug; per-locale ones are in translations.slug. */
   slug: string
   intro: string | null
-  /** Main image as a `/storage/…` URL. The public list carries it; `/api/admin/posts` omits it. */
+  /** Main image as a `/storage/…` URL, on both the public and the admin list. */
   image?: string | null
+  /**
+   * Admin list only: per locale, the parts with no text in that language.
+   * An empty list means the language is complete.
+   */
+  translation_gaps?: Partial<Record<string, TranslationGap[]>>
   excerpt: string
   published_at: string | null
   event_dates: string[]
@@ -81,6 +86,8 @@ export interface PostSummary {
     slug?: TranslationMap
   }
 }
+
+export type TranslationGap = 'title' | 'intro' | 'slug' | 'blocks'
 
 export interface PostPressRelease { id: number; title: string; url: string; site: string | null }
 

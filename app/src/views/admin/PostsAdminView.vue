@@ -24,6 +24,7 @@ import { reportSaveError } from '@/utils/formErrors'
 import type { PostSummary, PostPayload } from '@/types/post'
 import { useTagLabel } from '@/composables/useTagLabel'
 import { tagNames } from '@/utils/localeOrder'
+import { LOCALES, shortLabel, type Lang } from '@/locales'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
@@ -98,6 +99,17 @@ async function confirmDelete() {
     confirmId.value = null
   } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
+
+// ── List flags: cover image and translation completeness ──────
+function gapTitle(post: PostSummary, l: Lang): string {
+  const gaps = post.translation_gaps?.[l] ?? []
+  if (!gaps.length) return t('content.posts.list.complete', { lang: shortLabel(l) })
+  return t('content.posts.list.missing', {
+    lang: shortLabel(l),
+    parts: gaps.map(g => t(`content.posts.list.gap.${g}`)).join(', '),
+  })
+}
+const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?.length)
 </script>
 
 <template>
@@ -131,6 +143,8 @@ async function confirmDelete() {
               <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.tags') }}</th>
+                <th class="th">{{ $t('content.posts.list.image') }}</th>
+                <th class="th">{{ $t('content.posts.list.translations') }}</th>
                 <SortHeader :label="$t('common.fields.published')" sort-key="published_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
@@ -145,6 +159,25 @@ async function confirmDelete() {
                     <span v-for="t in post.tags" :key="t.id" class="pill pill--tag">{{ tagName(t) }}</span>
                   </span>
                   <span v-else style="color:var(--c-475569);">—</span>
+                </td>
+                <td class="td" data-testid="post-image-flag">
+                  <img v-if="post.image" :src="post.image" alt="" class="post-thumb" :title="$t('content.posts.list.hasImage')" />
+                  <span v-else class="flag flag--warn" :title="$t('content.posts.list.noImageHint')">{{ $t('content.posts.list.noImage') }}</span>
+                </td>
+                <td class="td" data-testid="post-translation-flags">
+                  <!-- No data is not "complete": an API without the field shows a dash. -->
+                  <span v-if="!post.translation_gaps" style="color:var(--c-475569);">—</span>
+                  <span v-else class="lang-flags">
+                    <span
+                      v-for="l in LOCALES"
+                      :key="l"
+                      class="flag"
+                      :class="isComplete(post, l) ? 'flag--ok' : 'flag--warn'"
+                      :data-locale="l"
+                      :data-complete="isComplete(post, l)"
+                      :title="gapTitle(post, l)"
+                    >{{ isComplete(post, l) ? '✓' : '!' }} {{ shortLabel(l) }}</span>
+                  </span>
                 </td>
                 <td class="td text-xs" :style="post.published_at ? 'color:var(--c-34d399);' : 'color:var(--c-475569);'">
                   {{ post.published_at ? post.published_at.slice(0,10) : $t('content.posts.draft') }}
@@ -201,4 +234,9 @@ async function confirmDelete() {
 .pill-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-2a2a2a); color:var(--c-d0d0d0); white-space:nowrap; }
 .pill--tag { background:var(--c-0f2a1e); color:var(--c-34d399); }
+.post-thumb { width: 2.75rem; height: 1.75rem; object-fit: cover; border-radius: 0.25rem; display: block; background: var(--c-141414); }
+.lang-flags { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.flag { font-size: var(--fs-2xs); font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 0.25rem; white-space: nowrap; cursor: default; }
+.flag--ok { background: var(--c-0f2a1e); color: var(--c-34d399); }
+.flag--warn { background: var(--c-1c1608); color: var(--c-fbbf24); }
 </style>

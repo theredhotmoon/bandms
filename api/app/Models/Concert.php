@@ -19,7 +19,7 @@ class Concert extends Model
 
     public array $translatable = ['name', 'description', 'slug'];
 
-    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'description', 'poster', 'slug'];
+    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'description', 'poster', 'ticket_url', 'slug'];
 
     protected function casts(): array
     {

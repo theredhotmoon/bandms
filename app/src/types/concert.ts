@@ -35,6 +35,10 @@ export interface Concert {
   bands: ConcertBand[]
   tags?: Tag[]
   links?: ConcertLink[]
+  /** External ticket shop; independent of our own ticket types. */
+  ticket_url?: string | null
+  /** Our own ticket types, on sale or not. */
+  ticket_types_count?: number
   /** Attached through the clips library — read-only here, written via /api/clips. */
   clips?: Clip[]
   translations?: {
@@ -72,4 +76,5 @@ export interface ConcertPayload {
   tag_ids?: number[]
   member_ids?: number[]
   links?: ConcertLinkPayload[]
+  ticket_url?: string | null
 }

@@ -1,6 +1,6 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
-import { adminHeaders, contentLocaleOrder, moduleSectionSlug, rebuildAndWait, TEST_PNG } from '../../fixtures/admin-api'
+import { adminHeaders, contentLocaleOrder, moduleSectionSlug, rebuildAndWait, TEST_PNG, postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * A post's main image on the news *list* and on the article's "More from the
@@ -56,6 +56,7 @@ test.describe.serial('Public — news main image', () => {
       const res = await request.post(`${API}/api/posts`, {
         headers: adminHeaders(),
         data: {
+          ...(await postRequiredFields(request, API)),
           title: Object.fromEntries(locales.map((l) => [l, title])),
           image: await uploadImage(request),
           published_at: new Date(Date.now() - minutesAgo * 60_000).toISOString(),

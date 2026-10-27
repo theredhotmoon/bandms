@@ -1,4 +1,4 @@
-import { test, expect, expectToast, confirmDelete, searchTable } from '../../fixtures/test-base'
+import { test, expect, expectToast, confirmDelete, searchTable, fillPostRequired } from '../../fixtures/test-base'
 import { adminHeaders, primaryLocale, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
@@ -84,6 +84,13 @@ test.describe.serial('Admin Posts', () => {
     await page.locator('input[placeholder="Post title"]').fill(postTitle)
     await page.locator('textarea[placeholder*="introductory"]').fill('Short intro text.')
 
+    // A tag is required, drafts included — the form refuses before any request.
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByTestId('post-tag-error')).toBeVisible()
+    await expect(page.getByText('Post created')).toHaveCount(0)
+
+    await fillPostRequired(page)
+    await expect(page.getByTestId('post-tag-error')).toHaveCount(0)
     await page.getByRole('button', { name: 'Create' }).click()
 
     await expectToast(page, 'Post created')
@@ -96,7 +103,7 @@ test.describe.serial('Admin Posts', () => {
     await expect(page.locator('.modal-overlay')).toBeVisible()
 
     await page.getByRole('button', { name: '+ Text' }).click()
-    await page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] textarea`).fill('First paragraph')
+    await page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] .tiptap`).fill('First paragraph')
 
     await page.getByRole('button', { name: '+ Embed / link' }).click()
     await page.locator('.block-row').nth(1).locator('input').first().fill('https://vimeo.com/76979871')
@@ -124,7 +131,7 @@ test.describe.serial('Admin Posts', () => {
     // Order is the whole feature — assert position, not just presence.
     await expect(page.locator('.block-row').nth(0).locator('.block-type')).toHaveText('Text')
     await expect(page.locator('.block-row').nth(1).locator('.block-type')).toHaveText('Embed / link')
-    await expect(page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] textarea`)).toHaveValue('First paragraph')
+    await expect(page.locator('.block-row').nth(0).locator(`[data-locale="${primary}"] .tiptap`)).toHaveText('First paragraph')
   })
 
   test('removing a block persists the shorter list', async ({ page }) => {
@@ -280,11 +287,11 @@ test.describe.serial('Admin Posts', () => {
     await searchTable(page, postTitle)
     await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
     await expect(firstBlock()).toBeVisible()
-    await expect(firstBlock().locator('textarea')).toHaveCount(2)
+    await expect(firstBlock().locator('.tiptap')).toHaveCount(2)
 
     await modal.getByRole('radio', { name: 'PL' }).check()
-    await expect(firstBlock().locator('textarea')).toHaveCount(1)
-    await expect(firstBlock().locator('[data-locale="pl"] textarea')).toBeVisible()
+    await expect(firstBlock().locator('.tiptap')).toHaveCount(1)
+    await expect(firstBlock().locator('[data-locale="pl"] .tiptap')).toBeVisible()
     await expect(modal.locator('textarea[placeholder*="introductory"]')).toHaveCount(0)
 
     // Pristine form (the view is not post data), so Cancel closes at once.
@@ -293,11 +300,11 @@ test.describe.serial('Admin Posts', () => {
     await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
     await expect(firstBlock()).toBeVisible()
     await expect(modal.getByRole('radio', { name: 'PL' })).toBeChecked()
-    await expect(firstBlock().locator('textarea')).toHaveCount(1)
+    await expect(firstBlock().locator('.tiptap')).toHaveCount(1)
 
     await modal.getByRole('radio', { name: 'All' }).check()
-    await expect(firstBlock().locator('textarea')).toHaveCount(2)
-    await expect(firstBlock().locator(`[data-locale="${primary}"] textarea`)).toHaveValue('First paragraph')
+    await expect(firstBlock().locator('.tiptap')).toHaveCount(2)
+    await expect(firstBlock().locator(`[data-locale="${primary}"] .tiptap`)).toHaveText('First paragraph')
     await modal.getByRole('button', { name: 'Cancel' }).click()
   })
 
@@ -404,6 +411,7 @@ test.describe.serial('Admin Posts', () => {
     await page.getByRole('button', { name: '+ Add post' }).click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
     await page.locator('input[placeholder="Post title"]').fill(scrollPostTitle)
+    await fillPostRequired(page)
 
     // Enough blocks to push the modal past the viewport — this is the state
     // that used to make the content area unscrollable (see

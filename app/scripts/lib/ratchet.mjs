@@ -56,6 +56,7 @@ export const MIGRATED = [
   'composables/useBandMembers.ts',
   'composables/useReleases.ts',
   'components/admin/ConcertTicketsManager.vue',
+  'components/admin/ConcertTicketsOverview.vue',
   'components/admin/forms/ConcertForm.vue',
   'components/admin/forms/TourForm.vue',
   'components/admin/forms/VenueForm.vue',
