@@ -193,14 +193,6 @@ export default {
       addNewClip: 'Dodaj nowy klip…',
       noConcert: 'Brak koncertu',
       attach: 'Dołącz',
-      // One key per entity rather than '+ New {entity}': Polish inflects the
-      // adjective with the noun's gender.
-      newEntity: {
-        concert: '+ Nowy koncert',
-        release: '+ Nowe wydawnictwo',
-        press: '+ Nowy materiał prasowy',
-        shop: '+ Nowy produkt',
-      },
     },
   },
 }

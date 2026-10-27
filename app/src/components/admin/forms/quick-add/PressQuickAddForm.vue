@@ -8,7 +8,7 @@ import { useTags } from '@/composables/useTags'
 import { useBandMembers } from '@/composables/useBandMembers'
 import type { PressReleasePayload } from '@/types/press-release'
 
-/** The press-coverage form with the lists it needs, for RefQuickAdd's slot. */
+/** The press-coverage form with the lists it needs, for EntityQuickAdd's slot. */
 defineProps<{ loading: boolean; errors: Record<string, string[]> }>()
 const emit = defineEmits<{ submit: [payload: PressReleasePayload]; cancel: [] }>()
 

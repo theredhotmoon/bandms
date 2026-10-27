@@ -7,6 +7,27 @@ import type { Post, PostPayload } from '@/types/post'
 import { useAuth } from './useAuth'
 import { useLang } from './useLang'
 
+/**
+ * The create mutation on its own (no list observer). Post lists are cached
+ * per role, filter and language as `{ data, meta }`, so the new row is put
+ * into every cached list's `data` rather than appended to one plain array,
+ * and all of them are invalidated.
+ */
+export function useCreatePost() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: PostPayload) => createPost(token.value!, payload),
+    onSuccess: (post) => {
+      queryClient.setQueriesData<PostListResponse>({ queryKey: ['posts'] }, (old) =>
+        old ? { ...old, data: [...old.data, post] } : old,
+      )
+      void queryClient.invalidateQueries({ queryKey: ['posts'] })
+    },
+  })
+}
+
 export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFilters>) {
   const { token, isAdmin, isPublisher } = useAuth()
   const { lang } = useLang()
@@ -26,10 +47,7 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
     enabled: () => token.value !== null,
   })
 
-  const create = useMutation({
-    mutationFn: (payload: PostPayload) => createPost(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
-  })
+  const create = useCreatePost()
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<PostPayload> }) =>

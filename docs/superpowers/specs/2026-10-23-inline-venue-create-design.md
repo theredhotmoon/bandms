@@ -153,12 +153,12 @@ a dead end. Best candidates first.
 | `BatchPhotoUpload` / album edit | Concert, Venue, Tag | three pages | no | two `<select>`s, same shape as the venue one |
 | `UsersAdminView` add/edit user | Band member | Band members | no | `<select>` |
 | Tag checkbox lists (`ConcertForm`, `VenueForm`, `PostForm`, `PressReleaseForm`, `ShopItemForm`, plus the album forms) | Tag | Tags | no | **done** (`TagQuickAdd`): beside the four plain checkbox lists, and inside the relations panel's Tags section, which is now offered even when the list is empty |
-| `EntityRelationsPanel` consumers (clip, post, press release, shop item) | concerts, releases, members… | many | no | empty sections are hidden with no hint at all |
+| `EntityRelationsPanel` consumers (clip, post, press release, shop item) | concerts, releases, members… | many | no | **done** (`EntityQuickAdd`): band members, concerts, releases, shop items, tours, posts and press coverage create in place, and those sections are offered even when empty; albums and music videos have no reusable form and still hide when empty |
 | `ShopItemForm` categories / currencies | Category, Currency | modals on the same Shop page | no | already same-page; a hint exists |
 | `TourForm` concerts | Concert | Concerts | no | shows "no concerts" |
 | `PlacementModal` "playing through" | a member's saved rig | My setups | no | *Add blank* already covers it |
 
-`VenueQuickAdd` is the shape to copy: a button, a nested `AdminModal`, the
+`VenueQuickAdd` is the shape to copy (`QuickAddModal` is the shell; `EntityQuickAdd` covers every entity with a reusable form): a button, a nested `AdminModal`, the
 existing form, the existing `create` mutation, one `created` emit. Modal
 stacking is solved once in `AdminModal`.
 

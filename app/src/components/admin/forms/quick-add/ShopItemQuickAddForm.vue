@@ -12,7 +12,7 @@ import type { PostFilters } from '@/api/posts'
 import type { ShopItemPayload } from '@/types/shop'
 
 /**
- * The shop-item form with the lists it needs, for RefQuickAdd's slot. Photos
+ * The shop-item form with the lists it needs, for EntityQuickAdd's slot. Photos
  * are an edit-only affair on the shop page too (they need the item's id), so
  * a quick-add item gets its pictures there, exactly as a freshly created one
  * does.

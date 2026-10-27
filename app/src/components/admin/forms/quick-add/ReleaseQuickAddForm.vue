@@ -3,7 +3,7 @@ import ReleaseForm from '@/components/admin/forms/ReleaseForm.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
 import type { ReleasePayload } from '@/types/release'
 
-/** The release form with its members list, for RefQuickAdd's slot. */
+/** The release form with its members list, for EntityQuickAdd's slot. */
 defineProps<{ loading: boolean; errors: Record<string, string[]> }>()
 const emit = defineEmits<{ submit: [payload: ReleasePayload, coverFile: File | null]; cancel: [] }>()
 

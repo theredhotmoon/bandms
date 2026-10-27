@@ -400,6 +400,7 @@ export default {
       scan: 'Scan to meet {name}',
     },
     added: 'Member added',
+    photoFailed: 'Member saved, but the photo could not be uploaded — add it from the member’s profile.',
     updated: 'Member updated',
     removed: 'Member removed',
     removeFailed: 'Failed to remove',

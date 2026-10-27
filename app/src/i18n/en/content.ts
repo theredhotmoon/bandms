@@ -193,14 +193,6 @@ export default {
       addNewClip: 'Add a new clip…',
       noConcert: 'No concert',
       attach: 'Attach',
-      // One key per entity rather than '+ New {entity}': Polish inflects the
-      // adjective with the noun's gender.
-      newEntity: {
-        concert: '+ New concert',
-        release: '+ New release',
-        press: '+ New press coverage',
-        shop: '+ New shop item',
-      },
     },
   },
 }

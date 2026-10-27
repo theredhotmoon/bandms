@@ -308,7 +308,9 @@ that appends to the list cache, one `created` emit — `QuickAddModal` is
 that shell, and a new quick-add is the form in its slot plus the
 mutation. Its `create` takes `(payload, file)`, so a form that emits a
 file beside its payload (a concert's poster, a release's cover) fits too:
-`RefQuickAdd` hands it `useCreateConcertWithPoster()` and friends, the
+`EntityQuickAdd` (`forms/quick-add/`, one component for every entity with a
+reusable form — used by the post reference block and the relations panel)
+hands it `useCreateConcertWithPoster()` and friends, the
 same create-then-upload sequence the concerts and releases pages use, in
 which a failed upload is its own toast and the record still closes —
 never a form left open whose second Create makes a duplicate. The cache

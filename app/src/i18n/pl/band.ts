@@ -396,6 +396,7 @@ export default {
       scan: 'Zeskanuj i poznaj: {name}',
     },
     added: 'Dodano osobę',
+    photoFailed: 'Członek zespołu zapisany, ale nie udało się wgrać zdjęcia — dodaj je w profilu.',
     updated: 'Zaktualizowano profil',
     removed: 'Usunięto osobę',
     removeFailed: 'Nie udało się usunąć',

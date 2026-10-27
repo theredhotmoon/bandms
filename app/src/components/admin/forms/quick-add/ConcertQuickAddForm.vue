@@ -7,9 +7,9 @@ import { useBandMembers } from '@/composables/useBandMembers'
 import type { ConcertPayload } from '@/types/concert'
 
 /**
- * The concert form with the lists it needs, for RefQuickAdd's slot. Mounted
+ * The concert form with the lists it needs, for EntityQuickAdd's slot. Mounted
  * only while that modal is open, so these queries do not run under every
- * post. The save itself is RefQuickAdd's (create, then the poster).
+ * post. The save itself is EntityQuickAdd's (create, then the poster).
  */
 defineProps<{ loading: boolean; errors: Record<string, string[]> }>()
 const emit = defineEmits<{ submit: [payload: ConcertPayload, posterFile: File | null]; cancel: [] }>()

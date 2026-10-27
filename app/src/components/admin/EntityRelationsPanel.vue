@@ -12,6 +12,7 @@ import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import { useTagLabel } from '@/composables/useTagLabel'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import EntityQuickAdd, { type QuickAddEntity } from '@/components/admin/forms/quick-add/EntityQuickAdd.vue'
 
 const tagName = useTagLabel()
 const props = defineProps<{
@@ -58,38 +59,46 @@ const expanded = reactive<Record<SectionKey, boolean>>({
   tours: false, albums: false, posts: false, musicVideos: false, pressReleases: false,
 })
 
+// Which sections can create their record in place (EntityQuickAdd); tags have
+// TagQuickAdd. Albums and music videos have no reusable form, so those two
+// sections still hide when their list is empty — there would be nothing to do.
+const QUICK_ADD: Partial<Record<SectionKey, QuickAddEntity>> = {
+  members: 'member', concerts: 'concert', releases: 'release', shopItems: 'shop_item',
+  tours: 'tour', posts: 'post', pressReleases: 'press_release',
+}
+
 // One list drives the template, so every section gets the same toggle,
 // summary and checkbox list — and the order is the order the forms always had.
+// A section that can create is offered whenever its list is *given* (even
+// empty): the button is the reason to show it, not a reason to hide it.
 const sections = computed<Section[]>(() => {
   const out: Section[] = []
-  // Tags alone are offered even when the list is empty: the section carries
-  // "+ New tag", so an empty list is a reason to show it, not to hide it.
   if (props.tags) out.push({
     key: 'tags', title: t('common.relations.tags'), testid: 'relations-tags',
     items: props.tags.map(x => ({ id: x.id, label: tagName(x) })),
     ids: tagIds.value, set: v => (tagIds.value = v),
   })
-  if (props.members?.length) out.push({
+  if (props.members) out.push({
     key: 'members', title: t('common.relations.members'), testid: 'relations-members',
     items: props.members.map(m => ({ id: m.id, label: `${m.first_name} ${m.last_name}` })),
     ids: memberIds.value, set: v => (memberIds.value = v),
   })
-  if (props.concerts?.length) out.push({
+  if (props.concerts) out.push({
     key: 'concerts', title: t('common.relations.concerts'),
     items: props.concerts.map(c => ({ id: c.id, label: c.venue?.name ? `${c.date} — ${c.venue.name}` : c.date })),
     ids: concertIds.value, set: v => (concertIds.value = v),
   })
-  if (props.releases?.length) out.push({
+  if (props.releases) out.push({
     key: 'releases', title: t('common.relations.releases'),
     items: props.releases.map(r => ({ id: r.id, label: r.title, badge: r.type })),
     ids: releaseIds.value, set: v => (releaseIds.value = v),
   })
-  if (props.shopItems?.length) out.push({
+  if (props.shopItems) out.push({
     key: 'shopItems', title: t('common.relations.shopItems'),
     items: props.shopItems.map(s => ({ id: s.id, label: s.name })),
     ids: shopItemIds.value, set: v => (shopItemIds.value = v),
   })
-  if (props.tours?.length) out.push({
+  if (props.tours) out.push({
     key: 'tours', title: t('common.relations.tours'),
     items: props.tours.map(x => ({ id: x.id, label: x.name })),
     ids: tourIds.value, set: v => (tourIds.value = v),
@@ -99,7 +108,7 @@ const sections = computed<Section[]>(() => {
     items: props.albums.map(a => ({ id: a.id, label: a.title })),
     ids: albumIds.value, set: v => (albumIds.value = v),
   })
-  if (props.posts?.length) out.push({
+  if (props.posts) out.push({
     key: 'posts', title: t('common.relations.posts'),
     items: props.posts.map(p => ({ id: p.id, label: p.title })),
     ids: postIds.value, set: v => (postIds.value = v),
@@ -109,7 +118,7 @@ const sections = computed<Section[]>(() => {
     items: props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
     ids: musicVideoIds.value, set: v => (musicVideoIds.value = v),
   })
-  if (props.pressReleases?.length) out.push({
+  if (props.pressReleases) out.push({
     key: 'pressReleases', title: t('common.relations.press'),
     items: props.pressReleases.map(pr => ({ id: pr.id, label: pr.og_title ?? pr.url })),
     ids: pressReleaseIds.value, set: v => (pressReleaseIds.value = v),
@@ -159,6 +168,7 @@ function summary(section: Section): string {
           <span>{{ i.label }} <span v-if="i.badge" class="assoc-badge">{{ i.badge }}</span></span>
         </label>
         <TagQuickAdd v-if="s.key === 'tags'" @created="pick(s, $event.id)" />
+        <EntityQuickAdd v-else-if="QUICK_ADD[s.key]" :entity="QUICK_ADD[s.key]!" @created="pick(s, $event)" />
       </div>
     </div>
   </div>

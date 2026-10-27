@@ -101,6 +101,18 @@ export default {
   members: {
     currentLineup: 'Obecny skład',
   },
+  // "+ New …" beside a picker of related records (EntityQuickAdd). One key
+  // per entity rather than '+ New {entity}': Polish inflects the adjective
+  // with the noun's gender.
+  quickAdd: {
+    concert: '+ Nowy koncert',
+    release: '+ Nowe wydawnictwo',
+    press: '+ Nowy materiał prasowy',
+    shopItem: '+ Nowy produkt',
+    member: '+ Nowy członek zespołu',
+    tour: '+ Nowa trasa',
+    post: '+ Nowy wpis',
+  },
   relations: {
     title: 'Powiąż z…',
     members: 'Członkowie zespołu',

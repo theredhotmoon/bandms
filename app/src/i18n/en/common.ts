@@ -105,6 +105,18 @@ export default {
   members: {
     currentLineup: 'Current line-up',
   },
+  // "+ New …" beside a picker of related records (EntityQuickAdd). One key
+  // per entity rather than '+ New {entity}': Polish inflects the adjective
+  // with the noun's gender.
+  quickAdd: {
+    concert: '+ New concert',
+    release: '+ New release',
+    press: '+ New press coverage',
+    shopItem: '+ New shop item',
+    member: '+ New band member',
+    tour: '+ New tour',
+    post: '+ New post',
+  },
   relations: {
     title: 'Link to…',
     members: 'Band members',

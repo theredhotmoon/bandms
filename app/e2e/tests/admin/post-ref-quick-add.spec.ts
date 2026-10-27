@@ -44,7 +44,7 @@ test.describe('Post block — reference created from the block', () => {
     await page.getByRole('button', { name: '+ Reference' }).click()
     const block = outer.locator('.block-row').last()
     await block.locator('select').first().selectOption('press_release')
-    await block.getByTestId('ref-quick-add').click()
+    await block.getByTestId('quick-add-press_release').click()
 
     const inner = page.locator('.modal-overlay').nth(1)
     await expect(inner).toBeVisible()
@@ -99,7 +99,7 @@ test.describe('Post block — reference created from the block', () => {
     ]
     for (const [entity, heading] of forms) {
       await block.locator('select').first().selectOption(entity)
-      await block.getByTestId('ref-quick-add').click()
+      await block.getByTestId(`quick-add-${entity}`).click()
       const inner = page.locator('.modal-overlay').nth(1)
       await expect(inner.getByRole('heading', { name: heading })).toBeVisible()
       // A clean form: Escape closes the nested modal alone.
@@ -110,7 +110,7 @@ test.describe('Post block — reference created from the block', () => {
 
     for (const entity of ['album', 'music_video']) {
       await block.locator('select').first().selectOption(entity)
-      await expect(block.getByTestId('ref-quick-add')).toHaveCount(0)
+      await expect(block.locator('[data-testid^="quick-add-"]')).toHaveCount(0)
     }
 
     expect(errors).toEqual([])
