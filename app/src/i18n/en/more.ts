@@ -266,11 +266,8 @@ export default {
       namePlaceholder: 'Band name',
       website: 'Website',
       contacts: 'Contact people',
-      // {link} is a RouterLink, so this is an <i18n-t> keypath. It was three
-      // separate keys around the link; a translator could not then reorder the
-      // clause or inflect the link text, which Polish needs.
-      noAuthors: 'No authors or contacts on file yet. {link} and it will show up here.',
-      addOneFirst: 'Add one first',
+      newContact: '+ New contact',
+      noAuthors: 'No authors or contacts on file yet. Add one with “+ New contact” and it will show up here.',
       /** Carries `{query}` — what was typed in the contact search. */
       noContactMatch: 'No contacts match “{query}”.',
       searchContacts: 'Search contacts…',

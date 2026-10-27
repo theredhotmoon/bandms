@@ -55,6 +55,7 @@ async function handleSubmit(payload: BandMemberPayload) {
         :loading="saving"
         :errors="errors"
         :available-instruments="instrumentsQuery.data.value ?? []"
+        :instruments-loaded="instrumentsQuery.isSuccess.value"
         @submit="handleSubmit"
       />
     </div>

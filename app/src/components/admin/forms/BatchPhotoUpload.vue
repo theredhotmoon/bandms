@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
+import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import ImageDropZone from './ImageDropZone.vue'
 import UploadProgressBar from './UploadProgressBar.vue'
 import TranslatedSlugInput from './TranslatedSlugInput.vue'
@@ -8,6 +9,8 @@ import type { Localized } from '@/types/website-module'
 import type { Concert } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Tag } from '@/types/tag'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import type { UploadProgress } from '@/api/albums'
 import { useTagLabel } from '@/composables/useTagLabel'
 
@@ -64,6 +67,10 @@ function toggleTag(id: number) {
   if (idx === -1) meta.tag_ids.push(id)
   else meta.tag_ids.splice(idx, 1)
 }
+
+// Files count as changes too: a picked photo is as much a draft as a typed title.
+const { isDirty } = useDirtyGuard(() => ({ ...meta, files: pendingFiles.value.length }))
+const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 const canUpload = computed(() =>
   pendingFiles.value.length > 0 && !!meta.title.trim() && !props.uploading,
@@ -138,8 +145,11 @@ function submit() {
         <label class="field-label">{{ $t('media.batchUpload.description') }}</label>
         <textarea v-model="meta.description" class="field-input" rows="2" :placeholder="$t('media.batchUpload.descriptionPlaceholder')" />
       </div>
-      <div v-if="tags.length">
-        <label class="field-label">{{ $t('media.batchUpload.tags') }}</label>
+      <div>
+        <div class="field-label-row">
+          <label class="field-label">{{ $t('media.batchUpload.tags') }}</label>
+          <TagQuickAdd @created="pushUnique(meta.tag_ids, $event.id)" />
+        </div>
         <div class="checkbox-list">
           <label v-for="t in tags" :key="t.id" class="checkbox-item">
             <input type="checkbox" :checked="meta.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -157,7 +167,7 @@ function submit() {
 
     <!-- Footer -->
     <div class="flex gap-2 justify-end pt-2">
-      <button type="button" @click="$emit('cancel')" class="btn-ghost" :disabled="uploading">{{ $t('common.actions.cancel') }}</button>
+      <button type="button" @click="cancel()" class="btn-ghost" :disabled="uploading">{{ $t('common.actions.cancel') }}</button>
       <button type="button" :disabled="!canUpload" class="btn-primary" @click="submit">
         {{ uploading
           ? $t('media.batchUpload.uploading')

@@ -4,6 +4,8 @@ import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import type { Venue, VenuePayload } from '@/types/venue'
 import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
@@ -294,7 +296,10 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
 
     <!-- Tags -->
     <div>
-      <label class="field-label">{{ $t('common.fields.tags') }}</label>
+      <div class="field-label-row">
+        <label class="field-label">{{ $t('common.fields.tags') }}</label>
+        <TagQuickAdd @created="pushUnique(form.tag_ids, $event.id)" />
+      </div>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />

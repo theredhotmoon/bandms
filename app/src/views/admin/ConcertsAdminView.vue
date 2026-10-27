@@ -12,7 +12,7 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useBandMembers } from '@/composables/useBandMembers'
-import { useConcerts } from '@/composables/useConcerts'
+import { useConcerts, useCreateConcertWithPoster } from '@/composables/useConcerts'
 import { useVenues } from '@/composables/useVenues'
 import { useBands } from '@/composables/useBands'
 import { useTags } from '@/composables/useTags'
@@ -30,6 +30,8 @@ import type { Concert, ConcertPayload } from '@/types/concert'
 const { t } = useI18n()
 
 const { query, create, update, remove } = useConcerts()
+// The page's own `create` goes in, so its isPending covers the create step.
+const createWithPoster = useCreateConcertWithPoster(create)
 const { query: venuesQ } = useVenues()
 const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()
@@ -37,8 +39,10 @@ const { query: membersQ } = useBandMembers()
 const { token } = useAuth()
 const queryClient = useQueryClient()
 
-// Button state and notice both come from one gate so they cannot drift apart.
+// The notice comes from the gate, never from a bare `data.length` check.
 // See src/utils/venueGate.ts for why a failed fetch must not read as "empty".
+// "+ Add concert" is no longer disabled on an empty list: the concert form
+// can create a venue itself (VenueQuickAdd), so the notice only points there.
 const gate = computed(() => venueGate({
   isSuccess: venuesQ.isSuccess.value,
   isError:   venuesQ.isError.value,
@@ -111,20 +115,21 @@ function closeModal() { showModal.value = false }
 async function handleSubmit(payload: ConcertPayload, posterFile: File | null, deletePoster: boolean) {
   fieldErrors.value = {}
   try {
-    let concert: Concert
     if (editing.value) {
-      concert = await update.mutateAsync({ id: editing.value.id, payload })
+      const concert: Concert = await update.mutateAsync({ id: editing.value.id, payload })
+      if (posterFile) {
+        await uploadConcertPoster(token.value!, concert.id, posterFile)
+        await queryClient.invalidateQueries({ queryKey: ['concerts'] })
+      } else if (deletePoster) {
+        await deleteConcertPoster(token.value!, concert.id)
+        await queryClient.invalidateQueries({ queryKey: ['concerts'] })
+      }
       toast.success(t('shows.concerts.updated'))
     } else {
-      concert = await create.mutateAsync(payload)
+      // Create, then the poster, in the composable: a failed poster upload is
+      // its own toast and the concert still closes, never a second Create.
+      await createWithPoster(payload, posterFile)
       toast.success(t('shows.concerts.created'))
-    }
-    if (posterFile) {
-      await uploadConcertPoster(token.value!, concert.id, posterFile)
-      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
-    } else if (deletePoster) {
-      await deleteConcertPoster(token.value!, concert.id)
-      await queryClient.invalidateQueries({ queryKey: ['concerts'] })
     }
     closeModal()
   } catch (e) {
@@ -147,12 +152,7 @@ async function confirmDelete() {
     <div class="p-8">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-lg font-semibold" style="color:var(--c-e2e8f0);">{{ $t('shows.concerts.title') }}</h1>
-        <button
-          @click="openCreate"
-          class="btn-add-primary"
-          :disabled="noVenues"
-          :title="noVenues ? $t('shows.concerts.addDisabledTitle') : undefined"
-        >{{ $t('shows.concerts.add') }}</button>
+        <button @click="openCreate" class="btn-add-primary">{{ $t('shows.concerts.add') }}</button>
       </div>
 
       <div v-if="noVenues" class="venue-notice">

@@ -6,9 +6,10 @@ export default {
     empty: 'Brak koncertów.',
     noMatch: 'Żaden koncert nie pasuje do wyszukiwania.',
     created: 'Koncert utworzony',
+    posterFailed: 'Nie udało się wgrać plakatu — dodaj go w formularzu edycji koncertu.',
     updated: 'Koncert zaktualizowany',
     deleted: 'Koncert usunięty',
-    needVenue: 'Aby dodać koncert, potrzebujesz przynajmniej jednego miejsca.',
+    needVenue: 'Brak miejsc — dodaj je z formularza koncertu albo na stronie Miejsc.',
     goToVenues: 'Przejdź do Miejsc →',
     venuesLoadFailed: 'Nie udało się wczytać miejsc — zapis koncertu może się nie powieść, dopóki to nie zostanie naprawione.',
     retry: 'Ponów',
@@ -22,10 +23,10 @@ export default {
     tickets: 'Bilety',
     modalEdit: 'Edytuj koncert',
     modalNew: 'Nowy koncert',
-    addDisabledTitle: 'Dodaj miejsce, zanim utworzysz koncert',
     ticketsModal: 'Bilety — {name}',
     form: {
       eventName: 'Nazwa wydarzenia',
+      newVenue: '+ Nowe miejsce',
       whoPlayed: 'Kto grał',
       // The two *En/*Pl placeholders are cross-locale on purpose: each hints at
       // content for THAT field, not for the chrome. The English field shows an

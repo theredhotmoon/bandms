@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import { provideModalGuard } from '@/composables/useDirtyGuard'
+import { enterModal, isTopmostModal, leaveModal, modalDepth } from '@/utils/modalStack'
 
 /**
  * The discard guard: while the modal holds unsaved input, every way out
@@ -26,6 +27,15 @@ const props = withDefaults(
   { dirty: undefined },
 )
 const emit = defineEmits<{ close: [] }>()
+
+// This instance's place in the shared open-modal stack (src/utils/modalStack).
+// The topmost modal answers Escape; the ones under it are `inert`, so Tab
+// and Shift+Tab cannot walk out of a nested modal into the form beneath it,
+// and each paints at a z-index of its depth, so what is on top is decided
+// by open order rather than by where each Teleport happened to land.
+const self = Symbol('admin-modal')
+const topmost = computed(() => isTopmostModal(self))
+const zIndex = computed(() => 50 + Math.max(modalDepth(self), 0))
 
 const titleId = useId()
 const panel = ref<HTMLElement | null>(null)
@@ -71,7 +81,7 @@ defineExpose({ requestClose })
 // consumed the key with preventDefault() is honoured and only the modal's own
 // Escape reaches here.
 function onKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || !guarded.value) return // i18n-ignore: key name, not copy
+  if (e.key !== 'Escape' || !props.open || e.defaultPrevented || !guarded.value || !isTopmostModal(self)) return // i18n-ignore: key name, not copy
   e.preventDefault()
   requestClose()
 }
@@ -79,10 +89,13 @@ function onKeydown(e: KeyboardEvent) {
 // Focus moves into the dialog on open and back to the opener on close, so a
 // keyboard user is not left on a button behind the overlay.
 let opener: Element | null = null
+// Where focus goes back to once the overlay is gone — set on close, used in onAfterLeave.
+let restoreTo: Element | null = null
 
 watch(() => props.open, async (open) => {
   if (open) {
     opener = document.activeElement
+    enterModal(self)
     window.addEventListener('keydown', onKeydown)
     await nextTick()
     observeHeader()
@@ -96,21 +109,44 @@ watch(() => props.open, async (open) => {
     headerObserver?.disconnect()
     headerObserver = null
     window.removeEventListener('keydown', onKeydown)
-    if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
+    // The stack and the focus restore wait for the overlay to be gone (see
+    // onAfterLeave): leaving the stack here, while the panel still fades for
+    // 150 ms, would hand the next Escape — a double-tap is common — to the
+    // modal underneath and ask to discard *its* form.
+    restoreTo = opener
     opener = null
   }
 }, { immediate: true })
 
+async function onAfterLeave() {
+  leaveModal(self)
+  // After the next render: the opener may sit in a modal underneath that is
+  // `inert` until the stack change reaches the DOM, and an inert element
+  // refuses focus silently. Bail if the modal reopened meanwhile — the open
+  // branch owns focus then, and this must not yank it back out.
+  const previous = restoreTo
+  restoreTo = null
+  await nextTick()
+  if (props.open) return
+  if (previous instanceof HTMLElement) previous.focus({ preventScroll: true })
+}
+
 onBeforeUnmount(() => {
+  leaveModal(self)
   window.removeEventListener('keydown', onKeydown)
   headerObserver?.disconnect()
+  // Torn down while open (the host view left): after-leave never fires, so
+  // this is the only exit that can hand focus back.
+  const el = opener ?? restoreTo
+  opener = restoreTo = null
+  if (el instanceof HTMLElement && el.isConnected) el.focus({ preventScroll: true })
 })
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="open" class="modal-overlay">
+    <Transition name="modal" @after-leave="onAfterLeave">
+      <div v-if="open" class="modal-overlay" :style="{ zIndex }" :inert="!topmost || undefined">
         <div class="modal-backdrop" @click="requestClose" />
         <div
           ref="panel"
@@ -137,6 +173,7 @@ onBeforeUnmount(() => {
 
   <ConfirmDialog
     :open="confirming"
+    :z-index="zIndex + 1"
     :title="$t('common.confirm.discardTitle')"
     :message="$t('common.confirm.discardMessage')"
     :confirm-label="$t('common.confirm.discard')"

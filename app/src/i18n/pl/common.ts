@@ -23,6 +23,7 @@ export default {
   },
   fields: {
     name: 'Nazwa',
+    newTag: '+ Nowy tag',
     description: 'Opis',
     title: 'Tytuł',
     email: 'E-mail',
@@ -99,6 +100,20 @@ export default {
   },
   members: {
     currentLineup: 'Obecny skład',
+  },
+  // "+ New …" beside a picker of related records (EntityQuickAdd). One key
+  // per entity rather than '+ New {entity}': Polish inflects the adjective
+  // with the noun's gender.
+  quickAdd: {
+    concert: '+ Nowy koncert',
+    release: '+ Nowe wydawnictwo',
+    press: '+ Nowy materiał prasowy',
+    shopItem: '+ Nowy produkt',
+    member: '+ Nowy członek zespołu',
+    tour: '+ Nowa trasa',
+    post: '+ Nowy wpis',
+    album: '+ Nowy album ze zdjęciami',
+    musicVideo: '+ Nowy teledysk',
   },
   relations: {
     title: 'Powiąż z…',

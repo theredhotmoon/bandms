@@ -2,9 +2,26 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createTag, deleteTag, fetchTags, updateTag } from '@/api/tags'
 import type { Tag, TagPayload } from '@/types/tag'
+import { appendToList } from '@/utils/queryCache'
 import { sortTagsByLabel, tagLabel, tagTerms } from '@/utils/localeOrder'
 import { useAuth } from './useAuth'
 import { useContentLocaleOrder } from './useContentLocales'
+
+/**
+ * The create mutation on its own, for a component that creates tags but
+ * never lists them (TagQuickAdd): `useTags()` would add a second observer on
+ * the list and refetch it on every mount.
+ */
+export function useCreateTag() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
+    // The query's `select` re-sorts the appended row into place.
+    onSuccess: (tag) => appendToList<Tag>(queryClient, ['tags'], tag),
+  })
+}
 
 export function useTags() {
   const { token } = useAuth()
@@ -22,10 +39,7 @@ export function useTags() {
     select: computed(() => (tags: Tag[]) => sortTagsByLabel(tags, order.value)),
   })
 
-  const create = useMutation({
-    mutationFn: (payload: TagPayload) => createTag(token.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
-  })
+  const create = useCreateTag()
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: TagPayload }) =>

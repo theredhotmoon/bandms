@@ -11,7 +11,7 @@ import ImageDropZone from '@/components/admin/forms/ImageDropZone.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
-import { useReleases } from '@/composables/useReleases'
+import { useReleases, useCreateReleaseWithCover } from '@/composables/useReleases'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useRelease } from '@/composables/useRelease'
 import { useTableControls } from '@/composables/useTableControls'
@@ -45,6 +45,8 @@ const typeBadgeStyle = (type: string) => ({
 })
 
 const { query, create, update, remove } = useReleases()
+// The page's own `create` goes in, so its isPending covers the create step.
+const createWithCover = useCreateReleaseWithCover(create)
 const { token } = useAuth()
 const { t } = useI18n()
 const queryClient = useQueryClient()
@@ -113,19 +115,19 @@ function closeModal() {
 async function handleSubmit(payload: ReleasePayload, coverFile: File | null, deleteCover: boolean) {
   fieldErrors.value = {}
   try {
-    let result: Release
     if (isCreating.value) {
-      result = await create.mutateAsync(payload)
+      // Create, then the cover, in the composable: a failed cover upload is
+      // its own toast and the release still closes, never a second Create.
+      await createWithCover(payload, coverFile)
     } else {
-      result = await update.mutateAsync({ id: editingId.value!, payload })
-    }
-
-    if (coverFile) {
-      await uploadReleaseCover(token.value!, result.id, coverFile)
-      await queryClient.invalidateQueries({ queryKey: ['releases'] })
-    } else if (deleteCover) {
-      await deleteReleaseCover(token.value!, result.id)
-      await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      const result: Release = await update.mutateAsync({ id: editingId.value!, payload })
+      if (coverFile) {
+        await uploadReleaseCover(token.value!, result.id, coverFile)
+        await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      } else if (deleteCover) {
+        await deleteReleaseCover(token.value!, result.id)
+        await queryClient.invalidateQueries({ queryKey: ['releases'] })
+      }
     }
 
     toast.success(isCreating.value ? t('media.releases.created') : t('media.releases.updated'))

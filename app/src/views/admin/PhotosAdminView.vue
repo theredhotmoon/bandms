@@ -8,15 +8,17 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BatchPhotoUpload from '@/components/admin/forms/BatchPhotoUpload.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import AlbumAddPhotos from '@/components/admin/forms/AlbumAddPhotos.vue'
 import PhotoMemberTags from '@/components/admin/PhotoMemberTags.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
-import { useAlbums } from '@/composables/useAlbums'
+import { useAlbums, useCreateAlbumWithPhotos } from '@/composables/useAlbums'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
-import { addAlbumPhotos, batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
+import { addAlbumPhotos, removeAlbumPhoto } from '@/api/albums'
 import { setPhotoMembers, togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
@@ -26,6 +28,7 @@ import { useTagLabel } from '@/composables/useTagLabel'
 
 const tagName = useTagLabel()
 const { query, update, remove, reorderPhotos } = useAlbums()
+const createAlbumWithPhotos = useCreateAlbumWithPhotos()
 const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
 const { query: tagsQ } = useTags()
@@ -54,10 +57,9 @@ async function handleBatchUpload(
   batchUploading.value = true
   batchProgress.value = null
   try {
-    const album = await batchCreateAlbum(token.value!, files, meta, (p) => {
+    const album = await createAlbumWithPhotos({ files, meta }, (p) => {
       batchProgress.value = p
     })
-    await queryClient.invalidateQueries({ queryKey: ['albums'] })
     toast.success(t('media.photos.albumCreated', album.photos.length, { named: { title: album.title, n: album.photos.length } }))
     showBatch.value = false
   } catch (e) {
@@ -403,8 +405,11 @@ async function confirmDelete() {
             <input v-model="editForm.published_at" type="datetime-local" class="field-input" />
           </div>
         </div>
-        <div v-if="tagsQ.data.value?.length">
-          <label class="field-label">{{ $t('media.photos.tags') }}</label>
+        <div>
+          <div class="field-label-row">
+            <label class="field-label">{{ $t('media.photos.tags') }}</label>
+            <TagQuickAdd @created="pushUnique(editForm.tag_ids, $event.id)" />
+          </div>
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
               <input type="checkbox" :checked="editForm.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />

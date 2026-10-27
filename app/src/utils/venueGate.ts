@@ -1,13 +1,14 @@
 /**
  * Decides what the concerts admin may say about the venue list.
  *
- * A concert cannot exist without a venue, so with none defined the create form
- * is a dead end and "+ Add concert" is disabled. Only a *settled* query proves
- * that: disabling on any non-success state blames a missing venue for what may
- * be a failed fetch, and leaves the user no way forward.
+ * A concert cannot exist without a venue, so with none defined the page shows
+ * a notice pointing at the concert form's own "New venue" button (it used to
+ * disable "+ Add concert" outright, before the form could create a venue
+ * itself). Only a *settled* query proves the list is empty: reacting to any
+ * non-success state blames a missing venue for what may be a failed fetch.
  *
- * The button state and the notice are both derived from `noVenues` here so the
- * two cannot drift apart — which is precisely how the original bug arose.
+ * The notice and `venuesFailed` are both derived here so the two states cannot
+ * drift apart — which is precisely how the original bug arose.
  */
 
 export interface VenueQueryState {
@@ -22,9 +23,9 @@ export interface VenueQueryState {
 export interface VenueGate {
   /** At least one venue is known to exist. */
   hasVenues: boolean
-  /** Confirmed empty: disable creation and explain why. */
+  /** Confirmed empty: show the notice pointing at the form's own "New venue". */
   noVenues: boolean
-  /** The list could not be loaded; creation stays available as a backstop. */
+  /** The list could not be loaded; say so rather than claim it is empty. */
   venuesFailed: boolean
 }
 

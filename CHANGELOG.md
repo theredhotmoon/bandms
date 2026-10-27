@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-27 (create related records from inside a form)
+
+### Added
+- **The relations panel's sections can create what they link**: *+ New band member / concert / release / shop item / tour / post / press coverage / photo album / music video* inside the matching section on the clip, post, press coverage and shop item forms, opening that record's own admin form over the host; the new record is listed and ticked on return, and every section now shows even while empty. A photo album is created with its photos, the way the Photos page does it. The post reference block offers the same for every target but the clip, which has its own *Add a new clip…*.
+- **A tag can be created from inside any form that picks tags**: *+ New tag* beside the tag checkbox list on the concert, venue and album forms, and inside the relations panel's Tags section on posts, press coverage and shop items (that section is now offered even while no tags exist). The new tag is listed and ticked on return.
+- **An instrument can be created from inside the band member form**: *+ New instrument* above the instrument cards opens the instrument form over the member; the new one becomes the member's main instrument (or an "also plays" when a main one is already chosen). The instrument block used to vanish entirely when no instruments existed; it now shows the button and a hint.
+- **A contact person can be created from inside the band form**: *+ New contact* beside the contact picker opens the author form over the band; the new person is listed and ticked on save, and the band's name and other ticks are untouched. The *add one first* link that used to leave the modal is gone.
+- **A post's reference block can create what it points at**: *+ New concert / release / press coverage / shop item* beside the item select opens that entity's own admin form over the post, and the block points at the new record the moment it is saved, before the list has refetched. Photo albums and music videos are not offered, because their create flows (a photo upload, a URL metadata fetch) live inline in their own pages.
+- **A venue can be created from inside the concert form**: a *+ New venue* button beside the venue select opens the full venue form in a modal over the concert, and saving selects the new venue with everything already typed into the concert left as it was. Until now a missing venue meant closing the concert, adding the venue on its own page and starting over, and with no venues at all the *+ Add concert* button was disabled outright. It is enabled now; the notice stays and points at the in-form button.
+
+### Fixed
+- **Escape in a modal opened over another modal acts on the top one only**: every open modal listened for Escape on `window` and the outer one registered first, so the key pressed inside a nested modal would have asked to discard the outer form. `AdminModal` now keeps a shared stack of open instances (`src/utils/modalStack.ts`): only the topmost answers Escape, the ones beneath are `inert` so Tab cannot leave the nested modal, and each paints at the z-index of its depth. The discard guard already scoped itself through provide/inject and needed no change; `concerts.spec.ts` proves all of it.
+
 ## [Unreleased] — 2026-10-20 (tailwind scanner check, follow-up)
 
 ### Fixed

@@ -5,6 +5,9 @@ import { computed, reactive, ref, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
+import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
+import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -82,7 +85,9 @@ function clearPoster() {
 // ── Form state ────────────────────────────────────────────────
 const form = reactive({
   name:             emptyBag(),
-  venue_id:         0,
+  // '' (not 0) while unset: only an empty-valued option is a placeholder the
+  // browser lets `required` act on — see RefBlockEditor for the full note.
+  venue_id:         '' as number | '',
   date:             '',
   doors_open:       '',
   sound_check_time: '',
@@ -137,7 +142,7 @@ const { cancel } = useModalGuard(canSave, () => emit('cancel'))
 watch(() => props.initial, (concert) => {
   if (!concert) {
     form.name             = emptyBag()
-    form.venue_id         = 0
+    form.venue_id         = ''
     form.date             = ''
     form.doors_open       = ''
     form.sound_check_time = ''
@@ -159,7 +164,7 @@ watch(() => props.initial, (concert) => {
   posterPreview.value = null
   posterDelete.value  = false
   const toHHMM = (t: string | null | undefined) => (t ?? '').slice(0, 5)
-  form.venue_id         = concert.venue?.id ?? 0
+  form.venue_id         = concert.venue?.id ?? ''
   form.date             = concert.date ?? ''
   form.doors_open       = toHHMM(concert.doors_open)
   form.sound_check_time = toHHMM(concert.sound_check_time)
@@ -312,7 +317,7 @@ function submit() {
   emit('submit', {
     name: compactBag(form.name),
     description: compactBag(form.description),
-    venue_id:          form.venue_id,
+    venue_id:          Number(form.venue_id),
     date:              form.date,
     doors_open:        form.doors_open       || null,
     sound_check_time:  form.sound_check_time || null,
@@ -348,9 +353,14 @@ function submit() {
 
     <!-- Venue -->
     <div>
-      <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
+      <div class="field-label-row">
+        <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
+        <!-- The venue list is the view's query; the created row reaches the
+             select through the cache append in useVenues.create. -->
+        <VenueQuickAdd :tags="tags" @created="form.venue_id = $event.id" />
+      </div>
       <select v-model="form.venue_id" required class="field-input">
-        <option :value="0" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
+        <option value="" disabled>{{ $t('shows.concerts.form.selectVenue') }}</option>
         <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
       </select>
       <p v-if="errors?.venue_id" class="field-error">{{ errors.venue_id[0] }}</p>
@@ -523,7 +533,10 @@ function submit() {
 
     <!-- Tags -->
     <div>
-      <label class="field-label">{{ $t('common.fields.tags') }}</label>
+      <div class="field-label-row">
+        <label class="field-label">{{ $t('common.fields.tags') }}</label>
+        <TagQuickAdd @created="pushUnique(form.tag_ids, $event.id)" />
+      </div>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
           <input type="checkbox" :checked="form.tag_ids.includes(t.id)" @change="toggleTag(t.id)" />
@@ -635,7 +648,7 @@ function submit() {
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
-/* ── Venue card ─────────────────────────────────────────────── */
+/* ── Venue ──────────────────────────────────────────────────── */
 .venue-card {
   margin-top: 0.625rem;
   border: 1px solid var(--c-2a2a2a);

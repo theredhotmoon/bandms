@@ -298,6 +298,61 @@ An in-modal popover that consumes Escape (`PhotoMemberTags`,
 `AdminModal` listens on `window`, which fires after every `document`
 listener, and skips a consumed key.
 
+**A modal may open inside another modal**, and nothing else is needed:
+`VenueQuickAdd` renders an `AdminModal` from inside `ConcertForm`, which
+sits in the concerts view's modal (`AuthorQuickAdd` in `BandForm`,
+`InstrumentQuickAdd` in `BandMemberForm` and `RefQuickAdd` in the post
+reference block are the same shape: a button, a
+nested `AdminModal`, the entity's existing form, a create-only mutation
+that appends to the list cache, one `created` emit — `QuickAddModal` is
+that shell, and a new quick-add is the form in its slot plus the
+mutation. Its `create` takes `(payload, file)`, so a form that emits a
+file beside its payload (a concert's poster, a release's cover) fits too:
+`EntityQuickAdd` (`forms/quick-add/`, one component for every entity with a
+reusable form — used by the post reference block and the relations panel;
+it mounts only the one create composable its `entity` names, so hosts
+`:key` it on the entity, and loads each entity's form with a dynamic
+import — a shop item form holds the relations panel, which holds the
+quick-add, which would hold the shop item form, and that import cycle is
+only safe when the inner edge is lazy) hands it `useCreateConcertWithPoster()`
+and friends. Those are instances of `useCreateWithUpload()`, over
+`createThenUpload()` in `src/utils/createThenUpload.ts`: the one policy the
+concerts, releases and band members pages share with the quick-adds — a
+failed upload is its own toast (worded to complement the success toast,
+not contradict it) and the record still closes, never a form left open
+whose second Create makes a duplicate. A page builds that wrapper itself
+from its own `create` mutation (`useCreateConcertWithPoster(create)`) so
+its `isPending` covers the create path and list-only consumers of
+`useConcerts()` carry no upload code; the first cut did neither, and the
+Save button stopped disabling. The cache append is `appendToList()` in
+`src/utils/queryCache.ts`; every `useCreate*()` composable goes through it,
+so a new list-backed create should too. Ticking the created record is
+`pushUnique()`, and the label-with-button row is `.field-label-row` in
+`form-styles.css`.)
+
+**A form that a quick-add can stack over another modal must be a
+component** that carries `useModalGuard` — the instrument and music video
+forms were extracted from their views for exactly this (`InstrumentForm`,
+`MusicVideoForm`), and `BatchPhotoUpload` gained the guard. An unguarded
+form in a nested modal gets no Escape at all. The nested form's `useModalGuard`
+injects the *nearest* modal, so its discard guard is its own, and
+`src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
+open — decides the rest from open order alone: the topmost answers Escape
+(every open modal listens on `window`, and the outer one registered
+first), the ones beneath it are `inert` (Tab cannot walk out of the nested
+modal into the form under it), and each overlay's z-index is its depth
+(so what paints on top never depends on where a `Teleport` landed in
+`<body>`). A quick-add inside a *permanently mounted* host would otherwise
+teleport before a sibling modal opened later and be painted under it.
+**That stack is a plain module on purpose.** Top-level code in
+`<script setup>` runs once per instance, so a "shared" array declared
+there is private to each modal and every one believes it is on top; the
+first cut did exactly that and the nested modal ignored Escape.
+
+An inert element refuses focus silently, so `AdminModal` restores focus to
+its opener only after `nextTick()` — the opener usually sits in the modal
+underneath, which is inert until the stack change reaches the DOM.
+
 ### Composables
 - Named `use*`, placed in `src/composables/`.
 - One composable = one logical concern.

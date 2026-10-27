@@ -23,6 +23,7 @@ export default {
   },
   fields: {
     name: 'Name',
+    newTag: '+ New tag',
     description: 'Description',
     title: 'Title',
     email: 'Email',
@@ -103,6 +104,20 @@ export default {
   // reads as ambiguous. Same split as band.clips vs common.clips.
   members: {
     currentLineup: 'Current line-up',
+  },
+  // "+ New …" beside a picker of related records (EntityQuickAdd). One key
+  // per entity rather than '+ New {entity}': Polish inflects the adjective
+  // with the noun's gender.
+  quickAdd: {
+    concert: '+ New concert',
+    release: '+ New release',
+    press: '+ New press coverage',
+    shopItem: '+ New shop item',
+    member: '+ New band member',
+    tour: '+ New tour',
+    post: '+ New post',
+    album: '+ New photo album',
+    musicVideo: '+ New music video',
   },
   relations: {
     title: 'Link to…',

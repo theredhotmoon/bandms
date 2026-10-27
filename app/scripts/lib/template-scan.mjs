@@ -224,11 +224,16 @@ export function copyHits(src, { isTs = false } = {}) {
   // computed is exactly as user-facing as one in the template.
   const sStart = src.indexOf('<script')
   const sEnd = src.lastIndexOf('</script>')
+  // The range starts after the opening tag's `>`, however many lines the tag
+  // takes: `<script setup lang="ts" generic="TPayload, TRecord">` is markup,
+  // and judging it as code reported a generic component's type parameters as
+  // copy — on a wrapped tag the second line would still have.
+  const sOpenEnd = sStart === -1 ? -1 : src.indexOf('>', sStart)
   const range = isTs
     ? [0, lines.length]
     : sStart === -1
       ? null
-      : [countLines(src.slice(0, sStart)) - 1, countLines(src.slice(0, sEnd))]
+      : [countLines(src.slice(0, sOpenEnd + 1)), countLines(src.slice(0, sEnd))]
   if (range) {
     for (let i = range[0]; i < range[1]; i++) {
       const l = lines[i]
@@ -237,7 +242,9 @@ export function copyHits(src, { isTs = false } = {}) {
       // Anchored: an unanchored `from ['"]` skipped any line merely containing
       // `from '`, including toast bodies and trailing comments.
       if (/^\s*(?:import\b|export\s+(?:\*|\{|type\b))/.test(l)) continue
-      const hits = copyLiterals(l)
+      // A dynamic import's specifier is a module path, not copy:
+      // `defineAsyncComponent(() => import('./X.vue'))` reads as a string.
+      const hits = copyLiterals(l.replace(/\bimport\(\s*(['"])[^'"]*\1\s*\)/g, 'import()'))
       if (hits.length) out.push({ line: i + 1, hits })
     }
   }

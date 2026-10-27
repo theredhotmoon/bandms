@@ -1,8 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { Ref } from 'vue'
-import { fetchAlbum, fetchAlbums, updateAlbum, deleteAlbum, reorderAlbumPhotos } from '@/api/albums'
-import type { Album, AlbumPayload } from '@/types/album'
+import { batchCreateAlbum, fetchAlbum, fetchAlbums, updateAlbum, deleteAlbum, reorderAlbumPhotos } from '@/api/albums'
+import type { UploadProgress } from '@/api/albums'
+import type { Album, AlbumPayload, BatchAlbumUploadMeta } from '@/types/album'
+import { appendToList } from '@/utils/queryCache'
 import { useAuth } from './useAuth'
+
+/** What the "new album" form hands over: the photos and the album's metadata. */
+export interface AlbumUpload {
+  files: { file: File; caption: string }[]
+  meta: BatchAlbumUploadMeta
+}
+
+/**
+ * One multipart create: the album and its photos together, the way the
+ * Photos page makes a new album — shared with the quick-add. The created
+ * album goes into the list cache at once.
+ */
+export function useCreateAlbumWithPhotos() {
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  return async (upload: AlbumUpload, onProgress: (p: UploadProgress) => void = () => {}): Promise<Album> => {
+    const album = await batchCreateAlbum(token.value!, upload.files, upload.meta, onProgress)
+    appendToList<Album>(queryClient, ['albums'], album)
+    return album
+  }
+}
 
 export function useAlbums() {
   const { token } = useAuth()
