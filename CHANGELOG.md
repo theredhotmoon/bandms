@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-27 (per-page content width)
+
+### Added
+- **Each page's content width is a setting**: *Content width — Full width / Limited width* in `/admin/website-modules`, on every routed page plus the homepage (not Privacy, the tech rider or the footer/site rows). *Limited* caps the content at the shared 1200px measure and centres it; section backgrounds still run edge to edge either way. Show, release, member and shop item pages follow their section; news articles keep their own 760px reading column. Stored as `website_modules.content_width` (`full` | `limited`, default `full`, as the design is full width) and served as `module_config.<key>.content_width`. Changes reach the public site on the next rebuild.
+
+### Changed
+- **Every section now lines up on one content edge**: Contact and the homepage ran their content to the gutters while News, Shows and About were capped by hardcoded 1200px widths, and most other sections were uncapped. All of them now go through one `.page-content` utility that reads the page's setting, and the hardcoded caps are gone. The migration (and the seeder, for a fresh database) sets *Limited* on Home, Contact, News, Shows, About and Shop, so no page goes from capped to edge-to-edge; Shop moves from its own 1280px cap to the shared 1200px one.
+
 ## [Unreleased] — 2026-10-27 (create related records from inside a form)
 
 ### Added
