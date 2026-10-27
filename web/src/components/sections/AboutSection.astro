@@ -176,7 +176,7 @@ const contacts = [
         {bio === ''
           ? <p class="ab-bio">{t.noBio}</p>
           : bioIsHtml
-            ? <div class="ab-bio-html" set:html={bio} />
+            ? <div class="ab-bio-html rich-text" set:html={bio} />
             : bioParagraphs.map((paragraph, i) => (
                 <p class={i === 0 ? 'ab-bio ab-bio--lead' : 'ab-bio'}>{paragraph}</p>
               ))}
@@ -333,27 +333,26 @@ const contacts = [
   /* The opening paragraph carries the page, so it is set larger. */
   .ab-bio--lead { font-size: 22px; }
 
-  /* RichEditor-sourced (bio_long/bio_full) HTML — same typography as .ab-bio,
-     plus the nested elements Tiptap's StarterKit can produce. Plain (non-
-     :global) selectors, matching TextBlock.astro's .art-prose: Astro scopes
-     this rule to the element this file renders (.ab-bio-html itself), which
-     covers the set:html-injected children below it too. */
+  /* RichEditor-sourced (bio_long/bio_full) HTML, injected with set:html — so
+     every descendant rule is :global(). A plain `.ab-bio-html p` compiles to
+     `p[data-astro-cid-…]`, which injected markup never matches: paragraph
+     spacing and list bullets were silently dropped. */
   .ab-bio-html { font: 500 19px/1.6 var(--font-body); color: var(--color-body); text-wrap: pretty; }
-  .ab-bio-html p { margin: 0 0 18px; }
-  .ab-bio-html p:last-child { margin-bottom: 0; }
-  .ab-bio-html h2,
-  .ab-bio-html h3 {
+  .ab-bio-html :global(p) { margin: 0 0 18px; }
+  .ab-bio-html :global(p:last-child) { margin-bottom: 0; }
+  .ab-bio-html :global(h2),
+  .ab-bio-html :global(h3) {
     font-family: var(--font-display);
     font-weight: var(--display-weight);
     text-transform: var(--display-transform);
     margin: 26px 0 10px;
     color: var(--color-ink);
   }
-  .ab-bio-html ul,
-  .ab-bio-html ol { padding-left: 1.4em; margin: 0 0 18px; }
-  .ab-bio-html li { margin: 4px 0; }
-  .ab-bio-html a { color: var(--color-accent); text-underline-offset: 3px; }
-  .ab-bio-html blockquote {
+  .ab-bio-html :global(ul),
+  .ab-bio-html :global(ol) { padding-left: 1.4em; margin: 0 0 18px; }
+  .ab-bio-html :global(li) { margin: 4px 0; }
+  .ab-bio-html :global(a) { color: var(--color-accent); text-underline-offset: 3px; }
+  .ab-bio-html :global(blockquote) {
     margin: 12px 0 18px;
     border-left: 4px solid var(--color-accent);
     padding-left: 18px;

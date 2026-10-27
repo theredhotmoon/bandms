@@ -12,14 +12,14 @@ beforeEach(function () {
 });
 
 it('creates a post with blocks in the submitted order', function () {
-    $this->postJson('/api/posts', [
+    $this->postJson('/api/posts', $this->validPost([
         'title'  => ['en' => 'Blocked post'],
         'blocks' => [
             ['type' => 'text',  'payload' => ['body' => ['en' => 'First']]],
             ['type' => 'embed', 'payload' => ['url' => 'https://youtu.be/dQw4w9WgXcQ']],
             ['type' => 'text',  'payload' => ['body' => ['en' => 'Third']]],
         ],
-    ])->assertCreated()
+    ]))->assertCreated()
       ->assertJsonPath('data.blocks.0.body', 'First')
       ->assertJsonPath('data.blocks.1.provider', 'youtube')
       ->assertJsonPath('data.blocks.2.body', 'Third');
@@ -29,13 +29,13 @@ it('creates a post with blocks in the submitted order', function () {
 // trap post_links fell into: it ordered correctly only because delete-and-
 // recreate happened to make auto-increment id match.
 it('sets position from the array index', function () {
-    $this->postJson('/api/posts', [
+    $this->postJson('/api/posts', $this->validPost([
         'title'  => ['en' => 'Positions'],
         'blocks' => [
             ['type' => 'text', 'payload' => ['body' => ['en' => 'A']]],
             ['type' => 'text', 'payload' => ['body' => ['en' => 'B']]],
         ],
-    ])->assertCreated();
+    ]))->assertCreated();
 
     expect(PostBlock::orderBy('position')->pluck('position')->all())->toBe([0, 1]);
 });
@@ -72,41 +72,41 @@ it('clears blocks when an empty array is sent', function () {
 });
 
 it('detects and stores the embed provider server-side', function () {
-    $this->postJson('/api/posts', [
+    $this->postJson('/api/posts', $this->validPost([
         'title'  => ['en' => 'Embeds'],
         'blocks' => [['type' => 'embed', 'payload' => ['url' => 'https://vimeo.com/76979871']]],
-    ])->assertCreated();
+    ]))->assertCreated();
 
     expect(PostBlock::first()->payload['provider'])->toBe('vimeo');
 });
 
 describe('validation', function () {
     it('rejects an unknown block type', function () {
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/posts', $this->validPost([
             'title'  => ['en' => 'X'],
             'blocks' => [['type' => 'carousel', 'payload' => []]],
-        ])->assertStatus(422)->assertJsonValidationErrors('blocks.0.type');
+        ]))->assertStatus(422)->assertJsonValidationErrors('blocks.0.type');
     });
 
     it('rejects an embed block with no url', function () {
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/posts', $this->validPost([
             'title'  => ['en' => 'X'],
             'blocks' => [['type' => 'embed', 'payload' => ['label' => 'nope']]],
-        ])->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.url');
+        ]))->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.url');
     });
 
     it('rejects a ref block naming an entity that is not a ref target', function () {
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/posts', $this->validPost([
             'title'  => ['en' => 'X'],
             'blocks' => [['type' => 'ref', 'payload' => ['entity' => 'tour', 'id' => 1]]],
-        ])->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.entity');
+        ]))->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.entity');
     });
 
     it('rejects an image block with no path', function () {
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/posts', $this->validPost([
             'title'  => ['en' => 'X'],
             'blocks' => [['type' => 'image', 'payload' => ['alt' => ['en' => 'x']]]],
-        ])->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.path');
+        ]))->assertStatus(422)->assertJsonValidationErrors('blocks.0.payload.path');
     });
 });
 
@@ -114,10 +114,10 @@ describe('validation', function () {
 it('rolls the post back when a block write fails', function () {
     $before = Post::count();
 
-    $this->postJson('/api/posts', [
+    $this->postJson('/api/posts', $this->validPost([
         'title'  => ['en' => 'Doomed'],
         'blocks' => [['type' => 'text', 'payload' => ['body' => ['en' => str_repeat('x', 70000)]]]],
-    ]);
+    ]));
 
     expect(Post::count())->toBe($before);
 })->skip(fn () => DB::connection()->getDriverName() === 'sqlite', 'SQLite does not enforce the length that trips this');
@@ -126,7 +126,7 @@ describe('SiteRebuild', function () {
     beforeEach(fn () => \App\Models\SiteSetting::set('auto_rebuild', 'true'));
 
     it('requests a rebuild on create, update and delete', function () {
-        $this->postJson('/api/posts', ['title' => ['en' => 'A']])->assertCreated();
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'A']]))->assertCreated();
         $post = Post::first();
         $this->putJson("/api/posts/{$post->id}", ['title' => ['en' => 'B']])->assertSuccessful();
         $this->deleteJson("/api/posts/{$post->id}")->assertNoContent();

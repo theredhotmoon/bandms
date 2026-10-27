@@ -46,3 +46,18 @@ export async function setAdminAuth(page: Page, role: 'admin' | 'member' = 'admin
 }
 
 export const test = base
+
+/**
+ * Fill what every post needs before it saves — an intro and at least one tag
+ * (drafts included). The intro input that is `required` is the band's first
+ * content language's, whichever that is; the first listed tag will do.
+ */
+export async function fillPostRequired(page: Page) {
+  const modal = page.locator('.modal-overlay').first()
+  const intro = modal.locator('textarea[required]').first()
+  if (await intro.count()) await intro.fill('E2E intro')
+  const tags = modal.getByTestId('relations-tags')
+  if (!(await tags.locator('.checkbox-item').count())) await tags.locator('.assoc-toggle').click()
+  const box = tags.locator('.checkbox-item input[type="checkbox"]').first()
+  if (!(await box.isChecked())) await box.check()
+}

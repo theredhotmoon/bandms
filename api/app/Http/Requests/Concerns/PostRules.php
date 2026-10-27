@@ -4,10 +4,47 @@ namespace App\Http\Requests\Concerns;
 
 use App\Support\EmbedProvider;
 use App\Support\PostBlockType;
+use Closure;
 use Illuminate\Validation\Rule;
 
 trait PostRules
 {
+    /**
+     * Title, intro and at least one tag are required for every post, drafts
+     * included — a draft is still the record the band publishes later, and a
+     * post with no intro or tag left holes in the news list and its filter.
+     *
+     * `$sometimes` is the update verb: a partial PUT may leave them out, but
+     * may not send them blank.
+     */
+    protected function requiredContentRules(bool $sometimes = false): array
+    {
+        // An array of rules, not a pipe string: the closure cannot be piped.
+        $presence = $sometimes ? ['sometimes', 'required'] : ['required'];
+
+        return [
+            'title'   => [...$presence, $this->someLocaleFilled()],
+            'intro'   => [...$presence, $this->someLocaleFilled()],
+            'tag_ids' => [...$presence, 'array', 'min:1'],
+        ];
+    }
+
+    /**
+     * A translated bag must hold text in at least one language. Laravel's
+     * `required` passes {"en": null, "pl": null} — the array is not empty —
+     * which is exactly what a form with every input blank sends.
+     */
+    private function someLocaleFilled(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) {
+            $values = is_array($value) ? $value : [$value];
+            $filled = collect($values)->contains(fn ($v) => is_string($v) && trim($v) !== '');
+            if (! $filled) {
+                $fail(__('validation.required', ['attribute' => $attribute]));
+            }
+        };
+    }
+
     /**
      * Everything except the slug rules, which differ per verb. Cross-locale
      * slug uniqueness — the #83 check that lived here as slugCrossUniqueRule()
@@ -18,7 +55,6 @@ trait PostRules
         return [
             'title.en'      => 'nullable|string|max:255',
             'title.pl'      => 'nullable|string|max:255',
-            'intro'         => 'nullable',
             'intro.en'      => 'nullable|string|max:1000',
             'intro.pl'      => 'nullable|string|max:1000',
             // A path returned by POST /api/posts/image, never a data URL (the
@@ -27,7 +63,6 @@ trait PostRules
             'image'         => ['nullable', 'string', 'max:255', 'regex:#^post-images/[A-Za-z0-9_-]+\.(jpe?g|png|gif|webp)$#i'],
             'published_at'  => 'nullable|date',
             'event_date_display' => ['nullable', Rule::in(['range', 'list'])],
-            'tag_ids'       => 'nullable|array',
             'tag_ids.*'     => 'integer|exists:tags,id',
             'concert_ids'   => 'nullable|array',
             'concert_ids.*' => 'integer|exists:concerts,id',

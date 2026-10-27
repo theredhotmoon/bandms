@@ -1,4 +1,4 @@
-import { test, expect, expectToast, confirmDelete, searchTable } from '../../fixtures/test-base'
+import { test, expect, expectToast, confirmDelete, searchTable, fillPostRequired } from '../../fixtures/test-base'
 import { readFileSync } from 'node:fs'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
@@ -62,6 +62,7 @@ test.describe.serial('Admin Posts — event date from linked concerts', () => {
     await page.getByRole('button', { name: '+ Add post' }).click()
     await expect(page.locator('.modal-overlay')).toBeVisible()
     await page.locator('input[placeholder="Post title"]').fill(postTitle)
+    await fillPostRequired(page)
 
     await page.getByRole('button', { name: /^Concerts/ }).click()
     await page.locator('.checkbox-item').filter({ hasText: '2099-01-10' }).locator('input[type="checkbox"]').check()

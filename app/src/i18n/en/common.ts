@@ -89,6 +89,10 @@ export default {
     bulletList: 'Bullet list',
     orderedList: 'Ordered list',
     blockquote: 'Blockquote',
+    link: 'Link (select text first)',
+    linkPlaceholder: 'https://…',
+    linkApply: 'Apply',
+    linkRemove: 'Remove link',
   },
   slug: {
     autoGenerate: 'Auto-generate from title',

@@ -24,8 +24,8 @@ class StorePostRequest extends FormRequest
 
     public function rules(): array
     {
-        return $this->sharedRules() + $this->blockPayloadRules($this->input('blocks', [])) + [
-            'title'   => 'required',
-        ] + Post::translatedSlugRules(null);
+        return $this->sharedRules() + $this->blockPayloadRules($this->input('blocks', []))
+            + $this->requiredContentRules()
+            + Post::translatedSlugRules(null);
     }
 }

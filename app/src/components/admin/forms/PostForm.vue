@@ -152,7 +152,18 @@ watch(() => props.errors, async () => {
   formEl.value?.querySelector('.field-error')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
 })
 
-function submit() {
+// Tags are checkboxes, which `required` cannot express as "at least one", so
+// this one is checked here; the API enforces it too (tag_ids min:1).
+const tagError = ref('')
+watch(() => form.tag_ids.length, (n) => { if (n) tagError.value = '' })
+
+async function submit() {
+  if (!form.tag_ids.length) {
+    tagError.value = t('content.posts.tagRequired')
+    await nextTick()
+    formEl.value?.querySelector('[data-testid="post-tag-error"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    return
+  }
   emit('submit', {
     // `{}` rather than null when blank: the API requires `title`, and an empty
     // object fails that rule with a message keyed `title`, which renders below.
@@ -160,7 +171,9 @@ function submit() {
     // Auto locales go as null only on create — the API generates slugs then;
     // on edit the form saves exactly what it shows (#153, #154).
     slug: slugPayload(form.slug, props.initial ? {} : slugAuto.value),
-    intro: compactBag(form.intro),
+    // `{}` when blank, like the title: the API's "some language filled" rule
+    // then reports it under `intro`.
+    intro: bagHasText(form.intro) ? compactBag(form.intro) : {},
     image: form.image === null ? null : form.image.path,
     published_at: isPublished.value ? form.published_at || null : null,
     event_date_display: form.event_date_display,
@@ -204,12 +217,13 @@ function submit() {
             <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
           </div>
           <div>
-            <label class="field-label">{{ $t('content.posts.intro') }}</label>
+            <label class="field-label">{{ $t('content.posts.intro') }} <span class="field-req">*</span></label>
             <div class="trans-group">
               <div v-for="l in visibleLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
                 <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
                 <textarea
                   v-model="form.intro[l]"
+                  :required="isPrimary(l) && !bagHasText(form.intro)"
                   class="field-input flex-1" rows="2"
                   :placeholder="introPlaceholder(l)"
                   :aria-label="`${$t('content.posts.intro')} ${shortLabel(l)}`"
@@ -283,7 +297,9 @@ function submit() {
         </div>
 
         <div>
-          <label class="field-label">{{ $t('common.fields.slug') }}</label>
+          <!-- Never blank: it follows the title until edited, and the API
+               generates the lead language's slug if none is sent. -->
+          <label class="field-label">{{ $t('common.fields.slug') }} <span class="field-req">*</span></label>
           <!-- Posts are routed per language, so each locale's slug is a public
                URL: a loaded slug stays fixed and nothing auto-fills on edit. -->
           <TranslatedSlugInput
@@ -303,6 +319,9 @@ function submit() {
           :members="members"
           v-model:memberIds="form.member_ids"
         />
+        <p v-if="tagError || errors?.tag_ids" class="field-error" data-testid="post-tag-error">
+          {{ tagError || errors?.tag_ids?.[0] }}
+        </p>
 
         <div v-if="form.concert_ids.length > 1">
           <label class="field-label">{{ $t('content.posts.eventDateShownAs') }}</label>

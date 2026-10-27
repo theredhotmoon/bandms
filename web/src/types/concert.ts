@@ -31,6 +31,10 @@ export interface Concert {
   bands: ConcertBand[]
   tags?: Tag[]
   links?: ConcertLink[]
+  /** External ticket shop, set in the admin. Absent on older API responses. */
+  ticket_url?: string | null
+  /** How many of our own ticket types exist. */
+  ticket_types_count?: number
   clips?: Clip[]
   translations?: {
     name?:        { en?: string | null; pl?: string | null }

@@ -24,6 +24,16 @@ export default {
     modalEdit: 'Edit concert',
     modalNew: 'New concert',
     ticketsModal: 'Tickets — {name}',
+    ticketDetails: {
+      external: 'External ticket shop',
+      noExternal: 'No external shop set.',
+      own: 'Sold on this site',
+      noOwn: 'No ticket types — nothing is sold here.',
+      noSales: 'No tickets sold yet.',
+      soldCount: '{n} sold',
+      purchasedAt: 'Bought',
+      fullList: 'Full ticket list →',
+    },
     form: {
       eventName: 'Event name',
       newVenue: '+ New venue',
@@ -61,6 +71,10 @@ export default {
       dropImage: 'Click or drop image',
       imageHint: 'JPG · PNG · WebP · max 4 MB',
       removePoster: 'Remove poster',
+      ticketsSection: 'Tickets',
+      externalTicketUrl: 'External ticket shop',
+      externalTicketUrlHint: 'A link to an outside ticket seller. If tickets are also sold here, visitors choose where to buy.',
+      ticketsSaveFirst: 'Save the concert first — then you can sell tickets through this site.',
     },
   },
   tickets: {

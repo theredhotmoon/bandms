@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
-import { adminToken } from '../../fixtures/admin-api'
+import { adminToken, postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * The public half of "news post event date is derived from linked concerts".
@@ -87,6 +87,7 @@ test.describe.serial('Public news post — event date from linked concerts', () 
 
     async function makePost(title: string, concert_ids: number[], event_date_display?: 'range' | 'list'): Promise<string> {
       const res = await authedFetch(request, 'post', '/api/posts', {
+        ...(await postRequiredFields(request, API)),
         title, published_at: new Date().toISOString(), concert_ids, event_date_display,
       })
       return (await res.json()).data.slug

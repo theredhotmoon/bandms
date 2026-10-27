@@ -1,4 +1,5 @@
 ---
+import { bioParagraphs, stripHtmlText } from '@/lib/bio'
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import BaseLayout from '@/layouts/BaseLayout.astro'
@@ -148,7 +149,7 @@ const ICONS = new Set(['instagram', 'facebook', 'youtube', 'spotify', 'bandcamp'
 const socials = (member.social_links ?? []).map((s) => ({ ...s, icon: ICONS.has(s.platform) ? s.platform : 'external' }))
 
 // `||`, not `??`: a bio saved as '' would otherwise give an empty description.
-const description = member.bio?.slice(0, 160) || [member.role, profile.name].filter(Boolean).join(' · ')
+const description = (member.bio ? stripHtmlText(member.bio) : '').slice(0, 160) || [member.role, profile.name].filter(Boolean).join(' · ')
 // Structured data needs an absolute URL; the API strips the host from photos.
 const origin = (Astro.site?.toString() ?? Astro.url.origin).replace(/\/$/, '')
 const photoUrl = member.photo ? (member.photo.startsWith('http') ? member.photo : `${origin}${member.photo}`) : null
@@ -212,7 +213,11 @@ const structuredData = {
       </div>
 
       <div class="md-body">
-        {member.bio && <p class="md-bio" data-testid="member-bio">{member.bio}</p>}
+        {member.bio && (
+          <div data-testid="member-bio">
+            {bioParagraphs(member.bio).map(para => <p class="md-bio">{para}</p>)}
+          </div>
+        )}
 
         {instruments.length > 0 && (
           <div class="md-plays" data-testid="member-instruments">
@@ -419,7 +424,7 @@ const structuredData = {
   .md-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .md-photo-fallback { display: block; width: 100%; height: 100%; background: var(--color-surface-2); }
   .md-body { display: flex; flex-direction: column; gap: 28px; }
-  .md-bio { margin: 0; font: 500 19px/1.6 var(--font-body); color: var(--color-body); white-space: pre-line; text-wrap: pretty; }
+  .md-bio { margin: 0 0 14px; font: 500 19px/1.6 var(--font-body); color: var(--color-body); white-space: pre-line; text-wrap: pretty; }
   .md-label { display: block; margin-bottom: 10px; font: 800 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--color-subtle); }
   .md-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .md-chip { padding: 7px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); font: 700 13px/1 var(--font-body); color: var(--color-body); }

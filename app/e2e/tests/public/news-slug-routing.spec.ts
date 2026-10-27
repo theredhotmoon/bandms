@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -100,6 +101,7 @@ test.describe.serial('Public news — slug-based routing', () => {
     ;[sectionEn, sectionPl] = await Promise.all([postsSection(request, 'en'), postsSection(request, 'pl')])
 
     const bilingual = await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E Slug EN ${stamp}`, pl: `E2E Slug PL ${stamp}` },
       published_at: new Date().toISOString(),
       blocks: [{ type: 'text', payload: { body: { en: '<p>Bilingual post.</p>' } } }],
@@ -110,6 +112,7 @@ test.describe.serial('Public news — slug-based routing', () => {
     bilingualSlugPl = bilingualBody.translations.slug.pl
 
     const enOnly = await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E Slug No PL ${stamp}` },
       published_at: new Date().toISOString(),
       blocks: [{ type: 'text', payload: { body: { en: '<p>English-only post.</p>' } } }],

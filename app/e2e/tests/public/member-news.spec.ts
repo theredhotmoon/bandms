@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import fs from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * A member's page lists the news linked to them, and each item leads to the
@@ -58,7 +59,7 @@ test.describe.serial('Public — member news', () => {
 
     const post = await request.post(`${API}/api/posts`, {
       headers: headers(),
-      data: { title: { en: title }, published_at: new Date(Date.now() - 3_600_000).toISOString().slice(0, 16), member_ids: [memberId] },
+      data: { ...(await postRequiredFields(request, API)), title: { en: title }, published_at: new Date(Date.now() - 3_600_000).toISOString().slice(0, 16), member_ids: [memberId] },
     })
     expect(post.status(), await post.text()).toBe(201)
     postId = (await post.json()).data.id

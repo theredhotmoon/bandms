@@ -13,7 +13,7 @@ import { getEpk, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDate, formatNumber } from '@/lib/i18n'
 import { EPK_COPY } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
-import { firstBioWithText, hasBioText } from '@/lib/bio'
+import { firstBioWithText, hasBioText, stripHtmlText } from '@/lib/bio'
 
 interface Props {
   lang: Locale
@@ -94,7 +94,7 @@ const contacts = [
     <section class="epk-sec page-x">
       <SectionHead icon="quote" title={t.bio} size="sm" />
       {bioHtml
-        ? <div class="epk-bio" set:html={bioHtml} />
+        ? <div class="epk-bio rich-text" set:html={bioHtml} />
         : <div class="epk-bio">{bioParagraphs.map(paragraph => <p>{paragraph}</p>)}</div>}
     </section>
   )}
@@ -128,7 +128,7 @@ const contacts = [
           <p class="epk-release-meta">
             {release.type}{release.release_date && ` · ${fmtDate(release.release_date, lang)}`}
           </p>
-          {release.description && <p class="epk-release-desc">{release.description}</p>}
+          {release.description && <p class="epk-release-desc">{stripHtmlText(release.description)}</p>}
 
           {(release.tracks ?? []).length > 0 && (
             <>
@@ -272,7 +272,8 @@ const contacts = [
 
   /* ── Bio ───────────────────────────────────────────────────────────────── */
   .epk-bio { max-width: 70ch; }
-  .epk-bio p {
+  /* :global — the long bio arrives through set:html. */
+  .epk-bio :global(p) {
     margin: 0 0 18px;
     font: 500 18px/1.65 var(--font-body);
     color: var(--color-body);

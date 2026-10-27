@@ -55,3 +55,11 @@ describe('firstBioWithText', () => {
     expect(firstBioWithText(['<p></p>', '', null])).toBeNull()
   })
 })
+
+describe('stripHtmlText — entities', () => {
+  // The result is printed as text and escaped again, so a stored `&amp;`
+  // reached the page as a literal "&amp;".
+  it('decodes the entities RichEditor stores', () => {
+    expect(stripHtmlText('<p>Rock &amp; Roll &lt;3 &quot;live&quot; &#39;26 &#x2013; ok</p>')).toBe('Rock & Roll <3 "live" \'26 – ok')
+  })
+})

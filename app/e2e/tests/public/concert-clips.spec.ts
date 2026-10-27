@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -112,6 +113,7 @@ test.describe.serial('Public clips', () => {
     audioClipId = audio.id
 
     const post = (await (await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E clip post ${Date.now()}` },
       published_at: new Date().toISOString(),
       blocks: [{ type: 'ref', payload: { entity: 'clip', id: clipId } }],

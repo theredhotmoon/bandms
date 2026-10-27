@@ -1,4 +1,5 @@
 ---
+import { stripHtmlText } from '@/lib/bio'
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import type { Release, ReleasePlatform } from '@/types/release'
@@ -199,7 +200,7 @@ const priceOf = (item: (typeof physical)[number]) => {
             {featured.release_date && (
               <p class="mu-out">{fmtDate(featured.release_date, lang)}</p>
             )}
-            {featured.description && <p class="mu-desc">{featured.description}</p>}
+            {featured.description && <p class="mu-desc">{stripHtmlText(featured.description)}</p>}
 
             {featured.tracks.length > 0 && (
               <>

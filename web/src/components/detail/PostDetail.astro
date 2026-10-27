@@ -4,9 +4,10 @@ import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
 import { postSlug, formatEventDates, fmtDate, fmtDateShort } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getAllPosts, getPost, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getAllPosts, getPost, getBandProfile, getSiteConfig, getConcerts } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
-import { POSTS_COPY } from '@bandms/site-copy'
+import { POSTS_COPY, CONCERTS_COPY } from '@bandms/site-copy'
+import PostConcerts from '@/components/PostConcerts.astro'
 import { moduleCopy, siteCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
@@ -71,6 +72,30 @@ const structuredData = {
 }
 
 const postsSection = slugMap[lang].posts ?? 'posts'
+
+// ── Linked concerts ───────────────────────────────────────────
+// The post carries only {id, date}; the card and dialog need the whole
+// concert, which the (memoised-per-build) list already holds.
+const linkedIds = (post.concerts ?? []).map(c => c.id)
+const linkedConcerts = linkedIds.length
+  ? (await getConcerts(lang)).filter(c => linkedIds.includes(c.id))
+      .sort((a, b) => linkedIds.indexOf(a.id) - linkedIds.indexOf(b.id))
+  : []
+// A switched-off module unbuilds its pages, so the dialog's "concert page"
+// link is gated on the module map, never on the data.
+const concertsBase = siteConfig.modules?.concerts !== false && slugMap[lang].concerts
+  ? `/${lang}/${slugMap[lang].concerts}`
+  : null
+const ct = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
+const concertCopy = {
+  kicker: t.concertKicker, open: t.concertOpen, openPage: t.concertOpenPage, close: t.concertClose,
+  doors: ct.factDoors, onStage: ct.factOnStage, lineup: ct.lineupTitle, headliner: ct.headliner,
+  support: ct.support, venue: ct.venueTitle, about: ct.aboutTitle, buyTickets: ct.buyTickets,
+  posterAlt: ct.posterAlt,
+}
+// One concert: the header's event date opens its dialog. Several: it jumps
+// to the cards, where each opens its own.
+const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : null
 ---
 
 <BaseLayout
@@ -111,15 +136,6 @@ const postsSection = slugMap[lang].posts ?? 'posts'
           </span>
         </nav>
 
-        <!-- tag stamps -->
-        {(post.tags ?? []).length > 0 && (
-          <div class="art-stamps">
-            {(post.tags ?? []).map(tg => (
-              <span class="art-stamp">{tg.name}</span>
-            ))}
-          </div>
-        )}
-
         <!-- title -->
         <h1 class="art-title">{post.title}</h1>
 
@@ -139,12 +155,28 @@ const postsSection = slugMap[lang].posts ?? 'posts'
           {eventDateStr && (
             <>
               <span class="art-meta-diamond" aria-hidden="true"></span>
-              <span class="art-meta-date">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
-                </svg>
-                {t.event}: {eventDateStr}
-              </span>
+              {singleConcertId !== null ? (
+                <button type="button" class="art-meta-date art-meta-event" data-open-concert={singleConcertId} data-testid="post-event-trigger">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
+                  </svg>
+                  {t.event}: {eventDateStr}
+                </button>
+              ) : linkedConcerts.length > 1 ? (
+                <a class="art-meta-date art-meta-event" href="#post-concerts" data-testid="post-event-trigger">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
+                  </svg>
+                  {t.event}: {eventDateStr}
+                </a>
+              ) : (
+                <span class="art-meta-date">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v6M8 4l4 4 4-4M4 22h16M4 22V10h16v12"/>
+                  </svg>
+                  {t.event}: {eventDateStr}
+                </span>
+              )}
             </>
           )}
           <span class="art-meta-diamond" aria-hidden="true"></span>
@@ -162,6 +194,16 @@ const postsSection = slugMap[lang].posts ?? 'posts'
     <!-- checker strip divider (teal + paper) -->
     <div class="checker-strip-tp" aria-hidden="true"></div>
 
+    <!-- ── TAGS: below the hero, where they are seen; each opens the
+         news list filtered to it (NewsFilter reads ?tag=). ──────── -->
+    {(post.tags ?? []).length > 0 && (
+      <nav class="ar-col art-stamps" aria-label={t.tagsLabel} data-testid="post-tags">
+        {(post.tags ?? []).map(tg => (
+          <a class="art-stamp" href={`/${lang}/${postsSection}?tag=${encodeURIComponent(tg.slug)}`}>{tg.name}</a>
+        ))}
+      </nav>
+    )}
+
     <!-- ── ARTICLE BODY ──────────────────────────────────────── -->
     <article class="ar-col art-body">
       <PostBlocks
@@ -169,6 +211,13 @@ const postsSection = slugMap[lang].posts ?? 'posts'
         lang={lang}
         slugMap={slugMap}
         modules={siteConfig.modules ?? {}}
+      />
+      <PostConcerts
+        concerts={linkedConcerts}
+        bandName={profile.name}
+        lang={lang}
+        concertsBase={concertsBase}
+        copy={concertCopy}
       />
     </article>
 
@@ -382,7 +431,7 @@ const postsSection = slugMap[lang].posts ?? 'posts'
     display: flex;
     gap: 9px;
     flex-wrap: wrap;
-    margin-bottom: 22px;
+    padding-top: 28px;
   }
   .art-stamp {
     background: var(--acc);
@@ -393,7 +442,20 @@ const postsSection = slugMap[lang].posts ?? 'posts'
     text-transform: uppercase;
     padding: 6px 10px;
     white-space: nowrap;
+    text-decoration: none;
+    transition: background .15s, color .15s;
   }
+  .art-stamp:hover,
+  .art-stamp:focus-visible { background: transparent; color: var(--acc); }
+  .art-stamps + .art-body { padding-top: 28px; }
+
+  /* The event date opens the linked concert. */
+  .art-meta-event {
+    background: none; border: 0; padding: 0; font: inherit; color: inherit;
+    cursor: pointer; text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .art-meta-event:hover { color: var(--acc); }
 
   /* Title */
   .art-title {

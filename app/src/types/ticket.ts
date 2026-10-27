@@ -6,6 +6,8 @@ export interface AdminTicket {
   holder_name: string | null
   holder_email: string | null
   ticket_type: string | null
+  /** ISO 8601; when the order that issued it was placed. */
+  purchased_at: string | null
 }
 
 export interface TicketStats {

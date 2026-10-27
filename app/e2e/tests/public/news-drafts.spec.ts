@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * A post with no published_at is a draft and must not reach the public site.
@@ -65,12 +66,14 @@ test.describe.serial('Public news — drafts are not built', () => {
     newsSlug = c.module_config?.posts?.slug ?? 'posts'
 
     const draft = await (await authedFetch(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: `E2E Draft Post ${stamp}`, intro: 'Not ready yet.',
     })).json()
     draftId = draft.data.id
     draftSlug = draft.data.slug
 
     const live = await (await authedFetch(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: `E2E Live Post ${stamp}`, intro: 'Ready.', published_at: new Date().toISOString(),
     })).json()
     liveId = live.data.id

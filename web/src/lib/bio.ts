@@ -10,12 +10,22 @@
  * produced the value.
  */
 
-/** Visible text of an HTML (or plain) string: tags and comments removed, whitespace entities collapsed. */
+const NAMED: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
+
+/**
+ * Visible text of an HTML (or plain) string: tags and comments removed,
+ * entities decoded, whitespace collapsed. Decoding matters because the result
+ * is printed as text and Astro escapes it again — RichEditor stores "Rock &
+ * Roll" as `Rock &amp; Roll`, which otherwise reached the page as "&amp;".
+ */
 export function stripHtmlText(value: string): string {
   return value
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<[^>]*>/g, ' ')
     .replace(/&(?:nbsp|ensp|emsp|thinsp|#160|#xa0|#x2002|#x2003|#x2009);/gi, ' ') // token-lint-ignore: HTML entities, not colours
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16))) // token-lint-ignore: entity syntax, not a colour
+    .replace(/&#(\d+);/g, (_, d: string) => String.fromCodePoint(Number(d)))
+    .replace(/&(amp|lt|gt|quot|apos);/g, (_, n: string) => NAMED[n])
     .replace(/\s+/g, ' ')
     .trim()
 }

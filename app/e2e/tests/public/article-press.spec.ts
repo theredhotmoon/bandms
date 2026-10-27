@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
+import { postRequiredFields } from '../../fixtures/admin-api'
 
 /**
  * Press coverage on the Article page.
@@ -120,6 +121,7 @@ test.describe.serial('Article — press coverage', () => {
     pressIds.push((await first.json()).data.id, (await second.json()).data.id)
 
     const post = await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E Press ${Date.now()}` },
       published_at: new Date().toISOString(),
       blocks: [
@@ -132,6 +134,7 @@ test.describe.serial('Article — press coverage', () => {
     postSlug = postBody.slug
 
     const bare = await api(request, 'post', '/api/posts', {
+      ...(await postRequiredFields(request, API)),
       title: { en: `E2E No Press ${Date.now()}` },
       published_at: new Date().toISOString(),
       blocks: [{ type: 'text', payload: { body: { en: '<p>No coverage here.</p>' } } }],

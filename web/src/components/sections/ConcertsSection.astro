@@ -1,4 +1,5 @@
 ---
+import { ticketLink } from '@/lib/tickets'
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
@@ -48,9 +49,10 @@ const concertsWithCoords = concerts.filter(
 )
 const coordIds = new Set(concertsWithCoords.map(c => c.id))
 
-function getTicketLink(concert: Concert) {
-  return concert.links?.find(l => /ticket|buy|bilet/i.test(l.label))?.url ?? null
-}
+// The shared rule (lib/tickets): off-site only when the external shop is the
+// only seller, otherwise the show page.
+const getTicketLink = (concert: Concert) =>
+  ticketLink(concert, `/${lang}/${slugMap[lang].concerts}/${concert.slug}`)
 function getTypeLabel(concert: Concert) {
   const slug = concert.tags?.find(t => ['festival','support','club'].includes(t.slug))?.slug
   if (slug === 'festival') return t.typeFestival
@@ -147,7 +149,7 @@ function getTypeLabel(concert: Concert) {
       {upcoming.length > 0 ? (
         <div class="gig-list">
           {upcoming.map(c => {
-            const ticketUrl = getTicketLink(c)
+            const ticket = getTicketLink(c)
             const typeLabel = getTypeLabel(c)
             const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
@@ -183,9 +185,9 @@ function getTypeLabel(concert: Concert) {
                       {t.showOnMap}
                     </button>
                   )}
-                  {ticketUrl
+                  {ticket
                     ? (
-                      <a class="ticket-btn" href={ticketUrl} target="_blank" rel="noopener noreferrer">
+                      <a class="ticket-btn" href={ticket.href} {...(ticket.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                           <path d="M5 12h14M13 6l6 6-6 6"/>
                         </svg>

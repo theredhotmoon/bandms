@@ -92,7 +92,7 @@ describe('slug generation for a title written only in the primary language', fun
     // fell back to the literal 'post', so every Polish-only post got
     // /en/news/post, post-2, post-3...
     it('builds a post\'s default slug from the Polish title instead of "post"', function () {
-        $this->postJson('/api/posts', ['title' => ['en' => null, 'pl' => 'Nowa płyta']])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => null, 'pl' => 'Nowa płyta']]))
             ->assertCreated()
             ->assertJsonPath('data.slug', 'nowa-plyta')
             ->assertJsonPath('data.translations.slug.pl', 'nowa-plyta');
@@ -105,7 +105,7 @@ describe('slug generation for a title written only in the primary language', fun
     });
 
     it('still prefers the English title for the default slug when both exist', function () {
-        $this->postJson('/api/posts', ['title' => ['en' => 'New record', 'pl' => 'Nowa płyta']])
+        $this->postJson('/api/posts', $this->validPost(['title' => ['en' => 'New record', 'pl' => 'Nowa płyta']]))
             ->assertCreated()
             ->assertJsonPath('data.slug', 'new-record');
     });
@@ -142,14 +142,17 @@ describe('clearing one language of a title on update', function () {
     });
 });
 
-it('clears every language of a post intro sent as an all-null bag', function () {
+// An intro is required now (drafts too), so an all-null bag is refused rather
+// than clearing the field — it used to save and leave the news card blank.
+it('refuses an intro sent as an all-null bag', function () {
     $this->createProfile();
     $this->actingAsAdmin();
     $post = \App\Models\Post::factory()->create(['title' => ['en' => 'T'], 'intro' => ['pl' => 'Wstęp']]);
 
     $this->withHeader('Accept-Language', 'en')
         ->putJson("/api/posts/{$post->id}", ['title' => ['en' => 'T'], 'intro' => ['en' => null, 'pl' => null]])
-        ->assertOk();
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('intro');
 
-    expect($post->fresh()->getTranslation('intro', 'pl', false))->toBe('');
+    expect($post->fresh()->getTranslation('intro', 'pl', false))->toBe('Wstęp');
 });

@@ -50,3 +50,7 @@ function selectCurrentLineup() {
     </div>
   </div>
 </template>
+
+<!-- The host form's form-styles.css is scoped to the host, so it never reached
+     these labels and checkboxes: they rendered unstyled and near-invisible. -->
+<style scoped src="../form-styles.css" />

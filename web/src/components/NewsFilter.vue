@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { formatEventDates, fmtDateShort } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
 import type { PostSummary } from '@/types/post'
@@ -45,8 +45,56 @@ const matched = computed(() => props.posts.filter(p => {
   return okTag && okQ
 }))
 
+// ── ?tag=<slug> ───────────────────────────────────────────────
+// A tag on an article links here with ?tag=, so the list opens filtered.
+// Read on mount, not during render: the island is server-rendered at build
+// time, when there is no URL to read.
+onMounted(() => {
+  const wanted = new URLSearchParams(window.location.search).get('tag')
+  if (wanted && allTags.value.some(t => t.slug === wanted)) tag.value = wanted
+})
+watch(tag, (slug) => {
+  const url = new URL(window.location.href)
+  if (slug === 'all') url.searchParams.delete('tag')
+  else url.searchParams.set('tag', slug)
+  history.replaceState(history.state, '', url)
+})
+
+// ── One-line tag rows ─────────────────────────────────────────
+// Every tag shows, on one line. A row wider than its card gets
+// data-overflow and the distance to travel; hovering the card then slides the
+// hidden tags into view (CSS below). Measured, because only the browser knows
+// how wide a row of translated, theme-fonted chips actually is.
+const root = ref<HTMLElement | null>(null)
+
+function measureTagRows() {
+  root.value?.querySelectorAll<HTMLElement>('.nf-chip-row').forEach(row => {
+    const track = row.firstElementChild as HTMLElement | null
+    if (!track) return
+    const overflow = track.scrollWidth - row.clientWidth
+    if (overflow > 1) {
+      row.dataset.overflow = ''
+      row.style.setProperty('--tag-shift', `-${overflow}px`)
+      // ~60px per second, so a long row does not whip past.
+      row.style.setProperty('--tag-duration', `${Math.max(0.6, overflow / 60)}s`)
+    } else {
+      delete row.dataset.overflow
+    }
+  })
+}
+
+let resizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  measureTagRows()
+  resizeObserver = new ResizeObserver(() => measureTagRows())
+  if (root.value) resizeObserver.observe(root.value)
+})
+onBeforeUnmount(() => resizeObserver?.disconnect())
+
 const featured = computed(() => matched.value[0] ?? null)
 const rest     = computed(() => matched.value.slice(1))
+
+watch(matched, () => nextTick(measureTagRows))
 
 function postDate(p: PostSummary): string {
   return fmtDateShort(p.published_at ?? p.created_at, props.lang ?? 'en')
@@ -58,7 +106,7 @@ function eventDate(p: PostSummary): string {
 </script>
 
 <template>
-  <div class="nf-root">
+  <div ref="root" class="nf-root">
     <!-- SEARCH + TAGS ROW -->
     <section class="nf-controls">
       <div class="nf-tags">
@@ -105,13 +153,15 @@ function eventDate(p: PostSummary): string {
           <span class="nf-feat-badge" :style="{ background: accent }">{{ copy.featured }}</span>
         </div>
         <div class="nf-feat-body">
-          <div class="nf-chip-row">
-            <span
-              v-for="tg in featured.tags.slice(0, 3)"
-              :key="tg.id"
-              class="nf-chip"
-              :style="{ color: accent, borderColor: accent }"
-            >{{ tg.name }}</span>
+          <div class="nf-chip-row" data-testid="news-card-tags">
+            <span class="nf-chip-track">
+              <span
+                v-for="tg in featured.tags"
+                :key="tg.id"
+                class="nf-chip"
+                :style="{ color: accent, borderColor: accent }"
+              >{{ tg.name }}</span>
+            </span>
           </div>
           <h2 class="nf-feat-title">{{ featured.title }}</h2>
           <p class="nf-feat-intro">{{ featured.intro ?? featured.excerpt }}</p>
@@ -143,13 +193,15 @@ function eventDate(p: PostSummary): string {
             <div v-else class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
           </div>
           <div class="nf-card-body">
-            <div class="nf-chip-row">
-              <span
-                v-for="tg in p.tags.slice(0, 2)"
-                :key="tg.id"
-                class="nf-chip"
-                :style="{ color: accent, borderColor: accent }"
-              >{{ tg.name }}</span>
+            <div class="nf-chip-row" data-testid="news-card-tags">
+              <span class="nf-chip-track">
+                <span
+                  v-for="tg in p.tags"
+                  :key="tg.id"
+                  class="nf-chip"
+                  :style="{ color: accent, borderColor: accent }"
+                >{{ tg.name }}</span>
+              </span>
             </div>
             <h3 class="nf-card-title">{{ p.title }}</h3>
             <p class="nf-card-intro">{{ p.intro ?? p.excerpt }}</p>
@@ -307,11 +359,34 @@ function eventDate(p: PostSummary): string {
   display: flex;
   flex-direction: column;
 }
+/* One line, always. Overflowing tags slide in on hover — see measureTagRows(). */
 .nf-chip-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  overflow: hidden;
   margin-bottom: 16px;
+}
+.nf-chip-row[data-overflow] {
+  -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); /* token-lint-ignore: mask alpha, not a colour */
+  mask-image: linear-gradient(to right, #000 85%, transparent); /* token-lint-ignore: mask alpha, not a colour */
+}
+.nf-chip-track {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  transform: translateX(0);
+  transition: transform .3s ease-out;
+}
+:is(.nf-card, .nf-featured):is(:hover, :focus-visible) .nf-chip-row[data-overflow] {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+:is(.nf-card, .nf-featured):is(:hover, :focus-visible) .nf-chip-row[data-overflow] .nf-chip-track {
+  transform: translateX(var(--tag-shift, 0));
+  transition: transform var(--tag-duration, 1.5s) linear .2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-chip-track { transition: none !important; }
+  :is(.nf-card, .nf-featured):is(:hover, :focus-visible) .nf-chip-row[data-overflow] .nf-chip-track { transform: none; }
+  .nf-chip-row[data-overflow] { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
 }
 .nf-chip {
   font: 800 10px/1 var(--font-body);
@@ -319,6 +394,7 @@ function eventDate(p: PostSummary): string {
   text-transform: uppercase;
   border: 2px solid;
   padding: 5px 8px;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 .nf-feat-title {

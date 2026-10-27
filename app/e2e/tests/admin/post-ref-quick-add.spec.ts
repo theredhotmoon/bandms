@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { expectToast, searchTable } from '../../fixtures/test-base'
-import { adminHeaders } from '../../fixtures/admin-api'
+import { adminHeaders, postRequiredFields } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -24,7 +24,7 @@ test.describe('Post block — reference created from the block', () => {
 
   test.beforeAll(async ({ request }) => {
     // No published_at: a draft, which /admin/posts lists and the public build ignores.
-    const res = await request.post('/api/posts', { headers: adminHeaders(), data: { title: { en: TITLE }, blocks: [] } })
+    const res = await request.post('/api/posts', { headers: adminHeaders(), data: { ...(await postRequiredFields(request)), title: { en: TITLE }, blocks: [] } })
     if (!res.ok()) throw new Error(`POST /api/posts → ${res.status()} ${await res.text()}`)
     postId = ((await res.json()) as { data: { id: number } }).data.id
   })

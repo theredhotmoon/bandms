@@ -128,26 +128,26 @@ describe('GET /api/posts/{post}', function () {
 
 describe('POST /api/posts', function () {
     it('returns 401 without authentication', function () {
-        $this->postJson('/api/posts', ['title' => 'Test'])->assertUnauthorized();
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Test']))->assertUnauthorized();
     });
 
     it('returns 403 for member role', function () {
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-        $this->postJson('/api/posts', ['title' => 'Test'])->assertForbidden();
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Test']))->assertForbidden();
     });
 
     it('allows publisher role to create a post', function () {
         Passport::actingAs(User::factory()->create(['role' => 'publisher']));
 
-        $this->postJson('/api/posts', ['title' => 'Publisher Post'])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Publisher Post']))
             ->assertCreated();
     });
 
     it('creates a post with required fields', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => 'Hello World'])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Hello World']))
             ->assertCreated()
             ->assertJsonPath('data.title', 'Hello World');
 
@@ -158,7 +158,7 @@ describe('POST /api/posts', function () {
     it('auto-generates a slug from the title', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => 'Hello World Post'])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Hello World Post']))
             ->assertCreated()
             ->assertJsonPath('data.slug', 'hello-world-post');
     });
@@ -166,7 +166,7 @@ describe('POST /api/posts', function () {
     it('creates a draft when published_at is null', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => 'Draft Post'])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Draft Post']))
             ->assertCreated()
             ->assertJsonPath('data.published_at', null);
     });
@@ -175,7 +175,7 @@ describe('POST /api/posts', function () {
         $this->actingAsAdmin();
         $tag = Tag::factory()->create(['name' => 'Live', 'slug' => ['en' => 'live']]);
 
-        $this->postJson('/api/posts', ['title' => 'Tagged Post', 'tag_ids' => [$tag->id]])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Tagged Post', 'tag_ids' => [$tag->id]]))
             ->assertCreated()
             ->assertJsonPath('data.tags.0.name', 'Live');
     });
@@ -184,7 +184,7 @@ describe('POST /api/posts', function () {
         $this->actingAsAdmin();
         $concert = Concert::factory()->create(['date' => '2026-05-03']);
 
-        $this->postJson('/api/posts', ['title' => 'Concert Post', 'concert_ids' => [$concert->id]])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Concert Post', 'concert_ids' => [$concert->id]]))
             ->assertCreated()
             ->assertJsonPath('data.event_dates', ['2026-05-03'])
             ->assertJsonPath('data.concerts.0.id', $concert->id);
@@ -195,11 +195,11 @@ describe('POST /api/posts', function () {
         $day2 = Concert::factory()->create(['date' => '2026-06-02']);
         $day1 = Concert::factory()->create(['date' => '2026-06-01']);
 
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/posts', $this->validPost([
             'title'       => 'Festival Post',
             'concert_ids' => [$day2->id, $day1->id],
             'event_date_display' => 'list',
-        ])
+        ]))
             ->assertCreated()
             ->assertJsonPath('data.event_dates', ['2026-06-01', '2026-06-02'])
             ->assertJsonPath('data.event_date_display', 'list');
@@ -208,7 +208,7 @@ describe('POST /api/posts', function () {
     it('rejects a concert_id that does not exist', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => 'Post', 'concert_ids' => [9999]])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Post', 'concert_ids' => [9999]]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['concert_ids.0']);
     });
@@ -216,7 +216,7 @@ describe('POST /api/posts', function () {
     it('validates title is required', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', [])
+        $this->postJson('/api/posts', $this->validPost([]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['title']);
     });
@@ -224,7 +224,7 @@ describe('POST /api/posts', function () {
     it('validates image must be a base64 data URL', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/posts', ['title' => 'Post', 'image' => 'not-an-image'])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'Post', 'image' => 'not-an-image']))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['image']);
     });
@@ -237,7 +237,7 @@ describe('POST /api/posts', function () {
         $this->actingAsAdmin();
         Post::factory()->create(['slug' => ['en' => 'shared-slug']]);
 
-        $this->postJson('/api/posts', ['title' => 'New Post', 'slug' => ['pl' => 'shared-slug']])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'New Post', 'slug' => ['pl' => 'shared-slug']]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['slug.pl']);
     });
@@ -246,7 +246,7 @@ describe('POST /api/posts', function () {
         $this->actingAsAdmin();
         Post::factory()->create(['slug' => ['en' => 'other-post', 'pl' => 'shared-slug']]);
 
-        $this->postJson('/api/posts', ['title' => 'New Post', 'slug' => ['en' => 'shared-slug']])
+        $this->postJson('/api/posts', $this->validPost(['title' => 'New Post', 'slug' => ['en' => 'shared-slug']]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['slug.en']);
     });

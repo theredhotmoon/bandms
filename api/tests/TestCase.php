@@ -38,6 +38,19 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * A post payload that passes the always-required fields — intro and one
+     * tag, which every post needs, drafts included — so a test only spells
+     * out what it is about. Its own keys win.
+     */
+    protected function validPost(array $fields): array
+    {
+        return $fields + [
+            'intro'   => ['en' => 'Intro'],
+            'tag_ids' => [\App\Models\Tag::factory()->create()->id],
+        ];
+    }
+
+    /**
      * Creates the singleton BandProfile at ID=1, which every band-profile
      * endpoint requires. Uses a raw DB insert to guarantee the ID regardless
      * of auto-increment state after prior transaction rollbacks.

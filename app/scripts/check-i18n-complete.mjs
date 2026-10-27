@@ -53,6 +53,7 @@ const EXEMPT = new Map([
   ['locales.ts', 'language names, written in their own language on purpose'],
   ['utils/formatDate.ts', '"UTC" is an IANA timezone identifier passed to Intl, not text'],
   ['utils/basemap.ts', 'map tile attribution — OpenStreetMap and CARTO require it verbatim'],
+  ['utils/richText.ts', 'HTML entity table and tag names for escaping and parsing editor content, not text'],
 ])
 
 /**
