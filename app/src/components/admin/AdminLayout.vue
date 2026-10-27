@@ -4,11 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import { useAuth } from '@/composables/useAuth'
+import { useContentLangSync } from '@/composables/useContentLocales'
 import RebuildBar from './RebuildBar.vue'
 import UiLangSwitcher from './UiLangSwitcher.vue'
 import AdminThemeSwitch from './AdminThemeSwitch.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
+// Every list resolves the band's content in their first language — see useLang().
+useContentLangSync()
 
 // `fill` is for full-screen editors (setlists, tech rider) that scroll their
 // own panes. The main column becomes exactly one viewport tall and the slot

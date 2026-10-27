@@ -17,6 +17,15 @@ test.describe('Hero Images Admin', () => {
 
   let originalMainIds: number[] | null = null
 
+  // Scope rows are labelled with the band's own module names, in their first
+  // content language (useLang). These tests find rows by their English names,
+  // so serve an English-first order rather than depend on the dev DB's — which
+  // is Polish-first and would label Contact "Kontakt".
+  test.beforeEach(async ({ page }) => {
+    await page.route(/\/api\/admin\/content-locales$/, route =>
+      route.fulfill({ json: { data: { order: ['en', 'pl'] } } }))
+  })
+
   const apiOptions = (baseURL: string | undefined) => ({
     baseURL,
     extraHTTPHeaders: {

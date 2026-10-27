@@ -93,17 +93,41 @@ three-file picture.
 
 ### Two language axes — chrome and content
 
-`useLang()` (`site_lang`) is the **content** locale: which translation of the
-band's data the editor is working on. It is passed as `?lang=` and sits in every
-TanStack `queryKey`.
+`useLang()` (`site_lang`) is the **content** locale: which language the API
+resolves the band's data in — a concert's `name`, a release's `title` in a list
+row. The posts, releases and profile fetches pass it as `?lang=` (and carry it
+in their `queryKey`); every other fetch sends it as `X-Content-Locale` from
+`authHeaders()`/`jsonHeaders` in `api/client.ts`. Editors are unaffected: they
+load the raw `translations` bags.
+
+**Not `Accept-Language`.** That header is the person's language, and
+`SetLocale.php` keeps the translator on it whenever `X-Content-Locale` is sent
+— so an English-UI editor on a Polish-first band gets Polish concert names and
+English validation errors. The first cut of this put the content language in
+`Accept-Language`, and review caught every 422 switching to the band's
+language. `fan.ts` sets `Accept-Language` itself for the same reason.
+
+**It follows the band's first content language** — `useContentLangSync()`,
+mounted in `AdminLayout`, sets it from the content-language order and refetches
+the cache when it changes. Nothing set it for a long time: its only setter was
+the public site's language switcher, deleted in #65, so it sat on English and
+every fetch without `?lang=` fell back to the *browser's* Accept-Language. A
+Polish-first band saw English names in every list under a Polish UI.
+`e2e/tests/admin/content-display-locale.spec.ts` pins both directions.
+
+**When it changes, cancel before invalidating.** A query still on its first
+fetch is not restarted by `invalidateQueries` — TanStack joins the in-flight
+request, and its old-language answer lands as fresh. The sync calls
+`cancelQueries` first; the English-first E2E case fails without it, because the
+stored `site_lang` in the E2E auth state is `pl`.
 
 `useUiLang()` (`admin_ui_lang`) is the **chrome** locale: which language the
 menus, buttons and toasts are in. It drives `vue-i18n` and `<html lang>`.
 
-**They are deliberately separate, and the storage keys must stay separate.** An
-editor routinely proofreads English copy; making one control do both would
-refetch every post, release and profile the moment someone changed the menu
-language. `App.vue` watches the **chrome** axis for `<html lang>` — announcing
+**They are deliberately separate, and the storage keys must stay separate.**
+Which language the menus are in is one person's preference; which language the
+band writes in is the band's. Making one follow the other would refetch every
+list the moment someone changed the menu language. `App.vue` watches the **chrome** axis for `<html lang>` — announcing
 the page as Polish because the *content* being edited is Polish is the wrong
 answer for a screen reader.
 

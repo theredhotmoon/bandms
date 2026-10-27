@@ -24,7 +24,7 @@ const { lang, alternates } = Astro.props
 const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
   getBandProfile(lang),
   getMembers(lang).catch(() => []),
-  getConcerts().catch(() => []),
+  getConcerts(lang).catch(() => []),
   getSiteConfig(lang),
   getSlugMap(),
 ])

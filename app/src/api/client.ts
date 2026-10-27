@@ -1,7 +1,15 @@
 import { adminUrl } from '@/config/admin'
+import { currentContentLang } from '@/composables/useLang'
 import type { ValidationErrors } from '@/types/auth'
 
 const API_BASE = import.meta.env.VITE_API_URL as string
+
+// Which language the API resolves the band's content in (a concert's `name`,
+// a release's `title`) — its own header, because Accept-Language is the
+// person's language and still decides validation messages (SetLocale.php).
+// Without it the server resolved content in the *browser's* language, so a
+// Polish-first band on an English browser saw English in every list.
+const CONTENT_LOCALE = 'X-Content-Locale'
 
 export class ApiValidationError extends Error {
   constructor(public readonly errors: Record<string, string[]>) {
@@ -107,7 +115,7 @@ export async function uploadImage(token: string, endpoint: string, file: File): 
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    headers: { Accept: 'application/json', [CONTENT_LOCALE]: currentContentLang(), Authorization: `Bearer ${token}` },
     body,
   })
   return handleResponse<UploadedImage>(res)
@@ -117,13 +125,17 @@ export function authHeaders(token: string): Record<string, string> {
   return {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    [CONTENT_LOCALE]: currentContentLang(),
     Authorization: `Bearer ${token}`,
   }
 }
 
+// A getter, so the ~50 call sites that pass this object as-is still send the
+// current language rather than the one at module load.
 export const jsonHeaders = {
   'Content-Type': 'application/json',
   Accept: 'application/json',
+  get [CONTENT_LOCALE](): string { return currentContentLang() },
 }
 
 /** Throws if id is not a safe positive integer (prevents URL injection). */

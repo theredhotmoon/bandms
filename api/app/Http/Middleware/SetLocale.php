@@ -13,9 +13,12 @@ class SetLocale
     {
         $supported = Locales::codes();
         $default   = Locales::default();
+        $preferred = $request->getPreferredLanguage($supported);
+        $content   = $this->contentLocale($request);
 
         $locale = $request->query('lang')
-            ?? $request->getPreferredLanguage($supported)
+            ?? $content
+            ?? $preferred
             ?? $default;
 
         // An unregistered ?lang= degrades to the default rather than 404ing:
@@ -23,6 +26,24 @@ class SetLocale
         // there takes down every page, not one.
         app()->setLocale(is_string($locale) && Locales::isSupported($locale) ? $locale : $default);
 
+        // The admin sends the band's content language as X-Content-Locale and
+        // leaves Accept-Language as the person's own. Resources resolve
+        // translated fields with app()->getLocale(); messages go through the
+        // translator — so only the translator is handed back to the person,
+        // and an English-UI editor on a Polish-first band gets Polish concert
+        // names with English validation errors.
+        if ($content !== null && $request->query('lang') === null) {
+            app('translator')->setLocale($preferred ?? $default);
+        }
+
         return $next($request);
+    }
+
+    /** X-Content-Locale when it names a registered locale; an unknown value is ignored. */
+    private function contentLocale(Request $request): ?string
+    {
+        $header = $request->header('X-Content-Locale');
+
+        return is_string($header) && Locales::isSupported($header) ? $header : null;
     }
 }
