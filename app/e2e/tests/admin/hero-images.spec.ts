@@ -132,7 +132,7 @@ test.describe('Hero Images Admin', () => {
     })
     await page.waitForLoadState('networkidle')
 
-    const thumbnails = page.locator('li.rounded-lg.overflow-hidden')
+    const thumbnails = page.locator('li.rounded-card.overflow-hidden')
     await expect(thumbnails).toHaveCount(2)
 
     // Capture identifying info (image src) for both thumbnails in their
@@ -155,7 +155,7 @@ test.describe('Hero Images Admin', () => {
     await page.reload()
     await page.waitForLoadState('networkidle')
 
-    const firstSrcReloaded = await page.locator('li.rounded-lg.overflow-hidden').nth(0).locator('img').getAttribute('src')
+    const firstSrcReloaded = await page.locator('li.rounded-card.overflow-hidden').nth(0).locator('img').getAttribute('src')
     expect(firstSrcReloaded).toBe(firstSrcAfter)
   })
 
@@ -230,13 +230,13 @@ test.describe('Hero Images Admin', () => {
     await page.goto('/admin/hero-images')
     await page.waitForLoadState('networkidle')
 
-    const countBefore = await page.locator('li.rounded-lg.overflow-hidden').count()
+    const countBefore = await page.locator('li.rounded-card.overflow-hidden').count()
     // .last(), not .first(): a new upload always lands at the highest position
     // (last in DOM order), so this is guaranteed to remove this test's own
     // probe picture — never a pre-existing real one that might already be in
     // the Main scope on the shared dev database.
     await page.getByRole('button', { name: 'Remove' }).last().click()
 
-    await expect(page.locator('li.rounded-lg.overflow-hidden')).toHaveCount(countBefore - 1)
+    await expect(page.locator('li.rounded-card.overflow-hidden')).toHaveCount(countBefore - 1)
   })
 })

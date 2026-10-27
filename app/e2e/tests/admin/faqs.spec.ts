@@ -71,7 +71,7 @@ test.describe('FAQ Admin', () => {
     // Scope to the row card. A bare `div` filter also matches every ancestor
     // that contains the text, and .last() then lands on an inner text wrapper
     // that holds no buttons.
-    const row = page.locator('div.rounded-xl').filter({ hasText: shown })
+    const row = page.locator('div.rounded-card').filter({ hasText: shown })
     await row.getByRole('button', { name: /^Edit question/ }).click()
 
     const input = page.locator(`#faq-q-${primary}`)
@@ -93,7 +93,7 @@ test.describe('FAQ Admin', () => {
     // Reopening the same row reseeds the editor from the just-saved value —
     // markClean() runs again on the new baseline, so Save goes back to
     // disabled until it is dirty again.
-    const savedRow = page.locator('div.rounded-xl').filter({ hasText: edited })
+    const savedRow = page.locator('div.rounded-card').filter({ hasText: edited })
     await savedRow.getByRole('button', { name: /^Edit question/ }).click()
     await expect(page.locator(`#faq-q-${primary}`)).toHaveValue(edited)
     await expect(page.getByRole('button', { name: /^Save$/ })).toBeDisabled()
@@ -103,7 +103,7 @@ test.describe('FAQ Admin', () => {
     await page.goto('/admin/faqs')
     await page.waitForLoadState('networkidle')
 
-    const row = page.locator('div.rounded-xl').filter({ hasText: edited })
+    const row = page.locator('div.rounded-card').filter({ hasText: edited })
     const badge = row.getByRole('button', { name: /^(Live|Draft)$/ })
 
     await expect(badge).toHaveText('Live')
@@ -136,7 +136,7 @@ test.describe('FAQ Admin', () => {
 
     page.on('dialog', (d) => d.accept())
 
-    const row = page.locator('div.rounded-xl').filter({ hasText: edited })
+    const row = page.locator('div.rounded-card').filter({ hasText: edited })
     await row.getByRole('button', { name: /^Delete question/ }).click()
 
     await expect(page.locator('[data-sonner-toast]')).toContainText('Question deleted', { timeout: 8000 })

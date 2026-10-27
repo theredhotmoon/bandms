@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-10-23 (venue from the concert form)
+## [Unreleased] — 2026-10-27 (create related records from inside a form)
 
 ### Added
 - **The relations panel's sections can create what they link**: *+ New band member / concert / release / shop item / tour / post / press coverage / photo album / music video* inside the matching section on the clip, post, press coverage and shop item forms, opening that record's own admin form over the host; the new record is listed and ticked on return, and every section now shows even while empty. A photo album is created with its photos, the way the Photos page does it. The post reference block offers the same for every target but the clip, which has its own *Add a new clip…*.

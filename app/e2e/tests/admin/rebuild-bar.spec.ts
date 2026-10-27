@@ -72,7 +72,7 @@ test.describe('Rebuild Bar', () => {
     // Clean up the probe FAQ so it does not linger on the shared dev database
     // into the next real rebuild.
     page.on('dialog', (d) => d.accept())
-    const row = page.locator('div.rounded-xl').filter({ hasText: QUESTION_EN })
+    const row = page.locator('div.rounded-card').filter({ hasText: QUESTION_EN })
     await row.getByRole('button', { name: /^Delete question/ }).click()
     await expect(page.locator('[data-sonner-toast]')).toContainText('Question deleted', { timeout: 8000 })
   })
