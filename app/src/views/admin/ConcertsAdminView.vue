@@ -12,7 +12,7 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useBandMembers } from '@/composables/useBandMembers'
-import { useConcerts } from '@/composables/useConcerts'
+import { useConcerts, useCreateConcertWithPoster } from '@/composables/useConcerts'
 import { useVenues } from '@/composables/useVenues'
 import { useBands } from '@/composables/useBands'
 import { useTags } from '@/composables/useTags'
@@ -29,7 +29,9 @@ import type { Concert, ConcertPayload } from '@/types/concert'
 
 const { t } = useI18n()
 
-const { query, create, createWithPoster, update, remove } = useConcerts()
+const { query, create, update, remove } = useConcerts()
+// The page's own `create` goes in, so its isPending covers the create step.
+const createWithPoster = useCreateConcertWithPoster(create)
 const { query: venuesQ } = useVenues()
 const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()

@@ -53,6 +53,15 @@ watch(() => props.initial, (v) => {
   markClean()
 }, { immediate: true })
 
+// A new video sorts last. The list the quick-add reads this from may land
+// after the form mounted, so the field follows the prop until the user has
+// typed into it (then it holds the previous prop's value no longer).
+watch(() => props.nextSortOrder, (next, prev) => {
+  if (props.initial || form.sort_order !== (prev ?? 0)) return
+  form.sort_order = next ?? 0
+  markClean()
+})
+
 function isVideoUrl(url: string): boolean {
   return /youtu(\.be|be\.com)|vimeo\.com/.test(url)
 }

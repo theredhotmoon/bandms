@@ -4,9 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { createRelease, deleteRelease, fetchReleases, updateRelease, uploadReleaseCover } from '@/api/releases'
 import type { Release, ReleaseSummary, ReleasePayload } from '@/types/release'
 import { appendToList } from '@/utils/queryCache'
-import { createThenUpload } from '@/utils/createThenUpload'
-import { reportSaveError } from '@/utils/formErrors'
 import { useAuth } from './useAuth'
+import { useCreateWithUpload } from './useCreateWithUpload'
 import { useLang } from './useLang'
 
 /**
@@ -26,23 +25,17 @@ export function useCreateRelease() {
 
 /**
  * Create, then the cover — shared by the releases page and the quick-add
- * (see createThenUpload for the policy). Pass the page's own `create` so its
- * `isPending` covers this path too.
+ * (see useCreateWithUpload). The page passes its own `create`.
  */
 export function useCreateReleaseWithCover(create = useCreateRelease()) {
   const { token } = useAuth()
   const { t } = useI18n()
-  const queryClient = useQueryClient()
-
-  return (payload: ReleasePayload, coverFile: File | null): Promise<Release> =>
-    createThenUpload(
-      () => create.mutateAsync(payload),
-      coverFile && (async (release) => {
-        await uploadReleaseCover(token.value!, release.id, coverFile)
-        void queryClient.invalidateQueries({ queryKey: ['releases'] })
-      }),
-      (e) => reportSaveError(e, t('media.releases.coverFailed')),
-    )
+  return useCreateWithUpload<ReleasePayload, Release>({
+    create: (payload) => create.mutateAsync(payload),
+    upload: (release, file) => uploadReleaseCover(token.value!, release.id, file),
+    invalidateKey: ['releases'],
+    failureMessage: () => t('media.releases.coverFailed'),
+  })
 }
 
 export function useReleases() {
@@ -58,7 +51,6 @@ export function useReleases() {
   })
 
   const create = useCreateRelease()
-  const createWithCover = useCreateReleaseWithCover(create)
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ReleasePayload }) =>
@@ -71,5 +63,5 @@ export function useReleases() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['releases'] }),
   })
 
-  return { query, create, createWithCover, update, remove }
+  return { query, create, update, remove }
 }

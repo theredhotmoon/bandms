@@ -11,7 +11,7 @@ import ImageDropZone from '@/components/admin/forms/ImageDropZone.vue'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
-import { useReleases } from '@/composables/useReleases'
+import { useReleases, useCreateReleaseWithCover } from '@/composables/useReleases'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useRelease } from '@/composables/useRelease'
 import { useTableControls } from '@/composables/useTableControls'
@@ -44,7 +44,9 @@ const typeBadgeStyle = (type: string) => ({
   borderColor: `color-mix(in srgb, ${TYPE_BADGE[type]} 27%, transparent)`, // i18n-ignore: CSS
 })
 
-const { query, create, createWithCover, update, remove } = useReleases()
+const { query, create, update, remove } = useReleases()
+// The page's own `create` goes in, so its isPending covers the create step.
+const createWithCover = useCreateReleaseWithCover(create)
 const { token } = useAuth()
 const { t } = useI18n()
 const queryClient = useQueryClient()

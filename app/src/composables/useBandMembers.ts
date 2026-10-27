@@ -1,6 +1,5 @@
 import { useI18n } from 'vue-i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { reportSaveError } from '@/utils/formErrors'
 import {
   createBandMember,
   deleteBandMember,
@@ -11,8 +10,8 @@ import {
 } from '@/api/bandMembers'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 import { appendToList } from '@/utils/queryCache'
-import { createThenUpload } from '@/utils/createThenUpload'
 import { useAuth } from './useAuth'
+import { useCreateWithUpload } from './useCreateWithUpload'
 
 const MEMBERS_KEY = ['band-profile-members']
 
@@ -28,26 +27,22 @@ export function useCreateBandMember() {
 }
 
 /**
- * Create, then the photo the form may carry in `photo_file` — the sequence
- * the Band Members page uses, shared with the quick-add (see createThenUpload
- * for the policy). Pass the page's own `create` so its `isPending` covers
- * this path too.
+ * Create, then the photo the form carries in `photo_file` — the sequence the
+ * Band Members page and the quick-add share (see useCreateWithUpload). The
+ * page passes its own `create`.
  */
 export function useCreateBandMemberWithPhoto(create = useCreateBandMember()) {
   const { token } = useAuth()
   const { t } = useI18n()
-  const queryClient = useQueryClient()
-
+  const createWithPhoto = useCreateWithUpload<Omit<BandMemberPayload, 'photo_file'>, BandMember>({
+    create: (payload) => create.mutateAsync(payload),
+    upload: (member, file) => uploadMemberPhoto(token.value!, member.id, file),
+    invalidateKey: MEMBERS_KEY,
+    failureMessage: () => t('band.members.photoFailed'),
+  })
   return (payload: BandMemberPayload): Promise<BandMember> => {
     const { photo_file: photoFile, ...rest } = payload
-    return createThenUpload(
-      () => create.mutateAsync(rest),
-      photoFile ? (async (member) => {
-        await uploadMemberPhoto(token.value!, member.id, photoFile)
-        void queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
-      }) : null,
-      (e) => reportSaveError(e, t('band.members.photoFailed')),
-    )
+    return createWithPhoto(rest, photoFile ?? null)
   }
 }
 

@@ -6,7 +6,7 @@ export default {
     empty: 'Brak koncertów.',
     noMatch: 'Żaden koncert nie pasuje do wyszukiwania.',
     created: 'Koncert utworzony',
-    posterFailed: 'Koncert zapisany, ale nie udało się wgrać plakatu — dodaj go w formularzu edycji koncertu.',
+    posterFailed: 'Nie udało się wgrać plakatu — dodaj go w formularzu edycji koncertu.',
     updated: 'Koncert zaktualizowany',
     deleted: 'Koncert usunięty',
     needVenue: 'Brak miejsc — dodaj je z formularza koncertu albo na stronie Miejsc.',

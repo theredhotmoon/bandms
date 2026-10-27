@@ -20,7 +20,7 @@ export default {
       actions: 'Akcje',
     },
     created: 'Wydawnictwo utworzone',
-    coverFailed: 'Wydawnictwo zapisane, ale nie udało się wgrać okładki — dodaj ją w formularzu edycji wydawnictwa.',
+    coverFailed: 'Nie udało się wgrać okładki — dodaj ją w formularzu edycji wydawnictwa.',
     updated: 'Wydawnictwo zaktualizowane',
     deleted: 'Wydawnictwo usunięte',
     deleteFailed: 'Nie udało się usunąć',

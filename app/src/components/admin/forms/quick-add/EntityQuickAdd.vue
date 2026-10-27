@@ -1,16 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
-import ConcertQuickAddForm from './ConcertQuickAddForm.vue'
-import ReleaseQuickAddForm from './ReleaseQuickAddForm.vue'
-import PressQuickAddForm from './PressQuickAddForm.vue'
-import ShopItemQuickAddForm from './ShopItemQuickAddForm.vue'
-import MemberQuickAddForm from './MemberQuickAddForm.vue'
-import TourQuickAddForm from './TourQuickAddForm.vue'
-import PostQuickAddForm from './PostQuickAddForm.vue'
-import AlbumQuickAddForm from './AlbumQuickAddForm.vue'
-import MusicVideoQuickAddForm from './MusicVideoQuickAddForm.vue'
 import { useCreateConcertWithPoster } from '@/composables/useConcerts'
 import { useCreateReleaseWithCover } from '@/composables/useReleases'
 import { useCreatePressRelease } from '@/composables/usePressReleases'
@@ -102,6 +93,23 @@ const FACTORIES: Record<QuickAddEntity, () => Omit<Config, 'button' | 'title' | 
 }
 const mounted = FACTORIES[props.entity]()
 
+// Loaded on demand, and that is load-bearing beyond bundle size: a shop item
+// form holds the relations panel, which holds this component, which would
+// hold the shop item form — an import cycle that Rollup orders arbitrarily.
+// A dynamic import breaks the cycle at module-evaluation time; Vite also
+// code-splits each form, which only mounts once its modal opens anyway.
+const FORMS: Record<QuickAddEntity, Component> = {
+  concert:       defineAsyncComponent(() => import('./ConcertQuickAddForm.vue')),
+  release:       defineAsyncComponent(() => import('./ReleaseQuickAddForm.vue')),
+  press_release: defineAsyncComponent(() => import('./PressQuickAddForm.vue')),
+  shop_item:     defineAsyncComponent(() => import('./ShopItemQuickAddForm.vue')),
+  member:        defineAsyncComponent(() => import('./MemberQuickAddForm.vue')),
+  tour:          defineAsyncComponent(() => import('./TourQuickAddForm.vue')),
+  post:          defineAsyncComponent(() => import('./PostQuickAddForm.vue')),
+  album:         defineAsyncComponent(() => import('./AlbumQuickAddForm.vue')),
+  music_video:   defineAsyncComponent(() => import('./MusicVideoQuickAddForm.vue')),
+}
+
 const LABELS: Record<QuickAddEntity, () => Pick<Config, 'button' | 'title' | 'success'>> = {
   concert:       () => ({ button: t('common.quickAdd.concert'),    title: t('shows.concerts.modalNew'),  success: t('shows.concerts.created') }),
   release:       () => ({ button: t('common.quickAdd.release'),    title: t('media.releases.modalNew'),  success: t('media.releases.created') }),
@@ -127,14 +135,6 @@ const config = computed<Config>(() => ({ ...mounted, ...LABELS[props.entity]() }
     @created="emit('created', $event.id)"
     v-slot="{ loading, errors, submit, cancel }"
   >
-    <ConcertQuickAddForm  v-if="entity === 'concert'"            :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <ReleaseQuickAddForm  v-else-if="entity === 'release'"       :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <PressQuickAddForm    v-else-if="entity === 'press_release'" :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <ShopItemQuickAddForm v-else-if="entity === 'shop_item'"     :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <MemberQuickAddForm   v-else-if="entity === 'member'"        :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <TourQuickAddForm     v-else-if="entity === 'tour'"          :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <PostQuickAddForm     v-else-if="entity === 'post'"          :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <AlbumQuickAddForm    v-else-if="entity === 'album'"         :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
-    <MusicVideoQuickAddForm v-else-if="entity === 'music_video'" :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
+    <component :is="FORMS[entity]" :loading="loading" :errors="errors" @submit="submit" @cancel="cancel" />
   </QuickAddModal>
 </template>

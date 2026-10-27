@@ -9,13 +9,14 @@ import BandMemberForm from '@/components/admin/forms/BandMemberForm.vue'
 import MemberSetupsPanel from '@/components/band-member/MemberSetupsPanel.vue'
 import MemberDefaultGear from '@/components/band-member/MemberDefaultGear.vue'
 import MemberPublicPage from '@/components/band-member/MemberPublicPage.vue'
-import { useBandMembers } from '@/composables/useBandMembers'
+import { useBandMembers, useCreateBandMemberWithPhoto } from '@/composables/useBandMembers'
 import { useInstruments } from '@/composables/useInstruments'
 import { reportSaveError } from '@/utils/formErrors'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 
 const { t } = useI18n()
 const { query, create, update, remove, uploadPhoto, reorder } = useBandMembers()
+const createWithPhoto = useCreateBandMemberWithPhoto(create)
 const { query: instrumentsQuery } = useInstruments()
 
 // ── Selection ──────────────────────────────────────────────────────────────────
@@ -92,13 +93,10 @@ const createErrors    = ref<Record<string, string[]>>({})
 
 async function handleCreate(payload: BandMemberPayload) {
   createErrors.value = {}
-  const photoFile = payload.photo_file ?? null
-  const { photo_file: _, ...rest } = payload
   try {
-    const created = await create.mutateAsync(rest)
-    if (photoFile) {
-      await uploadPhoto.mutateAsync({ id: created.id, file: photoFile })
-    }
+    // Create, then the photo, in the composable: a failed photo upload is its
+    // own toast and the member still closes, never a second "Add member".
+    const created = await createWithPhoto(payload)
     toast.success(t('band.members.added'))
     showCreateModal.value = false
     openId.value = created.id
