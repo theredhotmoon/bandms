@@ -33,6 +33,7 @@ const available = items.filter(i => i.is_available || i.is_presale)
 ---
 
 <BaseLayout
+  module="merch"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -44,7 +45,7 @@ const available = items.filter(i => i.is_available || i.is_presale)
     heroImages={resolveHeroImages(siteConfig, 'merch')}
   />
 
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-24">
+  <div class="page-content pt-16 pb-24">
 
     {available.length === 0 ? (
       <div class="rounded-card border border-border bg-surface p-10 text-center">

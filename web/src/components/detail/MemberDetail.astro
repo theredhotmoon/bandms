@@ -166,6 +166,7 @@ const structuredData = {
 ---
 
 <BaseLayout
+  module="about"
   lang={lang}
   alternates={alternates}
   title={name}
@@ -173,7 +174,7 @@ const structuredData = {
   image={member.photo}
   structuredData={structuredData}
 >
-  <section class="md-hero page-x">
+  <section class="md-hero page-content">
     <ThemeSlot name="hero-backdrop" />
     <div class="md-hero-in">
       <nav class="md-crumb" aria-label={site.breadcrumbLabel}>
@@ -204,7 +205,7 @@ const structuredData = {
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-  <section class="md-sec page-x">
+  <section class="md-sec page-content">
     <div class="md-grid">
       <div class="md-photo">
         {member.photo
@@ -245,7 +246,7 @@ const structuredData = {
   </section>
 
   {(member.photos?.length ?? 0) > 0 && (
-    <section class="md-sec page-x" data-testid="member-photos">
+    <section class="md-sec page-content" data-testid="member-photos">
       <h2 class="md-h2">{t.memberPhotos}</h2>
       <MemberPhotoGrid
         client:visible
@@ -257,7 +258,7 @@ const structuredData = {
   )}
 
   {news.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-news">
+    <section class="md-sec page-content" data-testid="member-news">
       <h2 class="md-h2">{t.memberNews}</h2>
       <ul class="md-news">
         {news.map((n) => (
@@ -273,7 +274,7 @@ const structuredData = {
   )}
 
   {gigs.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-gigs">
+    <section class="md-sec page-content" data-testid="member-gigs">
       <h2 class="md-h2">{t.memberGigs}</h2>
       <ul class="md-news">
         {gigs.map((g) => (
@@ -289,13 +290,13 @@ const structuredData = {
   )}
 
   {memberClips.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-clips">
+    <section class="md-sec page-content" data-testid="member-clips">
       <ClipsGrid clips={memberClips} heading={t.memberClips} copy={site} />
     </section>
   )}
 
   {discography.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-releases">
+    <section class="md-sec page-content" data-testid="member-releases">
       <h2 class="md-h2">{t.memberReleases}</h2>
       <ul class="md-releases">
         {discography.map((r) => (
@@ -314,7 +315,7 @@ const structuredData = {
   )}
 
   {videos.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-videos">
+    <section class="md-sec page-content" data-testid="member-videos">
       <h2 class="md-h2">{t.memberVideos}</h2>
       <ul class="md-releases">
         {videos.map((v) => (
@@ -332,7 +333,7 @@ const structuredData = {
   )}
 
   {press.length > 0 && (
-    <section class="md-sec page-x" data-testid="member-press">
+    <section class="md-sec page-content" data-testid="member-press">
       <h2 class="md-h2">{t.memberPress}</h2>
       <ul class="md-news">
         {press.map((p) => (
@@ -348,7 +349,7 @@ const structuredData = {
   )}
 
   <!-- Gear: the member's own kit, or a "coming soon" line until they add some. -->
-  <section class="md-sec page-x" data-testid="member-gear">
+  <section class="md-sec page-content" data-testid="member-gear">
     <h2 class="md-h2">{t.memberGear}</h2>
     {gear.length > 0 ? (
       <ul class="md-gear">

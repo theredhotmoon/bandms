@@ -168,3 +168,20 @@ it('is idempotent — a second run neither duplicates nor throws', function () {
     expect(DB::table('website_modules')->where('slug', 'merch')->count())->toBe(1)
         ->and(DB::table('band_profiles')->count())->toBe(1);
 });
+
+// The content_width migration backfills 'limited' on rows that exist when it
+// runs; on a fresh database concerts, posts and merch are inserted after it,
+// so the seeder has to carry the same values or News, Shows and Shop lose
+// their cap on every `make fresh`.
+it('seeds the capped pages as limited width and the rest as full', function () {
+    seedOntoEmptyModules();
+
+    $width = fn (string $slug) => DB::table('website_modules')->where('slug', $slug)->value('content_width');
+
+    expect($width('concerts'))->toBe('limited')
+        ->and($width('posts'))->toBe('limited')
+        ->and($width('merch'))->toBe('limited')
+        ->and($width('contact'))->toBe('limited')
+        ->and($width('videos'))->toBe('full')
+        ->and($width('releases'))->toBe('full');
+});

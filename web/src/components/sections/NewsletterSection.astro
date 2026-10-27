@@ -27,6 +27,7 @@ const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, lang)
 ---
 
 <BaseLayout
+  module="newsletter"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -36,7 +37,7 @@ const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, lang)
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-  <section class="nl-sec page-x">
+  <section class="nl-sec page-content">
     <!-- The design frames the signup in a dashed panel rather than a solid card,
          which is what marks it as an invitation rather than content. -->
     <div class="nl-panel">
@@ -47,7 +48,7 @@ const t = moduleCopy(siteConfig, 'newsletter', NEWSLETTER_COPY, lang)
       </div>
 
       <NewsletterSignup
-        client:load
+        client:visible
         placeholder={t.placeholder}
         submitLabel={t.submit}
         sendingLabel={t.sending}

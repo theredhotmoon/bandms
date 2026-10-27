@@ -37,7 +37,7 @@ const t = siteCopy(await getSiteConfig(lang), lang)
 {faqs.length > 0 && (
   <>
     {divider && <ThemeSlot name="section-divider" height={14} tone="accent" />}
-    <section class="faq-section page-x">
+    <section class="faq-section page-content">
       <div class="faq-head">
         <Icon name="quote" size={24} color="var(--color-accent)" />
         <h2 class="faq-title">{t.faqTitle}</h2>

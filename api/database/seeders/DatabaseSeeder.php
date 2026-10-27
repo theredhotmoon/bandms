@@ -31,14 +31,20 @@ class DatabaseSeeder extends Seeder
         // blew up on row 7 — and with it `migrate:fresh --seed`, `make fresh`
         // and `rebuild.sh --fresh-db`, all of which had already wiped the
         // database by that point.
+        // content_width lives here rather than on the few rows that differ:
+        // uniformRows() pads an undeclared column with null, and the column is
+        // NOT NULL. The 'limited' rows match what the column's migration
+        // backfills on an existing database, which it cannot do for these —
+        // they are inserted after it runs.
         $defaults = [
             'enabled'    => true,
+            'content_width' => 'full',
             'created_at' => now(),
             'updated_at' => now(),
         ];
 
         $modules = [
-            ['slug' => 'concerts',   'display_name' => 'Concerts',   'sort_order' => 1],
+            ['slug' => 'concerts',   'display_name' => 'Concerts',   'sort_order' => 1,  'content_width' => 'limited'],
             ['slug' => 'releases',   'display_name' => 'Releases',   'sort_order' => 2],
             // 'News' does not slugify to the key 'posts', so without an explicit
             // slug a freshly seeded database serves News at /en/posts while every
@@ -47,11 +53,11 @@ class DatabaseSeeder extends Seeder
             // and the seeder runs after it. These values reproduce that derivation.
             // `merch`/'Shop' below is the same case. No other seeded label diverges
             // from its key, and where they agree the key fallback already serves it.
-            ['slug' => 'posts',      'display_name' => 'News',       'sort_order' => 3,  'custom_slug' => json_encode(['en' => 'news', 'pl' => 'news'])],
+            ['slug' => 'posts',      'display_name' => 'News',       'sort_order' => 3,  'custom_slug' => json_encode(['en' => 'news', 'pl' => 'news']), 'content_width' => 'limited'],
             ['slug' => 'photos',     'display_name' => 'Photos',     'sort_order' => 4],
             ['slug' => 'press',      'display_name' => 'Press',      'sort_order' => 5],
             ['slug' => 'videos',     'display_name' => 'Videos',     'sort_order' => 6],
-            ['slug' => 'merch',      'display_name' => 'Shop',       'sort_order' => 7,  'custom_slug' => json_encode(['en' => 'shop', 'pl' => 'shop'])],
+            ['slug' => 'merch',      'display_name' => 'Shop',       'sort_order' => 7,  'custom_slug' => json_encode(['en' => 'shop', 'pl' => 'shop']), 'content_width' => 'limited'],
             ['slug' => 'epk',        'display_name' => 'EPK',        'sort_order' => 8],
             ['slug' => 'tech-rider', 'display_name' => 'Tech Rider', 'sort_order' => 9],
             ['slug' => 'newsletter', 'display_name' => 'Newsletter', 'sort_order' => 10],
@@ -60,7 +66,7 @@ class DatabaseSeeder extends Seeder
             // discards what follows on every database that has run migrations —
             // which is all of them. Editing these values changes nothing;
             // /pl/kontakt is set by that migration and its custom_slug backfill.
-            ['slug' => 'contact',    'display_name' => 'Contact',    'sort_order' => 11, 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt'])],
+            ['slug' => 'contact',    'display_name' => 'Contact',    'sort_order' => 11, 'custom_name' => json_encode(['pl' => 'Kontakt']), 'custom_slug' => json_encode(['en' => 'contact', 'pl' => 'kontakt']), 'content_width' => 'limited'],
         ];
 
         DB::table('website_modules')->insertOrIgnore(self::uniformRows($modules, $defaults));

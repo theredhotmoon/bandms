@@ -27,6 +27,10 @@ export default {
     visibility: 'Widoczność sekcji',
     rebuildNote: 'Zmiany pojawią się na stronie publicznej po przebudowie.',
     perPage: 'Pozycji na stronę',
+    contentWidth: 'Szerokość treści',
+    contentWidthFull: 'Pełna szerokość',
+    contentWidthLimited: 'Ograniczona szerokość',
+    contentWidthHelp: 'Ograniczona zwęża treść strony do szerokości czytania i wyśrodkowuje ją; tła nadal sięgają krawędzi. Strony koncertu, wydawnictwa, członka zespołu i produktu dziedziczą ustawienie sekcji; artykuły zachowują własną kolumnę tekstu.',
     perPageDefault: 'Domyślnie',
   },
 

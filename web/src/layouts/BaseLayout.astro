@@ -7,6 +7,7 @@ import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ConsentBanner from '@/components/ConsentBanner.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
+import { contentWidthFor } from '@/lib/contentWidth'
 import { getBandProfile, getSiteConfig } from '@/lib/cms'
 import { PRIVACY_COPY } from '@bandms/site-copy'
 import { cartCopy, merchCopy, moduleCopy } from '@/lib/copy'
@@ -26,6 +27,12 @@ export interface Props {
   structuredData?: object
   lang?: Locale
   alternates?: Alternates
+  /**
+   * The website module this page belongs to — a detail page passes its
+   * parent's key. Decides the content width set in the admin; omitted means
+   * full width.
+   */
+  module?: string
 }
 
 const {
@@ -37,6 +44,7 @@ const {
   structuredData,
   lang = 'en',
   alternates = {},
+  module,
 } = Astro.props
 
 // The layout is the only thing that appends the band name to a <title>. Pass
@@ -68,6 +76,9 @@ const pageTitle = !bandName || title === bandName ? title : `${title} — ${band
 // CMS can drive later without a rebuild.
 const theme = await getTheme(lang)
 const fontHref = THEME_FONTS[theme]
+
+// Read by .page-content in base.css, which every section's content box uses.
+const contentWidth = contentWidthFor(siteConfig, module)
 ---
 
 <!doctype html>
@@ -95,7 +106,7 @@ const fontHref = THEME_FONTS[theme]
   </head>
   <body class="flex min-h-screen flex-col">
     <Header lang={lang} />
-    <main class="flex-1">
+    <main class="flex-1" data-content-width={contentWidth}>
       <slot />
     </main>
     <Footer lang={lang} alternates={alternates} />

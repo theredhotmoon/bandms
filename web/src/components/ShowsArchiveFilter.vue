@@ -54,7 +54,7 @@ function showOnMap(id: number) {
 </script>
 
 <template>
-  <div class="archive-wrap">
+  <div class="archive-wrap page-content">
     <!-- Header row -->
     <div class="archive-head-row">
       <div class="archive-head-left">
@@ -107,10 +107,9 @@ function showOnMap(id: number) {
 </template>
 
 <style scoped>
+/* Width comes from the global .page-content — limited or full, per the admin. */
 .archive-wrap {
-  padding: 56px var(--page-gutter) 52px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding-block: 56px 52px;
   width: 100%;
   box-sizing: border-box;
 }

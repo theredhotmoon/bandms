@@ -6,8 +6,8 @@ import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vu
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
-import type { Localized, WebsiteModule, ModuleSettings, ModuleVisibility } from '@/types/website-module'
-import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
+import type { Localized, WebsiteModule, ModuleSettings, ModuleVisibility, ContentWidth } from '@/types/website-module'
+import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, hasContentWidth, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
 import { LOCALES, bagFrom, emptyBag, shortLabel, type Lang, type TranslationBag } from '@/locales'
 import { useContentLocales } from '@/composables/useContentLocales'
 import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
@@ -107,6 +107,7 @@ const editingSlug  = ref<string | null>(null)
 const draftName    = ref<TranslationBag>(emptyBag())
 const draftSlug    = ref<TranslationBag>(emptyBag())
 const draftPerPage = ref<number | null>(null)
+const draftWidth   = ref<ContentWidth>('full')
 const fieldErrors  = ref<Record<string, string[]>>({})
 
 // Editable page copy, keyed `<field>.<locale>` so one flat ref backs a form
@@ -132,6 +133,7 @@ const { isDirty, markClean } = useDirtyGuard(() => ({
   name: draftName.value,
   slug: draftSlug.value,
   perPage: draftPerPage.value,
+  width: draftWidth.value,
   settings: draftSettings.value,
   visibility: draftVisibility.value,
 }))
@@ -151,6 +153,7 @@ function startEdit(mod: WebsiteModule) {
   draftName.value    = bagFrom(mod.custom_name)
   draftSlug.value    = bagFrom(mod.custom_slug)
   draftPerPage.value = mod.per_page ?? null
+  draftWidth.value   = mod.content_width ?? 'full'
   fieldErrors.value  = {}
 
   const next: Record<string, string> = {}
@@ -234,6 +237,7 @@ async function saveEdit(slug: string) {
             }
           : {}),
         per_page: draftPerPage.value,
+        ...(hasContentWidth(slug) ? { content_width: draftWidth.value } : {}),
         ...(settingsFields.value.length > 0 ? { settings: collectSettings(slug) } : {}),
         ...(visibilityFields.value.length > 0 ? { visibility: collectVisibility(slug) } : {}),
       },
@@ -480,6 +484,22 @@ async function saveEdit(slug: string) {
             </label>
 
             <span class="text-xs text-zinc-600">{{ $t('pages.modules.rebuildNote') }}</span>
+          </div>
+
+          <!-- Content width. Read by BaseLayout on the public site; detail
+               pages (a show, a post, a release) follow their section. -->
+          <div v-if="hasContentWidth(mod.slug)" class="flex flex-col gap-1.5">
+            <label :for="`content-width-${mod.slug}`" class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.contentWidth') }}</label>
+            <select
+              :id="`content-width-${mod.slug}`"
+              v-model="draftWidth"
+              data-testid="content-width"
+              class="w-44 rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 transition-colors"
+            >
+              <option value="full">{{ $t('pages.modules.contentWidthFull') }}</option>
+              <option value="limited">{{ $t('pages.modules.contentWidthLimited') }}</option>
+            </select>
+            <span class="text-xs text-zinc-600">{{ $t('pages.modules.contentWidthHelp') }}</span>
           </div>
 
           <!-- Per-page select (list modules only) -->

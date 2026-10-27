@@ -11,7 +11,7 @@ class WebsiteModule extends Model
 
     public array $translatable = ['custom_name', 'custom_slug'];
 
-    protected $fillable = ['slug', 'display_name', 'custom_name', 'custom_slug', 'enabled', 'sort_order', 'per_page', 'settings', 'visibility'];
+    protected $fillable = ['slug', 'display_name', 'custom_name', 'custom_slug', 'enabled', 'sort_order', 'per_page', 'settings', 'visibility', 'content_width'];
 
     protected $casts = [
         'enabled'    => 'boolean',
@@ -20,4 +20,7 @@ class WebsiteModule extends Model
         'settings'   => 'array',
         'visibility' => 'array',
     ];
+
+    /** Accepted values of `content_width` — see the migration that added it. */
+    public const CONTENT_WIDTHS = ['full', 'limited'];
 }

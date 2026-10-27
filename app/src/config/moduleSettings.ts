@@ -100,3 +100,16 @@ export const MODULE_VISIBILITY_SCHEMA: Record<string, ModuleVisibilityField[]> =
 export function visibilityFieldsFor(slug: string): ModuleVisibilityField[] {
   return MODULE_VISIBILITY_SCHEMA[slug] ?? []
 }
+
+/**
+ * Whether a module's page offers the full/limited content-width switch.
+ *
+ * Every page with a route takes it, `home` included even though it is a
+ * fixed-route row. Not `tech-rider`: its page is a printable document with
+ * its own measure. Not `privacy`: a narrow prose column by design. Not the
+ * chrome rows (`footer`, `site`), which have no page of their own.
+ */
+export function hasContentWidth(slug: string): boolean {
+  if (slug === 'home') return true
+  return !NON_PAGE_MODULES.has(slug) && slug !== 'tech-rider'
+}

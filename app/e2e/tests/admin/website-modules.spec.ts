@@ -11,6 +11,7 @@ test.describe('Website Modules Admin', () => {
   // bakes whatever is there at container start — so a run that does not clean up
   // leaves "E2E KICKER 17878…" on the live contact page. Capture and restore.
   let originalKicker: string | null = null
+  let originalWidth: string | null = null
 
   test.beforeAll(async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: 'e2e/.auth/admin.json' })
@@ -19,6 +20,7 @@ test.describe('Website Modules Admin', () => {
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: 'Edit Contact settings' }).click()
     originalKicker = await page.locator('#set-kicker-en').inputValue()
+    originalWidth = await page.getByTestId('content-width').inputValue()
     await ctx.close()
   })
 
@@ -30,6 +32,7 @@ test.describe('Website Modules Admin', () => {
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: 'Edit Contact settings' }).click()
     await page.locator('#set-kicker-en').fill(originalKicker)
+    if (originalWidth !== null) await page.getByTestId('content-width').selectOption(originalWidth)
     await page.getByRole('button', { name: /^Save$/ }).click()
     await page.locator('#set-kicker-en').waitFor({ state: 'hidden', timeout: 8000 })
     await ctx.close()
@@ -213,5 +216,36 @@ test.describe('Website Modules Admin', () => {
     await expect(statsCheckbox).not.toBeChecked()
     await statsCheckbox.check()
     await expect(statsCheckbox).toBeChecked()
+  })
+
+  // The public half — that the page actually renders at this width — is
+  // tests/public/content-width.spec.ts.
+  test('content width saves and survives a reload', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Contact settings' }).click()
+
+    const select = page.getByTestId('content-width')
+    await expect(select).toBeVisible({ timeout: 8000 })
+    const flipped = (await select.inputValue()) === 'limited' ? 'full' : 'limited'
+    await select.selectOption(flipped)
+
+    const saved = page.waitForResponse(r => r.url().includes('/api/admin/modules/contact') && r.request().method() === 'PUT')
+    await page.getByRole('button', { name: /^Save$/ }).click()
+    expect((await (await saved).json()).data.content_width).toBe(flipped)
+    await expect(select).not.toBeVisible({ timeout: 8000 })
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Contact settings' }).click()
+    await expect(page.getByTestId('content-width')).toHaveValue(flipped, { timeout: 8000 })
+  })
+
+  test('content width is not offered on chrome rows', async ({ page }) => {
+    await page.goto('/admin/website-modules')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'Edit Footer settings' }).click()
+    await expect(page.getByText('Page copy')).toBeVisible({ timeout: 8000 })
+    await expect(page.getByTestId('content-width')).toHaveCount(0)
   })
 })

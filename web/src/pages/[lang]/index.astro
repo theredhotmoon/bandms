@@ -71,6 +71,7 @@ const structuredData = {
 ---
 
 <BaseLayout
+  module="home"
   lang={lang}
   alternates={alternates}
   title={profile.name}
@@ -135,7 +136,7 @@ const structuredData = {
 
     <!-- ── UPCOMING SHOWS ────────────────────────────────────────── -->
     {concertsEnabled && upcoming.length > 0 && (
-      <section class="sec">
+      <section class="sec page-content">
         <div class="sec-head-row">
           <div class="sec-head">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -173,7 +174,7 @@ const structuredData = {
     <!-- Nothing announced: keep the block, with a way to hear about the next
          gig or to book one, instead of dropping it from the page. -->
     {concertsEnabled && upcoming.length === 0 && (
-      <section class="sec" data-testid="home-no-gigs">
+      <section class="sec page-content" data-testid="home-no-gigs">
         <div class="sec-head-row">
           <div class="sec-head">
             <h2 class="sec-title">{t.showsTitle}</h2>
@@ -188,7 +189,7 @@ const structuredData = {
 
     <!-- ── LATEST MUSIC ──────────────────────────────────────────── -->
     {releasesEnabled && latestReleases.length > 0 && (
-      <section class="sec sec-dark">
+      <section class="sec sec-dark page-content">
         <div class="sec-head-row">
           <div class="sec-head">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -225,7 +226,7 @@ const structuredData = {
 
     <!-- ── LATEST NEWS ───────────────────────────────────────────── -->
     {postsEnabled && latestPosts.length > 0 && (
-      <section class="sec">
+      <section class="sec page-content">
         <div class="sec-head-row">
           <div class="sec-head">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -413,7 +414,7 @@ const structuredData = {
   /* ── Shared section ────────────────────── */
   .sec {
     background: var(--paper);
-    padding: 52px var(--page-gutter) 48px;
+    padding-block: 52px 48px;
   }
   .sec-dark {
     background: var(--ink);

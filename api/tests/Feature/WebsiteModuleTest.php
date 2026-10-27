@@ -1025,3 +1025,50 @@ it('refuses a page slug that would shadow the fixed privacy route', function () 
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['custom_slug.en']);
 });
+
+// ── content width (full / limited, added 2026-10-27) ─────────────────────────
+
+it('serves full content width by default and limited for the pages that were capped', function () {
+    WebsiteModule::create(['slug' => 'videos', 'display_name' => 'Videos', 'enabled' => true, 'sort_order' => 9]);
+
+    // contact, about and home are inserted by migrations and backfilled to
+    // 'limited' by the one that added the column; a row created later is 'full'.
+    $this->getJson('/api/site-config')
+        ->assertOk()
+        ->assertJsonPath('module_config.contact.content_width', 'limited')
+        ->assertJsonPath('module_config.about.content_width', 'limited')
+        ->assertJsonPath('module_config.home.content_width', 'limited')
+        ->assertJsonPath('module_config.videos.content_width', 'full');
+});
+
+it('saves a content width', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', ['content_width' => 'full'])
+        ->assertOk()
+        ->assertJsonPath('data.content_width', 'full');
+
+    $this->getJson('/api/site-config')
+        ->assertJsonPath('module_config.contact.content_width', 'full');
+});
+
+it('leaves the content width alone when a save omits it', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', ['enabled' => true])
+        ->assertOk()
+        ->assertJsonPath('data.content_width', 'limited');
+});
+
+it('rejects an unknown content width', function () {
+    Passport::actingAs(User::factory()->create(['role' => 'admin']));
+
+    $this->putJson('/api/admin/modules/contact', ['content_width' => 'wide'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('content_width');
+});
+
+it('requires authentication to change the content width', function () {
+    $this->putJson('/api/admin/modules/contact', ['content_width' => 'full'])
+        ->assertUnauthorized();
+});
