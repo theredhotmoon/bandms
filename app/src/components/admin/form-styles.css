@@ -119,6 +119,9 @@ textarea.field-input {
 }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* A field label with an action (a quick-add button) on its right. */
+.field-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+
 .btn-ghost {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;

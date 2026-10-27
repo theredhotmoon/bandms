@@ -112,6 +112,8 @@ export default {
     member: '+ Nowy członek zespołu',
     tour: '+ Nowa trasa',
     post: '+ Nowy wpis',
+    album: '+ Nowy album ze zdjęciami',
+    musicVideo: '+ Nowy teledysk',
   },
   relations: {
     title: 'Powiąż z…',

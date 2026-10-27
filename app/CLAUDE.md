@@ -309,14 +309,26 @@ that shell, and a new quick-add is the form in its slot plus the
 mutation. Its `create` takes `(payload, file)`, so a form that emits a
 file beside its payload (a concert's poster, a release's cover) fits too:
 `EntityQuickAdd` (`forms/quick-add/`, one component for every entity with a
-reusable form — used by the post reference block and the relations panel)
-hands it `useCreateConcertWithPoster()` and friends, the
-same create-then-upload sequence the concerts and releases pages use, in
-which a failed upload is its own toast and the record still closes —
-never a form left open whose second Create makes a duplicate. The cache
-append is `appendToList()` in `src/utils/queryCache.ts`; every
-`useCreate*()` composable goes through it, so a new list-backed create
-should too.) The nested form's `useModalGuard`
+reusable form — used by the post reference block and the relations panel;
+it mounts only the one create composable its `entity` names, so hosts
+`:key` it on the entity) hands it `useCreateConcertWithPoster()` and
+friends. Those are `createThenUpload()` in `src/utils/createThenUpload.ts`,
+the one policy the concerts, releases and band members pages share with
+the quick-adds: a failed upload is its own toast and the record still
+closes — never a form left open whose second Create makes a duplicate. A
+page passes its own `create` mutation into the `With*` composable so its
+`isPending` covers the create path; the first cut did not, and the Save
+button stopped disabling. The cache append is `appendToList()` in
+`src/utils/queryCache.ts`; every `useCreate*()` composable goes through it,
+so a new list-backed create should too. Ticking the created record is
+`pushUnique()`, and the label-with-button row is `.field-label-row` in
+`form-styles.css`.)
+
+**A form that a quick-add can stack over another modal must be a
+component** that carries `useModalGuard` — the instrument and music video
+forms were extracted from their views for exactly this (`InstrumentForm`,
+`MusicVideoForm`), and `BatchPhotoUpload` gained the guard. An unguarded
+form in a nested modal gets no Escape at all. The nested form's `useModalGuard`
 injects the *nearest* modal, so its discard guard is its own, and
 `src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on
 open — decides the rest from open order alone: the topmost answers Escape

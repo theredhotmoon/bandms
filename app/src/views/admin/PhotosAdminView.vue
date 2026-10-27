@@ -9,15 +9,16 @@ import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import BatchPhotoUpload from '@/components/admin/forms/BatchPhotoUpload.vue'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import AlbumAddPhotos from '@/components/admin/forms/AlbumAddPhotos.vue'
 import PhotoMemberTags from '@/components/admin/PhotoMemberTags.vue'
 import { useBandMembers } from '@/composables/useBandMembers'
-import { useAlbums } from '@/composables/useAlbums'
+import { useAlbums, useCreateAlbumWithPhotos } from '@/composables/useAlbums'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
 import { useTags } from '@/composables/useTags'
 import { useAuth } from '@/composables/useAuth'
-import { addAlbumPhotos, batchCreateAlbum, removeAlbumPhoto } from '@/api/albums'
+import { addAlbumPhotos, removeAlbumPhoto } from '@/api/albums'
 import { setPhotoMembers, togglePhotoEpkFeatured } from '@/api/photos'
 import type { UploadProgress } from '@/api/albums'
 import type { Album, AlbumPayload, AlbumPhoto } from '@/types/album'
@@ -27,6 +28,7 @@ import { useTagLabel } from '@/composables/useTagLabel'
 
 const tagName = useTagLabel()
 const { query, update, remove, reorderPhotos } = useAlbums()
+const createAlbumWithPhotos = useCreateAlbumWithPhotos()
 const { query: venuesQ } = useVenues()
 const { query: concertsQ } = useConcerts()
 const { query: tagsQ } = useTags()
@@ -55,10 +57,9 @@ async function handleBatchUpload(
   batchUploading.value = true
   batchProgress.value = null
   try {
-    const album = await batchCreateAlbum(token.value!, files, meta, (p) => {
+    const album = await createAlbumWithPhotos({ files, meta }, (p) => {
       batchProgress.value = p
     })
-    await queryClient.invalidateQueries({ queryKey: ['albums'] })
     toast.success(t('media.photos.albumCreated', album.photos.length, { named: { title: album.title, n: album.photos.length } }))
     showBatch.value = false
   } catch (e) {
@@ -102,11 +103,6 @@ function toggleTag(id: number) {
   const idx = editForm.tag_ids.indexOf(id)
   if (idx === -1) editForm.tag_ids.push(id)
   else editForm.tag_ids.splice(idx, 1)
-}
-
-/** A tag just created from this form is ticked, never un-ticked. */
-function pickTag(id: number) {
-  if (!editForm.tag_ids.includes(id)) editForm.tag_ids.push(id)
 }
 
 async function saveEdit() {
@@ -410,9 +406,9 @@ async function confirmDelete() {
           </div>
         </div>
         <div>
-          <div class="tag-label-row">
+          <div class="field-label-row">
             <label class="field-label">{{ $t('media.photos.tags') }}</label>
-            <TagQuickAdd @created="pickTag($event.id)" />
+            <TagQuickAdd @created="pushUnique(editForm.tag_ids, $event.id)" />
           </div>
           <div class="checkbox-list">
             <label v-for="t in tagsQ.data.value" :key="t.id" class="checkbox-item">
@@ -498,7 +494,6 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
 <style scoped>
-.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-0f2a1e); color:var(--c-34d399); white-space:nowrap; }
 
 .cover-cell { width:52px; height:40px; }

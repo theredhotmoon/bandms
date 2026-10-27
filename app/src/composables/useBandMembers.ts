@@ -11,6 +11,7 @@ import {
 } from '@/api/bandMembers'
 import type { BandMember, BandMemberPayload } from '@bandms/rider-core'
 import { appendToList } from '@/utils/queryCache'
+import { createThenUpload } from '@/utils/createThenUpload'
 import { useAuth } from './useAuth'
 
 const MEMBERS_KEY = ['band-profile-members']
@@ -28,27 +29,25 @@ export function useCreateBandMember() {
 
 /**
  * Create, then the photo the form may carry in `photo_file` — the sequence
- * the Band Members page uses, shared with the quick-add. The member stands
- * whatever happens to the photo; a failed upload is reported on its own.
+ * the Band Members page uses, shared with the quick-add (see createThenUpload
+ * for the policy). Pass the page's own `create` so its `isPending` covers
+ * this path too.
  */
-export function useCreateBandMemberWithPhoto() {
+export function useCreateBandMemberWithPhoto(create = useCreateBandMember()) {
   const { token } = useAuth()
   const { t } = useI18n()
   const queryClient = useQueryClient()
-  const create = useCreateBandMember()
 
-  return async (payload: BandMemberPayload): Promise<BandMember> => {
+  return (payload: BandMemberPayload): Promise<BandMember> => {
     const { photo_file: photoFile, ...rest } = payload
-    const member = await create.mutateAsync(rest)
-    if (photoFile) {
-      try {
+    return createThenUpload(
+      () => create.mutateAsync(rest),
+      photoFile ? (async (member) => {
         await uploadMemberPhoto(token.value!, member.id, photoFile)
-        await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
-      } catch (e) {
-        reportSaveError(e, t('band.members.photoFailed'))
-      }
-    }
-    return member
+        void queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
+      }) : null,
+      (e) => reportSaveError(e, t('band.members.photoFailed')),
+    )
   }
 }
 

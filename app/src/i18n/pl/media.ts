@@ -171,6 +171,7 @@ export default {
     publishAt: 'Data publikacji',
     tags: 'Tagi',
     photos: 'Zdjęcia',
+    albumAdded: 'Album utworzony',
     albumCreated: 'Album „{title}” utworzony z {n} zdjęciem | Album „{title}” utworzony z {n} zdjęciami | Album „{title}” utworzony z {n} zdjęciami',
     uploadFailed: 'Wysyłanie nie powiodło się',
     updated: 'Album zaktualizowany',

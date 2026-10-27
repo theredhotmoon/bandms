@@ -11,6 +11,7 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import { useTagLabel } from '@/composables/useTagLabel'
+import { pushUnique } from '@/utils/pushUnique'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import EntityQuickAdd, { type QuickAddEntity } from '@/components/admin/forms/quick-add/EntityQuickAdd.vue'
 
@@ -59,12 +60,11 @@ const expanded = reactive<Record<SectionKey, boolean>>({
   tours: false, albums: false, posts: false, musicVideos: false, pressReleases: false,
 })
 
-// Which sections can create their record in place (EntityQuickAdd); tags have
-// TagQuickAdd. Albums and music videos have no reusable form, so those two
-// sections still hide when their list is empty — there would be nothing to do.
-const QUICK_ADD: Partial<Record<SectionKey, QuickAddEntity>> = {
+// Every section can create its record in place (EntityQuickAdd); tags have
+// TagQuickAdd.
+const QUICK_ADD: Record<Exclude<SectionKey, 'tags'>, QuickAddEntity> = {
   members: 'member', concerts: 'concert', releases: 'release', shopItems: 'shop_item',
-  tours: 'tour', posts: 'post', pressReleases: 'press_release',
+  tours: 'tour', posts: 'post', pressReleases: 'press_release', albums: 'album', musicVideos: 'music_video',
 }
 
 // One list drives the template, so every section gets the same toggle,
@@ -103,7 +103,7 @@ const sections = computed<Section[]>(() => {
     items: props.tours.map(x => ({ id: x.id, label: x.name })),
     ids: tourIds.value, set: v => (tourIds.value = v),
   })
-  if (props.albums?.length) out.push({
+  if (props.albums) out.push({
     key: 'albums', title: t('common.relations.albums'),
     items: props.albums.map(a => ({ id: a.id, label: a.title })),
     ids: albumIds.value, set: v => (albumIds.value = v),
@@ -113,7 +113,7 @@ const sections = computed<Section[]>(() => {
     items: props.posts.map(p => ({ id: p.id, label: p.title })),
     ids: postIds.value, set: v => (postIds.value = v),
   })
-  if (props.musicVideos?.length) out.push({
+  if (props.musicVideos) out.push({
     key: 'musicVideos', title: t('common.relations.musicVideos'),
     items: props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
     ids: musicVideoIds.value, set: v => (musicVideoIds.value = v),
@@ -136,7 +136,9 @@ function toggle(section: Section, id: number) {
 
 /** A record just created from inside a section is ticked, never un-ticked. */
 function pick(section: Section, id: number) {
-  if (!section.ids.includes(id)) section.set([...section.ids, id])
+  const ids = [...section.ids]
+  pushUnique(ids, id)
+  section.set(ids)
 }
 
 function label(text: string, count: number) {
@@ -168,7 +170,7 @@ function summary(section: Section): string {
           <span>{{ i.label }} <span v-if="i.badge" class="assoc-badge">{{ i.badge }}</span></span>
         </label>
         <TagQuickAdd v-if="s.key === 'tags'" @created="pick(s, $event.id)" />
-        <EntityQuickAdd v-else-if="QUICK_ADD[s.key]" :entity="QUICK_ADD[s.key]!" @created="pick(s, $event)" />
+        <EntityQuickAdd v-else :entity="QUICK_ADD[s.key]" @created="pick(s, $event)" />
       </div>
     </div>
   </div>

@@ -20,8 +20,10 @@ export function useCreatePost() {
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(token.value!, payload),
     onSuccess: (post) => {
+      // The prefix also matches usePost's detail caches (['posts', id, lang]),
+      // which hold one Post, not a list: only a `{ data: [] }` shape is touched.
       queryClient.setQueriesData<PostListResponse>({ queryKey: ['posts'] }, (old) =>
-        old ? { ...old, data: [...old.data, post] } : old,
+        old && Array.isArray(old.data) ? { ...old, data: [...old.data, post] } : old,
       )
       void queryClient.invalidateQueries({ queryKey: ['posts'] })
     },

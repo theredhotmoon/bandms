@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { createRelease, deleteRelease, fetchReleases, updateRelease, uploadReleaseCover } from '@/api/releases'
 import type { Release, ReleaseSummary, ReleasePayload } from '@/types/release'
 import { appendToList } from '@/utils/queryCache'
+import { createThenUpload } from '@/utils/createThenUpload'
 import { reportSaveError } from '@/utils/formErrors'
 import { useAuth } from './useAuth'
 import { useLang } from './useLang'
@@ -24,29 +25,24 @@ export function useCreateRelease() {
 }
 
 /**
- * Create, then the cover — shared by the releases page and the post block's
- * quick-add. The release stands whatever happens to the cover; see
- * useCreateConcertWithPoster for why a failed upload must not keep the form
- * open.
+ * Create, then the cover — shared by the releases page and the quick-add
+ * (see createThenUpload for the policy). Pass the page's own `create` so its
+ * `isPending` covers this path too.
  */
-export function useCreateReleaseWithCover() {
+export function useCreateReleaseWithCover(create = useCreateRelease()) {
   const { token } = useAuth()
   const { t } = useI18n()
   const queryClient = useQueryClient()
-  const create = useCreateRelease()
 
-  return async (payload: ReleasePayload, coverFile: File | null): Promise<Release> => {
-    const release = await create.mutateAsync(payload)
-    if (coverFile) {
-      try {
+  return (payload: ReleasePayload, coverFile: File | null): Promise<Release> =>
+    createThenUpload(
+      () => create.mutateAsync(payload),
+      coverFile && (async (release) => {
         await uploadReleaseCover(token.value!, release.id, coverFile)
-        await queryClient.invalidateQueries({ queryKey: ['releases'] })
-      } catch (e) {
-        reportSaveError(e, t('media.releases.coverFailed'))
-      }
-    }
-    return release
-  }
+        void queryClient.invalidateQueries({ queryKey: ['releases'] })
+      }),
+      (e) => reportSaveError(e, t('media.releases.coverFailed')),
+    )
 }
 
 export function useReleases() {
@@ -62,7 +58,7 @@ export function useReleases() {
   })
 
   const create = useCreateRelease()
-  const createWithCover = useCreateReleaseWithCover()
+  const createWithCover = useCreateReleaseWithCover(create)
 
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ReleasePayload }) =>

@@ -80,7 +80,7 @@ test.describe('Post block — reference created from the block', () => {
     expect(ref?.data?.id).toBe(pressId)
   })
 
-  test('every supported entity opens its own form; album and video offer none', async ({ page }) => {
+  test('every entity but the clip opens its own form from the block', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))
 
@@ -94,7 +94,9 @@ test.describe('Post block — reference created from the block', () => {
 
     const forms: [string, string][] = [
       ['concert', 'New concert'],
+      ['album', 'New Photo Album'],
       ['release', 'New release'],
+      ['music_video', 'Add video'],
       ['shop_item', 'New shop item'],
     ]
     for (const [entity, heading] of forms) {
@@ -106,11 +108,6 @@ test.describe('Post block — reference created from the block', () => {
       await inner.locator('input').first().focus()
       await page.keyboard.press('Escape')
       await expect(page.locator('.modal-overlay')).toHaveCount(1)
-    }
-
-    for (const entity of ['album', 'music_video']) {
-      await block.locator('select').first().selectOption(entity)
-      await expect(block.locator('[data-testid^="quick-add-"]')).toHaveCount(0)
     }
 
     expect(errors).toEqual([])

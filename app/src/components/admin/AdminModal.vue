@@ -135,6 +135,11 @@ onBeforeUnmount(() => {
   leaveModal(self)
   window.removeEventListener('keydown', onKeydown)
   headerObserver?.disconnect()
+  // Torn down while open (the host view left): after-leave never fires, so
+  // this is the only exit that can hand focus back.
+  const el = opener ?? restoreTo
+  opener = restoreTo = null
+  if (el instanceof HTMLElement && el.isConnected) el.focus({ preventScroll: true })
 })
 </script>
 

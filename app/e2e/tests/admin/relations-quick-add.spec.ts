@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { expectToast } from '../../fixtures/test-base'
-import { adminHeaders } from '../../fixtures/admin-api'
+import { adminHeaders, TEST_PNG } from '../../fixtures/admin-api'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
@@ -20,10 +20,14 @@ test.describe('Admin — relations panel creates its own records', () => {
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   let tourId: number | undefined
   let memberId: number | undefined
+  let albumId: number | undefined
+  let videoId: number | undefined
 
   test.afterAll(async ({ request }) => {
     if (tourId) await request.delete(`/api/tours/${tourId}`, { headers: adminHeaders() })
     if (memberId) await request.delete(`/api/band-profile/members/${memberId}`, { headers: adminHeaders() })
+    if (albumId) await request.delete(`/api/albums/${albumId}`, { headers: adminHeaders() })
+    if (videoId) await request.delete(`/api/music-videos/${videoId}`, { headers: adminHeaders() })
   })
 
   async function discard(page: import('@playwright/test').Page, outer: import('@playwright/test').Locator) {
@@ -90,7 +94,66 @@ test.describe('Admin — relations panel creates its own records', () => {
     await discard(page, outer)
   })
 
-  test('shop item form: every section with a form offers it, and Escape closes only that form', async ({ page }) => {
+  test('press form: a photo album created from the Photo albums section, photo included, is ticked', async ({ page, request }) => {
+    const title = `E2E QuickAdd Album ${stamp}`
+    await page.goto('/admin/press-releases')
+    await page.locator('button.btn-add-primary').click()
+    const outer = page.locator('.modal-overlay').nth(0)
+    await expect(outer).toBeVisible()
+
+    const section = outer.locator('.assoc-section').filter({ hasText: 'Photo albums' })
+    await section.locator('.assoc-toggle').click()
+    await section.getByTestId('quick-add-album').click()
+    const inner = page.locator('.modal-overlay').nth(1)
+    await expect(inner.getByRole('heading', { name: 'New Photo Album' })).toBeVisible()
+
+    await inner.locator('input[placeholder*="Rudeboy" i]').fill(title)
+    // An album is its photos: the form wants at least one before it enables Create.
+    await inner.locator('input[type="file"]').setInputFiles({ name: 'e2e.png', mimeType: 'image/png', buffer: TEST_PNG })
+    await inner.locator('button.btn-primary').click()
+    await expectToast(page, 'Album created')
+    await expect(page.locator('.modal-overlay')).toHaveCount(1)
+    // The upload is an XHR (progress events), so the id is read back from the
+    // list rather than off the response; capture it before any assertion can
+    // fail, or the album outlives the test.
+    const albums = ((await (await request.get('/api/albums')).json()) as { data: { id: number; title: string }[] }).data
+    albumId = albums.find(a => a.title === title)?.id
+    expect(albumId).toBeDefined()
+
+    const item = section.locator('.checkbox-item').filter({ hasText: title })
+    await expect(item.locator('input[type="checkbox"]')).toBeChecked()
+
+    await discard(page, outer)
+  })
+
+  test('shop item form: a music video created from the Music videos section is ticked', async ({ page }) => {
+    const title = `E2E QuickAdd Video ${stamp}`
+    await page.goto('/admin/shop')
+    await page.locator('button.btn-add-primary').first().click()
+    const outer = page.locator('.modal-overlay').nth(0)
+    await expect(outer).toBeVisible()
+
+    const section = outer.locator('.assoc-section').filter({ hasText: 'Music videos' })
+    await section.locator('.assoc-toggle').click()
+    await section.getByTestId('quick-add-music_video').click()
+    const inner = page.locator('.modal-overlay').nth(1)
+    await expect(inner.getByRole('heading', { name: 'Add video' })).toBeVisible()
+
+    await inner.locator('input[type="url"]').fill(`https://youtu.be/e2e${stamp.replace(/\W/g, '')}`)
+    await inner.locator('input[placeholder="Video title"]').fill(title)
+    const created = page.waitForResponse(r => r.url().endsWith('/api/music-videos') && r.request().method() === 'POST')
+    await inner.getByRole('button', { name: 'Save' }).click()
+    videoId = ((await (await created).json()) as { data: { id: number } }).data.id
+    await expectToast(page, 'Music video added')
+    await expect(page.locator('.modal-overlay')).toHaveCount(1)
+
+    const item = section.locator('.checkbox-item').filter({ hasText: title })
+    await expect(item.locator('input[type="checkbox"]')).toBeChecked()
+
+    await discard(page, outer)
+  })
+
+  test('shop item form: every section offers its form, and Escape closes only that form', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))
     await page.goto('/admin/shop')
@@ -98,14 +161,14 @@ test.describe('Admin — relations panel creates its own records', () => {
     const outer = page.locator('.modal-overlay').nth(0)
     await expect(outer).toBeVisible()
 
-    // The shop item form links tags, releases, concerts, posts and videos;
-    // videos have no form, so no button, and the section hides when empty.
+    // The shop item form links tags, releases, concerts, posts and videos.
     // Sections are found by title: the button only renders once a section is
     // expanded, so it cannot be what identifies the section.
     const expected: [string, string, string][] = [
       ['Music releases', 'quick-add-release', 'New release'],
       ['Concerts', 'quick-add-concert', 'New concert'],
       ['Blog posts', 'quick-add-post', 'New post'],
+      ['Music videos', 'quick-add-music_video', 'Add video'],
     ]
     for (const [title, testId, heading] of expected) {
       const section = outer.locator('.assoc-section').filter({ hasText: title })
@@ -117,7 +180,6 @@ test.describe('Admin — relations panel creates its own records', () => {
       await page.keyboard.press('Escape')
       await expect(page.locator('.modal-overlay')).toHaveCount(1)
     }
-    await expect(outer.getByTestId('quick-add-music_video')).toHaveCount(0)
     expect(errors).toEqual([])
 
     await discard(page, outer)

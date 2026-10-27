@@ -7,6 +7,7 @@ import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vu
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
+import { pushUnique } from '@/utils/pushUnique'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -281,11 +282,6 @@ function toggleTag(id: number) {
   else form.tag_ids.splice(idx, 1)
 }
 
-/** A tag just created from this form is ticked, never un-ticked. */
-function pickTag(id: number) {
-  if (!form.tag_ids.includes(id)) form.tag_ids.push(id)
-}
-
 function addLink() {
   const label = newLinkLabel.value.trim()
   const url   = newLinkUrl.value.trim()
@@ -357,7 +353,7 @@ function submit() {
 
     <!-- Venue -->
     <div>
-      <div class="venue-label-row">
+      <div class="field-label-row">
         <label class="field-label">{{ $t('shows.venues.singular') }} <span style="color:var(--c-f87171);">*</span></label>
         <!-- The venue list is the view's query; the created row reaches the
              select through the cache append in useVenues.create. -->
@@ -537,9 +533,9 @@ function submit() {
 
     <!-- Tags -->
     <div>
-      <div class="tag-label-row">
+      <div class="field-label-row">
         <label class="field-label">{{ $t('common.fields.tags') }}</label>
-        <TagQuickAdd @created="pickTag($event.id)" />
+        <TagQuickAdd @created="pushUnique(form.tag_ids, $event.id)" />
       </div>
       <div class="checkbox-list">
         <label v-for="t in tags" :key="t.id" class="checkbox-item">
@@ -652,18 +648,7 @@ function submit() {
 }
 .lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
-/* ── Tags ───────────────────────────────────────────────────── */
-.tag-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
-
 /* ── Venue ──────────────────────────────────────────────────── */
-.venue-label-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-.venue-label-row .field-label { margin-bottom: 0.375rem; }
-
 .venue-card {
   margin-top: 0.625rem;
   border: 1px solid var(--c-2a2a2a);

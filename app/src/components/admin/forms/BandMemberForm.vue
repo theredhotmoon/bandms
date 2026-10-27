@@ -284,7 +284,7 @@ function submit() {
         <div>
 
           <!-- Main instrument (single-select radio cards) -->
-          <div class="instruments-heading-row">
+          <div class="field-label-row">
             <div class="member-links-heading">{{ $t('band.members.form.mainInstrument') }}</div>
             <!-- The list is the view's instruments query; the created row
                  reaches it through the cache append in useCreateInstrument. -->
@@ -370,7 +370,6 @@ function submit() {
   min-width: 9rem;
 }
 
-.instruments-heading-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .instruments-grid { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 .instruments-hint {
   font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.375rem; margin-top: -0.25rem;

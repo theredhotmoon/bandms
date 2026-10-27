@@ -176,6 +176,7 @@ export default {
     publishAt: 'Publish at',
     tags: 'Tags',
     photos: 'Photos',
+    albumAdded: 'Album created',
     albumCreated: 'Album “{title}” created with {n} photo | Album “{title}” created with {n} photos',
     uploadFailed: 'Upload failed',
     updated: 'Album updated',

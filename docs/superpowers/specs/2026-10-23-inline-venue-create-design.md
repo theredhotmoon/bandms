@@ -146,14 +146,14 @@ a dead end. Best candidates first.
 | Form (in a modal) | Picks | Created on | Required | Why it ranks here |
 |---|---|---|---|---|
 | `ConcertForm` venue select | Venue | Venues | **yes** | done in this PR |
-| `RefBlockEditor` (post reference block) | concert, album, release, video, press release, shop item | six pages | **yes** (per block) | **done** for concert, release, press coverage and shop item (`RefQuickAdd`); album and music video are left out because their create flows are inline in their views (a photo upload batch, a URL metadata fetch) and extracting them is its own refactor; the clip entity already has *Add a new clip…* |
+| `RefBlockEditor` (post reference block) | concert, album, release, video, press release, shop item | six pages | **yes** (per block) | **done** for every entity but the clip (`EntityQuickAdd`), which already has *Add a new clip…*; the music video form was extracted from its view into `MusicVideoForm`, and the album one is the Photos page's batch upload, photos included |
 | `BandForm` contacts | Author | Authors | no | **done** (`AuthorQuickAdd`); the *add one first* link that left the modal is gone |
 | `BandMemberForm` instruments | Instrument | Instruments | no | **done** (`InstrumentQuickAdd`); the instrument form was extracted from `InstrumentsAdminView` into `InstrumentForm` for it, and the block now shows with a hint when there are none |
 | `ConcertForm` lineup pool | Band | Bands | no | shows "no bands yet" |
 | `BatchPhotoUpload` / album edit | Concert, Venue, Tag | three pages | no | two `<select>`s, same shape as the venue one |
 | `UsersAdminView` add/edit user | Band member | Band members | no | `<select>` |
 | Tag checkbox lists (`ConcertForm`, `VenueForm`, `PostForm`, `PressReleaseForm`, `ShopItemForm`, plus the album forms) | Tag | Tags | no | **done** (`TagQuickAdd`): beside the four plain checkbox lists, and inside the relations panel's Tags section, which is now offered even when the list is empty |
-| `EntityRelationsPanel` consumers (clip, post, press release, shop item) | concerts, releases, members… | many | no | **done** (`EntityQuickAdd`): band members, concerts, releases, shop items, tours, posts and press coverage create in place, and those sections are offered even when empty; albums and music videos have no reusable form and still hide when empty |
+| `EntityRelationsPanel` consumers (clip, post, press release, shop item) | concerts, releases, members… | many | no | **done** (`EntityQuickAdd`): every section creates in place — band members, concerts, releases, shop items, tours, posts, press coverage, photo albums (with their photos) and music videos — and every section is offered even when empty |
 | `ShopItemForm` categories / currencies | Category, Currency | modals on the same Shop page | no | already same-page; a hint exists |
 | `TourForm` concerts | Concert | Concerts | no | shows "no concerts" |
 | `PlacementModal` "playing through" | a member's saved rig | My setups | no | *Add blank* already covers it |

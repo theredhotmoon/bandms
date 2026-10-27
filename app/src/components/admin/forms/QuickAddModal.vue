@@ -20,9 +20,10 @@ import { reportSaveError } from '@/utils/formErrors'
  * composables (useCreateVenue and friends, through `appendToList`) do — so
  * the host's picker shows the row the moment this closes.
  *
- * `cancel` goes through the modal's own close request, so a form that emits
- * `cancel` directly still gets the "Discard changes?" guard the ✕ and Escape
- * give it.
+ * Every form here carries useModalGuard, whose Cancel asks the modal directly
+ * and never emits `cancel`; the `cancel` slot prop is the fallback for a form
+ * without it, and routes through the same close request so the guard still
+ * applies.
  */
 const props = defineProps<{
   buttonLabel: string
