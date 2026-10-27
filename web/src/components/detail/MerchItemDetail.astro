@@ -34,13 +34,14 @@ const mainImage = images[0]?.url ?? item.cover_photo
 ---
 
 <BaseLayout
+  module="merch"
   title={item.name}
   description={item.description ?? `${item.name} — official merch from ${profile.name}`}
   image={mainImage}
   lang={lang}
   alternates={alternates}
 >
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-24">
+  <div class="page-content pt-16 pb-24">
     <nav class="mb-8 text-sm text-subtle">
       <a href={`/${lang}/${slugMap[lang].merch ?? 'merch'}`} class="hover:text-muted transition-colors">{t.title}</a>
       <span class="mx-2">›</span>

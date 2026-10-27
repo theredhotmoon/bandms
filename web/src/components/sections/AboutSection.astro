@@ -139,6 +139,7 @@ const contacts = [
 ---
 
 <BaseLayout
+  module="about"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -170,7 +171,7 @@ const contacts = [
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
   <!-- BIO -->
-  <section class="ab-sec page-x">
+  <section class="ab-sec page-content">
     <div class="ab-bio-grid">
       <div>
         {bio === ''
@@ -203,7 +204,7 @@ const contacts = [
 
   <!-- STATS -->
   {showSection('show_stats') && stats.length > 0 && (
-    <section class="ab-stats page-x">
+    <section class="ab-stats page-content">
       <h2 class="ab-stats-h">{t.stats}</h2>
       <div class="ab-stats-grid" style={`--stat-cols:${stats.length}`}>
         {stats.map(stat => (
@@ -219,7 +220,7 @@ const contacts = [
 
   <!-- MEMBERS -->
   {showSection('show_members') && (
-    <section class="ab-sec page-x">
+    <section class="ab-sec page-content">
       <div class="ab-head">
         <Icon name="star" size={24} color="var(--color-accent)" />
         <h2 class="ab-h2">{t.members}</h2>
@@ -242,7 +243,7 @@ const contacts = [
   {(pressCards.length > 0 || contacts.length > 0) && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="ab-sec page-x">
+      <section class="ab-sec page-content">
         <div class="ab-head">
           <Icon name="download" size={24} color="var(--color-accent)" />
           <h2 class="ab-h2">{t.press}</h2>
@@ -303,10 +304,8 @@ const contacts = [
   }
 
   /* ── Shared ────────────────────────────────────────────────────────────── */
-  /* Matches ConcertsSection's `.sec` (the list, not the full-bleed map) and
-     NewsFilter's content column, so About reads at the same width as News
-     and Shows instead of stretching to the page-x gutter on wide screens. */
-  .ab-sec { padding-block: 56px 50px; position: relative; max-width: 1200px; margin-inline: auto; }
+  /* Width comes from .page-content — limited or full, per the admin. */
+  .ab-sec { padding-block: 56px 50px; position: relative; }
   .ab-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
   .ab-h2 { margin: 0; font-size: 56px; line-height: .96; }
   .ab-sub {
@@ -392,13 +391,11 @@ const contacts = [
     color: var(--color-on-inverse);
     padding-block: 44px;
   }
-  .ab-stats-h { margin: 0 0 26px; font-size: 34px; line-height: 1; max-width: 1200px; margin-inline: auto; }
+  .ab-stats-h { margin: 0 0 26px; font-size: 34px; line-height: 1; }
   .ab-stats-grid {
     display: grid;
     grid-template-columns: repeat(var(--stat-cols, 5), 1fr);
     gap: 18px;
-    max-width: 1200px;
-    margin-inline: auto;
   }
   .ab-stat {
     border: var(--border-width-card) solid var(--color-on-inverse);

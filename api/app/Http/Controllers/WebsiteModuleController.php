@@ -39,6 +39,7 @@ class WebsiteModuleController extends Controller
                 // module that has never saved this bag (or predates the
                 // feature) renders exactly as it did before.
                 'visibility' => (object) ($m->visibility ?? []),
+                'content_width' => $m->content_width ?? 'full',
             ];
         });
 
@@ -183,6 +184,7 @@ class WebsiteModuleController extends Controller
                 }
             }],
             'visibility.*' => ['boolean'],
+            'content_width' => ['sometimes', 'string', 'in:' . implode(',', WebsiteModule::CONTENT_WIDTHS)],
         ];
 
         foreach (Locales::codes() as $code) {
@@ -253,6 +255,10 @@ class WebsiteModuleController extends Controller
             }
 
             $module->settings = $current;
+        }
+
+        if (array_key_exists('content_width', $validated)) {
+            $module->content_width = $validated['content_width'];
         }
 
         if (array_key_exists('visibility', $validated)) {

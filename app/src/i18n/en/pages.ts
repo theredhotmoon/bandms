@@ -38,6 +38,10 @@ export default {
     visibility: 'Section visibility',
     rebuildNote: 'Changes appear on the public site after a rebuild.',
     perPage: 'Items per page',
+    contentWidth: 'Content width',
+    contentWidthFull: 'Full width',
+    contentWidthLimited: 'Limited width',
+    contentWidthHelp: 'Limited caps the page content to the site’s reading width and centres it; backgrounds still run edge to edge. Detail pages follow their section.',
     perPageDefault: 'Default',
   },
 

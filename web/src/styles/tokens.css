@@ -73,4 +73,9 @@
   /* Horizontal page gutter. The design works to a 90px inset at desktop; the
    * base is tighter because a plain layout has no ornament to breathe around. */
   --page-gutter: 24px;
+
+  /* Width of a page's content box, gutter included — the measure News,
+   * Concerts and About were built to. Backgrounds stay full-bleed; see
+   * `.page-content` in base.css. */
+  --page-max: 1200px;
 }

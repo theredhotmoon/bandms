@@ -69,6 +69,7 @@ const categories = Object.values(
 ---
 
 <BaseLayout
+  module="photos"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -84,7 +85,7 @@ const categories = Object.values(
 
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
-  <section class="gl-sec page-x">
+  <section class="gl-sec page-content">
     {galleryAlbums.length === 0 ? (
       <p class="gl-none">{t.none}</p>
     ) : (

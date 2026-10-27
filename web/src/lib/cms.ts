@@ -205,6 +205,8 @@ export const getShopCategories = () =>
 
 // ── Site config ───────────────────────────────────────────────────────────────
 
+export type ContentWidth = 'full' | 'limited'
+
 export interface ModuleConfig {
   enabled: boolean
   label: string
@@ -222,6 +224,12 @@ export interface ModuleConfig {
    * !== false` uses for whole-module enablement.
    */
   visibility?: Record<string, boolean>
+  /**
+   * Whether this page's content runs to the gutters or is capped to
+   * --page-max. Optional because an API predating the column omits it —
+   * read through contentWidthFor(), which treats absent as 'full'.
+   */
+  content_width?: ContentWidth
   /**
    * Editable copy for this module, with the locale already resolved by the API.
    * Optional because an API predating the settings migration omits it — read

@@ -1377,6 +1377,33 @@ a fork that stops receiving base improvements. If a design needs something no
 slot can express, add the element to the *base layout* — unstyled, where every
 band gets it — rather than widening the slot contract.
 
+### Content width is a per-page admin setting — never a `max-width` in a section
+
+`website_modules.content_width` is `full` (the default — the design is full
+width) or `limited`, set per page in `/admin/website-modules`. `BaseLayout`
+takes a `module` prop, writes the value onto `<main data-content-width>`, and
+the global `.page-content` utility (`web/src/styles/base.css`) reads it:
+full is just the gutter, limited widens the gutter so the content never
+exceeds `--page-max` (1200px, gutter included) and sits centred. It is padding,
+not `max-width`, so section backgrounds stay full-bleed either way.
+
+- **A section's content box is `.page-content` + `padding-block`.** A
+  hardcoded `max-width: 1200px` or a `padding: X var(--page-gutter)` shorthand
+  silently ignores the switch and pulls that section out of line with the rest
+  of its page — which is how Contact and Home ended up wider than News and
+  Shows in the first place.
+- **Every page passes `module` to `BaseLayout`**; a detail page passes its
+  parent's key (`concerts`, `posts`, `releases`, `merch`, `about`). Omitting it
+  means full width, whatever the admin says.
+- **Never nest one `.page-content` in another** — `100%` in its padding is the
+  parent's width, so the inner one pads twice.
+- `PageHero`, the footer and the header keep `.page-x`: the setting is about
+  page content, not chrome. `privacy` and `tech-rider` have no switch
+  (`hasContentWidth()` in `app/src/config/moduleSettings.ts`).
+
+`e2e/tests/public/content-width.spec.ts` measures every page at 1600px and
+fails when any content box is off the shared edge.
+
 ### An *undefined* token is worse than a raw one
 
 A raw value is loud: `text-zinc-400` is obviously wrong. An undefined token is

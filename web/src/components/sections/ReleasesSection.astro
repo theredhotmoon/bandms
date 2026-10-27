@@ -144,6 +144,7 @@ const priceOf = (item: (typeof physical)[number]) => {
 ---
 
 <BaseLayout
+  module="releases"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -176,11 +177,11 @@ const priceOf = (item: (typeof physical)[number]) => {
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
   {featured === null ? (
-    <section class="mu-sec page-x"><p class="mu-empty">{t.empty}</p></section>
+    <section class="mu-sec page-content"><p class="mu-empty">{t.empty}</p></section>
   ) : (
     <>
       <!-- FEATURED RELEASE -->
-      <section class="mu-sec page-x">
+      <section class="mu-sec page-content">
         <div class="mu-head">
           <Icon name="star" size={24} color="var(--color-accent)" />
           <h2 class="mu-h2 mu-h2--sm">{t.featured}</h2>
@@ -238,7 +239,7 @@ const priceOf = (item: (typeof physical)[number]) => {
 
       <!-- WHERE TO LISTEN -->
       {platforms.length > 0 && (
-        <section class="mu-where page-x">
+        <section class="mu-where page-content">
           <div>
             <h2 class="mu-h2 mu-h2--sm mu-h2--inverse">{t.where}</h2>
             <p class="mu-where-sub">{t.whereSub}</p>
@@ -256,7 +257,7 @@ const priceOf = (item: (typeof physical)[number]) => {
 
       <!-- DISCOGRAPHY -->
       {rest.length > 0 && (
-        <section class="mu-sec page-x">
+        <section class="mu-sec page-content">
           <h2 class="mu-h2">{t.disco}</h2>
           <p class="mu-sub">{t.discoSub}</p>
           <DiscographyList
@@ -287,7 +288,7 @@ const priceOf = (item: (typeof physical)[number]) => {
   {galleryVideos.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="mu-sec page-x">
+      <section class="mu-sec page-content">
         <div class="mu-head">
           <Icon name="youtube" size={26} color="var(--color-accent)" />
           <h2 class="mu-h2">{t.videos}</h2>
@@ -301,7 +302,7 @@ const priceOf = (item: (typeof physical)[number]) => {
   {songs.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="accent" />
-      <section id="lyrics" class="mu-sec page-x">
+      <section id="lyrics" class="mu-sec page-content">
         <div class="mu-head">
           <Icon name="quote" size={24} color="var(--color-accent)" />
           <h2 class="mu-h2">{t.lyrics}</h2>
@@ -316,7 +317,7 @@ const priceOf = (item: (typeof physical)[number]) => {
   {physical.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="mu-sec page-x">
+      <section class="mu-sec page-content">
         <div class="mu-head">
           <Icon name="cart" size={26} color="var(--color-accent)" />
           <h2 class="mu-h2">{t.buy}</h2>

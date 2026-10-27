@@ -140,6 +140,7 @@ const promo = [
 ---
 
 <BaseLayout
+  module="contact"
   lang={lang}
   alternates={alternates}
   title={t.title}
@@ -176,7 +177,7 @@ const promo = [
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
   <!-- FORM + DIRECT CONTACTS -->
-  <section class="ct-main page-x" id="contact-form">
+  <section class="ct-main page-content" id="contact-form">
     <div class="ct-grid">
       <ContactForm
         client:visible
@@ -226,7 +227,7 @@ const promo = [
   {promo.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="ct-promo page-x">
+      <section class="ct-promo page-content">
         <div class="ct-promo-head">
           <Icon name="download" size={24} color="var(--color-accent)" />
           <h2 class="ct-promo-title">{t.promoTitle}</h2>
@@ -320,9 +321,9 @@ const promo = [
   }
 
   /* ── Form + contacts ───────────────────────────────────────────────────── */
-  /* Deliberately full-bleed, unlike Concerts/.sec, About/.ab-sec and News —
-     a 1200px cap here read as wrong, so Contact opts out of that convention
-     on purpose. Don't "fix" this back to capped width. */
+  /* Width comes from .page-content — limited or full, per the admin's
+     Content width setting. Do not add a max-width here: it would stop the
+     switch working and pull Contact out of line with the other pages. */
   .ct-main { padding-block: 56px 54px; }
   .ct-grid {
     display: grid;

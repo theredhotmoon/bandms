@@ -93,6 +93,7 @@ const structuredData = {
 ---
 
 <BaseLayout
+  module="releases"
   lang={lang}
   alternates={alternates}
   title={release.title}
@@ -101,7 +102,7 @@ const structuredData = {
   structuredData={structuredData}
 >
   <!-- HERO -->
-  <section class="rd-hero page-x">
+  <section class="rd-hero page-content">
     <ThemeSlot name="hero-backdrop" />
     <div class="rd-hero-in">
       <nav class="rd-crumb" aria-label={site.breadcrumbLabel}>
@@ -148,7 +149,7 @@ const structuredData = {
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
   <!-- COVER + TRACKLIST -->
-  <section class="rd-sec page-x">
+  <section class="rd-sec page-content">
     <div class="rd-grid">
       <div class="rd-cover-col">
         <div class="rd-cover">
@@ -194,7 +195,7 @@ const structuredData = {
   {photos.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="rd-sec page-x">
+      <section class="rd-sec page-content">
         <SectionHead icon="camera" title={t.photos} size="sm" />
         <div class="rd-photos">
           {photos.map(photo => (
@@ -211,7 +212,7 @@ const structuredData = {
   {(release.clips ?? []).length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="rd-sec page-x" data-testid="release-clips">
+      <section class="rd-sec page-content" data-testid="release-clips">
         <SectionHead icon="play" title={t.clipsTitle} size="sm" />
         <ClipsGrid clips={release.clips ?? []} copy={site} />
       </section>
@@ -222,7 +223,7 @@ const structuredData = {
   {songs.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="accent" />
-      <section id="lyrics" class="rd-sec page-x">
+      <section id="lyrics" class="rd-sec page-content">
         <SectionHead icon="quote" title={t.lyrics} size="sm" />
         <LyricsViewer client:visible songs={songs} emptyLabel={t.lyricsEmpty} navLabel={t.lyricsNav} />
       </section>

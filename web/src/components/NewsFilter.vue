@@ -108,7 +108,7 @@ function eventDate(p: PostSummary): string {
 <template>
   <div ref="root" class="nf-root">
     <!-- SEARCH + TAGS ROW -->
-    <section class="nf-controls">
+    <section class="nf-controls page-content">
       <div class="nf-tags">
         <button
           class="nf-tag-btn"
@@ -145,7 +145,7 @@ function eventDate(p: PostSummary): string {
     </div>
 
     <!-- FEATURED POST -->
-    <section v-if="featured" class="nf-featured-wrap">
+    <section v-if="featured" class="nf-featured-wrap page-content">
       <a :href="`${postHrefBase}/${featured.slug}`" class="nf-featured">
         <div class="nf-feat-img">
           <img v-if="featured.image" :src="featured.image" alt="" class="nf-img" loading="eager" />
@@ -180,7 +180,7 @@ function eventDate(p: PostSummary): string {
     </section>
 
     <!-- GRID -->
-    <section v-if="rest.length > 0" class="nf-grid-wrap">
+    <section v-if="rest.length > 0" class="nf-grid-wrap page-content">
       <div class="nf-grid">
         <a
           v-for="p in rest"
@@ -215,9 +215,9 @@ function eventDate(p: PostSummary): string {
 </template>
 
 <style scoped>
+/* Width comes from the global .page-content on each band below — limited or
+   full, per the admin. */
 .nf-root {
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -229,7 +229,7 @@ function eventDate(p: PostSummary): string {
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  padding: 40px var(--page-gutter) 8px;
+  padding-block: 40px 8px;
 }
 .nf-tags {
   display: flex;
@@ -291,7 +291,7 @@ function eventDate(p: PostSummary): string {
 
 /* FEATURED */
 .nf-featured-wrap {
-  padding: 28px var(--page-gutter) 16px;
+  padding-block: 28px 16px;
 }
 .nf-featured {
   display: grid;
@@ -436,7 +436,7 @@ function eventDate(p: PostSummary): string {
 
 /* GRID */
 .nf-grid-wrap {
-  padding: 20px var(--page-gutter) 56px;
+  padding-block: 20px 56px;
 }
 .nf-grid {
   display: grid;

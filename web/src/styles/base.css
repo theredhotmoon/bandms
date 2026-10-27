@@ -46,6 +46,20 @@ a {
   padding-inline: var(--page-gutter);
 }
 
+/* A page's content box. Full width it is just the gutter; on a page whose
+   module is set to 'limited' in the admin (BaseLayout puts that on <main> as
+   data-content-width) the gutter widens so the content never exceeds
+   --page-max and sits centred. Padding rather than max-width, so a section's
+   own background still runs edge to edge either way. Below --page-max the two
+   are identical. Never nest one .page-content in another: 100% is the
+   parent's width, so the inner one would pad a second time. */
+.page-content {
+  padding-inline: var(--page-gutter);
+}
+[data-content-width='limited'] .page-content {
+  padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));
+}
+
 .accent-line {
   width: 3rem;
   height: 3px;

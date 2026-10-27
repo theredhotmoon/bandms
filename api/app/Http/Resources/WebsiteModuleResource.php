@@ -29,6 +29,7 @@ class WebsiteModuleResource extends JsonResource
             'per_page'     => $this->per_page,
             'settings'     => $this->settings ?? new \stdClass(),
             'visibility'   => $this->visibility ?? new \stdClass(),
+            'content_width' => $this->content_width ?? 'full',
             'enabled'      => (bool) $this->enabled,
             'sort_order'   => $this->sort_order,
             'updated_at'   => $this->updated_at,

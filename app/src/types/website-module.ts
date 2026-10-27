@@ -20,6 +20,12 @@ export type ModuleSettings = Record<string, Partial<Localized>>
  */
 export type ModuleVisibility = Record<string, boolean>
 
+/**
+ * Whether a page's content runs to the gutters or is capped to the public
+ * site's --page-max. Section backgrounds stay full-bleed either way.
+ */
+export type ContentWidth = 'full' | 'limited'
+
 /** The editable fields of a module, as accepted by PUT /api/admin/modules/{slug}. */
 export interface WebsiteModuleSettingsPayload {
   custom_name?: Localized
@@ -33,6 +39,7 @@ export interface WebsiteModuleSettingsPayload {
   settings?: ModuleSettings
   /** Merged per field by the API. Omitting a key leaves it untouched. */
   visibility?: ModuleVisibility
+  content_width?: ContentWidth
 }
 
 export interface WebsiteModule {
@@ -55,6 +62,8 @@ export interface WebsiteModule {
    * false` elsewhere: absence must mean enabled, never hidden).
    */
   visibility: ModuleVisibility
+  /** The API serves 'full' for a row that has never set it. */
+  content_width: ContentWidth
   updated_at: string
 }
 

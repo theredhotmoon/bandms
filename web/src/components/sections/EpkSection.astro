@@ -71,6 +71,7 @@ const contacts = [
 ---
 
 <BaseLayout
+  module="epk"
   lang={lang}
   alternates={alternates}
   title={t.title || t.tabTitle}
@@ -91,7 +92,7 @@ const contacts = [
   <ThemeSlot name="section-divider" height={16} tone="accent" />
 
   {hasBio && (
-    <section class="epk-sec page-x">
+    <section class="epk-sec page-content">
       <SectionHead icon="quote" title={t.bio} size="sm" />
       {bioHtml
         ? <div class="epk-bio rich-text" set:html={bioHtml} />
@@ -100,7 +101,7 @@ const contacts = [
   )}
 
   {stats.length > 0 && (
-    <section class="epk-stats page-x">
+    <section class="epk-stats page-content">
       <SectionHead title={t.audience} size="sm" inverse />
       <div class="epk-stats-grid" style={`--epk-cols:${stats.length}`}>
         {stats.map(stat => (
@@ -115,7 +116,7 @@ const contacts = [
   )}
 
   {release && (
-    <section class="epk-sec page-x">
+    <section class="epk-sec page-content">
       <SectionHead icon="disc" title={t.release} size="sm" />
       <div class="epk-release">
         <div class="epk-release-cover">
@@ -150,14 +151,14 @@ const contacts = [
   )}
 
   {clips.length > 0 && (
-    <section class="epk-sec page-x" data-testid="epk-clips">
+    <section class="epk-sec page-content" data-testid="epk-clips">
       <SectionHead icon="play" title={t.clips} size="sm" />
       <ClipsGrid clips={clips} copy={site} />
     </section>
   )}
 
   {concerts.length > 0 && (
-    <section class="epk-sec page-x">
+    <section class="epk-sec page-content">
       <SectionHead icon="calendar" title={t.shows} size="sm" />
       <ul class="epk-shows">
         {concerts.map(concert => (
@@ -176,7 +177,7 @@ const contacts = [
   {photos.length > 0 && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="ink" />
-      <section class="epk-sec page-x">
+      <section class="epk-sec page-content">
         <SectionHead icon="camera" title={t.photos} size="sm" />
         <div class="epk-photos">
           {photos.map(photo => (
@@ -193,7 +194,7 @@ const contacts = [
   )}
 
   {quotes.length > 0 && (
-    <section class="epk-sec page-x">
+    <section class="epk-sec page-content">
       <SectionHead icon="quote" title={t.quotes} size="sm" />
       <div class="epk-quotes">
         {quotes.map(quote => (
@@ -216,7 +217,7 @@ const contacts = [
   {(contacts.length > 0 || socials.length > 0) && (
     <>
       <ThemeSlot name="section-divider" height={14} tone="accent" />
-      <section class="epk-sec page-x">
+      <section class="epk-sec page-content">
         <SectionHead icon="mail" title={t.contact} size="sm" />
 
         {contacts.length > 0 && (
