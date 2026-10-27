@@ -70,10 +70,12 @@
 	# base "/" and the default assetsDir, so the served index.html asks for
 	# /assets/index-<hash>.js and .css at the ROOT. Those fell through to Astro,
 	# which emits its own assets under /_astro/ and has no /assets/ — two 404s,
-	# no JS, and a Vue SPA with no JS renders a blank white page. /vite.svg is
-	# the favicon, shipped in app/public/ and unreachable for the same reason.
-	# There is no collision with Astro: it uses /_astro/, and web/public/ holds
-	# only robots.txt. Adding anything to app/public/ means adding it here too.
+	# no JS, and a Vue SPA with no JS renders a blank white page.
+	# /skanking-storks-icon.svg is the admin's favicon, shipped in app/public/ and
+	# unreachable for the same reason. There is no collision with Astro: it uses
+	# /_astro/, and web/public/ holds robots.txt and its own /favicon.svg — a
+	# different path on purpose, so the two can diverge. Adding anything to
+	# app/public/ means adding it here too.
 	# The admin prefix is configurable so a band can move the panel off the
 	# guessable /admin. Caddy resolves its own default here, which is why an unset
 	# ADMIN_PATH is correct rather than merely tolerated — but the SPA bakes
@@ -85,7 +87,7 @@
 	# root renders the sign-in form when signed out, so no URL announces that an
 	# admin exists. A wrong guess falls through to Astro and 404s like any other
 	# page that was never built.
-	@spa path /{$ADMIN_PATH:admin}* /account* /tickets/* /tech-rider* /assets/* /vite.svg
+	@spa path /{$ADMIN_PATH:admin}* /account* /tickets/* /tech-rider* /assets/* /skanking-storks-icon.svg
 	handle @spa {
 		reverse_proxy frontend:80
 	}

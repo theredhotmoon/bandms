@@ -1127,7 +1127,8 @@ fell through to the `web` container, which emits its own assets under `/_astro/`
 and has no `/assets/` at all. No JS runs, and a Vue SPA with no JS renders an
 empty `<div id="app">`. The HTML returning 200 is what makes this look mysterious.
 
-**Fix (already applied in #47):** `/assets/*` and `/vite.svg` are in the matcher.
+**Fix (already applied in #47):** `/assets/*` and the SPA's favicon (`/vite.svg` then,
+`/skanking-storks-icon.svg` now) are in the matcher.
 
 **The matcher holds two different kinds of thing.** Page routes, which track
 `app/src/router/index.ts`, *and* the SPA's static output. **Adding a file to
@@ -1139,7 +1140,7 @@ whole SPA from one origin, so no local setup can reproduce this.
 
 ```bash
 curl -o /dev/null -w '%{http_code}\n' http://SERVER/robots.txt  # 200 = web (Astro) is the fallthrough
-curl -o /dev/null -w '%{http_code}\n' http://SERVER/vite.svg    # 404 = SPA static is NOT routed
+curl -o /dev/null -w '%{http_code}\n' http://SERVER/skanking-storks-icon.svg  # 404 = SPA static is NOT routed
 ```
 
 **Beware a false green when probing asset paths.** The SPA's nginx ends in
@@ -1917,7 +1918,7 @@ time*" is a real ordering or contention bug. The machine-flake signature is a
 
 `app/` once carried the public site too. It no longer does: Caddy routes only
 `/{$ADMIN_PATH:admin}*`, `/account*`, `/tickets/*`, `/tech-rider*`, `/assets/*`
-and `/vite.svg` to the SPA, and everything else falls through to Astro. 27 public
+and `/skanking-storks-icon.svg` to the SPA, and everything else falls through to Astro. 27 public
 views (home, about, concerts, releases, posts, photos, merch, cart, checkout,
 press, EPK, newsletter, the public rider…) were deleted along with their routes
 and the redirect aliases that fed them; the surviving non-admin views are
