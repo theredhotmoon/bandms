@@ -1393,8 +1393,14 @@ not `max-width`, so section backgrounds stay full-bleed either way.
   of its page — which is how Contact and Home ended up wider than News and
   Shows in the first place.
 - **Every page passes `module` to `BaseLayout`**; a detail page passes its
-  parent's key (`concerts`, `posts`, `releases`, `merch`, `about`). Omitting it
-  means full width, whatever the admin says.
+  parent's key (`concerts`, `releases`, `merch`, `about`). Omitting it means
+  full width, whatever the admin says. `web/src/lib/contentWidth.test.ts`
+  fails on a page that forgets. `PostDetail` is the deliberate exception: an
+  article is a 760px reading column, so News' setting does not apply to it.
+- **A fresh database is seeded, not migrated, for most modules.** The
+  column's migration backfills `limited` only on rows that exist when it
+  runs; `DatabaseSeeder` inserts concerts, posts and merch afterwards and
+  carries the same values itself. Change one, change both.
 - **Never nest one `.page-content` in another** — `100%` in its padding is the
   parent's width, so the inner one pads twice.
 - `PageHero`, the footer and the header keep `.page-x`: the setting is about
@@ -1402,7 +1408,9 @@ not `max-width`, so section backgrounds stay full-bleed either way.
   (`hasContentWidth()` in `app/src/config/moduleSettings.ts`).
 
 `e2e/tests/public/content-width.spec.ts` measures every page at 1600px and
-fails when any content box is off the shared edge.
+fails when any content box is off the shared edge. It reads the width from
+the served page, not from the API: the admin spec flips Contact's setting
+mid-run, and the baked site only follows after a rebuild.
 
 ### An *undefined* token is worse than a raw one
 

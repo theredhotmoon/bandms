@@ -41,7 +41,7 @@ export default {
     contentWidth: 'Content width',
     contentWidthFull: 'Full width',
     contentWidthLimited: 'Limited width',
-    contentWidthHelp: 'Limited caps the page content to the site’s reading width and centres it; backgrounds still run edge to edge. Detail pages follow their section.',
+    contentWidthHelp: 'Limited caps the page content to the site’s reading width and centres it; backgrounds still run edge to edge. Show, release, member and shop item pages follow their section; news articles keep their own reading column.',
     perPageDefault: 'Default',
   },
 

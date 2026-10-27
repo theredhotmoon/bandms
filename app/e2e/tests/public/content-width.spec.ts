@@ -7,18 +7,16 @@ import { failOnPageError } from '../../fixtures/page-errors'
  * tests/admin/website-modules.spec.ts).
  *
  * BaseLayout writes the module's setting onto <main> as data-content-width,
- * and every section's content box carries .page-content, which reads it. So
- * two things can break independently, and both are asserted:
+ * and every section's content box carries .page-content, which reads it.
+ * This asserts the measure: a section that keeps a hardcoded max-width, or
+ * never got .page-content, no longer lines up with the rest of its page —
+ * the misalignment between Contact/Home and News/Shows this feature fixed.
  *
- *  1. The wiring — a page that forgets to pass `module` to BaseLayout is
- *     silently full width whatever the admin says.
- *  2. The measure — a section that keeps a hardcoded max-width, or never got
- *     .page-content, no longer lines up with the rest of its page. That
- *     misalignment between Contact/Home and News/Shows is what this feature
- *     was built to fix.
- *
- * Read-only: it asserts whatever the dev database holds, so it neither races
- * the admin spec nor needs a rebuild.
+ * The width is read from the served page, never from the API. The two only
+ * agree after a rebuild, and website-modules.spec.ts flips Contact's setting
+ * mid-run in the same pool, so comparing them would fail whenever the specs
+ * overlapped. That a page passes the right `module` at all is checked
+ * statically, for every page, by web/src/lib/contentWidth.test.ts.
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -44,6 +42,7 @@ const PAGES: { module: string; path: (cfg: ModuleConfig | undefined) => string }
     .map(module => ({ module, path: (cfg: ModuleConfig | undefined) => `/en/${cfg?.slug ?? module}/` })),
 ]
 
+// The site config is read only for which modules are on and where they live.
 test.describe('Public content width', () => {
   failOnPageError()
 
@@ -52,11 +51,11 @@ test.describe('Public content width', () => {
       const config = await siteConfig(request)
       test.skip(config.modules[module] === false, `the ${module} module is off`)
 
-      const expected = config.module_config[module]?.content_width ?? 'full'
       const res = await page.goto(`${WEB}${path(config.module_config[module])}`)
       test.skip(!res?.ok(), `${WEB}${path(config.module_config[module])} unavailable`)
 
-      await expect(page.locator('main')).toHaveAttribute('data-content-width', expected)
+      const expected = await page.locator('main').getAttribute('data-content-width')
+      expect(expected, 'BaseLayout did not mark <main> with a width').toMatch(/^(full|limited)$/)
 
       // Content box of every visible .page-content: its left edge and width
       // once padding is taken off. Hidden ones (an empty filter state, a

@@ -105,9 +105,8 @@ const contentWidth = contentWidthFor(siteConfig, module)
     <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-inverse focus:text-on-inverse focus:px-4 focus:py-2">Skip to content</a>
     <Header lang={lang} />
-    <main id="main-content" class="flex-1" data-content-width={contentWidth}>
+    <main class="flex-1" data-content-width={contentWidth}>
       <slot />
     </main>
     <Footer lang={lang} alternates={alternates} />

@@ -140,8 +140,10 @@ function eventDate(p: PostSummary): string {
     </section>
 
     <!-- NO RESULTS -->
-    <div v-if="matched.length === 0" class="nf-empty">
-      {{ copy.noMatch }}
+    <div v-if="matched.length === 0" class="page-content">
+      <div class="nf-empty">
+        {{ copy.noMatch }}
+      </div>
     </div>
 
     <!-- FEATURED POST -->
@@ -279,7 +281,7 @@ function eventDate(p: PostSummary): string {
 
 /* EMPTY */
 .nf-empty {
-  margin: 28px 90px 56px;
+  margin: 28px 0 56px;
   border: 3px dashed var(--color-ink);
   padding: 60px 30px;
   text-align: center;
@@ -499,7 +501,7 @@ function eventDate(p: PostSummary): string {
 /* RESPONSIVE */
 @media (max-width: 1100px) {
   .nf-controls { padding: 36px 40px 8px; }
-  .nf-empty { margin: 28px 40px 56px; }
+  .nf-empty { margin: 28px 0 56px; }
   .nf-featured-wrap { padding: 28px 40px 16px; }
   .nf-grid-wrap { padding: 20px 40px 56px; }
 }

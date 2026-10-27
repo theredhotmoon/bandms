@@ -14,10 +14,15 @@ use Illuminate\Support\Facades\Schema;
  * width is neither shown nor hidden. Not `settings` either, which validates
  * every field as per-locale copy.
  *
- * 'full' is the default because the design is full width. The five pages
- * seeded 'limited' are the ones that were capped on the day this landed —
- * News, Shows and About by hardcoded max-widths, Home and Contact at the
- * band's request — so nothing a visitor sees moves with the migration.
+ * 'full' is the default because the design is full width. The pages seeded
+ * 'limited' are the ones that were capped on the day this landed — News,
+ * Shows, About and Shop by hardcoded max-widths, Home and Contact at the
+ * band's request — so no page goes from capped to edge-to-edge. Shop was
+ * 1280px and is now the shared 1200px measure.
+ *
+ * This only reaches rows that exist when it runs. A fresh database gets
+ * concerts, posts and merch from DatabaseSeeder afterwards, which seeds
+ * the same values itself.
  */
 return new class extends Migration
 {
@@ -28,7 +33,7 @@ return new class extends Migration
         });
 
         DB::table('website_modules')
-            ->whereIn('slug', ['home', 'contact', 'posts', 'concerts', 'about'])
+            ->whereIn('slug', ['home', 'contact', 'posts', 'concerts', 'about', 'merch'])
             ->update(['content_width' => 'limited']);
     }
 
