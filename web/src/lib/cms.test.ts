@@ -185,3 +185,25 @@ describe('getShopItem', () => {
     expect(calls[0]).toContain('lang=pl')
   })
 })
+
+/**
+ * The concert list carries each concert's name resolved server-side. It was
+ * fetched with no locale, so /pl/ pages printed English names beside Polish
+ * labels — a green build, a wrong page.
+ */
+describe('getConcerts', () => {
+  it('requests the locale it was given', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: true, status: 200, json: async () => ({ data: [] }) }
+    }))
+    const { getConcerts } = await freshModule()
+
+    await getConcerts('pl')
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain('/concerts')
+    expect(calls[0]).toContain('lang=pl')
+  })
+})

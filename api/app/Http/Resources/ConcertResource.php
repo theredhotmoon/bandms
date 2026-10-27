@@ -13,7 +13,7 @@ class ConcertResource extends JsonResource
     {
         return [
             'id'             => $this->id,
-            'name'           => $this->getTranslation('name', 'en'),
+            'name'           => Locales::resolve($this->getTranslations('name')),
             // The default locale's slug — every concert URL, in every language,
             // is built from it. The concert-{id} fallback is the URL a concert
             // without a slug has always been served at; the migration stored
@@ -24,7 +24,7 @@ class ConcertResource extends JsonResource
             'sound_check_time' => $this->sound_check_time,
             'start_time'       => $this->start_time,
             'own_sort_order' => $this->own_sort_order,
-            'description'    => $this->getTranslation('description', 'en'),
+            'description'    => Locales::resolve($this->getTranslations('description')),
             'translations'   => [
                 'name'        => $this->getTranslations('name'),
                 'description' => $this->getTranslations('description'),

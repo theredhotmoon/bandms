@@ -26,7 +26,7 @@ import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
-const [concerts, profile, siteConfig] = await Promise.all([getConcerts(), getBandProfile(lang), getSiteConfig(lang)])
+const [concerts, profile, siteConfig] = await Promise.all([getConcerts(lang), getBandProfile(lang), getSiteConfig(lang)])
 // Every string on this page and its islands: registry defaults for this
 // locale, overridden by whatever the band saved in Website Modules → Shows.
 const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)

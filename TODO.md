@@ -313,6 +313,27 @@ reverted — this wants a reviewed diff per file, not a regex.
 
 ## Other open items
 
+### Decide which logo goes where — the band's, and BandMS's own
+The admin's favicon was Vite's default until Oct 2026. It is now the Skanking
+Storks icon (`app/public/skanking-storks-icon.svg`), and the public site's
+`web/public/favicon.svg` is the same image. The public site had linked
+`/favicon.svg` from `BaseHead.astro` all along with no such file, so it served
+no favicon at all. Both are stopgaps:
+
+- **The admin is BandMS, not the band.** It should carry a BandMS logo of its
+  own, which doesn't exist yet. The band's icon there is a placeholder.
+- **The public site's favicon is the band's**, so it belongs with the band's
+  logos, uploaded through `BandLogoManager` (`epk_logo_id`, `tech_rider_logo_id`,
+  `website_logo_id` on `band_profiles`), not baked into `web/public/`.
+  Otherwise every band served by this codebase gets Skanking Storks' icon.
+- Clarify which uploaded logo serves which surface (favicon, site header, EPK,
+  tech rider, emails, Apple Wallet pass), and whether a favicon needs a square
+  variant. The current SVG is 960×1000 and was auto-traced (VTracer).
+
+The two favicons sit on different paths on purpose (`/favicon.svg` for Astro,
+`/skanking-storks-icon.svg` in Caddy's `@spa` matcher) so they can diverge
+without fighting over one URL.
+
 ### Try the maintenance page against production, not just dev
 PR #108 added a Caddy `handle_errors` maintenance page (502/503/504 →
 `docker/caddy/maintenance/maintenance.html`), verified only against the local

@@ -38,6 +38,30 @@ describe('GET /api/concerts', function () {
 
         expect($data[0]['date'])->toBe('2026-08-01');
     });
+
+    // `name` and `description` were pinned to getTranslation(..., 'en'), so
+    // /pl/ printed a concert's English name beside its Polish date and labels.
+    it('resolves name and description in the requested locale', function () {
+        $concert = Concert::factory()->create([
+            'name'        => ['en' => 'Tenth anniversary', 'pl' => 'Dziesięciolecie'],
+            'description' => ['en' => 'Big show', 'pl' => 'Wielki koncert'],
+        ]);
+
+        $this->getJson('/api/concerts?lang=pl')
+            ->assertSuccessful()
+            ->assertJsonPath('data.0.name', 'Dziesięciolecie')
+            ->assertJsonPath('data.0.description', 'Wielki koncert');
+
+        $this->getJson("/api/concerts/{$concert->id}?lang=en")
+            ->assertJsonPath('data.name', 'Tenth anniversary');
+    });
+
+    it('falls back along the locale chain for an untranslated name', function () {
+        Concert::factory()->create(['name' => ['en' => 'Only English'], 'description' => null]);
+
+        $this->getJson('/api/concerts?lang=pl')
+            ->assertJsonPath('data.0.name', 'Only English');
+    });
 });
 
 // ── GET /api/concerts/{concert} ───────────────────────────────────────────────

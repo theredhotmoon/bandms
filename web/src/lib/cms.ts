@@ -112,8 +112,10 @@ export const getSocialLinks = () =>
 
 // ── Concerts ──────────────────────────────────────────────────────────────────
 
-export const getConcerts = () =>
-  get<Concert[]>('/concerts')
+// `lang` resolves each concert's name and description (and its tags' names);
+// the slug is the default locale's in every language.
+export const getConcerts = (lang: Locale = 'en') =>
+  get<Concert[]>('/concerts', { lang })
 
 /** Every clip, titles in `lang`. The member page picks a member's out of these. */
 export const getClips = (lang: Locale = 'en') =>

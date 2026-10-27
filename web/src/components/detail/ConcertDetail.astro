@@ -24,7 +24,7 @@ const slugMap = await getSlugMap()
 
 const ACCENT = 'var(--color-accent)'
 
-const concerts = await getConcerts()
+const concerts = await getConcerts(lang)
 const summaries = concerts.map(x => ({
   id: x.id,
   slug: x.slug,

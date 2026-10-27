@@ -24,7 +24,7 @@ const alternates = Object.fromEntries(LOCALES.map(l => [l, `/${l}`])) as Alterna
 
 const [profile, concerts, releases, { data: posts }, socialLinks, siteConfig] = await Promise.all([
   getBandProfile(lang),
-  getConcerts(),
+  getConcerts(lang),
   getReleases(lang),
   getPosts(lang, 1),
   getSocialLinks(),

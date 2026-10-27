@@ -29,9 +29,10 @@ export interface VerifyResponse {
  * without this the backend would answer from the browser header instead and
  * put an English validation message under a Polish label.
  *
- * Overridden here rather than in client.ts's shared helpers: those are used by
- * the admin too, where the *content* locale is an explicit `?lang=` and the
- * chrome locale is a different axis entirely.
+ * Set here rather than in client.ts's shared helpers: those are used by the
+ * admin too, where the *content* locale travels separately (`?lang=` or
+ * `X-Content-Locale`) and Accept-Language is left to the browser. Fan
+ * requests must keep sending this one, or messages follow the browser again.
  */
 function withFanLocale(headers: Record<string, string>): Record<string, string> {
   // A mounted fan page publishes what it settled on, so the header cannot
