@@ -42,7 +42,7 @@ class AlbumController extends Controller
             'tag_ids'      => 'nullable|array',
             'tag_ids.*'    => 'integer|exists:tags,id',
             'files'        => 'required|array|min:1|max:100',
-            'files.*'      => 'required|image|max:20480',
+            'files.*'      => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:20480',
             'captions'     => 'nullable|array',
             'captions.*'   => 'nullable|string|max:255',
         ] + Album::translatedSlugRules());
@@ -142,7 +142,7 @@ class AlbumController extends Controller
     {
         $data = $request->validate([
             'files'    => 'required|array|min:1|max:100',
-            'files.*'  => 'required|image|max:20480',
+            'files.*'  => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:20480',
             'captions' => 'nullable|array',
             'captions.*' => 'nullable|string|max:255',
         ]);

@@ -6,6 +6,7 @@
 #    ./rebuild.sh                 # Rebuild all images + run pending migrations
 #    ./rebuild.sh --backend-only  # Rebuild only the backend image (faster, PHP changes)
 #    ./rebuild.sh --fresh-db      # Rebuild all images + wipe DB + re-migrate + seed
+#    ./rebuild.sh --no-cache      # Force Docker builds without layer cache
 #    ./rebuild.sh --help          # Show this help
 #
 #  Logs are written to: rebuild.log (same directory as this script)
@@ -122,6 +123,7 @@ _run_tests() {
 FRESH_DB=false
 BACKEND_ONLY=false
 RUN_TESTS=true
+NO_CACHE=false
 BACKEND_CONTAINER="bandms_backend"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
@@ -129,16 +131,18 @@ for arg in "$@"; do
   case "$arg" in
     --fresh-db)      FRESH_DB=true ;;
     --backend-only)  BACKEND_ONLY=true ;;
+    --no-cache)      NO_CACHE=true ;;
     --run-tests)     RUN_TESTS=true ;;   # kept for backwards-compat
     --skip-tests)    RUN_TESTS=false ;;
     --help|-h)
       echo -e "${BOLD}BandMS rebuild script${RESET}"
       echo ""
-      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db] [--skip-tests]"
+      echo "  Usage: ./rebuild.sh [--backend-only | --fresh-db] [--no-cache] [--skip-tests]"
       echo ""
       echo "  (no flags)       Rebuild all Docker images, start containers, run migrations, run tests"
       echo "  --backend-only   Rebuild only the backend image — faster for PHP-only changes"
       echo "  --fresh-db       Rebuild all images + wipe DB volumes + re-migrate + seed"
+      echo "  --no-cache       Build Docker images without layer cache"
       echo "  --skip-tests     Skip the full test suite after rebuild (frontend unit + backend unit + E2E; runs by default)"
       echo "  --run-tests      (alias for default behaviour — kept for backwards-compat)"
       echo "  --help           Show this message"
@@ -179,8 +183,13 @@ if [[ "$BACKEND_ONLY" == true ]]; then
   echo ""
   echo -e "${YELLOW}  Mode: backend-only (PHP changes)${RESET}"
 
-  begin_step "Rebuilding backend image (no-cache)"
-  docker compose build --no-cache backend
+  if [[ "$NO_CACHE" == true ]]; then
+    begin_step "Rebuilding backend image (no-cache)"
+    docker compose build --no-cache backend
+  else
+    begin_step "Rebuilding backend image"
+    docker compose build backend
+  fi
   end_step "Backend image rebuilt"
 
   begin_step "Restarting backend container"
@@ -244,8 +253,13 @@ else
 fi
 
 # ── 2. Rebuild images ─────────────────────────────────────────────────────────
-begin_step "Rebuilding Docker images (no-cache)"
-docker compose build --no-cache
+if [[ "$NO_CACHE" == true ]]; then
+  begin_step "Rebuilding Docker images (no-cache)"
+  docker compose build --no-cache
+else
+  begin_step "Rebuilding Docker images"
+  docker compose build
+fi
 end_step "Images built"
 
 # ── 3. Start containers ───────────────────────────────────────────────────────
@@ -271,7 +285,7 @@ if [[ "$FRESH_DB" == true ]]; then
   end_step "Database wiped, migrated and seeded"
 
   begin_step "Installing Passport keys & clients"
-  docker exec "$BACKEND_CONTAINER" php artisan passport:install --no-interaction
+  docker exec "$BACKEND_CONTAINER" sh -c 'php artisan passport:keys --force && php artisan passport:client --personal --name="BandMS Personal Access Client" --no-interaction'
   end_step "Passport installed"
 else
   begin_step "Running pending migrations"

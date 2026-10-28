@@ -12,12 +12,12 @@ import type { AdminTicket, TicketStatus } from '@/types/ticket'
 const route = useRoute()
 const { token } = useAuth()
 
-const concertId = Number(route.params.concertId)
+const concertId = computed(() => Number(route.params.concertId))
 
 const { data, isPending, isError } = useQuery({
-  queryKey: ['concert-tickets', concertId],
-  queryFn: () => fetchConcertTickets(token.value!, concertId),
-  enabled: !!token.value && concertId > 0,
+  queryKey: computed(() => ['concert-tickets', concertId.value]),
+  queryFn: () => fetchConcertTickets(token.value!, concertId.value),
+  enabled: computed(() => !!token.value && concertId.value > 0),
 })
 
 const search = ref('')

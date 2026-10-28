@@ -14,6 +14,9 @@ const props = defineProps<{
 const mapEl = ref<HTMLDivElement>()
 let map: any
 
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
+
 const INK = 'var(--color-ink)'
 const PAPER = 'var(--color-page)'
 
@@ -27,24 +30,27 @@ onMounted(async () => {
   linkEl.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
   if (!document.querySelector('link[href*="leaflet"]')) document.head.appendChild(linkEl)
 
-  const styleEl = document.createElement('style')
-  styleEl.textContent = `
-    .ss-cmap .leaflet-container { background:${PAPER} !important; }
-    .ss-cmap .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
-    .ss-cmap .leaflet-bar a { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:28px;height:28px;line-height:28px;font-weight:700; }
-    .ss-cmap .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:3px 3px 0 rgba(0,0,0,.3); }
-    .ss-cmap .leaflet-bar a:first-child,.ss-cmap .leaflet-bar a:last-child { border-radius:0; }
-    .ss-cmap .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:6px 6px 0 ${props.accent}; }
-    .ss-cmap .leaflet-popup-tip { background:${INK}; }
-    .ss-cmap .leaflet-popup-content { margin:12px 14px; }
-    .ss-cmap .leaflet-popup-close-button { color:${INK} !important; }
-    .ss-cmap .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
-    .ss-cpin { position:relative;width:30px;height:30px;display:grid;place-items:center; }
-    .ss-cpin .ring { position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;z-index:1; }
-    @keyframes cmpulse { 0%{transform:scale(.6);opacity:.7;} 100%{transform:scale(2.4);opacity:0;} }
-    .ss-cpin.up .ring { animation:cmpulse 1.8s ease-out infinite; }
-  `
-  document.head.appendChild(styleEl)
+  if (!document.getElementById('bandms-concert-map-styles')) {
+    const styleEl = document.createElement('style')
+    styleEl.id = 'bandms-concert-map-styles'
+    styleEl.textContent = `
+      .ss-cmap .leaflet-container { background:${PAPER} !important; }
+      .ss-cmap .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
+      .ss-cmap .leaflet-bar a { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:28px;height:28px;line-height:28px;font-weight:700; }
+      .ss-cmap .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:3px 3px 0 rgba(0,0,0,.3); }
+      .ss-cmap .leaflet-bar a:first-child,.ss-cmap .leaflet-bar a:last-child { border-radius:0; }
+      .ss-cmap .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:6px 6px 0 ${props.accent}; }
+      .ss-cmap .leaflet-popup-tip { background:${INK}; }
+      .ss-cmap .leaflet-popup-content { margin:12px 14px; }
+      .ss-cmap .leaflet-popup-close-button { color:${INK} !important; }
+      .ss-cmap .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
+      .ss-cpin { position:relative;width:30px;height:30px;display:grid;place-items:center; }
+      .ss-cpin .ring { position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;z-index:1; }
+      @keyframes cmpulse { 0%{transform:scale(.6);opacity:.7;} 100%{transform:scale(2.4);opacity:0;} }
+      .ss-cpin.up .ring { animation:cmpulse 1.8s ease-out infinite; }
+    `
+    document.head.appendChild(styleEl)
+  }
 
   await new Promise(r => setTimeout(r, 60))
 
@@ -73,8 +79,8 @@ onMounted(async () => {
   L.marker([props.lat, props.lng], { icon }).addTo(map)
     .bindPopup(
       `<div style="font-family:Archivo,sans-serif;min-width:140px;">
-        <div style="font:400 20px/0.95 Anton,sans-serif;text-transform:uppercase;color:${INK};">${props.city ?? ''}</div>
-        <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${props.venueName}</div>
+        <div style="font:400 20px/0.95 Anton,sans-serif;text-transform:uppercase;color:${INK};">${escapeHtml(props.city ?? '')}</div>
+        <div style="font:600 13px/1.3 Archivo,sans-serif;color:var(--color-body);margin-top:4px;">${escapeHtml(props.venueName)}</div>
       </div>`
     )
 

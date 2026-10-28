@@ -22,7 +22,7 @@ class PostSummaryResource extends JsonResource
             : null;
 
         $body = $firstText
-            ? ($firstText->payload['body'][app()->getLocale()] ?? $firstText->payload['body']['en'] ?? '')
+            ? (Locales::resolve($firstText->payload['body'] ?? [], app()->getLocale()) ?? '')
             : '';
 
         $excerpt = Str::limit(strip_tags($body) ?: (string) $this->intro, 280);

@@ -18,7 +18,13 @@ class ShopItemResource extends JsonResource
             // from, in every language (it was slug_en — same value).
             'slug'             => $this->slugIn(Locales::default()),
             'translations'     => [
-                'slug' => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
+                'name'        => $this->isTranslatableAttribute('name')
+                    ? $this->getTranslations('name')
+                    : [Locales::default() => $this->name],
+                'description' => $this->isTranslatableAttribute('description')
+                    ? $this->getTranslations('description')
+                    : [Locales::default() => $this->description],
+                'slug'        => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
             'type'             => $this->type,
             'description'      => $this->description,

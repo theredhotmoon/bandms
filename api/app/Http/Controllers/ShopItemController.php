@@ -138,7 +138,7 @@ class ShopItemController extends Controller
 
     public function uploadPhoto(Request $request, ShopItem $shopItem): \Illuminate\Http\JsonResponse
     {
-        $request->validate(['photo' => 'required|image|max:4096']);
+        $request->validate(['photo' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096']);
 
         $path = $request->file('photo')->store('shop-photos', 'public');
         $sort = $shopItem->photos()->max('sort_order') + 1;

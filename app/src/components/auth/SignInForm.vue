@@ -35,7 +35,9 @@ async function handleSubmit() {
       }
       fieldErrors.value = flat
     } else if (err instanceof ApiError) {
-      generalError.value = err.message
+      // handleResponse leaves the message empty when the body has none, so the
+      // translated text stands in rather than a blank error box.
+      generalError.value = err.message || t('shell.signIn.unexpectedError')
     } else {
       generalError.value = t('shell.signIn.unexpectedError')
     }

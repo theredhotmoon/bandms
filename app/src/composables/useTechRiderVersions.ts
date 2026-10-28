@@ -64,6 +64,7 @@ export function useTechRiderVersions(riderId: Ref<number | null>) {
    */
   const diff = ref<RiderDiff | null>(null)
   const diffing = ref(false)
+  let compareSeq = 0
 
   /**
    * A computed diff is baked in the locale it was built with — field names,
@@ -73,9 +74,14 @@ export function useTechRiderVersions(riderId: Ref<number | null>) {
    * row detail. Dropping the diff is honest about that: the reader sees the
    * comparison gone rather than a half-translated one, and re-runs it.
    */
-  watch(uiLang, () => { diff.value = null })
+  watch(uiLang, () => {
+    compareSeq++
+    diff.value = null
+    diffing.value = false
+  })
 
   async function compare(olderId: number, newerId: number): Promise<void> {
+    const seq = ++compareSeq
     diffing.value = true
     diff.value = null
     try {
@@ -83,17 +89,22 @@ export function useTechRiderVersions(riderId: Ref<number | null>) {
         fetchTechRiderVersion(token.value!, olderId),
         fetchTechRiderVersion(token.value!, newerId),
       ])
+      if (seq !== compareSeq) return
       diff.value = diffRiders(
         before, after, t,
         riderSheetLabels(uiLang.value).resolver, instrumentLabels(uiLang.value),
       )
     } finally {
-      diffing.value = false
+      if (seq === compareSeq) {
+        diffing.value = false
+      }
     }
   }
 
   function clearDiff(): void {
+    compareSeq++
     diff.value = null
+    diffing.value = false
   }
 
   const versions = computed(() => query.data.value ?? [])

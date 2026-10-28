@@ -10,7 +10,7 @@ import { getTheme, THEME_FONTS } from '@/lib/theme'
 import { contentWidthFor } from '@/lib/contentWidth'
 import { getBandProfile, getSiteConfig } from '@/lib/cms'
 import { PRIVACY_COPY } from '@bandms/site-copy'
-import { cartCopy, merchCopy, moduleCopy } from '@/lib/copy'
+import { cartCopy, merchCopy, moduleCopy, siteCopy } from '@/lib/copy'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
 
@@ -64,6 +64,7 @@ const [profile, siteConfig] = await Promise.all([
 // copy is read here too — from the merch and privacy rows respectively.
 const cart = cartCopy(merchCopy(siteConfig, lang))
 const privacy = moduleCopy(siteConfig, 'privacy', PRIVACY_COPY, lang)
+const site = siteCopy(siteConfig, lang)
 const bannerCopy = { body: privacy.bannerBody, accept: privacy.bannerAccept, reject: privacy.bannerReject, privacy: privacy.bannerLink }
 // With the privacy row switched off its page is not built, so the banner
 // must not link to it — same "gate on the module map" rule as every other link.
@@ -105,8 +106,9 @@ const contentWidth = contentWidthFor(siteConfig, module)
     <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-inverse focus:text-on-inverse focus:px-4 focus:py-2">{site.skipToContent}</a>
     <Header lang={lang} />
-    <main class="flex-1" data-content-width={contentWidth}>
+    <main id="main-content" class="flex-1" data-content-width={contentWidth}>
       <slot />
     </main>
     <Footer lang={lang} alternates={alternates} />

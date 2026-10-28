@@ -14,6 +14,12 @@ class SendTicketTransferNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
+    public int $timeout = 60;
+
+    public array $backoff = [10, 30, 60];
+
     public function __construct(public readonly TicketTransfer $transfer) {}
 
     public function handle(): void

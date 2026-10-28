@@ -32,4 +32,21 @@ class PresaleCode extends Model
             'concert_ticket_price_tier_id'
         );
     }
+
+    public function isActive(): bool
+    {
+        if ($this->valid_from && $this->valid_from->gt(now())) {
+            return false;
+        }
+
+        if ($this->valid_until && $this->valid_until->lt(now())) {
+            return false;
+        }
+
+        if ($this->max_uses !== null && $this->used_count >= $this->max_uses) {
+            return false;
+        }
+
+        return true;
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BandMember;
 use App\Models\Concert;
+use App\Support\SafeUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -252,6 +253,10 @@ class BandCalendarController extends Controller
     ): array {
         try {
             $feedUrl = $this->normalizeCalendarUrl($member->calendar_url);
+
+            if (! SafeUrl::isAllowed($feedUrl)) {
+                return [];
+            }
 
             // Key includes a hash of the feed URL so changing the URL auto-invalidates the cache.
             $cacheKey = 'ical_member_' . $member->id . '_' . md5($feedUrl);

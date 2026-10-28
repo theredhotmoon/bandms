@@ -21,7 +21,10 @@ const isActive = computed(() => props.current === props.sortKey)
     :class="[{ 'sort-th--active': isActive }, right ? 'text-right' : '']"
     :style="width ? `width:${width}` : undefined"
     :aria-sort="isActive ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'"
+    tabindex="0"
     @click="emit('sort', sortKey)"
+    @keydown.enter.prevent="emit('sort', sortKey)"
+    @keydown.space.prevent="emit('sort', sortKey)"
   >
     <span class="sort-inner" :class="{ 'sort-inner--right': right }">
       {{ label }}

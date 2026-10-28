@@ -1,0 +1,10 @@
+{
+  "name": "bandms",
+  "private": true,
+  "scripts": {
+    "test:app": "pnpm --dir app test:unit",
+    "test:web": "pnpm --dir web test:unit",
+    "build:app": "pnpm --dir app build",
+    "build:web": "pnpm --dir web build"
+  }
+}

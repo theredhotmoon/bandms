@@ -27,11 +27,12 @@ export async function updatePhoto(token: string, id: number, payload: PhotoPaylo
 
 export async function togglePhotoEpkFeatured(token: string, id: number, epk_featured: boolean): Promise<void> {
   assertSafeId(id)
-  await fetch(`${API_BASE}/api/photos/${id}`, {
+  const res = await fetch(`${API_BASE}/api/photos/${id}`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ epk_featured }),
   })
+  if (!res.ok) await handleResponse<void>(res)
 }
 
 export async function deletePhoto(token: string, id: number): Promise<void> {

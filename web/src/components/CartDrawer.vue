@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch, onUnmounted } from 'vue'
 import { useStore } from '@nanostores/vue'
 import { cartItems, cartOpen, removeFromCart, updateQuantity, cartTotal, formatPrice } from '@/stores/cart'
 import type { CheckoutPayload } from '@/lib/checkout'
@@ -28,6 +28,20 @@ const isEmpty       = computed(() => itemList.value.length === 0)
 const formattedTotal = computed(() => formatPrice({ currency: currency.value, amount: total.value }))
 
 function close() { cartOpen.set(false) }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') close()
+}
+
+watch(open, (isOpen) => {
+  if (typeof window === 'undefined') return
+  if (isOpen) window.addEventListener('keydown', onKeydown)
+  else window.removeEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') window.removeEventListener('keydown', onKeydown)
+})
 
 async function checkout() {
   if (!itemList.value.length) return
@@ -61,7 +75,12 @@ async function checkout() {
       <div class="absolute inset-0 bg-inverse/60" @click="close" />
 
       <!-- Panel -->
-      <aside class="relative z-10 flex h-full w-full max-w-sm flex-col bg-surface shadow-2xl">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        :aria-label="copy.title"
+        class="relative z-10 flex h-full w-full max-w-sm flex-col bg-surface shadow-2xl"
+      >
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 class="font-bold text-body">{{ copy.title }}</h2>
@@ -83,9 +102,9 @@ async function checkout() {
               <p v-if="item.variant" class="text-xs text-muted">{{ item.variant }}</p>
               <p class="text-xs text-accent mt-0.5">{{ formatPrice(item.price) }}</p>
               <div class="flex items-center gap-2 mt-1.5">
-                <button type="button" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity - 1)">−</button>
+                <button type="button" :aria-label="`Decrease quantity of ${item.name}`" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity - 1)">−</button>
                 <span class="text-sm text-body w-4 text-center">{{ item.quantity }}</span>
-                <button type="button" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity + 1)">+</button>
+                <button type="button" :aria-label="`Increase quantity of ${item.name}`" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity + 1)">+</button>
                 <button type="button" class="ml-auto text-xs text-subtle hover:text-danger transition-colors" @click="removeFromCart(item.shopItemId, item.variantId)">{{ copy.remove }}</button>
               </div>
             </div>

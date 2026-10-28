@@ -36,7 +36,13 @@ export function useShop() {
   const { token } = useAuth()
   const qc = useQueryClient()
   const qk = SHOP_ITEMS_KEY
+  const itemQk = ['shop-item']
   const ckk = ['shop-currencies']
+
+  function invalidateItems() {
+    qc.invalidateQueries({ queryKey: qk })
+    qc.invalidateQueries({ queryKey: itemQk })
+  }
 
   const query = useQuery({
     queryKey: qk,
@@ -55,29 +61,30 @@ export function useShop() {
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ShopItemPayload }) =>
       updateShopItem(token.value!, id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const remove = useMutation({
     mutationFn: (id: number) => deleteShopItem(token.value!, id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const addPhoto = useMutation({
     mutationFn: ({ itemId, file }: { itemId: number; file: File }) =>
       uploadShopPhoto(token.value!, itemId, file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const removePhoto = useMutation({
     mutationFn: ({ itemId, photoId }: { itemId: number; photoId: number }) =>
       deleteShopPhoto(token.value!, itemId, photoId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const reorderPhotos = useMutation({
     mutationFn: ({ itemId, ids }: { itemId: number; ids: number[] }) =>
       reorderShopPhotos(token.value!, itemId, ids),
+    onSuccess: invalidateItems,
   })
 
   const saveCurrencies = useMutation({
@@ -88,19 +95,19 @@ export function useShop() {
   const addVariant = useMutation({
     mutationFn: ({ itemId, payload }: { itemId: number; payload: ShopItemVariantPayload }) =>
       createShopVariant(token.value!, itemId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const editVariant = useMutation({
     mutationFn: ({ itemId, variantId, payload }: { itemId: number; variantId: number; payload: ShopItemVariantPayload }) =>
       updateShopVariant(token.value!, itemId, variantId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   const removeVariant = useMutation({
     mutationFn: ({ itemId, variantId }: { itemId: number; variantId: number }) =>
       deleteShopVariant(token.value!, itemId, variantId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
+    onSuccess: invalidateItems,
   })
 
   return { query, currenciesQuery, create, update, remove, addPhoto, removePhoto, reorderPhotos, saveCurrencies, addVariant, editVariant, removeVariant }

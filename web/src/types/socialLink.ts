@@ -1,22 +1,6 @@
-export type SocialPlatform =
-  | 'spotify'
-  | 'instagram'
-  | 'facebook'
-  | 'youtube'
-  | 'tiktok'
-  | 'bandcamp'
-  | 'soundcloud'
-  | 'twitter'
-  | 'website'
+import type { SocialPlatform, SocialLink } from '@bandms/rider-core'
 
-export interface SocialLink {
-  id: number
-  band_id: number
-  member_id: number | null
-  platform: SocialPlatform
-  url: string
-  position: number
-}
+export type { SocialPlatform, SocialLink }
 
 export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
   spotify:    'Spotify',

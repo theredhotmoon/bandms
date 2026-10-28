@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 
 interface NavLink { href: string; label: string }
 
@@ -9,6 +9,20 @@ const open = ref(false)
 
 function toggle() { open.value = !open.value }
 function close()  { open.value = false }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') close()
+}
+
+watch(open, (isOpen) => {
+  if (typeof window === 'undefined') return
+  if (isOpen) window.addEventListener('keydown', onKeydown)
+  else window.removeEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') window.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <template>
@@ -34,7 +48,12 @@ function close()  { open.value = false }
         class="mob-overlay"
         @click.self="close"
       >
-        <div class="mob-panel">
+        <div
+          class="mob-panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="copy.navLabel"
+        >
           <div class="mob-top">
             <span class="mob-brand">{{ brand }}</span>
             <button type="button" class="mob-close" :aria-label="copy.close" @click="close">

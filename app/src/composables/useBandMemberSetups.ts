@@ -19,6 +19,11 @@ export function useMemberSetups(memberId: Ref<number | null>) {
 
   const qk = computed(() => ['member-setups', memberId.value])
 
+  function invalidateSetups() {
+    queryClient.invalidateQueries({ queryKey: qk.value })
+    queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
+  }
+
   const list = useQuery<BandMemberSetupSummary[]>({
     queryKey: qk,
     queryFn: () => fetchMemberSetups(memberId.value!),
@@ -28,19 +33,19 @@ export function useMemberSetups(memberId: Ref<number | null>) {
   const create = useMutation({
     mutationFn: (payload: BandMemberSetupPayload) =>
       createMemberSetup(token.value!, memberId.value!, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.value }),
+    onSuccess: invalidateSetups,
   })
 
   const remove = useMutation({
     mutationFn: (setupId: number) =>
       deleteMemberSetup(token.value!, memberId.value!, setupId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.value }),
+    onSuccess: invalidateSetups,
   })
 
   const setDefault = useMutation({
     mutationFn: (setupId: number) =>
       updateMemberSetup(token.value!, memberId.value!, setupId, { is_default: true }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.value }),
+    onSuccess: invalidateSetups,
   })
 
   return { list, create, remove, setDefault }
@@ -68,6 +73,7 @@ export function useMemberSetup(
     onSuccess: (updated: BandMemberSetup) => {
       queryClient.setQueryData(qk.value, updated)
       queryClient.invalidateQueries({ queryKey: ['member-setups', memberId.value] })
+      queryClient.invalidateQueries({ queryKey: ['all-member-setups'] })
     },
   })
 

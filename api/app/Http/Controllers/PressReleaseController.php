@@ -6,6 +6,7 @@ use App\Http\Resources\PressReleaseResource;
 use App\Http\Resources\PressReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\PressRelease;
+use App\Support\SafeUrl;
 use App\Support\SiteRebuild;
 use DOMDocument;
 use DOMXPath;
@@ -44,6 +45,10 @@ class PressReleaseController extends Controller
     public function fetchMeta(Request $request): JsonResponse
     {
         $data = $request->validate(['url' => 'required|url|max:1000']);
+
+        if (! SafeUrl::isAllowed($data['url'])) {
+            return response()->json(['message' => 'URL is not allowed.'], 422);
+        }
 
         try {
             $response = Http::withHeaders([

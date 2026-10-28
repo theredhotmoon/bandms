@@ -8,6 +8,7 @@ use App\Models\ConcertTicketPriceTier;
 use App\Models\ConcertTicketType;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PresaleCode;
 use App\Models\PromoCode;
 use App\Models\ShopItem;
 use App\Models\ShopItemVariant;
@@ -32,6 +33,7 @@ class CheckoutController extends Controller
             'items.*.shop_item_variant_id'          => 'nullable|integer|exists:shop_item_variants,id',
             'items.*.ticket_type_id'                => 'nullable|integer|exists:concert_ticket_types,id',
             'items.*.ticket_price_tier_id'          => 'nullable|integer|exists:concert_ticket_price_tiers,id',
+            'items.*.presale_code'                  => 'nullable|string|max:64',
             'items.*.quantity'                      => 'required|integer|min:1|max:100',
             'customer.name'                         => 'required|string|max:255',
             'customer.email'                        => 'required|email|max:255',
@@ -41,6 +43,7 @@ class CheckoutController extends Controller
             'customer.shipping_address.postal_code' => 'nullable|string|max:20',
             'customer.shipping_address.country'     => 'nullable|string|size:2',
             'promo_code'                            => 'nullable|string|max:32',
+            'presale_code'                          => 'nullable|string|max:64',
         ]);
 
         $currency  = strtoupper($validated['currency']);
@@ -149,8 +152,26 @@ class CheckoutController extends Controller
                     $ticketType = $ticketTypes->get($lineInput['ticket_type_id']);
                     abort_unless($ticketType, 422, 'Ticket type not found.');
 
-                    // Check sale window
-                    if ($ticketType->available_from && $ticketType->available_from->isFuture()) {
+                    $presaleCodeStr = $lineInput['presale_code'] ?? $validated['presale_code'] ?? null;
+                    $presale        = null;
+
+                    if (! empty($presaleCodeStr)) {
+                        $presale = PresaleCode::with('tiers')
+                            ->where('code', $presaleCodeStr)
+                            ->where(fn ($q) => $q
+                                ->where('concert_id', $ticketType->concert_id)
+                                ->orWhereNull('concert_id')
+                            )
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (! $presale || ! $presale->isActive() || ($presale->max_uses !== null && $presale->used_count >= $presale->max_uses)) {
+                            abort(422, 'Invalid or expired presale code.');
+                        }
+                    }
+
+                    // Check sale window (a valid presale code bypasses a future available_from date)
+                    if ($ticketType->available_from && $ticketType->available_from->isFuture() && ! $presale) {
                         abort(422, "Tickets for '{$ticketType->name}' are not on sale yet.");
                     }
                     if ($ticketType->on_sale_until && $ticketType->on_sale_until->isPast()) {
@@ -170,6 +191,18 @@ class CheckoutController extends Controller
                     $tier   = $tierId ? $ticketType->tiers->firstWhere('id', $tierId) : $ticketType->activeTier();
 
                     abort_unless($tier, 422, "No ticket tier available for '{$ticketType->name}'.");
+
+                    if ($presale && $presale->tiers->isNotEmpty() && ! $presale->tiers->contains('id', $tier->id)) {
+                        abort(422, 'Presale code is not valid for the selected ticket tier.');
+                    }
+
+                    if (strtoupper($tier->currency) !== $currency) {
+                        abort(422, 'Ticket currency does not match checkout currency.');
+                    }
+
+                    if ($presale) {
+                        $presale->increment('used_count');
+                    }
 
                     // Check tier availability_count
                     if ($tier->available_count !== null) {
@@ -229,21 +262,23 @@ class CheckoutController extends Controller
             $discountAmount = 0;
             $promoId        = null;
             if ($promo) {
+                $subtotal       = $total;
                 $discounted     = $promo->applyTo($total);
                 $discountAmount = round($total - $discounted, 2);
                 $total          = $discounted;
                 $promoId        = $promo->id;
 
-                // Append a discount line item for Stripe
-                if ($discountAmount > 0) {
-                    $lineItemsArr[] = [
-                        'price_data' => [
-                            'currency'     => strtolower($currency),
-                            'unit_amount'  => -(int) round($discountAmount * 100),
-                            'product_data' => ['name' => "Promo: {$promo->code}"],
-                        ],
-                        'quantity' => 1,
-                    ];
+                // Distribute discount proportionally across line_items unit_amounts
+                // so Stripe never receives a negative unit_amount.
+                if ($discountAmount > 0 && $subtotal > 0) {
+                    $ratio = max(0.0, $discounted / $subtotal);
+                    foreach ($lineItemsArr as &$lineItem) {
+                        $lineItem['price_data']['unit_amount'] = max(
+                            0,
+                            (int) round($lineItem['price_data']['unit_amount'] * $ratio)
+                        );
+                    }
+                    unset($lineItem);
                 }
             }
 

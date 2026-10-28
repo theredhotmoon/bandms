@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { fetchActiveTechRider, fetchTechRider } from '@/api/techRiders'
@@ -45,7 +45,9 @@ const profile = ref<BandProfile | null>(null)
 const loading = ref(true)
 const error   = ref<string | null>(null)
 
-onMounted(async () => {
+async function loadPreview() {
+  loading.value = true
+  error.value   = null
   try {
     const [riderData, membersData, profileData] = await Promise.all([
       route.params.id
@@ -62,7 +64,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadPreview)
+watch(() => route.params.id, loadPreview)
 
 const logoUrl = computed(() => {
   // Use tech_rider_logo_id pin if set, else fall back to global default

@@ -47,6 +47,22 @@ class BandLogoController extends Controller
         ]);
 
         $file     = $request->file('file');
+        if (
+            strtolower($file->getClientOriginalExtension()) === 'svg'
+            || str_contains(strtolower((string) $file->getMimeType()), 'svg')
+        ) {
+            $svgContent = (string) @file_get_contents($file->getRealPath());
+            if (
+                stripos($svgContent, '<script') !== false
+                || stripos($svgContent, 'javascript:') !== false
+                || preg_match('/\bon[a-z]+\s*=/i', $svgContent) === 1
+            ) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => ['SVG file contains unsafe content.'],
+                ]);
+            }
+        }
+
         $path     = $file->store('logos', 'public');
         $mime     = $file->getMimeType() ?? 'image/png';
         $size     = $file->getSize();

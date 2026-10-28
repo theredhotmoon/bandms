@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import { toast } from 'vue-sonner'
 import { useBandLogos } from '@/composables/useBandLogos'
 import { reportSaveError } from '@/utils/formErrors'
@@ -53,6 +53,7 @@ function pickFile(file: File) {
     toast.error(t('band.logos.tooLarge'))
     return
   }
+  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
   pendingFile.value = file
   // Generate preview (SVGs can be previewed via object URL)
   pendingPreview.value = URL.createObjectURL(file)
@@ -78,6 +79,12 @@ function cancelPending() {
   uploadForm.variant        = 'full'
   uploadForm.background     = 'any'
   uploadForm.version_label  = ''
+  onBeforeUnmountCleanup()
+}
+onBeforeUnmount(() => {
+  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
+})
+function onBeforeUnmountCleanup() {
 }
 
 async function doUpload() {
@@ -183,6 +190,14 @@ const pins = reactive({
   epk_logo_id:        props.epkLogoId        as number | null,
   tech_rider_logo_id: props.techRiderLogoId  as number | null,
   website_logo_id:    props.websiteLogoId    as number | null,
+}); watch(
+  () => [props.epkLogoId, props.techRiderLogoId, props.websiteLogoId] as const,
+  ([epk, rider, web]) => {
+    pins.epk_logo_id        = epk
+    pins.tech_rider_logo_id = rider
+    pins.website_logo_id    = web
+  },
+); ({
 })
 
 const savingPins = ref(false)
@@ -234,7 +249,11 @@ function isAnyUpdatePending(id: number): boolean {
           @dragover.prevent="dropActive = true"
           @dragleave="dropActive = false"
           @drop.prevent="onDrop"
+          tabindex="0"
+          role="button"
           @click="fileInput?.click()"
+          @keydown.enter.prevent="fileInput?.click()"
+          @keydown.space.prevent="fileInput?.click()"
         >
           <svg class="blm-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round"

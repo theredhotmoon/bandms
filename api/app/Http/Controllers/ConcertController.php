@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -41,21 +42,25 @@ class ConcertController extends Controller
 
         $data = $request->validate($this->rules(), $this->messages());
 
-        $concert = new Concert(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
-        // On create every locale gets a slug, from its own name or venue + date —
-        // what the admin form always generated client-side for Polish.
-        $venueDate = trim((Venue::find($data['venue_id'])?->name ?? 'concert') . ' ' . $data['date']);
-        $concert->applySlugBag(
-            $data['slug'] ?? null,
-            $this->slugSource($data['name'] ?? [], $data['venue_id'], $data['date']),
-            collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => ($data['name'][$c] ?? null) ?: $venueDate])->all(),
-        );
-        $concert->save();
+        $concert = DB::transaction(function () use ($data) {
+            $concert = new Concert(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
+            // On create every locale gets a slug, from its own name or venue + date —
+            // what the admin form always generated client-side for Polish.
+            $venueDate = trim((Venue::find($data['venue_id'])?->name ?? 'concert') . ' ' . $data['date']);
+            $concert->applySlugBag(
+                $data['slug'] ?? null,
+                $this->slugSource($data['name'] ?? [], $data['venue_id'], $data['date']),
+                collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => ($data['name'][$c] ?? null) ?: $venueDate])->all(),
+            );
+            $concert->save();
 
-        $this->syncBands($concert, $data['bands'] ?? []);
-        $this->syncTags($concert, $data['tag_ids'] ?? null);
-        $this->syncMembers($concert, $data);
-        $this->syncLinks($concert, $data['links'] ?? []);
+            $this->syncBands($concert, $data['bands'] ?? []);
+            $this->syncTags($concert, $data['tag_ids'] ?? null);
+            $this->syncMembers($concert, $data);
+            $this->syncLinks($concert, $data['links'] ?? []);
+
+            return $concert;
+        });
 
         SiteRebuild::markDirty('concerts');
 
@@ -74,18 +79,20 @@ class ConcertController extends Controller
         // Slugs through applySlugBag(): update() used to write the raw columns,
         // so clearing a concert's slug in the admin quietly moved its public
         // page to /concert-{id}. The default slug is never blanked now.
-        $concert->fill(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
-        if (array_key_exists('slug', $data)) {
-            $concert->applySlugBag($data['slug'], $this->slugSource(
-                $concert->getTranslations('name'), $concert->venue_id, $concert->date?->format('Y-m-d') ?? '',
-            ));
-        }
-        $concert->save();
+        DB::transaction(function () use ($concert, $data) {
+            $concert->fill(Arr::except($data, ['bands', 'tag_ids', 'member_ids', 'links', 'slug']));
+            if (array_key_exists('slug', $data)) {
+                $concert->applySlugBag($data['slug'], $this->slugSource(
+                    $concert->getTranslations('name'), $concert->venue_id, $concert->date?->format('Y-m-d') ?? '',
+                ));
+            }
+            $concert->save();
 
-        $this->syncBands($concert, $data['bands'] ?? []);
-        $this->syncTags($concert, $data['tag_ids'] ?? null);
-        $this->syncMembers($concert, $data);
-        $this->syncLinks($concert, $data['links'] ?? []);
+            $this->syncBands($concert, $data['bands'] ?? []);
+            $this->syncTags($concert, $data['tag_ids'] ?? null);
+            $this->syncMembers($concert, $data);
+            $this->syncLinks($concert, $data['links'] ?? []);
+        });
 
         SiteRebuild::markDirty('concerts');
 
@@ -106,7 +113,7 @@ class ConcertController extends Controller
 
     public function uploadPoster(Request $request, Concert $concert): ConcertResource
     {
-        $request->validate(['poster' => 'required|image|max:4096']);
+        $request->validate(['poster' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096']);
 
         if ($concert->poster) {
             Storage::disk('public')->delete($concert->poster);

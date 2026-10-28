@@ -37,7 +37,7 @@ class FaqResource extends JsonResource
     private static function perLocale(array $translations): array
     {
         return collect(Locales::codes())
-            ->mapWithKeys(fn (string $code) => [$code => ($translations[$code] ?? null) ?: null])
+            ->mapWithKeys(fn (string $code) => [$code => (($translations[$code] ?? null) !== '') ? ($translations[$code] ?? null) : null])
             ->all();
     }
 }

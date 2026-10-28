@@ -4,7 +4,14 @@ set -e
 API_BASE="${API_BASE:-http://backend}"
 
 echo "⏳  Waiting for API at ${API_BASE}/api/health …"
+MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-60}"
+attempt=0
 until wget -qO- "${API_BASE}/api/health" > /dev/null 2>&1; do
+  attempt=$((attempt + 1))
+  if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+    echo "✖  API at ${API_BASE}/api/health did not become ready after $((MAX_ATTEMPTS * 2))s." >&2
+    exit 1
+  fi
   sleep 2
 done
 echo "✅  API is ready."

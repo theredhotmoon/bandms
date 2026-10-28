@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class FanAccountController extends Controller
@@ -39,6 +40,8 @@ class FanAccountController extends Controller
         cache()->put("fan_magic:{$token}", $fan->id, now()->addHours(24));
 
         $verifyUrl = url("/api/fan/auth/verify?token={$token}");
+
+        Mail::raw("Sign in to your fan account: {$verifyUrl}", fn ($m) => $m->to($fan->email)->subject('Your Sign-In Link'));
 
         $response = ['message' => 'Magic link sent to your email.'];
         if (config('app.debug')) {

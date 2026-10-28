@@ -1,5 +1,6 @@
 import { adminUrl } from '@/config/admin'
 import { currentContentLang } from '@/composables/useLang'
+import { clearAuthSession } from '@/composables/useAuth'
 import type { ValidationErrors } from '@/types/auth'
 
 const API_BASE = import.meta.env.VITE_API_URL as string
@@ -28,14 +29,28 @@ export class ApiError extends Error {
   }
 }
 
-export async function handleResponse<T>(response: Response): Promise<T> {
+export interface HandleResponseOptions {
+  /**
+   * Treat a 401 as an expired session: clear it and send the browser to the
+   * sign-in screen. Right for every authenticated call, and wrong for the
+   * sign-in call itself, where a 401 means "wrong password" — there it must
+   * reach the form as an ApiError(401), or the redirect reloads the page and
+   * the user never learns why.
+   */
+  redirectOn401?: boolean
+}
+
+export async function handleResponse<T>(
+  response: Response,
+  { redirectOn401 = true }: HandleResponseOptions = {},
+): Promise<T> {
   if (response.ok) {
     if (response.status === 204) return undefined as T
     return response.json() as Promise<T>
   }
 
-  if (response.status === 401) {
-    localStorage.removeItem('auth_token')
+  if (response.status === 401 && redirectOn401) {
+    clearAuthSession()
     window.location.href = adminUrl()
     return new Promise(() => {}) as Promise<T>
   }
@@ -139,9 +154,9 @@ export const jsonHeaders = {
 }
 
 /** Throws if id is not a safe positive integer (prevents URL injection). */
-export function assertSafeId(id: unknown): asserts id is number {
+export function assertSafeId(id: unknown, name = 'resource id'): asserts id is number {
   if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
-    throw new Error(`Invalid resource id: ${String(id)}`)
+    throw new Error(`Invalid ${name}: ${String(id)}`)
   }
 }
 

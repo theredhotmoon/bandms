@@ -22,7 +22,7 @@ export interface RefLink { href: string; external: boolean }
  */
 export function refHref(
   entity: RefEntity,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   lang: Locale,
   slugMap: SlugMap,
   modules: Record<string, boolean>,
