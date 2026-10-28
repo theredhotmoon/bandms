@@ -6,6 +6,10 @@ export interface AuthorSummary {
   email: string | null
   whatsapp: string | null
   phone: string | null
+  /** ISO 3166-1 alpha-2 */
+  country: string | null
+  /** ISO 639-1 */
+  contact_language: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -51,6 +55,10 @@ export interface AuthorPayload {
   email: string | null
   whatsapp: string | null
   phone: string | null
+  /** ISO 3166-1 alpha-2 */
+  country: string | null
+  /** ISO 639-1 */
+  contact_language: string | null
   notes: string | null
   social_links: SocialLinkPayload[]
   press_release_ids: number[]

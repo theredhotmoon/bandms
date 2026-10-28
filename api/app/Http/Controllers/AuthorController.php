@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AuthorResource;
 use App\Http\Resources\AuthorSummaryResource;
 use App\Models\Author;
+use App\Support\ContactCodes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AuthorController extends Controller
 {
@@ -72,6 +74,8 @@ class AuthorController extends Controller
             'email'                   => 'nullable|email|max:255',
             'whatsapp'                => 'nullable|string|max:50',
             'phone'                   => 'nullable|string|max:50',
+            'country'                 => ['nullable', Rule::in(ContactCodes::COUNTRIES)],
+            'contact_language'        => ['nullable', Rule::in(ContactCodes::LANGUAGES)],
             'notes'                   => 'nullable|string',
             'social_links'            => 'nullable|array',
             'social_links.*.platform' => 'required|in:spotify,instagram,facebook,youtube,tiktok,bandcamp,soundcloud,twitter,website',

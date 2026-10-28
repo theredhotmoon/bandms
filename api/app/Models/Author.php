@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Author extends Model
 {
     protected $fillable = [
-        'name', 'email', 'facebook', 'instagram', 'whatsapp', 'phone', 'notes',
+        'name', 'email', 'facebook', 'instagram', 'whatsapp', 'phone', 'country', 'contact_language', 'notes',
     ];
 
     public function pressReleases(): BelongsToMany

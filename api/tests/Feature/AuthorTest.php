@@ -98,6 +98,28 @@ describe('POST /api/authors', function () {
           ->assertJsonPath('data.notes', 'Met at a festival.');
     });
 
+    it('stores country and preferred contact language as codes', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', [
+            'name'             => 'Abroad Contact',
+            'country'          => 'DE',
+            'contact_language' => 'de',
+        ])->assertCreated()
+          ->assertJsonPath('data.country', 'DE')
+          ->assertJsonPath('data.contact_language', 'de');
+
+        $this->assertDatabaseHas('authors', ['name' => 'Abroad Contact', 'country' => 'DE', 'contact_language' => 'de']);
+    });
+
+    it('rejects a country or language outside the code lists', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', ['name' => 'Test', 'country' => 'Germany', 'contact_language' => 'xx'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['country', 'contact_language']);
+    });
+
     it('validates name is required', function () {
         $this->actingAsAdmin();
 
@@ -139,6 +161,16 @@ describe('PUT /api/authors/{author}', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.name', 'New Name')
             ->assertJsonPath('data.notes', 'Updated note');
+    });
+
+    it('clears country and contact language when sent as null', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['name' => 'A', 'country' => 'PL', 'contact_language' => 'pl']);
+
+        $this->putJson("/api/authors/{$author->id}", ['name' => 'A', 'country' => null, 'contact_language' => null])
+            ->assertSuccessful()
+            ->assertJsonPath('data.country', null)
+            ->assertJsonPath('data.contact_language', null);
     });
 
     it('returns 404 for a non-existent author', function () {

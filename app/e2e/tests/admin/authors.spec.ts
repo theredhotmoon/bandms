@@ -62,6 +62,46 @@ test.describe.serial('Admin Authors', () => {
     await expect(page.getByRole('cell', { name: updatedName })).toBeVisible({ timeout: 8000 })
   })
 
+  test('form layout: no stray markup, notes sit above social links', async ({ page }) => {
+    await page.getByRole('button', { name: '+ Add author' }).click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    // An i18n-ignore comment inside the phone inputs' attribute lists once
+    // leaked into the page as a literal "/>" after each of them.
+    await expect(modal.locator('form')).not.toContainText('/>')
+
+    const notesBox  = await modal.getByPlaceholder('Additional context about this contact…').boundingBox()
+    const socialBox = await modal.locator('.social-links-editor').boundingBox()
+    expect(notesBox!.y).toBeLessThan(socialBox!.y)
+  })
+
+  test('country and contact language: pick, save, reopen → both persisted', async ({ page }) => {
+    await page.locator('input[aria-label="Search"]').fill(updatedName)
+    await page.locator('tr').filter({ hasText: updatedName }).getByRole('button', { name: 'Edit' }).click()
+
+    const modal = page.locator('.modal-overlay')
+    await expect(modal.getByPlaceholder('Jane Smith')).toHaveValue(updatedName)
+
+    const country  = modal.getByLabel('Country')
+    const language = modal.getByLabel('Preferred contact language')
+    // The full list's length is contactCodes.spec.ts's job; here, that it is populated.
+    await expect(country.locator('option[value=""]')).toHaveText('Not set')
+    expect(await country.locator('option').count()).toBeGreaterThan(200)
+    await country.selectOption('DE')
+    await language.selectOption('de')
+    await expect(country.locator('option:checked')).toHaveText('Germany')
+    await expect(language.locator('option:checked')).toHaveText('German')
+
+    await modal.getByRole('button', { name: 'Save' }).click()
+    await expect(page.locator('[data-sonner-toast]')).toContainText('Author updated', { timeout: 10000 })
+    await expect(modal).not.toBeVisible()
+
+    await page.locator('tr').filter({ hasText: updatedName }).getByRole('button', { name: 'Edit' }).click()
+    await expect(modal.getByLabel('Country')).toHaveValue('DE', { timeout: 8000 })
+    await expect(modal.getByLabel('Preferred contact language')).toHaveValue('de')
+  })
+
   test('delete author: ConfirmDialog appears → confirm → toast "Author deleted" and row gone', async ({ page }) => {
     await page.locator('input[aria-label="Search"]').fill(updatedName)
 
