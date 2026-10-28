@@ -485,6 +485,8 @@ describe('author first and last name', function () {
             'dutch'  => 'Jan  van der Berg',
             'single' => 'Radio357',
             'nbsp'   => "Anna\u{00A0}Nowak",
+            'narrow' => "Zoé\u{202F}Martin\tDurand",
+            'polish' => 'Mąka Żółć',
             'blank'  => '   ',
         ];
         $ids = [];
@@ -499,6 +501,8 @@ describe('author first and last name', function () {
             ->and($read('dutch'))->toBe(['first_name' => 'Jan', 'last_name' => 'van der Berg'])
             ->and($read('single'))->toBe(['first_name' => 'Radio357', 'last_name' => null])
             ->and($read('nbsp'))->toBe(['first_name' => 'Anna', 'last_name' => 'Nowak'])
+            ->and($read('narrow'))->toBe(['first_name' => 'Zoé', 'last_name' => 'Martin Durand'])
+            ->and($read('polish'))->toBe(['first_name' => 'Mąka', 'last_name' => 'Żółć'])
             ->and($read('blank'))->toBe(['first_name' => '?', 'last_name' => null])
             ->and(Schema::hasColumn('authors', 'name'))->toBeFalse();
     });

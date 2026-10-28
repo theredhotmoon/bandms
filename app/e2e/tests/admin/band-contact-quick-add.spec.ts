@@ -15,7 +15,11 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
 test.describe('Admin Bands — contact from inside the band form', () => {
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const BAND_NAME = `E2E QuickAdd Band ${stamp}`
-  const CONTACT_NAME = `E2E QuickAdd Contact ${stamp}`
+  // Two halves: the quick-add is a second AuthorForm instance, and the chip
+  // below must show the joined name, so a dropped last name fails here.
+  const CONTACT_FIRST = 'E2E'
+  const CONTACT_LAST = `QuickAdd Contact ${stamp}`
+  const CONTACT_NAME = `${CONTACT_FIRST} ${CONTACT_LAST}`
   let bandId: number | undefined
   let authorId: number | undefined
 
@@ -39,7 +43,8 @@ test.describe('Admin Bands — contact from inside the band form', () => {
     // The band form underneath is inert while the contact form is up.
     await expect(outer).toHaveAttribute('inert', '')
 
-    await inner.getByLabel('First name').fill(CONTACT_NAME)
+    await inner.getByLabel('First name').fill(CONTACT_FIRST)
+    await inner.getByLabel('Last name').fill(CONTACT_LAST)
     const created = page.waitForResponse(r => r.url().endsWith('/api/authors') && r.request().method() === 'POST')
     await inner.getByRole('button', { name: 'Save' }).click()
     authorId = ((await (await created).json()) as { data: { id: number } }).data.id

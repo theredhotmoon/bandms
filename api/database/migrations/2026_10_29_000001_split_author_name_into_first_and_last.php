@@ -27,12 +27,14 @@ return new class extends Migration
         // with one space, so a name holding a run of whitespace comes back
         // normalised — the words survive, the spacing does not.
         //
-        // No /u on the pattern: with it, a name holding invalid UTF-8 makes
-        // preg_split return false, first_name is written NULL and the NOT NULL
-        // change below dies half-way through a non-transactional MySQL DDL.
-        // Splitting on ASCII whitespace never touches a multibyte sequence;
-        // the one non-ASCII space a pasted name commonly carries, U+00A0 from
-        // a web page or an email signature, is turned into a plain one first.
+        // No regex: preg_split with /u returns false on invalid UTF-8 (first_name
+        // written NULL, the NOT NULL change below dying half-way through a
+        // non-transactional MySQL DDL), and without /u its \s follows the
+        // process locale, under which bytes inside "ą" or "à" can count as
+        // spaces. Replacing whole byte sequences is exact under any locale and
+        // any encoding damage. The non-ASCII spaces are the ones pasted names
+        // carry: U+00A0 from web pages, U+202F/U+2009 from French and macOS
+        // typography, U+3000 from CJK input.
         //
         // Skipped when `name` is already gone: a run that died after dropping
         // it but before being recorded has nothing left to backfill.
@@ -41,8 +43,13 @@ return new class extends Migration
             : [];
 
         foreach ($rows as $row) {
-            $name  = trim(str_replace("\u{00A0}", ' ', (string) $row->name));
-            $parts = $name === '' ? [] : preg_split('/\s+/', $name, 2);
+            $spaced = str_replace(
+                ["\t", "\n", "\r", "\v", "\f", "\u{00A0}", "\u{2007}", "\u{2009}", "\u{202F}", "\u{3000}"],
+                ' ',
+                (string) $row->name,
+            );
+            $words = array_values(array_filter(explode(' ', $spaced), fn ($w) => $w !== ''));
+            $parts = $words === [] ? [] : [$words[0], implode(' ', array_slice($words, 1)) ?: null];
 
             if ($parts === []) {
                 // The API always required a name; only direct SQL leaves one blank.
