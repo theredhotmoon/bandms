@@ -4,10 +4,13 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import AuthorQuickAdd from '@/components/admin/forms/AuthorQuickAdd.vue'
 import { pushUnique } from '@/utils/pushUnique'
+import { countryName } from '@/utils/contactCodes'
+import { useUiLang } from '@/composables/useUiLang'
 import type { Band, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 
 const URL_PLACEHOLDER = 'https://…' // i18n-ignore: URL scheme
 
@@ -50,7 +53,9 @@ const filteredAuthors = computed(() => {
     (a) =>
       a.name.toLowerCase().includes(q) ||
       (a.email ?? '').toLowerCase().includes(q) ||
-      (a.phone ?? '').toLowerCase().includes(q),
+      (a.phone ?? '').toLowerCase().includes(q) ||
+      // Prefix only: a substring would let "ana" pull in every contact in Ghana or Panama.
+      (countryName(a.country, uiLang.value) ?? '').toLowerCase().startsWith(q),
   )
 })
 
@@ -145,6 +150,7 @@ function submit() {
               @change="toggleAuthor(a.id)"
             />
             <span class="contact-name">{{ a.name }}</span>
+            <span v-if="a.country" class="contact-country" data-testid="contact-country">{{ countryName(a.country, uiLang) }}</span>
             <span class="contact-meta">{{ contactDetail(a) }}</span>
           </label>
         </div>
@@ -198,6 +204,11 @@ function submit() {
 .contact-item:hover { background: var(--c-1a1a1a); }
 .contact-check { accent-color: var(--c-888888); flex-shrink: 0; }
 .contact-name { font-size: var(--fs-xs); color: var(--c-e2e8f0); flex-shrink: 0; }
+.contact-country {
+  font-size: var(--fs-2xs); color: var(--c-94a3b8); white-space: nowrap;
+  min-width: 0; max-width: 9rem; overflow: hidden; text-overflow: ellipsis;
+  padding: 0 0.35rem; border: 1px solid var(--c-2a2a2a); border-radius: 0.25rem;
+}
 .contact-meta {
   font-size: var(--fs-2xs); color: var(--c-475569); margin-left: auto; padding-left: 0.75rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;

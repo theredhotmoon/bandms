@@ -26,6 +26,7 @@ test.describe.serial('Admin Bands — contact people', () => {
 
     await modal.getByPlaceholder('Jane Smith').fill(CONTACT_NAME)
     await modal.getByPlaceholder('jane@example.com').fill(CONTACT_EMAIL)
+    await modal.getByLabel('Country').selectOption('FR')
     await modal.getByRole('button', { name: 'Save' }).click()
 
     await expectToast(page, 'Author added')
@@ -44,6 +45,15 @@ test.describe.serial('Admin Bands — contact people', () => {
     // The picker lists every author; tick ours.
     const item = modal.locator('.contact-item').filter({ hasText: CONTACT_NAME })
     await expect(item).toBeVisible()
+    // The contact's country, named, so a band abroad can pick a local contact.
+    await expect(item.getByTestId('contact-country')).toHaveText('France')
+    // …and the picker's search finds contacts by the start of their country's name.
+    const search = modal.getByPlaceholder('Search contacts…')
+    if (await search.isVisible()) {
+      await search.fill('fran')
+      await expect(item).toBeVisible()
+      await search.fill('')
+    }
     await item.locator('input[type="checkbox"]').check()
 
     // A chip confirms the selection before saving.
