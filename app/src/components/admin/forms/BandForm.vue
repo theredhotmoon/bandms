@@ -4,7 +4,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import AuthorQuickAdd from '@/components/admin/forms/AuthorQuickAdd.vue'
 import { pushUnique } from '@/utils/pushUnique'
-import { countryName } from '@/utils/contactCodes'
+import { contactLanguageName, countryName } from '@/utils/contactCodes'
+import { matchesContactQuery } from '@/utils/contactSearch'
 import { useUiLang } from '@/composables/useUiLang'
 import type { Band, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
@@ -48,15 +49,7 @@ const showContactSearch = computed(() => props.authors.length > 6)
 
 const filteredAuthors = computed(() => {
   const q = contactSearch.value.trim().toLowerCase()
-  if (!q) return props.authors
-  return props.authors.filter(
-    (a) =>
-      a.name.toLowerCase().includes(q) ||
-      (a.email ?? '').toLowerCase().includes(q) ||
-      (a.phone ?? '').toLowerCase().includes(q) ||
-      // Prefix only: a substring would let "ana" pull in every contact in Ghana or Panama.
-      (countryName(a.country, uiLang.value) ?? '').toLowerCase().startsWith(q),
-  )
+  return props.authors.filter((a) => matchesContactQuery(a, q, uiLang.value))
 })
 
 /**
@@ -150,7 +143,9 @@ function submit() {
               @change="toggleAuthor(a.id)"
             />
             <span class="contact-name">{{ a.name }}</span>
-            <span v-if="a.country" class="contact-country" data-testid="contact-country">{{ countryName(a.country, uiLang) }}</span>
+            <!-- Two look-alike pills: the hidden prefix and the tooltip say which is which. -->
+            <span v-if="a.country" class="contact-tag" data-testid="contact-country" :title="$t('more.bands.form.countryTag')"><span class="sr-only">{{ $t('more.bands.form.countryTag') }}: </span>{{ countryName(a.country, uiLang) }}</span>
+            <span v-if="a.contact_language" class="contact-tag contact-tag--lang" data-testid="contact-language" :title="$t('more.bands.form.languageTag')"><span class="sr-only">{{ $t('more.bands.form.languageTag') }}: </span>{{ contactLanguageName(a.contact_language, uiLang) }}</span>
             <span class="contact-meta">{{ contactDetail(a) }}</span>
           </label>
         </div>
@@ -204,11 +199,12 @@ function submit() {
 .contact-item:hover { background: var(--c-1a1a1a); }
 .contact-check { accent-color: var(--c-888888); flex-shrink: 0; }
 .contact-name { font-size: var(--fs-xs); color: var(--c-e2e8f0); flex-shrink: 0; }
-.contact-country {
+.contact-tag {
   font-size: var(--fs-2xs); color: var(--c-94a3b8); white-space: nowrap;
-  min-width: 0; max-width: 9rem; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0; max-width: 7rem; overflow: hidden; text-overflow: ellipsis;
   padding: 0 0.35rem; border: 1px solid var(--c-2a2a2a); border-radius: 0.25rem;
 }
+.contact-tag--lang { border-style: dashed; }
 .contact-meta {
   font-size: var(--fs-2xs); color: var(--c-475569); margin-left: auto; padding-left: 0.75rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;

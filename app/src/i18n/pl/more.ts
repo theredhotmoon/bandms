@@ -259,6 +259,8 @@ export default {
       searchContacts: 'Szukaj kontaktów…',
       remove: 'Usuń {name}',
       noDetails: 'brak danych kontaktowych',
+      countryTag: 'Kraj',
+      languageTag: 'Preferowany język kontaktu',
     },
   },
 
