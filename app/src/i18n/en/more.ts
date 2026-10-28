@@ -274,6 +274,8 @@ export default {
       /** Carries `{name}` — the contact being removed. */
       remove: 'Remove {name}',
       noDetails: 'no contact details',
+      countryTag: 'Country',
+      languageTag: 'Preferred contact language',
     },
   },
 
