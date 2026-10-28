@@ -12,7 +12,10 @@ test.use({ storageState: 'e2e/.auth/admin.json' })
  */
 test.describe.serial('Admin Bands — contact people', () => {
   const stamp = `${Date.now()}${Math.floor(Math.random() * 1000)}`
-  const CONTACT_NAME = `E2E Contact ${stamp}`
+  // Two halves, so every surface below asserts the joined name, not a first name alone.
+  const CONTACT_FIRST = 'E2E'
+  const CONTACT_LAST = `Contact ${stamp}`
+  const CONTACT_NAME = `${CONTACT_FIRST} ${CONTACT_LAST}`
   const CONTACT_EMAIL = `e2e-contact-${stamp}@example.com`
   const BAND_NAME = `E2E Contact Band ${stamp}`
 
@@ -24,7 +27,8 @@ test.describe.serial('Admin Bands — contact people', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.getByPlaceholder('Jane Smith').fill(CONTACT_NAME)
+    await modal.getByLabel('First name').fill(CONTACT_FIRST)
+    await modal.getByLabel('Last name').fill(CONTACT_LAST)
     await modal.getByPlaceholder('jane@example.com').fill(CONTACT_EMAIL)
     await modal.getByLabel('Country').selectOption('FR')
     await modal.getByLabel('Preferred contact language').selectOption('fr')

@@ -5,6 +5,9 @@ return [
     'forbidden'       => 'Forbidden.',
     'not_found'       => 'Not found.',
 
+    // Shown by an admin tab still running a bundle older than the API it saves to.
+    'stale_admin'     => 'The admin panel was updated. Reload the page and save again.',
+
     /*
      * Messages a fan reads verbatim.
      *

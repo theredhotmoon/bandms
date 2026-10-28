@@ -3,9 +3,14 @@ import { test, expect } from '@playwright/test'
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 test.describe.serial('Admin Authors', () => {
-  const authorName = `E2E Author ${Date.now()}`
-  const authorEmail = `e2e-author-${Date.now()}@example.com`
-  const updatedName = `${authorName} Updated`
+  const stamp = Date.now()
+  const firstName = 'E2E'
+  const lastName = `Author ${stamp}`
+  // The table shows the two stored halves joined, so this is what a row reads.
+  const authorName = `${firstName} ${lastName}`
+  const authorEmail = `e2e-author-${stamp}@example.com`
+  const updatedLastName = `${lastName} Updated`
+  const updatedName = `${firstName} ${updatedLastName}`
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/authors')
@@ -16,14 +21,15 @@ test.describe.serial('Admin Authors', () => {
     await expect(page.getByRole('heading', { name: 'Authors & Contacts' })).toBeVisible()
   })
 
-  test('create author: fill name and email → toast "Author added" and row appears', async ({ page }) => {
+  test('create author: fill first name, last name and email → toast "Author added" and row appears', async ({ page }) => {
     await page.getByRole('button', { name: '+ Add author' }).click()
 
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
     await expect(modal.getByRole('heading', { name: 'Add author / contact' })).toBeVisible()
 
-    await modal.getByPlaceholder('Jane Smith').fill(authorName)
+    await modal.getByLabel('First name').fill(firstName)
+    await modal.getByLabel('Last name').fill(lastName)
     await modal.getByPlaceholder('jane@example.com').fill(authorEmail)
 
     await modal.getByRole('button', { name: 'Save' }).click()
@@ -40,7 +46,7 @@ test.describe.serial('Admin Authors', () => {
     await expect(page.getByRole('cell', { name: authorName })).toBeVisible({ timeout: 8000 })
   })
 
-  test('edit author: change name → toast "Author updated"', async ({ page }) => {
+  test('edit author: both halves load back, changing the last name → toast "Author updated"', async ({ page }) => {
     await page.locator('input[aria-label="Search"]').fill(authorName)
 
     const row = page.locator('tr').filter({ hasText: authorName })
@@ -50,9 +56,10 @@ test.describe.serial('Admin Authors', () => {
     await expect(modal).toBeVisible()
     await expect(modal.getByRole('heading', { name: 'Edit author / contact' })).toBeVisible()
 
-    const nameInput = modal.getByPlaceholder('Jane Smith')
-    await nameInput.clear()
-    await nameInput.fill(updatedName)
+    await expect(modal.getByLabel('First name')).toHaveValue(firstName)
+    const lastNameInput = modal.getByLabel('Last name')
+    await expect(lastNameInput).toHaveValue(lastName)
+    await lastNameInput.fill(updatedLastName)
 
     await modal.getByRole('button', { name: 'Save' }).click()
 
@@ -81,7 +88,7 @@ test.describe.serial('Admin Authors', () => {
     await page.locator('tr').filter({ hasText: updatedName }).getByRole('button', { name: 'Edit' }).click()
 
     const modal = page.locator('.modal-overlay')
-    await expect(modal.getByPlaceholder('Jane Smith')).toHaveValue(updatedName)
+    await expect(modal.getByLabel('Last name')).toHaveValue(updatedLastName)
 
     const country  = modal.getByLabel('Country')
     const language = modal.getByLabel('Preferred contact language')
@@ -153,7 +160,7 @@ test.describe.serial('Admin Authors', () => {
     await expect(modal).not.toBeVisible()
   })
 
-  test('validation: submit with empty name → browser required error', async ({ page }) => {
+  test('validation: submit with empty first name → browser required error, last name optional', async ({ page }) => {
     await page.getByRole('button', { name: '+ Add author' }).click()
 
     const modal = page.locator('.modal-overlay')
@@ -161,9 +168,10 @@ test.describe.serial('Admin Authors', () => {
 
     await modal.getByRole('button', { name: 'Save' }).click()
 
-    const nameInput = modal.getByPlaceholder('Jane Smith')
-    const validationMessage = await nameInput.evaluate((el: HTMLInputElement) => el.validationMessage)
+    const firstNameInput = modal.getByLabel('First name')
+    const validationMessage = await firstNameInput.evaluate((el: HTMLInputElement) => el.validationMessage)
     expect(validationMessage).not.toBe('')
+    expect(await modal.getByLabel('Last name').evaluate((el: HTMLInputElement) => el.required)).toBe(false)
   })
 
   test('validation: invalid email format → browser type error', async ({ page }) => {
@@ -172,7 +180,7 @@ test.describe.serial('Admin Authors', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.getByPlaceholder('Jane Smith').fill('Test Author Validation')
+    await modal.getByLabel('First name').fill('Test Author Validation')
     await modal.getByPlaceholder('jane@example.com').fill('not-an-email')
 
     await modal.getByRole('button', { name: 'Save' }).click()

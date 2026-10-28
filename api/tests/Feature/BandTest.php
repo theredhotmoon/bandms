@@ -210,8 +210,8 @@ describe('DELETE /api/bands/{band}', function () {
 describe('band contact people', function () {
     it('creates a band with contact people attached', function () {
         $this->actingAsAdmin();
-        $manager = Author::create(['name' => 'Mia Manager', 'email' => 'mia@mgmt.com']);
-        $booker  = Author::create(['name' => 'Bob Booker', 'phone' => '+48 111 222 333']);
+        $manager = Author::create(['first_name' => 'Mia Manager', 'email' => 'mia@mgmt.com']);
+        $booker  = Author::create(['first_name' => 'Bob Booker', 'phone' => '+48 111 222 333']);
 
         $this->postJson('/api/bands', [
             'name'       => 'Contactable Band',
@@ -226,10 +226,11 @@ describe('band contact people', function () {
     it('exposes contact details on the band listing', function () {
         $this->actingAsAdmin();
         $author = Author::create([
-            'name'     => 'Cara Contact',
-            'email'    => 'cara@example.com',
-            'phone'    => '+48 500 600 700',
-            'whatsapp' => '+48 500 600 700',
+            'first_name' => 'Cara',
+            'last_name'  => 'Contact',
+            'email'      => 'cara@example.com',
+            'phone'      => '+48 500 600 700',
+            'whatsapp'   => '+48 500 600 700',
         ]);
         $band = Band::create(['name' => 'Listed Band']);
         $band->authors()->attach($author);
@@ -244,8 +245,8 @@ describe('band contact people', function () {
 
     it('replaces contact people on update', function () {
         $this->actingAsAdmin();
-        $old = Author::create(['name' => 'Old Contact']);
-        $new = Author::create(['name' => 'New Contact']);
+        $old = Author::create(['first_name' => 'Old Contact']);
+        $new = Author::create(['first_name' => 'New Contact']);
         $band = Band::create(['name' => 'Switching Band']);
         $band->authors()->attach($old);
 
@@ -262,7 +263,7 @@ describe('band contact people', function () {
 
     it('clears contact people when an empty array is sent', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Doomed Contact']);
+        $author = Author::create(['first_name' => 'Doomed Contact']);
         $band = Band::create(['name' => 'Clearing Band']);
         $band->authors()->attach($author);
 
@@ -275,7 +276,7 @@ describe('band contact people', function () {
 
     it('keeps contact people when author_ids is omitted entirely', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Sticky Contact']);
+        $author = Author::create(['first_name' => 'Sticky Contact']);
         $band = Band::create(['name' => 'Renamed Band']);
         $band->authors()->attach($author);
 
@@ -315,7 +316,7 @@ describe('band contact people', function () {
 
     it('detaches the pivot row when a contact is deleted', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Temporary Contact']);
+        $author = Author::create(['first_name' => 'Temporary Contact']);
         $band = Band::create(['name' => 'Orphaned Band']);
         $band->authors()->attach($author);
 
@@ -326,7 +327,7 @@ describe('band contact people', function () {
 
     it('does not attach the same contact twice', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Once Only']);
+        $author = Author::create(['first_name' => 'Once Only']);
 
         $this->postJson('/api/bands', [
             'name'       => 'Dedupe Band',

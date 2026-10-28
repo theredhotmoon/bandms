@@ -11,12 +11,13 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AuthorController extends Controller
 {
     public function index(): ResourceCollection
     {
-        $authors = Author::orderBy('name')->get();
+        $authors = Author::orderByName()->get();
 
         return AuthorSummaryResource::collection($authors);
     }
@@ -69,8 +70,18 @@ class AuthorController extends Controller
 
     private function validatePayload(Request $request): array
     {
+        // An admin tab still running the bundle from before the name split
+        // sends `name`. Its form renders only `errors.name`, so a 422 on
+        // `first_name` would fail with nothing on screen. Splitting the name
+        // for it instead would silently undo a split the band corrected by
+        // hand ("Anna Maria" / "Kowalska") whenever that tab saved the notes.
+        if ($request->has('name') && ! $request->has('first_name')) {
+            throw ValidationException::withMessages(['name' => __('api.stale_admin')]);
+        }
+
         return $request->validate([
-            'name'                    => 'required|string|max:255',
+            'first_name'              => 'required|string|max:255',
+            'last_name'               => 'nullable|string|max:255',
             'email'                   => 'nullable|email|max:255',
             'whatsapp'                => 'nullable|string|max:50',
             'phone'                   => 'nullable|string|max:50',
