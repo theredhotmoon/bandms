@@ -64,3 +64,34 @@ export function countryOptions(uiLang: string): CodeOption[] {
 export function contactLanguageOptions(uiLang: string): CodeOption[] {
   return namedOptions(CONTACT_LANGUAGE_CODES, uiLang, 'language')
 }
+
+// Per-row lookups in a table; a find() over 250 options per cell adds up.
+const labelMaps = new WeakMap<CodeOption[], Map<string, string>>()
+
+function nameOf(options: CodeOption[], code: string | null): string | null {
+  if (!code) return null
+  let map = labelMaps.get(options)
+  if (!map) labelMaps.set(options, (map = new Map(options.map((o) => [o.code, o.label]))))
+  return map.get(code) ?? code
+}
+
+/** A stored country code's name in the admin's language; `null` when unset. */
+export function countryName(code: string | null, uiLang: string): string | null {
+  return nameOf(countryOptions(uiLang), code)
+}
+
+/** A stored contact-language code's name in the admin's language; `null` when unset. */
+export function contactLanguageName(code: string | null, uiLang: string): string | null {
+  return nameOf(contactLanguageOptions(uiLang), code)
+}
+
+/**
+ * The subset of `options` some record actually holds, in the same order as
+ * the form's dropdown; a code no longer on the list is kept, named by itself.
+ */
+export function usedOptions(options: CodeOption[], codes: (string | null)[]): CodeOption[] {
+  const used = new Set(codes.filter((c): c is string => !!c))
+  const known = options.filter((o) => used.has(o.code))
+  const unknown = [...used].filter((c) => !known.some((o) => o.code === c)).map((code) => ({ code, label: code }))
+  return [...known, ...unknown]
+}

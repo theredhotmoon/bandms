@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useUiLang } from '@/composables/useUiLang'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -17,6 +17,7 @@ import { useTours } from '@/composables/useTours'
 import { useBands } from '@/composables/useBands'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
+import { contactLanguageName, contactLanguageOptions, countryName, countryOptions, usedOptions } from '@/utils/contactCodes'
 import type { AuthorSummary, AuthorPayload } from '@/types/author'
 
 const { t } = useI18n()
@@ -36,13 +37,35 @@ const confirmId   = ref<number | null>(null)
 
 const fullRecord = useAuthor(computed(() => editingId.value))
 
+const filterCountry  = ref('')
+const filterLanguage = ref('')
+
+const filteredData = computed(() => (query.data.value ?? []).filter((a) =>
+  (!filterCountry.value  || a.country === filterCountry.value) &&
+  (!filterLanguage.value || a.contact_language === filterLanguage.value),
+))
+
+// Only the codes some contact actually holds — a 250-row filter of empty matches helps nobody.
+const usedCountries = computed(() => usedOptions(countryOptions(uiLang.value), (query.data.value ?? []).map((a) => a.country)))
+const usedLanguages = computed(() => usedOptions(contactLanguageOptions(uiLang.value), (query.data.value ?? []).map((a) => a.contact_language)))
+
+// Editing or deleting the last matching contact removes its code from the
+// options; a filter left on it would hide every row behind a select that no
+// longer shows — or, with no codes left, is not rendered at all.
+watch(usedCountries, (opts) => { if (filterCountry.value && !opts.some((o) => o.code === filterCountry.value)) filterCountry.value = '' })
+watch(usedLanguages, (opts) => { if (filterLanguage.value && !opts.some((o) => o.code === filterLanguage.value)) filterLanguage.value = '' })
+
 const tc = useTableControls<AuthorSummary>({
-  data: query.data,
+  data: filteredData,
   searchFn: (a, q) =>
     a.name.toLowerCase().includes(q) ||
     (a.email ?? '').toLowerCase().includes(q),
   defaultSort: 'name',
 })
+
+// useTableControls resets the page when the row count changes, which a
+// switch between two equally sized filters does not do.
+watch([filterCountry, filterLanguage], () => { tc.page.value = 1 })
 
 const modalTitle = computed(() => isCreating.value ? t('content.authors.modalNew') : t('content.authors.modalEdit'))
 
@@ -107,10 +130,21 @@ async function confirmDelete() {
         <div v-if="query.isPending.value" class="empty-state">{{ $t('common.state.loading') }}</div>
         <div v-else-if="query.isError.value" class="empty-state" style="color:var(--c-f87171);">{{ $t('content.authors.loadFailed') }}</div>
         <template v-else>
-          <TableToolbar v-model:search="tc.search.value" :total="tc.rawTotal.value" :showing="tc.total.value" />
+          <TableToolbar v-model:search="tc.search.value" :total="query.data.value?.length ?? 0" :showing="tc.total.value">
+            <template #filters>
+              <select v-if="usedCountries.length" v-model="filterCountry" class="filter-select" :aria-label="$t('content.authors.filters.country')">
+                <option value="">{{ $t('content.authors.filters.allCountries') }}</option>
+                <option v-for="c in usedCountries" :key="c.code" :value="c.code">{{ c.label }}</option>
+              </select>
+              <select v-if="usedLanguages.length" v-model="filterLanguage" class="filter-select" :aria-label="$t('content.authors.filters.language')">
+                <option value="">{{ $t('content.authors.filters.allLanguages') }}</option>
+                <option v-for="l in usedLanguages" :key="l.code" :value="l.code">{{ l.label }}</option>
+              </select>
+            </template>
+          </TableToolbar>
 
           <div v-if="!tc.paginated.value.length" class="empty-state">
-            <span v-if="!tc.rawTotal.value">{{ $t('content.authors.empty') }}</span>
+            <span v-if="!query.data.value?.length">{{ $t('content.authors.empty') }}</span>
             <span v-else>{{ $t('content.authors.noMatch') }}</span>
           </div>
           <table v-else class="w-full">
@@ -118,6 +152,8 @@ async function confirmDelete() {
               <tr style="border-bottom:1px solid var(--c-222222);">
                 <SortHeader :label="$t('common.fields.name')" sort-key="name" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('content.authors.columns.channels') }}</th>
+                <th class="th">{{ $t('content.authors.columns.country') }}</th>
+                <th class="th">{{ $t('content.authors.columns.language') }}</th>
                 <th class="th">{{ $t('content.authors.columns.notes') }}</th>
                 <SortHeader :label="$t('content.authors.columns.added')" sort-key="created_at" :current="tc.sortKey.value" :dir="tc.sortDir.value" width="9rem" @sort="tc.toggleSort" />
                 <th class="th text-right">{{ $t('common.table.actions') }}</th>
@@ -133,6 +169,8 @@ async function confirmDelete() {
                     <span v-if="author.whatsapp" class="contact-chip contact-chip--whatsapp" :title="author.whatsapp">{{ $t('content.authors.chip.whatsapp') }}</span>
                   </div>
                 </td>
+                <td class="td meta-cell" data-testid="author-country">{{ countryName(author.country, uiLang) ?? '—' }}</td>
+                <td class="td meta-cell" data-testid="author-language">{{ contactLanguageName(author.contact_language, uiLang) ?? '—' }}</td>
                 <td class="td notes-cell">{{ author.notes ?? '—' }}</td>
                 <td class="td" style="color:var(--c-475569); font-size:var(--fs-xs); white-space:nowrap;">
                   {{ new Date(author.created_at).toLocaleDateString(uiLang, { day: 'numeric', month: 'short', year: 'numeric' }) }}
@@ -199,6 +237,7 @@ async function confirmDelete() {
   font-size: var(--fs-xs); color: var(--c-475569);
   max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.meta-cell { font-size: var(--fs-xs); color: var(--c-94a3b8); white-space: nowrap; }
 .contact-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .contact-chip {
   display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.25rem;
