@@ -24,7 +24,7 @@ test.describe.serial('Admin Bands — contact people', () => {
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
 
-    await modal.getByPlaceholder('Jane Smith').fill(CONTACT_NAME)
+    await modal.getByLabel('First name').fill(CONTACT_NAME)
     await modal.getByPlaceholder('jane@example.com').fill(CONTACT_EMAIL)
     await modal.getByLabel('Country').selectOption('FR')
     await modal.getByLabel('Preferred contact language').selectOption('fr')

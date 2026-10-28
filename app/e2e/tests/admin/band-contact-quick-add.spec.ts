@@ -39,7 +39,7 @@ test.describe('Admin Bands — contact from inside the band form', () => {
     // The band form underneath is inert while the contact form is up.
     await expect(outer).toHaveAttribute('inert', '')
 
-    await inner.getByPlaceholder('Jane Smith').fill(CONTACT_NAME)
+    await inner.getByLabel('First name').fill(CONTACT_NAME)
     const created = page.waitForResponse(r => r.url().endsWith('/api/authors') && r.request().method() === 'POST')
     await inner.getByRole('button', { name: 'Save' }).click()
     authorId = ((await (await created).json()) as { data: { id: number } }).data.id

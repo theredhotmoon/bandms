@@ -36,7 +36,8 @@ const emit = defineEmits<{
 }>()
 
 const form = reactive({
-  name:     '',
+  first_name: '',
+  last_name:  '',
   email:    '',
   whatsapp: '',
   phone:    '',
@@ -65,7 +66,8 @@ const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 watch(
   () => props.initial,
   (val) => {
-    form.name     = val?.name     ?? ''
+    form.first_name = val?.first_name ?? ''
+    form.last_name  = val?.last_name  ?? ''
     form.email    = val?.email    ?? ''
     form.whatsapp = val?.whatsapp ?? ''
     form.phone    = val?.phone    ?? ''
@@ -116,7 +118,8 @@ function concertLabel(c: Concert) {
 
 function submit() {
   emit('submit', {
-    name:              form.name,
+    first_name:        form.first_name,
+    last_name:         form.last_name || null,
     email:             form.email    || null,
     whatsapp:          form.whatsapp || null,
     phone:             form.phone    || null,
@@ -137,10 +140,17 @@ function submit() {
   <form @submit.prevent="submit" class="flex flex-col gap-4">
 
     <!-- Name -->
-    <div>
-      <label class="field-label">{{ $t('common.fields.name') }} <span class="field-req">*</span></label>
-      <input v-model="form.name" required class="field-input" :placeholder="$t('content.authors.namePlaceholder')" />
-      <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
+    <div class="contact-grid">
+      <div>
+        <label class="field-label" for="author-first-name">{{ $t('content.authors.firstName') }} <span class="field-req">*</span></label>
+        <input id="author-first-name" v-model="form.first_name" required class="field-input" :placeholder="$t('content.authors.firstNamePlaceholder')" />
+        <p v-if="errors?.first_name" class="field-error">{{ errors.first_name[0] }}</p>
+      </div>
+      <div>
+        <label class="field-label" for="author-last-name">{{ $t('content.authors.lastName') }}</label>
+        <input id="author-last-name" v-model="form.last_name" class="field-input" :placeholder="$t('content.authors.lastNamePlaceholder')" />
+        <p v-if="errors?.last_name" class="field-error">{{ errors.last_name[0] }}</p>
+      </div>
     </div>
 
     <!-- Contact details -->

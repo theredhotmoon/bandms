@@ -22,14 +22,17 @@ describe('GET /api/authors', function () {
         $this->getJson('/api/authors')->assertForbidden();
     });
 
-    it('returns authors ordered by name', function () {
+    it('returns authors ordered by first name, then last name', function () {
         $this->actingAsAdmin();
-        Author::create(['name' => 'Zara Jones']);
-        Author::create(['name' => 'Alice Smith']);
+        Author::create(['first_name' => 'Zara', 'last_name' => 'Adams']);
+        Author::create(['first_name' => 'Alice', 'last_name' => 'Smith']);
+        Author::create(['first_name' => 'Alice', 'last_name' => 'Jones']);
 
         $this->getJson('/api/authors')
             ->assertSuccessful()
-            ->assertJsonPath('data.0.name', 'Alice Smith');
+            ->assertJsonPath('data.0.name', 'Alice Jones')
+            ->assertJsonPath('data.1.name', 'Alice Smith')
+            ->assertJsonPath('data.2.name', 'Zara Adams');
     });
 });
 
@@ -37,17 +40,19 @@ describe('GET /api/authors', function () {
 
 describe('GET /api/authors/{author}', function () {
     it('returns 401 without authentication', function () {
-        $author = Author::create(['name' => 'Private Person']);
+        $author = Author::create(['first_name' => 'Private Person']);
 
         $this->getJson("/api/authors/{$author->id}")->assertUnauthorized();
     });
 
     it('returns the author', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Bob Brown', 'email' => 'bob@music.com']);
+        $author = Author::create(['first_name' => 'Bob', 'last_name' => 'Brown', 'email' => 'bob@music.com']);
 
         $this->getJson("/api/authors/{$author->id}")
             ->assertSuccessful()
+            ->assertJsonPath('data.first_name', 'Bob')
+            ->assertJsonPath('data.last_name', 'Brown')
             ->assertJsonPath('data.name', 'Bob Brown')
             ->assertJsonPath('data.email', 'bob@music.com');
     });
@@ -63,36 +68,49 @@ describe('GET /api/authors/{author}', function () {
 
 describe('POST /api/authors', function () {
     it('returns 401 without authentication', function () {
-        $this->postJson('/api/authors', ['name' => 'Test'])->assertUnauthorized();
+        $this->postJson('/api/authors', ['first_name' => 'Test'])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-        $this->postJson('/api/authors', ['name' => 'Test'])->assertForbidden();
+        $this->postJson('/api/authors', ['first_name' => 'Test'])->assertForbidden();
     });
 
-    it('creates an author with required fields', function () {
+    it('stores first and last name in separate columns', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/authors', ['name' => 'Jane Journalist'])
+        $this->postJson('/api/authors', ['first_name' => 'Jane', 'last_name' => 'Journalist'])
             ->assertCreated()
+            ->assertJsonPath('data.first_name', 'Jane')
+            ->assertJsonPath('data.last_name', 'Journalist')
             ->assertJsonPath('data.name', 'Jane Journalist');
 
-        $this->assertDatabaseHas('authors', ['name' => 'Jane Journalist']);
+        $this->assertDatabaseHas('authors', ['first_name' => 'Jane', 'last_name' => 'Journalist']);
+    });
+
+    // A contact can be one word — a radio desk, a promoter's alias.
+    it('accepts an author with no last name', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', ['first_name' => 'Radio 357'])
+            ->assertCreated()
+            ->assertJsonPath('data.last_name', null)
+            ->assertJsonPath('data.name', 'Radio 357');
     });
 
     it('creates an author with all contact fields', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/authors', [
-            'name'      => 'Full Contact',
-            'email'     => 'full@press.com',
-            'phone'     => '+48 123 456 789',
-            'whatsapp'  => '+48 123 456 789',
-            'facebook'  => 'https://facebook.com/full',
-            'instagram' => 'fullcontact',
-            'notes'     => 'Met at a festival.',
+            'first_name' => 'Full',
+            'last_name'  => 'Contact',
+            'email'      => 'full@press.com',
+            'phone'      => '+48 123 456 789',
+            'whatsapp'   => '+48 123 456 789',
+            'facebook'   => 'https://facebook.com/full',
+            'instagram'  => 'fullcontact',
+            'notes'      => 'Met at a festival.',
         ])->assertCreated()
           ->assertJsonPath('data.email', 'full@press.com')
           ->assertJsonPath('data.notes', 'Met at a festival.');
@@ -102,36 +120,37 @@ describe('POST /api/authors', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/authors', [
-            'name'             => 'Abroad Contact',
+            'first_name'       => 'Abroad',
             'country'          => 'DE',
             'contact_language' => 'de',
         ])->assertCreated()
           ->assertJsonPath('data.country', 'DE')
           ->assertJsonPath('data.contact_language', 'de');
 
-        $this->assertDatabaseHas('authors', ['name' => 'Abroad Contact', 'country' => 'DE', 'contact_language' => 'de']);
+        $this->assertDatabaseHas('authors', ['first_name' => 'Abroad', 'country' => 'DE', 'contact_language' => 'de']);
     });
 
     it('rejects a country or language outside the code lists', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/authors', ['name' => 'Test', 'country' => 'Germany', 'contact_language' => 'xx'])
+        $this->postJson('/api/authors', ['first_name' => 'Test', 'country' => 'Germany', 'contact_language' => 'xx'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['country', 'contact_language']);
     });
 
-    it('validates name is required', function () {
+    it('validates first name is required', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/authors', ['email' => 'no-name@example.com'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['first_name'])
+            ->assertJsonMissingValidationErrors(['last_name']);
     });
 
     it('validates email must be a valid email address', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/authors', ['name' => 'Test', 'email' => 'not-an-email'])
+        $this->postJson('/api/authors', ['first_name' => 'Test', 'email' => 'not-an-email'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email']);
     });
@@ -141,33 +160,44 @@ describe('POST /api/authors', function () {
 
 describe('PUT /api/authors/{author}', function () {
     it('returns 401 without authentication', function () {
-        $author = Author::create(['name' => 'A']);
+        $author = Author::create(['first_name' => 'A']);
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'B'])->assertUnauthorized();
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'B'])->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $author = Author::create(['name' => 'A']);
+        $author = Author::create(['first_name' => 'A']);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'B'])->assertForbidden();
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'B'])->assertForbidden();
     });
 
     it('updates an author', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Old Name', 'notes' => 'Old note']);
+        $author = Author::create(['first_name' => 'Old', 'last_name' => 'Name', 'notes' => 'Old note']);
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'New Name', 'notes' => 'Updated note'])
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'New', 'last_name' => 'Surname', 'notes' => 'Updated note'])
             ->assertSuccessful()
-            ->assertJsonPath('data.name', 'New Name')
+            ->assertJsonPath('data.name', 'New Surname')
             ->assertJsonPath('data.notes', 'Updated note');
+    });
+
+    it('clears the last name when sent as null', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['first_name' => 'Ann', 'last_name' => 'Gone']);
+
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'Ann', 'last_name' => null])
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'Ann');
+
+        expect($author->fresh()->last_name)->toBeNull();
     });
 
     it('clears country and contact language when sent as null', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'A', 'country' => 'PL', 'contact_language' => 'pl']);
+        $author = Author::create(['first_name' => 'A', 'country' => 'PL', 'contact_language' => 'pl']);
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'A', 'country' => null, 'contact_language' => null])
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'A', 'country' => null, 'contact_language' => null])
             ->assertSuccessful()
             ->assertJsonPath('data.country', null)
             ->assertJsonPath('data.contact_language', null);
@@ -176,7 +206,7 @@ describe('PUT /api/authors/{author}', function () {
     it('returns 404 for a non-existent author', function () {
         $this->actingAsAdmin();
 
-        $this->putJson('/api/authors/9999', ['name' => 'X'])->assertNotFound();
+        $this->putJson('/api/authors/9999', ['first_name' => 'X'])->assertNotFound();
     });
 });
 
@@ -184,13 +214,13 @@ describe('PUT /api/authors/{author}', function () {
 
 describe('DELETE /api/authors/{author}', function () {
     it('returns 401 without authentication', function () {
-        $author = Author::create(['name' => 'A']);
+        $author = Author::create(['first_name' => 'A']);
 
         $this->deleteJson("/api/authors/{$author->id}")->assertUnauthorized();
     });
 
     it('returns 403 for non-admin roles', function () {
-        $author = Author::create(['name' => 'A']);
+        $author = Author::create(['first_name' => 'A']);
         Passport::actingAs(User::factory()->create(['role' => 'member']));
 
         $this->deleteJson("/api/authors/{$author->id}")->assertForbidden();
@@ -198,7 +228,7 @@ describe('DELETE /api/authors/{author}', function () {
 
     it('deletes an author', function () {
         $this->actingAsAdmin();
-        $author = Author::create(['name' => 'Gone Author']);
+        $author = Author::create(['first_name' => 'Gone Author']);
 
         $this->deleteJson("/api/authors/{$author->id}")->assertNoContent();
 
@@ -219,7 +249,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/authors', [
-            'name'         => 'Linked Author',
+            'first_name'   => 'Linked Author',
             'social_links' => [
                 ['platform' => 'instagram', 'url' => 'https://instagram.com/linked'],
                 ['platform' => 'twitter',   'url' => 'https://twitter.com/linked'],
@@ -228,7 +258,7 @@ describe('author social links', function () {
           ->assertJsonCount(2, 'data.social_links')
           ->assertJsonPath('data.social_links.0.url', 'https://instagram.com/linked');
 
-        $author = Author::where('name', 'Linked Author')->firstOrFail();
+        $author = Author::where('first_name', 'Linked Author')->firstOrFail();
 
         $this->assertDatabaseHas('social_links', [
             'author_id' => $author->id,
@@ -241,7 +271,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Fetch Me',
+            'first_name'   => 'Fetch Me',
             'social_links' => [['platform' => 'facebook', 'url' => 'https://facebook.com/fetchme']],
         ])->json('data.id');
 
@@ -255,12 +285,12 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Swap Links',
+            'first_name'   => 'Swap Links',
             'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/old']],
         ])->json('data.id');
 
         $this->putJson("/api/authors/{$id}", [
-            'name'         => 'Swap Links',
+            'first_name'   => 'Swap Links',
             'social_links' => [['platform' => 'website', 'url' => 'https://swap.example.com']],
         ])->assertSuccessful()
           ->assertJsonCount(1, 'data.social_links')
@@ -273,7 +303,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $this->postJson('/api/authors', [
-            'name'         => 'Not The Band',
+            'first_name'   => 'Not The Band',
             'social_links' => [['platform' => 'instagram', 'url' => 'https://instagram.com/journalist']],
         ])->assertCreated();
 
@@ -286,7 +316,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Ordered Author',
+            'first_name'   => 'Ordered Author',
             'social_links' => [
                 ['platform' => 'website',   'url' => 'https://first.example.com'],
                 ['platform' => 'instagram', 'url' => 'https://instagram.com/second'],
@@ -304,7 +334,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Shuffled Author',
+            'first_name'   => 'Shuffled Author',
             'social_links' => [
                 ['platform' => 'website',   'url' => 'https://a.example.com'],
                 ['platform' => 'instagram', 'url' => 'https://b.example.com'],
@@ -326,7 +356,7 @@ describe('author social links', function () {
         $this->actingAsAdmin();
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Reorder Me',
+            'first_name'   => 'Reorder Me',
             'social_links' => [
                 ['platform' => 'website',   'url' => 'https://one.example.com'],
                 ['platform' => 'instagram', 'url' => 'https://two.example.com'],
@@ -334,7 +364,7 @@ describe('author social links', function () {
         ])->json('data.id');
 
         $this->putJson("/api/authors/{$id}", [
-            'name'         => 'Reorder Me',
+            'first_name'   => 'Reorder Me',
             'social_links' => [
                 ['platform' => 'instagram', 'url' => 'https://two.example.com'],
                 ['platform' => 'website',   'url' => 'https://one.example.com'],
@@ -356,7 +386,7 @@ describe('author social links', function () {
         ]);
 
         $id = $this->postJson('/api/authors', [
-            'name'         => 'Smuggler',
+            'first_name'   => 'Smuggler',
             'social_links' => [[
                 'platform'   => 'instagram',
                 'url'        => 'https://instagram.com/smuggled',
@@ -385,7 +415,7 @@ describe('author bands', function () {
         $this->actingAsAdmin();
         $band = Band::create(['name' => 'Linked Band']);
 
-        $this->postJson('/api/authors', ['name' => 'Band Contact', 'band_ids' => [$band->id]])
+        $this->postJson('/api/authors', ['first_name' => 'Band Contact', 'band_ids' => [$band->id]])
             ->assertCreated()
             ->assertJsonCount(1, 'data.bands')
             ->assertJsonPath('data.bands.0.name', 'Linked Band');
@@ -397,10 +427,10 @@ describe('author bands', function () {
         $this->actingAsAdmin();
         $old = Band::create(['name' => 'Dropped Band']);
         $new = Band::create(['name' => 'Added Band']);
-        $author = Author::create(['name' => 'Switching Contact']);
+        $author = Author::create(['first_name' => 'Switching Contact']);
         $author->bands()->attach($old);
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'Switching Contact', 'band_ids' => [$new->id]])
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'Switching Contact', 'band_ids' => [$new->id]])
             ->assertSuccessful()
             ->assertJsonCount(1, 'data.bands')
             ->assertJsonPath('data.bands.0.name', 'Added Band');
@@ -411,7 +441,7 @@ describe('author bands', function () {
     it('validates that every band id exists', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/authors', ['name' => 'Bad Bands', 'band_ids' => [9999]])
+        $this->postJson('/api/authors', ['first_name' => 'Bad Bands', 'band_ids' => [9999]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['band_ids.0']);
     });
@@ -419,10 +449,10 @@ describe('author bands', function () {
     it('keeps bands when band_ids is omitted entirely', function () {
         $this->actingAsAdmin();
         $band = Band::create(['name' => 'Kept Band']);
-        $author = Author::create(['name' => 'Renamed Contact']);
+        $author = Author::create(['first_name' => 'Renamed Contact']);
         $author->bands()->attach($band);
 
-        $this->putJson("/api/authors/{$author->id}", ['name' => 'Renamed Contact 2'])
+        $this->putJson("/api/authors/{$author->id}", ['first_name' => 'Renamed Contact 2'])
             ->assertSuccessful()
             ->assertJsonCount(1, 'data.bands');
 
@@ -432,7 +462,7 @@ describe('author bands', function () {
     it('detaches the pivot row when a band is deleted', function () {
         $this->actingAsAdmin();
         $band = Band::create(['name' => 'Doomed Band']);
-        $author = Author::create(['name' => 'Surviving Contact']);
+        $author = Author::create(['first_name' => 'Surviving Contact']);
         $author->bands()->attach($band);
 
         $band->delete();

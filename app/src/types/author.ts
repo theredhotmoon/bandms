@@ -2,7 +2,10 @@ import type { SocialLinkPayload } from '@bandms/rider-core'
 
 export interface AuthorSummary {
   id: number
+  /** "First Last", composed by the API — display only, never sent back. */
   name: string
+  first_name: string
+  last_name: string | null
   email: string | null
   whatsapp: string | null
   phone: string | null
@@ -51,7 +54,8 @@ export interface Author extends AuthorSummary {
 }
 
 export interface AuthorPayload {
-  name: string
+  first_name: string
+  last_name: string | null
   email: string | null
   whatsapp: string | null
   phone: string | null

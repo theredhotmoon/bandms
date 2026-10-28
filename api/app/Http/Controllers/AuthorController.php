@@ -16,7 +16,7 @@ class AuthorController extends Controller
 {
     public function index(): ResourceCollection
     {
-        $authors = Author::orderBy('name')->get();
+        $authors = Author::orderBy('first_name')->orderBy('last_name')->get();
 
         return AuthorSummaryResource::collection($authors);
     }
@@ -70,7 +70,8 @@ class AuthorController extends Controller
     private function validatePayload(Request $request): array
     {
         return $request->validate([
-            'name'                    => 'required|string|max:255',
+            'first_name'              => 'required|string|max:255',
+            'last_name'               => 'nullable|string|max:255',
             'email'                   => 'nullable|email|max:255',
             'whatsapp'                => 'nullable|string|max:50',
             'phone'                   => 'nullable|string|max:50',
