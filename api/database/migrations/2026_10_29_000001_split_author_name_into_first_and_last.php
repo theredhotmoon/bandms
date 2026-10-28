@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -18,13 +19,24 @@ return new class extends Migration
 
         // First word is the first name, the rest the last name — right for
         // "Anna Kowalska" and "Jan van der Berg", wrong for a double first
-        // name, which the band can fix in the form. Nothing is lost either way:
-        // the two halves rejoin to the original string.
+        // name, which the band can fix in the form. The two halves rejoin to
+        // the original string, which is what down() relies on.
+        //
+        // No /u on the pattern: with it, a name holding invalid UTF-8 makes
+        // preg_split return false, first_name is written NULL and the NOT NULL
+        // change below dies half-way through a non-transactional MySQL DDL.
+        // Splitting on ASCII whitespace never touches a multibyte sequence.
         foreach (DB::table('authors')->orderBy('id')->get(['id', 'name']) as $row) {
-            $parts = preg_split('/\s+/u', trim((string) $row->name), 2);
+            $name  = trim((string) $row->name);
+            $parts = $name === '' ? [] : preg_split('/\s+/', $name, 2);
+
+            if ($parts === []) {
+                // The API always required a name; only direct SQL leaves one blank.
+                Log::warning("authors.{$row->id} had a blank name; first_name set to '?'");
+            }
 
             DB::table('authors')->where('id', $row->id)->update([
-                'first_name' => $parts[0] !== '' ? $parts[0] : '?',
+                'first_name' => $parts[0] ?? '?',
                 'last_name'  => $parts[1] ?? null,
             ]);
         }
@@ -47,7 +59,9 @@ return new class extends Migration
             ]);
         }
 
+        // NOT NULL, as create_authors_table made it.
         Schema::table('authors', function (Blueprint $table) {
+            $table->string('name')->nullable(false)->change();
             $table->dropColumn(['first_name', 'last_name']);
         });
     }

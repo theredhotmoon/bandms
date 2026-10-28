@@ -23,6 +23,6 @@ class Band extends Model
      */
     public function authors(): BelongsToMany
     {
-        return $this->belongsToMany(Author::class, 'author_bands')->orderBy('authors.first_name')->orderBy('authors.last_name');
+        return $this->belongsToMany(Author::class, 'author_bands')->orderByName();
     }
 }

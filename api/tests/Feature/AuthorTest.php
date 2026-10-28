@@ -5,6 +5,7 @@ use App\Models\Band;
 use App\Models\BandMember;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Passport;
 
 // ── GET /api/authors ──────────────────────────────────────────────────────────
@@ -469,5 +470,75 @@ describe('author bands', function () {
 
         $this->assertDatabaseMissing('author_bands', ['author_id' => $author->id]);
         $this->assertDatabaseHas('authors', ['id' => $author->id]);
+    });
+});
+
+// ── Splitting the old single name ─────────────────────────────────────────────
+
+describe('author first and last name', function () {
+    it('backfills first and last name from the old name column', function () {
+        $migration = require database_path('migrations/2026_10_29_000001_split_author_name_into_first_and_last.php');
+        $migration->down();
+
+        $rows = [
+            'anna'   => 'Anna Kowalska',
+            'dutch'  => 'Jan  van der Berg',
+            'single' => 'Radio357',
+            'blank'  => '   ',
+        ];
+        $ids = [];
+        foreach ($rows as $key => $name) {
+            $ids[$key] = DB::table('authors')->insertGetId(['name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $migration->up();
+
+        $read = fn (string $key) => (array) DB::table('authors')->where('id', $ids[$key])->first(['first_name', 'last_name']);
+        expect($read('anna'))->toBe(['first_name' => 'Anna', 'last_name' => 'Kowalska'])
+            ->and($read('dutch'))->toBe(['first_name' => 'Jan', 'last_name' => 'van der Berg'])
+            ->and($read('single'))->toBe(['first_name' => 'Radio357', 'last_name' => null])
+            ->and($read('blank'))->toBe(['first_name' => '?', 'last_name' => null])
+            ->and(Schema::hasColumn('authors', 'name'))->toBeFalse();
+    });
+
+    it('rolls back to a single name holding both halves', function () {
+        $author = Author::create(['first_name' => 'Anna', 'last_name' => 'Kowalska']);
+        $solo   = Author::create(['first_name' => 'Radio357']);
+
+        $migration = require database_path('migrations/2026_10_29_000001_split_author_name_into_first_and_last.php');
+        $migration->down();
+
+        expect(DB::table('authors')->where('id', $author->id)->value('name'))->toBe('Anna Kowalska')
+            ->and(DB::table('authors')->where('id', $solo->id)->value('name'))->toBe('Radio357');
+
+        $migration->up();
+    });
+
+    // An admin tab still on the bundle from before the split sends `name`.
+    it('accepts the legacy single name and splits it', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', ['name' => 'Jan van der Berg'])
+            ->assertCreated()
+            ->assertJsonPath('data.first_name', 'Jan')
+            ->assertJsonPath('data.last_name', 'van der Berg');
+    });
+
+    it('prefers first_name over a legacy name sent beside it', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/authors', ['first_name' => 'Anna', 'name' => 'Ignored Name'])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Anna');
+    });
+
+    it('splits a name written through the model instead of failing on a missing column', function () {
+        $author = new Author;
+        $author->name = 'Anna Kowalska';
+        $author->save();
+
+        expect($author->fresh())
+            ->first_name->toBe('Anna')
+            ->last_name->toBe('Kowalska');
     });
 });

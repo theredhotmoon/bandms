@@ -16,7 +16,7 @@ class AuthorController extends Controller
 {
     public function index(): ResourceCollection
     {
-        $authors = Author::orderBy('first_name')->orderBy('last_name')->get();
+        $authors = Author::orderByName()->get();
 
         return AuthorSummaryResource::collection($authors);
     }
@@ -69,6 +69,13 @@ class AuthorController extends Controller
 
     private function validatePayload(Request $request): array
     {
+        // An admin tab still running the bundle from before the name split
+        // sends `name`. Without this it gets a 422 on `first_name`, a field
+        // its form does not have, so the save fails with nothing on screen.
+        if (! $request->has('first_name') && $request->filled('name')) {
+            $request->merge(Author::splitName((string) $request->string('name')));
+        }
+
         return $request->validate([
             'first_name'              => 'required|string|max:255',
             'last_name'               => 'nullable|string|max:255',
