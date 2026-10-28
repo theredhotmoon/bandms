@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
+import { useUiLang } from '@/composables/useUiLang'
+import { contactLanguageOptions, countryOptions } from '@/utils/contactCodes'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import type { Author, AuthorPayload } from '@/types/author'
 import type { SocialLinkPayload } from '@bandms/rider-core'
@@ -11,6 +13,12 @@ import type { TourSummary } from '@/types/tour'
 import type { Band } from '@/types/band'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
+
+const PHONE_PLACEHOLDER = '+48 123 456 789' // i18n-ignore: number format example, no words
+
+const countries = computed(() => countryOptions(uiLang.value))
+const languages = computed(() => contactLanguageOptions(uiLang.value))
 
 const props = defineProps<{
   initial?: Author | null
@@ -32,6 +40,8 @@ const form = reactive({
   email:    '',
   whatsapp: '',
   phone:    '',
+  country:  '',
+  contact_language: '',
   notes:    '',
 })
 
@@ -59,6 +69,8 @@ watch(
     form.email    = val?.email    ?? ''
     form.whatsapp = val?.whatsapp ?? ''
     form.phone    = val?.phone    ?? ''
+    form.country  = val?.country  ?? ''
+    form.contact_language = val?.contact_language ?? ''
     form.notes    = val?.notes    ?? ''
     socialLinks.value           = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
     press_release_ids.value = val?.press_releases?.map((p) => p.id) ?? []
@@ -108,6 +120,8 @@ function submit() {
     email:             form.email    || null,
     whatsapp:          form.whatsapp || null,
     phone:             form.phone    || null,
+    country:           form.country  || null,
+    contact_language:  form.contact_language || null,
     notes:             form.notes    || null,
     social_links:      socialLinks.value,
     press_release_ids: press_release_ids.value,
@@ -138,22 +152,38 @@ function submit() {
       </div>
       <div>
         <label class="field-label">{{ $t('common.fields.phone') }}</label>
-        <input v-model="form.phone" class="field-input" placeholder="+48 123 456 789" <!-- i18n-ignore: number format example, no words --> />
+        <input v-model="form.phone" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
       </div>
       <div>
         <label class="field-label">{{ $t('content.authors.whatsapp') }}</label>
-        <input v-model="form.whatsapp" class="field-input" placeholder="+48 123 456 789" <!-- i18n-ignore: number format example, no words --> />
+        <input v-model="form.whatsapp" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
+      </div>
+      <div>
+        <label class="field-label" for="author-country">{{ $t('content.authors.country') }}</label>
+        <select id="author-country" v-model="form.country" class="field-input">
+          <option value="">{{ $t('content.authors.notSet') }}</option>
+          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
+        </select>
+        <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
+      </div>
+      <div>
+        <label class="field-label" for="author-contact-language">{{ $t('content.authors.contactLanguage') }}</label>
+        <select id="author-contact-language" v-model="form.contact_language" class="field-input">
+          <option value="">{{ $t('content.authors.notSet') }}</option>
+          <option v-for="l in languages" :key="l.code" :value="l.code">{{ l.label }}</option>
+        </select>
+        <p v-if="errors?.contact_language" class="field-error">{{ errors.contact_language[0] }}</p>
       </div>
     </div>
-
-    <!-- Social links -->
-    <SocialLinksEditor v-model="socialLinks" />
 
     <!-- Notes -->
     <div>
       <label class="field-label">{{ $t('content.authors.notes') }} <span class="hint">{{ $t('content.authors.notesOptional') }}</span></label>
       <textarea v-model="form.notes" rows="3" class="field-input" :placeholder="$t('content.authors.notesPlaceholder')" style="resize:vertical;" />
     </div>
+
+    <!-- Social links -->
+    <SocialLinksEditor v-model="socialLinks" />
 
     <!-- Press releases -->
     <div v-if="pressReleases.length" class="assoc-section">

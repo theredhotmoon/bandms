@@ -10,14 +10,16 @@ class AuthorSummaryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'name'       => $this->name,
-            'email'      => $this->email,
-            'whatsapp'   => $this->whatsapp,
-            'phone'      => $this->phone,
-            'notes'      => $this->notes,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'id'               => $this->id,
+            'name'             => $this->name,
+            'email'            => $this->email,
+            'whatsapp'         => $this->whatsapp,
+            'phone'            => $this->phone,
+            'country'          => $this->country,
+            'contact_language' => $this->contact_language,
+            'notes'            => $this->notes,
+            'created_at'       => $this->created_at,
+            'updated_at'       => $this->updated_at,
         ];
     }
 }
