@@ -7,6 +7,7 @@ use App\Http\Resources\TourSummaryResource;
 use App\Models\Tour;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class TourController extends Controller
 {
@@ -46,17 +47,21 @@ class TourController extends Controller
             'links.*.url'        => 'required|url|max:500',
         ]);
 
-        $tour = Tour::create($validated);
+        $tour = DB::transaction(function () use ($validated, $request) {
+            $tour = Tour::create($validated);
 
-        $tour->concerts()->sync($request->input('concert_ids', []));
+            $tour->concerts()->sync($request->input('concert_ids', []));
 
-        foreach ($request->input('images', []) as $img) {
-            $tour->images()->create($img);
-        }
+            foreach ($request->input('images', []) as $img) {
+                $tour->images()->create($img);
+            }
 
-        foreach ($request->input('links', []) as $link) {
-            $tour->links()->create($link);
-        }
+            foreach ($request->input('links', []) as $link) {
+                $tour->links()->create($link);
+            }
+
+            return $tour;
+        });
 
         $tour->load(['images', 'links', 'concerts.venue']);
 
@@ -82,19 +87,21 @@ class TourController extends Controller
             'links.*.url'        => 'required|url|max:500',
         ]);
 
-        $tour->update($validated);
+        DB::transaction(function () use ($tour, $validated, $request) {
+            $tour->update($validated);
 
-        $tour->concerts()->sync($request->input('concert_ids', []));
+            $tour->concerts()->sync($request->input('concert_ids', []));
 
-        $tour->images()->delete();
-        foreach ($request->input('images', []) as $img) {
-            $tour->images()->create($img);
-        }
+            $tour->images()->delete();
+            foreach ($request->input('images', []) as $img) {
+                $tour->images()->create($img);
+            }
 
-        $tour->links()->delete();
-        foreach ($request->input('links', []) as $link) {
-            $tour->links()->create($link);
-        }
+            $tour->links()->delete();
+            foreach ($request->input('links', []) as $link) {
+                $tour->links()->create($link);
+            }
+        });
 
         $tour->load(['images', 'links', 'concerts.venue']);
 

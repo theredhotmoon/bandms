@@ -23,9 +23,7 @@ class TagResource extends JsonResource
             'slug'         => $this->slugIn(Locales::default()),
             // Raw bag, one key per registered locale, for the admin editor.
             'translations' => [
-                'name' => collect(Locales::codes())
-                    ->mapWithKeys(fn (string $code) => [$code => ($names[$code] ?? null) ?: null])
-                    ->all(),
+                'name' => Locales::bag($names),
                 'slug' => collect(Locales::codes())
                     ->mapWithKeys(fn (string $code) => [$code => $this->slugIn($code)])
                     ->all(),

@@ -78,30 +78,35 @@ onMounted(async () => {
 
   const L = (await import('leaflet')).default
   // Import leaflet CSS
-  const linkEl = document.createElement('link')
-  linkEl.rel = 'stylesheet'
-  linkEl.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-  document.head.appendChild(linkEl)
+  if (!document.querySelector('link[href*="leaflet"]')) {
+    const linkEl = document.createElement('link')
+    linkEl.rel = 'stylesheet'
+    linkEl.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    document.head.appendChild(linkEl)
+  }
 
   // Custom popup styles
-  const styleEl = document.createElement('style')
-  styleEl.textContent = `
-    .ss-pin { position:relative;width:30px;height:30px;display:grid;place-items:center; }
-    .ss-pin .ss-ring { position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;z-index:1; }
-    @keyframes sspulse { 0% { transform:scale(.6);opacity:.7; } 100% { transform:scale(2.4);opacity:0; } }
-    .ss-pin.up .ss-ring { animation:sspulse 1.8s ease-out infinite; }
-    .leaflet-container { background:${PAPER} !important;font-family:Archivo,sans-serif; }
-    .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
-    .leaflet-bar a,.leaflet-bar a:hover { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:30px;height:30px;line-height:30px;font-weight:700; }
-    .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:4px 4px 0 rgba(0,0,0,.3); }
-    .leaflet-bar a:first-child,.leaflet-bar a:last-child { border-radius:0; }
-    .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:8px 8px 0 ${props.accent}; }
-    .leaflet-popup-tip { background:${INK}; }
-    .leaflet-popup-content { margin:13px 15px; }
-    .leaflet-popup-close-button { color:${INK} !important;font-size:19px !important;padding:5px 7px 0 0 !important; }
-    .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
-  `
-  document.head.appendChild(styleEl)
+  if (!document.getElementById('bandms-shows-map-styles')) {
+    const styleEl = document.createElement('style')
+    styleEl.id = 'bandms-shows-map-styles'
+    styleEl.textContent = `
+      .ss-pin { position:relative;width:30px;height:30px;display:grid;place-items:center; }
+      .ss-pin .ss-ring { position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;z-index:1; }
+      @keyframes sspulse { 0% { transform:scale(.6);opacity:.7; } 100% { transform:scale(2.4);opacity:0; } }
+      .ss-pin.up .ss-ring { animation:sspulse 1.8s ease-out infinite; }
+      .leaflet-container { background:${PAPER} !important;font-family:Archivo,sans-serif; }
+      .leaflet-tile-pane { filter:grayscale(1) contrast(0.92) sepia(0.22) brightness(1.03); }
+      .leaflet-bar a,.leaflet-bar a:hover { background:${INK};color:${PAPER};border-bottom-color:var(--color-muted);width:30px;height:30px;line-height:30px;font-weight:700; }
+      .leaflet-bar { border:2px solid ${INK};border-radius:0;box-shadow:4px 4px 0 rgba(0,0,0,.3); }
+      .leaflet-bar a:first-child,.leaflet-bar a:last-child { border-radius:0; }
+      .leaflet-popup-content-wrapper { background:${PAPER};color:${INK};border:3px solid ${INK};border-radius:0;box-shadow:8px 8px 0 ${props.accent}; }
+      .leaflet-popup-tip { background:${INK}; }
+      .leaflet-popup-content { margin:13px 15px; }
+      .leaflet-popup-close-button { color:${INK} !important;font-size:19px !important;padding:5px 7px 0 0 !important; }
+      .leaflet-control-attribution { background:color-mix(in oklab, var(--color-on-inverse) 80%, transparent) !important;font-size:9px; }
+    `
+    document.head.appendChild(styleEl)
+  }
 
   await new Promise(r => setTimeout(r, 60))
 
@@ -156,7 +161,7 @@ onUnmounted(() => {
 <template>
   <div ref="mapEl" style="height:520px;width:100%;background:var(--color-page);position:relative;">
     <!-- legend -->
-    <div style="position:absolute;top:14px;right:14px;z-index:500;background:var(--color-page);border:3px solid var(--color-ink);box-shadow:5px 5px 0 v-bind(accent);padding:12px 14px;display:flex;flex-direction:column;gap:9px;">
+    <div style="position:absolute;top:14px;right:14px;z-index:500;background:var(--color-page);border:3px solid var(--color-ink);padding:12px 14px;display:flex;flex-direction:column;gap:9px;" :style="{ boxShadow: `5px 5px 0 ${accent}` }">
       <span style="display:flex;align-items:center;gap:9px;font:800 12px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink);">
         <span :style="`width:16px;height:16px;border-radius:50%;background:${accent};border:2px solid var(--color-ink);display:inline-block;`"></span>{{ legendUpcoming }}
       </span>

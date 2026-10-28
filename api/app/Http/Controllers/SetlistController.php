@@ -14,6 +14,7 @@ use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class SetlistController extends Controller
 {
@@ -159,25 +160,29 @@ class SetlistController extends Controller
             'songs.*.is_encore' => ['boolean'],
         ]);
 
-        $setlist = Setlist::create([
-            'name'         => $data['name'],
-            'event_date'   => $data['event_date'] ?? null,
-            'setlistfm_id' => $data['setlistfm_id'],
-        ]);
-
-        foreach ($data['songs'] as $i => $songData) {
-            $song = Song::firstOrCreate(
-                ['title' => $songData['title']],
-                ['title' => $songData['title']],
-            );
-
-            SetlistItem::create([
-                'setlist_id' => $setlist->id,
-                'song_id'    => $song->id,
-                'position'   => $i + 1,
-                'is_encore'  => $songData['is_encore'] ?? false,
+        $setlist = DB::transaction(function () use ($data) {
+            $setlist = Setlist::create([
+                'name'         => $data['name'],
+                'event_date'   => $data['event_date'] ?? null,
+                'setlistfm_id' => $data['setlistfm_id'],
             ]);
-        }
+
+            foreach ($data['songs'] as $i => $songData) {
+                $song = Song::firstOrCreate(
+                    ['title' => $songData['title']],
+                    ['title' => $songData['title']],
+                );
+
+                SetlistItem::create([
+                    'setlist_id' => $setlist->id,
+                    'song_id'    => $song->id,
+                    'position'   => $i + 1,
+                    'is_encore'  => $songData['is_encore'] ?? false,
+                ]);
+            }
+
+            return $setlist;
+        });
 
         SiteRebuild::markDirty('setlists');
 

@@ -35,7 +35,7 @@ class HeroImageController extends Controller
             // own INSERT inside this request, so an unbounded array is an
             // unbounded write.
             'files'      => 'required|array|min:1|max:100',
-            'files.*'    => 'required|image|max:20480',
+            'files.*'    => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:20480',
             'captions'   => 'nullable|array',
             'captions.*' => 'nullable|string|max:255',
         ]);

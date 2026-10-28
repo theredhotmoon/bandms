@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\BandMember;
 use App\Models\Concert;
+use App\Support\SafeUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Sabre\VObject\Reader;
 
@@ -253,12 +253,16 @@ class BandCalendarController extends Controller
         try {
             $feedUrl = $this->normalizeCalendarUrl($member->calendar_url);
 
+            if (! SafeUrl::isAllowed($feedUrl)) {
+                return [];
+            }
+
             // Key includes a hash of the feed URL so changing the URL auto-invalidates the cache.
             $cacheKey = 'ical_member_' . $member->id . '_' . md5($feedUrl);
             $ical = Cache::remember(
                 $cacheKey,
                 300,
-                fn () => Http::timeout(15)->get($feedUrl)->body()
+                fn () => SafeUrl::get($feedUrl, 15)?->body() ?? ''
             );
 
             if (!$ical || !str_contains($ical, 'BEGIN:VCALENDAR')) {

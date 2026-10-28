@@ -9,6 +9,7 @@ use App\Models\BandProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Support\SiteRebuild;
 
@@ -102,18 +103,22 @@ class BandMemberController extends Controller
         ]);
 
         $profile = $this->profile();
-        $member = $profile->members()->create($data);
+        $member = DB::transaction(function () use ($profile, $data, $request) {
+            $member = $profile->members()->create($data);
 
-        foreach (array_values($request->input('social_links', [])) as $index => $link) {
-            $member->socialLinks()->create([
-                'profile_id' => $profile->id,
-                'platform'   => $link['platform'],
-                'url'        => $link['url'],
-                'position'   => $index,
-            ]);
-        }
+            foreach (array_values($request->input('social_links', [])) as $index => $link) {
+                $member->socialLinks()->create([
+                    'profile_id' => $profile->id,
+                    'platform'   => $link['platform'],
+                    'url'        => $link['url'],
+                    'position'   => $index,
+                ]);
+            }
 
-        $member->instruments()->sync($request->input('instrument_ids', []));
+            $member->instruments()->sync($request->input('instrument_ids', []));
+
+            return $member;
+        });
         $member->load(['socialLinks', 'instruments', 'mainInstrument']);
 
         SiteRebuild::markDirty('band-members');
@@ -165,19 +170,25 @@ class BandMemberController extends Controller
             'default_gear.*.notes'       => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $member->update($data);
-
-        $member->socialLinks()->delete();
-        foreach (array_values($request->input('social_links', [])) as $index => $link) {
-            $member->socialLinks()->create([
-                'profile_id' => $member->profile_id,
-                'platform'   => $link['platform'],
-                'url'        => $link['url'],
-                'position'   => $index,
-            ]);
+        if ($authUser->isMember()) {
+            unset($data['can_login'], $data['login_email'], $data['is_current'], $data['sort_order'], $data['joined_at'], $data['quit_at']);
         }
 
-        $member->instruments()->sync($request->input('instrument_ids', []));
+        DB::transaction(function () use ($member, $data, $request) {
+            $member->update($data);
+
+            $member->socialLinks()->delete();
+            foreach (array_values($request->input('social_links', [])) as $index => $link) {
+                $member->socialLinks()->create([
+                    'profile_id' => $member->profile_id,
+                    'platform'   => $link['platform'],
+                    'url'        => $link['url'],
+                    'position'   => $index,
+                ]);
+            }
+
+            $member->instruments()->sync($request->input('instrument_ids', []));
+        });
 
         SiteRebuild::markDirty('band-members');
 
@@ -188,7 +199,7 @@ class BandMemberController extends Controller
 
     public function uploadPhoto(Request $request, BandMember $member): BandMemberResource
     {
-        $request->validate(['photo' => 'required|image|max:4096']);
+        $request->validate(['photo' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096']);
 
         // Delete previous locally-stored photo
         if ($member->photo) {

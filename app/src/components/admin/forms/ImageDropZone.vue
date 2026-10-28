@@ -78,7 +78,11 @@ defineExpose({ clear })
       @dragover.prevent="dropActive = true"
       @dragleave="dropActive = false"
       @drop.prevent="onDrop"
+      tabindex="0"
+      role="button"
       @click="fileInput?.click()"
+      @keydown.enter.prevent="fileInput?.click()"
+      @keydown.space.prevent="fileInput?.click()"
     >
       <span class="drop-icon">⬆</span>
       <span class="drop-label">{{ $t('media.dropzone.prompt') }}</span>

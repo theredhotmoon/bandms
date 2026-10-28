@@ -30,7 +30,7 @@ const { t } = useI18n()
 const { data: ticketStats } = useQuery({
   queryKey: ['ticket-stats'],
   queryFn: () => fetchTicketStats(token.value!),
-  enabled: !!token.value,
+  enabled: computed(() => !!token.value),
 })
 
 const statCards = computed(() =>

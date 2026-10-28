@@ -3,7 +3,7 @@ import type {
   SetlistItem, SetlistItemPayload,
   SetlistFmArtist, SetlistFmSetlist,
 } from '@/types/setlist'
-import { API_BASE, authHeaders, handleResponse } from './client'
+import { API_BASE, assertSafeId, authHeaders, handleResponse } from './client'
 
 interface ListResponse    { data: SetlistSummary[] }
 interface SingleResponse  { data: Setlist }
@@ -17,7 +17,7 @@ export async function fetchSetlists(token: string): Promise<SetlistSummary[]> {
 }
 
 export async function fetchSetlist(token: string, id: number): Promise<Setlist> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid setlist id')
+  assertSafeId(id, 'setlistId')
   const res = await fetch(`${API_BASE}/api/setlists/${id}`, { headers: authHeaders(token) })
   return handleResponse<SingleResponse>(res).then((r) => r.data)
 }
@@ -32,7 +32,7 @@ export async function createSetlist(token: string, payload: SetlistPayload): Pro
 }
 
 export async function updateSetlist(token: string, id: number, payload: SetlistPayload): Promise<Setlist> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid setlist id')
+  assertSafeId(id, 'setlistId')
   const res = await fetch(`${API_BASE}/api/setlists/${id}`, {
     method: 'PUT',
     headers: authHeaders(token),
@@ -42,7 +42,7 @@ export async function updateSetlist(token: string, id: number, payload: SetlistP
 }
 
 export async function deleteSetlist(token: string, id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid setlist id')
+  assertSafeId(id, 'setlistId')
   const res = await fetch(`${API_BASE}/api/setlists/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
@@ -57,6 +57,7 @@ export async function addSetlistItem(
   setlistId: number,
   payload: SetlistItemPayload & { song_id: number },
 ): Promise<SetlistItem> {
+  assertSafeId(setlistId, 'setlistId')
   const res = await fetch(`${API_BASE}/api/setlists/${setlistId}/items`, {
     method: 'POST',
     headers: authHeaders(token),
@@ -71,6 +72,8 @@ export async function updateSetlistItem(
   itemId: number,
   payload: SetlistItemPayload,
 ): Promise<SetlistItem> {
+  assertSafeId(setlistId, 'setlistId')
+  assertSafeId(itemId, 'itemId')
   const res = await fetch(`${API_BASE}/api/setlists/${setlistId}/items/${itemId}`, {
     method: 'PUT',
     headers: authHeaders(token),
@@ -80,6 +83,8 @@ export async function updateSetlistItem(
 }
 
 export async function removeSetlistItem(token: string, setlistId: number, itemId: number): Promise<void> {
+  assertSafeId(setlistId, 'setlistId')
+  assertSafeId(itemId, 'itemId')
   const res = await fetch(`${API_BASE}/api/setlists/${setlistId}/items/${itemId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
@@ -88,6 +93,7 @@ export async function removeSetlistItem(token: string, setlistId: number, itemId
 }
 
 export async function reorderSetlistItems(token: string, setlistId: number, order: number[]): Promise<void> {
+  assertSafeId(setlistId, 'setlistId')
   const res = await fetch(`${API_BASE}/api/setlists/${setlistId}/items/reorder`, {
     method: 'PUT',
     headers: authHeaders(token),

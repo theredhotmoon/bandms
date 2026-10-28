@@ -14,8 +14,9 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const NL = String.fromCharCode(10)
 const EN_DIR = join(ROOT, 'src', 'i18n', 'en')
 const SRC = join(ROOT, 'src')

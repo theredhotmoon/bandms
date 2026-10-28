@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ReleaseController extends Controller
@@ -73,28 +74,33 @@ class ReleaseController extends Controller
 
         $titles = is_array($validated['title']) ? $validated['title'] : [Locales::default() => $validated['title']];
 
-        $release = new Release(Arr::except($validated, ['slug', 'member_ids']));
-        $release->applySlugBag(
-            $validated['slug'] ?? null,
-            ContentLocales::firstFilled($titles, Locales::default()) ?? 'release',
-            $titles,
-        );
-        $release->save();
+        $release = DB::transaction(function () use ($validated, $titles, $request) {
+            $release = new Release(Arr::except($validated, ['slug', 'member_ids']));
+            $release->applySlugBag(
+                $validated['slug'] ?? null,
+                ContentLocales::firstFilled($titles, Locales::default()) ?? 'release',
+                $titles,
+            );
+            $release->save();
 
-        foreach ($request->input('links', []) as $link) {
-            $release->links()->create($link);
-        }
-
-        foreach ($request->input('tracks', []) as $trackData) {
-            $trackLinks = $trackData['links'] ?? [];
-            unset($trackData['links']);
-            $track = $release->tracks()->create($trackData);
-            foreach ($trackLinks as $link) {
-                $track->links()->create($link);
+            foreach ($request->input('links', []) as $link) {
+                $release->links()->create($link);
             }
-        }
 
-        $this->syncMembers($release, $validated);
+            foreach ($request->input('tracks', []) as $trackData) {
+                $trackLinks = $trackData['links'] ?? [];
+                unset($trackData['links']);
+                $track = $release->tracks()->create($trackData);
+                foreach ($trackLinks as $link) {
+                    $track->links()->create($link);
+                }
+            }
+
+            $this->syncMembers($release, $validated);
+
+            return $release;
+        });
+
         $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
 
         SiteRebuild::markDirty('releases');
@@ -141,28 +147,31 @@ class ReleaseController extends Controller
 
         // Slugs through applySlugBag(): this used to update() the raw columns,
         // so a payload carrying slug_en: null nulled the release's slug.
-        $release->fill(Arr::except($validated, ['slug', 'member_ids']));
-        if (array_key_exists('slug', $validated)) {
-            $release->applySlugBag($validated['slug'], ContentLocales::firstFilled($release->getTranslations('title'), Locales::default()));
-        }
-        $release->save();
-
-        $release->links()->delete();
-        foreach ($request->input('links', []) as $link) {
-            $release->links()->create($link);
-        }
-
-        $release->tracks()->delete();
-        foreach ($request->input('tracks', []) as $trackData) {
-            $trackLinks = $trackData['links'] ?? [];
-            unset($trackData['links']);
-            $track = $release->tracks()->create($trackData);
-            foreach ($trackLinks as $link) {
-                $track->links()->create($link);
+        DB::transaction(function () use ($release, $validated, $request) {
+            $release->fill(Arr::except($validated, ['slug', 'member_ids']));
+            if (array_key_exists('slug', $validated)) {
+                $release->applySlugBag($validated['slug'], ContentLocales::firstFilled($release->getTranslations('title'), Locales::default()));
             }
-        }
+            $release->save();
 
-        $this->syncMembers($release, $validated);
+            $release->links()->delete();
+            foreach ($request->input('links', []) as $link) {
+                $release->links()->create($link);
+            }
+
+            $release->tracks()->delete();
+            foreach ($request->input('tracks', []) as $trackData) {
+                $trackLinks = $trackData['links'] ?? [];
+                unset($trackData['links']);
+                $track = $release->tracks()->create($trackData);
+                foreach ($trackLinks as $link) {
+                    $track->links()->create($link);
+                }
+            }
+
+            $this->syncMembers($release, $validated);
+        });
+
         $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
 
         SiteRebuild::markDirty('releases');
@@ -189,7 +198,7 @@ class ReleaseController extends Controller
 
     public function uploadCover(Request $request, Release $release): ReleaseResource
     {
-        $request->validate(['cover' => 'required|image|max:4096']);
+        $request->validate(['cover' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096']);
 
         if ($release->cover_image) {
             Storage::disk('public')->delete($release->cover_image);
@@ -219,7 +228,7 @@ class ReleaseController extends Controller
     {
         $request->validate([
             'files'      => 'required|array|min:1|max:20',
-            'files.*'    => 'required|image|max:10240',
+            'files.*'    => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:10240',
             'captions'   => 'nullable|array',
             'captions.*' => 'nullable|string|max:255',
         ]);

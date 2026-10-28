@@ -1,52 +1,16 @@
-import type { AuthResponse, LoginPayload, ValidationErrors } from '@/types/auth'
+import type { AuthResponse, LoginPayload } from '@/types/auth'
+import { API_BASE, ApiError, ApiValidationError, handleResponse, jsonHeaders } from './client'
 
-const API_BASE = import.meta.env.VITE_API_URL as string
-
-export class ApiValidationError extends Error {
-  constructor(public readonly errors: Record<string, string[]>) {
-    super('Validation failed')
-    this.name = 'ApiValidationError'
-  }
-}
-
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message)
-    this.name = 'ApiError'
-  }
-}
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (response.ok) {
-    return response.json() as Promise<T>
-  }
-
-  if (response.status === 422) {
-    const body = (await response.json()) as ValidationErrors
-    throw new ApiValidationError(body.errors)
-  }
-
-  let message = response.statusText
-  try {
-    const body = (await response.json()) as { message?: string }
-    if (body.message) message = body.message
-  } catch {
-    // ignore parse errors — keep statusText
-  }
-
-  throw new ApiError(response.status, message)
-}
+export { ApiError, ApiValidationError }
 
 export async function loginApi(payload: LoginPayload): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: jsonHeaders,
     body: JSON.stringify(payload),
   })
-  return handleResponse<AuthResponse>(response)
+  // A 401 here is bad credentials, not an expired session — see redirectOn401.
+  return handleResponse<AuthResponse>(response, { redirectOn401: false })
 }
 
 export async function logoutApi(token: string): Promise<void> {

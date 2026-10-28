@@ -87,6 +87,24 @@ final class Locales
         return null;
     }
 
+    /**
+     * A translation bag as the admin editor reads it: exactly one key per
+     * registered locale, with a missing or empty-string value sent as null, so
+     * every form sees the same shape for "not written in this language".
+     *
+     * @return array<string, string|null>
+     */
+    public static function bag(array $translations): array
+    {
+        $out = [];
+        foreach (self::codes() as $code) {
+            $value      = $translations[$code] ?? null;
+            $out[$code] = $value === '' ? null : $value;
+        }
+
+        return $out;
+    }
+
     /** Keys of a translation bag that are not registered locales. */
     public static function unsupportedKeys(array $bag): array
     {

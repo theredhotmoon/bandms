@@ -7,7 +7,11 @@ API_BASE="${API_BASE:-http://backend}"
 
 echo "[rebuild] Building Astro site..."
 cd /repo/web
-API_BASE="${API_BASE}" pnpm build
+API_BASE="${API_BASE}" \
+  PUBLIC_THEME="${PUBLIC_THEME:-}" \
+  PUBLIC_CARTO_KEY="${PUBLIC_CARTO_KEY:-}" \
+  PUBLIC_GA_MEASUREMENT_ID="${PUBLIC_GA_MEASUREMENT_ID:-}" \
+  pnpm build
 
 echo "[rebuild] Syncing output to Nginx..."
 # Nginx is live while this runs, so the served tree must never be empty: a

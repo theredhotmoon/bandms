@@ -45,6 +45,11 @@ export function useReleases() {
 
   const qk = computed(() => ['releases', lang.value])
 
+  function invalidateReleases() {
+    queryClient.invalidateQueries({ queryKey: ['releases'] })
+    queryClient.invalidateQueries({ queryKey: ['release'] })
+  }
+
   const query = useQuery<ReleaseSummary[]>({
     queryKey: qk,
     queryFn: () => fetchReleases(lang.value),
@@ -55,12 +60,12 @@ export function useReleases() {
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: ReleasePayload }) =>
       updateRelease(token.value!, id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['releases'] }),
+    onSuccess: invalidateReleases,
   })
 
   const remove = useMutation({
     mutationFn: (id: number) => deleteRelease(token.value!, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['releases'] }),
+    onSuccess: invalidateReleases,
   })
 
   return { query, create, update, remove }

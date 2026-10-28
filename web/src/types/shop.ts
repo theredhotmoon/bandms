@@ -47,7 +47,7 @@ export interface ShopItemSummary {
   sort_order: number
   prices: ShopItemPrice[]
   cover_photo: string | null
-  categories: { id: number; name: string }[]
+  categories?: { id: number; name: string; slug?: string }[]
   variants: ShopItemVariant[]
   created_at: string
   updated_at: string
@@ -61,7 +61,7 @@ export interface ShopItem extends ShopItemSummary {
   // Optional on purpose: responses produced before this field was added do not
   // carry it, and the Astro build dies on the whole site if a page dereferences
   // something absent. Read it with `?.` — see CLAUDE.md.
-  categories?: { id: number; name: string; slug: string }[]
+  categories?: { id: number; name: string; slug?: string }[]
 }
 
 export interface CartItem {

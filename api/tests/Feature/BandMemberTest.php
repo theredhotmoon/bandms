@@ -211,6 +211,34 @@ describe('PUT /api/band-profile/members/{member}', function () {
             ->assertJsonPath('data.bio', 'Updated bio.');
     });
 
+    it('prevents a member from altering admin-only fields on their own profile', function () {
+        $member = BandMember::create([
+            'profile_id'  => 1,
+            'first_name'  => 'John',
+            'last_name'   => 'Doe',
+            'is_current'  => false,
+            'can_login'   => false,
+            'login_email' => 'original@example.com',
+            'sort_order'  => 5,
+        ]);
+        $this->actingAsMember($member->id);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", [
+            'bio'         => 'Member updated bio',
+            'can_login'   => true,
+            'login_email' => 'escalated@example.com',
+            'is_current'  => true,
+            'sort_order'  => 0,
+        ])->assertSuccessful();
+
+        $member->refresh();
+        expect($member->bio)->toBe('Member updated bio')
+            ->and((bool) $member->can_login)->toBeFalse()
+            ->and($member->login_email)->toBe('original@example.com')
+            ->and((bool) $member->is_current)->toBeFalse()
+            ->and($member->sort_order)->toBe(5);
+    });
+
     it('forbids a member from updating another member', function () {
         $memberA = BandMember::create(['profile_id' => 1, 'first_name' => 'Alice', 'last_name' => 'A', 'can_login' => false]);
         $memberB = BandMember::create(['profile_id' => 1, 'first_name' => 'Bob',   'last_name' => 'B', 'can_login' => false]);

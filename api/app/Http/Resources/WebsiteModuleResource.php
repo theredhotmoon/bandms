@@ -16,9 +16,7 @@ class WebsiteModuleResource extends JsonResource
         return [
             'slug'         => $this->slug,
             'display_name' => $this->display_name,
-            'custom_name'  => collect(Locales::codes())
-                ->mapWithKeys(fn (string $c) => [$c => ($translations[$c] ?? null) ?: null])
-                ->all(),
+            'custom_name'  => Locales::bag($translations),
             // Empty means "fall back to the module key" — the admin renders the
             // key as the input's placeholder to make that visible. Compared
             // against '' rather than via ?:, which would report the legal slug

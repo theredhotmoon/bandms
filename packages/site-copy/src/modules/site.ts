@@ -35,6 +35,11 @@ export const SITE_COPY = defineCopy([
     defaults: { en: 'Breadcrumb', pl: 'Ścieżka nawigacji' },
   },
   {
+    key: 'skipToContent', label: '"Skip to content" link (keyboard users)', group: 'Navigation', maxLength: 40,
+    help: 'Hidden until a keyboard user presses Tab on a page; it jumps past the menu.',
+    defaults: { en: 'Skip to content', pl: 'Przejdź do treści' },
+  },
+  {
     key: 'faqTitle', label: 'Heading', group: 'FAQ block', maxLength: 60,
     help: 'The FAQ accordion at the bottom of any page that has questions.',
     defaults: { en: 'Quick answers', pl: 'Szybkie odpowiedzi' },

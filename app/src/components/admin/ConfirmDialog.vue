@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, useId, watch } from 'vue'
 
 /**
  * `title` and `confirmLabel` default to the delete wording; a discard-changes
@@ -9,6 +9,8 @@ import { onBeforeUnmount, watch } from 'vue'
 // nested AdminModal sits one step above the base (see utils/modalStack).
 const props = defineProps<{ open: boolean; title?: string; message?: string; confirmLabel?: string; loading?: boolean; zIndex?: number }>()
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
+
+const titleId = useId()
 
 // Escape backs out of the question. preventDefault() marks the key as
 // consumed so a modal underneath (AdminModal listens on window) leaves it be.
@@ -30,13 +32,13 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 flex items-center justify-center p-4" :style="{ zIndex: zIndex ?? 50 }">
       <div class="absolute inset-0 bg-(--scrim) backdrop-blur-sm" @click="$emit('cancel')" />
-      <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" class="relative z-10 w-full max-w-sm rounded-card shadow-(--shadow-modal)" style="background:var(--c-111111); border:1px solid var(--c-222222);">
+      <div role="dialog" aria-modal="true" :aria-labelledby="titleId" class="relative z-10 w-full max-w-sm rounded-card shadow-(--shadow-modal)" style="background:var(--c-111111); border:1px solid var(--c-222222);">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:var(--c-3f1212);">
               <svg class="w-4 h-4" style="color:var(--c-f87171);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </div>
-            <h3 id="confirm-dialog-title" class="text-sm font-semibold" style="color:var(--c-e2e8f0);">{{ title ?? $t('common.confirm.deleteTitle') }}</h3>
+            <h3 :id="titleId" class="text-sm font-semibold" style="color:var(--c-e2e8f0);">{{ title ?? $t('common.confirm.deleteTitle') }}</h3>
           </div>
           <p class="text-sm mb-5 leading-relaxed" style="color:var(--c-94a3b8);">{{ message ?? $t('common.confirm.deleteMessage') }}</p>
           <div class="flex gap-2 justify-end">

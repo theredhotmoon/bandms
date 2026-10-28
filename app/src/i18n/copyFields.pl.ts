@@ -106,8 +106,11 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '"Cities" counter label': 'Etykieta licznika „Miasta”',
   '"Close cart" (screen readers)': '„Zamknij koszyk” (czytniki ekranu)',
   '"Close menu" (screen readers)': '„Zamknij menu” (czytniki ekranu)',
+  '"Skip to content" link (keyboard users)': 'Link „Przejdź do treści” (użytkownicy klawiatury)',
   '"Close" button': 'Przycisk „Zamknij”',
   '"Contact us" link': 'Link „Skontaktuj się z nami”',
+  '"Decrease quantity" (screen readers)': '„Zmniejsz liczbę” (czytniki ekranu)',
+  '"Increase quantity" (screen readers)': '„Zwiększ liczbę” (czytniki ekranu)',
   '"Cookie settings" button': 'Przycisk „Ustawienia cookies”',
   '"Coverage" heading': 'Nagłówek „Media o nas”',
   '"Details" link': 'Link „Szczegóły”',
@@ -206,6 +209,8 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Breadcrumb (screen readers)': 'Okruszki (czytniki ekranu)',
   'Breadcrumb: home': 'Okruszki: strona główna',
   'Breadcrumb: untagged article': 'Okruszki: artykuł bez tagu',
+  'Hidden until a keyboard user presses Tab on a page; it jumps past the menu.':
+    'Ukryty, dopóki użytkownik klawiatury nie naciśnie Tab na stronie; przeskakuje menu.',
   'Browser tab title': 'Tytuł karty przeglądarki',
   'Button after adding': 'Przycisk po dodaniu',
   'Button while processing': 'Przycisk w trakcie przetwarzania',
@@ -504,6 +509,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '{date} is filled in.': '{date} jest uzupełniane.',
   '{n} is filled in with the count.': '{n} jest uzupełniane liczbą.',
   '{n} is filled in with the platform count.': '{n} jest uzupełniane liczbą platform.',
+  '{name} is the product.': '{name} to produkt.',
   '{n} is filled in.': '{n} jest uzupełniane.',
 
   // ── About → Member page ─────────────────────────────────────────────────

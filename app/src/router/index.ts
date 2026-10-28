@@ -235,6 +235,14 @@ const router = createRouter({
       component: () => import('@/views/admin/HeroImagesAdminView.vue'),
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
+    // Unknown admin URLs land on the panel root. Scoped to the admin prefix
+    // on purpose: a site-wide catch-all would answer /login with the sign-in
+    // form, recreating the dedicated login URL that was removed so scanners
+    // can't find the panel (see the root CLAUDE.md, "The front door").
+    {
+      path: adminUrl(':pathMatch(.*)*'),
+      redirect: adminUrl(),
+    },
   ],
 })
 
@@ -255,18 +263,26 @@ router.beforeEach((to) => {
 
   // 'admin' is the panel root, which renders the sign-in form for a signed-out
   // visitor. There is no dedicated login route to send them to any more.
-  if (to.meta.requiresAuth && !localStorage.getItem('auth_token')) {
+  const hasToken = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+  if (to.meta.requiresAuth && !hasToken) {
     return { name: 'admin' }
   }
 
   if (to.meta.requiredRole) {
-    const stored = localStorage.getItem('auth_user')
-    const userRole: string | undefined = stored ? (JSON.parse(stored) as { role?: string }).role : undefined
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user') : null
+    let userRole: string | undefined
+    if (stored) {
+      try {
+        userRole = (JSON.parse(stored) as { role?: string })?.role
+      } catch {
+        userRole = undefined
+      }
+    }
     const required = Array.isArray(to.meta.requiredRole)
       ? to.meta.requiredRole
       : [to.meta.requiredRole]
-    if (userRole && !required.includes(userRole as UserRole)) {
-      return { name: 'admin' }
+    if (!userRole || !required.includes(userRole as UserRole)) {
+      return adminUrl()
     }
   }
 })

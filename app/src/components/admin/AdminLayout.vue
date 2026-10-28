@@ -136,6 +136,7 @@ watch(() => route.path, (path) => {
           <button
             class="accordion-header"
             :class="{ 'accordion-header--active': isGroupActive('band') }"
+            :aria-expanded="openGroups.has('band')"
             @click="toggleGroup('band')"
           >
             <span class="accordion-title">
@@ -201,6 +202,7 @@ watch(() => route.path, (path) => {
           <button
             class="accordion-header"
             :class="{ 'accordion-header--active': isGroupActive('content') }"
+            :aria-expanded="openGroups.has('content')"
             @click="toggleGroup('content')"
           >
             <span class="accordion-title">
@@ -240,6 +242,7 @@ watch(() => route.path, (path) => {
           <button
             class="accordion-header"
             :class="{ 'accordion-header--active': isGroupActive('shows') }"
+            :aria-expanded="openGroups.has('shows')"
             @click="toggleGroup('shows')"
           >
             <span class="accordion-title">
@@ -273,6 +276,7 @@ watch(() => route.path, (path) => {
           <button
             class="accordion-header"
             :class="{ 'accordion-header--active': isGroupActive('more') }"
+            :aria-expanded="openGroups.has('more')"
             @click="toggleGroup('more')"
           >
             <span class="accordion-title">
@@ -310,6 +314,7 @@ watch(() => route.path, (path) => {
           <button
             class="accordion-header"
             :class="{ 'accordion-header--active': isGroupActive('pageconfig') }"
+            :aria-expanded="openGroups.has('pageconfig')"
             @click="toggleGroup('pageconfig')"
           >
             <span class="accordion-title">

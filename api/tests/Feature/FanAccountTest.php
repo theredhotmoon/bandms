@@ -36,6 +36,27 @@ describe('POST /api/fan/auth/magic-link', function () {
         $this->postJson('/api/fan/auth/magic-link', ['email' => 'not-an-email'])
             ->assertStatus(422);
     });
+
+    it('links the account page on the front end, not the JSON verify endpoint', function () {
+        config(['newsletter.frontend_url' => 'https://band.example/', 'app.debug' => true]);
+
+        $link = $this->postJson('/api/fan/auth/magic-link', ['email' => 'fan@example.com'])
+            ->assertOk()
+            ->json('dev_link');
+
+        expect($link)->toStartWith('https://band.example/account?token=')
+            ->and($link)->not->toContain('/api/');
+
+        $token = substr($link, strlen('https://band.example/account?token='));
+        expect(Cache::get("fan_magic:{$token}"))->toBe(FanAccount::where('email', 'fan@example.com')->value('id'));
+    });
+
+    it('returns 503 and drops the token when the mail cannot be sent', function () {
+        \Illuminate\Support\Facades\Mail::shouldReceive('raw')->andThrow(new \RuntimeException('smtp down'));
+
+        $this->postJson('/api/fan/auth/magic-link', ['email' => 'fan@example.com'])
+            ->assertStatus(503);
+    });
 });
 
 describe('GET /api/fan/auth/verify', function () {

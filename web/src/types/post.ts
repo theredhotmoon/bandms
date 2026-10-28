@@ -12,7 +12,7 @@ interface BlockBase { id: number; position: number }
 export interface TextBlock  extends BlockBase { type: 'text';  body: string | null }
 export interface ImageBlock extends BlockBase { type: 'image'; url: string | null; alt: string | null; caption: string | null }
 export interface EmbedBlock extends BlockBase { type: 'embed'; provider: EmbedProviderName; url: string | null; label: string | null; embed_id: string | null }
-export interface RefBlock   extends BlockBase { type: 'ref';   entity: RefEntity; data: Record<string, any> | null }
+export interface RefBlock   extends BlockBase { type: 'ref';   entity: RefEntity; data: Record<string, unknown> | null }
 
 export type PostBlock = TextBlock | ImageBlock | EmbedBlock | RefBlock
 

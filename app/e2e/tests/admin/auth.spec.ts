@@ -48,6 +48,15 @@ test.describe('Unauthenticated guard', () => {
     // assert the one thing true in both: it is not the sign-in form.
     await expect(page.getByRole('heading', { name: 'Sign In' })).toBeHidden()
   })
+
+  // The other half of the router's catch-all: it is scoped to the admin
+  // prefix, so an unknown panel URL still lands on the panel root while
+  // /login (above) does not.
+  test('an unknown admin URL redirects to the panel root', async ({ page }) => {
+    await page.goto('/admin/no-such-page')
+    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible()
+  })
 })
 
 // ─── login page rendering ─────────────────────────────────────────────────────

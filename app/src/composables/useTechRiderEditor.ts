@@ -6,7 +6,7 @@
  * Kept out of the view so the view stays a thin orchestrator, and so the
  * resolution rules live next to the data rather than inside a template.
  */
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, getCurrentInstance, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
@@ -148,6 +148,16 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
 
   const saving = ref(false)
   const saved = ref(false)
+  let savedTimer: ReturnType<typeof setTimeout> | null = null
+
+  if (getCurrentInstance()) {
+    onBeforeUnmount(() => {
+      if (savedTimer !== null) {
+        clearTimeout(savedTimer)
+        savedTimer = null
+      }
+    })
+  }
 
   /**
    * Every channel this rider would send, and where it lives.
@@ -186,7 +196,11 @@ export function useTechRiderEditor(openId: Ref<number | null>) {
       await riderMut.mutateAsync({ ...draft })
       markClean()
       saved.value = true
-      setTimeout(() => { saved.value = false }, 2000)
+      if (savedTimer !== null) clearTimeout(savedTimer)
+      savedTimer = setTimeout(() => {
+        saved.value = false
+        savedTimer = null
+      }, 2000)
       toast.success(t('rider.editor.saved'))
       return true
     } catch (e) {

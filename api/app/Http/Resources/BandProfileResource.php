@@ -57,7 +57,7 @@ class BandProfileResource extends JsonResource
             'epk_release_id'          => $this->epk_release_id,
             'epk_album_id'            => $this->epk_album_id,
             // Logo fields
-            'logo_url'                => $this->defaultLogo?->url ?? $this->whenLoaded('defaultLogo', fn () => $this->defaultLogo?->url),
+            'logo_url'                => $this->whenLoaded('defaultLogo', fn () => $this->defaultLogo?->url),
             'epk_logo_id'             => $this->epk_logo_id,
             'tech_rider_logo_id'      => $this->tech_rider_logo_id,
             'website_logo_id'         => $this->website_logo_id,

@@ -156,10 +156,50 @@ describe('POST /api/band-profile/logos', function () {
 
     it('accepts SVG files', function () {
         $this->actingAsAdmin();
-        $file = UploadedFile::fake()->create('logo.svg', 10, 'image/svg+xml');
+        Storage::fake('public');
+        $svg  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#000"/></svg>';
+        $file = UploadedFile::fake()->createWithContent('logo.svg', $svg);
 
-        $this->postJson('/api/band-profile/logos', ['file' => $file])
-            ->assertCreated();
+        $path = $this->postJson('/api/band-profile/logos', ['file' => $file])
+            ->assertCreated()
+            ->json('data.file_path') ?? BandLogo::latest('id')->value('file_path');
+
+        expect(Storage::disk('public')->get($path))->toContain('<circle');
+    });
+
+    it('stores an SVG with every script vector stripped out', function (string $payload) {
+        $this->actingAsAdmin();
+        Storage::fake('public');
+        $svg  = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" '
+            . 'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">'
+            . '<rect width="10" height="10"/>' . $payload . '</svg>';
+
+        $this->postJson('/api/band-profile/logos', [
+            'file' => UploadedFile::fake()->createWithContent('logo.svg', $svg),
+        ])->assertCreated();
+
+        $stored = strtolower(Storage::disk('public')->get(BandLogo::latest('id')->value('file_path')));
+
+        expect($stored)->toContain('<rect')
+            ->not->toContain('script')
+            ->not->toContain('javascript')
+            ->not->toContain('foreignobject')
+            ->not->toContain('onload');
+    })->with([
+        'script'          => ['<script>alert(1)</script>'],
+        'prefixed script' => ['<svg:script>alert(1)</svg:script>'],
+        'event handler'   => ['<g onload="alert(1)"/>'],
+        'encoded href'    => ['<a xlink:href="javascript&#58;alert(1)"><text>x</text></a>'],
+        'foreignObject'   => ['<foreignObject><iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe></foreignObject>'],
+    ]);
+
+    it('rejects a file that is not a readable SVG', function () {
+        $this->actingAsAdmin();
+        Storage::fake('public');
+
+        $this->postJson('/api/band-profile/logos', [
+            'file' => UploadedFile::fake()->createWithContent('logo.svg', 'not xml <<<'),
+        ])->assertUnprocessable()->assertJsonValidationErrors(['file']);
     });
 });
 

@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class FanAccountController extends Controller
@@ -38,7 +40,20 @@ class FanAccountController extends Controller
         $token = Str::random(64);
         cache()->put("fan_magic:{$token}", $fan->id, now()->addHours(24));
 
-        $verifyUrl = url("/api/fan/auth/verify?token={$token}");
+        // The fan opens the account page, which exchanges the token itself
+        // (FanAccountView). The API's verify endpoint answers JSON and consumes
+        // the token, so linking it directly signed nobody in. FRONTEND_URL, not
+        // APP_URL: the same rule as every other emailed link.
+        $verifyUrl = rtrim((string) config('newsletter.frontend_url'), '/') . "/account?token={$token}";
+
+        try {
+            Mail::raw("Sign in to your fan account: {$verifyUrl}", fn ($m) => $m->to($fan->email)->subject('Your Sign-In Link'));
+        } catch (\Throwable $e) {
+            cache()->forget("fan_magic:{$token}");
+            Log::warning("Fan magic-link mail to {$fan->id} failed: {$e->getMessage()}");
+
+            return response()->json(['message' => 'We could not send the email. Please try again.'], 503);
+        }
 
         $response = ['message' => 'Magic link sent to your email.'];
         if (config('app.debug')) {

@@ -6,6 +6,8 @@ settings:
 
 importers:
 
+  .: {}
+
   app:
     dependencies:
       '@bandms/rider-core':
@@ -119,6 +121,8 @@ importers:
         version: 3.5.42(typescript@5.7.3)
 
   packages/site-copy: {}
+
+  packages/style-guards: {}
 
   web:
     dependencies:

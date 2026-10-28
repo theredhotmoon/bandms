@@ -14,6 +14,12 @@ import type { Locale } from '@/types/shared'
 
 const BASE = (import.meta.env.API_BASE ?? '').replace(/\/$/, '')
 
+function assertSafeId(id: number): void {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new Error(`Invalid id: ${id}`)
+  }
+}
+
 async function get<T>(path: string, params?: Record<string, string>): Promise<T> {
   const qs = params ? '?' + new URLSearchParams(params).toString() : ''
   const res = await fetch(`${BASE}/api${path}${qs}`, {
@@ -122,13 +128,13 @@ export const getClips = (lang: Locale = 'en') =>
   get<import('@/types/clip').RenderableClip[]>('/clips', { lang })
 
 export const getConcert = (id: number, lang: Locale = 'en') =>
-  get<Concert>(`/concerts/${id}`, { lang })
+  { assertSafeId(id); return get<Concert>(`/concerts/${id}`, { lang }) }
 
 export const getConcertSetlist = (id: number) =>
-  getOptional<PublicSetlist>(`/concerts/${id}/setlist`)
+  { assertSafeId(id); return getOptional<PublicSetlist>(`/concerts/${id}/setlist`) }
 
 export const getConcertTickets = (id: number) =>
-  get<{ id: number; is_on_sale: boolean }[]>(`/concerts/${id}/tickets`)
+  { assertSafeId(id); return get<{ id: number; is_on_sale: boolean }[]>(`/concerts/${id}/tickets`) }
 
 // ── Releases ──────────────────────────────────────────────────────────────────
 
@@ -136,7 +142,7 @@ export const getReleases = (lang: Locale = 'en') =>
   get<ReleaseSummary[]>('/releases', { lang })
 
 export const getRelease = (id: number, lang: Locale = 'en') =>
-  get<Release>(`/releases/${id}`, { lang })
+  { assertSafeId(id); return get<Release>(`/releases/${id}`, { lang }) }
 
 // ── Posts ─────────────────────────────────────────────────────────────────────
 
@@ -150,7 +156,7 @@ export async function getPosts(lang: Locale = 'en', page = 1): Promise<{ data: P
 }
 
 export const getPost = (id: number, lang: Locale = 'en') =>
-  get<Post>(`/posts/${id}`, { lang })
+  { assertSafeId(id); return get<Post>(`/posts/${id}`, { lang }) }
 
 /**
  * Every post, across all pages.
@@ -179,7 +185,7 @@ export const getAlbums = () =>
   get<Album[]>('/albums')
 
 export const getAlbum = (id: number) =>
-  get<Album>(`/albums/${id}`)
+  { assertSafeId(id); return get<Album>(`/albums/${id}`) }
 
 // ── Music Videos ──────────────────────────────────────────────────────────────
 
@@ -198,7 +204,7 @@ export const getShopItems = () =>
 
 // `lang` resolves the item's clip titles; the item's own fields are not translated.
 export const getShopItem = (slug: string, lang: Locale = 'en') =>
-  get<ShopItem>(`/shop/by-slug/${slug}`, { lang })
+  get<ShopItem>(`/shop/by-slug/${encodeURIComponent(slug)}`, { lang })
 
 export const getShopCategories = () =>
   get<ShopCategory[]>('/shop-categories')

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Support\EmbedProvider;
+use App\Support\Locales;
 use App\Support\PostBlockType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -32,13 +33,14 @@ class PostBlockResource extends JsonResource
     {
         $locale  = app()->getLocale();
         $payload = $this->payload ?? [];
+        $empty   = array_fill_keys(Locales::codes(), null);
 
         $base = ['id' => $this->id, 'type' => $this->type, 'position' => $this->position];
 
         return match ($this->type) {
             PostBlockType::TEXT => $base + [
                 'body'         => $this->translated($payload['body'] ?? [], $locale),
-                'translations' => ['body' => $payload['body'] ?? ['en' => null, 'pl' => null]],
+                'translations' => ['body' => $payload['body'] ?? $empty],
             ],
 
             PostBlockType::IMAGE => $base + [
@@ -47,8 +49,8 @@ class PostBlockResource extends JsonResource
                 'alt'          => $this->translated($payload['alt'] ?? [], $locale),
                 'caption'      => $this->translated($payload['caption'] ?? [], $locale),
                 'translations' => [
-                    'alt'     => $payload['alt'] ?? ['en' => null, 'pl' => null],
-                    'caption' => $payload['caption'] ?? ['en' => null, 'pl' => null],
+                    'alt'     => $payload['alt'] ?? $empty,
+                    'caption' => $payload['caption'] ?? $empty,
                 ],
             ],
 
@@ -89,13 +91,15 @@ class PostBlockResource extends JsonResource
             return $label;
         }
 
-        return filled($label) ? ['en' => $label, 'pl' => null] : ['en' => null, 'pl' => null];
+        $empty = array_fill_keys(Locales::codes(), null);
+
+        return filled($label) ? [Locales::default() => $label] + $empty : $empty;
     }
 
     /** Resolve a {en, pl} bag for the request locale, falling back to the other. */
     private function translated(array $bag, string $locale): ?string
     {
-        foreach (\App\Support\Locales::chain($locale) as $code) {
+        foreach (Locales::chain($locale) as $code) {
             if (filled($bag[$code] ?? null)) {
                 return $bag[$code];
             }

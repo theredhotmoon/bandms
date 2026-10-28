@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '@/api/client'
 import { fanErrorMessage } from '@/utils/fanErrors'
@@ -18,7 +18,11 @@ const state      = ref<ClaimState>('loading')
 const newUuid    = ref<string | null>(null)
 const errorMsg   = ref<string | null>(null)
 
-onMounted(async () => {
+async function runClaim() {
+  state.value    = 'loading'
+  newUuid.value  = null
+  errorMsg.value = null
+
   const token = route.params.token
   const tokenStr = Array.isArray(token) ? token[0] : token
 
@@ -56,7 +60,10 @@ onMounted(async () => {
       state.value = 'error'
     }
   }
-})
+}
+
+onMounted(runClaim)
+watch(() => route.params.token, runClaim)
 </script>
 
 <template>

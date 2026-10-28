@@ -15,7 +15,7 @@ class OrderItem extends Model
         'order_id', 'shop_item_id', 'shop_item_variant_id',
         'concert_ticket_type_id', 'concert_ticket_price_tier_id',
         'name', 'variant_label', 'price', 'currency', 'quantity',
-        'ticket_code', 'scanned_at',
+        'ticket_code', 'scanned_at', 'presale_code_id',
     ];
 
     protected $casts = [

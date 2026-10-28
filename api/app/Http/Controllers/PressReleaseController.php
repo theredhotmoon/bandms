@@ -6,6 +6,7 @@ use App\Http\Resources\PressReleaseResource;
 use App\Http\Resources\PressReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\PressRelease;
+use App\Support\SafeUrl;
 use App\Support\SiteRebuild;
 use DOMDocument;
 use DOMXPath;
@@ -14,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Http;
 
 class PressReleaseController extends Controller
 {
@@ -45,11 +45,19 @@ class PressReleaseController extends Controller
     {
         $data = $request->validate(['url' => 'required|url|max:1000']);
 
+        if (! SafeUrl::isAllowed($data['url'])) {
+            return response()->json(['message' => 'URL is not allowed.'], 422);
+        }
+
         try {
-            $response = Http::withHeaders([
+            $response = SafeUrl::get($data['url'], 10, [
                 'User-Agent' => 'Mozilla/5.0 (compatible; BandMS-Bot/1.0; +http://localhost)',
                 'Accept'     => 'text/html,application/xhtml+xml',
-            ])->timeout(10)->get($data['url']);
+            ]);
+
+            if ($response === null) {
+                return response()->json(['message' => 'URL is not allowed.'], 422);
+            }
 
             if (! $response->successful()) {
                 return response()->json(['error' => 'Could not fetch the URL (HTTP ' . $response->status() . ')'], 422);
