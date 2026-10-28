@@ -23,15 +23,25 @@ return new class extends Migration
 
         // First word is the first name, the rest the last name — right for
         // "Anna Kowalska" and "Jan van der Berg", wrong for a double first
-        // name, which the band can fix in the form. The two halves rejoin to
-        // the original string, which is what down() relies on.
+        // name, which the band can fix in the form. down() rejoins the halves
+        // with one space, so a name holding a run of whitespace comes back
+        // normalised — the words survive, the spacing does not.
         //
         // No /u on the pattern: with it, a name holding invalid UTF-8 makes
         // preg_split return false, first_name is written NULL and the NOT NULL
         // change below dies half-way through a non-transactional MySQL DDL.
-        // Splitting on ASCII whitespace never touches a multibyte sequence.
-        foreach (DB::table('authors')->orderBy('id')->get(['id', 'name']) as $row) {
-            $name  = trim((string) $row->name);
+        // Splitting on ASCII whitespace never touches a multibyte sequence;
+        // the one non-ASCII space a pasted name commonly carries, U+00A0 from
+        // a web page or an email signature, is turned into a plain one first.
+        //
+        // Skipped when `name` is already gone: a run that died after dropping
+        // it but before being recorded has nothing left to backfill.
+        $rows = Schema::hasColumn('authors', 'name')
+            ? DB::table('authors')->orderBy('id')->get(['id', 'name'])
+            : [];
+
+        foreach ($rows as $row) {
+            $name  = trim(str_replace("\u{00A0}", ' ', (string) $row->name));
             $parts = $name === '' ? [] : preg_split('/\s+/', $name, 2);
 
             if ($parts === []) {
@@ -47,8 +57,13 @@ return new class extends Migration
 
         Schema::table('authors', function (Blueprint $table) {
             $table->string('first_name')->nullable(false)->change();
-            $table->dropColumn('name');
         });
+
+        if (Schema::hasColumn('authors', 'name')) {
+            Schema::table('authors', function (Blueprint $table) {
+                $table->dropColumn('name');
+            });
+        }
     }
 
     public function down(): void

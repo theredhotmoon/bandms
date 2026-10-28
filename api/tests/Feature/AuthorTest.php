@@ -484,6 +484,7 @@ describe('author first and last name', function () {
             'anna'   => 'Anna Kowalska',
             'dutch'  => 'Jan  van der Berg',
             'single' => 'Radio357',
+            'nbsp'   => "Anna\u{00A0}Nowak",
             'blank'  => '   ',
         ];
         $ids = [];
@@ -497,6 +498,7 @@ describe('author first and last name', function () {
         expect($read('anna'))->toBe(['first_name' => 'Anna', 'last_name' => 'Kowalska'])
             ->and($read('dutch'))->toBe(['first_name' => 'Jan', 'last_name' => 'van der Berg'])
             ->and($read('single'))->toBe(['first_name' => 'Radio357', 'last_name' => null])
+            ->and($read('nbsp'))->toBe(['first_name' => 'Anna', 'last_name' => 'Nowak'])
             ->and($read('blank'))->toBe(['first_name' => '?', 'last_name' => null])
             ->and(Schema::hasColumn('authors', 'name'))->toBeFalse();
     });
@@ -561,6 +563,16 @@ describe('author first and last name', function () {
         expect(mb_strlen(DB::table('authors')->where('id', $author->id)->value('name')))->toBe(255);
 
         $migration->up();
+    });
+
+    it('re-runs after a failure that had already dropped the old column', function () {
+        $author = Author::create(['first_name' => 'Anna', 'last_name' => 'Kowalska']);
+        $migration = require database_path('migrations/2026_10_29_000001_split_author_name_into_first_and_last.php');
+
+        // Schema already in its final shape, the migration not yet recorded.
+        $migration->up();
+
+        expect($author->fresh())->first_name->toBe('Anna')->last_name->toBe('Kowalska');
     });
 
     it('re-runs after a failure that left the new columns behind', function () {
