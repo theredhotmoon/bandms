@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, useId, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useUiLang } from '@/composables/useUiLang'
 import { contactLanguageOptions, countryOptions } from '@/utils/contactCodes'
@@ -14,6 +14,9 @@ import type { Band } from '@/types/band'
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
+
+// Two AuthorForms can share a page (the quick-add in a band form), so label ids are per instance.
+const uid = useId()
 
 const PHONE_PLACEHOLDER = '+48 123 456 789' // i18n-ignore: number format example, no words
 
@@ -142,13 +145,13 @@ function submit() {
     <!-- Name -->
     <div class="contact-grid">
       <div>
-        <label class="field-label" for="author-first-name">{{ $t('content.authors.firstName') }} <span class="field-req">*</span></label>
-        <input id="author-first-name" v-model="form.first_name" required class="field-input" :placeholder="$t('content.authors.firstNamePlaceholder')" />
+        <label class="field-label" :for="`${uid}-first-name`">{{ $t('content.authors.firstName') }} <span class="field-req">*</span></label>
+        <input :id="`${uid}-first-name`" v-model="form.first_name" required class="field-input" :placeholder="$t('content.authors.firstNamePlaceholder')" />
         <p v-if="errors?.first_name" class="field-error">{{ errors.first_name[0] }}</p>
       </div>
       <div>
-        <label class="field-label" for="author-last-name">{{ $t('content.authors.lastName') }}</label>
-        <input id="author-last-name" v-model="form.last_name" class="field-input" :placeholder="$t('content.authors.lastNamePlaceholder')" />
+        <label class="field-label" :for="`${uid}-last-name`">{{ $t('content.authors.lastName') }}</label>
+        <input :id="`${uid}-last-name`" v-model="form.last_name" class="field-input" :placeholder="$t('content.authors.lastNamePlaceholder')" />
         <p v-if="errors?.last_name" class="field-error">{{ errors.last_name[0] }}</p>
       </div>
     </div>
@@ -169,16 +172,16 @@ function submit() {
         <input v-model="form.whatsapp" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
       </div>
       <div>
-        <label class="field-label" for="author-country">{{ $t('content.authors.country') }}</label>
-        <select id="author-country" v-model="form.country" class="field-input">
+        <label class="field-label" :for="`${uid}-country`">{{ $t('content.authors.country') }}</label>
+        <select :id="`${uid}-country`" v-model="form.country" class="field-input">
           <option value="">{{ $t('content.authors.notSet') }}</option>
           <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
         </select>
         <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
       </div>
       <div>
-        <label class="field-label" for="author-contact-language">{{ $t('content.authors.contactLanguage') }}</label>
-        <select id="author-contact-language" v-model="form.contact_language" class="field-input">
+        <label class="field-label" :for="`${uid}-contact-language`">{{ $t('content.authors.contactLanguage') }}</label>
+        <select :id="`${uid}-contact-language`" v-model="form.contact_language" class="field-input">
           <option value="">{{ $t('content.authors.notSet') }}</option>
           <option v-for="l in languages" :key="l.code" :value="l.code">{{ l.label }}</option>
         </select>

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 class Author extends Model
 {
@@ -15,30 +16,20 @@ class Author extends Model
     ];
 
     /**
-     * "First Last". The API still sends `name`, so every list, picker and
-     * search that only displays a contact needs no change. There is no `name`
-     * column: writing one splits it, rather than failing at save time with an
-     * unknown column.
+     * "First Last", read-only. The API still sends `name`, so every list,
+     * picker and search that only displays a contact needs no change.
+     *
+     * Writing it throws: there is no `name` column, and guessing a split would
+     * undo one the band corrected by hand. (`Author::create(['name' => …])`
+     * never reaches here — `name` is not fillable — and fails on the NOT NULL
+     * `first_name` instead.)
      */
     protected function name(): Attribute
     {
         return Attribute::make(
             get: fn () => trim("{$this->first_name} {$this->last_name}"),
-            set: fn (?string $value) => static::splitName((string) $value),
+            set: fn () => throw new LogicException('Author has no name column; set first_name and last_name.'),
         );
-    }
-
-    /**
-     * First word is the first name, the rest the last name. ASCII whitespace
-     * only, without /u, so invalid UTF-8 cannot make the split return false.
-     *
-     * @return array{first_name: string, last_name: ?string}
-     */
-    public static function splitName(string $name): array
-    {
-        $parts = preg_split('/\s+/', trim($name), 2);
-
-        return ['first_name' => $parts[0], 'last_name' => $parts[1] ?? null];
     }
 
     /** One display order for every author list — the contacts page and the band picker. */

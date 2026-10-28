@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AuthorController extends Controller
 {
@@ -70,10 +71,12 @@ class AuthorController extends Controller
     private function validatePayload(Request $request): array
     {
         // An admin tab still running the bundle from before the name split
-        // sends `name`. Without this it gets a 422 on `first_name`, a field
-        // its form does not have, so the save fails with nothing on screen.
-        if (! $request->has('first_name') && $request->filled('name')) {
-            $request->merge(Author::splitName((string) $request->string('name')));
+        // sends `name`. Its form renders only `errors.name`, so a 422 on
+        // `first_name` would fail with nothing on screen. Splitting the name
+        // for it instead would silently undo a split the band corrected by
+        // hand ("Anna Maria" / "Kowalska") whenever that tab saved the notes.
+        if ($request->has('name') && ! $request->has('first_name')) {
+            throw ValidationException::withMessages(['name' => __('api.stale_admin')]);
         }
 
         return $request->validate([

@@ -514,14 +514,27 @@ describe('author first and last name', function () {
         $migration->up();
     });
 
-    // An admin tab still on the bundle from before the split sends `name`.
-    it('accepts the legacy single name and splits it', function () {
+    // An admin tab still on the bundle from before the split sends `name`,
+    // and renders only `errors.name`. It must be told to reload — and must
+    // not re-split a name the band corrected by hand.
+    it('tells a stale admin tab to reload instead of re-splitting its name', function () {
+        $this->actingAsAdmin();
+        $author = Author::create(['first_name' => 'Anna Maria', 'last_name' => 'Kowalska']);
+
+        $this->putJson("/api/authors/{$author->id}", ['name' => 'Anna Maria Kowalska', 'notes' => 'x'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name'])
+            ->assertJsonMissingValidationErrors(['first_name']);
+
+        expect($author->fresh())->first_name->toBe('Anna Maria')->last_name->toBe('Kowalska');
+    });
+
+    it('does not 500 on a non-string legacy name', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/authors', ['name' => 'Jan van der Berg'])
-            ->assertCreated()
-            ->assertJsonPath('data.first_name', 'Jan')
-            ->assertJsonPath('data.last_name', 'van der Berg');
+        $this->postJson('/api/authors', ['name' => ['a', 'b']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
     });
 
     it('prefers first_name over a legacy name sent beside it', function () {
@@ -532,13 +545,37 @@ describe('author first and last name', function () {
             ->assertJsonPath('data.name', 'Anna');
     });
 
-    it('splits a name written through the model instead of failing on a missing column', function () {
+    it('refuses a name written through the model, naming the columns to use', function () {
         $author = new Author;
-        $author->name = 'Anna Kowalska';
-        $author->save();
 
-        expect($author->fresh())
-            ->first_name->toBe('Anna')
-            ->last_name->toBe('Kowalska');
+        expect(fn () => $author->name = 'Anna Kowalska')
+            ->toThrow(LogicException::class, 'first_name and last_name');
+    });
+
+    it('rolls back a name longer than the old column without failing', function () {
+        $author = Author::create(['first_name' => str_repeat('a', 200), 'last_name' => str_repeat('b', 200)]);
+
+        $migration = require database_path('migrations/2026_10_29_000001_split_author_name_into_first_and_last.php');
+        $migration->down();
+
+        expect(mb_strlen(DB::table('authors')->where('id', $author->id)->value('name')))->toBe(255);
+
+        $migration->up();
+    });
+
+    it('re-runs after a failure that left the new columns behind', function () {
+        $migration = require database_path('migrations/2026_10_29_000001_split_author_name_into_first_and_last.php');
+        $migration->down();
+        $id = DB::table('authors')->insertGetId(['name' => 'Anna Kowalska', 'created_at' => now(), 'updated_at' => now()]);
+
+        // What a run that died after its first DDL statement leaves behind.
+        Schema::table('authors', function ($table) {
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+        });
+
+        $migration->up();
+
+        expect(DB::table('authors')->where('id', $id)->value('first_name'))->toBe('Anna');
     });
 });

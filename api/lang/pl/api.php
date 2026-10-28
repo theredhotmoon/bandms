@@ -4,6 +4,7 @@ return [
     'unauthenticated' => 'Nieuwierzytelniony.',
     'forbidden'       => 'Brak dostępu.',
     'not_found'       => 'Nie znaleziono.',
+    'stale_admin'     => 'Panel administracyjny został zaktualizowany. Odśwież stronę i zapisz ponownie.',
 
     /* See the note in lang/en/api.php. */
     'fan' => [
