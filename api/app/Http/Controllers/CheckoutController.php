@@ -76,7 +76,7 @@ class CheckoutController extends Controller
             }
         }
 
-        [$order, $lineItems] = DB::transaction(function () use ($validated, $currency, $customer, $items, $promo, $hasShopItems) {
+        [$order, $lineItems, $discountAmount] = DB::transaction(function () use ($validated, $currency, $customer, $items, $promo, $hasShopItems) {
 
             // Pre-load shop items and ticket types in bulk
             $shopItemIds   = array_filter(array_column($items, 'shop_item_id'));
@@ -96,6 +96,8 @@ class CheckoutController extends Controller
 
             // Track quantities per ticket type for max_per_order validation
             $ticketQtyByType = [];
+            // Tickets claimed per presale code in this order, against max_uses
+            $presaleQty = [];
 
             foreach ($items as $lineInput) {
                 $qty = (int) $lineInput['quantity'];
@@ -152,27 +154,30 @@ class CheckoutController extends Controller
                     $ticketType = $ticketTypes->get($lineInput['ticket_type_id']);
                     abort_unless($ticketType, 422, 'Ticket type not found.');
 
-                    $presaleCodeStr = $lineInput['presale_code'] ?? $validated['presale_code'] ?? null;
-                    $presale        = null;
+                    // A presale code matters only for a ticket whose sale has not
+                    // opened. On anything already on sale it is ignored, so an
+                    // order-level code scoped to one concert cannot block another
+                    // concert's tickets in the same cart.
+                    $presale = null;
+                    if ($ticketType->available_from && $ticketType->available_from->isFuture()) {
+                        $presaleCodeStr = $lineInput['presale_code'] ?? $validated['presale_code'] ?? null;
 
-                    if (! empty($presaleCodeStr)) {
-                        $presale = PresaleCode::with('tiers')
-                            ->where('code', $presaleCodeStr)
-                            ->where(fn ($q) => $q
-                                ->where('concert_id', $ticketType->concert_id)
-                                ->orWhereNull('concert_id')
-                            )
-                            ->lockForUpdate()
-                            ->first();
+                        if (! empty($presaleCodeStr)) {
+                            $presale = PresaleCode::with('tiers')
+                                ->where('code', $presaleCodeStr)
+                                ->where(fn ($q) => $q
+                                    ->where('concert_id', $ticketType->concert_id)
+                                    ->orWhereNull('concert_id')
+                                )
+                                ->lockForUpdate()
+                                ->first();
 
-                        if (! $presale || ! $presale->isActive() || ($presale->max_uses !== null && $presale->used_count >= $presale->max_uses)) {
-                            abort(422, 'Invalid or expired presale code.');
+                            if (! $presale || ! $presale->isActive()) {
+                                abort(422, 'Invalid or expired presale code.');
+                            }
                         }
-                    }
 
-                    // Check sale window (a valid presale code bypasses a future available_from date)
-                    if ($ticketType->available_from && $ticketType->available_from->isFuture() && ! $presale) {
-                        abort(422, "Tickets for '{$ticketType->name}' are not on sale yet.");
+                        abort_unless($presale, 422, "Tickets for '{$ticketType->name}' are not on sale yet.");
                     }
                     if ($ticketType->on_sale_until && $ticketType->on_sale_until->isPast()) {
                         abort(422, "Tickets for '{$ticketType->name}' are no longer on sale.");
@@ -200,8 +205,13 @@ class CheckoutController extends Controller
                         abort(422, 'Ticket currency does not match checkout currency.');
                     }
 
-                    if ($presale) {
-                        $presale->increment('used_count');
+                    // One use per ticket. Uses are spent when payment is confirmed
+                    // (webhook), so this only checks the order fits what is left.
+                    if ($presale && $presale->max_uses !== null) {
+                        $presaleQty[$presale->id] = ($presaleQty[$presale->id] ?? 0) + $qty;
+                        if ($presale->used_count + $presaleQty[$presale->id] > $presale->max_uses) {
+                            abort(422, 'Presale code does not have enough uses left for this order.');
+                        }
                     }
 
                     // Check tier availability_count
@@ -235,6 +245,7 @@ class CheckoutController extends Controller
                         $orderItemsData[] = [
                             'concert_ticket_type_id'      => $ticketType->id,
                             'concert_ticket_price_tier_id'=> $tier->id,
+                            'presale_code_id'             => $presale?->id,
                             'name'                        => $ticketType->name,
                             'variant_label'               => $tier->name,
                             'price'                       => $tier->price,
@@ -262,24 +273,9 @@ class CheckoutController extends Controller
             $discountAmount = 0;
             $promoId        = null;
             if ($promo) {
-                $subtotal       = $total;
-                $discounted     = $promo->applyTo($total);
-                $discountAmount = round($total - $discounted, 2);
-                $total          = $discounted;
+                $discountAmount = round($total - $promo->applyTo($total), 2);
+                $total          = round($total - $discountAmount, 2);
                 $promoId        = $promo->id;
-
-                // Distribute discount proportionally across line_items unit_amounts
-                // so Stripe never receives a negative unit_amount.
-                if ($discountAmount > 0 && $subtotal > 0) {
-                    $ratio = max(0.0, $discounted / $subtotal);
-                    foreach ($lineItemsArr as &$lineItem) {
-                        $lineItem['price_data']['unit_amount'] = max(
-                            0,
-                            (int) round($lineItem['price_data']['unit_amount'] * $ratio)
-                        );
-                    }
-                    unset($lineItem);
-                }
             }
 
             $shippingAddress = $hasShopItems ? ($customer['shipping_address'] ?? null) : null;
@@ -297,13 +293,13 @@ class CheckoutController extends Controller
 
             $order->items()->createMany($orderItemsData);
 
-            return [$order, $lineItemsArr];
+            return [$order, $lineItemsArr, $discountAmount];
         });
 
         $frontendUrl = rtrim(config('services.stripe.frontend_url'), '/');
 
         try {
-            $session = $this->stripe->createCheckoutSession([
+            $params = [
                 'mode'                 => 'payment',
                 'payment_method_types' => ['card'],
                 'customer_email'       => $customer['email'],
@@ -311,7 +307,23 @@ class CheckoutController extends Controller
                 'metadata'             => ['order_uuid' => $order->uuid],
                 'success_url'          => "{$frontendUrl}/merch/success?session_id={CHECKOUT_SESSION_ID}&order_uuid={$order->uuid}",
                 'cancel_url'           => "{$frontendUrl}/merch/cancel",
-            ]);
+            ];
+
+            // The promo goes to Stripe as one fixed-amount coupon for exactly the
+            // discount stored on the order. Stripe rejects a negative line, and
+            // scaling every unit price instead rounds per unit, so the charge
+            // drifted a few cents from Order.total.
+            if ($discountAmount > 0) {
+                $params['discounts'] = [[
+                    'coupon' => $this->stripe->createOneOffCoupon(
+                        (int) round($discountAmount * 100),
+                        $currency,
+                        "Promo: {$promo->code}",
+                    ),
+                ]];
+            }
+
+            $session = $this->stripe->createCheckoutSession($params);
         } catch (\Exception $e) {
             $order->update(['status' => \App\Enums\OrderStatus::Cancelled]);
             return response()->json(['message' => 'Payment provider unavailable. Please try again.'], 503);
@@ -395,6 +407,11 @@ class CheckoutController extends Controller
                 if ($order->promo_code_id !== null) {
                     PromoCode::where('id', $order->promo_code_id)->increment('used_count');
                 }
+
+                // And presale codes, one use per ticket bought with one.
+                $order->items()->whereNotNull('presale_code_id')->get()
+                    ->countBy('presale_code_id')
+                    ->each(fn (int $n, int $codeId) => PresaleCode::where('id', $codeId)->increment('used_count', $n));
 
                 return $order;
             });

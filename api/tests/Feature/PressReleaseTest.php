@@ -262,4 +262,47 @@ describe('POST /api/press-releases/fetch-meta', function () {
         $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com/broken'])
             ->assertStatus(422);
     });
+
+    it('refuses a public URL that redirects into the internal network', function () {
+        $this->actingAsAdmin();
+
+        Http::fake([
+            'example.com/*' => Http::response('', 302, ['Location' => 'http://127.0.0.1/admin']),
+            '127.0.0.1/*'   => Http::response('<meta property="og:title" content="internal" />', 200),
+        ]);
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com/moved'])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'URL is not allowed.');
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '127.0.0.1'));
+    });
+
+    it('follows a redirect that stays on public hosts', function () {
+        $this->actingAsAdmin();
+
+        Http::fake([
+            'example.com/review' => Http::response('<meta property="og:title" content="Moved Review" />', 200),
+            'example.com/*'      => Http::response('', 301, ['Location' => '/review']),
+        ]);
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => 'https://example.com/old'])
+            ->assertSuccessful()
+            ->assertJsonPath('data.og_title', 'Moved Review');
+    });
+
+    it('refuses private and IPv4-mapped addresses without fetching', function (string $url) {
+        $this->actingAsAdmin();
+        Http::fake();
+
+        $this->postJson('/api/press-releases/fetch-meta', ['url' => $url])->assertStatus(422);
+
+        Http::assertNothingSent();
+    })->with([
+        'loopback'    => 'http://127.0.0.1/',
+        'private'     => 'http://10.0.0.5/',
+        'metadata'    => 'http://169.254.169.254/latest/meta-data/',
+        'mapped v6'   => 'http://[::ffff:10.0.0.1]/',
+        'docker host' => 'http://backend/api/health',
+    ]);
 });

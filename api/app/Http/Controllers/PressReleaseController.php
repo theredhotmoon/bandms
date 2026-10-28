@@ -15,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Http;
 
 class PressReleaseController extends Controller
 {
@@ -51,10 +50,14 @@ class PressReleaseController extends Controller
         }
 
         try {
-            $response = Http::withHeaders([
+            $response = SafeUrl::get($data['url'], 10, [
                 'User-Agent' => 'Mozilla/5.0 (compatible; BandMS-Bot/1.0; +http://localhost)',
                 'Accept'     => 'text/html,application/xhtml+xml',
-            ])->timeout(10)->get($data['url']);
+            ]);
+
+            if ($response === null) {
+                return response()->json(['message' => 'URL is not allowed.'], 422);
+            }
 
             if (! $response->successful()) {
                 return response()->json(['error' => 'Could not fetch the URL (HTTP ' . $response->status() . ')'], 422);

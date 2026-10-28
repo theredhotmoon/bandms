@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BandLogoResource;
 use App\Models\BandLogo;
 use App\Models\BandProfile;
+use enshrined\svgSanitize\Sanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use App\Support\SiteRebuild;
 
 class BandLogoController extends Controller
@@ -47,23 +51,9 @@ class BandLogoController extends Controller
         ]);
 
         $file     = $request->file('file');
-        if (
-            strtolower($file->getClientOriginalExtension()) === 'svg'
-            || str_contains(strtolower((string) $file->getMimeType()), 'svg')
-        ) {
-            $svgContent = (string) @file_get_contents($file->getRealPath());
-            if (
-                stripos($svgContent, '<script') !== false
-                || stripos($svgContent, 'javascript:') !== false
-                || preg_match('/\bon[a-z]+\s*=/i', $svgContent) === 1
-            ) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'file' => ['SVG file contains unsafe content.'],
-                ]);
-            }
-        }
-
-        $path     = $file->store('logos', 'public');
+        $path     = $this->isSvg($file)
+            ? $this->storeSanitizedSvg($file)
+            : $file->store('logos', 'public');
         $mime     = $file->getMimeType() ?? 'image/png';
         $size     = $file->getSize();
 
@@ -174,5 +164,36 @@ class BandLogoController extends Controller
         }
         $info = @getimagesize($realPath);
         return $info ? [$info[0], $info[1]] : [null, null];
+    }
+
+    private function isSvg(UploadedFile $file): bool
+    {
+        return strtolower($file->getClientOriginalExtension()) === 'svg'
+            || str_contains(strtolower((string) $file->getMimeType()), 'svg');
+    }
+
+    /**
+     * An SVG is a document, not a picture: served from /storage it runs any
+     * script it carries on the site's own origin, where the admin's bearer
+     * token sits in localStorage. Matching substrings (`<script`, `on*=`)
+     * misses `<svg:script>`, entity-encoded `javascript&#58;` and
+     * `<foreignObject>`, so the file is parsed and rebuilt from an allowlist
+     * of elements and attributes instead, and only that rebuilt copy is
+     * stored.
+     */
+    private function storeSanitizedSvg(UploadedFile $file): string
+    {
+        $sanitizer = new Sanitizer();
+        $sanitizer->removeRemoteReferences(true);
+        $clean = $sanitizer->sanitize((string) file_get_contents($file->getRealPath()));
+
+        if ($clean === false || trim($clean) === '') {
+            throw ValidationException::withMessages(['file' => ['The SVG could not be read.']]);
+        }
+
+        $path = 'logos/' . Str::random(40) . '.svg';
+        Storage::disk('public')->put($path, $clean);
+
+        return $path;
     }
 }

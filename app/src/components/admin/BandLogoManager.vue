@@ -79,13 +79,11 @@ function cancelPending() {
   uploadForm.variant        = 'full'
   uploadForm.background     = 'any'
   uploadForm.version_label  = ''
-  onBeforeUnmountCleanup()
 }
+
 onBeforeUnmount(() => {
   if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
 })
-function onBeforeUnmountCleanup() {
-}
 
 async function doUpload() {
   if (!pendingFile.value) return
@@ -190,15 +188,16 @@ const pins = reactive({
   epk_logo_id:        props.epkLogoId        as number | null,
   tech_rider_logo_id: props.techRiderLogoId  as number | null,
   website_logo_id:    props.websiteLogoId    as number | null,
-}); watch(
+})
+
+watch(
   () => [props.epkLogoId, props.techRiderLogoId, props.websiteLogoId] as const,
   ([epk, rider, web]) => {
     pins.epk_logo_id        = epk
     pins.tech_rider_logo_id = rider
     pins.website_logo_id    = web
   },
-); ({
-})
+)
 
 const savingPins = ref(false)
 

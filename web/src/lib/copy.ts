@@ -87,6 +87,8 @@ export function cartCopy(t: MerchCopy) {
   return {
     title: t.cartTitle,
     close: t.cartClose,
+    decrease: t.cartDecrease,
+    increase: t.cartIncrease,
     empty: t.cartEmpty,
     remove: t.remove,
     total: t.total,

@@ -8,6 +8,9 @@ import type { CheckoutPayload } from '@/lib/checkout'
 export interface CartCopy {
   title: string
   close: string
+  /** '{name}' is the product. */
+  decrease: string
+  increase: string
   empty: string
   remove: string
   total: string
@@ -102,9 +105,9 @@ async function checkout() {
               <p v-if="item.variant" class="text-xs text-muted">{{ item.variant }}</p>
               <p class="text-xs text-accent mt-0.5">{{ formatPrice(item.price) }}</p>
               <div class="flex items-center gap-2 mt-1.5">
-                <button type="button" :aria-label="`Decrease quantity of ${item.name}`" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity - 1)">−</button>
+                <button type="button" :aria-label="copy.decrease.replace('{name}', item.name)" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity - 1)">−</button>
                 <span class="text-sm text-body w-4 text-center">{{ item.quantity }}</span>
-                <button type="button" :aria-label="`Increase quantity of ${item.name}`" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity + 1)">+</button>
+                <button type="button" :aria-label="copy.increase.replace('{name}', item.name)" class="w-6 h-6 rounded border border-border text-muted hover:text-body transition-colors flex items-center justify-center text-sm" @click="updateQuantity(item.shopItemId, item.variantId, item.quantity + 1)">+</button>
                 <button type="button" class="ml-auto text-xs text-subtle hover:text-danger transition-colors" @click="removeFromCart(item.shopItemId, item.variantId)">{{ copy.remove }}</button>
               </div>
             </div>

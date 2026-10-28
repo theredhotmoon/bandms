@@ -8,7 +8,6 @@ use App\Support\SafeUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Sabre\VObject\Reader;
 
@@ -263,7 +262,7 @@ class BandCalendarController extends Controller
             $ical = Cache::remember(
                 $cacheKey,
                 300,
-                fn () => Http::timeout(15)->get($feedUrl)->body()
+                fn () => SafeUrl::get($feedUrl, 15)?->body() ?? ''
             );
 
             if (!$ical || !str_contains($ical, 'BEGIN:VCALENDAR')) {

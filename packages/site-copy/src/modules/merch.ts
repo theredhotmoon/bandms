@@ -96,6 +96,16 @@ export const MERCH_COPY = defineCopy([
     defaults: { en: 'Close cart', pl: 'Zamknij koszyk' },
   },
   {
+    key: 'cartDecrease', label: '"Decrease quantity" (screen readers)', group: 'Cart', maxLength: 80,
+    help: '{name} is the product.',
+    defaults: { en: 'Decrease quantity of {name}', pl: 'Zmniejsz liczbę: {name}' },
+  },
+  {
+    key: 'cartIncrease', label: '"Increase quantity" (screen readers)', group: 'Cart', maxLength: 80,
+    help: '{name} is the product.',
+    defaults: { en: 'Increase quantity of {name}', pl: 'Zwiększ liczbę: {name}' },
+  },
+  {
     key: 'cartEmpty', label: 'Empty cart', group: 'Cart', maxLength: 80,
     defaults: { en: 'Your cart is empty.', pl: 'Twój koszyk jest pusty.' },
   },
