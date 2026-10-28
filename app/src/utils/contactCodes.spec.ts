@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { COUNTRY_CODES, CONTACT_LANGUAGE_CODES, contactLanguageOptions, countryOptions } from './contactCodes'
+import {
+  COUNTRY_CODES, CONTACT_LANGUAGE_CODES, contactLanguageName, contactLanguageOptions, countryName, countryOptions, usedOptions,
+} from './contactCodes'
 
 describe('parity with the API', () => {
   // The API validates against its own copy; a code in only one list is either
@@ -52,5 +54,25 @@ describe('contactLanguageOptions', () => {
 
   it('names every code', () => {
     expect(contactLanguageOptions('en').filter((o) => o.label === o.code)).toEqual([])
+  })
+})
+
+describe('countryName / contactLanguageName', () => {
+  it('names a stored code in the admin language', () => {
+    expect(countryName('DE', 'en')).toBe('Germany')
+    expect(contactLanguageName('de', 'pl')).toBe('niemiecki')
+  })
+
+  it('returns null for an unset field', () => {
+    expect(countryName(null, 'en')).toBeNull()
+    expect(contactLanguageName(null, 'en')).toBeNull()
+  })
+
+  it('narrows options to the codes in use, keeping unknown ones last', () => {
+    expect(usedOptions(countryOptions('en'), ['PL', null, 'DE', 'PL', 'QQ']).map((o) => o.code)).toEqual(['DE', 'PL', 'QQ'])
+  })
+
+  it('shows an unknown code as itself rather than dropping it', () => {
+    expect(countryName('QQ', 'en')).toBe('QQ')
   })
 })

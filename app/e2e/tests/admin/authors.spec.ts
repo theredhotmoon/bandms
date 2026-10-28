@@ -102,6 +102,32 @@ test.describe.serial('Admin Authors', () => {
     await expect(modal.getByLabel('Preferred contact language')).toHaveValue('de')
   })
 
+  test('table: shows country and language, and filters by them', async ({ page }) => {
+    const search = page.locator('input[aria-label="Search"]')
+    const row    = page.locator('tr').filter({ hasText: updatedName })
+    const countryCells  = page.getByTestId('author-country')
+    const languageCells = page.getByTestId('author-language')
+
+    await search.fill(updatedName)
+    await expect(row.getByTestId('author-country')).toHaveText('Germany', { timeout: 8000 })
+    await expect(row.getByTestId('author-language')).toHaveText('German')
+    await search.fill('')
+
+    // Filters narrow the whole table, not just a searched row.
+    const countryFilter  = page.getByRole('combobox', { name: 'Filter by country' })
+    const languageFilter = page.getByRole('combobox', { name: 'Filter by language' })
+    await countryFilter.selectOption('DE')
+    await expect(countryCells.first()).toBeVisible()
+    await expect(countryCells.filter({ hasNotText: 'Germany' })).toHaveCount(0)
+
+    await languageFilter.selectOption('de')
+    await expect(languageCells.filter({ hasNotText: 'German' })).toHaveCount(0)
+
+    // …and combine with search, so the contact is reachable whatever the page size.
+    await search.fill(updatedName)
+    await expect(row).toBeVisible()
+  })
+
   test('delete author: ConfirmDialog appears → confirm → toast "Author deleted" and row gone', async ({ page }) => {
     await page.locator('input[aria-label="Search"]').fill(updatedName)
 
