@@ -126,9 +126,10 @@ test.describe.serial('Admin Bands — contact people', () => {
     const recipient = page.locator('input[placeholder="Jane, John, The team…"]')
     await expect(recipient).toHaveValue(CONTACT_NAME)
 
-    // The greeting names the person; the body still names the band.
+    // The greeting names the person by first name; the body still names the band.
     const pitch = page.locator('.pitch-text')
-    await expect(pitch).toContainText(`Hi ${CONTACT_NAME},`)
+    await expect(pitch).toContainText(`Hi ${CONTACT_FIRST},`)
+    await expect(pitch).not.toContainText(`Hi ${CONTACT_NAME},`)
     await expect(pitch).toContainText(`with ${BAND_NAME}`)
   })
 

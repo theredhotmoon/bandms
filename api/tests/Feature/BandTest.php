@@ -238,6 +238,7 @@ describe('band contact people', function () {
         $this->getJson('/api/bands')
             ->assertSuccessful()
             ->assertJsonPath('data.0.contacts.0.name', 'Cara Contact')
+            ->assertJsonPath('data.0.contacts.0.first_name', 'Cara')
             ->assertJsonPath('data.0.contacts.0.email', 'cara@example.com')
             ->assertJsonPath('data.0.contacts.0.phone', '+48 500 600 700')
             ->assertJsonPath('data.0.contacts.0.whatsapp', '+48 500 600 700');
