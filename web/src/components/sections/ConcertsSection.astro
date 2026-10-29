@@ -23,7 +23,9 @@ import { isUpcoming, formatGenreKicker, fmtDateParts } from '@/lib/i18n'
 import type { Concert } from '@/types/concert'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { CONCERTS_COPY } from '@bandms/site-copy'
-import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
+import { moduleCopy, newsletterFormCopy, listPaging } from '@/lib/copy'
+import { pagedAttrs } from '@/lib/showMore'
+import ShowMore from '@/components/ShowMore.astro'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -31,6 +33,8 @@ const [concerts, profile, siteConfig] = await Promise.all([getConcerts(lang), ge
 // Every string on this page and its islands: registry defaults for this
 // locale, overridden by whatever the band saved in Website Modules → Shows.
 const t = moduleCopy(siteConfig, 'concerts', CONCERTS_COPY, lang)
+// Website Modules → Items per page — see ShowMore.astro / useShowMore().
+const { perPage, showMoreLabel } = listPaging(siteConfig, 'concerts', lang)
 const newsletterCopy = newsletterFormCopy(siteConfig, lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
@@ -148,13 +152,14 @@ function getTypeLabel(concert: Concert) {
       <p class="sec-sub">{t.upcomingSub}</p>
 
       {upcoming.length > 0 ? (
-        <div class="gig-list">
-          {upcoming.map(c => {
+        <>
+        <div id="upcoming-list" class="gig-list">
+          {upcoming.map((c, i) => {
             const ticket = getTicketLink(c)
             const typeLabel = getTypeLabel(c)
             const { day, mo, yr } = fmtDateParts(c.date, lang)
             return (
-              <div class="gig-row">
+              <div class="gig-row" {...pagedAttrs(i, perPage)}>
                 <a class="date-block" href={`/${lang}/${slugMap[lang].concerts}/${c.slug}`} aria-label={`${c.venue.city ?? c.venue.name}, ${mo} ${yr}`}>
                   <span class="date-day">{day}</span>
                   <span class="date-mo">{mo} {yr}</span>
@@ -204,6 +209,8 @@ function getTypeLabel(concert: Concert) {
             )
           })}
         </div>
+        <ShowMore list="upcoming-list" label={showMoreLabel} perPage={perPage} total={upcoming.length} />
+        </>
       ) : (
         <NoGigsCta lang={lang} siteConfig={siteConfig} slugMap={slugMap} />
       )}
@@ -231,6 +238,8 @@ function getTypeLabel(concert: Concert) {
           })}
           accent={ACCENT}
           copy={{ title: t.archiveTitle, sub: t.archiveSub, all: t.archiveAll, showOnMap: t.showOnMap, empty: t.archiveEmpty }}
+          perPage={perPage}
+          showMoreLabel={showMoreLabel}
           client:visible
         />
       </div>

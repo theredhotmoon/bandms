@@ -11,7 +11,7 @@ import FaqSection from '@/components/sections/FaqSection.astro'
 import { getMusicVideos, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, formatGenreKicker } from '@/lib/i18n'
 import { VIDEOS_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, listPaging } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -29,6 +29,8 @@ const genreKicker = formatGenreKicker(profile.genres)
 // Every string on this page: registry defaults for this locale, overridden by
 // whatever the band saved in Website Modules → Videos.
 const t = moduleCopy(siteConfig, 'videos', VIDEOS_COPY, lang)
+// Website Modules → Items per page — see ShowMore.astro / useShowMore().
+const { perPage, showMoreLabel } = listPaging(siteConfig, 'videos', lang)
 
 // Same shape the Music page builds, so both pages share one gallery island
 // rather than each rendering videos its own way.
@@ -68,7 +70,7 @@ const galleryVideos = [...videos]
     ) : (
       <>
         <SectionHead icon="youtube" title={t.heading} />
-        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} />
+        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} perPage={perPage} showMoreLabel={showMoreLabel} />
       </>
     )}
   </section>

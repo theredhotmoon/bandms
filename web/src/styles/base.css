@@ -87,6 +87,38 @@ a {
   background: var(--color-accent);
 }
 
+/* ── Show more (Website Modules → Items per page) ──────────────────────────────
+   One look for every list's "Show more", whether the list is a Vue island
+   (ShowMoreButton.vue) or static markup (ShowMore.astro). An item past the
+   current batch carries data-more-hidden in both; the attribute rather than
+   `hidden`, because a list row's own display rule would override `hidden`.
+   Both rules hang off html.js (set inline by BaseLayout): without JS every
+   item shows and the button, which could do nothing, does not. */
+.js [data-more-hidden] { display: none !important; }
+html:not(.js) .show-more { display: none; }
+.show-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 36px;
+}
+.show-more-btn {
+  background: transparent;
+  color: var(--color-ink);
+  border: 3px solid var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.show-more-btn:hover,
+.show-more-btn:focus-visible {
+  background: var(--color-ink);
+  color: var(--color-page);
+}
+
 /* ── Prose (post and release bodies) ───────────────────────────────────────── */
 
 .prose {

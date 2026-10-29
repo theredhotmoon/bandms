@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { useShowMore } from '@/lib/showMore'
+import ShowMoreButton from './ShowMoreButton.vue'
 
 export interface GalleryPhoto {
   id: number
@@ -37,6 +39,10 @@ const props = defineProps<{
   /** Filter chips, in display order. `slug` matches GalleryAlbum.categories. */
   categories: readonly { slug: string; label: string }[]
   copy: GalleryCopy
+  /** Website Modules → Photos → Items per page; null shows everything. */
+  perPage?: number | null
+  /** Site-wide "Show more" label (the `site` module's copy). */
+  showMoreLabel: string
 }>()
 
 // ── Filter ────────────────────────────────────────────────────────────────────
@@ -48,6 +54,9 @@ const visible = computed(() =>
     ? props.albums
     : props.albums.filter((a) => a.categories.includes(active.value)),
 )
+
+// Counts albums. Picking another category starts again from the first batch.
+const { heldBack, hasMore, showMore } = useShowMore(() => visible.value, () => props.perPage, [active])
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 
@@ -127,9 +136,10 @@ onMounted(() => {
     <p v-if="visible.length === 0" class="gb-empty">{{ copy.empty }}</p>
 
     <!-- ALBUMS -->
-    <div v-else class="gb-grid">
+    <div v-else id="gallery-grid" class="gb-grid">
       <button
-        v-for="album in visible"
+        v-for="(album, i) in visible"
+        :data-more-hidden="heldBack(i)"
         :key="album.id"
         type="button"
         class="gb-card"
@@ -164,6 +174,7 @@ onMounted(() => {
         </span>
       </button>
     </div>
+    <ShowMoreButton v-if="hasMore" list="gallery-grid" :label="showMoreLabel" @click="showMore" />
 
     <!-- LIGHTBOX -->
     <Teleport v-if="mounted" to="body">

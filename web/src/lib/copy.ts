@@ -36,6 +36,19 @@ export function siteCopy(siteConfig: SiteConfig, lang: string) {
 }
 
 /**
+ * What a list page needs for Website Modules → <module> → Items per page:
+ * the batch size (null for "Default", show everything) and the site-wide
+ * "Show more" label. Here rather than in showMore.ts, which islands import —
+ * this pulls in the copy registry, which must stay out of client bundles.
+ */
+export function listPaging(siteConfig: SiteConfig, slug: string, lang: string): { perPage: number | null; showMoreLabel: string } {
+  return {
+    perPage: siteConfig.module_config?.[slug]?.per_page ?? null,
+    showMoreLabel: siteCopy(siteConfig, lang).showMore,
+  }
+}
+
+/**
  * Props for `NewsletterSignup.vue`, which is embedded on three pages. The
  * form's own strings live on the `newsletter` module wherever the form is
  * rendered, so editing "Join the list" once changes every copy of the form —

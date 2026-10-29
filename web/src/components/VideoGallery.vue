@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted } from 'vue'
+import { useShowMore } from '@/lib/showMore'
+import ShowMoreButton from './ShowMoreButton.vue'
 
 export interface GalleryVideo {
   id: number
@@ -15,7 +17,20 @@ export interface GalleryVideo {
   meta: string
 }
 
-defineProps<{ videos: readonly GalleryVideo[]; closeLabel: string; watchLabel: string }>()
+const props = defineProps<{
+  videos: readonly GalleryVideo[]
+  closeLabel: string
+  watchLabel: string
+  /**
+   * Website Modules → Videos → Items per page; null shows everything. The
+   * Releases page passes none, and shows every video.
+   */
+  perPage?: number | null
+  /** Site-wide "Show more" label (the `site` module's copy). */
+  showMoreLabel: string
+}>()
+
+const { heldBack, hasMore, showMore } = useShowMore(() => props.videos, () => props.perPage)
 
 /**
  * Grid and lightbox live in one island rather than two.
@@ -59,8 +74,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="vg">
-    <button v-for="video in videos" :key="video.id" type="button" class="vg-card" @click="open(video)">
+  <div id="video-grid" class="vg">
+    <button v-for="(video, i) in videos" :data-more-hidden="heldBack(i)" :key="video.id" type="button" class="vg-card" @click="open(video)">
       <span class="vg-thumb">
         <img v-if="video.thumb" :src="video.thumb" :alt="video.title" loading="lazy" />
         <span v-else class="vg-thumb-fallback" aria-hidden="true" />
@@ -78,6 +93,7 @@ onMounted(() => {
       </span>
     </button>
   </div>
+  <ShowMoreButton v-if="hasMore" list="video-grid" :label="showMoreLabel" @click="showMore" />
 
   <Teleport v-if="mounted" to="body">
     <div

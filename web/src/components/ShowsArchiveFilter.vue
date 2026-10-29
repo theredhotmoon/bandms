@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useShowMore } from '@/lib/showMore'
+import ShowMoreButton from './ShowMoreButton.vue'
 
 interface ArchivedConcert {
   id: number
@@ -27,6 +29,10 @@ const props = defineProps<{
   concerts: ArchivedConcert[]
   accent: string
   copy: ArchiveCopy
+  /** Website Modules → Shows → Items per page; null shows everything. */
+  perPage?: number | null
+  /** Site-wide "Show more" label (the `site` module's copy). */
+  showMoreLabel: string
 }>()
 
 const safeHref = (u: string) => u.startsWith('/') || /^https?:\/\//i.test(u) ? u : '#'
@@ -43,6 +49,9 @@ const shown = computed(() =>
     ? props.concerts
     : props.concerts.filter(c => c.yr === selectedYear.value)
 )
+
+// Picking another year starts again from the first batch.
+const { heldBack, hasMore, showMore } = useShowMore(() => shown.value, () => props.perPage, [selectedYear])
 
 function showOnMap(id: number) {
   const mapSection = document.getElementById('shows-map')
@@ -75,8 +84,8 @@ function showOnMap(id: number) {
     </div>
     <p class="archive-sub">{{ copy.sub }}</p>
 
-    <div class="archive-list">
-      <div v-for="c in shown" :key="c.id" class="archive-row">
+    <div id="shows-archive-list" class="archive-list">
+      <div v-for="(c, i) in shown" :data-more-hidden="heldBack(i)" :key="c.id" class="archive-row">
         <a :href="safeHref(c.href)" class="arc-date-block">
           <span class="arc-day">{{ c.day }}</span>
           <span class="arc-mo">{{ c.mo }} {{ c.yr }}</span>
@@ -101,6 +110,7 @@ function showOnMap(id: number) {
         <div v-else />
       </div>
     </div>
+    <ShowMoreButton v-if="hasMore" list="shows-archive-list" :label="showMoreLabel" @click="showMore" />
 
     <div v-if="shown.length === 0" class="archive-empty">{{ copy.empty }}</div>
   </div>

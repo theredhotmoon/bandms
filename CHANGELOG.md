@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (public lists: items per page, equal news card widths)
+
+### Added
+- **Website Modules → Items per page now works on every list page**: News, Shows (the upcoming list and the past-shows archive, each on its own), Photos (albums), Videos, Press (the coverage list; featured pieces are curated, so always shown) and Merch. A list shows that many entries, and a **Show more** button below it reveals the next batch. Changing a filter (a news tag or search, an archive year, a photo category) starts again from the first batch. *Default* still shows everything. The setting had been saved and served for months without any public page reading it. On News the featured post is extra, so 6, 9 or 12 fill whole rows of the three-column grid. Every entry is still in the page's HTML, only hidden, so crawlers and visitors without JavaScript keep a link to each one. The button's wording is one editable string for the whole site (`showMore`, Website Modules → Site-wide → Lists).
+
+### Fixed
+- **Every card in the news grid is the same width again**: the grid's `1fr` columns are `minmax(auto, 1fr)`, so a card whose tags would not fit on one line set its column's minimum width and came out wider than its neighbours. The columns are now `minmax(0, 1fr)` (the featured post's split too), so the card stays put and the tag row overflows instead: the first tags show, the rest fade out at the edge and slide into view while the card is hovered or focused. That hover-scroll already existed, but it never engaged, because a widened row never overflowed.
+
 ## [Unreleased] — 2026-10-29 (admin: survive a deploy under an open tab)
 
 ### Fixed

@@ -43,6 +43,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Latest news': 'Najnowsze aktualności',
   'Lightbox': 'Podgląd zdjęcia',
   'Links column': 'Kolumna z linkami',
+  'Lists': 'Listy',
   'Lyrics': 'Teksty',
   'Message form': 'Formularz wiadomości',
   'Music videos': 'Teledyski',
@@ -172,6 +173,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '"Share" button': 'Przycisk „Udostępnij”',
   '"Share" button after copying': 'Przycisk „Udostępnij” po skopiowaniu',
   '"Shot at" label': 'Etykieta „Zdjęcie z”',
+  '"Show more" button': 'Przycisk „Pokaż więcej”',
   '"Show on map" button': 'Przycisk „Pokaż na mapie”',
   '"Shows played" counter label': 'Etykieta licznika „Zagrane koncerty”',
   '"Sold out" overlay': 'Nakładka „Wyprzedane”',
@@ -421,6 +423,8 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Before the order number.': 'Przed numerem zamówienia.',
   'Before the venue or place an album was taken at.':
     'Przed miejscem, w którym powstał album zdjęć.',
+  'Below any list whose Items per page holds some entries back.':
+    'Pod każdą listą, której „Pozycji na stronę” ukrywa część wpisów.',
   'Caption under the booking email. Hidden if the profile has no booking address.':
     'Podpis pod e-mailem bookingowym. Ukryty, gdy profil nie ma adresu bookingowego.',
   'Caption under the general contact email.': 'Podpis pod ogólnym adresem kontaktowym.',
