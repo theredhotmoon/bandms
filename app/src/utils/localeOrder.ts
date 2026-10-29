@@ -1,3 +1,4 @@
+import { computed, type ComputedRef, type Ref } from 'vue'
 import type { Lang } from '@/locales'
 
 /**
@@ -75,4 +76,21 @@ export function tagNames(tag: TagNameSource): string[] {
  */
 export function sortTagsByLabel<T extends TagNameSource>(tags: readonly T[], order: readonly Lang[]): T[] {
   return [...tags].sort((a, b) => tagLabel(a, order).localeCompare(tagLabel(b, order), order[0]))
+}
+
+/**
+ * A vue-query `select` that sorts by label, rebuilt whenever `order` changes.
+ *
+ * vue-query re-runs `select` only when the function itself is new, so `order`
+ * must be read *here*, in the computed's getter — that is what makes it a
+ * dependency. Read inside the returned function instead, it tracks nothing:
+ * one function is built at first load, while the order is still the
+ * registry's English-first stand-in, and a Polish-first band's pickers kept
+ * that English order under Polish labels.
+ */
+export function sortedByLabel(order: Readonly<Ref<readonly Lang[]>>): ComputedRef<<T extends TagNameSource>(tags: readonly T[]) => T[]> {
+  return computed(() => {
+    const current = order.value
+    return <T extends TagNameSource>(tags: readonly T[]) => sortTagsByLabel(tags, current)
+  })
 }
