@@ -172,6 +172,10 @@ class ConcertController extends Controller
     private function rules(bool $update = false, ?int $concertId = null): array
     {
         $sometimes = $update ? 'sometimes|' : '';
+        // TIME columns are served as HH:mm:ss, so a client that reads a concert
+        // and saves it back sends that shape. Accepting only H:i 422'd every
+        // save of a gig with a timed guest band from the admin form.
+        $time = 'nullable|date_format:H:i,H:i:s';
 
         return [
             'name'        => 'nullable|array',
@@ -179,9 +183,9 @@ class ConcertController extends Controller
             'name.pl'     => 'nullable|string|max:255',
             'venue_id'           => "{$sometimes}required|exists:venues,id",
             'date'               => "{$sometimes}required|date_format:Y-m-d",
-            'doors_open'         => 'nullable|date_format:H:i',
-            'sound_check_time'   => 'nullable|date_format:H:i',
-            'start_time'         => 'nullable|date_format:H:i',
+            'doors_open'         => $time,
+            'sound_check_time'   => $time,
+            'start_time'         => $time,
             'own_sort_order'     => 'nullable|integer|min:1',
             'description'        => 'nullable|array',
             'description.en'     => 'nullable|string|max:2000',
@@ -189,7 +193,7 @@ class ConcertController extends Controller
             'bands'              => 'nullable|array',
             'bands.*.id'         => 'required|integer|exists:bands,id',
             'bands.*.sort_order' => 'required|integer|min:1',
-            'bands.*.play_time'  => 'nullable|date_format:H:i',
+            'bands.*.play_time'  => $time,
             'tag_ids'            => 'nullable|array',
             'tag_ids.*'          => 'integer|exists:tags,id',
             // Who played. Absent leaves the links alone; [] clears them.

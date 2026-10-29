@@ -23,6 +23,12 @@ let memberId: number | null = null
 let slug = ''
 
 test.beforeEach(async ({ request, baseURL }) => {
+  // Both tests need the band-wide switch on: off, the tab withdraws the QR
+  // code for every member (and a prod-synced database may well have it off).
+  const config = await (await request.get(`${baseURL}/api/site-config?lang=en`)).json()
+  test.skip(config?.module_config?.about?.visibility?.member_pages === false,
+    'Member pages are switched off for the whole band')
+
   const res = await request.post(`${baseURL}/api/band-profile/members`, {
     headers: headers(),
     // login_email: the Profile form requires one, so the opt-out test's Save

@@ -81,8 +81,9 @@ test.describe.serial('Public — member gigs', () => {
   test('lists the gig, which leads to the show page', async ({ page, request }) => {
     // site-config is not wrapped in `data`.
     const config = await (await request.get(`${API}/api/site-config?lang=en`)).json()
-    test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false,
-      'Member pages are not built: About or its Members section is off')
+    test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false
+      || config?.module_config?.about?.visibility?.member_pages === false,
+      'Member pages are not built: About, its Members section or member pages are off')
     test.skip(config?.modules?.concerts === false, 'Concerts module is off')
     const about = config?.module_config?.about?.slug ?? 'about'
     const concerts = config?.module_config?.concerts?.slug ?? 'concerts'

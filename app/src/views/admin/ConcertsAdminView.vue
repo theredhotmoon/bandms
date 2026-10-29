@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { timeInputValue } from '@/utils/dateInput'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
@@ -202,10 +203,10 @@ async function confirmDelete() {
                 <td class="td" style="color:var(--c-d0d0d0);">{{ concert.name ?? '—' }}</td>
                 <td class="td text-xs" style="color:var(--c-94a3b8); font-variant-numeric:tabular-nums;">
                   <!-- Mirrors the column header, "Doors / Start": the position says which is which. -->
-                  <span v-if="concert.doors_open">{{ concert.doors_open }}</span>
+                  <span v-if="concert.doors_open">{{ timeInputValue(concert.doors_open) }}</span>
                   <span v-else-if="concert.start_time" style="color:var(--c-475569);">—</span>
                   <span v-if="concert.doors_open || concert.start_time" style="color:var(--c-475569);"> / </span>
-                  <span v-if="concert.start_time" style="color:var(--c-e2e8f0);">{{ concert.start_time }}</span>
+                  <span v-if="concert.start_time" style="color:var(--c-e2e8f0);">{{ timeInputValue(concert.start_time) }}</span>
                   <span v-else-if="concert.doors_open" style="color:var(--c-475569);">—</span>
                   <span v-if="!concert.doors_open && !concert.start_time">—</span>
                 </td>

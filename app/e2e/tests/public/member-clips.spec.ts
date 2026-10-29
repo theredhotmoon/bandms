@@ -75,8 +75,9 @@ test.describe.serial('Public — member clips', () => {
   test('shows the clip the member appears in', async ({ page, request }) => {
     // site-config is not wrapped in `data`.
     const config = await (await request.get(`${API}/api/site-config?lang=en`)).json()
-    test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false,
-      'Member pages are not built: About or its Members section is off')
+    test.skip(config?.modules?.about === false || config?.module_config?.about?.visibility?.show_members === false
+      || config?.module_config?.about?.visibility?.member_pages === false,
+      'Member pages are not built: About, its Members section or member pages are off')
     const about = config?.module_config?.about?.slug ?? 'about'
 
     await page.goto(`${WEB}/en/${about}/${slug}`)

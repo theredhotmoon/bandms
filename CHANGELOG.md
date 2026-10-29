@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-29 (concert form: guest band play times save)
+
+### Fixed
+- **A gig with a timed guest band can be saved again**: the concert form loaded a guest band's play time with seconds (`21:00:00`, as MySQL returns it) and sent it back that way, so any edit of such a gig — reordering the lineup, changing its date — failed with *"The bands.0.play_time field must match the format H:i."* The API now accepts `HH:mm:ss` as well as `HH:mm` on all four concert times (doors, sound check, start, a band's play time), so anything that reads a concert can save it back; the form also trims every time to `HH:mm` on load, and the admin concert list shows them without seconds.
+- **Opening a gig no longer marks it as edited**: the lineup's own-band row took the untrimmed start time and a watcher then rewrote it, so every opened gig enabled *Update* and asked *Discard changes?* on close without anything being touched.
+- **The member page E2E specs run against a production copy again.** They predated #216's *Member pages* switch, and production has it off, so each one seeded a member and waited for a page that is never built. A new `member-pages-on` Playwright project now switches it on for the run (recording whether it did) and its teardown, `member-pages-off`, puts it back and rebuilds; every spec that needs a built member page — the eight `member-<section>` specs included — runs behind it in `member-pages-readers`. `about-section-visibility.spec.ts` now also checks the admin half of the band-wide switch: with it off, a member's *Public page* tab shows the "switched off for the band" notice and withdraws the QR code, which nothing had asserted. No product change.
+
 ## [Unreleased] — 2026-10-29 (concert page: named prev/next, upcoming shows first)
 
 ### Changed
