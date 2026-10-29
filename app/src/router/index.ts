@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { adminUrl } from '@/config/admin'
 import type { UserRole } from '@/types/auth'
 import { routeTitle } from '@/utils/documentTitle'
+import { claimReload, isStaleChunkError } from '@/utils/staleChunk'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -292,6 +293,36 @@ router.beforeEach((to) => {
 // module scope, and the suffix was a hardcoded band name.
 router.afterEach((to) => {
   document.title = routeTitle(typeof to.name === 'string' ? to.name : '')
+})
+
+// A tab opened before a deploy asks for chunks the deploy deleted. Load the
+// page for real so the browser picks up the new index.html. A route chunk
+// fails inside a navigation, so it reloads into the page that was clicked;
+// any other lazy import (a quick-add form) reloads the page it is on.
+// `href`, not `fullPath`: it carries the history base.
+let navigating = false
+router.beforeEach(() => {
+  navigating = true
+})
+router.afterEach(() => {
+  navigating = false
+})
+
+const reloadOnce = (): boolean => claimReload(() => window.sessionStorage, Date.now())
+
+router.onError((err, to) => {
+  navigating = false
+  if (isStaleChunkError(err) && reloadOnce()) {
+    window.location.assign(router.resolve(to).href)
+    return
+  }
+  // Registering a handler stops vue-router logging; keep failures visible.
+  console.error(err) // i18n-ignore: developer console diagnostic
+})
+
+// Vite fires this for any failed dynamic import in a production build.
+window.addEventListener('vite:preloadError', () => {
+  if (!navigating && reloadOnce()) window.location.reload()
 })
 
 export default router

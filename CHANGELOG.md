@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-29 (admin: survive a deploy under an open tab)
+
+### Fixed
+- **An admin page left open across a deploy no longer goes blank on the next click**: every deploy replaces the hashed route chunks under `/assets/`, so a tab loaded before it asked for files that no longer exist — opening Pictures failed with *"Failed to fetch dynamically imported module: …/PhotosAdminView-DD2It20X.js"* and rendered nothing. The router now catches that error and loads the clicked page for real, which fetches the current `index.html` and its chunk names; a lazy form outside a navigation (the quick-add modals) reloads the page it is on, via Vite's `vite:preloadError`. One automatic reload per 10 s (kept in `sessionStorage`), so a chunk that is genuinely missing cannot reload the page forever — that case, and any other failed navigation, is logged to the console.
+
 ## [Unreleased] — 2026-10-29 (concert form: guest band play times save)
 
 ### Fixed
