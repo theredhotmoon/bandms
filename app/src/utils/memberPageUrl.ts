@@ -1,3 +1,4 @@
+import { memberPageBlocker as sharedBlocker } from '@bandms/rider-core'
 import { DEFAULT_LOCALE } from '@/locales'
 import type { WebsiteModule } from '@/types/website-module'
 
@@ -20,4 +21,17 @@ export function memberPageUrl(
   const about = modules?.find((m) => m.slug === 'about')
   const segment = about?.custom_slug?.[DEFAULT_LOCALE] || 'about'
   return `${origin}/${DEFAULT_LOCALE}/${segment}/${memberSlug}`
+}
+
+/**
+ * Why a member's page is not on the website, or null when it is: the shared
+ * rule from @bandms/rider-core, the one the public build applies, fed the
+ * About row from the admin's modules list. Unknown modules (not loaded, or not
+ * readable for this role) count as on.
+ */
+export function memberPageBlocker(
+  modules: readonly Pick<WebsiteModule, 'slug' | 'enabled' | 'visibility'>[] | undefined,
+  member: { public_page?: boolean },
+): 'band' | 'member' | null {
+  return sharedBlocker(modules?.find((m) => m.slug === 'about'), member)
 }

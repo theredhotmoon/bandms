@@ -29,6 +29,7 @@ const form = reactive({
   photo: '',
   bio: '',
   is_current: true,
+  public_page: true,
   joined_at: '',
   quit_at: '',
   calendar_url: '',
@@ -86,6 +87,7 @@ watch(
     form.photo               = val?.photo ?? ''
     form.bio                 = val?.bio ?? ''
     form.is_current          = val?.is_current ?? true
+    form.public_page         = val?.public_page ?? true
     form.joined_at           = val?.joined_at ?? ''
     form.quit_at             = val?.quit_at ?? ''
     form.calendar_url        = val?.calendar_url ?? ''
@@ -143,6 +145,7 @@ function submit() {
     photo_file:          photoFile.value,
     bio:                 form.bio || null,
     is_current:          form.is_current,
+    public_page:         form.public_page,
     joined_at:           form.joined_at || null,
     quit_at:             form.is_current ? null : (form.quit_at || null),
     calendar_url:        form.calendar_url || null,
@@ -265,6 +268,29 @@ function submit() {
               {{ form.is_current ? $t('band.members.form.current') : $t('band.members.form.exMember') }}
             </span>
           </label>
+        </div>
+
+        <!-- Own page on the website. In this form rather than an admin-only
+             one: MyProfileView reuses it, so a member can hide their own page. -->
+        <div>
+          <label class="field-label">{{ $t('band.members.form.publicPage') }}</label>
+          <label class="toggle-label">
+            <button
+              type="button"
+              class="toggle"
+              :class="{ 'toggle--on': form.public_page }"
+              @click="form.public_page = !form.public_page"
+              :aria-pressed="form.public_page"
+              :aria-label="$t('band.members.form.publicPage')"
+              data-testid="member-public-page-toggle"
+            >
+              <span class="toggle-thumb" />
+            </button>
+            <span class="text-sm" :style="form.public_page ? 'color:var(--c-e0e0e0);' : 'color:var(--c-94a3b8);'">
+              {{ form.public_page ? $t('band.members.form.publicPageOn') : $t('band.members.form.publicPageOff') }}
+            </span>
+          </label>
+          <p class="instruments-hint">{{ $t('band.members.form.publicPageHint') }}</p>
         </div>
 
         <!-- Joined / Quit -->

@@ -316,7 +316,7 @@ reverted — this wants a reviewed diff per file, not a regex.
 ### Decide which logo goes where — the band's, and BandMS's own
 The admin's favicon was Vite's default until Oct 2026. It is now the Skanking
 Storks icon (`app/public/skanking-storks-icon.svg`), and the public site's
-`web/public/favicon.svg` is the same image. The public site had linked
+`web/public/skanking-storks-favicon.svg` is the same image. The public site had linked
 `/favicon.svg` from `BaseHead.astro` all along with no such file, so it served
 no favicon at all. Both are stopgaps:
 
@@ -330,7 +330,7 @@ no favicon at all. Both are stopgaps:
   tech rider, emails, Apple Wallet pass), and whether a favicon needs a square
   variant. The current SVG is 960×1000 and was auto-traced (VTracer).
 
-The two favicons sit on different paths on purpose (`/favicon.svg` for Astro,
+The two favicons sit on different paths on purpose (`/skanking-storks-favicon.svg` for Astro,
 `/skanking-storks-icon.svg` in Caddy's `@spa` matcher) so they can diverge
 without fighting over one URL.
 

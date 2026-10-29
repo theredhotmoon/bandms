@@ -231,6 +231,7 @@ test.describe('Website Modules Admin', () => {
     // group headings further up the form.
     await expect(page.locator('label[for="visibility-show_stats"]')).toContainText('Band in numbers')
     await expect(page.locator('label[for="visibility-show_members"]')).toContainText('Band members')
+    await expect(page.locator('label[for="visibility-member_pages"]')).toContainText('Member pages')
 
     const statsCheckbox = page.locator('#visibility-show_stats')
     await expect(statsCheckbox).toBeChecked({ checked: statsShown })

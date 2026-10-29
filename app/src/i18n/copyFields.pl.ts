@@ -514,8 +514,6 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
 
   // ── About → Member page ─────────────────────────────────────────────────
   'Member page': 'Strona członka zespołu',
-  '"Full page" link': 'Link „Cała strona”',
-  "In a member's card on the About page; opens their own page.": 'W karcie członka zespołu na stronie „O nas”; otwiera jego własną stronę.',
   'Back link': 'Link powrotny',
   'Current member: joined': 'Obecny członek: od kiedy',
   'Takes {year}.': 'Przyjmuje {year}.',

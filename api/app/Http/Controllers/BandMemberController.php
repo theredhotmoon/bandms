@@ -76,6 +76,8 @@ class BandMemberController extends Controller
             'photo'                   => ['nullable', 'string', 'max:1000'],
             'role'                    => ['nullable', 'string', 'max:255'],
             'is_current'              => ['boolean'],
+            // A member may switch their own page off; not stripped below.
+            'public_page'             => ['boolean'],
             'joined_at'               => ['nullable', 'date'],
             'quit_at'                 => ['nullable', 'date', 'after_or_equal:joined_at'],
             'sort_order'              => ['integer', 'min:0'],
@@ -144,6 +146,8 @@ class BandMemberController extends Controller
             'photo'                   => ['nullable', 'string', 'max:1000'],
             'role'                    => ['nullable', 'string', 'max:255'],
             'is_current'              => ['boolean'],
+            // A member may switch their own page off; not stripped below.
+            'public_page'             => ['boolean'],
             'joined_at'               => ['nullable', 'date'],
             'quit_at'                 => ['nullable', 'date', 'after_or_equal:joined_at'],
             'sort_order'              => ['integer', 'min:0'],

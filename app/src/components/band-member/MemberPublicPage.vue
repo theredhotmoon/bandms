@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useBandProfile } from '@/composables/useBandProfile'
-import { memberPageUrl } from '@/utils/memberPageUrl'
+import { memberPageBlocker, memberPageUrl } from '@/utils/memberPageUrl'
 import type { BandMember } from '@bandms/rider-core'
 
 /**
@@ -22,14 +22,10 @@ const bandName = computed(() => profileQuery.data.value?.name ?? '')
 
 const url = computed(() => memberPageUrl(window.location.origin, modulesQuery.data.value?.data, props.member.slug))
 
-// The page is only built while the About module and its Members section are
-// on. Offering a QR code for a page that does not exist would print a 404.
-// Unknown (modules not loaded, or not readable for this role) counts as
-// published, the same "absent means on" rule the public site uses.
-const published = computed(() => {
-  const about = modulesQuery.data.value?.data?.find((m) => m.slug === 'about')
-  return !about || (about.enabled !== false && about.visibility?.show_members !== false)
-})
+// Why the page is not built, or null when it is — see memberPageBlocker().
+// Offering a QR code for a page that does not exist would print a 404.
+const blocker = computed(() => memberPageBlocker(modulesQuery.data.value?.data, props.member))
+const published = computed(() => blocker.value === null)
 const name = computed(() =>
   [props.member.first_name, props.member.nickname ? `“${props.member.nickname}”` : null, props.member.last_name]
     .filter(Boolean)
@@ -106,7 +102,8 @@ function printCard() {
     <p v-if="!url" class="pp-empty">{{ $t('band.members.publicPage.noSlug') }}</p>
 
     <template v-else>
-      <p v-if="!published" class="pp-warning" data-testid="member-page-unpublished">{{ $t('band.members.publicPage.unpublished') }}</p>
+      <p v-if="blocker === 'band'" class="pp-warning" data-testid="member-page-unpublished">{{ $t('band.members.publicPage.unpublished') }}</p>
+      <p v-else-if="blocker === 'member'" class="pp-warning" data-testid="member-page-opted-out">{{ $t('band.members.publicPage.optedOut') }}</p>
       <div class="pp-link">
         <code class="pp-url" data-testid="member-public-url">{{ url }}</code>
         <button type="button" class="btn-ghost" @click="copyLink">{{ $t('band.members.publicPage.copy') }}</button>

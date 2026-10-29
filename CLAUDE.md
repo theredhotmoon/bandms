@@ -249,6 +249,17 @@ git checkout -b feature/<short-name>   # e.g. feature/social-links-editor
 - Open a PR when the work is ready; use `make ship` or `gh pr create` to ship.
 - Merge via GitHub PR — never `git merge` directly into main locally.
 - **Every PR gets an explicit `/code-review` pass before merging — never merge on raw `git`/`gh` commands, and don't assume another skill covered it.** `/ship`'s pipeline (rebuild → test → changelog → branch → commit → PR) has no review step at all. `git-feature-workflow`'s review step only runs `vue3-review`, and only when the commit touches `.vue`/composable `.ts` files — it silently skips review for an `api/`-only (Laravel/PHP) change, which is most backend work in this repo. So run `/code-review` yourself regardless of which shipping skill you used — don't merge un-reviewed work just because tests are green.
+- **One commit, one push per PR — every push costs CI minutes, which the band pays for.**
+  The `Tests` workflow runs on every push to a PR branch, so five small
+  commits pushed one by one is five full CI runs. So:
+  - Verify locally first (tests, `pnpm build`, `/code-review`) and push only
+    when the branch is ready, not to "see what CI says".
+  - Squash WIP into a single commit before the first push
+    (`git reset --soft main && git commit`). Unrelated changes going out
+    together share one PR and one commit rather than one PR each.
+  - Review fixes are amended into that commit and pushed **once per review
+    round** (`git push --force-with-lease`), never one push per fix.
+  - Merge with `gh pr merge --squash`, so `main` gets one commit per PR either way.
 
 ### Commit messages — Conventional Commits
 

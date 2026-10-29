@@ -53,6 +53,11 @@ export interface BandMember {
    * optional because rider snapshots and fixtures built before it existed do not.
    */
   slug?: string
+  /**
+   * The member's own opt-out from that page; only consulted while the About
+   * module's `member_pages` switch is on. Optional for the same reason as `slug`.
+   */
+  public_page?: boolean
   bio: string | null
   photo: string | null
   role: string | null
@@ -112,6 +117,7 @@ export interface BandMemberPayload {
   calendar_url?: string | null
   login_email?: string | null
   can_login?: boolean
+  public_page?: boolean
   instrument_ids?: number[]
   main_instrument_id?: number | null
   social_links?: SocialLinkPayload[]

@@ -20,6 +20,7 @@ class BandMember extends Model
         'nickname',
         'last_name',
         'slug',
+        'public_page',
         'bio',
         'photo',
         'role',
@@ -34,8 +35,18 @@ class BandMember extends Model
         'main_instrument_id',
     ];
 
+    /**
+     * Mirrors the column default, so a model fresh from create() — and the
+     * resource built from it — reads true rather than null when the request
+     * did not send the field.
+     */
+    protected $attributes = [
+        'public_page' => true,
+    ];
+
     protected $casts = [
         'is_current'   => 'boolean',
+        'public_page'  => 'boolean',
         'can_login'    => 'boolean',
         'joined_at'    => 'date:Y-m-d',
         'quit_at'      => 'date:Y-m-d',

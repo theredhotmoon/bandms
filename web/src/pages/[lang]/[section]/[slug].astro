@@ -4,6 +4,7 @@ import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
 import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers } from '@/lib/cms'
+import { hasMemberPage } from '@/lib/memberPages'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
 import PostDetail      from '@/components/detail/PostDetail.astro'
@@ -70,19 +71,18 @@ export async function getStaticPaths() {
       }
     }
 
-    // Member pages live under About and go with it — and with its Members
-    // section: a band that hides that section should not still publish a page
-    // per member. A member with no slug (an API predating it) gets no page
-    // rather than an /about/undefined one.
-    if (cfg.modules.about !== false && cfg.module_config?.about?.visibility?.show_members !== false) {
-      for (const m of members.filter(m => m.slug)) {
-        paths.push({
-          params: { lang, section: slugMap[lang].about ?? 'about', slug: m.slug },
-          props: { sectionType: 'about', lang, itemId: m.id, itemSlug: m.slug,
-            alternates: alternatesFor('about', m.slug) },
-        })
-      }
+    // Member pages live under About and go with it, its Members section and
+    // its member_pages switch; a member can then opt out of their own page.
+    // hasMemberPage() is the rule AboutSection links by, so a card never
+    // points at a page that was not built.
+    for (const m of members.filter(m => hasMemberPage(cfg, m))) {
+      paths.push({
+        params: { lang, section: slugMap[lang].about ?? 'about', slug: m.slug },
+        props: { sectionType: 'about', lang, itemId: m.id, itemSlug: m.slug,
+          alternates: alternatesFor('about', m.slug) },
+      })
     }
+
     if (cfg.modules.merch !== false) {
       for (const item of shopItems) {
         paths.push({

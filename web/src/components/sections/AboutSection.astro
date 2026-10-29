@@ -14,6 +14,7 @@ import { formatNumber, formatGenreKicker, splitCommaList } from '@/lib/i18n'
 import { ABOUT_COPY } from '@bandms/site-copy'
 import { moduleCopy } from '@/lib/copy'
 import { hasBioText, stripHtmlText } from '@/lib/bio'
+import { hasMemberPage } from '@/lib/memberPages'
 
 interface Props {
   lang: Locale
@@ -121,7 +122,9 @@ const gridMembers = [...members]
     isCurrent: m.is_current,
     instruments: (m.instruments ?? []).map(i => i.name),
     socials: (m.social_links ?? []).map(s => ({ platform: s.platform, url: s.url })),
-    pageUrl: m.slug ? `${href('about')}/${m.slug}` : null,
+    // Set only when the page is built; MemberGrid then links the card straight
+    // to it, and opens the details modal otherwise.
+    pageUrl: hasMemberPage(siteConfig, m) ? `${href('about')}/${m.slug}` : null,
   }))
 
 // Press cards, each present only when its target exists. Both are module
@@ -233,7 +236,7 @@ const contacts = [
         <MemberGrid
           client:visible
           members={gridMembers}
-          copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view, page: t.memberPage }}
+          copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view }}
         />
       )}
     </section>

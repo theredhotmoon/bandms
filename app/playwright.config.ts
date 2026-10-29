@@ -15,6 +15,22 @@ const EPK_PUBLISHING_SPECS = [
   /band-profile\.spec\.ts/,
 ]
 
+// about-section-visibility flips the About module's member pages and one
+// member's opt-out, rebuilding the public site each time. The three specs that
+// read that state run in their own project (member-pages-readers) and the
+// writer chains after it (about-visibility), so the two never share a moment.
+//
+// Not `dependencies: ['chromium']`: Playwright runs a dependency project in
+// full whatever files the command names, so asking for this one spec ran the
+// entire suite — 16 minutes for six files, and the writer then skipped as
+// "did not run" whenever anything unrelated in the pool failed.
+const MEMBER_PAGE_READERS = [
+  /public[\\/]member-page\.spec\.ts/,
+  /public[\\/]about\.spec\.ts/,
+  /admin[\\/]member-public-page\.spec\.ts/,
+]
+const ABOUT_VISIBILITY_SPEC = /about-section-visibility\.spec\.ts/
+
 export default defineConfig({
   testDir: './e2e/tests',
   fullyParallel: true,
@@ -83,7 +99,22 @@ export default defineConfig({
         storageState: 'e2e/.auth/admin.json',
       },
       dependencies: ['setup'],
-      testIgnore: EPK_PUBLISHING_SPECS,
+      testIgnore: [...EPK_PUBLISHING_SPECS, ...MEMBER_PAGE_READERS, ABOUT_VISIBILITY_SPEC],
+    },
+    // The readers run beside the main pool (they only read member state, and
+    // member-public-page seeds and deletes its own member); the writer waits
+    // for them. See MEMBER_PAGE_READERS above.
+    {
+      name: 'member-pages-readers',
+      testMatch: MEMBER_PAGE_READERS,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'about-visibility',
+      testMatch: ABOUT_VISIBILITY_SPEC,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['member-pages-readers'],
     },
     // The two specs that publish EPK versions for real cannot share a moment:
     // /epk serves whichever version is live, and each asserts on its own. A

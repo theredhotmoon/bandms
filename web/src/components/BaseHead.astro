@@ -39,9 +39,10 @@ const canonicalUrl = canonical ?? Astro.url.href
 <!-- Favicon -->
 <!-- SVG alone left Safari (macOS and every iOS browser) with no icon at all,
      and /favicon.ico — which browsers request on their own — 404'd. The ICO
-     and touch icon are rendered from favicon.svg; regenerate them together. -->
-<link rel="icon" href="/favicon.ico" sizes="32x32" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+     and touch icon are rendered from skanking-storks-favicon.svg; regenerate
+     them together. nginx maps /favicon.ico to the ICO. -->
+<link rel="icon" href="/skanking-storks-favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/svg+xml" href="/skanking-storks-favicon.svg" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
 <!-- Open Graph -->
