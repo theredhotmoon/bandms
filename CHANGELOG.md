@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-29 (concert page: named prev/next, upcoming shows first)
+
+### Changed
+- **Previous / Next on a show page name the gig**: each button prints the neighbouring show's name (its venue when it has none) over its date and city, instead of the fixed word "Show". The *Prev/next: "Show" caption* copy field is retired (`navShow`).
+- **A show page's cards lead with upcoming shows**: whenever any other show is still ahead, the cards list the next three, soonest first, under *Upcoming shows* (a new editable string, Website Modules → Shows → Show page; an upcoming show's own page keeps *More upcoming shows*). Only when nothing is ahead does it fall back to the three most recently played, as *More past shows*. The cards now share the row equally: three take a third each, two take half, one runs the full width; phones still stack them.
+
+### Removed
+- **The "All shows" back button under a show page.** The header nav still leads to the list. Its copy field (`allShows`) is retired; a saved override stays in the database, unread.
+
+### Fixed
+- **A member deleted during a public-site rebuild no longer fails the whole build**: the member route listed members and each member page fetched them again, so a member removed in between was listed and then missing, and the page threw on `first_name`. Seen when an E2E teardown raced its own rebuild. The member list is now fetched once per locale per build, like the band profile.
+
 ## [Unreleased] — 2026-10-29 (member pages are optional)
 
 ### Added
