@@ -275,6 +275,37 @@ describe('PUT /api/concerts/{concert}', function () {
         $this->assertDatabaseHas('concert_band', ['concert_id' => $concert->id, 'band_id' => $new->id]);
     });
 
+    // MySQL TIME columns come back as HH:mm:ss, so a client that reads a
+    // concert and saves it unchanged sends that shape. It used to 422 on
+    // `bands.0.play_time` — the admin form did exactly this for guest bands.
+    it('accepts times in the HH:mm:ss shape its own GET returns', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+        $band    = Band::create(['name' => 'Support Act']);
+
+        $this->putJson("/api/concerts/{$concert->id}", [
+            'doors_open'       => '19:00:00',
+            'sound_check_time' => '17:30:00',
+            'start_time'       => '20:00:00',
+            'bands'            => [['id' => $band->id, 'sort_order' => 1, 'play_time' => '21:00:00']],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('concert_band', ['concert_id' => $concert->id, 'band_id' => $band->id]);
+        expect(substr((string) $concert->bands()->first()->pivot->play_time, 0, 5))->toBe('21:00');
+    });
+
+    it('still rejects a time that is not one', function (string $time) {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+        $band    = Band::create(['name' => 'Support Act']);
+
+        $this->putJson("/api/concerts/{$concert->id}", [
+            'bands' => [['id' => $band->id, 'sort_order' => 1, 'play_time' => $time]],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['bands.0.play_time']);
+    })->with(['9pm', '25:00', '21:00:00:00']);
+
     it('returns 404 for a non-existent concert', function () {
         $this->actingAsAdmin();
 

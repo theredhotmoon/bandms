@@ -24,10 +24,17 @@ const EPK_PUBLISHING_SPECS = [
 // full whatever files the command names, so asking for this one spec ran the
 // entire suite — 16 minutes for six files, and the writer then skipped as
 // "did not run" whenever anything unrelated in the pool failed.
+//
+// Member pages are built only while About's member_pages switch is on, and a
+// prod-synced database may have it off. The readers therefore run behind
+// member-pages-on, which turns it on for the run and has member-pages-off as
+// its teardown, putting it back. Every spec that needs a built member page is
+// a reader for that reason — the member-<section> specs included.
 const MEMBER_PAGE_READERS = [
   /public[\\/]member-page\.spec\.ts/,
   /public[\\/]about\.spec\.ts/,
   /admin[\\/]member-public-page\.spec\.ts/,
+  /public[\\/]member-(clips|gear|gigs|news|photos|press|releases|videos)\.spec\.ts/,
 ]
 const ABOUT_VISIBILITY_SPEC = /about-section-visibility\.spec\.ts/
 
@@ -104,17 +111,32 @@ export default defineConfig({
     // The readers run beside the main pool (they only read member state, and
     // member-public-page seeds and deletes its own member); the writer waits
     // for them. See MEMBER_PAGE_READERS above.
+    // Turns member_pages on for the readers (and the writer after them) and
+    // puts it back once both are done. See MEMBER_PAGE_READERS above.
+    {
+      name: 'member-pages-on',
+      testMatch: /setup[\\/]member-pages-on\.ts/,
+      dependencies: ['setup'],
+      teardown: 'member-pages-off',
+    },
+    {
+      name: 'member-pages-off',
+      testMatch: /setup[\\/]member-pages-off\.ts/,
+    },
     {
       name: 'member-pages-readers',
       testMatch: MEMBER_PAGE_READERS,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['setup'],
+      dependencies: ['member-pages-on'],
     },
     {
       name: 'about-visibility',
       testMatch: ABOUT_VISIBILITY_SPEC,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['member-pages-readers'],
+      // member-pages-on directly too, not only through the readers: a teardown
+      // waits for the projects that depend on its setup, and this writer must
+      // finish before member-pages-off restores the switch.
+      dependencies: ['member-pages-readers', 'member-pages-on'],
     },
     // The two specs that publish EPK versions for real cannot share a moment:
     // /epk serves whichever version is live, and each asserts on its own. A

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { localDateTimeInputValue } from './dateInput'
+import { localDateTimeInputValue, timeInputValue } from './dateInput'
+
+describe('timeInputValue', () => {
+  it('drops the seconds an API TIME column carries', () => {
+    expect(timeInputValue('21:00:00')).toBe('21:00')
+  })
+
+  it('leaves an HH:mm value as it is', () => {
+    expect(timeInputValue('20:30')).toBe('20:30')
+  })
+
+  it('turns a missing time into an empty input', () => {
+    expect(timeInputValue(null)).toBe('')
+    expect(timeInputValue(undefined)).toBe('')
+  })
+})
 
 describe('localDateTimeInputValue', () => {
   it('formats in local time with zero-padded fields and no seconds', () => {

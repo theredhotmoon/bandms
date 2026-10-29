@@ -9,6 +9,7 @@ import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import ConcertTicketsManager from '@/components/admin/ConcertTicketsManager.vue'
 import { pushUnique } from '@/utils/pushUnique'
+import { timeInputValue } from '@/utils/dateInput'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -171,12 +172,11 @@ watch(() => props.initial, (concert) => {
   posterFile.value    = null
   posterPreview.value = null
   posterDelete.value  = false
-  const toHHMM = (t: string | null | undefined) => (t ?? '').slice(0, 5)
   form.venue_id         = concert.venue?.id ?? ''
   form.date             = concert.date ?? ''
-  form.doors_open       = toHHMM(concert.doors_open)
-  form.sound_check_time = toHHMM(concert.sound_check_time)
-  form.start_time       = toHHMM(concert.start_time)
+  form.doors_open       = timeInputValue(concert.doors_open)
+  form.sound_check_time = timeInputValue(concert.sound_check_time)
+  form.start_time       = timeInputValue(concert.start_time)
   form.name           = bagFrom(concert.translations?.name, concert.name)
   form.description    = bagFrom(concert.translations?.description, concert.description)
   form.slug           = bagFrom(concert.translations?.slug)
@@ -186,12 +186,13 @@ watch(() => props.initial, (concert) => {
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
   const entries: LineupEntry[] = [
-    { type: 'main', play_time: concert.start_time ?? '', _initSort: concert.own_sort_order ?? 1 },
+    { type: 'main', play_time: timeInputValue(concert.start_time), _initSort: concert.own_sort_order ?? 1 },
     ...(concert.bands ?? []).map(b => ({
       type: 'band' as const,
       id:         b.id,
       name:       b.name,
-      play_time:  b.play_time ?? '',
+      // Trimmed like the gig's own times: saved back as `HH:mm:ss`, it 422s.
+      play_time:  timeInputValue(b.play_time),
       _initSort:  b.sort_order,
     })),
   ]

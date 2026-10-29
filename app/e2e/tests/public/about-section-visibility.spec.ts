@@ -165,7 +165,7 @@ test.describe.serial('Public — About page section visibility', () => {
   // ── Member pages ─────────────────────────────────────────────────────────
   // Switched off, no card links anywhere and no member page is built: every
   // card opens the details modal instead.
-  test('member_pages off: cards open the modal and member pages are not built', async ({ request, page }) => {
+  test('member_pages off: cards open the modal and member pages are not built', async ({ request, page, browser, baseURL }) => {
     test.setTimeout(180_000)
     const members = (await (await request.get(`${API}/api/band-profile/members`)).json()).data as PublicMember[]
     const current = members.find((m) => m.is_current && m.slug)
@@ -184,6 +184,26 @@ test.describe.serial('Public — About page section visibility', () => {
 
     const about = page.url().replace(/\/$/, '')
     expect((await request.get(`${about}/${current!.slug}`)).status()).toBe(404)
+
+    // The admin half: the member's Public page tab says the band switched
+    // pages off, and withdraws the QR code — a printed code for a page that is
+    // not built is a 404 on a poster. (The member's own opt-out is covered in
+    // admin/member-public-page.spec.ts; this is the band-wide one.) Its own
+    // signed-in context: this file browses the public site anonymously.
+    const adminCtx = await browser.newContext({ storageState: 'e2e/.auth/admin.json', baseURL })
+    try {
+      const admin = await adminCtx.newPage()
+      await admin.goto('/admin/band-members')
+      await admin.waitForLoadState('networkidle')
+      await admin.locator('.member-item').filter({ hasText: current!.last_name }).first().click()
+      await admin.getByTestId('member-tab-public').click()
+      const panel = admin.getByTestId('member-public-page')
+      await expect(panel.getByTestId('member-page-unpublished')).toBeVisible()
+      await expect(panel.getByTestId('member-page-opted-out')).toHaveCount(0)
+      await expect(panel.getByTestId('member-qr')).toHaveCount(0)
+    } finally {
+      await adminCtx.close()
+    }
   })
 
   // On, but one member opted out: their card opens the modal and their page
