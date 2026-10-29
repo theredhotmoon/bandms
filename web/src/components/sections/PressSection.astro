@@ -10,7 +10,9 @@ import FaqSection from '@/components/sections/FaqSection.astro'
 import { getPressReleases, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
 import { PRESS_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, listPaging } from '@/lib/copy'
+import { pagedAttrs } from '@/lib/showMore'
+import ShowMore from '@/components/ShowMore.astro'
 
 interface Props {
   lang: Locale
@@ -28,6 +30,8 @@ const genreKicker = formatGenreKicker(profile.genres)
 // Every string on this page: registry defaults for this locale, overridden by
 // whatever the band saved in Website Modules → Press.
 const t = moduleCopy(siteConfig, 'press', PRESS_COPY, lang)
+// Website Modules → Items per page — see ShowMore.astro / useShowMore(). Press pages its coverage list only: featured pieces are curated.
+const { perPage, showMoreLabel } = listPaging(siteConfig, 'press', lang)
 
 const sorted = [...press].sort((a, b) =>
   (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at),
@@ -90,9 +94,9 @@ const siteOf = (item: (typeof sorted)[number]) => {
     {rest.length > 0 && (
       <div class="pr-rest">
         <SectionHead icon="quote" title={t.coverage} size="sm" />
-        <ul class="pr-list">
-          {rest.map(item => (
-            <li>
+        <ul id="press-coverage-list" class="pr-list">
+          {rest.map((item, i) => (
+            <li {...pagedAttrs(i, perPage)}>
               <a class="pr-row" href={item.url} target="_blank" rel="noopener">
                 <span>
                   <span class="pr-site pr-site--row">{siteOf(item)}</span>
@@ -110,6 +114,7 @@ const siteOf = (item: (typeof sorted)[number]) => {
             </li>
           ))}
         </ul>
+        <ShowMore list="press-coverage-list" label={showMoreLabel} perPage={perPage} total={rest.length} />
       </div>
     )}
   </section>

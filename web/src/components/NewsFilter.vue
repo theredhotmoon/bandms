@@ -3,6 +3,8 @@ import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { formatEventDates, fmtDateShort } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
 import type { PostSummary } from '@/types/post'
+import { useShowMore } from '@/lib/showMore'
+import ShowMoreButton from './ShowMoreButton.vue'
 
 export interface NewsFilterCopy {
   all: string
@@ -27,6 +29,13 @@ const props = defineProps<{
   lang?: Locale
   /** Labels from the News module's copy — see PostsSection.astro. */
   copy: NewsFilterCopy
+  /**
+   * Grid cards shown before "Show more" (the featured post is extra) —
+   * Website Modules → News → Items per page. Null ("Default") shows all.
+   */
+  perPage?: number | null
+  /** Site-wide "Show more" label (the `site` module's copy). */
+  showMoreLabel: string
 }>()
 
 const q   = ref('')
@@ -93,6 +102,17 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
 
 const featured = computed(() => matched.value[0] ?? null)
 const rest     = computed(() => matched.value.slice(1))
+
+// ── Items per page ────────────────────────────────────────────
+// Counts grid cards, not the featured post, so 6/9/12 fill whole rows of
+// three. A new filter or search starts again from the first batch.
+const { heldBack, hasMore, showMore: revealMore } = useShowMore(() => rest.value, () => props.perPage, [q, tag])
+
+// A held-back card measures zero wide, so revealed ones are re-measured.
+function showMore() {
+  revealMore()
+  void nextTick(measureTagRows)
+}
 
 watch(matched, () => nextTick(measureTagRows))
 
@@ -183,9 +203,10 @@ function eventDate(p: PostSummary): string {
 
     <!-- GRID -->
     <section v-if="rest.length > 0" class="nf-grid-wrap page-content">
-      <div class="nf-grid">
+      <div id="news-grid" class="nf-grid">
         <a
-          v-for="p in rest"
+          v-for="(p, i) in rest"
+          :data-more-hidden="heldBack(i)"
           :key="p.id"
           :href="`${postHrefBase}/${p.slug}`"
           class="nf-card"
@@ -212,6 +233,7 @@ function eventDate(p: PostSummary): string {
           </div>
         </a>
       </div>
+      <ShowMoreButton v-if="hasMore" list="news-grid" :label="showMoreLabel" @click="showMore" />
     </section>
   </div>
 </template>
@@ -297,7 +319,7 @@ function eventDate(p: PostSummary): string {
 }
 .nf-featured {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   border: 3px solid var(--color-ink);
   background: var(--color-surface);
   text-decoration: none;
@@ -440,12 +462,17 @@ function eventDate(p: PostSummary): string {
 .nf-grid-wrap {
   padding-block: 20px 56px;
 }
+/* minmax(0, …), never a bare 1fr: 1fr means minmax(auto, 1fr), so a card's
+   one-line tag row would set its column's minimum and widen that card past
+   its neighbours — and, widened, the row would never overflow, so the
+   hover-scroll above never engaged. */
 .nf-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
 }
 .nf-card {
+  min-width: 0;
   border: 3px solid var(--color-ink);
   background: var(--color-surface);
   display: flex;
@@ -510,13 +537,13 @@ function eventDate(p: PostSummary): string {
   .nf-search-wrap { min-width: unset; }
   .nf-empty { margin: 24px 24px 40px; }
   .nf-featured-wrap { padding: 24px 24px 16px; }
-  .nf-featured { grid-template-columns: 1fr; }
+  .nf-featured { grid-template-columns: minmax(0, 1fr); }
   .nf-feat-img { min-height: 220px; border-right: none; border-bottom: 3px solid var(--color-ink); }
   .nf-feat-body { padding: 22px 22px; }
   .nf-grid-wrap { padding: 16px 24px 40px; }
-  .nf-grid { grid-template-columns: 1fr 1fr; }
+  .nf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
-  .nf-grid { grid-template-columns: 1fr; }
+  .nf-grid { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

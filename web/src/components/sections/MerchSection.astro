@@ -17,7 +17,9 @@ import { getShopItems, getShopCategories, getBandProfile, getSiteConfig } from '
 import { formatPrice, preferredPrice } from '@/stores/cart'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { MERCH_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, listPaging } from '@/lib/copy'
+import { pagedAttrs } from '@/lib/showMore'
+import ShowMore from '@/components/ShowMore.astro'
 
 const [items, categories, profile, siteConfig] = await Promise.all([
   getShopItems(),
@@ -28,6 +30,8 @@ const [items, categories, profile, siteConfig] = await Promise.all([
 // Every string on this page: registry defaults for this locale, overridden by
 // whatever the band saved in Website Modules → Merch.
 const t = moduleCopy(siteConfig, 'merch', MERCH_COPY, lang)
+// Website Modules → Items per page — see ShowMore.astro / useShowMore().
+const { perPage, showMoreLabel } = listPaging(siteConfig, 'merch', lang)
 
 const available = items.filter(i => i.is_available || i.is_presale)
 ---
@@ -54,13 +58,14 @@ const available = items.filter(i => i.is_available || i.is_presale)
         <a href={`/${lang}/${slugMap[lang].newsletter}`} class="mt-4 inline-block text-accent hover:underline text-sm">{t.emptyLink}</a>
       </div>
     ) : (
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <>
+      <div id="merch-grid" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {available
           .sort((a, b) => a.sort_order - b.sort_order)
-          .map(item => {
+          .map((item, i) => {
             const price = preferredPrice(item.prices)
             return (
-              <a href={`/${lang}/${slugMap[lang].merch}/${item.slug}`} class="group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5">
+              <a {...pagedAttrs(i, perPage)} data-testid="merch-card" href={`/${lang}/${slugMap[lang].merch}/${item.slug}`} class="group block overflow-hidden rounded-card border border-border bg-surface hover:border-border transition-all hover:-translate-y-0.5">
                 <!-- Cover photo -->
                 <div class="aspect-square overflow-hidden bg-surface-2 relative">
                   {item.cover_photo ? (
@@ -101,6 +106,8 @@ const available = items.filter(i => i.is_available || i.is_presale)
             )
           })}
       </div>
+      <ShowMore list="merch-grid" label={showMoreLabel} perPage={perPage} total={available.length} />
+      </>
     )}
   </div>
   <FaqSection module="merch" lang={lang} />

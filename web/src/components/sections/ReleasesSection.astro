@@ -19,7 +19,7 @@ import { getSlugMap } from '@/lib/slugs'
 import { PLATFORM_LABELS } from '@/types/release'
 import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail, formatGenreKicker } from '@/lib/i18n'
 import { RELEASES_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -293,7 +293,7 @@ const priceOf = (item: (typeof physical)[number]) => {
           <Icon name="youtube" size={26} color="var(--color-accent)" />
           <h2 class="mu-h2">{t.videos}</h2>
         </div>
-        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} />
+        <VideoGallery client:visible videos={galleryVideos} closeLabel={t.close} watchLabel={t.watch} showMoreLabel={siteCopy(siteConfig, lang).showMore} />
       </section>
     </>
   )}

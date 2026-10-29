@@ -18,7 +18,7 @@ import NewsFilter from '@/components/NewsFilter.vue'
 import { getAllPosts, getBandProfile, getSiteConfig } from '@/lib/cms'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { POSTS_COPY } from '@bandms/site-copy'
-import { moduleCopy } from '@/lib/copy'
+import { moduleCopy, listPaging } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -30,6 +30,8 @@ const [allPosts, profile, siteConfig] = await Promise.all([
 // Every string on this page and its island: registry defaults for this
 // locale, overridden by whatever the band saved in Website Modules → News.
 const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
+// Website Modules → Items per page — see useShowMore().
+const paging = listPaging(siteConfig, 'posts', lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
 const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
@@ -61,6 +63,8 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
       accent={ACCENT}
       postHrefBase={`/${lang}/${slugMap[lang].posts}`}
       lang={lang}
+      perPage={paging.perPage}
+      showMoreLabel={paging.showMoreLabel}
       copy={{
         all: t.filterAll, searchPlaceholder: t.searchPlaceholder, searchLabel: t.searchLabel,
         noMatch: t.noMatch, featured: t.featured, readFull: t.readFull, event: t.event,

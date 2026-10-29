@@ -1,0 +1,42 @@
+---
+/**
+ * "Show more" for a static list — Website Modules → Items per page.
+ *
+ * The list renders every item and marks those past the first batch with
+ * `data-more-hidden` (`pagedAttrs()` in lib/showMore.ts), so each one stays
+ * linked in the baked HTML, and without JS none is hidden at all (base.css).
+ * `list` is the list element's id. Each click reveals the next batch
+ * and moves focus onto it; the button removes itself once nothing is left.
+ * Renders nothing when the list fits in one batch.
+ */
+interface Props {
+  label: string
+  perPage: number | null | undefined
+  total: number
+  list: string
+}
+const { label, perPage, total, list } = Astro.props
+const paged = !!perPage && perPage > 0 && total > perPage
+---
+
+{paged && (
+  <div class="show-more" data-show-more={perPage}>
+    <button type="button" class="show-more-btn" data-testid="show-more" aria-controls={list}>{label}</button>
+  </div>
+)}
+
+<script>
+  import { focusFirstRevealed, heldBack } from '@/lib/showMoreDom'
+
+  document.addEventListener('click', (event) => {
+    const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-show-more] > button')
+    const wrap = button?.parentElement
+    const listId = button?.getAttribute('aria-controls')
+    if (!wrap || !listId) return
+    const hidden = heldBack(listId)
+    const batch = Number(wrap.dataset.showMore)
+    hidden.slice(0, batch).forEach(el => el.removeAttribute('data-more-hidden'))
+    if (hidden.length <= batch) wrap.remove()
+    focusFirstRevealed(hidden)
+  })
+</script>

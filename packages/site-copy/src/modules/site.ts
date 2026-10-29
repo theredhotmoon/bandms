@@ -92,4 +92,11 @@ export const SITE_COPY = defineCopy([
     key: 'clipCategoryOther', label: '"Other" category', group: 'Clips', maxLength: 30,
     defaults: { en: 'Other', pl: 'Inne' },
   },
+  // ── Lists ── under every list that Website Modules → Items per page cuts
+  // short: news, shows, photos, videos, press, merch.
+  {
+    key: 'showMore', label: '"Show more" button', group: 'Lists', maxLength: 30,
+    help: 'Below any list whose Items per page holds some entries back.',
+    defaults: { en: 'Show more', pl: 'Pokaż więcej' },
+  },
 ])
