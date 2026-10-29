@@ -17,6 +17,7 @@ class BandMemberResource extends JsonResource
             'nickname'   => $this->nickname,
             'last_name'  => $this->last_name,
             'slug'       => $this->slug,
+            'public_page' => $this->public_page,
             'bio'        => $this->bio,
             'photo'      => $this->photo ? preg_replace('#^https?://[^/]+#', '', $this->photo) : null,
             'role'       => $this->role,

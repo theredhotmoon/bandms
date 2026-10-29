@@ -33,6 +33,11 @@ export interface BandMember {
   last_name: string
   /** The member's page, /{lang}/{about}/{slug}. Generated once; never follows a rename. */
   slug: string
+  /**
+   * The member's own opt-out from a page. Optional: an API predating it sends
+   * nothing, and absent means public — read it through hasMemberPage().
+   */
+  public_page?: boolean
   bio: string | null
   photo: string | null
   role: string | null

@@ -2,8 +2,8 @@ import { test, expect, type APIRequestContext } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
- * A band member's own page, /{lang}/{about}/{slug}, and the About modal's
- * link to it. Reads whichever members the API serves rather than seeding one:
+ * A band member's own page, /{lang}/{about}/{slug}, and the About card that
+ * links straight to it. Reads whichever members the API serves rather than seeding one:
  * the public site is a static build, so a seeded member would need a rebuild
  * before it existed here.
  */
@@ -12,17 +12,23 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
-interface Member { first_name: string; last_name: string; slug?: string; is_current: boolean }
+interface Member { first_name: string; last_name: string; slug?: string; is_current: boolean; public_page?: boolean }
 
 async function firstMember(request: APIRequestContext) {
   const [members, config] = await Promise.all([
     request.get(`${API}/api/band-profile/members`).then((r) => r.json()),
     request.get(`${API}/api/site-config?lang=en`).then((r) => r.json()),
   ])
-  // Hidden Members section → no member pages are built, by design.
+  // Same rule as hasMemberPage() in web/src/lib/memberPages.ts: no pages while
+  // About, its Members section or its member-pages switch is off, and none for
+  // a member who opted out.
+  const visibility = config?.module_config?.about?.visibility ?? {}
   const published = config?.modules?.about !== false
-    && config?.module_config?.about?.visibility?.show_members !== false
-  const member = published ? (members.data as Member[]).find((m) => m.slug && m.is_current) ?? null : null
+    && visibility.show_members !== false
+    && visibility.member_pages !== false
+  const member = published
+    ? (members.data as Member[]).find((m) => m.slug && m.is_current && m.public_page !== false) ?? null
+    : null
   const about = config?.module_config?.about?.slug ?? 'about'
   return { member, aboutPath: `/en/${about}` }
 }
@@ -32,7 +38,7 @@ test.describe('Public — member page', () => {
 
   test('renders the member with their details, the gear placeholder and a share button', async ({ page, request }) => {
     const { member, aboutPath } = await firstMember(request)
-    test.skip(!member, 'No published member page on this instance (none with a slug, or About/Members hidden)')
+    test.skip(!member, 'No published member page on this instance (none with a slug, all opted out, or About/Members/member pages off)')
     // No skip on a 404: a member with a slug must have a page, and a route
     // that stopped being built should fail here, not pass by skipping.
     const res = await page.goto(`${WEB}${aboutPath}/${member!.slug}`)
@@ -50,20 +56,19 @@ test.describe('Public — member page', () => {
     await expect(page.locator('link[rel="alternate"][hreflang="pl"]')).toHaveAttribute('href', new RegExp(`/pl/[^/]+/${member!.slug}/?$`))
   })
 
-  test('the About page member modal links to the member page', async ({ page, request }) => {
+  test('a member card on the About page links straight to the member page', async ({ page, request }) => {
     const { member, aboutPath } = await firstMember(request)
-    test.skip(!member, 'No published member page on this instance (none with a slug, or About/Members hidden)')
+    test.skip(!member, 'No published member page on this instance (none with a slug, all opted out, or About/Members/member pages off)')
     await page.goto(`${WEB}${aboutPath}`)
 
     const card = page.locator('.mg-card').filter({ hasText: member!.last_name }).first()
     await expect(card).toHaveCount(1)
     await card.scrollIntoViewIfNeeded()
-    await page.waitForFunction(() => !document.querySelector('.mg-card')?.closest('astro-island')?.hasAttribute('ssr'))
+    // A real link, not a modal: it works before hydration and opens in a new
+    // tab like any other.
+    await expect(card).toHaveAttribute('href', `${aboutPath}/${member!.slug}`)
     await card.click()
-
-    const link = page.getByRole('dialog').getByTestId('member-page-link')
-    await expect(link).toHaveAttribute('href', `${aboutPath}/${member!.slug}`)
-    await link.click()
     await expect(page.getByTestId('member-name')).toContainText(member!.first_name)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })

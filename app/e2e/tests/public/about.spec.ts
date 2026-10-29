@@ -90,11 +90,15 @@ test.describe('About page', () => {
     }
   })
 
-  test('a member card opens their modal', async ({ page }) => {
+  test('a member card without a page opens their modal', async ({ page }) => {
     await page.goto(`${WEB}/en/about`)
 
-    const card = page.locator('.mg-card').first()
-    test.skip((await card.count()) === 0, 'No current members on this instance')
+    // A member with a page is a link straight to it (member-page.spec.ts); only
+    // a card rendered as a button opens the modal. Which kind exists depends on
+    // the band's member-pages switch and each member's opt-out —
+    // about-section-visibility.spec.ts forces the no-page case.
+    const card = page.locator('button.mg-card').first()
+    test.skip((await card.count()) === 0, 'No current members without a page on this instance')
     await hydrated(page, '.mg-card')
 
     const name = (await card.locator('.mg-name').textContent())?.trim() ?? ''
@@ -108,7 +112,7 @@ test.describe('About page', () => {
     await expect(dialog).toBeHidden({ timeout: 8000 })
   })
 
-  test('former members appear separately and open the same modal', async ({ page }) => {
+  test('former members appear separately, and one without a page opens the same modal', async ({ page }) => {
     await page.goto(`${WEB}/en/about`)
 
     const pills = page.locator('.mg-pill')
@@ -120,7 +124,9 @@ test.describe('About page', () => {
     const gridNames = await page.locator('.mg-card .mg-name').allTextContents()
     expect(gridNames.map((n) => n.trim())).not.toContain(formerName)
 
-    await pills.first().click()
+    const modalPill = page.locator('button.mg-pill').first()
+    test.skip((await modalPill.count()) === 0, 'Every former member has a page; their pills are links')
+    await modalPill.click()
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 8000 })
   })
 

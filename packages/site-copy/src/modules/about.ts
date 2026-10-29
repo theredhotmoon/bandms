@@ -96,11 +96,10 @@ export const ABOUT_COPY = defineCopy([
   },
 
   // ── Member page ─────────────────────────────────────────────────────
-  {
-    key: 'memberPage', label: '"Full page" link', group: 'Member page', maxLength: 40,
-    help: "In a member's card on the About page; opens their own page.",
-    defaults: { en: 'Full page', pl: 'Cała strona' },
-  },
+  // `memberPage` is retired: it labelled a "Full page" link inside the member
+  // modal, gone since a card with a page links straight to it. A band that
+  // customised it still holds that override in website_modules.settings, so
+  // never reuse the key — a new field under it would print the stale text.
   {
     key: 'memberBack', label: 'Back link', group: 'Member page', maxLength: 40,
     defaults: { en: 'All members', pl: 'Wszyscy członkowie' },

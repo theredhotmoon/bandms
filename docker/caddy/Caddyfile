@@ -73,7 +73,7 @@
 	# no JS, and a Vue SPA with no JS renders a blank white page.
 	# /skanking-storks-icon.svg is the admin's favicon, shipped in app/public/ and
 	# unreachable for the same reason. There is no collision with Astro: it uses
-	# /_astro/, and web/public/ holds robots.txt and its own /favicon.svg — a
+	# /_astro/, and web/public/ holds robots.txt and its own /skanking-storks-favicon.svg — a
 	# different path on purpose, so the two can diverge. Adding anything to
 	# app/public/ means adding it here too.
 	# The admin prefix is configurable so a band can move the panel off the

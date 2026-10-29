@@ -11,7 +11,11 @@ export interface GridMember {
   isCurrent: boolean
   instruments: readonly string[]
   socials: readonly { platform: string; url: string }[]
-  /** The member's own page, or null when there is none to link to. */
+  /**
+   * The member's own page, or null when it is not built (the band switched
+   * member pages off, or the member opted out). A card with a page links
+   * straight to it; one without opens the details modal instead.
+   */
   pageUrl: string | null
 }
 
@@ -20,7 +24,6 @@ export interface MemberGridCopy {
   plays: string
   close: string
   view: string
-  page: string
 }
 
 const props = defineProps<{ members: readonly GridMember[]; copy: MemberGridCopy }>()
@@ -30,6 +33,11 @@ const former = computed(() => props.members.filter((m) => !m.isCurrent))
 
 const open = ref<GridMember | null>(null)
 const panel = ref<HTMLElement | null>(null)
+
+// A link navigates on its own; only a card with no page opens the modal.
+function activate(member: GridMember) {
+  if (!member.pageUrl) show(member)
+}
 
 function show(member: GridMember) {
   open.value = member
@@ -77,7 +85,15 @@ onMounted(() => {
   <div>
     <!-- CURRENT LINE-UP -->
     <div class="mg-grid">
-      <button v-for="member in current" :key="member.id" type="button" class="mg-card" @click="show(member)">
+      <component
+        :is="member.pageUrl ? 'a' : 'button'"
+        v-for="member in current"
+        :key="member.id"
+        :href="member.pageUrl ?? undefined"
+        :type="member.pageUrl ? undefined : 'button'"
+        class="mg-card"
+        @click="activate(member)"
+      >
         <span class="mg-photo">
           <img v-if="member.photoUrl" :src="member.photoUrl" :alt="member.name" loading="lazy" />
           <span v-else class="mg-photo-fallback" aria-hidden="true" />
@@ -89,14 +105,22 @@ onMounted(() => {
             <span v-for="inst in member.instruments" :key="inst" class="mg-chip">{{ inst }}</span>
           </span>
         </span>
-      </button>
+      </component>
     </div>
 
     <!-- FORMER MEMBERS -->
     <div v-if="former.length > 0" class="mg-former">
       <h3 class="mg-former-h">{{ copy.former }}</h3>
       <div class="mg-former-list">
-        <button v-for="member in former" :key="member.id" type="button" class="mg-pill" @click="show(member)">
+        <component
+          :is="member.pageUrl ? 'a' : 'button'"
+          v-for="member in former"
+          :key="member.id"
+          :href="member.pageUrl ?? undefined"
+          :type="member.pageUrl ? undefined : 'button'"
+          class="mg-pill"
+          @click="activate(member)"
+        >
           <span class="mg-pill-photo">
             <img v-if="member.photoUrl" :src="member.photoUrl" :alt="member.name" loading="lazy" />
           </span>
@@ -104,7 +128,7 @@ onMounted(() => {
             <span class="mg-pill-name">{{ member.name }}</span>
             <span v-if="member.role" class="mg-pill-role">{{ member.role }}</span>
           </span>
-        </button>
+        </component>
       </div>
     </div>
 
@@ -139,8 +163,6 @@ onMounted(() => {
                  sanitised server-side — so it is rendered as text paragraphs,
                  never as markup (and a blank editor's `<p></p>` renders nothing). -->
             <p v-for="(para, i) in bioParagraphs(open.bio)" :key="i" class="mg-bio">{{ para }}</p>
-
-            <a v-if="open.pageUrl" class="mg-page-link" :href="open.pageUrl" data-testid="member-page-link">{{ copy.page }} →</a>
 
             <div v-if="open.socials.length > 0" class="mg-socials">
               <a
@@ -350,16 +372,6 @@ onMounted(() => {
   color: var(--color-body);
   text-wrap: pretty;
 }
-.mg-page-link {
-  display: inline-block;
-  margin-top: 18px;
-  font: 800 12px/1 var(--font-body);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  text-decoration: none;
-}
-.mg-page-link:hover { text-decoration: underline; }
 
 .mg-socials { display: flex; gap: 12px; margin-top: 22px; }
 .mg-social {

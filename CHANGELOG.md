@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-29 (member pages are optional)
+
+### Added
+- **Member pages can be switched off for the whole band**: *Member pages* under *Section visibility* in `/admin/website-modules` → About. On (the default, so every existing page and printed QR code keeps working), each member's card in the line-up links straight to their own page. Off, no member page is built and every card opens the details window instead. Stored as `member_pages` in the About module's visibility bag.
+- **A member can hide their own page**: *Own page on the website* in the band member form, which members also reach from *My profile*. Only consulted while the band's switch is on. Stored as `band_members.public_page` (default true). The member's *Public page* tab says which of the two is hiding the page, and withdraws the QR code rather than offer one that prints a 404.
+
+### Changed
+- **A member card with a page is now a link to it** rather than a button opening a window with a "Full page" link inside. That link and its editable copy (*About → Member page → "Full page" link*) are gone; the `memberPage` copy key is retired and must not be reused.
+- **The public favicon files are named `skanking-storks-favicon.ico`/`.svg`**, no longer the generic `favicon.*`. `/favicon.ico`, which browsers request on their own, is still answered by nginx from the renamed file, and both icons now carry a one-day cache instead of the static-asset block's year of `immutable`.
+
 ## [Unreleased] — 2026-10-27 (per-page content width)
 
 ### Added

@@ -25,7 +25,9 @@ let slug = ''
 test.beforeEach(async ({ request, baseURL }) => {
   const res = await request.post(`${baseURL}/api/band-profile/members`, {
     headers: headers(),
-    data: { first_name: 'Qr', last_name: `Member${stamp}`, role: 'Trombone' },
+    // login_email: the Profile form requires one, so the opt-out test's Save
+    // would otherwise be blocked by the browser's own validation.
+    data: { first_name: 'Qr', last_name: `Member${stamp}`, role: 'Trombone', login_email: `qr${stamp}@example.test` },
   })
   expect(res.status(), await res.text()).toBe(201)
   const body = (await res.json()).data
@@ -61,4 +63,30 @@ test('the Public page tab shows the member page URL and a QR code for it', async
 
   await expect(panel.getByTestId('member-qr-svg')).toHaveAttribute('href', /^data:image\/svg\+xml/)
   await expect(panel.getByTestId('member-qr-svg')).toHaveAttribute('download', `qr-${slug}.svg`)
+})
+
+// The member's own opt-out. The band-wide switch lives in Website modules and
+// is covered by tests/public/about-section-visibility.spec.ts; this is the
+// per-member half, and it must take the QR code away with it — a printed code
+// for a page that is not built is a 404 on a poster.
+test('hiding the member page in Profile withdraws the QR code', async ({ page }) => {
+  await page.goto('/admin/band-members')
+  await page.waitForLoadState('networkidle')
+  await page.locator('.member-item').filter({ hasText: `Member${stamp}` }).click()
+
+  const toggle = page.getByTestId('member-public-page-toggle')
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+  const saved = page.waitForResponse(r => r.url().endsWith(`/api/band-profile/members/${memberId}`) && r.request().method() === 'PUT')
+  await page.getByRole('button', { name: 'Update member' }).click()
+  const res = await saved
+  expect(res.ok(), await res.text()).toBeTruthy()
+  expect((await res.json()).data.public_page).toBe(false)
+
+  await page.getByTestId('member-tab-public').click()
+  const panel = page.getByTestId('member-public-page')
+  await expect(panel.getByTestId('member-page-opted-out')).toBeVisible()
+  await expect(panel.getByTestId('member-qr')).toHaveCount(0)
 })

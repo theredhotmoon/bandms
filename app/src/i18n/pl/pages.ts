@@ -111,6 +111,8 @@ export default {
       show_stats_help: 'Siatka statystyk (słuchacze miesięcznie, zagrane koncerty, lata na scenie…) na publicznej stronie O nas. Nadal ukrywa się automatycznie, gdy nie ma czego pokazać.',
       show_members: 'Skład zespołu',
       show_members_help: 'Siatka składu na publicznej stronie O nas.',
+      member_pages: 'Strony członków',
+      member_pages_help: 'Każdy członek zespołu dostaje własną stronę, do której prowadzi jego karta w składzie. Wyłączone: karta otwiera okno ze szczegółami i strony członków nie są budowane. Członek może też ukryć swoją stronę w swoim profilu.',
     },
   },
 }
