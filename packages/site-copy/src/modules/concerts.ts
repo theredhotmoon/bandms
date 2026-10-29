@@ -319,8 +319,8 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'More past shows', pl: 'Więcej zagranych koncertów' },
   },
   {
-    key: 'allShows', label: '"All shows" back link', group: 'Show page', maxLength: 40,
-    defaults: { en: 'All shows', pl: 'Wszystkie koncerty' },
+    key: 'upcomingShows', label: '"Upcoming shows" heading (past show)', group: 'Show page', maxLength: 80,
+    defaults: { en: 'Upcoming shows', pl: 'Nadchodzące koncerty' },
   },
   {
     key: 'previous', label: '"Previous" nav', group: 'Show page', maxLength: 30,
@@ -329,10 +329,6 @@ export const CONCERTS_COPY = defineCopy([
   {
     key: 'next', label: '"Next" nav', group: 'Show page', maxLength: 30,
     defaults: { en: 'Next', pl: 'Następny' },
-  },
-  {
-    key: 'navShow', label: 'Prev/next: "Show" caption', group: 'Show page', maxLength: 30,
-    defaults: { en: 'Show', pl: 'Koncert' },
   },
 
   // ── Ticket checkout ─────────────────────────────────────────────────

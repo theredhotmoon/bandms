@@ -12,7 +12,8 @@ import { concertLineup } from '@/lib/lineup'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
 import PosterModal from '@/components/PosterModal.vue'
 import { moduleCopy, siteCopy } from '@/lib/copy'
-import { fmtTime, isUpcoming } from '@/lib/i18n'
+import { fmtDateShort, fmtTime, isUpcoming } from '@/lib/i18n'
+import { pickMoreShows } from '@/lib/moreShows'
 import { dateLocale } from '@/lib/locales'
 
 interface Props {
@@ -30,9 +31,11 @@ const concerts = await getConcerts(lang)
 const summaries = concerts.map(x => ({
   id: x.id,
   slug: x.slug,
+  name: x.name,
   date: x.date,
   city: x.venue.city ?? x.venue.name,
   venue: x.venue.name,
+  venueCity: x.venue.city,
   tags: x.tags ?? [],
 }))
 const idx = summaries.findIndex(s => s.id === itemId)
@@ -97,14 +100,21 @@ const eventLinks = concert.links ?? []
 
 const hasMap = concert.venue.latitude != null && concert.venue.longitude != null
 
-// Prev / next IDs
-const prevSlug = idx > 0 ? summaries[idx - 1].slug : null
-const nextSlug = idx < summaries.length - 1 ? summaries[idx + 1].slug : null
+// Prev / next — `summaries` is in date order (the API sorts by date), so the
+// neighbours are the chronologically adjacent gigs. Each button names its gig.
+const prevConcert = idx > 0 ? summaries[idx - 1] : null
+const nextConcert = idx >= 0 && idx < summaries.length - 1 ? summaries[idx + 1] : null
+// Date, then the real city — not `city`, whose venue-name fallback would print
+// the venue twice on a gig with no name.
+const navMeta = (c: typeof summaries[number]) =>
+  [fmtDateShort(c.date, lang), c.venueCity].filter(Boolean).join(' · ')
 
-// More shows: same status, different gig, limit 3
-const moreConcerts = summaries
-  .filter((c, i) => i !== idx && isUpcoming(c.date) === upcoming)
-  .slice(0, 3)
+// More shows: the rule lives in lib/moreShows (pinned by its unit test).
+// Up to 3; the grid gives each card an equal share of the row.
+const more = pickMoreShows(summaries, itemId, isUpcoming)
+const moreConcerts = more.shows
+const moreTitle = more.kind === 'past' ? t.morePast
+  : upcoming ? t.moreUpcoming : t.upcomingShows
 
 // Google Calendar link
 function gcalLink() {
@@ -550,9 +560,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
             <rect x="3" y="4.5" width="18" height="16.5" rx="2.2"/>
             <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
           </svg>
-          <h2 class="sec-title">{upcoming ? t.moreUpcoming : t.morePast}</h2>
+          <h2 class="sec-title">{moreTitle}</h2>
         </div>
-        <div class="more-grid">
+        <div class="more-grid" data-count={moreConcerts.length} data-kind={more.kind} data-testid="more-shows">
           {moreConcerts.map(c => {
             const md = new Date(c.date + 'T00:00:00')
             const mDay = md.getDate().toString().padStart(2, '0')
@@ -580,38 +590,31 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     )}
 
     <!-- ── NAVIGATION ─────────────────────────────────────── -->
-    <div class="sec back-sec page-content">
-      <a class="back-btn" href={`/${lang}/${concertsSection}`}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M15 6l-6 6 6 6"/>
-        </svg>
-        {t.allShows}
-      </a>
-    </div>
-
-    {(prevSlug || nextSlug) && (
+    {(prevConcert || nextConcert) && (
       <div class="sec prevnext-sec page-content">
         <div class="prevnext-row">
-          {prevSlug ? (
-            <a class="prevnext-btn prev-btn" href={`/${lang}/${concertsSection}/${prevSlug}`}>
+          {prevConcert ? (
+            <a class="prevnext-btn prev-btn" href={`/${lang}/${concertsSection}/${prevConcert.slug}`} data-testid="prev-show">
               <span class="pn-dir">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6"/>
                 </svg>
                 {t.previous}
               </span>
-              <span class="pn-city">{t.navShow}</span>
+              <span class="pn-city">{prevConcert.name || prevConcert.venue}</span>
+              <span class="pn-meta">{navMeta(prevConcert)}</span>
             </a>
           ) : <div />}
-          {nextSlug ? (
-            <a class="prevnext-btn next-btn" href={`/${lang}/${concertsSection}/${nextSlug}`}>
+          {nextConcert ? (
+            <a class="prevnext-btn next-btn" href={`/${lang}/${concertsSection}/${nextConcert.slug}`} data-testid="next-show">
               <span class="pn-dir">
                 {t.next}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="2" aria-hidden="true">
                   <path d="M9 6l6 6-6 6"/>
                 </svg>
               </span>
-              <span class="pn-city">{t.navShow}</span>
+              <span class="pn-city">{nextConcert.name || nextConcert.venue}</span>
+              <span class="pn-meta">{navMeta(nextConcert)}</span>
             </a>
           ) : <div />}
         </div>
@@ -1330,11 +1333,14 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
 
   /* ── More shows ─────────────────────── */
   .more-sec { padding-bottom: 16px; }
+  /* One column per card, so 3 → thirds, 2 → halves, 1 → the full width. */
   .more-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
   }
+  .more-grid[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
+  .more-grid[data-count="1"] { grid-template-columns: 1fr; }
   .more-card {
     border: 3px solid var(--ink);
     background: var(--color-surface);
@@ -1430,24 +1436,8 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   }
   .link-event:hover { background: var(--color-body); }
 
-  /* ── Back / Prev–Next ───────────────── */
-  .back-sec { padding-top: 30px; }
-  .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: transparent;
-    border: 3px solid var(--ink);
-    color: var(--ink);
-    font-family: var(--font-display);
-    font-size: 15px;
-    letter-spacing: .01em;
-    text-transform: uppercase;
-    padding: 12px 18px;
-    text-decoration: none;
-  }
-  .back-btn:hover { background: var(--ink); color: var(--paper); }
-  .prevnext-sec { padding-top: 20px; padding-bottom: 60px; }
+  /* ── Prev–Next ──────────────────────── */
+  .prevnext-sec { padding-top: 30px; padding-bottom: 60px; }
   .prevnext-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1457,6 +1447,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
     border: 3px solid var(--ink);
     background: var(--color-surface);
     padding: 18px 20px;
@@ -1481,6 +1472,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     line-height: 1.02;
     letter-spacing: .01em;
     text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  .pn-meta {
+    font: 600 13px/1.3 var(--font-body);
+    color: var(--color-muted);
   }
 
   /* ── Responsive ─────────────────────── */
@@ -1489,7 +1485,6 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     .concert-header { padding: 22px 40px 28px; }
     .poster-facts { padding: 28px 40px 8px; }
     .sec { padding: 28px 40px 8px; }
-    .back-sec { padding-left: 40px; }
     .prevnext-sec { padding-left: 40px; padding-right: 40px; }
   }
   @media (max-width: 800px) {
@@ -1502,7 +1497,6 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     .poster-col { max-width: 300px; }
     .facts-grid { grid-template-columns: repeat(2, 1fr); }
     .sec { padding: 24px 24px 8px; }
-    .back-sec { padding: 24px 24px 0; }
     .prevnext-sec { padding: 16px 24px 40px; }
     .venue-top { flex-direction: column; }
     .venue-two-col { grid-template-columns: 1fr; }
@@ -1510,7 +1504,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     .more-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 520px) {
-    .more-grid { grid-template-columns: 1fr; }
+    .more-grid, .more-grid[data-count] { grid-template-columns: 1fr; }
   }
 
 </style>
