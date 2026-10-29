@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { firstInOrder, sortTagsByLabel, tagLabel, tagNames, tagTerms } from './localeOrder'
+import { ref } from 'vue'
+import type { Lang } from '@/locales'
+import { firstInOrder, sortTagsByLabel, sortedByLabel, tagLabel, tagNames, tagTerms } from './localeOrder'
 
 describe('firstInOrder', () => {
   it('reads the first language in the band order, not the default locale', () => {
@@ -71,5 +73,44 @@ describe('sortTagsByLabel', () => {
     const before = tags.map(t => t.name)
     sortTagsByLabel(tags, ['pl', 'en'])
     expect(tags.map(t => t.name)).toEqual(before)
+  })
+})
+
+describe('sortedByLabel', () => {
+  const tags = [
+    { name: 'concert', translations: { name: { en: 'concert', pl: 'koncert' } } },
+    { name: 'festival', translations: { name: { en: 'festival', pl: 'festiwal' } } },
+    { name: 'cracow', translations: { name: { en: 'cracow', pl: 'kraków' } } },
+  ]
+  const labels = (sorted: typeof tags) => sorted.map((t) => tagLabel(t, ['pl', 'en']))
+
+  // vue-query re-runs a `select` only when the function itself changes, so
+  // the builder must hand out a new one whenever the order does. Reading the
+  // order inside the returned function instead tracks nothing: the list kept
+  // the order of first load — the registry's, English-first — while the
+  // labels switched to Polish.
+  it('hands out a new select function when the order changes', () => {
+    const order = ref<Lang[]>(['en', 'pl'])
+    const select = sortedByLabel(order)
+    const before = select.value
+
+    order.value = ['pl', 'en']
+
+    expect(select.value).not.toBe(before)
+  })
+
+  // Each function is bound to the order it was built for. That is what makes
+  // a new one necessary — and what the broken shape lacked: it read the order
+  // lazily, so the old function sorted the new way too, and nothing told
+  // vue-query its cached result was stale.
+  it('binds each select to the order it was built for', () => {
+    const order = ref<Lang[]>(['en', 'pl'])
+    const select = sortedByLabel(order)
+    const englishFirst = select.value
+
+    order.value = ['pl', 'en']
+
+    expect(labels(englishFirst(tags))).toEqual(['koncert', 'kraków', 'festiwal'])
+    expect(labels(select.value(tags))).toEqual(['festiwal', 'koncert', 'kraków'])
   })
 })

@@ -199,9 +199,31 @@ test.describe('Website Modules Admin', () => {
   // Persistence through a real save is already covered by the Pest test in
   // WebsiteModuleTest.php ("saves a visibility toggle") and by that public
   // spec's own PUT-then-read round trip.
-  test('offers a section-visibility checkbox per configured toggle, checked by default', async ({ page }) => {
+  //
+  // The checkbox must mirror the *stored* flag, not a default: on a database
+  // synced from production the band may have hidden a section, and this spec
+  // failed there for asserting "checked". Absent-means-shown is the API's
+  // rule, pinned in WebsiteModuleTest.php; here it only decides the reading.
+  //
+  // The flag is read from the LAST modules response before the form opens,
+  // because that is the data the form is built from. The first one is not:
+  // the list refetches on a content-language switch, and the public spec can
+  // PUT this flag in another worker in between.
+  test('offers a section-visibility checkbox per configured toggle, reflecting the stored flag', async ({ page }) => {
+    type ModulesBody = { data: { slug: string, visibility?: Record<string, boolean> }[] }
+    // A holder, not a `let`: TS narrows a let assigned only in a callback to null.
+    const seen: { latest: Promise<ModulesBody> | null } = { latest: null }
+    page.on('response', r => {
+      if (r.url().endsWith('/api/admin/modules') && r.request().method() === 'GET' && r.ok()) {
+        seen.latest = r.json() as Promise<ModulesBody>
+      }
+    })
+
     await page.goto('/admin/website-modules')
     await page.waitForLoadState('networkidle')
+    if (!seen.latest) throw new Error('the page never loaded /api/admin/modules')
+    const { data } = await seen.latest
+    const statsShown = data.find(m => m.slug === 'about')?.visibility?.show_stats !== false
     await page.getByRole('button', { name: 'Edit About settings' }).click()
 
     await expect(page.getByText('Section visibility')).toBeVisible({ timeout: 8000 })
@@ -211,11 +233,12 @@ test.describe('Website Modules Admin', () => {
     await expect(page.locator('label[for="visibility-show_members"]')).toContainText('Band members')
 
     const statsCheckbox = page.locator('#visibility-show_stats')
-    await expect(statsCheckbox).toBeChecked()
-    await statsCheckbox.uncheck()
-    await expect(statsCheckbox).not.toBeChecked()
-    await statsCheckbox.check()
-    await expect(statsCheckbox).toBeChecked()
+    await expect(statsCheckbox).toBeChecked({ checked: statsShown })
+    // Both directions, ending where it started — nothing is saved.
+    await statsCheckbox.setChecked(!statsShown)
+    await expect(statsCheckbox).toBeChecked({ checked: !statsShown })
+    await statsCheckbox.setChecked(statsShown)
+    await expect(statsCheckbox).toBeChecked({ checked: statsShown })
   })
 
   // The public half — that the page actually renders at this width — is
