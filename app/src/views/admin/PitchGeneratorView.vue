@@ -8,7 +8,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { useAuthors } from '@/composables/useAuthors'
 import { useBandContactPrefill } from '@/composables/useBandContactPrefill'
-import { bandMention } from '@/utils/pitchRecipient'
+import { bandMention, greetingName } from '@/utils/pitchRecipient'
 import type { AuthorSummary } from '@/types/author'
 
 const { t } = useI18n()
@@ -45,6 +45,11 @@ const {
   selectedContactId,
   chooseContact,
 } = useBandContactPrefill(bandId, bandName.value, recipientName)
+
+// The greeting reads the picked contact's own first name, not a text match.
+const pickedContact = computed(() =>
+  bandContacts.value.find((c) => c.id === selectedContactId.value) ?? null,
+)
 
 const matchedAuthor = computed(() => {
   const q = recipientName.value.trim().toLowerCase()
@@ -100,7 +105,8 @@ const pitch = computed((): string => {
   const contact = p.booking_email ? `\n\nBooking: ${p.booking_email}` : '' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const sign    = `\n\nBest,\n[Your name]` // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
 
-  const to = recipientName.value ? `Hi ${recipientName.value},\n\n` : 'Hi,\n\n' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
+  const greeting = greetingName(recipientName.value, pickedContact.value)
+  const to = greeting ? `Hi ${greeting},\n\n` : 'Hi,\n\n' // i18n-ignore: outgoing email to a third party, not chrome — awaiting the pitch language picker
   const note = customNote.value ? `\n\n${customNote.value}` : ''
 
   switch (selectedType.value) {

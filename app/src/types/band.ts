@@ -1,7 +1,10 @@
 /** A person to contact about a band — an `Author` row, surfaced on the band. */
 export interface BandContact {
   id: number
+  /** "First Last", for display and the recipient box. */
   name: string
+  /** What the pitch greets them by. */
+  first_name: string
   email: string | null
   phone: string | null
   whatsapp: string | null
