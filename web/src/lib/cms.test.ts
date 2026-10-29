@@ -169,6 +169,33 @@ describe('getBandProfile', () => {
  * A merch item carries clips whose titles the API resolves for the requested
  * locale — so the item fetch must say which one, like getRelease does.
  */
+/**
+ * The member detail route lists members in getStaticPaths and each page then
+ * finds its member in getMembers(lang). Unmemoised, those were separate
+ * requests, so a member deleted mid-build — an E2E spec's teardown racing its
+ * own rebuild — was listed, then missing: `find()` returned undefined, the page
+ * threw on `first_name`, and the all-or-nothing build took the site down.
+ */
+describe('getMembers', () => {
+  it('answers each locale from one request, even after the API drops a member', async () => {
+    let roster = [{ id: 1, slug: 'ana' }, { id: 2, slug: 'temp-member' }]
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: true, status: 200, json: async () => ({ data: roster }) }
+    }))
+    const { getMembers } = await freshModule()
+
+    const listed = await getMembers('en')
+    roster = [{ id: 1, slug: 'ana' }] // deleted between the path list and the page
+
+    expect((await getMembers('en')).map(m => m.id)).toEqual([1, 2])
+    expect(await getMembers('en')).toBe(listed)
+    await getMembers('pl')
+    expect(calls).toHaveLength(2)
+  })
+})
+
 describe('getShopItem', () => {
   it('requests the locale it was given', async () => {
     const calls: string[] = []

@@ -110,8 +110,17 @@ export async function getEpkOptional(lang: Locale = 'en'): Promise<EpkData | nul
   }
 }
 
-export const getMembers = (lang: Locale = 'en') =>
-  get<BandMember[]>('/band-profile/members', { lang })
+/**
+ * Memoised per locale for the life of the build, so the member route's
+ * getStaticPaths, the About section's cards and each member page all read one
+ * answer. Unmemoised they were separate requests, and a member deleted between
+ * them was listed as a path and then missing from its own page's fetch — which
+ * threw, and an all-or-nothing build took the whole site down with it.
+ */
+export const getMembers: (lang?: Locale) => Promise<BandMember[]> = memoisePerLocale(
+  (lang) => get<BandMember[]>('/band-profile/members', { lang }),
+  3,
+)
 
 export const getSocialLinks = () =>
   get<SocialLink[]>('/band-profile/social-links')
