@@ -69,7 +69,7 @@ test.describe.serial('Admin Authors', () => {
     await expect(page.getByRole('cell', { name: updatedName })).toBeVisible({ timeout: 8000 })
   })
 
-  test('form layout: no stray markup, notes sit above social links', async ({ page }) => {
+  test('form layout: no stray markup, details · social · relations in three columns', async ({ page }) => {
     await page.getByRole('button', { name: '+ Add author' }).click()
     const modal = page.locator('.modal-overlay')
     await expect(modal).toBeVisible()
@@ -78,9 +78,11 @@ test.describe.serial('Admin Authors', () => {
     // leaked into the page as a literal "/>" after each of them.
     await expect(modal.locator('form')).not.toContainText('/>')
 
-    const notesBox  = await modal.getByPlaceholder('Additional context about this contact…').boundingBox()
-    const socialBox = await modal.locator('.social-links-editor').boundingBox()
-    expect(notesBox!.y).toBeLessThan(socialBox!.y)
+    const notesBox     = await modal.getByPlaceholder('Additional context about this contact…').boundingBox()
+    const socialBox    = await modal.locator('.social-links-editor').boundingBox()
+    const relationsBox = await modal.locator('.assoc-section').first().boundingBox()
+    expect(notesBox!.x + notesBox!.width).toBeLessThanOrEqual(socialBox!.x)
+    expect(socialBox!.x + socialBox!.width).toBeLessThanOrEqual(relationsBox!.x)
   })
 
   test('country and contact language: pick, save, reopen → both persisted', async ({ page }) => {

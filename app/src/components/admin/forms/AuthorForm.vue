@@ -94,6 +94,11 @@ const expandedSections = reactive({
   bands:         false,
 })
 
+// The quick-add passes empty lists, so it gets no relations column at all.
+const hasRelations = computed(() =>
+  props.pressReleases.length > 0 || props.concerts.length > 0 || props.tours.length > 0 || props.bands.length > 0,
+)
+
 /** Laravel keys a bad id as `band_ids.0`; a plain lookup renders nothing. */
 const bandsError = computed(() => {
   const errs = props.errors ?? {}
@@ -140,120 +145,127 @@ function submit() {
 </script>
 
 <template>
-  <form @submit.prevent="submit" class="flex flex-col gap-4">
+  <form @submit.prevent="submit" class="author-form flex flex-col gap-4">
+    <div class="author-columns">
+      <div class="author-col">
+        <!-- Name -->
+        <div class="contact-grid">
+          <div>
+            <label class="field-label" :for="`${uid}-first-name`">{{ $t('content.authors.firstName') }} <span class="field-req">*</span></label>
+            <input :id="`${uid}-first-name`" v-model="form.first_name" required class="field-input" :placeholder="$t('content.authors.firstNamePlaceholder')" />
+            <p v-if="errors?.first_name" class="field-error">{{ errors.first_name[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label" :for="`${uid}-last-name`">{{ $t('content.authors.lastName') }}</label>
+            <input :id="`${uid}-last-name`" v-model="form.last_name" class="field-input" :placeholder="$t('content.authors.lastNamePlaceholder')" />
+            <p v-if="errors?.last_name" class="field-error">{{ errors.last_name[0] }}</p>
+          </div>
+        </div>
 
-    <!-- Name -->
-    <div class="contact-grid">
-      <div>
-        <label class="field-label" :for="`${uid}-first-name`">{{ $t('content.authors.firstName') }} <span class="field-req">*</span></label>
-        <input :id="`${uid}-first-name`" v-model="form.first_name" required class="field-input" :placeholder="$t('content.authors.firstNamePlaceholder')" />
-        <p v-if="errors?.first_name" class="field-error">{{ errors.first_name[0] }}</p>
+        <!-- Contact details -->
+        <div class="contact-grid">
+          <div>
+            <label class="field-label">{{ $t('common.fields.email') }}</label>
+            <input v-model="form.email" type="email" class="field-input" :placeholder="$t('content.authors.emailPlaceholder')" />
+            <p v-if="errors?.email" class="field-error">{{ errors.email[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label">{{ $t('common.fields.phone') }}</label>
+            <input v-model="form.phone" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
+          </div>
+          <div>
+            <label class="field-label">{{ $t('content.authors.whatsapp') }}</label>
+            <input v-model="form.whatsapp" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
+          </div>
+          <div>
+            <label class="field-label" :for="`${uid}-country`">{{ $t('content.authors.country') }}</label>
+            <select :id="`${uid}-country`" v-model="form.country" class="field-input">
+              <option value="">{{ $t('content.authors.notSet') }}</option>
+              <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
+            </select>
+            <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
+          </div>
+          <div>
+            <label class="field-label" :for="`${uid}-contact-language`">{{ $t('content.authors.contactLanguage') }}</label>
+            <select :id="`${uid}-contact-language`" v-model="form.contact_language" class="field-input">
+              <option value="">{{ $t('content.authors.notSet') }}</option>
+              <option v-for="l in languages" :key="l.code" :value="l.code">{{ l.label }}</option>
+            </select>
+            <p v-if="errors?.contact_language" class="field-error">{{ errors.contact_language[0] }}</p>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="field-label">{{ $t('content.authors.notes') }} <span class="hint">{{ $t('content.authors.notesOptional') }}</span></label>
+          <textarea v-model="form.notes" rows="3" class="field-input" :placeholder="$t('content.authors.notesPlaceholder')" style="resize:vertical;" />
+        </div>
       </div>
-      <div>
-        <label class="field-label" :for="`${uid}-last-name`">{{ $t('content.authors.lastName') }}</label>
-        <input :id="`${uid}-last-name`" v-model="form.last_name" class="field-input" :placeholder="$t('content.authors.lastNamePlaceholder')" />
-        <p v-if="errors?.last_name" class="field-error">{{ errors.last_name[0] }}</p>
+
+      <div class="author-col">
+        <!-- Social links -->
+        <SocialLinksEditor v-model="socialLinks" />
+      </div>
+
+      <div v-if="hasRelations" class="author-col">
+        <!-- Press releases -->
+        <div v-if="pressReleases.length" class="assoc-section">
+          <button type="button" class="assoc-toggle" @click="expandedSections.pressReleases = !expandedSections.pressReleases">
+            <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.pressReleases }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {{ sectionLabel(t('content.authors.sections.pressReleases'), press_release_ids.length) }}
+          </button>
+          <div v-if="expandedSections.pressReleases" class="assoc-list">
+            <label v-for="pr in pressReleases" :key="pr.id" class="assoc-item">
+              <input type="checkbox" :checked="press_release_ids.includes(pr.id)" @change="toggle(press_release_ids, pr.id)" class="assoc-check" />
+              <span class="assoc-text">{{ prLabel(pr) }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Concerts -->
+        <div v-if="concerts.length" class="assoc-section">
+          <button type="button" class="assoc-toggle" @click="expandedSections.concerts = !expandedSections.concerts">
+            <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.concerts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {{ sectionLabel(t('content.authors.sections.concerts'), concert_ids.length) }}
+          </button>
+          <div v-if="expandedSections.concerts" class="assoc-list">
+            <label v-for="c in concerts" :key="c.id" class="assoc-item">
+              <input type="checkbox" :checked="concert_ids.includes(c.id)" @change="toggle(concert_ids, c.id)" class="assoc-check" />
+              <span class="assoc-text">{{ concertLabel(c) }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tours -->
+        <div v-if="tours.length" class="assoc-section">
+          <button type="button" class="assoc-toggle" @click="expandedSections.tours = !expandedSections.tours">
+            <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.tours }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {{ sectionLabel(t('content.authors.sections.tours'), tour_ids.length) }}
+          </button>
+          <div v-if="expandedSections.tours" class="assoc-list">
+            <label v-for="tour in tours" :key="tour.id" class="assoc-item">
+              <input type="checkbox" :checked="tour_ids.includes(tour.id)" @change="toggle(tour_ids, tour.id)" class="assoc-check" />
+              <span class="assoc-text">{{ tour.name }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Bands -->
+        <div v-if="bands.length" class="assoc-section">
+          <button type="button" class="assoc-toggle" @click="expandedSections.bands = !expandedSections.bands">
+            <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.bands }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {{ sectionLabel(t('content.authors.sections.bands'), band_ids.length) }}
+          </button>
+          <div v-if="expandedSections.bands" class="assoc-list">
+            <label v-for="b in bands" :key="b.id" class="assoc-item">
+              <input type="checkbox" :checked="band_ids.includes(b.id)" @change="toggle(band_ids, b.id)" class="assoc-check" />
+              <span class="assoc-text">{{ b.name }}</span>
+            </label>
+          </div>
+        </div>
+        <p v-if="bandsError" class="field-error">{{ bandsError }}</p>
       </div>
     </div>
-
-    <!-- Contact details -->
-    <div class="contact-grid">
-      <div>
-        <label class="field-label">{{ $t('common.fields.email') }}</label>
-        <input v-model="form.email" type="email" class="field-input" :placeholder="$t('content.authors.emailPlaceholder')" />
-        <p v-if="errors?.email" class="field-error">{{ errors.email[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label">{{ $t('common.fields.phone') }}</label>
-        <input v-model="form.phone" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
-      </div>
-      <div>
-        <label class="field-label">{{ $t('content.authors.whatsapp') }}</label>
-        <input v-model="form.whatsapp" class="field-input" :placeholder="PHONE_PLACEHOLDER" />
-      </div>
-      <div>
-        <label class="field-label" :for="`${uid}-country`">{{ $t('content.authors.country') }}</label>
-        <select :id="`${uid}-country`" v-model="form.country" class="field-input">
-          <option value="">{{ $t('content.authors.notSet') }}</option>
-          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
-        </select>
-        <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
-      </div>
-      <div>
-        <label class="field-label" :for="`${uid}-contact-language`">{{ $t('content.authors.contactLanguage') }}</label>
-        <select :id="`${uid}-contact-language`" v-model="form.contact_language" class="field-input">
-          <option value="">{{ $t('content.authors.notSet') }}</option>
-          <option v-for="l in languages" :key="l.code" :value="l.code">{{ l.label }}</option>
-        </select>
-        <p v-if="errors?.contact_language" class="field-error">{{ errors.contact_language[0] }}</p>
-      </div>
-    </div>
-
-    <!-- Notes -->
-    <div>
-      <label class="field-label">{{ $t('content.authors.notes') }} <span class="hint">{{ $t('content.authors.notesOptional') }}</span></label>
-      <textarea v-model="form.notes" rows="3" class="field-input" :placeholder="$t('content.authors.notesPlaceholder')" style="resize:vertical;" />
-    </div>
-
-    <!-- Social links -->
-    <SocialLinksEditor v-model="socialLinks" />
-
-    <!-- Press releases -->
-    <div v-if="pressReleases.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expandedSections.pressReleases = !expandedSections.pressReleases">
-        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.pressReleases }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        {{ sectionLabel(t('content.authors.sections.pressReleases'), press_release_ids.length) }}
-      </button>
-      <div v-if="expandedSections.pressReleases" class="assoc-list">
-        <label v-for="pr in pressReleases" :key="pr.id" class="assoc-item">
-          <input type="checkbox" :checked="press_release_ids.includes(pr.id)" @change="toggle(press_release_ids, pr.id)" class="assoc-check" />
-          <span class="assoc-text">{{ prLabel(pr) }}</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Concerts -->
-    <div v-if="concerts.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expandedSections.concerts = !expandedSections.concerts">
-        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.concerts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        {{ sectionLabel(t('content.authors.sections.concerts'), concert_ids.length) }}
-      </button>
-      <div v-if="expandedSections.concerts" class="assoc-list">
-        <label v-for="c in concerts" :key="c.id" class="assoc-item">
-          <input type="checkbox" :checked="concert_ids.includes(c.id)" @change="toggle(concert_ids, c.id)" class="assoc-check" />
-          <span class="assoc-text">{{ concertLabel(c) }}</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Tours -->
-    <div v-if="tours.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expandedSections.tours = !expandedSections.tours">
-        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.tours }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        {{ sectionLabel(t('content.authors.sections.tours'), tour_ids.length) }}
-      </button>
-      <div v-if="expandedSections.tours" class="assoc-list">
-        <label v-for="tour in tours" :key="tour.id" class="assoc-item">
-          <input type="checkbox" :checked="tour_ids.includes(tour.id)" @change="toggle(tour_ids, tour.id)" class="assoc-check" />
-          <span class="assoc-text">{{ tour.name }}</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Bands -->
-    <div v-if="bands.length" class="assoc-section">
-      <button type="button" class="assoc-toggle" @click="expandedSections.bands = !expandedSections.bands">
-        <svg class="assoc-chevron" :class="{ 'assoc-chevron--open': expandedSections.bands }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        {{ sectionLabel(t('content.authors.sections.bands'), band_ids.length) }}
-      </button>
-      <div v-if="expandedSections.bands" class="assoc-list">
-        <label v-for="b in bands" :key="b.id" class="assoc-item">
-          <input type="checkbox" :checked="band_ids.includes(b.id)" @change="toggle(band_ids, b.id)" class="assoc-check" />
-          <span class="assoc-text">{{ b.name }}</span>
-        </label>
-      </div>
-    </div>
-    <p v-if="bandsError" class="field-error">{{ bandsError }}</p>
 
     <div class="flex gap-2 justify-end pt-1">
       <button type="button" class="btn-ghost" @click="cancel()">{{ $t('common.actions.cancel') }}</button>
@@ -266,6 +278,17 @@ function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+/*
+ * Three columns (details · social · relations) once the form itself is wide,
+ * i.e. in the authors page's modal. The quick-add in the band form keeps its
+ * narrow modal, so it measures the form rather than the viewport and stacks.
+ */
+.author-form    { container-type: inline-size; }
+.author-columns { display: flex; flex-direction: column; gap: 1rem; }
+.author-col     { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+@container (min-width: 56rem) {
+  .author-columns { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 1.5rem; align-items: start; }
+}
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
 .field-req  { color: var(--c-f87171); }
 .hint       { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--c-334155); font-size: var(--fs-2xs); }

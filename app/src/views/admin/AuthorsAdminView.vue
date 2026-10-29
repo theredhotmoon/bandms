@@ -197,7 +197,7 @@ async function confirmDelete() {
       </div>
     </div>
 
-    <AdminModal :open="showModal" :title="modalTitle" max-width="40rem" @close="closeModal">
+    <AdminModal :open="showModal" :title="modalTitle" max-width="76rem" @close="closeModal">
       <div v-if="!isCreating && fullRecord.isPending.value" class="py-8 text-center text-sm" style="color:var(--c-475569);">{{ $t('common.state.loading') }}</div>
       <!--
         Without this branch a failed fetch renders an empty form that is still
