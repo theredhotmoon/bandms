@@ -1,4 +1,5 @@
 import type { Lang } from '@/locales'
+import type { RewriteMode } from '@/utils/rewriteModes'
 
 /** 'html' protects markup (Tiptap output); 'text' is a plain string. */
 export type TranslateFormat = 'text' | 'html'
@@ -24,4 +25,16 @@ export interface TranslateItem {
 export interface AssistantCapabilities {
   translate: boolean
   rewrite: boolean
+}
+
+/** One rewrite for POST /api/admin/assistant/rewrite — the row's text, in its own language, in one mode. */
+export interface RewriteBody {
+  text: string
+  format: TranslateFormat
+  locale: Lang
+  mode: RewriteMode
+  /** Stable field id (`concert.description`); the server picks style examples by it. */
+  fieldKey: string
+  /** The field's own cap, so the result can never exceed what Save accepts. */
+  maxLength?: number
 }

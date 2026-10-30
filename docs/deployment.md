@@ -236,6 +236,9 @@ the ones that break things quietly:
 | `PUBLIC_GA_MEASUREMENT_ID` | leave as-is | overwritten from the GitHub secret on the next deploy, *if that secret is set* — an unset secret leaves this line untouched; see step 5 and the callout below |
 | `ASSISTANT_TRANSLATOR` | `deepl` once you have a key, otherwise leave unset | the admin shows no Translate buttons (unset means *none*; a key on its own switches nothing on) |
 | `DEEPL_API_KEY` | a DeepL API key — the free tier (500k chars/month, key ends in `:fx`) covers this site many times over | with `ASSISTANT_TRANSLATOR=deepl` and no key, the buttons stay hidden |
+| `ASSISTANT_TEXT_MODEL_DRIVER` | `anthropic` once you have a key, otherwise leave unset | the admin shows no Enhance menu (unset means *none*) |
+| `ANTHROPIC_API_KEY` | an Anthropic API key (console.anthropic.com → API keys) | with the driver set and no key, the menu stays hidden |
+| `ASSISTANT_TEXT_MODEL`, `ASSISTANT_TRIAGE_MODEL` | leave the defaults (`claude-opus-5-5` for rewrites, `claude-haiku-5-5` for the crawler's triage) | — |
 
 Lock it down — it holds every secret the stack has:
 

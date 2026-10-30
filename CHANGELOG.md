@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (admin assistant: Enhance menu, phase 2)
+
+### Added
+- **An Enhance menu on every description, intro, bio, FAQ answer, page-copy paragraph and text block** — a ✦ button beside Translate on any text row that has something in it, offering *Fix the flow*, *Punchier*, *Shorter*, *Longer* and *Press release*. The rewrite keeps the language and every fact (names, dates, times, places, prices, links) and sounds like the band: the model is shown a few of your own recent texts of the same field. The row is replaced and an **Undo** chip stays until you edit the row or press it; a result longer than the field allows is refused rather than cut. Powered by Claude through a swappable provider (`App\Assistant\Text`); switched on with `ASSISTANT_TEXT_MODEL_DRIVER=anthropic` + `ANTHROPIC_API_KEY`. Unset, no menu is rendered. The default model is `claude-opus-5-5` (`ASSISTANT_TEXT_MODEL`); `ASSISTANT_TRIAGE_MODEL` (`claude-haiku-5-5`) is reserved for the crawler.
+- **Design and plans for phases 2–3** of the assistant (`docs/superpowers/specs/2026-10-30-*`): this menu, and the nightly crawler for mentions, ska news and venue/promoter leads worldwide.
+
 ## [Unreleased] — 2026-10-30 (news: highlighted post, Show more from the server)
 
 ### Added

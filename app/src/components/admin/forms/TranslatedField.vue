@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, ref } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
+import EnhanceMenu from '@/components/admin/forms/EnhanceMenu.vue'
 import RichEditor from '@/components/admin/RichEditor.vue'
-import { useAssistantCapabilities, useTranslate } from '@/composables/useAssistant'
+import { useAssistantCapabilities, useEnhance, useTranslate } from '@/composables/useAssistant'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { bagHasText, shortLabel, type Lang, type TranslationBag } from '@/locales'
 import type { TranslateFormat } from '@/types/assistant'
 import { VISIBLE_LOCALES } from '@/utils/editorLocales'
+import { canRestore, snapshot, type UndoState } from '@/utils/enhanceUndo'
+import type { RewriteMode } from '@/utils/rewriteModes'
 import { decideClick, replyStillApplies, type Armed } from '@/utils/translateButton'
 import { fillKey } from '@/utils/translationFill'
 import { isFilled, sourceFor } from '@/utils/translationSource'
@@ -66,8 +69,9 @@ const visible = inject(VISIBLE_LOCALES, null)
 const locales = computed<Lang[]>(() => props.locales ?? visible?.value ?? order.value)
 const format = computed<TranslateFormat>(() => props.format ?? (props.kind === 'rich' ? 'html' : 'text'))
 
-const { canTranslate } = useAssistantCapabilities()
+const { canTranslate, capabilities } = useAssistantCapabilities()
 const { translate, isPending: pendingKey } = useTranslate()
+const { rewrite, isPending: rewritePending } = useEnhance()
 
 function set(l: Lang, value: string): void {
   emit('update:modelValue', { ...props.modelValue, [l]: value })
@@ -107,7 +111,7 @@ function buttonTitle(l: Lang): string {
 
 async function onTranslateClick(l: Lang): Promise<void> {
   const from = source(l)
-  if (!from || isPending(l)) return
+  if (!from || rowBusy(l)) return
 
   const decision = decideClick({ filled: isFilled(props.modelValue[l]), armed: armed.value, key: key(l), now: Date.now() })
   if (decision.action === 'arm') {
@@ -133,6 +137,44 @@ async function onTranslateClick(l: Lang): Promise<void> {
   } catch {
     // useTranslate already toasted; the field is left as it was.
   }
+}
+
+// ── Enhance menu ────────────────────────────────────────────────────────────
+// Only textarea/rich rows with text, and only when the server can rewrite.
+// A rewrite always replaces the row, so it always leaves an Undo behind
+// (utils/enhanceUndo.ts) until the band edits the row or presses it.
+const rewriteKey = (l: Lang): string => `rewrite:${props.fieldKey}.${l}`
+const canEnhance = (l: Lang): boolean => capabilities.value.rewrite && props.kind !== 'input' && isFilled(props.modelValue[l])
+const rowBusy = (l: Lang): boolean => isPending(l) || rewritePending(rewriteKey(l))
+const undo = ref<Partial<Record<Lang, UndoState>>>({})
+const canUndo = (l: Lang): boolean => canRestore(undo.value[l], props.modelValue[l])
+
+async function onEnhance(l: Lang, mode: RewriteMode): Promise<void> {
+  if (rowBusy(l)) return
+  const before = props.modelValue[l]
+  try {
+    const text = await rewrite({ text: before, format: format.value, locale: l, mode, fieldKey: props.fieldKey, maxLength: props.maxlength })
+    if (props.modelValue[l] !== before) {
+      toast.info(t('common.assistant.rewriteSkipped')) // the band edited the row meanwhile
+      return
+    }
+    set(l, text)
+    // A rich editor re-emits its NORMALISED html after setContent (a newline
+    // between blocks, a reordered attribute), so the value the row settles to
+    // is the one Undo must compare against — not the model's raw text.
+    await nextTick()
+    await nextTick()
+    undo.value = { ...undo.value, [l]: snapshot(before, props.modelValue[l]) }
+  } catch {
+    // useEnhance already toasted; the field is left as it was.
+  }
+}
+
+function onUndo(l: Lang): void {
+  const state = undo.value[l]
+  if (!state || !canUndo(l)) return
+  undo.value = { ...undo.value, [l]: undefined }
+  set(l, state.before)
 }
 </script>
 
@@ -190,7 +232,7 @@ async function onTranslateClick(l: Lang): Promise<void> {
           :data-locale="l"
           :data-source="source(l)"
           :data-confirm="isArmed(l) ? 'true' : undefined"
-          :disabled="isPending(l)"
+          :disabled="rowBusy(l)"
           :title="buttonTitle(l)"
           :aria-label="buttonTitle(l)"
           @click="onTranslateClick(l)"
@@ -202,7 +244,27 @@ async function onTranslateClick(l: Lang): Promise<void> {
             <path d="M7 3.5a.75.75 0 0 1 .53.22l2.5 2.5a.75.75 0 1 1-1.06 1.06L7.75 6.06V12a.75.75 0 0 1-1.5 0V6.06L5.03 7.28a.75.75 0 0 1-1.06-1.06l2.5-2.5A.75.75 0 0 1 7 3.5Zm6 13a.75.75 0 0 1-.53-.22l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22V8a.75.75 0 0 1 1.5 0v5.94l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-.53.22Z" />
           </svg>
         </button>
+
+        <EnhanceMenu
+          v-if="canEnhance(l)"
+          :locale="l"
+          :disabled="rowBusy(l)"
+          :pending="rewritePending(rewriteKey(l))"
+          :class="{ 'enhance--alone': !(canTranslate && source(l)) }"
+          @pick="onEnhance(l, $event)"
+        />
       </div>
+
+      <button
+        v-if="canUndo(l)"
+        type="button"
+        class="trans-undo"
+        :data-locale="l"
+        :title="$t('common.assistant.undoHint')"
+        @click="onUndo(l)"
+      >
+        {{ $t('common.assistant.undo') }}
+      </button>
     </div>
 
     <template v-for="l in locales" :key="`err-${l}`">
@@ -215,6 +277,18 @@ async function onTranslateClick(l: Lang): Promise<void> {
 <style scoped>
 .trans-control { position: relative; display: flex; align-items: flex-start; min-width: 0; }
 .trans-control--with-button { padding-right: 2.25rem; }
+/* Two icons beside a row push the text a little further; one takes the inner slot. */
+.trans-control:has(.enhance:not(.enhance--alone)) > .field-input,
+.trans-control:has(.enhance:not(.enhance--alone)) > .trans-rich { padding-right: 4rem; }
+.trans-control:has(.enhance--alone) > .field-input,
+.trans-control:has(.enhance--alone) > .trans-rich { padding-right: 2.25rem; }
+.trans-control > .enhance--alone { right: 0.375rem; }
+.trans-undo {
+  align-self: flex-start; margin-left: 0.25rem; padding: 0.2rem 0.5rem;
+  border: 1px solid var(--c-333333); border-radius: 0.25rem; background: transparent;
+  color: var(--c-aaaaaa); font-size: var(--fs-2xs); cursor: pointer; white-space: nowrap;
+}
+.trans-undo:hover { color: var(--c-e2e8f0); border-color: var(--c-444444); }
 .trans-rich { flex: 1; min-width: 0; }
 .trans-rich + .trans-translate { top: 0.375rem; }
 /* A rich editor's toolbar is taller than an input, so the badge sits beside the first line of text. */

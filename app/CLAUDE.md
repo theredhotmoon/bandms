@@ -111,6 +111,17 @@ two stop sharing one pending state. The rendered test id is
 `trans-input-<fieldKey>-<locale>`; specs otherwise select rows by
 `.trans-row[data-locale]`, never by position.
 
+The same component carries the **Enhance** menu (`EnhanceMenu.vue`) on
+`textarea`/`rich` rows that have text, when the server reports the `rewrite`
+capability: five modes (`utils/rewriteModes.ts` mirrors the API enum — its
+spec reads the PHP file), one request per pick through `useEnhance()`, the
+row replaced and an Undo chip left behind (`utils/enhanceUndo.ts`: restore
+the text before the *latest* rewrite, only while the row still shows it).
+Pass `maxlength` on every textarea/rich field whose API rule has a cap — it
+travels with the request so a rewrite can never exceed what Save accepts.
+The menu consumes Escape itself (`stopPropagation`), or `AdminModal` would
+read it as "close me".
+
 ### Two language axes — chrome and content
 
 `useLang()` (`site_lang`) is the **content** locale: which language the API

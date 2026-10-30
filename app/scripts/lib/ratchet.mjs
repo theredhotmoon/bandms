@@ -45,6 +45,7 @@ export const MIGRATED = [
   'components/admin/forms/TranslatedSlugInput.vue',
   'components/admin/forms/TranslatedField.vue',
   'components/admin/forms/TranslateFormButton.vue',
+  'components/admin/forms/EnhanceMenu.vue',
   'components/admin/forms/AttachedClipsField.vue',
   'components/admin/forms/SocialLinksEditor.vue',
   'components/admin/RichEditor.vue',

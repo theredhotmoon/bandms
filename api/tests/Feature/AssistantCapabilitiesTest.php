@@ -27,6 +27,20 @@ it('reports translate off when deepl is chosen but has no key', function () {
     $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.translate', false);
 });
 
+it('reports rewrite off when no text model is configured', function () {
+    config(['assistant.text_model' => 'none']);
+    $this->actingAsUser();
+
+    $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.rewrite', false);
+});
+
+it('reports rewrite off when anthropic is chosen but has no key', function () {
+    config(['assistant.text_model' => 'anthropic', 'services.anthropic.api_key' => '']);
+    $this->actingAsUser();
+
+    $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.rewrite', false);
+});
+
 it('is readable by any authenticated user, not only admins', function () {
     config(['assistant.translator' => 'none']);
     $this->actingAsMember();

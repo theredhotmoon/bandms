@@ -332,7 +332,7 @@ async function saveSocialLinks() {
                     field-key="profile.bio_short"
                     :locales="[bioLang]"
                     :rows="2"
-                    :maxlength="300"
+                    :maxlength="280"
                     :label="$t('band.profile.bio.variants.short')"
                     :placeholders="bioPlaceholders('shortPlaceholder')"
                   />
