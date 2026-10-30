@@ -66,7 +66,7 @@ test.describe.serial('Clips admin', () => {
 
     await form.locator('input').first().fill('https://vimeo.com/76979871')
     await expect(form.locator('.provider-badge')).toHaveText('Vimeo')
-    await form.getByTestId('clip-title-en').fill(TITLE)
+    await form.getByTestId('trans-input-clip.title-en').fill(TITLE)
     // Typed key by key: the custom category starts with a preset word, and the
     // picker used to blank the field the moment the text spelled "live".
     await form.getByTestId('clip-category-custom').pressSequentially('live acoustic')
@@ -91,7 +91,7 @@ test.describe.serial('Clips admin', () => {
     await page.locator('tbody tr', { hasText: TITLE }).getByRole('button', { name: 'Edit' }).click()
     const form = page.getByTestId('clip-form')
 
-    await form.getByTestId('clip-title-en').fill(EDITED)
+    await form.getByTestId('trans-input-clip.title-en').fill(EDITED)
     // `exact` keeps the chip from matching the relations panel's "Concerts (1)" toggle.
     await form.getByRole('button', { name: 'Backstage', exact: true }).click()
     await form.getByRole('button', { name: 'Update' }).click()

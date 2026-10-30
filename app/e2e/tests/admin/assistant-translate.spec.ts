@@ -126,6 +126,24 @@ test('what the band types while a translation is in flight is kept', async ({ pa
 
   await page.waitForTimeout(2000)
   await expect(nameRow(modal, second).locator('input')).toHaveValue('typed meanwhile')
+  // A dropped reply says so, or the band reads an ended spinner as "broken".
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /changed/i })).toHaveCount(1)
+})
+
+test('a provider failure during a form-level fill toasts once, not once per field', async ({ page, request }) => {
+  const [first] = await contentLocaleOrder(request)
+  await page.route(CAPABILITIES, route => route.fulfill({ json: { data: { translate: true, rewrite: false } } }))
+  await page.route(TRANSLATE, route => route.fulfill({ status: 503, json: { message: 'DeepL quota reached for this month.' } }))
+  const modal = await openNewConcert(page)
+
+  await nameRow(modal, first).locator('input').fill('Name A')
+  await descRow(modal, first).locator('textarea').fill('Doors at eight.')
+  await modal.getByTestId('translate-empty-fields').click()
+
+  const toasts = page.locator('[data-sonner-toast]').filter({ hasText: 'DeepL quota reached' })
+  await expect(toasts).toHaveCount(1)
+  await page.waitForTimeout(1000)
+  await expect(toasts).toHaveCount(1)
 })
 
 test('the form-level fill lights up the rows it is filling', async ({ page, request }) => {
@@ -137,6 +155,9 @@ test('the form-level fill lights up the rows it is filling', async ({ page, requ
   await descRow(modal, first).locator('textarea').fill('Doors at eight.')
   await modal.getByTestId('translate-empty-fields').click()
 
+  // The form button stays mounted and busy for the whole run — it must not
+  // blink out the moment its own items go pending.
+  await expect(modal.getByTestId('translate-empty-fields')).toBeDisabled()
   // Both empty rows are in flight through the shared pending set: their own
   // buttons are busy, so a second request for the same row cannot be fired.
   await expect(nameRow(modal, second).locator('.trans-translate')).toBeDisabled()

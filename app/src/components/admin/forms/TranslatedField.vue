@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { toast } from 'vue-sonner'
 import RichEditor from '@/components/admin/RichEditor.vue'
 import { useAssistantCapabilities, useTranslate } from '@/composables/useAssistant'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { shortLabel, type Lang, type TranslationBag } from '@/locales'
+import { bagHasText, shortLabel, type Lang, type TranslationBag } from '@/locales'
 import type { TranslateFormat } from '@/types/assistant'
 import { VISIBLE_LOCALES } from '@/utils/editorLocales'
-import { decideClick, type Armed } from '@/utils/translateButton'
+import { decideClick, replyStillApplies, type Armed } from '@/utils/translateButton'
 import { fillKey } from '@/utils/translationFill'
 import { isFilled, sourceFor } from '@/utils/translationSource'
 
@@ -31,9 +32,19 @@ const props = withDefaults(defineProps<{
   kind: 'input' | 'textarea' | 'rich'
   /** Stable id like `concert.description` — the row's translate keys and (phase 2) style examples hang off it. */
   fieldKey: string
+  /** The field's name, for each control's aria-label ("Title EN"). */
+  label?: string
+  /** DOM id for the FIRST row's control, so a `<label for>` can point at it. */
+  id?: string
+  /** Or an id per row: `${idPrefix}-${locale}` (FaqEditor's `faq-q-en`). */
+  idPrefix?: string
   placeholders?: Partial<Record<Lang, string>>
   errors?: Partial<Record<Lang, string | undefined>>
-  /** Marks only the PRIMARY content locale's control required — the content-language rule. */
+  /**
+   * The content-language rule: only the PRIMARY locale's control is required,
+   * and only while EVERY locale is blank — so an English-only post written
+   * before the band switched to Polish-first stays saveable.
+   */
   required?: boolean
   locales?: Lang[]
   rows?: number
@@ -61,6 +72,11 @@ const { translate, isPending: pendingKey } = useTranslate()
 function set(l: Lang, value: string): void {
   emit('update:modelValue', { ...props.modelValue, [l]: value })
 }
+
+const isRequired = (l: Lang): boolean => props.required && l === primary.value && !bagHasText(props.modelValue)
+const ariaLabel = (l: Lang): string | undefined => (props.label ? `${props.label} ${shortLabel(l)}` : undefined)
+const controlId = (l: Lang): string | undefined =>
+  props.idPrefix ? `${props.idPrefix}-${l}` : props.id && l === locales.value[0] ? props.id : undefined
 
 function onInput(l: Lang, e: Event): void {
   set(l, (e.target as HTMLInputElement | HTMLTextAreaElement).value)
@@ -102,15 +118,18 @@ async function onTranslateClick(l: Lang): Promise<void> {
   }
 
   disarm()
-  // The row stays editable while the request runs. Whatever it held at click
-  // time is what the band asked to fill or replace; if they typed into it in
-  // the meantime, the answer is stale and must not land (the spec's first
-  // anti-goal: never overwrite what the band wrote).
-  const before = props.modelValue[l]
+  // The row stays editable while the request runs, and a host may swap the bag
+  // under this mounted field (a reordered post block, a reloaded record). The
+  // answer lands only if the row still holds what it held at click time and the
+  // source still reads what was sent — utils/translateButton.ts — so nothing
+  // the band wrote is overwritten and no other record receives this text.
+  const sent = { target: props.modelValue[l], source: props.modelValue[from] }
   try {
-    const out = await translate([{ key: key(l), text: props.modelValue[from], format: format.value, source: from, target: l }])
+    const out = await translate([{ key: key(l), text: sent.source, format: format.value, source: from, target: l }])
     const text = out[key(l)]
-    if (text !== undefined && props.modelValue[l] === before) set(l, text)
+    if (text === undefined) return
+    if (replyStillApplies(sent, { target: props.modelValue[l], source: props.modelValue[from] })) set(l, text)
+    else toast.info(t('common.assistant.skippedChanged')) // a silent drop reads as "broken"
   } catch {
     // useTranslate already toasted; the field is left as it was.
   }
@@ -136,9 +155,11 @@ async function onTranslateClick(l: Lang): Promise<void> {
           type="text"
           class="field-input w-full"
           :class="{ 'field-input--error': errors[l], 'trans-control--with-button': canTranslate && source(l) }"
+          :id="controlId(l)"
           :placeholder="placeholders[l]"
-          :required="required && l === primary"
+          :required="isRequired(l)"
           :maxlength="maxlength"
+          :aria-label="ariaLabel(l)"
           :aria-invalid="Boolean(errors[l])"
           :data-testid="`trans-input-${fieldKey}-${l}`"
         />
@@ -148,14 +169,16 @@ async function onTranslateClick(l: Lang): Promise<void> {
           @input="onInput(l, $event)"
           class="field-input w-full"
           :class="{ 'field-input--error': errors[l], 'trans-control--with-button': canTranslate && source(l) }"
+          :id="controlId(l)"
           :rows="rows"
           :placeholder="placeholders[l]"
-          :required="required && l === primary"
+          :required="isRequired(l)"
           :maxlength="maxlength"
+          :aria-label="ariaLabel(l)"
           :aria-invalid="Boolean(errors[l])"
           :data-testid="`trans-input-${fieldKey}-${l}`"
         />
-        <div v-else class="trans-rich" :data-testid="`trans-input-${fieldKey}-${l}`">
+        <div v-else class="trans-rich" :class="{ 'trans-control--with-button': canTranslate && source(l) }" :data-testid="`trans-input-${fieldKey}-${l}`">
           <RichEditor :model-value="modelValue[l]" @update:model-value="set(l, $event)" :placeholder="placeholders[l]" />
         </div>
 

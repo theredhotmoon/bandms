@@ -4,6 +4,7 @@ import { computed, nextTick, provide, reactive, ref, watch } from 'vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import SingleImageUpload, { type ImageField } from '@/components/admin/forms/SingleImageUpload.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -45,7 +46,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [PostPayload]; cancel: [] }>()
 
-const { order: contentLocales, isPrimary } = useContentLocales()
+const { order: contentLocales } = useContentLocales()
 const { token } = useAuth()
 const uploadImage = (file: File) => uploadPostImage(token.value!, file)
 
@@ -201,35 +202,32 @@ async function submit() {
         <div class="flex flex-col gap-3 min-w-0">
           <div>
             <label class="field-label" for="post-title-0">{{ $t('common.fields.title') }} <span class="field-req">*</span></label>
-            <div class="trans-group">
-              <div v-for="(l, idx) in contentLocales" :key="l" class="trans-row" :data-locale="l">
-                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-                <input
-                  v-model="form.title[l]"
-                  :id="idx === 0 ? 'post-title-0' : undefined"
-                  :required="isPrimary(l) && !bagHasText(form.title)"
-                  class="field-input flex-1"
-                  :placeholder="titlePlaceholder(l)"
-                  :aria-label="`${$t('common.fields.title')} ${shortLabel(l)}`"
-                />
-              </div>
-            </div>
+            <!-- The title shows EVERY locale whatever the single-language view
+                 says (`:locales`), the way it always has; the view is for prose. -->
+            <TranslatedField
+              v-model="form.title"
+              kind="input"
+              field-key="post.title"
+              id="post-title-0"
+              :label="$t('common.fields.title')"
+              :locales="contentLocales"
+              :placeholders="Object.fromEntries(LOCALES.map(l => [l, titlePlaceholder(l)]))"
+              required
+            />
             <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
           </div>
           <div>
             <label class="field-label">{{ $t('content.posts.intro') }} <span class="field-req">*</span></label>
-            <div class="trans-group">
-              <div v-for="l in visibleLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-                <textarea
-                  v-model="form.intro[l]"
-                  :required="isPrimary(l) && !bagHasText(form.intro)"
-                  class="field-input flex-1" rows="2"
-                  :placeholder="introPlaceholder(l)"
-                  :aria-label="`${$t('content.posts.intro')} ${shortLabel(l)}`"
-                />
-              </div>
-            </div>
+            <TranslatedField
+              v-model="form.intro"
+              kind="textarea"
+              field-key="post.intro"
+              :rows="2"
+              :label="$t('content.posts.intro')"
+              :locales="visibleLocales"
+              :placeholders="Object.fromEntries(LOCALES.map(l => [l, introPlaceholder(l)]))"
+              required
+            />
             <p v-if="errors?.intro" class="field-error">{{ errors.intro[0] }}</p>
           </div>
         </div>

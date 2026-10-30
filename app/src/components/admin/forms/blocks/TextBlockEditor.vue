@@ -1,47 +1,42 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { shortLabel, type Lang } from '@/locales'
-import { VISIBLE_LOCALES } from '@/utils/editorLocales'
-import RichEditor from '@/components/admin/RichEditor.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import { LOCALES, bagFrom, type Lang, type TranslationBag } from '@/locales'
 
 const props = defineProps<{ payload: Record<string, unknown> }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
 
 const { t } = useI18n()
-const { order } = useContentLocales()
 
-// The host form may narrow the view to one language; without a provider every
-// locale renders, as it always did.
-const visible = inject(VISIBLE_LOCALES, null)
-const locales = computed<Lang[]>(() => visible?.value ?? order.value)
+// Every block on a post renders the same field, so the translate key carries
+// this instance's id — otherwise one block's spinner would light every block.
+const fieldKey = `post.block.text#${useId()}`
 
-const placeholder = (l: Lang): string => t('content.blocks.text.placeholder', {}, { locale: l })
+const placeholders = Object.fromEntries(LOCALES.map(l => [l, t('content.blocks.text.placeholder', {}, { locale: l })])) as Record<Lang, string>
 
-const body = () => (props.payload.body ?? {}) as Partial<Record<Lang, string>>
+// A loaded payload may hold a partial bag (only locales ever typed); the
+// field wants a full one. The full bag goes back out WITH its blanks: the API
+// requires `body` to be a non-empty array and nulls blank strings itself, so
+// stripping them would make a paragraph cleared in every language unsaveable.
+const body = () => bagFrom(props.payload.body as Partial<Record<Lang, string>> | undefined)
 
-function set(locale: Lang, value: string) {
-  emit('update:payload', { ...props.payload, body: { ...body(), [locale]: value } })
+function set(bag: TranslationBag) {
+  emit('update:payload', { ...props.payload, body: bag })
 }
 </script>
 
 <template>
-  <div class="trans-group">
-    <div v-for="l in locales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-      <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-      <!-- Bold, italic and links (plus lists/headings) — stored as HTML, which
-           the public TextBlock renders as-is. Blocks written as plain text
-           before this load with their line breaks as paragraphs. -->
-      <RichEditor
-        class="flex-1 min-w-0"
-        :model-value="body()[l] ?? ''"
-        :placeholder="placeholder(l)"
-        :aria-label="`${$t('content.blocks.kind.text')} ${shortLabel(l)}`"
-        @update:model-value="set(l, $event)"
-      />
-    </div>
-  </div>
+  <!-- Bold, italic and links (plus lists/headings) — stored as HTML, which the
+       public TextBlock renders as-is. Blocks written as plain text before this
+       load with their line breaks as paragraphs. The host form may narrow the
+       rows to one language (VISIBLE_LOCALES); TranslatedField reads that itself. -->
+  <TranslatedField
+    :model-value="body()"
+    kind="rich"
+    :field-key="fieldKey"
+    :label="$t('content.blocks.kind.text')"
+    :placeholders="placeholders"
+    @update:model-value="set"
+  />
 </template>
-
-<style scoped src="../../form-styles.css" />

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import MemberPicker from './MemberPicker.vue'
 import { computed, reactive, ref, watch } from 'vue'
-import RichEditor from '@/components/admin/RichEditor.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import TranslateFormButton from '@/components/admin/forms/TranslateFormButton.vue'
 import { useI18n } from 'vue-i18n'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
+import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, slugPayload, type Lang, type TranslationBag } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
 
 const props = defineProps<{
@@ -26,11 +26,17 @@ const { t } = useI18n()
 
 // Locales whose slug still follows the title — sent as null so the API generates them.
 const slugAuto = ref<Partial<Record<Lang, boolean>>>({})
-const { order: contentLocales, isPrimary } = useContentLocales()
 
 // Sample text written in each input's own language — see PostForm.
 const titlePlaceholder = (l: Lang): string => t('media.releaseForm.titlePlaceholder', {}, { locale: l })
 const descriptionPlaceholder = (l: Lang): string => t('media.releaseForm.descriptionPlaceholder', {}, { locale: l })
+
+// "Translate empty fields" hands back the bags it filled, keyed by fieldKey;
+// only still-empty locales were written (utils/translationFill.ts).
+function onTranslatedFill(bags: Record<string, TranslationBag>): void {
+  if (bags['release.title']) form.title = bags['release.title']
+  if (bags['release.description']) form.description = bags['release.description']
+}
 
 // i18n-ignore block: `label` is a brand name and `color` is that brand's
 // hex — neither translates. `key` is the persisted ReleasePlatform.
@@ -281,13 +287,22 @@ function handleSubmit() {
 
       <div class="flex flex-col gap-3">
         <div>
-          <label class="field-label">{{ $t('media.releaseForm.title') }} <span class="field-req">*</span></label>
-          <div class="trans-group">
-            <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-              <input v-model="form.title[l]" :required="isPrimary(l) && !bagHasText(form.title)" class="field-input flex-1" :placeholder="titlePlaceholder(l)" />
-            </div>
+          <div class="field-label-row">
+            <label class="field-label">{{ $t('media.releaseForm.title') }} <span class="field-req">*</span></label>
+            <TranslateFormButton
+              :fields="{ 'release.title': form.title, 'release.description': form.description }"
+              :formats="{ 'release.title': 'text', 'release.description': 'html' }"
+              @filled="onTranslatedFill"
+            />
           </div>
+          <TranslatedField
+            v-model="form.title"
+            kind="input"
+            field-key="release.title"
+            :label="$t('media.releaseForm.title')"
+            :placeholders="Object.fromEntries(LOCALES.map(l => [l, titlePlaceholder(l)]))"
+            required
+          />
           <p v-if="errors?.title" class="field-error">{{ errors.title[0] }}</p>
         </div>
         <div>
@@ -347,14 +362,13 @@ function handleSubmit() {
     <!-- Description -->
     <div class="mb-5">
       <label class="field-label">{{ $t('media.releaseForm.description') }}</label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`" style="margin-top:0.5rem;">{{ shortLabel(l) }}</span>
-          <div class="flex-1">
-            <RichEditor v-model="form.description[l]" :placeholder="descriptionPlaceholder(l)" />
-          </div>
-        </div>
-      </div>
+      <TranslatedField
+        v-model="form.description"
+        kind="rich"
+        field-key="release.description"
+        :label="$t('media.releaseForm.description')"
+        :placeholders="Object.fromEntries(LOCALES.map(l => [l, descriptionPlaceholder(l)]))"
+      />
     </div>
 
     <!-- Streaming links -->
@@ -460,16 +474,6 @@ function handleSubmit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
-.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
-.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
-.trans-row--top { align-items: flex-start; }
-.lang-badge {
-  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em;
-  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
-  background: var(--c-1e3a5f); color: var(--c-60a5fa); width: 2rem; text-align: center;
-}
-.lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
-
 /* .section-title comes from form-styles.css */
 .platform-row  { display: flex; align-items: center; gap: 0.625rem; }
 .platform-row--compact { gap: 0.5rem; }

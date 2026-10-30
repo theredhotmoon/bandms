@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { CONFIRM_MS, decideClick } from './translateButton'
+import { CONFIRM_MS, decideClick, replyStillApplies } from './translateButton'
+
+describe('replyStillApplies', () => {
+  const sent = { target: '', source: 'Beta' }
+
+  it('applies when neither the target nor the source moved', () => {
+    expect(replyStillApplies(sent, { target: '', source: 'Beta' })).toBe(true)
+  })
+
+  it('drops a reply when the band typed into the target meanwhile', () => {
+    expect(replyStillApplies(sent, { target: 'typed', source: 'Beta' })).toBe(false)
+  })
+
+  it('drops a reply when the source text is no longer what was sent', () => {
+    // The host swapped the bag under a mounted field — a reordered post block,
+    // a reloaded record — so this row is not the one that asked.
+    expect(replyStillApplies(sent, { target: '', source: 'Alpha' })).toBe(false)
+  })
+})
 
 describe('decideClick', () => {
   it('translates an empty target on the first click', () => {

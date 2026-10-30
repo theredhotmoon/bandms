@@ -91,6 +91,26 @@ it edits raw translation bags, so an untranslated locale must render an empty
 input, not the other language's text. See the root `CLAUDE.md` for the full
 three-file picture.
 
+### Translated fields are `TranslatedField` — never a hand-rolled row
+
+`components/admin/forms/TranslatedField.vue` renders a translation bag as one
+row per content locale (`kind="input" | "textarea" | "rich"`), with the badge,
+per-locale `errors`, `placeholders`, the content-language `required` rule
+(primary row only, and only while every locale is blank), `label` → per-row
+aria-label, `id` / `idPrefix` for `<label for>`, `locales` to narrow the rows
+(it also reads `inject(VISIBLE_LOCALES)`), and the assistant's Translate
+button. Every form uses it; `TranslatedSlugInput` is the one sibling, for
+slugs. A form that writes its own `v-for="l in contentLocales"` row again has
+a field with no button and no `required` rule — the `.trans-row` /
+`.lang-badge` styles in `form-styles.css` exist for these two components only.
+
+`fieldKey` (`concert.name`, `module.<slug>.<field>`, `post.block.text#<uid>`)
+is a stable id: translate keys are `<fieldKey>.<locale>`, and a form's
+`TranslateFormButton` must key its `fields` by the same `fieldKey`s or the
+two stop sharing one pending state. The rendered test id is
+`trans-input-<fieldKey>-<locale>`; specs otherwise select rows by
+`.trans-row[data-locale]`, never by position.
+
 ### Two language axes — chrome and content
 
 `useLang()` (`site_lang`) is the **content** locale: which language the API

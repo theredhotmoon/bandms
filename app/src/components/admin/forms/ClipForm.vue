@@ -4,16 +4,12 @@ import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import EmbedBlockEditor from '@/components/admin/forms/blocks/EmbedBlockEditor.vue'
 import ClipCategoryPicker from '@/components/admin/forms/ClipCategoryPicker.vue'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import { LOCALES, emptyBag } from '@/locales'
-import { useContentLocales } from '@/composables/useContentLocales'
 import type { Clip, ClipAttach, ClipPayload } from '@/types/clip'
 import type { Concert } from '@/types/concert'
 import type { ReleaseSummary } from '@/types/release'
 import type { ShopItemSummary } from '@/types/shop'
-
-// Inputs render in the band's writing order; the registry order stays for
-// building payloads, where order carries no meaning.
-const { order: contentLocales } = useContentLocales()
 
 const props = defineProps<{
   initial?: Clip | null
@@ -87,12 +83,13 @@ function submit() {
 
     <div>
       <label class="field-label">{{ $t('common.fields.title') }}</label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
-          <input v-model="form.title[l]" class="field-input flex-1" :placeholder="$t('band.clips.form.titlePlaceholder', {}, { locale: l })" :data-testid="`clip-title-${l}`" />
-        </div>
-      </div>
+      <TranslatedField
+        v-model="form.title"
+        kind="input"
+        field-key="clip.title"
+        :label="$t('common.fields.title')"
+        :placeholders="Object.fromEntries(LOCALES.map(l => [l, $t('band.clips.form.titlePlaceholder', {}, { locale: l })]))"
+      />
     </div>
 
     <div>
