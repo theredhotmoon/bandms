@@ -22,7 +22,14 @@ describe('pagedAttrs', () => {
 describe('listPaging', () => {
   it('reads the module setting and the site-wide label', () => {
     const cfg = { module_config: { press: { per_page: 9 } } } as unknown as SiteConfig
-    expect(listPaging(cfg, 'press', 'en')).toEqual({ perPage: 9, showMoreLabel: 'Show more' })
+    expect(listPaging(cfg, 'press', 'en')).toEqual({
+      perPage: 9,
+      showMoreLabel: 'Show more',
+      showMoreLoading: 'Loading…',
+      showMoreError: 'Could not load more posts. Try again.',
+      listLoadError: 'Could not load the posts. Try again.',
+      tryAgainLabel: 'Try again',
+    })
     expect(listPaging(cfg, 'press', 'pl').showMoreLabel).toBe('Pokaż więcej')
   })
 

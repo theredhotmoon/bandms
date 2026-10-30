@@ -41,10 +41,22 @@ export function siteCopy(siteConfig: SiteConfig, lang: string) {
  * "Show more" label. Here rather than in showMore.ts, which islands import —
  * this pulls in the copy registry, which must stay out of client bundles.
  */
-export function listPaging(siteConfig: SiteConfig, slug: string, lang: string): { perPage: number | null; showMoreLabel: string } {
+export function listPaging(siteConfig: SiteConfig, slug: string, lang: string): {
+  perPage: number | null
+  showMoreLabel: string
+  showMoreLoading: string
+  showMoreError: string
+  listLoadError: string
+  tryAgainLabel: string
+} {
+  const t = siteCopy(siteConfig, lang)
   return {
     perPage: siteConfig.module_config?.[slug]?.per_page ?? null,
-    showMoreLabel: siteCopy(siteConfig, lang).showMore,
+    showMoreLabel: t.showMore,
+    showMoreLoading: t.showMoreLoading,
+    showMoreError: t.showMoreError,
+    listLoadError: t.listLoadError,
+    tryAgainLabel: t.tryAgain,
   }
 }
 

@@ -18,6 +18,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class PostController extends Controller
 {
@@ -33,7 +35,84 @@ class PostController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        return $this->listResponse($request, $this->listQuery($request, withImage: true)->published());
+        $request->validate([
+            'limit'   => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'exclude' => ['sometimes', 'integer'],
+            'built_at' => ['sometimes', 'date'],
+        ]);
+
+        return $this->listResponse(
+            $request,
+            $this->listQuery($request, withImage: true)
+                ->published()
+                // The post on top of the News page, which the grid must not
+                // repeat — the public site passes whatever featured() gave it.
+                ->when($request->filled('exclude'), fn ($q) => $q->whereKeyNot((int) $request->exclude))
+                // When the public site was built. A post created or published
+                // after it has no article page yet, so a card linking to it
+                // would 404 until the next rebuild — leave it out until then.
+                // "Published after" is a published_at between the build and
+                // now; one still in the future was published before the build
+                // (published_at is a switch, not a timer — see CLAUDE.md), so
+                // its page exists and it stays.
+                ->when($request->filled('built_at'), function ($q) use ($request) {
+                    $at = Carbon::parse($request->built_at)->setTimezone(config('app.timezone'));
+                    $q->where('created_at', '<=', $at)
+                        ->where(fn ($q) => $q->where('published_at', '<=', $at)->orWhere('published_at', '>', now()));
+                }),
+        );
+    }
+
+    /**
+     * The post at the top of the News page: the one the band highlighted,
+     * else the newest. `data` is null when nothing is published. One post,
+     * decided once per build, so it stays put whatever a visitor filters.
+     */
+    public function featured(Request $request): JsonResponse
+    {
+        $post = $this->listQuery(new Request(), withImage: true)
+            ->published()
+            ->reorder()
+            ->orderByDesc('is_highlighted')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return response()->json(['data' => $post ? (new PostSummaryResource($post))->resolve($request) : null]);
+    }
+
+    /**
+     * Pin a post to the top of the News page, or unpin it. One at a time:
+     * pinning clears whichever post held it, in the same transaction. A
+     * draft cannot be pinned — the public site would never show it, and the
+     * band would wonder why the top post did not change.
+     */
+    public function highlight(Request $request, Post $post): JsonResponse
+    {
+        $on = $request->validate(['highlighted' => ['required', 'boolean']])['highlighted'];
+
+        if ($on && $post->published_at === null) {
+            throw ValidationException::withMessages(['highlighted' => __('api.highlight_draft')]);
+        }
+
+        // Set, then clear the rest — in that order. Two concurrent pins
+        // that cleared first could each miss the other's uncommitted row and
+        // both commit, leaving two pinned posts. This way the second clear has
+        // to wait on the first's locked row; InnoDB breaks the resulting
+        // deadlock, and the retry re-runs the loser after the winner commits.
+        DB::transaction(function () use ($post, $on) {
+            // A query, not $post->save(): after a deadlock rollback the model
+            // still believes the flag is set, so a retried save() would be a
+            // no-op and the retry would clear every pin, its own included.
+            Post::whereKey($post->id)->update(['is_highlighted' => (bool) $on]);
+            if ($on) {
+                Post::whereKeyNot($post->id)->where('is_highlighted', true)->update(['is_highlighted' => false]);
+            }
+        }, 3);
+
+        SiteRebuild::markDirty('posts');
+
+        return response()->json(['data' => ['id' => $post->id, 'is_highlighted' => (bool) $on]]);
     }
 
     /**
@@ -59,7 +138,7 @@ class PostController extends Controller
      */
     private function listQuery(Request $request, bool $withImage = false): Builder
     {
-        $columns = ['id', 'title', 'slug', 'intro', 'published_at', 'event_date_display', 'created_at', 'updated_at'];
+        $columns = ['id', 'title', 'slug', 'intro', 'published_at', 'event_date_display', 'is_highlighted', 'created_at', 'updated_at'];
         if ($withImage) {
             $columns[] = 'image';
         }
@@ -68,15 +147,8 @@ class PostController extends Controller
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
             ->when(
                 $request->filled('search'),
-                // Matches any block's payload, not just type=text: an embed's
-                // label/url and an image's alt/caption are plain text in the
-                // payload JSON too, and the old `content` column this search
-                // replaced covered the whole article body regardless of shape.
-                fn ($q) => $q->where(fn ($q) => $q
-                    ->where('title', 'like', '%' . $request->search . '%')
-                    ->orWhereHas('blocks', fn ($b) => $b
-                        ->where('payload', 'like', '%' . $request->search . '%'))
-                )
+                // Title, intro and every block's text — see applySearch().
+                fn ($q) => $this->applySearch($q, (string) $request->search)
             )
             ->when(
                 $request->filled('tag_id'),
@@ -86,8 +158,70 @@ class PostController extends Controller
             ->orderByDesc('created_at');
     }
 
+    /**
+     * Title, intro (in the response's language and its fallbacks — what the
+     * card shows) and any block's payload, ignoring case.
+     *
+     * The columns are JSON, and MySQL compares a JSON value as utf8mb4_bin:
+     * a plain LIKE was case-sensitive and ran over every locale's text and
+     * the keys, so "tour" missed "Summer Tour" and "en" matched every post.
+     * That went unseen while the public search ran in the browser; it runs
+     * here now. SQLite (the test stage) ignores case either way, which is why
+     * the lowercasing is explicit rather than left to the collation.
+     *
+     * `%` and `_` in the term are literal. '!' is the escape character
+     * because it means the same in MySQL and SQLite string literals, where a
+     * backslash does not.
+     */
+    private function applySearch(Builder $query, string $search): Builder
+    {
+        $term = '%' . strtr(mb_strtolower($search), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+        $grammar = $query->getQuery()->getGrammar();
+        $like = fn (string $column) => 'LOWER(' . $grammar->wrap($column) . ") LIKE ? ESCAPE '!'";
+
+        $locales = Locales::chain(app()->getLocale());
+
+        return $query->where(function ($q) use ($like, $term, $locales) {
+            foreach ($locales as $code) {
+                $q->orWhereRaw($like("title->{$code}"), [$term])
+                    // The public News search matched title and intro when it
+                    // ran in the browser, so intro stays in.
+                    ->orWhereRaw($like("intro->{$code}"), [$term]);
+            }
+            // Any block, not just type=text: an embed's label and URL and an image's
+            // alt/caption are text too, and the old `content` column this
+            // replaced covered the whole body. Field by field, not the whole
+            // payload, whose keys ("body", "en") would match every post.
+            $q->orWhereHas('blocks', function ($b) use ($like, $term, $locales) {
+                $b->where(function ($b) use ($like, $term, $locales) {
+                    foreach ($locales as $code) {
+                        foreach (['body', 'alt', 'caption', 'label'] as $field) {
+                            $b->orWhereRaw($like("payload->{$field}->{$code}"), [$term]);
+                        }
+                    }
+                    // Untranslated: searching "youtube" or a video id finds the post.
+                    $b->orWhereRaw($like('payload->url'), [$term]);
+                });
+            });
+        });
+    }
+
     private function listResponse(Request $request, Builder $query): AnonymousResourceCollection
     {
+        // `limit` is the public News page's "Show more": a cursor (the last
+        // post shown) rather than a page number, so a post published after
+        // the site was built cannot shift the batches into a repeat or a
+        // skip. The order needs a unique last column for that, hence id.
+        if ($request->filled('limit')) {
+            $posts = $query->reorder()
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->cursorPaginate((int) $request->limit)
+                ->withQueryString();
+
+            return PostSummaryResource::collection($posts);
+        }
+
         $posts = $request->filled('page')
             ? $query->paginate(12)
             : $query->get();
@@ -195,6 +329,11 @@ class PostController extends Controller
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
             // payload carrying slug_en: null nulled the post's slug.
             $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks', 'slug']));
+            // A draft cannot hold the top of the News page (highlight()), so
+            // unpublishing gives it up rather than keeping a pin no one sees.
+            if ($post->published_at === null) {
+                $post->is_highlighted = false;
+            }
             if (array_key_exists('slug', $data)) {
                 $post->applySlugBag($data['slug'], ContentLocales::firstFilled($post->getTranslations('title'), Locales::default()));
             }

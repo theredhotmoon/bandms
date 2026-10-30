@@ -99,4 +99,26 @@ export const SITE_COPY = defineCopy([
     help: 'Below any list whose Items per page holds some entries back.',
     defaults: { en: 'Show more', pl: 'Pokaż więcej' },
   },
+  // News fetches its next batch from the server rather than revealing one
+  // already in the page, so it can be slow, and it can fail.
+  {
+    key: 'showMoreLoading', label: '"Show more" while loading', group: 'Lists', maxLength: 30,
+    help: 'On News, where the next posts are fetched when the button is pressed.',
+    defaults: { en: 'Loading…', pl: 'Ładowanie…' },
+  },
+  {
+    key: 'showMoreError', label: '"Show more" failed', group: 'Lists', maxLength: 120,
+    help: 'On News, when the next posts could not be fetched. The button stays, so the visitor can try again.',
+    defaults: { en: 'Could not load more posts. Try again.', pl: 'Nie udało się wczytać kolejnych wpisów. Spróbuj ponownie.' },
+  },
+  {
+    key: 'listLoadError', label: 'Filter or search failed', group: 'Lists', maxLength: 120,
+    help: 'On News, when the posts for a tag or a search could not be fetched.',
+    defaults: { en: 'Could not load the posts. Try again.', pl: 'Nie udało się wczytać wpisów. Spróbuj ponownie.' },
+  },
+  {
+    key: 'tryAgain', label: '"Try again" button', group: 'Lists', maxLength: 30,
+    help: 'Replaces "Show more" on News after a tag or a search failed to load.',
+    defaults: { en: 'Try again', pl: 'Spróbuj ponownie' },
+  },
 ])

@@ -10,12 +10,18 @@ const props = defineProps<{
   label: string
   /** id of the list element whose items carry data-more-hidden. */
   list: string
+  /**
+   * A batch is on its way from the server (News). aria-disabled rather than
+   * disabled: a disabled button drops keyboard focus to <body>.
+   */
+  busy?: boolean
 }>()
 const emit = defineEmits<{ click: [] }>()
 
 // The island reveals the batch; this moves focus onto it, because on the last
 // batch the island unmounts this button and focus would drop to <body>.
 async function reveal() {
+  if (props.busy) return
   const before = heldBack(props.list)
   emit('click')
   await nextTick()
@@ -25,7 +31,14 @@ async function reveal() {
 
 <template>
   <div class="show-more">
-    <button type="button" class="show-more-btn" data-testid="show-more" :aria-controls="list" @click="reveal">
+    <button
+      type="button"
+      class="show-more-btn"
+      data-testid="show-more"
+      :aria-controls="list"
+      :aria-disabled="busy || undefined"
+      @click="reveal"
+    >
       {{ label }}
     </button>
   </div>

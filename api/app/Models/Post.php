@@ -24,6 +24,7 @@ class Post extends Model
     {
         return [
             'published_at' => 'datetime',
+            'is_highlighted' => 'boolean',
         ];
     }
 

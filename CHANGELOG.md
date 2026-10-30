@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (news: highlighted post, Show more from the server)
+
+### Added
+- **Pick the post on top of the News page**: a ★ column in the admin's posts list pins a post there. Only one post can be pinned, so pinning another moves the pin. A draft's ★ is disabled, and the API refuses it with a 422. Unpublishing the pinned post gives up its place. With nothing pinned, the newest post is on top, as before. The pinned post **stays on top whatever a visitor filters or searches**, and the grid below never repeats it. It still does not count toward Items per page. New endpoints: `PUT /api/posts/{post}/highlight` (admin/publisher) and `GET /api/posts/featured`. A pin marks `posts` dirty, so it reaches the public site on the next rebuild.
+
+### Changed
+- **News "Show more" fetches the next posts from the server.** The page used to carry every post and only reveal hidden ones, which stops scaling as the band writes more. Now only the first batch (Items per page) is baked into the page. Each click asks `GET /api/posts?limit=…` for the posts after the last one shown. Batches follow a cursor, not a page number, so a post published after the last rebuild cannot make a card appear twice or never. Tag filters and search also ask the server; search now covers the intro as well as the title and article text. It ignores case and reads only the page language's text: a plain `LIKE` on MySQL's JSON columns had been case-sensitive and matched the JSON keys, so *tour* missed *Summer Tour* and *en* matched every post. `%` and `_` are literal, and searches are rate-limited to 60 a minute per visitor. Plain list reads, which the site build makes, are not limited. Posts created or published after the last build are left out of fetched batches until the next rebuild, because their article pages don't exist yet. If a filter request fails, the grid empties instead of leaving the previous list under the new filter, and the button offers *Try again*. While a tag or search loads, the old cards fade out and the button hides, so the old list can't pass for the answer. Going back to *All* restores the baked first batch without a request. The button shows *Loading…* while it waits. If a fetch fails, a message says so and the same button tries again. All four strings are editable site-wide copy (`showMoreLoading`, `showMoreError`, `listLoadError`, `tryAgain`, Website Modules → Site-wide → Lists). *Default* Items per page still bakes every post. Older posts no longer appear in the News page's HTML, but they stay linked from the sitemap and their own article pages.
+
 ## [Unreleased] — 2026-10-30 (admin assistant: translate button on every form)
 
 ### Added

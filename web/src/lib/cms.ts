@@ -9,10 +9,20 @@ import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/pressRelease'
 import type { ShopItem, ShopItemSummary, ShopCategory } from '@/types/shop'
 import type { PublicSetlist } from '@/types/setlist'
-import { assertRegistryMatches } from './locales'
+import { assertRegistryMatches, DEFAULT_LOCALE } from './locales'
+import { fetchPostBatch, type PostBatchQuery } from './postFeed'
 import type { Locale } from '@/types/shared'
 
 const BASE = (import.meta.env.API_BASE ?? '').replace(/\/$/, '')
+
+/**
+ * When this build started, set once as the module loads — before any page's
+ * getStaticPaths reads a post. The News island sends it with every batch, so
+ * the API leaves out posts that came after it and have no page (postFeed.ts).
+ * Taken any later, a post published mid-build would slip into the list with
+ * no article to link to.
+ */
+export const BUILD_STARTED_AT = new Date().toISOString()
 
 function assertSafeId(id: number): void {
   if (!Number.isSafeInteger(id) || id <= 0) {
@@ -163,6 +173,17 @@ export async function getPosts(lang: Locale = 'en', page = 1): Promise<{ data: P
   const json = (await res.json()) as { data: PostSummary[]; meta: PaginationMeta }
   return json
 }
+
+/**
+ * The post on top of the News page: the one highlighted in the admin, else
+ * the newest; null with nothing published. Decided here, once per build, so
+ * it stays put whatever a visitor filters.
+ */
+export const getFeaturedPost = (lang: Locale = DEFAULT_LOCALE) =>
+  get<PostSummary | null>('/posts/featured', { lang })
+
+/** One batch of the News grid — the build bakes the first. See postFeed.ts. */
+export const getPostBatch = (q: PostBatchQuery) => fetchPostBatch(BASE, q)
 
 export const getPost = (id: number, lang: Locale = 'en') =>
   { assertSafeId(id); return get<Post>(`/posts/${id}`, { lang }) }

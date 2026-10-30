@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { Ref } from 'vue'
-import { fetchPost, fetchPosts, fetchPublicPosts, createPost, updatePost, deletePost } from '@/api/posts'
+import { fetchPost, fetchPosts, fetchPublicPosts, createPost, updatePost, deletePost, setPostHighlighted } from '@/api/posts'
 import type { PostFilters, PostListResponse } from '@/api/posts'
 import type { Post, PostPayload } from '@/types/post'
 import { useAuth } from './useAuth'
@@ -62,7 +62,14 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
   })
 
-  return { query, create, update, remove }
+  // Pinning one post unpins another, so the whole list is refetched.
+  const highlight = useMutation({
+    mutationFn: ({ id, highlighted }: { id: number; highlighted: boolean }) =>
+      setPostHighlighted(token.value!, id, highlighted),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+  })
+
+  return { query, create, update, remove, highlight }
 }
 
 export function usePost(id: Ref<number | null>) {

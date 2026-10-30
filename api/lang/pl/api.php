@@ -6,6 +6,8 @@ return [
     'not_found'       => 'Nie znaleziono.',
     'stale_admin'     => 'Panel administracyjny został zaktualizowany. Odśwież stronę i zapisz ponownie.',
 
+    'highlight_draft' => 'Opublikuj wpis, zanim go wyróżnisz.',
+
     /* See the note in lang/en/api.php. */
     'fan' => [
         'ticket_not_active'      => 'Przekazać można tylko aktywne bilety.',

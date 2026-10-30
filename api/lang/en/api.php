@@ -8,6 +8,9 @@ return [
     // Shown by an admin tab still running a bundle older than the API it saves to.
     'stale_admin'     => 'The admin panel was updated. Reload the page and save again.',
 
+    // A draft cannot be pinned to the top of the News page — it is not public.
+    'highlight_draft' => 'Publish the post before highlighting it.',
+
     /*
      * Messages a fan reads verbatim.
      *

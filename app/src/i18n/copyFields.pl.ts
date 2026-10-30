@@ -174,6 +174,10 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '"Share" button after copying': 'Przycisk „Udostępnij” po skopiowaniu',
   '"Shot at" label': 'Etykieta „Zdjęcie z”',
   '"Show more" button': 'Przycisk „Pokaż więcej”',
+  '"Show more" failed': '„Pokaż więcej” — błąd',
+  '"Show more" while loading': '„Pokaż więcej” — w trakcie ładowania',
+  '"Try again" button': 'Przycisk „Spróbuj ponownie”',
+  'Filter or search failed': 'Błąd filtra lub wyszukiwania',
   '"Show on map" button': 'Przycisk „Pokaż na mapie”',
   '"Shows played" counter label': 'Etykieta licznika „Zagrane koncerty”',
   '"Sold out" overlay': 'Nakładka „Wyprzedane”',
@@ -425,6 +429,14 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
     'Przed miejscem, w którym powstał album zdjęć.',
   'Below any list whose Items per page holds some entries back.':
     'Pod każdą listą, której „Pozycji na stronę” ukrywa część wpisów.',
+  'On News, where the next posts are fetched when the button is pressed.':
+    'W Aktualnościach, gdzie kolejne wpisy są pobierane po naciśnięciu przycisku.',
+  'On News, when the posts for a tag or a search could not be fetched.':
+    'W Aktualnościach, gdy nie udało się pobrać wpisów dla tagu lub wyszukiwania.',
+  'Replaces "Show more" on News after a tag or a search failed to load.':
+    'Zastępuje „Pokaż więcej” w Aktualnościach, gdy nie udało się wczytać tagu lub wyszukiwania.',
+  'On News, when the next posts could not be fetched. The button stays, so the visitor can try again.':
+    'W Aktualnościach, gdy nie udało się pobrać kolejnych wpisów. Przycisk zostaje, więc odwiedzający może spróbować ponownie.',
   'Caption under the booking email. Hidden if the profile has no booking address.':
     'Podpis pod e-mailem bookingowym. Ukryty, gdy profil nie ma adresu bookingowego.',
   'Caption under the general contact email.': 'Podpis pod ogólnym adresem kontaktowym.',

@@ -13,9 +13,11 @@ import { adminHeaders, contentLocaleOrder, moduleSectionSlug, rebuildAndWait, TE
  * `vue-tsc` were both green — nothing read a field that did not exist. Only
  * the rendered page shows the gap, which is why this is an E2E spec.
  *
- * No post in the dev database has a main image, so this seeds two: the newer
- * becomes the featured card, the older a grid card, and each appears on the
- * other's article under "More from the blog".
+ * No post in the dev database has a main image, so this seeds two: the older
+ * is always a grid card, and each appears on the other's article under "More
+ * from the blog". The featured card's image is list-per-page.spec.ts: which
+ * post is on top is the highlighted one, else the newest overall, and only
+ * that serial spec may pin one.
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -77,32 +79,23 @@ test.describe.serial('Public — news main image', () => {
   })
 
   /**
-   * Which post is featured is "newest first", and five other public specs
-   * seed posts published *now* in parallel — so the seeded pair is not
-   * reliably at the top of the unfiltered list. The island's search box
-   * filters client-side and features the first match, which makes the
-   * layout deterministic: narrow the list to this run's stamp and the newer
-   * post is the featured card, the older one a grid card.
+   * Five other public specs seed posts published *now* in parallel, so the
+   * seeded pair is not reliably near the top of the unfiltered list. The
+   * search box narrows it to this run's stamp (on the server). The top post
+   * never changes with a search, so the newer of the pair is a grid card too
+   * unless it is the newest post of all; the older one always is.
    */
   async function openFiltered(page: Page) {
     await page.goto(listUrl)
     const search = page.locator('input.nf-search')
-    const featured = page.locator('.nf-featured')
+    const older = page.locator('.nf-card', { hasText: olderTitle })
     // The island is client:idle; a value typed before hydration is wiped
     // when Vue binds the input, so type until the filter visibly applies.
     await expect(async () => {
       await search.fill(String(stamp))
-      await expect(featured).toContainText(newerTitle, { timeout: 2_000 })
+      await expect(older).toHaveCount(1, { timeout: 2_000 })
     }).toPass({ timeout: 30_000 })
   }
-
-  test('the featured card shows the post’s main image', async ({ page }) => {
-    await openFiltered(page)
-    const featured = page.locator('.nf-featured', { hasText: newerTitle })
-    await expect(featured).toHaveCount(1)
-    await expect(featured.locator('img.nf-img')).toHaveAttribute('src', STORED_SRC)
-    await expect(featured.locator('.nf-placeholder')).toHaveCount(0)
-  })
 
   test('a grid card shows the post’s main image', async ({ page }) => {
     await openFiltered(page)
@@ -114,7 +107,7 @@ test.describe.serial('Public — news main image', () => {
 
   test('the article’s "More from the blog" card shows the other post’s main image', async ({ page }) => {
     await openFiltered(page)
-    await page.locator('.nf-featured', { hasText: newerTitle }).click()
+    await page.locator('.nf-featured, .nf-card', { hasText: newerTitle }).first().click()
     await expect(page.locator('.art-title')).toContainText(newerTitle)
 
     // "More" is the three newest *other* posts over the whole archive, and

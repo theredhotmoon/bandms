@@ -45,6 +45,8 @@ class PostSummaryResource extends JsonResource
             'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()
                 ->map(fn ($c) => $c->date->format('Y-m-d'))),
             'event_date_display' => $this->event_date_display,
+            // Pinned to the top of the News page — PostController::highlight().
+            'is_highlighted' => (bool) $this->is_highlighted,
             'tags'         => TagResource::collection($this->whenLoaded('tags')),
             'translations' => [
                 'title' => $this->getTranslations('title'),

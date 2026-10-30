@@ -118,6 +118,11 @@ html:not(.js) .show-more { display: none; }
   background: var(--color-ink);
   color: var(--color-page);
 }
+/* News fetches its next batch; the button waits for it. */
+.show-more-btn[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.6;
+}
 
 /* ── Prose (post and release bodies) ───────────────────────────────────────── */
 

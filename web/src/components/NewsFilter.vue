@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
-import { formatEventDates, fmtDateShort } from '@/lib/i18n'
+import { formatEventDates, fmtDateShort, postSlug } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
 import type { PostSummary } from '@/types/post'
-import { useShowMore } from '@/lib/showMore'
+import { fetchPostBatch, MAX_BATCH } from '@/lib/postFeed'
+import { DEFAULT_LOCALE } from '@/lib/locales'
 import ShowMoreButton from './ShowMoreButton.vue'
 
 export interface NewsFilterCopy {
@@ -16,8 +17,22 @@ export interface NewsFilterCopy {
   event: string
 }
 
+export interface NewsTag { id: number; slug: string; name: string }
+
 const props = defineProps<{
-  posts: PostSummary[]
+  /**
+   * The post on top: highlighted in the admin, else the newest. Decided at
+   * build time and never filtered — it stays whatever the visitor picks.
+   */
+  featured: PostSummary | null
+  /** The grid's first batch, baked into the page. */
+  initialPosts: PostSummary[]
+  /** Where "Show more" picks up after it; null when that batch was the last. */
+  initialCursor: string | null
+  /** When this page was built — see PostBatchQuery.builtAt. */
+  builtAt: string
+  /** Every tag on a published post — more than the first batch carries. */
+  tags: NewsTag[]
   accent: string
   /**
    * Locale-aware base for a post URL, e.g. `/pl/aktualnosci`. Required, and
@@ -30,29 +45,115 @@ const props = defineProps<{
   /** Labels from the News module's copy — see PostsSection.astro. */
   copy: NewsFilterCopy
   /**
-   * Grid cards shown before "Show more" (the featured post is extra) —
-   * Website Modules → News → Items per page. Null ("Default") shows all.
+   * Grid cards per batch (the featured post is extra) — Website Modules →
+   * News → Items per page. Null ("Default") baked them all; a filter then
+   * fetches in the API's largest batches.
    */
   perPage?: number | null
-  /** Site-wide "Show more" label (the `site` module's copy). */
+  /** Site-wide "Show more" strings (the `site` module's copy). */
   showMoreLabel: string
+  showMoreLoading: string
+  showMoreError: string
+  /** A tag or a search failed — the list on screen is not its answer. */
+  listLoadError: string
+  tryAgainLabel: string
 }>()
+
+const lang = computed<Locale>(() => props.lang ?? DEFAULT_LOCALE)
+const href = (p: PostSummary) => `${props.postHrefBase}/${postSlug(p, lang.value)}`
 
 const q   = ref('')
 const tag = ref('all')
 
-const allTags = computed(() => {
-  const seen = new Map<string, string>()
-  props.posts.forEach(p => p.tags.forEach(t => seen.set(t.slug, t.name)))
-  return [...seen.entries()].map(([slug, name]) => ({ slug, name }))
+// ── The grid, a batch at a time from the API ──────────────────
+// Only the first batch is in the page. "Show more" asks the API for the
+// posts after the last one shown; a tag or a search asks for a fresh first
+// batch. The featured post is excluded server-side, so it is never repeated.
+const posts   = ref<PostSummary[]>(props.initialPosts)
+const cursor  = ref<string | null>(props.initialCursor)
+const loading = ref(false)
+/** A fresh list (tag, search) is on its way; the cards on screen are the old answer. */
+const refreshing = ref(false)
+/** Set when the last request failed: true for a fresh list, false for "more". */
+const failed  = ref<boolean | null>(null)
+const batch   = computed(() => props.perPage && props.perPage > 0 ? props.perPage : MAX_BATCH)
+
+const tagId = computed(() => props.tags.find(t => t.slug === tag.value)?.id ?? null)
+// The search box asks the server, so it waits for a pause in typing.
+const searchTerm = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(q, (value) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { searchTerm.value = value.trim() }, 300)
+})
+const filtered = computed(() => tagId.value !== null || searchTerm.value !== '')
+
+// A request superseded by a newer one (typing on, another tag) is dropped
+// when it lands, so a slow answer can never overwrite a newer list.
+let request = 0
+let controller: AbortController | null = null
+
+async function load(fresh: boolean) {
+  const mine = ++request
+  controller?.abort()
+  controller = new AbortController()
+  loading.value = true
+  refreshing.value = fresh
+  failed.value = null
+  try {
+    const next = await fetchPostBatch('', {
+      lang: lang.value,
+      limit: batch.value,
+      exclude: props.featured?.id,
+      cursor: fresh ? null : cursor.value,
+      tagId: tagId.value,
+      search: searchTerm.value,
+      builtAt: props.builtAt,
+    }, { signal: controller.signal })
+    if (mine !== request) return
+    const shown = posts.value.length
+    posts.value = fresh ? next.posts : [...posts.value, ...next.posts]
+    cursor.value = next.nextCursor
+    if (!fresh) void focusCard(shown)
+  } catch {
+    if (mine !== request) return
+    failed.value = fresh
+    // A fresh list that failed must not leave the previous one standing
+    // under the new filter, where its cards would read as matches.
+    if (fresh) { posts.value = []; cursor.value = null }
+  } finally {
+    if (mine === request) { loading.value = false; refreshing.value = false }
+  }
+}
+
+watch([tagId, searchTerm], () => {
+  if (filtered.value) return void load(true)
+  // Back to everything: the baked first batch is that list, no request needed.
+  request++
+  controller?.abort()
+  posts.value = props.initialPosts
+  cursor.value = props.initialCursor
+  loading.value = false
+  refreshing.value = false
+  failed.value = null
 })
 
-const matched = computed(() => props.posts.filter(p => {
-  const okTag = tag.value === 'all' || p.tags.some(t => t.slug === tag.value)
-  const hay = ((p.title ?? '') + ' ' + (p.intro ?? '')).toLowerCase()
-  const okQ  = !q.value.trim() || hay.includes(q.value.trim().toLowerCase())
-  return okTag && okQ
-}))
+// Not while a fresh list loads: the old list's cursor would fetch its next
+// batch, not the new filter's.
+const hasMore = computed(() => !refreshing.value && (cursor.value !== null || failed.value !== null))
+function showMore() {
+  if (loading.value) return
+  void load(failed.value === true)
+}
+
+// The button may be gone after the last batch, and focus would drop to
+// <body>; it moves to the first new card instead.
+async function focusCard(index: number) {
+  await nextTick()
+  root.value?.querySelectorAll<HTMLElement>('#news-grid .nf-card')[index]?.focus()
+}
+
+onBeforeUnmount(() => { clearTimeout(searchTimer); controller?.abort() })
 
 // ── ?tag=<slug> ───────────────────────────────────────────────
 // A tag on an article links here with ?tag=, so the list opens filtered.
@@ -60,7 +161,7 @@ const matched = computed(() => props.posts.filter(p => {
 // time, when there is no URL to read.
 onMounted(() => {
   const wanted = new URLSearchParams(window.location.search).get('tag')
-  if (wanted && allTags.value.some(t => t.slug === wanted)) tag.value = wanted
+  if (wanted && props.tags.some(t => t.slug === wanted)) tag.value = wanted
 })
 watch(tag, (slug) => {
   const url = new URL(window.location.href)
@@ -100,28 +201,14 @@ onMounted(() => {
 })
 onBeforeUnmount(() => resizeObserver?.disconnect())
 
-const featured = computed(() => matched.value[0] ?? null)
-const rest     = computed(() => matched.value.slice(1))
-
-// ── Items per page ────────────────────────────────────────────
-// Counts grid cards, not the featured post, so 6/9/12 fill whole rows of
-// three. A new filter or search starts again from the first batch.
-const { heldBack, hasMore, showMore: revealMore } = useShowMore(() => rest.value, () => props.perPage, [q, tag])
-
-// A held-back card measures zero wide, so revealed ones are re-measured.
-function showMore() {
-  revealMore()
-  void nextTick(measureTagRows)
-}
-
-watch(matched, () => nextTick(measureTagRows))
+watch(posts, () => nextTick(measureTagRows))
 
 function postDate(p: PostSummary): string {
-  return fmtDateShort(p.published_at ?? p.created_at, props.lang ?? 'en')
+  return fmtDateShort(p.published_at ?? p.created_at, lang.value)
 }
 
 function eventDate(p: PostSummary): string {
-  return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range', props.lang ?? 'en')
+  return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range', lang.value)
 }
 </script>
 
@@ -137,7 +224,7 @@ function eventDate(p: PostSummary): string {
           @click="tag = 'all'"
         >{{ copy.all }}</button>
         <button
-          v-for="t in allTags"
+          v-for="t in tags"
           :key="t.slug"
           class="nf-tag-btn"
           :class="{ active: tag === t.slug }"
@@ -159,16 +246,9 @@ function eventDate(p: PostSummary): string {
       </div>
     </section>
 
-    <!-- NO RESULTS -->
-    <div v-if="matched.length === 0" class="page-content">
-      <div class="nf-empty">
-        {{ copy.noMatch }}
-      </div>
-    </div>
-
-    <!-- FEATURED POST -->
+    <!-- FEATURED POST — never filtered, see the prop -->
     <section v-if="featured" class="nf-featured-wrap page-content">
-      <a :href="`${postHrefBase}/${featured.slug}`" class="nf-featured">
+      <a :href="href(featured)" class="nf-featured" data-testid="news-featured">
         <div class="nf-feat-img">
           <img v-if="featured.image" :src="featured.image" alt="" class="nf-img" loading="eager" />
           <div v-else class="nf-placeholder nf-placeholder--dark" aria-hidden="true" />
@@ -201,14 +281,20 @@ function eventDate(p: PostSummary): string {
       </a>
     </section>
 
+    <!-- NO RESULTS — not while a fresh list is still on its way -->
+    <div v-if="posts.length === 0 && !loading && failed === null && (filtered || !featured)" class="page-content">
+      <div class="nf-empty">
+        {{ copy.noMatch }}
+      </div>
+    </div>
+
     <!-- GRID -->
-    <section v-if="rest.length > 0" class="nf-grid-wrap page-content">
-      <div id="news-grid" class="nf-grid">
+    <section v-if="posts.length > 0 || hasMore" class="nf-grid-wrap page-content">
+      <div id="news-grid" class="nf-grid" :class="{ 'nf-grid--stale': refreshing }" :aria-busy="loading">
         <a
-          v-for="(p, i) in rest"
-          :data-more-hidden="heldBack(i)"
+          v-for="p in posts"
           :key="p.id"
-          :href="`${postHrefBase}/${p.slug}`"
+          :href="href(p)"
           class="nf-card"
         >
           <div class="nf-card-img">
@@ -233,7 +319,14 @@ function eventDate(p: PostSummary): string {
           </div>
         </a>
       </div>
-      <ShowMoreButton v-if="hasMore" list="news-grid" :label="showMoreLabel" @click="showMore" />
+      <p v-if="failed !== null" class="nf-load-error" role="alert">{{ failed ? listLoadError : showMoreError }}</p>
+      <ShowMoreButton
+        v-if="hasMore"
+        list="news-grid"
+        :label="loading ? showMoreLoading : failed ? tryAgainLabel : showMoreLabel"
+        :busy="loading"
+        @click="showMore"
+      />
     </section>
   </div>
 </template>
@@ -300,6 +393,22 @@ function eventDate(p: PostSummary): string {
   color: var(--color-ink);
 }
 .nf-search::-webkit-search-cancel-button { cursor: pointer; }
+
+/* A tag or search is loading: the cards are the previous answer, so they
+   fade rather than read as matches. */
+.nf-grid--stale {
+  opacity: 0.4;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+
+/* SHOW MORE FAILED */
+.nf-load-error {
+  margin: 28px 0 0;
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-ink);
+}
 
 /* EMPTY */
 .nf-empty {

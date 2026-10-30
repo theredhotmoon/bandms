@@ -2,7 +2,7 @@
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
 import { getSlugMap } from '@/lib/slugs'
-import { postSlug, formatGenreKicker } from '@/lib/i18n'
+import { formatGenreKicker } from '@/lib/i18n'
 
 interface Props {
   lang: Locale
@@ -15,17 +15,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import PageHero from '@/components/PageHero.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import NewsFilter from '@/components/NewsFilter.vue'
-import { getAllPosts, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { BUILD_STARTED_AT, getAllPosts, getBandProfile, getFeaturedPost, getPostBatch, getSiteConfig } from '@/lib/cms'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import { POSTS_COPY } from '@bandms/site-copy'
 import { moduleCopy, listPaging } from '@/lib/copy'
 
 const ACCENT = 'var(--color-accent)'
 
-const [allPosts, profile, siteConfig] = await Promise.all([
+const [allPosts, profile, siteConfig, featured] = await Promise.all([
   getAllPosts(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
+  getFeaturedPost(lang),
 ])
 // Every string on this page and its island: registry defaults for this
 // locale, overridden by whatever the band saved in Website Modules → News.
@@ -34,7 +35,19 @@ const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
 const paging = listPaging(siteConfig, 'posts', lang)
 const genreKicker = formatGenreKicker(profile.genres)
 
-const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
+// Only the first batch of the grid is baked; "Show more" and the filters
+// fetch the rest from the API (postFeed.ts), so the page stays the same size
+// however many posts the band writes. "Default" (no Items per page) bakes
+// them all, as before.
+const firstBatch = paging.perPage
+  ? await getPostBatch({ lang, limit: paging.perPage, exclude: featured?.id })
+  : { posts: allPosts.filter(p => p.id !== featured?.id), nextCursor: null }
+
+// The filter chips: every tag on a published post, which the first batch
+// alone would not cover. Read at build time; only the list reaches the page.
+const tagMap = new Map<number, { id: number; slug: string; name: string }>()
+allPosts.forEach(p => p.tags.forEach(t => tagMap.set(t.id, { id: t.id, slug: t.slug, name: t.name })))
+const tags = [...tagMap.values()]
 ---
 
 <BaseLayout
@@ -59,12 +72,20 @@ const postsWithSlug = allPosts.map(p => ({ ...p, slug: postSlug(p, lang) }))
 
     <!-- ── FILTER + POSTS (Vue island) ───────────────────────── -->
     <NewsFilter
-      posts={postsWithSlug}
+      featured={featured}
+      initialPosts={firstBatch.posts}
+      initialCursor={firstBatch.nextCursor}
+      builtAt={BUILD_STARTED_AT}
+      tags={tags}
       accent={ACCENT}
       postHrefBase={`/${lang}/${slugMap[lang].posts}`}
       lang={lang}
       perPage={paging.perPage}
       showMoreLabel={paging.showMoreLabel}
+      showMoreLoading={paging.showMoreLoading}
+      showMoreError={paging.showMoreError}
+      listLoadError={paging.listLoadError}
+      tryAgainLabel={paging.tryAgainLabel}
       copy={{
         all: t.filterAll, searchPlaceholder: t.searchPlaceholder, searchLabel: t.searchLabel,
         noMatch: t.noMatch, featured: t.featured, readFull: t.readFull, event: t.event,

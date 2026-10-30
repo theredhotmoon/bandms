@@ -33,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
+        RateLimiter::for('post-search', function (Request $request) {
+            return $request->filled('search')
+                ? Limit::perMinute(60)->by($request->ip())
+                : Limit::none();
+        });
+
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(config('auth.login_max_attempts'))
                 ->by($request->ip());
