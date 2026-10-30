@@ -55,6 +55,12 @@ return [
         'api_key' => env('DEEPL_API_KEY'),
     ],
 
+    // Admin assistant — the text model behind Enhance and triage
+    // (App\Assistant\Text). Same rule: the key alone enables nothing.
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+    ],
+
     'google_wallet' => [
         'enabled'   => env('GOOGLE_WALLET_ENABLED', false),
         'issuer_id' => env('GOOGLE_WALLET_ISSUER_ID', ''),

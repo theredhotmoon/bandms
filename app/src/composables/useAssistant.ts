@@ -2,9 +2,9 @@ import { computed, ref, type ComputedRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { fetchAssistantCapabilities, translateItems } from '@/api/assistant'
+import { fetchAssistantCapabilities, rewriteText, translateItems } from '@/api/assistant'
 import { saveErrorMessage } from '@/api/client'
-import type { AssistantCapabilities, TranslateItem } from '@/types/assistant'
+import type { AssistantCapabilities, RewriteBody, TranslateItem } from '@/types/assistant'
 import { useAuth } from './useAuth'
 
 const QUERY_KEY = ['assistant-capabilities']
@@ -70,4 +70,33 @@ export function useTranslate(): {
   }
 
   return { translate, isPending: (key: string) => pending.value.has(key), failureMessage }
+}
+
+/**
+ * The rewrite call behind every Enhance menu. Shares the module-level pending
+ * set with translate (key `rewrite:<fieldKey>.<locale>`), so a row in either
+ * kind of request shows one spinner and refuses a second request.
+ */
+export function useEnhance(): {
+  rewrite: (body: RewriteBody) => Promise<string>
+  isPending: (key: string) => boolean
+} {
+  const { token } = useAuth()
+  const { t } = useI18n()
+
+  async function rewrite(body: RewriteBody): Promise<string> {
+    const key = `rewrite:${body.fieldKey}.${body.locale}`
+    pending.value = new Set([...pending.value, key])
+    try {
+      const { text } = await rewriteText(token.value!, body)
+      return text
+    } catch (e) {
+      toast.error(saveErrorMessage(e, t('common.assistant.rewriteFailed')))
+      throw e
+    } finally {
+      pending.value = new Set([...pending.value].filter(k => k !== key))
+    }
+  }
+
+  return { rewrite, isPending: (key: string) => pending.value.has(key) }
 }

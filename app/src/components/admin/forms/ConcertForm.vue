@@ -400,6 +400,7 @@ function submit() {
             kind="textarea"
             field-key="concert.description"
             :rows="2"
+            :maxlength="2000"
             :placeholders="Object.fromEntries(LOCALES.map(l => [l, descriptionPlaceholder(l)]))"
             :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`description.${l}`]?.[0]]))"
           />

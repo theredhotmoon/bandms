@@ -223,6 +223,7 @@ async function submit() {
               kind="textarea"
               field-key="post.intro"
               :rows="2"
+              :maxlength="1000"
               :label="$t('content.posts.intro')"
               :locales="visibleLocales"
               :placeholders="Object.fromEntries(LOCALES.map(l => [l, introPlaceholder(l)]))"

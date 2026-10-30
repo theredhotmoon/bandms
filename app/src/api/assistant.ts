@@ -1,4 +1,4 @@
-import type { AssistantCapabilities, TranslateItem } from '@/types/assistant'
+import type { AssistantCapabilities, RewriteBody, TranslateItem } from '@/types/assistant'
 import { API_BASE, authHeaders, handleResponse } from './client'
 
 interface CapabilitiesResponse {
@@ -33,4 +33,22 @@ export async function translateItems(
     items: Object.fromEntries(body.data.items.map(i => [i.key, i.text])),
     provider: body.data.provider,
   }
+}
+
+interface RewriteResponse {
+  data: { text: string; mode: string; provider: string; model: string }
+}
+
+/**
+ * One rewrite; a 503 arrives as an ApiError carrying the server's toast
+ * message (not configured, declined, too long, provider busy).
+ */
+export async function rewriteText(token: string, body: RewriteBody): Promise<{ text: string; mode: string }> {
+  const res = await fetch(`${API_BASE}/api/admin/assistant/rewrite`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  const parsed = await handleResponse<RewriteResponse>(res)
+  return { text: parsed.data.text, mode: parsed.data.mode }
 }

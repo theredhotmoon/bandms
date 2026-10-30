@@ -1696,9 +1696,47 @@ The block editors append `useId()` to their `fieldKey` (`post.block.text#…`)
 because several blocks render the same field; phase 2's style-example
 resolver must strip that suffix.
 
-Design and plan: `docs/superpowers/specs/2026-10-29-admin-assistant-design.md`,
-`docs/superpowers/plans/2026-10-29-assistant-translate.md`. Phases 2 (Enhance)
-and 3 (the robot) are sketched there and reuse the same provider shape.
+### Phase 2 — the Enhance menu and `TextModel`
+
+The second provider, `App\Assistant\Text\TextModel`, is deliberately not
+`Translator`: DeepL translates better and cheaper; the text model rewrites
+(`rewrite()`, the Enhance menu) and classifies (`structured()`, the phase-3
+crawler's triage — implemented and tested now so the interface does not
+change under code built on it). `ASSISTANT_TEXT_MODEL_DRIVER=anthropic` +
+`ANTHROPIC_API_KEY` switch it on; model ids are config
+(`ASSISTANT_TEXT_MODEL` for rewrites, `ASSISTANT_TRIAGE_MODEL` for triage),
+never literals. The call goes through the official `anthropic-ai/sdk`
+behind one seam, `MessagesGateway`; tests stub the gateway
+(`tests/Support/StubMessagesGateway`) or bind `tests/Support/FakeTextModel`
+over the interface — **nothing in CI reaches Anthropic**. Every call:
+`maxTokens` 16 000 (thinking tokens count against it), effort `medium`,
+adaptive thinking (omitted = default), the server-side refusal fallback
+(`betas: server-side-fallback-2026-07-01`, `fallbacks: 'default'`), and no
+prompt cache — the system prompt is under the cacheable minimum.
+
+**Length is a contract.** The request carries the field's `maxLength`, the
+prompt states it, and a result over it or a `max_tokens` stop is a 503 —
+never a cut-off paragraph in the band's field, never text that Save would
+422. `RewritePrompt`'s facts line is the first thing to read when touching
+the prompt: every mode keeps names, dates, times, places, prices, URLs and
+numbers verbatim. `StyleExamples` is the "write like us" map from a
+`fieldKey` to that field's recent values (the `#uid` suffix stripped) — the
+same map phase 3's outreach draft will use. `RewriteResult::clean()` strips
+the quotes or "Here is…:" line the prompt forbids — guarded by the original
+text, so a heading the band wrote ("Support acts:") or quotes they wrapped
+their own text in stay — and `isUnsafeHtml()` (called by the controller)
+refuses script-capable and embedding tags, script/data URLs and inline
+handlers in HTML. Both reviews of this phase found the same thing twice:
+"facts survive" is a rule for our own post-processing as much as for the
+model, and the prompt must say the examples show the *voice only* — the
+other concerts' dates and prices are not facts for this one. nginx's
+`fastcgi_read_timeout` is 120 s and the SDK call times out at 110 s with one
+retry, so a long `longer` rewrite is a 503 the admin can show, not a 504.
+
+Design and plans: `docs/superpowers/specs/2026-10-29-admin-assistant-design.md`
+(umbrella), `…/2026-10-30-assistant-enhance-design.md` + `plans/2026-10-30-assistant-enhance.md`
+(this phase), `…/2026-10-30-assistant-crawler-design.md` +
+`plans/2026-10-30-assistant-crawler.md` (phase 3).
 
 ---
 

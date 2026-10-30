@@ -64,6 +64,12 @@ services:
       # none, and the admin then renders no Translate button at all.
       ASSISTANT_TRANSLATOR: ${ASSISTANT_TRANSLATOR:-none}
       DEEPL_API_KEY:        ${DEEPL_API_KEY:-}
+      # The text model behind Enhance (and the crawler's triage). Same rule:
+      # the driver name switches it on; the key alone does nothing.
+      ASSISTANT_TEXT_MODEL_DRIVER: ${ASSISTANT_TEXT_MODEL_DRIVER:-none}
+      ASSISTANT_TEXT_MODEL:        ${ASSISTANT_TEXT_MODEL:-claude-opus-5-5}
+      ASSISTANT_TRIAGE_MODEL:      ${ASSISTANT_TRIAGE_MODEL:-claude-haiku-5-5}
+      ANTHROPIC_API_KEY:           ${ANTHROPIC_API_KEY:-}
 
       # The seeder creates an admin only when these are set, so production is
       # safe by default. The local stack declares them here to keep the fixed

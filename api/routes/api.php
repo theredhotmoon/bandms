@@ -245,6 +245,9 @@ Route::middleware('auth:api')->group(function () {
     // throttle carries its own key — an inline `throttle:60,1` would share one
     // counter with every other inline-throttled route in this file (see the
     // fan-routes note below).
+    Route::post('/admin/assistant/rewrite', [AssistantController::class, 'rewrite'])
+        ->middleware('throttle:30,1,assistant-rewrite')
+        ->name('api.admin.assistant.rewrite');
     Route::get('/admin/assistant/capabilities', [AssistantController::class, 'capabilities'])
         ->name('api.admin.assistant.capabilities');
     Route::post('/admin/assistant/translate', [AssistantController::class, 'translate'])
