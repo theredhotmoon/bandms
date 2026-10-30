@@ -91,12 +91,47 @@ it('offers the other bio variants as examples for a bio', function () use ($defa
     expect($examples)->toContain('Medium bio.')->toContain('Long bio.')->not->toContain('Short bio.');
 });
 
+it('falls back to the band\'s other page-copy prose when no other page has the field', function () use ($default) {
+    // Page-copy keys are mostly per page (upcomingTitle, formTitle…), so the
+    // same key elsewhere rarely exists. The band's other paragraphs — this page
+    // first, then the rest — are still its voice. Short labels are not prose.
+    WebsiteModule::updateOrCreate(['slug' => 'contact'], ['display_name' => 'Contact', 'settings' => [
+        'intro'     => [$default() => 'We play anywhere with a stage and a crowd that likes to skank.'],
+        'formTitle' => [$default() => 'Write'],
+    ]]);
+    WebsiteModule::updateOrCreate(['slug' => 'about'], ['display_name' => 'About', 'settings' => [
+        'lead' => [$default() => 'Seven players, one brass section, and a lot of offbeat since 2015.'],
+    ]]);
+
+    $examples = StyleExamples::for('module.contact.replyNote', $default(), 'x');
+
+    expect($examples[0])->toBe('We play anywhere with a stage and a crowd that likes to skank.')
+        ->and($examples)->toContain('Seven players, one brass section, and a lot of offbeat since 2015.')
+        ->and($examples)->not->toContain('Write');
+});
+
+it('skips short same-field labels and the privacy policy\'s legal text', function () use ($default) {
+    WebsiteModule::updateOrCreate(['slug' => 'concerts'], ['display_name' => 'Shows', 'settings' => ['title' => [$default() => 'Shows']]]);
+    WebsiteModule::updateOrCreate(['slug' => 'privacy'], ['display_name' => 'Privacy', 'settings' => [
+        'body' => [$default() => 'We process personal data in accordance with Regulation (EU) 2016/679 (GDPR).'],
+    ]]);
+    WebsiteModule::updateOrCreate(['slug' => 'about'], ['display_name' => 'About', 'settings' => [
+        'lead' => [$default() => 'Seven players, one brass section, and a lot of offbeat since 2015.'],
+    ]]);
+
+    $examples = StyleExamples::for('module.contact.title', $default(), 'x');
+
+    expect($examples)->not->toContain('Shows')
+        ->and($examples)->toContain('Seven players, one brass section, and a lot of offbeat since 2015.')
+        ->and(collect($examples)->contains(fn ($e) => str_contains($e, 'GDPR')))->toBeFalse();
+});
+
 it('reads the same copy field on other modules', function () use ($default) {
     // Modules are seeded by a migration: overwrite their copy rather than insert.
-    WebsiteModule::updateOrCreate(['slug' => 'concerts'], ['display_name' => 'Shows', 'settings' => ['lead' => [$default() => 'Shows lead.']]]);
-    WebsiteModule::updateOrCreate(['slug' => 'about'], ['display_name' => 'About', 'settings' => ['lead' => [$default() => 'About lead.'], 'kicker' => [$default() => 'Kicker.']]]);
+    WebsiteModule::updateOrCreate(['slug' => 'concerts'], ['display_name' => 'Shows', 'settings' => ['lead' => [$default() => 'Shows lead, long enough to count as the band writing.']]]);
+    WebsiteModule::updateOrCreate(['slug' => 'about'], ['display_name' => 'About', 'settings' => ['lead' => [$default() => 'About lead, long enough to count as the band writing.'], 'kicker' => [$default() => 'Kicker.']]]);
 
-    $examples = StyleExamples::for('module.about.lead', $default(), 'About lead.');
+    $examples = StyleExamples::for('module.about.lead', $default(), 'About lead, long enough to count as the band writing.');
 
-    expect($examples)->toContain('Shows lead.')->not->toContain('About lead.')->not->toContain('Kicker.');
+    expect($examples)->toContain('Shows lead, long enough to count as the band writing.')->not->toContain('About lead, long enough to count as the band writing.')->not->toContain('Kicker.');
 });

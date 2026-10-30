@@ -16,7 +16,8 @@ use App\Models\WebsiteModule;
  * `fieldKey` to where that field's values live, so phase 3's "draft an
  * outreach email like us" reuses it.
  *
- * Up to 4, newest first, each capped at 1 500 chars, never the text being
+ * Up to 4 — newest first for records; for page copy, the same field elsewhere
+ * then this page's other prose then the rest — each capped at 1 500 chars, never the text being
  * rewritten (exclusion is by equality — the request names no record, and a
  * record's own stored value is still the band's writing; decided in the
  * design). An unknown key is simply no examples, never an error.
@@ -86,7 +87,18 @@ final class StyleExamples
         return $out;
     }
 
-    /** `module.<slug>.<field>`: the same field on every other module. */
+    /** Below this, a copy value is a label ("Write", "Upcoming shows"), not prose to imitate. */
+    private const MIN_PROSE_CHARS = 40;
+
+    /** Copy rows that hold legal text rather than the band's own writing. */
+    private const NOT_THE_BANDS_VOICE = ['privacy'];
+
+    /**
+     * `module.<slug>.<field>`: the same field on other modules first; then,
+     * because page-copy keys are mostly per page and the same key elsewhere
+     * rarely exists, the band's other copy paragraphs — this page's first,
+     * then every other page's. Short labels are skipped: they carry no voice.
+     */
     private static function moduleCopy(string $key, string $locale): array
     {
         [, $slug, $field] = array_pad(explode('.', $key, 3), 3, null);
@@ -94,8 +106,37 @@ final class StyleExamples
             return [];
         }
 
-        return WebsiteModule::query()->where('slug', '!=', $slug)->get()
-            ->map(fn (WebsiteModule $m) => $m->settings[$field][$locale] ?? null)
-            ->all();
+        // The privacy policy and cookie banner are legal text, not the band's voice.
+        $modules = WebsiteModule::query()->whereNotIn('slug', self::NOT_THE_BANDS_VOICE)->get(['slug', 'settings']);
+        $prose   = function (WebsiteModule $m, string $f) use ($locale): ?string {
+            $text = $m->settings[$f][$locale] ?? null;
+
+            return is_string($text) && mb_strlen(trim($text)) >= self::MIN_PROSE_CHARS ? $text : null;
+        };
+
+        $out = [];
+        $add = function (?string $text) use (&$out): bool {
+            if ($text !== null && !in_array($text, $out, true)) {
+                $out[] = $text;
+            }
+
+            // A few spare candidates beyond the cap, for the caller's exclusion.
+            return count($out) >= self::MAX_EXAMPLES + 2;
+        };
+
+        foreach ($modules->where('slug', '!=', $slug) as $m) {
+            if ($add($prose($m, $field))) {
+                return $out;
+            }
+        }
+        foreach ($modules->sortBy(fn ($m) => $m->slug === $slug ? 0 : 1) as $m) {
+            foreach (array_keys($m->settings ?? []) as $f) {
+                if ($f !== $field && $add($prose($m, $f))) {
+                    return $out;
+                }
+            }
+        }
+
+        return $out;
     }
 }

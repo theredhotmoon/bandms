@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-10-31 (admin assistant: per-user access, superadmins)
+## [Unreleased] — 2026-10-30 (Enhance: keep your headings, page-copy examples)
+
+### Fixed
+- **Enhance no longer drops a heading line you wrote** when the model rewords it ("Support acts:" → "Supporting acts:"), nor a label line like "Line-up:" or "Bilety:". Only a line that reads as the model talking ("Here is a punchier version:", "Oto poprawiona wersja:") is removed.
+- **Enhance on page copy (Website Modules) now writes like you**: it is shown your other copy paragraphs — the same page first, then the rest — instead of looking for the same field on other pages, which rarely exists. Short labels and the privacy policy are skipped.
+
+## [Unreleased] — 2026-10-30 (admin assistant: per-user access, superadmins)
 
 ### Added
 - **Superadmins decide who may use Translate and Enhance**: the Users page gains an *Assistant* column with three switches per user — Translate, Enhance, Superadmin. Only a superadmin can flip them (a regular admin sees them read-only); a superadmin always has both features and can make another user superadmin. There is always at least one superadmin — the last one can be neither demoted nor deleted.
