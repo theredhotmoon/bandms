@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed, inject, ref } from 'vue'
+import { ref, useId } from 'vue'
 import { uploadPostBlockImage } from '@/api/postBlocks'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import { useAuth } from '@/composables/useAuth'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, type Lang, type TranslationBag } from '@/locales'
 import { reportSaveError } from '@/utils/formErrors'
-import { VISIBLE_LOCALES } from '@/utils/editorLocales'
 
 const { t } = useI18n()
 
@@ -17,12 +16,18 @@ const { token } = useAuth()
 const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const { order } = useContentLocales()
-const visible = inject(VISIBLE_LOCALES, null)
-const locales = computed<Lang[]>(() => visible?.value ?? order.value)
+// Every block on a post renders the same fields, so the translate keys carry
+// this instance's id — otherwise one block's spinner would light every block.
+const uid = useId()
 
 type BagKey = 'alt' | 'caption'
 const bag = (key: BagKey) => (props.payload[key] ?? {}) as Partial<Record<Lang, string>>
+
+// A loaded payload may hold a partial bag; the field takes and returns a full
+// one, blanks included — the API nulls blank strings itself (see TextBlockEditor).
+function setBag(key: BagKey, next: TranslationBag) {
+  set(key, next)
+}
 
 // All alt rows, then all caption rows — the grouping the editor always had.
 // Sample text in the input's own language (see PostForm).
@@ -71,15 +76,15 @@ async function onFile(e: Event) {
     </button>
     <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFile" />
 
-    <div class="trans-group">
-      <template v-for="key in BAG_KEYS" :key="key">
-        <div v-for="l in locales" :key="`${key}-${l}`" class="trans-row" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input :value="bag(key)[l] ?? ''" @input="set(key, { ...bag(key), [l]: ($event.target as HTMLInputElement).value })"
-                 class="field-input flex-1" :placeholder="placeholders[key](l)" />
-        </div>
-      </template>
-    </div>
+    <TranslatedField
+      v-for="key in BAG_KEYS"
+      :key="key"
+      :model-value="bagFrom(bag(key))"
+      kind="input"
+      :field-key="`post.block.${key}#${uid}`"
+      :placeholders="Object.fromEntries(LOCALES.map(l => [l, placeholders[key](l)]))"
+      @update:model-value="setBag(key, $event)"
+    />
   </div>
 </template>
 

@@ -3,20 +3,24 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import TranslateFormButton from '@/components/admin/forms/TranslateFormButton.vue'
 import { useWebsiteModules } from '@/composables/useWebsiteModules'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { reportSaveError } from '@/utils/formErrors'
 import type { Localized, WebsiteModule, ModuleSettings, ModuleVisibility, ContentWidth } from '@/types/website-module'
-import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, hasContentWidth, NON_PAGE_MODULES, ALWAYS_ON_MODULES } from '@/config/moduleSettings'
-import { LOCALES, bagFrom, emptyBag, shortLabel, type Lang, type TranslationBag } from '@/locales'
+import { settingsFieldsFor, settingsGroupsFor, visibilityFieldsFor, hasContentWidth, NON_PAGE_MODULES, ALWAYS_ON_MODULES, type ModuleSettingField } from '@/config/moduleSettings'
+import { LOCALES, bagFrom, emptyBag, type Lang, type TranslationBag } from '@/locales'
+import type { TranslateFormat } from '@/types/assistant'
+import { toDraft, toPayload } from '@/utils/moduleCopyDraft'
 import { useContentLocales } from '@/composables/useContentLocales'
 import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
 import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
 import { useUiLang } from '@/composables/useUiLang'
 
-// Inputs render in the band's writing order; the registry order stays for
-// building payloads, where order carries no meaning.
-const { order: contentLocales, primary: primaryLocale } = useContentLocales()
+// The band's first content language names a module in the list and resolves
+// its live slug; the inputs themselves order their rows through TranslatedField.
+const { primary: primaryLocale } = useContentLocales()
 
 /**
  * The row's label: the custom name in the band's primary language, with no
@@ -47,9 +51,6 @@ const badgeClass = (on: boolean) =>
 
 const editIconClass = (editing: boolean) =>
   editing ? 'text-teal-400' : 'text-zinc-600 hover:text-zinc-400' // i18n-ignore: CSS classes
-
-const inputBorderClass = (hasError: boolean) =>
-  hasError ? 'border-red-500' : 'border-zinc-700 focus:border-teal-500' // i18n-ignore: CSS classes
 
 
 const { query, toggleModule, updateSettings, reorder } = useWebsiteModules()
@@ -110,9 +111,9 @@ const draftPerPage = ref<number | null>(null)
 const draftWidth   = ref<ContentWidth>('full')
 const fieldErrors  = ref<Record<string, string[]>>({})
 
-// Editable page copy, keyed `<field>.<locale>` so one flat ref backs a form
-// whose shape comes from the schema rather than from named refs.
-const draftSettings = ref<Record<string, string>>({})
+// Editable page copy: one translation bag per schema field, so each field is a
+// TranslatedField like every other translated input (utils/moduleCopyDraft.ts).
+const draftSettings = ref<Record<string, TranslationBag>>({})
 
 const settingsFields = computed(() =>
   editingSlug.value ? settingsFieldsFor(editingSlug.value) : [],
@@ -126,7 +127,7 @@ const settingsGroups = computed(() =>
 )
 
 // Section toggles, keyed by field — no locale dimension, so a flat boolean
-// map is enough (unlike draftSettings, which needs the `.<locale>` split).
+// map is enough.
 const draftVisibility = ref<Record<string, boolean>>({})
 
 const { isDirty, markClean } = useDirtyGuard(() => ({
@@ -156,13 +157,7 @@ function startEdit(mod: WebsiteModule) {
   draftWidth.value   = mod.content_width ?? 'full'
   fieldErrors.value  = {}
 
-  const next: Record<string, string> = {}
-  for (const field of settingsFieldsFor(mod.slug)) {
-    for (const locale of LOCALES) {
-      next[`${field.key}.${locale}`] = mod.settings?.[field.key]?.[locale] ?? ''
-    }
-  }
-  draftSettings.value = next
+  draftSettings.value = toDraft(settingsFieldsFor(mod.slug).map(f => f.key), mod.settings)
 
   // Absent means visible — mirrors how the public site treats a missing key,
   // so a module that has never saved this bag opens with every toggle on.
@@ -202,14 +197,27 @@ function previewPath(mod: WebsiteModule, lang: Lang, draft: string) {
  * silently keep the old copy — the same trap the slug fields set.
  */
 function collectSettings(slug: string): ModuleSettings {
-  const out: ModuleSettings = {}
-  for (const field of settingsFieldsFor(slug)) {
-    out[field.key] = {
-      en: draftSettings.value[`${field.key}.en`]?.trim() || null,
-      pl: draftSettings.value[`${field.key}.pl`]?.trim() || null,
-    }
+  return toPayload(settingsFieldsFor(slug).map(f => f.key), draftSettings.value)
+}
+
+// ── "Translate empty fields", one button per copy group ─────────────────────
+// TranslatedField keys its rows `module.<slug>.<field>.<locale>`; the group
+// button must plan under the same keys so the two share one pending state.
+const copyFieldKey = (field: string): string => `module.${editingSlug.value}.${field}`
+
+function groupBags(fields: ModuleSettingField[]): Record<string, TranslationBag> {
+  return Object.fromEntries(fields.map(f => [copyFieldKey(f.key), draftSettings.value[f.key] ?? emptyBag()]))
+}
+
+function groupFormats(fields: ModuleSettingField[]): Record<string, TranslateFormat> {
+  return Object.fromEntries(fields.map(f => [copyFieldKey(f.key), 'text' as const]))
+}
+
+function onGroupFill(bags: Record<string, TranslationBag>): void {
+  const prefix = copyFieldKey('')
+  for (const [key, bag] of Object.entries(bags)) {
+    if (key.startsWith(prefix)) draftSettings.value[key.slice(prefix.length)] = bag
   }
-  return out
 }
 
 function collectVisibility(slug: string): ModuleVisibility {
@@ -356,18 +364,14 @@ async function saveEdit(slug: string) {
           <!-- Custom name inputs -->
           <div class="flex flex-col gap-1.5">
             <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.modules.customName') }}</span>
-            <div class="flex flex-col gap-2">
-              <div v-for="l in contentLocales" :key="l" class="flex items-center gap-2" :data-locale="l">
-                <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-                <input
-                  v-model="draftName[l]"
-                  type="text"
-                  maxlength="80"
-                  :placeholder="mod.display_name"
-                  class="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 transition-colors"
-                />
-              </div>
-            </div>
+            <TranslatedField
+              v-model="draftName"
+              kind="input"
+              :field-key="`module.${mod.slug}.customName`"
+              :label="$t('pages.modules.customName')"
+              :maxlength="80"
+              :placeholders="Object.fromEntries(LOCALES.map(l => [l, mod.display_name]))"
+            />
           </div>
 
           <!-- URL slug. TranslatedSlugInput like every other slug field in the
@@ -414,42 +418,24 @@ async function saveEdit(slug: string) {
               </summary>
 
               <div class="flex flex-col gap-3 px-3 pb-3 pt-1 border-t border-zinc-800">
+                <TranslateFormButton
+                  :fields="groupBags(group.fields)"
+                  :formats="groupFormats(group.fields)"
+                  @filled="onGroupFill"
+                />
                 <div v-for="field in group.fields" :key="field.key" class="flex flex-col gap-1">
                   <span class="text-xs text-zinc-400">{{ copyFieldLabel(field, uiLang) }}</span>
-                  <div class="trans-group">
-                    <div v-for="locale in contentLocales" :key="locale" class="flex flex-col gap-1">
-                      <div class="trans-row" :class="{ 'trans-row--top': field.type === 'textarea' }">
-                        <label class="lang-badge" :class="`lang-badge--${locale}`" :for="`set-${field.key}-${locale}`">
-                          {{ locale.toUpperCase() }}
-                        </label>
-                        <textarea
-                          v-if="field.type === 'textarea'"
-                          :id="`set-${field.key}-${locale}`"
-                          v-model="draftSettings[`${field.key}.${locale}`]"
-                          rows="3"
-                          :maxlength="field.maxLength"
-                          :placeholder="field.placeholder(locale)"
-                          :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
-                          class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-y"
-                          :class="inputBorderClass(!!fieldErrors[`settings.${field.key}.${locale}`])"
-                        />
-                        <input
-                          v-else
-                          :id="`set-${field.key}-${locale}`"
-                          v-model="draftSettings[`${field.key}.${locale}`]"
-                          type="text"
-                          :maxlength="field.maxLength"
-                          :placeholder="field.placeholder(locale)"
-                          :aria-invalid="Boolean(fieldErrors[`settings.${field.key}.${locale}`])"
-                          class="flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                          :class="inputBorderClass(!!fieldErrors[`settings.${field.key}.${locale}`])"
-                        />
-                      </div>
-                      <span v-if="fieldErrors[`settings.${field.key}.${locale}`]" class="text-xs text-red-400 pl-10">
-                        {{ fieldErrors[`settings.${field.key}.${locale}`][0] }}
-                      </span>
-                    </div>
-                  </div>
+                  <TranslatedField
+                    v-model="draftSettings[field.key]"
+                    :kind="field.type === 'textarea' ? 'textarea' : 'input'"
+                    :field-key="copyFieldKey(field.key)"
+                    :id-prefix="`set-${field.key}`"
+                    :label="copyFieldLabel(field, uiLang)"
+                    :rows="3"
+                    :maxlength="field.maxLength"
+                    :placeholders="Object.fromEntries(LOCALES.map(l => [l, field.placeholder(l)]))"
+                    :errors="Object.fromEntries(LOCALES.map(l => [l, fieldErrors[`settings.${field.key}.${l}`]?.[0]]))"
+                  />
                   <span v-if="field.help" class="text-xs text-zinc-600">{{ copyFieldHelp(field, uiLang) }}</span>
                 </div>
               </div>

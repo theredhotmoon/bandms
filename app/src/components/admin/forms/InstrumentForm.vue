@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, reactive, useId, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
-import { useContentLocales } from '@/composables/useContentLocales'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import InstrumentIcon from '@bandms/rider-core/components/InstrumentIcon.vue'
 import InstrumentIconPicker from '@/components/ui/InstrumentIconPicker.vue'
 import type { Instrument, InstrumentPayload } from '@bandms/rider-core'
@@ -24,10 +24,6 @@ const props = defineProps<{
 const emit = defineEmits<{ submit: [InstrumentPayload]; cancel: [] }>()
 
 const { t } = useI18n()
-// Inputs render in the band's writing order; the registry order stays for
-// building payloads, where order carries no meaning.
-const { order: contentLocales } = useContentLocales()
-
 // i18n-ignore: these are seeds for a free-text column, not chrome. They get
 // STORED in instruments.category, so translating them would have a Polish
 // admin create 'Smyczkowe' where an English one created 'Strings' — two
@@ -73,15 +69,14 @@ function submit() {
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
       <label class="field-label">{{ $t('more.instruments.name') }} <span class="field-req">*</span></label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ l.toUpperCase() }}</span>
-          <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.instruments.namePlaceholder')" />
-        </div>
-      </div>
-      <template v-for="l in contentLocales" :key="`name-err-${l}`">
-        <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
-      </template>
+      <TranslatedField
+        v-model="form.name"
+        kind="input"
+        field-key="instrument.name"
+        :label="$t('more.instruments.name')"
+        :placeholders="Object.fromEntries(LOCALES.map(l => [l, $t('more.instruments.namePlaceholder')]))"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`name.${l}`]?.[0]]))"
+      />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
     <div>

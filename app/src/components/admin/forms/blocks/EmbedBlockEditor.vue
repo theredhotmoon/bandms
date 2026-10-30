@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { shortLabel, type Lang } from '@/locales'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import { LOCALES, bagFrom, type Lang, type TranslationBag } from '@/locales'
 import { providerLabel, detectProvider, isAudioProvider } from '@/utils/postBlocks'
-import { VISIBLE_LOCALES } from '@/utils/editorLocales'
 
 const props = defineProps<{ payload: Record<string, unknown>; hideLabel?: boolean }>()
 const emit = defineEmits<{ 'update:payload': [Record<string, unknown>] }>()
@@ -17,13 +16,20 @@ const detected = computed(() => detectProvider(url.value))
 const label = computed(() => (props.payload.label ?? {}) as Partial<Record<Lang, string>>)
 
 const { t } = useI18n()
-const { order } = useContentLocales()
-const visible = inject(VISIBLE_LOCALES, null)
-const locales = computed<Lang[]>(() => visible?.value ?? order.value)
 const labelPlaceholder = (l: Lang): string => t('content.blocks.embed.linkText', {}, { locale: l })
+
+// Every block on a post renders the same field, so the translate key carries
+// this instance's id — otherwise one block's spinner would light every block.
+const uid = useId()
 
 function set(key: string, value: unknown) {
   emit('update:payload', { ...props.payload, [key]: value })
+}
+
+// A loaded payload may hold a partial bag; the field takes and returns a full
+// one, blanks included — the API nulls blank strings itself (see TextBlockEditor).
+function setLabel(next: TranslationBag) {
+  set('label', next)
 }
 </script>
 
@@ -38,13 +44,14 @@ function set(key: string, value: unknown) {
       />
       <span v-if="url" class="provider-badge">{{ isAudioProvider(detected) ? $t('content.blocks.embed.audioLabel', { provider: providerLabel(detected, $t('common.link')) }) : providerLabel(detected, $t('common.link')) }}</span>
     </div>
-    <div v-if="detected === 'link' && !hideLabel" class="trans-group">
-      <div v-for="l in locales" :key="l" class="trans-row" :data-locale="l">
-        <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-        <input :value="label[l] ?? ''" @input="set('label', { ...label, [l]: ($event.target as HTMLInputElement).value })"
-               class="field-input flex-1" :placeholder="labelPlaceholder(l)" />
-      </div>
-    </div>
+    <TranslatedField
+      v-if="detected === 'link' && !hideLabel"
+      :model-value="bagFrom(label)"
+      kind="input"
+      :field-key="`post.block.embedLabel#${uid}`"
+      :placeholders="Object.fromEntries(LOCALES.map(l => [l, labelPlaceholder(l)]))"
+      @update:model-value="setLabel"
+    />
   </div>
 </template>
 

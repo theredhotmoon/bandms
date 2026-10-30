@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (admin assistant: translate button on every form)
+
+### Added
+- **The Translate button reaches every translated field**: posts (title, intro and every text, image and link block), releases (title, description), tags, clips, instruments, FAQ questions and answers, every page-copy field and the custom name in Website Modules, and the four band bios (one row per language tab, filling from the other language). *Translate empty fields* sits on releases, FAQs and each Website Modules copy group.
+
+### Changed
+- **One component for every translated input** — `TranslatedField` replaces the per-form rows, so the content-language `required` rule, per-language errors and the Translate button behave the same everywhere. Small visible side effects: the FAQ editor's and Website Modules' inputs now wear the shared field styling; a per-language error prints below the field's rows rather than under its own row; each band-bio tab shows its language badge beside the editor; and switching a bio's language tab resets the rich editor's undo history, as the editor is re-created per language.
+- **A translation that arrives late no longer lands in the wrong place**: if the source text changed while a request ran — a post block reordered, a record reloaded — the reply is dropped, the same way it already was when the band had typed into the target.
+
 ## [Unreleased] — 2026-10-30 (admin assistant: translate button, phase 1)
 
 ### Added

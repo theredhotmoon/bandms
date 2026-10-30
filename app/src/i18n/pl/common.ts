@@ -102,6 +102,7 @@ export default {
     replaceWithTranslation: 'Zastąpić tłumaczeniem? Naciśnij ponownie, aby potwierdzić',
     translateEmpty: 'Przetłumacz puste pola',
     translateFailed: 'Tłumaczenie nie powiodło się',
+    skippedChanged: 'Pominięto tłumaczenie — pole zmieniło się w trakcie. Naciśnij Przetłumacz ponownie.',
   },
   social: {
     title: 'Linki społecznościowe',

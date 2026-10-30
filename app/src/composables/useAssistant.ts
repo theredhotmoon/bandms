@@ -44,20 +44,24 @@ export function useAssistantCapabilities(): {
  * rethrows, so a caller can leave the field alone.
  */
 export function useTranslate(): {
-  translate: (items: TranslateItem[]) => Promise<Record<string, string>>
+  /** `quiet` leaves the toast to the caller — a form-level fill toasts once, not once per field. */
+  translate: (items: TranslateItem[], opts?: { quiet?: boolean }) => Promise<Record<string, string>>
   /** Whether an item with this key is in flight — from ANY caller. */
   isPending: (key: string) => boolean
+  /** The toast the composable would have shown for this error. */
+  failureMessage: (e: unknown) => string
 } {
   const { token } = useAuth()
   const { t } = useI18n()
+  const failureMessage = (e: unknown): string => saveErrorMessage(e, t('common.assistant.translateFailed'))
 
-  async function translate(items: TranslateItem[]): Promise<Record<string, string>> {
+  async function translate(items: TranslateItem[], opts: { quiet?: boolean } = {}): Promise<Record<string, string>> {
     pending.value = new Set([...pending.value, ...items.map(i => i.key)])
     try {
       const { items: translated } = await translateItems(token.value!, items)
       return translated
     } catch (e) {
-      toast.error(saveErrorMessage(e, t('common.assistant.translateFailed')))
+      if (!opts.quiet) toast.error(failureMessage(e))
       throw e
     } finally {
       const keys = new Set(items.map(i => i.key))
@@ -65,5 +69,5 @@ export function useTranslate(): {
     }
   }
 
-  return { translate, isPending: (key: string) => pending.value.has(key) }
+  return { translate, isPending: (key: string) => pending.value.has(key), failureMessage }
 }

@@ -364,6 +364,21 @@ test.describe.serial('Admin Posts', () => {
     await expect(rows.nth(1).locator('.block-type')).toHaveText('Text')
   })
 
+  test('a text block emptied again still saves', async ({ page }) => {
+    // The API requires a text block's body to be a non-empty array; the
+    // editor must keep sending every locale (blank as '') rather than an
+    // empty bag, or clearing a paragraph makes the whole post unsaveable.
+    await searchTable(page, postTitle)
+    await page.locator('tbody tr').first().getByRole('button', { name: 'Edit' }).click()
+    const textBlock = page.locator('.block-row').filter({ has: page.locator('.tiptap') }).first()
+    await expect(textBlock).toBeVisible()
+
+    for (const editor of await textBlock.locator('.tiptap').all()) await editor.fill('')
+
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expectToast(page, 'Post updated')
+  })
+
   test('deletes a post and shows "Post deleted" toast', async ({ page }) => {
     await searchTable(page, updatedTitle)
 
