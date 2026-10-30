@@ -28,7 +28,7 @@ it('returns 401 anonymously', function () {
 
 it('answers 503 with a message when no text model is configured', function () {
     config(['assistant.text_model' => 'none']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $this->postJson('/api/admin/assistant/rewrite', rewriteBody())
         ->assertStatus(503)
@@ -59,7 +59,7 @@ describe('with a text model bound', function () {
         config(['assistant.text_model' => 'anthropic']);
         $this->fake = new FakeTextModel();
         app()->instance(TextModel::class, $this->fake);
-        $this->actingAsUser();
+        $this->actingAsAssistantUser();
     });
 
     it('reports the rewrite capability on', function () {

@@ -12,6 +12,7 @@ use App\Assistant\Translation\TranslatorUnavailable;
 use App\Http\Requests\RewriteFormRequest;
 use App\Http\Requests\TranslateRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -31,11 +32,16 @@ class AssistantController extends Controller
      * is not rendered at all (the ALWAYS_ON_MODULES rule: no control that
      * nobody can enable from the UI).
      */
-    public function capabilities(): JsonResponse
+    public function capabilities(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        // Per user: the provider must be configured AND a superadmin must have
+        // allowed this user. The admin renders a control only for `true`, so a
+        // disabled user never sees ↔ or ✦.
         return response()->json(['data' => [
-            'translate' => !($this->translator instanceof NullTranslator),
-            'rewrite'   => !($this->textModel instanceof NullTextModel),
+            'translate' => !($this->translator instanceof NullTranslator) && $user->mayTranslate(),
+            'rewrite'   => !($this->textModel instanceof NullTextModel) && $user->mayEnhance(),
         ]]);
     }
 
@@ -45,6 +51,11 @@ class AssistantController extends Controller
      */
     public function translate(TranslateRequest $request): JsonResponse
     {
+        // Enforced here, not only by hiding the button: tokens are the point.
+        if (!$request->user()->mayTranslate()) {
+            return response()->json(['message' => "Translation isn't enabled for your account."], 403);
+        }
+
         $items = $request->items();
 
         try {
@@ -62,6 +73,10 @@ class AssistantController extends Controller
     /** One rewrite of one field in one mode; the result is shown, never saved. */
     public function rewrite(RewriteFormRequest $request): JsonResponse
     {
+        if (!$request->user()->mayEnhance()) {
+            return response()->json(['message' => "Enhance isn't enabled for your account."], 403);
+        }
+
         $rewrite = $request->toRewrite();
 
         try {

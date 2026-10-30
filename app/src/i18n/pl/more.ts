@@ -130,6 +130,16 @@ export default {
     empty: 'Brak użytkowników.',
     you: '(ty)',
     cannotDeleteSelf: 'Nie można usunąć własnego konta',
+    access: {
+      col: 'Asystent',
+      translate: 'Tłumaczenie',
+      enhance: 'Ulepszanie',
+      superadmin: 'Superadmin',
+      superadminHint: 'Superadmini mają obie funkcje i decydują, kto jeszcze je dostaje',
+      readOnly: 'Zmienić to może tylko superadmin',
+      saved: 'Zaktualizowano dostęp',
+      saveFailed: 'Nie udało się zaktualizować dostępu',
+    },
 
     cols: {
       name: 'Imię i nazwisko',

@@ -203,3 +203,4 @@ describe('DELETE /api/users/{user}', function () {
         $this->deleteJson('/api/users/9999')->assertNotFound();
     });
 });
+

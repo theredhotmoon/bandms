@@ -20,6 +20,16 @@ class User extends Authenticatable
         'password',
         'role',
         'band_member_id',
+        'is_superadmin',
+        'can_translate',
+        'can_enhance',
+    ];
+
+    /** Mirrors the column defaults, so a just-created model reports them too. */
+    protected $attributes = [
+        'is_superadmin' => false,
+        'can_translate' => false,
+        'can_enhance'   => false,
     ];
 
     protected $hidden = [
@@ -32,8 +42,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'is_superadmin'     => 'boolean',
+            'can_translate'     => 'boolean',
+            'can_enhance'       => 'boolean',
         ];
     }
+
+    /** Superadmins always may; everyone else only what a superadmin switched on. */
+    public function mayTranslate(): bool { return (bool) ($this->is_superadmin || $this->can_translate); }
+
+    public function mayEnhance(): bool { return (bool) ($this->is_superadmin || $this->can_enhance); }
 
     public function bandMember(): BelongsTo
     {

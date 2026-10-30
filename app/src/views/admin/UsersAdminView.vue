@@ -14,6 +14,7 @@ import { useBandMembers } from '@/composables/useBandMembers'
 import { useAuth } from '@/composables/useAuth'
 import type { ManagedUser, UserPayload } from '@/types/user'
 import type { UserRole } from '@/types/auth'
+import UserAccessSwitches, { type AccessField } from '@/components/admin/UserAccessSwitches.vue'
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
@@ -27,6 +28,25 @@ function roleBadgeStyle(role: UserRole) {
 const { list, create, update, remove } = useUsers()
 const { query: membersQ } = useBandMembers()
 const { user: currentUser } = useAuth()
+
+// ── Assistant access ──────────────────────────────────────────────────────────
+// Read from the users list, not the stored auth user: a session from before
+// this feature has no flags, and the list is what the server says today.
+const iAmSuperadmin = computed(() =>
+  (list.data.value ?? []).some(u => u.id === currentUser.value?.id && u.is_superadmin))
+const savingAccess = ref<number | null>(null)
+
+async function onAccessChange(u: ManagedUser, field: AccessField, value: boolean): Promise<void> {
+  savingAccess.value = u.id
+  try {
+    await update.mutateAsync({ id: u.id, payload: { [field]: value } })
+    toast.success(t('more.users.access.saved'))
+  } catch (e) {
+    reportSaveError(e, t('more.users.access.saveFailed'))
+  } finally {
+    savingAccess.value = null
+  }
+}
 
 const bandMembers = computed(() => membersQ.data.value ?? [])
 
@@ -196,6 +216,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
               <th class="th">{{ $t('more.users.cols.name') }}</th>
               <th class="th">{{ $t('more.users.cols.email') }}</th>
               <th class="th">{{ $t('more.users.cols.role') }}</th>
+              <th class="th">{{ $t('more.users.access.col') }}</th>
               <th class="th">{{ $t('more.users.cols.bandMember') }}</th>
               <th class="th">{{ $t('more.users.cols.created') }}</th>
               <th class="th" style="text-align:right;">{{ $t('more.users.cols.actions') }}</th>
@@ -212,6 +233,14 @@ const ROLE_COLORS: Record<UserRole, string> = {
                 <span class="role-badge" :style="roleBadgeStyle(u.role as UserRole)">
                   {{ $t(`more.users.roles.${u.role}`) }}
                 </span>
+              </td>
+              <td class="td">
+                <UserAccessSwitches
+                  :user="u"
+                  :editable="iAmSuperadmin"
+                  :busy="savingAccess === u.id"
+                  @change="(field, value) => onAccessChange(u, field, value)"
+                />
               </td>
               <td class="td" style="color:var(--c-64748b);">
                 <span v-if="u.band_member">{{ u.band_member.first_name }} {{ u.band_member.last_name }}</span>
@@ -230,7 +259,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
               </td>
             </tr>
             <tr v-if="(list.data.value ?? []).length === 0">
-              <td colspan="6" class="empty-state">{{ $t('more.users.empty') }}</td>
+              <td colspan="7" class="empty-state">{{ $t('more.users.empty') }}</td>
             </tr>
           </tbody>
         </table>

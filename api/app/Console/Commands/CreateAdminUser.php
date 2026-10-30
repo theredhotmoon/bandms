@@ -63,6 +63,9 @@ class CreateAdminUser extends Command
             'email'      => $email,
             'password'   => $password,
             'role'       => 'admin',
+            // An install's first admin must be able to manage assistant access
+            // (and grant superadmin to the next person).
+            'is_superadmin' => true,
         ]);
 
         $this->info("Admin user {$email} created.");

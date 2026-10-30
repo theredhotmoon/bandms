@@ -26,12 +26,17 @@ export function useAssistantCapabilities(): {
   capabilities: ComputedRef<AssistantCapabilities>
   canTranslate: ComputedRef<boolean>
 } {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
+  // Per user: the answer depends on who is signed in (a superadmin switches
+  // access per person), so the key carries the user id — a sign-out/in as
+  // someone else never reuses another person's answer. Refetched on window
+  // focus after five minutes, and invalidated by useUsers when access changes,
+  // so a switch flipped elsewhere reaches an open session without a reload.
   const query = useQuery({
-    queryKey: QUERY_KEY,
+    queryKey: computed(() => [...QUERY_KEY, user.value?.id ?? null]),
     queryFn: () => fetchAssistantCapabilities(token.value!),
     enabled: () => token.value !== null,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000,
   })
   const capabilities = computed<AssistantCapabilities>(() => query.data.value ?? NONE)
   return { capabilities, canTranslate: computed(() => capabilities.value.translate) }

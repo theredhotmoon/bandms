@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (admin assistant: per-user access, superadmins)
+
+### Added
+- **Superadmins decide who may use Translate and Enhance**: the Users page gains an *Assistant* column with three switches per user — Translate, Enhance, Superadmin. Only a superadmin can flip them (a regular admin sees them read-only); a superadmin always has both features and can make another user superadmin. There is always at least one superadmin — the last one can be neither demoted nor deleted.
+- **Enforced on the server**: a user without the permission never sees the ↔ or ✦ buttons, and the translate/rewrite endpoints refuse them with a 403 even if called directly, so tokens are spent only by people you enabled.
+
+### Changed
+- **Every current admin became a superadmin; everyone else starts with Translate and Enhance off.** Switch them on per person on the Users page.
+
 ## [Unreleased] — 2026-10-30 (admin assistant: Enhance menu, phase 2)
 
 ### Added
