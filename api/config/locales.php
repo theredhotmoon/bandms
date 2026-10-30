@@ -22,6 +22,15 @@
  * render an empty accordion row in a green Astro build. A third locale should
  * normally declare ['en'] alone.
  *
+ * `translation` is the locale's code at each machine-translation provider,
+ * read through Locales::translationCode(). It lives here and NOT in a driver
+ * because a ['en' => 'EN-GB'] map inside DeepLTranslator would be an 'en'
+ * literal outside the three registry files. Server-only: the two TypeScript
+ * mirrors never call a provider, so they do not carry it. DeepL deprecates
+ * bare EN as a target and wants a region; EN-GB matches `date_locale` and was
+ * the band's choice (Oct 2026) — changing it later re-spends quota and loses
+ * every edit made on top of the old translations.
+ *
  * NOTE: config is baked by `php artisan optimize` in the container entrypoint.
  * Editing this file needs a container rebuild, not a restart.
  */
@@ -37,6 +46,7 @@ return [
             'html_lang'   => 'en',
             'date_locale' => 'en-GB',
             'fallbacks'   => ['pl'],
+            'translation' => ['deepl' => 'EN-GB'],
         ],
 
         'pl' => [
@@ -45,6 +55,7 @@ return [
             'html_lang'   => 'pl',
             'date_locale' => 'pl-PL',
             'fallbacks'   => ['en'],
+            'translation' => ['deepl' => 'PL'],
         ],
 
     ],

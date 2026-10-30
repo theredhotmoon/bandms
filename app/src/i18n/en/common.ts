@@ -97,6 +97,12 @@ export default {
   slug: {
     autoGenerate: 'Auto-generate from title',
   },
+  assistant: {
+    translateFrom: 'Translate from {lang}',
+    replaceWithTranslation: 'Replace with a translation? Press again to confirm',
+    translateEmpty: 'Translate empty fields',
+    translateFailed: 'Translation failed',
+  },
   social: {
     title: 'Social links',
     dragToReorder: 'Drag to reorder',

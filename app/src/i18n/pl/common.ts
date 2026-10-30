@@ -97,6 +97,12 @@ export default {
   slug: {
     autoGenerate: 'Generuj z tytułu',
   },
+  assistant: {
+    translateFrom: 'Przetłumacz z {lang}',
+    replaceWithTranslation: 'Zastąpić tłumaczeniem? Naciśnij ponownie, aby potwierdzić',
+    translateEmpty: 'Przetłumacz puste pola',
+    translateFailed: 'Tłumaczenie nie powiodło się',
+  },
   social: {
     title: 'Linki społecznościowe',
     dragToReorder: 'Przeciągnij, aby zmienić kolejność',

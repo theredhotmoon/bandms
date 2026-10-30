@@ -4,7 +4,7 @@ import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import ImageDropZone from './ImageDropZone.vue'
 import UploadProgressBar from './UploadProgressBar.vue'
 import TranslatedSlugInput from './TranslatedSlugInput.vue'
-import { DEFAULT_LOCALE, emptyBag, slugPayload, type Lang } from '@/locales'
+import { emptyBag, slugPayload, type Lang } from '@/locales'
 import type { Localized } from '@/types/website-module'
 import type { Concert } from '@/types/concert'
 import type { Venue } from '@/types/venue'
@@ -105,12 +105,12 @@ function submit() {
       </div>
       <div class="meta-full">
         <label class="field-label">{{ $t('common.fields.slug') }}</label>
-        <!-- An album title is one string, not translated, so only the default
-             locale's slug follows it; other locales are typed by hand. -->
+        <!-- An album title is one string, not translated: every locale's slug
+             follows it. -->
         <TranslatedSlugInput
           v-model="meta.slug"
           v-model:auto="slugAuto"
-          :sources="{ [DEFAULT_LOCALE]: meta.title }"
+          :source="meta.title"
         />
       </div>
       <div class="meta-row">

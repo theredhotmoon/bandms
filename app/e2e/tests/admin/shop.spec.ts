@@ -105,6 +105,12 @@ test.describe('Shop Admin', () => {
 
     await modal.locator('input[placeholder*="Debut LP" i], input[placeholder*="name" i]').first().fill(ITEM_NAME)
 
+    // The name is one untranslated string and is the slug source for every
+    // locale, so every slug row carries the regenerate button.
+    const slugRows = modal.locator('.slug-row')
+    expect(await slugRows.count()).toBeGreaterThan(1)
+    for (const row of await slugRows.all()) await expect(row.locator('.slug-regen')).toBeVisible()
+
     // Fill price for USD
     const priceInput = modal.locator('input[placeholder*="Amount in USD" i]')
     await expect(priceInput).toBeVisible()
@@ -145,10 +151,22 @@ test.describe('Shop Admin', () => {
     await nameInput.clear()
     await nameInput.fill(editedItemName)
 
+    // Regenerating a NON-default slug on the edit form must save what it
+    // shows. The form used to send a regenerated row as auto (null), and the
+    // API never invents a non-default slug on update — so the previewed slug
+    // was forgotten while the form displayed it (#153's shape).
+    const otherRow = modal.locator('.slug-row:not([data-locale="en"])').first()
+    const otherLocale = await otherRow.getAttribute('data-locale')
+    await otherRow.locator('.slug-regen').click()
+    const previewed = await otherRow.locator('input').inputValue()
+    expect(previewed).not.toBe('')
+
     const saved = page.waitForResponse(r => /\/api\/shop\/\d+$/.test(r.url()) && r.request().method() === 'PUT')
     await modal.getByRole('button', { name: /save changes/i }).click()
 
     await expect(page.locator('[data-sonner-toast]')).toContainText('Item updated', { timeout: 8000 })
+    const sentSlug = (JSON.parse((await saved).request().postData() ?? '{}') as { slug: Record<string, string | null> }).slug
+    expect(sentSlug[otherLocale!]).toBe(previewed)
 
     // Renaming in the admin must not move the public merch URL. The slug input
     // used to send a loaded slug that matched the name as "auto" (null), and

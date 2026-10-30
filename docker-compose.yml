@@ -59,6 +59,12 @@ services:
       # locally for the E2E suite, which logs in repeatedly from one IP.
       LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10}
 
+      # Admin assistant — machine translation behind the Translate buttons.
+      # The driver name switches it on; the key alone does nothing. Unset means
+      # none, and the admin then renders no Translate button at all.
+      ASSISTANT_TRANSLATOR: ${ASSISTANT_TRANSLATOR:-none}
+      DEEPL_API_KEY:        ${DEEPL_API_KEY:-}
+
       # The seeder creates an admin only when these are set, so production is
       # safe by default. The local stack declares them here to keep the fixed
       # login the E2E suite expects (app/e2e/fixtures/auth.ts). Note that

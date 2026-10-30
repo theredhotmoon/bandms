@@ -82,3 +82,27 @@ it('exposes display metadata for every locale', function () {
             'is_default'  => false,
         ]);
 });
+
+// Provider language codes live in the registry, not in a driver: DeepL wants
+// EN-GB/EN-US as a target and deprecates bare EN, Google takes en, and a
+// ['en' => 'EN-GB'] map inside a driver would be an 'en' literal outside the
+// three registry files.
+it('resolves a DeepL code for every registered locale', function () {
+    foreach (Locales::codes() as $code) {
+        expect(Locales::translationCode($code, 'deepl'))->toBeString()->not->toBe('');
+    }
+});
+
+it('uses a regional English for DeepL, never bare EN', function () {
+    expect(Locales::translationCode(Locales::default(), 'deepl'))->toMatch('/^[A-Z]{2}-[A-Z]{2}$/');
+});
+
+it('rejects a provider the registry does not know', function () {
+    expect(fn () => Locales::translationCode(Locales::default(), 'nope'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('rejects a locale the registry does not know when asked for a provider code', function () {
+    expect(fn () => Locales::translationCode('xx', 'deepl'))
+        ->toThrow(InvalidArgumentException::class);
+});

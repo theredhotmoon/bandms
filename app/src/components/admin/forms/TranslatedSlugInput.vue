@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import Slugify from 'slugify'
 import { useI18n } from 'vue-i18n'
 import { useContentLocales } from '@/composables/useContentLocales'
@@ -24,7 +24,16 @@ import { LOCALES, shortLabel, type Lang, type TranslationBag } from '@/locales'
  */
 const props = withDefaults(defineProps<{
   modelValue: TranslationBag
+  /** A translated source per locale — usually the title bag. */
   sources?: Partial<Record<Lang, string>>
+  /**
+   * ONE untranslated source that every locale's slug follows — a merch item's
+   * name, an album's title. Until Oct 2026 those forms passed it under the
+   * default locale only, so the other locale's row had no regenerate button
+   * and was "typed by hand"; a name that is not translated is still the
+   * obvious source for every slug. Mutually exclusive with `sources`.
+   */
+  source?: string
   placeholders?: Partial<Record<Lang, string>>
   /** Shown under a row when it has no error — e.g. a resolved path preview. */
   hints?: Partial<Record<Lang, string | undefined>>
@@ -64,6 +73,18 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const { order: contentLocales } = useContentLocales()
 
+if (import.meta.env.DEV && props.source !== undefined && Object.keys(props.sources).length > 0) {
+  console.warn('TranslatedSlugInput: pass `source` or `sources`, not both — `source` wins.') // i18n-ignore: dev-only console message for the programmer, never rendered
+}
+
+// What each locale's slug follows: the per-locale bag, or the one untranslated
+// string spread over every locale.
+const sourceFor = computed<Partial<Record<Lang, string>>>(() =>
+  props.source !== undefined
+    ? Object.fromEntries(LOCALES.map(l => [l, props.source])) as Record<Lang, string>
+    : props.sources,
+)
+
 const makeSlug = (s: string): string => Slugify(s, { lower: true, strict: true, trim: true })
 
 // What this component last emitted per locale. A value arriving that is NOT
@@ -74,7 +95,7 @@ const makeSlug = (s: string): string => Slugify(s, { lower: true, strict: true, 
 const emitted: Partial<Record<Lang, string>> = {}
 
 const follows = (l: Lang, value: string): boolean => {
-  if (props.followLoaded) return value === '' || value === makeSlug(props.sources[l] ?? '')
+  if (props.followLoaded) return value === '' || value === makeSlug(sourceFor.value[l] ?? '')
   if (props.editing) return false
   return value === ''
 }
@@ -85,20 +106,34 @@ const auto = reactive(
 
 watch(auto, () => emit('update:auto', { ...auto }), { immediate: true })
 
+// Several locales in ONE emit. With a shared `source` every locale's slug
+// changes in the same tick, and one emit per locale spreads the still-stale
+// `props.modelValue` each time — the last emit wins and wipes the others
+// (album-slugs.spec caught the EN slug coming back empty).
+function setMany(patch: Partial<Record<Lang, string>>): void {
+  for (const l of Object.keys(patch) as Lang[]) emitted[l] = patch[l]
+  emit('update:modelValue', { ...props.modelValue, ...patch })
+}
+
 function set(l: Lang, value: string): void {
-  emitted[l] = value
-  emit('update:modelValue', { ...props.modelValue, [l]: value })
+  setMany({ [l]: value })
 }
 
 for (const l of LOCALES) {
   watch(() => props.modelValue[l], (value) => {
     if (value !== emitted[l]) auto[l] = follows(l, value)
   })
-
-  watch(() => props.sources[l], (source) => {
-    if (auto[l] && source !== undefined) set(l, source ? makeSlug(source) : '')
-  })
 }
+
+watch(() => LOCALES.map(l => sourceFor.value[l]), (next, prev) => {
+  const patch: Partial<Record<Lang, string>> = {}
+  LOCALES.forEach((l, i) => {
+    const source = next[i]
+    if (source === prev?.[i] || !auto[l] || source === undefined) return
+    patch[l] = source ? makeSlug(source) : ''
+  })
+  if (Object.keys(patch).length > 0) setMany(patch)
+})
 
 function onInput(l: Lang, e: Event): void {
   const value = (e.target as HTMLInputElement).value
@@ -108,7 +143,8 @@ function onInput(l: Lang, e: Event): void {
 
 function regenerate(l: Lang): void {
   auto[l] = true
-  set(l, props.sources[l] ? makeSlug(props.sources[l]!) : '')
+  const source = sourceFor.value[l]
+  set(l, source ? makeSlug(source) : '')
 }
 </script>
 
@@ -130,7 +166,7 @@ function regenerate(l: Lang): void {
             spellcheck="false"
           />
           <button
-            v-if="sources[l] !== undefined"
+            v-if="sourceFor[l] !== undefined"
             type="button"
             class="slug-regen"
             @click="regenerate(l)"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\ClipController;
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
@@ -233,6 +234,17 @@ Route::middleware('auth:api')->group(function () {
     // Read by every translated form, publishers' post editor included, so it
     // cannot sit behind role:admin. Changing it is admin-only (below).
     Route::get('/admin/content-locales', [ContentLocaleController::class, 'show'])->name('api.admin.content-locales.show');
+
+    // ── Any authenticated user: the admin assistant ────────────────────────
+    // Same reasoning: every translated form carries the Translate button. The
+    // throttle carries its own key — an inline `throttle:60,1` would share one
+    // counter with every other inline-throttled route in this file (see the
+    // fan-routes note below).
+    Route::get('/admin/assistant/capabilities', [AssistantController::class, 'capabilities'])
+        ->name('api.admin.assistant.capabilities');
+    Route::post('/admin/assistant/translate', [AssistantController::class, 'translate'])
+        ->middleware('throttle:60,1,assistant-translate')
+        ->name('api.admin.assistant.translate');
 
     // ── Member + Admin: own BandMember record & setups ─────────────────────
 
