@@ -22,12 +22,19 @@ final class RewriteResult
         $originalLines = preg_split('/\R/u', trim((string) $original)) ?: [];
         $originalFirst = rtrim($originalLines[0] ?? '');
 
-        // A short first line ending in a colon, with more text after it, is a
-        // preamble ("Here is a punchier version:") — unless the band's own
-        // text starts with that line, in which case it is their heading.
+        // Drop a first line only when it reads as a PREAMBLE ("Here is a
+        // punchier version:", "Oto poprawiona wersja:") — never merely because
+        // it is short and ends in a colon: "Line-up:", "Bilety:" are the band's
+        // own headings, and so is a heading the model reworded. If the band's
+        // text opened with a `…:` line, the rewrite's first line is theirs.
         $lines = preg_split('/\R/u', $text) ?: [$text];
         $first = rtrim($lines[0]);
-        if (count($lines) > 1 && mb_strlen($first) < 80 && str_ends_with($first, ':') && $first !== $originalFirst) {
+        if (count($lines) > 1
+            && mb_strlen($first) < 80
+            && str_ends_with($first, ':')
+            && $first !== $originalFirst
+            && self::looksLikePreamble($first)
+        ) {
             array_shift($lines);
             $text = trim(implode("\n", $lines));
         }
@@ -50,6 +57,42 @@ final class RewriteResult
         }
 
         return $text;
+    }
+
+    /**
+     * The phrases a model opens with when it ignores "no preamble". Words of
+     * the languages the band writes in, not locale codes — a third language
+     * whose preamble is not listed simply keeps that line, which is the safe
+     * failure (an extra line the band deletes beats a heading silently lost).
+     */
+    private static function looksLikePreamble(string $line): bool
+    {
+        // (*UCP): \b and \w follow Unicode, so "Złoto" is one word, not "Zł"+"oto".
+        $noun = '(versions?|rewrites?|texts?|takes?|drafts?|results?|edits?|it|'
+            . 'wersj\w*|tekst\w*|propozycj\w*)';
+        $adj  = '(rewritten|revised|improved|edited|polished|punchier|shorter|longer|tighter|new|'
+            . 'poprawion\w*|przepisan\w*|now\w*|krótsz\w*|dłuższ\w*|zmienion\w*)';
+
+        $patterns = [
+            // A bare acknowledgement: "Sure!", "Certainly —", "Jasne,".
+            '/^(sure|certainly|of course|okay|ok|absolutely|jasne|oczywiście|pewnie)\b/iu',
+            // A lead-in that points at THE TEXT: "Here's a tighter take:", "Oto
+            // poprawiona wersja:" — but not "Here are the dates:", which points
+            // at the band's content.
+            "/^(here(\\s+is|\\s+are|['’]s)?|below(\\s+is)?|this\\s+is|tutaj|oto|poniżej|to\\s+jest)\\b.*\\b{$noun}\\b/iu",
+            // A label naming the rewrite itself: "Punchier rewrite:", "Rewritten
+            // version:" — not "Acoustic version:" or "Revised setlist:".
+            "/^(the\\s+|a\\s+)?{$adj}\\s+{$noun}\\b/iu",
+        ];
+
+        foreach ($patterns as $pattern) {
+            // The verb goes inside the delimiter: "/(*UCP)^…/iu".
+            if (preg_match('/(*UCP)' . substr($pattern, 1), $line)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
