@@ -16,6 +16,20 @@ export interface Armed {
 
 export type ClickDecision = { action: 'translate' } | { action: 'arm'; until: number }
 
+/**
+ * Whether a reply may still land. The row stays editable while the request
+ * runs, and a host may swap the bag under a mounted field (a reordered post
+ * block, a reloaded record) — so the answer lands only if the target still
+ * holds what it held at click time AND the source still reads what was sent.
+ * Either moving means this row is no longer the one that asked.
+ */
+export function replyStillApplies(
+  sent: { target: string; source: string },
+  now: { target: string; source: string },
+): boolean {
+  return now.target === sent.target && now.source === sent.source
+}
+
 export function decideClick(input: {
   filled: boolean
   armed: Armed | null

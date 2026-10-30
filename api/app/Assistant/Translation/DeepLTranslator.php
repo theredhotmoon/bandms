@@ -116,13 +116,18 @@ final class DeepLTranslator implements Translator
 
         $this->guard($response);
 
+        // An answer with the wrong count, or an entry without text, is a
+        // failure — never a blank to fill the row with and cache for 30 days.
         $translations = $response->json('translations');
-        if (!is_array($translations) || count($translations) !== count($group)) {
+        $texts        = is_array($translations)
+            ? array_map(fn ($t) => is_array($t) && isset($t['text']) && is_string($t['text']) && $t['text'] !== '' ? $t['text'] : null, $translations)
+            : [];
+        if (count($texts) !== count($group) || in_array(null, $texts, true)) {
             Log::warning('assistant.translate.malformed', ['body' => $response->body()]);
             throw new TranslatorUnavailable('Translation failed — try again.');
         }
 
-        return array_map(fn (array $t) => (string) ($t['text'] ?? ''), $translations);
+        return array_values($texts);
     }
 
     private function guard(Response $response): void

@@ -2,13 +2,9 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
-import { LOCALES, bagFrom, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
-import { useContentLocales } from '@/composables/useContentLocales'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import { LOCALES, bagFrom, emptyBag, slugPayload, type Lang } from '@/locales'
 import type { Tag, TagPayload } from '@/types/tag'
-
-// Inputs render in the band's writing order; the registry order stays for
-// building payloads, where order carries no meaning.
-const { order: contentLocales } = useContentLocales()
 
 const props = defineProps<{
   initial?: Tag | null
@@ -55,15 +51,14 @@ function submit() {
   <form @submit.prevent="submit" class="flex flex-col gap-4">
     <div>
       <label class="field-label">{{ $t('more.tags.cols.name') }} <span style="color:var(--c-f87171);">*</span></label>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-          <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-          <input v-model="form.name[l]" class="field-input flex-1" :placeholder="$t('more.tags.namePlaceholder')" />
-        </div>
-      </div>
-      <template v-for="l in contentLocales" :key="`name-err-${l}`">
-        <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
-      </template>
+      <TranslatedField
+        v-model="form.name"
+        kind="input"
+        field-key="tag.name"
+        :label="$t('more.tags.cols.name')"
+        :placeholders="Object.fromEntries(LOCALES.map(l => [l, $t('more.tags.namePlaceholder')]))"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`name.${l}`]?.[0]]))"
+      />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
     </div>
     <div>

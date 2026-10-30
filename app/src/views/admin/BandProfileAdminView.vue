@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
-import RichEditor from '@/components/admin/RichEditor.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
 import AboutBioVariantSelect from '@/components/admin/forms/AboutBioVariantSelect.vue'
 import { useBandProfile } from '@/composables/useBandProfile'
@@ -20,7 +20,7 @@ import type { BioVariant } from '@/types/bandProfile'
 import BandLogoManager from '@/components/admin/BandLogoManager.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
-import { bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
+import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, type Lang } from '@/locales'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
@@ -147,6 +147,10 @@ watch(
   },
   { immediate: true },
 )
+
+// Sample text in each input's own language (see PostForm).
+const bioPlaceholders = (key: string): Record<Lang, string> =>
+  Object.fromEntries(LOCALES.map(l => [l, t(`band.profile.bio.${key}`, {}, { locale: l })])) as Record<Lang, string>
 
 const shortChars     = computed(() => form.bio_short[bioLang.value].length)
 const shortOverLimit = computed(() => shortChars.value > 280)
@@ -315,12 +319,23 @@ async function saveSocialLinks() {
 
               <AboutBioVariantSelect v-model="form.about_bio_variant" />
 
+              <!-- Each panel shows ONE language — the tab chosen above — as a
+                   single TranslatedField row (`:locales="[bioLang]"`). Its
+                   Translate button reads from the other language, so the
+                   Polish tab fills from the English bio and vice versa. -->
               <div v-show="bioTab === 'short'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.shortHint') }}</div>
                 <div class="char-wrap">
-                  <textarea v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_short[l]"
-                    class="field-input bio-plain" rows="2" maxlength="300" :data-locale="l"
-                    :placeholder="$t('band.profile.bio.shortPlaceholder', {}, { locale: l })" />
+                  <TranslatedField
+                    v-model="form.bio_short"
+                    kind="textarea"
+                    field-key="profile.bio_short"
+                    :locales="[bioLang]"
+                    :rows="2"
+                    :maxlength="300"
+                    :label="$t('band.profile.bio.variants.short')"
+                    :placeholders="bioPlaceholders('shortPlaceholder')"
+                  />
                   <span class="char-count" :class="{ warn: shortChars > 240, over: shortOverLimit }">
                     {{ shortChars }}&thinsp;/&thinsp;280 <!-- i18n-ignore: digits and thin-space markup -->
                   </span>
@@ -330,23 +345,41 @@ async function saveSocialLinks() {
 
               <div v-show="bioTab === 'medium'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.mediumHint') }}</div>
-                <textarea v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_medium[l]"
-                  class="field-input bio-plain" rows="3" :data-locale="l"
-                  :placeholder="$t('band.profile.bio.mediumPlaceholder', {}, { locale: l })" />
+                <TranslatedField
+                  v-model="form.bio_medium"
+                  kind="textarea"
+                  field-key="profile.bio_medium"
+                  :locales="[bioLang]"
+                  :rows="3"
+                  :label="$t('band.profile.bio.variants.medium')"
+                  :placeholders="bioPlaceholders('mediumPlaceholder')"
+                />
                 <p v-if="fieldErrors.bio_medium" class="field-error">{{ fieldErrors.bio_medium[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'long'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.longHint') }}</div>
-                <RichEditor v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_long[l]"
-                  :placeholder="$t('band.profile.bio.longPlaceholder', {}, { locale: l })" />
+                <TranslatedField
+                  v-model="form.bio_long"
+                  kind="rich"
+                  field-key="profile.bio_long"
+                  :locales="[bioLang]"
+                  :label="$t('band.profile.bio.variants.long')"
+                  :placeholders="bioPlaceholders('longPlaceholder')"
+                />
                 <p v-if="fieldErrors.bio_long" class="field-error">{{ fieldErrors.bio_long[0] }}</p>
               </div>
 
               <div v-show="bioTab === 'full'" class="bio-panel">
                 <div class="bio-hint">{{ $t('band.profile.bio.fullHint') }}</div>
-                <RichEditor v-for="l in contentLocales" :key="l" v-show="bioLang === l" v-model="form.bio_full[l]"
-                  :placeholder="$t('band.profile.bio.fullPlaceholder', {}, { locale: l })" />
+                <TranslatedField
+                  v-model="form.bio_full"
+                  kind="rich"
+                  field-key="profile.bio_full"
+                  :locales="[bioLang]"
+                  :label="$t('band.profile.bio.variants.full')"
+                  :placeholders="bioPlaceholders('fullPlaceholder')"
+                />
                 <p v-if="fieldErrors.bio_full" class="field-error">{{ fieldErrors.bio_full[0] }}</p>
               </div>
             </div>
@@ -660,7 +693,6 @@ async function saveSocialLinks() {
 
 .bio-panel { padding-top: 0.25rem; }
 .bio-hint { font-size: var(--fs-2xs); color: var(--c-475569); margin-bottom: 0.5rem; line-height: 1.4; }
-.bio-plain { resize: vertical; }
 
 .char-wrap { position: relative; }
 .char-count {

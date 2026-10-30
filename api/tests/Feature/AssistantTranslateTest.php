@@ -105,6 +105,18 @@ describe('with DeepL configured', function () {
         Http::assertSentCount(1);
     });
 
+    it('treats an answer without text as a failure and does not cache it', function () {
+        Http::fake(['api-free.deepl.com/*' => Http::sequence()
+            ->push(['translations' => [['detected_source_language' => 'XX']]])
+            ->push(['translations' => [['text' => 'Cześć']]])]);
+
+        $this->postJson('/api/admin/assistant/translate', ['items' => [item()]])->assertStatus(503);
+        // Nothing was cached from the malformed answer: the retry reaches DeepL.
+        $this->postJson('/api/admin/assistant/translate', ['items' => [item()]])
+            ->assertOk()->assertJsonPath('data.items.0.text', 'Cześć');
+        Http::assertSentCount(2);
+    });
+
     it('retries once on 429 then succeeds', function () {
         Http::fake(['api-free.deepl.com/*' => Http::sequence()
             ->push([], 429)

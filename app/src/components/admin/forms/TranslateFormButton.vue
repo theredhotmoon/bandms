@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { useAssistantCapabilities, useTranslate } from '@/composables/useAssistant'
 import { useContentLocales } from '@/composables/useContentLocales'
 import type { Lang, TranslationBag } from '@/locales'
@@ -30,13 +31,15 @@ const emit = defineEmits<{ filled: [Record<string, TranslationBag>] }>()
 
 const { order } = useContentLocales()
 const { canTranslate } = useAssistantCapabilities()
-const { translate, isPending } = useTranslate()
+const { translate, isPending, failureMessage } = useTranslate()
 const busy = ref(false)
 
 // A row whose own button already fired is left to that request.
 const plan = computed<TranslateItem[]>(() =>
   planFill(props.fields, props.locales ?? order.value, props.formats).filter(item => !isPending(item.key)))
-const show = computed(() => canTranslate.value && plan.value.length > 0)
+// Stays mounted while busy: the plan empties the moment its items go pending,
+// and a button that unmounts mid-run reads as a flicker.
+const show = computed(() => canTranslate.value && (busy.value || plan.value.length > 0))
 
 async function run(): Promise<void> {
   if (busy.value) return
@@ -48,8 +51,11 @@ async function run(): Promise<void> {
       const field = item.key.slice(0, item.key.lastIndexOf('.'))
       byField.set(field, [...(byField.get(field) ?? []), item])
     }
-    const results = await Promise.allSettled([...byField.values()].map(items => translate(items)))
+    // Quiet per field: a provider outage would otherwise toast once per field.
+    const results = await Promise.allSettled([...byField.values()].map(items => translate(items, { quiet: true })))
     const translated = Object.assign({}, ...results.flatMap(r => (r.status === 'fulfilled' ? [r.value] : [])))
+    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+    if (failed) toast.error(failureMessage(failed.reason))
     if (Object.keys(translated).length > 0) emit('filled', applyFill(props.fields, translated))
   } finally {
     busy.value = false

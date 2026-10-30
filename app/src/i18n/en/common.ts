@@ -102,6 +102,7 @@ export default {
     replaceWithTranslation: 'Replace with a translation? Press again to confirm',
     translateEmpty: 'Translate empty fields',
     translateFailed: 'Translation failed',
+    skippedChanged: 'Translation skipped — the field changed while it ran. Press Translate again.',
   },
   social: {
     title: 'Social links',

@@ -3,13 +3,10 @@ import { useLang } from '@/composables/useLang'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Faq, FaqPayload } from '@/types/faq'
 import type { WebsiteModule } from '@/types/website-module'
-import { LOCALES, emptyBag, type Lang as Locale } from '@/locales'
-import { useContentLocales } from '@/composables/useContentLocales'
+import { LOCALES, emptyBag, type Lang as Locale, type TranslationBag } from '@/locales'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import TranslateFormButton from '@/components/admin/forms/TranslateFormButton.vue'
 import { useDirtyGuard } from '@/composables/useDirtyGuard'
-
-// Inputs render in the band's writing order; the registry order stays for
-// building payloads, where order carries no meaning.
-const { order: contentLocales } = useContentLocales()
 
 // Module names are the band's content, so they follow the content locale.
 const { lang } = useLang()
@@ -68,6 +65,13 @@ function bagFrom(field: 'question' | 'answer'): Record<Locale, string | null> {
   ) as Record<Locale, string | null>
 }
 
+// "Translate empty fields" hands back the bags it filled, keyed by fieldKey;
+// only still-empty locales were written (utils/translationFill.ts).
+function onTranslatedFill(bags: Record<string, TranslationBag>): void {
+  if (bags['faq.question']) Object.assign(draft.question, bags['faq.question'])
+  if (bags['faq.answer']) Object.assign(draft.answer, bags['faq.answer'])
+}
+
 function submit() {
   emit('save', {
     module_slug: draftModule.value,
@@ -81,20 +85,6 @@ function submit() {
     answer: bagFrom('answer'),
     is_published: published.value,
   })
-}
-
-const INPUT_BASE =
-  'flex-1 rounded-lg bg-zinc-800 border px-3 py-1.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors' // i18n-ignore: CSS classes
-
-/** The textarea variant — same classes plus a resize affordance. */
-function textareaClass(key: string) {
-  return `${inputClass(key)} resize-y` // i18n-ignore: CSS classes
-}
-
-function inputClass(key: string) {
-  return props.errors[key]
-    ? `${INPUT_BASE} border-red-500`
-    : `${INPUT_BASE} border-zinc-700 focus:border-teal-500` // i18n-ignore: CSS classes
 }
 
 // Every key this form renders inline. Anything else — a bare `question` or
@@ -145,48 +135,39 @@ const otherErrors = computed(() =>
       </label>
     </div>
 
+    <!-- Fills the question AND the answer, so it sits above both rather than in
+         one field's label row. -->
+    <TranslateFormButton
+      :fields="{ 'faq.question': draft.question, 'faq.answer': draft.answer }"
+      :formats="{ 'faq.question': 'text', 'faq.answer': 'text' }"
+      @filled="onTranslatedFill"
+    />
+
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.question') }}</span>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="flex flex-col gap-1">
-          <div class="trans-row">
-            <label class="lang-badge" :class="`lang-badge--${l}`" :for="`faq-q-${l}`">{{ l.toUpperCase() }}</label>
-            <input
-              :id="`faq-q-${l}`"
-              v-model="draft.question[l]"
-              type="text"
-              maxlength="300"
-              :aria-invalid="Boolean(errors[`question.${l}`])"
-              :class="inputClass(`question.${l}`)"
-            />
-          </div>
-          <span v-if="errors[`question.${l}`]" class="text-xs text-red-400 pl-10">
-            {{ errors[`question.${l}`][0] }}
-          </span>
-        </div>
-      </div>
+      <TranslatedField
+        v-model="draft.question"
+        kind="input"
+        field-key="faq.question"
+        id-prefix="faq-q"
+        :label="$t('pages.faqs.question')"
+        :maxlength="300"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors[`question.${l}`]?.[0]]))"
+      />
     </div>
 
     <div class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ $t('pages.faqs.answer') }}</span>
-      <div class="trans-group">
-        <div v-for="l in contentLocales" :key="l" class="flex flex-col gap-1">
-          <div class="trans-row trans-row--top">
-            <label class="lang-badge" :class="`lang-badge--${l}`" :for="`faq-a-${l}`">{{ l.toUpperCase() }}</label>
-            <textarea
-              :id="`faq-a-${l}`"
-              v-model="draft.answer[l]"
-              rows="4"
-              maxlength="4000"
-              :aria-invalid="Boolean(errors[`answer.${l}`])"
-              :class="textareaClass(`answer.${l}`)"
-            />
-          </div>
-          <span v-if="errors[`answer.${l}`]" class="text-xs text-red-400 pl-10">
-            {{ errors[`answer.${l}`][0] }}
-          </span>
-        </div>
-      </div>
+      <TranslatedField
+        v-model="draft.answer"
+        kind="textarea"
+        field-key="faq.answer"
+        id-prefix="faq-a"
+        :label="$t('pages.faqs.answer')"
+        :rows="4"
+        :maxlength="4000"
+        :errors="Object.fromEntries(LOCALES.map(l => [l, errors[`answer.${l}`]?.[0]]))"
+      />
     </div>
 
     <span class="text-xs text-zinc-600">{{ $t('pages.faqs.editorHint') }}</span>

@@ -1649,6 +1649,59 @@ so nobody questioned that the *value* was structurally incapable of being right.
 
 ---
 
+## The admin assistant — Translate buttons and the provider layer
+
+Every translated text field in the admin is one component,
+`app/src/components/admin/forms/TranslatedField.vue` (input, textarea or rich
+editor per content locale), and that component is the **only** place the
+Translate button exists. **A new hand-rolled `.trans-row` block in a form is a
+regression** — it would be a translated field with no button, no
+content-language `required` rule and no per-row error. Slugs are the one
+exception (`TranslatedSlugInput`). `TranslateFormButton` ("Translate empty
+fields") takes a form's bags keyed by each field's `fieldKey`; keyed any other
+way, its requests and the rows' spinners stop sharing one pending state.
+
+**The source of a translation is the first *filled* locale in content order,
+not the primary.** A Polish-first band's backlog is English-only records
+written before the switch, where PL is the empty row; a primary-only rule
+would hide the button on exactly those rows (`utils/translationSource.ts`).
+An empty row fills on one click; a filled row needs a second click within 3 s
+(`utils/translateButton.ts`); the answer lands only if the row still holds
+what it held at click time; the form-level fill never writes over a filled
+locale and skips rows already in flight.
+
+**Unset means off, not disabled.** `ASSISTANT_TRANSLATOR` (`none`|`deepl`,
+`config/assistant.php`) picks the driver and `DEEPL_API_KEY` is its key; a key
+alone enables nothing, in production too. `GET /api/admin/assistant/capabilities`
+reports what exists and the admin renders a button **only** for that — a
+disabled control nobody can enable from the UI is a control pretending to be
+one (the `ALWAYS_ON_MODULES` rule). CI has no key: Pest fakes `Http`, and
+`e2e/tests/admin/assistant-translate.spec.ts` serves both endpoints through
+`page.route`. A spec that reaches DeepL is a bug.
+
+**Provider language codes live in the registry, not the driver.** DeepL wants
+`EN-GB`/`EN-US` as a *target* and deprecates bare `EN`; a `['en' => 'EN-GB']`
+map inside the driver would be an `'en'` literal outside the three registry
+files, so `config/locales.php` carries `translation.deepl` per locale, read
+through `Locales::translationCode()`. **DeepL takes the region for `target_lang`
+only** — its `source_lang` list is bare languages — so the driver strips it for
+the source. A faked HTTP layer cannot see provider-side validation: the first
+real EN→PL call after a new key is worth watching once.
+
+**One request per field, all-or-nothing per request.** The form-level fill
+issues them in parallel so a slow or failed field leaves the others filled,
+and no request nears the 50-item cap. Translations are cached by text for 30
+days (`Cache`), so dev and E2E pointed at a real key cost no quota on repeats.
+The block editors append `useId()` to their `fieldKey` (`post.block.text#…`)
+because several blocks render the same field; phase 2's style-example
+resolver must strip that suffix.
+
+Design and plan: `docs/superpowers/specs/2026-10-29-admin-assistant-design.md`,
+`docs/superpowers/plans/2026-10-29-assistant-translate.md`. Phases 2 (Enhance)
+and 3 (the robot) are sketched there and reuse the same provider shape.
+
+---
+
 ## A post with no `published_at` is a draft — and the admin reads its own routes
 
 `GET /api/posts` and `GET /api/posts/{post}` return **published posts only**
