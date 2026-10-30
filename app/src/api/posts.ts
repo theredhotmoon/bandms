@@ -86,6 +86,17 @@ export async function updatePost(token: string, id: number, payload: Partial<Pos
   return handleResponse<PostResponse>(res).then((r) => r.data)
 }
 
+/** Pin a post to the top of the public News page, or unpin it. One at a time. */
+export async function setPostHighlighted(token: string, id: number, highlighted: boolean): Promise<void> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/posts/${id}/highlight`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ highlighted }),
+  })
+  await handleResponse<unknown>(res)
+}
+
 export async function deletePost(token: string, id: number): Promise<void> {
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/posts/${id}`, {

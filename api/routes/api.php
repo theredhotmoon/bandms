@@ -109,7 +109,12 @@ Route::get('/concerts/{concert}/tickets', [ConcertTicketController::class, 'inde
 Route::get('/tags', [TagController::class, 'index'])->name('api.tags.index');
 Route::get('/tags/{tag}', [TagController::class, 'show'])->name('api.tags.show');
 
-Route::get('/posts', [PostController::class, 'index'])->name('api.posts.index');
+// A search scans every post and block, and the News page sends one per
+// pause in typing; the limiter only counts requests that carry one, so the
+// site build's many plain reads are never throttled.
+Route::get('/posts', [PostController::class, 'index'])->middleware('throttle:post-search')->name('api.posts.index');
+// Must precede /posts/{post}, which would capture "featured".
+Route::get('/posts/featured', [PostController::class, 'featured'])->name('api.posts.featured');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('api.posts.show');
 
 Route::get('/albums', [AlbumController::class, 'index'])->name('api.albums.index');
@@ -305,6 +310,9 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/posts/{post}', [PostController::class, 'update'])
         ->middleware('role:admin,publisher')
         ->name('api.posts.update');
+    Route::put('/posts/{post}/highlight', [PostController::class, 'highlight'])
+        ->middleware('role:admin,publisher')
+        ->name('api.posts.highlight');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])
         ->middleware('role:admin,publisher')
         ->name('api.posts.destroy');

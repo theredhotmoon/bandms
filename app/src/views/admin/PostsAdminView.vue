@@ -29,7 +29,7 @@ import { LOCALES, shortLabel, type Lang } from '@/locales'
 const tagName = useTagLabel()
 const { t } = useI18n()
 
-const { query, create, update, remove } = usePosts()
+const { query, create, update, remove, highlight } = usePosts()
 const { query: tagsQ }       = useTags()
 const { query: concertsQ }   = useConcerts()
 const { query: membersQ }    = useBandMembers()
@@ -100,6 +100,20 @@ async function confirmDelete() {
   } catch (e) { reportSaveError(e, t('common.state.deleteFailed')) }
 }
 
+// ── Top of the News page ──────────────────────────────────────
+// One post at a time; pinning another unpins this one server-side.
+async function toggleHighlight(post: PostSummary) {
+  const on = !post.is_highlighted
+  try {
+    await highlight.mutateAsync({ id: post.id, highlighted: on })
+    toast.success(t(on ? 'content.posts.list.highlighted' : 'content.posts.list.unhighlighted'))
+  } catch (e) { reportSaveError(e, t('common.state.somethingWentWrong')) }
+}
+function highlightTitle(post: PostSummary): string {
+  if (post.is_highlighted) return t('content.posts.list.highlightOff')
+  return post.published_at ? t('content.posts.list.highlightOn') : t('content.posts.list.highlightDraft')
+}
+
 // ── List flags: cover image and translation completeness ──────
 function gapTitle(post: PostSummary, l: Lang): string {
   const gaps = post.translation_gaps?.[l] ?? []
@@ -141,6 +155,7 @@ const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?
           <table v-else class="w-full">
             <thead>
               <tr style="border-bottom:1px solid var(--c-222222);">
+                <th class="th">{{ $t('content.posts.list.highlight') }}</th>
                 <SortHeader :label="$t('common.fields.title')" sort-key="title" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.tags') }}</th>
                 <th class="th">{{ $t('content.posts.list.image') }}</th>
@@ -151,6 +166,21 @@ const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?
             </thead>
             <tbody>
               <tr v-for="post in tc.paginated.value" :key="post.id" class="table-row">
+                <td class="td">
+                  <!-- A draft cannot be pinned (the API refuses it): the
+                       button stays, disabled, and its title says why. -->
+                  <button
+                    type="button"
+                    class="star"
+                    :class="{ 'star--on': post.is_highlighted }"
+                    :aria-pressed="!!post.is_highlighted"
+                    :aria-label="highlightTitle(post)"
+                    :title="highlightTitle(post)"
+                    :disabled="(!post.published_at && !post.is_highlighted) || highlight.isPending.value"
+                    data-testid="post-highlight"
+                    @click="toggleHighlight(post)"
+                  >{{ post.is_highlighted ? '★' : '☆' }}</button>
+                </td>
                 <td class="td font-medium" style="color:var(--c-e2e8f0); max-width:16rem;">
                   <span class="truncate block">{{ post.title }}</span>
                 </td>
@@ -232,6 +262,10 @@ const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?
 <style scoped src="./admin-table.css" />
 <style scoped>
 .pill-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.star { background: none; border: 0; padding: 0.1rem 0.3rem; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--c-64748b); }
+.star:hover:not(:disabled) { color: var(--c-fbbf24); }
+.star--on { color: var(--c-fbbf24); }
+.star:disabled { cursor: not-allowed; opacity: 0.4; }
 .pill { font-size:var(--fs-2xs); padding:0.1rem 0.4rem; border-radius:9999px; background:var(--c-2a2a2a); color:var(--c-d0d0d0); white-space:nowrap; }
 .pill--tag { background:var(--c-0f2a1e); color:var(--c-34d399); }
 .post-thumb { width: 2.75rem; height: 1.75rem; object-fit: cover; border-radius: 0.25rem; display: block; background: var(--c-141414); }

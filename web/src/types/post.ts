@@ -28,6 +28,8 @@ export interface PostSummary {
   published_at: string | null
   event_dates: string[]
   event_date_display: 'range' | 'list'
+  /** Pinned to the top of the News page in the admin's posts list. */
+  is_highlighted?: boolean
   tags: Tag[]
   created_at: string
   updated_at: string

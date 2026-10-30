@@ -44,6 +44,9 @@ const ABOUT_VISIBILITY_SPEC = /about-section-visibility\.spec\.ts/
 // news or shows list, and a rebuild they trigger bakes the same per_page.
 // The cost: a failure anywhere in the pool reports this one as "did not run".
 const LIST_PER_PAGE_SPEC = /list-per-page\.spec\.ts/
+// Pins posts to the top of News, which a rebuild then bakes there — so it
+// waits for the pool and for list-per-page, which asserts on that top post.
+const POST_HIGHLIGHT_SPEC = /post-highlight\.spec\.ts/
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -113,13 +116,19 @@ export default defineConfig({
         storageState: 'e2e/.auth/admin.json',
       },
       dependencies: ['setup'],
-      testIgnore: [...EPK_PUBLISHING_SPECS, ...MEMBER_PAGE_READERS, ABOUT_VISIBILITY_SPEC, LIST_PER_PAGE_SPEC],
+      testIgnore: [...EPK_PUBLISHING_SPECS, ...MEMBER_PAGE_READERS, ABOUT_VISIBILITY_SPEC, LIST_PER_PAGE_SPEC, POST_HIGHLIGHT_SPEC],
     },
     {
       name: 'list-per-page',
       testMatch: LIST_PER_PAGE_SPEC,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['chromium'],
+    },
+    {
+      name: 'post-highlight',
+      testMatch: POST_HIGHLIGHT_SPEC,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['list-per-page'],
     },
     // The readers run beside the main pool (they only read member state, and
     // member-public-page seeds and deletes its own member); the writer waits

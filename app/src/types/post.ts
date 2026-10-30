@@ -77,6 +77,8 @@ export interface PostSummary {
   published_at: string | null
   event_dates: string[]
   event_date_display: 'range' | 'list'
+  /** Pinned to the top of the public News page; at most one post. */
+  is_highlighted?: boolean
   tags: Tag[]
   created_at: string
   updated_at: string
