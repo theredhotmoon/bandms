@@ -1696,6 +1696,28 @@ The block editors append `useId()` to their `fieldKey` (`post.block.text#…`)
 because several blocks render the same field; phase 2's style-example
 resolver must strip that suffix.
 
+### Who may spend the tokens — per-user access and superadmins
+
+`users` carries `is_superadmin`, `can_translate`, `can_enhance` (all default
+`false`). `User::mayTranslate()` / `mayEnhance()` are the rule: a superadmin
+always may; anyone else only what a superadmin switched on. **Enforced on the
+server, twice**: `capabilities` is per user (provider configured AND allowed),
+so the admin never renders ↔/✦ for a disabled user — and `translate` /
+`rewrite` 403 on their own, because hiding a button saves no tokens from
+someone calling the API by hand. Only a superadmin may send the three flags
+to `POST`/`PUT /api/users` (anyone else gets a 403, not a silent drop), and
+the last superadmin can be neither demoted nor deleted (422). Only an `admin`
+can be a superadmin (anyone else never reaches the Users page), and leaving
+`admin` counts as a demotion; a superadmin's own account — password, email,
+role, existence — is a superadmin's business only, or a regular admin could
+reset a superadmin's password and sign in as them. The count runs under a
+row lock inside the write's transaction. The migration made every existing
+admin a superadmin; the seeder and `bandms:create-admin` flag the first admin
+themselves, because on a fresh database the backfill runs on an empty table. Assistant tests act through
+`actingAsAssistantUser()` — `actingAsUser()` now has neither feature. The
+Users page reads "am I a superadmin" from the users list, not the stored auth
+user: a session from before this feature carries no flags.
+
 ### Phase 2 — the Enhance menu and `TextModel`
 
 The second provider, `App\Assistant\Text\TextModel`, is deliberately not

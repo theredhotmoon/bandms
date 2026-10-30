@@ -18,6 +18,18 @@ abstract class TestCase extends BaseTestCase
         return $user;
     }
 
+    /**
+     * A plain user a superadmin has allowed both assistant features — what the
+     * assistant tests need now that access is per user (users default to none).
+     */
+    protected function actingAsAssistantUser(): User
+    {
+        $user = User::factory()->create(['can_translate' => true, 'can_enhance' => true]);
+        Passport::actingAs($user);
+
+        return $user;
+    }
+
     protected function actingAsAdmin(): User
     {
         $user = User::factory()->create(['role' => 'admin']);

@@ -12,7 +12,7 @@ it('returns 401 anonymously', function () {
 
 it('reports translate off when no translator is configured', function () {
     config(['assistant.translator' => 'none']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $this->getJson('/api/admin/assistant/capabilities')
         ->assertOk()
@@ -22,21 +22,21 @@ it('reports translate off when no translator is configured', function () {
 
 it('reports translate off when deepl is chosen but has no key', function () {
     config(['assistant.translator' => 'deepl', 'services.deepl.api_key' => '']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.translate', false);
 });
 
 it('reports rewrite off when no text model is configured', function () {
     config(['assistant.text_model' => 'none']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.rewrite', false);
 });
 
 it('reports rewrite off when anthropic is chosen but has no key', function () {
     config(['assistant.text_model' => 'anthropic', 'services.anthropic.api_key' => '']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $this->getJson('/api/admin/assistant/capabilities')->assertJsonPath('data.rewrite', false);
 });
@@ -50,7 +50,7 @@ it('is readable by any authenticated user, not only admins', function () {
 
 it('answers 503 on translate when no translator is configured', function () {
     config(['assistant.translator' => 'none']);
-    $this->actingAsUser();
+    $this->actingAsAssistantUser();
 
     $source = Locales::default();
     $target = collect(Locales::codes())->first(fn (string $c) => $c !== $source);

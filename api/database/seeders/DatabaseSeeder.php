@@ -110,6 +110,10 @@ class DatabaseSeeder extends Seeder
             'email'      => $email,
             'password'   => Hash::make($password),
             'role'       => 'admin',
+            // The superadmin migration's backfill runs before this seeder, on an
+            // empty table — the first admin must be flagged here, or a fresh
+            // install has nobody who can manage assistant access.
+            'is_superadmin' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]]);

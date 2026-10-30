@@ -44,7 +44,7 @@ it('returns 401 anonymously', function () {
 describe('with DeepL configured', function () {
     beforeEach(function () {
         config(['assistant.translator' => 'deepl', 'services.deepl.api_key' => 'test-key:fx']);
-        $this->actingAsUser();
+        $this->actingAsAssistantUser();
     });
 
     it('reports the translate capability on', function () {

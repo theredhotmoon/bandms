@@ -20,7 +20,11 @@ export function useUsers() {
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<UserPayload> }) =>
       updateUser(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: QK })
+      // Access may have changed — including the signed-in user's own.
+      void qc.invalidateQueries({ queryKey: ['assistant-capabilities'] })
+    },
   })
 
   const remove = useMutation({

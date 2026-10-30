@@ -122,6 +122,7 @@ export const MIGRATED = [
   'views/admin/HeroImagesAdminView.vue',
   'views/admin/ShopAdminView.vue',
   'views/admin/UsersAdminView.vue',
+  'components/admin/UserAccessSwitches.vue',
   'views/admin/TagsAdminView.vue',
   'views/admin/InstrumentsAdminView.vue',
   'views/admin/BandsAdminView.vue',

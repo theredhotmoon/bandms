@@ -141,6 +141,17 @@ export default {
     /** Marks the signed-in admin's own row. */
     you: '(you)',
     cannotDeleteSelf: 'Cannot delete your own account',
+    /** Per-user access to the assistant's token-spending features. */
+    access: {
+      col: 'Assistant',
+      translate: 'Translate',
+      enhance: 'Enhance',
+      superadmin: 'Superadmin',
+      superadminHint: 'Superadmins have both features and decide who else gets them',
+      readOnly: 'Only a superadmin can change this',
+      saved: 'Access updated',
+      saveFailed: 'Could not update access',
+    },
 
     cols: {
       name: 'Name',
