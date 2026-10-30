@@ -234,6 +234,8 @@ the ones that break things quietly:
 | `STRIPE_SECRET_KEY` | `sk_test_…` to start | checkout returns 503 |
 | `PUBLIC_CARTO_KEY` | your CARTO basemap key (optional) | concert/venue map tiles render watermarked "API KEY REQUIRED" |
 | `PUBLIC_GA_MEASUREMENT_ID` | leave as-is | overwritten from the GitHub secret on the next deploy, *if that secret is set* — an unset secret leaves this line untouched; see step 5 and the callout below |
+| `ASSISTANT_TRANSLATOR` | `deepl` once you have a key, otherwise leave unset | the admin shows no Translate buttons (unset means *none*; a key on its own switches nothing on) |
+| `DEEPL_API_KEY` | a DeepL API key — the free tier (500k chars/month, key ends in `:fx`) covers this site many times over | with `ASSISTANT_TRANSLATOR=deepl` and no key, the buttons stay hidden |
 
 Lock it down — it holds every secret the stack has:
 

@@ -103,6 +103,9 @@ services:
       FACEBOOK_APP_ID: "${FACEBOOK_APP_ID:-}"
       FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET:-}"
       SETLISTFM_API_KEY: "${SETLISTFM_API_KEY:-}"
+      # Admin assistant: `deepl` switches the Translate buttons on; unset = none.
+      ASSISTANT_TRANSLATOR: "${ASSISTANT_TRANSLATOR:-none}"
+      DEEPL_API_KEY: "${DEEPL_API_KEY:-}"
 
       # Must be listed here to reach the app — this service takes no env_file.
       # Drives CORS allowed_origins (config/cors.php), which otherwise falls

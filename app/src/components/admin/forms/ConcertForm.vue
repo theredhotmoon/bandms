@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { computed, reactive, ref, useId, watch } from 'vue'
 import VenueMap from '@/components/map/VenueMap.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
+import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
+import TranslateFormButton from '@/components/admin/forms/TranslateFormButton.vue'
 import AttachedClipsField from '@/components/admin/forms/AttachedClipsField.vue'
 import VenueQuickAdd from '@/components/admin/forms/VenueQuickAdd.vue'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
@@ -12,8 +14,7 @@ import { pushUnique } from '@/utils/pushUnique'
 import { timeInputValue } from '@/utils/dateInput'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
-import { useContentLocales } from '@/composables/useContentLocales'
-import { LOCALES, bagFrom, compactBag, emptyBag, shortLabel, slugPayload, type Lang } from '@/locales'
+import { LOCALES, bagFrom, compactBag, emptyBag, slugPayload, type Lang, type TranslationBag } from '@/locales'
 import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } from '@/types/concert'
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
@@ -22,11 +23,18 @@ import { useTagLabel } from '@/composables/useTagLabel'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
-const { order: contentLocales } = useContentLocales()
 
 // Sample text written in each input's own language — see PostForm.
 const namePlaceholder = (l: Lang): string => t('shows.concerts.form.eventNamePlaceholder', {}, { locale: l })
 const descriptionPlaceholder = (l: Lang): string => t('shows.concerts.form.descriptionPlaceholder', {}, { locale: l })
+
+// "Translate empty fields" hands back the bags it filled, keyed by fieldKey;
+// only still-empty locales were written (utils/translationFill.ts), so this
+// is a plain assign.
+function onTranslatedFill(bags: Record<string, TranslationBag>): void {
+  if (bags['concert.name']) form.name = bags['concert.name']
+  if (bags['concert.description']) form.description = bags['concert.description']
+}
 
 const props = defineProps<{
   initial?: Concert | null
@@ -353,16 +361,21 @@ function submit() {
       <div class="cf-col" data-testid="concert-col-about">
         <!-- Name -->
         <div>
-          <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
-          <div class="trans-group">
-            <div v-for="l in contentLocales" :key="l" class="trans-row" :data-locale="l">
-              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-              <input v-model="form.name[l]" type="text" class="field-input flex-1" :placeholder="namePlaceholder(l)" />
-            </div>
+          <div class="field-label-row">
+            <label class="field-label">{{ $t('shows.concerts.form.eventName') }}</label>
+            <TranslateFormButton
+              :fields="{ 'concert.name': form.name, 'concert.description': form.description }"
+              :formats="{ 'concert.name': 'text', 'concert.description': 'text' }"
+              @filled="onTranslatedFill"
+            />
           </div>
-          <template v-for="l in contentLocales" :key="`name-err-${l}`">
-            <p v-if="errors?.[`name.${l}`]" class="field-error">{{ errors[`name.${l}`][0] }}</p>
-          </template>
+          <TranslatedField
+            v-model="form.name"
+            kind="input"
+            field-key="concert.name"
+            :placeholders="Object.fromEntries(LOCALES.map(l => [l, namePlaceholder(l)]))"
+            :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`name.${l}`]?.[0]]))"
+          />
         </div>
 
         <!-- Slug URL -->
@@ -382,15 +395,14 @@ function submit() {
         <!-- Description -->
         <div>
           <label class="field-label">{{ $t('common.fields.description') }}</label>
-          <div class="trans-group">
-            <div v-for="l in contentLocales" :key="l" class="trans-row trans-row--top" :data-locale="l">
-              <span class="lang-badge" :class="`lang-badge--${l}`">{{ shortLabel(l) }}</span>
-              <textarea v-model="form.description[l]" class="field-input flex-1" rows="2" :placeholder="descriptionPlaceholder(l)" />
-            </div>
-          </div>
-          <template v-for="l in contentLocales" :key="`description-err-${l}`">
-            <p v-if="errors?.[`description.${l}`]" class="field-error">{{ errors[`description.${l}`][0] }}</p>
-          </template>
+          <TranslatedField
+            v-model="form.description"
+            kind="textarea"
+            field-key="concert.description"
+            :rows="2"
+            :placeholders="Object.fromEntries(LOCALES.map(l => [l, descriptionPlaceholder(l)]))"
+            :errors="Object.fromEntries(LOCALES.map(l => [l, errors?.[`description.${l}`]?.[0]]))"
+          />
         </div>
 
         <!-- Links -->
@@ -724,17 +736,6 @@ function submit() {
   font-size: var(--fs-sm); color: var(--c-64748b); margin: 0;
   padding: 0.75rem 1rem; border: 1px dashed var(--c-2a2a2a); border-radius: var(--radius-card);
 }
-
-/* ── Bilingual inputs ───────────────────────────────────────── */
-.trans-group { display: flex; flex-direction: column; gap: 0.375rem; }
-.trans-row   { display: flex; align-items: center; gap: 0.5rem; }
-.trans-row--top { align-items: flex-start; }
-.lang-badge {
-  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em;
-  padding: 0.2rem 0.45rem; border-radius: 0.25rem; flex-shrink: 0;
-  background: var(--c-1e3a5f); color: var(--c-60a5fa); width: 2rem; text-align: center;
-}
-.lang-badge--pl { background: var(--c-3f1010); color: var(--c-f87171); }
 
 /* ── Venue ──────────────────────────────────────────────────── */
 .venue-card {

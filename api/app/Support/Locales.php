@@ -111,6 +111,30 @@ final class Locales
         return array_values(array_diff(array_keys($bag), self::codes()));
     }
 
+    /**
+     * The locale's code at a machine-translation provider ('deepl' => 'EN-GB').
+     *
+     * Throws for a locale or provider the registry does not list: a silent
+     * fallback to the bare locale code would send DeepL a deprecated `EN` and
+     * work until the day it does not.
+     */
+    public static function translationCode(string $locale, string $provider): string
+    {
+        if (!self::isSupported($locale)) {
+            throw new \InvalidArgumentException("Locale '{$locale}' is not registered.");
+        }
+
+        $code = config("locales.supported.{$locale}.translation.{$provider}");
+
+        if (!is_string($code) || $code === '') {
+            throw new \InvalidArgumentException(
+                "No '{$provider}' translation code registered for locale '{$locale}' in config/locales.php.",
+            );
+        }
+
+        return $code;
+    }
+
     /** Display metadata for every locale — the public shape served by site-config. */
     public static function all(): array
     {

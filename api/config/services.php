@@ -49,6 +49,12 @@ return [
         'api_key' => env('SETLISTFM_API_KEY'),
     ],
 
+    // Admin assistant — machine translation (App\Assistant\Translation). The
+    // key alone enables nothing; config/assistant.php picks the driver.
+    'deepl' => [
+        'api_key' => env('DEEPL_API_KEY'),
+    ],
+
     'google_wallet' => [
         'enabled'   => env('GOOGLE_WALLET_ENABLED', false),
         'issuer_id' => env('GOOGLE_WALLET_ISSUER_ID', ''),

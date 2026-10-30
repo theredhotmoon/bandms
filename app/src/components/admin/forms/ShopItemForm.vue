@@ -9,7 +9,7 @@ import type { PostSummary } from '@/types/post'
 import type { MusicVideo } from '@/types/musicVideo'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
-import { DEFAULT_LOCALE, LOCALES, bagFrom, emptyBag, slugPayload, type Lang } from '@/locales'
+import { LOCALES, bagFrom, emptyBag, slugPayload, type Lang } from '@/locales'
 import { useShop } from '@/composables/useShop'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 
@@ -194,7 +194,10 @@ function handleSubmit() {
 
   const payload: ShopItemPayload = {
     name:             form.name,
-    slug:             slugPayload(form.slug, slugAuto.value),
+    // On an edit every locale goes exactly as shown — see slugPayload(). The
+    // auto map was passed here too, so a regenerated PL slug on an existing
+    // item went out as null and the API forgot it while the form displayed it.
+    slug:             slugPayload(form.slug, props.initial ? {} : slugAuto.value),
     description:      form.description || null,
     is_available:     form.is_available,
     is_presale:       form.is_presale,
@@ -233,7 +236,7 @@ function handleSubmit() {
         v-model="form.slug"
         :editing="!!initial"
         v-model:auto="slugAuto"
-        :sources="{ [DEFAULT_LOCALE]: form.name }"
+        :source="form.name"
         :errors="Object.fromEntries(LOCALES.map(l => [l, err(`slug.${l}`)]))"
       />
     </div>

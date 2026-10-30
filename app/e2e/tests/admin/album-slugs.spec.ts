@@ -31,6 +31,13 @@ test('uploading an album saves the title-following slug and a hand-typed one as 
 
     await page.getByPlaceholder('e.g. Rudeboy 2026-05-08').fill(title)
     await expect(page.locator('.slug-row[data-locale="en"] input')).toHaveValue(`e2e-album-${stamp}`)
+
+    // An untranslated title is still the source for EVERY locale's slug, so
+    // each row offers the regenerate button — not only the default locale's.
+    const slugRows = page.locator('.slug-row')
+    expect(await slugRows.count()).toBeGreaterThan(1)
+    for (const row of await slugRows.all()) await expect(row.locator('.slug-regen')).toBeVisible()
+
     await page.locator('.slug-row[data-locale="pl"] input').fill(`album-pl-${stamp}`)
 
     await page.locator('input[type="file"]').first().setInputFiles({

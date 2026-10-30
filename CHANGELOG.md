@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (admin assistant: translate button, phase 1)
+
+### Added
+- **A Translate button on translated fields** — first on the concert form's name and description. Each language row gains a ↔ button that fills it from the first *filled* language in the band's content order (so an English-only legacy concert gets a Polish button too); an empty row fills on one click, a filled one needs a second click within 3 s so nothing the band typed is overwritten by accident. *Translate empty fields* next to the name fills every empty language on the form at once and never touches a filled one. Powered by DeepL through a swappable provider layer (`App\Assistant\Translation`); switched on with `ASSISTANT_TRANSLATOR=deepl` + `DEEPL_API_KEY` in the backend's environment. Unset, no button is rendered anywhere. Translations are cached by text for 30 days, so repeats cost no quota.
+- **`TranslatedField`**, one component for every translated input/textarea/rich-text field, replacing the hand-rolled per-form rows — the concert form is the first to move; the other forms follow in the next PRs.
+
+### Fixed
+- **Slug regenerate on every language**: merch items and photo albums have one untranslated name, and only the default language's slug row offered the ↻ button — the other row had to be typed by hand. Every row offers it now.
+
 ## [Unreleased] — 2026-10-30 (public lists: items per page, equal news card widths)
 
 ### Added
