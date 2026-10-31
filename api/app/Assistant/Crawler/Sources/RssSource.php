@@ -40,16 +40,14 @@ final class RssSource implements Source
 
     public function fetch(Query $query): array
     {
-        $response = SafeUrl::get($query->text, 15, ['Accept' => 'application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.5']);
+        $response = SafeUrl::get($query->text, 15, ['Accept' => 'application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.5'], self::MAX_BYTES);
         if ($response === null) {
             throw new RuntimeException("Feed {$query->text} is not a public http(s) address.");
         }
         $response->throw();
 
+        // SafeUrl stopped the download at MAX_BYTES (and named the host).
         $body = $response->body();
-        if (strlen($body) > self::MAX_BYTES) {
-            throw new RuntimeException("Feed {$query->text} is larger than 2 MB.");
-        }
 
         // LIBXML_NONET: never fetch anything the document points at.
         $xml = @simplexml_load_string($body, SimpleXMLElement::class, LIBXML_NONET | LIBXML_NOCDATA);

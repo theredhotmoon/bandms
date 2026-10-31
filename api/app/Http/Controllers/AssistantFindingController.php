@@ -92,11 +92,13 @@ class AssistantFindingController extends Controller
         $runs = AssistantRun::query()
             ->whereIn('id', AssistantRun::query()->selectRaw('max(id)')->groupBy('source'))
             ->orderBy('source')
-            ->get(['source', 'status', 'started_at', 'finished_at', 'queries', 'found', 'new', 'error'])
-            ->map(fn (AssistantRun $run) => $run->toArray() + [
-                'remaining'    => CapLedger::remaining($run->source),
-                'failing_runs' => $this->failingRuns($run->source),
-            ]);
+            ->get(['source', 'status', 'started_at', 'finished_at', 'queries', 'found', 'new', 'error']);
+        $remaining = CapLedger::remainingAll();
+        $streaks   = $this->failingRuns();
+        $runs      = $runs->map(fn (AssistantRun $run) => $run->toArray() + [
+            'remaining'    => $remaining[$run->source] ?? 0,
+            'failing_runs' => $streaks[$run->source] ?? 0,
+        ]);
 
         return response()->json(['data' => $runs]);
     }
@@ -164,14 +166,31 @@ class AssistantFindingController extends Controller
         return response()->json(['data' => $dispatcher->dispatch($v['source'] ?? null)], 202);
     }
 
-    private function failingRuns(string $source): int
+    /**
+     * Per source, how many of its latest runs failed in a row (at most 10) —
+     * each source's own last ten, in one window query, so a quiet source's
+     * streak does not fall out of a window the busy ones filled.
+     *
+     * @return array<string, int>
+     */
+    private function failingRuns(): array
     {
-        $streak = 0;
-        foreach (AssistantRun::query()->where('source', $source)->latest('id')->limit(10)->pluck('status') as $status) {
-            if ($status !== 'failed') {
-                break;
+        $ranked = AssistantRun::query()->select('id', 'source', 'status')
+            ->selectRaw('row_number() over (partition by source order by id desc) as rn');
+        $rows = DB::query()->fromSub($ranked, 'r')->where('rn', '<=', 10)
+            ->orderBy('source')->orderBy('rn')->get(['source', 'status']);
+
+        $streak = [];
+        $done   = [];
+        foreach ($rows as $run) {
+            if (isset($done[$run->source])) {
+                continue;
             }
-            $streak++;
+            if ($run->status === 'failed') {
+                $streak[$run->source] = ($streak[$run->source] ?? 0) + 1;
+            } else {
+                $done[$run->source] = true;
+            }
         }
 
         return $streak;

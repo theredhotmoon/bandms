@@ -74,3 +74,19 @@ it('skips a source with nothing to search, or one already running, instead of cl
         ->and($res->json('data.skipped.youtube'))->toBe('already running')
         ->and($res->json('data.queued'))->toContain('google_cse');
 });
+
+it('reports every source\'s runs in a handful of queries, not a few per source', function () {
+    $this->actingAsAdmin();
+    foreach (array_keys(CrawlerSettings::SOURCES) as $source) {
+        AssistantRun::create(['source' => $source, 'started_at' => now()->subDay(), 'status' => 'failed']);
+        AssistantRun::create(['source' => $source, 'started_at' => now(), 'status' => 'ok', 'queries' => 2]);
+    }
+
+    \Illuminate\Support\Facades\DB::flushQueryLog();
+    \Illuminate\Support\Facades\DB::enableQueryLog();
+    $runs = $this->getJson('/api/admin/assistant/runs')->assertOk()->json('data');
+    $queries = count(\Illuminate\Support\Facades\DB::getQueryLog());
+
+    expect($runs)->toHaveCount(count(CrawlerSettings::SOURCES))
+        ->and($queries)->toBeLessThanOrEqual(10); // auth + settings + a few grouped reads — was ~5 per source
+});

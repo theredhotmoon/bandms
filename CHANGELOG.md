@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (assistant crawler: three loose ends)
+
+### Changed
+- **The Assistant page's status bar loads faster**: it reads every source's runs and remaining limits in a few database queries instead of about thirty.
+- **An RSS feed address that serves something huge is stopped while it downloads** (2 MB), instead of after the server has taken the whole thing in.
+- The setlists page and the crawler now share one setlist.fm connection, so a change on setlist.fm's side is fixed in one place.
+
 ## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 4 — the Monday digest)
 
 ### Added

@@ -4,40 +4,21 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Support\SetlistFmClient;
 
 class SetlistFmController extends Controller
 {
-    private const BASE = 'https://api.setlist.fm/rest/1.0';
-
-    private function apiKey(): string
-    {
-        return config('services.setlistfm.api_key', '');
-    }
-
-    private function headers(): array
-    {
-        return [
-            'x-api-key' => $this->apiKey(),
-            'Accept'    => 'application/json',
-        ];
-    }
+    public function __construct(private readonly SetlistFmClient $setlistFm) {}
 
     public function searchArtist(Request $request): JsonResponse
     {
         $request->validate(['q' => ['required', 'string', 'max:100']]);
 
-        if (!$this->apiKey()) {
+        if (!$this->setlistFm->hasKey()) {
             return response()->json(['error' => 'setlist.fm API key not configured'], 503);
         }
 
-        $res = Http::timeout(10)
-            ->withHeaders($this->headers())
-            ->get(self::BASE . '/search/artists', [
-                'artistName' => $request->q,
-                'p'          => 1,
-                'sort'       => 'relevance',
-            ]);
+        $res = $this->setlistFm->searchArtists((string) $request->q);
 
         if (!$res->successful()) {
             return response()->json(['error' => 'setlist.fm API error'], 502);
@@ -53,15 +34,13 @@ class SetlistFmController extends Controller
 
     public function artistSetlists(Request $request, string $mbid): JsonResponse
     {
-        if (!$this->apiKey()) {
+        if (!$this->setlistFm->hasKey()) {
             return response()->json(['error' => 'setlist.fm API key not configured'], 503);
         }
 
         $page = max(1, (int) $request->get('p', 1));
 
-        $res = Http::timeout(10)
-            ->withHeaders($this->headers())
-            ->get(self::BASE . "/artist/{$mbid}/setlists", ['p' => $page]);
+        $res = $this->setlistFm->artistSetlists($mbid, $page);
 
         if (!$res->successful()) {
             return response()->json(['error' => 'setlist.fm API error'], 502);
