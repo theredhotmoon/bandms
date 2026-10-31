@@ -46,6 +46,16 @@ export default {
     deleted: 'v{version} deleted',
     deleteFailed: 'Failed to delete',
   },
+  assistant: {
+    title: 'Assistant',
+    leads: '{n} new leads',
+    mentions: '{n} mentions',
+    news: '{n} news',
+    lastRun: 'Last run {when}',
+    never: 'The crawler has not run yet',
+    failing: '{n} source(s) failing',
+    open: 'Open the inbox',
+  },
   career: {
     title: 'Band Career Level',
     updateFailed: 'Failed to update career level',

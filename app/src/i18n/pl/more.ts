@@ -272,6 +272,13 @@ export default {
       noDetails: 'brak danych kontaktowych',
       countryTag: 'Kraj',
       languageTag: 'Preferowany język kontaktu',
+      kind: 'Rodzaj',
+      kinds: {
+        band: 'Zespół',
+        promoter: 'Promotor',
+        festival: 'Festiwal',
+      },
+      country: 'Kraj',
     },
   },
 
@@ -320,6 +327,24 @@ export default {
     dismissed: 'Odrzucono',
     restored: 'Przywrócono',
     actionFailed: 'Nie udało się zmienić wyniku',
+    saveAs: {
+      button: 'Zapisz jako…',
+      venue: 'Klub',
+      band: 'Zespół',
+      promoter: 'Promotor',
+      festival: 'Festiwal',
+      author: 'Kontakt',
+      linked: 'Zapisano — kontakt jest już w twoich danych',
+      linkFailed: 'Rekord powstał, ale nie udało się oznaczyć wyniku jako zapisanego — kliknij „Oznacz jako zapisane”, by spróbować ponownie',
+      relink: 'Oznacz jako zapisane',
+    },
+    known: {
+      venue: 'Już w twoich klubach: {name}',
+      band: 'Już w twoich zespołach: {name}',
+      author: 'Już w twoich kontaktach: {name}',
+    },
+    duplicate: 'Znalezione wcześniej przez inne źródło',
+    savedBadge: 'Zapisano',
     runs: {
       title: 'Ostatnie przebiegi',
       never: 'Wyszukiwanie jeszcze nie ruszyło.',

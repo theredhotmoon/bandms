@@ -20,6 +20,12 @@ export interface Finding {
   saved_type: string | null
   saved_id: number | null
   found_at: string | null
+  /** A record the band already has with this name (triage) — no Save as… then. */
+  known: { type: 'venue' | 'band' | 'author'; id: number; name: string } | null
+  /** The id of the finding that found this page first (triage). */
+  duplicate_of: number | null
+  /** What triage read off the finding — Save as… prefills from it. */
+  contacts: { email?: string | null; website?: string | null; instagram?: string | null; facebook?: string | null } | null
 }
 
 export interface FindingsFilter {
@@ -98,4 +104,11 @@ export interface CrawlerSettingsResponse {
   data: CrawlerSettings
   sources: SourceStatus[]
   countries: { code: string; name: string; native: string }[]
+}
+
+/** GET /api/admin/assistant/summary — the dashboard widget. */
+export interface AssistantSummary {
+  new: Record<FindingKind, number>
+  last_run_at: string | null
+  failing_sources: number
 }

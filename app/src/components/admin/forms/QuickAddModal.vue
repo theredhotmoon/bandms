@@ -34,6 +34,8 @@ const props = defineProps<{
   maxWidth?: string
   /** The toast when the save fails; defaults to the generic one. */
   errorMessage?: string
+  /** No "+ New" button: the host opens it through the exposed `open()` (Save as… in the inbox). */
+  hideButton?: boolean
 }>()
 
 const emit = defineEmits<{ created: [record: TRecord] }>()
@@ -63,6 +65,8 @@ function cancel(): void {
   modal.value?.requestClose()
 }
 
+defineExpose({ open: openModal })
+
 async function submit(payload: TPayload, file: File | null = null): Promise<void> {
   fieldErrors.value = {}
   loading.value = true
@@ -80,7 +84,7 @@ async function submit(payload: TPayload, file: File | null = null): Promise<void
 </script>
 
 <template>
-  <button type="button" class="btn-add" :data-testid="testId" @click="openModal">
+  <button v-if="!hideButton" type="button" class="btn-add" :data-testid="testId" @click="openModal">
     {{ buttonLabel }}
   </button>
 

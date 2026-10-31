@@ -4,10 +4,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import AuthorQuickAdd from '@/components/admin/forms/AuthorQuickAdd.vue'
 import { pushUnique } from '@/utils/pushUnique'
-import { contactLanguageName, countryName } from '@/utils/contactCodes'
+import { contactLanguageName, countryName, countryOptions } from '@/utils/contactCodes'
 import { matchesContactQuery } from '@/utils/contactSearch'
 import { useUiLang } from '@/composables/useUiLang'
-import type { Band, BandPayload } from '@/types/band'
+import type { Band, BandKind, BandPayload } from '@/types/band'
 import type { AuthorSummary } from '@/types/author'
 
 const { t } = useI18n()
@@ -17,6 +17,8 @@ const URL_PLACEHOLDER = 'https://…' // i18n-ignore: URL scheme
 
 const props = defineProps<{
   initial?: Band | null
+  /** Values for a new band (Save as… from the assistant); ignored when editing. */
+  prefill?: Partial<BandPayload> | null
   loading?: boolean
   errors?: Record<string, string[]>
   /** Every author/contact on file — the pool this band's contacts are picked from. */
@@ -25,7 +27,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [BandPayload]; cancel: [] }>()
 
-const form = reactive<{ name: string; website: string }>({ name: '', website: '' })
+const form = reactive<{ name: string; website: string; kind: BandKind; country: string }>({ name: '', website: '', kind: 'band', country: '' })
+const countries = computed(() => countryOptions(uiLang.value))
 const authorIds = ref<number[]>([])
 const contactSearch = ref('')
 
@@ -33,10 +36,13 @@ const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, authorIds: author
 const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(
-  () => props.initial,
-  (val) => {
-    form.name       = val?.name ?? ''
-    form.website    = val?.website ?? ''
+  () => [props.initial, props.prefill] as const,
+  ([val, pre]) => {
+    const p = val ? null : pre
+    form.name       = val?.name ?? p?.name ?? ''
+    form.website    = val?.website ?? p?.website ?? ''
+    form.kind       = val?.kind ?? p?.kind ?? 'band'
+    form.country    = val?.country ?? p?.country ?? ''
     authorIds.value = val?.contacts?.map((c) => c.id) ?? []
     contactSearch.value = ''
     markClean()
@@ -83,6 +89,8 @@ function contactDetail(a: AuthorSummary): string {
 function submit() {
   emit('submit', {
     name: form.name,
+    kind: form.kind,
+    country: form.country || null,
     website: form.website || null,
     author_ids: authorIds.value,
   })
@@ -95,6 +103,25 @@ function submit() {
       <label class="field-label">{{ $t('more.bands.form.name') }} <span style="color:var(--c-f87171);">*</span></label>
       <input v-model="form.name" required class="field-input" :placeholder="$t('more.bands.form.namePlaceholder')" />
       <p v-if="errors?.name" class="field-error">{{ errors.name[0] }}</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="band-kind">{{ $t('more.bands.form.kind') }}</label>
+        <select id="band-kind" v-model="form.kind" class="field-input">
+          <option value="band">{{ $t('more.bands.form.kinds.band') }}</option>
+          <option value="promoter">{{ $t('more.bands.form.kinds.promoter') }}</option>
+          <option value="festival">{{ $t('more.bands.form.kinds.festival') }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="band-country">{{ $t('more.bands.form.country') }}</label>
+        <select id="band-country" v-model="form.country" class="field-input">
+          <option value="">—</option><!-- i18n-ignore: empty choice -->
+          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
+        </select>
+        <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
+      </div>
     </div>
 
     <div>

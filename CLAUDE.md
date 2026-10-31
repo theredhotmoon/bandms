@@ -1787,6 +1787,22 @@ caps, so pressing it spends nothing twice. `GET /runs` adds `remaining`
 (today's cap left) and `failing_runs` (failed in a row — three is the
 inbox's banner).
 
+**Triage** (`TriageFindingsJob`, queued by `assistant:triage` at 03:40 when a
+text model is configured) sends new findings to the triage model in
+batches of 20, at most 200 a night. Two kinds never reach it: a lead whose
+name matches a venue, band or contact already on file (`triage.known`,
+`similar_text` ≥ 85 on an ASCII-folded name) and a page another finding
+already has (`triage.duplicate_of`, by `GoogleCseSource::normaliseUrl`).
+A batch is written whole or not at all: an answer off-schema, or one that
+skips a finding, fails the job and leaves the rows for the next night.
+
+**Save as… creates through the record's own endpoint, then links.** The
+inbox opens the usual quick-add (venue, band, contact) prefilled from the
+finding; on success it calls `POST /findings/{id}/saved {type, id}`, which
+marks the finding saved and stamps `source = assistant:<id>` on the record
+when it has none. So validation lives in one place — a duplicate venue name
+is that form's 422 — and a failed create leaves the finding `new`.
+
 **The dev stack does not crawl on its own** (`ASSISTANT_CRAWL_SCHEDULED=false`
 in `docker-compose.yml`): dev and prod keep separate ledgers, so a real key in
 both would spend each provider's cap twice. `assistant:crawl --source=…` by

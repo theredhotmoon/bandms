@@ -288,6 +288,13 @@ export default {
       noDetails: 'no contact details',
       countryTag: 'Country',
       languageTag: 'Preferred contact language',
+      kind: 'Kind',
+      kinds: {
+        band: 'Band',
+        promoter: 'Promoter',
+        festival: 'Festival',
+      },
+      country: 'Country',
     },
   },
 
@@ -336,6 +343,24 @@ export default {
     dismissed: 'Dismissed',
     restored: 'Restored',
     actionFailed: 'Could not update the finding',
+    saveAs: {
+      button: 'Save as…',
+      venue: 'Venue',
+      band: 'Band',
+      promoter: 'Promoter',
+      festival: 'Festival',
+      author: 'Contact',
+      linked: 'Saved — the lead is in your records now',
+      linkFailed: 'The record was created, but the lead could not be marked as saved — press “Mark as saved” to try again',
+      relink: 'Mark as saved',
+    },
+    known: {
+      venue: 'Already in your venues: {name}',
+      band: 'Already in your bands: {name}',
+      author: 'Already in your contacts: {name}',
+    },
+    duplicate: 'Found earlier by another source',
+    savedBadge: 'Saved',
     runs: {
       title: 'Last runs',
       never: 'The crawler has not run yet.',

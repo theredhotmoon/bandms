@@ -8,6 +8,9 @@ export interface Venue {
   street_number: string | null
   city: string | null
   postcode: string | null
+  /** ISO 3166-1 alpha-2 — the crawler groups leads by it. */
+  country?: string | null
+  website?: string | null
   additional_info: string | null
   capacity: number | null
   latitude: number | null
@@ -24,6 +27,8 @@ export interface VenuePayload {
   street_number?: string | null
   city?: string | null
   postcode?: string | null
+  country?: string | null
+  website?: string | null
   additional_info?: string | null
   capacity?: number | null
   latitude?: number | null

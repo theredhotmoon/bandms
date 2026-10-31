@@ -5,6 +5,7 @@ import { adminUrl } from '@/config/admin'
 import { useQuery } from '@tanstack/vue-query'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import CareerLevelWidget from '@/components/admin/CareerLevelWidget.vue'
+import AssistantWidget from '@/components/admin/assistant/AssistantWidget.vue'
 import { useBands } from '@/composables/useBands'
 import { useVenues } from '@/composables/useVenues'
 import { useConcerts } from '@/composables/useConcerts'
@@ -187,6 +188,9 @@ const avgEnhanceScore = computed(() => {
         @make-live="epk.makeLive"
         @remove="epk.remove"
       />
+
+      <!-- The assistant's inbox, at a glance -->
+      <div class="mt-8"><AssistantWidget /></div>
 
       <!-- Career level widget -->
       <div class="mt-8" v-if="profileQ.data.value">

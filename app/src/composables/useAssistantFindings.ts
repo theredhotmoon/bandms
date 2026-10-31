@@ -1,11 +1,12 @@
 import { computed, ref } from 'vue'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useAuth } from '@/composables/useAuth'
-import { fetchCrawlRuns, fetchFindings, runCrawl, setFindingStatus } from '@/api/assistantFindings'
+import { fetchAssistantSummary, fetchCrawlRuns, fetchFindings, linkSavedFinding, runCrawl, setFindingStatus } from '@/api/assistantFindings'
 import type { FindingsFilter } from '@/types/assistantCrawler'
 import { withFilter } from '@/utils/findingsFilters'
 
 const QKEY = ['assistant-findings']
+const SUMMARY_KEY = ['assistant-summary']
 
 /** The inbox: the filtered page of findings, the filter itself, and dismiss/restore. */
 export function useAssistantFindings() {
@@ -25,14 +26,26 @@ export function useAssistantFindings() {
   const setStatus = useMutation({
     mutationFn: ({ id, status }: { id: number; status: 'new' | 'dismissed' }) =>
       setFindingStatus(token.value!, id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QKEY }),
+    onSuccess: () => Promise.all([
+      qc.invalidateQueries({ queryKey: QKEY }),
+      qc.invalidateQueries({ queryKey: SUMMARY_KEY }),
+    ]),
+  })
+
+  const link = useMutation({
+    mutationFn: ({ id, type, recordId }: { id: number; type: 'venue' | 'band' | 'author'; recordId: number }) =>
+      linkSavedFinding(token.value!, id, type, recordId),
+    onSuccess: () => Promise.all([
+      qc.invalidateQueries({ queryKey: QKEY }),
+      qc.invalidateQueries({ queryKey: SUMMARY_KEY }),
+    ]),
   })
 
   function change(next: Partial<FindingsFilter>): void {
     filter.value = withFilter(filter.value, next)
   }
 
-  return { query, filter, change, setStatus }
+  return { query, filter, change, setStatus, link }
 }
 
 /** Each source's last run, for the status bar above the inbox, and Run now. */
@@ -58,4 +71,18 @@ export function useCrawlRuns() {
   })
 
   return { query, run }
+}
+
+/**
+ * The dashboard widget's numbers. Admins only — the dashboard is shared with
+ * members, and the endpoint would 403 them — so for anyone else the query
+ * never runs and the widget renders nothing.
+ */
+export function useAssistantSummary() {
+  const { token, isAdmin } = useAuth()
+  return useQuery({
+    queryKey: SUMMARY_KEY,
+    queryFn: () => fetchAssistantSummary(token.value!),
+    enabled: computed(() => !!token.value && isAdmin.value),
+  })
 }
