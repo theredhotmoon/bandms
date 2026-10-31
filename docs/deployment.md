@@ -241,7 +241,8 @@ the ones that break things quietly:
 | `ASSISTANT_TEXT_MODEL`, `ASSISTANT_TRIAGE_MODEL` | leave the defaults (`claude-opus-5-5` for rewrites, `claude-haiku-5-5` for the crawler's triage) | — |
 | `GOOGLE_API_KEY`, `GOOGLE_CSE_ID` | a Google Cloud API key with Custom Search (and Places) enabled, and a Programmable Search engine id | the crawler skips Google search; the settings page says *No API key* |
 | `YOUTUBE_API_KEY` | a YouTube Data API v3 key (the same Google Cloud project is fine) | the crawler skips YouTube |
-| `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_USER_ID` | the band Page's id and a long-lived Page token; the linked Instagram business account id | the crawler skips the band's own Page and Instagram (arrives with crawler slice 2) |
+| `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_USER_ID` | the band Page's id and a long-lived Page token; the linked Instagram business account id | the crawler skips posts that tag the band. A Page token expires: the run then fails with "token expired" on the Assistant page — mint a new one |
+| `SETLISTFM_API_KEY` | a setlist.fm API key (free, setlist.fm → API) | the crawler skips the venues of the sibling bands picked in the crawler settings |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USERNAME` | a Reddit *script* app | Reddit is skipped (it is also off by default in the crawler settings) |
 
 Lock it down — it holds every secret the stack has:

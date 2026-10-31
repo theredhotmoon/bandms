@@ -1773,6 +1773,20 @@ read; `assistant_findings` and `assistant_runs` are prod-only in
 `scripts/prodsync/tables.py`, because a push resetting the run ledger would
 let the next run spend the day's cap again.
 
+**Every credential travels in a header** (`X-Goog-Api-Key`, `x-api-key`,
+`Authorization: Bearer`, basic auth for Reddit's token), never the URL: a
+Guzzle connection error prints the full URL, and that text lands in
+`assistant_runs.error`, which admins read. Sources throw plain exceptions
+and leave the catch to `CrawlSourceJob`. The registry is a singleton inside
+a long-running queue worker, so anything a source caches between calls (the
+Reddit token) must carry its own expiry.
+
+**Run now** (`POST /api/admin/assistant/run`, 2/min) goes through
+`CrawlDispatcher`, the same path as the nightly command; the jobs check the
+caps, so pressing it spends nothing twice. `GET /runs` adds `remaining`
+(today's cap left) and `failing_runs` (failed in a row — three is the
+inbox's banner).
+
 **The dev stack does not crawl on its own** (`ASSISTANT_CRAWL_SCHEDULED=false`
 in `docker-compose.yml`): dev and prod keep separate ledgers, so a real key in
 both would spend each provider's cap twice. `assistant:crawl --source=…` by

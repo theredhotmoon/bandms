@@ -31,6 +31,7 @@ export const MIGRATED = [
   'components/admin/assistant/FindingRow.vue',
   'components/admin/assistant/FindingsFilters.vue',
   'components/admin/assistant/RunStatusBar.vue',
+  'components/admin/assistant/SiblingBandPicker.vue',
   'views/admin/AssistantInboxView.vue',
   'views/admin/AssistantSettingsView.vue',
   'App.vue',

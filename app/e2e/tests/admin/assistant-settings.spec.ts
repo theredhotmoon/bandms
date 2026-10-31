@@ -77,6 +77,36 @@ test('adds a country, switches a source off and saves', async ({ page }) => {
   expect(sent.rss_feeds).toEqual(['https://ska.example/feed?tags=ska,punk'])
 })
 
+test('picks a sibling band from setlist.fm and shows a source\'s last error', async ({ page }) => {
+  const puts: Record<string, unknown>[] = []
+  await page.route(SETTINGS, (route: Route) => {
+    if (route.request().method() === 'PUT') {
+      puts.push(JSON.parse(route.request().postData() ?? '{}'))
+      return route.fulfill({ json: response(puts.at(-1)!) })
+    }
+    const r = response(INITIAL)
+    r.sources[1] = { ...r.sources[1], lastRun: { status: 'failed', error: 'Places quota misconfigured', started_at: null, finished_at: null, queries: 1, new: 0 } } as never
+    return route.fulfill({ json: r })
+  })
+  await page.route(/\/api\/setlists\/setlistfm\/search/, route => route.fulfill({ json: { data: [
+    { mbid: 'mb-busters', name: 'The Busters' },
+  ] } }))
+  await page.goto('/admin/assistant/settings')
+
+  const form = page.getByTestId('crawler-settings')
+  await expect(form.locator('[data-source="places"] [data-testid="source-last-error"]')).toContainText('misconfigured')
+
+  const picker = form.getByTestId('sibling-bands')
+  await picker.getByRole('searchbox').fill('Busters')
+  await picker.getByRole('button', { name: /^find$/i }).click()
+  await picker.getByRole('button', { name: /The Busters/ }).click()
+  await expect(picker.locator('[data-mbid="mb-busters"]')).toBeVisible()
+  await form.getByRole('button', { name: /save settings/i }).click()
+
+  await expect(page.getByText(/crawler settings saved/i)).toBeVisible()
+  expect((puts[0] as { sibling_bands: unknown }).sibling_bands).toEqual([{ mbid: 'mb-busters', name: 'The Busters' }])
+})
+
 test('tells an admin who is not a superadmin why there is no form', async ({ page }) => {
   await page.route(SETTINGS, route => route.fulfill({ status: 403, json: { message: 'Only a superadmin can manage the crawler.' } }))
   await page.goto('/admin/assistant/settings')

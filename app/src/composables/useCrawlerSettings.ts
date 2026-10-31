@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useAuth } from '@/composables/useAuth'
 import { fetchCrawlerSettings, saveCrawlerSettings } from '@/api/assistantFindings'
+import { searchSetlistFmArtist } from '@/api/setlists'
 import type { CrawlerSettings } from '@/types/assistantCrawler'
 import { normaliseCrawlerSettings } from '@/utils/crawlerSettings'
 
@@ -24,5 +25,8 @@ export function useCrawlerSettings() {
     onSuccess: data => qc.setQueryData(QKEY, data),
   })
 
-  return { query, save }
+  /** setlist.fm artist search, for the sibling-band picker. */
+  const searchArtists = (q: string) => searchSetlistFmArtist(token.value!, q)
+
+  return { query, save, searchArtists }
 }

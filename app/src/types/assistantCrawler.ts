@@ -53,6 +53,16 @@ export interface CrawlRun {
   found?: number
   new: number
   error: string | null
+  /** What is left of today's cap (GET /runs only). */
+  remaining?: number
+  /** How many of the latest runs failed in a row (GET /runs only). */
+  failing_runs?: number
+}
+
+/** POST /api/admin/assistant/run's answer. */
+export interface CrawlDispatch {
+  queued: string[]
+  skipped: Record<string, string>
 }
 
 export interface SourceSettings {

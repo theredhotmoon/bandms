@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Assistant\Crawler\CapLedger;
+use App\Assistant\Crawler\CrawlDispatcher;
+use App\Assistant\Crawler\SourceRegistry;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use Illuminate\Http\JsonResponse;
@@ -76,14 +79,43 @@ class AssistantFindingController extends Controller
         return response()->json(['data' => $this->format($finding)]);
     }
 
+    /**
+     * Each source's last run, with what is left of today's cap and how many
+     * of its latest runs failed in a row — three is the status bar's banner.
+     */
     public function runs(): JsonResponse
     {
         $runs = AssistantRun::query()
             ->whereIn('id', AssistantRun::query()->selectRaw('max(id)')->groupBy('source'))
             ->orderBy('source')
-            ->get(['source', 'status', 'started_at', 'finished_at', 'queries', 'found', 'new', 'error']);
+            ->get(['source', 'status', 'started_at', 'finished_at', 'queries', 'found', 'new', 'error'])
+            ->map(fn (AssistantRun $run) => $run->toArray() + [
+                'remaining'    => CapLedger::remaining($run->source),
+                'failing_runs' => $this->failingRuns($run->source),
+            ]);
 
         return response()->json(['data' => $runs]);
+    }
+
+    /** Run now: queue the crawl (one source, or every one that may run). */
+    public function run(Request $request, SourceRegistry $registry, CrawlDispatcher $dispatcher): JsonResponse
+    {
+        $v = $request->validate(['source' => ['nullable', 'string', Rule::in($registry->keys())]]);
+
+        return response()->json(['data' => $dispatcher->dispatch($v['source'] ?? null)], 202);
+    }
+
+    private function failingRuns(string $source): int
+    {
+        $streak = 0;
+        foreach (AssistantRun::query()->where('source', $source)->latest('id')->limit(10)->pluck('status') as $status) {
+            if ($status !== 'failed') {
+                break;
+            }
+            $streak++;
+        }
+
+        return $streak;
     }
 
     private function format(AssistantFinding $f): array

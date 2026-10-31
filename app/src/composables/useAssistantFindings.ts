@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useAuth } from '@/composables/useAuth'
-import { fetchCrawlRuns, fetchFindings, setFindingStatus } from '@/api/assistantFindings'
+import { fetchCrawlRuns, fetchFindings, runCrawl, setFindingStatus } from '@/api/assistantFindings'
 import type { FindingsFilter } from '@/types/assistantCrawler'
 import { withFilter } from '@/utils/findingsFilters'
 
@@ -35,12 +35,27 @@ export function useAssistantFindings() {
   return { query, filter, change, setStatus }
 }
 
-/** Each source's last run, for the status bar above the inbox. */
+/** Each source's last run, for the status bar above the inbox, and Run now. */
 export function useCrawlRuns() {
   const { token } = useAuth()
-  return useQuery({
+  const qc = useQueryClient()
+
+  const query = useQuery({
     queryKey: ['assistant-runs'],
     queryFn: () => fetchCrawlRuns(token.value!),
     enabled: computed(() => !!token.value),
   })
+
+  // The jobs are queued, not awaited: on production they finish a minute or
+  // two later. Refetching now shows whatever already ran (all of it on a
+  // stack with a sync queue); the bar refreshes again on window focus.
+  const run = useMutation({
+    mutationFn: () => runCrawl(token.value!),
+    onSuccess: () => Promise.all([
+      qc.invalidateQueries({ queryKey: ['assistant-runs'] }),
+      qc.invalidateQueries({ queryKey: QKEY }),
+    ]),
+  })
+
+  return { query, run }
 }

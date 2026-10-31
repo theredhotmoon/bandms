@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 2)
+
+### Added
+- **Five more places the crawler looks**: venues where *bands like yours* played in the last two years (setlist.fm — pick the bands in Crawler settings), live-music venues and ska bars in your cities (Google Places), your RSS feeds, posts that tag the band on its own Facebook Page and Instagram, and the ska, reggae and punk subreddits (off by default — Reddit blocks many servers). Each runs only when its key is set.
+- **Run now** on the Assistant page, beside each source's last run and what is left of today's limit. A source that fails three runs in a row gets a red banner, and its error (for example an expired Facebook token) is shown on the page and in Crawler settings.
+
 ## [Unreleased] — 2026-10-31 (crawler: keep API keys out of errors)
 
 ### Security

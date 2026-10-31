@@ -94,6 +94,11 @@ it('keeps the settings to superadmins', function () {
 
 it('says which sources are not built yet', function () {
     crawlerSuperadmin();
+    // Every source is built now; a registry without RSS stands in for a later one.
+    app()->instance(\App\Assistant\Crawler\SourceRegistry::class, new \App\Assistant\Crawler\SourceRegistry([
+        new \App\Assistant\Crawler\Sources\GoogleCseSource(),
+        new \App\Assistant\Crawler\Sources\YouTubeSource(),
+    ]));
 
     $sources = collect($this->getJson('/api/admin/assistant/settings')->assertOk()->json('sources'))->keyBy('key');
 

@@ -1,4 +1,5 @@
 import type {
+  CrawlDispatch,
   CrawlRun,
   CrawlerSettings,
   CrawlerSettingsResponse,
@@ -50,4 +51,14 @@ export async function saveCrawlerSettings(token: string, settings: CrawlerSettin
     body: JSON.stringify(settings),
   })
   return handleResponse<CrawlerSettingsResponse>(res)
+}
+
+/** Run now: queue the crawl — one source, or every one that may run. */
+export async function runCrawl(token: string, source?: string): Promise<CrawlDispatch> {
+  const res = await fetch(`${API_BASE}/api/admin/assistant/run`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(source ? { source } : {}),
+  })
+  return (await handleResponse<{ data: CrawlDispatch }>(res)).data
 }
