@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import QuickAddModal from '@/components/admin/forms/QuickAddModal.vue'
 import AuthorForm from '@/components/admin/forms/AuthorForm.vue'
 import { useCreateAuthor } from '@/composables/useAuthors'
@@ -12,15 +13,20 @@ import type { Author, AuthorPayload } from '@/types/author'
  * band's checkbox here would both fetch four lists the band form never
  * needs and invite a second, conflicting way to make the same link.
  */
+defineProps<{ prefill?: Partial<AuthorPayload> | null; hideButton?: boolean }>()
 const emit = defineEmits<{ created: [author: Author] }>()
 
 const create = useCreateAuthor()
 // The shell's `create` takes (payload, file); the mutation wants the payload alone.
+const shell = ref<{ open: () => void } | null>(null)
+defineExpose({ open: () => shell.value?.open() })
 const createRecord = (payload: AuthorPayload) => create.mutateAsync(payload)
 </script>
 
 <template>
   <QuickAddModal
+    ref="shell"
+    :hide-button="hideButton"
     :button-label="$t('more.bands.form.newContact')"
     :title="$t('content.authors.modalNew')"
     :success-message="$t('content.authors.created')"
@@ -31,6 +37,7 @@ const createRecord = (payload: AuthorPayload) => create.mutateAsync(payload)
   >
     <AuthorForm
       :initial="null"
+      :prefill="prefill"
       :press-releases="[]"
       :concerts="[]"
       :tours="[]"

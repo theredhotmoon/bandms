@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 3)
+
+### Added
+- **The assistant now reads what it found.** Every night after the crawl, a small, cheap model scores each new finding 0–100 for how useful it is to the band and writes a one-line summary in the band's first language. Pages found twice, and venues, bands or contacts you already have, are marked instead of being sent to the model.
+- **Save as…** on every lead in the inbox: opens the usual venue, band (also promoter or festival) or contact form, already filled in with the name, country, website and any email or profiles the assistant found. A name you already have shows the form's usual error, and nothing else changes.
+- **Venues and bands get country and website fields; bands get a kind** (band, promoter, festival).
+- **An Assistant box on the dashboard**: new leads, mentions and news, when the crawler last ran, and whether a source is failing.
+
 ## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 2)
 
 ### Added

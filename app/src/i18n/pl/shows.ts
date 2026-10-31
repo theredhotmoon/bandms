@@ -207,6 +207,8 @@ export default {
       postcode: 'Kod pocztowy',
       city: 'Miasto',
       cityPlaceholder: 'Kraków',
+      country: 'Kraj',
+      website: 'Strona www',
       extra: 'Dodatkowe informacje',
       extraPlaceholder: 'Piętro, wejście, uwagi o parkingu…',
       capacity: 'Pojemność miejsca',

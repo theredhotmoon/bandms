@@ -25,6 +25,8 @@ const languages = computed(() => contactLanguageOptions(uiLang.value))
 
 const props = defineProps<{
   initial?: Author | null
+  /** Values for a new contact (Save as… from the assistant); ignored when editing. */
+  prefill?: Partial<AuthorPayload> | null
   loading?: boolean
   errors?: Record<string, string[]>
   pressReleases: PressReleaseSummary[]
@@ -67,17 +69,18 @@ const { isDirty, markClean } = useDirtyGuard(() => ({
 const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 watch(
-  () => props.initial,
-  (val) => {
-    form.first_name = val?.first_name ?? ''
-    form.last_name  = val?.last_name  ?? ''
-    form.email    = val?.email    ?? ''
+  () => [props.initial, props.prefill] as const,
+  ([val, pre]) => {
+    const p = val ? null : pre
+    form.first_name = val?.first_name ?? p?.first_name ?? ''
+    form.last_name  = val?.last_name  ?? p?.last_name ?? ''
+    form.email    = val?.email    ?? p?.email ?? ''
     form.whatsapp = val?.whatsapp ?? ''
     form.phone    = val?.phone    ?? ''
-    form.country  = val?.country  ?? ''
+    form.country  = val?.country  ?? p?.country ?? ''
     form.contact_language = val?.contact_language ?? ''
     form.notes    = val?.notes    ?? ''
-    socialLinks.value           = (val?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
+    socialLinks.value           = (val?.social_links ?? p?.social_links ?? []).map((l) => ({ platform: l.platform, url: l.url }))
     press_release_ids.value = val?.press_releases?.map((p) => p.id) ?? []
     concert_ids.value       = val?.concerts?.map((c) => c.id)       ?? []
     tour_ids.value          = val?.tours?.map((tour) => tour.id)           ?? []

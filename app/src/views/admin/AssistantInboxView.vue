@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
@@ -11,7 +12,7 @@ import { adminUrl } from '@/config/admin'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
-const { query, filter, change, setStatus } = useAssistantFindings()
+const { query, filter, change, setStatus, link } = useAssistantFindings()
 const { query: runs, run } = useCrawlRuns()
 
 async function runNow() {
@@ -20,6 +21,21 @@ async function runNow() {
     if (queued.length) toast.success(t('more.assistant.runs.queued', { n: queued.length }))
     else toast.info(t('more.assistant.runs.nothingToRun'))
   } catch (e) { reportSaveError(e, t('more.assistant.runs.runFailed')) }
+}
+
+// A record created by Save as… whose link then failed, per finding: the row
+// offers to link it again rather than create a second one.
+const pendingLinks = ref<Record<number, { type: 'venue' | 'band' | 'author'; id: number }>>({})
+
+async function linkSaved(id: number, saved: { type: 'venue' | 'band' | 'author'; id: number }) {
+  try {
+    await link.mutateAsync({ id, type: saved.type, recordId: saved.id })
+    delete pendingLinks.value[id]
+    toast.success(t('more.assistant.saveAs.linked'))
+  } catch (e) {
+    pendingLinks.value[id] = saved
+    reportSaveError(e, t('more.assistant.saveAs.linkFailed'))
+  }
 }
 
 async function updateStatus(id: number, status: 'new' | 'dismissed') {
@@ -59,9 +75,11 @@ async function updateStatus(id: number, status: 'new' | 'dismissed') {
             v-for="f in query.data.value.data"
             :key="f.id"
             :finding="f"
-            :busy="setStatus.isPending.value"
+            :busy="setStatus.isPending.value || link.isPending.value"
+            :pending-link="pendingLinks[f.id] ?? null"
             @dismiss="updateStatus(f.id, 'dismissed')"
             @restore="updateStatus(f.id, 'new')"
+            @saved="linkSaved(f.id, $event)"
           />
           <Pagination
             v-if="query.data.value.meta.last_page > 1"

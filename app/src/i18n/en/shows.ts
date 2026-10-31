@@ -207,6 +207,8 @@ export default {
       postcode: 'Postcode',
       city: 'City',
       cityPlaceholder: 'Kraków',
+      country: 'Country',
+      website: 'Website',
       extra: 'Additional info',
       extraPlaceholder: 'Floor, entrance, parking notes…',
       capacity: 'Venue capacity',

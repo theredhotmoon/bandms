@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { reactive, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, reactive, watch, ref, onMounted, onBeforeUnmount, nextTick, useId } from 'vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import type { Map as LMap, Marker } from 'leaflet'
 import SocialLinksEditor from '@/components/admin/forms/SocialLinksEditor.vue'
@@ -11,12 +11,20 @@ import type { Tag } from '@/types/tag'
 import type { SocialLinkPayload } from '@bandms/rider-core'
 import { basemapTileUrl, BASEMAP_ATTRIBUTION } from '@/utils/basemap'
 import { useTagLabel } from '@/composables/useTagLabel'
+import { useUiLang } from '@/composables/useUiLang'
+import { countryOptions } from '@/utils/contactCodes'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
+const { uiLang } = useUiLang()
+// Label ids per instance: a quick-add can open over a page that has its own form.
+const uid = useId()
+const countries = computed(() => countryOptions(uiLang.value))
 
 const props = defineProps<{
   initial?: Venue | null
+  /** Values for a new venue (Save as… from the assistant); ignored when editing. */
+  prefill?: Partial<VenuePayload> | null
   tags: Tag[]
   loading?: boolean
   errors?: Record<string, string[]>
@@ -30,6 +38,8 @@ const form = reactive({
   street_number:   '',
   city:            '',
   postcode:        '',
+  country:         '',
+  website:         '',
   additional_info: '',
   capacity:        '' as string,
   latitude:        '' as string,
@@ -177,11 +187,14 @@ const { isDirty, markClean } = useDirtyGuard(() => ({ ...form, socialLinks: soci
 const { cancel } = useModalGuard(isDirty, () => emit('cancel'))
 
 // ── Props sync ────────────────────────────────────────────────
-watch(() => props.initial, (val) => {
-  form.name            = val?.name            ?? ''
+watch(() => [props.initial, props.prefill] as const, ([val, pre]) => {
+  const p = val ? null : pre
+  form.name            = val?.name            ?? p?.name ?? ''
   form.street          = val?.street          ?? ''
   form.street_number   = val?.street_number   ?? ''
-  form.city            = val?.city            ?? ''
+  form.city            = val?.city            ?? p?.city ?? ''
+  form.country         = val?.country         ?? p?.country ?? ''
+  form.website         = val?.website         ?? p?.website ?? ''
   form.postcode        = val?.postcode        ?? ''
   form.additional_info = val?.additional_info ?? ''
   form.capacity        = val?.capacity != null ? String(val.capacity) : ''
@@ -209,6 +222,8 @@ function submit() {
     street_number:   form.street_number   || null,
     city:            form.city            || null,
     postcode:        form.postcode        || null,
+    country:         form.country         || null,
+    website:         form.website         || null,
     additional_info: form.additional_info || null,
     capacity:        form.capacity !== '' ? parseInt(form.capacity, 10) : null,
     latitude:        form.latitude  !== '' ? parseFloat(form.latitude)  : null,
@@ -252,6 +267,21 @@ onBeforeUnmount(() => { lmap?.remove(); lmap = null; marker = null })
         <label class="field-label">{{ $t('shows.venues.form.city') }}</label>
         <input v-model="form.city" class="field-input" :placeholder="$t('shows.venues.form.cityPlaceholder')" />
         <p v-if="errors?.city" class="field-error">{{ errors.city[0] }}</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" :for="`${uid}-country`">{{ $t('shows.venues.form.country') }}</label>
+        <select :id="`${uid}-country`" v-model="form.country" class="field-input">
+          <option value="">—</option><!-- i18n-ignore: empty choice -->
+          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.label }}</option>
+        </select>
+        <p v-if="errors?.country" class="field-error">{{ errors.country[0] }}</p>
+      </div>
+      <div>
+        <label class="field-label" :for="`${uid}-website`">{{ $t('shows.venues.form.website') }}</label>
+        <input :id="`${uid}-website`" v-model="form.website" type="url" class="field-input" placeholder="https://…" /><!-- i18n-ignore: URL scheme -->
+        <p v-if="errors?.website" class="field-error">{{ errors.website[0] }}</p>
       </div>
     </div>
     <div>

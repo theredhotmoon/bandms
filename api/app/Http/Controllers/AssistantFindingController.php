@@ -7,6 +7,10 @@ use App\Assistant\Crawler\CrawlDispatcher;
 use App\Assistant\Crawler\SourceRegistry;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
+use App\Models\Author;
+use App\Models\Band;
+use App\Models\Venue;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,6 +101,61 @@ class AssistantFindingController extends Controller
         return response()->json(['data' => $runs]);
     }
 
+    /**
+     * Save as…, second half: the record was created through its own endpoint
+     * (its validation, its 422s), and this links it. Until then the finding
+     * stays new — a failed create leaves nothing half-saved.
+     */
+    public function saved(Request $request, AssistantFinding $finding): JsonResponse
+    {
+        $models = ['venue' => Venue::class, 'band' => Band::class, 'author' => Author::class];
+        $v = $request->validate([
+            'type' => ['required', Rule::in(array_keys($models))],
+            'id'   => ['required', 'integer'],
+        ]);
+        $record = $models[$v['type']]::query()->find($v['id']);
+        if (!$record) {
+            return response()->json(['message' => 'No such record.', 'errors' => ['id' => ['No such record.']]], 422);
+        }
+
+        // Locked, so two clicks (or two tabs) cannot both link the same finding.
+        $refused = DB::transaction(function () use ($finding, $record, $v) {
+            $locked = AssistantFinding::query()->lockForUpdate()->findOrFail($finding->id);
+            if ($locked->kind !== 'lead' || $locked->status !== 'new') {
+                return 'Only a new lead can be saved.';
+            }
+            // Where it came from — unless the band already said.
+            if (($record->source ?? null) === null) {
+                $record->update(['source' => "assistant:{$finding->id}"]);
+            }
+            $locked->update(['status' => 'saved', 'saved_type' => $v['type'], 'saved_id' => $record->id]);
+
+            return null;
+        });
+        if ($refused !== null) {
+            return response()->json(['message' => $refused, 'errors' => ['id' => [$refused]]], 422);
+        }
+
+        return response()->json(['data' => $this->format($finding->fresh())]);
+    }
+
+    /** The dashboard widget: new findings per kind, the last finished run, failing sources. */
+    public function summary(): JsonResponse
+    {
+        // What is worth a look: new, and either not triaged yet or kept by
+        // triage (known names, duplicates and irrelevant ones score 0).
+        $counts = AssistantFinding::query()->status('new')
+            ->where(fn ($q) => $q->whereNull('triaged_at')->orWhere('score', '>', 0))
+            ->selectRaw('kind, count(*) as n')->groupBy('kind')->pluck('n', 'kind');
+        $latest = AssistantRun::query()->whereIn('id', AssistantRun::query()->selectRaw('max(id)')->groupBy('source'));
+
+        return response()->json(['data' => [
+            'new'             => collect(AssistantFinding::KINDS)->sort()->mapWithKeys(fn ($k) => [$k => (int) ($counts[$k] ?? 0)])->all(),
+            'last_run_at'     => AssistantRun::query()->max('finished_at'),
+            'failing_sources' => (clone $latest)->where('status', 'failed')->count(),
+        ]]);
+    }
+
     /** Run now: queue the crawl (one source, or every one that may run). */
     public function run(Request $request, SourceRegistry $registry, CrawlDispatcher $dispatcher): JsonResponse
     {
@@ -132,6 +191,11 @@ class AssistantFindingController extends Controller
             'score'      => $f->score,
             'status'     => $f->status,
             'summary'    => $f->triage['summary'] ?? null,
+            // What triage knew: a record the band already has, the same page
+            // found earlier, and contacts read off the finding (Save as… prefill).
+            'known'        => $f->triage['known'] ?? null,
+            'duplicate_of' => $f->triage['duplicate_of'] ?? null,
+            'contacts'     => $f->triage['contacts'] ?? null,
             'saved_type' => $f->saved_type,
             'saved_id'   => $f->saved_id,
             'found_at'   => $f->found_at,

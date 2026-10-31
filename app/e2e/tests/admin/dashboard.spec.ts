@@ -8,6 +8,21 @@ test.describe('Admin Dashboard', () => {
     await page.waitForLoadState('networkidle')
   })
 
+  // The assistant widget's numbers are served through page.route: the real
+  // inbox fills only from a nightly crawl, which never runs in E2E.
+  test('the assistant widget shows new leads and links to the inbox', async ({ page }) => {
+    await page.route(/\/api\/admin\/assistant\/summary$/, route => route.fulfill({ json: { data: {
+      new: { lead: 4, mention: 2, news: 0 }, last_run_at: '2026-10-31T02:10:00Z', failing_sources: 1,
+    } } }))
+    await page.goto('/admin')
+
+    const widget = page.getByTestId('assistant-widget')
+    await expect(widget.getByTestId('assistant-widget-leads')).toHaveText('4 new leads')
+    await expect(widget).toContainText('1 source(s) failing')
+    await widget.getByRole('link', { name: /open the inbox/i }).click()
+    await expect(page).toHaveURL(/\/admin\/assistant$/)
+  })
+
   test('dashboard loads with welcome heading', async ({ page }) => {
     await expect(page.locator('h1')).toContainText('Welcome back')
   })

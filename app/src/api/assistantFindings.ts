@@ -1,4 +1,5 @@
 import type {
+  AssistantSummary,
   CrawlDispatch,
   CrawlRun,
   CrawlerSettings,
@@ -61,4 +62,20 @@ export async function runCrawl(token: string, source?: string): Promise<CrawlDis
     body: JSON.stringify(source ? { source } : {}),
   })
   return (await handleResponse<{ data: CrawlDispatch }>(res)).data
+}
+
+/** Save as…, second half: link the finding to the record just created from it. */
+export async function linkSavedFinding(token: string, id: number, type: 'venue' | 'band' | 'author', recordId: number): Promise<Finding> {
+  assertSafeId(id, 'finding id')
+  const res = await fetch(`${API_BASE}/api/admin/assistant/findings/${id}/saved`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ type, id: recordId }),
+  })
+  return (await handleResponse<{ data: Finding }>(res)).data
+}
+
+export async function fetchAssistantSummary(token: string): Promise<AssistantSummary> {
+  const res = await fetch(`${API_BASE}/api/admin/assistant/summary`, { headers: authHeaders(token) })
+  return (await handleResponse<{ data: AssistantSummary }>(res)).data
 }

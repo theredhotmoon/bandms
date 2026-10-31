@@ -46,6 +46,16 @@ export default {
     deleted: 'v{version} usunięta',
     deleteFailed: 'Nie udało się usunąć',
   },
+  assistant: {
+    title: 'Asystent',
+    leads: 'nowe kontakty: {n}',
+    mentions: 'wzmianki: {n}',
+    news: 'newsy: {n}',
+    lastRun: 'Ostatni przebieg {when}',
+    never: 'Wyszukiwanie jeszcze nie ruszyło',
+    failing: 'źródła z błędem: {n}',
+    open: 'Otwórz wyniki',
+  },
   career: {
     title: 'Poziom kariery zespołu',
     updateFailed: 'Nie udało się zaktualizować poziomu kariery',
