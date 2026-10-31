@@ -176,13 +176,16 @@ it('skips dismissed and already-triaged findings', function () {
     expect($this->model->lastStructured)->toBeNull();
 });
 
-it('is queued by assistant:triage only when a text model is configured', function () {
+it('is queued by assistant:triage only when a real text model is bound', function () {
     Queue::fake();
-    config(['assistant.text_model' => 'none']);
+    // A driver named without its key resolves to the null model: queuing
+    // triage then would fail every finding until it is set aside.
+    config(['assistant.text_model' => 'anthropic']);
+    app()->instance(TextModel::class, new \App\Assistant\Text\NullTextModel());
     $this->artisan('assistant:triage')->assertSuccessful();
     Queue::assertNotPushed(TriageFindingsJob::class);
 
-    config(['assistant.text_model' => 'anthropic']);
+    app()->instance(TextModel::class, $this->model);
     $this->artisan('assistant:triage')->assertSuccessful();
     Queue::assertPushed(TriageFindingsJob::class);
 });

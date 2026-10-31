@@ -415,6 +415,26 @@ underneath, which is inert until the stack change reaches the DOM.
 
 ---
 
+### The assistant's inbox and crawler settings
+
+*More → Assistant* (`AssistantInboxView`) lists what the crawler found:
+`FindingsFilters` (kind tabs, country chips — both counted within the
+other filter, so the numbers match the list), `FindingRow` (Open only for an
+http(s) URL; `SaveAsMenu` on new leads), `RunStatusBar` (last run per
+source, today's remaining cap, the failing banner, Run now). *Crawler
+settings* (`AssistantSettingsView` → `CrawlerSettingsForm`) is
+superadmin-only on the server; an admin gets a sentence, not a form.
+
+**Save as… never writes the finding until the record exists.** It opens the
+usual quick-add (`VenueQuickAdd`, `BandQuickAdd`, `AuthorQuickAdd` with
+`hide-button` + their exposed `open()`, prefilled through each form's
+`prefill` prop — ignored when editing), and only on `created` calls
+`POST /findings/{id}/saved`. A failed link keeps the record in the view's
+`pendingLinks`, and the row offers *Mark as saved* instead of a second
+create. Prefill logic is `utils/findingPrefill.ts` (spec'd): a website comes
+from triage's contacts or a Places result's own site, never a Maps page or
+an article.
+
 ## Security rules
 
 ### No `v-html` with untrusted content

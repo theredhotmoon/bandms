@@ -127,6 +127,8 @@ services:
       # back to http://localhost:5173, and the links in outgoing email
       # (config/newsletter.php). Set it to the real public domain.
       FRONTEND_URL: "${FRONTEND_URL:-${APP_URL}}"
+      # The assistant digest's inbox link follows the admin panel's segment.
+      ADMIN_PATH: "${ADMIN_PATH:-admin}"
 
       # A SEPARATE variable read only by config/services.php, which builds the
       # Stripe success_url / cancel_url. Its fallback is http://localhost:5173,
