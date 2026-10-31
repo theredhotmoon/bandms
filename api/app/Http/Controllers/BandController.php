@@ -73,6 +73,9 @@ class BandController extends Controller
         $validated = $request->validate([
             'name'         => $name,
             'website'      => ['nullable', 'url', 'max:500'],
+            // The table holds other bands, promoters and festivals alike.
+            'kind'         => ['sometimes', Rule::in(['band', 'promoter', 'festival'])],
+            'country'      => ['nullable', 'string', Rule::in(\App\Support\ContactCodes::COUNTRIES)],
             'author_ids'   => ['nullable', 'array'],
             'author_ids.*' => ['integer', 'exists:authors,id'],
         ]);

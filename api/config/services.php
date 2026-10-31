@@ -43,6 +43,26 @@ return [
         'app_id'     => env('FACEBOOK_APP_ID'),
         'app_secret' => env('FACEBOOK_APP_SECRET'),
         'page_id'    => env('FACEBOOK_PAGE_ID'),
+        // The crawler's own-page mentions (`/{page}/tagged`, IG `/tags`) need a
+        // long-lived PAGE token minted by a page admin — not the app token.
+        'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
+        'instagram_user_id' => env('INSTAGRAM_USER_ID'),
+    ],
+
+    // Admin assistant — the crawler. One Cloud project: Programmable Search
+    // (engine set to "search the entire web") and Places API (New). Places
+    // needs a billing account even for its free tier (€5 budget alert).
+    'google' => [
+        'api_key' => env('GOOGLE_API_KEY'),
+        'cse_id'  => env('GOOGLE_CSE_ID'),
+    ],
+
+    // Optional: a Reddit "script" app; unauthenticated access is throttled and
+    // often blocked from datacenter IPs.
+    'reddit' => [
+        'client_id'     => env('REDDIT_CLIENT_ID'),
+        'client_secret' => env('REDDIT_CLIENT_SECRET'),
+        'username'      => env('REDDIT_USERNAME'),
     ],
 
     'setlistfm' => [

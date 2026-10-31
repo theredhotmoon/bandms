@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\CrawlerSettingsController;
+use App\Http\Controllers\AssistantFindingController;
 use App\Http\Controllers\ClipController;
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
@@ -323,6 +325,15 @@ Route::middleware('auth:api')->group(function () {
     // ── Admin-only routes ───────────────────────────────────────────────────
 
     Route::middleware('role:admin')->group(function () {
+
+        // The assistant's crawler — settings are superadmin-only (checked in
+        // the controller): they decide how much quota and money is spent.
+        Route::get('/admin/assistant/settings', [CrawlerSettingsController::class, 'show'])->name('api.admin.assistant.settings.show');
+        Route::put('/admin/assistant/settings', [CrawlerSettingsController::class, 'update'])->name('api.admin.assistant.settings.update');
+        // The inbox: any admin may read and triage it by hand.
+        Route::get('/admin/assistant/findings', [AssistantFindingController::class, 'index'])->name('api.admin.assistant.findings.index');
+        Route::patch('/admin/assistant/findings/{finding}', [AssistantFindingController::class, 'update'])->name('api.admin.assistant.findings.update');
+        Route::get('/admin/assistant/runs', [AssistantFindingController::class, 'runs'])->name('api.admin.assistant.runs');
 
         // User management (admin creates/manages all user accounts)
         Route::get('/users', [UserController::class, 'index'])->name('api.users.index');

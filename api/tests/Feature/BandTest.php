@@ -337,3 +337,21 @@ describe('band contact people', function () {
           ->assertJsonCount(1, 'data.contacts');
     });
 });
+
+describe('band kind and country (crawler leads)', function () {
+    it('saves a promoter or festival with a country', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/bands', ['name' => 'Ska Fest Mexico', 'kind' => 'festival', 'country' => 'MX'])
+            ->assertCreated()
+            ->assertJsonPath('data.kind', 'festival')
+            ->assertJsonPath('data.country', 'MX');
+    });
+
+    it('defaults to a band and rejects an unknown kind', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/bands', ['name' => 'Plain Band'])->assertCreated()->assertJsonPath('data.kind', 'band');
+        $this->postJson('/api/bands', ['name' => 'Odd One', 'kind' => 'circus'])->assertStatus(422);
+    });
+});

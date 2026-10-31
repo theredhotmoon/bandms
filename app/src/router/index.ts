@@ -183,6 +183,18 @@ const router = createRouter({
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
+      path: adminUrl('assistant'),
+      name: 'admin-assistant',
+      component: () => import('@/views/admin/AssistantInboxView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
+      path: adminUrl('assistant/settings'),
+      name: 'admin-assistant-settings',
+      component: () => import('@/views/admin/AssistantSettingsView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
       path: adminUrl('setlists'),
       name: 'admin-setlists',
       component: () => import('@/views/admin/SetlistsAdminView.vue'),

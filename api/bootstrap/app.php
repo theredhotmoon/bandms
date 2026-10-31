@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,6 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // The assistant crawler on the band's clock: crawl 03:00, triage 03:40, digest
+    // Monday 08:00. Here and not in routes/console.php: this callback runs only
+    // when the schedule is resolved, while console.php runs on every boot, and
+    // resolving the schedule there on each test's boot exhausted the suite's
+    // 256 MB.
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command('assistant:crawl')->dailyAt('03:00')->timezone('Europe/Warsaw')->withoutOverlapping()
+            ->when(fn () => (bool) config('assistant.crawler_scheduled'));
+        $schedule->command('assistant:triage')->dailyAt('03:40')->timezone('Europe/Warsaw')->withoutOverlapping();
+        $schedule->command('assistant:digest')->weeklyOn(1, '08:00')->timezone('Europe/Warsaw')->withoutOverlapping();
+    })
     ->withMiddleware(function (Middleware $middleware) {
         // Every request arrives through Caddy on a private Docker network, and
         // no other container publishes a port, so the proxy chain is trusted by

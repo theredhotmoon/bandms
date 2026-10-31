@@ -12,7 +12,7 @@ class Venue extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'street', 'street_number', 'city', 'postcode', 'additional_info', 'capacity', 'latitude', 'longitude'];
+    protected $fillable = ['name', 'street', 'street_number', 'city', 'postcode', 'country', 'website', 'source', 'additional_info', 'capacity', 'latitude', 'longitude'];
 
     protected function casts(): array
     {

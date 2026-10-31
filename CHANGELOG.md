@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (admin assistant: the crawler, slice 1)
+
+### Added
+- **An Assistant inbox** (*More → Assistant*): every night at 03:00 the crawler searches Google and YouTube for mentions of the band, ska news and leads — venues, promoters, festivals, bands — in each country you pick, in that country's language. The inbox groups them by kind (Leads, Mentions, News) and country, with counts; open a result or dismiss it (dismissed ones can be restored). A bar on top shows each source's last run, including when it hit its daily limit.
+- **Crawler settings** (superadmins only): search phrases, countries and their cities, each source on or off with its daily query cap (held to the provider's free tier, so a typo cannot open a bill), RSS feeds and the weekly digest's recipients. A source with no API key on the server says so.
+- **Venues and bands carry a country** (and venues a website; bands a kind — band, promoter or festival), ready for *Save as…* in a later slice.
+- New keys, all optional: `GOOGLE_API_KEY`, `GOOGLE_CSE_ID`, `YOUTUBE_API_KEY` now; `SETLISTFM_API_KEY`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `REDDIT_*` for the sources arriving next. The backend container now also runs Laravel's scheduler.
+
 ## [Unreleased] — 2026-10-30 (Enhance: keep your headings, page-copy examples)
 
 ### Fixed

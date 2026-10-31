@@ -54,6 +54,7 @@ export default {
     tags: 'Tagi',
     instruments: 'Instrumenty',
     users: 'Użytkownicy',
+    assistant: 'Asystent',
     websiteModules: 'Moduły strony',
     faqs: 'FAQ',
     heroImages: 'Zdjęcia nagłówkowe',

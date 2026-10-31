@@ -248,3 +248,20 @@ describe('venue social links', function () {
         $this->assertDatabaseHas('social_links', ['venue_id' => $id, 'url' => 'https://instagram.com/hall',    'position' => 1]);
     });
 });
+
+describe('venue country and website (crawler leads)', function () {
+    it('saves and returns a country and website', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', ['name' => 'Club Ska Hamburg', 'country' => 'DE', 'website' => 'https://club.example'])
+            ->assertCreated()
+            ->assertJsonPath('data.country', 'DE')
+            ->assertJsonPath('data.website', 'https://club.example');
+    });
+
+    it('rejects a country code it does not know', function () {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/venues', ['name' => 'Nowhere Club', 'country' => 'XX'])->assertStatus(422);
+    });
+});
