@@ -11,7 +11,7 @@ import type { CrawlerSettings } from '@/types/assistantCrawler'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
-const { query, save } = useCrawlerSettings()
+const { query, save, searchArtists } = useCrawlerSettings()
 
 // The settings decide how much of each provider's quota is spent, so the
 // server keeps them to superadmins; an admin who is not one gets a 403.
@@ -35,7 +35,7 @@ async function handleSave(settings: CrawlerSettings) {
       <p v-if="query.isPending.value" style="color:var(--c-94a3b8);">{{ $t('common.state.loading') }}</p>
       <p v-else-if="forbidden" data-testid="crawler-settings-forbidden" style="color:var(--c-94a3b8);">{{ $t('more.assistant.settings.forbidden') }}</p>
       <p v-else-if="query.isError.value" style="color:var(--c-f87171);">{{ $t('more.assistant.settings.loadFailed') }}</p>
-      <CrawlerSettingsForm v-else-if="query.data.value" :initial="query.data.value" :saving="save.isPending.value" @save="handleSave" />
+      <CrawlerSettingsForm v-else-if="query.data.value" :initial="query.data.value" :saving="save.isPending.value" :search-artists="searchArtists" @save="handleSave" />
     </div>
   </AdminLayout>
 </template>

@@ -335,6 +335,9 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/admin/assistant/findings', [AssistantFindingController::class, 'index'])->name('api.admin.assistant.findings.index');
         Route::patch('/admin/assistant/findings/{finding}', [AssistantFindingController::class, 'update'])->name('api.admin.assistant.findings.update');
         Route::get('/admin/assistant/runs', [AssistantFindingController::class, 'runs'])->name('api.admin.assistant.runs');
+        Route::post('/admin/assistant/run', [AssistantFindingController::class, 'run'])
+            ->middleware('throttle:2,1,assistant-run')
+            ->name('api.admin.assistant.run');
 
         // User management (admin creates/manages all user accounts)
         Route::get('/users', [UserController::class, 'index'])->name('api.users.index');

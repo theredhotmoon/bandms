@@ -102,3 +102,35 @@ test('links only http(s) results', async ({ page }) => {
   await expect(page.locator('[data-finding-id="1"] a')).toHaveAttribute('href', 'https://minoga.example/koncerty')
   await expect(page.locator('[data-finding-id="3"] a')).toHaveCount(0)
 })
+
+test('Run now queues the crawl and the bar shows the new runs', async ({ page }) => {
+  await serveInbox(page)
+  let ran = false
+  // Registered after serveInbox, so it answers first (Playwright tries the newest route first).
+  await page.route(/\/api\/admin\/assistant\/runs$/, route => route.fulfill({ json: { data: ran
+    ? [{ source: 'google_cse', status: 'ok', started_at: null, finished_at: null, queries: 12, new: 7, error: null, remaining: 68, failing_runs: 0 }]
+    : [] } }))
+  await page.route(/\/api\/admin\/assistant\/run$/, route => {
+    ran = true
+    return route.fulfill({ status: 202, json: { data: { queued: ['google_cse'], skipped: {} } } })
+  })
+  await page.goto('/admin/assistant')
+  await expect(page.getByTestId('run-status')).toContainText(/not run yet/i)
+
+  await page.getByTestId('run-now').click()
+
+  await expect(page.getByTestId('run-status').locator('[data-source="google_cse"]')).toContainText('68')
+  await expect(page.getByText(/crawl started/i)).toBeVisible()
+})
+
+test('a source failing three runs in a row gets a banner with its error', async ({ page }) => {
+  await serveInbox(page)
+  await page.route(/\/api\/admin\/assistant\/runs$/, route => route.fulfill({ json: { data: [
+    { source: 'meta_own', status: 'failed', started_at: null, finished_at: null, queries: 1, new: 0,
+      error: 'Facebook Page token expired — mint a new Page access token', remaining: 4, failing_runs: 3 },
+  ] } }))
+  await page.goto('/admin/assistant')
+
+  await expect(page.getByTestId('run-failing-banner')).toContainText(/3 runs in a row/i)
+  await expect(page.getByTestId('run-status')).toContainText('token expired')
+})

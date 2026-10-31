@@ -5,6 +5,11 @@ namespace App\Providers;
 use Anthropic\Client;
 use App\Assistant\Crawler\SourceRegistry;
 use App\Assistant\Crawler\Sources\GoogleCseSource;
+use App\Assistant\Crawler\Sources\MetaOwnSource;
+use App\Assistant\Crawler\Sources\PlacesSource;
+use App\Assistant\Crawler\Sources\RedditSource;
+use App\Assistant\Crawler\Sources\RssSource;
+use App\Assistant\Crawler\Sources\SetlistFmSource;
 use App\Assistant\Crawler\Sources\YouTubeSource;
 use App\Assistant\Text\AnthropicTextModel;
 use App\Assistant\Text\NullTextModel;
@@ -31,6 +36,11 @@ class AssistantServiceProvider extends ServiceProvider
         $this->app->singleton(SourceRegistry::class, fn () => new SourceRegistry([
             new GoogleCseSource(),
             new YouTubeSource(),
+            new SetlistFmSource(),
+            new PlacesSource(),
+            new MetaOwnSource(),
+            new RedditSource(),
+            new RssSource(),
         ]));
 
         $this->app->singleton(Translator::class, function (): Translator {

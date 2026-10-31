@@ -3,11 +3,17 @@ import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiLang } from '@/composables/useUiLang'
 import type { CrawlerSettings, CrawlerSettingsResponse, SourceSettings } from '@/types/assistantCrawler'
+import type { SetlistFmArtist } from '@/types/setlist'
+import SiblingBandPicker from './SiblingBandPicker.vue'
 import { countryName } from '@/utils/contactCodes'
 import { parseList } from '@/utils/crawlerSettings'
 import { sourceName } from '@/utils/crawlerSourceNames'
 
-const props = defineProps<{ initial: CrawlerSettingsResponse; saving: boolean }>()
+const props = defineProps<{
+  initial: CrawlerSettingsResponse
+  saving: boolean
+  searchArtists: (q: string) => Promise<SetlistFmArtist[]>
+}>()
 const emit = defineEmits<{ save: [settings: CrawlerSettings] }>()
 
 const { t } = useI18n()
@@ -21,6 +27,7 @@ const draft = reactive({
   countries: [] as string[],
   cities: {} as Record<string, string>,
   sources: {} as Record<string, SourceSettings>,
+  siblings: [] as SetlistFmArtist[],
 })
 
 function load(r: CrawlerSettingsResponse): void {
@@ -30,6 +37,7 @@ function load(r: CrawlerSettingsResponse): void {
   draft.digestTo = s.digest_to.join('\n')
   draft.countries = [...s.countries]
   draft.cities = Object.fromEntries(Object.entries(s.cities_by_country).map(([c, list]) => [c, list.join('\n')]))
+  draft.siblings = s.sibling_bands.map(b => ({ ...b }))
   draft.sources = Object.fromEntries(Object.entries(s.sources).map(([k, v]) => [k, { ...v }]))
 }
 watch(() => props.initial, load, { immediate: true })
@@ -47,6 +55,7 @@ function submit(): void {
     countries: draft.countries,
     cities_by_country: Object.fromEntries(draft.countries.map(c => [c, parseList(draft.cities[c] ?? '', { lines: true })])),
     sources: draft.sources,
+    sibling_bands: draft.siblings,
     rss_feeds: parseList(draft.rssFeeds, { lines: true }),
     digest_to: parseList(draft.digestTo),
   })
@@ -88,6 +97,9 @@ function submit(): void {
         </label>
         <span v-if="!src.available" class="cs-soon">{{ $t('more.assistant.settings.notYet') }}</span>
         <span v-else-if="!src.hasKey" class="cs-nokey">{{ $t('more.assistant.settings.noKey') }}</span>
+        <span v-if="src.lastRun?.status === 'failed' && src.lastRun.error" class="cs-lasterror" data-testid="source-last-error">
+          {{ src.lastRun.error }}
+        </span>
         <label v-if="src.available" class="cs-cap">
           {{ $t('more.assistant.settings.capDay') }}
           <input v-model.number="draft.sources[src.key].cap_day" type="number" min="0" class="field-input cs-cap-input" />
@@ -97,6 +109,12 @@ function submit(): void {
           <input v-model.number="draft.sources[src.key].cap_month" type="number" min="0" class="field-input cs-cap-input" />
         </label>
       </div>
+    </section>
+
+    <section class="cs-section">
+      <h2 class="section-title">{{ $t('more.assistant.settings.siblings') }}</h2>
+      <p class="field-hint">{{ $t('more.assistant.settings.siblingsHelp') }}</p>
+      <SiblingBandPicker v-model="draft.siblings" :search="searchArtists" />
     </section>
 
     <section class="cs-section">
@@ -126,6 +144,7 @@ function submit(): void {
 .cs-source { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; padding: 0.4rem 0; }
 .cs-source-name { display: inline-flex; align-items: center; gap: 0.4rem; min-width: 12rem; color: var(--c-e2e8f0); font-size: var(--fs-sm); }
 .cs-nokey { font-size: var(--fs-xs); color: var(--c-f59e0b); }
+.cs-lasterror { flex-basis: 100%; font-size: var(--fs-xs); color: var(--c-f87171); overflow-wrap: anywhere; }
 .cs-soon { font-size: var(--fs-xs); color: var(--c-94a3b8); }
 .cs-cap { display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--fs-xs); color: var(--c-94a3b8); }
 .cs-cap-input { width: 6rem; }

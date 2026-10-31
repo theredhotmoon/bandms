@@ -12,7 +12,15 @@ import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
 const { query, filter, change, setStatus } = useAssistantFindings()
-const runs = useCrawlRuns()
+const { query: runs, run } = useCrawlRuns()
+
+async function runNow() {
+  try {
+    const { queued } = await run.mutateAsync()
+    if (queued.length) toast.success(t('more.assistant.runs.queued', { n: queued.length }))
+    else toast.info(t('more.assistant.runs.nothingToRun'))
+  } catch (e) { reportSaveError(e, t('more.assistant.runs.runFailed')) }
+}
 
 async function updateStatus(id: number, status: 'new' | 'dismissed') {
   try {
@@ -31,7 +39,7 @@ async function updateStatus(id: number, status: 'new' | 'dismissed') {
       </div>
       <p class="mb-4 text-sm" style="color:var(--c-94a3b8);">{{ $t('more.assistant.lead') }}</p>
 
-      <RunStatusBar :runs="runs.data.value ?? []" />
+      <RunStatusBar :runs="runs.data.value ?? []" :running="run.isPending.value" @run="runNow" />
 
       <FindingsFilters
         :filter="filter"
