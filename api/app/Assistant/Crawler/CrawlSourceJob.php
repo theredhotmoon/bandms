@@ -78,9 +78,10 @@ final class CrawlSourceJob implements ShouldQueue
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('assistant.crawl.failed', ['source' => $this->sourceKey, 'error' => $e->getMessage()]);
+            // Redacted: a connection error quotes the request URL, credentials and all.
+            Log::warning('assistant.crawl.failed', ['source' => $this->sourceKey, 'error' => Redact::message($e->getMessage())]);
             $run->status = 'failed';
-            $run->error  = mb_substr($e::class . ': ' . $e->getMessage(), 0, 1000);
+            $run->error  = self::errorText($e);
         }
 
         $run->fill(['queries' => $queries, 'found' => $found, 'new' => $new, 'finished_at' => now()])->save();
@@ -99,8 +100,14 @@ final class CrawlSourceJob implements ShouldQueue
             ->update([
                 'status'      => 'failed',
                 'finished_at' => now(),
-                'error'       => mb_substr($e::class . ': ' . $e->getMessage(), 0, 1000),
+                'error'       => self::errorText($e),
             ]);
+    }
+
+    /** What assistant_runs.error shows the admin — never a credential. */
+    private static function errorText(\Throwable $e): string
+    {
+        return mb_substr($e::class . ': ' . Redact::message($e->getMessage()), 0, 1000);
     }
 
     /** @return bool whether the finding is new */
