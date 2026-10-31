@@ -55,6 +55,7 @@ export default {
     instruments: 'Instruments',
     users: 'Users',
     assistant: 'Assistant',
+    activity: 'Activity log',
     websiteModules: 'Website Modules',
     faqs: 'FAQ',
     heroImages: 'Hero Images',

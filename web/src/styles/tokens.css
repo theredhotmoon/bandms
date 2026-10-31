@@ -78,4 +78,19 @@
    * Concerts and About were built to. Backgrounds stay full-bleed; see
    * `.page-content` in base.css. */
   --page-max: 1200px;
+
+  /* Data colours for charts — the line-up timeline colours each instrument
+   * with the next of these. They must stay distinct from one another rather
+   * than follow the brand, which is why even the black-and-white base defines
+   * real hues; a theme may retune them. --chart-none is a member with no
+   * instrument on file. */
+  --chart-1: #d62728;
+  --chart-2: #2ca02c;
+  --chart-3: #1f77b4;
+  --chart-4: #9467bd;
+  --chart-5: #ff7f0e;
+  --chart-6: #17becf;
+  --chart-7: #bcbd22;
+  --chart-8: #e377c2;
+  --chart-none: #9a9a9a;
 }

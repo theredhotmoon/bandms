@@ -1,0 +1,223 @@
+---
+/**
+ * The line-up timeline, after the EasyTimeline chart on a Wikipedia band
+ * article: a row per member, a bar per tenure in their instrument's colour,
+ * thin stripes for what else they play, a year grid, and a vertical line per
+ * album (solid) and EP (dashed). Static HTML — positions are percentages from
+ * lib/memberTimeline.ts, hover text is a `title`, and a visually hidden list
+ * carries the same facts for screen readers.
+ */
+import type { MemberTimeline } from '@/lib/memberTimeline'
+
+interface Props {
+  timeline: MemberTimeline
+  copy: { present: string; albums: string; eps: string; other: string; label: string }
+}
+const { timeline, copy } = Astro.props
+
+const barColour = (colour: number | null) => colour === null ? 'var(--chart-none)' : `var(--chart-${colour})`
+const years = (row: { fromYear: number; toYear: number | null; endUnknown: boolean }) =>
+  `${row.fromYear} – ${row.endUnknown ? '?' : row.toYear ?? copy.present}`
+
+/** Stripe bands inside a bar: one centred, or two stacked. */
+const STRIPE_BANDS: Record<number, [number, number][]> = {
+  1: [[36, 28]],
+  2: [[18, 22], [60, 22]],
+}
+
+const hasNoInstrument = timeline.rows.some(r => r.colour === null)
+const hasAlbums = timeline.releases.some(r => r.kind === 'album')
+const hasEps = timeline.releases.some(r => r.kind === 'ep')
+---
+
+<figure class="mt" data-testid="members-timeline">
+  <div class="mt-scroll">
+    <div class="mt-chart" role="img" aria-label={copy.label}>
+      <div class="mt-plot-overlay" aria-hidden="true">
+        {timeline.ticks.map(t => <span class="mt-grid" style={`left:${t.left}%`} />)}
+        {timeline.releases.map(r => (
+          <span
+            class:list={['mt-release', `mt-release--${r.kind}`]}
+            style={`left:${r.left}%`}
+            title={`${r.title} (${r.year})`}
+            data-testid="timeline-release"
+            data-kind={r.kind}
+          />
+        ))}
+      </div>
+
+      {timeline.rows.map(row => (
+        <div class="mt-row" data-testid="timeline-row">
+          <div class:list={['mt-name', { 'mt-name--former': !row.current }]}>{row.name}</div>
+          <div class="mt-track">
+            <span
+              class="mt-bar"
+              style={`left:${row.left}%;width:${row.width}%;--bar:${barColour(row.colour)}`}
+              title={`${row.name} · ${row.instruments.join(', ') || copy.other} · ${years(row)}`}
+              data-testid="timeline-bar"
+            >
+              {row.stripes.map((colour, i) => {
+                const [top, height] = STRIPE_BANDS[row.stripes.length][i]
+                return <span class="mt-stripe" style={`top:${top}%;height:${height}%;--stripe:${barColour(colour)}`} />
+              })}
+            </span>
+          </div>
+        </div>
+      ))}
+
+      <div class="mt-row mt-axis" aria-hidden="true">
+        <div class="mt-name" />
+        <div class="mt-track mt-track--axis">
+          {timeline.ticks.map(t => <span class:list={['mt-tick', { 'mt-tick--edge': t.left >= 100 }]} style={`left:${t.left}%`}>{t.year}</span>)}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figcaption class="mt-legend" data-testid="timeline-legend">
+    {timeline.legend.map(l => (
+      <span class="mt-key"><span class="mt-swatch" style={`--bar:${barColour(l.colour)}`} />{l.name}</span>
+    ))}
+    {hasNoInstrument && <span class="mt-key"><span class="mt-swatch" style={`--bar:${barColour(null)}`} />{copy.other}</span>}
+    {hasAlbums && <span class="mt-key"><span class="mt-line" />{copy.albums}</span>}
+    {hasEps && <span class="mt-key"><span class="mt-line mt-line--ep" />{copy.eps}</span>}
+  </figcaption>
+
+  <ul class="sr-only">
+    {timeline.rows.map(row => (
+      <li>{row.name}: {row.instruments.join(', ') || copy.other}, {years(row)}</li>
+    ))}
+    {timeline.releases.map(r => <li>{r.title} ({r.year})</li>)}
+  </ul>
+</figure>
+
+<style>
+  .mt {
+    --mt-label: 11rem;
+    --mt-gap: 0.75rem;
+    --mt-row: 1.5rem;
+    /* A row is the bar plus breathing room; rows touch, so the sticky name
+     * column covers its whole height and no gridline shows between names. */
+    --mt-row-outer: 1.9rem;
+    margin: 0;
+  }
+
+  .mt-scroll { overflow-x: auto; }
+
+  .mt-chart {
+    position: relative;
+    min-width: 40rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mt-row {
+    display: grid;
+    grid-template-columns: var(--mt-label) 1fr;
+    gap: var(--mt-gap);
+    align-items: center;
+    min-height: var(--mt-row-outer);
+  }
+
+  /* Sticky, so a phone scrolling through the years keeps the names. */
+  .mt-name {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    align-self: stretch;
+    line-height: var(--mt-row-outer);
+    box-shadow: -2px 0 0 var(--color-page);
+    background: var(--color-page);
+    text-align: right;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mt-name--former { color: var(--color-muted); font-weight: 400; }
+
+  .mt-track { position: relative; height: var(--mt-row); }
+
+  .mt-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--bar);
+    min-width: 3px;
+  }
+
+  .mt-stripe {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--stripe);
+  }
+
+  /* Gridlines and release lines sit over the plot column only. */
+  .mt-plot-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 1.5rem;
+    left: calc(var(--mt-label) + var(--mt-gap));
+    right: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .mt-grid {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* Drawn left of its year, so the last one stays inside the chart. */
+    margin-left: -1px;
+    border-left: 1px solid var(--color-border);
+    opacity: 0.15;
+  }
+  .mt-release {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    border-left: 2px solid var(--color-body);
+    /* A hover target for the release's title, wider than the 2px line. */
+    pointer-events: auto;
+    width: 6px;
+    margin-left: -1px;
+  }
+  .mt-release--ep { border-left-style: dashed; border-left-color: var(--color-muted); }
+
+  .mt-axis { min-height: 1.25rem; }
+  .mt-track--axis { height: 1.25rem; }
+  .mt-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* A year on the right edge, centred, would overflow the chart and put a
+   * scrollbar under it. Only that one: with a 2- or 5-year step the last
+   * tick usually sits inside the chart and stays centred on its line. */
+  .mt-tick--edge { transform: translateX(-100%); }
+
+  .mt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 1rem;
+    padding-left: calc(var(--mt-label) + var(--mt-gap));
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .mt-key { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .mt-swatch { width: 0.9rem; height: 0.9rem; background: var(--bar); }
+  .mt-line { width: 0; height: 0.9rem; border-left: 2px solid var(--color-body); }
+  .mt-line--ep { border-left-style: dashed; border-left-color: var(--color-muted); }
+
+  @media (max-width: 640px) {
+    .mt { --mt-label: 7rem; }
+    .mt-legend { padding-left: 0; }
+  }
+</style>

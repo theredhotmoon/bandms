@@ -13,6 +13,7 @@ PROD_ONLY_TABLES = frozenset({
     "orders", "order_items", "tickets", "ticket_transfers",
     "presale_codes", "presale_code_tiers", "promo_codes",
     "newsletter_subscribers", "tech_rider_confirmations",
+    "activity_logs", "activity_changes",
     "oauth_access_tokens", "oauth_auth_codes", "oauth_clients",
     "oauth_device_codes", "oauth_refresh_tokens",
     "sessions", "password_reset_tokens",

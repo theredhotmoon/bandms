@@ -1800,6 +1800,56 @@ Design and plans: `docs/superpowers/specs/2026-10-29-admin-assistant-design.md`
 
 ---
 
+## The activity log records every Eloquent write — and only those itemise
+
+`App\Support\Activity\ActivityRecorder` listens to `eloquent.{created,updated,deleted}: *`
+globally (`AppServiceProvider::recordActivity()`), so **a new model is logged
+from its first line** with nothing to register. One `activity_logs` row per
+request or job; its `activity_changes` hold `{field: [old, new]}` in `diff`
+(not `changes` — Eloquent owns that name). The `RecordActivity` middleware
+(appended to the `api` group) names the route and the record a request was
+about, and records an authenticated write that itemised nothing — but only
+when the route names a record, so a logout or an upload is not an "edit".
+
+**What it cannot itemise:** anything that bypasses model events —
+`DB::table()`, a query-builder `update()`/`delete()`, `sync()`/`attach()` on a
+pivot, `saveQuietly()`. The request still shows up as an action on its record;
+the field diff does not. Write through models when the history matters, or
+call `recordField($subject, $field, $before, $after)` yourself —
+`PostBlockSync` does, because a news body is a delete-and-bulk-insert. Two
+lists are diffed per position (`blocks.2`), so one fixed paragraph stores one
+paragraph.
+
+**Rows are written through `DB::afterCommit()`, never inside the caller's
+transaction.** The diff is taken when the event fires; the INSERT waits for
+the commit. A rolled-back or retried transaction drops its pending rows, and
+the log can never be the deadlock victim that takes a save down — the first
+cut wrote inline, and review caught both: `PostController`'s retried
+`post_blocks` transaction kept a stale log id whose row had rolled back, and
+a swallowed exception from a log INSERT hid an already-aborted transaction.
+
+- **Visitors are not logged.** An anonymous web request (sign-up, checkout)
+  records nothing; jobs and commands are logged as the system.
+- **People who are not users** (`ActivityRecorder::PERSONAL`: subscribers,
+  fans, orders, tickets, allowed emails) are logged by field name only, with
+  no label — a value in the log would outlive their own row after an erasure.
+  A new model holding a non-user's personal data belongs on that list.
+- **Redacted:** a model's `$hidden`, plus any column *or JSON-bag key*
+  matching `ActivityRecorder::REDACTED` (password, secret, token, api key,
+  credential, `ticket_code`) — stored as `***`, so the log still says it
+  changed. A pattern, so a new secret column is covered without an edit here;
+  a name it misses (a door code called something else) needs adding to it.
+- **Skipped:** the log's own models, `SiteDirtyArea`, Passport's models, a
+  timestamp-only update, and `db:seed`/`migrate*` runs.
+- From/To filter in the **admin's** time zone: the SPA sends
+  `tz_offset` (`getTimezoneOffset()`), `created_at` is UTC.
+- `activity_logs`/`activity_changes` are **prod-only** in
+  `scripts/prodsync/tables.py`: a `push --content` must not replace
+  production's history with the local one.
+- No pruning yet — nothing schedules `model:prune` in this stack.
+
+Spec: `docs/superpowers/specs/2026-10-30-activity-log-design.md`.
+
 ## A post with no `published_at` is a draft — and the admin reads its own routes
 
 `GET /api/posts` and `GET /api/posts/{post}` return **published posts only**
