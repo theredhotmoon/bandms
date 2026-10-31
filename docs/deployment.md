@@ -574,6 +574,43 @@ docker logs -f bandms-web          # Astro build output
 docker logs -f bandms-caddy        # access log, TLS issuance
 ```
 
+### The assistant's crawler
+
+Everything is optional; each source runs only when its keys are in `.env`,
+and *Admin → More → Assistant → Crawler settings* says which ones lack them.
+After adding a key: `docker compose -f docker-compose.prod.yml up -d --no-deps backend`
+(a restart is not enough — env is cached at start).
+
+- **Google search + YouTube + Places** — in Google Cloud Console, in one
+  project with billing on and a budget alert: *APIs & Services → Library* →
+  enable *Custom Search API*, *YouTube Data API v3* and *Places API (New)*;
+  *Credentials → Create credentials → API key* (restrict it to those three
+  APIs). That key is `GOOGLE_API_KEY` and `YOUTUBE_API_KEY`. Then at
+  programmablesearchengine.google.com create a search engine with *Search the
+  entire web* on; its *Search engine ID* is `GOOGLE_CSE_ID`.
+- **setlist.fm** — sign in at setlist.fm → *API* → apply for a key
+  (non-commercial): `SETLISTFM_API_KEY`.
+- **The band's Facebook Page and Instagram** — in developers.facebook.com
+  create an app, add the Page, and generate a **long-lived Page access
+  token** with `pages_read_engagement` and `instagram_basic`:
+  `FACEBOOK_PAGE_ACCESS_TOKEN`. `FACEBOOK_PAGE_ID` is the Page's id;
+  `INSTAGRAM_USER_ID` is the linked Instagram business account's id (Graph
+  Explorer: `/{page-id}?fields=instagram_business_account`). When the token
+  expires the source's run fails with *token expired* — mint a new one.
+- **Reddit** — reddit.com/prefs/apps → *create another app* → type
+  **script**: the id under the name is `REDDIT_CLIENT_ID`, *secret* is
+  `REDDIT_CLIENT_SECRET`, your username `REDDIT_USERNAME`. Then switch
+  Reddit on in Crawler settings (it is off by default — Reddit blocks many
+  server IPs; a 403 in the run says so).
+- **Triage and the digest** use the text model behind Enhance
+  (`ASSISTANT_TEXT_MODEL_DRIVER=anthropic` + `ANTHROPIC_API_KEY`). The
+  digest needs working `MAIL_*`.
+
+`docker exec bandms-backend php artisan schedule:list` shows the crawl
+(03:00), triage (03:40) and digest (Mon 08:00), all Warsaw time.
+`docker exec bandms-backend php artisan assistant:digest --preview` prints the
+digest as it would go out right now (later triage can still change Monday's).
+
 ### Database backups
 
 > Full detail — verification, restore procedure, rollback caveats and known

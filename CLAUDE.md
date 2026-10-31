@@ -1803,6 +1803,27 @@ marks the finding saved and stamps `source = assistant:<id>` on the record
 when it has none. So validation lives in one place — a duplicate venue name
 is that form's 422 — and a failed create leaves the finding `new`.
 
+**The digest** (`assistant:digest`, Monday 08:00 Warsaw) mails what
+`DigestBuilder` returns: findings triaged since `site_settings.assistant_last_digest_at`
+(`triaged_at`, so one scored after a Monday reaches the next digest) scoring
+≥ 50 — ten best leads by country, twenty mentions, five news; the first
+digest covers one week. One mail per recipient.
+Nothing new means no mail and no stamp, never an empty Monday. Recipients are
+`digest_to`, else every superadmin — **not** `ADMIN_EMAIL`, which production
+leaves blank on purpose. Without a text model *bound* (`NullTextModel` —
+which a driver set without its key also gives) nothing is ever scored, so the
+floor is dropped and `found_at` is the clock; `assistant:triage` makes the
+same check and does not queue. The inbox link uses
+`config('assistant.admin_path')` (`ADMIN_PATH`, now also passed to the
+backend), so a relocated panel still gets a working link. `--preview` prints
+the HTML and changes nothing.
+
+**Adding a source** is one class implementing `Source`, registered in
+`AssistantServiceProvider`, plus its entry in `CrawlerSettings::SOURCES`
+(default caps and the free-tier ceiling) and its key list in
+`CrawlerSettings::KEYS`. Sources are declared APIs and feeds — never a
+scraper, never a page body.
+
 **The dev stack does not crawl on its own** (`ASSISTANT_CRAWL_SCHEDULED=false`
 in `docker-compose.yml`): dev and prod keep separate ledgers, so a real key in
 both would spend each provider's cap twice. `assistant:crawl --source=…` by

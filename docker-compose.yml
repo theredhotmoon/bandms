@@ -54,6 +54,8 @@ services:
       # in outgoing email (config/newsletter.php); it must match the port users
       # actually browse on, which is the public site's 4322 in development.
       FRONTEND_URL:     ${FRONTEND_URL:-http://localhost}
+      # The assistant digest's inbox link follows the admin panel's segment.
+      ADMIN_PATH: ${ADMIN_PATH:-admin}
 
       # Login attempts per minute, per IP. Keep low in production; raise it
       # locally for the E2E suite, which logs in repeatedly from one IP.

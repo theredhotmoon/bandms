@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 4 — the Monday digest)
+
+### Added
+- **A Monday morning email** (08:00, Warsaw time) with what the assistant found that week: the ten best leads grouped by country, every mention of the band, and the five best news items, each with its one-line summary and a link — plus a button into the inbox. Only findings the assistant scored as worth a look (50 or more) are included. If nothing new turned up, no email is sent.
+- It goes to the addresses in *Crawler settings → Weekly digest goes to*; with none set, to every superadmin.
+
 ## [Unreleased] — 2026-10-31 (admin assistant: the crawler, slice 3)
 
 ### Added
