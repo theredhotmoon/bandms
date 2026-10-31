@@ -19,27 +19,47 @@ final class CapLedger
 {
     public const TZ = 'America/Los_Angeles';
 
-    public static function remaining(string $source): int
+    /** @param array|null $settings CrawlerSettings::get(), when the caller already has it */
+    public static function remaining(string $source, ?array $settings = null): int
     {
-        $settings = CrawlerSettings::get()['sources'][$source] ?? null;
-        if ($settings === null) {
-            return 0;
-        }
-
-        $now   = Carbon::now(self::TZ);
-        $left  = $settings['cap_day'] - self::spentSince($source, $now->copy()->startOfDay());
-        if (isset($settings['cap_month'])) {
-            $left = min($left, $settings['cap_month'] - self::spentSince($source, $now->copy()->startOfMonth()));
-        }
-
-        return max(0, $left);
+        return self::remainingAll($settings, $source)[$source] ?? 0;
     }
 
-    private static function spentSince(string $source, Carbon $since): int
+    /**
+     * Every source's remaining budget in two grouped reads — the status bar
+     * asks for all of them at once, and per-source sums were ~5 queries each.
+     *
+     * @return array<string, int>
+     */
+    public static function remainingAll(?array $settings = null, ?string $only = null): array
     {
-        return (int) AssistantRun::query()
-            ->where('source', $source)
+        $now     = Carbon::now(self::TZ);
+        $today   = self::spentSince($now->copy()->startOfDay(), $only);
+        $month   = self::spentSince($now->copy()->startOfMonth(), $only);
+        $left    = [];
+        $sources = ($settings ?? CrawlerSettings::get())['sources'];
+        if ($only !== null) {
+            $sources = array_intersect_key($sources, [$only => true]);
+        }
+
+        foreach ($sources as $source => $settings) {
+            $budget = $settings['cap_day'] - ($today[$source] ?? 0);
+            if (isset($settings['cap_month'])) {
+                $budget = min($budget, $settings['cap_month'] - ($month[$source] ?? 0));
+            }
+            $left[$source] = max(0, $budget);
+        }
+
+        return $left;
+    }
+
+    /** @return array<string, int> queries spent per source since the given moment */
+    private static function spentSince(Carbon $since, ?string $only = null): array
+    {
+        return AssistantRun::query()
+            ->when($only, fn ($q) => $q->where('source', $only))
             ->where('started_at', '>=', $since->copy()->utc())
-            ->sum('queries');
+            ->selectRaw('source, sum(queries) as spent')->groupBy('source')
+            ->pluck('spent', 'source')->map(fn ($n) => (int) $n)->all();
     }
 }

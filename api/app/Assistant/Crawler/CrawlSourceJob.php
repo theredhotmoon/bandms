@@ -50,7 +50,7 @@ final class CrawlSourceJob implements ShouldQueue
         }
 
         $run = AssistantRun::create(['source' => $this->sourceKey, 'started_at' => now(), 'status' => 'ok']);
-        $budget = CapLedger::remaining($this->sourceKey);
+        $budget = CapLedger::remaining($this->sourceKey, $settings);
         $queries = 0;
         $found = 0;
         $new = 0;

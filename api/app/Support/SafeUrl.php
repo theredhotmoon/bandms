@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Support;
 
 use Illuminate\Http\Client\Response;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -42,8 +44,9 @@ final class SafeUrl
      * anywhere that is not a public http(s) address.
      *
      * @param  array<string, string>  $headers
+     * @param  int|null  $maxBytes  stop the download past this size (see sizeGuard)
      */
-    public static function get(string $url, int $timeout, array $headers = []): ?Response
+    public static function get(string $url, int $timeout, array $headers = [], ?int $maxBytes = null): ?Response
     {
         for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
             $target = self::resolve($url);
@@ -51,15 +54,32 @@ final class SafeUrl
                 return null;
             }
 
-            $options = ['allow_redirects' => false];
+            $options = ['allow_redirects' => false, 'curl' => []];
             if ($target['ips'] !== []) {
-                $options['curl'] = [CURLOPT_RESOLVE => array_map(
+                $options['curl'][CURLOPT_RESOLVE] = array_map(
                     fn (string $ip) => "{$target['host']}:{$target['port']}:" . (str_contains($ip, ':') ? "[{$ip}]" : $ip),
                     $target['ips'],
-                )];
+                );
+            }
+            $tripped = new \ArrayObject();
+            if ($maxBytes !== null) {
+                $guard = self::sizeGuard($maxBytes, $tripped);
+                $options['on_headers'] = $guard['on_headers'];
+                $options['curl'] += $guard['curl'];
             }
 
-            $response = Http::withHeaders($headers)->withOptions($options)->timeout($timeout)->get($url);
+            try {
+                $response = Http::withHeaders($headers)->withOptions($options)->timeout($timeout)->get($url);
+            } catch (\Throwable $e) {
+                // Guzzle wraps both trips (an on_headers error, a callback
+                // abort) in generic messages; say what actually happened.
+                if ($tripped->count() > 0) {
+                    throw new RuntimeException(
+                        "The response from {$target['host']} is larger than " . number_format($maxBytes / 1_000_000, 1) . ' MB.', 0, $e,
+                    );
+                }
+                throw $e;
+            }
 
             if (! $response->redirect()) {
                 return $response;
@@ -73,6 +93,42 @@ final class SafeUrl
         }
 
         return null;
+    }
+
+    /**
+     * Options that stop a download larger than $maxBytes while it happens:
+     * `on_headers` refuses a declared Content-Length over the limit before
+     * the body is read, and curl's XFERINFOFUNCTION returns non-zero — which
+     * is what makes curl abort — once an undeclared body passes it. (Throwing
+     * from Guzzle's `progress` option does not abort: curl only stops on a
+     * non-zero return, and a probe against a slow 5 MB stream downloaded the
+     * lot.) Each trip is recorded in $tripped so get() can name it.
+     *
+     * @return array{on_headers: callable, curl: array<int, mixed>}
+     */
+    public static function sizeGuard(int $maxBytes, \ArrayObject $tripped): array
+    {
+        return [
+            'on_headers' => function (ResponseInterface $response) use ($maxBytes, $tripped): void {
+                $length = $response->getHeaderLine('Content-Length');
+                if ($length !== '' && (int) $length > $maxBytes) {
+                    $tripped->append('content-length');
+                    throw new RuntimeException('Declared size over the limit.');
+                }
+            },
+            'curl' => [
+                CURLOPT_NOPROGRESS       => false,
+                CURLOPT_XFERINFOFUNCTION => function ($handle, $downloadTotal, $downloaded) use ($maxBytes, $tripped): int {
+                    if ($downloaded > $maxBytes) {
+                        $tripped->append('downloaded');
+
+                        return 1;
+                    }
+
+                    return 0;
+                },
+            ],
+        ];
     }
 
     /**

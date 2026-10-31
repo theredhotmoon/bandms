@@ -8,7 +8,7 @@ use App\Assistant\Crawler\Source;
 use App\Assistant\Crawler\SourceCapped;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
+use App\Support\SetlistFmClient;
 use Illuminate\Support\Sleep;
 
 /**
@@ -19,7 +19,6 @@ use Illuminate\Support\Sleep;
  */
 final class SetlistFmSource implements Source
 {
-    private const BASE = 'https://api.setlist.fm/rest/1.0';
     private const PAGES = 2;
     private const YEARS = 2;
     /** The standard key allows about two requests a second. */
@@ -33,6 +32,8 @@ final class SetlistFmSource implements Source
      * @var array<string, true>
      */
     private array $seen = [];
+
+    public function __construct(private readonly SetlistFmClient $client = new SetlistFmClient()) {}
 
     public function key(): string
     {
@@ -99,11 +100,8 @@ final class SetlistFmSource implements Source
     private function request(Query $query): Response
     {
         Sleep::for(self::PACE_MS)->milliseconds();
-        $mbid = rawurlencode((string) $query->params['mbid']);
 
-        return Http::timeout(15)
-            ->withHeaders(['x-api-key' => (string) config('services.setlistfm.api_key'), 'Accept' => 'application/json'])
-            ->get(self::BASE . "/artist/{$mbid}/setlists", ['p' => $query->params['page']]);
+        return $this->client->artistSetlists((string) $query->params['mbid'], (int) $query->params['page'], 15);
     }
 
     /** setlist.fm dates are dd-MM-yyyy. */
