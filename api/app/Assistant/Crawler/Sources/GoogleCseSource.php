@@ -59,14 +59,17 @@ final class GoogleCseSource implements Source
 
     public function fetch(Query $query): array
     {
-        $response = Http::timeout(15)->get(self::URL, array_filter([
-            'key' => config('services.google.api_key'),
-            'cx'  => config('services.google.cse_id'),
-            'q'   => $query->text,
-            'num' => 10,
-            'gl'  => $query->params['gl'] ?? null,
-            'hl'  => $query->params['hl'] ?? null,
-        ]));
+        // The key goes in a header, never the URL: a URL is what an error
+        // message quotes, and that message is logged and shown to admins.
+        $response = Http::withHeaders(['X-goog-api-key' => (string) config('services.google.api_key')])
+            ->timeout(15)
+            ->get(self::URL, array_filter([
+                'cx'  => config('services.google.cse_id'),
+                'q'   => $query->text,
+                'num' => 10,
+                'gl'  => $query->params['gl'] ?? null,
+                'hl'  => $query->params['hl'] ?? null,
+            ]));
 
         if ($response->status() === 429 || ($response->status() === 403 && str_contains($response->body(), 'Limit'))) {
             throw new SourceCapped('Google Programmable Search quota reached.');

@@ -50,7 +50,7 @@ describe('google_cse', function () {
             ->and($out[0]->externalKey)->toBe(sha1('ska.example/news/storks'))
             ->and($out[0]->country)->toBe('DE')
             ->and($out[1]->leadType)->toBe('profile');
-        Http::assertSent(fn ($r) => $r['key'] === 'gkey' && $r['cx'] === 'cx1' && $r['gl'] === 'de' && $r['q'] === 'ska concert Germany');
+        Http::assertSent(fn ($r) => $r->header('X-goog-api-key') === ['gkey'] && !str_contains($r->url(), 'gkey') && $r['cx'] === 'cx1' && $r['gl'] === 'de' && $r['q'] === 'ska concert Germany');
     });
 
     it('returns nothing for an empty result page', function () {
@@ -96,7 +96,7 @@ describe('youtube', function () {
         expect($out[0])->externalKey->toBe('vid123')->url->toBe('https://www.youtube.com/watch?v=vid123')
             ->leadType->toBe('band')->country->toBe('PL')
             ->and($out[0]->payload['channelId'])->toBe('ch9');
-        Http::assertSent(fn ($r) => $r['key'] === 'ykey' && $r['type'] === 'video' && $r['regionCode'] === 'PL');
+        Http::assertSent(fn ($r) => $r->header('X-goog-api-key') === ['ykey'] && !str_contains($r->url(), 'ykey') && $r['type'] === 'video' && $r['regionCode'] === 'PL');
     });
 
     it('treats quotaExceeded as capped', function () {

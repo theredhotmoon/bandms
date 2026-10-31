@@ -163,3 +163,23 @@ it('marks a run failed when the worker gives up on the job', function () {
         ->and($run->fresh()->finished_at)->not->toBeNull()
         ->and($run->fresh()->error)->toContain('timed out');
 });
+
+it('never stores or logs a key that leaked into an error message', function () {
+    \Illuminate\Support\Facades\Log::spy();
+    $leak = 'cURL error 28: timed out for https://www.googleapis.com/customsearch/v1?key=AIzaSyLEAKED&q=ska';
+    FakeSource::$answers = ['q1' => new \RuntimeException($leak)];
+
+    (new CrawlSourceJob('rss'))->handle(app(SourceRegistry::class));
+
+    expect(AssistantRun::sole()->error)->not->toContain('AIzaSyLEAKED')->toContain('key=[redacted]');
+    \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')
+        ->withArgs(fn ($msg, $ctx) => !str_contains(json_encode($ctx), 'AIzaSyLEAKED'));
+});
+
+it('redacts the error when the worker gives up on the job, too', function () {
+    $run = AssistantRun::create(['source' => 'rss', 'started_at' => now(), 'status' => 'ok', 'queries' => 1]);
+
+    (new CrawlSourceJob('rss'))->failed(new \RuntimeException('for https://x.test/?key=AIzaSyGAVEUP'));
+
+    expect($run->fresh()->error)->not->toContain('AIzaSyGAVEUP');
+});
