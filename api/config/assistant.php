@@ -36,4 +36,11 @@ return [
     'triage_model_id'  => env('ASSISTANT_TRIAGE_MODEL', 'claude-haiku-5-5'),
     'rewrite_max_chars' => 20000,
 
+    // ── The crawler (phase 3) ───────────────────────────────────────────────
+    // Whether this stack's scheduler runs the nightly crawl. The dev stack
+    // turns it off: dev and prod keep separate run ledgers, so a real key in
+    // both would spend each provider's daily cap twice. `assistant:crawl`
+    // by hand still works.
+    'crawler_scheduled' => (bool) env('ASSISTANT_CRAWL_SCHEDULED', true),
+
 ];

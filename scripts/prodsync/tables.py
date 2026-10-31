@@ -18,6 +18,9 @@ PROD_ONLY_TABLES = frozenset({
     "sessions", "password_reset_tokens",
     "jobs", "job_batches", "failed_jobs",
     "cache", "cache_locks", "site_dirty_areas", "migrations",
+    # The crawler's runtime: the band's dismissals, and the ledger its daily
+    # caps are counted from — a push must not reset either.
+    "assistant_findings", "assistant_runs",
 })
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9_]+$")

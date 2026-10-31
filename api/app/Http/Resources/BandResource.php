@@ -12,6 +12,8 @@ class BandResource extends JsonResource
         return [
             'id'           => $this->id,
             'name'         => $this->name,
+            'kind'         => $this->kind ?? 'band',
+            'country'      => $this->country,
             'website'      => $this->website,
             'gigs_count'   => $this->concerts_count ?? 0,
             'last_gig_at'  => $this->concerts_max_date,

@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Anthropic\Client;
+use App\Assistant\Crawler\SourceRegistry;
+use App\Assistant\Crawler\Sources\GoogleCseSource;
+use App\Assistant\Crawler\Sources\YouTubeSource;
 use App\Assistant\Text\AnthropicTextModel;
 use App\Assistant\Text\NullTextModel;
 use App\Assistant\Text\SdkMessagesGateway;
@@ -23,6 +26,13 @@ class AssistantServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // The crawler's sources. A new one is one class here plus one entry in
+        // CrawlerSettings::SOURCES.
+        $this->app->singleton(SourceRegistry::class, fn () => new SourceRegistry([
+            new GoogleCseSource(),
+            new YouTubeSource(),
+        ]));
+
         $this->app->singleton(Translator::class, function (): Translator {
             $key = (string) config('services.deepl.api_key', '');
 

@@ -111,6 +111,16 @@ services:
       ASSISTANT_TEXT_MODEL: "${ASSISTANT_TEXT_MODEL:-claude-opus-5-5}"
       ASSISTANT_TRIAGE_MODEL: "${ASSISTANT_TRIAGE_MODEL:-claude-haiku-5-5}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      # The crawler's sources: each runs only when its key is set.
+      # YOUTUBE_API_KEY and SETLISTFM_API_KEY are above.
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
+      GOOGLE_CSE_ID: "${GOOGLE_CSE_ID:-}"
+      FACEBOOK_PAGE_ID: "${FACEBOOK_PAGE_ID:-}"
+      FACEBOOK_PAGE_ACCESS_TOKEN: "${FACEBOOK_PAGE_ACCESS_TOKEN:-}"
+      INSTAGRAM_USER_ID: "${INSTAGRAM_USER_ID:-}"
+      REDDIT_CLIENT_ID: "${REDDIT_CLIENT_ID:-}"
+      REDDIT_CLIENT_SECRET: "${REDDIT_CLIENT_SECRET:-}"
+      REDDIT_USERNAME: "${REDDIT_USERNAME:-}"
 
       # Must be listed here to reach the app — this service takes no env_file.
       # Drives CORS allowed_origins (config/cors.php), which otherwise falls

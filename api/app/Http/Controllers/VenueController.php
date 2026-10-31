@@ -95,6 +95,10 @@ class VenueController extends Controller
             'street_number'   => 'nullable|string|max:20',
             'city'            => 'nullable|string|max:100',
             'postcode'        => 'nullable|string|max:20',
+            // A worldwide crawler groups leads by country; the one list of
+            // codes the admin already offers (ContactCodes) is the rule.
+            'country'         => ['nullable', 'string', \Illuminate\Validation\Rule::in(\App\Support\ContactCodes::COUNTRIES)],
+            'website'         => 'nullable|url|max:500',
             'additional_info' => 'nullable|string|max:500',
             'capacity'        => 'nullable|integer|min:1|max:1000000',
             'latitude'        => 'nullable|numeric|between:-90,90',

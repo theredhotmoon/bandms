@@ -27,6 +27,12 @@
  * read correctly.
  */
 export const MIGRATED = [
+  'components/admin/assistant/CrawlerSettingsForm.vue',
+  'components/admin/assistant/FindingRow.vue',
+  'components/admin/assistant/FindingsFilters.vue',
+  'components/admin/assistant/RunStatusBar.vue',
+  'views/admin/AssistantInboxView.vue',
+  'views/admin/AssistantSettingsView.vue',
   'App.vue',
   'components/admin/AdminLayout.vue',
   'components/admin/ContentLanguagesCard.vue',

@@ -18,6 +18,10 @@
         </include>
     </source>
     <php>
+        <!-- The suite holds on to memory per test (main already needed 200-256 MB
+             in Oct 2026, 1830 tests) and grows with every feature; php.ini's
+             256 MB is the production FPM limit, not a test budget. -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

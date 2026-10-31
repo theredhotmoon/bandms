@@ -1755,6 +1755,44 @@ other concerts' dates and prices are not facts for this one. nginx's
 `fastcgi_read_timeout` is 120 s and the SDK call times out at 110 s with one
 retry, so a long `longer` rewrite is a 503 the admin can show, not a 504.
 
+### Phase 3 — the crawler
+
+`assistant:crawl` dispatches one `CrawlSourceJob` per enabled source that
+has its key; a source is a class implementing `App\Assistant\Crawler\Source`,
+registered in `AssistantServiceProvider` and listed in
+`CrawlerSettings::SOURCES` (its default caps and the free-tier ceiling a cap
+may be raised to). `CapLedger` counts queries per **Pacific** day from
+`assistant_runs` — when Google's and YouTube's free quotas reset; counted on
+the band's Warsaw clock, the 03:00 run and a manual one the evening before
+land in one quota day and spend the cap twice. Findings upsert on
+`(source, external_key)`; a re-crawl refreshes only the text — status, kind,
+triage and a known country or lead type are never reset, so a dismissed
+finding stays dismissed. Settings are one JSON row
+(`site_settings.assistant_crawler`), superadmin-only, normalised on every
+read; `assistant_findings` and `assistant_runs` are prod-only in
+`scripts/prodsync/tables.py`, because a push resetting the run ledger would
+let the next run spend the day's cap again.
+
+**The dev stack does not crawl on its own** (`ASSISTANT_CRAWL_SCHEDULED=false`
+in `docker-compose.yml`): dev and prod keep separate ledgers, so a real key in
+both would spend each provider's cap twice. `assistant:crawl --source=…` by
+hand still runs.
+
+**The schedule lives in `bootstrap/app.php`'s `withSchedule()`, not in
+`routes/console.php`.** That file runs on *every* boot — each test, each
+queue job — while `withSchedule` runs only when the console app starts
+(`schedule:work`, `schedule:list`). A test reading the schedule must call
+`Artisan::all()` first, or `events()` is empty. The times are fixed (crawl
+03:00, triage 03:40, digest Monday 08:00, Warsaw) so building the schedule
+never reads the database.
+
+**The backend suite runs with `memory_limit=1G` (`phpunit.xml`).** It holds on
+to memory per test: `main` already needed 200–256 MB at 1830 tests, and the
+crawler branch tipped it over php.ini's 256 MB, which surfaced as a fatal
+"Allowed memory size exhausted" in whatever file happened to be loading
+(`routes/api.php`, dompdf). That is a budget, not a leak fix — a test that
+suddenly needs far more is still worth a look.
+
 Design and plans: `docs/superpowers/specs/2026-10-29-admin-assistant-design.md`
 (umbrella), `…/2026-10-30-assistant-enhance-design.md` + `plans/2026-10-30-assistant-enhance.md`
 (this phase), `…/2026-10-30-assistant-crawler-design.md` +

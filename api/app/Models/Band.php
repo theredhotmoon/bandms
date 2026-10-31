@@ -10,7 +10,7 @@ class Band extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'website'];
+    protected $fillable = ['name', 'kind', 'country', 'website', 'source'];
 
     public function concerts(): BelongsToMany
     {
