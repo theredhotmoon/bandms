@@ -43,15 +43,18 @@ final class YouTubeSource implements Source
 
     public function fetch(Query $query): array
     {
-        $response = Http::timeout(15)->get(self::URL, array_filter([
-            'key'        => config('services.youtube.api_key'),
-            'part'       => 'snippet',
-            'type'       => 'video',
-            'q'          => $query->text,
-            'order'      => 'date',
-            'maxResults' => 25,
-            'regionCode' => $query->params['regionCode'] ?? null,
-        ]));
+        // The key goes in a header, never the URL: a URL is what an error
+        // message quotes, and that message is logged and shown to admins.
+        $response = Http::withHeaders(['X-goog-api-key' => (string) config('services.youtube.api_key')])
+            ->timeout(15)
+            ->get(self::URL, array_filter([
+                'part'       => 'snippet',
+                'type'       => 'video',
+                'q'          => $query->text,
+                'order'      => 'date',
+                'maxResults' => 25,
+                'regionCode' => $query->params['regionCode'] ?? null,
+            ]));
 
         if ($response->status() === 403 && str_contains($response->body(), 'quotaExceeded')) {
             throw new SourceCapped('YouTube Data API quota reached.');

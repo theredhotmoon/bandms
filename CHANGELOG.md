@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-31 (crawler: keep API keys out of errors)
+
+### Security
+- **The crawler no longer leaks its Google/YouTube API key.** The key was sent in the request URL, and a timeout or connection error quotes that URL — so the key was written to the server log and shown to admins in the Assistant run status. Keys now travel in a header, and every crawl error is scrubbed of credentials before it is logged or stored. **If a crawl has failed since the crawler shipped, rotate `GOOGLE_API_KEY` and `YOUTUBE_API_KEY`.**
+
 ## [Unreleased] — 2026-10-30 (admin assistant: the crawler, slice 1)
 
 ### Added
