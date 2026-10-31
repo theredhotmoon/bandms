@@ -134,6 +134,8 @@ export default {
       show_stats_help: 'The stats grid (monthly listeners, shows played, years on stage…) on the public About page. Still hidden automatically when there is nothing to show.',
       show_members: 'Band members',
       show_members_help: 'The line-up grid on the public About page.',
+      show_timeline: 'Line-up timeline',
+      show_timeline_help: 'The chart of who played what, and when, with albums and EPs marked — under the line-up on the public About page. Needs join dates on members, or a formation year.',
       member_pages: 'Member pages',
       member_pages_help: 'Give each member their own page, linked from their card in the line-up. Off: the card opens a details window instead and no member page is built. A member can still hide their own page from their profile.',
     },

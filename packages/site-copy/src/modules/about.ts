@@ -95,6 +95,38 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Close', pl: 'Zamknij' },
   },
 
+  // ── Line-up timeline ────────────────────────────────────────────────
+  {
+    key: 'timeline', label: 'Heading', group: 'Line-up timeline', maxLength: 60,
+    help: 'Above the timeline of who played what, and when.',
+    defaults: { en: 'Members through the years', pl: 'Skład na przestrzeni lat' },
+  },
+  {
+    key: 'timelineSub', label: 'Subtitle', group: 'Line-up timeline', maxLength: 200,
+    defaults: {
+      en: 'Every member, coloured by instrument, with our records marked along the way.',
+      pl: 'Każdy członek zespołu w kolorze swojego instrumentu, z naszymi płytami po drodze.',
+    },
+  },
+  {
+    key: 'timelinePresent', label: '"Present" (still in the band)', group: 'Line-up timeline', maxLength: 30,
+    help: 'Ends the years of a current member, as in "2015 – present".',
+    defaults: { en: 'present', pl: 'obecnie' },
+  },
+  {
+    key: 'timelineAlbums', label: 'Legend: albums', group: 'Line-up timeline', maxLength: 40,
+    defaults: { en: 'Albums', pl: 'Albumy' },
+  },
+  {
+    key: 'timelineEps', label: 'Legend: EPs', group: 'Line-up timeline', maxLength: 40,
+    defaults: { en: 'EPs', pl: 'EP-ki' },
+  },
+  {
+    key: 'timelineOther', label: 'Legend: no instrument set', group: 'Line-up timeline', maxLength: 40,
+    help: 'For a member with no instrument on their profile.',
+    defaults: { en: 'Other', pl: 'Inne' },
+  },
+
   // ── Member page ─────────────────────────────────────────────────────
   // `memberPage` is retired: it labelled a "Full page" link inside the member
   // modal, gone since a card with a page links straight to it. A band that

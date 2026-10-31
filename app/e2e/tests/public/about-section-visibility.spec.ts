@@ -149,7 +149,7 @@ test.describe.serial('Public — About page section visibility', () => {
     await rebuildAndWait(request, Date.now())
 
     await page.goto(`${WEB}/en/about`)
-    await expect(page.getByRole('heading', { name: /line-up/i })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: /^the line-up$/i })).toHaveCount(0)
   })
 
   test('restores the members section — heading included — when show_members is on', async ({ request, page }) => {
@@ -159,7 +159,7 @@ test.describe.serial('Public — About page section visibility', () => {
     await rebuildAndWait(request, Date.now())
 
     await page.goto(`${WEB}/en/about`)
-    await expect(page.getByRole('heading', { name: /line-up/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /^the line-up$/i })).toBeVisible()
   })
 
   // ── Member pages ─────────────────────────────────────────────────────────

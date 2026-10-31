@@ -17,6 +17,7 @@ use App\Http\Controllers\ShopItemController;
 use App\Http\Controllers\ShopItemVariantController;
 use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\NewsletterSubscriberController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\FacebookSyncController;
 use App\Http\Controllers\SetlistController;
@@ -340,6 +341,10 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/users', [UserController::class, 'store'])->name('api.users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('api.users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('api.users.destroy');
+
+        // Activity log: who changed what, and when (read-only).
+        Route::get('/admin/activity', [ActivityLogController::class, 'index'])->name('api.admin.activity.index');
+        Route::get('/admin/activity/filters', [ActivityLogController::class, 'filters'])->name('api.admin.activity.filters');
 
         Route::get('/band-profile/calendar/events', [BandCalendarController::class, 'events'])->name('api.calendar.events');
         Route::put('/band-profile', [BandProfileController::class, 'update'])->name('api.band-profile.update');

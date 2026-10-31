@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-30 (activity log, one account per member, line-up timeline)
+
+### Added
+- **Activity log** (*More → Activity log*, admins only): every addition, edit and deletion — of any record, including ones added to the app later — with who did it, when, through which screen, and the old → new value of each field. Filter by type, person, action, date range or text; a record's **History** button (and a shareable URL, `?subject_type=Post&subject_id=12`) narrows the log to that one record. Passwords and tokens are never stored, only that they changed. Background jobs are listed as *System*. What visitors do on the public site (a sign-up, an order) is not logged, and for subscribers, fans, orders and tickets only the names of the changed fields are kept, never the personal details themselves.
+- **Line-up timeline on the About page**, drawn like a Wikipedia band article: a bar per member coloured by instrument, thin stripes for what else they play, a year grid, and a line at each album (solid) and EP (dashed). It needs join dates on members, or a formation year. Shown under the line-up; switch it off in *Website modules → About → Line-up timeline*. Its wording is editable there too.
+
+### Fixed
+- **A band member can no longer be given two user accounts.** In the Users form a member who already has one is greyed out with the account's name; the API refuses it too.
+
 ## [Unreleased] — 2026-10-30 (admin assistant: the crawler, slice 1)
 
 ### Added

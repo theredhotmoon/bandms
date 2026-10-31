@@ -18,6 +18,8 @@ class UserController extends Controller
      */
     private const SUPERADMIN_FIELDS = ['is_superadmin', 'can_translate', 'can_enhance'];
 
+    private const MESSAGES = ['band_member_id.unique' => 'This band member already has an account.'];
+
     public function index(): JsonResponse
     {
         $users = User::with('bandMember')
@@ -42,9 +44,11 @@ class UserController extends Controller
             'password'       => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'password_confirmation' => ['required', 'string'],
             'role'           => ['required', 'string', 'in:admin,member,publisher'],
-            'band_member_id' => ['nullable', 'integer', 'exists:band_members,id'],
+            // One account per member: a second login for the same person would
+            // split their rigs and rider confirmations across two users.
+            'band_member_id' => ['nullable', 'integer', 'exists:band_members,id', Rule::unique('users', 'band_member_id')],
             ...$this->flagRules(),
-        ]);
+        ], self::MESSAGES);
 
         if (($data['is_superadmin'] ?? false) && $data['role'] !== 'admin') {
             return $this->onlyAdminsMayBeSuperadmin();
@@ -68,9 +72,9 @@ class UserController extends Controller
             'password'       => ['sometimes', 'confirmed', Password::min(8)->letters()->numbers()],
             'password_confirmation' => ['sometimes', 'required_with:password', 'string'],
             'role'           => ['sometimes', 'required', 'string', 'in:admin,member,publisher'],
-            'band_member_id' => ['nullable', 'integer', 'exists:band_members,id'],
+            'band_member_id' => $this->memberRules($request, $user),
             ...$this->flagRules(),
-        ]);
+        ], self::MESSAGES);
 
         $role         = $data['role'] ?? $user->role;
         $willBeSuper  = array_key_exists('is_superadmin', $data) ? (bool) $data['is_superadmin'] : (bool) $user->is_superadmin;
@@ -139,6 +143,23 @@ class UserController extends Controller
     private function atLeastOneSuperadmin(): JsonResponse
     {
         return response()->json(['message' => 'There must always be at least one superadmin.'], 422);
+    }
+
+    /**
+     * One account per member — but keeping the member a user already has is
+     * never a new duplicate. A link that predates the rule must not make that
+     * user unsaveable: the edit form always resends `band_member_id`.
+     *
+     * @return array<int, mixed>
+     */
+    private function memberRules(Request $request, User $user): array
+    {
+        $rules = ['nullable', 'integer', 'exists:band_members,id'];
+        if ((int) $request->input('band_member_id') !== (int) $user->band_member_id) {
+            $rules[] = Rule::unique('users', 'band_member_id')->ignore($user->id);
+        }
+
+        return $rules;
     }
 
     /** @return array<string, array<int, string>> */

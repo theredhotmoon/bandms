@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Post;
+use App\Support\Activity\ActivityRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,7 +20,17 @@ final class PostBlockSync
     /** @param list<array{type: string, payload: array}> $blocks */
     public static function sync(Post $post, array $blocks): void
     {
-        $oldPaths = self::imagePaths($post->blocks()->get()->all());
+        $old      = $post->blocks()->get();
+        $oldPaths = self::imagePaths($old->all());
+
+        // The bulk write below fires no model events, so the activity log is
+        // told the article body's before and after itself.
+        app(ActivityRecorder::class)->recordField(
+            $post,
+            'blocks',
+            $old->map(fn ($b) => ['type' => $b->type, 'payload' => $b->payload])->values()->all(),
+            array_map(fn ($b) => ['type' => $b['type'], 'payload' => json_decode(json_encode($b['payload']), true)], array_values($blocks)),
+        );
 
         $post->blocks()->delete();
 

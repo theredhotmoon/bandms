@@ -195,6 +195,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiredRole: 'admin' },
     },
     {
+      path: adminUrl('activity'),
+      name: 'admin-activity',
+      component: () => import('@/views/admin/ActivityLogView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
       path: adminUrl('setlists'),
       name: 'admin-setlists',
       component: () => import('@/views/admin/SetlistsAdminView.vue'),

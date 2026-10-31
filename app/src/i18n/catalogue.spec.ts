@@ -82,6 +82,7 @@ describe('i18n catalogues', () => {
       // the friction working rather than a sign it needs automating.
       const PLURALS = new Set([
         'common.rebuild.pendingChanges',
+        'more.activity.changes',
         'content.newsletter.subscribers',
         'rider.rig.signalChain.generates',
         'rider.rig.signalChain.existingRows',

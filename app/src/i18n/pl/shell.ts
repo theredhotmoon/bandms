@@ -55,6 +55,7 @@ export default {
     instruments: 'Instrumenty',
     users: 'Użytkownicy',
     assistant: 'Asystent',
+    activity: 'Dziennik zmian',
     websiteModules: 'Moduły strony',
     faqs: 'FAQ',
     heroImages: 'Zdjęcia nagłówkowe',

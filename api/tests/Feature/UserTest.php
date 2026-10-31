@@ -204,3 +204,59 @@ describe('DELETE /api/users/{user}', function () {
     });
 });
 
+
+// ── One account per band member ──────────────────────────────────────────────
+
+describe('band member uniqueness', function () {
+    it('refuses a second user for a member who already has one', function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'can_login' => false]);
+        User::factory()->create(['role' => 'member', 'band_member_id' => $member->id]);
+
+        $this->postJson('/api/users', [
+            'first_name'            => 'John',
+            'last_name'             => 'Doe',
+            'email'                 => 'john2@band.com',
+            'password'              => 'Secret12',
+            'password_confirmation' => 'Secret12',
+            'role'                  => 'member',
+            'band_member_id'        => $member->id,
+        ])->assertUnprocessable()
+          ->assertJsonValidationErrors(['band_member_id']);
+    });
+
+    it('refuses moving another user onto a linked member', function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'can_login' => false]);
+        User::factory()->create(['role' => 'member', 'band_member_id' => $member->id]);
+        $other = User::factory()->create(['role' => 'member']);
+
+        $this->putJson("/api/users/{$other->id}", ['band_member_id' => $member->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['band_member_id']);
+    });
+
+    it('lets a user keep their own member on save', function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'can_login' => false]);
+        $user = User::factory()->create(['role' => 'member', 'band_member_id' => $member->id]);
+
+        $this->putJson("/api/users/{$user->id}", ['band_member_id' => $member->id, 'first_name' => 'Johnny'])
+            ->assertSuccessful();
+    });
+});
+
+it('lets a user who predates the rule keep a shared member', function () {
+    $this->createProfile();
+    $this->actingAsAdmin();
+    $member = BandMember::create(['profile_id' => 1, 'first_name' => 'John', 'last_name' => 'Doe', 'can_login' => false]);
+    User::factory()->create(['role' => 'member', 'band_member_id' => $member->id]);
+    // A duplicate left over from before the rule existed.
+    $legacy = User::factory()->create(['role' => 'member', 'band_member_id' => $member->id]);
+
+    $this->putJson("/api/users/{$legacy->id}", ['band_member_id' => $member->id, 'role' => 'publisher'])
+        ->assertSuccessful();
+});
