@@ -21,6 +21,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Band in numbers': 'Zespół w liczbach',
   'Band members': 'Skład zespołu',
   'Biography': 'Biografia',
+  'Line-up timeline': 'Oś czasu składu',
   'Booking column': 'Kolumna bookingowa',
   'Bottom bar': 'Dolny pasek',
   'Brand column': 'Kolumna z nazwą',
@@ -108,6 +109,10 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '"Close menu" (screen readers)': '„Zamknij menu” (czytniki ekranu)',
   '"Skip to content" link (keyboard users)': 'Link „Przejdź do treści” (użytkownicy klawiatury)',
   '"Close" button': 'Przycisk „Zamknij”',
+  '"Present" (still in the band)': '„Obecnie” (nadal w zespole)',
+  'Legend: albums': 'Legenda: albumy',
+  'Legend: EPs': 'Legenda: EP-ki',
+  'Legend: no instrument set': 'Legenda: bez instrumentu',
   '"Contact us" link': 'Link „Skontaktuj się z nami”',
   '"Decrease quantity" (screen readers)': '„Zmniejsz liczbę” (czytniki ekranu)',
   '"Increase quantity" (screen readers)': '„Zwiększ liczbę” (czytniki ekranu)',
@@ -411,6 +416,9 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
 
   // ── Help text ────────────────────────────────────────────────────────────
   'Above the list of comparable artists.': 'Nad listą podobnych wykonawców.',
+  'Above the timeline of who played what, and when.': 'Nad osią czasu: kto na czym grał i kiedy.',
+  'Ends the years of a current member, as in "2015 – present".': 'Kończy lata obecnego członka, jak w „2015 – obecnie”.',
+  'For a member with no instrument on their profile.': 'Dla członka bez instrumentu w profilu.',
   'After the number of songs in the setlist header.': 'Za liczbą utworów w nagłówku setlisty.',
   'Also on the checkout-cancelled page.': 'Również na stronie anulowanej płatności.',
   'Also on the order confirmation page.': 'Również na stronie potwierdzenia zamówienia.',

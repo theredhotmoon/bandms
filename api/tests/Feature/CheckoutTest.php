@@ -107,13 +107,6 @@ describe('POST /api/checkout', function () {
 // ── POST /api/webhooks/stripe ─────────────────────────────────────────────────
 
 describe('POST /api/webhooks/stripe', function () {
-    function makeStripeSignature(string $payload, string $secret): string
-    {
-        $timestamp = time();
-        $signature = hash_hmac('sha256', "{$timestamp}.{$payload}", $secret);
-        return "t={$timestamp},v1={$signature}";
-    }
-
     it('marks order as paid and decrements stock on checkout.session.completed', function () {
         $secret = 'whsec_test_secret';
         config(['services.stripe.webhook_secret' => $secret]);

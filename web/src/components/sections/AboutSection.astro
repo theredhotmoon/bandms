@@ -7,8 +7,10 @@ import PageHero from '@/components/PageHero.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import Icon from '@/components/Icon.astro'
 import MemberGrid from '@/components/MemberGrid.vue'
+import MembersTimeline from '@/components/MembersTimeline.astro'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getBandProfile, getMembers, getConcerts, getSiteConfig } from '@/lib/cms'
+import { getBandProfile, getMembers, getConcerts, getReleases, getSiteConfig } from '@/lib/cms'
+import { buildMemberTimeline } from '@/lib/memberTimeline'
 import { getSlugMap } from '@/lib/slugs'
 import { formatNumber, formatGenreKicker, splitCommaList } from '@/lib/i18n'
 import { ABOUT_COPY } from '@bandms/site-copy'
@@ -22,10 +24,12 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const [profile, members, concerts, siteConfig, slugMap] = await Promise.all([
+const [profile, members, concerts, releases, siteConfig, slugMap] = await Promise.all([
   getBandProfile(lang),
   getMembers(lang).catch(() => []),
   getConcerts(lang).catch(() => []),
+  // Only for the timeline's album lines — an unreachable list draws none.
+  getReleases(lang).catch(() => []),
   getSiteConfig(lang),
   getSlugMap(),
 ])
@@ -126,6 +130,10 @@ const gridMembers = [...members]
     // to it, and opens the details modal otherwise.
     pageUrl: hasMemberPage(siteConfig, m) ? `${href('about')}/${m.slug}` : null,
   }))
+
+// Formation year anchors the axis when no member has a join date. The build
+// clock is "now", as for the stats band above.
+const timeline = buildMemberTimeline(members, releases, profile.formation_year ?? null, new Date())
 
 // Press cards, each present only when its target exists. Both are module
 // routes and disappear with the module. The rider is not offered here: it
@@ -239,6 +247,21 @@ const contacts = [
           copy={{ former: t.former, plays: t.plays, close: t.close, view: t.view }}
         />
       )}
+    </section>
+  )}
+
+  <!-- LINE-UP TIMELINE -->
+  {showSection('show_timeline') && timeline && (
+    <section class="ab-sec page-content" data-testid="about-timeline">
+      <div class="ab-head">
+        <Icon name="calendar" size={24} color="var(--color-accent)" />
+        <h2 class="ab-h2">{t.timeline}</h2>
+      </div>
+      <p class="ab-sub">{t.timelineSub}</p>
+      <MembersTimeline
+        timeline={timeline}
+        copy={{ present: t.timelinePresent, albums: t.timelineAlbums, eps: t.timelineEps, other: t.timelineOther, label: t.timeline }}
+      />
     </section>
   )}
 

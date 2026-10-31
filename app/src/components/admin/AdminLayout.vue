@@ -66,7 +66,7 @@ const groupRoutes: Record<GroupId, string[]> = {
                adminUrl('tech-rider'), adminUrl('setlists')],
   content:    [adminUrl('posts'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
   shows:      [adminUrl('concerts'), adminUrl('tours'), adminUrl('venues'), adminUrl('door')],
-  more:       [adminUrl('shop'), adminUrl('bands'), adminUrl('tags'), adminUrl('instruments'), adminUrl('users'), adminUrl('assistant')],
+  more:       [adminUrl('shop'), adminUrl('bands'), adminUrl('tags'), adminUrl('instruments'), adminUrl('users'), adminUrl('assistant'), adminUrl('activity')],
   pageconfig: [adminUrl('website-modules'), adminUrl('faqs'), adminUrl('hero-images')],
 }
 
@@ -309,6 +309,10 @@ watch(() => route.path, (path) => {
             <RouterLink :to="adminUrl('assistant')" class="nav-item" active-class="nav-item--active">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               {{ $t('shell.nav.assistant') }}
+            </RouterLink>
+            <RouterLink :to="adminUrl('activity')" class="nav-item" active-class="nav-item--active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              {{ $t('shell.nav.activity') }}
             </RouterLink>
           </div>
         </template>

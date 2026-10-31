@@ -94,6 +94,7 @@ export const MODULE_VISIBILITY_SCHEMA: Record<string, ModuleVisibilityField[]> =
   about: [
     { key: 'show_stats', help: true },
     { key: 'show_members', help: true },
+    { key: 'show_timeline', help: true },
     // Whether a member card links to the member's own page, or opens the
     // details modal. Each member can still opt out (Profile → public_page).
     { key: 'member_pages', help: true },

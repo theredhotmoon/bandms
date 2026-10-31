@@ -15,6 +15,7 @@ import { useAuth } from '@/composables/useAuth'
 import type { ManagedUser, UserPayload } from '@/types/user'
 import type { UserRole } from '@/types/auth'
 import UserAccessSwitches, { type AccessField } from '@/components/admin/UserAccessSwitches.vue'
+import { linkedMemberOwners } from '@/utils/memberAccounts'
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
@@ -49,6 +50,16 @@ async function onAccessChange(u: ManagedUser, field: AccessField, value: boolean
 }
 
 const bandMembers = computed(() => membersQ.data.value ?? [])
+
+// A member who already has a login is greyed out — the API refuses a second.
+// The edited user's own member stays selectable.
+const addOwners  = computed(() => linkedMemberOwners(list.data.value ?? []))
+const editOwners = computed(() => linkedMemberOwners(list.data.value ?? [], editingId.value))
+
+function takenBy(owners: Map<number, ManagedUser>, memberId: number): string | null {
+  const owner = owners.get(memberId)
+  return owner ? t('more.users.form.memberHasAccount', { name: `${owner.first_name} ${owner.last_name}` }) : null
+}
 
 // The words live in the catalogue, keyed by the stored value; the order here
 // is the order the radio cards appear in.
@@ -273,8 +284,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
           <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="addForm.band_member_id" class="field-input">
             <option :value="null">{{ $t('more.users.form.enterManually') }}</option>
-            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
-              {{ m.first_name }} {{ m.last_name }}
+            <option v-for="m in bandMembers" :key="m.id" :value="m.id" :disabled="addOwners.has(m.id)">
+              {{ m.first_name }} {{ m.last_name }}<template v-if="addOwners.has(m.id)"> ({{ takenBy(addOwners, m.id) }})</template>
             </option>
           </select>
         </div>
@@ -326,8 +337,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
           <label class="field-label">{{ $t('more.users.form.bandMember') }} <span style="color:var(--c-475569);font-weight:400;">{{ $t('more.users.form.bandMemberHint') }}</span></label>
           <select v-model="editForm.band_member_id" class="field-input">
             <option :value="null">{{ $t('more.users.form.none') }}</option>
-            <option v-for="m in bandMembers" :key="m.id" :value="m.id">
-              {{ m.first_name }} {{ m.last_name }}
+            <option v-for="m in bandMembers" :key="m.id" :value="m.id" :disabled="editOwners.has(m.id)">
+              {{ m.first_name }} {{ m.last_name }}<template v-if="editOwners.has(m.id)"> ({{ takenBy(editOwners, m.id) }})</template>
             </option>
           </select>
         </div>

@@ -42,6 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => null);
 
         $middleware->append(\App\Http\Middleware\SetLocale::class);
+        // Names the who/route/record of every API write in the activity log.
+        $middleware->api(append: [\App\Http\Middleware\RecordActivity::class]);
         $middleware->alias([
             'role'     => \App\Http\Middleware\RequireRole::class,
             'fan.auth' => \App\Http\Middleware\FanAuth::class,
