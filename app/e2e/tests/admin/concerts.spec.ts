@@ -30,8 +30,9 @@ test.describe('Admin Concerts — read-only', () => {
       return
     }
 
-    // Use the Venue column (index 3: Date=0, Name=1, Doors/Start=2, Venue=3)
-    const venueCell = rowsBefore.first().locator('td').nth(3)
+    // By test id, not position (adding the On stage column moved it once)
+    // nor header text (the admin's language is per user).
+    const venueCell = rowsBefore.first().getByTestId('concert-venue')
     const venueText = await venueCell.textContent()
     const query = venueText && venueText.trim() !== '—' ? venueText.trim().substring(0, 4) : 'a'
 

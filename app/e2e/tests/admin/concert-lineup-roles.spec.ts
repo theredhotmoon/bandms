@@ -24,7 +24,7 @@ test.describe.serial('Admin Concerts — line-up roles switch', () => {
 
     const concert = await request.post('/api/concerts', {
       headers: adminHeaders(),
-      data: { name: { en: concertName }, venue_id: venueId, date: '2099-04-04' },
+      data: { name: { en: concertName }, venue_id: venueId, date: '2099-04-04', start_time: '19:00' },
     })
     expect(concert.status(), await concert.text()).toBe(201)
     const body = (await concert.json()).data
@@ -41,10 +41,15 @@ test.describe.serial('Admin Concerts — line-up roles switch', () => {
     }
   })
 
-  async function openEditor(page: import('@playwright/test').Page) {
+  async function openList(page: import('@playwright/test').Page) {
     await page.goto('/admin/concerts')
     await page.waitForLoadState('networkidle')
     await searchTable(page, concertName)
+  }
+
+  /** `listOpen`: the list is already loaded and searched — skip a second page load. */
+  async function openEditor(page: import('@playwright/test').Page, { listOpen = false } = {}) {
+    if (!listOpen) await openList(page)
     await page.locator('tbody tr').filter({ hasText: concertName }).getByRole('button', { name: /edit/i }).click()
     const modal = page.locator('.modal-overlay')
     await expect(modal.getByRole('heading', { name: /edit concert/i })).toBeVisible()
@@ -74,7 +79,13 @@ test.describe.serial('Admin Concerts — line-up roles switch', () => {
   })
 
   test("our band's line-up row takes its own stage time, apart from the show's start", async ({ page, request }) => {
-    let modal = await openEditor(page)
+    // Before: the list says our time is not set (in words, whatever the UI language).
+    await openList(page)
+    const cell = page.locator('tbody tr').filter({ hasText: concertName }).getByTestId('concert-stage-time')
+    await expect(cell.locator('.stage-unset')).toHaveCount(1)
+    await expect(cell).not.toContainText('19:00')
+
+    let modal = await openEditor(page, { listOpen: true })
     const own = modal.getByTestId('concert-own-play-time')
     await expect(own).toHaveValue('')
     await own.fill('23:00')
@@ -86,7 +97,11 @@ test.describe.serial('Admin Concerts — line-up roles switch', () => {
 
     const after = (await (await request.get(`/api/concerts/${concertId}`, { headers: adminHeaders() })).json()).data
     expect(after.own_play_time?.slice(0, 5)).toBe('23:00')
-    expect(after.start_time).toBeNull()
+    expect(after.start_time?.slice(0, 5)).toBe('19:00')
+
+    // After: the list shows our own time; the start stays in its own column.
+    await expect(cell).toHaveText('23:00')
+    await expect(cell.locator('.stage-unset')).toHaveCount(0)
 
     modal = await openEditor(page)
     await expect(modal.getByTestId('concert-own-play-time')).toHaveValue('23:00')
