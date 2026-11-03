@@ -9,6 +9,7 @@ import HeroBackdrop from '@/components/HeroBackdrop.astro'
 import { resolveHeroImages } from '@/lib/heroImages'
 import { getBandProfile, getConcerts, getReleases, getPosts, getSocialLinks, getSiteConfig } from '@/lib/cms'
 import { isUpcoming, fmtTime, postSlug, fmtDateParts } from '@/lib/i18n'
+import { ourStageTime } from '@/lib/lineup'
 import { HOME_COPY } from '@bandms/site-copy'
 import { moduleCopy, newsletterFormCopy } from '@/lib/copy'
 
@@ -160,8 +161,8 @@ const structuredData = {
                   <span class="gig-city">{c.venue.city ?? c.venue.name}</span>
                   <span class="gig-venue">{c.venue.name}</span>
                 </div>
-                {c.start_time && (
-                  <span class="gig-time">{fmtTime(c.start_time)}</span>
+                {ourStageTime(c) && (
+                  <span class="gig-time">{fmtTime(ourStageTime(c)!)}</span>
                 )}
                 <span class="gig-arrow">→</span>
               </a>

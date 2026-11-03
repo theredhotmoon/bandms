@@ -70,7 +70,7 @@ test.describe.serial('Admin Concerts — guest band play time', () => {
 
     const modal = page.locator('.modal-overlay')
     await expect(modal.getByRole('heading', { name: /edit concert/i })).toBeVisible()
-    await expect(modal.locator('.play-time-input')).toHaveValue('21:00')
+    await expect(modal.locator('.lineup-item:not(.is-main) .play-time-input')).toHaveValue('21:00')
     await expect(modal.getByRole('button', { name: /update|save/i })).toBeDisabled()
   })
 

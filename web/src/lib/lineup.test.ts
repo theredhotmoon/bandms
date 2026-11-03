@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { concertLineup, lineupCaption, showsLineupRoles } from './lineup'
+import { concertLineup, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from './lineup'
 
 const guest = (name: string, sort_order: number, play_time: string | null = null) => ({
   id: sort_order, name, website: null, sort_order, play_time,
@@ -39,6 +39,24 @@ describe('concertLineup', () => {
     expect(lineup.map((e) => e.name)).toEqual(['Skanking Storks', 'Guest'])
   })
 
+  it("prints our band's own stage time rather than the show's start", () => {
+    // Headlining a four-band bill: the show starts at 19:00 with the opener,
+    // we are on at 23:00. start_time is the former, own_play_time the latter.
+    const lineup = concertLineup(
+      { bands: [guest('Opener', 2, '19:00')], own_sort_order: 1, start_time: '19:00', own_play_time: '23:00' },
+      'Skanking Storks',
+    )
+
+    expect(lineup[0]).toMatchObject({ own: true, play_time: '23:00' })
+  })
+
+  it('falls back to start_time when our stage time is unset', () => {
+    for (const own_play_time of [null, undefined]) {
+      const lineup = concertLineup({ bands: [], own_sort_order: 1, start_time: '21:00', own_play_time }, 'Us')
+      expect(lineup[0].play_time).toBe('21:00')
+    }
+  })
+
   it('does not reorder the bands array it was given', () => {
     const bands = [guest('B', 3), guest('A', 2)]
     concertLineup({ bands, own_sort_order: 1, start_time: null }, 'Us')
@@ -76,5 +94,28 @@ describe('showsLineupRoles', () => {
 
   it('keeps the labels for a concert served without the flag', () => {
     expect(showsLineupRoles({})).toBe(true)
+  })
+})
+
+describe('runningOrderNumber', () => {
+  it('numbers the billing-ordered list in the order the acts play', () => {
+    // Headliner on top of the bill, on stage last.
+    expect([0, 1, 2, 3, 4].map((i) => runningOrderNumber(i, 5))).toEqual(['05', '04', '03', '02', '01'])
+  })
+
+  it('gives a lone act 01', () => {
+    expect(runningOrderNumber(0, 1)).toBe('01')
+  })
+})
+
+describe('ourStageTime', () => {
+  it("prefers our own slot over the show's start", () => {
+    expect(ourStageTime({ start_time: '19:00', own_play_time: '23:00' })).toBe('23:00')
+  })
+
+  it('falls back to the start, or to nothing', () => {
+    expect(ourStageTime({ start_time: '21:00', own_play_time: null })).toBe('21:00')
+    expect(ourStageTime({ start_time: '21:00' })).toBe('21:00')
+    expect(ourStageTime({ start_time: null, own_play_time: null })).toBeNull()
   })
 })

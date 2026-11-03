@@ -11,7 +11,7 @@
  */
 import type { Locale } from '@/types/shared'
 import type { Concert } from '@/types/concert'
-import { concertLineup, lineupCaption, showsLineupRoles } from '@/lib/lineup'
+import { concertLineup, lineupCaption, ourStageTime, showsLineupRoles } from '@/lib/lineup'
 import { fmtDateParts, fmtTime, isUpcoming } from '@/lib/i18n'
 import { richTextHtml } from '@/lib/richText'
 import { ticketLink } from '@/lib/tickets'
@@ -47,6 +47,7 @@ const rows = concerts.map(c => {
       [c.venue.street, c.venue.street_number].filter(Boolean).join(' '),
       [c.venue.postcode, c.venue.city].filter(Boolean).join(' '),
     ].filter(Boolean).join(', '),
+    onStage: ourStageTime(c),
     lineup: concertLineup(c, bandName).map((b, i) => ({ ...b, caption: lineupCaption(i, b, showsLineupRoles(c), copy, fmtTime) })),
     description: richTextHtml(c.description),
   }
@@ -65,7 +66,7 @@ const rows = concerts.map(c => {
           <span class="pc-title">{r.c.name ?? r.place}</span>
           <span class="pc-meta">
             {/* Template strings: Astro drops the whitespace between adjacent expressions. */}
-            {[r.c.name ? r.place : null, r.c.start_time ? `${copy.onStage} ${fmtTime(r.c.start_time)}` : null].filter(Boolean).join(' · ')}
+            {[r.c.name ? r.place : null, r.onStage ? `${copy.onStage} ${fmtTime(r.onStage)}` : null].filter(Boolean).join(' · ')}
           </span>
         </span>
         <span class="pc-cta">
@@ -90,7 +91,7 @@ const rows = concerts.map(c => {
             <dl class="pc-facts">
               <div><dt>{copy.venue}</dt><dd>{r.c.venue.name}{r.address && <span class="pc-sub">{r.address}</span>}</dd></div>
               {r.c.doors_open && <div><dt>{copy.doors}</dt><dd>{fmtTime(r.c.doors_open)}</dd></div>}
-              {r.c.start_time && <div><dt>{copy.onStage}</dt><dd>{fmtTime(r.c.start_time)}</dd></div>}
+              {r.onStage && <div><dt>{copy.onStage}</dt><dd>{fmtTime(r.onStage)}</dd></div>}
             </dl>
 
             {r.lineup.length > 1 && (

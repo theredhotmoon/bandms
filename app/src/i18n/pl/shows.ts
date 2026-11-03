@@ -54,7 +54,7 @@ export default {
       concertLineup: 'Kolejność występów',
       dragToReorder: '(przeciągnij, aby zmienić kolejność)',
       us: 'my',
-      bandStart: '↑ start zespołu',
+      ownTimeFallback: 'puste = start {time}',
       setTimeTitle: 'Przybliżony czas setu',
       removeFromLineup: 'Usuń ze składu',
       showLineupRoles: 'Pokazuj role zespołów pod każdym występem',

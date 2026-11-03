@@ -29,6 +29,8 @@ export interface Concert {
   sound_check_time: string | null
   start_time: string | null
   own_sort_order: number
+  /** Our band's stage time in the line-up; null = it plays at `start_time`. */
+  own_play_time: string | null
   /** Print "Headliner" / "Support" under each act on the show page. */
   show_lineup_roles: boolean
   description: string | null
@@ -74,6 +76,7 @@ export interface ConcertPayload {
   sound_check_time?: string | null
   start_time?: string | null
   own_sort_order?: number
+  own_play_time?: string | null
   show_lineup_roles?: boolean
   bands?: ConcertBandPayload[]
   tag_ids?: number[]

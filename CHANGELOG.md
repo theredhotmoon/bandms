@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-03 (our stage time, running-order numbers, shows page order)
+
+### Added
+- **Our band's line-up row has its own stage time.** In the concert form our row now takes a time like every guest row, separate from the show's start time. When we headline, the show starts with the opener (say 19:00) and we play later (23:00): the page used to print the start time against our band, or nothing when no start time was set. Left empty, the row still uses the start time, so existing shows are unchanged. Everything labelled *On stage* now uses the same time: the show page's facts strip, the concert card on a news post, and the gig list on the home page.
+
+### Changed
+- **Line-up numbers follow the running order.** The list is in billing order, headliner on top, and the headliner plays last. It used to be numbered 01 and is now numbered highest. The opening act is 01.
+- **The shows page leads with upcoming gigs.** The order is now hero, upcoming gigs, map, then the archive of past shows. The map used to come before the upcoming list.
+
 ## [Unreleased] — 2026-11-03 (headliner/support labels are optional)
 
 ### Added
