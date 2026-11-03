@@ -57,6 +57,8 @@ export default {
       bandStart: '↑ start zespołu',
       setTimeTitle: 'Przybliżony czas setu',
       removeFromLineup: 'Usuń ze składu',
+      showLineupRoles: 'Pokazuj role zespołów pod każdym występem',
+      showLineupRolesNote: '(headliner, support — wyłącz przy festiwalu lub równorzędnym składzie)',
       dropBands: 'Przeciągnij tu zespoły, aby ułożyć kolejność',
       descriptionPlaceholder: 'Opcjonalny opis…',
       slug: 'Adres URL (slug)',

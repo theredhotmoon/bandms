@@ -50,19 +50,24 @@ test.describe.serial('Public — concert poster', () => {
   failOnPageError()
 
   let concertId: number | null = null
+  let venueId: number | null = null
   let slug = ''
 
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000)
-    const venues = ((await (await request.get(`${API}/api/venues`, { headers: headers() })).json()).data ?? []) as { id: number }[]
-    test.skip(venues.length === 0, 'No venue to hold a concert')
+    // Its own venue: borrowing venues[0] hung this concert on whichever venue
+    // sorted first, often another spec's fixture, whose cleanup delete
+    // cascaded to this concert mid-run.
+    const venue = await request.post(`${API}/api/venues`, { headers: headers(), data: { name: `E2E Poster Venue ${Date.now()}${Math.random().toString(36).slice(2, 6)}` } })
+    expect(venue.status(), await venue.text()).toBe(201)
+    venueId = (await venue.json()).data.id
 
     // A date far out and random enough not to collide with another run's.
     const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')
     const month = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0')
     const created = await request.post(`${API}/api/concerts`, {
       headers: headers(),
-      data: { venue_id: venues[0].id, date: `2098-${month}-${day}`, name: { en: `E2E Poster ${Date.now()}` } },
+      data: { venue_id: venueId, date: `2098-${month}-${day}`, name: { en: `E2E Poster ${Date.now()}` } },
     })
     expect(created.status(), await created.text()).toBe(201)
     const concert = (await created.json()).data
@@ -83,6 +88,10 @@ test.describe.serial('Public — concert poster', () => {
     if (concertId === null) return
     const res = await request.delete(`${API}/api/concerts/${concertId}`, { headers: headers() })
     expect(res.ok(), `cleanup delete failed with ${res.status()}`).toBeTruthy()
+    if (venueId !== null) {
+      const v = await request.delete(`${API}/api/venues/${venueId}`, { headers: headers() })
+      expect(v.ok(), `venue cleanup failed with ${v.status()}`).toBeTruthy()
+    }
     await rebuildAndWait(request, Date.now())
   })
 

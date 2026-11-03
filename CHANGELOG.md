@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-03 (headliner/support labels are optional)
+
+### Added
+- **Each concert can hide the "Headliner" and "Support" labels.** A new switch under the line-up in the concert form, *Show billing roles under each act*, is on by default, so every existing show stays as it was. Switch it off for a festival slot or a split bill: the line-up keeps its running order and stage times, the labels disappear, and the first act is no longer highlighted as the headliner. This applies to the show page and to the concert card on a news post.
+
+### Fixed
+- **Five E2E specs no longer borrow "the first venue" for their test concerts.** That venue was often another spec's temporary one, and when that spec cleaned up, deleting it also deleted their concert mid-run. Each spec now creates and removes its own venue.
+
 ## [Unreleased] — 2026-11-03 (show page layout, rebuilds in the activity log)
 
 ### Added

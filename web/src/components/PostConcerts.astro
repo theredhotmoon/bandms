@@ -11,7 +11,7 @@
  */
 import type { Locale } from '@/types/shared'
 import type { Concert } from '@/types/concert'
-import { concertLineup } from '@/lib/lineup'
+import { concertLineup, lineupCaption, showsLineupRoles } from '@/lib/lineup'
 import { fmtDateParts, fmtTime, isUpcoming } from '@/lib/i18n'
 import { richTextHtml } from '@/lib/richText'
 import { ticketLink } from '@/lib/tickets'
@@ -47,7 +47,7 @@ const rows = concerts.map(c => {
       [c.venue.street, c.venue.street_number].filter(Boolean).join(' '),
       [c.venue.postcode, c.venue.city].filter(Boolean).join(' '),
     ].filter(Boolean).join(', '),
-    lineup: concertLineup(c, bandName),
+    lineup: concertLineup(c, bandName).map((b, i) => ({ ...b, caption: lineupCaption(i, b, showsLineupRoles(c), copy, fmtTime) })),
     description: richTextHtml(c.description),
   }
 })
@@ -97,10 +97,10 @@ const rows = concerts.map(c => {
               <div class="pc-block">
                 <h3 class="pc-h">{copy.lineup}</h3>
                 <ol class="pc-lineup">
-                  {r.lineup.map((b, i) => (
+                  {r.lineup.map(b => (
                     <li data-own={b.own ? '' : undefined}>
                       <span class="pc-band">{b.name}</span>
-                      <span class="pc-sub">{i === 0 ? copy.headliner : copy.support}{b.play_time && ` · ${fmtTime(b.play_time)}`}</span>
+                      {b.caption && <span class="pc-sub">{b.caption}</span>}
                     </li>
                   ))}
                 </ol>

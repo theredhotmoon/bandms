@@ -47,6 +47,7 @@ test.describe.serial('Public — member gigs', () => {
   let memberId: number | null = null
   let slug = ''
   let concertId: number | null = null
+  let venueId: number | null = null
   let concertSlug = ''
 
   test.beforeAll(async ({ request }) => {
@@ -59,11 +60,15 @@ test.describe.serial('Public — member gigs', () => {
     memberId = (await member.json()).data.id
     slug = (await member.json()).data.slug
 
-    const venues = ((await (await request.get(`${API}/api/venues`, { headers: headers() })).json()).data ?? []) as { id: number }[]
-    test.skip(venues.length === 0, 'No venue to hold a concert')
+    // Its own venue: borrowing venues[0] hung this concert on whichever venue
+    // sorted first, often another spec's fixture, whose cleanup delete
+    // cascaded to this concert mid-run.
+    const venue = await request.post(`${API}/api/venues`, { headers: headers(), data: { name: `E2E Gig Venue ${Date.now()}${Math.random().toString(36).slice(2, 6)}` } })
+    expect(venue.status(), await venue.text()).toBe(201)
+    venueId = (await venue.json()).data.id
     const concert = await request.post(`${API}/api/concerts`, {
       headers: headers(),
-      data: { venue_id: venues[0].id, date: '2096-05-05', name: { en: `E2E Gig ${stamp}` }, member_ids: [memberId] },
+      data: { venue_id: venueId, date: '2096-05-05', name: { en: `E2E Gig ${stamp}` }, member_ids: [memberId] },
     })
     expect(concert.status(), await concert.text()).toBe(201)
     concertId = (await concert.json()).data.id
@@ -75,6 +80,10 @@ test.describe.serial('Public — member gigs', () => {
     test.setTimeout(240_000)
     if (concertId !== null) await request.delete(`${API}/api/concerts/${concertId}`, { headers: headers() })
     if (memberId !== null) await request.delete(`${API}/api/band-profile/members/${memberId}`, { headers: headers() })
+    if (venueId !== null) {
+      const res = await request.delete(`${API}/api/venues/${venueId}`, { headers: headers() })
+      expect(res.ok(), `venue cleanup → ${res.status()}`).toBe(true)
+    }
     await rebuildAndWait(request, Date.now())
   })
 

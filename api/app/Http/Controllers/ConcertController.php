@@ -187,6 +187,8 @@ class ConcertController extends Controller
             'sound_check_time'   => $time,
             'start_time'         => $time,
             'own_sort_order'     => 'nullable|integer|min:1',
+            // "Headliner" / "Support" under each act on the show page.
+            'show_lineup_roles'  => 'sometimes|boolean',
             'description'        => 'nullable|array',
             'description.en'     => 'nullable|string|max:2000',
             'description.pl'     => 'nullable|string|max:2000',

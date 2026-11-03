@@ -79,6 +79,26 @@ test.describe('Admin Concerts — CRUD flow', () => {
   // after ours push our row off page 1. Searching by the name pins it there.
   const showOurRow = (page: import('@playwright/test').Page) => searchTable(page, concertName)
 
+  // Its own venue, chosen by name. "The first option" was whichever venue
+  // sorted first — often another spec's fixture, deleted (with every concert
+  // on it) by that spec's cleanup while this flow was still using it.
+  const venueName = `E2E CRUD Venue ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  let venueId: number | null = null
+
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post('/api/venues', { headers: adminHeaders(), data: { name: venueName } })
+    expect(res.status(), await res.text()).toBe(201)
+    venueId = (await res.json()).data.id
+  })
+
+  // Last: the flow's own delete step has removed the concert by then, and a
+  // venue delete would cascade to it if that step had failed.
+  test.afterAll(async ({ request }) => {
+    if (venueId === null) return
+    const res = await request.delete(`/api/venues/${venueId}`, { headers: adminHeaders() })
+    expect(res.ok(), `venue cleanup → ${res.status()}`).toBe(true)
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/concerts')
     await page.waitForLoadState('networkidle')
@@ -108,8 +128,7 @@ test.describe('Admin Concerts — CRUD flow', () => {
     const dateInput = modal.locator('input[type="date"], input[name="date"]').first()
     await dateInput.fill(futureDate)
 
-    // Select first available venue
-    await venueSelect.selectOption({ index: 1 })
+    await venueSelect.selectOption({ label: venueName })
 
     // Fill start_time if visible
     const timeInput = modal.locator('input[type="time"]').first()

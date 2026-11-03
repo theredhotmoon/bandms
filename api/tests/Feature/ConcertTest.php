@@ -534,3 +534,50 @@ describe('GET /api/concerts/{concert}/setlist', function () {
             ->assertNotFound();
     });
 });
+
+describe('show_lineup_roles', function () {
+    it('defaults to showing the headliner and support labels', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create();
+
+        $id = $this->postJson('/api/concerts', ['venue_id' => $venue->id, 'date' => '2026-09-20'])
+            ->assertCreated()
+            ->assertJsonPath('data.show_lineup_roles', true)
+            ->json('data.id');
+
+        // The public read the Astro build makes, not just the write's echo.
+        $this->getJson("/api/concerts/{$id}")->assertJsonPath('data.show_lineup_roles', true);
+    });
+
+    it('switches the labels off and back on', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+
+        $this->putJson("/api/concerts/{$concert->id}", ['show_lineup_roles' => false])
+            ->assertSuccessful()
+            ->assertJsonPath('data.show_lineup_roles', false);
+        expect($concert->fresh()->show_lineup_roles)->toBeFalse();
+
+        $this->putJson("/api/concerts/{$concert->id}", ['show_lineup_roles' => true])
+            ->assertJsonPath('data.show_lineup_roles', true);
+    });
+
+    it('leaves the setting alone when a save does not mention it', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01', 'show_lineup_roles' => false]);
+
+        $this->putJson("/api/concerts/{$concert->id}", ['date' => '2026-07-01'])
+            ->assertJsonPath('data.show_lineup_roles', false);
+    });
+
+    it('rejects a value that is not a boolean', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        $this->putJson("/api/concerts/{$concert->id}", ['show_lineup_roles' => 'sometimes'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('show_lineup_roles');
+    });
+});

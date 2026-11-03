@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { concertLineup } from './lineup'
+import { concertLineup, lineupCaption, showsLineupRoles } from './lineup'
 
 const guest = (name: string, sort_order: number, play_time: string | null = null) => ({
   id: sort_order, name, website: null, sort_order, play_time,
@@ -44,5 +44,37 @@ describe('concertLineup', () => {
     concertLineup({ bands, own_sort_order: 1, start_time: null }, 'Us')
 
     expect(bands.map((b) => b.name)).toEqual(['B', 'A'])
+  })
+})
+
+describe('lineupCaption', () => {
+  const labels = { headliner: 'Headliner', support: 'Support' }
+  const fmt = (t: string) => t.slice(0, 5)
+
+  it('bills the first act as headliner and the rest as support, with their times', () => {
+    expect(lineupCaption(0, { play_time: '21:00:00' }, true, labels, fmt)).toBe('Headliner · 21:00')
+    expect(lineupCaption(1, { play_time: null }, true, labels, fmt)).toBe('Support')
+  })
+
+  it('leaves only the time when the band switched the roles off', () => {
+    expect(lineupCaption(0, { play_time: '21:00' }, false, labels, fmt)).toBe('21:00')
+    expect(lineupCaption(2, { play_time: '19:30' }, false, labels, fmt)).toBe('19:30')
+  })
+
+  it('prints nothing for an untimed act with the roles off', () => {
+    // '' lets the page drop the caption element instead of an empty line.
+    expect(lineupCaption(1, { play_time: null }, false, labels, fmt)).toBe('')
+  })
+
+})
+
+describe('showsLineupRoles', () => {
+  it('follows the flag', () => {
+    expect(showsLineupRoles({ show_lineup_roles: true })).toBe(true)
+    expect(showsLineupRoles({ show_lineup_roles: false })).toBe(false)
+  })
+
+  it('keeps the labels for a concert served without the flag', () => {
+    expect(showsLineupRoles({})).toBe(true)
   })
 })

@@ -35,3 +35,36 @@ export function concertLineup(
     .sort((a, b) => a.order - b.order || a.rank - b.rank)
     .map((x) => x.entry)
 }
+
+export interface LineupRoleLabels {
+  headliner: string
+  support: string
+}
+
+/**
+ * Whether a concert's line-up is billed as headliner + support — the band's
+ * choice per concert, since a festival slot or a split bill is not. Read
+ * `!== false` so a concert served without the key (an older API mid-deploy)
+ * keeps the labels it had. The one place this is decided: the caption and
+ * the show page's headliner highlight both take its answer.
+ */
+export function showsLineupRoles(concert: { show_lineup_roles?: boolean }): boolean {
+  return concert.show_lineup_roles !== false
+}
+
+/**
+ * The small line under an act's name: its billing role, its stage time, or
+ * both — "Headliner · 21:00". With the roles off only the time is left, and
+ * an act with no time gets no line at all ('').
+ */
+export function lineupCaption(
+  index: number,
+  entry: Pick<LineupEntry, 'play_time'>,
+  showRoles: boolean,
+  labels: LineupRoleLabels,
+  fmtTime: (time: string) => string,
+): string {
+  const role = showRoles ? (index === 0 ? labels.headliner : labels.support) : ''
+  const time = entry.play_time ? fmtTime(entry.play_time) : ''
+  return [role, time].filter(Boolean).join(' · ')
+}
