@@ -1879,6 +1879,14 @@ cut wrote inline, and review caught both: `PostController`'s retried
 `post_blocks` transaction kept a stale log id whose row had rolled back, and
 a swallowed exception from a log INSERT hid an already-aborted transaction.
 
+- **A public-site rebuild is a `rebuilt` change on subject `PublicSite`**
+  (`ActivityRecorder::recordRebuild()`, called from `SiteRebuild::rebuild()`
+  — the one path both the button and auto-rebuild take). Its diff carries
+  `trigger`, the pending `areas` read *before* they are cleared, and on a
+  manual rebuild `changes`: snapshots of every log row after the previous
+  rebuild — the edits that went live. An automatic one omits `changes`; it
+  is filed inside the save that fired it. A rebuild a visitor's checkout
+  fired is not logged, by the rule below.
 - **Visitors are not logged.** An anonymous web request (sign-up, checkout)
   records nothing; jobs and commands are logged as the system.
 - **People who are not users** (`ActivityRecorder::PERSONAL`: subscribers,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityChange;
 use App\Models\ActivityLog;
+use App\Support\Activity\ActivityRecorder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class ActivityLogController extends Controller
             'subject_type' => ['nullable', 'string', 'max:64'],
             'subject_id'   => ['nullable', 'integer', 'min:1'],
             'user_id'      => ['nullable', 'integer', 'min:1'],
-            'action'       => ['nullable', 'string', 'in:created,updated,deleted,other'],
+            'action'       => ['nullable', 'string', 'in:created,updated,deleted,rebuilt,other'],
             'from'         => ['nullable', 'date'],
             'to'           => ['nullable', 'date'],
             'tz_offset'    => ['nullable', 'integer', 'min:-840', 'max:840'],
@@ -51,7 +52,16 @@ class ActivityLogController extends Controller
             $query->where('user_id', $filters['user_id']);
         }
         if (!empty($filters['action'])) {
-            $query->where('action', $filters['action']);
+            $action = $filters['action'];
+            $query->where(function (Builder $q) use ($action) {
+                $q->where('action', $action);
+                // An automatic rebuild is filed inside the save that fired it,
+                // whose action stays created/updated/deleted. With auto-rebuild
+                // on that is every rebuild, so match the change itself too.
+                if ($action === ActivityRecorder::REBUILT) {
+                    $q->orWhereHas('entries', fn (Builder $c) => $c->where('event', ActivityRecorder::REBUILT));
+                }
+            });
         }
         // From/To are calendar days in the admin's own time zone — the table
         // shows times that way — while created_at is UTC. `tz_offset` is the

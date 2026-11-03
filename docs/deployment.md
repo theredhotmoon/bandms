@@ -410,9 +410,10 @@ Watch the Actions tab. The run does: backend tests + frontend unit tests → bui
 and push three images → scp the compose file and Caddyfile → SSH in and start
 everything.
 
-The first run is the slow one — images build from scratch, and the backend's
-`composer install` uses `--prefer-source`, which git-clones every dependency.
-Expect 15–25 minutes. Later runs hit the layer cache.
+The first run is the slow one — images build from scratch. Later runs hit the
+layer cache. The backend's `composer install` uses `--prefer-dist` (release
+archives); it used `--prefer-source` until Nov 2026, which git-cloned every
+dependency and once filled a CI runner's disk.
 
 If the deploy step hangs on `--wait backend`, the healthcheck is failing:
 

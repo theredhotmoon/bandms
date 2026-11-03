@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { ActivityAction, ActivityFilterOptions, ActivityFilters } from '@/types/activity'
-import { humanizeType } from '@/utils/activityFilters'
+import { ACTIVITY_ACTIONS as ACTIONS, humanizeType } from '@/utils/activityFilters'
 
 const props = defineProps<{
   filters: ActivityFilters
@@ -13,8 +13,6 @@ const emit = defineEmits<{
   change: [patch: Partial<ActivityFilters>]
   clear: []
 }>()
-
-const ACTIONS: ActivityAction[] = ['created', 'updated', 'deleted', 'other']
 
 // The search box commits on Enter or blur, not per keystroke: each commit is
 // a URL change and a request.

@@ -419,7 +419,17 @@ export default {
       created: 'Dodano',
       updated: 'Edytowano',
       deleted: 'Usunięto',
+      rebuilt: 'Przebudowano',
       other: 'Zmieniono',
+    },
+    rebuild: {
+      manual: 'Przebudowa uruchomiona ręcznie',
+      auto: 'Automatyczna przebudowa po tym zapisie',
+      areas: 'Przebudowane sekcje',
+      noAreas: 'Brak oczekujących zmian — strona została przebudowana bez zmian.',
+      included: 'Edycje od poprzedniej przebudowy ({n}) | Edycje od poprzedniej przebudowy ({n}) | Edycje od poprzedniej przebudowy ({n})',
+      capped: 'Pokazano {n} najnowszych.',
+      noneIncluded: 'Brak zapisanych edycji od poprzedniej przebudowy.',
     },
     cols: {
       when: 'Kiedy',

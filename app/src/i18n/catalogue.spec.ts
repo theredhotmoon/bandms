@@ -83,6 +83,7 @@ describe('i18n catalogues', () => {
       const PLURALS = new Set([
         'common.rebuild.pendingChanges',
         'more.activity.changes',
+        'more.activity.rebuild.included',
         'content.newsletter.subscribers',
         'rider.rig.signalChain.generates',
         'rider.rig.signalChain.existingRows',

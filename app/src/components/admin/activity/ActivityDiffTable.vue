@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ActivityChange } from '@/types/activity'
 import { formatDiffValue, humanizeType } from '@/utils/activityFilters'
+import ActivityRebuildDetails from './ActivityRebuildDetails.vue'
 
 const props = defineProps<{ change: ActivityChange }>()
 
@@ -25,7 +26,10 @@ const rows = computed(() =>
       <span v-if="change.subject_id" class="ad-id">#{{ change.subject_id }}</span>
     </div>
 
-    <table v-if="rows.length" class="ad-table">
+    <!-- A rebuild stores what it shipped, not field values: no before/after. -->
+    <ActivityRebuildDetails v-if="change.event === 'rebuilt'" :change="change" />
+
+    <table v-else-if="rows.length" class="ad-table">
       <thead>
         <tr>
           <th>{{ $t('more.activity.cols.field') }}</th>
@@ -53,6 +57,7 @@ const rows = computed(() =>
 }
 .ad-event--created { color: var(--c-4ade80); }
 .ad-event--deleted { color: var(--c-f87171); }
+.ad-event--rebuilt { color: var(--c-60a5fa); }
 .ad-type  { color: var(--c-94a3b8); }
 .ad-label { color: var(--c-e2e8f0); font-weight: 600; }
 .ad-id    { color: var(--c-64748b); font-size: var(--fs-xs); }

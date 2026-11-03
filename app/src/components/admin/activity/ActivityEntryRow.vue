@@ -18,8 +18,9 @@ const open = ref(false)
 const time = computed(() =>
   new Date(props.entry.created_at).toLocaleTimeString(props.locale, { hour: '2-digit', minute: '2-digit' }))
 
+// A rebuild's diff keys (trigger, areas, changes) are not fields anyone edited.
 const fieldCount = computed(() =>
-  props.entry.changes.reduce((n, c) => n + Object.keys(c.diff).length, 0))
+  props.entry.changes.reduce((n, c) => n + (c.event === 'rebuilt' ? 0 : Object.keys(c.diff).length), 0))
 
 const detailsId = computed(() => `activity-details-${props.entry.id}`)
 </script>
@@ -87,6 +88,7 @@ const detailsId = computed(() => `activity-details-${props.entry.id}`)
 }
 .ae-action--created { color: var(--c-4ade80); }
 .ae-action--deleted { color: var(--c-f87171); }
+.ae-action--rebuilt { color: var(--c-60a5fa); }
 .ae-type   { color: var(--c-94a3b8); }
 .ae-label  { color: var(--c-e2e8f0); font-weight: 600; }
 .ae-route  { font-size: var(--fs-2xs); color: var(--c-64748b); font-family: ui-monospace, monospace; margin-top: 0.15rem; }

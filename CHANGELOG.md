@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-03 (show page layout, rebuilds in the activity log)
+
+### Added
+- **Website rebuilds appear in the activity log** as *Rebuilt*, with who pressed the button, which sections were rebuilt, and every edit made since the previous rebuild (the newest 200, with the full count). With automatic rebuilds on, the rebuild shows once inside the save that started it, however many sections that save touched. The log's *Action* filter can show rebuilds alone, automatic ones included.
+
+### Changed
+- **On a show page, the line-up and the venue sit side by side**, half the width each, right under the show's description. On a phone they stack.
+- **The venue's notes are printed once**, at the top of the venue card. The *Getting there* column beside the map, which repeated them, is gone, and with it its two texts in *Website modules → Concerts*.
+
 ## [Unreleased] — 2026-10-31 (assistant crawler: three loose ends)
 
 ### Changed
