@@ -3,7 +3,7 @@ import { expectToast, searchTable } from '../../fixtures/test-base'
 import { adminHeaders } from '../../fixtures/admin-api'
 
 /**
- * The concert form's "Show Headliner and Support" switch.
+ * The concert form's billing-roles switch and our band's own stage time.
  *
  * Not every gig is billed headliner + support — a festival slot, a split
  * bill — so the band turns the words off per concert. The switch must load
@@ -71,5 +71,24 @@ test.describe.serial('Admin Concerts — line-up roles switch', () => {
     await expect(modal.getByTestId('concert-show-lineup-roles')).not.toBeChecked()
     // Loading the stored value must not count as an edit.
     await expect(modal.getByRole('button', { name: /update|save/i })).toBeDisabled()
+  })
+
+  test("our band's line-up row takes its own stage time, apart from the show's start", async ({ page, request }) => {
+    let modal = await openEditor(page)
+    const own = modal.getByTestId('concert-own-play-time')
+    await expect(own).toHaveValue('')
+    await own.fill('23:00')
+
+    const saved = page.waitForResponse((r) => r.url().includes(`/api/concerts/${concertId}`) && r.request().method() !== 'GET')
+    await modal.getByRole('button', { name: /update|save/i }).click()
+    expect((await saved).status()).toBeLessThan(300)
+    await expect(modal).not.toBeVisible({ timeout: 8000 })
+
+    const after = (await (await request.get(`/api/concerts/${concertId}`, { headers: adminHeaders() })).json()).data
+    expect(after.own_play_time?.slice(0, 5)).toBe('23:00')
+    expect(after.start_time).toBeNull()
+
+    modal = await openEditor(page)
+    await expect(modal.getByTestId('concert-own-play-time')).toHaveValue('23:00')
   })
 })

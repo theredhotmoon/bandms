@@ -12,7 +12,7 @@ export interface LineupEntry {
  *
  * The API keeps them apart. Guests are the `bands` pivot, each with its
  * `sort_order`; our band is the concert itself, its slot in `own_sort_order`
- * and its stage time in `start_time`. The admin numbers one sequence across
+ * and its stage time is `ourStageTime()`. The admin numbers one sequence across
  * both (ConcertForm's line-up editor), so merging by position reproduces what
  * the band arranged. Reading only `bands` dropped our band from every
  * line-up on the site.
@@ -21,10 +21,10 @@ export interface LineupEntry {
  * default it to 1, which can collide with a guest's 1.
  */
 export function concertLineup(
-  concert: Pick<Concert, 'bands' | 'own_sort_order' | 'start_time'>,
+  concert: Pick<Concert, 'bands' | 'own_sort_order' | 'start_time' | 'own_play_time'>,
   bandName: string,
 ): LineupEntry[] {
-  const own = { order: concert.own_sort_order ?? 1, rank: 0, entry: { name: bandName, play_time: concert.start_time, own: true } }
+  const own = { order: concert.own_sort_order ?? 1, rank: 0, entry: { name: bandName, play_time: ourStageTime(concert), own: true } }
   const guests = concert.bands.map((b) => ({
     order: b.sort_order,
     rank: 1,
@@ -34,6 +34,18 @@ export function concertLineup(
   return [own, ...guests]
     .sort((a, b) => a.order - b.order || a.rank - b.rank)
     .map((x) => x.entry)
+}
+
+/**
+ * When our band is on stage: its own slot time, else the show's start.
+ *
+ * `start_time` is when the night starts — the opener's slot whenever we
+ * headline — so it is only our time when nothing more specific was set,
+ * which is every concert saved before `own_play_time` existed. Everything
+ * labelled "On stage" reads this, never `start_time` directly.
+ */
+export function ourStageTime(concert: Pick<Concert, 'start_time' | 'own_play_time'>): string | null {
+  return concert.own_play_time || concert.start_time
 }
 
 export interface LineupRoleLabels {
@@ -67,4 +79,15 @@ export function lineupCaption(
   const role = showRoles ? (index === 0 ? labels.headliner : labels.support) : ''
   const time = entry.play_time ? fmtTime(entry.play_time) : ''
   return [role, time].filter(Boolean).join(' · ')
+}
+
+/**
+ * The number printed beside an act: its place in the running order.
+ *
+ * The list itself is in billing order — the headliner on top — and the
+ * headliner plays last, so counting down the list numbered the night
+ * backwards. The opener is 01, the act at the top of the bill the highest.
+ */
+export function runningOrderNumber(index: number, total: number): string {
+  return String(total - index).padStart(2, '0')
 }

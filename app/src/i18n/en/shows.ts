@@ -54,7 +54,7 @@ export default {
       concertLineup: 'Concert lineup',
       dragToReorder: '(drag to reorder)',
       us: 'us',
-      bandStart: '↑ band start',
+      ownTimeFallback: 'empty = start {time}',
       setTimeTitle: 'Approximate set time',
       removeFromLineup: 'Remove from lineup',
       showLineupRoles: 'Show billing roles under each act',

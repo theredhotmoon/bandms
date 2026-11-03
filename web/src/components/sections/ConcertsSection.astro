@@ -105,41 +105,6 @@ function getTypeLabel(concert: Concert) {
       </Fragment>
     </PageHero>
 
-    <!-- ── MAP ───────────────────────────────────────────────────── -->
-    {concertsWithCoords.length > 0 && (
-      <section id="shows-map" class="map-section">
-        <div class="map-intro page-content">
-          <div class="sec-head">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
-              <circle cx="12" cy="10" r="2.6"/>
-            </svg>
-            <h2 class="sec-title">{t.mapTitle}</h2>
-          </div>
-          <p class="sec-sub">{t.mapSub}</p>
-        </div>
-        <div class="map-frame">
-          <ShowsMap
-            concerts={concertsWithCoords.map(c => ({
-              id: c.id,
-              href: `/${lang}/${slugMap[lang].concerts}/${c.slug}`,
-              lat: c.venue.latitude as number,
-              lng: c.venue.longitude as number,
-              city: c.venue.city,
-              venue: c.venue.name,
-              date: c.date,
-              upcoming: isUpcoming(c.date),
-            }))}
-            accent={ACCENT}
-            legendUpcoming={t.mapLegendUpcoming}
-            legendPlayed={t.mapLegendPlayed}
-            popupCta={t.mapPopupCta}
-            client:visible
-          />
-        </div>
-      </section>
-    )}
-
     <!-- ── UPCOMING ───────────────────────────────────────────────── -->
     <section class="sec upcoming-sec page-content">
       <div class="sec-head">
@@ -215,6 +180,41 @@ function getTypeLabel(concert: Concert) {
         <NoGigsCta lang={lang} siteConfig={siteConfig} slugMap={slugMap} />
       )}
     </section>
+
+    <!-- ── MAP ───────────────────────────────────────────────────── -->
+    {concertsWithCoords.length > 0 && (
+      <section id="shows-map" class="map-section">
+        <div class="map-intro page-content">
+          <div class="sec-head">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
+              <circle cx="12" cy="10" r="2.6"/>
+            </svg>
+            <h2 class="sec-title">{t.mapTitle}</h2>
+          </div>
+          <p class="sec-sub">{t.mapSub}</p>
+        </div>
+        <div class="map-frame">
+          <ShowsMap
+            concerts={concertsWithCoords.map(c => ({
+              id: c.id,
+              href: `/${lang}/${slugMap[lang].concerts}/${c.slug}`,
+              lat: c.venue.latitude as number,
+              lng: c.venue.longitude as number,
+              city: c.venue.city,
+              venue: c.venue.name,
+              date: c.date,
+              upcoming: isUpcoming(c.date),
+            }))}
+            accent={ACCENT}
+            legendUpcoming={t.mapLegendUpcoming}
+            legendPlayed={t.mapLegendPlayed}
+            popupCta={t.mapPopupCta}
+            client:visible
+          />
+        </div>
+      </section>
+    )}
 
     <!-- ── CHECKER STRIP ─────────────────────────────────────────── -->
     <div class="checker-strip" aria-hidden="true"></div>

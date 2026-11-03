@@ -581,3 +581,45 @@ describe('show_lineup_roles', function () {
             ->assertJsonValidationErrors('show_lineup_roles');
     });
 });
+
+describe('own_play_time', function () {
+    it('stores our band\'s stage time apart from the show\'s start', function () {
+        $this->actingAsAdmin();
+        $venue = Venue::factory()->create();
+
+        $id = $this->postJson('/api/concerts', [
+            'venue_id' => $venue->id, 'date' => '2026-09-20',
+            'start_time' => '19:00', 'own_play_time' => '23:00',
+        ])->assertCreated()->json('data.id');
+
+        // HH:mm: MySQL serves TIME as HH:mm:ss, the test SQLite as sent.
+        $data = $this->getJson("/api/concerts/{$id}")->json('data');
+        expect(substr($data['start_time'], 0, 5))->toBe('19:00')
+            ->and(substr($data['own_play_time'], 0, 5))->toBe('23:00');
+    });
+
+    it('is null until set, and can be cleared again', function () {
+        $this->actingAsAdmin();
+        $venue   = Venue::factory()->create();
+        $concert = Concert::create(['venue_id' => $venue->id, 'date' => '2026-06-01']);
+
+        $this->getJson("/api/concerts/{$concert->id}")->assertJsonPath('data.own_play_time', null);
+
+        // The shape a read sends back (HH:mm:ss) must save, like every other time.
+        $saved = $this->putJson("/api/concerts/{$concert->id}", ['own_play_time' => '22:30:00'])
+            ->assertSuccessful()->json('data.own_play_time');
+        expect(substr($saved, 0, 5))->toBe('22:30');
+
+        $this->putJson("/api/concerts/{$concert->id}", ['own_play_time' => null])
+            ->assertJsonPath('data.own_play_time', null);
+    });
+
+    it('rejects a value that is not a time', function () {
+        $this->actingAsAdmin();
+        $concert = Concert::factory()->create();
+
+        $this->putJson("/api/concerts/{$concert->id}", ['own_play_time' => 'late'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('own_play_time');
+    });
+});

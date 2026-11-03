@@ -4,10 +4,12 @@ import { failOnPageError } from '../../fixtures/page-errors'
 
 /**
  * A show page labels its line-up "Headliner" / "Support" only when the
- * concert's `show_lineup_roles` is on.
+ * concert's `show_lineup_roles` is on, prints our band's own stage time, and
+ * numbers the acts in the order they play.
  *
- * Seeds two otherwise identical concerts — roles on, roles off — each with
- * our band first at 20:00 and a guest at 21:30, rebuilds the public site
+ * Seeds two concerts — roles on, roles off — each starting at 20:00 with our
+ * band on top of the bill and a guest at 21:30. The roles-off one also sets
+ * our own stage time (23:00); the other falls back to the start. Rebuilds the public site
  * once, checks both pages, then deletes everything and rebuilds again so
  * nothing of it stays served.
  */
@@ -69,6 +71,7 @@ test.describe.serial('Public — concert line-up roles', () => {
           date: '2096-07-07',
           start_time: '20:00',
           own_sort_order: 1,
+          own_play_time: show ? null : '23:00',
           bands: [{ id: bandId, sort_order: 2, play_time: '21:30' }],
           show_lineup_roles: show,
         },
@@ -117,9 +120,34 @@ test.describe.serial('Public — concert line-up roles', () => {
     await expect(roles.nth(1)).toHaveText(/^\S.* · 21:30$/)
   })
 
+  test('numbers the acts in running order: the headliner on top plays last', async ({ page, request }) => {
+    await open(page, request, 'on')
+    await expect(page.locator('.lineup-num')).toHaveText(['02', '01'])
+  })
+
   test('with roles off, only the stage times are printed and nobody is highlighted', async ({ page, request }) => {
     await open(page, request, 'off')
     await expect(page.locator('.lineup-headliner')).toHaveCount(0)
-    await expect(page.locator('.lineup-role')).toHaveText(['20:00', '21:30'])
+    // 23:00 is our own stage time, not the show's 20:00 start.
+    await expect(page.locator('.lineup-role')).toHaveText(['23:00', '21:30'])
+    // …and the facts strip agrees: "On stage" is our slot, not the doors-to-opener start.
+    await expect(page.locator('.fact').filter({ hasText: '23:00' })).toHaveCount(1)
+    await expect(page.locator('.fact-val', { hasText: '20:00' })).toHaveCount(0)
+  })
+
+  test('the shows page lists upcoming gigs first, then the map, then the archive', async ({ page, request }) => {
+    const config = await (await request.get(`${API}/api/site-config?lang=en`)).json()
+    test.skip(config?.modules?.concerts === false, 'Concerts module is off')
+    const section = config?.module_config?.concerts?.slug ?? 'concerts'
+    expect((await page.goto(`${WEB}/en/${section}/`))?.status()).toBe(200)
+
+    // In page order, which of the three are there. Our seeded 2096 shows
+    // guarantee the upcoming list; map and archive depend on the data.
+    const seen = await page.evaluate(() =>
+      [...document.querySelectorAll('.ph, .upcoming-sec, #shows-map, .archive-wrap-outer')].map((el) =>
+        el.matches('.ph') ? 'hero' : el.matches('.upcoming-sec') ? 'upcoming' : el.id === 'shows-map' ? 'map' : 'archive'),
+    )
+    expect(seen.slice(0, 2)).toEqual(['hero', 'upcoming'])
+    expect(seen).toEqual(['hero', 'upcoming', 'map', 'archive'].filter((s) => seen.includes(s)))
   })
 })

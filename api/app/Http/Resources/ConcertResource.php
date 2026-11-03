@@ -24,6 +24,8 @@ class ConcertResource extends JsonResource
             'sound_check_time' => $this->sound_check_time,
             'start_time'       => $this->start_time,
             'own_sort_order' => $this->own_sort_order,
+            // Our band's stage time; null means it plays at start_time.
+            'own_play_time'  => $this->own_play_time,
             // "Headliner" / "Support" under each act; the default lives on the model.
             'show_lineup_roles' => $this->show_lineup_roles,
             'description'    => Locales::resolve($this->getTranslations('description')),

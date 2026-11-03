@@ -19,7 +19,7 @@ class Concert extends Model
 
     public array $translatable = ['name', 'description', 'slug'];
 
-    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'show_lineup_roles', 'description', 'poster', 'ticket_url', 'slug'];
+    protected $fillable = ['name', 'venue_id', 'date', 'doors_open', 'sound_check_time', 'start_time', 'own_sort_order', 'own_play_time', 'show_lineup_roles', 'description', 'poster', 'ticket_url', 'slug'];
 
     /**
      * Mirrors the column default, so a concert created without the field

@@ -25,6 +25,8 @@ export interface Concert {
   doors_open: string | null
   start_time: string | null
   own_sort_order: number
+  /** Our band's stage time; null means it plays at `start_time`. Absent on older API responses. */
+  own_play_time?: string | null
   /** Print "Headliner" / "Support" under each act of the line-up. */
   show_lineup_roles: boolean
   description: string | null

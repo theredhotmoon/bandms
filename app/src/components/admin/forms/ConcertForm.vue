@@ -198,7 +198,9 @@ watch(() => props.initial, (concert) => {
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
   const entries: LineupEntry[] = [
-    { type: 'main', play_time: timeInputValue(concert.start_time), _initSort: concert.own_sort_order ?? 1 },
+    // Our own stage time — not start_time, which is the opener's slot
+    // whenever we headline. Empty means the page prints start_time.
+    { type: 'main', play_time: timeInputValue(concert.own_play_time), _initSort: concert.own_sort_order ?? 1 },
     ...(concert.bands ?? []).map(b => ({
       type: 'band' as const,
       id:         b.id,
@@ -213,11 +215,6 @@ watch(() => props.initial, (concert) => {
   markClean()
 }, { immediate: true })
 
-// keep main-band play_time label in sync with start_time field
-watch(() => form.start_time, (t) => {
-  const main = lineup.value.find(i => i.type === 'main')
-  if (main) main.play_time = t
-})
 
 // ── Computed ──────────────────────────────────────────────────
 const availableBands = computed(() => {
@@ -326,11 +323,13 @@ function removeLink(idx: number) {
 function submit() {
   const bandsPayload: ConcertBandPayload[] = []
   let ownSortOrder = 1
+  let ownPlayTime: string | null = null
 
   lineup.value.forEach((item, idx) => {
     const sortOrder = idx + 1
     if (item.type === 'main') {
       ownSortOrder = sortOrder
+      ownPlayTime  = item.play_time || null
     } else if (item.id !== undefined) {
       bandsPayload.push({ id: item.id, sort_order: sortOrder, play_time: item.play_time || null })
     }
@@ -345,6 +344,7 @@ function submit() {
     sound_check_time:  form.sound_check_time || null,
     start_time:        form.start_time       || null,
     own_sort_order:    ownSortOrder,
+    own_play_time:     ownPlayTime,
     show_lineup_roles: form.show_lineup_roles,
     // On edit every locale goes as shown — the API generates only on create,
     // so a previewed slug sent as null would be dropped (#153's review).
@@ -578,19 +578,17 @@ function submit() {
                   <span v-if="item.type === 'main'" class="main-badge">{{ $t('shows.concerts.form.us') }}</span>
                 </span>
                 <span class="item-time">
-                  <template v-if="item.type === 'main'">
-                    <span class="time-auto" :class="{ dim: !form.start_time }">
-                      {{ form.start_time || '—' }}
-                    </span>
-                    <span class="time-auto-label">{{ $t('shows.concerts.form.bandStart') }}</span>
-                  </template>
+                  <span
+                    v-if="item.type === 'main' && !item.play_time && form.start_time"
+                    class="time-auto-label"
+                  >{{ $t('shows.concerts.form.ownTimeFallback', { time: form.start_time }) }}</span>
                   <input
-                    v-else
                     v-model="item.play_time"
                     type="time"
                     class="play-time-input"
                     placeholder="--:--"
                     :title="$t('shows.concerts.form.setTimeTitle')"
+                    :data-testid="item.type === 'main' ? 'concert-own-play-time' : undefined"
                   />
                 </span>
                 <button
@@ -908,14 +906,6 @@ function submit() {
   gap: 0.25rem;
   flex-shrink: 0;
 }
-.time-auto {
-  font-size: var(--fs-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--c-9ca3af);
-  min-width: 3rem;
-  text-align: right;
-}
-.time-auto.dim { color: var(--c-334155); }
 .time-auto-label { font-size: var(--fs-2xs); color: var(--c-334155); }
 
 .play-time-input {
