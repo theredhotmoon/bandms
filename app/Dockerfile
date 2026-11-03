@@ -14,11 +14,12 @@ RUN npm install -g pnpm@11
 WORKDIR /repo
 
 # Manifests first so a source-only change does not re-run the install layer.
-# All three members are copied because --frozen-lockfile validates the lockfile
+# Every member is copied because --frozen-lockfile validates the lockfile
 # against the whole workspace, even when the filter narrows what gets built.
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY app/package.json                  app/package.json
 COPY web/package.json                  web/package.json
+COPY packages/concert-core/package.json packages/concert-core/package.json
 COPY packages/rider-core/package.json  packages/rider-core/package.json
 COPY packages/site-copy/package.json   packages/site-copy/package.json
 RUN pnpm install --frozen-lockfile --filter exp-01...

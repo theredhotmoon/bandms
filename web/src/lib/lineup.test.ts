@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { concertLineup, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from './lineup'
+import { concertLineup, isHighlighted, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from './lineup'
 
 const guest = (name: string, sort_order: number, play_time: string | null = null) => ({
   id: sort_order, name, website: null, sort_order, play_time,
@@ -84,6 +84,18 @@ describe('lineupCaption', () => {
     expect(lineupCaption(1, { play_time: null }, false, labels, fmt)).toBe('')
   })
 
+})
+
+describe('isHighlighted', () => {
+  it('follows the billing when the roles are on — the top act, even a guest', () => {
+    expect(isHighlighted(0, { own: false }, true)).toBe(true)
+    expect(isHighlighted(1, { own: true }, true)).toBe(false)
+  })
+
+  it('highlights our band wherever it plays when the roles are off', () => {
+    expect(isHighlighted(1, { own: true }, false)).toBe(true)
+    expect(isHighlighted(0, { own: false }, false)).toBe(false)
+  })
 })
 
 describe('showsLineupRoles', () => {

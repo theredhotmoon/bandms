@@ -16,6 +16,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@bandms/concert-core": "workspace:*",
     "@bandms/rider-core": "workspace:*",
     "@bandms/site-copy": "workspace:*",
     "@fontsource-variable/archivo": "^5.3.0",

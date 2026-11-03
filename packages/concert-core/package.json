@@ -1,0 +1,10 @@
+{
+  "name": "@bandms/concert-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "Concert rules both apps must agree on — today, when our band is on stage. The admin's concerts list and the public show page used to hold a hand-kept copy each. Ships TypeScript source, not a build, like @bandms/rider-core; both consumers run Vite.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

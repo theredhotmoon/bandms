@@ -14,6 +14,7 @@ This is a monorepo with two applications:
 | `app/` | Vue 3 + TypeScript SPA (**admin only** — see below) |
 | `web/` | Astro SSG public site — everything a visitor sees |
 | `packages/rider-core/` | Tech-rider domain code shared by `app/` and `web/` |
+| `packages/concert-core/` | Concert rules both apps must agree on — today, which time is our stage time (`resolveStageTime()`) |
 | `packages/style-guards/` | The CSS/script grammar behind the style guards of `app/` and `web/` (plain ESM, imported by path; specs run under `app/`’s vitest) |
 
 `app/`, `web/` and `packages/*` are one **pnpm workspace** (`pnpm-workspace.yaml`)

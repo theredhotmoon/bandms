@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-04 (our band highlighted on show pages)
+
+### Changed
+- **With *Show line-up roles* off, a show page highlights our band.** The line-up used to highlight no one in that case. It now gives our band the black headliner row wherever it sits in the running order. With the roles on nothing changes: the top-billed act is highlighted, even when that is a guest.
+- **The stage-time rule lives in one place, `@bandms/concert-core`.** The admin's *On stage* column and the show page's *On stage* fact now ask the same function which time is ours and whether it falls back to the show's start, so the two cannot drift.
+
 ## [Unreleased] — 2026-11-04 (stage time in the admin concerts list)
 
 ### Added
