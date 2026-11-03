@@ -1,4 +1,4 @@
-export type ActivityAction = 'created' | 'updated' | 'deleted' | 'other'
+export type ActivityAction = 'created' | 'updated' | 'deleted' | 'rebuilt' | 'other'
 
 /** `{attribute: [old, new]}`. Values are raw column values; JSON columns arrive decoded. */
 export type ActivityDiff = Record<string, [unknown, unknown]>

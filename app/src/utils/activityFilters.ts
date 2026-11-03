@@ -1,6 +1,7 @@
 import type { ActivityAction, ActivityFilters } from '@/types/activity'
 
-const ACTIONS: readonly ActivityAction[] = ['created', 'updated', 'deleted', 'other']
+/** Every action the log records, in the order the filter offers them. */
+export const ACTIVITY_ACTIONS: readonly ActivityAction[] = ['created', 'updated', 'deleted', 'rebuilt', 'other']
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const TYPE = /^[A-Za-z][A-Za-z0-9]{0,63}$/
 
@@ -33,7 +34,7 @@ export function parseActivityFilters(query: RawQuery): ActivityFilters {
     // An id without a type would match every entity with that id.
     subject_id:   subjectType ? id(query.subject_id) : null,
     user_id:      id(query.user_id),
-    action:       action && (ACTIONS as readonly string[]).includes(action) ? action as ActivityAction : null,
+    action:       action && (ACTIVITY_ACTIONS as readonly string[]).includes(action) ? action as ActivityAction : null,
     from:         from && DATE.test(from) ? from : null,
     to:           to && DATE.test(to) ? to : null,
     q:            str(query.q)?.slice(0, 100) ?? null,

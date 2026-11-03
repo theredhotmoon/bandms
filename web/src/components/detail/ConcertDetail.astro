@@ -350,32 +350,102 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
       </section>
     )}
 
-    <!-- ── LINE-UP ─────────────────────────────────────────── -->
-    {lineup.length > 0 && (
-      <section class="sec lineup-sec page-content">
+    <!-- ── LINE-UP + VENUE — one row, 50/50; the venue alone spans it ── -->
+    <div class={`sec lineup-venue page-content${lineup.length > 0 ? ' lineup-venue-split' : ''}`}>
+      <!-- ── LINE-UP ─────────────────────────────────────────── -->
+      {lineup.length > 0 && (
+        <section class="lineup-sec">
+          <div class="sec-head">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/>
+              <path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17 13.6a5.5 5.5 0 0 1 3.5 5.4"/>
+            </svg>
+            <h2 class="sec-title">{t.lineupTitle}</h2>
+          </div>
+          <div class="lineup-list">
+            {lineup.map((band, i) => (
+              <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
+                <span class="lineup-num">{String(i + 1).padStart(2, '0')}</span>
+                <div class="lineup-info">
+                  <span class="lineup-name">{band.name}</span>
+                  <span class="lineup-role">
+                    {i === 0 ? t.headliner : t.support}
+                    {band.play_time && ` · ${fmtTime(band.play_time)}`}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- ── VENUE & GETTING THERE ───────────────────────────── -->
+      <section class="venue-sec">
         <div class="sec-head">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/>
-            <path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17 13.6a5.5 5.5 0 0 1 3.5 5.4"/>
+            <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
+            <circle cx="12" cy="10" r="2.6"/>
           </svg>
-          <h2 class="sec-title">{t.lineupTitle}</h2>
+          <h2 class="sec-title">{t.venueTitle}</h2>
         </div>
-        <div class="lineup-list">
-          {lineup.map((band, i) => (
-            <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
-              <span class="lineup-num">{String(i + 1).padStart(2, '0')}</span>
-              <div class="lineup-info">
-                <span class="lineup-name">{band.name}</span>
-                <span class="lineup-role">
-                  {i === 0 ? t.headliner : t.support}
-                  {band.play_time && ` · ${fmtTime(band.play_time)}`}
-                </span>
+
+        <div class="venue-card">
+          <!-- Top bar: name + address + open-map link -->
+          <div class="venue-top">
+            <div>
+              <div class="venue-card-name">{concert.venue.name}</div>
+              <div class="venue-addr">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                  <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+                </svg>
+                <span>{fullAddr}</span>
               </div>
+              {concert.venue.additional_info && (
+                <div class="venue-addr">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill={ACCENT} stroke="none"/>
+                  </svg>
+                  <span>{concert.venue.additional_info}</span>
+                </div>
+              )}
             </div>
-          ))}
+            {fullAddr && (
+              <a
+                class="open-map-btn"
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
+                  <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
+                  <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+                </svg>
+                {t.openInMaps}
+              </a>
+            )}
+          </div>
+
+          <!-- Map or address-only row -->
+          {hasMap ? (
+            <div class="venue-bottom">
+              <ConcertMap
+                lat={concert.venue.latitude as number}
+                lng={concert.venue.longitude as number}
+                venueName={concert.venue.name}
+                city={concert.venue.city}
+                accent={ACCENT}
+                upcoming={upcoming}
+                client:visible
+              />
+            </div>
+          ) : concert.venue.city && (
+            <div class="venue-no-map">
+              <span>{concert.venue.city}</span>
+            </div>
+          )}
         </div>
       </section>
-    )}
+    </div>
 
     <!-- ── SETLIST ─────────────────────────────────────────── -->
     {setlist && setlist.items.length > 0 && (
@@ -422,91 +492,6 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         <ClipsGrid clips={concert.clips ?? []} heading={t.clipsTitle} copy={site} />
       </section>
     )}
-
-    <!-- ── VENUE & GETTING THERE ───────────────────────────── -->
-    <section class="sec venue-sec page-content">
-      <div class="sec-head">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/>
-          <circle cx="12" cy="10" r="2.6"/>
-        </svg>
-        <h2 class="sec-title">{t.venueTitle}</h2>
-      </div>
-
-      <div class="venue-card">
-        <!-- Top bar: name + address + open-map link -->
-        <div class="venue-top">
-          <div>
-            <div class="venue-card-name">{concert.venue.name}</div>
-            <div class="venue-addr">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
-                <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
-              </svg>
-              <span>{fullAddr}</span>
-            </div>
-            {concert.venue.additional_info && (
-              <div class="venue-addr">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
-                  <circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill={ACCENT} stroke="none"/>
-                </svg>
-                <span>{concert.venue.additional_info}</span>
-              </div>
-            )}
-          </div>
-          {fullAddr && (
-            <a
-              class="open-map-btn"
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
-                <path d="M14 4h6v6"/><path d="M20 4l-9 9"/>
-                <path d="M19 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
-              </svg>
-              {t.openInMaps}
-            </a>
-          )}
-        </div>
-
-        <!-- Map or address-only row -->
-        {hasMap ? (
-          <div class="venue-bottom venue-two-col">
-            <div class="venue-map-col">
-              <ConcertMap
-                lat={concert.venue.latitude as number}
-                lng={concert.venue.longitude as number}
-                venueName={concert.venue.name}
-                city={concert.venue.city}
-                accent={ACCENT}
-                upcoming={upcoming}
-                client:visible
-              />
-            </div>
-            <div class="venue-info-col">
-              <div class="venue-info-head">{t.gettingThere}</div>
-              {concert.venue.additional_info ? (
-                <p class="venue-info-body">{concert.venue.additional_info}</p>
-              ) : (
-                <p class="venue-info-body venue-info-muted">{t.noTransportInfo}</p>
-              )}
-              {fullAddr && (
-                <div class="venue-info-addr">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} stroke-width="1.7" aria-hidden="true">
-                    <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
-                  </svg>
-                  {fullAddr}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : concert.venue.city && (
-          <div class="venue-no-map">
-            <span>{concert.venue.city}</span>
-          </div>
-        )}
-      </div>
-    </section>
 
     <!-- ── LIVE TICKET AVAILABILITY ─────────────────────────── -->
     {upcoming && hasInternalTickets && (
@@ -1236,7 +1221,6 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   }
 
   /* ── Venue ──────────────────────────── */
-  .venue-sec {}
   .venue-card {
     border: 3px solid var(--ink);
     background: var(--color-surface);
@@ -1286,50 +1270,23 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
   .venue-bottom {
     border-top: none;
   }
-  .venue-map-col { width: 100%; }
+  .venue-bottom { overflow: hidden; }
   .venue-no-map {
     padding: 24px;
     font: 600 16px/1.5 var(--font-body);
     color: var(--color-muted);
   }
 
-  /* ── Venue 2-col ───────────────────── */
-  .venue-two-col {
+  /* ── Line-up + venue row ─────────────
+     One .page-content box holds both, so the halves share the page's edges;
+     minmax(0, 1fr) stops a long band name or the map from widening a half. */
+  .lineup-venue {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px 32px;
+    align-items: start;
   }
-  .venue-map-col { overflow: hidden; }
-  .venue-info-col {
-    padding: 24px 28px;
-    border-left: 3px solid var(--ink);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .venue-info-head {
-    font-family: var(--font-display);
-    font-size: 18px;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-  .venue-info-body {
-    font: 500 15px/1.65 var(--font-body);
-    color: var(--color-body);
-    margin: 0;
-  }
-  .venue-info-muted { color: var(--color-subtle); font-style: italic; }
-  .venue-info-addr {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font: 600 13px/1.5 var(--font-body);
-    color: var(--color-muted);
-    margin-top: auto;
-    padding-top: 8px;
-    border-top: 2px solid color-mix(in oklab, var(--color-ink) 10%, transparent);
-  }
-  .venue-info-addr svg { flex-shrink: 0; margin-top: 2px; }
+  .lineup-venue-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   /* ── More shows ─────────────────────── */
   .more-sec { padding-bottom: 16px; }
@@ -1499,8 +1456,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
     .sec { padding: 24px 24px 8px; }
     .prevnext-sec { padding: 16px 24px 40px; }
     .venue-top { flex-direction: column; }
-    .venue-two-col { grid-template-columns: 1fr; }
-    .venue-info-col { border-left: none; border-top: 3px solid var(--ink); }
+    .lineup-venue-split { grid-template-columns: minmax(0, 1fr); }
     .more-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 520px) {

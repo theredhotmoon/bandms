@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\SiteDirtyArea;
 use App\Models\SiteSetting;
+use App\Support\Activity\ActivityRecorder;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -29,9 +30,23 @@ final class SiteRebuild
         SiteDirtyArea::markDirty($area);
 
         if (SiteSetting::get('auto_rebuild', 'false') === 'true') {
-            self::request();
-            self::clearPending();
+            self::rebuild(automatic: true);
         }
+    }
+
+    /**
+     * Fire a rebuild, clear the pending list, and put it in the activity log
+     * with the areas it shipped — read *before* the clear, which is the only
+     * moment that list exists.
+     */
+    public static function rebuild(bool $automatic = false): void
+    {
+        $areas = array_column(self::pendingAreas(), 'area');
+
+        self::request();
+        self::clearPending();
+
+        app(ActivityRecorder::class)->recordRebuild($areas, $automatic);
     }
 
     /** Fire-and-forget: the webhook is absent in tests and may be down in dev. */

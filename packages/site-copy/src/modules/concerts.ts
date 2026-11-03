@@ -291,14 +291,6 @@ export const CONCERTS_COPY = defineCopy([
     defaults: { en: 'Open in maps', pl: 'Otwórz w mapach' },
   },
   {
-    key: 'gettingThere', label: '"Getting there" label', group: 'Show page', maxLength: 40,
-    defaults: { en: 'Getting there', pl: 'Dojazd' },
-  },
-  {
-    key: 'noTransportInfo', label: 'No transport info', group: 'Show page', maxLength: 80,
-    defaults: { en: 'No transport info yet.', pl: 'Brak informacji o dojeździe.' },
-  },
-  {
     key: 'ticketsTitle', label: 'Tickets heading', group: 'Show page', maxLength: 60,
     defaults: { en: 'Tickets', pl: 'Bilety' },
   },

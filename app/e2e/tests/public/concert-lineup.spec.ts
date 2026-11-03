@@ -55,4 +55,38 @@ test.describe('Public — concert line-up', () => {
       .map((e) => e.name)
     await expect(names).toHaveText(expected)
   })
+
+  test('sits beside the venue, half and half, with the venue text printed once', async ({ page, request }) => {
+    const [concerts, config] = await Promise.all([
+      request.get(`${API}/api/concerts?lang=en`).then((r) => r.json()),
+      request.get(`${API}/api/site-config?lang=en`).then((r) => r.json()),
+    ])
+    test.skip(config?.modules?.concerts === false, 'Concerts module is off')
+    const list = concerts.data as ApiConcert[]
+    test.skip(list.length === 0, 'No concerts on this instance')
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const section = config?.module_config?.concerts?.slug ?? 'concerts'
+    const res = await page.goto(`${WEB}/en/${section}/${list[0].slug}`)
+    test.skip(res?.status() === 404, 'Concert page not built yet')
+
+    // Our own band is always in the line-up, so every show page takes the split.
+    const row = page.locator('.lineup-venue')
+    await expect(row).toHaveClass(/lineup-venue-split/)
+    const lineup = await row.locator('.lineup-sec').boundingBox()
+    const venue = await row.locator('.venue-sec').boundingBox()
+    expect(lineup && venue).toBeTruthy()
+    expect(Math.abs(lineup!.y - venue!.y)).toBeLessThan(2)
+    expect(Math.abs(lineup!.width - venue!.width)).toBeLessThan(2)
+    expect(venue!.x).toBeGreaterThan(lineup!.x + lineup!.width)
+
+    // The "getting there" column beside the map repeated the venue's notes.
+    await expect(page.locator('.venue-info-col')).toHaveCount(0)
+
+    // Narrow screens stack the two.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const lineupNarrow = await row.locator('.lineup-sec').boundingBox()
+    const venueNarrow = await row.locator('.venue-sec').boundingBox()
+    expect(venueNarrow!.y).toBeGreaterThan(lineupNarrow!.y + lineupNarrow!.height)
+  })
 })

@@ -435,7 +435,17 @@ export default {
       created: 'Created',
       updated: 'Edited',
       deleted: 'Deleted',
+      rebuilt: 'Rebuilt',
       other: 'Changed',
+    },
+    rebuild: {
+      manual: 'Rebuild pressed by hand',
+      auto: 'Automatic rebuild after this save',
+      areas: 'Sections rebuilt',
+      noAreas: 'No pending changes — the site was rebuilt as it was.',
+      included: 'Edits since the previous rebuild (1) | Edits since the previous rebuild ({n})',
+      capped: 'Showing the newest {n}.',
+      noneIncluded: 'No logged edits since the previous rebuild.',
     },
     cols: {
       when: 'When',

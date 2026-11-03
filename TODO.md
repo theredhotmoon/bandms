@@ -347,9 +347,6 @@ design first if it's ready by then.
 ### E2E flakiness is connection resets, not memory
 Every full run loses ~2 specs, a different pair each time, always downstream of `[vite] http proxy error … ECONNRESET` — never an assertion mismatch. No OOM or GPU signatures in any run. Suspected cause is `pm.max_children = 20` in `api/docker/www.conf`: an admin page fires 6–10 parallel API calls, times two Playwright workers plus setup traffic. **Untested** — raising the pool trades RAM for connection headroom. Documented in `CLAUDE.md`.
 
-### `--prefer-source` makes builds ~8× slower and fragile
-`api/Dockerfile` uses `composer install --prefer-source`, which git-clones every package instead of downloading zips. Observed: one composer step took **51 minutes** and then died on a single DNS blip. `--prefer-dist` would fix both. It was introduced in PR #10; worth checking whether whatever prompted it still applies.
-
 ### Production deployment — wired, not yet run
 `docs/deployment.md` is the Hetzner runbook — also published as a shareable page with a progress-saving verification checklist: [BandMS Deploy Runbook](https://claude.ai/code/artifact/1573a8d4-01c1-4518-bf57-10e09edecf3b). The audit that produced it fixed: the missing `web` service (the Astro site was absent from prod entirely), Caddy TLS via `SITE_ADDRESS`, MySQL never starting on a first deploy, the seeded `admin@bandms.test` / `password` account, missing `trustProxies` (which collapsed the per-IP login throttle into one global bucket), Passport keys not surviving a deploy, unconfigured mail, and `APP_FRONTEND_URL` — a variable distinct from `FRONTEND_URL`, read only by `config/services.php`, that sent every Stripe redirect to `localhost:5173`.
 

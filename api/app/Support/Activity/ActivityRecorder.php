@@ -82,6 +82,13 @@ class ActivityRecorder
 
     private const TIMESTAMPS = ['created_at', 'updated_at'];
 
+    /** The event and action of a public-site rebuild, and the subject it is filed on. */
+    public const REBUILT     = 'rebuilt';
+    public const PUBLIC_SITE = 'PublicSite';
+
+    /** A rebuild after months of edits must not store the whole log again. */
+    private const MAX_REBUILD_CHANGES = 200;
+
     private const MAX_VALUE_LENGTH = 2000;
 
     /** Attributes tried, in order, for a human-readable label. */
@@ -92,6 +99,12 @@ class ActivityRecorder
     /** Set by the RecordActivity middleware for the length of a request. */
     private ?Request $request = null;
 
+    /** The one automatic-rebuild change of this request or job, and its areas so far. */
+    private ?int $autoRebuildChangeId = null;
+
+    /** @var list<string> */
+    private array $autoRebuildAreas = [];
+
     /**
      * Start a request's log. Resets the current row too: the container is not
      * rebuilt between two requests in one test, so a scoped instance alone
@@ -99,8 +112,10 @@ class ActivityRecorder
      */
     public function forRequest(Request $request): void
     {
-        $this->request = $request;
-        $this->logId   = null;
+        $this->request             = $request;
+        $this->logId               = null;
+        $this->autoRebuildChangeId = null;
+        $this->autoRebuildAreas    = [];
     }
 
     /** Called from the global `eloquent.{created,updated,deleted}: *` listener. */
@@ -168,6 +183,141 @@ class ActivityRecorder
             'subject_label' => self::labelFor($subject),
             'diff'          => $diff,
         ]);
+    }
+
+    /**
+     * A rebuild of the public site — which the model events cannot see, since
+     * it writes nothing but a webhook call and a query-builder delete of the
+     * pending areas. Filed as a `rebuilt` change on the `PublicSite` subject.
+     *
+     * $areas are the pending areas the rebuild shipped. A manual rebuild also
+     * snapshots the logged requests since the previous rebuild. That is a time
+     * window, not a list of published records — a user's role change sits in
+     * it too — so the admin labels it "edits since the previous rebuild". An
+     * automatic rebuild skips that list: it rides on the save that fired it,
+     * which is already the entry it is filed under.
+     *
+     * @param  list<string>  $areas
+     */
+    public function recordRebuild(array $areas, bool $automatic): void
+    {
+        if ($this->isVisitor()) {
+            return;
+        }
+
+        if ($automatic) {
+            $this->recordAutoRebuild($areas);
+
+            return;
+        }
+
+        $diff = [
+            'trigger' => [null, 'manual'],
+            'areas'   => [null, array_values($areas)],
+        ];
+
+        try {
+            [$changes, $total] = $this->changesSincePreviousRebuild();
+            $diff['changes'] = [null, $changes];
+            if ($total > count($changes)) {
+                $diff['changes_total'] = [null, $total];
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        $this->write([
+            'event'         => self::REBUILT,
+            'subject_type'  => self::PUBLIC_SITE,
+            'subject_id'    => null,
+            'subject_label' => null,
+            'diff'          => $diff,
+        ]);
+    }
+
+    /**
+     * One save can mark several areas dirty — a clip on a concert and a
+     * release marks both, then `posts` — and with auto-rebuild on each mark
+     * fires a rebuild. They are one rebuild as far as the band is concerned,
+     * so the first writes the change and the rest widen its area list.
+     *
+     * Both run through afterCommit in call order, so inside a transaction the
+     * update lands after the insert; a rolled-back insert leaves no id, and
+     * the next call inserts instead.
+     *
+     * @param  list<string>  $areas
+     */
+    private function recordAutoRebuild(array $areas): void
+    {
+        $this->autoRebuildAreas = array_values(array_unique([...$this->autoRebuildAreas, ...$areas]));
+        $diff = [
+            'trigger' => [null, 'auto'],
+            'areas'   => [null, $this->autoRebuildAreas],
+        ];
+
+        DB::afterCommit(function () use ($diff) {
+            try {
+                $existing = $this->autoRebuildChangeId !== null ? ActivityChange::find($this->autoRebuildChangeId) : null;
+                if ($existing !== null) {
+                    $existing->update(['diff' => $diff]);
+
+                    return;
+                }
+
+                $this->autoRebuildChangeId = ActivityChange::create([
+                    'activity_log_id' => $this->logId(),
+                    'event'           => self::REBUILT,
+                    'subject_type'    => self::PUBLIC_SITE,
+                    'subject_id'      => null,
+                    'subject_label'   => null,
+                    'diff'            => $diff,
+                ])->id;
+            } catch (Throwable $e) {
+                report($e);
+            }
+        });
+    }
+
+    /**
+     * The newest log rows after the previous rebuild, oldest first, as
+     * snapshots — so the rebuild's entry still reads correctly once those rows
+     * are pruned. Past the cap the *oldest* are dropped: the edits made just
+     * before the press are the ones someone checking it is looking for.
+     *
+     * @return array{0: list<array{log_id: int, at: string|null, user: string|null, action: string, subject_type: string|null, subject_id: int|null, subject_label: string|null}>, 1: int}
+     */
+    private function changesSincePreviousRebuild(): array
+    {
+        // (event, activity_log_id) is indexed, so this reads one index entry.
+        $previous = ActivityChange::query()
+            ->where('event', self::REBUILT)
+            ->max('activity_log_id');
+
+        $query = ActivityLog::query()
+            ->when($previous, fn ($q) => $q->where('id', '>', $previous))
+            ->when($this->logId, fn ($q) => $q->where('id', '!=', $this->logId))
+            ->where('action', '!=', self::REBUILT);
+
+        $total = (clone $query)->count();
+
+        $changes = $query
+            ->orderByDesc('id')
+            ->limit(self::MAX_REBUILD_CHANGES)
+            ->get()
+            ->reverse()
+            ->map(fn (ActivityLog $log) => [
+                'log_id'        => $log->id,
+                'at'            => $log->created_at?->toIso8601String(),
+                'user'          => $log->user_name,
+                'action'        => $log->action,
+                'subject_type'  => $log->subject_type,
+                'subject_id'    => $log->subject_id,
+                'subject_label' => $log->subject_label,
+            ])
+            ->values()
+            ->all();
+
+        return [$changes, $total];
     }
 
     /**
@@ -410,7 +560,7 @@ class ActivityRecorder
     }
 
     /**
-     * created / updated / deleted / other. The route name's last segment is the
+     * created / updated / deleted / rebuilt / other. The route name's last segment is the
      * best evidence (`api.posts.destroy`), then the first itemised change, then
      * the HTTP verb.
      */

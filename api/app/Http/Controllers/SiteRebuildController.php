@@ -21,8 +21,7 @@ class SiteRebuildController extends Controller
 
     public function rebuild(): JsonResponse
     {
-        SiteRebuild::request();
-        SiteRebuild::clearPending();
+        SiteRebuild::rebuild();
 
         return response()->json(['status' => 'rebuild_started']);
     }

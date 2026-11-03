@@ -1,4 +1,9 @@
 # ── Stage 1: prod PHP dependencies (no dev) ───────────────────
+# --prefer-dist, not --prefer-source: source git-clones every package's full
+# history. It took 51 min once and died on a DNS blip; in Nov 2026 it filled
+# a CI runner's disk in "Build test image", then stalled 33 min on retry (#236).
+# A failed dist download (e.g. GitHub's anonymous zipball rate limit) falls
+# back to a source clone on its own, so dist is never worse.
 FROM composer:2 AS vendor
 
 WORKDIR /app
@@ -8,7 +13,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-source \
+    --prefer-dist \
     --ignore-platform-req=ext-pcntl
 
 COPY . .
@@ -23,7 +28,7 @@ RUN composer install \
     --no-interaction \
     --no-scripts \
     --no-autoloader \
-    --prefer-source \
+    --prefer-dist \
     --ignore-platform-req=ext-pcntl
 
 COPY . .

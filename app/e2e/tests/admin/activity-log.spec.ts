@@ -67,4 +67,62 @@ test.describe('Activity log', () => {
     await expect(page.getByTestId('activity-entry').first()).toHaveAttribute('data-action', 'updated')
     await expect(page.getByTestId('activity-entry').last()).toHaveAttribute('data-action', 'created')
   })
+
+  // Served through page.route: pressing Rebuild for real would rebuild the
+  // public site under every parallel public spec. Pest proves the server
+  // writes this shape (SiteRebuildActivityTest); this proves the page reads it.
+  test('shows who rebuilt the site, the sections and the edits that went live', async ({ page }) => {
+    const entry = {
+      id: 990001,
+      created_at: '2026-11-03T12:00:00+00:00',
+      user_id: 1,
+      user_name: 'E2E Rebuilder',
+      action: 'rebuilt',
+      method: 'POST',
+      route: 'api.admin.site.rebuild',
+      subject_type: 'PublicSite',
+      subject_id: null,
+      subject_label: null,
+      changes: [{
+        id: 990002,
+        event: 'rebuilt',
+        subject_type: 'PublicSite',
+        subject_id: null,
+        subject_label: null,
+        diff: {
+          trigger: [null, 'manual'],
+          areas: [null, ['concerts', 'faqs']],
+          changes: [null, [
+            { log_id: 41, at: '2026-11-03T11:00:00+00:00', user: 'Ada', action: 'updated', subject_type: 'Concert', subject_id: 9, subject_label: 'E2E Warsaw' },
+            { log_id: 42, at: '2026-11-03T11:30:00+00:00', user: 'Ada', action: 'created', subject_type: 'Faq', subject_id: 3, subject_label: 'E2E question' },
+          ]],
+        },
+      }],
+    }
+    let requestedAction: string | null = null
+    await page.route(/\/api\/admin\/activity(\?.*)?$/, async (route) => {
+      requestedAction = new URL(route.request().url()).searchParams.get('action')
+      await route.fulfill({ json: { data: [entry], meta: { current_page: 1, last_page: 1, total: 1, per_page: 25 } } })
+    })
+
+    await page.goto('/admin/activity?action=rebuilt')
+
+    // The filter offers the action, and the URL value reaches the API.
+    await expect(page.getByTestId('activity-filters').locator('option[value="rebuilt"]')).toHaveCount(1)
+    await expect.poll(() => requestedAction).toBe('rebuilt')
+
+    const row = page.getByTestId('activity-entry').first()
+    await expect(row).toHaveAttribute('data-action', 'rebuilt')
+    await expect(row).toContainText('E2E Rebuilder')
+    // Its diff keys are not "fields changed".
+    await expect(row.locator('.ae-count')).toHaveCount(0)
+
+    await row.getByTestId('activity-details-toggle').click()
+    const details = page.getByTestId('activity-rebuild')
+    await expect(details.getByTestId('activity-rebuild-area')).toHaveCount(2)
+    await expect(details.getByTestId('activity-rebuild-change')).toHaveCount(2)
+    await expect(details.getByTestId('activity-rebuild-change').first()).toContainText('E2E Warsaw')
+    // No before/after table for a rebuild.
+    await expect(page.locator('.ad-table')).toHaveCount(0)
+  })
 })
