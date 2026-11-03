@@ -25,6 +25,8 @@ export interface Concert {
   doors_open: string | null
   start_time: string | null
   own_sort_order: number
+  /** Print "Headliner" / "Support" under each act of the line-up. */
+  show_lineup_roles: boolean
   description: string | null
   poster_url: string | null
   venue: Venue

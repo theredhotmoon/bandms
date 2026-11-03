@@ -29,6 +29,8 @@ export interface Concert {
   sound_check_time: string | null
   start_time: string | null
   own_sort_order: number
+  /** Print "Headliner" / "Support" under each act on the show page. */
+  show_lineup_roles: boolean
   description: string | null
   poster_url: string | null
   venue: Venue
@@ -72,6 +74,7 @@ export interface ConcertPayload {
   sound_check_time?: string | null
   start_time?: string | null
   own_sort_order?: number
+  show_lineup_roles?: boolean
   bands?: ConcertBandPayload[]
   tag_ids?: number[]
   member_ids?: number[]

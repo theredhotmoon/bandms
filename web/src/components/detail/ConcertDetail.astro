@@ -8,7 +8,7 @@ import ConcertMap from '@/components/ConcertMap.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getConcerts, getConcert, getConcertSetlist, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { ticketMode as resolveTicketMode } from '@/lib/tickets'
-import { concertLineup } from '@/lib/lineup'
+import { concertLineup, lineupCaption, showsLineupRoles } from '@/lib/lineup'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
 import PosterModal from '@/components/PosterModal.vue'
 import { moduleCopy, siteCopy } from '@/lib/copy'
@@ -152,7 +152,9 @@ const structuredData = {
 
 // Setlist split
 // Guests *and* our own band, in the order the band arranged them.
+const showRoles = showsLineupRoles(concert)
 const lineup = concertLineup(concert, profile.name)
+  .map((band, i) => ({ ...band, caption: lineupCaption(i, band, showRoles, t, fmtTime) }))
 const mainSongs  = setlist?.items.filter(s => !s.is_encore).sort((a,b) => a.position - b.position) ?? []
 const encoreSongs = setlist?.items.filter(s => s.is_encore).sort((a,b) => a.position - b.position) ?? []
 const setTotal   = setlist?.total_duration_sec
@@ -364,14 +366,11 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           </div>
           <div class="lineup-list">
             {lineup.map((band, i) => (
-              <div class={`lineup-row ${i === 0 ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
+              <div class={`lineup-row ${i === 0 && showRoles ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
                 <span class="lineup-num">{String(i + 1).padStart(2, '0')}</span>
                 <div class="lineup-info">
                   <span class="lineup-name">{band.name}</span>
-                  <span class="lineup-role">
-                    {i === 0 ? t.headliner : t.support}
-                    {band.play_time && ` · ${fmtTime(band.play_time)}`}
-                  </span>
+                  {band.caption && <span class="lineup-role">{band.caption}</span>}
                 </div>
               </div>
             ))}

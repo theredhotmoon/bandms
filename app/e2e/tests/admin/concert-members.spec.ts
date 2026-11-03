@@ -21,6 +21,7 @@ const headers = () => ({ Accept: 'application/json', Authorization: `Bearer ${ad
 const stamp = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`
 const concertName = `E2E Who Played ${stamp}`
 let concertId: number | null = null
+let venueId: number | null = null
 const memberIds: number[] = []
 
 test.beforeEach(async ({ request, baseURL }) => {
@@ -32,13 +33,17 @@ test.beforeEach(async ({ request, baseURL }) => {
     expect(res.status(), await res.text()).toBe(201)
     memberIds.push((await res.json()).data.id)
   }
-  const venues = ((await (await request.get(`${baseURL}/api/venues`, { headers: headers() })).json()).data ?? []) as { id: number }[]
-  test.skip(venues.length === 0, 'No venue to hold a concert')
+  // Its own venue. Borrowing venues[0] put this concert on whichever venue
+  // sorted first — another spec's fixture, whose afterAll delete cascaded to
+  // this concert mid-test and left the admin list without it.
+  const venue = await request.post(`${baseURL}/api/venues`, { headers: headers(), data: { name: `E2E Who Played Venue ${stamp}` } })
+  expect(venue.status(), await venue.text()).toBe(201)
+  venueId = (await venue.json()).data.id
   const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')
   const month = String(1 + Math.floor(Math.random() * 9)).padStart(2, '0')
   const concert = await request.post(`${baseURL}/api/concerts`, {
     headers: headers(),
-    data: { venue_id: venues[0].id, date: `2097-${month}-${day}`, name: { en: concertName } },
+    data: { venue_id: venueId, date: `2097-${month}-${day}`, name: { en: concertName } },
   })
   expect(concert.status(), await concert.text()).toBe(201)
   concertId = (await concert.json()).data.id
@@ -48,6 +53,13 @@ test.beforeEach(async ({ request, baseURL }) => {
 test.afterEach(async ({ request, baseURL }) => {
   if (concertId !== null) await request.delete(`${baseURL}/api/concerts/${concertId}`, { headers: headers() })
   for (const id of memberIds) await request.delete(`${baseURL}/api/band-profile/members/${id}`, { headers: headers() })
+  // After the concert, which references it.
+  if (venueId !== null) {
+    const res = await request.delete(`${baseURL}/api/venues/${venueId}`, { headers: headers() })
+    expect(res.ok(), `venue cleanup → ${res.status()}`).toBe(true)
+  }
+  venueId = null
+  concertId = null
 })
 
 test('the current line-up shortcut links every current member, and it persists', async ({ page, request, baseURL }) => {

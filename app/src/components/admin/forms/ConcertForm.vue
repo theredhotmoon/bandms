@@ -107,6 +107,8 @@ const form = reactive({
   tag_ids:          [] as number[],
   member_ids:       [] as number[],
   ticket_url:       '',
+  // "Headliner" / "Support" under each act on the show page.
+  show_lineup_roles: true,
 })
 
 // The tickets section sits outside the <form> element, and the submit button
@@ -168,6 +170,7 @@ watch(() => props.initial, (concert) => {
     form.tag_ids          = []
     form.member_ids       = []
     form.ticket_url       = ''
+    form.show_lineup_roles = true
     links.value           = []
     lineup.value          = [{ type: 'main', play_time: '' }]
     posterFile.value      = null
@@ -191,6 +194,7 @@ watch(() => props.initial, (concert) => {
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   form.member_ids  = concert.member_ids ? [...concert.member_ids] : []
   form.ticket_url  = concert.ticket_url ?? ''
+  form.show_lineup_roles = concert.show_lineup_roles !== false
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
 
   const entries: LineupEntry[] = [
@@ -341,6 +345,7 @@ function submit() {
     sound_check_time:  form.sound_check_time || null,
     start_time:        form.start_time       || null,
     own_sort_order:    ownSortOrder,
+    show_lineup_roles: form.show_lineup_roles,
     // On edit every locale goes as shown — the API generates only on create,
     // so a previewed slug sent as null would be dropped (#153's review).
     slug:              slugPayload(form.slug, props.initial ? {} : slugAuto.value),
@@ -600,6 +605,13 @@ function submit() {
               <p v-if="!lineup.length" class="empty-note">{{ $t('shows.concerts.form.dropBands') }}</p>
             </div>
           </div>
+          <label class="roles-toggle">
+            <input v-model="form.show_lineup_roles" type="checkbox" data-testid="concert-show-lineup-roles" />
+            <span>
+              {{ $t('shows.concerts.form.showLineupRoles') }}
+              <span class="label-note">{{ $t('shows.concerts.form.showLineupRolesNote') }}</span>
+            </span>
+          </label>
         </div>
 
         <!-- Who played: explicit, because line-ups change — an empty list is not "everyone". -->
@@ -773,6 +785,16 @@ function submit() {
 }
 
 /* ── Lineup builder ─────────────────────────────────────────── */
+.roles-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+  font-size: var(--fs-sm);
+  color: var(--c-d0d0d0);
+  cursor: pointer;
+}
+.roles-toggle input { margin-top: 0.2rem; }
 .lineup-cols {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

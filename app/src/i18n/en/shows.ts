@@ -57,6 +57,8 @@ export default {
       bandStart: '↑ band start',
       setTimeTitle: 'Approximate set time',
       removeFromLineup: 'Remove from lineup',
+      showLineupRoles: 'Show billing roles under each act',
+      showLineupRolesNote: '(headliner, support — turn off for a festival or a split bill)',
       dropBands: 'Drop bands here to build the lineup',
       descriptionPlaceholder: 'Optional description…',
       slug: 'Slug URL',

@@ -27,6 +27,7 @@ const headers = () => ({ Accept: 'application/json', Authorization: `Bearer ${ad
 const stamp = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`
 const NAME = { en: `E2E Anniversary ${stamp}`, pl: `E2E Rocznica ${stamp}` }
 let concertId: number | null = null
+let venueId: number | null = null
 
 async function serveOrder(page: Page, order: string[]): Promise<void> {
   await page.route(/\/api\/admin\/content-locales$/, route =>
@@ -34,12 +35,16 @@ async function serveOrder(page: Page, order: string[]): Promise<void> {
 }
 
 test.beforeEach(async ({ request, baseURL }) => {
-  const venues = ((await (await request.get(`${baseURL}/api/venues`, { headers: headers() })).json()).data ?? []) as { id: number }[]
-  test.skip(venues.length === 0, 'No venue to hold a concert')
+  // Its own venue: borrowing venues[0] hung this concert on whichever venue
+  // sorted first, often another spec's fixture, whose cleanup delete
+  // cascaded to this concert mid-run.
+  const venue = await request.post(`${baseURL}/api/venues`, { headers: headers(), data: { name: `E2E Locale Venue ${Date.now()}${Math.random().toString(36).slice(2, 6)}` } })
+  expect(venue.status(), await venue.text()).toBe(201)
+  venueId = (await venue.json()).data.id
   const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')
   const res = await request.post(`${baseURL}/api/concerts`, {
     headers: headers(),
-    data: { venue_id: venues[0].id, date: `2096-03-${day}`, name: NAME },
+    data: { venue_id: venueId, date: `2096-03-${day}`, name: NAME },
   })
   expect(res.status(), await res.text()).toBe(201)
   concertId = (await res.json()).data.id
@@ -49,6 +54,12 @@ test.beforeEach(async ({ request, baseURL }) => {
 test.afterEach(async ({ request, baseURL }) => {
   if (concertId !== null) await request.delete(`${baseURL}/api/concerts/${concertId}`, { headers: headers() })
   concertId = null
+  // After the concert, which references it.
+  if (venueId !== null) {
+    const res = await request.delete(`${baseURL}/api/venues/${venueId}`, { headers: headers() })
+    expect(res.ok(), `venue cleanup → ${res.status()}`).toBe(true)
+  }
+  venueId = null
 })
 
 for (const [order, shown, hidden] of [
