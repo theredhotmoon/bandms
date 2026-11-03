@@ -193,6 +193,7 @@ async function confirmDelete() {
                 <SortHeader :label="$t('common.fields.date')" sort-key="date" :current="tc.sortKey.value" :dir="tc.sortDir.value" @sort="tc.toggleSort" />
                 <th class="th">{{ $t('common.fields.name') }}</th>
                 <th class="th">{{ $t('shows.concerts.columns.doorsStart') }}</th>
+                <th class="th">{{ $t('shows.concerts.columns.onStage') }}</th>
                 <th class="th">{{ $t('shows.venues.singular') }}</th>
                 <th class="th text-right">{{ $t('common.table.actions') }}</th>
               </tr>
@@ -210,7 +211,17 @@ async function confirmDelete() {
                   <span v-else-if="concert.doors_open" style="color:var(--c-475569);">—</span>
                   <span v-if="!concert.doors_open && !concert.start_time">—</span>
                 </td>
-                <td class="td" style="color:var(--c-94a3b8);">{{ concert.venue?.name ?? '—' }}</td>
+                <!-- Our own slot. Unset says so in words, not by colour alone: the show
+                     page then falls back to the start, already in the column beside. -->
+                <td class="td text-xs stage-time" data-testid="concert-stage-time">
+                  <template v-if="concert.own_play_time">{{ timeInputValue(concert.own_play_time) }}</template>
+                  <span
+                    v-else
+                    class="stage-unset"
+                    :title="concert.start_time ? $t('shows.concerts.onStageFallback') : undefined"
+                  >{{ $t('shows.concerts.onStageUnset') }}<span v-if="concert.start_time" class="sr-only">: {{ $t('shows.concerts.onStageFallback') }}</span></span>
+                </td>
+                <td class="td" style="color:var(--c-94a3b8);" data-testid="concert-venue">{{ concert.venue?.name ?? '—' }}</td>
                 <td class="td text-right">
                   <button
                     class="btn-edit"
@@ -265,6 +276,8 @@ async function confirmDelete() {
 <style scoped src="./admin-table.css" />
 
 <style scoped>
+.stage-time { color: var(--c-e2e8f0); font-variant-numeric: tabular-nums; }
+.stage-unset { color: var(--c-64748b); font-style: italic; }
 .venue-notice {
   display: flex;
   align-items: center;

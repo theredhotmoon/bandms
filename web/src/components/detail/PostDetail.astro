@@ -221,16 +221,6 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
       />
     </article>
 
-    <!-- ── BACK ───────────────────────────────────────────────── -->
-    <div class="ar-col art-back">
-      <a href={`/${lang}/${postsSection}`} class="art-back-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M15 6l-6 6 6 6"/>
-        </svg>
-        {t.backToList}
-      </a>
-    </div>
-
     <!-- ── PREV / NEXT ────────────────────────────────────────── -->
     {(prevSlug || nextSlug) && (
       <section class="ar-col art-prevnext">
@@ -287,6 +277,17 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
         </div>
       </section>
     )}
+    <!-- ── BACK — last, on the dark ground that runs into the footer ── -->
+    <div class="art-back-sec">
+      <div class="ar-col art-back">
+        <a href={`/${lang}/${postsSection}`} class="art-back-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6"/>
+          </svg>
+          {t.backToList}
+        </a>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
@@ -527,15 +528,19 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
      elements the file itself renders, not to markup a child component emits. */
   .art-body { padding-top: 44px; padding-bottom: 8px; }
 
-  /* ── BACK ────────────────────────────── */
-  .art-back { padding-top: 30px; padding-bottom: 8px; }
+  /* ── BACK ──────────────────────────────
+     The page's last block. Ink, like "More from the blog" above it and the
+     footer below, so the article ends in one dark run, not dark-light-dark. */
+  .art-back-sec { background: var(--ink); color: var(--paper); }
+  .art-back { padding-top: 32px; padding-bottom: 56px; }
+  .art-more-sec + .art-back-sec .art-back { padding-top: 0; }
   .art-back-btn {
     display: inline-flex;
     align-items: center;
     gap: 10px;
     background: transparent;
-    border: 3px solid var(--ink);
-    color: var(--ink);
+    border: 3px solid var(--paper);
+    color: var(--paper);
     font-family: var(--font-display);
     font-size: 15px;
     letter-spacing: .01em;
@@ -544,7 +549,7 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
     text-decoration: none;
     transition: background .12s, color .12s;
   }
-  .art-back-btn:hover { background: var(--ink); color: var(--paper); }
+  .art-back-btn:hover { background: var(--paper); color: var(--ink); }
 
   /* ── PREV / NEXT ─────────────────────── */
   .art-prevnext { padding-top: 30px; padding-bottom: 10px; }

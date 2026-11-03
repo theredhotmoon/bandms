@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-04 (stage time in the admin concerts list)
+
+### Added
+- **The admin concerts list has an *On stage* column** showing our own stage time. When it is not set, the cell says *not set* (hover explains that the show page uses the start time until then), so gigs that still need a time stand out without opening each one.
+
+### Changed
+- **A news article ends with *Back to all news*.** The link used to sit straight under the article, above the previous/next posts. It is now the last thing before the footer, below previous/next and *More from the blog*, on the same dark background, so it reads as the way out once you have finished.
+
 ## [Unreleased] — 2026-11-03 (our stage time, running-order numbers, shows page order)
 
 ### Added
