@@ -6,6 +6,9 @@
       "@/*": [
         "src/*"
       ],
+      "@bandms/concert-core": [
+        "../packages/concert-core/src/index.ts"
+      ],
       "@bandms/rider-core": [
         "../packages/rider-core/src/index.ts"
       ],

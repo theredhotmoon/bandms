@@ -8,7 +8,7 @@ import ConcertMap from '@/components/ConcertMap.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { getConcerts, getConcert, getConcertSetlist, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { ticketMode as resolveTicketMode } from '@/lib/tickets'
-import { concertLineup, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from '@/lib/lineup'
+import { concertLineup, isHighlighted, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from '@/lib/lineup'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
 import PosterModal from '@/components/PosterModal.vue'
 import { moduleCopy, siteCopy } from '@/lib/copy'
@@ -367,7 +367,7 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
           </div>
           <div class="lineup-list">
             {lineup.map((band, i) => (
-              <div class={`lineup-row ${i === 0 && showRoles ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
+              <div class={`lineup-row ${isHighlighted(i, band, showRoles) ? 'lineup-headliner' : ''}`} data-own={band.own ? '' : undefined}>
                 <span class="lineup-num">{runningOrderNumber(i, lineup.length)}</span>
                 <div class="lineup-info">
                   <span class="lineup-name">{band.name}</span>

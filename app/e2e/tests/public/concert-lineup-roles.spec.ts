@@ -7,9 +7,10 @@ import { failOnPageError } from '../../fixtures/page-errors'
  * concert's `show_lineup_roles` is on, prints our band's own stage time, and
  * numbers the acts in the order they play.
  *
- * Seeds two concerts — roles on, roles off — each starting at 20:00 with our
- * band on top of the bill and a guest at 21:30. The roles-off one also sets
- * our own stage time (23:00); the other falls back to the start. Rebuilds the public site
+ * Seeds two concerts — roles on, roles off — each starting at 20:00 with a
+ * guest at 21:30. The roles-on one has our band on top of the bill; the
+ * roles-off one puts the guest above us and sets our own stage time (23:00),
+ * so with the roles off the highlight is seen to follow our band, not the top slot. Rebuilds the public site
  * once, checks both pages, then deletes everything and rebuilds again so
  * nothing of it stays served.
  */
@@ -70,9 +71,9 @@ test.describe.serial('Public — concert line-up roles', () => {
           venue_id: venueId,
           date: '2096-07-07',
           start_time: '20:00',
-          own_sort_order: 1,
+          own_sort_order: show ? 1 : 2,
           own_play_time: show ? null : '23:00',
-          bands: [{ id: bandId, sort_order: 2, play_time: '21:30' }],
+          bands: [{ id: bandId, sort_order: show ? 2 : 1, play_time: '21:30' }],
           show_lineup_roles: show,
         },
       })
@@ -125,11 +126,14 @@ test.describe.serial('Public — concert line-up roles', () => {
     await expect(page.locator('.lineup-num')).toHaveText(['02', '01'])
   })
 
-  test('with roles off, only the stage times are printed and nobody is highlighted', async ({ page, request }) => {
+  test('with roles off, only the stage times are printed and our band stays highlighted below the guest', async ({ page, request }) => {
     await open(page, request, 'off')
-    await expect(page.locator('.lineup-headliner')).toHaveCount(0)
+    // We are second in the list here, and still the one highlighted.
+    await expect(page.locator('.lineup-headliner')).toHaveCount(1)
+    await expect(page.locator('.lineup-row').nth(1)).toHaveAttribute('data-own', '')
+    await expect(page.locator('.lineup-row').nth(1)).toHaveClass(/lineup-headliner/)
     // 23:00 is our own stage time, not the show's 20:00 start.
-    await expect(page.locator('.lineup-role')).toHaveText(['23:00', '21:30'])
+    await expect(page.locator('.lineup-role')).toHaveText(['21:30', '23:00'])
     // …and the facts strip agrees: "On stage" is our slot, not the doors-to-opener start.
     await expect(page.locator('.fact').filter({ hasText: '23:00' })).toHaveCount(1)
     await expect(page.locator('.fact-val', { hasText: '20:00' })).toHaveCount(0)

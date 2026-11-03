@@ -1,3 +1,4 @@
+import { ourStageTime } from '@bandms/concert-core'
 import type { Concert } from '@/types/concert'
 
 export interface LineupEntry {
@@ -38,15 +39,11 @@ export function concertLineup(
 
 /**
  * When our band is on stage: its own slot time, else the show's start.
- *
- * `start_time` is when the night starts — the opener's slot whenever we
- * headline — so it is only our time when nothing more specific was set,
- * which is every concert saved before `own_play_time` existed. Everything
- * labelled "On stage" reads this, never `start_time` directly.
+ * Everything labelled "On stage" reads this, never `start_time` directly. The
+ * rule lives in `@bandms/concert-core` because the admin's concerts list
+ * shows the same time and must not drift from it.
  */
-export function ourStageTime(concert: Pick<Concert, 'start_time' | 'own_play_time'>): string | null {
-  return concert.own_play_time || concert.start_time
-}
+export { ourStageTime }
 
 export interface LineupRoleLabels {
   headliner: string
@@ -58,7 +55,7 @@ export interface LineupRoleLabels {
  * choice per concert, since a festival slot or a split bill is not. Read
  * `!== false` so a concert served without the key (an older API mid-deploy)
  * keeps the labels it had. The one place this is decided: the caption and
- * the show page's headliner highlight both take its answer.
+ * the show page's highlight (`isHighlighted()`) both take its answer.
  */
 export function showsLineupRoles(concert: { show_lineup_roles?: boolean }): boolean {
   return concert.show_lineup_roles !== false
@@ -79,6 +76,18 @@ export function lineupCaption(
   const role = showRoles ? (index === 0 ? labels.headliner : labels.support) : ''
   const time = entry.play_time ? fmtTime(entry.play_time) : ''
   return [role, time].filter(Boolean).join(' · ')
+}
+
+/**
+ * Which line-up row the show page paints as the headliner.
+ *
+ * With the roles on, the billing is the band's own statement: the act on top
+ * is the headliner, even when it is a guest. With them off there is no billing
+ * to follow, and on its own site our band is always the headliner — so our
+ * row is highlighted wherever it sits in the running order.
+ */
+export function isHighlighted(index: number, entry: Pick<LineupEntry, 'own'>, showRoles: boolean): boolean {
+  return showRoles ? index === 0 : entry.own
 }
 
 /**

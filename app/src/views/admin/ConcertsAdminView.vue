@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { resolveStageTime } from '@bandms/concert-core'
 import { timeInputValue } from '@/utils/dateInput'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
@@ -109,6 +110,11 @@ const tc = useTableControls<Concert>({
   defaultDir: 'desc',
 })
 
+// Which time the show page prints under "On stage", and whether it is a
+// borrowed start — the public site's rule, from @bandms/concert-core. Once
+// per visible row; the cell reads it three times.
+const stageTimes = computed(() => new Map(tc.paginated.value.map((c) => [c.id, resolveStageTime(c)])))
+
 // Tickets are set up in the concert form; the list's button only reports, so
 // it shows only when there is something to report.
 const hasTickets = (c: Concert) => !!c.ticket_url || (c.ticket_types_count ?? 0) > 0
@@ -214,12 +220,12 @@ async function confirmDelete() {
                 <!-- Our own slot. Unset says so in words, not by colour alone: the show
                      page then falls back to the start, already in the column beside. -->
                 <td class="td text-xs stage-time" data-testid="concert-stage-time">
-                  <template v-if="concert.own_play_time">{{ timeInputValue(concert.own_play_time) }}</template>
+                  <template v-if="stageTimes.get(concert.id)?.time && !stageTimes.get(concert.id)?.fallback">{{ timeInputValue(stageTimes.get(concert.id)?.time) }}</template>
                   <span
                     v-else
                     class="stage-unset"
-                    :title="concert.start_time ? $t('shows.concerts.onStageFallback') : undefined"
-                  >{{ $t('shows.concerts.onStageUnset') }}<span v-if="concert.start_time" class="sr-only">: {{ $t('shows.concerts.onStageFallback') }}</span></span>
+                    :title="stageTimes.get(concert.id)?.fallback ? $t('shows.concerts.onStageFallback') : undefined"
+                  >{{ $t('shows.concerts.onStageUnset') }}<span v-if="stageTimes.get(concert.id)?.fallback" class="sr-only">: {{ $t('shows.concerts.onStageFallback') }}</span></span>
                 </td>
                 <td class="td" style="color:var(--c-94a3b8);" data-testid="concert-venue">{{ concert.venue?.name ?? '—' }}</td>
                 <td class="td text-right">
