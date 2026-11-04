@@ -277,4 +277,24 @@ describe('getConcerts', () => {
     expect(calls[0]).toContain('/concerts')
     expect(calls[0]).toContain('lang=pl')
   })
+
+  // Every concert page derives prev/next and "more shows" from this list, so
+  // one build must read one answer: a concert seeded mid-build used to show up
+  // on some pages and not others, linked from pages though never built itself.
+  it('answers each locale from one request for the whole build', async () => {
+    let list = [{ id: 1 }]
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: true, status: 200, json: async () => ({ data: list }) }
+    }))
+    const { getConcerts } = await freshModule()
+
+    const first = await getConcerts('en')
+    list = [{ id: 1 }, { id: 2 }] // created by a parallel save mid-build
+
+    expect(await getConcerts('en')).toBe(first)
+    await getConcerts('pl')
+    expect(calls).toHaveLength(2)
+  })
 })

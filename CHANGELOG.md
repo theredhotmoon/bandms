@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-04 (news tag rows slide all the way, more E2E races)
+
+### Fixed
+- **On the news list, a card's tag row now slides all the way to its last tag on hover.** The distance was measured once, when the list loaded, and again only when the whole list changed size. Tags that widened after that, for example when the tags' font arrived late, never changed the list's size, so the row stopped short and the last tag stayed hidden. Each tag row is now re-measured whenever its own width changes.
+- **Every concert page in one build now agrees on which concerts exist.** Each page fetched the concert list again while it rendered, so a concert created or deleted mid-build appeared in *more shows* and prev/next on some pages and not others, and could be linked from a page although its own page was never built. The list is now fetched once per language for the whole build, the way band members already are.
+- **The concert page's *more shows* spec no longer fails when a parallel spec adds or deletes a concert after its rebuild.** It took its concert list from the live API, so it could open a page that was never built (a 404 with no cards). It now takes the set from the built sitemap and uses the API only for those concerts' dates and names.
+- **E2E specs no longer time out while waiting for a site rebuild.** The rebuild helper waits up to 180 seconds, but four specs called it from setup or cleanup steps that kept Playwright's default 30-second limit, so a queued rebuild failed the step and skipped every test after it. The helper now extends the calling step's limit by its own wait, so no caller has to remember to.
+
 ## [Unreleased] — 2026-11-04 (Not now and Wrong in the assistant's inbox)
 
 ### Added
@@ -15,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - **The *Save as…* menu on the last finding is no longer cut off** by the list's frame.
+
 
 ## [Unreleased] — 2026-11-04 (public build survives a mid-build delete)
 

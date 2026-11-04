@@ -818,7 +818,10 @@ detail page never fetches its own record.** `getStaticPaths` fetches it
 through `existingDetails()` (`web/src/lib/existingDetails.ts`) with a
 `find*` fetcher from `cms.ts` (null on 404, still throws on anything else),
 drops what is gone, and passes the record to the page as a prop. Member pages
-get the same guarantee from the memoised `getMembers()`. A new detail route
+get the same guarantee from the memoised `getMembers()`, and a list that
+every detail page reads for its neighbours (`getConcerts()`, behind prev/next
+and *more shows*) is memoised the same way. Fetched per page, one build's
+pages disagreed on which concerts existed. A new detail route
 follows the same shape. The lists can still link to a record that was
 dropped, for one build, until the rebuild its delete triggers. A proxy that
 404s one record's detail while leaving it listed reproduces the failure on

@@ -89,4 +89,35 @@ test.describe.serial('Public — news grid card widths', () => {
     await expect.poll(() => lastChip.evaluate(el => el.getBoundingClientRect().right), { timeout: (duration + 3) * 1000 })
       .toBeLessThanOrEqual(rowRight + 1)
   })
+
+  // A row's chips can widen after the row was measured while the grid keeps
+  // its size: the chips' own font weight landing after the one the grid's text
+  // uses (the chips' line-height is fixed, so they do not grow taller). The
+  // slide distance used to be re-measured only when the grid resized, so the
+  // row stopped short of its last tag; this spec failed that way under load,
+  // 36px short (878 vs 842). Widening the chips by hand makes it certain.
+  test('chips that widen after the row was measured still slide to the last tag', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 1000 })
+    await page.goto(newsUrl)
+    const card = page.locator('.nf-card', { hasText: TITLE }).filter({ hasNotText: 'decoy' })
+    const row = card.getByTestId('news-card-tags')
+    await expect(row).toHaveAttribute('data-overflow', '')
+
+    // Fonts first, so the widening below is the only thing that can move the
+    // distance (a late font would re-measure for its own reasons).
+    await page.evaluate(() => document.fonts.ready)
+    const shiftBefore = await row.evaluate(el => el.style.getPropertyValue('--tag-shift'))
+    const gridBefore = await page.locator('.nf-card').first().evaluate(el => el.getBoundingClientRect().height)
+    await page.addStyleTag({ content: '.nf-chip { letter-spacing: 3px !important; }' })
+    // The premise: the grid did not change size, only the chips did.
+    expect(await page.locator('.nf-card').first().evaluate(el => el.getBoundingClientRect().height)).toBe(gridBefore)
+    await expect.poll(() => row.evaluate(el => el.style.getPropertyValue('--tag-shift'))).not.toBe(shiftBefore)
+
+    const rowRight = await row.evaluate(el => el.getBoundingClientRect().right)
+    const lastChip = row.locator('.nf-chip').last()
+    const duration = await row.evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--tag-duration')) || 1.5)
+    await card.hover()
+    await expect.poll(() => lastChip.evaluate(el => el.getBoundingClientRect().right), { timeout: (duration + 3) * 1000 })
+      .toBeLessThanOrEqual(rowRight + 1)
+  })
 })
