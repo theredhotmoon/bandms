@@ -1,10 +1,13 @@
 import type {
   AssistantSummary,
+  BlockedSite,
   CrawlDispatch,
   CrawlRun,
   CrawlerSettings,
   CrawlerSettingsResponse,
   Finding,
+  FindingStatusChange,
+  FindingStatusResult,
   FindingsFilter,
   FindingsPage,
 } from '@/types/assistantCrawler'
@@ -25,14 +28,25 @@ export async function fetchFindings(token: string, f: FindingsFilter): Promise<F
   return handleResponse<FindingsPage>(res)
 }
 
-export async function setFindingStatus(token: string, id: number, status: 'new' | 'dismissed'): Promise<Finding> {
+export async function setFindingStatus(token: string, id: number, change: FindingStatusChange): Promise<FindingStatusResult> {
   assertSafeId(id, 'finding id')
   const res = await fetch(`${API_BASE}/api/admin/assistant/findings/${id}`, {
     method: 'PATCH',
     headers: authHeaders(token),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(change),
   })
-  return (await handleResponse<{ data: Finding }>(res)).data
+  return handleResponse<FindingStatusResult>(res)
+}
+
+export async function fetchBlockedSites(token: string): Promise<BlockedSite[]> {
+  const res = await fetch(`${API_BASE}/api/admin/assistant/blocked-sites`, { headers: authHeaders(token) })
+  return (await handleResponse<{ data: BlockedSite[] }>(res)).data
+}
+
+export async function unblockSite(token: string, id: number): Promise<void> {
+  assertSafeId(id, 'blocked site id')
+  const res = await fetch(`${API_BASE}/api/admin/assistant/blocked-sites/${id}`, { method: 'DELETE', headers: authHeaders(token) })
+  await handleResponse<null>(res)
 }
 
 export async function fetchCrawlRuns(token: string): Promise<CrawlRun[]> {

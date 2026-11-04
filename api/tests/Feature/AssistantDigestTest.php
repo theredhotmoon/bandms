@@ -1,5 +1,6 @@
 <?php
 
+use App\Assistant\Crawler\DigestBuilder;
 use App\Mail\AssistantDigest;
 use App\Models\AssistantFinding;
 use App\Models\SiteSetting;
@@ -128,6 +129,49 @@ it('includes a finding triaged after the last digest, even when it was found bef
     $this->artisan('assistant:digest')->assertSuccessful();
 
     Mail::assertSent(AssistantDigest::class, fn (AssistantDigest $m) => str_contains($m->render(), 'Late-scored lead'));
+});
+
+it('carries a finding whose snooze ended since the last digest, even if nobody opened the inbox', function () {
+    SiteSetting::set(DigestBuilder::LAST_SENT_KEY, now()->subWeek()->toIso8601String());
+    AssistantFinding::factory()->lead()->create([
+        'title' => 'Back from Not now', 'score' => 80, 'triaged_at' => now()->subMonths(3),
+        'status' => 'snoozed', 'snoozed_until' => now()->subDay(),
+    ]);
+    AssistantFinding::factory()->lead()->create([
+        'title' => 'Still asleep', 'score' => 80, 'triaged_at' => now()->subMonths(3),
+        'status' => 'snoozed', 'snoozed_until' => now()->addDay(),
+    ]);
+
+    $this->artisan('assistant:digest')->assertSuccessful();
+
+    Mail::assertSent(AssistantDigest::class, function (AssistantDigest $mail) {
+        $html = $mail->render();
+
+        return str_contains($html, 'Back from Not now') && !str_contains($html, 'Still asleep');
+    });
+});
+
+it('wakes as of the end of its window, so what it wakes is in this digest', function () {
+    $until = now()->subMinutes(5); // the window's end, taken before the query
+    AssistantFinding::factory()->lead()->create([
+        'score' => 80, 'triaged_at' => now()->subMonths(3), 'status' => 'snoozed', 'snoozed_until' => $until->copy()->subMinute(),
+    ]);
+
+    $digest = app(DigestBuilder::class)->build($until);
+
+    expect($digest['total'] ?? 0)->toBe(1)
+        ->and(AssistantFinding::sole()->woke_at->equalTo($until->copy()->startOfSecond()))->toBeTrue();
+});
+
+it('does not carry a woken finding a second time', function () {
+    SiteSetting::set(DigestBuilder::LAST_SENT_KEY, now()->subDay()->toIso8601String());
+    AssistantFinding::factory()->lead()->create([
+        'title' => 'Woke last week', 'score' => 80, 'triaged_at' => now()->subMonths(3), 'woke_at' => now()->subWeek(),
+    ]);
+
+    $this->artisan('assistant:digest')->assertSuccessful();
+
+    Mail::assertNothingSent();
 });
 
 it('covers only the last week the first time it runs', function () {

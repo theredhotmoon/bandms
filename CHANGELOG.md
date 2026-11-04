@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-04 (Not now and Wrong in the assistant's inbox)
+
+### Added
+- **A finding can be put off with *Not now*.** Pick 1, 3 or 6 months; it leaves the inbox and comes back as new on its own when the time is up. Snoozed findings wait under *Show → Not now*, each with the date it returns, and *Restore* brings one back early. They are left out of the dashboard widget and the Monday digest until then, and the first digest after they return includes them again.
+- ***Wrong* can block a whole site.** Marking a finding as wrong hides it for good, as Dismiss did. A checkbox can also block where it came from: a website (and its subdomains), or on Instagram, Facebook, Reddit, TikTok, SoundCloud, X and YouTube the account or channel, never the whole platform. The crawler then adds nothing new from there, and what else from there was still in the inbox or snoozed is dismissed with it. Blocked sites are listed under the inbox, with *Unblock*.
+
+### Changed
+- **The inbox's *Show dismissed* checkbox is now a *Show* menu**: New, Not now or Dismissed.
+
+### Fixed
+- **The *Save as…* menu on the last finding is no longer cut off** by the list's frame.
+
 ## [Unreleased] — 2026-11-04 (public build survives a mid-build delete)
 
 ### Fixed

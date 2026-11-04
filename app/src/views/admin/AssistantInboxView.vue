@@ -4,14 +4,19 @@ import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import Pagination from '@/components/admin/Pagination.vue'
+import BlockedSitesList from '@/components/admin/assistant/BlockedSitesList.vue'
 import FindingRow from '@/components/admin/assistant/FindingRow.vue'
 import FindingsFilters from '@/components/admin/assistant/FindingsFilters.vue'
 import RunStatusBar from '@/components/admin/assistant/RunStatusBar.vue'
 import { useAssistantFindings, useCrawlRuns } from '@/composables/useAssistantFindings'
+import { useUiLang } from '@/composables/useUiLang'
+import type { FindingStatusChange } from '@/types/assistantCrawler'
 import { adminUrl } from '@/config/admin'
+import { formatShortDate } from '@/utils/formatDate'
 import { reportSaveError } from '@/utils/formErrors'
 
 const { t } = useI18n()
+const { uiLang } = useUiLang()
 const { query, filter, change, setStatus, link } = useAssistantFindings()
 const { query: runs, run } = useCrawlRuns()
 
@@ -38,11 +43,24 @@ async function linkSaved(id: number, saved: { type: 'venue' | 'band' | 'author';
   }
 }
 
-async function updateStatus(id: number, status: 'new' | 'dismissed') {
+async function updateStatus(id: number, change: FindingStatusChange) {
   try {
-    await setStatus.mutateAsync({ id, status })
-    toast.success(status === 'dismissed' ? t('more.assistant.dismissed') : t('more.assistant.restored'))
+    const { data, meta } = await setStatus.mutateAsync({ id, change })
+    toast.success(statusToast(change, data.snoozed_until, meta))
   } catch (e) { reportSaveError(e, t('more.assistant.actionFailed')) }
+}
+
+function statusToast(
+  change: FindingStatusChange,
+  until: string | null,
+  meta: { blocked: { label: string } | null; also_dismissed: number },
+): string {
+  if (change.status === 'new') return t('more.assistant.restored')
+  if (change.status === 'snoozed') return t('more.assistant.notNow.done', { date: formatShortDate(until, uiLang.value, 'instant') })
+  if (!meta.blocked) return t('more.assistant.wrong.done')
+  return meta.also_dismissed > 0
+    ? t('more.assistant.wrong.blockedMore', { site: meta.blocked.label, n: meta.also_dismissed })
+    : t('more.assistant.wrong.blocked', { site: meta.blocked.label })
 }
 </script>
 
@@ -77,8 +95,9 @@ async function updateStatus(id: number, status: 'new' | 'dismissed') {
             :finding="f"
             :busy="setStatus.isPending.value || link.isPending.value"
             :pending-link="pendingLinks[f.id] ?? null"
-            @dismiss="updateStatus(f.id, 'dismissed')"
-            @restore="updateStatus(f.id, 'new')"
+            @snooze="m => updateStatus(f.id, { status: 'snoozed', snooze_months: m })"
+            @wrong="block => updateStatus(f.id, { status: 'dismissed', block_site: block })"
+            @restore="updateStatus(f.id, { status: 'new' })"
             @saved="linkSaved(f.id, $event)"
           />
           <Pagination
@@ -93,9 +112,17 @@ async function updateStatus(id: number, status: 'new' | 'dismissed') {
           />
         </template>
       </div>
+
+      <BlockedSitesList />
     </div>
   </AdminLayout>
 </template>
 
 <style scoped src="./admin-table.css" />
 <style scoped src="../../components/admin/form-styles.css" />
+<style scoped>
+/* The rows' Save as… / Not now / Wrong menus drop below the row; the card's
+   clipping (there for table corners — these rows paint no background) cut
+   them off on the last row. */
+.table-card { overflow: visible; }
+</style>

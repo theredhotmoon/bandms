@@ -1,14 +1,17 @@
 import { computed, ref } from 'vue'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useAuth } from '@/composables/useAuth'
-import { fetchAssistantSummary, fetchCrawlRuns, fetchFindings, linkSavedFinding, runCrawl, setFindingStatus } from '@/api/assistantFindings'
-import type { FindingsFilter } from '@/types/assistantCrawler'
+import {
+  fetchAssistantSummary, fetchBlockedSites, fetchCrawlRuns, fetchFindings, linkSavedFinding, runCrawl, setFindingStatus, unblockSite,
+} from '@/api/assistantFindings'
+import type { FindingStatusChange, FindingsFilter } from '@/types/assistantCrawler'
 import { withFilter } from '@/utils/findingsFilters'
 
 const QKEY = ['assistant-findings']
 const SUMMARY_KEY = ['assistant-summary']
+const BLOCKED_KEY = ['assistant-blocked-sites']
 
-/** The inbox: the filtered page of findings, the filter itself, and dismiss/restore. */
+/** The inbox: the filtered page of findings, the filter itself, and Not now / Wrong / Restore. */
 export function useAssistantFindings() {
   const { token } = useAuth()
   const qc = useQueryClient()
@@ -24,11 +27,13 @@ export function useAssistantFindings() {
   })
 
   const setStatus = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: 'new' | 'dismissed' }) =>
-      setFindingStatus(token.value!, id, status),
-    onSuccess: () => Promise.all([
+    mutationFn: ({ id, change }: { id: number; change: FindingStatusChange }) =>
+      setFindingStatus(token.value!, id, change),
+    onSuccess: ({ meta }) => Promise.all([
       qc.invalidateQueries({ queryKey: QKEY }),
       qc.invalidateQueries({ queryKey: SUMMARY_KEY }),
+      // Only a block changes that list; Not now, Restore and a plain Wrong do not.
+      meta.blocked ? qc.invalidateQueries({ queryKey: BLOCKED_KEY }) : null,
     ]),
   })
 
@@ -46,6 +51,25 @@ export function useAssistantFindings() {
   }
 
   return { query, filter, change, setStatus, link }
+}
+
+/** The sites "Wrong" blocked, and Unblock — which lets new findings in again, nothing more. */
+export function useBlockedSites() {
+  const { token } = useAuth()
+  const qc = useQueryClient()
+
+  const query = useQuery({
+    queryKey: BLOCKED_KEY,
+    queryFn: () => fetchBlockedSites(token.value!),
+    enabled: computed(() => !!token.value),
+  })
+
+  const unblock = useMutation({
+    mutationFn: (id: number) => unblockSite(token.value!, id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: BLOCKED_KEY }),
+  })
+
+  return { query, unblock }
 }
 
 /** Each source's last run, for the status bar above the inbox, and Run now. */

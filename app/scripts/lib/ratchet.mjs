@@ -32,6 +32,8 @@ export const MIGRATED = [
   'components/admin/assistant/FindingsFilters.vue',
   'components/admin/assistant/RunStatusBar.vue',
   'components/admin/assistant/SaveAsMenu.vue',
+  'components/admin/assistant/RejectActions.vue',
+  'components/admin/assistant/BlockedSitesList.vue',
   'components/admin/assistant/AssistantWidget.vue',
   'components/admin/forms/BandQuickAdd.vue',
   'components/admin/assistant/SiblingBandPicker.vue',

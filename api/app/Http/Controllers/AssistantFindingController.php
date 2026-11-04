@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Assistant\Crawler\CapLedger;
 use App\Assistant\Crawler\CrawlDispatcher;
+use App\Assistant\Crawler\SiteKey;
 use App\Assistant\Crawler\SourceRegistry;
+use App\Models\AssistantBlockedSite;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use App\Models\Author;
@@ -17,14 +19,19 @@ use Illuminate\Validation\Rule;
 
 /**
  * The crawler's inbox. Lists findings (new by default, newest first) with the
- * per-country and per-kind counts the filter chips show, dismisses or
- * restores one, and reports each source's last run for the status bar.
- * Saving a lead as a venue/band/author arrives with slice 3.
+ * per-country and per-kind counts the filter chips show, snoozes, dismisses
+ * or restores one (a dismissal may block its whole site), links a lead saved
+ * as a venue/band/author, and reports each source's last run.
  */
 class AssistantFindingController extends Controller
 {
+    /** The lengths "Not now" offers. */
+    public const SNOOZE_MONTHS = [1, 3, 6];
+
     public function index(Request $request): JsonResponse
     {
+        AssistantFinding::wakeSnoozed();
+
         $v = $request->validate([
             'kind'    => ['nullable', Rule::in(AssistantFinding::KINDS)],
             'country' => ['nullable', 'string', 'size:2'],
@@ -68,19 +75,71 @@ class AssistantFindingController extends Controller
         ]);
     }
 
+    /**
+     * Restore (`new`), "Not now" (`snoozed` for 1, 3 or 6 months) or "Wrong"
+     * (`dismissed`, and with `block_site` its whole site, channel or account:
+     * the crawler adds nothing new from there, and whatever from there is
+     * still in the inbox or asleep is dismissed with it).
+     */
     public function update(Request $request, AssistantFinding $finding): JsonResponse
     {
-        // `saved` is set by Save as… (slice 3), never by hand.
-        $v = $request->validate(['status' => ['required', Rule::in(['new', 'dismissed'])]]);
-        if ($finding->status === 'saved') {
-            return response()->json([
-                'message' => 'A saved finding stays saved.',
-                'errors'  => ['status' => ['A saved finding stays saved.']],
-            ], 422);
+        // `saved` is set by Save as…, never by hand.
+        $v = $request->validate([
+            'status'        => ['required', Rule::in(['new', 'dismissed', 'snoozed'])],
+            'snooze_months' => ['required_if:status,snoozed', 'nullable', 'integer', Rule::in(self::SNOOZE_MONTHS)],
+            'block_site'    => ['sometimes', 'boolean'],
+        ]);
+        $block = (bool) ($v['block_site'] ?? false);
+        if ($block && $v['status'] !== 'dismissed') {
+            return $this->refuse('block_site', 'Only a dismissal can block a site.');
         }
-        $finding->update($v);
+        $until = $v['status'] === 'snoozed' ? now()->addMonths((int) $v['snooze_months']) : null;
 
-        return response()->json(['data' => $this->format($finding)]);
+        // Locked and read again, like saved(): Save as… finishing between a
+        // read here and the write must not leave a saved finding dismissed.
+        $result = DB::transaction(function () use ($finding, $v, $until, $block, $request) {
+            $locked = AssistantFinding::query()->lockForUpdate()->findOrFail($finding->id);
+            if ($locked->status === 'saved') {
+                return ['refuse' => ['status', 'A saved finding stays saved.']];
+            }
+            $site = $block ? SiteKey::for($locked->url, $locked->payload ?? [], $locked->source) : null;
+            if ($block && $site === null) {
+                return ['refuse' => ['block_site', 'This finding has no site to block.']];
+            }
+
+            $locked->update(['status' => $v['status'], 'snoozed_until' => $until]);
+            if ($site === null) {
+                return ['finding' => $locked, 'site' => null, 'swept' => 0];
+            }
+            AssistantBlockedSite::query()->firstOrCreate(
+                ['site_key' => $site['key']],
+                ['label' => $site['label'], 'created_by' => $request->user()?->id],
+            );
+
+            // What else from there is still in the inbox or asleep. The URL
+            // narrows it to the few rows on that host; SiteKey decides. One
+            // UPDATE — findings are not in the activity log anyway.
+            $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $site['host']) . '%';
+            $ids = AssistantFinding::query()
+                ->whereIn('status', ['new', 'snoozed'])->whereKeyNot($locked->id)->where('url', 'like', $like)
+                ->get(['id', 'url', 'payload', 'source'])
+                ->filter(fn (AssistantFinding $o) => SiteKey::isBlocked(SiteKey::for($o->url, $o->payload ?? [], $o->source), [$site['key']]))
+                ->modelKeys();
+            if ($ids !== []) {
+                AssistantFinding::query()->whereKey($ids)->update(['status' => 'dismissed', 'snoozed_until' => null]);
+            }
+
+            return ['finding' => $locked, 'site' => $site, 'swept' => count($ids)];
+        });
+        if (isset($result['refuse'])) {
+            return $this->refuse(...$result['refuse']);
+        }
+        [$finding, $site, $swept] = [$result['finding'], $result['site'], $result['swept']];
+
+        return response()->json([
+            'data' => $this->format($finding),
+            'meta' => ['blocked' => $site ? ['key' => $site['key'], 'label' => $site['label']] : null, 'also_dismissed' => $swept],
+        ]);
     }
 
     /**
@@ -144,6 +203,8 @@ class AssistantFindingController extends Controller
     /** The dashboard widget: new findings per kind, the last finished run, failing sources. */
     public function summary(): JsonResponse
     {
+        AssistantFinding::wakeSnoozed();
+
         // What is worth a look: new, and either not triaged yet or kept by
         // triage (known names, duplicates and irrelevant ones score 0).
         $counts = AssistantFinding::query()->status('new')
@@ -196,8 +257,15 @@ class AssistantFindingController extends Controller
         return $streak;
     }
 
+    private function refuse(string $field, string $message): JsonResponse
+    {
+        return response()->json(['message' => $message, 'errors' => [$field => [$message]]], 422);
+    }
+
     private function format(AssistantFinding $f): array
     {
+        $site = SiteKey::for($f->url, $f->payload ?? [], $f->source);
+
         return [
             'id'         => $f->id,
             'kind'       => $f->kind,
@@ -209,6 +277,10 @@ class AssistantFindingController extends Controller
             'lead_type'  => $f->lead_type,
             'score'      => $f->score,
             'status'     => $f->status,
+            'snoozed_until' => $f->snoozed_until,
+            // What "Wrong → block the whole site" would block; null when
+            // nothing can be (a post permalink, a Maps link).
+            'site'       => $site ? ['key' => $site['key'], 'label' => $site['label']] : null,
             'summary'    => $f->triage['summary'] ?? null,
             // What triage knew: a record the band already has, the same page
             // found earlier, and contacts read off the finding (Save as… prefill).

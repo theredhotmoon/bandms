@@ -2,6 +2,7 @@
 
 namespace App\Assistant\Crawler;
 
+use App\Models\AssistantBlockedSite;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use App\Support\CrawlerSettings;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\Log;
  * findings by (source, external_key) without touching their status, and
  * always leaves an assistant_runs row: ok, capped (cap reached, or the
  * provider said its quota is spent) or failed (with the error). A failure
- * keeps what was found before it — and is a row, never a silence.
+ * keeps what was found before it — and is a row, never a silence. Nothing
+ * new is added from a site the band blocked (SiteKey).
  */
 final class CrawlSourceJob implements ShouldQueue
 {
@@ -28,6 +30,9 @@ final class CrawlSourceJob implements ShouldQueue
     // overlap lock outlives it, and failed() closes the run if the worker
     // kills the job anyway.
     public int $timeout = 1500;
+
+    /** @var list<string>|null read once per run */
+    private ?array $blocked = null;
 
     public function __construct(public readonly string $sourceKey) {}
 
@@ -135,6 +140,13 @@ final class CrawlSourceJob implements ShouldQueue
                 'lead_type' => $existing->lead_type === null ? $f->leadType : null,
             ], fn ($v) => $v !== null));
 
+            return false;
+        }
+
+        // Only a new row is held back: what was already found keeps its
+        // status, and blocking a site dismissed the ones still in the inbox.
+        $this->blocked ??= AssistantBlockedSite::keys();
+        if (SiteKey::isBlocked(SiteKey::for($f->url, $f->payload, $this->sourceKey), $this->blocked)) {
             return false;
         }
 

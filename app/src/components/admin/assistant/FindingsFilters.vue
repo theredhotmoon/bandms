@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiLang } from '@/composables/useUiLang'
-import type { FindingKind, FindingsFilter } from '@/types/assistantCrawler'
+import type { FindingKind, FindingStatus, FindingsFilter } from '@/types/assistantCrawler'
 import { countryName } from '@/utils/contactCodes'
 import { countryChips, kindTabs } from '@/utils/findingsFilters'
 
@@ -56,12 +56,17 @@ function kindLabel(kind: FindingKind | null): string {
       />
 
       <label class="ff-dismissed">
-        <input
-          type="checkbox"
-          :checked="filter.status === 'dismissed'"
-          @change="emit('change', { status: ($event.target as HTMLInputElement).checked ? 'dismissed' : 'new' })"
-        />
-        {{ $t('more.assistant.showDismissed') }}
+        {{ $t('more.assistant.statusFilter') }}
+        <select
+          class="field-input"
+          data-testid="findings-status"
+          :value="filter.status"
+          @change="emit('change', { status: ($event.target as HTMLSelectElement).value as FindingStatus })"
+        >
+          <option value="new">{{ $t('more.assistant.statuses.new') }}</option>
+          <option value="snoozed">{{ $t('more.assistant.statuses.snoozed') }}</option>
+          <option value="dismissed">{{ $t('more.assistant.statuses.dismissed') }}</option>
+        </select>
       </label>
     </div>
 

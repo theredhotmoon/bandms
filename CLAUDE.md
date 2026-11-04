@@ -1789,6 +1789,22 @@ read; `assistant_findings` and `assistant_runs` are prod-only in
 `scripts/prodsync/tables.py`, because a push resetting the run ledger would
 let the next run spend the day's cap again.
 
+**Two ways to say no in the inbox.** *Not now* snoozes one finding
+(`status = snoozed`, `snoozed_until` = 1, 3 or 6 months on) and
+`AssistantFinding::wakeSnoozed()` puts it back to `new`, stamping `woke_at`,
+when the inbox, the dashboard widget or the digest next reads — there is no
+scheduled job, so a missed run cannot leave one asleep. The digest counts
+`woke_at` beside its usual clock, so a woken finding is in the next Monday
+mail although it was triaged months before. *Wrong* dismisses it and, with its checkbox, blocks
+its **site**: `SiteKey::for()` — a website's host (a block covers its
+subdomains), but on a platform the *account* (`instagram.com/<name>`,
+`reddit.com/r/<sub>`, a YouTube channel id), because blocking a host there
+would block every account on Facebook. A URL with no readable account (a
+post permalink, a Maps link, setlist.fm) has no site and offers no checkbox.
+`CrawlSourceJob::upsert()` skips a *new* finding from a blocked site; rows it
+already had are refreshed as before. `assistant_blocked_sites` is prod-only
+too — a push must not unblock what the band blocked.
+
 **Every credential travels in a header** (`X-Goog-Api-Key`, `x-api-key`,
 `Authorization: Bearer`, basic auth for Reddit's token), never the URL: a
 Guzzle connection error prints the full URL, and that text lands in
