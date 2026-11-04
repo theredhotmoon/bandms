@@ -7,7 +7,12 @@ import { failOnPageError } from '../../fixtures/page-errors'
  * to sit straight under the article, above prev/next.
  *
  * Read-only: it opens a post that is already built, so it seeds nothing and
- * needs no rebuild. A published post that 404s is a failure, not a skip.
+ * needs no rebuild. The post is picked from the *built* News page, not from
+ * the API. The API's newest post may be one a parallel spec published after
+ * the last rebuild, which the site has not built yet, so "API post 0 must
+ * be built" 404'd whenever a seed beat the next rebuild. The News page's
+ * links come from the same build as the article pages. A linked post that
+ * 404s is a failure, not a skip.
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
@@ -20,14 +25,16 @@ test.describe('Public — news article back link', () => {
   test('sits below previous/next, just above the footer', async ({ page, request }) => {
     const config = await (await request.get(`${API}/api/site-config?lang=en`)).json()
     test.skip(config?.modules?.posts === false, 'News module is off')
-    const posts = ((await (await request.get(`${API}/api/posts?lang=en`)).json()).data ?? []) as { slug: string }[]
-    // Two posts at least, so the page has a previous or a next to sit below.
-    test.skip(posts.length < 2, 'Needs two published posts')
-
     // An empty slug means the module key, as the site itself resolves it.
     const section = config?.module_config?.posts?.slug || 'posts'
-    const res = await page.goto(`${WEB}/en/${section}/${posts[0].slug}/`)
-    expect(res?.status(), 'a published post must be built').toBe(200)
+    await page.goto(`${WEB}/en/${section}/`)
+    const links = await page.locator('a.nf-featured, a.nf-card').evaluateAll((as) =>
+      [...new Set(as.map((a) => a.getAttribute('href')).filter((h): h is string => !!h))])
+    // Two posts at least, so the page has a previous or a next to sit below.
+    test.skip(links.length < 2, 'Needs two published posts')
+
+    const res = await page.goto(new URL(links[0], WEB).href)
+    expect(res?.status(), `the News page links ${links[0]}, which must be built`).toBe(200)
 
     const back = page.locator('.art-back-btn')
     await expect(back).toHaveCount(1)

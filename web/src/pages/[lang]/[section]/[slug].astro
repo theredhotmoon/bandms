@@ -3,7 +3,12 @@ import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
-import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers } from '@/lib/cms'
+import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers, findConcert, findPost, findRelease, findShopItem } from '@/lib/cms'
+import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
+import type { Concert } from '@/types/concert'
+import type { Post } from '@/types/post'
+import type { Release } from '@/types/release'
+import type { ShopItem } from '@/types/shop'
 import { hasMemberPage } from '@/lib/memberPages'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
@@ -40,37 +45,54 @@ export async function getStaticPaths() {
       LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${typeof slug === 'function' ? slug(l) : slug}`]),
     ) as Alternates
 
+  // Each record's page is built from the detail fetched here, never from a
+  // second fetch in the page: a record deleted after this listing would 404
+  // there and fail the whole build. existingDetails() drops a record that
+  // is gone (lib/existingDetails.ts has the incident), and inEveryLocale()
+  // drops it from every locale at once, so no page carries an hreflang or a
+  // language-switcher link to a twin that was never built. A switched-off
+  // module fetches nothing. The sections go one after another, not in
+  // parallel: each already has 4 records x every locale in flight, and four
+  // sections at once would outnumber php-fpm's 20 workers.
+  const enabled = (m: string) => cfg.modules[m] !== false
+  const builtConcerts = enabled('concerts')
+    ? await existingDetails(concerts, c => inEveryLocale(LOCALES, l => findConcert(c.id, l)), { label: c => `concert ${c.id}` })
+    : []
+  const builtPosts = enabled('posts')
+    ? await existingDetails(posts, p => inEveryLocale(LOCALES, l => findPost(p.id, l)), { label: p => `post ${p.id}` })
+    : []
+  const builtReleases = enabled('releases')
+    ? await existingDetails(releases, r => inEveryLocale(LOCALES, l => findRelease(r.id, l)), { label: r => `release ${r.id}` })
+    : []
+  const builtMerch = enabled('merch')
+    ? await existingDetails(shopItems, i => inEveryLocale(LOCALES, l => findShopItem(i.slug, l)), { label: i => `shop item ${i.slug}` })
+    : []
+
   for (const lang of LOCALES) {
 
-    if (cfg.modules.concerts !== false) {
-      for (const c of concerts) {
-        paths.push({
-          params: { lang, section: slugMap[lang].concerts ?? 'concerts', slug: c.slug },
-          props: { sectionType: 'concerts', lang, itemId: c.id, itemSlug: c.slug,
-            alternates: alternatesFor('concerts', c.slug) },
-        })
-      }
+    for (const { item: c, detail } of builtConcerts) {
+      paths.push({
+        params: { lang, section: slugMap[lang].concerts ?? 'concerts', slug: c.slug },
+        props: { sectionType: 'concerts', lang, itemId: c.id, itemSlug: c.slug, concert: detail[lang],
+          alternates: alternatesFor('concerts', c.slug) },
+      })
     }
 
-    if (cfg.modules.posts !== false) {
-      for (const p of posts) {
-        const slug = postSlug(p, lang)
-        paths.push({
-          params: { lang, section: slugMap[lang].posts ?? 'posts', slug },
-          props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: slug,
-            alternates: alternatesFor('posts', l => postSlug(p, l)) },
-        })
-      }
+    for (const { item: p, detail } of builtPosts) {
+      const slug = postSlug(p, lang)
+      paths.push({
+        params: { lang, section: slugMap[lang].posts ?? 'posts', slug },
+        props: { sectionType: 'posts', lang, itemId: p.id, itemSlug: slug, post: detail[lang],
+          alternates: alternatesFor('posts', l => postSlug(p, l)) },
+      })
     }
 
-    if (cfg.modules.releases !== false) {
-      for (const r of releases) {
-        paths.push({
-          params: { lang, section: slugMap[lang].releases ?? 'releases', slug: String(r.id) },
-          props: { sectionType: 'releases', lang, itemId: r.id, itemSlug: '',
-            alternates: alternatesFor('releases', r.id) },
-        })
-      }
+    for (const { item: r, detail } of builtReleases) {
+      paths.push({
+        params: { lang, section: slugMap[lang].releases ?? 'releases', slug: String(r.id) },
+        props: { sectionType: 'releases', lang, itemId: r.id, itemSlug: '', release: detail[lang],
+          alternates: alternatesFor('releases', r.id) },
+      })
     }
 
     // Member pages live under About and go with it, its Members section and
@@ -85,14 +107,12 @@ export async function getStaticPaths() {
       })
     }
 
-    if (cfg.modules.merch !== false) {
-      for (const item of shopItems) {
-        paths.push({
-          params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug },
-          props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug,
-            alternates: alternatesFor('merch', item.slug) },
-        })
-      }
+    for (const { item, detail } of builtMerch) {
+      paths.push({
+        params: { lang, section: slugMap[lang].merch ?? 'merch', slug: item.slug },
+        props: { sectionType: 'merch', lang, itemId: 0, itemSlug: item.slug, shopItem: detail[lang],
+          alternates: alternatesFor('merch', item.slug) },
+      })
     }
   }
 
@@ -105,13 +125,19 @@ interface Props {
   alternates: Alternates
   itemId: number
   itemSlug: string
+  // The record getStaticPaths fetched for this page; exactly one is set,
+  // matching sectionType (none for a member page).
+  concert?: Concert
+  post?: Post
+  release?: Release
+  shopItem?: ShopItem
 }
 
-const { sectionType, lang, alternates, itemId, itemSlug } = Astro.props
+const { sectionType, lang, alternates, itemId, concert, post, release, shopItem } = Astro.props
 ---
 
-{sectionType === 'concerts'  && <ConcertDetail   lang={lang} alternates={alternates} itemId={itemId} />}
-{sectionType === 'posts'     && <PostDetail      lang={lang} alternates={alternates} itemId={itemId} />}
-{sectionType === 'releases'  && <ReleaseDetail   lang={lang} alternates={alternates} itemId={itemId} />}
-{sectionType === 'merch'     && <MerchItemDetail lang={lang} alternates={alternates} itemSlug={itemSlug} />}
+{sectionType === 'concerts'  && concert  && <ConcertDetail   lang={lang} alternates={alternates} concert={concert} />}
+{sectionType === 'posts'     && post     && <PostDetail      lang={lang} alternates={alternates} post={post} />}
+{sectionType === 'releases'  && release  && <ReleaseDetail   lang={lang} alternates={alternates} release={release} />}
+{sectionType === 'merch'     && shopItem && <MerchItemDetail lang={lang} alternates={alternates} item={shopItem} />}
 {sectionType === 'about'     && <MemberDetail    lang={lang} alternates={alternates} itemId={itemId} />}

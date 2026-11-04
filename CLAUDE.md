@@ -809,6 +809,21 @@ cd web && API_BASE=http://localhost:8081 pnpm build
 
 **Both slipped through because the types lie.** `slug_en` is typed `string` while the column is nullable, and `testimonials` was a required array the API never returns. When adding a field to `web/src/types/`, make it match what the API *actually* returns — and guard anything read from a published EPK version, whose frozen snapshots predate any field added later.
 
+**A third, which no type can catch: a record deleted mid-build.** A detail
+route lists records in `getStaticPaths` and renders their pages seconds later.
+If a page fetched its own record, anything deleted in between 404'd there,
+and every page went down with it: `CMS 404: /posts/722`, from a parallel E2E
+spec's cleanup, failed rebuilds that other specs were waiting on. So **a
+detail page never fetches its own record.** `getStaticPaths` fetches it
+through `existingDetails()` (`web/src/lib/existingDetails.ts`) with a
+`find*` fetcher from `cms.ts` (null on 404, still throws on anything else),
+drops what is gone, and passes the record to the page as a prop. Member pages
+get the same guarantee from the memoised `getMembers()`. A new detail route
+follows the same shape. The lists can still link to a record that was
+dropped, for one build, until the rebuild its delete triggers. A proxy that
+404s one record's detail while leaving it listed reproduces the failure on
+demand; the race itself is too narrow to hit by timing.
+
 ### Verifying the public build when the API (or Docker) is down — stub it
 
 `web/src/lib/cms.ts` funnels every request through one `get()` helper hitting

@@ -2,11 +2,12 @@
 import { richTextHtml } from '@/lib/richText'
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
+import type { Concert } from '@/types/concert'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
-import { getConcerts, getConcert, getConcertSetlist, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getConcerts, getConcertSetlist, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { ticketMode as resolveTicketMode } from '@/lib/tickets'
 import { concertLineup, isHighlighted, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from '@/lib/lineup'
 import { CONCERTS_COPY, fillCopy } from '@bandms/site-copy'
@@ -19,10 +20,13 @@ import { dateLocale } from '@/lib/locales'
 interface Props {
   lang: Locale
   alternates: Alternates
-  itemId: number
+  // Fetched once, in the route's getStaticPaths, so the page cannot ask for a
+  // record a parallel delete removed in between (lib/existingDetails.ts).
+  concert: Concert
 }
 
-const { lang, alternates, itemId } = Astro.props
+const { lang, alternates, concert } = Astro.props
+const itemId = concert.id
 const slugMap = await getSlugMap()
 
 const ACCENT = 'var(--color-accent)'
@@ -40,8 +44,7 @@ const summaries = concerts.map(x => ({
 }))
 const idx = summaries.findIndex(s => s.id === itemId)
 
-const [concert, setlist, profile, siteConfig] = await Promise.all([
-  getConcert(itemId, lang),
+const [setlist, profile, siteConfig] = await Promise.all([
   getConcertSetlist(itemId),
   getBandProfile(lang),
   getSiteConfig(lang),

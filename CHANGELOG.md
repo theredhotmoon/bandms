@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-04 (public build survives a mid-build delete)
+
+### Fixed
+- **Deleting a concert, post, release or merch item while the public site was rebuilding no longer fails the whole rebuild.** Each detail page used to fetch its record again after the build had listed it. A record deleted in between returned 404 there, and the all-or-nothing build published nothing at all. Pages are now built from the record fetched with the list. A record deleted in that moment is left out of that build and drops away on the next one.
+- **Two public E2E specs no longer fail when a parallel spec changes data between site rebuilds.** Each compared the built site with the live API, which other specs change at the same time. The About timeline spec counted the API's members; it now checks the timeline against the same page's member cards and former-member pills, built from the same data. The article back-link spec opened the API's newest post, which may not be built yet; it now opens a post linked from the built News page.
+
 ## [Unreleased] — 2026-11-04 (our band highlighted on show pages)
 
 ### Changed
