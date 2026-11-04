@@ -4,7 +4,7 @@ import type { Finding } from '@/types/assistantCrawler'
 
 const base: Finding = {
   id: 7, kind: 'lead', source: 'places', url: 'https://minoga.example', title: 'Klub Pod Minogą, Kraków',
-  snippet: '', country: 'PL', lead_type: 'venue', score: 80, status: 'new', summary: null,
+  snippet: '', country: 'PL', lead_type: 'venue', score: 80, status: 'new', snoozed_until: null, site: null, summary: null,
   saved_type: null, saved_id: null, found_at: null, known: null, duplicate_of: null, contacts: null,
 }
 

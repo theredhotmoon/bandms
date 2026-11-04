@@ -19,8 +19,10 @@ use Illuminate\Support\Carbon;
  * finding found before Monday but scored after it (triage down, or past its
  * nightly limit) must reach the next digest, not fall behind the stamp
  * unscored. With no model bound nothing is ever scored, so the floor is
- * dropped and `found_at` is the clock. The first digest covers one week,
- * not everything the crawler has ever found.
+ * dropped and `found_at` is the clock. A finding back from *Not now*
+ * counts from `woke_at` as well: the band asked to hear about it again, and
+ * it was found and triaged long before the stamp. The first digest covers
+ * one week, not everything the crawler has ever found.
  */
 final class DigestBuilder
 {
@@ -41,6 +43,11 @@ final class DigestBuilder
      */
     public function build(Carbon $until): ?array
     {
+        // Nobody may have opened the inbox since a snooze ended. Woken as of
+        // $until, not now(): stamped later than the window's end, it would
+        // miss this digest and wait for the next one.
+        AssistantFinding::wakeSnoozed($until);
+
         $stored  = SiteSetting::get(self::LAST_SENT_KEY);
         $since   = $stored ? Carbon::parse($stored) : $until->copy()->subWeek();
         // The real check, not the config string: a driver named without its
@@ -50,7 +57,9 @@ final class DigestBuilder
 
         $base = fn () => AssistantFinding::query()
             ->status('new')
-            ->where($clock, '>', $since)->where($clock, '<=', $until)
+            ->where(fn ($q) => $q
+                ->where(fn ($w) => $w->where($clock, '>', $since)->where($clock, '<=', $until))
+                ->orWhere(fn ($w) => $w->where('woke_at', '>', $since)->where('woke_at', '<=', $until)))
             ->when($scoring, fn ($q) => $q->where('score', '>=', self::SCORE_FLOOR))
             ->orderByDesc('score')->orderByDesc('found_at')->orderByDesc('id');
 

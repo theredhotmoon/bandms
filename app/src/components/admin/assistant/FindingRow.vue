@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiLang } from '@/composables/useUiLang'
-import type { Finding, LeadType } from '@/types/assistantCrawler'
+import type { Finding, LeadType, SnoozeMonths } from '@/types/assistantCrawler'
 import { countryName } from '@/utils/contactCodes'
 import { sourceName } from '@/utils/crawlerSourceNames'
+import { formatShortDate } from '@/utils/formatDate'
+import RejectActions from './RejectActions.vue'
 import SaveAsMenu from './SaveAsMenu.vue'
 
 const props = defineProps<{
@@ -13,7 +15,12 @@ const props = defineProps<{
   /** A record Save as… created whose link failed — offered again instead of a second create. */
   pendingLink?: { type: 'venue' | 'band' | 'author'; id: number } | null
 }>()
-const emit = defineEmits<{ dismiss: []; restore: []; saved: [link: { type: 'venue' | 'band' | 'author'; id: number }] }>()
+const emit = defineEmits<{
+  snooze: [months: SnoozeMonths]
+  wrong: [blockSite: boolean]
+  restore: []
+  saved: [link: { type: 'venue' | 'band' | 'author'; id: number }]
+}>()
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
@@ -59,6 +66,9 @@ function leadLabel(type: LeadType): string {
         <span v-if="finding.score > 0">{{ $t('more.assistant.score', { n: finding.score }) }}</span>
         <span v-if="finding.known" class="fr-badge" data-testid="finding-known">{{ knownLabel(finding.known) }}</span>
         <span v-if="finding.duplicate_of" class="fr-badge">{{ $t('more.assistant.duplicate') }}</span>
+        <span v-if="finding.status === 'snoozed' && finding.snoozed_until" class="fr-badge" data-testid="finding-back-on">
+          {{ $t('more.assistant.notNow.backOn', { date: formatShortDate(finding.snoozed_until, uiLang, 'instant') }) }}
+        </span>
         <span v-if="finding.status === 'saved'" class="fr-badge fr-badge--saved" data-testid="finding-saved">{{ $t('more.assistant.savedBadge') }}</span>
       </div>
     </div>
@@ -68,12 +78,16 @@ function leadLabel(type: LeadType): string {
         {{ $t('more.assistant.saveAs.relink') }}
       </button>
       <SaveAsMenu v-else-if="canSave" :finding="finding" @saved="emit('saved', $event)" />
-      <button v-if="finding.status === 'dismissed'" type="button" class="btn-ghost" :disabled="busy" @click="emit('restore')">
+      <button v-if="finding.status === 'dismissed' || finding.status === 'snoozed'" type="button" class="btn-ghost" :disabled="busy" @click="emit('restore')">
         {{ $t('more.assistant.restore') }}
       </button>
-      <button v-else-if="finding.status === 'new'" type="button" class="btn-ghost" :disabled="busy" @click="emit('dismiss')">
-        {{ $t('more.assistant.dismiss') }}
-      </button>
+      <RejectActions
+        v-else-if="finding.status === 'new'"
+        :finding="finding"
+        :busy="busy"
+        @snooze="emit('snooze', $event)"
+        @wrong="emit('wrong', $event)"
+      />
     </div>
   </article>
 </template>

@@ -9,16 +9,32 @@ import type { Page, Route } from '@playwright/test'
  */
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
-interface F { id: number; kind: string; country: string | null; status: string; title: string; url: string }
+interface F {
+  id: number; kind: string; country: string | null; status: string; title: string; url: string
+  site: { key: string; label: string } | null; snoozed_until?: string | null
+}
 
 const SEED: F[] = [
-  { id: 1, kind: 'lead', country: 'PL', status: 'new', title: 'Klub Pod Minogą — concerts', url: 'https://minoga.example/koncerty' },
-  { id: 2, kind: 'news', country: 'DE', status: 'new', title: 'Ska festival lineup announced', url: 'https://ska.example/news' },
-  { id: 3, kind: 'lead', country: 'JP', status: 'new', title: 'Tokyo ska night', url: 'javascript:alert(1)' },
+  { id: 1, kind: 'lead', country: 'PL', status: 'new', title: 'Klub Pod Minogą — concerts', url: 'https://minoga.example/koncerty',
+    site: { key: 'minoga.example', label: 'minoga.example' } },
+  { id: 2, kind: 'news', country: 'DE', status: 'new', title: 'Ska festival lineup announced', url: 'https://ska.example/news',
+    site: { key: 'ska.example', label: 'ska.example' } },
+  { id: 3, kind: 'lead', country: 'JP', status: 'new', title: 'Tokyo ska night', url: 'javascript:alert(1)', site: null },
 ]
 
-async function serveInbox(page: Page, patches: { id: number; status: string }[] = []): Promise<void> {
+type Patch = { id: number; status: string; snooze_months?: number; block_site?: boolean }
+type Blocked = { id: number; key: string; label: string; created_by: string | null; created_at: string }
+
+async function serveInbox(page: Page, patches: Patch[] = [], blocked: Blocked[] = []): Promise<void> {
   const rows = SEED.map(f => ({ ...f }))
+  await page.route(/\/api\/admin\/assistant\/blocked-sites(\/\d+)?$/, (route: Route) => {
+    if (route.request().method() === 'DELETE') {
+      const id = Number(route.request().url().split('/').pop())
+      blocked.splice(blocked.findIndex(b => b.id === id), 1)
+      return route.fulfill({ status: 204 })
+    }
+    return route.fulfill({ json: { data: blocked } })
+  })
   await page.route(/\/api\/admin\/assistant\/runs$/, route => route.fulfill({ json: { data: [
     { source: 'youtube', status: 'capped', started_at: null, finished_at: null, queries: 20, new: 4, error: null },
   ] } }))
@@ -43,11 +59,14 @@ async function serveInbox(page: Page, patches: { id: number; status: string }[] 
   })
   await page.route(/\/api\/admin\/assistant\/findings\/\d+$/, (route: Route) => {
     const id = Number(route.request().url().split('/').pop())
-    const { status } = JSON.parse(route.request().postData() ?? '{}')
-    patches.push({ id, status })
+    const body = JSON.parse(route.request().postData() ?? '{}') as Omit<Patch, 'id'>
+    patches.push({ id, ...body })
     const row = rows.find(f => f.id === id)!
-    row.status = status
-    return route.fulfill({ json: { data: row } })
+    row.status = body.status
+    row.snoozed_until = body.status === 'snoozed' ? '2027-02-04T10:00:00Z' : null
+    const site = body.block_site ? row.site : null
+    if (site) blocked.push({ id: blocked.length + 1, ...site, created_by: 'Admin', created_at: '2026-11-04T10:00:00Z' })
+    return route.fulfill({ json: { data: row, meta: { blocked: site, also_dismissed: 0 } } })
   })
 }
 
@@ -79,20 +98,90 @@ test('filters by country and kind, and a second click on a chip clears it', asyn
   await expect(page.getByTestId('finding-row')).toContainText('lineup')
 })
 
-test('dismisses a finding, and it can be restored from the dismissed view', async ({ page }) => {
-  const patches: { id: number; status: string }[] = []
+test('marks a finding as wrong, and it can be restored from the dismissed view', async ({ page }) => {
+  const patches: Patch[] = []
   await serveInbox(page, patches)
   await page.goto('/admin/assistant')
 
-  await page.locator('[data-finding-id="2"]').getByRole('button', { name: /dismiss/i }).click()
+  const row = page.locator('[data-finding-id="2"]')
+  await row.getByTestId('wrong').locator('summary').click()
+  await expect(row.getByTestId('block-site')).not.toBeChecked()
+  await row.getByTestId('confirm-wrong').click()
   await expect(page.getByTestId('finding-row')).toHaveCount(2)
-  expect(patches).toEqual([{ id: 2, status: 'dismissed' }])
+  expect(patches).toEqual([{ id: 2, status: 'dismissed', block_site: false }])
+  await expect(page.getByTestId('blocked-sites')).toHaveCount(0)
 
-  await page.getByLabel(/show dismissed/i).check()
+  await page.getByTestId('findings-status').selectOption('dismissed')
   await expect(page.getByTestId('finding-row')).toHaveCount(1)
   await page.locator('[data-finding-id="2"]').getByRole('button', { name: /restore/i }).click()
   await expect(page.getByTestId('findings-empty')).toBeVisible()
   expect(patches.at(-1)).toEqual({ id: 2, status: 'new' })
+})
+
+test('Not now hides a finding for the months picked, and it waits under Not now with its date', async ({ page }) => {
+  const patches: Patch[] = []
+  await serveInbox(page, patches)
+  await page.goto('/admin/assistant')
+
+  const row = page.locator('[data-finding-id="1"]')
+  await row.getByTestId('not-now').locator('summary').click()
+  await row.getByTestId('not-now').locator('[data-months="3"]').click()
+  await expect(page.getByTestId('finding-row')).toHaveCount(2)
+  expect(patches).toEqual([{ id: 1, status: 'snoozed', snooze_months: 3 }])
+
+  await page.getByTestId('findings-status').selectOption('snoozed')
+  await expect(page.getByTestId('finding-row')).toHaveCount(1)
+  await expect(page.getByTestId('finding-back-on')).toContainText('2027')
+})
+
+test('Wrong can block the whole site, which then lists under Blocked sites and can be unblocked', async ({ page }) => {
+  const patches: Patch[] = []
+  const blocked: Blocked[] = []
+  await serveInbox(page, patches, blocked)
+  await page.goto('/admin/assistant')
+
+  // A link with nothing to block offers no checkbox.
+  const bare = page.locator('[data-finding-id="3"]')
+  await bare.getByTestId('wrong').locator('summary').click()
+  await expect(bare.getByTestId('block-site')).toHaveCount(0)
+  await bare.getByTestId('wrong').locator('summary').click()
+
+  const row = page.locator('[data-finding-id="1"]')
+  await row.getByTestId('wrong').locator('summary').click()
+  await row.getByTestId('block-site').check()
+  await expect(row.getByTestId('wrong')).toContainText('minoga.example')
+  await row.getByTestId('confirm-wrong').click()
+
+  const list = page.getByTestId('blocked-sites')
+  await expect(list).toBeVisible()
+  expect(patches).toEqual([{ id: 1, status: 'dismissed', block_site: true }])
+  await list.locator('summary').click()
+  await expect(list.locator('[data-site="minoga.example"]')).toBeVisible()
+  await list.getByRole('button', { name: /unblock/i }).click()
+  await expect(page.getByTestId('blocked-sites')).toHaveCount(0)
+})
+
+test('one popover at a time, and a block ticked then left is not remembered', async ({ page }) => {
+  const patches: Patch[] = []
+  await serveInbox(page, patches)
+  await page.goto('/admin/assistant')
+
+  const row = page.locator('[data-finding-id="1"]')
+  const wrong = row.getByTestId('wrong')
+  const notNow = row.getByTestId('not-now')
+
+  await wrong.locator('summary').click()
+  await row.getByTestId('block-site').check()
+  await notNow.locator('summary').click() // opening Not now closes Wrong
+  await expect(wrong).not.toHaveAttribute('open')
+  await page.getByRole('heading', { name: 'Assistant' }).click() // a click outside closes Not now
+  await expect(notNow).not.toHaveAttribute('open')
+
+  await wrong.locator('summary').click()
+  await expect(row.getByTestId('block-site')).not.toBeChecked()
+  await row.getByTestId('confirm-wrong').click()
+  await expect(page.getByTestId('finding-row')).toHaveCount(2)
+  expect(patches).toEqual([{ id: 1, status: 'dismissed', block_site: false }])
 })
 
 test('links only http(s) results', async ({ page }) => {

@@ -1,6 +1,7 @@
 /** What the crawler found: news about ska, a mention of the band, or a lead to contact. */
 export type FindingKind = 'mention' | 'news' | 'lead'
-export type FindingStatus = 'new' | 'saved' | 'dismissed'
+/** `snoozed` is "Not now": back to `new` on its own once `snoozed_until` passes. */
+export type FindingStatus = 'new' | 'saved' | 'dismissed' | 'snoozed'
 export type LeadType = 'venue' | 'promoter' | 'festival' | 'band' | 'media' | 'profile'
 
 /** One row of GET /api/admin/assistant/findings. */
@@ -15,6 +16,10 @@ export interface Finding {
   lead_type: LeadType | null
   score: number
   status: FindingStatus
+  /** When a snoozed finding comes back to the inbox. */
+  snoozed_until: string | null
+  /** What "Wrong → block the whole site" would block — null when nothing can be (a post link, a Maps link). */
+  site: { key: string; label: string } | null
   /** Triage's one-line summary — null until triage (slice 3) has read it. */
   summary: string | null
   saved_type: string | null
@@ -34,6 +39,29 @@ export interface FindingsFilter {
   status: FindingStatus
   q: string
   page: number
+}
+
+/** The lengths "Not now" offers, in months. */
+export type SnoozeMonths = 1 | 3 | 6
+
+/** What PATCH /findings/{id} takes: restore, Not now, or Wrong (optionally blocking the site). */
+export type FindingStatusChange =
+  | { status: 'new' }
+  | { status: 'snoozed'; snooze_months: SnoozeMonths }
+  | { status: 'dismissed'; block_site?: boolean }
+
+export interface FindingStatusResult {
+  data: Finding
+  meta: { blocked: { key: string; label: string } | null; also_dismissed: number }
+}
+
+/** One row of GET /api/admin/assistant/blocked-sites. */
+export interface BlockedSite {
+  id: number
+  key: string
+  label: string
+  created_by: string | null
+  created_at: string
 }
 
 /** The list plus the counts the chips show — each within the other filters. */

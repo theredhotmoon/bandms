@@ -7,6 +7,7 @@ use App\Assistant\Crawler\Query;
 use App\Assistant\Crawler\Source;
 use App\Assistant\Crawler\SourceCapped;
 use App\Assistant\Crawler\SourceRegistry;
+use App\Models\AssistantBlockedSite;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use App\Support\CrawlerSettings;
@@ -73,6 +74,18 @@ it('keeps a dismissed finding dismissed when it is found again', function () {
 
     $f = AssistantFinding::sole();
     expect($f->status)->toBe('dismissed')->and($f->title)->toBe('Title a');
+});
+
+it('adds nothing new from a blocked site, but keeps refreshing what it already had', function () {
+    AssistantBlockedSite::create(['site_key' => 'x.test', 'label' => 'x.test']);
+    AssistantFinding::factory()->create(['source' => 'rss', 'external_key' => 'a', 'url' => 'https://x.test/a', 'title' => 'Old']);
+    $elsewhere = new Finding(kind: 'news', externalKey: 'z', url: 'https://ok.test/z', title: 'Z', snippet: '', country: null, leadType: null);
+    FakeSource::$answers = ['q1' => [fakeFinding('a'), fakeFinding('b'), $elsewhere]];
+
+    (new CrawlSourceJob('rss'))->handle(app(SourceRegistry::class));
+
+    expect(AssistantFinding::orderBy('external_key')->pluck('title', 'external_key')->all())->toBe(['a' => 'Title a', 'z' => 'Z'])
+        ->and(AssistantRun::sole()->new)->toBe(1);
 });
 
 it('stops at the day cap, records the run as capped, and a later run spends only the remainder', function () {

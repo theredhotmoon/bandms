@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\CrawlerSettingsController;
+use App\Http\Controllers\AssistantBlockedSiteController;
 use App\Http\Controllers\AssistantFindingController;
 use App\Http\Controllers\ClipController;
 use App\Http\Controllers\ConcertTicketController;
@@ -337,6 +338,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/admin/assistant/runs', [AssistantFindingController::class, 'runs'])->name('api.admin.assistant.runs');
         Route::get('/admin/assistant/summary', [AssistantFindingController::class, 'summary'])->name('api.admin.assistant.summary');
         Route::post('/admin/assistant/findings/{finding}/saved', [AssistantFindingController::class, 'saved'])->name('api.admin.assistant.findings.saved');
+        Route::get('/admin/assistant/blocked-sites', [AssistantBlockedSiteController::class, 'index'])->name('api.admin.assistant.blocked-sites.index');
+        Route::delete('/admin/assistant/blocked-sites/{site}', [AssistantBlockedSiteController::class, 'destroy'])->name('api.admin.assistant.blocked-sites.destroy');
         Route::post('/admin/assistant/run', [AssistantFindingController::class, 'run'])
             ->middleware('throttle:2,1,assistant-run')
             ->name('api.admin.assistant.run');
