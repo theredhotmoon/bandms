@@ -167,7 +167,7 @@ describe('getBandProfile', () => {
 
 /**
  * A merch item carries clips whose titles the API resolves for the requested
- * locale — so the item fetch must say which one, like getRelease does.
+ * locale — so the item fetch must say which one, like findRelease does.
  */
 /**
  * The member detail route lists members in getStaticPaths and each page then
@@ -196,20 +196,64 @@ describe('getMembers', () => {
   })
 })
 
-describe('getShopItem', () => {
+describe('findShopItem', () => {
   it('requests the locale it was given', async () => {
     const calls: string[] = []
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       calls.push(url)
       return { ok: true, status: 200, json: async () => ({ data: { id: 1 } }) }
     }))
-    const { getShopItem } = await freshModule()
+    const { findShopItem } = await freshModule()
 
-    await getShopItem('clip-tee', 'pl')
+    await findShopItem('clip-tee', 'pl')
 
     expect(calls).toHaveLength(1)
     expect(calls[0]).toContain('/shop/by-slug/clip-tee')
     expect(calls[0]).toContain('lang=pl')
+  })
+})
+
+/**
+ * The detail route's records. A parallel delete between getStaticPaths
+ * listing a post and its page fetching it 404'd ("CMS 404: /posts/722"), and
+ * the all-or-nothing build took every page down with it. Gone is now null.
+ */
+describe('find* detail fetchers', () => {
+  function stubStatus(status: number) {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: status < 400, status, json: async () => ({ data: { id: 7 } }) }
+    }))
+    return calls
+  }
+
+  it('returns the record, unwrapped, with the locale in the query', async () => {
+    const calls = stubStatus(200)
+    const { findConcert, findPost, findRelease } = await freshModule()
+
+    expect(await findConcert(7, 'pl')).toEqual({ id: 7 })
+    expect(await findPost(7, 'pl')).toEqual({ id: 7 })
+    expect(await findRelease(7, 'pl')).toEqual({ id: 7 })
+    expect(calls.map((u) => new URL(u, 'http://x').pathname)).toEqual(['/api/concerts/7', '/api/posts/7', '/api/releases/7'])
+    expect(calls.every((u) => u.endsWith('?lang=pl'))).toBe(true)
+  })
+
+  it('is null for a record that is gone', async () => {
+    stubStatus(404)
+    const { findConcert, findPost, findRelease, findShopItem } = await freshModule()
+
+    expect(await findConcert(7)).toBeNull()
+    expect(await findPost(7)).toBeNull()
+    expect(await findRelease(7)).toBeNull()
+    expect(await findShopItem('tee')).toBeNull()
+  })
+
+  it('still throws on anything but a 404, so a broken API fails loudly', async () => {
+    stubStatus(500)
+    const { findPost } = await freshModule()
+
+    await expect(findPost(7)).rejects.toThrow('CMS 500: /posts/7')
   })
 })
 

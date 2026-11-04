@@ -1,10 +1,11 @@
 ---
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
+import type { Post } from '@/types/post'
 import { getSlugMap } from '@/lib/slugs'
 import { postSlug, formatEventDates, fmtDate, fmtDateShort } from '@/lib/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { getAllPosts, getPost, getBandProfile, getSiteConfig, getConcerts } from '@/lib/cms'
+import { getAllPosts, getBandProfile, getSiteConfig, getConcerts } from '@/lib/cms'
 import PostBlocks from '@/components/blocks/PostBlocks.astro'
 import { POSTS_COPY, CONCERTS_COPY } from '@bandms/site-copy'
 import PostConcerts from '@/components/PostConcerts.astro'
@@ -15,10 +16,13 @@ const ACCENT = 'var(--color-accent)'
 interface Props {
   lang: Locale
   alternates: Alternates
-  itemId: number
+  // Fetched once, in the route's getStaticPaths, so the page cannot ask for a
+  // record a parallel delete removed in between (lib/existingDetails.ts).
+  post: Post
 }
 
-const { lang, alternates, itemId } = Astro.props
+const { lang, alternates, post } = Astro.props
+const itemId = post.id
 const slugMap = await getSlugMap()
 const siteConfig = await getSiteConfig(lang)
 
@@ -35,17 +39,16 @@ const summaries = allPosts.map(p => ({
 }))
 const idx = summaries.findIndex(s => s.id === itemId)
 
-const [post, profile] = await Promise.all([
-  getPost(itemId, lang),
-  getBandProfile(lang),
-])
+const profile = await getBandProfile(lang)
 
 const dateStr = fmtDate(post.published_at ?? post.created_at, lang)
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') ?? ''
 
 // Prev (newer) / next (older) — posts are newest-first
 const prevSlug = idx > 0                   ? summaries[idx - 1].slug : null
-const nextSlug = idx < summaries.length - 1 ? summaries[idx + 1].slug : null
+// idx is -1 when the post left the list after its page was planned (deleted
+// mid-build): no neighbours then, rather than "next" pointing at summaries[0].
+const nextSlug = idx >= 0 && idx < summaries.length - 1 ? summaries[idx + 1].slug : null
 
 // More: up to 3 other posts
 const more = summaries.filter((_, i) => i !== idx).slice(0, 3)

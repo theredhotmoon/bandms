@@ -45,13 +45,35 @@ async function get<T>(path: string, params?: Record<string, string>): Promise<T>
   return json as T
 }
 
-async function getOptional<T>(path: string): Promise<T | null> {
-  const res = await fetch(`${BASE}/api${path}`, { headers: { Accept: 'application/json' } })
+async function getOptional<T>(path: string, params?: Record<string, string>): Promise<T | null> {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+  const res = await fetch(`${BASE}/api${path}${qs}`, { headers: { Accept: 'application/json' } })
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`CMS ${res.status}: ${path}`)
   const json = (await res.json()) as unknown
   if (json && typeof json === 'object' && 'data' in json) return (json as { data: T }).data
   return json as T
+}
+
+/**
+ * One detail record, or null when it is gone, fetched at most once per build.
+ *
+ * The localised detail route and its legacy unlocalised twin (/concerts/…,
+ * /posts/…) both build the English page of every record. Without this they
+ * fetched each one twice, and could disagree about a record deleted between
+ * the two fetches: one route built, the other dropped. Memoised, both read
+ * one answer. A failure is not cached: it fails the build anyway.
+ */
+const detailCache = new Map<string, Promise<unknown>>()
+function findOnce<T>(path: string, params: Record<string, string>): Promise<T | null> {
+  const key = `${path}?${new URLSearchParams(params)}`
+  let hit = detailCache.get(key) as Promise<T | null> | undefined
+  if (!hit) {
+    hit = getOptional<T>(path, params)
+    detailCache.set(key, hit)
+    hit.catch(() => detailCache.delete(key))
+  }
+  return hit
 }
 
 // ── Band profile ──────────────────────────────────────────────────────────────
@@ -146,8 +168,15 @@ export const getConcerts = (lang: Locale = 'en') =>
 export const getClips = (lang: Locale = 'en') =>
   get<import('@/types/clip').RenderableClip[]>('/clips', { lang })
 
-export const getConcert = (id: number, lang: Locale = 'en') =>
-  { assertSafeId(id); return get<Concert>(`/concerts/${id}`, { lang }) }
+/**
+ * One concert, or null when it no longer exists. The detail route fetches
+ * through this in getStaticPaths, not in the page: a record a parallel
+ * delete removed between "listed" and "rendered" then simply is not built,
+ * instead of a 404 here failing the all-or-nothing build. The same holds for
+ * findPost, findRelease and findShopItem; see lib/existingDetails.ts.
+ */
+export const findConcert = (id: number, lang: Locale = 'en') =>
+  { assertSafeId(id); return findOnce<Concert>(`/concerts/${id}`, { lang }) }
 
 export const getConcertSetlist = (id: number) =>
   { assertSafeId(id); return getOptional<PublicSetlist>(`/concerts/${id}/setlist`) }
@@ -160,8 +189,9 @@ export const getConcertTickets = (id: number) =>
 export const getReleases = (lang: Locale = 'en') =>
   get<ReleaseSummary[]>('/releases', { lang })
 
-export const getRelease = (id: number, lang: Locale = 'en') =>
-  { assertSafeId(id); return get<Release>(`/releases/${id}`, { lang }) }
+/** One release, or null when it no longer exists. See findConcert. */
+export const findRelease = (id: number, lang: Locale = 'en') =>
+  { assertSafeId(id); return findOnce<Release>(`/releases/${id}`, { lang }) }
 
 // ── Posts ─────────────────────────────────────────────────────────────────────
 
@@ -185,8 +215,9 @@ export const getFeaturedPost = (lang: Locale = DEFAULT_LOCALE) =>
 /** One batch of the News grid — the build bakes the first. See postFeed.ts. */
 export const getPostBatch = (q: PostBatchQuery) => fetchPostBatch(BASE, q)
 
-export const getPost = (id: number, lang: Locale = 'en') =>
-  { assertSafeId(id); return get<Post>(`/posts/${id}`, { lang }) }
+/** One published post, or null — deleted, or unpublished mid-build. See findConcert. */
+export const findPost = (id: number, lang: Locale = 'en') =>
+  { assertSafeId(id); return findOnce<Post>(`/posts/${id}`, { lang }) }
 
 /**
  * Every post, across all pages.
@@ -233,8 +264,9 @@ export const getShopItems = () =>
   get<ShopItemSummary[]>('/shop')
 
 // `lang` resolves the item's clip titles; the item's own fields are not translated.
-export const getShopItem = (slug: string, lang: Locale = 'en') =>
-  get<ShopItem>(`/shop/by-slug/${encodeURIComponent(slug)}`, { lang })
+// Null when the item no longer exists; see findConcert.
+export const findShopItem = (slug: string, lang: Locale = 'en') =>
+  findOnce<ShopItem>(`/shop/by-slug/${encodeURIComponent(slug)}`, { lang })
 
 export const getShopCategories = () =>
   get<ShopCategory[]>('/shop-categories')

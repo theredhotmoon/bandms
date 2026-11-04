@@ -7,16 +7,27 @@
  * copy — this file had drifted into its own pre-theme layout while the localised
  * route was ported, which is exactly what delegation prevents.
  */
-import { getReleases, getSiteConfig } from '@/lib/cms'
+import { getReleases, getSiteConfig, findRelease } from '@/lib/cms'
+import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
+import type { Release } from '@/types/release'
 import { getSlugMap } from '@/lib/slugs'
+import { LOCALES } from '@/lib/locales'
 import ReleaseDetail from '@/components/detail/ReleaseDetail.astro'
 
 export async function getStaticPaths() {
   const releases = await getReleases('en')
-  return releases.map(r => ({ params: { id: String(r.id) } }))
+  // The record is fetched here and handed to the page, never fetched again
+  // there: one deleted in between is not built (lib/existingDetails.ts). In
+  // every locale, like the localised route, so this page's hreflang twin
+  // exists whenever it does; the find* memo makes those the same requests.
+  // Module off: the page only redirects, so it needs no record and none is fetched.
+  if ((await getSiteConfig()).modules.releases === false) return releases.map(r => ({ params: { id: String(r.id) } }))
+  const found = await existingDetails(releases, r => inEveryLocale(LOCALES, l => findRelease(r.id, l)), { label: r => `release ${r.id}` })
+  return found.map(({ item: r, detail }) => ({ params: { id: String(r.id) }, props: { release: detail.en } }))
 }
 
 const { id } = Astro.params
+const { release } = Astro.props as { release: Release }
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.releases === false) return Astro.redirect('/404', 307)
@@ -30,4 +41,4 @@ const slugMap = await getSlugMap()
 const alternates = { pl: `/pl/${slugMap.pl.releases ?? 'releases'}/${id}` }
 ---
 
-<ReleaseDetail lang="en" alternates={alternates} itemId={Number(id)} />
+<ReleaseDetail lang="en" alternates={alternates} release={release} />

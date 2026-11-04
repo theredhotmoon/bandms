@@ -2,25 +2,27 @@
 import { richTextHtml } from '@/lib/richText'
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
+import type { ShopItem } from '@/types/shop'
 import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
-import { getShopItem, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getBandProfile, getSiteConfig } from '@/lib/cms'
 import { MERCH_COPY } from '@bandms/site-copy'
 import { moduleCopy, addToCartCopy, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
   alternates: Alternates
-  itemSlug: string
+  // Fetched once, in the route's getStaticPaths, so the page cannot ask for a
+  // record a parallel delete removed in between (lib/existingDetails.ts).
+  item: ShopItem
 }
 
-const { lang, alternates, itemSlug } = Astro.props
+const { lang, alternates, item } = Astro.props
 const slugMap = await getSlugMap()
 
-const [item, profile, siteConfig] = await Promise.all([
-  getShopItem(itemSlug, lang),
+const [profile, siteConfig] = await Promise.all([
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
