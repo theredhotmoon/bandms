@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import type { APIRequestContext } from '@playwright/test'
+import { test, type APIRequestContext } from '@playwright/test'
 
 /**
  * Bearer auth for API calls made from a spec.
@@ -103,9 +103,17 @@ export const TEST_PNG = Buffer.from(
  * 409 here just means the other worker's rebuild is the one in flight. A
  * completed build is only accepted if it started at or after `since`, so a
  * build that read the database before this worker's seed is never trusted.
+ *
+ * It extends the calling test's or hook's time limit by its own budget. A
+ * queued rebuild can take minutes, and a hook keeps Playwright's 30-second
+ * default unless it says otherwise: four specs forgot to, so their setup timed
+ * out mid-wait and every test after it was skipped.
  */
 export async function rebuildAndWait(request: APIRequestContext, since: number, apiBase = ''): Promise<void> {
-  const deadline = Date.now() + 180_000
+  const BUDGET = 180_000
+  const info = test.info()
+  if (info.timeout > 0) info.setTimeout(info.timeout + BUDGET)
+  const deadline = Date.now() + BUDGET
   while (Date.now() < deadline) {
     const trigger = await request.post(`${apiBase}/api/admin/site/rebuild`, { headers: adminHeaders() })
     if (!trigger.ok() && trigger.status() !== 409) throw new Error(`POST /api/admin/site/rebuild → ${trigger.status()}`)

@@ -161,8 +161,16 @@ export const getSocialLinks = () =>
 
 // `lang` resolves each concert's name and description (and its tags' names);
 // the slug is the default locale's in every language.
-export const getConcerts = (lang: Locale = 'en') =>
-  get<Concert[]>('/concerts', { lang })
+//
+// Memoised per locale for the build, like getMembers(): every concert page
+// derives its prev/next and "more shows" from this list. Fetched afresh per
+// page, a concert a parallel save created or deleted mid-build appeared on
+// some pages of one build and not others, and could be linked from a page
+// although its own page was never built.
+export const getConcerts: (lang?: Locale) => Promise<Concert[]> = memoisePerLocale(
+  (lang) => get<Concert[]>('/concerts', { lang }),
+  3,
+)
 
 /** Every clip, titles in `lang`. The member page picks a member's out of these. */
 export const getClips = (lang: Locale = 'en') =>

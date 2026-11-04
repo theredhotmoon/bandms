@@ -175,12 +175,29 @@ watch(tag, (slug) => {
 // data-overflow and the distance to travel; hovering the card then slides the
 // hidden tags into view (CSS below). Measured, because only the browser knows
 // how wide a row of translated, theme-fonted chips actually is.
+//
+// Each track is observed as well as the root: the theme's web font usually
+// arrives after mount, widening every chip while the grid stays the same
+// size, so a root-only observer kept the pre-font distance and the row
+// stopped short of its last tag on hover. A transform does not resize an
+// element, so the slide itself never re-triggers this.
 const root = ref<HTMLElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
+const observedTracks = new Set<HTMLElement>()
 
 function measureTagRows() {
+  // Let go of the tracks a filter or search change removed, so the observer
+  // does not hold every past grid for the life of the page.
+  for (const track of observedTracks) {
+    if (!track.isConnected) { resizeObserver?.unobserve(track); observedTracks.delete(track) }
+  }
   root.value?.querySelectorAll<HTMLElement>('.nf-chip-row').forEach(row => {
     const track = row.firstElementChild as HTMLElement | null
     if (!track) return
+    if (resizeObserver && !observedTracks.has(track)) {
+      resizeObserver.observe(track)
+      observedTracks.add(track)
+    }
     const overflow = track.scrollWidth - row.clientWidth
     if (overflow > 1) {
       row.dataset.overflow = ''
@@ -193,13 +210,12 @@ function measureTagRows() {
   })
 }
 
-let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
-  measureTagRows()
   resizeObserver = new ResizeObserver(() => measureTagRows())
   if (root.value) resizeObserver.observe(root.value)
+  measureTagRows()
 })
-onBeforeUnmount(() => resizeObserver?.disconnect())
+onBeforeUnmount(() => { resizeObserver?.disconnect(); observedTracks.clear() })
 
 watch(posts, () => nextTick(measureTagRows))
 
