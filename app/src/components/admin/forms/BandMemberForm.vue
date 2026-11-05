@@ -17,6 +17,14 @@ const props = defineProps<{
   availableInstruments?: Instrument[]
   /** The instruments query settled: the "none yet" hint must not show while it loads or after it failed. */
   instrumentsLoaded?: boolean
+  /**
+   * A member editing their own row. The form shows only what the role can
+   * change: `BandMemberController::update` drops `login_email`, `is_current`,
+   * `joined_at` and `quit_at` from a member, and the photo upload and
+   * `POST /instruments` are admin-only. Those fields are not sent either:
+   * `photo: null` beside a file nobody could upload deleted the picture.
+   */
+  selfEdit?: boolean
 }>()
 
 const emit = defineEmits<{ submit: [BandMemberPayload]; cancel: [] }>()
@@ -141,15 +149,17 @@ function submit() {
     nickname:            form.nickname || null,
     last_name:           form.last_name,
     role:                form.role || null,
-    photo:               photoFile.value ? null : (form.photo || null),
-    photo_file:          photoFile.value,
     bio:                 form.bio || null,
-    is_current:          form.is_current,
     public_page:         form.public_page,
-    joined_at:           form.joined_at || null,
-    quit_at:             form.is_current ? null : (form.quit_at || null),
     calendar_url:        form.calendar_url || null,
-    login_email:         form.login_email,
+    ...(props.selfEdit ? {} : {
+      photo:             photoFile.value ? null : (form.photo || null),
+      photo_file:        photoFile.value,
+      is_current:        form.is_current,
+      joined_at:         form.joined_at || null,
+      quit_at:           form.is_current ? null : (form.quit_at || null),
+      login_email:       form.login_email,
+    }),
     instrument_ids:      form.instrument_ids,
     main_instrument_id:  form.main_instrument_id,
     social_links:        socialLinks.value,
@@ -185,8 +195,8 @@ function submit() {
         </div>
 
         <!-- Role + Google Calendar in one row -->
-      <div class="grid grid-cols-3 gap-3">
-          <div>
+      <div class="grid gap-3" :class="selfEdit ? 'grid-cols-2' : 'grid-cols-3'">
+          <div v-if="!selfEdit">
               <label class="field-label">{{ $t('band.members.form.email') }} <span style="color:var(--c-f87171);">*</span></label>
               <input v-model="form.login_email" type="email" required class="field-input" :placeholder="$t('band.members.form.emailPlaceholder')" />
               <p v-if="errors?.login_email" class="field-error">{{ errors.login_email[0] }}</p>
@@ -217,7 +227,7 @@ function submit() {
       <div class="form-col-aside">
 
         <!-- Photo -->
-        <div>
+        <div v-if="!selfEdit">
           <label class="field-label">{{ $t('band.members.form.photo') }}</label>
           <div class="aside-avatar-wrap">
             <img
@@ -252,7 +262,7 @@ function submit() {
         </div>
 
         <!-- Status -->
-        <div>
+        <div v-if="!selfEdit">
           <label class="field-label">{{ $t('band.members.form.status') }}</label>
           <label class="toggle-label">
             <button
@@ -294,17 +304,19 @@ function submit() {
         </div>
 
         <!-- Joined / Quit -->
-        <div>
-          <label class="field-label">{{ $t('band.members.form.joined') }}</label>
-          <input v-model="form.joined_at" type="date" class="field-input" />
-          <p v-if="errors?.joined_at" class="field-error">{{ errors.joined_at[0] }}</p>
-        </div>
+        <template v-if="!selfEdit">
+          <div>
+            <label class="field-label">{{ $t('band.members.form.joined') }}</label>
+            <input v-model="form.joined_at" type="date" class="field-input" />
+            <p v-if="errors?.joined_at" class="field-error">{{ errors.joined_at[0] }}</p>
+          </div>
 
-        <div>
-          <label class="field-label" :style="form.is_current ? 'opacity:0.35;' : ''">{{ $t('band.members.form.quit') }}</label>
-          <input v-model="form.quit_at" type="date" class="field-input" :disabled="form.is_current" />
-          <p v-if="errors?.quit_at" class="field-error">{{ errors.quit_at[0] }}</p>
-        </div>
+          <div>
+            <label class="field-label" :style="form.is_current ? 'opacity:0.35;' : ''">{{ $t('band.members.form.quit') }}</label>
+            <input v-model="form.quit_at" type="date" class="field-input" :disabled="form.is_current" />
+            <p v-if="errors?.quit_at" class="field-error">{{ errors.quit_at[0] }}</p>
+          </div>
+        </template>
 
         <!-- Instruments -->
         <div>
@@ -314,9 +326,9 @@ function submit() {
             <div class="member-links-heading">{{ $t('band.members.form.mainInstrument') }}</div>
             <!-- The list is the view's instruments query; the created row
                  reaches it through the cache append in useCreateInstrument. -->
-            <InstrumentQuickAdd @created="pickCreatedInstrument($event.id)" />
+            <InstrumentQuickAdd v-if="!selfEdit" @created="pickCreatedInstrument($event.id)" />
           </div>
-          <p v-if="instrumentsLoaded && !availableInstruments?.length" class="instruments-hint">{{ $t('band.members.form.noInstruments') }}</p>
+          <p v-if="!selfEdit && instrumentsLoaded && !availableInstruments?.length" class="instruments-hint">{{ $t('band.members.form.noInstruments') }}</p>
           <template v-else-if="availableInstruments?.length">
           <p class="instruments-hint">{{ $t('band.members.form.mainInstrumentHint') }}</p>
           <div class="instruments-grid">
@@ -364,7 +376,7 @@ function submit() {
     </div>
 
     <div class="flex gap-2 justify-end pt-1">
-      <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
+      <button v-if="!selfEdit" type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
       <button type="submit" :disabled="loading" class="btn-primary">
         {{ loading ? $t('common.actions.saving') : (initial ? $t('band.members.form.update') : $t('band.members.form.create')) }}
       </button>

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 (musicians can save My Profile)
+
+### Fixed
+- **Musicians can save My Profile again.** The form required a login email that is only ever sent to admins, so the field stayed empty and the browser blocked the save with no message. The field is gone from this page.
+- **Choosing a new photo on My Profile no longer deletes the current one.** The upload is admin-only, so the file never arrived, the old photo was cleared anyway, and the page still said *Profile updated*.
+
+### Changed
+- **My Profile now shows only what a musician can change.** Current/ex-member status, the joined and quit dates, the photo and *+ New instrument* are gone from it, because the server ignored or refused them, so edits looked saved and were not. The Cancel button is gone too, as it did nothing on this page. An admin still changes all of these under Band Members, including a member's photo.
+
 ## [Unreleased] — 2026-11-04 (news tag rows slide all the way, more E2E races)
 
 ### Fixed
