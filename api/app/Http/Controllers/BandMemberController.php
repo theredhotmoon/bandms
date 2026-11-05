@@ -171,8 +171,10 @@ class BandMemberController extends Controller
             'default_gear.*.notes'       => ['nullable', 'string', 'max:2000'],
         ]);
 
+        // `photo` too: the upload is admin-only, and an older admin bundle sent
+        // `photo: null` beside a file the member could never upload.
         if ($authUser->isMember()) {
-            unset($data['can_login'], $data['login_email'], $data['is_current'], $data['sort_order'], $data['joined_at'], $data['quit_at']);
+            unset($data['can_login'], $data['login_email'], $data['is_current'], $data['sort_order'], $data['joined_at'], $data['quit_at'], $data['photo']);
         }
 
         DB::transaction(function () use ($member, $data, $request) {

@@ -220,6 +220,9 @@ describe('PUT /api/band-profile/members/{member}', function () {
             'can_login'   => false,
             'login_email' => 'original@example.com',
             'sort_order'  => 5,
+            'joined_at'   => '2020-01-01',
+            'quit_at'     => '2021-01-01',
+            'photo'       => '/storage/members/original.jpg',
         ]);
         $this->actingAsMember($member->id);
 
@@ -229,6 +232,9 @@ describe('PUT /api/band-profile/members/{member}', function () {
             'login_email' => 'escalated@example.com',
             'is_current'  => true,
             'sort_order'  => 0,
+            'joined_at'   => '2022-02-02',
+            'quit_at'     => '2023-03-03',
+            'photo'       => null,
         ])->assertSuccessful();
 
         $member->refresh();
@@ -236,7 +242,10 @@ describe('PUT /api/band-profile/members/{member}', function () {
             ->and((bool) $member->can_login)->toBeFalse()
             ->and($member->login_email)->toBe('original@example.com')
             ->and((bool) $member->is_current)->toBeFalse()
-            ->and($member->sort_order)->toBe(5);
+            ->and($member->sort_order)->toBe(5)
+            ->and($member->joined_at->toDateString())->toBe('2020-01-01')
+            ->and($member->quit_at->toDateString())->toBe('2021-01-01')
+            ->and($member->photo)->toBe('/storage/members/original.jpg');
     });
 
     it('forbids a member from updating another member', function () {
