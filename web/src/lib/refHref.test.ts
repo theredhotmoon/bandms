@@ -37,9 +37,7 @@ describe('refHref', () => {
     expect(refHref('album', { id: 3 }, 'en', slugMap, allOn)).toBeNull()
   })
 
-  it('returns external hrefs for music videos and press releases', () => {
-    expect(refHref('music_video', { video_url: 'https://youtu.be/x' }, 'en', slugMap, allOn))
-      .toEqual({ href: 'https://youtu.be/x', external: true })
+  it('returns an external href for press releases', () => {
     expect(refHref('press_release', { url: 'https://pitchfork.com/x' }, 'en', slugMap, allOn))
       .toEqual({ href: 'https://pitchfork.com/x', external: true })
   })

@@ -51,9 +51,6 @@ class BandMemberController extends Controller
                 'concerts' => fn ($q) => $q->orderByDesc('concerts.date'),
                 'clips' => fn ($q) => $q->orderByDesc('clips.recorded_on')->orderByDesc('clips.id'),
                 'releases' => fn ($q) => $q->orderByDesc('releases.release_date')->orderByDesc('releases.id'),
-                // Published only: a video with no published_at is a draft.
-                'musicVideos' => fn ($q) => $q->whereNotNull('music_videos.published_at')
-                    ->orderByDesc('music_videos.published_at')->orderByDesc('music_videos.id'),
                 // Every article: published_at is the article's own date, not a
                 // draft flag — the Press page lists undated ones too.
                 'pressReleases' => fn ($q) => $q->orderByDesc('press_releases.published_at')->orderByDesc('press_releases.id'),

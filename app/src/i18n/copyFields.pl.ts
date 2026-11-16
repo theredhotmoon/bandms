@@ -134,6 +134,11 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   '"Join" button': 'Przycisk „Dołącz”',
   '"Listen" button': 'Przycisk „Posłuchaj”',
   '"Live" category': 'Kategoria „Na żywo”',
+  '"Music video" category': 'Kategoria „Teledysk”',
+  '"Fan video" label': 'Etykieta „Nagranie fana”',
+  'Fan video credit': 'Podpis nagrania fana',
+  'On every video marked as a fan video in the admin.': 'Przy każdym nagraniu oznaczonym w panelu jako nagranie fana.',
+  'Links to the channel that posted it. {name} is the channel or author.': 'Prowadzi do kanału, który je opublikował. {name} to kanał lub autor.',
   '"Lyrics" link on a track': 'Link „Tekst” przy utworze',
   '"More from the blog" heading': 'Nagłówek „Więcej z bloga”',
   '"More past shows" heading': 'Nagłówek „Więcej zagranych koncertów”',
@@ -576,14 +581,12 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── About → Member page → gigs ──────────────────────────────────────────
   'Gigs heading': 'Nagłówek koncertów',
   'Above the concerts the member played. Hidden when there are none.': 'Nad koncertami, w których grał członek zespołu. Ukryty, gdy ich nie ma.',
-  // ── About → Member page → clips ─────────────────────────────────────────
-  'Above the clips the member appears in. Hidden when there are none.': 'Nad klipami, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
+  // ── About → Member page → videos ────────────────────────────────────────
+  'Videos heading': 'Nagłówek nagrań wideo',
+  'Above the videos the member appears in. Hidden when there are none.': 'Nad nagraniami wideo, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
   // ── About → Member page → releases ──────────────────────────────────────
   'Releases heading': 'Nagłówek wydawnictw',
   'Above the releases the member played on. Hidden when there are none.': 'Nad wydawnictwami, na których grał członek zespołu. Ukryty, gdy ich nie ma.',
-  // ── About → Member page → music videos ──────────────────────────────────
-  'Music videos heading': 'Nagłówek teledysków',
-  'Above the music videos the member appears in. Hidden when there are none.': 'Nad teledyskami, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
   // ── About → Member page → press ─────────────────────────────────────────
   'Press coverage heading': 'Nagłówek artykułów prasowych',
   'Above the articles about the member. Hidden when there are none.': 'Nad artykułami o członku zespołu. Ukryty, gdy ich nie ma.',

@@ -5,7 +5,6 @@ import type { Concert } from '@/types/concert'
 import type { Release, ReleaseSummary } from '@/types/release'
 import type { Post, PostSummary, PaginationMeta } from '@/types/post'
 import type { Album } from '@/types/album'
-import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/pressRelease'
 import type { ShopItem, ShopItemSummary, ShopCategory } from '@/types/shop'
 import type { PublicSetlist } from '@/types/setlist'
@@ -261,11 +260,6 @@ export const getAlbums: (lang?: Locale) => Promise<Album[]> = memoisePerLocale(
   (lang) => get<Album[]>('/albums', { lang, linked: '1' }),
   3,
 )
-
-// ── Music Videos ──────────────────────────────────────────────────────────────
-
-export const getMusicVideos = () =>
-  get<MusicVideo[]>('/music-videos')
 
 // ── Press ─────────────────────────────────────────────────────────────────────
 

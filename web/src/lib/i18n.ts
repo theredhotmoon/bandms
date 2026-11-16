@@ -170,16 +170,4 @@ export function formatNumber(n: number | null | undefined): string {
   return String(n)
 }
 
-export function youtubeEmbedUrl(url: string): string | null {
-  const m =
-    url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/) ??
-    url.match(/youtube\.com\/embed\/([\w-]+)/)
-  if (!m) return null
-  return `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1`
-}
 
-export function youtubeThumbnail(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
-  if (!m) return null
-  return `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`
-}

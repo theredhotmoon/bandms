@@ -191,29 +191,18 @@ it('marks setlists dirty when a setlist item is reordered', function () {
 });
 
 use App\Models\Album;
-use App\Models\MusicVideo;
 use App\Models\PressRelease;
 use App\Models\Release;
 
 // NOTE on deviations from the task-6 brief's example test bodies, following the
 // same "verify against the real codebase" instruction as tasks 4 and 5's
 // reports document:
-//   1. There is no `/api/admin/{releases,photos,music-videos,press-releases}`
-//      prefix. All four are registered directly under the `role:admin` group as
-//      `/api/releases`, `/api/photos`, `/api/music-videos`, `/api/press-releases`
-//      (routes/api.php:349-372).
-//   2. There is no `Album::factory()` or `MusicVideo::factory()`
-//      (`database/factories/` has only ReleaseFactory and PressReleaseFactory).
-//      `tests/Feature/AlbumTest.php` and `tests/Feature/PhotoTest.php` build
-//      albums with plain `Album::create(['title' => ..., 'slug' => [...]])`,
-//      so the same convention is used here for the photo test.
-//   3. `music_videos.profile_id` is a non-nullable FK to `band_profiles`
-//      (`2026_05_09_000006_create_music_videos_table.php`), and
-//      `MusicVideoController::store()` falls back to `BandProfile::value('id')
-//      ?? 1` when no profile exists — which would violate the FK. Every
-//      existing `tests/Feature/MusicVideoTest.php` case calls
-//      `$this->createProfile()` in a `beforeEach` for exactly this reason, so
-//      the music-videos test below does the same.
+//   1. There is no `/api/admin/{releases,photos,press-releases}` prefix. All
+//      are registered directly under the `role:admin` group. (Music videos
+//      were folded into `/api/clips` in Nov 2026; the Videos page's dirty area
+//      kept its `music-videos` key.)
+//   2. There is no `Album::factory()`; albums are built with plain
+//      `Album::create(['title' => ..., 'slug' => [...]])`, as in AlbumTest.
 // The assertion in each test — SiteDirtyArea::where('area', '...')->exists() —
 // is unchanged from the brief.
 
@@ -242,14 +231,13 @@ it('marks photos dirty when a photo caption is updated', function () {
     expect(SiteDirtyArea::where('area', 'photos')->exists())->toBeTrue();
 });
 
-it('marks music-videos dirty when a music video is created', function () {
-    $this->createProfile();
+it('marks music-videos (the Videos page) dirty when a video is created', function () {
     Http::fake();
     $admin = User::factory()->create(['role' => 'admin']);
     Passport::actingAs($admin);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
-    $this->postJson('/api/music-videos', ['title' => 'A Video', 'video_url' => 'https://youtube.com/watch?v=abc'])
+    $this->postJson('/api/clips', ['url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'])
         ->assertCreated();
 
     expect(SiteDirtyArea::where('area', 'music-videos')->exists())->toBeTrue();

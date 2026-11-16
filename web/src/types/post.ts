@@ -2,7 +2,7 @@ import type { AlbumCard } from './album'
 import type { TranslationBag } from '@/lib/locales'
 import type { Tag } from './tag'
 
-export type RefEntity = 'concert' | 'album' | 'release' | 'music_video' | 'press_release' | 'shop_item' | 'clip'
+export type RefEntity = 'concert' | 'album' | 'release' | 'press_release' | 'shop_item' | 'clip'
 export type EmbedProviderName =
   | 'youtube' | 'vimeo' | 'instagram' | 'tiktok' | 'facebook'
   | 'spotify' | 'soundcloud' | 'apple_music'

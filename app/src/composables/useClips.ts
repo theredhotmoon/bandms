@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { attachClip, createClip, deleteClip, detachClip, fetchClips, updateClip } from '@/api/clips'
+import { attachClip, createClip, deleteClip, detachClip, fetchClips, retrieveClipMetadata, syncClipViews, updateClip } from '@/api/clips'
 import type { Clip, ClipAttach, ClipPayload } from '@/types/clip'
 import { useAuth } from './useAuth'
 
@@ -55,5 +55,17 @@ export function useClips() {
     onSuccess: upsert,
   })
 
-  return { query, create, update, remove, attach, detach }
+  // View counts change on many rows at once: refetch rather than patch.
+  const syncViews = useMutation({
+    mutationFn: () => syncClipViews(token.value!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: CLIPS_QKEY }),
+  })
+
+  return { query, create, update, remove, attach, detach, syncViews }
+}
+
+/** The form's Retrieve button. Writes nothing — the form decides what to keep. */
+export function useRetrieveClipMetadata() {
+  const { token } = useAuth()
+  return useMutation({ mutationFn: (url: string) => retrieveClipMetadata(token.value!, url) })
 }

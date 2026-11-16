@@ -40,7 +40,7 @@ it('returns an array with all expected top-level keys', function () {
         'hometown', 'genres', 'comparable_artists', 'booking_email',
         'press_email', 'stat_spotify_monthly', 'stat_instagram_followers',
         'stat_tiktok_followers', 'stat_youtube_subscribers', 'stat_facebook_followers',
-        'tech_rider_url', 'social_links', 'music_videos',
+        'tech_rider_url', 'social_links',
         'featured_release', 'press_photos', 'press_articles', 'upcoming_concerts', 'clips',
     ] as $key) {
         expect($result)->toHaveKey($key);
@@ -51,7 +51,7 @@ it('returns empty arrays for optional sections when no related data exists', fun
     $result = EpkSnapshotBuilder::build();
 
     expect($result['social_links'])->toBe([]);
-    expect($result['music_videos'])->toBe([]);
+    expect($result)->not->toHaveKey('music_videos');
     expect($result['featured_release'])->toBeNull();
     expect($result['press_photos'])->toBe([]);
     expect($result['press_articles'])->toBe([]);

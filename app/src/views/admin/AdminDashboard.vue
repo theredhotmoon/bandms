@@ -15,7 +15,8 @@ import { useTours } from '@/composables/useTours'
 import { useAuth } from '@/composables/useAuth'
 import { useBandProfile } from '@/composables/useBandProfile'
 import { usePressReleases } from '@/composables/usePressReleases'
-import { useMusicVideos } from '@/composables/useMusicVideos'
+import { useClips } from '@/composables/useClips'
+import { countOfficialMusicVideos } from '@/utils/clipSources'
 import { useEpkVersionHistory } from '@/composables/useEpkVersionHistory'
 import EpkVersionHistory from '@/components/admin/EpkVersionHistory.vue'
 import { usePosts } from '@/composables/usePosts'
@@ -54,7 +55,7 @@ const { query: releasesQ } = useReleases()
 const { query: toursQ }    = useTours()
 const { query: profileQ, update: updateProfile } = useBandProfile()
 const { query: pressQ } = usePressReleases()
-const { query: videosQ } = useMusicVideos()
+const { query: videosQ } = useClips()
 const { query: postsQ } = usePosts()
 const { list: techRidersQ } = useTechRiders()
 
@@ -201,7 +202,7 @@ const avgEnhanceScore = computed(() => {
           :releases="releasesQ.data.value ?? []"
           :press-count="pressQ.data.value?.length ?? 0"
           :posts-count="postsQ.data.value?.data?.length ?? 0"
-          :music-videos-count="videosQ.data.value?.length ?? 0"
+          :music-videos-count="countOfficialMusicVideos(videosQ.data.value ?? [])"
           :members-count="profileQ.data.value.members?.length ?? 0"
           :tech-rider-active="hasTechRiderActive"
           :epk-published="!!publishedVersion"
@@ -265,7 +266,7 @@ const avgEnhanceScore = computed(() => {
           <RouterLink :to="adminUrl('releases')" class="quick-btn">{{ $t('dashboard.quickActions.release') }}</RouterLink>
           <RouterLink :to="adminUrl('tours')" class="quick-btn">{{ $t('dashboard.quickActions.tour') }}</RouterLink>
           <RouterLink :to="adminUrl('photos')" class="quick-btn">{{ $t('dashboard.quickActions.photo') }}</RouterLink>
-          <RouterLink :to="adminUrl('music-videos')" class="quick-btn">{{ $t('dashboard.quickActions.video') }}</RouterLink>
+          <RouterLink :to="adminUrl('clips')" class="quick-btn">{{ $t('dashboard.quickActions.video') }}</RouterLink>
         </div>
       </div>
 

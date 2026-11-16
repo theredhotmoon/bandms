@@ -19,7 +19,6 @@ import type { Tag } from '@/types/tag'
 import type { Concert } from '@/types/concert'
 import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
-import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import type { Clip } from '@/types/clip'
@@ -35,7 +34,6 @@ const props = defineProps<{
   concerts: Concert[]
   albums: Album[]
   releases: ReleaseSummary[]
-  musicVideos: MusicVideo[]
   pressReleases: PressReleaseSummary[]
   shopItems: ShopItemSummary[]
   clips: Clip[]
@@ -91,7 +89,6 @@ const entityLists = computed<RefEntityLists>(() => ({
   concert:       props.concerts.map(c => ({ id: c.id, label: `${c.date} — ${c.venue?.name ?? t('content.posts.venueTba')}` })),
   album:         props.albums.map(a => ({ id: a.id, label: a.title })),
   release:       props.releases.map(r => ({ id: r.id, label: r.title })),
-  music_video:   props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
   press_release: props.pressReleases.map(p => ({ id: p.id, label: p.og_title ?? p.url })),
   shop_item:     props.shopItems.map(s => ({ id: s.id, label: s.name })),
   clip:          props.clips.map(c => ({

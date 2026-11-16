@@ -1,4 +1,4 @@
-import type { Clip, ClipAttach, ClipPayload } from '@/types/clip'
+import type { Clip, ClipAttach, ClipPayload, VideoMetadata, YouTubeSyncResult } from '@/types/clip'
 import { API_BASE, assertSafeId, authHeaders, handleResponse, jsonHeaders } from './client'
 
 interface ClipListResponse { data: Clip[] }
@@ -24,6 +24,16 @@ export async function deleteClip(token: string, id: number): Promise<void> {
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/clips/${id}`, { method: 'DELETE', headers: authHeaders(token) })
   await handleResponse<void>(res)
+}
+
+export async function retrieveClipMetadata(token: string, url: string): Promise<VideoMetadata> {
+  const res = await fetch(`${API_BASE}/api/clips/retrieve-metadata`, { method: 'POST', headers: authHeaders(token), body: JSON.stringify({ url }) })
+  return handleResponse<VideoMetadata>(res)
+}
+
+export async function syncClipViews(token: string): Promise<YouTubeSyncResult> {
+  const res = await fetch(`${API_BASE}/api/clips/sync-views`, { method: 'POST', headers: authHeaders(token) })
+  return handleResponse<YouTubeSyncResult>(res)
 }
 
 export async function attachClip(token: string, id: number, owner: ClipAttach): Promise<Clip> {

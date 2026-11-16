@@ -63,10 +63,6 @@ class ShopItem extends Model
         return $this->belongsToMany(Post::class, 'shop_item_post');
     }
 
-    public function videos(): BelongsToMany
-    {
-        return $this->belongsToMany(MusicVideo::class, 'shop_item_video');
-    }
 
     public function categories(): BelongsToMany
     {

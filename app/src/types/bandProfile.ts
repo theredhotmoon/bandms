@@ -215,13 +215,6 @@ export interface EpkTestimonial {
   quote: string
 }
 
-export interface EpkMusicVideo {
-  id: number
-  title: string
-  video_url: string
-  published_at: string | null
-}
-
 export interface EpkData {
   name: string
   bio_short: string | null
@@ -242,7 +235,6 @@ export interface EpkData {
   logo_url: string | null
   social_links: EpkSocialLink[]
   testimonials: EpkTestimonial[]
-  music_videos: EpkMusicVideo[]
   /** Absent on snapshots published before the builder emitted clips. */
   clips?: Omit<Clip, 'show_in_epk' | 'translations' | 'owners'>[]
   featured_release: EpkRelease | null

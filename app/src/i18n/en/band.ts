@@ -216,24 +216,49 @@ export default {
   // library screen: a page title and a create button with its + prefix. Same
   // English word, different surface — keep them apart so a translator can
   // word the page heading differently from the inline field label.
+  //
+  // The library holds every video about the band — official ones and fan
+  // footage alike (music videos were folded in, Nov 2026), so the page is
+  // "Videos" while the keys keep their `clips` name.
   clips: {
-    title: 'Clips',
-    add: '+ Add clip',
-    loadFailed: 'Failed to load clips.',
-    empty: 'No clips yet.',
-    noMatch: 'No clips match your search.',
-    created: 'Clip created',
-    updated: 'Clip updated',
-    deleted: 'Clip deleted',
-    modalNew: 'New clip',
-    modalEdit: 'Edit clip',
+    title: 'Videos',
+    subtitle: 'Every video about the band — yours and your fans’. Attach each one to the shows, releases and merch it belongs with.',
+    add: '+ Add video',
+    loadFailed: 'Failed to load videos.',
+    empty: 'No videos yet.',
+    noMatch: 'No videos match your search.',
+    created: 'Video added',
+    updated: 'Video updated',
+    deleted: 'Video deleted',
+    modalNew: 'New video',
+    modalEdit: 'Edit video',
     form: {
       url: 'Video URL',
-      titlePlaceholder: 'Clip title',
-      recordedOn: 'Recorded on',
+      titlePlaceholder: 'Video title',
+      recordedOn: 'Date',
       showInEpk: 'Show in EPK',
+      source: 'Who made it',
+      sourceHint: 'A fan video shows a “Fan video” label and credits the channel below.',
+      channelName: 'Channel or author',
+      channelUrl: 'Channel link',
+      channelHint: 'Shown as “Filmed by …” on fan videos.',
+      retrieve: 'Retrieve',
+      retrieving: 'Retrieving…',
+      retrieveHint: 'Fills the title, channel and thumbnail from YouTube, Vimeo or TikTok.',
+      metaFailed: 'Could not retrieve the video details.',
+      views: '{n} views',
+      noApiKey: 'Views need a YouTube API key',
     },
-    columns: { category: 'Category', provider: 'Provider', attachedTo: 'Attached to', recorded: 'Recorded' },
+    source: { official: 'Official', fan: 'Fan video', all: 'All videos' },
+    columns: { preview: 'Preview', source: 'Made by', category: 'Category', provider: 'Provider', attachedTo: 'Attached to', recorded: 'Date', views: 'Views' },
+    sync: {
+      button: 'Sync YouTube views',
+      syncing: 'Syncing…',
+      done: 'Updated {n} video — {views} views | Updated {n} videos — {views} views',
+      failed: 'Failed to sync views',
+      totalViews: 'views on your own videos',
+      syncedAt: 'synced {at}',
+    },
   },
   // The Band Profile screen. `careerTab` rather than `career` because the
   // sibling `career` above is the dashboard checklist — same word, two

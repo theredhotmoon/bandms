@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ClipRequest;
 use App\Http\Resources\ClipResource;
 use App\Models\Clip;
+use App\Support\ClipCategory;
 use App\Support\ClipOwners;
+use App\Support\ClipSource;
 use App\Support\SiteRebuild;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +36,10 @@ class ClipController extends Controller
         $data = $request->validated();
 
         $clip = DB::transaction(function () use ($data) {
-            $clip = Clip::create($this->attributes($data) + ['category' => $data['category'] ?? 'live']);
+            $clip = Clip::create($this->attributes($data) + [
+                'category' => $data['category'] ?? 'live',
+                'source'   => $data['source'] ?? ClipSource::OFFICIAL,
+            ]);
             if (array_key_exists('attach', $data)) {
                 $this->syncOwners($clip, $data['attach']);
             }
@@ -132,7 +137,10 @@ class ClipController extends Controller
     /** Column attributes from a validated payload — never `attach`. */
     private function attributes(array $data): array
     {
-        $attrs = array_intersect_key($data, array_flip(['url', 'title', 'category', 'recorded_on', 'show_in_epk']));
+        $attrs = array_intersect_key($data, array_flip([
+            'url', 'title', 'category', 'source', 'recorded_on', 'show_in_epk',
+            'channel_name', 'channel_url', 'thumbnail_url', 'duration', 'view_count',
+        ]));
 
         // `provider` is stamped from `url` by ClipRequest, never taken from the
         // client: a PUT without a url must leave it alone, and the column is
@@ -143,6 +151,14 @@ class ClipController extends Controller
         }
         if (array_key_exists('category', $attrs) && $attrs['category'] === null) {
             $attrs['category'] = 'live';
+        }
+        if (array_key_exists('source', $attrs) && $attrs['source'] === null) {
+            $attrs['source'] = ClipSource::OFFICIAL;
+        }
+        // A count the form sends is one Retrieve just read (or a cleared one,
+        // for a new URL): the sync time describes it, not an older sync.
+        if (array_key_exists('view_count', $attrs)) {
+            $attrs['views_synced_at'] = $attrs['view_count'] === null ? null : now();
         }
 
         return $attrs;
@@ -191,7 +207,12 @@ class ClipController extends Controller
         return $max === null ? 0 : (int) $max + 1;
     }
 
-    /** Every area a clip can appear in: each owner's page, plus posts (ref blocks) and the EPK. */
+    /**
+     * Every area a clip can appear in: each owner's page, posts (ref blocks),
+     * the Videos page (every video clip is listed there), the Music page
+     * (music videos) and the EPK. Member pages rebuild from syncMembers(),
+     * only when the links themselves change.
+     */
     private function markDirty(Clip $clip): void
     {
         foreach ($clip->ownersList() as $owner) {
@@ -200,6 +221,12 @@ class ClipController extends Controller
             }
         }
         SiteRebuild::markDirty('posts');
+        SiteRebuild::markDirty('music-videos');
+        // update() calls this before and after saving, so a video leaving the
+        // category is caught by the first call, joining it by the second.
+        if ($clip->category === ClipCategory::MUSIC_VIDEO) {
+            SiteRebuild::markDirty('releases');
+        }
         if ($clip->show_in_epk || $clip->wasChanged('show_in_epk')) {
             SiteRebuild::markDirty('band-profile');
         }

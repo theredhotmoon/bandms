@@ -14,10 +14,11 @@ import LyricsViewer from '@/components/LyricsViewer.vue'
 import VideoGallery from '@/components/VideoGallery.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
 import SocialLinks from '@/components/SocialLinks.astro'
-import { getReleases, findRelease, getBandProfile, getMusicVideos, getShopItems, getSiteConfig, getSocialLinks } from '@/lib/cms'
+import { getReleases, findRelease, getBandProfile, getClips, getShopItems, getSiteConfig, getSocialLinks } from '@/lib/cms'
+import { toGalleryVideos } from '@/lib/videoGallery'
 import { getSlugMap } from '@/lib/slugs'
 import { PLATFORM_LABELS } from '@/types/release'
-import { fmtDate, formatNumber, youtubeEmbedUrl, youtubeThumbnail, formatGenreKicker } from '@/lib/i18n'
+import { fmtDate, formatGenreKicker } from '@/lib/i18n'
 import { RELEASES_COPY } from '@bandms/site-copy'
 import { moduleCopy, siteCopy } from '@/lib/copy'
 
@@ -30,7 +31,7 @@ const { lang, alternates } = Astro.props
 const [summaries, profile, videos, siteConfig, slugMap, socialLinks] = await Promise.all([
   getReleases(lang),
   getBandProfile(lang),
-  getMusicVideos().catch(() => []),
+  getClips(lang).catch(() => []),
   getSiteConfig(lang),
   getSlugMap(),
   getSocialLinks().catch(() => []),
@@ -115,21 +116,12 @@ const songs = releases.flatMap(r =>
     })),
 )
 
-const galleryVideos = videos.map(v => ({
-  id: v.id,
-  title: v.og_title ?? v.title,
-  kind: v.channel_name ?? '',
-  embedUrl: youtubeEmbedUrl(v.video_url),
-  watchUrl: v.video_url,
-  thumb: v.og_image ?? youtubeThumbnail(v.video_url),
-  duration: v.duration,
-  meta: [
-    v.view_count ? `${formatNumber(v.view_count)} ${t.views}` : null,
-    v.published_at ? v.published_at.slice(0, 4) : null,
-  ]
-    .filter(Boolean)
-    .join(' · '),
-}))
+// Music videos only — the rest of the library has the Videos page. Former
+// music-video rows carry this category since they were folded into clips.
+const galleryVideos = toGalleryVideos(
+  videos.filter(v => v.category === 'music_video'),
+  { ...siteCopy(siteConfig, lang), views: t.views },
+)
 
 // Physical formats tied to a release. Gated on the merch module: with it off
 // those routes are unbuilt and every card here would be a dead link.

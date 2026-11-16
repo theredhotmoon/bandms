@@ -68,7 +68,7 @@ test.describe.serial('Post block — clip', () => {
     // Enter in the URL field attaches — it used to submit the whole post form
     // with this block's id still 0 and surface a validation error instead.
     await panel.getByTestId('new-clip-url').press('Enter')
-    await expectToast(page, 'Clip added to the library')
+    await expectToast(page, 'Video added to the library')
 
     // The select now shows the new clip and the add panel is gone.
     await expect(block.getByTestId('new-clip')).toHaveCount(0)
@@ -77,7 +77,7 @@ test.describe.serial('Post block — clip', () => {
     expect(Number(chosen)).toBeGreaterThan(0)
 
     await page.getByRole('button', { name: 'Update' }).click()
-    // The 'Clip added' toast may still be on screen: filter by text, never match every toast.
+    // The 'Video added' toast may still be on screen: filter by text, never match every toast.
     await expectToast(page, 'Post updated')
 
     const post = (await (await api(request, 'get', `/api/admin/posts/${postId}`)).json()).data
@@ -93,6 +93,6 @@ test.describe.serial('Post block — clip', () => {
     await searchTable(page, CLIP_URL)
     const row = page.locator('tbody tr', { hasText: 'TikTok' }).first()
     await expect(row).toBeVisible()
-    await expect(row.locator('td').nth(3)).toHaveText(concertCount > 0 ? '1' : '0')   // "Attached to"
+    await expect(row.getByTestId('clip-attached-count')).toHaveText(concertCount > 0 ? '1' : '0')
   })
 })

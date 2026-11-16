@@ -8,10 +8,11 @@ import SectionHead from '@/components/SectionHead.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import VideoGallery from '@/components/VideoGallery.vue'
 import FaqSection from '@/components/sections/FaqSection.astro'
-import { getMusicVideos, getBandProfile, getSiteConfig } from '@/lib/cms'
-import { youtubeEmbedUrl, youtubeThumbnail, formatNumber, formatGenreKicker } from '@/lib/i18n'
+import { getClips, getBandProfile, getSiteConfig } from '@/lib/cms'
+import { formatGenreKicker } from '@/lib/i18n'
+import { toGalleryVideos } from '@/lib/videoGallery'
 import { VIDEOS_COPY } from '@bandms/site-copy'
-import { moduleCopy, listPaging } from '@/lib/copy'
+import { moduleCopy, listPaging, siteCopy } from '@/lib/copy'
 
 interface Props {
   lang: Locale
@@ -20,7 +21,7 @@ interface Props {
 const { lang, alternates } = Astro.props
 
 const [videos, profile, siteConfig] = await Promise.all([
-  getMusicVideos().catch(() => []),
+  getClips(lang).catch(() => []),
   getBandProfile(lang),
   getSiteConfig(lang),
 ])
@@ -32,25 +33,10 @@ const t = moduleCopy(siteConfig, 'videos', VIDEOS_COPY, lang)
 // Website Modules → Items per page — see ShowMore.astro / useShowMore().
 const { perPage, showMoreLabel } = listPaging(siteConfig, 'videos', lang)
 
-// Same shape the Music page builds, so both pages share one gallery island
-// rather than each rendering videos its own way.
-const galleryVideos = [...videos]
-  .sort((a, b) => a.sort_order - b.sort_order)
-  .map(v => ({
-    id: v.id,
-    title: v.og_title ?? v.title,
-    kind: v.channel_name ?? '',
-    embedUrl: youtubeEmbedUrl(v.video_url),
-    watchUrl: v.video_url,
-    thumb: v.og_image ?? youtubeThumbnail(v.video_url),
-    duration: v.duration,
-    meta: [
-      v.view_count ? `${formatNumber(v.view_count)} ${t.views}` : null,
-      v.published_at ? v.published_at.slice(0, 4) : null,
-    ]
-      .filter(Boolean)
-      .join(' · '),
-  }))
+// Every video in the library — the band's own and fans' footage in one
+// list, newest first (the API's order), a fan video labelled and credited.
+// Same gallery island as the Music page, so both render a video one way.
+const galleryVideos = toGalleryVideos(videos, { ...siteCopy(siteConfig, lang), views: t.views })
 ---
 
 <BaseLayout

@@ -171,7 +171,7 @@ const LEVELS = computed((): LevelDef[] => {
               id: 'music-video',
               label: t('band.career.items.musicVideo.label'),
               done: props.musicVideosCount >= 1,
-              link: adminUrl('music-videos'),
+              link: adminUrl('clips'),
               tip: t('band.career.items.musicVideo.tip'),
             },
           ],

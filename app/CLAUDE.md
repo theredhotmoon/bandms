@@ -386,9 +386,10 @@ so a new list-backed create should too. Ticking the created record is
 `form-styles.css`.)
 
 **A form that a quick-add can stack over another modal must be a
-component** that carries `useModalGuard` — the instrument and music video
-forms were extracted from their views for exactly this (`InstrumentForm`,
-`MusicVideoForm`), and `BatchPhotoUpload` gained the guard. An unguarded
+component** that carries `useModalGuard` — the instrument form was
+extracted from its view for exactly this (`InstrumentForm`; the music video
+form was too, before music videos were folded into the clip library), and
+`BatchPhotoUpload` gained the guard. An unguarded
 form in a nested modal gets no Escape at all. The nested form's `useModalGuard`
 injects the *nearest* modal, so its discard guard is its own, and
 `src/utils/modalStack.ts` — a reactive stack every `AdminModal` enters on

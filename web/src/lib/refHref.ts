@@ -26,9 +26,6 @@ export function refHref(
   slugMap: SlugMap,
   modules: Record<string, boolean>,
 ): RefLink | null {
-  if (entity === 'music_video') {
-    return data.video_url ? { href: String(data.video_url), external: true } : null
-  }
   if (entity === 'press_release') {
     return data.url ? { href: String(data.url), external: true } : null
   }

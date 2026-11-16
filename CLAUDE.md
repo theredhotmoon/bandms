@@ -2350,7 +2350,22 @@ hardcode `riderSheetLabels('en')` in the preview and only that spec goes red.
 
 ## Clips are a library, attached polymorphically — posts reference, never own
 
-`clips` holds every live/studio/backstage video; `clippables` is a
+**Clips and music videos are one library (Nov 2026).** The admin calls it
+*Videos* (`/admin/clips`; `/admin/music-videos` redirects there). Every video
+about the band is a clip, with `source` = `official` (the band made it) or
+`fan` (someone else filmed it; the public site labels it *Fan video* and
+credits `channel_name` → `channel_url` through `clipCredit()` in
+`web/src/lib/clipCategory.ts`). `2026_11_16_000001_merge_music_videos_into_clips`
+moved every `music_videos` row in as an official `music_video`-category clip
+and repointed `memberables`, `shop_item_video` (→ `clippables`) and post
+`ref` blocks (`music_video` → `clip`; refs to deleted videos dropped) — new
+ids, because the two tables' ids overlapped. The Videos page lists every
+video clip (audio providers excluded) and keeps the `music-videos` dirty
+area; the Music page lists the `music_video` category. A `music_video` ref
+entity, `/api/music-videos` and `MusicVideo` no longer exist. YouTube view
+sync and Retrieve live in `ClipMetadataController`, key in a header.
+
+`clips` holds every video; `clippables` is a
 `morphToMany` pivot (`clippable_type` stores the **alias** from
 `App\Support\ClipOwners::MAP`, enforced through `Relation::enforceMorphMap` —
 never rename an alias, it is data). Owners get `->clips()` from the `HasClips`

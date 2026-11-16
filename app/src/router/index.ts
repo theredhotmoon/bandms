@@ -128,12 +128,9 @@ const router = createRouter({
       name: 'tech-rider-preview-id',
       component: () => import('@/views/TechRiderPreviewView.vue'),
     },
-    {
-      path: adminUrl('music-videos'),
-      name: 'admin-music-videos',
-      component: () => import('@/views/admin/MusicVideosAdminView.vue'),
-      meta: { requiresAuth: true },
-    },
+    // Music videos were folded into the video library (Nov 2026). The old
+    // URL is bookmarked and linked from the career checklist's history.
+    { path: adminUrl('music-videos'), redirect: adminUrl('clips') },
     {
       path: adminUrl('clips'),
       name: 'admin-clips',

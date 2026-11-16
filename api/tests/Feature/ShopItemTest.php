@@ -112,7 +112,7 @@ describe('GET /api/shop/{shopItem}', function () {
 
         $data = $this->getJson("/api/shop/{$item->id}")->assertSuccessful()->json('data');
 
-        expect($data)->toHaveKeys(['tags', 'release_ids', 'concert_ids', 'post_ids', 'video_ids', 'category_ids', 'photos']);
+        expect($data)->toHaveKeys(['tags', 'release_ids', 'concert_ids', 'post_ids', 'category_ids', 'photos']);
     });
 
     it('carries the item clips in pivot order, by id and by slug', function () {

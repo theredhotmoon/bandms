@@ -11,9 +11,9 @@ namespace App\Support;
  * renderer cannot disagree about which video a block points at.
  *
  * Adding a provider is one entry in HOSTS plus one arm in embedId() (and
- * AUDIO if it is a fixed-height player) — mirrored by one arm each in
- * web/src/components/blocks/EmbedBlock.astro's SRC/SHAPE maps and
- * app/src/utils/postBlocks.ts.
+ * AUDIO if it is a fixed-height player) — mirrored by one arm in
+ * web/src/lib/embed.ts's SRC map (and AUDIO_PROVIDERS, plus a height in
+ * EmbedBlock.astro's AUDIO_HEIGHT) and app/src/utils/postBlocks.ts.
  */
 final class EmbedProvider
 {

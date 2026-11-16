@@ -18,6 +18,6 @@ final class PostBlockType
     public const ALL = [self::TEXT, self::IMAGE, self::EMBED, self::REF];
 
     public const REF_ENTITIES = [
-        'concert', 'album', 'release', 'music_video', 'press_release', 'shop_item', 'clip',
+        'concert', 'album', 'release', 'press_release', 'shop_item', 'clip',
     ];
 }

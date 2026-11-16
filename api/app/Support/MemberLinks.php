@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Models\Clip;
 use App\Models\Concert;
-use App\Models\MusicVideo;
 use App\Models\PressRelease;
 use App\Models\Release;
 use App\Models\Photo;
@@ -29,7 +28,6 @@ final class MemberLinks
         'clip'    => Clip::class,
         // Same alias as in ClipOwners.
         'release' => Release::class,
-        'music_video' => MusicVideo::class,
         'press_release' => PressRelease::class,
     ];
 
@@ -40,7 +38,6 @@ final class MemberLinks
         'concert' => 'concerts',
         'clip'    => 'band-members',
         'release' => 'releases',
-        'music_video' => 'music-videos',
         'press_release' => 'press-releases',
     ];
 

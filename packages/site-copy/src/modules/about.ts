@@ -179,19 +179,14 @@ export const ABOUT_COPY = defineCopy([
     defaults: { en: 'Gigs', pl: 'Koncerty' },
   },
   {
-    key: 'memberClips', label: 'Clips heading', group: 'Member page', maxLength: 40,
-    help: 'Above the clips the member appears in. Hidden when there are none.',
-    defaults: { en: 'Clips', pl: 'Klipy' },
+    key: 'memberClips', label: 'Videos heading', group: 'Member page', maxLength: 40,
+    help: 'Above the videos the member appears in. Hidden when there are none.',
+    defaults: { en: 'Videos', pl: 'Wideo' },
   },
   {
     key: 'memberReleases', label: 'Releases heading', group: 'Member page', maxLength: 40,
     help: 'Above the releases the member played on. Hidden when there are none.',
     defaults: { en: 'Discography', pl: 'Dyskografia' },
-  },
-  {
-    key: 'memberVideos', label: 'Music videos heading', group: 'Member page', maxLength: 40,
-    help: 'Above the music videos the member appears in. Hidden when there are none.',
-    defaults: { en: 'Music videos', pl: 'Teledyski' },
   },
   {
     key: 'memberPress', label: 'Press coverage heading', group: 'Member page', maxLength: 40,

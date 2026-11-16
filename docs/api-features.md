@@ -161,18 +161,23 @@ photo_count, cover_url
 
 ---
 
-### Music Videos
+### Videos (the clips library)
+
+Music videos were folded into the clips library in Nov 2026: every video
+about the band — official or a fan's — is one `clips` row.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/music-videos` | List ordered by sort_order |
+| `GET /api/clips` | Every video, newest `recorded_on` first, with its owners |
+| `POST /api/clips/retrieve-metadata` | Title, channel, thumbnail (+ views/duration with a YouTube key) for a YouTube, Vimeo or TikTok URL — admin |
+| `POST /api/clips/sync-views` | Refresh view counts of every YouTube video — admin |
 
 **Video fields:**
 ```
-id, title, video_url,
-published_at, sort_order,
-og_title, og_image (thumbnail), og_site_name (provider), channel_name,
-view_count, duration (formatted string e.g. "4:33"), views_synced_at
+id, provider, url, embed_id, title (translated), category (music_video | live | studio | backstage | interview | other | custom),
+source (official | fan), channel_name, channel_url (a fan video's credit),
+thumbnail_url, duration (e.g. "4:33"), view_count, views_synced_at,
+recorded_on, show_in_epk, member_ids, owners
 ```
 
 ---
@@ -498,7 +503,7 @@ POST/PUT/DELETE /api/venues/{venue}   (admin only)
 | **Concert Detail** | concerts/{id}, setlist | Full info + setlist with songs |
 | **Music / Releases** | releases | Discography by type, streaming links, presave CTA for upcoming |
 | **Release Detail** | releases/{id} | Cover, tracks, photos, label |
-| **Music Videos** | music-videos | Embedded players, channel, view count |
+| **Videos** | clips | Official and fan videos in one list; a fan video is labelled and credits its channel |
 | **Gallery** | albums, photos | Album grid, lightbox, captions, EPK-badge |
 | **Tours** | tours | Name, dates, concerts, images |
 | **News / Blog** | posts | Search, tag filter, pagination |
@@ -539,7 +544,7 @@ POST/PUT/DELETE /api/venues/{venue}   (admin only)
 
 **Gallery**: Album grid (cover = first photo), click to open lightbox, EPK-tagged photos have badge
 
-**Music Videos**: Responsive embed grid, channel name, view count, sortable
+**Videos**: Responsive grid of every video, official and fan; fan videos labelled *Fan video* and credited *Filmed by …*; YouTube view counts
 
 **Press**: OG image cards → external link, site name, publication date, featured highlighted
 

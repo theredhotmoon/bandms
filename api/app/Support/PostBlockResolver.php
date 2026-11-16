@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Models\Album;
 use App\Models\Clip;
 use App\Models\Concert;
-use App\Models\MusicVideo;
 use App\Models\PressRelease;
 use App\Models\Release;
 use App\Models\ShopItem;
@@ -91,10 +90,6 @@ final class PostBlockResolver
             'shop_item' => ShopItem::whereIn('id', $ids)->get()
                 ->keyBy('id')->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'slug' => $s->slugIn(Locales::default())])->all(),
 
-            'music_video' => MusicVideo::whereIn('id', $ids)->get()
-                ->keyBy('id')->map(fn ($v) => [
-                    'id' => $v->id, 'title' => $v->og_title ?? $v->title, 'video_url' => $v->video_url,
-                ])->all(),
 
             'press_release' => PressRelease::whereIn('id', $ids)->get()
                 ->keyBy('id')->map(fn ($p) => [
@@ -123,6 +118,9 @@ final class PostBlockResolver
                         'embed_id' => EmbedProvider::embedId($c->url),
                         'title'    => Locales::resolve($c->getTranslations('title'), app()->getLocale()),
                         'category' => $c->category,
+                        'source'   => $c->source,
+                        'channel_name' => $c->channel_name,
+                        'channel_url'  => $c->channel_url,
                         'concert'  => $concert ? [
                             'id'      => $concert->id,
                             'slug'    => $concert->slugIn(Locales::default()) ?? 'concert-' . $concert->id,

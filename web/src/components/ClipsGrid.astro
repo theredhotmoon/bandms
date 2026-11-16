@@ -1,7 +1,7 @@
 ---
 import type { RenderableClip } from '@/types/clip'
 import type { ClipCategoryCopy } from '@/lib/clipCategory'
-import { clipCategoryLabel } from '@/lib/clipCategory'
+import { clipCategoryLabel, clipCredit } from '@/lib/clipCategory'
 import EmbedBlock from '@/components/blocks/EmbedBlock.astro'
 
 /**
@@ -24,16 +24,23 @@ const { clips, heading, copy } = Astro.props
   <div class="clips-grid" data-testid="clips-grid">
     {heading && <h2 class="clips-title">{heading}</h2>}
     <ul class="clips-list">
-      {clips.map(clip => (
-        <li class="clips-item" data-provider={clip.provider}>
-          <EmbedBlock block={{ provider: clip.provider, url: clip.url, label: clip.title, embed_id: clip.embed_id }} />
-          <div class="clips-caption">
-            <span class="clips-cat">{clipCategoryLabel(clip.category, copy)}</span>
-            {clip.title && <span class="clips-name">{clip.title}</span>}
-            {clip.recorded_on && <time class="clips-date" datetime={clip.recorded_on}>{clip.recorded_on}</time>}
-          </div>
-        </li>
-      ))}
+      {clips.map(clip => {
+        const credit = clipCredit(clip, copy)
+        return (
+          <li class="clips-item" data-provider={clip.provider} data-source={clip.source ?? 'official'}>
+            <EmbedBlock block={{ provider: clip.provider, url: clip.url, label: clip.title, embed_id: clip.embed_id }} />
+            <div class="clips-caption">
+              {clip.source === 'fan' && <span class="clips-fan" data-testid="clip-fan-label">{copy.clipFan}</span>}
+              <span class="clips-cat">{clipCategoryLabel(clip.category, copy)}</span>
+              {clip.title && <span class="clips-name">{clip.title}</span>}
+              {clip.recorded_on && <time class="clips-date" datetime={clip.recorded_on}>{clip.recorded_on}</time>}
+              {credit && (credit.href
+                ? <a class="clips-credit" href={credit.href} target="_blank" rel="noopener noreferrer" data-testid="clip-credit">{credit.text} ↗</a>
+                : <span class="clips-credit" data-testid="clip-credit">{credit.text}</span>)}
+            </div>
+          </li>
+        )
+      })}
     </ul>
   </div>
 )}
@@ -53,4 +60,11 @@ const { clips, heading, copy } = Astro.props
     color: var(--color-accent);
   }
   .clips-date { color: var(--color-muted); font-size: 13px; }
+  .clips-fan {
+    font: 800 11px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase;
+    border: 2px solid var(--color-border); padding: 3px 6px; color: var(--color-ink);
+  }
+  .clips-credit { flex-basis: 100%; color: var(--color-muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+  a.clips-credit { color: var(--color-accent); }
+  a.clips-credit:hover { text-decoration: underline; }
 </style>

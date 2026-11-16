@@ -15,7 +15,6 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAlbums } from '@/composables/useAlbums'
 import { useReleases } from '@/composables/useReleases'
-import { useMusicVideos } from '@/composables/useMusicVideos'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useShop } from '@/composables/useShop'
 import { useClips } from '@/composables/useClips'
@@ -35,7 +34,6 @@ const { query: concertsQ }   = useConcerts()
 const { query: membersQ }    = useBandMembers()
 const { query: albumsQ }     = useAlbums()
 const { query: releasesQ }   = useReleases()
-const { query: musicVideosQ }   = useMusicVideos()
 const { query: pressReleasesQ } = usePressReleases()
 const { query: shopItemsQ }     = useShop()
 const { query: clipsQ }         = useClips()
@@ -244,7 +242,6 @@ const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?
         :members="membersQ.data.value ?? []"
         :albums="albumsQ.data.value ?? []"
         :releases="releasesQ.data.value ?? []"
-        :musicVideos="musicVideosQ.data.value ?? []"
         :pressReleases="pressReleasesQ.data.value ?? []"
         :shopItems="shopItemsQ.data.value ?? []"
         :clips="clipsQ.data.value ?? []"

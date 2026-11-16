@@ -9,5 +9,8 @@ namespace App\Support;
  */
 final class ClipCategory
 {
-    public const PRESETS = ['live', 'studio', 'backstage', 'interview', 'other'];
+    public const PRESETS = ['music_video', 'live', 'studio', 'backstage', 'interview', 'other'];
+
+    /** The category the Music page lists, and former music videos carry. */
+    public const MUSIC_VIDEO = 'music_video';
 }
