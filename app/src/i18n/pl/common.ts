@@ -153,6 +153,7 @@ export default {
     shopItems: 'Produkty w sklepie',
     tours: 'Trasy',
     albums: 'Albumy zdjęć',
+    albumHidden: 'niewidoczny na stronie',
     posts: 'Wpisy na blogu',
     musicVideos: 'Teledyski',
     press: 'Prasa',

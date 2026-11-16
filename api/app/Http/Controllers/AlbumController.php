@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AlbumResource;
 use App\Models\Album;
 use App\Models\Photo;
-use App\Support\SiteRebuild;
+use App\Support\AlbumLinks;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -15,9 +15,17 @@ use Illuminate\Support\Facades\Storage;
 
 class AlbumController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    /** What links to an album — AlbumResource's `linked`. */
+    private const LINKED = ['linkedPosts', 'linkedConcerts.venue', 'linkedReleases', 'linkedShopItems'];
+
+    /**
+     * `?linked=1` adds what links to each album (AlbumResource's `linked`):
+     * only the public build's album pages read it, so the admin's lists and
+     * every album picker do not pay for four more relations.
+     */
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $albums = Album::with(['venue', 'concert', 'tags', 'photos.members'])
+        $albums = Album::with(['venue', 'concert', 'tags', 'photos.members', ...($request->boolean('linked') ? self::LINKED : [])])
             ->orderByDesc('taken_at')
             ->orderByDesc('created_at')
             ->get();
@@ -27,7 +35,7 @@ class AlbumController extends Controller
 
     public function show(Album $album): AlbumResource
     {
-        return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos.members']));
+        return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos.members', ...self::LINKED]));
     }
 
     public function batchStore(Request $request): AlbumResource
@@ -57,6 +65,7 @@ class AlbumController extends Controller
         ]);
         $album->applySlugBag($data['slug'] ?? null, $data['title']);
         $album->save();
+        AlbumLinks::linkOwnConcert($album);
 
         if (!empty($data['tag_ids'])) {
             $album->tags()->sync($data['tag_ids']);
@@ -72,7 +81,7 @@ class AlbumController extends Controller
             ]);
         }
 
-        SiteRebuild::markDirty('photos');
+        AlbumLinks::markAlbumDirty($album);
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
@@ -90,17 +99,19 @@ class AlbumController extends Controller
             'tag_ids.*'    => 'integer|exists:tags,id',
         ] + Album::translatedSlugRules($album->id));
 
+        $previousConcert = $album->concert_id;
         $album->fill(Arr::except($data, ['tag_ids', 'slug']));
         if (array_key_exists('slug', $data)) {
             $album->applySlugBag($data['slug'], $album->title);
         }
         $album->save();
+        AlbumLinks::linkOwnConcert($album, $previousConcert);
 
         if (array_key_exists('tag_ids', $data)) {
             $album->tags()->sync($data['tag_ids'] ?? []);
         }
 
-        SiteRebuild::markDirty('photos');
+        AlbumLinks::markAlbumDirty($album);
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
@@ -118,6 +129,9 @@ class AlbumController extends Controller
         // Deleting the photo also cascades to photo_tag and photo_post.
         $paths = $album->photos->pluck('image')->filter()->all();
 
+        // Before the delete: the link rows cascade away with the album.
+        AlbumLinks::markAlbumDirty($album);
+
         // Rows first, in one transaction; files only once it has committed.
         // Storage is not transactional, so the orders are not equivalent:
         // deleting files first means a failure part-way leaves rows pointing at
@@ -132,8 +146,6 @@ class AlbumController extends Controller
         foreach ($paths as $path) {
             Storage::disk('public')->delete($path);
         }
-
-        SiteRebuild::markDirty('photos');
 
         return response()->json(null, 204);
     }
@@ -159,7 +171,7 @@ class AlbumController extends Controller
             ]);
         }
 
-        SiteRebuild::markDirty('photos');
+        AlbumLinks::markAlbumDirty($album);
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }
@@ -174,7 +186,7 @@ class AlbumController extends Controller
 
         $photo->delete();
 
-        SiteRebuild::markDirty('photos');
+        AlbumLinks::markAlbumDirty($album);
 
         return response()->json(null, 204);
     }
@@ -190,7 +202,7 @@ class AlbumController extends Controller
             $album->photos()->where('id', $photoId)->update(['sort_order' => $sortOrder]);
         }
 
-        SiteRebuild::markDirty('photos');
+        AlbumLinks::markAlbumDirty($album);
 
         return new AlbumResource($album->load(['venue', 'concert', 'tags', 'photos']));
     }

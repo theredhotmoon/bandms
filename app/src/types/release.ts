@@ -52,6 +52,8 @@ export interface ReleaseSummary {
   label_name: string | null
   /** Band members who played on it — any number. Sent by the single-release endpoint. */
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   links: ReleaseLink[]
   created_at: string
   updated_at: string
@@ -105,6 +107,8 @@ export interface ReleasePayload {
   presave_url: string | null
   label_name: string | null
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   links: ReleaseLinkPayload[]
   tracks: ReleaseTrackPayload[]
 }

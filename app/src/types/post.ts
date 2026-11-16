@@ -101,6 +101,8 @@ export interface Post extends PostSummary {
   concerts: { id: number; date: string }[]
   /** Band members this post is about — any number. */
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   translations?: {
     title: TranslationMap
     intro: TranslationMap
@@ -123,5 +125,7 @@ export interface PostPayload {
   tag_ids?: number[]
   concert_ids?: number[]
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   blocks?: PostBlockDraft[]
 }

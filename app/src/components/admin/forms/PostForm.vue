@@ -83,6 +83,7 @@ const form = reactive({
   tag_ids: [] as number[],
   concert_ids: [] as number[],
   member_ids: [] as number[],
+  album_ids: [] as number[],
   blocks: [] as PostBlockDraft[],
 })
 
@@ -128,6 +129,7 @@ watch(() => props.initial, (val) => {
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.member_ids = val?.member_ids ? [...val.member_ids] : []
+  form.album_ids = val?.album_ids ? [...val.album_ids] : []
   form.blocks = (val?.blocks ?? []).map(b => {
     if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
     if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
@@ -181,6 +183,7 @@ async function submit() {
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
     member_ids: form.member_ids,
+    album_ids: form.album_ids,
     // `url` is a preview-only field on image drafts; strip it before sending.
     blocks: form.blocks.map(b => ({
       type: b.type,
@@ -317,6 +320,8 @@ async function submit() {
           v-model:concertIds="form.concert_ids"
           :members="members"
           v-model:memberIds="form.member_ids"
+          :albums="albums"
+          v-model:albumIds="form.album_ids"
         />
         <p v-if="tagError || errors?.tag_ids" class="field-error" data-testid="post-tag-error">
           {{ tagError || errors?.tag_ids?.[0] }}

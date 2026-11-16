@@ -53,6 +53,9 @@ class ReleaseResource extends JsonResource
                 ])->values(),
             ])),
             'member_ids'   => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
+            // Linked photo albums — see ConcertResource.
+            'album_ids'    => $this->whenLoaded('albums', fn () => $this->albums->pluck('id')->values()),
+            'albums'       => $this->whenLoaded('albums', fn () => AlbumCardResource::forOwner($this->albums)),
             'clips'        => ClipResource::collection($this->whenLoaded('clips')),
             'photos'       => $this->whenLoaded('photos', fn () => $this->photos->map(fn ($p) => [
                 'id'         => $p->id,

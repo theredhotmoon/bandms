@@ -21,6 +21,8 @@ export interface Concert {
   id: number
   /** Band members who played this show — linked explicitly; line-ups change. */
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   name: string | null
   /** The default locale's slug — every concert URL, in every language. */
   slug: string
@@ -81,6 +83,8 @@ export interface ConcertPayload {
   bands?: ConcertBandPayload[]
   tag_ids?: number[]
   member_ids?: number[]
+  /** Linked photo albums ("Link to… → Photo albums"), in order. */
+  album_ids?: number[]
   links?: ConcertLinkPayload[]
   ticket_url?: string | null
 }

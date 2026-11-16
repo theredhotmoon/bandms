@@ -8,11 +8,15 @@ import { useI18n } from 'vue-i18n'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { LOCALES, bagFrom, bagHasText, compactBag, emptyBag, slugPayload, type Lang, type TranslationBag } from '@/locales'
 import type { Release, ReleasePayload, ReleasePlatform, ReleaseType } from '@/types/release'
+import type { Album } from '@/types/album'
+import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 
 const props = defineProps<{
   initial?: Release | null
   /** Band members, for "who played on it". */
   members?: readonly { id: number; first_name: string; last_name: string; is_current: boolean }[]
+  /** Photo albums for "Link to… → Photo albums"; the section is hidden without it. */
+  albums?: Album[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -141,6 +145,7 @@ const form = reactive({
   presave_url:  '',
   label_name:   '',
   member_ids:   [] as number[],
+  album_ids:    [] as number[],
   links:        emptyLinks(),
 })
 
@@ -163,6 +168,7 @@ watch(
       form.presave_url    = ''
       form.label_name     = ''
       form.member_ids     = []
+      form.album_ids      = []
       form.links          = emptyLinks()
       tracks.value        = [emptyTrack(0)]
       coverFile.value     = null
@@ -180,6 +186,7 @@ watch(
     form.presave_url    = val.presave_url ?? ''
     form.label_name     = val.label_name ?? ''
     form.member_ids     = val.member_ids ? [...val.member_ids] : []
+    form.album_ids      = val.album_ids ? [...val.album_ids] : []
     const lm = emptyLinks()
     for (const l of val.links) lm[l.platform] = l.url
     form.links = lm
@@ -237,6 +244,11 @@ function handleSubmit() {
     presave_url:  form.is_upcoming ? (form.presave_url || null) : null,
     label_name:   form.label_name || null,
     member_ids:   form.member_ids,
+    // Only from a host that renders the Photo albums section (passes the
+    // list, even empty): one that does not would otherwise clear every link.
+    // The ids come from the record, not the list, so a list still loading
+    // clears nothing.
+    ...(props.albums ? { album_ids: form.album_ids } : {}),
     links: PLATFORMS
       .filter(p => form.links[p.key])
       .map(p => ({ platform: p.key, url: form.links[p.key] })),
@@ -357,6 +369,14 @@ function handleSubmit() {
       :label="$t('media.releaseForm.whoPlayed')"
       testid="release-members"
       class="mb-4"
+    />
+
+    <EntityRelationsPanel
+      v-if="albums"
+      :albums="albums"
+      v-model:albumIds="form.album_ids"
+      class="mb-4"
+      data-testid="release-relations"
     />
 
     <!-- Description -->

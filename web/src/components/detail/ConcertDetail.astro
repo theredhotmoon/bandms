@@ -7,6 +7,7 @@ import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ConcertMap from '@/components/ConcertMap.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
+import AlbumCards from '@/components/AlbumCards.astro'
 import { getConcerts, getConcertSetlist, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { ticketMode as resolveTicketMode } from '@/lib/tickets'
 import { concertLineup, isHighlighted, lineupCaption, ourStageTime, runningOrderNumber, showsLineupRoles } from '@/lib/lineup'
@@ -495,6 +496,9 @@ const concertsSection = slugMap[lang].concerts ?? 'concerts'
         <ClipsGrid clips={concert.clips ?? []} heading={t.clipsTitle} copy={site} />
       </section>
     )}
+
+    <!-- ── PHOTOS: linked albums ───────────────────────────── -->
+    <AlbumCards lang={lang} albums={concert.albums} />
 
     <!-- ── LIVE TICKET AVAILABILITY ─────────────────────────── -->
     {upcoming && hasInternalTickets && (

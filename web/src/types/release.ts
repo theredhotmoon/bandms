@@ -1,3 +1,4 @@
+import type { AlbumCard } from './album'
 import type { Clip } from './clip'
 
 export type ReleaseType     = 'LP' | 'EP' | 'single' | 'compilation'
@@ -58,6 +59,8 @@ export interface Release extends ReleaseSummary {
   tracks: ReleaseTrack[]
   photos: ReleasePhoto[]
   clips?: Clip[]
+  /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
+  albums?: AlbumCard[]
 }
 
 // Release-type labels are copy, not types: they come from the Music module's

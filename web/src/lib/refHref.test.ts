@@ -26,11 +26,15 @@ describe('refHref', () => {
       .toEqual({ href: '/en/shop/tee', external: false })
   })
 
-  // Only concerts, releases, posts and merch have detail routes. An album has
-  // no page of its own, so it links to the photos listing.
-  it('links an album to the photos listing, not a per-album page', () => {
-    expect(refHref('album', { id: 3 }, 'en', slugMap, allOn))
-      .toEqual({ href: '/en/gallery', external: false })
+  it('links an album to its own page under the gallery section', () => {
+    expect(refHref('album', { id: 3, slug: 'live', on_site: true }, 'pl', slugMap, allOn))
+      .toEqual({ href: '/pl/galeria/live', external: false })
+  })
+
+  // A draft or empty album has no page; the block renders as text instead.
+  it('does not link an album the site builds no page for', () => {
+    expect(refHref('album', { id: 3, slug: 'live', on_site: false }, 'en', slugMap, allOn)).toBeNull()
+    expect(refHref('album', { id: 3 }, 'en', slugMap, allOn)).toBeNull()
   })
 
   it('returns external hrefs for music videos and press releases', () => {

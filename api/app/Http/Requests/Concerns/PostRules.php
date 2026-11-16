@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Concerns;
 
+use App\Support\AlbumLinks;
 use App\Support\EmbedProvider;
 use App\Support\PostBlockType;
 use Closure;
@@ -68,6 +69,8 @@ trait PostRules
             'concert_ids.*' => 'integer|exists:concerts,id',
             'member_ids'    => 'nullable|array',
             'member_ids.*'  => 'integer|distinct|exists:band_members,id',
+            // Linked photo albums (AlbumLinks); absent leaves them alone.
+            ...AlbumLinks::rules(),
 
             'blocks'                    => 'nullable|array',
             'blocks.*.type'             => ['required', Rule::in(PostBlockType::ALL)],

@@ -13,6 +13,7 @@ import SortHeader from '@/components/admin/SortHeader.vue'
 import Pagination from '@/components/admin/Pagination.vue'
 import { useReleases, useCreateReleaseWithCover } from '@/composables/useReleases'
 import { useBandMembers } from '@/composables/useBandMembers'
+import { useAlbums } from '@/composables/useAlbums'
 import { useRelease } from '@/composables/useRelease'
 import { useTableControls } from '@/composables/useTableControls'
 import { useAuth } from '@/composables/useAuth'
@@ -80,6 +81,7 @@ const confirmId    = ref<number | null>(null)
 
 const fullRecord   = useRelease(editingId)
 const { query: membersQ } = useBandMembers()
+const { query: albumsQ } = useAlbums()
 const modalTitle   = computed(() =>
   isCreating.value ? t('media.releases.modalNew') : (fullRecord.data.value?.title ?? t('media.releases.modalEdit')),
 )
@@ -308,6 +310,7 @@ async function uploadPhotos() {
         <ReleaseForm
           :initial="isCreating ? null : (fullRecord.data.value ?? null)"
           :members="membersQ.data.value ?? []"
+          :albums="albumsQ.data.value ?? []"
           :loading="create.isPending.value || update.isPending.value"
           :errors="fieldErrors"
           @submit="handleSubmit"

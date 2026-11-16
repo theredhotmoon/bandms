@@ -71,7 +71,7 @@ test.describe('Gallery page', () => {
     test.skip((await counts.count()) === 0, 'No published albums on this instance')
 
     for (let i = 0; i < (await counts.count()); i++) {
-      // "3 photos" — a zero here would mean an album that opens an empty lightbox.
+      // "3 photos" — a zero here would mean a card leading to an empty album.
       await expect(counts.nth(i)).toHaveText(/[1-9]\d*\s+\S+/)
     }
   })
@@ -99,45 +99,47 @@ test.describe('Gallery page', () => {
     await expect(page.locator('.gb-card')).toHaveCount(total)
   })
 
-  test('a card opens the lightbox on its first photo', async ({ page }) => {
+  /**
+   * Open an album page from the gallery — the first card whose count is at
+   * least `minPhotos`. Albums have their own pages now; the lightbox lives
+   * there. Skips when the instance has no such album.
+   */
+  async function openAlbum(page: import('@playwright/test').Page, minPhotos = 1): Promise<string> {
     await page.goto(`${WEB}/en/photos`)
+    const cards = page.locator('.gb-card')
+    test.skip((await cards.count()) === 0, 'No published albums on this instance')
+    for (let i = 0; i < (await cards.count()); i++) {
+      const label = (await cards.nth(i).locator('.gb-count').textContent()) ?? ''
+      if (Number.parseInt(label, 10) >= minPhotos) {
+        const title = ((await cards.nth(i).locator('.gb-title').textContent()) ?? '').trim()
+        await cards.nth(i).click()
+        await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+        await hydrated(page, '.ap-thumb')
+        return title
+      }
+    }
+    test.skip(true, `No album with ${minPhotos}+ photos`)
+    return ''
+  }
 
-    const card = page.locator('.gb-card').first()
-    test.skip((await card.count()) === 0, 'No published albums on this instance')
-    await hydrated(page, '.gb-card')
+  test('a card opens the album page, whose first photo opens the lightbox', async ({ page }) => {
+    const title = await openAlbum(page)
 
-    await card.click()
+    await page.locator('.ap-thumb').first().click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 8000 })
-    await expect(dialog.locator('.gb-stage img')).toHaveAttribute('src', /.+/)
-    await expect(dialog.locator('.gb-counter')).toHaveText(/^1 \/ \d+$/)
+    await expect(dialog).toHaveAttribute('aria-label', title)
+    await expect(dialog.locator('.ap-stage img')).toHaveAttribute('src', /.+/)
+    await expect(dialog.locator('.ap-counter')).toHaveText(/^1 \/ \d+$/)
   })
 
   test('lightbox arrows advance and wrap around', async ({ page }) => {
-    await page.goto(`${WEB}/en/photos`)
-
-    // Guard before hydrating, like every other card test here: hydrated()
-    // waits for a card to exist, so on an instance with no albums it times
-    // out instead of skipping.
-    const cards = page.locator('.gb-card')
-    test.skip((await cards.count()) === 0, 'No published albums on this instance')
-    await hydrated(page, '.gb-card')
-
-    // Find an album with more than one photo; wrapping needs at least two.
-    let opened = false
-    for (let i = 0; i < (await cards.count()); i++) {
-      const label = (await cards.nth(i).locator('.gb-count').textContent()) ?? ''
-      if (Number.parseInt(label, 10) > 1) {
-        await cards.nth(i).click()
-        opened = true
-        break
-      }
-    }
-    test.skip(!opened, 'No album with more than one photo')
+    await openAlbum(page, 2)
+    await page.locator('.ap-thumb').first().click()
 
     const dialog = page.getByRole('dialog')
-    const counter = dialog.locator('.gb-counter')
+    const counter = dialog.locator('.ap-counter')
     const total = Number.parseInt((await counter.textContent())!.split('/')[1]!.trim(), 10)
 
     await expect(counter).toHaveText(`1 / ${total}`)
@@ -153,24 +155,19 @@ test.describe('Gallery page', () => {
   })
 
   test('arrow keys and Escape drive the lightbox', async ({ page }) => {
-    await page.goto(`${WEB}/en/photos`)
-
-    const card = page.locator('.gb-card').first()
-    test.skip((await card.count()) === 0, 'No published albums on this instance')
-    await hydrated(page, '.gb-card')
-
-    await card.click()
+    await openAlbum(page)
+    await page.locator('.ap-thumb').first().click()
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 8000 })
 
     const total = Number.parseInt(
-      (await dialog.locator('.gb-counter').textContent())!.split('/')[1]!.trim(),
+      (await dialog.locator('.ap-counter').textContent())!.split('/')[1]!.trim(),
       10,
     )
 
     if (total > 1) {
       await page.keyboard.press('ArrowRight')
-      await expect(dialog.locator('.gb-counter')).toHaveText(`2 / ${total}`)
+      await expect(dialog.locator('.ap-counter')).toHaveText(`2 / ${total}`)
     }
 
     await page.keyboard.press('Escape')
@@ -189,13 +186,9 @@ test.describe('Gallery page', () => {
   })
 
   test('scrolling is restored after the lightbox closes', async ({ page }) => {
-    await page.goto(`${WEB}/en/photos`)
+    await openAlbum(page)
 
-    const card = page.locator('.gb-card').first()
-    test.skip((await card.count()) === 0, 'No published albums on this instance')
-    await hydrated(page, '.gb-card')
-
-    await card.click()
+    await page.locator('.ap-thumb').first().click()
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 8000 })
     expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden')
 

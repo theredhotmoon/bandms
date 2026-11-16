@@ -3,12 +3,14 @@ import type { Locale } from '@/types/shared'
 import { getSlugMap, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
-import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers, findConcert, findPost, findRelease, findShopItem } from '@/lib/cms'
+import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers, getAlbums, findConcert, findPost, findRelease, findShopItem } from '@/lib/cms'
 import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
 import type { Concert } from '@/types/concert'
 import type { Post } from '@/types/post'
 import type { Release } from '@/types/release'
 import type { ShopItem } from '@/types/shop'
+import type { Album } from '@/types/album'
+import { isAlbumOnSite } from '@/lib/albums'
 import { hasMemberPage } from '@/lib/memberPages'
 
 import ConcertDetail   from '@/components/detail/ConcertDetail.astro'
@@ -16,6 +18,7 @@ import PostDetail      from '@/components/detail/PostDetail.astro'
 import ReleaseDetail   from '@/components/detail/ReleaseDetail.astro'
 import MerchItemDetail from '@/components/detail/MerchItemDetail.astro'
 import MemberDetail    from '@/components/detail/MemberDetail.astro'
+import AlbumDetail     from '@/components/detail/AlbumDetail.astro'
 
 export async function getStaticPaths() {
   // One config, not one per locale: `modules` is the enabled map, which the API
@@ -64,6 +67,21 @@ export async function getStaticPaths() {
   const builtReleases = enabled('releases')
     ? await existingDetails(releases, r => inEveryLocale(LOCALES, l => findRelease(r.id, l)), { label: r => `release ${r.id}` })
     : []
+  // Albums: one memoised list per locale — the one the Gallery page lists
+  // from — so no page links to an album this build did not make. An album
+  // missing from any locale's list (deleted between those fetches) is built
+  // in none, so no hreflang points at a twin that does not exist.
+  const albumsByLang = enabled('photos')
+    ? new Map(await Promise.all(LOCALES.map(async l => [l, await getAlbums(l)] as const)))
+    : new Map<Locale, Album[]>()
+  const builtAlbums = (albumsByLang.get(DEFAULT_LOCALE) ?? [])
+    .filter(a => isAlbumOnSite(a) && a.slug)
+    .map(a => ({
+      item: a,
+      detail: Object.fromEntries(LOCALES.map(l => [l, albumsByLang.get(l)?.find(x => x.id === a.id)])) as Record<Locale, Album | undefined>,
+    }))
+    .filter(({ detail }) => LOCALES.every(l => detail[l] && isAlbumOnSite(detail[l])))
+
   const builtMerch = enabled('merch')
     ? await existingDetails(shopItems, i => inEveryLocale(LOCALES, l => findShopItem(i.slug, l)), { label: i => `shop item ${i.slug}` })
     : []
@@ -114,6 +132,14 @@ export async function getStaticPaths() {
           alternates: alternatesFor('merch', item.slug) },
       })
     }
+
+    for (const { item: a, detail } of builtAlbums) {
+      paths.push({
+        params: { lang, section: slugMap[lang].photos ?? 'photos', slug: a.slug },
+        props: { sectionType: 'photos', lang, itemId: a.id, itemSlug: a.slug, album: detail[lang],
+          alternates: alternatesFor('photos', a.slug) },
+      })
+    }
   }
 
   return paths
@@ -131,9 +157,10 @@ interface Props {
   post?: Post
   release?: Release
   shopItem?: ShopItem
+  album?: Album
 }
 
-const { sectionType, lang, alternates, itemId, concert, post, release, shopItem } = Astro.props
+const { sectionType, lang, alternates, itemId, concert, post, release, shopItem, album } = Astro.props
 ---
 
 {sectionType === 'concerts'  && concert  && <ConcertDetail   lang={lang} alternates={alternates} concert={concert} />}
@@ -141,3 +168,4 @@ const { sectionType, lang, alternates, itemId, concert, post, release, shopItem 
 {sectionType === 'releases'  && release  && <ReleaseDetail   lang={lang} alternates={alternates} release={release} />}
 {sectionType === 'merch'     && shopItem && <MerchItemDetail lang={lang} alternates={alternates} item={shopItem} />}
 {sectionType === 'about'     && <MemberDetail    lang={lang} alternates={alternates} itemId={itemId} />}
+{sectionType === 'photos'    && album    && <AlbumDetail     lang={lang} alternates={alternates} album={album} />}

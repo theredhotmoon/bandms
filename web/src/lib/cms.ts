@@ -250,11 +250,17 @@ export async function getAllPosts(lang: Locale = 'en'): Promise<PostSummary[]> {
 
 // ── Albums & Photos ───────────────────────────────────────────────────────────
 
-export const getAlbums = () =>
-  get<Album[]>('/albums')
-
-export const getAlbum = (id: number) =>
-  { assertSafeId(id); return get<Album>(`/albums/${id}`) }
+// Every album, with photos and the public records linking to each (`linked`,
+// titles in `lang`). Memoised per locale for the build, like getConcerts():
+// the Gallery page lists albums from it and each album page is built from
+// the same list, so a page can never link to an album whose page was not
+// built in this run — and an album page never fetches its own record, which
+// a mid-build delete would turn into a failed build (existingDetails.ts).
+export const getAlbums: (lang?: Locale) => Promise<Album[]> = memoisePerLocale(
+  // `linked` adds each album's "See also" records; only the build asks for it.
+  (lang) => get<Album[]>('/albums', { lang, linked: '1' }),
+  3,
+)
 
 // ── Music Videos ──────────────────────────────────────────────────────────────
 

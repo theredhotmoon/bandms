@@ -17,8 +17,7 @@ export interface RefLink { href: string; external: boolean }
  *    would 404 on a page that builds perfectly green;
  *  - the identifying field is missing from a frozen or partial payload.
  *
- * Only four sections have detail routes (concerts, releases, posts, merch), so
- * an album links to the photos listing — there is no per-album page.
+ * An album links to its own page under the Gallery section.
  */
 export function refHref(
   entity: RefEntity,
@@ -48,8 +47,14 @@ export function refHref(
       return data.id ? { href: `/${lang}/${section('releases')}/${data.id}`, external: false } : null
     case 'shop_item':
       return data.slug ? { href: `/${lang}/${section('merch')}/${data.slug}`, external: false } : null
+    // An album page exists only for a published album with photos; the
+    // resolver says which (`on_site`), so a block pointing at a draft stays
+    // text rather than linking to a page that was never built. A frozen
+    // payload without the flag (older API) is trusted, as before.
     case 'album':
-      return { href: `/${lang}/${section('photos')}`, external: false }
+      return data.slug && data.on_site !== false
+        ? { href: `/${lang}/${section('photos')}/${data.slug}`, external: false }
+        : null
     default:
       return null
   }

@@ -43,8 +43,55 @@ class AlbumResource extends JsonResource
             'cover_url'    => $this->whenLoaded('photos', fn () =>
                 $this->photos->first()?->image ? '/storage/' . $this->photos->first()->image : null
             ),
+            // What links to this album and is public: the album page lists
+            // these as "See also". A draft post or a hidden merch item is
+            // left out, because its page is never built.
+            'linked'       => $this->when(
+                $this->relationLoaded('linkedPosts'),
+                fn () => $this->linkedRecords(),
+            ),
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function linkedRecords(): array
+    {
+        $default = Locales::default();
+        // Titles through the declared fallback chain, as every other public
+        // resource does: a release titled only in Polish would otherwise be
+        // an empty string on /en/, and the album page drops an empty entry.
+        $title = fn ($model, string $field) => Locales::resolve($model->getTranslations($field)) ?? '';
+        $out = [];
+
+        foreach ($this->linkedPosts->whereNotNull('published_at')->sortByDesc('published_at') as $p) {
+            $out[] = [
+                'type'         => 'post',
+                'id'           => $p->id,
+                'title'        => $title($p, 'title'),
+                'slug'         => $p->slugIn($default),
+                // Posts are routed per language — postSlug() on the site.
+                'translations' => ['slug' => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $p->slugIn($c)])->all()],
+            ];
+        }
+        foreach ($this->linkedConcerts->sortByDesc('date') as $c) {
+            $out[] = [
+                'type'  => 'concert',
+                'id'    => $c->id,
+                'title' => $title($c, 'name') ?: null,
+                'slug'  => $c->slugIn($default) ?? 'concert-' . $c->id,
+                'date'  => $c->date?->format('Y-m-d'),
+                'venue' => $c->venue?->name,
+            ];
+        }
+        foreach ($this->linkedReleases as $r) {
+            $out[] = ['type' => 'release', 'id' => $r->id, 'title' => $title($r, 'title'), 'slug' => null];
+        }
+        foreach ($this->linkedShopItems->where('is_available', true) as $s) {
+            $out[] = ['type' => 'shop_item', 'id' => $s->id, 'title' => $s->name, 'slug' => $s->slugIn($default)];
+        }
+
+        return $out;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Support\Activity\ActivityRecorder;
+use App\Support\AlbumLinks;
 use App\Support\ClipOwners;
 use App\Support\MemberLinks;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
         // Short aliases in clippables.clippable_type and memberables.memberable_type
         // — renaming a model class must not orphan pivot rows. One map for both:
         // a class has a single morph alias app-wide.
-        Relation::enforceMorphMap([...ClipOwners::MAP, ...MemberLinks::MAP]);
+        Relation::enforceMorphMap([...ClipOwners::MAP, ...MemberLinks::MAP, ...AlbumLinks::MAP]);
 
         $this->configureRateLimiting();
         $this->recordActivity();

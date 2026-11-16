@@ -1,3 +1,4 @@
+import type { AlbumCard } from './album'
 import type { TranslationBag } from '@/lib/locales'
 import type { Tag } from './tag'
 
@@ -43,6 +44,8 @@ export interface PostSummary {
 
 export interface Post extends PostSummary {
   blocks: PostBlock[]
+  /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
+  albums?: AlbumCard[]
   translations?: {
     title: TranslationBag
     intro: TranslationBag

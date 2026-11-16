@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\PostSummaryResource;
 use App\Models\Post;
+use App\Support\AlbumLinks;
 use App\Support\ContentLocales;
 use App\Support\Locales;
 use App\Support\PostBlockSync;
@@ -269,6 +270,8 @@ class PostController extends Controller
                 $membersChanged = (bool) array_filter($post->members()->sync($data['member_ids']));
             }
 
+            AlbumLinks::sync($post, $data);
+
             PostBlockSync::sync($post, $data['blocks'] ?? []);
 
             return $post;
@@ -284,7 +287,7 @@ class PostController extends Controller
             SiteRebuild::markDirty('band-members');
         }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
     }
 
     /**
@@ -301,7 +304,7 @@ class PostController extends Controller
     /** Admin detail — drafts included; what the editor loads. */
     public function adminShow(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
     }
 
     public function update(UpdatePostRequest $request, Post $post): PostResource
@@ -328,7 +331,7 @@ class PostController extends Controller
 
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
             // payload carrying slug_en: null nulled the post's slug.
-            $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'blocks', 'slug']));
+            $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'member_ids', 'album_ids', 'blocks', 'slug']));
             // A draft cannot hold the top of the News page (highlight()), so
             // unpublishing gives it up rather than keeping a pin no one sees.
             if ($post->published_at === null) {
@@ -351,6 +354,8 @@ class PostController extends Controller
                 $membersChanged = (bool) array_filter($post->members()->sync($data['member_ids'] ?? []));
             }
 
+            AlbumLinks::sync($post, $data);
+
             if (array_key_exists('blocks', $data)) {
                 PostBlockSync::sync($post, $data['blocks'] ?? []);
             }
@@ -367,7 +372,7 @@ class PostController extends Controller
             SiteRebuild::markDirty('band-members');
         }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members']));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
     }
 
     public function destroy(Post $post): JsonResponse

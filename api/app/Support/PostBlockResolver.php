@@ -76,8 +76,16 @@ final class PostBlockResolver
             'release' => Release::whereIn('id', $ids)->get()
                 ->keyBy('id')->map(fn ($r) => ['id' => $r->id, 'title' => $r->title, 'type' => $r->type])->all(),
 
-            'album' => Album::whereIn('id', $ids)->get()
-                ->keyBy('id')->map(fn ($a) => ['id' => $a->id, 'title' => $a->title])->all(),
+            // `slug` builds the album page's URL; `on_site` says whether that
+            // page is built at all (published, with photos), so a block on a
+            // draft album renders as text rather than a link that 404s.
+            'album' => Album::withOnSiteCounts()->whereIn('id', $ids)->get()
+                ->keyBy('id')->map(fn ($a) => [
+                    'id'      => $a->id,
+                    'title'   => $a->title,
+                    'slug'    => $a->slugIn(Locales::default()),
+                    'on_site' => $a->isOnSite(),
+                ])->all(),
 
             // ShopItem's column is `name`, not `title`.
             'shop_item' => ShopItem::whereIn('id', $ids)->get()

@@ -19,6 +19,8 @@ import type { Concert, ConcertBandPayload, ConcertLinkPayload, ConcertPayload } 
 import type { Venue } from '@/types/venue'
 import type { Band } from '@/types/band'
 import type { Tag } from '@/types/tag'
+import type { Album } from '@/types/album'
+import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import { useTagLabel } from '@/composables/useTagLabel'
 
 const tagName = useTagLabel()
@@ -43,6 +45,8 @@ const props = defineProps<{
   tags: Tag[]
   /** Band members, for "who played". */
   members?: readonly { id: number; first_name: string; last_name: string; is_current: boolean }[]
+  /** Photo albums for "Link to… → Photo albums"; the section is hidden without it. */
+  albums?: Album[]
   loading?: boolean
   errors?: Record<string, string[]>
 }>()
@@ -106,6 +110,7 @@ const form = reactive({
   slug:             emptyBag(),
   tag_ids:          [] as number[],
   member_ids:       [] as number[],
+  album_ids:        [] as number[],
   ticket_url:       '',
   // "Headliner" / "Support" under each act on the show page.
   show_lineup_roles: true,
@@ -169,6 +174,7 @@ watch(() => props.initial, (concert) => {
     form.slug             = emptyBag()
     form.tag_ids          = []
     form.member_ids       = []
+    form.album_ids        = []
     form.ticket_url       = ''
     form.show_lineup_roles = true
     links.value           = []
@@ -193,6 +199,7 @@ watch(() => props.initial, (concert) => {
   form.slug           = bagFrom(concert.translations?.slug)
   form.tag_ids     = concert.tags?.map(t => t.id) ?? []
   form.member_ids  = concert.member_ids ? [...concert.member_ids] : []
+  form.album_ids   = concert.album_ids ? [...concert.album_ids] : []
   form.ticket_url  = concert.ticket_url ?? ''
   form.show_lineup_roles = concert.show_lineup_roles !== false
   links.value      = concert.links?.map(l => ({ label: l.label, url: l.url })) ?? []
@@ -352,6 +359,11 @@ function submit() {
     bands:             bandsPayload,
     tag_ids:           form.tag_ids,
     member_ids:        form.member_ids,
+    // Only from a host that renders the Photo albums section (passes the
+    // list, even empty): one that does not would otherwise clear every link.
+    // The ids come from the record, not the list, so a list still loading
+    // clears nothing.
+    ...(props.albums ? { album_ids: form.album_ids } : {}),
     links:             links.value,
     ticket_url:        form.ticket_url.trim() || null,
   }, posterFile.value, posterDelete.value)
@@ -618,6 +630,13 @@ function submit() {
           :members="members ?? []"
           :label="$t('shows.concerts.form.whoPlayed')"
           testid="concert-members"
+        />
+
+        <EntityRelationsPanel
+          v-if="albums"
+          :albums="albums"
+          v-model:albumIds="form.album_ids"
+          data-testid="concert-relations"
         />
       </div>
 

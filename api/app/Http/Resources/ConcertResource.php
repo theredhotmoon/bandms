@@ -47,6 +47,10 @@ class ConcertResource extends JsonResource
             ),
             'tags'  => TagResource::collection($this->whenLoaded('tags')),
             'member_ids' => $this->whenLoaded('members', fn () => $this->members->pluck('id')->values()),
+            // Linked photo albums: every id for the admin, cards for the
+            // ones the public site builds a page for.
+            'album_ids' => $this->whenLoaded('albums', fn () => $this->albums->pluck('id')->values()),
+            'albums'    => $this->whenLoaded('albums', fn () => AlbumCardResource::forOwner($this->albums)),
             'links' => $this->whenLoaded('links', fn () =>
                 $this->links->map(fn ($l) => [
                     'id'    => $l->id,

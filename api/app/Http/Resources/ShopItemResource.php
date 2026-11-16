@@ -61,6 +61,9 @@ class ShopItemResource extends JsonResource
             ])->values(),
             'variants'         => ShopItemVariantResource::collection($this->whenLoaded('variants')),
             'clips'            => ClipResource::collection($this->whenLoaded('clips')),
+            // Linked photo albums — see ConcertResource.
+            'album_ids'        => $this->whenLoaded('albums', fn () => $this->albums->pluck('id')->values()),
+            'albums'           => $this->whenLoaded('albums', fn () => AlbumCardResource::forOwner($this->albums)),
             'created_at'       => $this->created_at,
             'updated_at'       => $this->updated_at,
         ];

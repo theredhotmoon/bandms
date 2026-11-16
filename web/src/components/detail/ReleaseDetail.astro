@@ -10,6 +10,7 @@ import Icon from '@/components/Icon.astro'
 import TrackList from '@/components/TrackList.vue'
 import LyricsViewer from '@/components/LyricsViewer.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
+import AlbumCards from '@/components/AlbumCards.astro'
 import { getBandProfile, getSiteConfig, getShopItems } from '@/lib/cms'
 import { getSlugMap } from '@/lib/slugs'
 import { PLATFORM_LABELS } from '@/types/release'
@@ -220,6 +221,9 @@ const structuredData = {
       </section>
     </>
   )}
+
+  <!-- PHOTOS: linked albums -->
+  <AlbumCards lang={lang} albums={release.albums} />
 
   <!-- LYRICS -->
   {songs.length > 0 && (

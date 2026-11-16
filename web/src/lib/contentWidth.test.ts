@@ -49,6 +49,8 @@ describe('BaseLayout call sites', () => {
     'components/detail/MemberDetail.astro': 'about',
     'components/detail/MerchItemDetail.astro': 'merch',
     'components/detail/ReleaseDetail.astro': 'releases',
+    // An album page is the Gallery's, so it follows the Gallery's width.
+    'components/detail/AlbumDetail.astro': 'photos',
     'pages/[lang]/index.astro': 'home',
     // No switch: an article is a 760px reading column, and the rest are
     // narrow single-purpose pages or a printable document.
