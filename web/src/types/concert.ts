@@ -1,3 +1,4 @@
+import type { AlbumCard } from './album'
 import type { Venue } from './venue'
 import type { Tag } from './tag'
 import type { Clip } from './clip'
@@ -40,6 +41,8 @@ export interface Concert {
   /** How many of our own ticket types exist. */
   ticket_types_count?: number
   clips?: Clip[]
+  /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
+  albums?: AlbumCard[]
   translations?: {
     name?:        { en?: string | null; pl?: string | null }
     description?: { en?: string | null; pl?: string | null }

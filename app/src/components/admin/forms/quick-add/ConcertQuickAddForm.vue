@@ -4,6 +4,7 @@ import { useVenues } from '@/composables/useVenues'
 import { useBands } from '@/composables/useBands'
 import { useTags } from '@/composables/useTags'
 import { useBandMembers } from '@/composables/useBandMembers'
+import { useAlbums } from '@/composables/useAlbums'
 import type { ConcertPayload } from '@/types/concert'
 
 /**
@@ -18,6 +19,7 @@ const { query: venuesQ } = useVenues()
 const { query: bandsQ } = useBands()
 const { query: tagsQ } = useTags()
 const { query: membersQ } = useBandMembers()
+const { query: albumsQ } = useAlbums()
 </script>
 
 <template>
@@ -27,6 +29,7 @@ const { query: membersQ } = useBandMembers()
     :bands="bandsQ.data.value ?? []"
     :tags="tagsQ.data.value ?? []"
     :members="membersQ.data.value ?? []"
+    :albums="albumsQ.data.value ?? []"
     :loading="loading"
     :errors="errors"
     @submit="(payload, posterFile) => emit('submit', payload, posterFile)"

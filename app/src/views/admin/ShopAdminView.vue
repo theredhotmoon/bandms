@@ -19,6 +19,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { usePosts } from '@/composables/usePosts'
 import { useMusicVideos } from '@/composables/useMusicVideos'
+import { useAlbums } from '@/composables/useAlbums'
 import { useAuth } from '@/composables/useAuth'
 import { reportSaveError } from '@/utils/formErrors'
 import { uploadShopPhoto, deleteShopPhoto, reorderShopPhotos } from '@/api/shop'
@@ -39,6 +40,7 @@ const releasesQ   = useReleases()
 const concertsQ   = useConcerts()
 const postsQ      = usePosts(ref<PostFilters>({}))
 const videosQ     = useMusicVideos()
+const { query: albumsQ } = useAlbums()
 
 const currencies = computed(() => currenciesQuery.data.value ?? [])
 const categories = computed(() => categoriesQ.query.data.value ?? [])
@@ -398,6 +400,7 @@ const TYPE_COLOURS: Record<string, string> = {
           :item-id="editingId"
           :currencies="currencies"
           :categories="categories"
+          :albums="albumsQ.data.value ?? []"
           :tags="tags"
           :releases="releases"
           :concerts="concerts"

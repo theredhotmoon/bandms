@@ -1,0 +1,129 @@
+---
+/**
+ * "Photos": the albums a news post, show, release or merch item links to
+ * (admin → Link to… → Photo albums), each a card leading to its album page.
+ * Renders nothing when there is none to show — the API sends only albums
+ * the site builds a page for, and a switched-off Gallery unbuilds them all.
+ */
+import type { Locale } from '@/types/shared'
+import type { AlbumCard } from '@/types/album'
+import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { albumHref } from '@/lib/albums'
+import { fmtDateShort } from '@/lib/i18n'
+import { PHOTOS_COPY } from '@bandms/site-copy'
+import { moduleCopy } from '@/lib/copy'
+
+interface Props {
+  lang: Locale
+  albums?: AlbumCard[]
+  /**
+   * Inside a box that already sets the page's width (merch's page-content,
+   * a post's reading column): no width of its own, because one .page-content
+   * nested in another pads twice.
+   */
+  contained?: boolean
+}
+const { lang, albums = [], contained = false } = Astro.props
+
+const [siteConfig, slugMap] = await Promise.all([getSiteConfig(lang), getSlugMap()])
+const t = moduleCopy(siteConfig, 'photos', PHOTOS_COPY, lang)
+
+const cards = albums
+  .map(a => ({ ...a, href: albumHref(a, lang, slugMap, siteConfig.modules) }))
+  .filter((a): a is AlbumCard & { href: string } => a.href !== null)
+---
+
+{cards.length > 0 && (
+  <section class:list={['ac-sec', { 'page-content': !contained }]} data-testid="linked-albums">
+    <h2 class="ac-h">{t.linkedTitle}</h2>
+    <ul class="ac-grid">
+      {cards.map(a => (
+        <li>
+          <a class="ac-card" href={a.href} data-testid="linked-album-card">
+            <span class="ac-cover">
+              {a.cover_url
+                ? <img src={a.cover_url} alt="" loading="lazy" />
+                : <span class="ac-cover-fallback" aria-hidden="true" />}
+              <span class="ac-count">{a.photo_count} {t.photos}</span>
+            </span>
+            <span class="ac-body">
+              {a.taken_at && <span class="ac-meta">{fmtDateShort(a.taken_at, lang)}</span>}
+              <span class="ac-title">{a.title}</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .ac-sec { padding-block: 8px 48px; }
+  .ac-h {
+    margin: 0 0 18px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 34px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+  .ac-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .ac-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: var(--border-width-card) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-body);
+    text-decoration: none;
+  }
+  .ac-card:hover .ac-title { text-decoration: underline; text-underline-offset: 4px; }
+  .ac-card:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .ac-cover {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-bottom: var(--border-width-card) solid var(--color-border);
+    background: var(--color-inverse);
+  }
+  .ac-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ac-cover-fallback { display: block; width: 100%; height: 100%; }
+  .ac-count {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: var(--color-inverse);
+    color: var(--color-on-inverse);
+    font: 700 12px/1 ui-monospace, Menlo, monospace;
+    letter-spacing: .04em;
+    padding: 5px 8px;
+  }
+  .ac-body { display: block; padding: 14px 16px 16px; }
+  .ac-meta {
+    display: block;
+    margin-bottom: 8px;
+    font: 800 11px/1 var(--font-body);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .ac-title {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-transform);
+  }
+</style>

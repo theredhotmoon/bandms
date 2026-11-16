@@ -8,6 +8,7 @@ import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { usePosts } from '@/composables/usePosts'
 import { useMusicVideos } from '@/composables/useMusicVideos'
+import { useAlbums } from '@/composables/useAlbums'
 import type { PostFilters } from '@/api/posts'
 import type { ShopItemPayload } from '@/types/shop'
 
@@ -27,6 +28,7 @@ const { query: releasesQ } = useReleases()
 const { query: concertsQ } = useConcerts()
 const postsQ = usePosts(ref<PostFilters>({}))
 const { query: videosQ } = useMusicVideos()
+const { query: albumsQ } = useAlbums()
 </script>
 
 <template>
@@ -35,6 +37,7 @@ const { query: videosQ } = useMusicVideos()
     :item-id="null"
     :currencies="currenciesQuery.data.value ?? []"
     :categories="categoriesQ.query.data.value ?? []"
+    :albums="albumsQ.data.value ?? []"
     :tags="tagsQ.data.value ?? []"
     :releases="releasesQ.data.value ?? []"
     :concerts="concertsQ.data.value ?? []"

@@ -7,6 +7,7 @@ import { getSlugMap } from '@/lib/slugs'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import AddToCart from '@/components/AddToCart.vue'
 import ClipsGrid from '@/components/ClipsGrid.astro'
+import AlbumCards from '@/components/AlbumCards.astro'
 import { getBandProfile, getSiteConfig } from '@/lib/cms'
 import { MERCH_COPY } from '@bandms/site-copy'
 import { moduleCopy, addToCartCopy, siteCopy } from '@/lib/copy'
@@ -111,6 +112,11 @@ const mainImage = images[0]?.url ?? item.cover_photo
       <section class="mt-16" data-testid="merch-clips">
         <ClipsGrid clips={clips} heading={t.clipsTitle} copy={site} />
       </section>
+    )}
+
+    <!-- Photos: linked albums, under the clips. -->
+    {(item.albums ?? []).length > 0 && (
+      <div class="mt-16"><AlbumCards lang={lang} albums={item.albums} contained /></div>
     )}
   </div>
 </BaseLayout>

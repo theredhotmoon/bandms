@@ -157,6 +157,8 @@ export default {
     shopItems: 'Shop items',
     tours: 'Tours',
     albums: 'Photo albums',
+    // Badge on an album the public site does not show yet (draft or no photos).
+    albumHidden: 'not on site',
     posts: 'Blog posts',
     musicVideos: 'Music videos',
     press: 'Press',

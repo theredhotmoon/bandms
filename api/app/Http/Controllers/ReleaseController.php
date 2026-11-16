@@ -7,6 +7,7 @@ use App\Http\Resources\ReleaseSummaryResource;
 use App\Models\BandProfile;
 use App\Models\Release;
 use App\Models\ReleasePhoto;
+use App\Support\AlbumLinks;
 use App\Support\ContentLocales;
 use App\Support\Locales;
 use App\Support\SiteRebuild;
@@ -28,7 +29,7 @@ class ReleaseController extends Controller
 
     public function show(Release $release): ReleaseResource
     {
-        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
+        $release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]);
 
         return new ReleaseResource($release);
     }
@@ -68,14 +69,14 @@ class ReleaseController extends Controller
             'tracks.*.links'                  => 'nullable|array',
             'tracks.*.links.*.platform'       => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'tracks.*.links.*.url'            => 'required|url|max:500',
-        ] + Release::translatedSlugRules());
+        ] + AlbumLinks::rules() + Release::translatedSlugRules());
 
         $validated['profile_id'] = BandProfile::value('id') ?? 1;
 
         $titles = is_array($validated['title']) ? $validated['title'] : [Locales::default() => $validated['title']];
 
         $release = DB::transaction(function () use ($validated, $titles, $request) {
-            $release = new Release(Arr::except($validated, ['slug', 'member_ids']));
+            $release = new Release(Arr::except($validated, ['slug', 'member_ids', 'album_ids']));
             $release->applySlugBag(
                 $validated['slug'] ?? null,
                 ContentLocales::firstFilled($titles, Locales::default()) ?? 'release',
@@ -97,11 +98,12 @@ class ReleaseController extends Controller
             }
 
             $this->syncMembers($release, $validated);
+            AlbumLinks::sync($release, $validated);
 
             return $release;
         });
 
-        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
+        $release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]);
 
         SiteRebuild::markDirty('releases');
 
@@ -143,12 +145,12 @@ class ReleaseController extends Controller
             'tracks.*.links'                  => 'nullable|array',
             'tracks.*.links.*.platform'       => 'required|in:spotify,apple_music,bandcamp,youtube,instagram',
             'tracks.*.links.*.url'            => 'required|url|max:500',
-        ] + Release::translatedSlugRules($release->id));
+        ] + AlbumLinks::rules() + Release::translatedSlugRules($release->id));
 
         // Slugs through applySlugBag(): this used to update() the raw columns,
         // so a payload carrying slug_en: null nulled the release's slug.
         DB::transaction(function () use ($release, $validated, $request) {
-            $release->fill(Arr::except($validated, ['slug', 'member_ids']));
+            $release->fill(Arr::except($validated, ['slug', 'member_ids', 'album_ids']));
             if (array_key_exists('slug', $validated)) {
                 $release->applySlugBag($validated['slug'], ContentLocales::firstFilled($release->getTranslations('title'), Locales::default()));
             }
@@ -170,9 +172,10 @@ class ReleaseController extends Controller
             }
 
             $this->syncMembers($release, $validated);
+            AlbumLinks::sync($release, $validated);
         });
 
-        $release->load('tracks.links', 'links', 'photos', 'clips', 'members');
+        $release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]);
 
         SiteRebuild::markDirty('releases');
 
@@ -209,7 +212,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]));
     }
 
     public function destroyCover(Release $release): ReleaseResource
@@ -221,7 +224,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]));
     }
 
     public function addPhotos(Request $request, Release $release): ReleaseResource
@@ -246,7 +249,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]));
     }
 
     public function removePhoto(Release $release, ReleasePhoto $photo): Response
@@ -272,7 +275,7 @@ class ReleaseController extends Controller
 
         SiteRebuild::markDirty('releases');
 
-        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members']));
+        return new ReleaseResource($release->load(['tracks.links', 'links', 'photos', 'clips', 'members', ...AlbumLinks::eager()]));
     }
 
     /**

@@ -105,8 +105,16 @@ const sections = computed<Section[]>(() => {
   })
   if (props.albums) out.push({
     key: 'albums', title: t('common.relations.albums'),
-    items: props.albums.map(a => ({ id: a.id, label: a.title })),
+    // The public site builds a page only for a published album with photos;
+    // a link to any other one shows nowhere until it is, so say so here.
+    items: props.albums.map(a => ({
+      id: a.id, label: a.title,
+      // Photos with a file, as the site counts them (Album::isOnSite()), not
+      // photo rows: a row without a file builds nothing.
+      badge: a.published_at && a.photos.some(p => p.image_url) ? undefined : t('common.relations.albumHidden'),
+    })),
     ids: albumIds.value, set: v => (albumIds.value = v),
+    testid: 'relations-albums',
   })
   if (props.posts) out.push({
     key: 'posts', title: t('common.relations.posts'),

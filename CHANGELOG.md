@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-16 (a page for every photo album, linked from news, shows, releases and merch)
+
+### Added
+- **Every photo album has its own page**, at `/en/photos/<album>` (under the Gallery's own URL in each language). It shows the album's title, date, place and description and a grid of its photos; clicking a photo opens the same full-screen viewer as before. Only a published album with at least one photo gets a page, the same albums the Gallery lists.
+- **Albums can be linked from news posts, shows, releases and merch items.** Their admin forms have a *Photo albums* section under *Link to…*: tick any number of albums, or create one in place. The public page then shows a *Photos* block of album cards leading to each album's page. An album nobody can see yet (a draft, or one with no photos) carries a *not on site* badge in that list.
+- **An album page lists what links to it** under *See also*: the posts, shows, releases and merch items, each only when its own page is built.
+- New page-copy strings on the Gallery module for all of the above (*All albums*, *See also*, the *Photos* heading on other pages, and the screen-reader label for each photo).
+
+### Changed
+- **On the Gallery page, an album card opens the album's page** instead of opening the viewer on the spot.
+- **A gallery reference block inside an article links to that album's page** rather than to the Gallery page. A block pointing at a draft album shows as plain text until the album is published.
+- **An album's *Concert* field also links it from that concert**, so the concert's *Photo albums* section opens with it ticked, added after any albums already arranged there. Changing the field moves the link to the new concert. Existing albums were linked the same way when this shipped. Unticking it on the concert sticks until someone picks that concert on the album again.
+
 ## [Unreleased] — 2026-11-04 (news tag rows slide all the way, more E2E races)
 
 ### Fixed

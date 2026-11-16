@@ -11,6 +11,8 @@ import { getAlbums, getBandProfile, getSiteConfig } from '@/lib/cms'
 import { fmtDateShort, formatGenreKicker } from '@/lib/i18n'
 import { PHOTOS_COPY } from '@bandms/site-copy'
 import { moduleCopy, listPaging } from '@/lib/copy'
+import { getSlugMap } from '@/lib/slugs'
+import { albumHref, isAlbumOnSite } from '@/lib/albums'
 
 interface Props {
   lang: Locale
@@ -18,7 +20,7 @@ interface Props {
 }
 const { lang, alternates } = Astro.props
 
-const [albums, profile, siteConfig] = await Promise.all([getAlbums(), getBandProfile(lang), getSiteConfig(lang)])
+const [albums, profile, siteConfig, slugMap] = await Promise.all([getAlbums(lang), getBandProfile(lang), getSiteConfig(lang), getSlugMap()])
 const genreKicker = formatGenreKicker(profile.genres)
 
 // Every string on this page: registry defaults for this locale, overridden by
@@ -27,9 +29,10 @@ const t = moduleCopy(siteConfig, 'photos', PHOTOS_COPY, lang)
 // Website Modules → Items per page — see ShowMore.astro / useShowMore().
 const { perPage, showMoreLabel } = listPaging(siteConfig, 'photos', lang)
 
-// Unpublished albums and empty ones are both invisible: a gallery card that
-// opens an empty lightbox is worse than an absent card.
-const visible = albums.filter(a => a.published_at && (a.photos?.length ?? 0) > 0)
+// Unpublished albums and empty ones are both invisible: their pages are not
+// built (isAlbumOnSite() is the rule the album route uses too), and a card
+// leading to an empty album is worse than an absent card.
+const visible = albums.filter(isAlbumOnSite)
 
 const galleryAlbums = visible.map(album => {
   const shotAt = album.venue?.name ?? ''
@@ -38,23 +41,20 @@ const galleryAlbums = visible.map(album => {
   // just the date rather than leaving a dangling separator.
   const category = album.tags?.[0]?.name ?? ''
 
+  const photos = (album.photos ?? []).filter(photo => photo.image_url)
+
   return {
     id: album.id,
     title: album.title,
+    // Every visible album has a page, and this is the Gallery module's own
+    // page, so the module is on: the href is never null here.
+    href: albumHref(album, lang, slugMap, siteConfig.modules) ?? '#',
     categories: (album.tags ?? []).map(tag => tag.slug),
     metaLine: [category, when].filter(Boolean).join(' · '),
     shotAt,
-    coverUrl: album.cover_url ?? album.photos?.[0]?.image_url ?? null,
-    photos: [...(album.photos ?? [])]
-      .sort((a, b) => a.sort_order - b.sort_order)
-      // A photo with no URL cannot be shown; it would open a broken lightbox.
-      .filter(photo => photo.image_url)
-      .map(photo => ({
-        id: photo.id,
-        src: photo.image_url as string,
-        caption: photo.caption,
-        isPressReady: photo.epk_featured ?? false,
-      })),
+    coverUrl: album.cover_url ?? photos[0]?.image_url ?? null,
+    photoCount: photos.length,
+    hasPressReady: photos.some(photo => photo.epk_featured ?? false),
   }
 })
 
@@ -102,9 +102,6 @@ const categories = Object.values(
           photos: t.photos,
           pressReady: t.pressReady,
           shotAt: t.shotAt,
-          close: t.close,
-          prev: t.prev,
-          next: t.next,
           empty: t.empty,
         }}
       />

@@ -1,3 +1,4 @@
+import type { AlbumCard } from './album'
 import type { Clip } from './clip'
 
 export interface ShopCategory {
@@ -57,6 +58,8 @@ export interface ShopItem extends ShopItemSummary {
   description: string | null
   photos: ShopItemPhoto[]
   clips?: Clip[]
+  /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
+  albums?: AlbumCard[]
   tags: { id: number; name: string; slug: string }[]
   // Optional on purpose: responses produced before this field was added do not
   // carry it, and the Astro build dies on the whole site if a page dereferences

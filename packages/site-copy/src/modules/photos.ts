@@ -41,6 +41,42 @@ export const PHOTOS_COPY = defineCopy([
     defaults: { en: 'Nothing in this category yet.', pl: 'Brak zdjęć w tej kategorii.' },
   },
   {
+    key: 'backToAlbums', label: 'Back link', group: 'Album page', maxLength: 40,
+    help: 'Above the album title, back to the Gallery page.',
+    defaults: { en: 'All albums', pl: 'Wszystkie albumy' },
+  },
+  {
+    key: 'openPhoto', label: 'Photo button (screen readers)', group: 'Album page', maxLength: 60,
+    help: 'Read out for each photo in the grid. {n} is the photo number.',
+    defaults: { en: 'Open photo {n}', pl: 'Otwórz zdjęcie {n}' },
+  },
+  {
+    key: 'seeAlso', label: '"See also" heading', group: 'Album page', maxLength: 40,
+    help: 'Above the news, shows, releases and merch this album is linked from.',
+    defaults: { en: 'See also', pl: 'Zobacz też' },
+  },
+  {
+    key: 'linkedPost', label: 'Kicker: news', group: 'Album page', maxLength: 30,
+    defaults: { en: 'News', pl: 'Aktualności' },
+  },
+  {
+    key: 'linkedConcert', label: 'Kicker: show', group: 'Album page', maxLength: 30,
+    defaults: { en: 'Show', pl: 'Koncert' },
+  },
+  {
+    key: 'linkedRelease', label: 'Kicker: release', group: 'Album page', maxLength: 30,
+    defaults: { en: 'Release', pl: 'Wydawnictwo' },
+  },
+  {
+    key: 'linkedMerch', label: 'Kicker: merch', group: 'Album page', maxLength: 30,
+    defaults: { en: 'Merch', pl: 'Sklep' },
+  },
+  {
+    key: 'linkedTitle', label: 'Photos heading on other pages', group: 'On other pages', maxLength: 40,
+    help: 'Above the album cards on a news post, show, release or merch page that links albums.',
+    defaults: { en: 'Photos', pl: 'Zdjęcia' },
+  },
+  {
     key: 'close', label: '"Close" button', group: 'Lightbox', maxLength: 30,
     defaults: { en: 'Close', pl: 'Zamknij' },
   },

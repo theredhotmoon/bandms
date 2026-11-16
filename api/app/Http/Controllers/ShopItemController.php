@@ -12,6 +12,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Support\AlbumLinks;
 use App\Support\SiteRebuild;
 use Illuminate\Support\Arr;
 use App\Support\Locales;
@@ -34,7 +35,7 @@ class ShopItemController extends Controller
     public function show(ShopItem $shopItem): ShopItemResource
     {
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -42,7 +43,7 @@ class ShopItemController extends Controller
     {
         $shopItem = ShopItem::whereSlug($slug)->firstOrFail();
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -67,7 +68,7 @@ class ShopItemController extends Controller
 
         $data['profile_id'] = BandProfile::value('id') ?? 1;
 
-        $item = new ShopItem(Arr::except($data, ['slug']));
+        $item = new ShopItem(Arr::except($data, ['slug', 'album_ids']));
         $item->applySlugBag($data['slug'] ?? null, $data['name']);
         $item->save();
 
@@ -79,9 +80,10 @@ class ShopItemController extends Controller
         }
 
         $this->syncRelations($request, $item);
+        AlbumLinks::sync($item, $data);
         SiteRebuild::markDirty('shop');
 
-        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips']);
+        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($item);
     }
 
@@ -97,7 +99,7 @@ class ShopItemController extends Controller
         // when a public merch URL moves is not this refactor's call. Forgetting
         // the slug lets applySlugBag() generate it from the new name.
         $given = $data['slug'] ?? [];
-        $shopItem->fill(Arr::except($data, ['slug']));
+        $shopItem->fill(Arr::except($data, ['slug', 'album_ids']));
         if ($shopItem->isDirty('name') && blank($given[Locales::default()] ?? null)) {
             $shopItem->forgetTranslation('slug', Locales::default());
         }
@@ -116,9 +118,10 @@ class ShopItemController extends Controller
         });
 
         $this->syncRelations($request, $shopItem);
+        AlbumLinks::sync($shopItem, $data);
         SiteRebuild::markDirty('shop');
 
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips']);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -218,7 +221,7 @@ class ShopItemController extends Controller
             'stock_quantity'   => 'nullable|integer|min:0',
             'purchase_url'     => 'nullable|url|max:1000',
             'sort_order'       => 'integer|min:0',
-        ] + ShopItem::translatedSlugRules($ignoreId));
+        ] + AlbumLinks::rules() + ShopItem::translatedSlugRules($ignoreId));
     }
 
     private function validatePrices(Request $request): void

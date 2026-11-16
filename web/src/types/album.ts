@@ -31,6 +31,26 @@ export interface Album {
    */
   venue: { id: number; name: string } | null
   concert: { id: number; date: string; description: string | null } | null
+  /** Public records linking to this album. Absent from an older API. */
+  linked?: AlbumLink[]
   created_at: string
   updated_at: string
 }
+
+/** An album as a card on a post, show, release or merch page — AlbumCardResource. */
+export interface AlbumCard {
+  id: number
+  title: string
+  /** The default locale's slug: the album page's URL in every language. */
+  slug: string
+  taken_at: string | null
+  photo_count: number
+  cover_url: string | null
+}
+
+/** A public record that links to an album — the album page's "See also". */
+export type AlbumLink =
+  | { type: 'post'; id: number; title: string; slug: string; translations: { slug: Record<string, string | null> } }
+  | { type: 'concert'; id: number; title: string | null; slug: string; date: string | null; venue: string | null }
+  | { type: 'release'; id: number; title: string; slug: null }
+  | { type: 'shop_item'; id: number; title: string; slug: string }
