@@ -16,13 +16,18 @@ class Clip extends Model
 
     public array $translatable = ['title'];
 
-    protected $fillable = ['provider', 'url', 'title', 'category', 'recorded_on', 'show_in_epk'];
+    protected $fillable = [
+        'provider', 'url', 'title', 'category', 'source', 'recorded_on', 'show_in_epk',
+        'channel_name', 'channel_url', 'thumbnail_url', 'duration', 'view_count', 'views_synced_at',
+    ];
 
     protected function casts(): array
     {
         return [
             'recorded_on' => 'date:Y-m-d',
             'show_in_epk' => 'boolean',
+            'view_count'  => 'integer',
+            'views_synced_at' => 'datetime',
         ];
     }
 

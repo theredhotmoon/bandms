@@ -70,8 +70,12 @@ export const SITE_COPY = defineCopy([
     key: 'notFoundHome', label: '"Back to home" button', group: '404 page', maxLength: 40,
     defaults: { en: 'Back to home', pl: 'Wróć na stronę główną' },
   },
-  // ── Clips ── category labels shown wherever a clip renders (concert page,
-  // news). A custom category typed in the admin prints as typed.
+  // ── Clips ── category labels shown wherever a video renders (Videos page,
+  // concert page, news). A custom category typed in the admin prints as typed.
+  {
+    key: 'clipCategoryMusicVideo', label: '"Music video" category', group: 'Clips', maxLength: 30,
+    defaults: { en: 'Music video', pl: 'Teledysk' },
+  },
   {
     key: 'clipCategoryLive', label: '"Live" category', group: 'Clips', maxLength: 30,
     defaults: { en: 'Live', pl: 'Na żywo' },
@@ -91,6 +95,17 @@ export const SITE_COPY = defineCopy([
   {
     key: 'clipCategoryOther', label: '"Other" category', group: 'Clips', maxLength: 30,
     defaults: { en: 'Other', pl: 'Inne' },
+  },
+  // A video someone else filmed: labelled, and its channel credited.
+  {
+    key: 'clipFan', label: '"Fan video" label', group: 'Clips', maxLength: 30,
+    help: 'On every video marked as a fan video in the admin.',
+    defaults: { en: 'Fan video', pl: 'Nagranie fana' },
+  },
+  {
+    key: 'clipFilmedBy', label: 'Fan video credit', group: 'Clips', maxLength: 60,
+    help: 'Links to the channel that posted it. {name} is the channel or author.',
+    defaults: { en: 'Filmed by {name}', pl: 'Nagranie: {name}' },
   },
   // ── Lists ── under every list that Website Modules → Items per page cuts
   // short: news, shows, photos, videos, press, merch.

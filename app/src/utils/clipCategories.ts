@@ -3,7 +3,7 @@
  * the column is free text, so these drive the chips, not validation.
  * Lives in utils/ so vitest can import it (no composable dependencies).
  */
-export const CLIP_CATEGORY_PRESETS = ['live', 'studio', 'backstage', 'interview', 'other'] as const
+export const CLIP_CATEGORY_PRESETS = ['music_video', 'live', 'studio', 'backstage', 'interview', 'other'] as const
 export type ClipCategoryPreset = (typeof CLIP_CATEGORY_PRESETS)[number]
 
 export function isPresetCategory(value: string): value is ClipCategoryPreset {

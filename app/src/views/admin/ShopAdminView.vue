@@ -18,7 +18,6 @@ import { useTags } from '@/composables/useTags'
 import { useReleases } from '@/composables/useReleases'
 import { useConcerts } from '@/composables/useConcerts'
 import { usePosts } from '@/composables/usePosts'
-import { useMusicVideos } from '@/composables/useMusicVideos'
 import { useAlbums } from '@/composables/useAlbums'
 import { useAuth } from '@/composables/useAuth'
 import { reportSaveError } from '@/utils/formErrors'
@@ -39,7 +38,6 @@ const tagsQ       = useTags()
 const releasesQ   = useReleases()
 const concertsQ   = useConcerts()
 const postsQ      = usePosts(ref<PostFilters>({}))
-const videosQ     = useMusicVideos()
 const { query: albumsQ } = useAlbums()
 
 const currencies = computed(() => currenciesQuery.data.value ?? [])
@@ -48,7 +46,6 @@ const tags       = computed(() => tagsQ.query.data.value ?? [])
 const releases   = computed(() => releasesQ.query.data.value ?? [])
 const concerts   = computed(() => concertsQ.query.data.value ?? [])
 const posts      = computed(() => postsQ.query.data.value?.data ?? [])
-const videos     = computed(() => videosQ.query.data.value ?? [])
 
 // ── Table ──────────────────────────────────────────────────────
 const tc = useTableControls<ShopItemSummary>({
@@ -405,7 +402,6 @@ const TYPE_COLOURS: Record<string, string> = {
           :releases="releases"
           :concerts="concerts"
           :posts="posts"
-          :videos="videos"
           :loading="create.isPending.value || update.isPending.value"
           :errors="fieldErrors"
           @submit="handleSubmit"

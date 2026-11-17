@@ -16,7 +16,6 @@ class EpkSnapshotBuilder
     {
         $profile = BandProfile::findOrFail(1)->load([
             'socialLinks',
-            'musicVideos',
             'epkRelease.links',
             'epkRelease.tracks.links',
             'epkTechRider.publishedVersion',
@@ -73,12 +72,6 @@ class EpkSnapshotBuilder
                 'url'      => $l->url,
                 'label'    => $l->label,
             ])->values()->all(),
-            'music_videos' => $profile->musicVideos->map(fn ($v) => [
-                'id'           => $v->id,
-                'title'        => $v->title,
-                'video_url'    => $v->video_url,
-                'published_at' => $v->published_at?->format('Y-m-d'),
-            ])->values()->all(),
             'featured_release' => $release ? [
                 'id'           => $release->id,
                 'title'        => $release->title,
@@ -120,6 +113,9 @@ class EpkSnapshotBuilder
                 'embed_id'    => EmbedProvider::embedId($c->url),
                 'title'       => Locales::resolve($c->getTranslations('title')),
                 'category'    => $c->category,
+                'source'      => $c->source,
+                'channel_name' => $c->channel_name,
+                'channel_url' => $c->channel_url,
                 'recorded_on' => $c->recorded_on?->format('Y-m-d'),
             ])->values()->all(),
             'upcoming_concerts' => $upcomingConcerts->map(fn ($c) => [

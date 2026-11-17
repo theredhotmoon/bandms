@@ -47,7 +47,7 @@ test('links two members to a clip and both persist', async ({ page, request, bas
     await members.locator('.checkbox-item').filter({ hasText: `${first} Clip${stamp}` }).locator('input').check()
   }
   await form.getByRole('button', { name: 'Update' }).click()
-  await expectToast(page, 'Clip updated')
+  await expectToast(page, 'Video updated')
 
   const clips = (await (await request.get(`${baseURL}/api/clips`)).json()).data as { id: number; member_ids: number[] }[]
   expect([...(clips.find((c) => c.id === clipId)?.member_ids ?? [])].sort()).toEqual([...memberIds].sort())

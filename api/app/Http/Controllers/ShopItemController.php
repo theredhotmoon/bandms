@@ -35,7 +35,7 @@ class ShopItemController extends Controller
     public function show(ShopItem $shopItem): ShopItemResource
     {
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -43,7 +43,7 @@ class ShopItemController extends Controller
     {
         $shopItem = ShopItem::whereSlug($slug)->firstOrFail();
         abort_if(! $shopItem->is_available, 404);
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'categories', 'variants', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -83,7 +83,7 @@ class ShopItemController extends Controller
         AlbumLinks::sync($item, $data);
         SiteRebuild::markDirty('shop');
 
-        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips', ...AlbumLinks::eager()]);
+        $item->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'categories', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($item);
     }
 
@@ -121,7 +121,7 @@ class ShopItemController extends Controller
         AlbumLinks::sync($shopItem, $data);
         SiteRebuild::markDirty('shop');
 
-        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'videos', 'categories', 'clips', ...AlbumLinks::eager()]);
+        $shopItem->load(['prices', 'photos', 'tags', 'releases', 'concerts', 'posts', 'categories', 'clips', ...AlbumLinks::eager()]);
         return new ShopItemResource($shopItem);
     }
 
@@ -239,7 +239,6 @@ class ShopItemController extends Controller
         $item->releases()->sync($request->input('release_ids', []));
         $item->concerts()->sync($request->input('concert_ids', []));
         $item->posts()->sync($request->input('post_ids', []));
-        $item->videos()->sync($request->input('video_ids', []));
         $item->categories()->sync($request->input('category_ids', []));
     }
 }

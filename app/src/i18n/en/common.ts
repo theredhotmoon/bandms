@@ -146,7 +146,6 @@ export default {
     tour: '+ New tour',
     post: '+ New post',
     album: '+ New photo album',
-    musicVideo: '+ New music video',
   },
   relations: {
     title: 'Link to…',
@@ -160,7 +159,6 @@ export default {
     // Badge on an album the public site does not show yet (draft or no photos).
     albumHidden: 'not on site',
     posts: 'Blog posts',
-    musicVideos: 'Music videos',
     press: 'Press',
   },
   imageUpload: {
@@ -172,6 +170,7 @@ export default {
     uploadFailed: 'Image upload failed',
   },
   clipCategory: {
+    music_video: 'Music video',
     live: 'Live',
     studio: 'Studio',
     backstage: 'Backstage',
@@ -180,15 +179,15 @@ export default {
     customPlaceholder: '…or type your own category',
   },
   clips: {
-    title: 'Clips',
-    saveFirst: 'Save first to add clips.',
-    detach: 'Detach clip',
+    title: 'Videos',
+    saveFirst: 'Save first to add videos.',
+    detach: 'Detach video',
     urlPlaceholder: 'Paste a video URL…',
-    add: 'Add clip',
-    added: 'Clip added',
-    addFailed: 'Failed to add clip',
-    detached: 'Clip detached',
-    detachFailed: 'Failed to detach clip',
+    add: 'Add video',
+    added: 'Video added',
+    addFailed: 'Failed to add video',
+    detached: 'Video detached',
+    detachFailed: 'Failed to detach video',
   },
   rebuildAreas: {
     'band-profile': 'Band Profile',
@@ -201,7 +200,7 @@ export default {
     setlists: 'Setlists',
     releases: 'Releases',
     photos: 'Photos',
-    'music-videos': 'Music Videos',
+    'music-videos': 'Videos',
     'press-releases': 'Press Releases',
     shop: 'Shop',
     faqs: 'FAQs',

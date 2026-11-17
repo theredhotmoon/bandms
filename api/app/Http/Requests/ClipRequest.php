@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Support\ClipOwners;
+use App\Support\ClipSource;
 use App\Support\EmbedProvider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,14 @@ class ClipRequest extends FormRequest
             'category'     => 'nullable|string|max:64',
             'recorded_on'  => 'nullable|date_format:Y-m-d',
             'show_in_epk'  => 'nullable|boolean',
+            'source'       => ['nullable', Rule::in(ClipSource::ALL)],
+            // Who published it — what a fan video's credit links to.
+            'channel_name' => 'nullable|string|max:255',
+            'channel_url'  => 'nullable|string|url|max:500',
+            // Filled by the form's Retrieve button, never typed.
+            'thumbnail_url' => 'nullable|string|url|max:1000',
+            'duration'     => 'nullable|string|max:20',
+            'view_count'   => 'nullable|integer|min:0',
             // Members in the clip. Absent leaves them alone; [] clears them.
             'member_ids'   => 'sometimes|nullable|array',
             'member_ids.*' => 'integer|distinct|exists:band_members,id',

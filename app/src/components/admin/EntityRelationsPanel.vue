@@ -7,7 +7,6 @@ import type { Album } from '@/types/album'
 import type { ReleaseSummary } from '@/types/release'
 import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
-import type { MusicVideo } from '@/types/musicVideo'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
 import { useTagLabel } from '@/composables/useTagLabel'
@@ -23,7 +22,6 @@ const props = defineProps<{
   releases?: ReleaseSummary[]
   tours?: TourSummary[]
   tags?: Tag[]
-  musicVideos?: MusicVideo[]
   pressReleases?: PressReleaseSummary[]
   shopItems?: ShopItemSummary[]
   /** Band members, for content that can be about several of them. */
@@ -36,14 +34,13 @@ const albumIds        = defineModel<number[]>('albumIds',        { default: () =
 const releaseIds      = defineModel<number[]>('releaseIds',      { default: () => [] })
 const tourIds         = defineModel<number[]>('tourIds',         { default: () => [] })
 const tagIds          = defineModel<number[]>('tagIds',          { default: () => [] })
-const musicVideoIds   = defineModel<number[]>('musicVideoIds',   { default: () => [] })
 const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
 const shopItemIds     = defineModel<number[]>('shopItemIds',     { default: () => [] })
 const memberIds       = defineModel<number[]>('memberIds',       { default: () => [] })
 
 const { t } = useI18n()
 
-type SectionKey = 'tags' | 'members' | 'concerts' | 'releases' | 'shopItems' | 'tours' | 'albums' | 'posts' | 'musicVideos' | 'pressReleases'
+type SectionKey = 'tags' | 'members' | 'concerts' | 'releases' | 'shopItems' | 'tours' | 'albums' | 'posts' | 'pressReleases'
 
 interface Item { id: number; label: string; badge?: string }
 interface Section {
@@ -57,14 +54,14 @@ interface Section {
 
 const expanded = reactive<Record<SectionKey, boolean>>({
   tags: false, members: false, concerts: false, releases: false, shopItems: false,
-  tours: false, albums: false, posts: false, musicVideos: false, pressReleases: false,
+  tours: false, albums: false, posts: false, pressReleases: false,
 })
 
 // Every section can create its record in place (EntityQuickAdd); tags have
 // TagQuickAdd.
 const QUICK_ADD: Record<Exclude<SectionKey, 'tags'>, QuickAddEntity> = {
   members: 'member', concerts: 'concert', releases: 'release', shopItems: 'shop_item',
-  tours: 'tour', posts: 'post', pressReleases: 'press_release', albums: 'album', musicVideos: 'music_video',
+  tours: 'tour', posts: 'post', pressReleases: 'press_release', albums: 'album',
 }
 
 // One list drives the template, so every section gets the same toggle,
@@ -120,11 +117,6 @@ const sections = computed<Section[]>(() => {
     key: 'posts', title: t('common.relations.posts'),
     items: props.posts.map(p => ({ id: p.id, label: p.title })),
     ids: postIds.value, set: v => (postIds.value = v),
-  })
-  if (props.musicVideos) out.push({
-    key: 'musicVideos', title: t('common.relations.musicVideos'),
-    items: props.musicVideos.map(v => ({ id: v.id, label: v.og_title ?? v.title })),
-    ids: musicVideoIds.value, set: v => (musicVideoIds.value = v),
   })
   if (props.pressReleases) out.push({
     key: 'pressReleases', title: t('common.relations.press'),

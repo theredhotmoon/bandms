@@ -59,7 +59,6 @@ export interface ShopItem extends ShopItemSummary {
   release_ids: number[]
   concert_ids: number[]
   post_ids: number[]
-  video_ids: number[]
   /** Linked photo albums ("Link to… → Photo albums"), in order. */
   album_ids?: number[]
   category_ids: number[]
@@ -81,7 +80,6 @@ export interface ShopItemPayload {
   release_ids: number[]
   concert_ids: number[]
   post_ids: number[]
-  video_ids: number[]
   /** Linked photo albums ("Link to… → Photo albums"), in order. */
   album_ids?: number[]
   category_ids: number[]

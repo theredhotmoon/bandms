@@ -10,6 +10,9 @@ import { defineConfig, devices } from '@playwright/test'
 const EPK_PUBLISHING_SPECS = [
   /epk-versions\.spec\.ts/,
   /clips-surfaces\.spec\.ts/,
+  // Not an EPK spec, but it switches the releases module on and off as
+  // clips-surfaces does, so it chains after it (videos-public below).
+  /videos-page\.spec\.ts/,
   /epk-modal\.spec\.ts/,
   /band-profile-rider\.spec\.ts/,
   /band-profile\.spec\.ts/,
@@ -176,6 +179,15 @@ export default defineConfig({
       testMatch: /clips-surfaces\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['epk-admin'],
+    },
+    // videos-page switches the videos and releases modules on for its run and
+    // back off after, as clips-surfaces does for releases — run in parallel,
+    // one would switch a module off under the other. Chained after it.
+    {
+      name: 'videos-public',
+      testMatch: /videos-page\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['epk-public'],
     },
     // band-profile.spec.ts performs several whole-form Saves against the same
     // band_profiles row the rider specs link, each resending whatever

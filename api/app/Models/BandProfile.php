@@ -91,11 +91,6 @@ class BandProfile extends Model
         return $this->hasMany(Testimonial::class, 'profile_id')->orderBy('sort_order')->orderBy('id');
     }
 
-    public function musicVideos(): HasMany
-    {
-        return $this->hasMany(MusicVideo::class, 'profile_id')->orderBy('sort_order')->orderBy('id');
-    }
-
     public function epkRelease(): BelongsTo
     {
         return $this->belongsTo(Release::class, 'epk_release_id');

@@ -10,7 +10,6 @@ import { useCreateBandMemberWithPhoto } from '@/composables/useBandMembers'
 import { useCreateTour } from '@/composables/useTours'
 import { useCreatePost } from '@/composables/usePosts'
 import { useCreateAlbumWithPhotos, type AlbumUpload } from '@/composables/useAlbums'
-import { useCreateMusicVideo } from '@/composables/useMusicVideos'
 import type { ConcertPayload } from '@/types/concert'
 import type { ReleasePayload } from '@/types/release'
 import type { PressReleasePayload } from '@/types/press-release'
@@ -18,10 +17,9 @@ import type { ShopItemPayload } from '@/types/shop'
 import type { TourPayload } from '@/types/tour'
 import type { PostPayload } from '@/types/post'
 import type { BandMemberPayload } from '@bandms/rider-core'
-import type { MusicVideoPayload } from '@/types/musicVideo'
 
 /** The records a picker can create in place: each has a reusable admin form. */
-export type QuickAddEntity = 'concert' | 'release' | 'press_release' | 'shop_item' | 'member' | 'tour' | 'post' | 'album' | 'music_video'
+export type QuickAddEntity = 'concert' | 'release' | 'press_release' | 'shop_item' | 'member' | 'tour' | 'post' | 'album'
 
 /**
  * "+ New …" beside a picker of related records — a post's reference block,
@@ -86,10 +84,6 @@ const FACTORIES: Record<QuickAddEntity, () => Omit<Config, 'button' | 'title' | 
     const create = useCreateAlbumWithPhotos()
     return { width: '64rem', create: (p) => create(p as AlbumUpload) }
   },
-  music_video: () => {
-    const create = useCreateMusicVideo()
-    return { width: '32rem', create: (p) => create.mutateAsync(p as MusicVideoPayload) }
-  },
 }
 const mounted = FACTORIES[props.entity]()
 
@@ -107,7 +101,6 @@ const FORMS: Record<QuickAddEntity, Component> = {
   tour:          defineAsyncComponent(() => import('./TourQuickAddForm.vue')),
   post:          defineAsyncComponent(() => import('./PostQuickAddForm.vue')),
   album:         defineAsyncComponent(() => import('./AlbumQuickAddForm.vue')),
-  music_video:   defineAsyncComponent(() => import('./MusicVideoQuickAddForm.vue')),
 }
 
 const LABELS: Record<QuickAddEntity, () => Pick<Config, 'button' | 'title' | 'success'>> = {
@@ -119,7 +112,6 @@ const LABELS: Record<QuickAddEntity, () => Pick<Config, 'button' | 'title' | 'su
   tour:          () => ({ button: t('common.quickAdd.tour'),       title: t('shows.tours.modalNew'),     success: t('shows.tours.created') }),
   post:          () => ({ button: t('common.quickAdd.post'),       title: t('content.posts.modalNew'),   success: t('content.posts.created') }),
   album:         () => ({ button: t('common.quickAdd.album'),      title: t('media.photos.modalNew'),    success: t('media.photos.albumAdded') }),
-  music_video:   () => ({ button: t('common.quickAdd.musicVideo'), title: t('media.videos.modalNew'),    success: t('media.videos.added') }),
 }
 const config = computed<Config>(() => ({ ...mounted, ...LABELS[props.entity]() }))
 </script>

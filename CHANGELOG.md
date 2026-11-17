@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-16 (one video library: official and fan videos)
+
+### Changed
+- **Music videos and clips are now one admin page, *Videos*.** Every video about the band lives there, whatever site it is on: music videos, live sets, backstage footage, interviews. Each one can still be attached to the shows, releases and merch it belongs with, and to the band members in it. All existing music videos moved in automatically, keeping their links from news posts, merch items and member pages. The old *Music videos* address opens the new page.
+- **The public Videos page shows the whole library in one list**, newest first, not just music videos. The Music page still shows only the music videos.
+- **A member's page shows all their videos in one section**, music videos included.
+
+### Added
+- **Mark a video as *Official* or *Fan video*.** A fan video carries a *Fan video* label on the site and a *Filmed by …* credit that links to the channel that posted it. Both texts can be edited in *Website modules → Site*.
+- **The video form can fill itself in.** *Retrieve* reads the title, channel and thumbnail from YouTube, Vimeo or TikTok. It fills only empty fields and never overwrites what you typed.
+- **The Videos page in the admin shows a thumbnail, who made each video and its YouTube views**, can be filtered to official or fan videos, and keeps the *Sync YouTube views* button. View sync now covers every YouTube video in the library, fan videos included.
+- A *Music video* category beside *Live*, *Studio*, *Backstage*, *Interview* and *Other*.
+
+### Removed
+- **The *Music videos* section of the merch item form.** Videos are linked to merch from the video's own form now, and the links the old section held moved there. They now also show on the merch item's page.
+
 ## [Unreleased] — 2026-11-16 (a page for every photo album, linked from news, shows, releases and merch)
 
 ### Added

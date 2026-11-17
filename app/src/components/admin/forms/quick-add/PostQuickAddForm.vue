@@ -5,7 +5,6 @@ import { useConcerts } from '@/composables/useConcerts'
 import { useBandMembers } from '@/composables/useBandMembers'
 import { useAlbums } from '@/composables/useAlbums'
 import { useReleases } from '@/composables/useReleases'
-import { useMusicVideos } from '@/composables/useMusicVideos'
 import { usePressReleases } from '@/composables/usePressReleases'
 import { useShop } from '@/composables/useShop'
 import { useClips } from '@/composables/useClips'
@@ -24,7 +23,6 @@ const { query: concertsQ } = useConcerts()
 const { query: membersQ } = useBandMembers()
 const { query: albumsQ } = useAlbums()
 const { query: releasesQ } = useReleases()
-const { query: musicVideosQ } = useMusicVideos()
 const { query: pressReleasesQ } = usePressReleases()
 const { query: shopItemsQ } = useShop()
 const { query: clipsQ } = useClips()
@@ -38,7 +36,6 @@ const { query: clipsQ } = useClips()
     :members="membersQ.data.value ?? []"
     :albums="albumsQ.data.value ?? []"
     :releases="releasesQ.data.value ?? []"
-    :music-videos="musicVideosQ.data.value ?? []"
     :press-releases="pressReleasesQ.data.value ?? []"
     :shop-items="shopItemsQ.data.value ?? []"
     :clips="clipsQ.data.value ?? []"

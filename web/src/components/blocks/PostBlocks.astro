@@ -2,6 +2,7 @@
 import type { PostBlock } from '@/types/post'
 import type { Locale } from '@/types/shared'
 import type { SlugMap } from '@/lib/slugs'
+import type { ClipCategoryCopy } from '@/lib/clipCategory'
 import TextBlock  from './TextBlock.astro'
 import ImageBlock from './ImageBlock.astro'
 import EmbedBlock from './EmbedBlock.astro'
@@ -12,8 +13,10 @@ interface Props {
   lang: Locale
   slugMap: SlugMap
   modules: Record<string, boolean>
+  /** The site module's clip copy — a fan video's label and credit. */
+  clipCopy: ClipCategoryCopy
 }
-const { blocks, lang, slugMap, modules } = Astro.props
+const { blocks, lang, slugMap, modules, clipCopy } = Astro.props
 
 const KNOWN = new Set(['text', 'image', 'embed', 'ref'])
 
@@ -42,5 +45,5 @@ const firstPressId = renderable.find(b => b.type === 'ref' && b.entity === 'pres
 : block.type === 'image' ? <ImageBlock block={block} />
 : block.type === 'embed' ? <EmbedBlock block={block} />
 : <RefBlock block={block} lang={lang} slugMap={slugMap} modules={modules}
-            isFirstPress={block.id === firstPressId} />
+            isFirstPress={block.id === firstPressId} clipCopy={clipCopy} />
 ))}

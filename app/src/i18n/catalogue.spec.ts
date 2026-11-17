@@ -14,6 +14,8 @@
  * check-i18n-coverage skips src/i18n entirely.
  */
 import { describe, it, expect } from 'vitest'
+import { CLIP_SOURCES, sourceMessageKey } from '@/utils/clipSources'
+import { CLIP_CATEGORY_PRESETS } from '@/utils/clipCategories'
 import { createI18n } from 'vue-i18n'
 import en from './en'
 import pl from './pl'
@@ -93,7 +95,7 @@ describe('i18n catalogues', () => {
         'band.setups.waiting',
         'media.releases.uploadPhotos',
         'media.releases.photosAdded',
-        'media.videos.syncResult',
+        'band.clips.sync.done',
         'media.photos.photoCount',
         'media.photos.albumCreated',
         'media.photos.uploadN',
@@ -289,11 +291,17 @@ describe('i18n catalogues', () => {
       }
     })
 
-    it('media.videos.hosts covers every videoHost() return', () => {
-      // videoHost() returns a key now, not a label — YouTube and Vimeo are
-      // brand names but the fallback is a generic noun that translates.
-      for (const h of ['youtube', 'vimeo', 'other']) {
-        expect(has(`media.videos.hosts.${h}`), h).toBe(true)
+    it('band.clips.source covers every CLIP_SOURCES entry', () => {
+      // sourceMessageKey() builds the key, so neither the types nor the
+      // key guard can see a source the catalogue is missing.
+      for (const s of CLIP_SOURCES) {
+        expect(has(sourceMessageKey(s)), s).toBe(true)
+      }
+    })
+
+    it('common.clipCategory covers every preset', () => {
+      for (const c of CLIP_CATEGORY_PRESETS) {
+        expect(has(`common.clipCategory.${c}`), c).toBe(true)
       }
     })
 

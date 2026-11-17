@@ -3,6 +3,8 @@ import type { RefBlock } from '@/types/post'
 import type { Locale } from '@/types/shared'
 import type { SlugMap } from '@/lib/slugs'
 import { refHref } from '@/lib/refHref'
+import { clipCredit } from '@/lib/clipCategory'
+import type { ClipCategoryCopy, CreditableClip } from '@/lib/clipCategory'
 import EmbedBlock from './EmbedBlock.astro'
 
 interface Props {
@@ -12,8 +14,10 @@ interface Props {
   modules: Record<string, boolean>
   /** Press coverage renders as the pull quote when it is the first one. */
   isFirstPress?: boolean
+  /** The site module's clip copy — labels and credits a fan video. */
+  clipCopy: ClipCategoryCopy
 }
-const { block, lang, slugMap, modules, isFirstPress = false } = Astro.props
+const { block, lang, slugMap, modules, isFirstPress = false, clipCopy } = Astro.props
 
 // data is never null here — PostBlocks filters those out before rendering.
 const data = block.data!
@@ -33,19 +37,25 @@ const clipConcert = block.entity === 'clip' && data.concert
 const clipConcertLabel = block.entity === 'clip' && data.concert
   ? [data.concert.venue?.name, data.concert.date].filter(Boolean).join(' · ')
   : ''
+const clipFan = block.entity === 'clip' && data.source === 'fan'
+const credit = block.entity === 'clip' ? clipCredit(data as CreditableClip, clipCopy) : null
 ---
 
 {block.entity === 'clip' ? (
   <figure class="art-clip">
     <EmbedBlock block={{ provider: data.provider, url: data.url, label: data.title ?? null, embed_id: data.embed_id ?? null }} />
-    {(label || clipConcertLabel) && (
+    {(label || clipConcertLabel || clipFan) && (
       <figcaption class="art-clip-cap">
+        {clipFan && <span class="art-clip-fan" data-testid="clip-fan-label">{clipCopy.clipFan}</span>}
         {label && <span class="art-clip-title">{label}</span>}
         {clipConcertLabel && (clipConcert ? (
           <a href={clipConcert.href} class="art-clip-show">{clipConcertLabel} →</a>
         ) : (
           <span class="art-clip-show art-clip-show--dead">{clipConcertLabel}</span>
         ))}
+        {credit && (credit.href
+          ? <a href={credit.href} class="art-clip-credit" target="_blank" rel="noopener noreferrer" data-testid="clip-credit">{credit.text} ↗</a>
+          : <span class="art-clip-credit" data-testid="clip-credit">{credit.text}</span>)}
       </figcaption>
     )}
   </figure>
@@ -124,4 +134,11 @@ const clipConcertLabel = block.entity === 'clip' && data.concert
   .art-clip-show { color: var(--color-accent); text-decoration: none; font-weight: 700; }
   .art-clip-show:hover { text-decoration: underline; }
   .art-clip-show--dead { color: var(--color-muted); }
+  .art-clip-fan {
+    font: 800 11px/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase;
+    border: 2px solid var(--color-border); padding: 3px 6px; color: var(--color-ink);
+  }
+  .art-clip-credit { flex-basis: 100%; color: var(--color-muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+  a.art-clip-credit { color: var(--color-accent); }
+  a.art-clip-credit:hover { text-decoration: underline; }
 </style>

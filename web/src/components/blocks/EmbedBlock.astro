@@ -1,5 +1,6 @@
 ---
 import type { EmbedProviderName } from '@/types/post'
+import { embedSrc, isAudioProvider } from '@/lib/embed'
 
 /** The fields an iframe needs — an embed block or a clip, either works. */
 export interface EmbedLike {
@@ -12,26 +13,10 @@ export interface EmbedLike {
 interface Props { block: EmbedLike }
 const { block } = Astro.props
 
-/**
- * Every provider is an iframe — no third-party JavaScript anywhere.
- * Instagram and TikTok also publish blockquote-plus-script embeds, but the
- * public specs run failOnPageError(), so a third-party script that throws
- * would fail specs that have nothing to do with this page.
- */
-const SRC: Record<string, (id: string) => string> = {
-  youtube:   id => `https://www.youtube-nocookie.com/embed/${id}`,
-  vimeo:     id => `https://player.vimeo.com/video/${id}`,
-  instagram: id => `https://www.instagram.com/p/${id}/embed`,
-  tiktok:    id => `https://www.tiktok.com/embed/v2/${id}`,
-  facebook:    id => `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(id)}&show_text=false`,
-  spotify:     id => `https://open.spotify.com/embed/${id}`,
-  soundcloud:  id => `https://w.soundcloud.com/player/?url=${encodeURIComponent(id)}&visual=false`,
-  apple_music: id => `https://embed.music.apple.com${id}`,
-}
-
 // A provider with no extractable id falls back to a link row rather than an
-// iframe with a broken src.
-const src = block.embed_id && SRC[block.provider] ? SRC[block.provider](block.embed_id) : null
+// iframe with a broken src. The player URLs live in lib/embed.ts, shared
+// with the Videos page's gallery.
+const src = embedSrc(block.provider, block.embed_id)
 
 /**
  * Video players fill a 16:9 box. Audio players are fixed-height widgets and
@@ -40,14 +25,11 @@ const src = block.embed_id && SRC[block.provider] ? SRC[block.provider](block.em
  * defaults.
  */
 type Shape = { kind: 'video' } | { kind: 'audio'; height: number }
-const SHAPE: Record<string, Shape> = {
-  youtube: { kind: 'video' }, vimeo: { kind: 'video' }, instagram: { kind: 'video' },
-  tiktok: { kind: 'video' }, facebook: { kind: 'video' },
-  spotify: { kind: 'audio', height: 352 },
-  soundcloud: { kind: 'audio', height: 166 },
-  apple_music: { kind: 'audio', height: 450 },
-}
-const shape: Shape = SHAPE[block.provider] ?? { kind: 'video' }
+// Which providers are audio is lib/embed.ts's list; only the heights live here.
+const AUDIO_HEIGHT: Record<string, number> = { spotify: 352, soundcloud: 166, apple_music: 450 }
+const shape: Shape = isAudioProvider(block.provider)
+  ? { kind: 'audio', height: AUDIO_HEIGHT[block.provider] ?? 166 }
+  : { kind: 'video' }
 ---
 
 {src ? (

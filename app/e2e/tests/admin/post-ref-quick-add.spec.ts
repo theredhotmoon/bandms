@@ -96,7 +96,6 @@ test.describe('Post block — reference created from the block', () => {
       ['concert', 'New concert'],
       ['album', 'New Photo Album'],
       ['release', 'New release'],
-      ['music_video', 'Add video'],
       ['shop_item', 'New shop item'],
     ]
     for (const [entity, heading] of forms) {

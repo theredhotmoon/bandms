@@ -6,7 +6,6 @@ import type { Tag } from '@/types/tag'
 import type { ReleaseSummary } from '@/types/release'
 import type { Concert } from '@/types/concert'
 import type { PostSummary } from '@/types/post'
-import type { MusicVideo } from '@/types/musicVideo'
 import type { Album } from '@/types/album'
 import EntityRelationsPanel from '@/components/admin/EntityRelationsPanel.vue'
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
@@ -30,7 +29,6 @@ const props = defineProps<{
   releases: ReleaseSummary[]
   concerts: Concert[]
   posts: PostSummary[]
-  videos: MusicVideo[]
   categories: ShopCategory[]
   /** Photo albums for "Link to… → Photo albums"; the section is hidden without it. */
   albums?: Album[]
@@ -57,7 +55,6 @@ const form = reactive({
   release_ids:       [] as number[],
   concert_ids:       [] as number[],
   post_ids:          [] as number[],
-  video_ids:         [] as number[],
   album_ids:         [] as number[],
   category_ids:      [] as number[],
 })
@@ -99,7 +96,6 @@ watch(
       form.release_ids      = []
       form.concert_ids      = []
       form.post_ids         = []
-      form.video_ids        = []
       form.album_ids        = []
       form.category_ids     = []
     } else {
@@ -116,7 +112,6 @@ watch(
       form.release_ids      = item.release_ids ?? []
       form.concert_ids      = item.concert_ids ?? []
       form.post_ids         = item.post_ids ?? []
-      form.video_ids        = item.video_ids ?? []
       form.album_ids        = item.album_ids ? [...item.album_ids] : []
       form.category_ids     = item.category_ids ?? []
     }
@@ -216,7 +211,6 @@ function handleSubmit() {
     release_ids:      form.release_ids,
     concert_ids:      form.concert_ids,
     post_ids:         form.post_ids,
-    video_ids:        form.video_ids,
     category_ids:     form.category_ids,
     // Only from a host that renders the Photo albums section (passes the
     // list, even empty): one that does not would otherwise clear every link.
@@ -388,12 +382,10 @@ function handleSubmit() {
       :releases="releases"
       :concerts="concerts"
       :posts="posts"
-      :musicVideos="videos"
       v-model:tagIds="form.tag_ids"
       v-model:releaseIds="form.release_ids"
       v-model:concertIds="form.concert_ids"
       v-model:postIds="form.post_ids"
-      v-model:musicVideoIds="form.video_ids"
       :albums="albums"
       v-model:albumIds="form.album_ids"
     />

@@ -15,7 +15,6 @@ export interface RefEntityLists {
   concert:       { id: number; label: string }[]
   album:         { id: number; label: string }[]
   release:       { id: number; label: string }[]
-  music_video:   { id: number; label: string }[]
   press_release: { id: number; label: string }[]
   shop_item:     { id: number; label: string }[]
   clip:          { id: number; label: string }[]
@@ -30,7 +29,6 @@ const ENTITY_LABELS = computed<Record<RefEntity, string>>(() => ({
   concert: t('content.blocks.ref.entity.concert'),
   album: t('content.blocks.ref.entity.album'),
   release: t('content.blocks.ref.entity.release'),
-  music_video: t('content.blocks.ref.entity.video'),
   press_release: t('content.blocks.ref.entity.press'),
   shop_item: t('content.blocks.ref.entity.shop'),
   clip: t('content.blocks.ref.entity.clip'),
@@ -42,7 +40,7 @@ const items  = computed(() => props.entities[entity.value] ?? [])
 // Every reference target but the clip can be created in place; the clip has
 // its own "Add a new clip…" below.
 const QUICK_ADD: Partial<Record<RefEntity, QuickAddEntity>> = {
-  concert: 'concert', album: 'album', release: 'release', music_video: 'music_video',
+  concert: 'concert', album: 'album', release: 'release',
   press_release: 'press_release', shop_item: 'shop_item',
 }
 const quickAdd = computed(() => QUICK_ADD[entity.value])

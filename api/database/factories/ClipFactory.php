@@ -15,6 +15,13 @@ class ClipFactory extends Factory
             'category'    => 'live',
             'recorded_on' => fake()->optional()->date(),
             'show_in_epk' => false,
+            'source'      => 'official',
         ];
+    }
+
+    /** Someone else filmed it; the band shows it with a credit. */
+    public function fan(string $channel = 'Gig Goer', string $url = 'https://www.youtube.com/@giggoer'): static
+    {
+        return $this->state(['source' => 'fan', 'category' => 'live', 'channel_name' => $channel, 'channel_url' => $url]);
     }
 }

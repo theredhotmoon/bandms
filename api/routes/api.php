@@ -5,6 +5,7 @@ use App\Http\Controllers\CrawlerSettingsController;
 use App\Http\Controllers\AssistantBlockedSiteController;
 use App\Http\Controllers\AssistantFindingController;
 use App\Http\Controllers\ClipController;
+use App\Http\Controllers\ClipMetadataController;
 use App\Http\Controllers\ConcertTicketController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FaqController;
@@ -42,7 +43,6 @@ use App\Http\Controllers\ConcertController;
 use App\Http\Controllers\ContentLocaleController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
-use App\Http\Controllers\MusicVideoController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ReleaseController;
@@ -138,8 +138,6 @@ Route::get('/tours/{tour}', [TourController::class, 'show'])->name('api.tours.sh
 
 Route::get('/press-releases', [PressReleaseController::class, 'index'])->name('api.press-releases.index');
 Route::get('/press-releases/{pressRelease}', [PressReleaseController::class, 'show'])->name('api.press-releases.show');
-
-Route::get('/music-videos', [MusicVideoController::class, 'index'])->name('api.music-videos.index');
 
 Route::get('/clips', [ClipController::class, 'index'])->name('api.clips.index');
 
@@ -449,16 +447,13 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/press-releases/{pressRelease}', [PressReleaseController::class, 'update'])->name('api.press-releases.update');
         Route::delete('/press-releases/{pressRelease}', [PressReleaseController::class, 'destroy'])->name('api.press-releases.destroy');
 
-        Route::post('/music-videos', [MusicVideoController::class, 'store'])->name('api.music-videos.store');
-        Route::post('/music-videos/sync-views', [\App\Http\Controllers\YouTubeSyncController::class, 'syncViewCounts'])->name('api.music-videos.sync-views');
-        Route::post('/music-videos/retrieve-metadata', [MusicVideoController::class, 'retrieveMetadata'])->name('api.music-videos.retrieve-metadata');
-        Route::put('/music-videos/{musicVideo}', [MusicVideoController::class, 'update'])->name('api.music-videos.update');
-        Route::delete('/music-videos/{musicVideo}', [MusicVideoController::class, 'destroy'])->name('api.music-videos.destroy');
-        Route::post('/music-videos/{musicVideo}/fetch-preview', [MusicVideoController::class, 'fetchPreview'])->name('api.music-videos.fetch-preview');
-
         // Clips library. Attach/detach are the owner forms' quick paths, so a
         // concert form can add a clip without knowing the clip's other owners.
         Route::post('/clips', [ClipController::class, 'store'])->name('api.clips.store');
+        // Literal paths before /clips/{clip}: YouTube view sync, and the
+        // oEmbed lookup the form's Retrieve button fills itself from.
+        Route::post('/clips/sync-views', [ClipMetadataController::class, 'syncViews'])->name('api.clips.sync-views');
+        Route::post('/clips/retrieve-metadata', [ClipMetadataController::class, 'retrieve'])->name('api.clips.retrieve-metadata');
         Route::put('/clips/{clip}', [ClipController::class, 'update'])->name('api.clips.update');
         Route::delete('/clips/{clip}', [ClipController::class, 'destroy'])->name('api.clips.destroy');
         Route::post('/clips/{clip}/attach', [ClipController::class, 'attach'])->name('api.clips.attach');

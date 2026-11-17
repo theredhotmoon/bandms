@@ -154,7 +154,7 @@ test.describe('Music page', () => {
     test.skip((await card.count()) === 0, 'No music videos on this instance')
     await hydrated(page, '.vg-card')
 
-    await card.click()
+    await card.locator('.vg-open').click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 8000 })

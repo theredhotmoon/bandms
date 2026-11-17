@@ -21,13 +21,11 @@ test.describe('Admin — relations panel creates its own records', () => {
   let tourId: number | undefined
   let memberId: number | undefined
   let albumId: number | undefined
-  let videoId: number | undefined
 
   test.afterAll(async ({ request }) => {
     if (tourId) await request.delete(`/api/tours/${tourId}`, { headers: adminHeaders() })
     if (memberId) await request.delete(`/api/band-profile/members/${memberId}`, { headers: adminHeaders() })
     if (albumId) await request.delete(`/api/albums/${albumId}`, { headers: adminHeaders() })
-    if (videoId) await request.delete(`/api/music-videos/${videoId}`, { headers: adminHeaders() })
   })
 
   async function discard(page: import('@playwright/test').Page, outer: import('@playwright/test').Locator) {
@@ -126,32 +124,6 @@ test.describe('Admin — relations panel creates its own records', () => {
     await discard(page, outer)
   })
 
-  test('shop item form: a music video created from the Music videos section is ticked', async ({ page }) => {
-    const title = `E2E QuickAdd Video ${stamp}`
-    await page.goto('/admin/shop')
-    await page.locator('button.btn-add-primary').first().click()
-    const outer = page.locator('.modal-overlay').nth(0)
-    await expect(outer).toBeVisible()
-
-    const section = outer.locator('.assoc-section').filter({ hasText: 'Music videos' })
-    await section.locator('.assoc-toggle').click()
-    await section.getByTestId('quick-add-music_video').click()
-    const inner = page.locator('.modal-overlay').nth(1)
-    await expect(inner.getByRole('heading', { name: 'Add video' })).toBeVisible()
-
-    await inner.locator('input[type="url"]').fill(`https://youtu.be/e2e${stamp.replace(/\W/g, '')}`)
-    await inner.locator('input[placeholder="Video title"]').fill(title)
-    const created = page.waitForResponse(r => r.url().endsWith('/api/music-videos') && r.request().method() === 'POST')
-    await inner.getByRole('button', { name: 'Save' }).click()
-    videoId = ((await (await created).json()) as { data: { id: number } }).data.id
-    await expectToast(page, 'Music video added')
-    await expect(page.locator('.modal-overlay')).toHaveCount(1)
-
-    const item = section.locator('.checkbox-item').filter({ hasText: title })
-    await expect(item.locator('input[type="checkbox"]')).toBeChecked()
-
-    await discard(page, outer)
-  })
 
   test('shop item form: every section offers its form, and Escape closes only that form', async ({ page }) => {
     const errors: string[] = []
@@ -161,14 +133,13 @@ test.describe('Admin — relations panel creates its own records', () => {
     const outer = page.locator('.modal-overlay').nth(0)
     await expect(outer).toBeVisible()
 
-    // The shop item form links tags, releases, concerts, posts and videos.
+    // The shop item form links tags, releases, concerts and posts.
     // Sections are found by title: the button only renders once a section is
     // expanded, so it cannot be what identifies the section.
     const expected: [string, string, string][] = [
       ['Music releases', 'quick-add-release', 'New release'],
       ['Concerts', 'quick-add-concert', 'New concert'],
       ['Blog posts', 'quick-add-post', 'New post'],
-      ['Music videos', 'quick-add-music_video', 'Add video'],
     ]
     for (const [title, testId, heading] of expected) {
       const section = outer.locator('.assoc-section').filter({ hasText: title })

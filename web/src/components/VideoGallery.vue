@@ -2,20 +2,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { useShowMore } from '@/lib/showMore'
 import ShowMoreButton from './ShowMoreButton.vue'
-
-export interface GalleryVideo {
-  id: number
-  title: string
-  /** Channel or category line above the title. Empty renders nothing. */
-  kind: string
-  /** YouTube embed URL, or null when the URL could not be parsed. */
-  embedUrl: string | null
-  /** Fallback link, always present. */
-  watchUrl: string
-  thumb: string | null
-  duration: string | null
-  meta: string
-}
+import type { GalleryVideo } from '@/lib/videoGallery'
 
 const props = defineProps<{
   videos: readonly GalleryVideo[]
@@ -23,7 +10,7 @@ const props = defineProps<{
   watchLabel: string
   /**
    * Website Modules → Videos → Items per page; null shows everything. The
-   * Releases page passes none, and shows every video.
+   * Releases page passes none, and shows every music video.
    */
   perPage?: number | null
   /** Site-wide "Show more" label (the `site` module's copy). */
@@ -75,7 +62,9 @@ onMounted(() => {
 
 <template>
   <div id="video-grid" class="vg">
-    <button v-for="(video, i) in videos" :data-more-hidden="heldBack(i)" :key="video.id" type="button" class="vg-card" @click="open(video)">
+    <article v-for="(video, i) in videos" :data-more-hidden="heldBack(i)" :key="video.id" class="vg-card"
+             :data-source="video.fanLabel ? 'fan' : 'official'" data-testid="video-card">
+    <button type="button" class="vg-open" @click="open(video)">
       <span class="vg-thumb">
         <img v-if="video.thumb" :src="video.thumb" :alt="video.title" loading="lazy" />
         <span v-else class="vg-thumb-fallback" aria-hidden="true" />
@@ -85,6 +74,7 @@ onMounted(() => {
           </svg>
         </span>
         <span v-if="video.duration" class="vg-dur">{{ video.duration }}</span>
+        <span v-if="video.fanLabel" class="vg-fan" data-testid="video-fan-label">{{ video.fanLabel }}</span>
       </span>
       <span class="vg-body">
         <span v-if="video.kind" class="vg-kind">{{ video.kind }}</span>
@@ -92,6 +82,11 @@ onMounted(() => {
         <span v-if="video.meta" class="vg-meta">{{ video.meta }}</span>
       </span>
     </button>
+    <p v-if="video.credit" class="vg-credit" data-testid="video-credit">
+      <a v-if="video.credit.href" :href="video.credit.href" target="_blank" rel="noopener noreferrer">{{ video.credit.text }} ↗</a>
+      <span v-else>{{ video.credit.text }}</span>
+    </p>
+    </article>
   </div>
   <ShowMoreButton v-if="hasMore" list="video-grid" :label="showMoreLabel" @click="showMore" />
 
@@ -131,15 +126,20 @@ onMounted(() => {
 }
 
 .vg-card {
-  all: unset;
   box-sizing: border-box;
-  display: block;
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
   border: var(--border-width-card) solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-body);
 }
-.vg-card:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+.vg-open {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  cursor: pointer;
+}
+.vg-open:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 
 .vg-thumb {
   position: relative;
@@ -186,6 +186,29 @@ onMounted(() => {
 }
 
 .vg-body { display: block; padding: 14px 16px 16px; }
+
+/* A fan's footage: a label on the frame, and the channel credited below. */
+.vg-fan {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--color-page);
+  color: var(--color-ink);
+  border: 2px solid var(--color-border);
+  font: 800 11px/1 var(--font-body);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 5px 8px;
+}
+.vg-credit {
+  margin: auto 0 0;
+  padding: 0 16px 14px;
+  font: 600 13px/1.3 var(--font-body);
+  color: var(--color-muted);
+}
+.vg-credit a { color: var(--color-accent); text-decoration: none; }
+.vg-credit a:hover { text-decoration: underline; }
+.vg-credit a:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 
 .vg-kind {
   display: block;

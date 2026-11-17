@@ -62,7 +62,7 @@ type GroupId = 'band' | 'content' | 'shows' | 'more' | 'pageconfig'
 
 const groupRoutes: Record<GroupId, string[]> = {
   band:       [adminUrl('my-profile'), adminUrl('my-setups'), adminUrl('band-profile'), adminUrl('band-members'),
-               adminUrl('releases'), adminUrl('music-videos'), adminUrl('clips'), adminUrl('photos'), adminUrl('band-calendar'),
+               adminUrl('releases'), adminUrl('clips'), adminUrl('photos'), adminUrl('band-calendar'),
                adminUrl('tech-rider'), adminUrl('setlists')],
   content:    [adminUrl('posts'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
   shows:      [adminUrl('concerts'), adminUrl('tours'), adminUrl('venues'), adminUrl('door')],
@@ -168,10 +168,6 @@ watch(() => route.path, (path) => {
               <RouterLink :to="adminUrl('releases')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                 {{ $t('shell.nav.releases') }}
-              </RouterLink>
-              <RouterLink :to="adminUrl('music-videos')" class="nav-item" active-class="nav-item--active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                {{ $t('shell.nav.musicVideos') }}
               </RouterLink>
               <RouterLink :to="adminUrl('clips')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>

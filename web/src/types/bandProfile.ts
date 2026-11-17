@@ -86,13 +86,6 @@ export interface EpkTestimonial {
   quote: string
 }
 
-export interface EpkMusicVideo {
-  id: number
-  title: string
-  video_url: string
-  published_at: string | null
-}
-
 /** A clip frozen in the snapshot — what ClipsGrid renders, title already resolved. */
 export type EpkClip = RenderableClip
 
@@ -118,7 +111,6 @@ export interface EpkData {
   // versions store a frozen snapshot — so older snapshots will never carry the
   // field even if the builder starts sending it. Consumers must guard.
   testimonials?: EpkTestimonial[]
-  music_videos: EpkMusicVideo[]
   // Optional for the same reason as testimonials: snapshots published before
   // the builder emitted clips never carry the key. Read as `epk.clips ?? []`.
   clips?: EpkClip[]

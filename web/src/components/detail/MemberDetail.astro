@@ -6,7 +6,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import Icon from '@/components/Icon.astro'
 import MemberPhotoGrid from '@/components/MemberPhotoGrid.vue'
-import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases, getMusicVideos, getPressReleases } from '@/lib/cms'
+import { getMembers, getBandProfile, getSiteConfig, getAllPosts, getConcerts, getClips, getReleases, getPressReleases } from '@/lib/cms'
 import ClipsGrid from '@/components/ClipsGrid.astro'
 import { fmtDate, postSlug } from '@/lib/i18n'
 import { getSlugMap } from '@/lib/slugs'
@@ -27,7 +27,7 @@ interface Props {
 
 const { lang, alternates, itemId } = Astro.props
 
-const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases, allVideos, allPress] = await Promise.all([
+const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, allReleases, allPress] = await Promise.all([
   getMembers(lang),
   getBandProfile(lang),
   getSiteConfig(lang),
@@ -36,7 +36,6 @@ const [members, profile, siteConfig, slugMap, allPosts, allConcerts, allClips, a
   getConcerts(lang),
   getClips(lang),
   getReleases(lang),
-  getMusicVideos(),
   // Same fallback as the Press section: an unreachable list hides the block
   // rather than failing the whole build.
   getPressReleases().catch(() => []),
@@ -88,7 +87,8 @@ const gigs = siteConfig.modules.concerts === false ? [] : (member.concert_ids ??
     href: `${concertsHref}/${c.slug}`,
   }))
 
-// Clips the member appears in, in the API's order (most recent first). Clips
+// Videos the member appears in — official and fan footage, former music
+// videos included — in the API's order (most recent first). Videos
 // have no module of their own — they render on concerts, releases and merch
 // whatever is switched on — so this block is not gated.
 const clipsById = new Map(allClips.map((c) => [c.id, c]))
@@ -111,13 +111,6 @@ const discography = siteConfig.modules.releases === false ? [] : (member.release
     href: `${releasesHref}/${r.id}`,
   }))
 
-// Music videos the member appears in, newest first. The API sends published
-// ones only; each opens the video itself. Gated on the videos module.
-const videosById = new Map(allVideos.map((v) => [v.id, v]))
-const videos = siteConfig.modules.videos === false ? [] : (member.music_video_ids ?? [])
-  .map((id) => videosById.get(id))
-  .filter((v): v is NonNullable<typeof v> => Boolean(v))
-  .map((v) => ({ id: v.id, title: v.title, thumb: v.og_image, href: v.video_url }))
 
 // Press articles about the member, in the API's order (newest first, undated
 // last). Each opens the article itself, on the outlet's site. Gated on the
@@ -314,23 +307,6 @@ const structuredData = {
     </section>
   )}
 
-  {videos.length > 0 && (
-    <section class="md-sec page-content" data-testid="member-videos">
-      <h2 class="md-h2">{t.memberVideos}</h2>
-      <ul class="md-releases">
-        {videos.map((v) => (
-          <li>
-            <a class="md-release" href={v.href} target="_blank" rel="noopener" data-testid="member-video">
-              <span class="md-release-cover md-video-thumb">
-                {v.thumb ? <img src={v.thumb} alt="" loading="lazy" /> : <span class="md-photo-fallback" aria-hidden="true" />}
-              </span>
-              <span class="md-release-title">{v.title}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
 
   {press.length > 0 && (
     <section class="md-sec page-content" data-testid="member-press">
@@ -454,7 +430,6 @@ const structuredData = {
   .md-release-cover { display: block; aspect-ratio: 1; border-radius: var(--radius-card); overflow: hidden; background: var(--color-surface-2); box-shadow: var(--shadow-card); }
   .md-release-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .md-release:hover .md-release-title { color: var(--color-accent); }
-  .md-video-thumb { aspect-ratio: 16 / 9; }
   .md-release-title { font: 700 16px/1.3 var(--font-body); }
   .md-release-year { font: 600 13px/1 var(--font-body); color: var(--color-muted); }
   .md-gear-soon { margin: 4px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--color-muted); }

@@ -49,7 +49,6 @@ class ShopItemResource extends JsonResource
             'release_ids'      => $this->releases->pluck('id')->values(),
             'concert_ids'      => $this->concerts->pluck('id')->values(),
             'post_ids'         => $this->posts->pluck('id')->values(),
-            'video_ids'        => $this->videos->pluck('id')->values(),
             'category_ids'     => $this->categories->pluck('id')->values(),
             // The public shop detail page renders category names. It only ever
             // received ids, so `item.categories` was undefined and reading

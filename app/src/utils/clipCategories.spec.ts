@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { CLIP_CATEGORY_PRESETS, isPresetCategory, presetMessageKey } from './clipCategories'
 
 describe('clipCategories', () => {
-  it('lists the five presets in order', () => {
-    expect(CLIP_CATEGORY_PRESETS).toEqual(['live', 'studio', 'backstage', 'interview', 'other'])
+  // music_video first: former music videos carry it, and the Music page lists it.
+  it('lists the six presets in order', () => {
+    expect(CLIP_CATEGORY_PRESETS).toEqual(['music_video', 'live', 'studio', 'backstage', 'interview', 'other'])
   })
   it('tells a preset from a custom category', () => {
     expect(isPresetCategory('studio')).toBe(true)
