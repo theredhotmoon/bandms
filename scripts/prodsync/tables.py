@@ -9,7 +9,7 @@ from typing import Iterable
 # never touches these; everything else is content. A new migration's table is
 # therefore content by default - the flows print it so that is never silent.
 PROD_ONLY_TABLES = frozenset({
-    "users", "fan_accounts", "allowed_emails",
+    "users", "fan_accounts", "post_comments", "allowed_emails",
     "orders", "order_items", "tickets", "ticket_transfers",
     "presale_codes", "presale_code_tiers", "promo_codes",
     "newsletter_subscribers", "tech_rider_confirmations",

@@ -63,6 +63,7 @@ trait PostRules
             // another folder — the controller deletes whatever path it replaces.
             'image'         => ['nullable', 'string', 'max:255', 'regex:#^post-images/[A-Za-z0-9_-]+\.(jpe?g|png|gif|webp)$#i'],
             'published_at'  => 'nullable|date',
+            'comments_enabled' => 'sometimes|boolean',
             'event_date_display' => ['nullable', Rule::in(['range', 'list'])],
             'tag_ids.*'     => 'integer|exists:tags,id',
             'concert_ids'   => 'nullable|array',

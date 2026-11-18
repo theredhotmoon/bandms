@@ -75,6 +75,8 @@ export interface PostSummary {
   translation_gaps?: Partial<Record<string, TranslationGap[]>>
   excerpt: string
   published_at: string | null
+  /** Whether the public page offers comments. Absent on list rows. */
+  comments_enabled?: boolean
   event_dates: string[]
   event_date_display: 'range' | 'list'
   /** Pinned to the top of the public News page; at most one post. */
@@ -121,6 +123,7 @@ export interface PostPayload {
    */
   image?: string | null
   published_at?: string | null
+  comments_enabled?: boolean
   event_date_display?: 'range' | 'list'
   tag_ids?: number[]
   concert_ids?: number[]

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-18 (comments on news, for signed-in fans)
+
+### Added
+- **Fans can comment under a news post.** Only a signed-in fan can comment. Signing in uses the fan account that tickets and orders already use: the fan types an email, gets a link, and the link brings them back to the post they were reading. No password.
+- **A comment is on the site as soon as it is posted**, in one flat list, oldest first. It is plain text of up to 2000 characters. A fan can delete their own comments.
+- **Fans choose the name shown with their comments** the first time they comment, and can change it later. The email address is never shown. A fan cannot use the band's own name.
+- **A *Comments* page in the admin** (under *Content*, admins only) lists every comment with its post, author and email. A comment can be hidden or deleted, and a fan can be blocked: a blocked fan cannot comment, and none of their comments are shown. All of this takes effect at once, with no site rebuild.
+- **An email to the superadmins about new comments**, with the text and a link to the Comments page. It is sent two minutes after the first new comment on a post and gathers everything posted on that post in the meantime, so a burst of comments is one email, not many.
+- **A limit on how much one fan can post**, set on the Comments page: *one fan may post at most N comments in M minutes* (5 in 10 to start with). A fan who reaches it is told how long to wait.
+- **An *Allow comments* switch on every post**, on by default. Switching it off takes the comments block off that post at the next site rebuild, and closes commenting on it straight away.
+- New page-copy strings for the comments block (*Website modules → News → Comments*) and a *Comments and fan accounts* paragraph in the privacy policy. Check the policy wording suits you before promoting the feature.
+
 ## [Unreleased] — 2026-11-16 (one video library: official and fan videos)
 
 ### Changed

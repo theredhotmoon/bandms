@@ -103,4 +103,75 @@ export const POSTS_COPY = defineCopy([
     key: 'more', label: '"More from the blog" heading', group: 'Article page', maxLength: 60,
     defaults: { en: 'More from the blog', pl: 'Więcej z bloga' },
   },
+
+  // ── Comments (under an article; signed-in fans only) ────────────────
+  {
+    key: 'commentsTitle', label: 'Heading', group: 'Comments', maxLength: 60,
+    defaults: { en: 'Comments', pl: 'Komentarze' },
+  },
+  {
+    key: 'commentsEmpty', label: 'No comments yet', group: 'Comments', maxLength: 120,
+    defaults: { en: 'No comments yet. Be the first.', pl: 'Nie ma jeszcze komentarzy. Napisz pierwszy.' },
+  },
+  {
+    key: 'commentsSignInLead', label: 'Sign-in prompt', group: 'Comments', maxLength: 200,
+    defaults: { en: 'Sign in with your email to comment. We will send you a link — no password needed.', pl: 'Zaloguj się e-mailem, aby skomentować. Wyślemy ci link — bez hasła.' },
+  },
+  {
+    key: 'commentsEmailLabel', label: 'Email field label', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Your email', pl: 'Twój e-mail' },
+  },
+  {
+    key: 'commentsSendLink', label: '"Send link" button', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Send me a sign-in link', pl: 'Wyślij mi link do logowania' },
+  },
+  {
+    key: 'commentsLinkSent', label: 'After the link is sent', group: 'Comments', maxLength: 160,
+    defaults: { en: 'Check your inbox — the link brings you back to this post.', pl: 'Sprawdź skrzynkę — link przeniesie cię z powrotem do tego wpisu.' },
+  },
+  {
+    key: 'commentsNameLabel', label: 'Display name label', group: 'Comments', maxLength: 60,
+    defaults: { en: 'Name shown with your comments', pl: 'Nazwa widoczna przy twoich komentarzach' },
+  },
+  {
+    key: 'commentsBodyLabel', label: 'Comment field label', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Your comment', pl: 'Twój komentarz' },
+  },
+  {
+    key: 'commentsSubmit', label: '"Post comment" button', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Post comment', pl: 'Dodaj komentarz' },
+  },
+  {
+    key: 'commentsSignedInAs', label: '"Signed in as" line', group: 'Comments', maxLength: 60,
+    help: '{email} is filled in with the fan\'s address.',
+    defaults: { en: 'Signed in as {email}', pl: 'Zalogowano jako {email}' },
+  },
+  {
+    key: 'commentsSignOut', label: '"Sign out" link', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Sign out', pl: 'Wyloguj' },
+  },
+  {
+    key: 'commentsChangeName', label: '"Change name" link', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Change name', pl: 'Zmień nazwę' },
+  },
+  {
+    key: 'commentsSaveName', label: '"Save name" button', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Save name', pl: 'Zapisz nazwę' },
+  },
+  {
+    key: 'commentsDelete', label: '"Delete" link', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Delete', pl: 'Usuń' },
+  },
+  {
+    key: 'commentsDeleteConfirm', label: '"Delete" link, second click', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Click again to delete', pl: 'Kliknij ponownie, aby usunąć' },
+  },
+  {
+    key: 'commentsBlocked', label: 'Shown to a blocked fan', group: 'Comments', maxLength: 120,
+    defaults: { en: "You can't comment on this site.", pl: 'Nie możesz komentować na tej stronie.' },
+  },
+  {
+    key: 'commentsError', label: 'Generic error', group: 'Comments', maxLength: 120,
+    defaults: { en: 'Something went wrong. Please try again.', pl: 'Coś poszło nie tak. Spróbuj ponownie.' },
+  },
 ])

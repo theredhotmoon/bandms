@@ -590,4 +590,26 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   // ── About → Member page → press ─────────────────────────────────────────
   'Press coverage heading': 'Nagłówek artykułów prasowych',
   'Above the articles about the member. Hidden when there are none.': 'Nad artykułami o członku zespołu. Ukryty, gdy ich nie ma.',
+  // ── News → Comments ─────────────────────────────────────────────────────
+  'Comments': 'Komentarze',
+  'No comments yet': 'Brak komentarzy',
+  'Sign-in prompt': 'Zachęta do logowania',
+  'Email field label': 'Etykieta pola e-mail',
+  '"Send link" button': 'Przycisk „Wyślij link”',
+  'After the link is sent': 'Po wysłaniu linku',
+  'Display name label': 'Etykieta nazwy wyświetlanej',
+  'Comment field label': 'Etykieta pola komentarza',
+  '"Post comment" button': 'Przycisk „Dodaj komentarz”',
+  '"Signed in as" line': 'Wiersz „Zalogowano jako”',
+  '"Sign out" link': 'Link „Wyloguj”',
+  '"Change name" link': 'Link „Zmień nazwę”',
+  '"Save name" button': 'Przycisk „Zapisz nazwę”',
+  '"Delete" link': 'Link „Usuń”',
+  '"Delete" link, second click': 'Link „Usuń”, drugie kliknięcie',
+  'Shown to a blocked fan': 'Widoczne dla zablokowanego fana',
+  'Generic error': 'Ogólny błąd',
+  "{email} is filled in with the fan's address.": 'W miejsce {email} wstawiany jest adres fana.',
+  // ── Privacy → Comments ──────────────────────────────────────────────────
+  'Comments: heading': 'Komentarze: nagłówek',
+  'Comments: text': 'Komentarze: tekst',
 }

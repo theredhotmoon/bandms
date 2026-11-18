@@ -63,6 +63,7 @@ const ROUTE_TITLE_KEYS: Record<string, string> = {
   'tech-rider-preview-id': 'shell.titles.techRider',
   'admin-concert-tickets': 'shell.titles.concertTickets',
   'admin-fan-accounts': 'shell.titles.fanAccounts',
+  'admin-comments': 'shell.titles.comments',
   'admin-door': 'shell.titles.doorCheck',
   'admin-website-modules': 'shell.titles.websiteModules',
   'admin-faqs': 'shell.titles.faqs',

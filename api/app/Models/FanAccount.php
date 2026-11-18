@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class FanAccount extends Model
 {
     protected $fillable = [
-        'email', 'name', 'password_hash',
+        'email', 'name', 'display_name', 'comments_blocked_at', 'password_hash',
         'email_verified_at', 'newsletter_subscribed',
     ];
 
@@ -15,11 +15,22 @@ class FanAccount extends Model
 
     protected $casts = [
         'email_verified_at'     => 'datetime',
+        'comments_blocked_at'   => 'datetime',
         'newsletter_subscribed' => 'boolean',
     ];
 
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(PostComment::class);
+    }
+
+    public function isCommentBlocked(): bool
+    {
+        return $this->comments_blocked_at !== null;
     }
 }

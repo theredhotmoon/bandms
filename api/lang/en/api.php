@@ -29,5 +29,9 @@ return [
         'transfer_to_self'       => 'You cannot transfer a ticket to yourself.',
         'transfer_already_open'  => 'A pending transfer already exists for this ticket.',
         'session_expired'        => 'Your session has expired. Please sign in again.',
+        'comments_disabled'      => 'Comments are closed for this post.',
+        'comments_blocked'       => 'You cannot comment on this site.',
+        'display_name_reserved'  => 'That name is reserved. Please choose another.',
+        'comment_limit'          => 'You have posted a lot in a short time. You can comment again in a minute.|You have posted a lot in a short time. You can comment again in :count minutes.',
     ],
 ];

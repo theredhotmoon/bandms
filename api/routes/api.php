@@ -44,6 +44,8 @@ use App\Http\Controllers\ContentLocaleController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\AdminCommentController;
+use App\Http\Controllers\PostCommentController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ReleaseController;
 use App\Http\Controllers\SocialLinkController;
@@ -120,6 +122,10 @@ Route::get('/posts', [PostController::class, 'index'])->middleware('throttle:pos
 // Must precede /posts/{post}, which would capture "featured".
 Route::get('/posts/featured', [PostController::class, 'featured'])->name('api.posts.featured');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('api.posts.show');
+// Read by the browser at runtime, never by the site build. A fan token is
+// optional here (it only decides `mine`), so this is not behind fan.auth.
+Route::get('/posts/{post}/comments', [PostCommentController::class, 'index'])
+    ->middleware('throttle:120,1,post-comments')->name('api.posts.comments.index');
 
 Route::get('/albums', [AlbumController::class, 'index'])->name('api.albums.index');
 Route::get('/albums/{album}', [AlbumController::class, 'show'])->name('api.albums.show');
@@ -215,6 +221,18 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
     Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate'])
         ->middleware('throttle:20,1,fan-transfer');
     Route::post('auth/logout', [FanAccountController::class, 'logout']);
+
+    // Comments on news. Own throttle prefixes, for the reason given above
+    // the fan auth routes: an inline throttle shares one bucket per visitor.
+    Route::put('me', [FanAccountController::class, 'updateMe'])
+        ->middleware('throttle:10,1,fan-profile');
+    // The band's per-fan limit is CommentSettings, checked in the controller.
+    // This is only the address-keyed backstop behind it, set above the
+    // highest limit the band can choose per minute's worth of posting.
+    Route::post('posts/{post}/comments', [PostCommentController::class, 'store'])
+        ->middleware('throttle:30,1,fan-comment');
+    Route::delete('comments/{comment}', [PostCommentController::class, 'destroy'])
+        ->middleware('throttle:30,1,fan-comment-delete');
 });
 
 // Ticket claim — public (recipient may not have an account)
@@ -526,6 +544,14 @@ Route::middleware('auth:api')->group(function () {
 
         // Fan accounts admin list
         Route::get('/fan-accounts', [FanAccountController::class, 'adminList'])->name('api.fan-accounts.index');
+
+        // Fan comments — moderation. Admin-only: the list carries fan emails.
+        Route::get('/admin/comments', [AdminCommentController::class, 'index'])->name('api.admin.comments.index');
+        Route::put('/admin/comments/{comment}', [AdminCommentController::class, 'update'])->name('api.admin.comments.update');
+        Route::delete('/admin/comments/{comment}', [AdminCommentController::class, 'destroy'])->name('api.admin.comments.destroy');
+        Route::get('/admin/comment-settings', [AdminCommentController::class, 'settings'])->name('api.admin.comment-settings.show');
+        Route::put('/admin/comment-settings', [AdminCommentController::class, 'updateSettings'])->name('api.admin.comment-settings.update');
+        Route::put('/admin/fan-accounts/{fan}/comments-block', [AdminCommentController::class, 'block'])->name('api.admin.fan-accounts.comments-block');
 
         // Door check — QR scanning at venue entry. Throttled: both endpoints
         // take a code and report whether it is valid, so they are guessable.

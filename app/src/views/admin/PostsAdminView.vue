@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminModal from '@/components/admin/AdminModal.vue'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
@@ -72,6 +73,13 @@ function openEdit(id: number) {
   isCreating.value = false; editingId.value = id; fieldErrors.value = {}; showModal.value = true
 }
 function closeModal() { showModal.value = false }
+
+// `?edit=<id>` opens that post's editor — the Comments page links here.
+// Read once and dropped from the URL, so a reload does not reopen the editor.
+const route = useRoute()
+const editFromLink = Number(route.query.edit)
+if (route.query.edit !== undefined) void useRouter().replace({ query: { ...route.query, edit: undefined } })
+if (Number.isSafeInteger(editFromLink) && editFromLink > 0) openEdit(editFromLink)
 
 async function handleSubmit(payload: PostPayload) {
   fieldErrors.value = {}

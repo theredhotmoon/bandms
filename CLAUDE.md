@@ -1944,6 +1944,92 @@ a swallowed exception from a log INSERT hid an already-aborted transaction.
 
 Spec: `docs/superpowers/specs/2026-10-30-activity-log-design.md`.
 
+## News comments are read and written at runtime — nothing about them is baked
+
+A signed-in fan comments under a news post; the comment is public at once, in
+a flat list. `post_comments` (`PostCommentController`, moderation in
+`AdminCommentController`), rendered by the `PostComments.vue` island that
+`PostDetail.astro` mounts in `#comments`.
+
+**The build never fetches comments.** The island calls
+`GET /api/posts/{post}/comments` in the browser, so a comment, a hide, a
+delete or a block needs no rebuild and marks nothing dirty. The one baked bit
+is `posts.comments_enabled` — it decides whether the island is mounted at
+all, and rides the post save's own `posts` dirty mark. The API enforces it
+regardless (`enabled: false`, and a 403 on write), so a post switched off
+since the last build shows no block rather than a dead form. The page gates
+on `!== false`, for the same fail-open reason as the module map.
+
+**"Verified" is the fan account** — the magic-link session `FanAuth` checks.
+The island reads the `fan_token` / `fan` keys the SPA's `/account` page writes
+to `localStorage`; same origin behind Caddy, so one sign-in serves both. The
+sign-in form on a post sends `return_to`, and the emailed link carries it as
+`&return=`. `ReturnPath::clean()` (API), `app/src/utils/returnPath.ts` and
+`cleanReturnPath` in `web/src/lib/comments.ts` are three copies of one rule —
+a site-relative path, no `//`, no backslash — and must stay in step: the
+value arrives in a URL anyone can write.
+
+**`/account` follows `return` only in the browser that asked.** The island
+stores the path under `fan_return_to` when the link is requested, and
+`consumeReturnPath()` honours the link's `return` only when it matches (once).
+Without that, a sign-in link is a quiet login-CSRF: send someone your own
+link with a `return` and they land on an article already signed in as *you*,
+never having seen the account page. A browser that did not ask — another
+device, or someone else's link — stops on `/account`, as it always did. Do not
+"simplify" this to trusting the URL.
+
+**The public name is `fan_accounts.display_name`, never `name`.** `name`
+defaults to the email's local part, so printing it would publish half of the
+fan's address. The first comment asks for a display name; `PUT /api/fan/me`
+changes it. The public list carries no email and no fan id — `mine` is all
+the page needs. `App\Support\DisplayName` is the one definition of the name
+rule for both write paths. It refuses the band's own name (ignoring spacing
+and invisible characters) **and nothing else**: names are not unique, so a
+member's name, another commenter's, or a look-alike letter all pass — Block
+fan is the answer. It strips a fixed list of invisible characters, not all of
+`\p{Cf}`: ZWJ/ZWNJ hold emoji sequences and Persian/Indic spellings together.
+A comment body that shows nothing (zero-width characters only) is a 422.
+
+**The public list takes an optional fan token, and a bad one is not an
+error.** It is not behind `fan.auth`: `FanSession::fan()` returns null for a
+stale token and the reader is simply anonymous. `FanAuth` uses the same
+helper, so "what is a valid session" has one answer.
+
+**Hidden, or written by a blocked fan, means gone for everyone** — the author
+included (`PostComment::scopeVisible()`). Moderation is `role:admin`, not
+publisher: every row of the admin list carries the fan's email.
+
+**The band is mailed two minutes after a post's first new comment, once.**
+Nothing is held for approval, so the mail is the band's only prompt to look —
+but one mail per comment let any fan flood the superadmins' inboxes. The
+first comment on a post sets a cache marker and dispatches
+`SendCommentDigest` with a delay (`config('comments.mail_delay_seconds')`);
+comments arriving meanwhile find the marker and schedule nothing; the job
+clears the marker and mails everything from that first comment on. It carries
+ids, not models, so a comment deleted during the wait is just absent. It
+clears the marker *before* reading — the other order loses a comment that
+lands in between. Scheduling sits in a try/catch: a queue failure never costs
+the fan their comment. **With `QUEUE_CONNECTION=sync` (the dev stack) the
+delay is ignored** and each comment mails at once; the two-minute gathering
+only happens under a real queue worker.
+
+**How much one fan may post is the band's setting** — *Comments → Limit per
+fan*, `App\Support\CommentSettings`, one JSON row in `site_settings`
+(default 5 comments in 10 minutes). It is counted per fan **account** with
+`RateLimiter`, not per address like the route throttle, which a shared
+connection trips for everyone. Over the limit is a 429 carrying
+`code: comment_limit` and a message worded for the fan; that code is how the
+island tells it from the route throttle's 429, whose message is a framework
+string in English and is never shown. The route's own `throttle:30,1` is only
+a backstop behind it. A rejected comment does not count.
+
+`PostComment` is on `ActivityRecorder::PERSONAL` and `post_comments` is
+prod-only in `scripts/prodsync/tables.py`. E2E gets a fan session from
+`php artisan e2e:seed-fan-session` (`seedFanSession()`), because the backend
+runs with debug off and the emailed link cannot be followed from a test.
+
+Spec: `docs/superpowers/specs/2026-11-18-news-comments-design.md`.
+
 ## A post with no `published_at` is a draft — and the admin reads its own routes
 
 `GET /api/posts` and `GET /api/posts/{post}` return **published posts only**

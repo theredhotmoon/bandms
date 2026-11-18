@@ -3,6 +3,7 @@ import {
   CONTACT_COPY,
   MERCH_COPY,
   NEWSLETTER_COPY,
+  POSTS_COPY,
   SITE_COPY,
   type CopyField,
   type ResolvedCopy,
@@ -94,6 +95,21 @@ export function newsletterFormCopy(siteConfig: SiteConfig, lang: string) {
     sendingLabel: t.sending,
     doneLabel: t.done,
     errorLabel: t.error,
+  }
+}
+
+/** News copy in the shape the PostComments island takes (an island has no siteConfig). */
+export function postCommentsCopy(siteConfig: SiteConfig, lang: string) {
+  const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
+  return {
+    title: t.commentsTitle, empty: t.commentsEmpty,
+    signInLead: t.commentsSignInLead, emailLabel: t.commentsEmailLabel,
+    sendLink: t.commentsSendLink, linkSent: t.commentsLinkSent,
+    nameLabel: t.commentsNameLabel, bodyLabel: t.commentsBodyLabel, submit: t.commentsSubmit,
+    signedInAs: t.commentsSignedInAs, signOut: t.commentsSignOut,
+    changeName: t.commentsChangeName, saveName: t.commentsSaveName,
+    delete: t.commentsDelete, deleteConfirm: t.commentsDeleteConfirm,
+    blocked: t.commentsBlocked, error: t.commentsError,
   }
 }
 

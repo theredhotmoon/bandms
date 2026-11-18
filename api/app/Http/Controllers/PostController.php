@@ -250,6 +250,7 @@ class PostController extends Controller
                 'image'        => $data['image'] ?? null,
                 'published_at' => $data['published_at'] ?? null,
                 'event_date_display' => $data['event_date_display'] ?? 'range',
+                'comments_enabled' => $data['comments_enabled'] ?? true,
             ]);
             $post->applySlugBag(
                 $data['slug'] ?? null,

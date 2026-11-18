@@ -19,6 +19,9 @@ class PostResource extends JsonResource
             'intro'        => $this->intro,
             'image'        => $this->image ? '/storage/' . $this->image : null,
             'published_at' => $this->published_at,
+            // Whether the public page mounts the comments block at all. A row
+            // read without the column (a narrow select) counts as enabled.
+            'comments_enabled' => $this->comments_enabled ?? true,
             'event_dates'  => $this->whenLoaded('concerts', fn () => $this->sortedConcerts()
                 ->map(fn ($c) => $c->date->format('Y-m-d'))),
             'event_date_display' => $this->event_date_display,

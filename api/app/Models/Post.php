@@ -19,13 +19,14 @@ class Post extends Model
 
     public array $translatable = ['title', 'intro', 'slug'];
 
-    protected $fillable = ['title', 'slug', 'intro', 'image', 'published_at', 'event_date_display'];
+    protected $fillable = ['title', 'slug', 'intro', 'image', 'published_at', 'event_date_display', 'comments_enabled'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
             'is_highlighted' => 'boolean',
+            'comments_enabled' => 'boolean',
         ];
     }
 
@@ -38,6 +39,11 @@ class Post extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->whereNotNull('published_at');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PostComment::class);
     }
 
     public function tags(): BelongsToMany

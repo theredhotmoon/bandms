@@ -11,6 +11,7 @@ use App\Models\FanAccount;
 use App\Models\NewsletterSubscriber;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PostComment;
 use App\Models\SiteDirtyArea;
 use App\Models\Ticket;
 use App\Models\TicketTransfer;
@@ -63,6 +64,7 @@ class ActivityRecorder
     private const PERSONAL = [
         NewsletterSubscriber::class,
         FanAccount::class,
+        PostComment::class,
         Order::class,
         OrderItem::class,
         Ticket::class,
