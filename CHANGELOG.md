@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-19 (Google Analytics finally counts visits)
+
+### Fixed
+- **Google Analytics recorded nothing, for anyone, since it was added in September.** A visitor who accepted cookies had the Google tag loaded and then switched off again by the site itself on every page, so no visit was ever sent. Visits from people who accept cookies are now counted. Nothing changes for a visitor who rejects cookies or has not chosen: no tag is loaded and nothing is sent.
+
 ## [Unreleased] — 2026-11-18 (comments on news, for signed-in fans)
 
 ### Added

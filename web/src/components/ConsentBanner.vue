@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { useStore } from '@nanostores/vue'
-import { consentStatus, denyConsent, grantConsent, loadStoredConsent } from '@/stores/consent'
+import { consentStatus, denyConsent, grantConsent, loadStoredConsent, type ConsentStatus } from '@/stores/consent'
 import { disableGoogleAnalytics, loadGoogleAnalytics } from '@/lib/analytics'
 import type { Locale } from '@/types/shared'
 
@@ -27,18 +27,28 @@ const status = useStore(consentStatus)
 const t = props.copy
 
 // grant/deny/resetConsent() only persist + flip the atom; starting or
-// stopping GA is this component's job, triggered by the same watcher
-// whichever way the status changed — including 'unknown', which covers a
-// visitor reopening "Cookie settings" after having accepted: consent is
-// withdrawn the moment the banner reopens, not only if they go on to click
-// Reject, and disableGoogleAnalytics() is safe to call even if GA was never
-// loaded in this tab.
-watch(status, value => {
+// stopping GA is this component's job, whichever way the status changed —
+// including back to 'unknown', which covers a visitor reopening "Cookie
+// settings" after having accepted: consent is withdrawn the moment the banner
+// reopens, not only if they go on to click Reject.
+function applyConsent(value: ConsentStatus): void {
   if (value === 'granted') loadGoogleAnalytics(props.measurementId)
   else disableGoogleAnalytics(props.measurementId)
-}, { immediate: true })
+}
 
-onMounted(loadStoredConsent)
+// Not `immediate`. The atom starts at 'unknown' on every page load, before
+// the stored choice has been read, and that placeholder is not a withdrawal:
+// acting on it set GA's kill switch on every page (the tag then never sent a
+// hit) and cleared the visitor's `_ga` cookies, which would make each page
+// view a new visitor. Read the stored choice first, then act on it once.
+watch(status, applyConsent)
+
+onMounted(() => {
+  loadStoredConsent()
+  // Also when the answer is still 'unknown': an Accept that has expired
+  // leaves cookies behind that nobody has agreed to any more.
+  applyConsent(consentStatus.get())
+})
 </script>
 
 <template>
