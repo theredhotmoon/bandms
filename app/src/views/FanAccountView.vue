@@ -9,6 +9,7 @@ import FanMagicLinkSent from '@/components/fan/FanMagicLinkSent.vue'
 import FanTicketsList from '@/components/fan/FanTicketsList.vue'
 import FanOrdersList from '@/components/fan/FanOrdersList.vue'
 import { useFanLocale } from '@/composables/useFanLocale'
+import { consumeReturnPath } from '@/utils/returnPath'
 
 // Fans never see the admin's language switcher, so these pages resolve
 // their own locale the way the API does — see utils/fanLocale.ts.
@@ -34,10 +35,16 @@ function onMagicLinkSent(link: string | null) {
 onMounted(async () => {
   const token = route.query.token
   if (typeof token !== 'string' || token === '') return
-  router.replace({ query: { ...route.query, token: undefined } })
+  // `return` is where the fan asked to sign in from (a news post's comments).
+  // Dropped from the URL with the token; honoured only as a path on this site,
+  // and only in the browser that asked — see consumeReturnPath().
+  const returnTo = consumeReturnPath(route.query.return, typeof localStorage === 'undefined' ? null : localStorage)
+  router.replace({ query: { ...route.query, token: undefined, return: undefined } })
   try {
     const result = await verifyMagicLink(token)
     setSession(result.token, result.fan)
+    // A full navigation: the post is served by the public site, not this SPA.
+    if (returnTo) window.location.assign(returnTo)
   } catch {
     linkError.value = t('fan.login.linkInvalid')
   }

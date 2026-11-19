@@ -87,3 +87,38 @@ export function purgeSeededFixtures(): void {
     )
   }
 }
+
+export interface SeededFanSession {
+  fan_id: number
+  email: string
+  name: string
+  /** A live `fan_session` token — what the account page stores as `fan_token`. */
+  token: string
+}
+
+/**
+ * A signed-in fan for the comment specs. The backend has APP_DEBUG off, so the
+ * emailed sign-in link cannot be followed from a test; `e2e:seed-fan-session`
+ * creates the fan and the session directly. The fan is `e2e-…`, so the
+ * teardown purge removes it, and its comments with it.
+ */
+export function seedFanSession(displayName?: string): SeededFanSession {
+  const args = ['exec', CONTAINER, 'php', 'artisan', 'e2e:seed-fan-session', '--force']
+  if (displayName) args.push(`--display-name=${displayName}`)
+
+  let raw: string
+  try {
+    raw = execFileSync('docker', args, { encoding: 'utf-8', timeout: 60_000 })
+  } catch (e) {
+    const err = e as { stdout?: string; stderr?: string; message: string }
+    throw new Error(
+      `seedFanSession failed. Is the ${CONTAINER} container running?\n` +
+        `${err.stderr ?? ''}${err.stdout ?? ''}${err.message}`,
+    )
+  }
+
+  const line = raw.split('\n').map(l => l.trim()).filter(Boolean).find(l => l.startsWith('{'))
+  if (!line) throw new Error(`seedFanSession: no JSON in command output:\n${raw}`)
+
+  return JSON.parse(line) as SeededFanSession
+}

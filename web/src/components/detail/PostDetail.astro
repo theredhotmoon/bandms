@@ -10,7 +10,8 @@ import PostBlocks from '@/components/blocks/PostBlocks.astro'
 import { POSTS_COPY, CONCERTS_COPY } from '@bandms/site-copy'
 import PostConcerts from '@/components/PostConcerts.astro'
 import AlbumCards from '@/components/AlbumCards.astro'
-import { moduleCopy, siteCopy } from '@/lib/copy'
+import { moduleCopy, postCommentsCopy, siteCopy } from '@/lib/copy'
+import PostComments from '@/components/PostComments.vue'
 
 const ACCENT = 'var(--color-accent)'
 
@@ -255,6 +256,20 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
           ) : <div />}
         </div>
       </section>
+    )}
+
+    <!-- ── COMMENTS: fetched and posted in the browser, never baked. `!== false`
+         so a post from an API that predates the switch still gets them. ── -->
+    {post.comments_enabled !== false && (
+      <div class="ar-col" id="comments">
+        <PostComments
+          client:visible
+          postId={post.id}
+          lang={lang}
+          returnPath={`/${lang}/${postsSection}/${postSlug(post, lang)}#comments`}
+          copy={postCommentsCopy(siteConfig, lang)}
+        />
+      </div>
     )}
 
     <!-- ── MORE FROM THE BLOG ─────────────────────────────────── -->

@@ -64,7 +64,7 @@ const groupRoutes: Record<GroupId, string[]> = {
   band:       [adminUrl('my-profile'), adminUrl('my-setups'), adminUrl('band-profile'), adminUrl('band-members'),
                adminUrl('releases'), adminUrl('clips'), adminUrl('photos'), adminUrl('band-calendar'),
                adminUrl('tech-rider'), adminUrl('setlists')],
-  content:    [adminUrl('posts'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
+  content:    [adminUrl('posts'), adminUrl('comments'), adminUrl('press-releases'), adminUrl('pitch'), adminUrl('newsletter'), adminUrl('authors')],
   shows:      [adminUrl('concerts'), adminUrl('tours'), adminUrl('venues'), adminUrl('door')],
   more:       [adminUrl('shop'), adminUrl('bands'), adminUrl('tags'), adminUrl('instruments'), adminUrl('users'), adminUrl('assistant'), adminUrl('activity')],
   pageconfig: [adminUrl('website-modules'), adminUrl('faqs'), adminUrl('hero-images')],
@@ -213,6 +213,10 @@ watch(() => route.path, (path) => {
               {{ $t('shell.nav.posts') }}
             </RouterLink>
             <template v-if="isAdmin">
+              <RouterLink :to="adminUrl('comments')" class="nav-item" active-class="nav-item--active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                {{ $t('shell.nav.comments') }}
+              </RouterLink>
               <RouterLink :to="adminUrl('press-releases')" class="nav-item" active-class="nav-item--active">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 {{ $t('shell.nav.press') }}

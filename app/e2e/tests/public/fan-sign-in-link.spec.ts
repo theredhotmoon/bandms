@@ -52,4 +52,42 @@ test.describe('fan sign-in link', () => {
     )
     await expect(page).not.toHaveURL(/token=/)
   })
+
+  // A fan who asked to sign in from a news post is sent back to it.
+  test('returns the fan to the page they signed in from', async ({ page }) => {
+    await page.route('**/api/fan/auth/verify*', (r) =>
+      r.fulfill({ json: { token: 'session-token', fan: FAN } }))
+
+    // The comments block notes the path in this browser when the link is requested.
+    await page.addInitScript(() => localStorage.setItem('fan_return_to', '/en/news/some-post#comments'))
+    await page.goto(`/account?token=link-token-456&lang=en&return=${encodeURIComponent('/en/news/some-post#comments')}`)
+
+    await page.waitForURL('**/en/news/some-post#comments')
+    expect(await page.evaluate(() => localStorage.getItem('fan_token'))).toBe('session-token')
+  })
+
+  // Someone else's link must not sign you in and whisk you off to a post:
+  // a browser that never asked stops on the account page, where it shows whose account this is.
+  test('stays on the account page when this browser did not ask to return', async ({ page }) => {
+    await page.route('**/api/fan/auth/verify*', (r) =>
+      r.fulfill({ json: { token: 'session-token', fan: FAN } }))
+
+    await page.goto(`/account?token=link-token-457&lang=en&return=${encodeURIComponent('/en/news/some-post#comments')}`)
+
+    await expect(page.getByRole('heading', { name: 'My Account' })).toBeVisible()
+    await expect(page.getByText(FAN.email)).toBeVisible()
+    await expect(page).toHaveURL(/\/account/)
+  })
+
+  test('ignores a return address that leaves the site', async ({ page }) => {
+    await page.route('**/api/fan/auth/verify*', (r) =>
+      r.fulfill({ json: { token: 'session-token', fan: FAN } }))
+
+    await page.addInitScript(() => localStorage.setItem('fan_return_to', '//evil.example/x'))
+    await page.goto(`/account?token=link-token-789&lang=en&return=${encodeURIComponent('//evil.example/x')}`)
+
+    await expect(page.getByRole('heading', { name: 'My Account' })).toBeVisible()
+    await expect(page).toHaveURL(/\/account/)
+    await expect(page).not.toHaveURL(/return=/)
+  })
 })

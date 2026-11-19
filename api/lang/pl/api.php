@@ -15,5 +15,9 @@ return [
         'transfer_to_self'       => 'Nie możesz przekazać biletu sobie.',
         'transfer_already_open'  => 'Ten bilet już czeka na odbiór przez inną osobę.',
         'session_expired'        => 'Twoja sesja wygasła. Zaloguj się ponownie.',
+        'comments_disabled'      => 'Komentarze pod tym wpisem są wyłączone.',
+        'comments_blocked'       => 'Nie możesz komentować na tej stronie.',
+        'display_name_reserved'  => 'Ta nazwa jest zarezerwowana. Wybierz inną.',
+        'comment_limit'          => 'Napisałeś dużo w krótkim czasie. Kolejny komentarz dodasz za minutę.|Napisałeś dużo w krótkim czasie. Kolejny komentarz dodasz za :count minuty.|Napisałeś dużo w krótkim czasie. Kolejny komentarz dodasz za :count minut.',
     ],
 ];

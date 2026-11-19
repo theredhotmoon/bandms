@@ -3,6 +3,10 @@ export interface FanAccount {
   email: string
   name: string
   newsletter_subscribed: boolean
+  /** The name shown on the fan's comments; null until they first comment. */
+  display_name?: string | null
+  /** True when the band has blocked this fan from commenting. */
+  comments_blocked?: boolean
 }
 
 export interface FanTicket {

@@ -97,6 +97,17 @@ export const PRIVACY_COPY = defineCopy([
     },
   },
   {
+    key: 'commentsHeading', label: 'Comments: heading', group: 'Policy page', maxLength: 80,
+    defaults: { en: 'Comments and fan accounts', pl: 'Komentarze i konta fanów' },
+  },
+  {
+    key: 'commentsBody', label: 'Comments: text', group: 'Policy page', type: 'textarea', maxLength: 600,
+    defaults: {
+      en: 'To comment on news you sign in with your email address, which we store with your account and never show on the site. A comment is public and appears with the name you choose. You can delete your own comments at any time, and you can ask us to remove your account together with everything you wrote.',
+      pl: 'Aby komentować aktualności, logujesz się adresem e-mail, który przechowujemy przy twoim koncie i nigdy nie pokazujemy na stronie. Komentarz jest publiczny i pojawia się z wybraną przez ciebie nazwą. Własne komentarze możesz usunąć w każdej chwili, możesz też poprosić nas o usunięcie konta razem ze wszystkim, co napisałeś.',
+    },
+  },
+  {
     key: 'controllerHeading', label: 'Contact: heading', group: 'Policy page', maxLength: 80,
     defaults: { en: 'Who to contact', pl: 'Kontakt' },
   },

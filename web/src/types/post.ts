@@ -44,6 +44,8 @@ export interface PostSummary {
 
 export interface Post extends PostSummary {
   blocks: PostBlock[]
+  /** Whether the page mounts the comments block. Absent from an older API, which counts as on. */
+  comments_enabled?: boolean
   /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
   albums?: AlbumCard[]
   translations?: {

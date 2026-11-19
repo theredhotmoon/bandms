@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\FanAccount;
+use App\Support\FanSession;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,10 +24,7 @@ class FanAuth
         $token = $request->bearerToken();
         abort_unless($token, 401, __('api.unauthenticated'));
 
-        $fanId = cache()->get("fan_session:{$token}");
-        abort_unless($fanId, 401, __('api.fan.session_expired'));
-
-        $fan = FanAccount::find($fanId);
+        $fan = FanSession::fan($request);
         abort_unless($fan, 401, __('api.fan.session_expired'));
 
         $request->attributes->set('fan', $fan);

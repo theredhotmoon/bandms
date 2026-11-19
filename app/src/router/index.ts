@@ -222,6 +222,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      // Admin-only: the list carries fan emails (the API enforces it too).
+      path: adminUrl('comments'),
+      name: 'admin-comments',
+      component: () => import('@/views/admin/CommentsAdminView.vue'),
+      meta: { requiresAuth: true, requiredRole: 'admin' },
+    },
+    {
       path: adminUrl('fan-accounts'),
       name: 'admin-fan-accounts',
       component: () => import('@/views/admin/FanAccountsAdminView.vue'),

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\FanAccount;
 use App\Models\Order;
 use App\Models\Ticket;
+use App\Support\DisplayName;
+use App\Support\ReturnPath;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +32,10 @@ class FanAccountController extends Controller
         $data = $request->validate([
             'email' => 'required|email|max:255',
             'name'  => 'nullable|string|max:255',
+            // Where to send the fan after sign-in (a news post they wanted to
+            // comment on). Not validated as a rule: a bad value is dropped,
+            // never a 422 — the fan still gets a working link to /account.
+            'return_to' => 'nullable',
         ]);
 
         $fan = FanAccount::firstOrCreate(
@@ -45,6 +51,10 @@ class FanAccountController extends Controller
         // the token, so linking it directly signed nobody in. FRONTEND_URL, not
         // APP_URL: the same rule as every other emailed link.
         $verifyUrl = rtrim((string) config('newsletter.frontend_url'), '/') . "/account?token={$token}";
+
+        if ($returnTo = ReturnPath::clean($data['return_to'] ?? null)) {
+            $verifyUrl .= '&return=' . rawurlencode($returnTo);
+        }
 
         try {
             Mail::raw("Sign in to your fan account: {$verifyUrl}", fn ($m) => $m->to($fan->email)->subject('Your Sign-In Link'));
@@ -78,26 +88,42 @@ class FanAccountController extends Controller
 
         return response()->json([
             'token' => $sessionToken,
-            'fan'   => [
-                'id'                    => $fan->id,
-                'email'                 => $fan->email,
-                'name'                  => $fan->name,
-                'newsletter_subscribed' => $fan->newsletter_subscribed,
-            ],
+            'fan'   => $this->fanPayload($fan),
         ]);
     }
 
     // GET /api/fan/me  (requires fan.auth middleware)
     public function me(Request $request): JsonResponse
     {
+        return response()->json($this->fanPayload($request->attributes->get('fan')));
+    }
+
+    // PUT /api/fan/me  (requires fan.auth middleware)
+    // Body: {display_name: string} — the name shown on the fan's comments.
+    public function updateMe(Request $request): JsonResponse
+    {
         $fan = $request->attributes->get('fan');
 
-        return response()->json([
+        $request->merge(['display_name' => DisplayName::clean($request->input('display_name'))]);
+        $data = $request->validate(['display_name' => DisplayName::rules()]);
+        DisplayName::assertAllowed($data['display_name']);
+
+        $fan->update(['display_name' => $data['display_name']]);
+
+        return response()->json($this->fanPayload($fan));
+    }
+
+    /** The fan as their own browser sees them — one shape for verify, me and updateMe. */
+    private function fanPayload(FanAccount $fan): array
+    {
+        return [
             'id'                    => $fan->id,
             'email'                 => $fan->email,
             'name'                  => $fan->name,
             'newsletter_subscribed' => $fan->newsletter_subscribed,
-        ]);
+            'display_name'          => $fan->display_name,
+            'comments_blocked'      => $fan->isCommentBlocked(),
+        ];
     }
 
     // GET /api/fan/tickets  (requires fan.auth middleware)

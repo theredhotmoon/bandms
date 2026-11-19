@@ -77,6 +77,7 @@ const form = reactive({
   // payload omits `image` and the server leaves it alone.
   image: null as ImageField | null,
   published_at: '',
+  comments_enabled: true,
   event_date_display: 'range' as 'range' | 'list',
   tag_ids: [] as number[],
   concert_ids: [] as number[],
@@ -123,6 +124,7 @@ watch(() => props.initial, (val) => {
   form.published_at = val?.published_at ? val.published_at.slice(0, 16) : ''
   isPublished.value = !!val?.published_at
   form.event_date_display = val?.event_date_display ?? 'range'
+  form.comments_enabled = val?.comments_enabled ?? true
   form.tag_ids = val?.tags?.map(t => t.id) ?? []
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.member_ids = val?.member_ids ? [...val.member_ids] : []
@@ -177,6 +179,7 @@ async function submit() {
     image: form.image === null ? null : form.image.path,
     published_at: isPublished.value ? form.published_at || null : null,
     event_date_display: form.event_date_display,
+    comments_enabled: form.comments_enabled,
     tag_ids: form.tag_ids,
     concert_ids: form.concert_ids,
     member_ids: form.member_ids,
@@ -296,6 +299,16 @@ async function submit() {
         </div>
 
         <div>
+          <label class="pf-comments-toggle">
+            <input v-model="form.comments_enabled" type="checkbox" data-testid="post-comments-enabled" />
+            <span>
+              {{ $t('content.posts.allowComments') }}
+              <span class="pf-comments-note">{{ $t('content.posts.allowCommentsNote') }}</span>
+            </span>
+          </label>
+        </div>
+
+        <div>
           <!-- Never blank: it follows the title until edited, and the API
                generates the lead language's slug if none is sent. -->
           <label class="field-label">{{ $t('common.fields.slug') }} <span class="field-req">*</span></label>
@@ -360,6 +373,20 @@ async function submit() {
 
 <style scoped src="../form-styles.css" />
 <style scoped>
+.pf-comments-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+  color: var(--c-d0d0d0);
+  cursor: pointer;
+}
+.pf-comments-toggle input { margin-top: 0.2rem; }
+.pf-comments-note {
+  display: block;
+  font-size: var(--fs-2xs);
+  color: var(--c-888888);
+}
 /* Two named containers: the form decides whether there is room for the rail;
    the main column decides whether its own cover grid still fits, on the width
    it is actually laid out in rather than the form's. */
