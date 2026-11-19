@@ -28,7 +28,11 @@ const contactEmail = profile?.booking_email
 
 // Every string on this page is editable in Website Modules → Privacy, which
 // also holds the cookie banner's copy. {band} and {email} are filled in here.
-const c = moduleCopy(await getSiteConfig(lang), 'privacy', PRIVACY_COPY, lang)
+const siteConfig = await getSiteConfig(lang)
+const c = moduleCopy(siteConfig, 'privacy', PRIVACY_COPY, lang)
+// Only while the welcome screen's "Near a gig" targeting is on — the one
+// feature that reads the visitor's IP for anything but serving the page.
+const showLocation = siteConfig.modules.welcome === true && siteConfig.welcome?.geo.enabled === true
 const t = {
   ...c,
   intro: fillCopy(c.intro, { band: bandName }),
@@ -56,6 +60,13 @@ const t = {
 
       <h2>{t.commentsHeading}</h2>
       <p>{t.commentsBody}</p>
+
+      {showLocation && (
+        <>
+          <h2>{t.locationHeading}</h2>
+          <p>{t.locationBody}</p>
+        </>
+      )}
 
       <h2>{t.controllerHeading}</h2>
       <p>{t.controllerBody}</p>

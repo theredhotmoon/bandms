@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
@@ -20,7 +21,7 @@ const STAMP = `${Date.now()}`
 const EN = `E2E UPCOMING ${STAMP}`
 const PL = `E2E NADCHODZĄCE ${STAMP}`
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 function adminToken(): string {
   const raw = JSON.parse(readFileSync('e2e/.auth/admin.json', 'utf-8'))

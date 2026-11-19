@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -15,7 +16,7 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
 const DEFAULTS = { en: 'Skip to content', pl: 'Przejdź do treści' } as const
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 test.describe('Public skip link', () => {
   failOnPageError()

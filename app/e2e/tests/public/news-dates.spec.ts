@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -14,7 +15,7 @@ import { failOnPageError } from '../../fixtures/page-errors'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 /** A real date: no NaN/undefined anywhere, and a four-digit year present. */
 async function expectRealDates(dates: Locator) {

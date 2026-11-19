@@ -53,6 +53,8 @@ use App\Http\Controllers\TourController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\VenueController;
 use App\Http\Controllers\WebsiteModuleController;
+use App\Http\Controllers\WelcomeNearbyController;
+use App\Http\Controllers\WelcomeSettingsController;
 use App\Http\Controllers\SiteRebuildController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +107,11 @@ Route::get('/band-profile/calendar/availability-range', [BandCalendarController:
 Route::get('/band-profile/epk', [BandProfileController::class, 'showEpk'])->name('api.band-profile.epk');
 Route::get('/band-profile/members', [BandMemberController::class, 'index'])->name('api.band-profile.members.index');
 Route::get('/band-profile/social-links', [SocialLinkController::class, 'index'])->name('api.band-profile.social-links.index');
+
+// Public, fail-open geo lookup for the welcome screen; the IP is read, never echoed or stored.
+Route::get('/welcome/nearby', WelcomeNearbyController::class)
+    ->middleware('throttle:30,1,welcome-nearby')
+    ->name('api.welcome.nearby');
 
 Route::get('/concerts', [ConcertController::class, 'index'])->name('api.concerts.index');
 Route::get('/concerts/{concert}', [ConcertController::class, 'show'])->name('api.concerts.show');
@@ -551,6 +558,9 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/admin/comments/{comment}', [AdminCommentController::class, 'destroy'])->name('api.admin.comments.destroy');
         Route::get('/admin/comment-settings', [AdminCommentController::class, 'settings'])->name('api.admin.comment-settings.show');
         Route::put('/admin/comment-settings', [AdminCommentController::class, 'updateSettings'])->name('api.admin.comment-settings.update');
+        Route::get('/admin/welcome-settings', [WelcomeSettingsController::class, 'show'])->name('api.admin.welcome-settings.show');
+        Route::put('/admin/welcome-settings', [WelcomeSettingsController::class, 'update'])->name('api.admin.welcome-settings.update');
+        Route::post('/admin/welcome-settings/campaign', [WelcomeSettingsController::class, 'campaign'])->name('api.admin.welcome-settings.campaign');
         Route::put('/admin/fan-accounts/{fan}/comments-block', [AdminCommentController::class, 'block'])->name('api.admin.fan-accounts.comments-block');
 
         // Door check — QR scanning at venue entry. Throttled: both endpoints

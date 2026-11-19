@@ -5,6 +5,8 @@ import {
   NEWSLETTER_COPY,
   POSTS_COPY,
   SITE_COPY,
+  WELCOME_COPY,
+  fillCopy,
   type CopyField,
   type ResolvedCopy,
 } from '@bandms/site-copy'
@@ -95,6 +97,40 @@ export function newsletterFormCopy(siteConfig: SiteConfig, lang: string) {
     sendingLabel: t.sending,
     doneLabel: t.done,
     errorLabel: t.error,
+  }
+}
+
+/**
+ * The welcome screen's copy, in the shape `WelcomeScreen.vue` takes. Mounted
+ * by BaseLayout on every page, so the layout shapes it. `{band}` is filled
+ * here; with no band name the placeholder is dropped rather than printed.
+ */
+export function welcomeCopy(siteConfig: SiteConfig, lang: string, bandName: string) {
+  const t = moduleCopy(siteConfig, 'welcome', WELCOME_COPY, lang)
+  return {
+    heading: fillCopy(t.heading, { band: bandName }).trim(),
+    intro: t.intro,
+    gigsTitle: t.gigsTitle,
+    gigsNearTitle: t.gigsNearTitle,
+    newsTitle: t.newsTitle,
+    newsletterTitle: t.newsletterTitle,
+    newsletterBody: t.newsletterBody,
+    newsletter: {
+      placeholder: t.newsletterPlaceholder,
+      submitLabel: t.newsletterSubmit,
+      sendingLabel: t.newsletterSending,
+      doneLabel: t.newsletterDone,
+      errorLabel: t.newsletterError,
+    },
+    accountTitle: t.accountTitle,
+    accountBody: t.accountBody,
+    accountPlaceholder: t.accountPlaceholder,
+    accountSubmit: t.accountSubmit,
+    accountSending: t.accountSending,
+    accountDone: t.accountDone,
+    accountError: t.accountError,
+    enter: t.enter,
+    close: t.close,
   }
 }
 

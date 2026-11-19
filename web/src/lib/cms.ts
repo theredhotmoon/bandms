@@ -8,6 +8,7 @@ import type { Album } from '@/types/album'
 import type { PressReleaseSummary } from '@/types/pressRelease'
 import type { ShopItem, ShopItemSummary, ShopCategory } from '@/types/shop'
 import type { PublicSetlist } from '@/types/setlist'
+import type { WelcomeConfig } from './welcome'
 import { assertRegistryMatches, DEFAULT_LOCALE } from './locales'
 import { fetchPostBatch, type PostBatchQuery } from './postFeed'
 import type { Locale } from '@/types/shared'
@@ -212,6 +213,15 @@ export async function getPosts(lang: Locale = 'en', page = 1): Promise<{ data: P
 }
 
 /**
+ * The newest published post, or null. Memoised per locale because BaseLayout
+ * reads it for the welcome screen on every page of the build.
+ */
+export const getLatestPost: (lang?: Locale) => Promise<PostSummary | null> = memoisePerLocale(
+  async (lang) => (await getPosts(lang, 1)).data[0] ?? null,
+  3,
+)
+
+/**
  * The post on top of the News page: the one highlighted in the admin, else
  * the newest; null with nothing published. Decided here, once per build, so
  * it stays put whatever a visitor filters.
@@ -347,6 +357,8 @@ export interface SiteConfig {
    * always undefined today and `getTheme()` falls through to the env var.
    */
   theme?: string
+  /** Welcome-screen settings; absent on a fail-open config or an older API. */
+  welcome?: WelcomeConfig
   /**
    * Hero backdrop candidates keyed by scope ('main', 'home', or a module slug).
    *

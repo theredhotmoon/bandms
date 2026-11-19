@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { adminHeaders, rebuildAndWait } from '../../fixtures/admin-api'
@@ -19,7 +20,7 @@ const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 const SHOP_URL = `https://tickets.example.com/e2e-choice-${Date.now()}`
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 let seeded: SeededTicket
 let pageUrl = ''

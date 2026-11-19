@@ -122,3 +122,27 @@ export function seedFanSession(displayName?: string): SeededFanSession {
 
   return JSON.parse(line) as SeededFanSession
 }
+
+/**
+ * Put the welcome screen's campaign stamp back to `campaign`.
+ *
+ * The welcome specs press *Show to everyone now*; site_settings is a content
+ * table, so a stamp left on the dev DB would reach production with
+ * `sync_db.py push --content` and re-show the screen to every visitor. Each
+ * spec captures the campaign before it stamps and restores it here.
+ */
+export function setWelcomeCampaign(campaign: number): void {
+  try {
+    execFileSync(
+      'docker',
+      ['exec', CONTAINER, 'php', 'artisan', 'e2e:set-welcome-campaign', String(campaign), '--force'],
+      { encoding: 'utf-8', timeout: 60_000 },
+    )
+  } catch (e) {
+    const err = e as { stdout?: string; stderr?: string; message: string }
+    throw new Error(
+      `setWelcomeCampaign failed. Is the ${CONTAINER} container running?\n` +
+        `${err.stderr ?? ''}${err.stdout ?? ''}${err.message}`,
+    )
+  }
+}

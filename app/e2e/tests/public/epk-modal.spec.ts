@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
@@ -15,7 +16,7 @@ import { readFileSync } from 'node:fs'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 /**
  * storageState replays cookies only, and e2e/.auth/admin.json holds none — an

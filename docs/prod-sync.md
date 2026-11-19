@@ -321,6 +321,16 @@ including any table a new migration adds, which the push prints as
 `new table -> treated as content`. The list is `PROD_ONLY_TABLES` in
 `scripts/prodsync/tables.py`.
 
+**The welcome screen's campaign stamp travels with `push --content`.** It is
+the `campaign` key of `site_settings.welcome_screen`, and `site_settings` is a
+content table — tables move whole, so the stamp cannot be left behind. Pressing
+*Show to everyone now* locally and then pushing **re-shows the welcome screen
+to every production visitor**, exactly as pressing it on prod would. The E2E
+welcome specs stamp it too, and put the original value back in `afterAll`
+(`php artisan e2e:set-welcome-campaign`); if a run died before that, check
+`curl -s localhost:8081/api/site-config | grep -o '"campaign":[0-9]*'` against
+prod's before pushing.
+
 **Only `storage/app/public` ever moves.** The rest of `storage/` holds
 Passport's `oauth-*.key`; replacing it would log out every user on that side.
 

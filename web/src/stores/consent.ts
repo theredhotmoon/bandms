@@ -65,6 +65,15 @@ export function resolveStoredConsent(stored: StoredConsent | null): ConsentStatu
   return stored.status
 }
 
+/**
+ * The stored verdict without touching the atom. For an island that must
+ * follow the consent step but may hydrate before the banner has read storage:
+ * the atom still says 'unknown' then, even for a visitor who answered weeks ago.
+ */
+export function storedConsentStatus(): ConsentStatus {
+  return resolveStoredConsent(readStoredConsent())
+}
+
 /** Reads localStorage and sets the atom accordingly. Call once, on mount. */
 export function loadStoredConsent(): void {
   consentStatus.set(resolveStoredConsent(readStoredConsent()))

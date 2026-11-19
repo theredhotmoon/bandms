@@ -28,6 +28,7 @@ import { RELEASES_COPY } from './modules/releases'
 import { SITE_COPY } from './modules/site'
 import { TECH_RIDER_COPY } from './modules/techRider'
 import { VIDEOS_COPY } from './modules/videos'
+import { WELCOME_COPY } from './modules/welcome'
 
 export type { CopyField, CopyKeys, ResolvedCopy } from './types'
 export { defineCopy, resolveCopy, defaultFor, fillCopy } from './resolve'
@@ -49,6 +50,7 @@ export {
   SITE_COPY,
   TECH_RIDER_COPY,
   VIDEOS_COPY,
+  WELCOME_COPY,
 }
 
 export const MODULE_COPY: Readonly<Record<string, readonly CopyField[]>> = {
@@ -68,6 +70,7 @@ export const MODULE_COPY: Readonly<Record<string, readonly CopyField[]>> = {
   site: SITE_COPY,
   'tech-rider': TECH_RIDER_COPY,
   videos: VIDEOS_COPY,
+  welcome: WELCOME_COPY,
 }
 
 /** The field list for a module slug; empty for a module with no copy. */

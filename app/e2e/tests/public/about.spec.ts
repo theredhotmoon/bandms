@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -10,7 +11,7 @@ import { failOnPageError } from '../../fixtures/page-errors'
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 async function aboutIsUp(request: import('@playwright/test').APIRequestContext) {
   try {

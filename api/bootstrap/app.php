@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->when(fn () => (bool) config('assistant.crawler_scheduled'));
         $schedule->command('assistant:triage')->dailyAt('03:40')->timezone('Europe/Warsaw')->withoutOverlapping();
         $schedule->command('assistant:digest')->weeklyOn(1, '08:00')->timezone('Europe/Warsaw')->withoutOverlapping();
+        $schedule->command('geoip:update')->weeklyOn(3, '04:00')->timezone('Europe/Warsaw')->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware) {
         // Every request arrives through Caddy on a private Docker network, and

@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { adminHeaders, postRequiredFields, rebuildAndWait, TEST_PNG } from '../../fixtures/admin-api'
@@ -35,7 +36,7 @@ const PER_PAGE = 6
 const STAMP = `${Date.now()}${Math.floor(Math.random() * 1000)}`
 const MODULES = ['posts', 'concerts'] as const
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 const original: Partial<Record<(typeof MODULES)[number], number | null>> = {}
 const concertIds: number[] = []

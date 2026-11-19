@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { adminHeaders, postRequiredFields, rebuildAndWait } from '../../fixtures/admin-api'
@@ -17,7 +18,7 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 const STAMP = `${Date.now()}${Math.floor(Math.random() * 1000)}`
 const TITLE = `E2E News widths ${STAMP}`
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 let newsUrl = ''
 const postIds: number[] = []
