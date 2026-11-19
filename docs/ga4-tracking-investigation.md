@@ -1,11 +1,75 @@
 # GA4 tracking investigation — the silent tag
 
-**Status: unresolved, escalated to Google Support.** Not a code problem — see the
-evidence below. This doc is the record of what was tried, kept so nobody
-re-runs the same diagnosis from scratch, and so the ready-to-send support
-report doesn't get lost.
+**Status: resolved on 2026-11-19. It was our code after all — two bugs in
+`web/src/lib/analytics.ts`.** Everything below the *Root cause* section is the
+September investigation, kept as written. Its conclusion ("not a code
+problem", "escalated to Google Support") was wrong, and why it was wrong is the
+useful part.
 
-**Opened:** 2026-09-11. **Last update:** 2026-09-14.
+**Opened:** 2026-09-11. **Resolved:** 2026-11-19.
+
+## Root cause
+
+1. **The site switched Google's tag off on every page load and never back
+   on.** `ConsentBanner.vue` watches the consent status with
+   `{ immediate: true }`, so it first runs while the status is still
+   `unknown` — before `onMounted` reads the stored choice — and calls
+   `disableGoogleAnalytics()`, which sets `window['ga-disable-<id>'] = true`.
+   That is Google's documented kill switch: gtag.js checks it before sending
+   anything. `loadGoogleAnalytics()` never cleared it. So the tag loaded,
+   initialised, and stayed silent — no error, no request, exactly the
+   symptom.
+2. **Commands were queued as arrays.** `function gtag(...args) {
+   dataLayer.push(args) }` pushes a real array; gtag.js only executes an
+   `Arguments` object and treats an array as plain data. Google's snippet
+   uses `arguments` for this reason.
+
+Both had to be fixed; either alone leaves the tag silent.
+
+## Why the September tests all agreed with each other
+
+Every "independent" variant was run **on the live page**, where bug 1 had
+already set the kill switch for the configured measurement ID. Google's
+literal snippet, the GTM container and the full Consent Mode sequence were all
+injected into a page that had told Google's code not to send. They were not
+independent tests; they shared the one variable that mattered. The raw request
+to `/g/collect` succeeded because it bypassed gtag.js and with it the switch.
+
+The lesson: a control that is injected into the system under test inherits its
+state. The check that settled it took one page load — clear the flag, run
+Google's snippet, and a `page_view` left for `region1.google-analytics.com`
+with a 204.
+
+## The fix
+
+- `ConsentBanner.vue` no longer acts on the placeholder `unknown`: the
+  watcher is not `immediate`, and `onMounted` reads the stored choice first
+  and applies it once.
+- `loadGoogleAnalytics()` clears the kill switch (and re-configures a tag that
+  is already on the page), so reject-then-accept in one tab resumes.
+- `gtag()` pushes `arguments`.
+- `disableGoogleAnalytics()` expires `_ga*` on every parent domain as well as
+  the host. gtag sets them on `.skankingstorks.band`, and a write with no
+  `Domain` cannot remove that — unreachable while the tag never ran, and a
+  withdrawal that left the identifier behind the moment it did.
+
+## What pins it now
+
+- `web/src/lib/analytics.test.ts` — the queue holds `Arguments` objects; a
+  load clears the switch; cookies are expired per parent domain.
+- `app/e2e/tests/public/consent-banner.spec.ts` — Accept produces a real
+  `page_view` request (answered by a stub, so a test run is never counted),
+  and the `_ga` client id survives a reload. It skips on a stack with no
+  measurement ID, so run it against one that has it after touching this code.
+
+**Dev sends real hits too.** The root `.env` carries the production
+measurement ID, so accepting the banner on `localhost:8081` now records a
+visit in the live property. Blank `PUBLIC_GA_MEASUREMENT_ID` locally (and
+rebuild `web`) or filter the `localhost` hostname in GA if that matters.
+
+---
+
+# The September investigation (superseded)
 
 ## TL;DR
 
