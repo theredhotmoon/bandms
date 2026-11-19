@@ -66,5 +66,15 @@ chmod -R 775 storage bootstrap/cache
 # Tighten key permissions AFTER the broad chmod so they aren't overwritten
 chmod 600 storage/oauth-private.key storage/oauth-public.key 2>/dev/null || true
 
+# Fetch the GeoLite2 database once when it is missing and a key is set. In the
+# background and never fatal: a slow or failing download must not block start.
+if [ -n "${MAXMIND_LICENSE_KEY:-}" ] && [ ! -f storage/app/geoip/GeoLite2-City.mmdb ]; then
+    echo "[entrypoint] Fetching GeoLite2-City in the background..."
+    # As www-data, like the scheduler that refreshes it weekly: run as root, this
+    # would create storage/app/geoip root-owned and every weekly install would fail.
+    # busybox su (Alpine); -s because www-data's login shell is nologin.
+    (su -s /bin/sh www-data -c 'cd /var/www/html && php artisan geoip:update' >/dev/null 2>&1 || echo "[entrypoint] geoip:update failed; geo targeting stays off until the weekly run" >&2) &
+fi
+
 echo "[entrypoint] Starting services..."
 exec supervisord -c /etc/supervisord.conf

@@ -7,20 +7,24 @@ import { defineCopy } from '../resolve'
 export const PRIVACY_COPY = defineCopy([
   // ── Cookie banner ───────────────────────────────────────────────────
   {
+    key: 'bannerTitle', label: 'Banner heading', group: 'Cookie banner', maxLength: 60,
+    defaults: { en: 'Help us plan the next tour', pl: 'Pomóż nam zaplanować trasę' },
+  },
+  {
     key: 'bannerBody', label: 'Banner text', group: 'Cookie banner', type: 'textarea', maxLength: 300,
     help: 'Only shown when analytics are configured.',
     defaults: {
-      en: 'We use cookies to understand how visitors use this site. Analytics only load if you accept.',
-      pl: 'Używamy plików cookie, aby zrozumieć, jak odwiedzający korzystają z tej strony. Analityka ładuje się tylko po Twojej zgodzie.',
+      en: 'We are an independent band. Analytics tell us which cities our visitors come from, which helps us decide where to play next. Nothing loads unless you allow it.',
+      pl: 'Jesteśmy niezależnym zespołem. Analityka mówi nam, z jakich miast przychodzą odwiedzający, co pomaga nam zdecydować, gdzie zagrać następny koncert. Nic się nie ładuje bez twojej zgody.',
     },
   },
   {
-    key: 'bannerAccept', label: '"Accept" button', group: 'Cookie banner', maxLength: 30,
-    defaults: { en: 'Accept', pl: 'Akceptuję' },
+    key: 'bannerAccept', label: '"Allow" button', group: 'Cookie banner', maxLength: 30,
+    defaults: { en: 'Allow', pl: 'Zezwalam' },
   },
   {
-    key: 'bannerReject', label: '"Reject" button', group: 'Cookie banner', maxLength: 30,
-    defaults: { en: 'Reject', pl: 'Odrzucam' },
+    key: 'bannerReject', label: '"No thanks" button', group: 'Cookie banner', maxLength: 30,
+    defaults: { en: 'No thanks', pl: 'Nie, dziękuję' },
   },
   {
     key: 'bannerLink', label: 'Policy link', group: 'Cookie banner', maxLength: 40,
@@ -105,6 +109,17 @@ export const PRIVACY_COPY = defineCopy([
     defaults: {
       en: 'To comment on news you sign in with your email address, which we store with your account and never show on the site. A comment is public and appears with the name you choose. You can delete your own comments at any time, and you can ask us to remove your account together with everything you wrote.',
       pl: 'Aby komentować aktualności, logujesz się adresem e-mail, który przechowujemy przy twoim koncie i nigdy nie pokazujemy na stronie. Komentarz jest publiczny i pojawia się z wybraną przez ciebie nazwą. Własne komentarze możesz usunąć w każdej chwili, możesz też poprosić nas o usunięcie konta razem ze wszystkim, co napisałeś.',
+    },
+  },
+  {
+    key: 'locationHeading', label: 'Location: heading', group: 'Policy page', maxLength: 80,
+    defaults: { en: 'Shows near you', pl: 'Koncerty w pobliżu' },
+  },
+  {
+    key: 'locationBody', label: 'Location: text', group: 'Policy page', type: 'textarea', maxLength: 600,
+    defaults: {
+      en: 'To show you concerts near you, we use your IP address once, on our own server, to estimate which city you are in. The address is not stored and not shared with anyone; only the nearby shows are picked from it.',
+      pl: 'Aby pokazać ci koncerty w pobliżu, jednorazowo używamy twojego adresu IP na naszym własnym serwerze, żeby oszacować, w jakim mieście jesteś. Adres nie jest zapisywany ani nikomu udostępniany; służy tylko do wybrania pobliskich koncertów.',
     },
   },
   {

@@ -144,6 +144,7 @@ export const MIGRATED = [
   'views/admin/FanAccountsAdminView.vue',
   'views/admin/CommentsAdminView.vue',
   'components/admin/CommentLimitForm.vue',
+  'components/admin/WelcomeSettingsPanel.vue',
   'components/admin/forms/TagForm.vue',
   'components/admin/forms/ShopItemForm.vue',
   'views/admin/FaqsAdminView.vue',

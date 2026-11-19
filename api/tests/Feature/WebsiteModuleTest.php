@@ -43,10 +43,11 @@ it('returns the baseline modules when nothing else is registered', function () {
     $this->getJson('/api/site-config')
         ->assertOk()
         // Keyed in sort_order: contact (11), about (12), home (89), footer (90),
-        // privacy (91), site (92).
+        // privacy (91), site (92), welcome (93).
         ->assertJsonPath('modules', [
             'contact' => true, 'about' => true, 'home' => true,
             'footer' => true, 'privacy' => true, 'site' => true,
+            'welcome' => false,
         ]);
 });
 
@@ -91,10 +92,10 @@ it('returns all modules and auto_rebuild for admin', function () {
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
     // concerts (1), then the migrated baseline modules in sort_order:
-    // contact (11), about (12), home (89), footer (90), privacy (91), site (92).
+    // contact (11), about (12), home (89), footer (90), privacy (91), site (92), welcome (93).
     $this->getJson('/api/admin/modules')
         ->assertOk()
-        ->assertJsonCount(7, 'data')
+        ->assertJsonCount(8, 'data')
         ->assertJsonPath('data.0.slug', 'concerts')
         ->assertJsonPath('data.1.slug', 'contact')
         ->assertJsonPath('data.2.slug', 'about')
@@ -102,6 +103,7 @@ it('returns all modules and auto_rebuild for admin', function () {
         ->assertJsonPath('data.4.slug', 'footer')
         ->assertJsonPath('data.5.slug', 'privacy')
         ->assertJsonPath('data.6.slug', 'site')
+        ->assertJsonPath('data.7.slug', 'welcome')
         ->assertJsonPath('auto_rebuild', false);
 });
 

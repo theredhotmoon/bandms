@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { failOnPageError } from '../../fixtures/page-errors'
@@ -5,7 +6,7 @@ import { failOnPageError } from '../../fixtures/page-errors'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 const REASON = `E2E clips-surfaces ${STAMP}`

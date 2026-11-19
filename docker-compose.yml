@@ -72,6 +72,9 @@ services:
       ASSISTANT_TEXT_MODEL:        ${ASSISTANT_TEXT_MODEL:-claude-opus-5-5}
       ASSISTANT_TRIAGE_MODEL:      ${ASSISTANT_TRIAGE_MODEL:-claude-haiku-5-5}
       ANTHROPIC_API_KEY:           ${ANTHROPIC_API_KEY:-}
+      # Welcome screen geo targeting (geoip:update); without them it fails open.
+      MAXMIND_ACCOUNT_ID:          ${MAXMIND_ACCOUNT_ID:-}
+      MAXMIND_LICENSE_KEY:         ${MAXMIND_LICENSE_KEY:-}
       # The crawler's sources (assistant:crawl). Each source runs only when its
       # key is here; the settings page shows which ones lack one. The nightly
       # run is off locally — dev and prod keep separate run ledgers, so a real

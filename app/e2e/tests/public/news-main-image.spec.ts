@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { adminHeaders, contentLocaleOrder, moduleSectionSlug, rebuildAndWait, TEST_PNG, postRequiredFields } from '../../fixtures/admin-api'
@@ -22,7 +23,7 @@ import { adminHeaders, contentLocaleOrder, moduleSectionSlug, rebuildAndWait, TE
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 /** Uploads the 1×1 PNG the way the admin's cover field does and returns the stored path. */
 async function uploadImage(request: APIRequestContext): Promise<string> {

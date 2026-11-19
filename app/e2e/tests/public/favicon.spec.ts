@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect } from '@playwright/test'
 
 /**
@@ -12,7 +13,7 @@ import { test, expect } from '@playwright/test'
  */
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 test('every icon the page links is served as an image', async ({ page, request }) => {
   await page.goto(`${WEB}/en/`)

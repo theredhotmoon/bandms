@@ -8,6 +8,7 @@ use App\Models\SiteSetting;
 use App\Models\WebsiteModule;
 use App\Support\Locales;
 use App\Support\SiteRebuild;
+use App\Support\WelcomeSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -78,6 +79,9 @@ class WebsiteModuleController extends Controller
             // Always an object, never null — the Astro build bakes whatever it
             // gets, and a null would throw at build time.
             'hero_images'   => (object) $hero_images,
+            // Beside module_config, not inside it: slugs.ts builds the slug
+            // map from module_config's keys.
+            'welcome'       => WelcomeSettings::forBuild(),
         ]);
     }
 

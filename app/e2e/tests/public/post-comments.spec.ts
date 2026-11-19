@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type Page } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { seedFanSession, type SeededFanSession } from '../../fixtures/seed'
@@ -19,7 +20,7 @@ import { seedFanSession, type SeededFanSession } from '../../fixtures/seed'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 /**
  * The first article the built News page links to — see post-back-link.spec.ts

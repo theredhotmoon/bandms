@@ -2173,6 +2173,55 @@ Editors live at **`/admin/website-modules`** (page copy, per module) and
 
 ---
 
+## The welcome screen and the consent card
+
+A first-time visitor gets a GA consent card (a modal; a slim strip on the
+excluded paths) and then, optionally, a welcome screen. Both are islands in
+`web/`; the show rules are pure functions in `web/src/lib/welcome.ts`, which
+also holds the **excluded paths** (privacy, rider, ...) — a new page that must
+not be covered goes there.
+
+- **Settings are `site_settings.welcome_screen`**, read through
+  `App\Support\WelcomeSettings` and served **top-level as `welcome`** in
+  `/api/site-config`, never inside `module_config` (same reason as hero
+  images: `slugs.ts` iterates `module_config`'s keys).
+- **The `welcome` website_modules row is created disabled**, and `enabled` is
+  the master switch. A fresh or synced database shows nothing until the band
+  switches it on.
+- **`PUT` never changes `campaign`; only `POST .../campaign` does.** A stamp
+  re-arms **every** visitor, including the E2E ones. That is why
+  `anonymousVisitor()` (`app/e2e/fixtures/visitor.ts`) reads the *live*
+  campaign instead of hardcoding one (memoised per process; `{ fresh: true }`
+  re-reads after a stamp), and why **both** welcome specs stamp and both run
+  last: `welcome-admin` and then `welcome-public` depend on every chain's leaf
+  (`WELCOME_AFTER` in `app/playwright.config.ts` — a new chain's leaf joins
+  it), or a stamp would re-arm the seeded visitor of every spec running beside
+  it whenever the module is on, as it is on a prod-synced DB.
+- **Both welcome specs put the campaign back** in `afterAll`, through
+  `setWelcomeCampaign()` → `php artisan e2e:set-welcome-campaign` (no admin
+  route can lower it). `site_settings` is a content table, so a stamp left on
+  the dev DB would ride `sync_db.py push --content` and re-show the screen to
+  every production visitor — see `docs/prod-sync.md`.
+- **The geo data is written as `www-data`.** The entrypoint runs
+  `geoip:update` through `su -s /bin/sh www-data`, because the weekly run is
+  the scheduler (www-data) and a root-created `storage/app/geoip/` made every
+  later install fail. A manual run is `docker exec -u www-data …`.
+- **Public specs use `anonymousVisitor()`, never an empty storage state** —
+  it seeds consent and welcome-seen, and without it the consent card covers
+  the page and every click times out.
+- **The two consent buttons must stay equal** in size, weight and colour.
+  That is a legal requirement (no nudging toward Allow), not taste.
+- **Geo targeting fails open.** `GET /api/welcome/nearby` answers from a
+  MaxMind GeoLite2 database on our own server; with no key, no database, an
+  unknown IP or any error it returns "not near", and the ordinary screen
+  shows. The visitor's IP is never logged or stored.
+- **`MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` must be in the backend
+  `environment:` of *both* compose files** (the usual env-reaches-the-container
+  rule above). The `.mmdb` lives on the storage volume and is fetched by
+  `geoip:update` — weekly, and by the entrypoint when it is missing.
+
+---
+
 ## Astro islands cannot share props — use a nanostore
 
 Two islands on the same page are two separate Vue apps. The availability

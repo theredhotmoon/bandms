@@ -14,6 +14,7 @@ import { LOCALES, bagFrom, emptyBag, type Lang, type TranslationBag } from '@/lo
 import type { TranslateFormat } from '@/types/assistant'
 import { toDraft, toPayload } from '@/utils/moduleCopyDraft'
 import { useContentLocales } from '@/composables/useContentLocales'
+import WelcomeSettingsPanel from '@/components/admin/WelcomeSettingsPanel.vue'
 import ContentLanguagesCard from '@/components/admin/ContentLanguagesCard.vue'
 import { copyFieldGroup, copyFieldHelp, copyFieldLabel } from '@/i18n/copyFields'
 import { useUiLang } from '@/composables/useUiLang'
@@ -130,7 +131,15 @@ const settingsGroups = computed(() =>
 // map is enough.
 const draftVisibility = ref<Record<string, boolean>>({})
 
-const { isDirty, markClean } = useDirtyGuard(() => ({
+// The welcome panel keeps its own form; the view only needs to know whether it
+// holds unsaved edits and to ask it to save along with the module row.
+const welcomePanel = ref<InstanceType<typeof WelcomeSettingsPanel> | null>(null)
+const panelDirty = computed(() => editingSlug.value === 'welcome' && welcomePanel.value?.dirty === true)
+
+// The guard tracks the row's own fields only. The panel's dirtiness is added
+// below: it must never be part of the baseline, or markClean() after a save
+// would record "panel dirty" as the clean state.
+const { isDirty: rowDirty, markClean } = useDirtyGuard(() => ({
   name: draftName.value,
   slug: draftSlug.value,
   perPage: draftPerPage.value,
@@ -138,6 +147,9 @@ const { isDirty, markClean } = useDirtyGuard(() => ({
   settings: draftSettings.value,
   visibility: draftVisibility.value,
 }))
+
+// One `isDirty` answers "is there anything to lose here" for the row and the panel.
+const isDirty = computed(() => rowDirty.value || panelDirty.value)
 
 const visibilityFields = computed(() =>
   editingSlug.value ? visibilityFieldsFor(editingSlug.value) : [],
@@ -230,6 +242,16 @@ function collectVisibility(slug: string): ModuleVisibility {
 
 async function saveEdit(slug: string) {
   fieldErrors.value = {}
+  // The panel saves first; if it fails it has already shown its toast, and the
+  // editor stays open with everything still typed.
+  // Asked before the panel saves, about the row's own fields only: a panel-only
+  // edit must not cost a module PUT that changes nothing.
+  const rowChanged = rowDirty.value
+  if (panelDirty.value && !(await welcomePanel.value!.save())) return
+  if (!rowChanged) {
+    editingSlug.value = null
+    return
+  }
   try {
     await updateSettings.mutateAsync({
       slug,
@@ -397,6 +419,8 @@ async function saveEdit(slug: string) {
               <template #path><code class="text-zinc-500">/{{ mod.slug }}</code></template>
             </i18n-t>
           </div>
+
+          <WelcomeSettingsPanel v-if="editingSlug === 'welcome'" :ref="(el) => (welcomePanel = el as InstanceType<typeof WelcomeSettingsPanel> | null)" />
 
           <!-- Page copy. Which fields appear comes from the @bandms/site-copy
                registry, not from the server: settings is a free-form bag, so a

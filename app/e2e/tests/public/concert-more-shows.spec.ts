@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 import { rebuildAndWait } from '../../fixtures/admin-api'
@@ -23,7 +24,7 @@ import { rebuildAndWait } from '../../fixtures/admin-api'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 1400, height: 900 } })
+test.use({ storageState: anonymousVisitor(), viewport: { width: 1400, height: 900 } })
 
 interface ApiConcert { id: number; slug: string; name: string | null; date: string; venue: { name: string } }
 

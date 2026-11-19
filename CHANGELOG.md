@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-19 (a welcome screen for first-time visitors)
+
+### Added
+- **A welcome screen for first-time visitors.** It greets a new visitor with what is coming up: your next gigs, the latest news, the newsletter sign-up and the fan account, in whichever mix you choose. It is switched off until you turn it on.
+- **Settings in *Website modules -> Welcome screen*.** Choose which blocks appear and in what order, how many upcoming gigs it lists, and how often a visitor sees it: again every N days, or only once per visitor. A *near a gig* option offers visitors the gigs close to where they are (you pick the radius, and whether visitors far from every gig get the screen without gigs or no screen at all). *Show to everyone now* brings the screen back once for every visitor who has already seen it, for example after a big announcement.
+- Polish and English wording for the whole screen, editable like the rest of the page copy.
+
+### Changed
+- **The cookie notice is now a centred card** with two equal buttons, *Allow* and *No thanks*. On pages where a big card would get in the way (privacy, the tech rider and similar) it is a slim strip instead.
+- Friendlier default wording on the notice.
+
+### Before switching it on
+- Review the wording in *Website modules -> Welcome screen*.
+- For *near a gig*, create a free MaxMind account and set `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` on the server (see `docs/deployment.md`). Without them the option does nothing and everyone gets the ordinary screen.
+- Check the new paragraph in the privacy policy suits you.
+
 ## [Unreleased] — 2026-11-19 (Google Analytics finally counts visits)
 
 ### Fixed

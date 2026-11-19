@@ -51,6 +51,15 @@ const LIST_PER_PAGE_SPEC = /list-per-page\.spec\.ts/
 // waits for the pool and for list-per-page, which asserts on that top post.
 const POST_HIGHLIGHT_SPEC = /post-highlight\.spec\.ts/
 
+// The welcome-screen admin spec writes the one welcome_settings row; the public
+// spec (welcome-public) reads what it bakes, so they chain: admin, then public.
+const WELCOME_ADMIN_SPEC = /admin[\\/]welcome-screen\.spec\.ts/
+const WELCOME_PUBLIC_SPEC = /public[\\/]welcome-screen\.spec\.ts/
+// Every chain's final project. Both welcome specs stamp a campaign, so both
+// wait for all of these; a new chain's leaf joins this list, or it can run
+// while a stamped campaign re-arms its seeded visitors.
+const WELCOME_AFTER = ['post-highlight', 'about-visibility', 'rider-link-public', 'videos-public']
+
 export default defineConfig({
   testDir: './e2e/tests',
   fullyParallel: true,
@@ -119,7 +128,26 @@ export default defineConfig({
         storageState: 'e2e/.auth/admin.json',
       },
       dependencies: ['setup'],
-      testIgnore: [...EPK_PUBLISHING_SPECS, ...MEMBER_PAGE_READERS, ABOUT_VISIBILITY_SPEC, LIST_PER_PAGE_SPEC, POST_HIGHLIGHT_SPEC],
+      testIgnore: [...EPK_PUBLISHING_SPECS, ...MEMBER_PAGE_READERS, ABOUT_VISIBILITY_SPEC, LIST_PER_PAGE_SPEC, POST_HIGHLIGHT_SPEC, WELCOME_ADMIN_SPEC, WELCOME_PUBLIC_SPEC],
+    },
+    {
+      name: 'welcome-admin',
+      testMatch: WELCOME_ADMIN_SPEC,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      // Last in the run, like welcome-public: it presses *Show to everyone now*,
+      // and a new campaign makes every other spec's seeded visitor (see
+      // fixtures/visitor.ts) due for the welcome screen whenever the module is
+      // on — as it is on a prod-synced DB. Both specs restore it in afterAll.
+      dependencies: WELCOME_AFTER,
+    },
+    {
+      name: 'welcome-public',
+      testMatch: WELCOME_PUBLIC_SPEC,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      // Last in the run, after welcome-admin: it enables the module and stamps a
+      // new campaign, which makes every other spec's seeded visitor due for the
+      // welcome screen. So it waits for every chain's final project too.
+      dependencies: ['welcome-admin', ...WELCOME_AFTER],
     },
     {
       name: 'list-per-page',

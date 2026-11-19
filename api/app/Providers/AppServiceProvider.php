@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Support\Activity\ActivityRecorder;
 use App\Support\AlbumLinks;
 use App\Support\ClipOwners;
+use App\Support\Geo\Locator;
+use App\Support\Geo\MaxMindLocator;
 use App\Support\MemberLinks;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -20,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // One per request or queued job: everything it writes shares one log row.
         $this->app->scoped(ActivityRecorder::class);
+
+        $this->app->singleton(Locator::class, MaxMindLocator::class);
     }
 
     public function boot(): void

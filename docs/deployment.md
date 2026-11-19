@@ -612,6 +612,26 @@ After adding a key: `docker compose -f docker-compose.prod.yml up -d --no-deps b
 `docker exec bandms-backend php artisan assistant:digest --preview` prints the
 digest as it would go out right now (later triage can still change Monday's).
 
+### The welcome screen's near-a-gig targeting
+
+Optional. The welcome screen works without this; the *near a gig* option
+(*Website modules -> Welcome screen*) needs to know roughly where a visitor
+is, which the backend works out on our own server from MaxMind's free
+GeoLite2 City database. No visitor IP leaves the server and none is stored.
+
+1. Create a free account at maxmind.com (GeoLite2 sign-up), then *Manage
+   account ID* shows the **account ID** and *Manage license keys* -> *Generate
+   new license key* gives the **licence key**.
+2. In `/opt/bandms/.env` set `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY`,
+   then `docker compose -f docker-compose.prod.yml up -d --no-deps backend`.
+3. The backend downloads the database itself: at start when it is missing,
+   then weekly (`geoip:update`). It lives on the storage volume, so it
+   survives deploys. `docker exec -u www-data bandms-backend php artisan geoip:update`
+   fetches it right now.
+
+Without both values targeting stays off and every visitor gets the ordinary
+welcome screen.
+
 ### Database backups
 
 > Full detail — verification, restore procedure, rollback caveats and known

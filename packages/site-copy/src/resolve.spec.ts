@@ -3,6 +3,7 @@ import {
   CONCERTS_COPY,
   EPK_COPY,
   MERCH_COPY,
+  PRIVACY_COPY,
   RELEASES_COPY,
   copyFieldsFor,
   copyGroupsFor,
@@ -12,6 +13,7 @@ import {
   MODULE_COPY,
   resolveCopy,
   SITE_COPY,
+  WELCOME_COPY,
 } from './index'
 
 const FIELDS = defineCopy([
@@ -184,5 +186,36 @@ describe('the registry', () => {
     const epkRider = copyFieldsFor('contact').find(f => f.key === 'epkRider')!
     expect(defaultFor(epkRider, 'en')).toBe('Tech rider & stage plot')
     expect(defaultFor(epkRider, 'pl')).toBe('Rider techniczny i plan sceny')
+  })
+
+  it('registers the welcome screen copy with filled en and pl defaults', () => {
+    expect(copyFieldsFor('welcome')).toBe(WELCOME_COPY)
+    expect(WELCOME_COPY.map(f => f.key)).toEqual([
+      'heading', 'intro', 'gigsTitle', 'gigsNearTitle', 'newsTitle',
+      'newsletterTitle', 'newsletterBody', 'newsletterPlaceholder', 'newsletterSubmit',
+      'newsletterSending', 'newsletterDone', 'newsletterError',
+      'accountTitle', 'accountBody', 'accountPlaceholder', 'accountSubmit',
+      'accountSending', 'accountDone', 'accountError', 'enter', 'close',
+    ])
+    expect(copyGroupsFor('welcome').map(g => g.group)).toEqual(
+      ['Intro', 'Gigs', 'News', 'Newsletter', 'Account', 'Buttons'],
+    )
+    for (const f of WELCOME_COPY) {
+      expect(defaultFor(f, 'en'), `${f.key} en`).not.toBe('')
+      expect(defaultFor(f, 'pl'), `${f.key} pl`).not.toBe('')
+    }
+  })
+
+  it('keeps the pinned privacy keys and adds the consent card ones', () => {
+    const keys = PRIVACY_COPY.map(f => f.key)
+    expect(keys).toEqual(expect.arrayContaining([
+      'bannerBody', 'bannerAccept', 'bannerReject', 'bannerLink',
+      'bannerTitle', 'locationHeading', 'locationBody',
+    ]))
+    const get = (k: string) => PRIVACY_COPY.find(f => f.key === k)!
+    expect(defaultFor(get('bannerAccept'), 'en')).toBe('Allow')
+    expect(defaultFor(get('bannerReject'), 'pl')).toBe('Nie, dziękuję')
+    expect(get('bannerTitle').group).toBe('Cookie banner')
+    expect(get('locationBody').group).toBe('Policy page')
   })
 })

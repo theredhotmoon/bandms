@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -25,7 +26,7 @@ const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 const VIEWPORT = { width: 1600, height: 1000 }
 const PAGE_MAX = 1200
 
-test.use({ storageState: { cookies: [], origins: [] }, viewport: VIEWPORT })
+test.use({ storageState: anonymousVisitor(), viewport: VIEWPORT })
 
 interface ModuleConfig { enabled: boolean; slug?: string; content_width?: 'full' | 'limited' }
 

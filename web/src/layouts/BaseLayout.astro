@@ -6,11 +6,14 @@ import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ConsentBanner from '@/components/ConsentBanner.vue'
+import WelcomeScreen from '@/components/WelcomeScreen.vue'
 import { getTheme, THEME_FONTS } from '@/lib/theme'
 import { contentWidthFor } from '@/lib/contentWidth'
-import { getBandProfile, getSiteConfig } from '@/lib/cms'
+import { getBandProfile, getConcerts, getLatestPost, getSiteConfig } from '@/lib/cms'
+import { getSlugMap } from '@/lib/slugs'
+import { buildWelcomeData, shouldMountWelcome } from '@/lib/welcomeProps'
 import { PRIVACY_COPY } from '@bandms/site-copy'
-import { cartCopy, merchCopy, moduleCopy, siteCopy } from '@/lib/copy'
+import { cartCopy, merchCopy, moduleCopy, siteCopy, welcomeCopy } from '@/lib/copy'
 import ThemeSlot from '@/components/ThemeSlot.astro'
 import '@/styles/global.css'
 
@@ -65,12 +68,38 @@ const [profile, siteConfig] = await Promise.all([
 const cart = cartCopy(merchCopy(siteConfig, lang))
 const privacy = moduleCopy(siteConfig, 'privacy', PRIVACY_COPY, lang)
 const site = siteCopy(siteConfig, lang)
-const bannerCopy = { body: privacy.bannerBody, accept: privacy.bannerAccept, reject: privacy.bannerReject, privacy: privacy.bannerLink }
+const bannerCopy = { title: privacy.bannerTitle, body: privacy.bannerBody, accept: privacy.bannerAccept, reject: privacy.bannerReject, privacy: privacy.bannerLink }
 // With the privacy row switched off its page is not built, so the banner
 // must not link to it — same "gate on the module map" rule as every other link.
 const privacyHref = siteConfig.modules.privacy !== false ? `/${lang}/privacy` : null
 const bandName = profile?.name?.trim() || ''
 const pageTitle = !bandName || title === bandName ? title : `${title} — ${bandName}`
+
+// The welcome screen. Only an explicit `true` mounts it — the row is created
+// disabled, and a fail-open config (no module map, no `welcome`) must not show
+// it. Concerts and the latest post are memoised per locale, so this costs one fetch per
+// build, not one per page; a failure costs the block, never the build.
+const welcomeConfig = siteConfig.welcome
+const welcomeEnabled = siteConfig.modules.welcome === true && !!welcomeConfig
+const [welcomeConcerts, welcomeLatestPost, welcomeSlugMap] = welcomeEnabled && welcomeConfig
+  ? await Promise.all([
+      siteConfig.modules.concerts !== false ? getConcerts(lang).catch(() => []) : Promise.resolve([]),
+      siteConfig.modules.posts !== false ? getLatestPost(lang).catch(() => null) : Promise.resolve(null),
+      getSlugMap(),
+    ])
+  : [[], null, null]
+const welcomeData = welcomeEnabled && welcomeConfig && welcomeSlugMap
+  ? buildWelcomeData({
+      lang,
+      config: welcomeConfig,
+      modules: siteConfig.modules,
+      concerts: welcomeConcerts,
+      latestPost: welcomeLatestPost,
+      slugMap: welcomeSlugMap,
+    })
+  : null
+const showWelcome = shouldMountWelcome(siteConfig.modules.welcome, welcomeConfig, welcomeData)
+const welcomeTexts = showWelcome ? welcomeCopy(siteConfig, lang, bandName) : null
 
 // Theme is an attribute rather than a build flag: every theme's tokens ship in
 // one stylesheet scoped to [data-theme], so switching is a runtime concern the
@@ -126,6 +155,18 @@ const contentWidth = contentWidthFor(siteConfig, module)
       e2e/tests/public/consent-banner.spec.ts.
     */}
     {gaMeasurementId && <ConsentBanner client:load lang={lang} measurementId={gaMeasurementId} copy={bannerCopy} privacyHref={privacyHref} />}
+    {showWelcome && welcomeConfig && welcomeData && welcomeTexts && (
+      <WelcomeScreen
+        client:idle
+        lang={lang}
+        config={welcomeConfig}
+        gaConfigured={gaMeasurementId !== ''}
+        concerts={welcomeData.concerts}
+        post={welcomeData.post}
+        available={welcomeData.available}
+        copy={welcomeTexts}
+      />
+    )}
     <ThemeSlot name="page-grain" />
   </body>
 </html>

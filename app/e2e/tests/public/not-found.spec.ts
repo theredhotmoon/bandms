@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -24,7 +25,7 @@ const COPY = {
   pl: { lang: 'pl', heading: 'Nie znaleziono strony', title: 'Nie znaleziono strony', home: '/pl/' },
 } as const
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 async function siteIsUp(request: import('@playwright/test').APIRequestContext) {
   try {

@@ -26,6 +26,10 @@ async function siteIsUp(request: import('@playwright/test').APIRequestContext) {
   }
 }
 
+/** The island is in the page only when PUBLIC_GA_MEASUREMENT_ID was baked in. */
+const hasConsent = async (page: import('@playwright/test').Page) =>
+  (await page.locator('astro-island[component-url*="ConsentBanner"]').count()) > 0
+
 test.describe('Cookie consent banner', () => {
   failOnPageError()
 
@@ -38,11 +42,11 @@ test.describe('Cookie consent banner', () => {
     await page.route(GA_COLLECT, route => route.fulfill({ status: 204, body: '' }))
   })
 
-  test('shows on first visit and GA does not load until a choice is made', async ({ page }) => {
+  test('shows as a card on first visit and GA does not load until a choice is made', async ({ page }) => {
     await page.goto(`${WEB}/en`)
 
-    const banner = page.getByRole('region', { name: /privacy|prywatności/i })
-    const isConfigured = await banner.count() > 0
+    const banner = page.getByRole('dialog')
+    const isConfigured = await hasConsent(page)
     test.skip(!isConfigured, 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
 
     await expect(banner).toBeVisible()
@@ -52,14 +56,14 @@ test.describe('Cookie consent banner', () => {
   test('Accept hides the banner, sends a page view, and persists across reload', async ({ page, context }) => {
     await page.goto(`${WEB}/en`)
 
-    const banner = page.getByRole('region', { name: /privacy|prywatności/i })
-    test.skip((await banner.count()) === 0, 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+    const banner = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
 
     // A loaded tag is not a sending tag: production loaded this one on every
     // page from Sep to Nov 2026 and it never sent a hit. The request is the
     // only thing that tells the two apart.
     const firstHit = page.waitForRequest(GA_COLLECT)
-    await page.getByRole('button', { name: 'Accept' }).click()
+    await page.getByTestId('consent-allow').click()
     await expect(banner).toBeHidden()
     expect((await firstHit).url()).toContain('en=page_view')
 
@@ -88,10 +92,10 @@ test.describe('Cookie consent banner', () => {
   test('Reject hides the banner, never loads GA, and persists across reload', async ({ page }) => {
     await page.goto(`${WEB}/en`)
 
-    const banner = page.getByRole('region', { name: /privacy|prywatności/i })
-    test.skip((await banner.count()) === 0, 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+    const banner = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
 
-    await page.getByRole('button', { name: 'Reject' }).click()
+    await page.getByTestId('consent-reject').click()
     await expect(banner).toBeHidden()
     expect(await page.locator('#ga4-tag').count()).toBe(0)
 
@@ -103,10 +107,10 @@ test.describe('Cookie consent banner', () => {
   test('the footer\'s "Cookie settings" link reopens the banner', async ({ page }) => {
     await page.goto(`${WEB}/en`)
 
-    const banner = page.getByRole('region', { name: /privacy|prywatności/i })
-    test.skip((await banner.count()) === 0, 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+    const banner = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
 
-    await page.getByRole('button', { name: 'Accept' }).click()
+    await page.getByTestId('consent-allow').click()
     await expect(banner).toBeHidden()
 
     await page.getByRole('button', { name: 'Cookie settings' }).click()
@@ -116,10 +120,10 @@ test.describe('Cookie consent banner', () => {
   test('reopening after Accept and choosing Reject actually stops GA, not just future loads', async ({ page, context }) => {
     await page.goto(`${WEB}/en`)
 
-    const banner = page.getByRole('region', { name: /privacy|prywatności/i })
-    test.skip((await banner.count()) === 0, 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+    const banner = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
 
-    await page.getByRole('button', { name: 'Accept' }).click()
+    await page.getByTestId('consent-allow').click()
     await expect(page.locator('#ga4-tag')).toHaveCount(1)
 
     const measurementId = await page.evaluate(() => {
@@ -137,7 +141,7 @@ test.describe('Cookie consent banner', () => {
       .poll(() => page.evaluate(id => (window as Record<string, unknown>)[`ga-disable-${id}`], measurementId))
       .toBe(true)
 
-    await page.getByRole('button', { name: 'Reject' }).click()
+    await page.getByTestId('consent-reject').click()
     await expect(banner).toBeHidden()
     await expect
       .poll(() => page.evaluate(id => (window as Record<string, unknown>)[`ga-disable-${id}`], measurementId))
@@ -149,5 +153,72 @@ test.describe('Cookie consent banner', () => {
     await expect
       .poll(async () => (await context.cookies()).filter(c => c.name.startsWith('_ga')).map(c => c.name))
       .toEqual([])
+  })
+  test('Allow and No thanks are the same size', async ({ page }) => {
+    await page.goto(`${WEB}/en`)
+    const card = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+
+    const allow = await page.getByTestId('consent-allow').boundingBox()
+    const reject = await page.getByTestId('consent-reject').boundingBox()
+    expect(allow && reject).toBeTruthy()
+    expect(Math.abs(allow!.width - reject!.width)).toBeLessThanOrEqual(1)
+    expect(Math.abs(allow!.height - reject!.height)).toBeLessThanOrEqual(1)
+  })
+
+  test('the card cannot be dismissed with Esc and traps Tab', async ({ page }) => {
+    await page.goto(`${WEB}/en`)
+    const card = page.getByRole('dialog')
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+
+    await expect(card).toHaveAttribute('aria-modal', 'true')
+    await page.keyboard.press('Escape')
+    await expect(card).toBeVisible()
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true)
+    await page.keyboard.press('Shift+Tab')
+    expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true)
+  })
+
+  test('shows as a non-blocking strip on the privacy page', async ({ page }) => {
+    await page.goto(`${WEB}/en`)
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+
+    const res = await page.goto(`${WEB}/en/privacy`)
+    test.skip(!res || !res.ok(), 'privacy page is switched off')
+    await expect(page.getByRole('region', { name: /privacy|prywatności/i })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('the strip offers both answers at the same size, in the card order', async ({ page }) => {
+    await page.goto(`${WEB}/en`)
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+
+    const res = await page.goto(`${WEB}/en/privacy`)
+    test.skip(!res || !res.ok(), 'privacy page is switched off')
+    const strip = page.getByRole('region', { name: /privacy|prywatności/i })
+    await expect(strip).toBeVisible()
+
+    const allow = await strip.getByTestId('consent-allow').boundingBox()
+    const reject = await strip.getByTestId('consent-reject').boundingBox()
+    expect(allow && reject).toBeTruthy()
+    expect(Math.abs(allow!.width - reject!.width)).toBeLessThanOrEqual(1)
+    expect(Math.abs(allow!.height - reject!.height)).toBeLessThanOrEqual(1)
+    // Allow first, as in the card.
+    expect(allow!.x).toBeLessThan(reject!.x)
+  })
+
+  test('with storage unavailable the choice cannot persist, so it is the strip, not the card', async ({ page }) => {
+    // Writes refused, reads allowed — Safari's old private mode, or a full
+    // quota. The banner probes with a write, so this is what it must survive.
+    await page.addInitScript(() => {
+      Storage.prototype.setItem = () => { throw new DOMException('quota', 'QuotaExceededError') }
+    })
+    // failOnPageError(): a page that throws on the missing storage fails here too.
+    await page.goto(`${WEB}/en`)
+    test.skip(!(await hasConsent(page)), 'PUBLIC_GA_MEASUREMENT_ID not configured on this stack')
+
+    await expect(page.getByRole('region', { name: /privacy|prywatności/i })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })

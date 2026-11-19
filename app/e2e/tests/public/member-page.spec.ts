@@ -1,3 +1,4 @@
+import { anonymousVisitor } from '../../fixtures/visitor'
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { failOnPageError } from '../../fixtures/page-errors'
 
@@ -10,7 +11,7 @@ import { failOnPageError } from '../../fixtures/page-errors'
 const WEB = process.env.E2E_WEB_URL ?? 'http://localhost:4322'
 const API = process.env.E2E_API_URL ?? 'http://localhost:8081'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: anonymousVisitor() })
 
 interface Member { first_name: string; last_name: string; slug?: string; is_current: boolean; public_page?: boolean }
 

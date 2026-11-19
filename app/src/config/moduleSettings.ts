@@ -38,7 +38,7 @@ export interface ModuleSettingField {
  * it is fixed (`/{lang}`, `/{lang}/privacy`). For all four a URL slug and a
  * per-page count would be inputs that do nothing, so the admin hides them.
  */
-export const NON_PAGE_MODULES = new Set(['footer', 'site', 'home', 'privacy'])
+export const NON_PAGE_MODULES = new Set(['footer', 'site', 'home', 'privacy', 'welcome'])
 
 /**
  * Rows whose `enabled` flag the public build ignores — there is no homepage
