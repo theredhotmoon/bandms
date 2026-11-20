@@ -232,6 +232,21 @@ export const getFeaturedPost = (lang: Locale = DEFAULT_LOCALE) =>
 /** One batch of the News grid — the build bakes the first. See postFeed.ts. */
 export const getPostBatch = (q: PostBatchQuery) => fetchPostBatch(BASE, q)
 
+/**
+ * Every draft, in full, for its preview page (lib/postPreview.ts). The
+ * endpoint answers only inside the Docker network. Fails open to none: a
+ * preview is a convenience for the band, and the build is all-or-nothing, so
+ * a failed fetch here must never take the public site down with it.
+ */
+export async function getPostPreviews(lang: Locale = DEFAULT_LOCALE): Promise<Post[]> {
+  try {
+    return await get<Post[]>('/internal/post-previews', { lang })
+  } catch (e) {
+    console.warn(`[build] draft previews unavailable (${(e as Error).message}); building none`)
+    return []
+  }
+}
+
 /** One published post, or null — deleted, or unpublished mid-build. See findConcert. */
 export const findPost = (id: number, lang: Locale = 'en') =>
   { assertSafeId(id); return findOnce<Post>(`/posts/${id}`, { lang }) }

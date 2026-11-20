@@ -1,6 +1,7 @@
 import type { AlbumCard } from './album'
 import type { TranslationBag } from '@/lib/locales'
 import type { Tag } from './tag'
+import type { RenderableClip } from './clip'
 
 export type RefEntity = 'concert' | 'album' | 'release' | 'press_release' | 'shop_item' | 'clip'
 export type EmbedProviderName =
@@ -44,10 +45,14 @@ export interface PostSummary {
 
 export interface Post extends PostSummary {
   blocks: PostBlock[]
+  /** Drafts only, from the build's draft list: the secret of its preview page. */
+  preview_token?: string
   /** Whether the page mounts the comments block. Absent from an older API, which counts as on. */
   comments_enabled?: boolean
   /** Linked photo albums the site builds a page for, in the band's order. Absent from an older API. */
   albums?: AlbumCard[]
+  /** Clips listed at the foot of the article, in the band's order. Absent from an older API. */
+  clips?: RenderableClip[]
   translations?: {
     title: TranslationBag
     intro: TranslationBag

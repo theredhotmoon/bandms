@@ -16,6 +16,14 @@ class PostResource extends JsonResource
             // The default locale's slug. A post's URL is per language — the
             // public site resolves translations.slug down the locale chain.
             'slug'         => $this->slugIn(Locales::default()),
+            // The draft preview's secret (/{lang}/post-preview/{token}/): for
+            // the roles that may read drafts (the adminShow gate), and for the
+            // build that bakes those pages — never on a public read.
+            'preview_token' => $this->when(
+                in_array($request->user('api')?->role, ['admin', 'publisher'], true)
+                    || $request->routeIs('api.internal.post-previews'),
+                fn () => $this->preview_token,
+            ),
             'intro'        => $this->intro,
             'image'        => $this->image ? '/storage/' . $this->image : null,
             'published_at' => $this->published_at,
@@ -48,6 +56,10 @@ class PostResource extends JsonResource
             // Linked photo albums — see ConcertResource.
             'album_ids'    => $this->whenLoaded('albums', fn () => $this->albums->pluck('id')->values()),
             'albums'       => $this->whenLoaded('albums', fn () => AlbumCardResource::forOwner($this->albums)),
+            // Clips listed at the foot of the article, in the band's order.
+            // The public page drops any that a ref block already embeds.
+            'clip_ids'     => $this->whenLoaded('clips', fn () => $this->clips->pluck('id')->values()),
+            'clips'        => ClipResource::collection($this->whenLoaded('clips')),
             // `site` is the publication name, which the Article page renders above
             // each headline and as the attribution on the pull quote. It falls
             // back to the URL's host rather than being omitted: a quote with no

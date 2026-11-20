@@ -6,6 +6,7 @@ import SingleImageUpload, { type ImageField } from '@/components/admin/forms/Sin
 import TranslatedSlugInput from '@/components/admin/forms/TranslatedSlugInput.vue'
 import TranslatedField from '@/components/admin/forms/TranslatedField.vue'
 import PostBlockEditor from '@/components/admin/forms/PostBlockEditor.vue'
+import PostPreviewLink from '@/components/admin/PostPreviewLink.vue'
 import { useDirtyGuard, useModalGuard } from '@/composables/useDirtyGuard'
 import { useContentLocales } from '@/composables/useContentLocales'
 import { useAuth } from '@/composables/useAuth'
@@ -83,6 +84,7 @@ const form = reactive({
   concert_ids: [] as number[],
   member_ids: [] as number[],
   album_ids: [] as number[],
+  clip_ids: [] as number[],
   blocks: [] as PostBlockDraft[],
 })
 
@@ -129,6 +131,7 @@ watch(() => props.initial, (val) => {
   form.concert_ids = val?.concerts?.map(c => c.id) ?? []
   form.member_ids = val?.member_ids ? [...val.member_ids] : []
   form.album_ids = val?.album_ids ? [...val.album_ids] : []
+  form.clip_ids = val?.clip_ids ? [...val.clip_ids] : []
   form.blocks = (val?.blocks ?? []).map(b => {
     if (b.type === 'text')  return { type: 'text',  payload: { body: b.translations.body } }
     if (b.type === 'image') return { type: 'image', payload: { path: b.path, url: b.url, alt: b.translations.alt, caption: b.translations.caption } }
@@ -184,6 +187,7 @@ async function submit() {
     concert_ids: form.concert_ids,
     member_ids: form.member_ids,
     album_ids: form.album_ids,
+    clip_ids: form.clip_ids,
     // `url` is a preview-only field on image drafts; strip it before sending.
     blocks: form.blocks.map(b => ({
       type: b.type,
@@ -332,6 +336,8 @@ async function submit() {
           v-model:memberIds="form.member_ids"
           :albums="albums"
           v-model:albumIds="form.album_ids"
+          :clips="clips"
+          v-model:clipIds="form.clip_ids"
         />
         <p v-if="tagError || errors?.tag_ids" class="field-error" data-testid="post-tag-error">
           {{ tagError || errors?.tag_ids?.[0] }}
@@ -361,7 +367,9 @@ async function submit() {
       <p class="pf-footer-status" :class="{ 'pf-footer-status--error': hasErrors }" aria-live="polite">
         {{ hasErrors ? $t('content.posts.checkFields') : (isPublished ? $t('content.posts.footerPublished') : $t('content.posts.footerDraft')) }}
       </p>
-      <div class="flex gap-2 shrink-0">
+      <div class="flex gap-2 shrink-0 items-center">
+        <!-- A saved draft only: a published post has its real page. -->
+        <PostPreviewLink v-if="initial && !initial.published_at" :token="initial.preview_token" :dirty="isDirty" />
         <button type="button" @click="cancel()" class="btn-ghost">{{ $t('common.actions.cancel') }}</button>
         <button type="submit" :disabled="loading || !isDirty" class="btn-primary">
           {{ loading ? $t('common.actions.saving') : (initial ? $t('common.actions.update') : $t('common.actions.create')) }}

@@ -288,6 +288,9 @@ class WebsiteModuleController extends Controller
         return response()->json(['data' => new WebsiteModuleResource($module)]);
     }
 
+    /** Path segments the public site uses itself under /{lang}/ (web/src/pages/[lang]/). */
+    private const RESERVED_SLUGS = ['post-preview'];
+
     /**
      * Validation for one locale's URL slug.
      *
@@ -307,6 +310,13 @@ class WebsiteModuleController extends Controller
             'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
             function (string $attribute, mixed $value, \Closure $fail) use ($module, $locale) {
                 if (blank($value)) {
+                    return;
+                }
+                // Fixed public routes beside the module pages, under the same
+                // /{lang}/ prefix: a module there would be shadowed.
+                if (in_array($value, self::RESERVED_SLUGS, true)) {
+                    $fail("The {$locale} slug \"{$value}\" is reserved by the website.");
+
                     return;
                 }
 

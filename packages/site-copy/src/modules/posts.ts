@@ -67,6 +67,16 @@ export const POSTS_COPY = defineCopy([
     defaults: { en: 'Tags', pl: 'Tagi' },
   },
   {
+    key: 'previewBanner', label: 'Draft preview banner', group: 'Article page', maxLength: 120,
+    help: "Across the top of a draft's preview page. Visitors never see it.",
+    defaults: { en: 'Preview — this post is not published yet', pl: 'Podgląd — ten wpis nie jest jeszcze opublikowany' },
+  },
+  {
+    key: 'clipsTitle', label: 'Videos heading', group: 'Article page', maxLength: 60,
+    help: 'Above the videos linked at the end of a post. Hidden when the post links none.',
+    defaults: { en: 'Videos', pl: 'Wideo' },
+  },
+  {
     key: 'concertKicker', label: 'Linked concert: card label', group: 'Article page', maxLength: 40,
     help: 'Above the concert card at the end of a post linked to a show.',
     defaults: { en: 'The show', pl: 'Koncert' },

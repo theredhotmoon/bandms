@@ -73,6 +73,8 @@ export interface PostSummary {
    * An empty list means the language is complete.
    */
   translation_gaps?: Partial<Record<string, TranslationGap[]>>
+  /** Drafts only (admin list and detail): the secret of the draft's preview page. */
+  preview_token?: string
   excerpt: string
   published_at: string | null
   /** Whether the public page offers comments. Absent on list rows. */
@@ -105,6 +107,8 @@ export interface Post extends PostSummary {
   member_ids?: number[]
   /** Linked photo albums ("Link to… → Photo albums"), in order. */
   album_ids?: number[]
+  /** Clips listed at the foot of the article ("Link to… → Videos"), in order. */
+  clip_ids?: number[]
   translations?: {
     title: TranslationMap
     intro: TranslationMap
@@ -130,5 +134,7 @@ export interface PostPayload {
   member_ids?: number[]
   /** Linked photo albums ("Link to… → Photo albums"), in order. */
   album_ids?: number[]
+  /** Clips listed at the foot of the article, in order. */
+  clip_ids?: number[]
   blocks?: PostBlockDraft[]
 }

@@ -183,6 +183,13 @@ export default {
     allowComments: 'Allow comments',
     allowCommentsNote: 'Signed-in fans can comment under this post.',
     footerDraft: 'Saved as a draft — not on the public site',
+    preview: {
+      open: 'Preview',
+      title: 'Open this draft as visitors will see it, in a new tab. Only people with the link can open it.',
+      saveFirst: 'Save to see your changes in the preview.',
+      building: 'The site is rebuilding — the preview updates in a minute.',
+      pending: 'The preview shows the last site build. Rebuild the site to see your latest saved changes.',
+    },
     footerPublished: 'Live on the public site once saved',
     checkFields: 'Some fields need attention',
     localeView: 'Show',

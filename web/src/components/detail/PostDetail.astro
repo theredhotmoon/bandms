@@ -10,6 +10,8 @@ import PostBlocks from '@/components/blocks/PostBlocks.astro'
 import { POSTS_COPY, CONCERTS_COPY } from '@bandms/site-copy'
 import PostConcerts from '@/components/PostConcerts.astro'
 import AlbumCards from '@/components/AlbumCards.astro'
+import ClipsGrid from '@/components/ClipsGrid.astro'
+import { footClips } from '@/lib/postClips'
 import { moduleCopy, postCommentsCopy, siteCopy } from '@/lib/copy'
 import PostComments from '@/components/PostComments.vue'
 
@@ -21,9 +23,14 @@ interface Props {
   // Fetched once, in the route's getStaticPaths, so the page cannot ask for a
   // record a parallel delete removed in between (lib/existingDetails.ts).
   post: Post
+  /**
+   * A draft's preview page (/{lang}/post-preview/{token}/): not indexed,
+   * marked as a preview, and without comments — a draft takes none.
+   */
+  preview?: boolean
 }
 
-const { lang, alternates, post } = Astro.props
+const { lang, alternates, post, preview = false } = Astro.props
 const itemId = post.id
 const slugMap = await getSlugMap()
 const siteConfig = await getSiteConfig(lang)
@@ -101,6 +108,9 @@ const concertCopy = {
 // One concert: the header's event date opens its dialog. Several: it jumps
 // to the cards, where each opens its own.
 const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : null
+
+// Videos ticked under "Link to…", minus those a block already placed in the text.
+const endClips = footClips(post.clips, post.blocks)
 ---
 
 <BaseLayout
@@ -110,11 +120,16 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
   structuredData={structuredData}
   lang={lang}
   alternates={alternates}
+  noindex={preview}
+  noAnalytics={preview}
 >
   <Fragment slot="head">
 </Fragment>
 
   <div class="ss">
+    {preview && (
+      <div class="art-preview" role="status" data-testid="post-preview-banner">{t.previewBanner}</div>
+    )}
 
     <!-- ── DARK HERO HEADER ──────────────────────────────────── -->
     <header class="art-hero">
@@ -226,6 +241,11 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
         copy={concertCopy}
       />
       <AlbumCards lang={lang} albums={post.albums} contained />
+      {endClips.length > 0 && (
+        <div class="art-clips" data-testid="post-clips">
+          <ClipsGrid clips={endClips} heading={t.clipsTitle} copy={site} />
+        </div>
+      )}
     </article>
 
     <!-- ── PREV / NEXT ────────────────────────────────────────── -->
@@ -260,7 +280,7 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
 
     <!-- ── COMMENTS: fetched and posted in the browser, never baked. `!== false`
          so a post from an API that predates the switch still gets them. ── -->
-    {post.comments_enabled !== false && (
+    {!preview && post.comments_enabled !== false && (
       <div class="ar-col" id="comments">
         <PostComments
           client:visible
@@ -548,6 +568,18 @@ const singleConcertId = linkedConcerts.length === 1 ? linkedConcerts[0].id : nul
      component owns its own <style>, since Astro scopes a <style> block to
      elements the file itself renders, not to markup a child component emits. */
   .art-body { padding-top: 44px; padding-bottom: 8px; }
+  .art-clips { margin-top: 36px; }
+
+  /* Draft preview: a band across the top, so nobody mistakes it for the live page. */
+  .art-preview {
+    background: var(--acc);
+    color: var(--color-on-accent);
+    font: 800 12px/1.3 var(--font-body);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 10px var(--page-gutter);
+  }
 
   /* ── BACK ──────────────────────────────
      The page's last block. Ink, like "More from the blog" above it and the

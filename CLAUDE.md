@@ -2058,6 +2058,41 @@ now that drafts are hidden. Use `->draft()` when the test needs one.
 dateless post with its `created_at`**, so hiding drafts removed nothing that
 was visible the day before. It runs once and is deliberately irreversible.
 
+### Draft previews are baked at a secret URL
+
+Every post carries `preview_token` (40 random chars, set on create, never
+fillable, `$hidden`). The build fetches every draft from
+`GET /api/internal/post-previews` and bakes each, through the real
+`PostDetail` with `preview`, at `/{lang}/post-preview/{token}/` — a banner,
+`noindex`, no comments, out of the sitemap. The admin links it from a draft's
+row and its editor footer (`PostPreviewLink`, `utils/postPreview.ts`).
+
+**`/api/internal/*` is for the build only, and two locks keep it that way.**
+Caddy answers it with a 404 (a `handle` block *above* `/api/*`), and the
+`internal` middleware 404s any request carrying `X-Forwarded-For`/`-Host`,
+which Caddy always adds. The build reaches `http://backend` directly on the
+Docker network, so it sends neither. A Caddyfile edit that drops the block
+still leaves the middleware; do not add a third route there without both.
+
+**A preview is a build, so it lags the editor.** Unsaved edits, a build in
+progress, and saved changes no build has run since (auto-rebuild off) all
+leave it stale, and the link says which. A rebuild for a preview publishes
+every other pending change too — there is no partial build.
+
+**`getPostPreviews()` fails open to no previews** — a broken draft list must
+never take the all-or-nothing build down. The token is checked
+(`previewableDrafts()`) before it becomes a path segment. The token is
+obscurity, like a rider link: anyone holding the URL sees the draft.
+
+**So nothing may record that URL.** The preview passes `noAnalytics` to
+`BaseLayout` — no consent card, no GA tag, because GA would store the token
+as `page_location` for anyone with access to the property — and
+`welcome.ts`'s `EXCLUDED_PATHS` keeps the welcome screen off it. The token
+goes only to `admin`/`publisher` (the roles that may read drafts), never
+to a member-role session. `post-preview` is in
+`WebsiteModuleController::RESERVED_SLUGS`, because the static route would
+otherwise shadow a module given that slug.
+
 ## FAQ entries are per subpage
 
 `faqs.module_slug` mirrors `website_modules.slug`, so FAQ categories track the
@@ -2516,10 +2551,22 @@ register `fn ($model) => $model->clips()->detach()`, and that arrow fn returns
 `deleting` hook never ran and a deleted concert left its member links behind.
 Both hooks are block closures returning `void` now; write new ones the same way.
 
-**Posts are not owners.** A post embeds a clip with a `ref` block
-(`entity: clip`); the block decides where in the article it sits. A clip
-created from the block editor's *Add a new clip…* is a real library row and
+**A post links a clip two ways, and they are different things.** A `ref`
+block (`entity: clip`) places the clip *in* the article, where the block
+sits. *Link to… → Videos* makes the post an owner (`post` alias, `clip_ids`
+on the post endpoints), and the article lists those clips at its **foot** —
+minus any a ref block already embeds (`footClips()`,
+`web/src/lib/postClips.ts`), so a video never shows twice. A clip created
+from the block editor's *Add a new clip…* is a real library row and
 outlives the post.
+
+**The clip form has no post picker, so it sends post owners back as it
+loaded them.** `attach` is the full owner list and `syncOwners()` detaches
+every omitted type, so a clip form that only knew concerts, releases and
+merch would unlink the clip from every post on save. `ClipForm`'s
+`keptOwners` carries any type it does not edit (posts, and albums, which it
+used to drop the same way). A new owner type without a picker needs nothing
+more; one *with* a picker goes in `EDITED_OWNERS`.
 
 **Clip ids are referenced by post blocks, so no write path may
 delete-and-recreate them.** `PUT /api/clips/{id}` updates in place and

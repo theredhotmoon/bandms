@@ -34,6 +34,8 @@ export default defineConfig({
           !path.startsWith('/newsletter/confirm') &&
           !path.startsWith('/newsletter/unsubscribe') &&
           !path.startsWith('/rider') &&
+          // Draft previews: secret, noindex, and gone once the post is published.
+          !LOCALES.some(l => path.startsWith(`/${l}/post-preview/`)) &&
           !LOCALES.some(l => path === `/${l}/404` || path === `/${l}/404/`)
         )
       },

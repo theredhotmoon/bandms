@@ -158,6 +158,7 @@ export default {
     albums: 'Photo albums',
     // Badge on an album the public site does not show yet (draft or no photos).
     albumHidden: 'not on site',
+    clips: 'Videos',
     posts: 'Blog posts',
     press: 'Press',
   },

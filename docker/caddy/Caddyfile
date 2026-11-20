@@ -45,6 +45,14 @@
 		redir https://{re.apex.1}{uri} permanent
 	}
 
+	# ── Build-only API ───────────────────────────────────────────────────────
+	# /api/internal/* serves drafts to the public-site build, which calls the
+	# backend directly on the Docker network. From outside it does not exist.
+	# Above /api/*: handle blocks are mutually exclusive, first match wins.
+	handle /api/internal/* {
+		respond 404
+	}
+
 	# ── Backend API ──────────────────────────────────────────────────────────
 	handle /api/* {
 		reverse_proxy backend:80

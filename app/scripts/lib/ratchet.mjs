@@ -97,6 +97,7 @@ export const MIGRATED = [
   'components/admin/CareerLevelWidget.vue',
   'components/admin/forms/AboutBioVariantSelect.vue',
   'components/admin/EntityRelationsPanel.vue',
+  'components/admin/PostPreviewLink.vue',
   'components/admin/forms/SingleImageUpload.vue',
   'components/admin/forms/ClipForm.vue',
   'components/AppNavbar.vue',

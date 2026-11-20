@@ -474,6 +474,10 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
     'Nagłówek sekcji wideo na stronie koncertu. Ukryty, gdy koncert nie ma klipów.',
   'Heading of the videos section on an item page. Hidden when the item has no clips.':
     'Nagłówek sekcji wideo na stronie produktu. Ukryty, gdy produkt nie ma klipów.',
+  "Across the top of a draft's preview page. Visitors never see it.":
+    'Na górze strony podglądu szkicu. Odwiedzający nigdy go nie widzą.',
+  'Above the videos linked at the end of a post. Hidden when the post links none.':
+    'Nad nagraniami wideo powiązanymi na końcu wpisu. Ukryty, gdy wpis żadnych nie ma.',
   'Heading of the videos section. Hidden when no clip is marked "Show in EPK".':
     'Nagłówek sekcji wideo. Ukryty, gdy żaden klip nie jest oznaczony „Pokaż w EPK”.',
   'On a show tagged festival, in the list and the archive.':
@@ -583,6 +587,7 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'Above the concerts the member played. Hidden when there are none.': 'Nad koncertami, w których grał członek zespołu. Ukryty, gdy ich nie ma.',
   // ── About → Member page → videos ────────────────────────────────────────
   'Videos heading': 'Nagłówek nagrań wideo',
+  'Draft preview banner': 'Pasek podglądu szkicu',
   'Above the videos the member appears in. Hidden when there are none.': 'Nad nagraniami wideo, w których występuje członek zespołu. Ukryty, gdy ich nie ma.',
   // ── About → Member page → releases ──────────────────────────────────────
   'Releases heading': 'Nagłówek wydawnictw',

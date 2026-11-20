@@ -2,7 +2,7 @@ import type { EmbedProviderName } from './post'
 import type { TranslationMap } from './shared'
 import type { ClipSource } from '@/utils/clipSources'
 
-export type ClipOwnerType = 'concert' | 'release' | 'shop_item' | 'album'
+export type ClipOwnerType = 'concert' | 'release' | 'shop_item' | 'album' | 'post'
 
 export interface ClipOwner {
   type: ClipOwnerType
