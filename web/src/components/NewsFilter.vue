@@ -594,7 +594,9 @@ function eventDate(p: PostSummary): string {
 .nf-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  /* Rows get twice the column gap: stacked cards with heavy 3px borders read
+     as one block at 24px, and the 6px hover shadow ate a quarter of that. */
+  gap: 48px 24px;
 }
 .nf-card {
   min-width: 0;
