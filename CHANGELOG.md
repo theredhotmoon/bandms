@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-20 (more space between news posts)
+
+### Changed
+- **The News page has more space between rows of posts**, so stacked cards no longer run together. The space between cards side by side is unchanged.
+
 ## [Unreleased] — 2026-11-20 (musicians can save My Profile)
 
 ### Fixed
