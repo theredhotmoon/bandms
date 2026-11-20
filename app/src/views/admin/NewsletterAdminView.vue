@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useUiLang } from '@/composables/useUiLang'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import { useNewsletterSubscribers } from '@/composables/useNewsletterSubscribers'
 import type { NewsletterSubscriber } from '@/types/newsletterSubscriber'
 import { reportSaveError } from '@/utils/formErrors'
+import { ApiError } from '@/api/client'
 
 const { t } = useI18n()
 const { uiLang } = useUiLang()
 
-const { query, remove, page } = useNewsletterSubscribers()
+const { query, remove, update, page } = useNewsletterSubscribers()
+
+// The API keeps the list to superadmins; anyone else gets a 403 and a sentence.
+const forbidden = computed(() => query.error.value instanceof ApiError && query.error.value.status === 403)
 
 const subscribers = computed<NewsletterSubscriber[]>(() => query.data.value?.data ?? [])
 const meta        = computed(() => query.data.value?.meta)
@@ -36,6 +40,61 @@ async function doDelete(id: number) {
     reportSaveError(e, t('content.newsletter.removeFailed'))
   } finally {
     confirmId.value = null
+  }
+}
+
+// ── Inline edit ──────────────────────────────────────────────────────────────
+const editingId   = ref<number | null>(null)
+const draft       = ref({ email: '', name: '' })
+const fieldErrors = ref<Record<string, string[]>>({})
+const editingOriginalEmail = ref('')
+
+// The server lower-cases and trims, so compare the same way — a case-only
+// edit is not a new address and sends no mail.
+const emailChanged = computed(() =>
+  draft.value.email.trim().toLowerCase() !== editingOriginalEmail.value.toLowerCase(),
+)
+
+function startEdit(s: NewsletterSubscriber) {
+  confirmId.value = null
+  editingId.value = s.id
+  editingOriginalEmail.value = s.email
+  draft.value = { email: s.email, name: s.name ?? '' }
+  fieldErrors.value = {}
+}
+
+function cancelEdit() {
+  editingId.value = null
+  fieldErrors.value = {}
+}
+
+// A row filtered out or paged away must not come back still in edit (or
+// remove-confirm) mode holding a forgotten draft.
+watch([search, page], () => {
+  cancelEdit()
+  confirmId.value = null
+})
+
+async function saveEdit(id: number) {
+  // Enter in an input bypasses the disabled Save button; each extra PUT of a
+  // changed address would rotate the token and send another mail.
+  if (update.isPending.value) return
+  fieldErrors.value = {}
+  try {
+    const result = await update.mutateAsync({
+      id,
+      payload: { email: draft.value.email.trim(), name: draft.value.name.trim() || null },
+    })
+    if (result.email_changed && !result.confirmation_sent) {
+      toast.warning(t('content.newsletter.savedConfirmationFailed', { email: result.data.email }))
+    } else {
+      toast.success(result.confirmation_sent
+        ? t('content.newsletter.savedConfirmationSent', { email: result.data.email })
+        : t('content.newsletter.saved'))
+    }
+    editingId.value = null
+  } catch (e) {
+    reportSaveError(e, t('content.newsletter.saveFailed'), fieldErrors)
   }
 }
 
@@ -87,6 +146,7 @@ function exportCsv() {
       </div>
 
       <div v-if="query.isPending.value" class="state-msg">{{ $t('common.state.loading') }}</div>
+      <div v-else-if="forbidden" class="state-msg" data-testid="newsletter-forbidden">{{ $t('content.newsletter.forbidden') }}</div>
       <div v-else-if="query.isError.value" class="state-msg state-msg--error">{{ $t('content.newsletter.loadFailed') }}</div>
       <div v-else-if="!subscribers.length" class="state-msg">{{ $t('content.newsletter.empty') }}</div>
       <div v-else-if="!filtered.length" class="state-msg">{{ $t('content.newsletter.noResults', { q: search }) }}</div>
@@ -104,9 +164,43 @@ function exportCsv() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="s in filtered" :key="s.id">
-              <td class="cell-email">{{ s.email }}</td>
-              <td class="cell-secondary">{{ s.name ?? '—' }}</td>
+            <tr v-for="s in filtered" :key="s.id" :data-testid="`subscriber-row-${s.id}`">
+              <template v-if="editingId === s.id">
+                <td class="cell-edit">
+                  <input
+                    v-model="draft.email"
+                    type="email"
+                    class="edit-input"
+                    :class="{ 'edit-input--error': fieldErrors.email }"
+                    :aria-label="$t('common.fields.email')"
+                    data-testid="subscriber-email-input"
+                    @keydown.enter="saveEdit(s.id)"
+                    @keydown.esc="cancelEdit"
+                  />
+                  <p v-if="fieldErrors.email" class="edit-error">{{ fieldErrors.email[0] }}</p>
+                  <p v-else-if="emailChanged" class="edit-hint" data-testid="subscriber-email-hint">
+                    {{ $t('content.newsletter.emailChangeHint') }}
+                  </p>
+                </td>
+                <td class="cell-edit">
+                  <input
+                    v-model="draft.name"
+                    type="text"
+                    class="edit-input"
+                    :class="{ 'edit-input--error': fieldErrors.name }"
+                    :aria-label="$t('common.fields.name')"
+                    :placeholder="$t('content.newsletter.namePlaceholder')"
+                    data-testid="subscriber-name-input"
+                    @keydown.enter="saveEdit(s.id)"
+                    @keydown.esc="cancelEdit"
+                  />
+                  <p v-if="fieldErrors.name" class="edit-error">{{ fieldErrors.name[0] }}</p>
+                </td>
+              </template>
+              <template v-else>
+                <td class="cell-email">{{ s.email }}</td>
+                <td class="cell-secondary">{{ s.name ?? '—' }}</td>
+              </template>
               <td class="cell-secondary">
                 <span class="source-badge">{{ s.source ?? 'website' }}</span>
               </td>
@@ -117,16 +211,38 @@ function exportCsv() {
                 </span>
               </td>
               <td class="cell-action">
-                <template v-if="confirmId === s.id">
+                <template v-if="editingId === s.id">
+                  <button
+                    class="btn-save"
+                    :disabled="update.isPending.value"
+                    data-testid="subscriber-save"
+                    @click="saveEdit(s.id)"
+                  >{{ $t('content.newsletter.save') }}</button>
+                  <button class="btn-confirm-no" @click="cancelEdit">{{ $t('content.newsletter.cancel') }}</button>
+                </template>
+                <template v-else-if="confirmId === s.id">
                   <span class="confirm-text">{{ $t('content.newsletter.confirmRemove') }}</span>
                   <button class="btn-confirm-yes" @click="doDelete(s.id)">{{ $t('content.newsletter.yes') }}</button>
                   <button class="btn-confirm-no"  @click="confirmId = null">{{ $t('content.newsletter.no') }}</button>
                 </template>
-                <button v-else class="btn-delete" @click="confirmId = s.id" :title="$t('content.newsletter.removeTitle')">
+                <template v-else>
+                <button
+                  class="btn-icon"
+                  :title="$t('content.newsletter.editTitle')"
+                  :aria-label="$t('content.newsletter.editTitle')"
+                  data-testid="subscriber-edit"
+                  @click="startEdit(s)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-delete" @click="confirmId = s.id" :title="$t('content.newsletter.removeTitle')" :aria-label="$t('content.newsletter.removeTitle')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
                   </svg>
                 </button>
+                </template>
               </td>
             </tr>
           </tbody>
@@ -235,6 +351,34 @@ function exportCsv() {
   transition: background 100ms;
 }
 .btn-confirm-no:hover { background: var(--c-273549); }
+
+.cell-edit { vertical-align: top; }
+.edit-input {
+  width: 100%; min-width: 10rem;
+  padding: 0.35rem 0.5rem; border-radius: 0.375rem;
+  border: 1px solid var(--c-334155-line); background: var(--c-0d0d0d);
+  color: var(--c-e2e8f0); font-size: var(--fs-sm); outline: none;
+}
+.edit-input:focus { border-color: var(--c-94a3b8); }
+.edit-input--error { border-color: var(--c-f87171); }
+.edit-hint  { margin: 0.35rem 0 0; font-size: var(--fs-2xs); color: var(--c-fbbf24); max-width: 22rem; }
+.edit-error { margin: 0.35rem 0 0; font-size: var(--fs-2xs); color: var(--c-f87171); }
+
+.btn-save {
+  padding: 0.2rem 0.6rem; border-radius: 0.25rem;
+  font-size: var(--fs-xs); font-weight: 600;
+  background: var(--c-052e16); color: var(--c-4ade80); border: 1px solid var(--c-4ade80);
+  cursor: pointer; margin-right: 0.25rem;
+}
+.btn-save:disabled { opacity: 0.5; cursor: wait; }
+
+.btn-icon {
+  padding: 0.3rem; border-radius: 0.375rem; margin-right: 0.25rem;
+  background: transparent; border: 1px solid transparent;
+  color: var(--c-475569); cursor: pointer;
+  transition: background 100ms, color 100ms, border-color 100ms;
+}
+.btn-icon:hover { background: var(--c-1f1f1f); color: var(--c-e2e8f0); border-color: var(--c-334155-line); }
 
 .btn-delete {
   padding: 0.3rem; border-radius: 0.375rem;

@@ -525,9 +525,13 @@ Route::middleware('auth:api')->group(function () {
 
         Route::post('/setlists/import-setlistfm', [SetlistController::class, 'importFromSetlistFm'])->name('api.setlists.import-setlistfm');
 
-        // Newsletter subscribers
-        Route::get('/newsletter-subscribers', [NewsletterSubscriberController::class, 'index'])->name('api.newsletter-subscribers.index');
-        Route::delete('/newsletter-subscribers/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('api.newsletter-subscribers.destroy');
+        // Newsletter subscribers — superadmin only, reading included: the list
+        // is every subscriber's email address, and an edit mails one of them.
+        Route::middleware('superadmin')->group(function () {
+            Route::get('/newsletter-subscribers', [NewsletterSubscriberController::class, 'index'])->name('api.newsletter-subscribers.index');
+            Route::put('/newsletter-subscribers/{subscriber}', [NewsletterSubscriberController::class, 'update'])->name('api.newsletter-subscribers.update');
+            Route::delete('/newsletter-subscribers/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('api.newsletter-subscribers.destroy');
+        });
 
         // Shop
         Route::get('/shop-admin', [ShopItemController::class, 'adminIndex'])->name('api.shop.admin-index');

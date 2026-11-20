@@ -38,6 +38,14 @@ abstract class TestCase extends BaseTestCase
         return $user;
     }
 
+    protected function actingAsSuperadmin(): User
+    {
+        $user = User::factory()->create(['role' => 'admin', 'is_superadmin' => true]);
+        Passport::actingAs($user);
+
+        return $user;
+    }
+
     protected function actingAsMember(?int $memberId = null): User
     {
         $user = User::factory()->create([

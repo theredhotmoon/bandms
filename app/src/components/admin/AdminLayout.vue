@@ -3,13 +3,19 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { adminUrl } from '@/config/admin'
-import { useAuth } from '@/composables/useAuth'
+import { refreshUserOnce, useAuth } from '@/composables/useAuth'
 import { useContentLangSync } from '@/composables/useContentLocales'
 import RebuildBar from './RebuildBar.vue'
 import UiLangSwitcher from './UiLangSwitcher.vue'
 import AdminThemeSwitch from './AdminThemeSwitch.vue'
 
 const { logout, user, isAdmin, isMember, isPublisher } = useAuth()
+onMounted(() => { void refreshUserOnce() })
+
+// The newsletter API is superadmin-only. Hide the link only on an explicit
+// `false`: until refreshUserOnce() answers, a session stored before the flag
+// existed carries no key, and the page itself explains a 403.
+const showNewsletter = computed(() => user.value?.is_superadmin !== false)
 // Every list resolves the band's content in their first language — see useLang().
 useContentLangSync()
 
@@ -225,7 +231,7 @@ watch(() => route.path, (path) => {
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 {{ $t('shell.nav.pitch') }}
               </RouterLink>
-              <RouterLink :to="adminUrl('newsletter')" class="nav-item" active-class="nav-item--active">
+              <RouterLink v-if="showNewsletter" :to="adminUrl('newsletter')" class="nav-item" active-class="nav-item--active" data-testid="nav-newsletter">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 {{ $t('shell.nav.newsletter') }}
               </RouterLink>
