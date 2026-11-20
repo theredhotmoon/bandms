@@ -19,7 +19,7 @@ class ClipController extends Controller
 {
     // `members` rides along: the admin's clip form is seeded from these
     // responses, and without member_ids a save would clear the clip's members.
-    private const OWNER_RELATIONS = ['concerts.venue', 'releases', 'shopItems', 'albums', 'members'];
+    private const OWNER_RELATIONS = ['concerts.venue', 'releases', 'shopItems', 'albums', 'posts:id,title', 'members'];
 
     public function index(): AnonymousResourceCollection
     {

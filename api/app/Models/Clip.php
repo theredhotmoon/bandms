@@ -51,6 +51,11 @@ class Clip extends Model
         return $this->owners(Album::class);
     }
 
+    public function posts(): MorphToMany
+    {
+        return $this->owners(Post::class);
+    }
+
     /** The relation for a morph alias — `concerts()` for 'concert', etc. */
     public function ownerRelation(string $alias): MorphToMany
     {
@@ -84,6 +89,13 @@ class Clip extends Model
         }
         foreach ($this->albums as $a) {
             $out[] = ['type' => 'album', 'id' => $a->id, 'label' => $a->title];
+        }
+        // Loaded only where the caller asked (ClipController does); an owner
+        // list built without them must not lazy-load one query per clip.
+        if ($this->relationLoaded('posts')) {
+            foreach ($this->posts as $p) {
+                $out[] = ['type' => 'post', 'id' => $p->id, 'label' => $p->getTranslation('title', Locales::default(), true)];
+            }
         }
 
         return $out;

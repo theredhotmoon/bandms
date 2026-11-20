@@ -143,6 +143,11 @@ class PostController extends Controller
         if ($withImage) {
             $columns[] = 'image';
         }
+        // The admin list's Preview link on a draft row. Selected only there,
+        // and the resource sends it only on that list.
+        if ($request->attributes->get(PostSummaryResource::ADMIN_LIST)) {
+            $columns[] = 'preview_token';
+        }
 
         return Post::select($columns)
             ->with(['tags', 'concerts:id,date', 'blocks' => fn ($q) => $q->where('type', 'text')->orderBy('position')])
@@ -272,6 +277,7 @@ class PostController extends Controller
             }
 
             AlbumLinks::sync($post, $data);
+            $this->syncClips($post, $data);
 
             PostBlockSync::sync($post, $data['blocks'] ?? []);
 
@@ -288,7 +294,7 @@ class PostController extends Controller
             SiteRebuild::markDirty('band-members');
         }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', 'clips', ...AlbumLinks::eager()]));
     }
 
     /**
@@ -302,10 +308,25 @@ class PostController extends Controller
         return $this->adminShow($post);
     }
 
+    /**
+     * Every draft, in full, for the public build: it bakes each one at
+     * /{lang}/post-preview/{token}/ so the band can see it as visitors will.
+     * A published post needs no preview — it has its page.
+     */
+    public function previews(): AnonymousResourceCollection
+    {
+        $drafts = Post::whereNull('published_at')
+            ->with(['tags', 'concerts', 'pressReleases', 'blocks', 'members', 'clips', ...AlbumLinks::eager()])
+            ->orderByDesc('id')
+            ->get();
+
+        return PostResource::collection($drafts);
+    }
+
     /** Admin detail — drafts included; what the editor loads. */
     public function adminShow(Post $post): PostResource
     {
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', 'clips', ...AlbumLinks::eager()]));
     }
 
     public function update(UpdatePostRequest $request, Post $post): PostResource
@@ -332,7 +353,7 @@ class PostController extends Controller
 
             // Slugs through applySlugBag(): update() wrote the raw columns, so a
             // payload carrying slug_en: null nulled the post's slug.
-            $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'member_ids', 'album_ids', 'blocks', 'slug']));
+            $post->fill(Arr::except($data, ['tag_ids', 'concert_ids', 'member_ids', 'album_ids', 'clip_ids', 'blocks', 'slug']));
             // A draft cannot hold the top of the News page (highlight()), so
             // unpublishing gives it up rather than keeping a pin no one sees.
             if ($post->published_at === null) {
@@ -356,6 +377,7 @@ class PostController extends Controller
             }
 
             AlbumLinks::sync($post, $data);
+            $this->syncClips($post, $data);
 
             if (array_key_exists('blocks', $data)) {
                 PostBlockSync::sync($post, $data['blocks'] ?? []);
@@ -373,7 +395,26 @@ class PostController extends Controller
             SiteRebuild::markDirty('band-members');
         }
 
-        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', ...AlbumLinks::eager()]));
+        return new PostResource($post->load(['tags', 'concerts', 'pressReleases', 'blocks', 'members', 'clips', ...AlbumLinks::eager()]));
+    }
+
+    /**
+     * The clips listed at the foot of the article, in the order given.
+     * Keyed on presence: a save that never mentions `clip_ids` leaves them
+     * alone, [] clears them. Only `posts` is dirtied — the controller does
+     * that on every save — because a clip's own pages do not list posts.
+     */
+    private function syncClips(Post $post, array $data): void
+    {
+        if (! array_key_exists('clip_ids', $data)) {
+            return;
+        }
+
+        $sync = [];
+        foreach (array_values($data['clip_ids'] ?? []) as $position => $id) {
+            $sync[(int) $id] = ['position' => $position];
+        }
+        $post->clips()->sync($sync);
     }
 
     public function destroy(Post $post): JsonResponse

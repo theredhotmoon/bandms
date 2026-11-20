@@ -33,6 +33,8 @@ export const EXCLUDED_PATHS: RegExp[] = [
   /^\/account(\/|$)/,
   /^\/newsletter(\/|$)/,
   /^\/tickets(\/|$)/,
+  // A draft's preview (pages/[lang]/post-preview/): the band checking a post.
+  new RegExp(`^/(${locales})/post-preview/`),
   // Stripe's return pages: unlocalised, fixed routes (pages/merch/success|cancel).
   /^\/merch\/(success|cancel)\/?$/,
 ]

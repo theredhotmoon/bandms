@@ -19,7 +19,7 @@ import '@/styles/global.css'
 
 // Unset means the banner and GA never render — same fail-open shape as
 // PUBLIC_CARTO_KEY (see web/src/lib/basemap.ts).
-const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || ''
+const gaMeasurementIdEnv = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || ''
 
 export interface Props {
   title: string
@@ -36,6 +36,12 @@ export interface Props {
    * full width.
    */
   module?: string
+  /**
+   * No analytics on this page — no consent card, no GA tag. For a page whose
+   * URL is a secret (a draft preview): GA would record the URL, token and
+   * all, as page_location, readable by anyone with access to the property.
+   */
+  noAnalytics?: boolean
 }
 
 const {
@@ -48,7 +54,9 @@ const {
   lang = 'en',
   alternates = {},
   module,
+  noAnalytics = false,
 } = Astro.props
+const gaMeasurementId = noAnalytics ? '' : gaMeasurementIdEnv
 
 // The layout is the only thing that appends the band name to a <title>. Pass
 // the page's own heading and nothing more — a caller that adds the name itself

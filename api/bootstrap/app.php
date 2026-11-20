@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'     => \App\Http\Middleware\RequireRole::class,
             'superadmin' => \App\Http\Middleware\RequireSuperadmin::class,
             'fan.auth' => \App\Http\Middleware\FanAuth::class,
+            'internal' => \App\Http\Middleware\InternalOnly::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

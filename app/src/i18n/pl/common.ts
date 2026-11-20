@@ -153,6 +153,7 @@ export default {
     tours: 'Trasy',
     albums: 'Albumy zdjęć',
     albumHidden: 'niewidoczny na stronie',
+    clips: 'Wideo',
     posts: 'Wpisy na blogu',
     press: 'Prasa',
   },

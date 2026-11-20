@@ -12,7 +12,7 @@ import { LOCALES, emptyBag } from '@/locales'
 import { CLIP_SOURCES, canRetrieveMetadata, sourceMessageKey } from '@/utils/clipSources'
 import { reportSaveError } from '@/utils/formErrors'
 import type { ClipSource } from '@/utils/clipSources'
-import type { Clip, ClipAttach, ClipPayload } from '@/types/clip'
+import type { Clip, ClipAttach, ClipOwnerType, ClipPayload } from '@/types/clip'
 import type { Concert } from '@/types/concert'
 import type { ReleaseSummary } from '@/types/release'
 import type { ShopItemSummary } from '@/types/shop'
@@ -55,6 +55,12 @@ const form = reactive({
   memberIds: [] as number[],
 })
 
+// Owners this form has no picker for (posts link clips from the post's own
+// "Link to…", albums are not offered). `attach` is the full list — an omitted
+// type is detached server-side — so they are sent back exactly as loaded.
+const EDITED_OWNERS: readonly ClipOwnerType[] = ['concert', 'release', 'shop_item']
+let keptOwners: ClipAttach[] = []
+
 /** What the provider said about the URL currently in the field. */
 const meta = reactive({
   thumbnail_url: null as string | null,
@@ -80,6 +86,7 @@ watch(() => props.initial, (val) => {
   form.releaseIds  = val?.owners.filter(o => o.type === 'release').map(o => o.id) ?? []
   form.shopItemIds = val?.owners.filter(o => o.type === 'shop_item').map(o => o.id) ?? []
   form.memberIds   = val?.member_ids ? [...val.member_ids] : []
+  keptOwners = (val?.owners ?? []).filter(o => !EDITED_OWNERS.includes(o.type)).map(o => ({ type: o.type, id: o.id }))
   meta.thumbnail_url = val?.thumbnail_url ?? null
   meta.duration = val?.duration ?? null
   meta.view_count = val?.view_count ?? null
@@ -122,6 +129,7 @@ function submit() {
     ...form.concertIds.map(id => ({ type: 'concert' as const, id })),
     ...form.releaseIds.map(id => ({ type: 'release' as const, id })),
     ...form.shopItemIds.map(id => ({ type: 'shop_item' as const, id })),
+    ...keptOwners,
   ]
   // A new URL without a Retrieve clears the old one's thumbnail and stats;
   // an unchanged URL sends them back as they were.

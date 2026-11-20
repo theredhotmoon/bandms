@@ -21,6 +21,8 @@ import { useShop } from '@/composables/useShop'
 import { useClips } from '@/composables/useClips'
 import { useTableControls } from '@/composables/useTableControls'
 import { reportSaveError } from '@/utils/formErrors'
+import { postPreviewUrl } from '@/utils/postPreview'
+import { useContentLocaleOrder } from '@/composables/useContentLocales'
 import type { PostSummary, PostPayload } from '@/types/post'
 import { useTagLabel } from '@/composables/useTagLabel'
 import { tagNames } from '@/utils/localeOrder'
@@ -28,6 +30,9 @@ import { LOCALES, shortLabel, type Lang } from '@/locales'
 
 const tagName = useTagLabel()
 const { t } = useI18n()
+// A draft row's Preview link opens in the band's first content language.
+const contentOrder = useContentLocaleOrder()
+const previewHref = (token?: string) => postPreviewUrl(contentOrder.value[0], token)
 
 const { query, create, update, remove, highlight } = usePosts()
 const { query: tagsQ }       = useTags()
@@ -219,6 +224,11 @@ const isComplete = (post: PostSummary, l: Lang) => !(post.translation_gaps?.[l]?
                   {{ post.published_at ? post.published_at.slice(0,10) : $t('content.posts.draft') }}
                 </td>
                 <td class="td text-right">
+                  <a
+                    v-if="!post.published_at && previewHref(post.preview_token)"
+                    :href="previewHref(post.preview_token)!" target="_blank" rel="noopener"
+                    class="btn-edit" :title="$t('content.posts.preview.title')" data-testid="post-row-preview"
+                  >{{ $t('content.posts.preview.open') }} ↗</a>
                   <button @click="openEdit(post.id)" class="btn-edit">{{ $t('common.actions.edit') }}</button>
                   <button @click="confirmId = post.id" class="btn-delete">{{ $t('common.actions.delete') }}</button>
                 </td>

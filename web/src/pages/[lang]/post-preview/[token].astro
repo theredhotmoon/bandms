@@ -1,0 +1,41 @@
+---
+import type { Locale } from '@/types/shared'
+import { LOCALES } from '@/lib/slugs'
+import type { Alternates } from '@/lib/locales'
+import { getPostPreviews, getSiteConfig } from '@/lib/cms'
+import { DEFAULT_LOCALE } from '@/lib/locales'
+import { previewableDrafts, previewPath } from '@/lib/postPreview'
+import PostDetail from '@/components/detail/PostDetail.astro'
+
+/**
+ * A draft, baked as visitors will see it once published, under the post's
+ * secret token. Nothing links here and the page is noindex (and out of the
+ * sitemap); the admin's Preview button is the way in. Built only while the
+ * News module is on, like the post pages themselves.
+ */
+export async function getStaticPaths() {
+  const cfg = await getSiteConfig(DEFAULT_LOCALE)
+  if (cfg.modules.posts === false) return []
+
+  const byLang = new Map(await Promise.all(LOCALES.map(async l => [l, previewableDrafts(await getPostPreviews(l))] as const)))
+  // Built in every locale or none, so the language switcher never points at
+  // a twin that was not made (a draft deleted between the fetches).
+  const everywhere = (id: number) => LOCALES.every(l => byLang.get(l)!.some(p => p.id === id))
+
+  return LOCALES.flatMap(lang =>
+    byLang.get(lang)!.filter(p => everywhere(p.id)).map(post => ({
+      params: { lang, token: post.preview_token! },
+      props: {
+        lang,
+        post,
+        alternates: Object.fromEntries(LOCALES.map(l => [l, previewPath(l, post.preview_token!)])) as Alternates,
+      },
+    })),
+  )
+}
+
+interface Props { lang: Locale; post: import('@/types/post').Post; alternates: Alternates }
+const { lang, post, alternates } = Astro.props
+---
+
+<PostDetail lang={lang} alternates={alternates} post={post} preview />

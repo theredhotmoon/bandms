@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAlbums;
+use App\Models\Concerns\HasClips;
 use App\Models\Concerns\HasMembers;
 use App\Traits\HasTranslatedSlug;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,13 +12,26 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\PressRelease;
+use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
 class Post extends Model
 {
-    use HasFactory, HasTranslatedSlug, HasTranslations, HasMembers, HasAlbums;
+    use HasFactory, HasTranslatedSlug, HasTranslations, HasMembers, HasAlbums, HasClips;
 
     public array $translatable = ['title', 'intro', 'slug'];
+
+    /** Never in a public payload; PostResource adds it for signed-in users. */
+    protected $hidden = ['preview_token'];
+
+    protected static function booted(): void
+    {
+        // The secret the draft preview page is baked under (see the
+        // add_preview_token migration). Set once; never part of $fillable.
+        static::creating(function (Post $post): void {
+            $post->preview_token ??= Str::random(40);
+        });
+    }
 
     protected $fillable = ['title', 'slug', 'intro', 'image', 'published_at', 'event_date_display', 'comments_enabled'];
 

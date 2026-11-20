@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-20 (link videos to a news post; preview a draft)
+
+### Added
+- **Preview a draft post** before publishing it. A draft has a *Podgląd / Preview* link in the posts list and in the post form; it opens the post exactly as visitors will see it, in a new tab, with a banner saying it is not published yet. Only someone with the link can open it, and search engines are told to ignore it.
+- The preview shows the last saved version once the site has rebuilt. The form says when your latest changes are not in it yet: unsaved changes, a rebuild in progress, or (with automatic rebuild off) saved changes waiting for a rebuild. Rebuilding the site also publishes any other changes that are waiting.
+- **Link videos to a news post** from *Link to… → Videos* in the post form. Tick any videos from the library; they appear under a *Videos* heading at the end of the article, in the order you ticked them. The heading is editable in *Website modules → News*.
+- A video you also placed in the text with a *Reference → Video* block shows only there, never a second time at the end.
+
+### Fixed
+- Saving a video on the *Videos* page no longer drops its links to posts or photo albums, which that form has no picker for.
+
 ## [Unreleased] — 2026-11-20 (edit newsletter subscribers; superadmins only)
 
 ### Added

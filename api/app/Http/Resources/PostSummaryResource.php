@@ -53,6 +53,11 @@ class PostSummaryResource extends JsonResource
                 'intro' => $this->getTranslations('intro'),
                 'slug'    => collect(Locales::codes())->mapWithKeys(fn (string $c) => [$c => $this->slugIn($c)])->all(),
             ],
+            // A draft's preview secret, for the admin list's Preview link.
+            'preview_token' => $this->when(
+                (bool) $request->attributes->get(self::ADMIN_LIST) && $this->published_at === null,
+                fn () => $this->preview_token,
+            ),
             'translation_gaps' => $this->when(
                 (bool) $request->attributes->get(self::ADMIN_LIST),
                 fn () => $this->translationGaps(),

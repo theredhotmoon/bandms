@@ -9,8 +9,10 @@ import type { PostSummary } from '@/types/post'
 import type { TourSummary } from '@/types/tour'
 import type { PressReleaseSummary } from '@/types/press-release'
 import type { ShopItemSummary } from '@/types/shop'
+import type { Clip } from '@/types/clip'
 import { useTagLabel } from '@/composables/useTagLabel'
 import { pushUnique } from '@/utils/pushUnique'
+import { presetMessageKey } from '@/utils/clipCategories'
 import TagQuickAdd from '@/components/admin/forms/TagQuickAdd.vue'
 import EntityQuickAdd, { type QuickAddEntity } from '@/components/admin/forms/quick-add/EntityQuickAdd.vue'
 
@@ -24,6 +26,8 @@ const props = defineProps<{
   tags?: Tag[]
   pressReleases?: PressReleaseSummary[]
   shopItems?: ShopItemSummary[]
+  /** Videos from the library, listed at the foot of a post. */
+  clips?: Clip[]
   /** Band members, for content that can be about several of them. */
   members?: readonly { id: number; first_name: string; last_name: string }[]
 }>()
@@ -37,10 +41,11 @@ const tagIds          = defineModel<number[]>('tagIds',          { default: () =
 const pressReleaseIds = defineModel<number[]>('pressReleaseIds', { default: () => [] })
 const shopItemIds     = defineModel<number[]>('shopItemIds',     { default: () => [] })
 const memberIds       = defineModel<number[]>('memberIds',       { default: () => [] })
+const clipIds         = defineModel<number[]>('clipIds',         { default: () => [] })
 
 const { t } = useI18n()
 
-type SectionKey = 'tags' | 'members' | 'concerts' | 'releases' | 'shopItems' | 'tours' | 'albums' | 'posts' | 'pressReleases'
+type SectionKey = 'tags' | 'members' | 'concerts' | 'releases' | 'shopItems' | 'tours' | 'albums' | 'clips' | 'posts' | 'pressReleases'
 
 interface Item { id: number; label: string; badge?: string }
 interface Section {
@@ -54,12 +59,13 @@ interface Section {
 
 const expanded = reactive<Record<SectionKey, boolean>>({
   tags: false, members: false, concerts: false, releases: false, shopItems: false,
-  tours: false, albums: false, posts: false, pressReleases: false,
+  tours: false, albums: false, clips: false, posts: false, pressReleases: false,
 })
 
-// Every section can create its record in place (EntityQuickAdd); tags have
-// TagQuickAdd.
-const QUICK_ADD: Record<Exclude<SectionKey, 'tags'>, QuickAddEntity> = {
+// Every section but videos can create its record in place (EntityQuickAdd);
+// tags have TagQuickAdd. A new video is added from the post's reference block
+// ("Add a new clip…") or the Videos page.
+const QUICK_ADD: Record<Exclude<SectionKey, 'tags' | 'clips'>, QuickAddEntity> = {
   members: 'member', concerts: 'concert', releases: 'release', shopItems: 'shop_item',
   tours: 'tour', posts: 'post', pressReleases: 'press_release', albums: 'album',
 }
@@ -112,6 +118,14 @@ const sections = computed<Section[]>(() => {
     })),
     ids: albumIds.value, set: v => (albumIds.value = v),
     testid: 'relations-albums',
+  })
+  if (props.clips) out.push({
+    key: 'clips', title: t('common.relations.clips'), testid: 'relations-clips',
+    items: props.clips.map(c => {
+      const key = presetMessageKey(c.category)
+      return { id: c.id, label: c.title || c.url, badge: key ? t(key) : c.category }
+    }),
+    ids: clipIds.value, set: v => (clipIds.value = v),
   })
   if (props.posts) out.push({
     key: 'posts', title: t('common.relations.posts'),
@@ -170,7 +184,7 @@ function summary(section: Section): string {
           <span>{{ i.label }} <span v-if="i.badge" class="assoc-badge">{{ i.badge }}</span></span>
         </label>
         <TagQuickAdd v-if="s.key === 'tags'" @created="pick(s, $event.id)" />
-        <EntityQuickAdd v-else :entity="QUICK_ADD[s.key]" @created="pick(s, $event)" />
+        <EntityQuickAdd v-else-if="s.key !== 'clips'" :entity="QUICK_ADD[s.key]" @created="pick(s, $event)" />
       </div>
     </div>
   </div>

@@ -16,6 +16,9 @@ export function useClips() {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: CLIPS_QKEY })
     qc.invalidateQueries({ queryKey: ['concerts'] })
+    // A post's form holds its clip_ids; a deleted clip left there would 422
+    // the next post save.
+    qc.invalidateQueries({ queryKey: ['posts'] })
   }
 
   // Every mutation returns the full clip, so the library cache is written from

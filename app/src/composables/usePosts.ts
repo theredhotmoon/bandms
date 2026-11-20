@@ -26,8 +26,20 @@ export function useCreatePost() {
         old && Array.isArray(old.data) ? { ...old, data: [...old.data, post] } : old,
       )
       void queryClient.invalidateQueries({ queryKey: ['posts'] })
+      afterPostWrite(queryClient)
     },
   })
+}
+
+/**
+ * A post save also changes what other caches describe: the clips it links
+ * (their owner lists — ClipForm resends those, so a stale one would unlink
+ * the post) and the site's pending build, which the Preview link reads to
+ * say whether the preview is behind.
+ */
+function afterPostWrite(queryClient: ReturnType<typeof useQueryClient>): void {
+  void queryClient.invalidateQueries({ queryKey: ['clips'] })
+  void queryClient.invalidateQueries({ queryKey: ['rebuild-status'] })
 }
 
 export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFilters>) {
@@ -54,12 +66,18 @@ export function usePosts(filters: Ref<PostFilters> = { value: {} } as Ref<PostFi
   const update = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<PostPayload> }) =>
       updatePost(token.value!, id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+    onSuccess: () => {
+      afterPostWrite(queryClient)
+      return queryClient.invalidateQueries({ queryKey: ['posts'] })
+    },
   })
 
   const remove = useMutation({
     mutationFn: (id: number) => deletePost(token.value!, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+    onSuccess: () => {
+      afterPostWrite(queryClient)
+      return queryClient.invalidateQueries({ queryKey: ['posts'] })
+    },
   })
 
   // Pinning one post unpins another, so the whole list is refetched.

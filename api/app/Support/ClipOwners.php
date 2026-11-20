@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Album;
 use App\Models\Concert;
+use App\Models\Post;
 use App\Models\Release;
 use App\Models\ShopItem;
 
@@ -13,6 +14,8 @@ use App\Models\ShopItem;
  * The alias is what `clippables.clippable_type` stores, so it is part of the
  * data: never rename one. `album` is in the map (the model is ready) but the
  * admin does not offer it — albums have no public page to show clips on.
+ * `post` lists its clips at the foot of the article; a clip *placed* in the
+ * text is a ref block instead, and the page skips it in the foot list.
  */
 final class ClipOwners
 {
@@ -21,6 +24,7 @@ final class ClipOwners
         'release'   => Release::class,
         'shop_item' => ShopItem::class,
         'album'     => Album::class,
+        'post'      => Post::class,
     ];
 
     /** SiteRebuild area whose baked pages show this owner's clips. */
@@ -29,6 +33,7 @@ final class ClipOwners
         'release'   => 'releases',
         'shop_item' => 'shop',
         'album'     => 'photos',
+        'post'      => 'posts',
     ];
 
     /** @return string[] */

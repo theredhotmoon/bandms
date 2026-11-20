@@ -19,7 +19,7 @@ const now = new Date('2026-11-19T12:00:00Z')
 const ago = (d: number) => new Date(now.getTime() - d * DAY).toISOString()
 
 describe('isExcludedPath', () => {
-  it.each(['/rider/abc', '/en/privacy', '/pl/privacy/', '/account', '/newsletter/confirm/t', '/tickets/x'])('excludes %s', p => {
+  it.each(['/rider/abc', '/en/privacy', '/pl/privacy/', '/account', '/newsletter/confirm/t', '/tickets/x', '/pl/post-preview/abc/'])('excludes %s', p => {
     expect(isExcludedPath(p)).toBe(true)
   })
   it.each(['/en', '/en/', '/en/concerts', '/pl/kontakt'])('allows %s', p => {

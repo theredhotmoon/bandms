@@ -129,6 +129,10 @@ Route::get('/posts', [PostController::class, 'index'])->middleware('throttle:pos
 // Must precede /posts/{post}, which would capture "featured".
 Route::get('/posts/featured', [PostController::class, 'featured'])->name('api.posts.featured');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('api.posts.show');
+// Drafts, for the public build's preview pages — reachable only from inside
+// the Docker network (InternalOnly; Caddy refuses /api/internal/* too).
+Route::get('/internal/post-previews', [PostController::class, 'previews'])
+    ->middleware('internal')->name('api.internal.post-previews');
 // Read by the browser at runtime, never by the site build. A fan token is
 // optional here (it only decides `mine`), so this is not behind fan.auth.
 Route::get('/posts/{post}/comments', [PostCommentController::class, 'index'])

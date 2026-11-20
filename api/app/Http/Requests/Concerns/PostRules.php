@@ -72,6 +72,9 @@ trait PostRules
             'member_ids.*'  => 'integer|distinct|exists:band_members,id',
             // Linked photo albums (AlbumLinks); absent leaves them alone.
             ...AlbumLinks::rules(),
+            // Clips listed at the foot of the article; absent leaves them alone.
+            'clip_ids'      => 'sometimes|nullable|array',
+            'clip_ids.*'    => 'integer|distinct|exists:clips,id',
 
             'blocks'                    => 'nullable|array',
             'blocks.*.type'             => ['required', Rule::in(PostBlockType::ALL)],

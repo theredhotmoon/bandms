@@ -183,6 +183,13 @@ export default {
     allowComments: 'Zezwalaj na komentarze',
     allowCommentsNote: 'Zalogowani fani mogą komentować ten wpis.',
     footerDraft: 'Zapisany jako szkic — nie ma go na stronie',
+    preview: {
+      open: 'Podgląd',
+      title: 'Otwórz szkic tak, jak zobaczą go odwiedzający, w nowej karcie. Otworzy go tylko ktoś, kto ma link.',
+      saveFirst: 'Zapisz, aby zobaczyć zmiany w podglądzie.',
+      building: 'Strona się przebudowuje — podgląd odświeży się za chwilę.',
+      pending: 'Podgląd pokazuje ostatnią wersję strony. Przebuduj stronę, aby zobaczyć najnowsze zapisane zmiany.',
+    },
     footerPublished: 'Po zapisie widoczny na stronie',
     checkFields: 'Niektóre pola wymagają uwagi',
     localeView: 'Pokaż',
