@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { removeSubscriber, seedSubscriber, uniqueSubscriberEmail } from '../../fixtures/newsletter'
 
 test.use({ storageState: 'e2e/.auth/admin.json' })
 
 test.describe('Newsletter Admin', () => {
-  test.describe.configure({ mode: 'serial' })
+  // Seeding may wait out the sign-up throttle (up to a minute) — see fixtures/newsletter.ts.
+  test.describe.configure({ mode: 'serial', timeout: 120_000 })
 
   test('page loads and shows "Newsletter" or "Subscribers" heading', async ({ page }) => {
     await page.goto('/admin/newsletter')
@@ -133,82 +135,45 @@ test.describe('Newsletter Admin', () => {
     expect(hasTable || hasEmptyState).toBe(true)
   })
 
-  test('delete subscriber: click Delete → ConfirmDialog → confirm → toast success, row gone', async ({
-    page,
-  }) => {
-    await page.goto('/admin/newsletter')
-    await page.waitForLoadState('networkidle')
+  // Each delete test seeds and targets its own row. They used to act on
+  // whichever row came first and expected a ConfirmDialog this page never had
+  // — they only "passed" because the dev DB has no subscribers, so they always
+  // skipped. Acting on the first row would also delete another spec's fixture.
+  test('delete subscriber: Remove → Yes → toast success, row gone', async ({ page, request }) => {
+    const email = uniqueSubscriberEmail('e2e-del')
+    await seedSubscriber(request, email)
+    try {
+      await page.goto('/admin/newsletter')
+      await page.locator('input[type="search"]').fill(email)
+      const row = page.locator('tbody tr').filter({ hasText: email })
+      await expect(row).toHaveCount(1)
 
-    const rowCount = await page.locator('tbody tr').count()
-    if (rowCount === 0) {
-      test.skip()
-      return
-    }
+      await row.getByRole('button', { name: /remove subscriber/i }).click()
+      await row.getByRole('button', { name: /^yes$/i }).click()
 
-    const firstRow = page.locator('tbody tr').first()
-    const rowEmail = await firstRow
-      .locator('td')
-      .first()
-      .textContent()
-      .then((t) => t?.trim() ?? '')
-
-    await firstRow.getByRole('button', { name: /delete/i }).click()
-
-    const confirmDialog = page
-      .locator('[role="dialog"]')
-      .filter({ hasText: /confirm|delete/i })
-    await expect(confirmDialog).toBeVisible({ timeout: 5_000 })
-
-    await confirmDialog.getByRole('button', { name: 'Delete' }).click()
-
-    await expect(page.locator('[data-sonner-toast]')).toContainText(
-      /subscriber deleted|deleted/i,
-      { timeout: 8_000 },
-    )
-
-    if (rowEmail) {
-      await expect(
-        page.locator('tbody').getByText(rowEmail, { exact: true }),
-      ).not.toBeVisible({ timeout: 8_000 })
+      await expect(page.locator('[data-sonner-toast]').first()).toContainText(/subscriber removed/i)
+      await expect(page.locator('tbody tr').filter({ hasText: email })).toHaveCount(0)
+    } finally {
+      await removeSubscriber(request, email)
     }
   })
 
-  test('delete subscriber: cancel in ConfirmDialog → row remains', async ({ page }) => {
-    await page.goto('/admin/newsletter')
-    await page.waitForLoadState('networkidle')
+  test('delete subscriber: Remove → No → row remains', async ({ page, request }) => {
+    const email = uniqueSubscriberEmail('e2e-del')
+    await seedSubscriber(request, email)
+    try {
+      await page.goto('/admin/newsletter')
+      await page.locator('input[type="search"]').fill(email)
+      const row = page.locator('tbody tr').filter({ hasText: email })
+      await expect(row).toHaveCount(1)
 
-    const rowCount = await page.locator('tbody tr').count()
-    if (rowCount === 0) {
-      test.skip()
-      return
-    }
+      await row.getByRole('button', { name: /remove subscriber/i }).click()
+      await row.getByRole('button', { name: /^no$/i }).click()
 
-    const firstRow = page.locator('tbody tr').first()
-    const rowEmail = await firstRow
-      .locator('td')
-      .first()
-      .textContent()
-      .then((t) => t?.trim() ?? '')
-
-    await firstRow.getByRole('button', { name: /delete/i }).click()
-
-    const confirmDialog = page
-      .locator('[role="dialog"]')
-      .filter({ hasText: /confirm|delete/i })
-    await expect(confirmDialog).toBeVisible({ timeout: 5_000 })
-
-    await confirmDialog
-      .getByRole('button', { name: /cancel|no/i })
-      .click()
-
-    await expect(confirmDialog).not.toBeVisible({ timeout: 5_000 })
-
-    if (rowEmail) {
-      await expect(
-        page.locator('tbody').getByText(rowEmail, { exact: true }),
-      ).toBeVisible({ timeout: 5_000 })
-    } else {
-      expect(await page.locator('tbody tr').count()).toBeGreaterThan(0)
+      await expect(row.getByRole('button', { name: /^yes$/i })).toHaveCount(0)
+      await expect(row).toHaveCount(1)
+    } finally {
+      await removeSubscriber(request, email)
     }
   })
 

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-20 (edit newsletter subscribers; superadmins only)
+
+### Added
+- **Edit a newsletter subscriber** in *Content -> Newsletter*: the pencil on a row lets you fix the email address or the name. Enter saves, Esc cancels.
+- **Changing the address asks again.** A new email address has never agreed to anything, so the subscriber goes back to *Pending* and gets a fresh confirmation email; the page warns you before you save. Links mailed to the old address (confirm and unsubscribe) stop working. Changing only the name, or only the capital letters, sends nothing and keeps them *Confirmed*.
+- If the confirmation email cannot be sent, the change is still saved and the page tells you the subscriber stays *Pending*.
+
+### Changed
+- **The newsletter is now for superadmins only**: seeing the list, exporting it, editing and removing. It is everyone's email address. Other admins no longer see *Newsletter* in the menu, and the page explains why if they open it directly.
+- The admin menu now notices a superadmin switch changed on the *Users* page without signing out and in again.
+
+### Before relying on it
+- Every admin who existed when superadmins were introduced *is* one. To keep the newsletter to fewer people, switch *Superadmin* off for the others on the *Users* page.
+
 ## [Unreleased] — 2026-11-19 (a welcome screen for first-time visitors)
 
 ### Added

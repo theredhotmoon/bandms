@@ -44,6 +44,36 @@ export async function fetchNewsletterSubscribers(token: string, page = 1): Promi
   return handleResponse<SubscriberPage>(res)
 }
 
+export interface NewsletterSubscriberUpdate {
+  email: string
+  name: string | null
+}
+
+/**
+ * `email_changed`: the server put the subscriber back to pending.
+ * `confirmation_sent`: the new confirmation mail actually went out — false
+ * with `email_changed` true means the change is saved but the mail failed.
+ */
+export interface NewsletterSubscriberUpdateResult {
+  data: NewsletterSubscriber
+  email_changed: boolean
+  confirmation_sent: boolean
+}
+
+export async function updateNewsletterSubscriber(
+  token: string,
+  id: number,
+  payload: NewsletterSubscriberUpdate,
+): Promise<NewsletterSubscriberUpdateResult> {
+  assertSafeId(id)
+  const res = await fetch(`${API_BASE}/api/newsletter-subscribers/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+  return handleResponse<NewsletterSubscriberUpdateResult>(res)
+}
+
 export async function deleteNewsletterSubscriber(token: string, id: number): Promise<void> {
   assertSafeId(id)
   const res = await fetch(`${API_BASE}/api/newsletter-subscribers/${id}`, {

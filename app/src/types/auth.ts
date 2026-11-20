@@ -7,6 +7,11 @@ export interface AuthUser {
   email: string
   role: UserRole
   band_member_id: number | null
+  /**
+   * Optional: a session stored before the flag existed has no such key. Treat
+   * `undefined` as "unknown", never as "no" — the server's 403 is the gate.
+   */
+  is_superadmin?: boolean
   email_verified_at: string | null
   created_at: string
   updated_at: string

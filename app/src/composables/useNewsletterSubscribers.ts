@@ -1,7 +1,13 @@
 import { computed, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useAuth } from '@/composables/useAuth'
-import { fetchNewsletterSubscribers, deleteNewsletterSubscriber } from '@/api/newsletter'
+import { ApiError } from '@/api/client'
+import {
+  fetchNewsletterSubscribers,
+  deleteNewsletterSubscriber,
+  updateNewsletterSubscriber,
+  type NewsletterSubscriberUpdate,
+} from '@/api/newsletter'
 
 export function useNewsletterSubscribers() {
   const { token } = useAuth()
@@ -13,6 +19,8 @@ export function useNewsletterSubscribers() {
     queryKey: computed(() => [...QKEY, page.value]),
     queryFn:  () => fetchNewsletterSubscribers(token.value!, page.value),
     enabled:  computed(() => !!token.value),
+    // A 403 (not a superadmin) will not change on retry — show it at once.
+    retry:    (count, error) => !(error instanceof ApiError && error.status === 403) && count < 3,
   })
 
   const remove = useMutation({
@@ -20,5 +28,11 @@ export function useNewsletterSubscribers() {
     onSuccess:  () => qc.invalidateQueries({ queryKey: QKEY }),
   })
 
-  return { query, remove, page }
+  const update = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: NewsletterSubscriberUpdate }) =>
+      updateNewsletterSubscriber(token.value!, id, payload),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: QKEY }),
+  })
+
+  return { query, remove, update, page }
 }

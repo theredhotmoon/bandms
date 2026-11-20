@@ -47,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [\App\Http\Middleware\RecordActivity::class]);
         $middleware->alias([
             'role'     => \App\Http\Middleware\RequireRole::class,
+            'superadmin' => \App\Http\Middleware\RequireSuperadmin::class,
             'fan.auth' => \App\Http\Middleware\FanAuth::class,
         ]);
     })
