@@ -369,6 +369,9 @@ function submit() {
             </label>
           </div>
           </template>
+          <!-- Outside the template: the rule "an instrument or a role" fails
+               hardest when the band has no instruments to pick. -->
+          <p v-if="errors?.instrument_ids" class="field-error" data-testid="member-instruments-error">{{ errors.instrument_ids[0] }}</p>
 
         </div>
 

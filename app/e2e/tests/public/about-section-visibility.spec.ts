@@ -78,19 +78,13 @@ interface PublicMember {
 }
 
 /**
- * A member's opt-out, written with everything the update endpoint would
- * otherwise wipe: it replaces social links and instruments with whatever the
- * payload carries, so a bare {public_page} would strip both.
+ * A member's opt-out, sent alone. The update endpoint replaces links and
+ * instruments only when the payload carries them, and judges the
+ * instrument-or-role rule only then, so a bare {public_page} touches nothing else
+ * — even on a prod-synced member who has neither.
  */
 async function setPublicPage(request: APIRequestContext, m: PublicMember, publicPage: boolean) {
-  await api(request, 'put', `/api/band-profile/members/${m.id}`, {
-    first_name: m.first_name,
-    last_name: m.last_name,
-    public_page: publicPage,
-    main_instrument_id: m.main_instrument_id,
-    instrument_ids: m.instruments.map((i) => i.id),
-    social_links: m.social_links.map((l) => ({ platform: l.platform, url: l.url })),
-  })
+  await api(request, 'put', `/api/band-profile/members/${m.id}`, { public_page: publicPage })
 }
 
 async function pageIsUp(request: APIRequestContext, path: string) {

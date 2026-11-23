@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use App\Support\SiteRebuild;
 
@@ -101,6 +102,8 @@ class BandMemberController extends Controller
             'default_gear.*.notes'       => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $this->ensureHasPart($request, null);
+
         $profile = $this->profile();
         $member = DB::transaction(function () use ($profile, $data, $request) {
             $member = $profile->members()->create($data);
@@ -177,20 +180,28 @@ class BandMemberController extends Controller
             unset($data['can_login'], $data['login_email'], $data['is_current'], $data['sort_order'], $data['joined_at'], $data['quit_at'], $data['photo']);
         }
 
+        $this->ensureHasPart($request, $member);
+
         DB::transaction(function () use ($member, $data, $request) {
             $member->update($data);
 
-            $member->socialLinks()->delete();
-            foreach (array_values($request->input('social_links', [])) as $index => $link) {
-                $member->socialLinks()->create([
-                    'profile_id' => $member->profile_id,
-                    'platform'   => $link['platform'],
-                    'url'        => $link['url'],
-                    'position'   => $index,
-                ]);
+            // Links and instruments are replaced only when sent: defaulting a
+            // missing key to [] made every partial update a wipe of both.
+            if ($request->has('social_links')) {
+                $member->socialLinks()->delete();
+                foreach (array_values($request->input('social_links') ?? []) as $index => $link) {
+                    $member->socialLinks()->create([
+                        'profile_id' => $member->profile_id,
+                        'platform'   => $link['platform'],
+                        'url'        => $link['url'],
+                        'position'   => $index,
+                    ]);
+                }
             }
 
-            $member->instruments()->sync($request->input('instrument_ids', []));
+            if ($request->has('instrument_ids')) {
+                $member->instruments()->sync($request->input('instrument_ids') ?? []);
+            }
         });
 
         SiteRebuild::markDirty('band-members');
@@ -198,6 +209,44 @@ class BandMemberController extends Controller
         $member->load(['socialLinks', 'instruments', 'mainInstrument']);
 
         return new BandMemberResource($member);
+    }
+
+    /**
+     * A band member plays something or has some other part in the band — a
+     * member with neither is never right, so it is refused like any other
+     * invalid field. Reported under `instrument_ids`, where the form shows it.
+     *
+     * `$member` is null on create. On update, a field the request did not send
+     * keeps its stored value: `$request->has(...)` tells you which, and the
+     * member holds the rest.
+     *
+     * The main instrument counts on its own. It is a column beside the
+     * `instrument_ids` pivot, and the form keeps the two in step, but an API
+     * call or a row from before that may set only the column.
+     */
+    private function ensureHasPart(Request $request, ?BandMember $member): void
+    {
+        // An update that touches none of these cannot break the rule, so it is
+        // not judged: a member stored before the rule existed must still be
+        // able to change their bio through a partial update. (The admin form
+        // and My Profile always send them, so they are judged.)
+        if ($member && ! $request->hasAny(['role', 'instrument_ids', 'main_instrument_id'])) {
+            return;
+        }
+
+        $hasRole = $request->has('role')
+            ? $request->filled('role')
+            : filled($member?->role);
+        $hasInstrument = $request->has('instrument_ids')
+            ? count($request->input('instrument_ids') ?? []) > 0
+            : (bool) $member?->instruments()->exists();
+        $hasMain = $request->has('main_instrument_id')
+            ? $request->filled('main_instrument_id')
+            : filled($member?->main_instrument_id);
+
+        if (! $hasRole && ! $hasInstrument && ! $hasMain) {
+            throw ValidationException::withMessages(['instrument_ids' => __('api.member_needs_part')]);
+        }
     }
 
     public function uploadPhoto(Request $request, BandMember $member): BandMemberResource

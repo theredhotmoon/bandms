@@ -55,7 +55,7 @@ test.describe.serial('Public — member releases', () => {
 
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000)
-    const member = await request.post(`${API}/api/band-profile/members`, { headers: headers(), data: { first_name: 'Record', last_name: `Member${stamp}` } })
+    const member = await request.post(`${API}/api/band-profile/members`, { headers: headers(), data: { role: 'E2E', first_name: 'Record', last_name: `Member${stamp}` } })
     expect(member.status(), await member.text()).toBe(201)
     memberId = (await member.json()).data.id
     slug = (await member.json()).data.slug

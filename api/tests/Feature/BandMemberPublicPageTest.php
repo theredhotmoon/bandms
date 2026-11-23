@@ -50,7 +50,7 @@ describe('band member public page opt-out', function () {
 
         // The response is built from the model create() returned, which never
         // read the column default back from the database.
-        $this->postJson('/api/band-profile/members', ['first_name' => 'Anna', 'last_name' => 'Nowak'])
+        $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'Anna', 'last_name' => 'Nowak'])
             ->assertCreated()
             ->assertJsonPath('data.public_page', true);
     });
@@ -58,7 +58,7 @@ describe('band member public page opt-out', function () {
     it('lets an admin set it on create', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/band-profile/members', ['first_name' => 'Anna', 'last_name' => 'Nowak', 'public_page' => false])
+        $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'Anna', 'last_name' => 'Nowak', 'public_page' => false])
             ->assertCreated()
             ->assertJsonPath('data.public_page', false);
     });

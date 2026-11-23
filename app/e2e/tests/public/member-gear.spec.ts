@@ -52,6 +52,7 @@ test.describe.serial('Public — member gear', () => {
     const res = await request.post(`${API}/api/band-profile/members`, {
       headers: headers(),
       data: {
+        role: 'E2E',
         first_name: 'Gear',
         last_name: `Member${stamp}`,
         default_gear: [

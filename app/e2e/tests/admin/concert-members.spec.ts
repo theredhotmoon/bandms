@@ -28,7 +28,7 @@ test.beforeEach(async ({ request, baseURL }) => {
   for (const first of ['Ania', 'Bartek']) {
     const res = await request.post(`${baseURL}/api/band-profile/members`, {
       headers: headers(),
-      data: { first_name: first, last_name: `Gig${stamp}`, is_current: true },
+      data: { role: 'E2E', first_name: first, last_name: `Gig${stamp}`, is_current: true },
     })
     expect(res.status(), await res.text()).toBe(201)
     memberIds.push((await res.json()).data.id)

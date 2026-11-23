@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-23 (every band member has an instrument or a role)
+
+### Changed
+- **A band member now needs at least one instrument or a role.** A main instrument counts on its own. Saving a member with neither is refused, with the message shown under the instruments, in both the Band Members form and My Profile. An existing member who has neither has to be given one on their next save, since both forms always send instruments and role; none of the band's current members are affected.
+
+### Fixed
+- **Updating a member without sending their instruments or social links no longer removes them.** Any update that left either list out of the request cleared it. The admin forms always send both, so this only hit other callers of the API.
+
 ## [Unreleased] — 2026-11-20 (more space between news posts)
 
 ### Changed

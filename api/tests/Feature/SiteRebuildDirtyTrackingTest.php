@@ -344,7 +344,7 @@ it('marks band-members dirty when a member is created', function () {
     Passport::actingAs($admin);
     SiteSetting::create(['key' => 'auto_rebuild', 'value' => 'false']);
 
-    $this->postJson('/api/band-profile/members', ['first_name' => 'Jane', 'last_name' => 'Doe'])
+    $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'Jane', 'last_name' => 'Doe'])
         ->assertCreated();
 
     expect(SiteDirtyArea::where('area', 'band-members')->exists())->toBeTrue();
