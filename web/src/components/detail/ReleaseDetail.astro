@@ -1,7 +1,7 @@
 ---
 import { richTextHtml } from '@/lib/richText'
 import type { Locale } from '@/types/shared'
-import type { Alternates } from '@/lib/locales'
+import { canonicalUrl, pageUrlOptions, type Alternates } from '@/lib/locales'
 import type { Release } from '@/types/release'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ThemeSlot from '@/components/ThemeSlot.astro'
@@ -90,7 +90,7 @@ const structuredData = {
   byArtist: { '@type': 'MusicGroup', name: profile.name },
   datePublished: release.release_date ?? undefined,
   image: release.cover_image ?? undefined,
-  url: Astro.url.href,
+  url: canonicalUrl(alternates, pageUrlOptions(Astro, lang)),
   numTracks: tracks.length > 0 ? tracks.length : undefined,
 }
 ---

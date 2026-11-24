@@ -10,8 +10,8 @@
 import { getConcerts, getSiteConfig, findConcert } from '@/lib/cms'
 import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
 import type { Concert } from '@/types/concert'
-import { getSlugMap } from '@/lib/slugs'
-import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
+import { getSlugMap, sectionAlternates } from '@/lib/slugs'
+import { LOCALES } from '@/lib/locales'
 import ConcertDetail from '@/components/detail/ConcertDetail.astro'
 
 export async function getStaticPaths() {
@@ -30,14 +30,13 @@ export async function getStaticPaths() {
   return found.map(({ item: c, detail }) => ({ params: { slug: c.slug }, props: { concert: detail.en } }))
 }
 
-const { slug } = Astro.params
 const { concert } = Astro.props as { concert: Concert }
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.concerts === false) return Astro.redirect('/404', 307)
 
-const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].concerts ?? 'concerts'}/${slug}`]))
+// Every locale's path, /en/ included: that one is this page's canonical.
+const alternates = sectionAlternates(await getSlugMap(), 'concerts', concert.slug)
 ---
 
 <ConcertDetail lang="en" alternates={alternates} concert={concert} />

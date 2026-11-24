@@ -7,6 +7,7 @@ import {
   resolveTranslation,
   dateLocale,
   nativeName,
+  canonicalUrl,
   hreflangLinks,
 } from './locales'
 
@@ -148,5 +149,52 @@ describe('hreflangLinks', () => {
   it('does not double the slash between site and path', () => {
     const links = hreflangLinks({ en: '/en/' }, { ...opts, site: 'https://example.com/' })
     expect(links[0].href).toBe('https://example.com/en/')
+  })
+})
+
+// ── canonical ────────────────────────────────────────────────────────────────
+//
+// The legacy unlocalised routes (/posts/{id}, /concerts/{slug}, /about …) render
+// the English page at a second URL. Each used to name itself canonical, so every
+// English article was in the index twice, competing with its own /en/ twin.
+describe('canonicalUrl', () => {
+  const site = 'https://example.com'
+
+  it('sends a legacy URL to its localised twin', () => {
+    expect(canonicalUrl({ en: '/en/news/hello', pl: '/pl/aktualnosci/czesc' }, {
+      site, currentLocale: 'en', currentPath: '/posts/2/',
+    })).toBe('https://example.com/en/news/hello/')
+  })
+
+  it('is the page itself on a localised page', () => {
+    expect(canonicalUrl({ en: '/en/news/hello', pl: '/pl/aktualnosci/czesc' }, {
+      site, currentLocale: 'pl', currentPath: '/pl/aktualnosci/czesc/',
+    })).toBe('https://example.com/pl/aktualnosci/czesc/')
+  })
+
+  it('is the page itself when the route passes no alternates', () => {
+    expect(canonicalUrl({}, { site, currentLocale: 'en', currentPath: '/merch/success/' }))
+      .toBe('https://example.com/merch/success/')
+  })
+
+  // Record slugs are stored as typed. Astro's own URL — and so the sitemap's —
+  // ends these in a slash and percent-encodes them.
+  it('keeps the slash on a slug with a dot', () => {
+    expect(canonicalUrl({ en: '/en/news/vol.2' }, { site, currentLocale: 'en', currentPath: '/posts/2/' }))
+      .toBe('https://example.com/en/news/vol.2/')
+  })
+
+  it('percent-encodes a slug, and never encodes one twice', () => {
+    const opts = { site, currentLocale: 'en' as const, currentPath: '/posts/2/' }
+    const encoded = 'https://example.com/en/news/m%C3%B3j%20koncert/'
+    expect(canonicalUrl({ en: '/en/news/mój koncert' }, opts)).toBe(encoded)
+    expect(canonicalUrl({ en: '/en/news/m%C3%B3j%20koncert/' }, opts)).toBe(encoded)
+  })
+
+  // A canonical and a self hreflang one character apart is a broken cluster.
+  it('is exactly the hreflang row for the same locale', () => {
+    const alternates = { en: '/en/about', pl: '/pl/o-nas' }
+    const opts = { site, currentLocale: 'en' as const, currentPath: '/about/' }
+    expect(hreflangLinks(alternates, opts)).toContainEqual({ hreflang: 'en', href: canonicalUrl(alternates, opts) })
   })
 })

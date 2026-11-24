@@ -8,10 +8,14 @@
  * page drifted out of sync with its localised twin.
  */
 import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap, sectionAlternates } from '@/lib/slugs'
 import ReleasesSection from '@/components/sections/ReleasesSection.astro'
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.releases === false) return Astro.redirect('/404', 307)
+
+// Every locale's path, /en/ included: that one is this page's canonical.
+const alternates = sectionAlternates(await getSlugMap(), 'releases')
 ---
 
-<ReleasesSection lang="en" />
+<ReleasesSection lang="en" alternates={alternates} />

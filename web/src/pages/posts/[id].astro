@@ -10,8 +10,8 @@
 import { getAllPosts, getSiteConfig, findPost } from '@/lib/cms'
 import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
 import type { Post } from '@/types/post'
-import { getSlugMap } from '@/lib/slugs'
-import { LOCALES, DEFAULT_LOCALE } from '@/lib/locales'
+import { getSlugMap, sectionAlternates } from '@/lib/slugs'
+import { LOCALES } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
 import PostDetail from '@/components/detail/PostDetail.astro'
 
@@ -32,9 +32,8 @@ const { post } = Astro.props as { post: Post }
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.posts === false) return Astro.redirect('/404', 307)
 
-// The localised routes key posts by their per-locale slug, not by id.
-const slugMap = await getSlugMap()
-const alternates = Object.fromEntries(LOCALES.filter(l => l !== DEFAULT_LOCALE).map(l => [l, `/${l}/${slugMap[l].posts ?? 'posts'}/${postSlug(post, l)}`]))
+// Every locale's path, /en/ included: that one is this page's canonical.
+const alternates = sectionAlternates(await getSlugMap(), 'posts', l => postSlug(post, l))
 ---
 
 <PostDetail lang="en" alternates={alternates} post={post} />

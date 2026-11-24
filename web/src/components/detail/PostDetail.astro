@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
-import type { Alternates } from '@/lib/locales'
+import { canonicalUrl, pageUrlOptions, type Alternates } from '@/lib/locales'
 import type { Post } from '@/types/post'
 import { getSlugMap } from '@/lib/slugs'
 import { postSlug, formatEventDates, fmtDate, fmtDateShort } from '@/lib/i18n'
@@ -80,7 +80,7 @@ const structuredData = {
   datePublished: post.published_at ?? post.created_at,
   author: { '@type': 'Organization', name: profile.name },
   publisher: { '@type': 'Organization', name: profile.name },
-  url: Astro.url.href,
+  url: canonicalUrl(alternates, pageUrlOptions(Astro, lang)),
 }
 
 const postsSection = slugMap[lang].posts ?? 'posts'

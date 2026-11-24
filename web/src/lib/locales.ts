@@ -148,6 +148,45 @@ export function assertRegistryMatches(
  */
 export type Alternates = Partial<Record<Locale, string>>
 
+interface PageUrlOptions { site: string; currentLocale: Locale; currentPath: string }
+
+/** The page being rendered, from the `Astro` global. */
+export function pageUrlOptions(astro: { site: URL | undefined; url: URL }, lang: Locale): PageUrlOptions {
+  return { site: astro.site?.toString() ?? astro.url.origin, currentLocale: lang, currentPath: astro.url.pathname }
+}
+
+/**
+ * Astro's default build.format is 'directory', so Astro.url.pathname always ends
+ * in '/' and is percent-encoded. Every canonical and alternate is normalised to
+ * that same form, which is also the one the sitemap lists. Only a real file
+ * keeps its ending: record slugs are stored as typed, so "any dot" would take
+ * the slash off a post called vol.2.
+ */
+function absoluteUrl(site: string, path: string): string {
+  const p = path.startsWith('/') ? path : '/' + path
+  const isFile = /\.(html|xml|txt)$/.test(p)
+  return new URL(p.endsWith('/') || isFile ? p : p + '/', site).href
+}
+
+/** A locale's path for this page; the current locale falls back to the URL itself. */
+function pathFor(alternates: Alternates, locale: Locale, opts: PageUrlOptions): string | undefined {
+  return alternates[locale] ?? (locale === opts.currentLocale ? opts.currentPath : undefined)
+}
+
+/**
+ * The one URL this page should be indexed at: the current locale's own entry in
+ * the route's map, or the page itself when the route passes none.
+ *
+ * On a localised page the two are the same. On a legacy unlocalised one
+ * (/posts/{id}, /about …) the entry is its /en/ twin — those pages named
+ * *themselves* canonical until Nov 2026, so every English page was offered for
+ * indexing twice. Read from the same map as hreflangLinks(), so the canonical
+ * and the self-referential alternate cannot disagree.
+ */
+export function canonicalUrl(alternates: Alternates, opts: PageUrlOptions): string {
+  return absoluteUrl(opts.site, pathFor(alternates, opts.currentLocale, opts) ?? opts.currentPath)
+}
+
 /**
  * Absolute <link rel="alternate"> rows for one page, plus x-default.
  *
@@ -164,33 +203,17 @@ export type Alternates = Partial<Record<Locale, string>>
  */
 export function hreflangLinks(
   alternates: Alternates,
-  opts: { site: string; currentLocale: Locale; currentPath: string },
+  opts: PageUrlOptions,
 ): Array<{ hreflang: string; href: string }> {
-  const base = opts.site.replace(/\/$/, '')
-
-  // Astro's default build.format is 'directory', so Astro.url.href -- which
-  // BaseHead uses as the canonical -- always ends in '/'. A self-referential
-  // alternate differing from the canonical by one slash is a broken hreflang
-  // cluster, so every row is normalised to the same directory form. A path with
-  // a file extension is left alone.
-  const abs = (path: string) => {
-    const p = path.startsWith('/') ? path : '/' + path
-    const isFile = /\.[^/]+$/.test(p)
-    return base + (p.endsWith('/') || isFile ? p : p + '/')
-  }
-
   // A locale with no path is skipped rather than guessed at — a wrong alternate
   // is worse for a crawler than a missing one.
-  const pathFor = (l: Locale): string | undefined =>
-    alternates[l] ?? (l === opts.currentLocale ? opts.currentPath : undefined)
-
   const links = LOCALES.flatMap(l => {
-    const path = pathFor(l)
-    return path ? [{ hreflang: htmlLang(l), href: abs(path) }] : []
+    const path = pathFor(alternates, l, opts)
+    return path ? [{ hreflang: htmlLang(l), href: absoluteUrl(opts.site, path) }] : []
   })
 
-  const fallback = pathFor(DEFAULT_LOCALE)
-  if (fallback) links.push({ hreflang: 'x-default', href: abs(fallback) })
+  const fallback = pathFor(alternates, DEFAULT_LOCALE, opts)
+  if (fallback) links.push({ hreflang: 'x-default', href: absoluteUrl(opts.site, fallback) })
 
   return links
 }

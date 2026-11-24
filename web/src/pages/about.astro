@@ -6,10 +6,14 @@
  * Delegates to the section component rather than holding a second copy.
  */
 import { getSiteConfig } from '@/lib/cms'
+import { getSlugMap, sectionAlternates } from '@/lib/slugs'
 import AboutSection from '@/components/sections/AboutSection.astro'
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.about === false) return Astro.redirect('/404', 307)
+
+// Every locale's path, /en/ included: that one is this page's canonical.
+const alternates = sectionAlternates(await getSlugMap(), 'about')
 ---
 
-<AboutSection lang="en" />
+<AboutSection lang="en" alternates={alternates} />

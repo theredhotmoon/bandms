@@ -1,5 +1,5 @@
 import { getSiteConfig, isFailOpenConfig, type SiteConfig } from './cms'
-import { DEFAULT_LOCALE, LOCALES, type Locale } from './locales'
+import { DEFAULT_LOCALE, LOCALES, type Alternates, type Locale } from './locales'
 
 // Keyed by the registry rather than a literal pair, so a new locale is a
 // missing-key type error here instead of a silently half-built slug map.
@@ -37,6 +37,43 @@ function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
 }
 
 /**
+ * The URL segment for a section, falling back to the module key.
+ *
+ * The fallback is the half that matters. When site-config is unreachable the
+ * map ships module keys for the whole site — but a module with no row at all
+ * (fail-open serves `module_config: {}`) has no entry, so a bare
+ * `slugMap[lang].posts` is `undefined` and emits `/en/undefined/<slug>`. The
+ * routes already guard with `?? 'posts'`, so the linking page must use the same
+ * fallback or the two disagree and the link is dead — exactly what the
+ * "consistent URLs, no dead links" guarantee above rules out.
+ */
+export function sectionSlug(map: SlugMap, lang: Locale, key: string): string {
+  return map[lang][key] ?? key
+}
+
+/**
+ * Every locale's path for one section, or one record in it — what a route hands
+ * to the layout as `alternates`.
+ *
+ * `slug` is either the same string in every locale (concerts, merch, releases)
+ * or a per-locale resolver (posts). Every locale is always in the map, the
+ * default one included: BaseHead reads the page's canonical from it, and a
+ * legacy unlocalised route that left its own locale out named itself canonical
+ * beside its /en/ twin.
+ */
+export function sectionAlternates(
+  map: SlugMap,
+  section: string,
+  slug?: string | number | ((lang: Locale) => string | number),
+): Alternates {
+  return Object.fromEntries(LOCALES.map(l => {
+    const base = `/${l}/${sectionSlug(map, l, section)}`
+    if (slug === undefined) return [l, base]
+    return [l, `${base}/${typeof slug === 'function' ? slug(l) : slug}`]
+  })) as Alternates
+}
+
+/**
  * Returns the full slug map for all modules + hardcoded sections.
  *
  * Resolved exactly once per build. This matters more than it looks: the map
@@ -54,21 +91,6 @@ function dedupeSlugMap(m: Record<string, string>): Record<string, string> {
  * links. Throwing instead would be worse — a failed Astro build crash-loops the
  * `web` container and takes the public site down entirely.
  */
-/**
- * The URL segment for a section, falling back to the module key.
- *
- * The fallback is the half that matters. When site-config is unreachable the
- * map ships module keys for the whole site — but a module with no row at all
- * (fail-open serves `module_config: {}`) has no entry, so a bare
- * `slugMap[lang].posts` is `undefined` and emits `/en/undefined/<slug>`. The
- * routes already guard with `?? 'posts'`, so the linking page must use the same
- * fallback or the two disagree and the link is dead — exactly what the
- * "consistent URLs, no dead links" guarantee above rules out.
- */
-export function sectionSlug(map: SlugMap, lang: Locale, key: string): string {
-  return map[lang][key] ?? key
-}
-
 export function getSlugMap(): Promise<SlugMap> {
   _pending ??= resolveSlugMap()
   return _pending
