@@ -11,6 +11,7 @@ use App\Support\AlbumLinks;
 use App\Support\ContentLocales;
 use App\Support\Locales;
 use App\Support\PostBlockSync;
+use App\Support\PostContent;
 use App\Support\SiteRebuild;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -343,6 +344,17 @@ class PostController extends Controller
                 $data['event_date_display'] = 'range';
             }
 
+            // A retry after a deadlock must start from the row, not from a model
+            // whose save() was rolled back: that one believes it holds no
+            // changes, so the retry would save nothing and still answer 200.
+            // Locked first, so a save that waited for another one reads what that
+            // one wrote: otherwise it could skip a title it believes unchanged
+            // and still replace the body.
+            Post::whereKey($post->id)->lockForUpdate()->firstOrFail();
+            $post->refresh();
+            $wasPublished = $post->published_at !== null;
+            $before = PostContent::snapshot($post);
+
             // A replaced or cleared main image loses its file — after the
             // commit, so a rollback cannot leave the row pointing at nothing.
             // An omitted key leaves both alone, which is how the admin resends
@@ -361,6 +373,16 @@ class PostController extends Controller
             }
             if (array_key_exists('slug', $data)) {
                 $post->applySlugBag($data['slug'], ContentLocales::firstFilled($post->getTranslations('title'), Locales::default()));
+            }
+            // Only an edit to something readers could already see. Writing a
+            // draft, and the save that publishes it, are not modifications. That
+            // includes an article taken offline, rewritten and put back: nothing
+            // tells it from a draft, so it claims no modified date.
+            $contentChanged = $before !== PostContent::snapshot($post)
+                || (array_key_exists('blocks', $data)
+                    && PostContent::blocks($post->blocks()->orderBy('position')->get()) !== PostContent::blocks($data['blocks'] ?? []));
+            if ($wasPublished && $post->published_at !== null && $contentChanged) {
+                $post->content_updated_at = now();
             }
             $post->save();
 

@@ -1,4 +1,5 @@
 ---
+import { isoDay } from '@/lib/postDates'
 import type { Locale } from '@/types/shared'
 import { getSlugMap, sectionSlug, LOCALES } from '@/lib/slugs'
 import type { Alternates } from '@/lib/locales'
@@ -242,10 +243,10 @@ const structuredData = {
             const { day, mo, yr } = fmtDateParts(p.published_at ?? p.created_at, lang)
             return (
               <a class="post-row" href={`/${lang}/${sectionSlug(slugMap, lang, 'posts')}/${postSlug(p, lang)}`}>
-                <div class="post-date">
+                <time class="post-date" datetime={isoDay(p.published_at ?? p.created_at)}>
                   <span class="post-day">{day}</span>
                   <span class="post-mo">{mo} {yr}</span>
-                </div>
+                </time>
                 <div class="post-info">
                   <span class="post-title">{p.title}</span>
                   {p.excerpt && <span class="post-excerpt">{p.excerpt}</span>}
@@ -580,7 +581,7 @@ const structuredData = {
     transition: background .1s;
   }
   .post-row:hover { background: color-mix(in oklab, var(--color-ink) 4%, transparent); }
-  .post-date { text-align: center; }
+  .post-date { display: block; text-align: center; }
   .post-day {
     display: block;
     font-family: var(--font-display);

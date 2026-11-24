@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '@/types/shared'
 import type { Alternates } from '@/lib/locales'
+import type { PostDates } from '@/lib/postDates'
 import BaseHead from '@/components/BaseHead.astro'
 import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
@@ -27,6 +28,8 @@ export interface Props {
   image?: string | null
   noindex?: boolean
   structuredData?: object
+  /** Set on a news article: announces it as one, with its dates. */
+  article?: PostDates
   lang?: Locale
   alternates?: Alternates
   /**
@@ -49,6 +52,7 @@ const {
   image,
   noindex,
   structuredData,
+  article,
   lang = 'en',
   alternates = {},
   module,
@@ -135,6 +139,7 @@ const contentWidth = contentWidthFor(siteConfig, module)
       image={image}
       noindex={noindex}
       structuredData={structuredData}
+      article={article}
       siteName={bandName}
     />
     <slot name="head" />

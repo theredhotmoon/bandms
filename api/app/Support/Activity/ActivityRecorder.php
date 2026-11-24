@@ -87,7 +87,7 @@ class ActivityRecorder
 
     private const MASK = '***';
 
-    private const TIMESTAMPS = ['created_at', 'updated_at'];
+    private const TIMESTAMPS = ['created_at', 'updated_at', 'content_updated_at'];
 
     /** The event and action of a public-site rebuild, and the subject it is filed on. */
     public const REBUILT     = 'rebuilt';

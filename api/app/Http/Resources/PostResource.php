@@ -27,6 +27,8 @@ class PostResource extends JsonResource
             'intro'        => $this->intro,
             'image'        => $this->image ? '/storage/' . $this->image : null,
             'published_at' => $this->published_at,
+            // Null until a published post's text or pictures change.
+            'content_updated_at' => $this->content_updated_at,
             // Whether the public page mounts the comments block at all. A row
             // read without the column (a narrow select) counts as enabled.
             'comments_enabled' => $this->comments_enabled ?? true,

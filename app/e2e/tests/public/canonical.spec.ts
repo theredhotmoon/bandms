@@ -121,4 +121,17 @@ test.describe('Public — canonical URLs', () => {
     expect(paths).toContain('/en/')
     expect(paths.filter(p => !locales.some(l => p.startsWith(`/${l.code}/`)))).toEqual([])
   })
+
+  test('the sitemap lists no page that asks not to be indexed', async ({ request }) => {
+    const xml = await (await request.get(`${WEB}/sitemap-0.xml`)).text()
+    const paths = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => pathOf(m[1]!))
+    expect(paths.length).toBeGreaterThan(0)
+    const noindex: string[] = []
+    for (const path of paths) {
+      // A 404 is a page another spec's cleanup removed since the listing.
+      const res = await request.get(`${WEB}${path}`)
+      if (res.ok() && /<meta name="robots" content="[^"]*noindex/.test(await res.text())) noindex.push(path)
+    }
+    expect(noindex).toEqual([])
+  })
 })
