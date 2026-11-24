@@ -28,6 +28,7 @@ export interface FanProfile {
   name: string
   display_name?: string | null
   comments_blocked?: boolean
+  has_password?: boolean
 }
 
 export interface FanSession {
@@ -65,9 +66,9 @@ export function cleanReturnPath(value: unknown): string | null {
   return value
 }
 
-type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+export type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
-function browserStore(): Store | null {
+export function browserStore(): Store | null {
   try {
     return typeof localStorage === 'undefined' ? null : localStorage
   } catch {
@@ -101,6 +102,16 @@ export function storeFan(fan: FanProfile, store: Store | null = browserStore()):
     store?.setItem('fan', JSON.stringify(fan))
   } catch {
     // Not persisted; the page still holds it for this visit.
+  }
+}
+
+/** Signs the browser in: the same two keys the account page writes. */
+export function storeSession(session: FanSession, store: Store | null = browserStore()): void {
+  try {
+    store?.setItem('fan_token', session.token)
+    store?.setItem('fan', JSON.stringify(session.fan))
+  } catch {
+    // Not persisted; the page still holds the session for this visit.
   }
 }
 
@@ -140,7 +151,7 @@ export function formatCommentDate(iso: string, lang: string): string {
   return new Intl.DateTimeFormat(lang, { dateStyle: 'long' }).format(date)
 }
 
-function headers(lang: string, token?: string | null, json = false): Record<string, string> {
+export function headers(lang: string, token?: string | null, json = false): Record<string, string> {
   return {
     Accept: 'application/json',
     // The fan API answers in this language (SetLocale) — the page's, not the browser's.
@@ -150,7 +161,7 @@ function headers(lang: string, token?: string | null, json = false): Record<stri
   }
 }
 
-async function parse<T>(res: Response): Promise<T> {
+export async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   let body: unknown = null
   try {
@@ -163,6 +174,29 @@ async function parse<T>(res: Response): Promise<T> {
   const { message, errors, code } = (body ?? {}) as { message?: string; errors?: Record<string, string[]>; code?: string }
   const first = errors ? Object.values(errors)[0]?.[0] : undefined
   throw new CommentApiError(res.status, first ?? message ?? '', errors ?? {}, typeof code === 'string' ? code : null)
+}
+
+/**
+ * Runs a request with the session the fan holds now, and hands back what it
+ * returned — or null when there is nothing to act on: signed out, failed, or
+ * answered for a session that is no longer the current one. A late answer (or
+ * a late 401) for an old token must not rewrite, or sign out, a newer session,
+ * so a failure reaches `onError` only while the session that asked still holds.
+ */
+export async function asSession<T>(
+  current: () => string | null,
+  request: (token: string) => Promise<T>,
+  onError: (e: unknown) => void,
+): Promise<{ value: T } | null> {
+  const asked = current()
+  if (!asked) return null
+  try {
+    const value = await request(asked)
+    return current() === asked ? { value } : null
+  } catch (e) {
+    if (current() === asked) onError(e)
+    return null
+  }
 }
 
 export async function fetchComments(postId: number, lang: string, token?: string | null): Promise<CommentsResponse> {

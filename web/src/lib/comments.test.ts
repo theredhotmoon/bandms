@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
-  RETURN_KEY, cleanReturnPath, clearFanSession, formatCommentDate, readFanSession, rememberReturnPath, storeFan,
+  RETURN_KEY, CommentApiError, asSession, cleanReturnPath, clearFanSession, formatCommentDate, readFanSession, rememberReturnPath, storeFan,
 } from './comments'
 
 describe('rememberReturnPath', () => {
@@ -115,5 +115,60 @@ describe('formatCommentDate', () => {
 
   it('returns nothing for a date it cannot read', () => {
     expect(formatCommentDate('not a date', 'en')).toBe('')
+  })
+})
+
+describe('asSession', () => {
+  function deferred<T>() {
+    let resolve!: (v: T) => void
+    let reject!: (e: unknown) => void
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej })
+    return { promise, resolve, reject }
+  }
+
+  it('hands back the answer while the session that asked still holds', async () => {
+    const onError = vi.fn()
+    const answer = await asSession(() => 'A', async (token) => `for ${token}`, onError)
+    expect(answer).toEqual({ value: 'for A' })
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  it('hands back an answer that carries nothing (a 204)', async () => {
+    expect(await asSession(() => 'A', async () => undefined, vi.fn())).toEqual({ value: undefined })
+  })
+
+  it('asks for nothing when signed out', async () => {
+    const request = vi.fn()
+    expect(await asSession(() => null, request, vi.fn())).toBeNull()
+    expect(request).not.toHaveBeenCalled()
+  })
+
+  it('ignores a late answer for a session that was replaced or signed out', async () => {
+    for (const next of ['B', null]) {
+      let token: string | null = 'A'
+      const work = deferred<string>()
+      const pending = asSession(() => token, () => work.promise, vi.fn())
+      token = next
+      work.resolve('late')
+      expect(await pending).toBeNull()
+    }
+  })
+
+  it('ignores a late failure too, so an old 401 cannot sign a newer session out', async () => {
+    let token: string | null = 'A'
+    const work = deferred<string>()
+    const onError = vi.fn()
+    const pending = asSession(() => token, () => work.promise, onError)
+    token = 'B'
+    work.reject(new CommentApiError(401, 'expired'))
+    expect(await pending).toBeNull()
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  it('passes a failure on while the session still holds', async () => {
+    const onError = vi.fn()
+    const error = new CommentApiError(401, 'expired')
+    expect(await asSession(() => 'A', () => Promise.reject(error), onError)).toBeNull()
+    expect(onError).toHaveBeenCalledWith(error)
   })
 })

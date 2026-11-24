@@ -17,6 +17,10 @@ export interface MagicLinkResponse {
 export interface VerifyResponse {
   token: string
   fan: FanAccount
+  /** True when the exchanged link also carried this browser's password claim. */
+  password_set?: boolean
+  /** Set when the link connected a social account; not used by this page yet. */
+  linked?: string | null
 }
 
 /**
@@ -58,9 +62,11 @@ async function fanHandleResponse<T>(response: Response): Promise<T> {
   }
 
   if (response.status === 422) {
-    const body = (await response.json()) as {
+    // A 422 with no JSON body is still a refusal, not a success that could not be read.
+    const body = (await response.json().catch(() => ({}))) as {
       errors?: Record<string, string[]>
       message?: string
+      code?: string
     }
     // Not every 422 carries a Laravel `errors` bag — the same note client.ts
     // makes, which this handler was missing. TicketTransferController::initiate
@@ -72,7 +78,7 @@ async function fanHandleResponse<T>(response: Response): Promise<T> {
     if (body.errors && Object.keys(body.errors).length > 0) {
       throw new ApiValidationError(body.errors)
     }
-    throw new ApiError(422, body.message ?? '')
+    throw new ApiError(422, body.message ?? '', body.code)
   }
 
   // Deliberately NOT response.statusText, and the status is carried as a
@@ -86,14 +92,16 @@ async function fanHandleResponse<T>(response: Response): Promise<T> {
   // state machine out of `err.message.startsWith('409')`, which quietly ties
   // a UI branch to the shape of a string meant for a human.
   let message = ''
+  let code: string | undefined
   try {
-    const body = (await response.json()) as { message?: string }
+    const body = (await response.json()) as { message?: string; code?: string }
     if (body.message) message = body.message
+    if (typeof body.code === 'string') code = body.code
   } catch {
     // No JSON body — the caller's translated fallback is the better answer.
   }
 
-  throw new ApiError(response.status, message)
+  throw new ApiError(response.status, message, code)
 }
 
 export async function requestMagicLink(email: string, name?: string): Promise<MagicLinkResponse> {
@@ -107,12 +115,49 @@ export async function requestMagicLink(email: string, name?: string): Promise<Ma
   return fanHandleResponse<MagicLinkResponse>(response)
 }
 
-export async function verifyMagicLink(token: string): Promise<VerifyResponse> {
+export async function verifyMagicLink(token: string, claim?: string | null): Promise<VerifyResponse> {
+  const query = `token=${encodeURIComponent(token)}${claim ? `&claim=${encodeURIComponent(claim)}` : ''}`
   const response = await fetch(
-    `${API_BASE}/api/fan/auth/verify?token=${encodeURIComponent(token)}`,
+    `${API_BASE}/api/fan/auth/verify?${query}`,
     { headers: withFanLocale({ Accept: 'application/json' }) },
   )
   return fanHandleResponse<VerifyResponse>(response)
+}
+
+export async function loginFan(email: string, password: string): Promise<VerifyResponse> {
+  const response = await fetch(`${API_BASE}/api/fan/auth/login`, {
+    method: 'POST',
+    headers: withFanLocale(jsonHeaders),
+    body: JSON.stringify({ email, password }),
+  })
+  return fanHandleResponse<VerifyResponse>(response)
+}
+
+/** Creates the account's pending password; the emailed link confirms it. */
+export async function registerFan(
+  email: string,
+  password: string,
+  claimHash: string | null,
+): Promise<MagicLinkResponse> {
+  const response = await fetch(`${API_BASE}/api/fan/auth/register`, {
+    method: 'POST',
+    headers: withFanLocale(jsonHeaders),
+    body: JSON.stringify({ email, password, ...(claimHash ? { claim_hash: claimHash } : {}) }),
+  })
+  return fanHandleResponse<MagicLinkResponse>(response)
+}
+
+export async function setFanPassword(
+  authToken: string,
+  password: string,
+  currentPassword?: string,
+): Promise<FanAccount> {
+  const response = await fetch(`${API_BASE}/api/fan/me/password`, {
+    method: 'PUT',
+    headers: withFanLocale(authHeaders(authToken)),
+    body: JSON.stringify({ password, ...(currentPassword ? { current_password: currentPassword } : {}) }),
+  })
+  return fanHandleResponse<FanAccount>(response)
 }
 
 export async function fetchFanMe(authToken: string): Promise<FanAccount> {

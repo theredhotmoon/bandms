@@ -2,10 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import {
   COMMENT_MAX, NAME_MAX, CommentApiError,
-  clearFanSession, deleteComment, fetchComments, fetchFanProfile, formatCommentDate,
-  postComment, readFanSession, rememberReturnPath, requestSignInLink, saveDisplayName, storeFan,
-  type FanProfile, type PostComment,
+  asSession, clearFanSession, deleteComment, fetchComments, fetchFanProfile, formatCommentDate,
+  postComment, readFanSession, saveDisplayName, storeFan,
+  type FanProfile, type FanSession, type PostComment,
 } from '@/lib/comments'
+import { commentListLoader, withComment } from '@/lib/commentList'
+import FanSignIn, { type FanSignInCopy } from './FanSignIn.vue'
 
 /**
  * Comments under a news post. Everything here happens in the browser: the
@@ -18,10 +20,7 @@ import {
 export interface PostCommentsCopy {
   title: string
   empty: string
-  signInLead: string
-  emailLabel: string
-  sendLink: string
-  linkSent: string
+  signIn: FanSignInCopy
   nameLabel: string
   bodyLabel: string
   submit: string
@@ -57,9 +56,6 @@ const fan = ref<FanProfile | null>(null)
 // list renders until the browser has looked in its storage.
 const ready = ref(false)
 
-const email = ref('')
-const linkState = ref<'idle' | 'sending' | 'sent'>('idle')
-
 const body = ref('')
 const displayName = ref('')
 const posting = ref(false)
@@ -75,18 +71,46 @@ const needsName = computed(() => !!fan.value && !fan.value.display_name)
 // as a replacement pattern and garble the line.
 const signedInAs = computed(() => props.copy.signedInAs.replace('{email}', () => fan.value?.email ?? ''))
 
-function signOutLocally() {
+// Whose unsent text is in the form. A session that lapsed keeps the text for
+// its fan to come back to; nobody else may see it.
+let draftOwner: number | null = null
+
+/** Ends the session in this browser, leaving what the fan was writing. */
+function endSession() {
+  draftOwner = fan.value?.id ?? null
   clearFanSession()
   token.value = null
   fan.value = null
+  error.value = ''
+  disarmDelete()
+  // A request of the ended session no longer speaks for these (see asSession).
+  posting.value = false
+  savingName.value = false
   // No session, no Delete: a button that silently does nothing is worse than none.
   comments.value = comments.value.map((c) => (c.mine ? { ...c, mine: false } : c))
 }
 
-/** A 401 means the session lapsed: back to the sign-in form, without an error. */
+function clearDrafts() {
+  draftOwner = null
+  body.value = ''
+  displayName.value = ''
+  editingName.value = false
+}
+
+function disarmDelete() {
+  clearTimeout(disarm)
+  armedDelete.value = null
+}
+
+const currentToken = () => token.value
+
+/**
+ * A 401 means the session lapsed: back to the sign-in form, without an error.
+ * Reached through asSession() only, so it is always about the current session.
+ */
 function handle(e: unknown) {
   if (e instanceof CommentApiError && e.status === 401) {
-    signOutLocally()
+    endSession()
     return
   }
   // A 403 here usually means the band blocked this fan since the page loaded;
@@ -106,29 +130,24 @@ function handle(e: unknown) {
  * never takes away a name set in the meantime (a first comment can beat it).
  */
 async function refreshProfile() {
-  const asked = token.value
-  if (!asked) return
-  try {
-    const fresh = await fetchFanProfile(props.lang, asked)
-    if (token.value !== asked) return
-    fan.value = { ...fresh, display_name: fresh.display_name ?? fan.value?.display_name ?? null }
-    storeFan(fan.value)
-  } catch (e) {
-    if (e instanceof CommentApiError && e.status === 401 && token.value === asked) signOutLocally()
-  }
+  const answer = await asSession(currentToken, (asked) => fetchFanProfile(props.lang, asked), (e) => {
+    if (e instanceof CommentApiError && e.status === 401) endSession()
+  })
+  if (!answer) return
+  const fresh = answer.value
+  fan.value = { ...fresh, display_name: fresh.display_name ?? fan.value?.display_name ?? null }
+  storeFan(fan.value)
 }
 
-async function load() {
-  try {
-    const res = await fetchComments(props.postId, props.lang, token.value)
+const list = commentListLoader({
+  token: currentToken,
+  fetch: (asked) => fetchComments(props.postId, props.lang, asked),
+  apply: (res) => {
     enabled.value = res.enabled
     comments.value = res.data
-  } catch {
-    // The list failing must not take the article down; show the form anyway.
-  } finally {
-    loaded.value = true
-  }
-}
+  },
+  settled: () => { loaded.value = true },
+})
 
 onMounted(async () => {
   const session = readFanSession()
@@ -138,45 +157,39 @@ onMounted(async () => {
     void refreshProfile()
   }
   ready.value = true
-  await load()
+  await list.load()
 })
 
-async function sendLink() {
-  if (linkState.value === 'sending' || !email.value) return
+/** Signed in under the post: the session is stored already; pick it up and re-read the list. */
+async function onSignedIn(session: FanSession) {
+  if (draftOwner !== session.fan.id) clearDrafts()
+  token.value = session.token
+  fan.value = session.fan
   error.value = ''
-  linkState.value = 'sending'
-  try {
-    await requestSignInLink(email.value, props.lang, props.returnPath)
-    // The account page only follows the link's return path in the browser
-    // that asked for it — see rememberReturnPath().
-    rememberReturnPath(props.returnPath)
-    linkState.value = 'sent'
-  } catch (e) {
-    linkState.value = 'idle'
-    handle(e)
-  }
+  void refreshProfile()
+  // `mine` is decided by the token, so the fan's own comments get their Delete.
+  await list.load()
 }
 
 async function submit() {
   if (posting.value || !token.value || !body.value.trim()) return
+  const asker = token.value
   error.value = ''
   posting.value = true
-  try {
-    const created = await postComment(props.postId, props.lang, token.value, {
-      body: body.value,
-      ...(needsName.value ? { display_name: displayName.value } : {}),
-    })
-    comments.value = [...comments.value, created]
-    if (fan.value && needsName.value) {
-      fan.value = { ...fan.value, display_name: created.author_name }
-      storeFan(fan.value)
-    }
-    body.value = ''
-  } catch (e) {
-    handle(e)
-  } finally {
-    posting.value = false
+  const answer = await asSession(currentToken, (asked) => postComment(props.postId, props.lang, asked, {
+    body: body.value,
+    ...(needsName.value ? { display_name: displayName.value } : {}),
+  }), handle)
+  if (token.value === asker) posting.value = false
+  if (!answer) return
+  const created = answer.value
+  list.changed()
+  comments.value = withComment(comments.value, created)
+  if (fan.value && needsName.value) {
+    fan.value = { ...fan.value, display_name: created.author_name }
+    storeFan(fan.value)
   }
+  body.value = ''
 }
 
 function startNameEdit() {
@@ -186,20 +199,19 @@ function startNameEdit() {
 
 async function saveName() {
   if (savingName.value || !token.value || !displayName.value.trim()) return
+  const asker = token.value
   error.value = ''
   savingName.value = true
-  try {
-    const fresh = await saveDisplayName(props.lang, token.value, displayName.value)
-    fan.value = fresh
-    storeFan(fresh)
-    editingName.value = false
-    // The new name shows on every comment the fan wrote.
-    comments.value = comments.value.map((c) => (c.mine ? { ...c, author_name: fresh.display_name ?? c.author_name } : c))
-  } catch (e) {
-    handle(e)
-  } finally {
-    savingName.value = false
-  }
+  const answer = await asSession(currentToken, (asked) => saveDisplayName(props.lang, asked, displayName.value), handle)
+  if (token.value === asker) savingName.value = false
+  if (!answer) return
+  const fresh = answer.value
+  fan.value = fresh
+  storeFan(fresh)
+  editingName.value = false
+  // The new name shows on every comment the fan wrote.
+  list.changed()
+  comments.value = comments.value.map((c) => (c.mine ? { ...c, author_name: fresh.display_name ?? c.author_name } : c))
 }
 
 // Delete cannot be undone, so it takes a second click (no browser confirm).
@@ -211,19 +223,18 @@ async function remove(c: PostComment) {
     disarm = setTimeout(() => { armedDelete.value = null }, 3000)
     return
   }
-  armedDelete.value = null
+  disarmDelete()
   error.value = ''
-  try {
-    await deleteComment(c.id, props.lang, token.value)
-    comments.value = comments.value.filter((x) => x.id !== c.id)
-  } catch (e) {
-    handle(e)
-  }
+  const answer = await asSession(currentToken, (asked) => deleteComment(c.id, props.lang, asked), handle)
+  if (!answer) return
+  list.changed()
+  comments.value = comments.value.filter((x) => x.id !== c.id)
 }
 
 function signOut() {
   const t = token.value
-  signOutLocally()
+  endSession()
+  clearDrafts()
   // Best effort: the session is gone from this browser either way.
   if (t) void fetch('/api/fan/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${t}`, Accept: 'application/json' } }).catch(() => {})
 }
@@ -250,17 +261,9 @@ function signOut() {
     <p v-else-if="loaded" class="pc-empty" data-testid="comments-empty">{{ copy.empty }}</p>
 
     <template v-if="ready">
-    <!-- Signed out: ask for an email, send the link back to this post. -->
+    <!-- Signed out: password, new account, or an emailed link back to this post. -->
     <div v-if="!fan" class="pc-box" data-testid="comment-signin">
-      <p v-if="linkState === 'sent'" class="pc-sent" role="status">{{ copy.linkSent }}</p>
-      <form v-else class="pc-form" @submit.prevent="sendLink">
-        <p class="pc-lead">{{ copy.signInLead }}</p>
-        <label class="pc-label" for="pc-email">{{ copy.emailLabel }}</label>
-        <div class="pc-row">
-          <input id="pc-email" v-model="email" type="email" required autocomplete="email" class="pc-input" />
-          <button type="submit" class="pc-btn" :disabled="linkState === 'sending'">{{ copy.sendLink }}</button>
-        </div>
-      </form>
+      <FanSignIn :copy="copy.signIn" :lang="lang" :return-path="returnPath" @signed-in="onSignedIn" />
     </div>
 
     <p v-else-if="fan.comments_blocked" class="pc-box pc-blocked" data-testid="comment-blocked">{{ copy.blocked }}</p>
@@ -347,7 +350,6 @@ function signOut() {
 }
 .pc-form { display: flex; flex-direction: column; gap: 8px; }
 .pc-nameform { margin-top: 16px; }
-.pc-lead { margin: 0 0 4px; font: 400 16px/1.5 var(--font-body); color: var(--color-body); }
 .pc-label { font: 700 14px/1.3 var(--font-body); color: var(--color-body); }
 
 .pc-input {
@@ -400,6 +402,6 @@ function signOut() {
   color: var(--color-muted);
   overflow-wrap: anywhere;
 }
-.pc-sent, .pc-blocked { margin: 0; font: 400 16px/1.5 var(--font-body); color: var(--color-body); }
+.pc-blocked { margin: 0; font: 400 16px/1.5 var(--font-body); color: var(--color-body); }
 .pc-error { margin: 12px 0 0; font: 700 15px/1.4 var(--font-body); color: var(--color-danger); }
 </style>

@@ -6,12 +6,14 @@ use App\Models\FanAccount;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Support\DisplayName;
-use App\Support\ReturnPath;
+use App\Support\FanEmail;
+use App\Support\FanMagicToken;
+use App\Support\FanPassword;
+use App\Support\FanPayload;
+use App\Support\FanSession;
+use App\Support\FanSignInLink;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class FanAccountController extends Controller
 {
@@ -30,7 +32,7 @@ class FanAccountController extends Controller
     public function requestMagicLink(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => 'required|email|max:255',
+            'email' => FanEmail::rules(),
             'name'  => 'nullable|string|max:255',
             // Where to send the fan after sign-in (a news post they wanted to
             // comment on). Not validated as a rule: a bad value is dropped,
@@ -38,34 +40,21 @@ class FanAccountController extends Controller
             'return_to' => 'nullable',
         ]);
 
-        $fan = FanAccount::firstOrCreate(
-            ['email' => $data['email']],
-            ['name' => $data['name'] ?? explode('@', $data['email'])[0]]
-        );
+        $response = ['message' => 'Magic link sent to your email.'];
 
-        $token = Str::random(64);
-        cache()->put("fan_magic:{$token}", $fan->id, now()->addHours(24));
-
-        // The fan opens the account page, which exchanges the token itself
-        // (FanAccountView). The API's verify endpoint answers JSON and consumes
-        // the token, so linking it directly signed nobody in. FRONTEND_URL, not
-        // APP_URL: the same rule as every other emailed link.
-        $verifyUrl = rtrim((string) config('newsletter.frontend_url'), '/') . "/account?token={$token}";
-
-        if ($returnTo = ReturnPath::clean($data['return_to'] ?? null)) {
-            $verifyUrl .= '&return=' . rawurlencode($returnTo);
+        $fan = FanAccount::findOrCreateByEmail($data['email'], $data['name'] ?? null);
+        if ($fan === null) {
+            return response()->json($response);
         }
 
-        try {
-            Mail::raw("Sign in to your fan account: {$verifyUrl}", fn ($m) => $m->to($fan->email)->subject('Your Sign-In Link'));
-        } catch (\Throwable $e) {
-            cache()->forget("fan_magic:{$token}");
-            Log::warning("Fan magic-link mail to {$fan->id} failed: {$e->getMessage()}");
+        $token = FanMagicToken::issue($fan);
 
+        try {
+            $verifyUrl = FanSignInLink::send($fan, $token, $data['return_to'] ?? null);
+        } catch (\Throwable) {
             return response()->json(['message' => 'We could not send the email. Please try again.'], 503);
         }
 
-        $response = ['message' => 'Magic link sent to your email.'];
         if (config('app.debug')) {
             $response['dev_link'] = $verifyUrl;
         }
@@ -78,24 +67,42 @@ class FanAccountController extends Controller
     public function verifyMagicLink(Request $request): JsonResponse
     {
         $token = $request->query('token', '');
-        $fanId = cache()->pull("fan_magic:{$token}");
+        $magic = is_string($token) && $token !== '' ? FanMagicToken::pull($token) : null;
 
-        abort_unless($fanId, 401, 'Invalid or expired token.');
+        abort_unless($magic, 401, 'Invalid or expired token.');
 
-        $fan          = FanAccount::findOrFail($fanId);
-        $sessionToken = Str::random(64);
-        cache()->put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $fan = FanAccount::findOrFail($magic['fan_id']);
+
+        if ($fan->email_verified_at === null) {
+            $fan->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        // A password parked by register is applied only for the browser that
+        // typed it (it holds the claim) and only onto an account with none.
+        // The conditional update is the check, so two openings cannot both win.
+        $passwordSet = $magic['password_hash'] !== null
+            && FanMagicToken::claimMatches($magic['claim_hash'], $request->query('claim'))
+            && FanAccount::whereKey($fan->id)->whereNull('password_hash')->update(['password_hash' => $magic['password_hash']]) === 1;
+
+        if ($passwordSet) {
+            FanPassword::notify($fan, true);
+        }
+
+        $fan->refresh();
+        $sessionToken = FanSession::open($fan, $magic['method']);
 
         return response()->json([
-            'token' => $sessionToken,
-            'fan'   => $this->fanPayload($fan),
+            'token'        => $sessionToken,
+            'fan'          => FanPayload::for($fan, FanSession::rowFor($sessionToken)),
+            'password_set' => $passwordSet,
+            'linked'       => null,
         ]);
     }
 
     // GET /api/fan/me  (requires fan.auth middleware)
     public function me(Request $request): JsonResponse
     {
-        return response()->json($this->fanPayload($request->attributes->get('fan')));
+        return response()->json(FanPayload::for($request->attributes->get('fan'), $request->attributes->get('fan_session')));
     }
 
     // PUT /api/fan/me  (requires fan.auth middleware)
@@ -110,20 +117,7 @@ class FanAccountController extends Controller
 
         $fan->update(['display_name' => $data['display_name']]);
 
-        return response()->json($this->fanPayload($fan));
-    }
-
-    /** The fan as their own browser sees them — one shape for verify, me and updateMe. */
-    private function fanPayload(FanAccount $fan): array
-    {
-        return [
-            'id'                    => $fan->id,
-            'email'                 => $fan->email,
-            'name'                  => $fan->name,
-            'newsletter_subscribed' => $fan->newsletter_subscribed,
-            'display_name'          => $fan->display_name,
-            'comments_blocked'      => $fan->isCommentBlocked(),
-        ];
+        return response()->json(FanPayload::for($fan, $request->attributes->get('fan_session')));
     }
 
     // GET /api/fan/tickets  (requires fan.auth middleware)
@@ -137,7 +131,10 @@ class FanAccountController extends Controller
         )
             ->with(['concertTicketType.concert.venue'])
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            // The query compares addresses as MySQL does, which is not exactly (see FanEmail).
+            ->filter(fn (Ticket $t) => $t->fan_account_id === $fan->id || FanEmail::same($t->holder_email, $fan->email))
+            ->values();
 
         return response()->json($tickets->map(fn($t) => [
             'uuid'         => $t->uuid,
@@ -153,10 +150,7 @@ class FanAccountController extends Controller
     // POST /api/fan/auth/logout — invalidates the session token
     public function logout(Request $request): JsonResponse
     {
-        $token = $request->bearerToken();
-        if ($token) {
-            cache()->forget("fan_session:{$token}");
-        }
+        FanSession::close($request);
 
         return response()->json(['message' => 'Logged out.']);
     }
@@ -169,7 +163,9 @@ class FanAccountController extends Controller
         $orders = Order::where('email', $fan->email)
             ->with(['items.tickets'])
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->filter(fn (Order $o) => FanEmail::same($o->email, $fan->email))
+            ->values();
 
         return response()->json($orders->map(fn($o) => [
             'uuid'       => $o->uuid,

@@ -19,8 +19,7 @@ use Illuminate\Support\Str;
 function makeFan(string $email = 'fan@example.com', string $name = 'Fan'): array
 {
     $fan          = FanAccount::create(['email' => $email, 'name' => $name]);
-    $sessionToken = Str::random(64);
-    Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+    $sessionToken = fanToken($fan);
 
     return [$fan, $sessionToken];
 }
@@ -104,6 +103,43 @@ describe('POST /api/fan/tickets/{uuid}/transfer', function () {
             ['to_email' => $fan->email],
             ['Authorization' => "Bearer {$token}"],
         )->assertStatus(422);
+    });
+
+    it('lets a buyer who typed capitals at checkout transfer their ticket', function () {
+        [$fan, $token] = makeFan('buyer@example.com');
+        $ticket        = makeTicket($fan);
+        // Checkout stores the address as typed and links no account.
+        $ticket->forceFill(['holder_email' => 'Buyer@Example.com', 'fan_account_id' => null])->save();
+
+        $this->postJson(
+            "/api/fan/tickets/{$ticket->uuid}/transfer",
+            ['to_email' => 'recipient@example.com'],
+            ['Authorization' => "Bearer {$token}"],
+        )->assertStatus(200);
+    });
+
+    it('does not own a ticket through a lookalike address', function () {
+        [, $token] = makeFan('buyer@exámple.com');
+        [$buyer]   = makeFan('buyer@example.com');
+        $ticket    = makeTicket($buyer);
+        $ticket->forceFill(['fan_account_id' => null])->save();
+
+        $this->postJson(
+            "/api/fan/tickets/{$ticket->uuid}/transfer",
+            ['to_email' => 'recipient@example.com'],
+            ['Authorization' => "Bearer {$token}"],
+        )->assertStatus(403);
+    });
+
+    it('cannot transfer a ticket to yourself in other capitals', function () {
+        [$fan, $token] = makeFan('self@example.com');
+        $ticket        = makeTicket($fan);
+
+        $this->postJson(
+            "/api/fan/tickets/{$ticket->uuid}/transfer",
+            ['to_email' => 'Self@Example.com'],
+            ['Authorization' => "Bearer {$token}"],
+        )->assertStatus(422)->assertJsonPath('message', __('api.fan.transfer_to_self'));
     });
 
     it('returns 422 when a pending transfer already exists', function () {

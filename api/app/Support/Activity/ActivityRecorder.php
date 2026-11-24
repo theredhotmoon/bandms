@@ -9,6 +9,7 @@ use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use App\Models\FanAccount;
 use App\Models\NewsletterSubscriber;
+use App\Models\FanSessionRow;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PostComment;
@@ -46,6 +47,8 @@ class ActivityRecorder
         ActivityChange::class,
         // Rebuild bookkeeping, written by nearly every admin save.
         SiteDirtyArea::class,
+        // A row per sign-in and a write per day of use: not band activity.
+        FanSessionRow::class,
         // The nightly crawler's output: hundreds of rows a night written by
         // a job, not by the band. Its settings are edited by people and stay.
         AssistantFinding::class,

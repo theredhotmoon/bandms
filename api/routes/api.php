@@ -13,6 +13,7 @@ use App\Http\Controllers\HeroImageController;
 use App\Http\Controllers\PresaleCodeController;
 use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
+use App\Http\Controllers\FanAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
@@ -218,6 +219,13 @@ Route::prefix('fan/auth')->group(function () {
         ->middleware('throttle:5,1,fan-magic-link');
     Route::get('verify', [FanAccountController::class, 'verifyMagicLink'])
         ->middleware('throttle:20,1,fan-verify');
+    // Mails a link to any address it is given, so it is held as tight as magic-link.
+    Route::post('register', [FanAuthController::class, 'register'])
+        ->middleware('throttle:5,1,fan-register');
+    // The route throttle is per address; the per-email failure limit lives in
+    // FanAuthController, so a botnet cannot guess one fan's password from many IPs.
+    Route::post('login', [FanAuthController::class, 'login'])
+        ->middleware('throttle:10,1,fan-login');
 });
 
 // Fan portal (fan-auth protected)
@@ -231,6 +239,8 @@ Route::prefix('fan')->middleware('fan.auth')->group(function () {
     // only once sign-in works, which is the accident that hid it; see TODO.md.
     Route::post('tickets/{uuid}/transfer', [TicketTransferController::class, 'initiate'])
         ->middleware('throttle:20,1,fan-transfer');
+    Route::put('me/password', [FanAuthController::class, 'setPassword'])
+        ->middleware('throttle:10,1,fan-password');
     Route::post('auth/logout', [FanAccountController::class, 'logout']);
 
     // Comments on news. Own throttle prefixes, for the reason given above

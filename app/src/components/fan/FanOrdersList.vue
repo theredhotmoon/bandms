@@ -6,15 +6,14 @@ import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanOrders } from '@/api/fan'
+import { fanListQuery } from '@/utils/fanQueries'
 
 const { uiLang } = useUiLang()
 
-const { token } = useFanAccount()
-const { data: orders, isPending, isError } = useQuery({
-  queryKey: ['fan', 'orders'],
-  queryFn: () => fetchFanOrders(token.value!),
-  enabled: computed(() => !!token.value),
-})
+const { token, fan } = useFanAccount()
+const { data: orders, isPending, isError } = useQuery(
+  computed(() => fanListQuery('orders', token.value, fan.value, fetchFanOrders)),
+)
 </script>
 
 <template>

@@ -5,17 +5,16 @@ import { useQuery } from '@tanstack/vue-query'
 import { useFanAccount } from '@/composables/useFanAccount'
 import { fetchFanTickets, initiateTransfer } from '@/api/fan'
 import { fanErrorMessage } from '@/utils/fanErrors'
+import { fanListQuery } from '@/utils/fanQueries'
 import TicketDownloadCard from '@/components/TicketDownloadCard.vue'
 import type { FanTicket } from '@/types/fan'
 
 const { t } = useI18n()
 
-const { token } = useFanAccount()
-const { data: tickets, isPending, isError } = useQuery({
-  queryKey: ['fan', 'tickets'],
-  queryFn: () => fetchFanTickets(token.value!),
-  enabled: computed(() => !!token.value),
-})
+const { token, fan } = useFanAccount()
+const { data: tickets, isPending, isError } = useQuery(
+  computed(() => fanListQuery('tickets', token.value, fan.value, fetchFanTickets)),
+)
 
 const STATUS_COLOR: Record<string, string> = {
   active: 'ftl-badge--active',

@@ -23,6 +23,8 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    /** The API's machine-readable reason, when it sent one (`login_limit`…). */
+    public readonly code?: string,
   ) {
     super(message)
     this.name = 'ApiError'

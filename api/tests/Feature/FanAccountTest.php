@@ -3,6 +3,7 @@
 use App\Models\Concert;
 use App\Models\ConcertTicketType;
 use App\Models\FanAccount;
+use App\Models\FanSessionRow;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Ticket;
@@ -48,7 +49,7 @@ describe('POST /api/fan/auth/magic-link', function () {
             ->and($link)->not->toContain('/api/');
 
         $token = substr($link, strlen('https://band.example/account?token='));
-        expect(Cache::get("fan_magic:{$token}"))->toBe(FanAccount::where('email', 'fan@example.com')->value('id'));
+        expect(Cache::get("fan_magic:{$token}")['fan_id'])->toBe(FanAccount::where('email', 'fan@example.com')->value('id'));
     });
 
     it('returns 503 and drops the token when the mail cannot be sent', function () {
@@ -87,8 +88,7 @@ describe('GET /api/fan/auth/verify', function () {
 describe('GET /api/fan/me', function () {
     it('returns 200 with fan data when authenticated', function () {
         $fan          = FanAccount::create(['email' => 'me@example.com', 'name' => 'Me Fan']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         $this->getJson('/api/fan/me', ['Authorization' => "Bearer {$sessionToken}"])
             ->assertStatus(200)
@@ -108,8 +108,7 @@ describe('GET /api/fan/me', function () {
 describe('GET /api/fan/tickets', function () {
     it('returns 200 with ticket array when authenticated', function () {
         $fan          = FanAccount::create(['email' => 'ticketfan@example.com', 'name' => 'Ticket Fan']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         $this->getJson('/api/fan/tickets', ['Authorization' => "Bearer {$sessionToken}"])
             ->assertStatus(200)
@@ -118,8 +117,7 @@ describe('GET /api/fan/tickets', function () {
 
     it('returns tickets linked by fan_account_id', function () {
         $fan          = FanAccount::create(['email' => 'ticketowner@example.com', 'name' => 'Owner']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         $venue      = Venue::factory()->create(['name' => 'Test Venue']);
         $concert    = Concert::create(['venue_id' => $venue->id, 'date' => '2026-09-15']);
@@ -148,8 +146,7 @@ describe('GET /api/fan/tickets', function () {
 describe('GET /api/fan/orders', function () {
     it('returns 200 with order array when authenticated', function () {
         $fan          = FanAccount::create(['email' => 'orderfan@example.com', 'name' => 'Order Fan']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         $this->getJson('/api/fan/orders', ['Authorization' => "Bearer {$sessionToken}"])
             ->assertStatus(200)
@@ -158,8 +155,7 @@ describe('GET /api/fan/orders', function () {
 
     it('returns orders matching fan email', function () {
         $fan          = FanAccount::create(['email' => 'purchaser@example.com', 'name' => 'Purchaser']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         Order::factory()->create([
             'email'    => 'purchaser@example.com',
@@ -201,14 +197,13 @@ describe('GET /api/fan-accounts (admin list)', function () {
 describe('POST /api/fan/auth/logout', function () {
     it('returns 200 and clears the session token', function () {
         $fan          = FanAccount::create(['email' => 'logout@example.com', 'name' => 'Logout Fan']);
-        $sessionToken = Str::random(64);
-        Cache::put("fan_session:{$sessionToken}", $fan->id, now()->addDays(30));
+        $sessionToken = fanToken($fan);
 
         $this->postJson('/api/fan/auth/logout', [], ['Authorization' => "Bearer {$sessionToken}"])
             ->assertStatus(200)
             ->assertJson(['message' => 'Logged out.']);
 
-        expect(Cache::get("fan_session:{$sessionToken}"))->toBeNull();
+        expect(FanSessionRow::count())->toBe(0);
     });
 
     it('returns 401 without authentication', function () {

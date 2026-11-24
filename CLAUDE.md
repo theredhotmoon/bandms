@@ -1944,6 +1944,140 @@ a swallowed exception from a log INSERT hid an already-aborted transaction.
 
 Spec: `docs/superpowers/specs/2026-10-30-activity-log-design.md`.
 
+## Fan sign-in — email is proven first, the password second
+
+A fan signs in with the emailed link or with email + password. **Sessions live
+in `fan_sessions`**, keyed by the SHA-256 of the token (a database leak hands
+out nothing). They last 180 days *of use*: `config/fan_auth.php`
+`session_days`, slid forward on use but written at most once a day.
+`App\Support\FanSession` is the one answer to "who is this request" —
+`FanAuth` and the public comments list both go through it.
+
+**Sessions used to be 30-day cache entries (`fan_session:{token}`).**
+`FanSession::migrateLegacy()` still honours one on first use and moves it into
+the table, so deploying signed nobody out. It can be **deleted 30 days after
+this shipped (2026-11-24)**, when every legacy entry has expired. The migrated
+row is **backdated** 30 days: stamped "now" it would look like a link opened a
+moment ago, and (below) could change a password without the current one.
+`fan_legacy_revoked:{id}` (31 days) is how a password change signs out a
+fan's legacy sessions too, since they are not rows to delete. The marker is
+written **before** the rows are deleted and read again after a legacy row is
+inserted, so a session moving at that moment cannot survive the change.
+
+**Two addresses are the same only when `FanEmail::same()` says so — MySQL's
+answer does not count.** `fan_accounts.email`, `orders.email` and
+`tickets.holder_email` are `utf8mb4_unicode_ci`: `á` equals `a`, a control or
+zero-width character equals nothing. Whoever owns `gmáil.com` can receive mail
+at `victim@gmáil.com`, which the database calls equal to `victim@gmail.com` —
+and a session shows its address's orders and tickets. So:
+
+- **Magic-link and register take printable ASCII only** (`FanEmail::rules()`);
+  login answers any other address with the ordinary `login_failed`.
+- **Every lookup is `FanAccount::findByEmail()`** (or `findOrCreateByEmail()`),
+  which drops a row that is not exactly equal; a raw `where('email', …)` on
+  these columns brings back both the read and the bypass of the login limit,
+  which is counted per spelling. When a lookalike holds the unique key, the
+  request is answered as usual, nothing is mailed and the log names the fan id.
+- `/fan/tickets` and `/fan/orders` filter the query's rows again, and a
+  transfer compares owner and recipient the same way. Checkout keeps the
+  address **as typed**, so a plain `===` refuses a buyer who typed capitals.
+- `normalise()` lowercases ASCII only: `mb_strtolower()` folds the Kelvin sign
+  into "k".
+
+SQLite compares bytes, so `FanEmailTest` gives those columns a collation that
+folds as MySQL's does; without that, these tests pass on broken code.
+
+**The email is proven before the password is trusted.** `POST
+/api/fan/auth/register` never signs anyone in and never sets anything: it
+hashes the password and parks it, with the claim hash, in the link's
+`FanMagicToken`; `verifyMagicLink` applies it. It answers identically for a
+known and an unknown address, and `login` does too — a wrong password, no
+account and no password all return `login_failed`, and a miss hashes against
+`DUMMY_HASH` so it costs the same time. **That hash is fixed at bcrypt cost
+12: changing `BCRYPT_ROUNDS` means regenerating it**, or a miss turns visibly
+faster than a hit. Ten failures per address per 15 minutes is a 429
+(`login_limit`). `current_password` has the same limit **per fan id**
+(`fan-current-password:{id}`, cleared by a change), or a stolen session would
+be a way to guess the password. It answers with the same code and its own
+sentence. Only a wrong guess counts, not a missing one, and a fresh link
+session (below) never reaches it.
+
+**A password is checked and acted on under one row lock.** `setPassword` re-reads
+the fan and the session inside its transaction before it decides, and `login`
+opens its session only if the hash it verified is still the one stored;
+otherwise a session could be opened on, or a password set over, a change that
+landed in between. The mail goes out after the commit. **Both transactions are
+retried (3 attempts) and so may run twice**: two fans signing in at once can
+deadlock, because `FanSession::open()`'s delete of expired rows holds a gap lock
+until its insert. Nothing that would double belongs inside — no mail, no
+`RateLimiter::hit`; `setPassword`'s closure returns an outcome and acts on it
+after. `rerunTransactions()` (`tests/Pest.php`) plays the retry, because the
+suite's own outer transaction stops Laravel from doing it.
+
+**The claim stops planting a password on someone else's account.** Without it,
+anyone could register `victim@x.com` with a password they chose, and when the
+victim opened the mail their account would carry the attacker's password. The
+browser that registers keeps a random value under `fan_claim`, sends only its
+SHA-256, and presents the value when the link is opened; a mismatch signs the
+fan in and leaves the password unset (and only onto an account with none —
+the conditional `UPDATE` is the check). **The consequence is deliberate:
+register on a laptop, open the mail on a phone, and you are signed in with no
+password.** `fan_claim` is one key mirrored by `web/src/lib/fanAuth.ts` and
+`app/src/utils/fanClaim.ts`; keep them in step. Do not trust the URL for it.
+A second registration replaces the claim, so only the newest mail can set its
+password — unless the server **refuses** it: nothing was mailed, so
+`withNewClaim()` (both apps) puts the earlier claim back. No answer, or a
+gateway's 502/504, means a mail may have gone out, and the new claim stays (our
+own 503, mail not sent, is a refusal). `/account` takes the claim before
+the exchange and puts it back after anything but a success or a 401
+(`linkWasRefused()`): a throttle, a 5xx, a page that is not JSON or no answer
+may leave the link good.
+
+**A `link` session under 15 minutes old may change the password without the
+current one.** That *is* forgot-password: opening the mailed link proves the
+mailbox. It is why a session records the **method its token carried**
+(`FanSession::METHODS`) and why `created_at` must stay honest — see the
+backdating above. `FanPayload::needsCurrent()` is the one rule, served as
+`password_needs_current`. A password change signs out **every other session**
+and emails the fan (`FanPassword::notify()`); a mail failure never fails it.
+
+`FanPassword` is the one definition of the rules (8+ characters, **72 bytes**
+max — bcrypt ignores the rest, and "ż" is two bytes, so going over has its own
+sentence rather than a character count — and no NUL byte, which it refuses to
+hash); `FanEmail` is the one definition of the address.
+`FanMagicToken` is the one reader of `fan_magic:{token}`; a
+token mailed before it carried an array holds a bare id and still works.
+
+**The stored fan in `localStorage` is stale by design** (`password_needs_current`
+flips with the clock; fans stored before this have neither flag), so `/account`
+refetches `/api/fan/me` before showing the password form. Any answer carries
+the token it was asked with, and **a late answer for an old token is
+ignored**: it must not rewrite, or sign out, a newer session. The password
+form and the comments island's profile and write requests go through an
+`asSession()` helper for that (`FanSignInOptions.vue`;
+`web/src/lib/comments.ts`). The rest have their own guard:
+
+- **The fan's ticket and order lists** are `fanListQuery()`
+  (`app/src/utils/fanQueries.ts`): keyed by the fan **id** (a token in a query
+  key shows in the devtools) and asked with the token taken when the key was
+  built. `setSession()` drops every fan list when the token changes, and the
+  lists and the options section are keyed by the token, so a new session loads
+  its own. A ticket transfer has no guard of its own: it is sent with the token
+  of the moment, and its answer lands in the list it was sent from, which is
+  gone once the session changes. `useFanNotices` clears the page's one-off
+  messages the same way.
+- **The comment list** goes through `commentListLoader()`
+  (`web/src/lib/commentList.ts`): only the newest load applies, and an answer
+  older than the session, or than a comment posted, deleted or renamed here, is
+  asked for again. A new local change to the list must call `list.changed()`.
+- **Unsent text under a post** goes on an explicit sign-out. A lapsed session (a
+  401) keeps it for the fan who wrote it, and it is cleared if another signs in.
+
+Test ids differ by surface: `fan-signin-*` on the public site
+(`FanSignIn.vue`), `fan-login-*` on `/account`. E2E gets a fan from
+`php artisan e2e:seed-fan-session --password=…`; without it the account is
+link-only.
+
 ## News comments are read and written at runtime — nothing about them is baked
 
 A signed-in fan comments under a news post; the comment is public at once, in
@@ -1960,7 +2094,7 @@ regardless (`enabled: false`, and a 403 on write), so a post switched off
 since the last build shows no block rather than a dead form. The page gates
 on `!== false`, for the same fail-open reason as the module map.
 
-**"Verified" is the fan account** — the magic-link session `FanAuth` checks.
+**"Verified" is the fan account** — the session `FanAuth` checks (link or password; see *Fan sign-in*).
 The island reads the `fan_token` / `fan` keys the SPA's `/account` page writes
 to `localStorage`; same origin behind Caddy, so one sign-in serves both. The
 sign-in form on a post sends `return_to`, and the emailed link carries it as

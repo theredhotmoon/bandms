@@ -24,8 +24,7 @@ function commentFan(array $attributes = []): array
         'name'         => "fan{$n}",
         'display_name' => "Fan {$n}",
     ]);
-    $token = "session-{$n}-" . bin2hex(random_bytes(4));
-    Cache::put("fan_session:{$token}", $fan->id, now()->addDay());
+    $token = fanToken($fan);
 
     return [$fan, ['Authorization' => "Bearer {$token}"]];
 }

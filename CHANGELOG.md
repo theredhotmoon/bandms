@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-24 (fans sign in with a password and stay signed in)
+
+### Added
+- **Fans can sign in with an email and a password**, under a news post and on the fan account page. Wrong details always get the same answer, whether or not the address has an account, and ten wrong tries in 15 minutes pause sign-in for that address.
+- **Fans can create an account with an email and a password.** The account is activated by the emailed link, and the password only takes effect when the link is opened in the same browser the fan registered in. Opened elsewhere, the fan is signed in but has no password yet and can set one on the account page.
+- **Fans can set or change their password on the account page.** Changing it signs the fan out everywhere else and sends them an email saying it happened. Right after opening the emailed link, the current password is not asked for, so a forgotten password is recovered the same way.
+
+### Changed
+- **Fans stay signed in for 180 days of use**, instead of 30 days from the link. Fans signed in before this update stay signed in.
+- **The emailed sign-in link still works** and is the way back in after a forgotten password.
+- **The default sign-in prompt under news posts has new wording.** A band that wrote its own prompt in Website modules may want to update it to mention passwords.
+
+### Fixed
+- **A fan only sees orders and tickets for exactly their own address.** An address that differed only by an accent or an invisible character counted as the same one.
+- **Transferring a ticket works whatever capitals the buyer typed at checkout.** It used to be refused when they differed from the address the fan signed in with.
+
 ## [Unreleased] — 2026-11-23 (every band member has an instrument or a role)
 
 ### Changed

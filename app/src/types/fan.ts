@@ -7,6 +7,10 @@ export interface FanAccount {
   display_name?: string | null
   /** True when the band has blocked this fan from commenting. */
   comments_blocked?: boolean
+  /** Whether the account has a password. Absent in a fan stored before it existed. */
+  has_password?: boolean
+  /** Changing the password asks for the current one (not right after a link sign-in). */
+  password_needs_current?: boolean
 }
 
 export interface FanTicket {

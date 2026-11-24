@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError, ApiValidationError } from '@/api/client'
-import { fanErrorMessage } from './fanErrors'
+import { fanErrorMessage, linkWasRefused, serverRefused } from './fanErrors'
 
 const FALLBACK = 'Coś poszło nie tak.'
 
@@ -43,5 +43,54 @@ describe('fanErrorMessage', () => {
 
   it('passes an empty fallback through, for a template with its own v-else', () => {
     expect(fanErrorMessage(new ApiError(429, 'Too Many Attempts.'), '')).toBe('')
+  })
+})
+
+describe('fanErrorMessage with a code', () => {
+  it('shows a 429 only when it is the login limit the API worded', () => {
+    expect(fanErrorMessage(new ApiError(429, 'Za dużo prób.', 'login_limit'), FALLBACK)).toBe('Za dużo prób.')
+  })
+
+  it('still hides a 429 with no code or another code', () => {
+    expect(fanErrorMessage(new ApiError(429, 'Too Many Attempts.'), FALLBACK)).toBe(FALLBACK)
+    expect(fanErrorMessage(new ApiError(429, 'Too Many Attempts.', 'other'), FALLBACK)).toBe(FALLBACK)
+  })
+
+  it('keeps showing a 422 with a code', () => {
+    expect(fanErrorMessage(new ApiError(422, 'Nieprawidłowe dane.', 'login_failed'), FALLBACK)).toBe('Nieprawidłowe dane.')
+  })
+})
+
+describe('linkWasRefused', () => {
+  it('is true only for a 401: the link is used up or expired', () => {
+    expect(linkWasRefused(new ApiError(401, 'Invalid or expired token.'))).toBe(true)
+  })
+
+  it('is false for every failure that leaves the link good', () => {
+    for (const status of [404, 422, 429, 500, 502, 503]) {
+      expect(linkWasRefused(new ApiError(status, ''))).toBe(false)
+    }
+    expect(linkWasRefused(new ApiValidationError({ token: ['x'] }))).toBe(false)
+    expect(linkWasRefused(new TypeError('Failed to fetch'))).toBe(false)
+    expect(linkWasRefused(new DOMException('aborted', 'AbortError'))).toBe(false)
+    // A 200 that is not JSON: a portal's or a proxy's page, not the API.
+    expect(linkWasRefused(new SyntaxError('Unexpected token <'))).toBe(false)
+  })
+})
+
+describe('serverRefused', () => {
+  it('is true for an error status the API answered with', () => {
+    expect(serverRefused(new ApiError(429, ''))).toBe(true)
+    expect(serverRefused(new ApiError(503, 'mail failed'))).toBe(true)
+    expect(serverRefused(new ApiValidationError({ password: ['x'] }))).toBe(true)
+  })
+
+  it('is false when it is not known what the server did', () => {
+    expect(serverRefused(new TypeError('Failed to fetch'))).toBe(false)
+    expect(serverRefused(new DOMException('aborted', 'AbortError'))).toBe(false)
+    expect(serverRefused(new SyntaxError('Unexpected token <'))).toBe(false)
+    // The gateway gave up waiting; the API may have gone on and sent the mail.
+    expect(serverRefused(new ApiError(502, ''))).toBe(false)
+    expect(serverRefused(new ApiError(504, ''))).toBe(false)
   })
 })

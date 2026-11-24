@@ -9,6 +9,19 @@
  */
 export default {
   account: {
+    passwordSet: 'Your password is set. You can now sign in with it.',
+    setPassword: 'Set a password',
+    changePassword: 'Change password',
+    passwordLead: 'Add a password to sign in without waiting for an email.',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    savePassword: 'Save password',
+    saving: 'Saving…',
+    passwordSaved: 'Password saved.',
+    passwordFailed: 'Could not save the password.',
+    optionsLoading: 'Loading…',
+    optionsLoadFailed: 'Could not load your sign-in options.',
+    retry: 'Try again',
     title: 'My Account',
     signOut: 'Sign out',
     myTickets: 'My Tickets',
@@ -38,8 +51,17 @@ export default {
   },
 
   login: {
+    lead: 'Sign in with your email and password, or get a sign-in link by email.',
+    password: 'Password',
+    passwordHint: 'At least 8 characters.',
+    signIn: 'Sign in',
+    signingIn: 'Signing in…',
+    createAccount: 'Create an account',
+    createSubmit: 'Create account',
+    creating: 'Creating account…',
+    backToSignIn: 'Back to sign in',
+    registerSent: 'Almost done. We emailed you a link; open it to confirm your address and finish creating the account.',
     title: 'My Account',
-    lead: 'Enter your email to receive a magic sign-in link.',
     email: 'Email address',
     sending: 'Sending…',
     send: 'Send magic link',
