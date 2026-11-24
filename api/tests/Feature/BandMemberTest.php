@@ -99,6 +99,7 @@ describe('POST /api/band-profile/members', function () {
         $this->postJson('/api/band-profile/members', [
             'first_name' => 'John',
             'last_name'  => 'Doe',
+            'role'       => 'Vocals', // a member needs an instrument or a role
         ])->assertCreated()
           ->assertJsonPath('data.first_name', 'John')
           ->assertJsonPath('data.last_name', 'Doe');
@@ -141,6 +142,7 @@ describe('POST /api/band-profile/members', function () {
         $this->postJson('/api/band-profile/members', [
             'first_name'   => 'John',
             'last_name'    => 'Doe',
+            'role'         => 'Vocals',
             'social_links' => [
                 ['platform' => 'instagram', 'url' => 'https://instagram.com/johndoe'],
             ],
@@ -350,5 +352,151 @@ describe('PUT /api/band-profile/members/reorder', function () {
         $this->putJson('/api/band-profile/members/reorder', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['ids']);
+    });
+});
+
+// ── Every member plays something or has a role ───────────────────────────────
+
+describe('a member has an instrument or a role', function () {
+    beforeEach(function () {
+        $this->createProfile();
+        $this->actingAsAdmin();
+        $this->trumpet = \App\Models\Instrument::create(['name' => 'Trumpet', 'category' => 'Brass']);
+    });
+
+    it('refuses a new member with neither', function () {
+        $this->postJson('/api/band-profile/members', ['first_name' => 'No', 'last_name' => 'Part'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+
+        $this->assertDatabaseMissing('band_members', ['first_name' => 'No']);
+    });
+
+    it('refuses a role that is only whitespace', function () {
+        $this->postJson('/api/band-profile/members', ['first_name' => 'No', 'last_name' => 'Part', 'role' => '   '])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+    });
+
+    it('accepts a new member with only an instrument', function () {
+        $this->postJson('/api/band-profile/members', [
+            'first_name' => 'Has', 'last_name' => 'Trumpet', 'instrument_ids' => [$this->trumpet->id],
+        ])->assertCreated();
+    });
+
+    it('accepts a new member with only a role', function () {
+        $this->postJson('/api/band-profile/members', ['first_name' => 'Has', 'last_name' => 'Role', 'role' => 'Sound engineer'])
+            ->assertCreated();
+    });
+
+    it('refuses an update that clears both', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager', 'can_login' => false]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['role' => null, 'instrument_ids' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+
+        expect($member->fresh()->role)->toBe('Manager');
+    });
+
+    it('lets an update that touches neither field through, even for a member with no part', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'can_login' => false]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['bio' => 'New bio'])
+            ->assertSuccessful();
+    });
+
+    it('refuses clearing the role of a member who has no instrument', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager', 'can_login' => false]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['role' => null])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+    });
+
+    it('judges a field the update did not send by its stored value', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'can_login' => false]);
+        $member->instruments()->sync([$this->trumpet->id]);
+
+        // Clearing the role is fine: the stored instrument still counts.
+        $this->putJson("/api/band-profile/members/{$member->id}", ['role' => null])
+            ->assertSuccessful();
+    });
+
+    // `update()` used to sync `instrument_ids ?? []`, so any PUT that left the
+    // key out — a partial update — silently removed every instrument.
+    it('keeps the instruments when an update does not send them', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'can_login' => false]);
+        $member->instruments()->sync([$this->trumpet->id]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['bio' => 'New bio'])
+            ->assertSuccessful();
+
+        expect($member->fresh()->instruments->pluck('id')->all())->toBe([$this->trumpet->id]);
+    });
+
+    // Same wipe, for links: `socialLinks()->delete()` ran on every update.
+    it('keeps the social links when an update does not send them', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager', 'can_login' => false]);
+        $member->socialLinks()->create(['profile_id' => 1, 'platform' => 'instagram', 'url' => 'https://instagram.com/a', 'position' => 0]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['public_page' => false])
+            ->assertSuccessful();
+
+        expect($member->fresh()->socialLinks->pluck('url')->all())->toBe(['https://instagram.com/a']);
+    });
+
+    it('still clears the social links when an update sends an empty list', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager', 'can_login' => false]);
+        $member->socialLinks()->create(['profile_id' => 1, 'platform' => 'instagram', 'url' => 'https://instagram.com/a', 'position' => 0]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['social_links' => []])
+            ->assertSuccessful();
+
+        expect($member->fresh()->socialLinks)->toHaveCount(0);
+    });
+
+    // My Profile: the rule reads the request, the write reads the validated
+    // data, and a member's data has fields stripped — the two must agree.
+    it('refuses a musician clearing both on their own profile', function () {
+        $member = BandMember::create(['profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager', 'can_login' => false]);
+        $this->actingAsMember($member->id);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['role' => null, 'instrument_ids' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+
+        expect($member->fresh()->role)->toBe('Manager');
+    });
+
+    // The main instrument is a column beside the pivot; on its own it counts.
+    it('accepts a new member with only a main instrument', function () {
+        $this->postJson('/api/band-profile/members', [
+            'first_name' => 'Has', 'last_name' => 'Main', 'main_instrument_id' => $this->trumpet->id,
+        ])->assertCreated();
+    });
+
+    it('counts a stored main instrument when the pivot is empty', function () {
+        $member = BandMember::create([
+            'profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B', 'role' => 'Manager',
+            'main_instrument_id' => $this->trumpet->id, 'can_login' => false,
+        ]);
+
+        $this->putJson("/api/band-profile/members/{$member->id}", ['role' => null, 'instrument_ids' => []])
+            ->assertSuccessful();
+    });
+
+    it('refuses an update that clears the main instrument too', function () {
+        $member = BandMember::create([
+            'profile_id' => 1, 'first_name' => 'A', 'last_name' => 'B',
+            'main_instrument_id' => $this->trumpet->id, 'can_login' => false,
+        ]);
+
+        // Sending only the main instrument is judged: it can remove the last part.
+        $this->putJson("/api/band-profile/members/{$member->id}", ['main_instrument_id' => null])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['instrument_ids']);
+
+        expect($member->fresh()->main_instrument_id)->toBe($this->trumpet->id);
     });
 });

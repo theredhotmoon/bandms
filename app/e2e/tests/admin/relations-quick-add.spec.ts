@@ -79,6 +79,8 @@ test.describe('Admin — relations panel creates its own records', () => {
 
     await inner.locator('input[placeholder="Jane"]').fill(first)
     await inner.locator('input[placeholder="Smith"]').fill('Quickadd')
+    // A member needs an instrument or a role, or the save is a 422.
+    await inner.locator('input[placeholder*="Vocalist"]').fill('Vocals')
     await inner.locator('input[placeholder="member@example.com"]').fill(`e2e-quickadd-${stamp}@example.com`)
     const created = page.waitForResponse(r => r.url().endsWith('/api/band-profile/members') && r.request().method() === 'POST')
     await inner.getByRole('button', { name: 'Add member' }).click()

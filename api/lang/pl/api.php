@@ -6,6 +6,9 @@ return [
     'not_found'       => 'Nie znaleziono.',
     'stale_admin'     => 'Panel administracyjny został zaktualizowany. Odśwież stronę i zapisz ponownie.',
 
+    // A band member with no instrument and no role (BandMemberController).
+    'member_needs_part' => 'Wybierz co najmniej jeden instrument albo wpisz rolę w zespole.',
+
     'highlight_draft' => 'Opublikuj wpis, zanim go wyróżnisz.',
 
     /* See the note in lang/en/api.php. */

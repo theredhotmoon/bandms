@@ -156,6 +156,33 @@ test.describe.serial('Admin Band Members', () => {
   })
 
   // ---------------------------------------------------------------------------
+  // 6b. A member needs an instrument or a role — the server's 422 is shown
+  //     under the instruments, and nothing is created
+  // ---------------------------------------------------------------------------
+  test('validation: no instrument and no role → error under instruments, modal stays open', async ({ page }) => {
+    await page.locator('button.btn-new').click()
+    const modal = page.locator('.modal-overlay')
+    await expect(modal).toBeVisible()
+
+    const first = `NoPart${Date.now()}`
+    await modal.locator('input[placeholder="Jane"]').fill(first)
+    await modal.locator('input[placeholder="Smith"]').fill(LAST_NAME)
+    await modal.locator('input[placeholder="member@example.com"]').fill(`nopart-${Date.now()}@bandms.test`)
+
+    await modal.getByRole('button', { name: 'Add member' }).click()
+
+    await expect(modal.getByTestId('member-instruments-error')).toBeVisible({ timeout: 8000 })
+    await expect(modal).toBeVisible()
+
+    await modal.locator('button[aria-label="Close"]').click()
+    // The modal may ask before discarding a filled form.
+    const discard = page.getByRole('button', { name: /discard/i })
+    if (await discard.isVisible().catch(() => false)) await discard.click()
+
+    await expect(page.locator('.member-item').filter({ hasText: first })).toHaveCount(0)
+  })
+
+  // ---------------------------------------------------------------------------
   // 7. is_current toggle defaults to active for new member
   // ---------------------------------------------------------------------------
   test('is_current toggle defaults to active when opening new member modal', async ({

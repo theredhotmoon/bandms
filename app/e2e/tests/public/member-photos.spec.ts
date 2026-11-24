@@ -56,7 +56,7 @@ test.describe.serial('Public — member photos', () => {
     test.setTimeout(300_000)
     const member = await request.post(`${API}/api/band-profile/members`, {
       headers: headers(),
-      data: { first_name: 'Photo', last_name: `Member${stamp}` },
+      data: { role: 'E2E', first_name: 'Photo', last_name: `Member${stamp}` },
     })
     expect(member.status(), await member.text()).toBe(201)
     memberId = (await member.json()).data.id

@@ -52,7 +52,7 @@ describe('band member slugs', function () {
     it('is generated for a member created through the admin API', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/band-profile/members', ['first_name' => 'Anna', 'last_name' => 'Nowak'])
+        $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'Anna', 'last_name' => 'Nowak'])
             ->assertCreated()
             ->assertJsonPath('data.slug', 'anna-nowak');
     });
@@ -73,7 +73,7 @@ describe('default gear validation', function () {
     it('rejects a gear item whose fields are not strings or whose type is unknown', function (array $item, string $error) {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'V', 'default_gear' => [$item]])
+        $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'G', 'last_name' => 'V', 'default_gear' => [$item]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors($error);
     })->with([
@@ -85,7 +85,7 @@ describe('default gear validation', function () {
     it('accepts a well-formed gear item', function () {
         $this->actingAsAdmin();
 
-        $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'V', 'default_gear' => [
+        $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'G', 'last_name' => 'V', 'default_gear' => [
             ['id' => 'a', 'type' => 'amp_head', 'label' => 'Main', 'brand_model' => 'Orange', 'own_gear' => true, 'notes' => ''],
         ]])->assertCreated();
     });
@@ -101,7 +101,7 @@ describe('default gear round trip', function () {
         $this->actingAsAdmin();
         $item = ['id' => 'g-42', 'type' => 'amp_head', 'label' => 'Main', 'brand_model' => 'Orange', 'own_gear' => true, 'notes' => 'n'];
 
-        $id = $this->postJson('/api/band-profile/members', ['first_name' => 'G', 'last_name' => 'R', 'default_gear' => [$item]])
+        $id = $this->postJson('/api/band-profile/members', ['role' => 'Vocals', 'first_name' => 'G', 'last_name' => 'R', 'default_gear' => [$item]])
             ->assertCreated()
             ->assertJsonPath('data.default_gear.0', $item)
             ->json('data.id');
