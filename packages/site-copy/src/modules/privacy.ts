@@ -112,6 +112,13 @@ export const PRIVACY_COPY = defineCopy([
     },
   },
   {
+    key: 'socialSignInBody', label: 'Google and Facebook sign-in: text', group: 'Policy page', type: 'textarea', maxLength: 600,
+    defaults: {
+      en: 'If you sign in with Google or Facebook, we keep only your email address and an account id from them, not your name, photo or friends. We use them to recognise you when you come back, to show you the tickets and orders bought with that address, and to email you about signing in. To have your account removed, use the contact details further down this page.',
+      pl: 'Jeśli logujesz się przez Google lub Facebooka, zachowujemy od nich tylko twój adres e-mail i identyfikator konta, a nie imię, zdjęcie czy znajomych. Dzięki nim rozpoznajemy cię, gdy wrócisz, pokazujemy ci bilety kupione i zamówienia złożone na ten adres oraz wysyłamy ci wiadomości związane z logowaniem. Aby usunąć konto, skorzystaj z danych kontaktowych niżej na tej stronie.',
+    },
+  },
+  {
     key: 'locationHeading', label: 'Location: heading', group: 'Policy page', maxLength: 80,
     defaults: { en: 'Shows near you', pl: 'Koncerty w pobliżu' },
   },

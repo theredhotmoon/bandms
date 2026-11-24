@@ -624,12 +624,16 @@ export const COPY_FIELD_PL: Readonly<Record<string, string>> = {
   'After creating an account': 'Po założeniu konta',
   'Wrong email or password': 'Błędny e-mail lub hasło',
   'Too many sign-in attempts': 'Zbyt wiele prób logowania',
+  '"Continue with" button (Google, Facebook)': 'Przycisk „Kontynuuj z…” (Google, Facebook)',
+  'Divider under the provider buttons': 'Separator pod przyciskami dostawców',
+  '{provider} is filled in with Google or Facebook. The buttons only appear once the band has set the provider up.': 'W miejsce {provider} wstawiane jest Google lub Facebook. Przyciski pojawiają się dopiero po skonfigurowaniu dostawcy przez zespół.',
   'Password hint when creating an account': 'Podpowiedź o haśle przy zakładaniu konta',
   'Generic sign-in error': 'Ogólny błąd logowania',
   "{email} is filled in with the fan's address.": 'W miejsce {email} wstawiany jest adres fana.',
   // ── Privacy → Comments ──────────────────────────────────────────────────
   'Comments: heading': 'Komentarze: nagłówek',
   'Comments: text': 'Komentarze: tekst',
+  'Google and Facebook sign-in: text': 'Logowanie przez Google i Facebooka: tekst',
   // ── Cookie consent card + location policy ───────────────────────────────
   'Banner heading': 'Baner: nagłówek',
   'Location: heading': 'Lokalizacja: nagłówek',

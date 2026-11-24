@@ -147,6 +147,7 @@ export function postCommentsCopy(siteConfig: SiteConfig, lang: string) {
       linkSent: t.commentsLinkSent, registerSent: t.commentsRegisterSent,
       loginFailed: t.commentsLoginFailed, loginLimit: t.commentsLoginLimit,
       passwordHint: t.commentsPasswordHint, failed: t.commentsSignInFailed,
+      continueWith: t.commentsContinueWith, orDivider: t.commentsOrDivider,
     },
     nameLabel: t.commentsNameLabel, bodyLabel: t.commentsBodyLabel, submit: t.commentsSubmit,
     signedInAs: t.commentsSignedInAs, signOut: t.commentsSignOut,

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-25 (fans sign in with Google or Facebook)
+
+### Added
+- **Fans can sign in with Google or Facebook**, under a news post and on the fan account page. The buttons only appear once the band has put the Google or Facebook keys in the server's settings; until then nothing changes, and passwords and email links work as before. See `docs/deployment.md` for the setup.
+- **The account page lists which of Google and Facebook are connected** to a fan's account, and shows a plain message when a sign-in is cancelled or fails.
+- **The privacy page explains what we keep** when someone signs in this way, and what we use it for: their email address and an account id, never their name, photo or friends. It is also the page Facebook asks for as the place to request account removal.
+
+### Changed
+- **A fan's first sign-in with Facebook asks them to open one emailed link** to confirm it is them; every later sign-in is instant. The same applies to Google for any address Google does not run itself (anything other than Gmail or a Google Workspace domain). The link has to be opened in the same browser.
+- **The fan account page has been given a proper layout.** Its fields had no borders, its buttons looked like plain text and nothing kept the page off the edge of the screen.
+
 ## [Unreleased] — 2026-11-24 (one address per page for search engines)
 
 ### Fixed

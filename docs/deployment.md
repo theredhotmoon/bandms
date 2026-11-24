@@ -242,6 +242,7 @@ the ones that break things quietly:
 | `GOOGLE_API_KEY`, `GOOGLE_CSE_ID` | a Google Cloud API key with Custom Search (and Places) enabled, and a Programmable Search engine id | the crawler skips Google search; the settings page says *No API key* |
 | `YOUTUBE_API_KEY` | a YouTube Data API v3 key (the same Google Cloud project is fine) | the crawler skips YouTube |
 | `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_USER_ID` | the band Page's id and a long-lived Page token; the linked Instagram business account id | the crawler skips posts that tag the band. A Page token expires: the run then fails with "token expired" on the Assistant page — mint a new one |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET` | the OAuth clients for fan sign-in — see *Fan sign-in with Google and Facebook* below. **Not** `GOOGLE_API_KEY` or the Page token; those are the crawler's | no *Continue with Google/Facebook* buttons. Each provider needs both of its two values; passwords and email links work regardless |
 | `SETLISTFM_API_KEY` | a setlist.fm API key (free, setlist.fm → API) | the crawler skips the venues of the sibling bands picked in the crawler settings |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USERNAME` | a Reddit *script* app | Reddit is skipped (it is also off by default in the crawler settings) |
 
@@ -611,6 +612,49 @@ After adding a key: `docker compose -f docker-compose.prod.yml up -d --no-deps b
 (03:00), triage (03:40) and digest (Mon 08:00), all Warsaw time.
 `docker exec bandms-backend php artisan assistant:digest --preview` prints the
 digest as it would go out right now (later triage can still change Monday's).
+
+### Fan sign-in with Google and Facebook
+
+Optional. Fans can always sign in with a password or an emailed link; these
+add the *Continue with Google* / *Continue with Facebook* buttons under news
+posts and on `/account`. A provider's button appears only when **both** of its
+values are in `/opt/bandms/.env`, and it is read at runtime, so no site rebuild
+is needed.
+
+1. **Register the two callback URLs** (the redirect URIs derive from
+   `FRONTEND_URL`, so they must be the address the site is really served on).
+   Both providers need an **https domain**; a bare IP address is refused:
+   - `https://YOUR_DOMAIN/api/fan/auth/google/callback`
+   - `https://YOUR_DOMAIN/api/fan/auth/facebook/callback`
+2. **Google** — in Google Cloud Console: *APIs & Services -> OAuth consent
+   screen*, set up and **publish** it (in *Testing* only the listed test users
+   can sign in); *Credentials -> Create credentials -> OAuth client ID*, type
+   *Web application*, with the Google callback URL above as an authorised
+   redirect URI. The client id and secret are `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET`. The scopes are only `openid` and `email`.
+3. **Facebook** — in developers.facebook.com, an app with the *Facebook Login*
+   product; the Facebook callback URL above as a valid OAuth redirect URI.
+   **Add the `email` permission** to the Facebook Login use case (*Use cases ->
+   Customize -> Permissions*); a new app does not have it, and without it
+   Facebook shows every fan an error instead of the sign-in. In
+   *Settings -> Basic* set the **Privacy Policy URL** and the **User data
+   deletion** *instructions URL* to the site's privacy page
+   (`https://YOUR_DOMAIN/en/privacy`; it says how to have an account removed).
+   The *Privacy & cookies* module must be **on** in Website modules, or that
+   URL is a 404. Then switch the app to **Live** — in Development mode only the app's own
+   roles can sign in. Meta may ask for **business verification** before
+   strangers can use a Live app. The app id and secret are
+   `FACEBOOK_CLIENT_ID` and `FACEBOOK_CLIENT_SECRET`; this can be the same app
+   as the crawler's Page token, but is a separate pair of values.
+4. Put the four values in `/opt/bandms/.env`, then recreate the backend (env is
+   cached at start, so a restart is not enough):
+   `docker compose -f docker-compose.prod.yml up -d --no-deps backend`.
+   `curl -s https://YOUR_DOMAIN/api/fan/auth/providers` should now list the
+   providers you configured.
+
+A fan's first sign-in with Facebook (and with Google for an address Google does
+not host) costs one click in an emailed link; after that it is instant. Only
+the email address and the provider's account id are kept.
 
 ### The welcome screen's near-a-gig targeting
 

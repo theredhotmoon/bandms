@@ -26,25 +26,23 @@ async function handleVerify() {
 </script>
 
 <template>
-  <div class="fmls-card">
-    <h2>{{ $t('fan.login.sentTitle') }}</h2>
-    <p>{{ $t('fan.login.sentBody') }}</p>
+  <div class="fan-card fmls">
+    <h2 class="fan-subtitle">{{ $t('fan.login.sentTitle') }}</h2>
+    <p class="fan-text">{{ $t('fan.login.sentBody') }}</p>
     <!-- The API only returns dev_link under APP_DEBUG. Without this guard the
          production build printed "Dev mode: Click here to sign in" as an <a>
          with no href — visible, unclickable, and addressed to the wrong
          audience. -->
-    <p v-if="devLink" class="fmls-dev">
+    <p v-if="devLink" class="fan-text">
       <strong>{{ $t('fan.login.devMode') }}</strong>
       <a :href="devLink" @click.prevent="handleVerify" class="fmls-link">{{ $t('fan.login.devSignIn') }}</a>
     </p>
-    <p v-if="errorMessage" role="alert" class="fmls-error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" role="alert" class="fan-msg fan-msg--error">{{ errorMessage }}</p>
   </div>
 </template>
 
+<style scoped src="./fan-styles.css" />
 <style scoped>
-.fmls-error {
-  color: #dc2626;
-  margin-top: 0.5rem;
-  font-size: var(--fs-base);
-}
+.fmls { display: flex; flex-direction: column; gap: 0.75rem; }
+.fmls-link { margin-left: 0.35em; text-decoration: underline; text-underline-offset: 3px; }
 </style>

@@ -14,6 +14,7 @@ use App\Http\Controllers\PresaleCodeController;
 use App\Http\Controllers\TicketTransferController;
 use App\Http\Controllers\FanAccountController;
 use App\Http\Controllers\FanAuthController;
+use App\Http\Controllers\FanSocialAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopItemController;
@@ -226,6 +227,14 @@ Route::prefix('fan/auth')->group(function () {
     // FanAuthController, so a botnet cannot guess one fan's password from many IPs.
     Route::post('login', [FanAuthController::class, 'login'])
         ->middleware('throttle:10,1,fan-login');
+    // Public, marks nothing dirty and is never baked by the site build.
+    Route::get('providers', [FanAuthController::class, 'providers'])
+        ->middleware('throttle:60,1,fan-providers');
+    // Page navigations, not fetches: both answer with a redirect.
+    Route::get('{provider}/redirect', [FanSocialAuthController::class, 'redirect'])
+        ->whereIn('provider', ['google', 'facebook'])->middleware('throttle:fan-social-redirect');
+    Route::get('{provider}/callback', [FanSocialAuthController::class, 'callback'])
+        ->whereIn('provider', ['google', 'facebook'])->middleware('throttle:fan-social-callback');
 });
 
 // Fan portal (fan-auth protected)

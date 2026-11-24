@@ -26,6 +26,12 @@ export default {
     signOut: 'Sign out',
     myTickets: 'My Tickets',
     orderHistory: 'Order History',
+    /** Carries `{providers}` — proper names, already joined. */
+    linked: 'Connected sign-in accounts: {providers}.',
+    /** Carries `{providers}` — the configured ones, joined with "or". */
+    linkedNone: 'No {providers} account is connected yet. Sign in with one using the same email address to connect it.',
+    /** Carries `{provider}`. */
+    linkedNow: '{provider} is now connected to your account.',
   },
 
   tickets: {
@@ -70,6 +76,15 @@ export default {
     sentBody: 'We sent a magic link to your email address.',
     devMode: 'Dev mode:',
     devSignIn: 'Click here to sign in',
+    /** Carries `{provider}`. */
+    continueWith: 'Continue with {provider}',
+    or: 'or',
+    authError: {
+      cancelled: 'Sign-in was cancelled. You can try again.',
+      no_email: 'That account did not share an email address, so we could not sign you in. Use another way to sign in.',
+      failed: 'Could not sign you in with that account. Please try again.',
+    },
+    confirmEmail: 'We emailed you a link to confirm it is you. Open it in this browser to finish signing in.',
     linkInvalid: 'Sign-in link invalid or expired. Please request a new one.',
   },
 

@@ -8,6 +8,7 @@ use App\Models\AllowedEmail;
 use App\Models\AssistantFinding;
 use App\Models\AssistantRun;
 use App\Models\FanAccount;
+use App\Models\FanIdentity;
 use App\Models\NewsletterSubscriber;
 use App\Models\FanSessionRow;
 use App\Models\Order;
@@ -67,6 +68,7 @@ class ActivityRecorder
     private const PERSONAL = [
         NewsletterSubscriber::class,
         FanAccount::class,
+        FanIdentity::class,
         PostComment::class,
         Order::class,
         OrderItem::class,

@@ -113,6 +113,11 @@ services:
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       MAXMIND_ACCOUNT_ID: "${MAXMIND_ACCOUNT_ID:-}"
       MAXMIND_LICENSE_KEY: "${MAXMIND_LICENSE_KEY:-}"
+      # Fan sign-in with Google / Facebook; a button appears only with both values.
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      FACEBOOK_CLIENT_ID: "${FACEBOOK_CLIENT_ID:-}"
+      FACEBOOK_CLIENT_SECRET: "${FACEBOOK_CLIENT_SECRET:-}"
       # The crawler's sources: each runs only when its key is set.
       # YOUTUBE_API_KEY and SETLISTFM_API_KEY are above.
       GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"

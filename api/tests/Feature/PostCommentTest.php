@@ -547,6 +547,7 @@ describe('ReturnPath', function () {
         expect(ReturnPath::clean($value))->toBeNull();
     })->with([
         'protocol-relative' => ['//evil.example/x'],
+        'not UTF-8'         => ["/\xFF"],
         'backslash host'    => ['/\\evil.example'],
         'absolute url'      => ['https://evil.example/'],
         'no leading slash'  => ['en/news'],

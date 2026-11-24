@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_LOCALE } from '@/locales'
-import { activeFanLocale, localeFromQuery, narrowToLocale, resolveFanLocale, setActiveFanLocale } from './fanLocale'
+import { activeFanLocale, chosenFanLocale, localeFromQuery, narrowToLocale, resolveFanLocale, setActiveFanLocale } from './fanLocale'
 
 describe('narrowToLocale', () => {
   it('strips the region off a BCP-47 tag', () => {
@@ -63,6 +63,18 @@ describe('localeFromQuery', () => {
     expect(localeFromQuery(undefined)).toBeNull()
     expect(localeFromQuery('?lang=')).toBeNull()
     expect(localeFromQuery('?lang=de')).toBeNull()
+  })
+})
+
+describe('chosenFanLocale', () => {
+  it('is the link\'s language, then the stored one', () => {
+    expect(chosenFanLocale({ search: '?lang=pl', stored: 'en' })).toBe('pl')
+    expect(chosenFanLocale({ search: '?lang=xx', stored: 'en' })).toBe('en')
+  })
+
+  it('is null when the fan chose nothing, whatever the browser prefers', () => {
+    expect(chosenFanLocale({ search: '', stored: null })).toBeNull()
+    expect(chosenFanLocale({ search: undefined, stored: 'xx' })).toBeNull()
   })
 })
 

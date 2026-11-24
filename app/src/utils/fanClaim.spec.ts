@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CLAIM_KEY, consumeClaim, newClaim, restoreClaim, withNewClaim } from './fanClaim'
+import {
+  CLAIM_KEY, KEPT_CLAIM_KEY, consumeClaim, dropKeptClaim, newClaim, newProviderClaim, putBackKeptClaim, restoreClaim,
+  withNewClaim,
+} from './fanClaim'
 
 function memoryStore(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial))
@@ -112,6 +115,124 @@ describe('withNewClaim', () => {
     const store = memoryStore({ [CLAIM_KEY]: 'earlier' })
     await withNewClaim(store, async () => {}, refused)
     expect(store.getItem(CLAIM_KEY)).toBe('earlier')
+  })
+})
+
+describe('newProviderClaim', () => {
+  it('keeps the claim it replaces beside its own', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    expect(await newProviderClaim(store)).toMatch(/^[0-9a-f]{64}$/)
+    const own = store.getItem(CLAIM_KEY)
+    expect(own).toMatch(/^[0-9a-f]{64}$/)
+    expect(JSON.parse(store.getItem(KEPT_CLAIM_KEY)!)).toEqual({ own, earlier: 'registration' })
+  })
+
+  it('keeps the registration\'s claim through a second press, not the first press\'s own', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    await newProviderClaim(store)
+    putBackKeptClaim(store)
+    expect(store.getItem(CLAIM_KEY)).toBe('registration')
+  })
+
+  it('keeps nothing through a second press when there was nothing before the first', async () => {
+    const store = memoryStore()
+    await newProviderClaim(store)
+    await newProviderClaim(store)
+    putBackKeptClaim(store)
+    expect(store.data.size).toBe(0)
+  })
+
+  it('keeps the newer registration when one came between two presses', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'first' })
+    await newProviderClaim(store)
+    await withNewClaim(store, async () => {}, () => false)
+    const second = store.getItem(CLAIM_KEY)
+    await newProviderClaim(store)
+    putBackKeptClaim(store)
+    expect(store.getItem(CLAIM_KEY)).toBe(second)
+  })
+
+  it('keeps the claim a mail is waiting on when the next press fails', async () => {
+    const store = memoryStore()
+    await newProviderClaim(store)
+    const waiting = store.getItem(CLAIM_KEY)
+    dropKeptClaim(store) // confirm_email
+    await newProviderClaim(store)
+    putBackKeptClaim(store)
+    expect(store.getItem(CLAIM_KEY)).toBe(waiting)
+  })
+
+  it('changes nothing when no claim can be made', async () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+      subtle: { digest: () => Promise.reject(new Error('no')) },
+    })
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    expect(await newProviderClaim(store)).toBeNull()
+    expect([...store.data]).toEqual([[CLAIM_KEY, 'registration']])
+    expect(await newProviderClaim(null)).toBeNull()
+  })
+
+  it('still claims when the kept one cannot be stored', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    const setItem = store.setItem
+    store.setItem = (k, v) => {
+      if (k === KEPT_CLAIM_KEY) throw new Error('quota')
+      setItem(k, v)
+    }
+    expect(await newProviderClaim(store)).toMatch(/^[0-9a-f]{64}$/)
+  })
+})
+
+describe('putBackKeptClaim', () => {
+  it('puts the kept claim back once, over the press\'s own', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    putBackKeptClaim(store)
+    expect([...store.data]).toEqual([[CLAIM_KEY, 'registration']])
+    store.setItem(CLAIM_KEY, 'newer')
+    putBackKeptClaim(store)
+    expect(store.getItem(CLAIM_KEY)).toBe('newer')
+  })
+
+  it('puts it back after the exchange consumed the press\'s own', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    const consumed = consumeClaim(store)
+    putBackKeptClaim(store, consumed)
+    expect([...store.data]).toEqual([[CLAIM_KEY, 'registration']])
+  })
+
+  it('never replaces a claim made since', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    const consumed = consumeClaim(store)
+    store.setItem(CLAIM_KEY, 'newer')
+    putBackKeptClaim(store, consumed)
+    expect(store.getItem(CLAIM_KEY)).toBe('newer')
+  })
+
+  it('does nothing after an exchange that consumed some other claim', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    consumeClaim(store)
+    putBackKeptClaim(store, 'some other')
+    putBackKeptClaim(store)
+    expect(store.getItem(CLAIM_KEY)).toBeNull()
+  })
+
+  it('is silent with no store, a store that throws, or an entry it cannot read', () => {
+    putBackKeptClaim(null)
+    dropKeptClaim(null)
+    const blocked = () => { throw new Error('blocked') }
+    putBackKeptClaim({ getItem: blocked, setItem: blocked, removeItem: blocked })
+    dropKeptClaim({ getItem: blocked, setItem: blocked, removeItem: blocked })
+    for (const entry of ['{', '"x"', 'null', '{"own":1}', '{}']) {
+      const store = memoryStore({ [CLAIM_KEY]: 'mine', [KEPT_CLAIM_KEY]: entry })
+      putBackKeptClaim(store)
+      expect(store.getItem(CLAIM_KEY)).toBe('mine')
+    }
   })
 })
 

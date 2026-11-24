@@ -170,6 +170,7 @@ export const MIGRATED = [
   'components/fan/FanMagicLinkSent.vue',
   'components/fan/FanOrdersList.vue',
   'components/fan/FanSignInOptions.vue',
+  'components/fan/FanProviderButtons.vue',
   'views/admin/BandProfileAdminView.vue',
   'views/admin/AdminDashboard.vue',
   'views/admin/AdminEntry.vue',
@@ -183,6 +184,7 @@ export const MIGRATED = [
   'utils/postBlocks.ts',
   'composables/useConcertTickets.ts',
   'utils/fanClaim.ts',
+  'utils/authQuery.ts',
 ]
 
 /** A path is on the ratchet directly, or under a directory entry. */

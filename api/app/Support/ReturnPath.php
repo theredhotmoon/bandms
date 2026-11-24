@@ -17,6 +17,9 @@ class ReturnPath
         if (! is_string($value) || $value === '' || mb_strlen($value) > self::MAX) {
             return null;
         }
+        if (! mb_check_encoding($value, 'UTF-8')) {
+            return null; // a JS string cannot hold this, so the two copies have no such line
+        }
         if ($value[0] !== '/' || str_starts_with($value, '//') || str_contains($value, '\\')) {
             return null;
         }

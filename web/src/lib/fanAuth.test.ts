@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CommentApiError, readFanSession } from './comments'
-import { CLAIM_KEY, fanAuthErrorText, newClaim, registerWithPassword, signInWithPassword } from './fanAuth'
+import {
+  CLAIM_KEY, KEPT_CLAIM_KEY, fanAuthErrorText, fetchProviders, isPlainLeftClick, newClaim, newProviderClaim,
+  providerName, providerUrl,
+  registerWithPassword, signInWithPassword,
+} from './fanAuth'
 
 function memoryStore(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial))
@@ -91,6 +95,65 @@ describe('newClaim', () => {
 
     expect(await newClaim(store)).toBeNull()
     expect(store.getItem(CLAIM_KEY)).toBe('earlier')
+  })
+})
+
+describe('newProviderClaim', () => {
+  const kept = (store: ReturnType<typeof memoryStore>) => JSON.parse(store.getItem(KEPT_CLAIM_KEY) ?? 'null')
+
+  it('keeps the claim it replaces beside its own, under the key the admin SPA reads', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+
+    const hash = await newProviderClaim(store)
+
+    const own = store.getItem(CLAIM_KEY)!
+    expect(hash).toBe(await sha256Hex(own))
+    expect(KEPT_CLAIM_KEY).toBe('fan_claim_kept')
+    expect(kept(store)).toEqual({ own, earlier: 'registration' })
+  })
+
+  it('keeps the registration\'s claim through a second press, not the first press\'s own', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+    await newProviderClaim(store)
+    await newProviderClaim(store)
+    expect(kept(store)).toEqual({ own: store.getItem(CLAIM_KEY), earlier: 'registration' })
+  })
+
+  it('keeps nothing through a second press when there was nothing before the first', async () => {
+    const store = memoryStore()
+    await newProviderClaim(store)
+    await newProviderClaim(store)
+    expect(kept(store)).toEqual({ own: store.getItem(CLAIM_KEY), earlier: null })
+  })
+
+  it('keeps the newer registration when one came between two presses', async () => {
+    const store = memoryStore({ [CLAIM_KEY]: 'first' })
+    await newProviderClaim(store)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { message: 'ok' })))
+    await registerWithPassword('a@b.c', 'secret-pass', 'en', '/', store)
+    const second = store.getItem(CLAIM_KEY)
+    await newProviderClaim(store)
+    expect(kept(store).earlier).toBe(second)
+  })
+
+  it('reads an entry it does not understand as none', async () => {
+    for (const entry of ['{', '"x"', '{"own":1}']) {
+      const store = memoryStore({ [CLAIM_KEY]: 'registration', [KEPT_CLAIM_KEY]: entry })
+      await newProviderClaim(store)
+      expect(kept(store).earlier).toBe('registration')
+    }
+  })
+
+  it('changes nothing when no claim can be made', async () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+      subtle: { digest: () => Promise.reject(new Error('boom')) },
+    })
+    const store = memoryStore({ [CLAIM_KEY]: 'registration' })
+
+    expect(await newProviderClaim(store)).toBeNull()
+    expect([...store.data]).toEqual([[CLAIM_KEY, 'registration']])
+    expect(await newProviderClaim(null)).toBeNull()
   })
 })
 
@@ -250,5 +313,60 @@ describe('fanAuthErrorText', () => {
     expect(fanAuthErrorText(new CommentApiError(500, 'Server Error'), copy)).toBe('GENERIC')
     expect(fanAuthErrorText(new TypeError('Failed to fetch'), copy)).toBe('GENERIC')
     expect(fanAuthErrorText(new CommentApiError(422, ''), copy)).toBe('GENERIC')
+  })
+})
+
+describe('fetchProviders', () => {
+  it('lists the configured providers it knows', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(200, { providers: ['google', 'myspace', 'facebook', 7] })))
+    expect(await fetchProviders('en')).toEqual(['google', 'facebook'])
+  })
+
+  it('is empty on a 500', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(500, { message: 'Server Error' })))
+    expect(await fetchProviders('en')).toEqual([])
+  })
+
+  it('is empty on a network error', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
+    expect(await fetchProviders('en')).toEqual([])
+  })
+
+  it('is empty when the body is not the expected shape', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(200, { providers: 'google' })))
+    expect(await fetchProviders('en')).toEqual([])
+  })
+})
+
+describe('providerUrl', () => {
+  it('encodes the return path and the language', () => {
+    expect(providerUrl('google', 'pl', '/pl/news/a b?x=1&y=2', null))
+      .toBe('/api/fan/auth/google/redirect?lang=pl&return_to=%2Fpl%2Fnews%2Fa%20b%3Fx%3D1%26y%3D2')
+  })
+
+  it('carries the claim hash only when there is one', () => {
+    expect(providerUrl('facebook', 'en', '/en/news/a', 'abc123'))
+      .toBe('/api/fan/auth/facebook/redirect?lang=en&return_to=%2Fen%2Fnews%2Fa&claim_hash=abc123')
+    expect(providerUrl('facebook', 'en', '/en/news/a', null)).not.toContain('claim_hash')
+  })
+
+  it('drops a return path that is not a path on this site', () => {
+    expect(providerUrl('google', 'en', '//evil.example', null)).not.toContain('return_to')
+  })
+})
+
+describe('providerName and isPlainLeftClick', () => {
+  it('names the providers properly', () => {
+    expect(providerName('google')).toBe('Google')
+    expect(providerName('facebook')).toBe('Facebook')
+    expect(providerName('myspace')).toBe('')
+    expect(providerName('constructor')).toBe('')
+  })
+
+  it('leaves modified clicks to the browser', () => {
+    expect(isPlainLeftClick({ button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false })).toBe(true)
+    expect(isPlainLeftClick({ button: 1, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false })).toBe(false)
+    expect(isPlainLeftClick({ button: 0, metaKey: false, ctrlKey: true, shiftKey: false, altKey: false })).toBe(false)
+    expect(isPlainLeftClick({ button: 0, metaKey: true, ctrlKey: false, shiftKey: false, altKey: false })).toBe(false)
   })
 })

@@ -11,6 +11,8 @@ export interface FanAccount {
   has_password?: boolean
   /** Changing the password asks for the current one (not right after a link sign-in). */
   password_needs_current?: boolean
+  /** Linked social sign-ins ('google', 'facebook'); absent in a fan stored before they existed. */
+  providers?: string[]
 }
 
 export interface FanTicket {
