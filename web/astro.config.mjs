@@ -6,6 +6,7 @@ import sitemap from '@astrojs/sitemap'
 // a locale Astro does not know about (which leaves Astro.currentLocale
 // undefined on those pages).
 import { LOCALES, DEFAULT_LOCALE } from './src/lib/locales.ts'
+import { isInSitemap } from './src/lib/sitemap.ts'
 
 const SITE = process.env.SITE_URL ?? 'https://skankingstorks.band'
 const API_PROXY = process.env.API_PROXY ?? 'http://localhost:80'
@@ -16,29 +17,8 @@ export default defineConfig({
   integrations: [
     vue(),
     sitemap({
-      // Belt-and-braces alongside each page's own `noindex` meta: these are
-      // Stripe-redirect and token-action pages, never something to surface in
-      // search — see the matching `noindex={true}` on each.
-      //
-      // The per-locale 404 pages are different: they are built as ordinary
-      // routes (Astro can emit only one root 404.html) and nginx marks them
-      // `internal`, so a crawler sent there by the sitemap gets a 404 and
-      // reports "submitted URL not found" on every crawl. The integration's
-      // built-in 404 exclusion only covers the root page — it reads its *own*
-      // i18n option, not Astro's — so they are excluded here, off the registry.
-      filter: page => {
-        const path = new URL(page).pathname
-        return (
-          !path.startsWith('/merch/success') &&
-          !path.startsWith('/merch/cancel') &&
-          !path.startsWith('/newsletter/confirm') &&
-          !path.startsWith('/newsletter/unsubscribe') &&
-          !path.startsWith('/rider') &&
-          // Draft previews: secret, noindex, and gone once the post is published.
-          !LOCALES.some(l => path.startsWith(`/${l}/post-preview/`)) &&
-          !LOCALES.some(l => path === `/${l}/404` || path === `/${l}/404/`)
-        )
-      },
+      // Localised pages only — the rule and its reasons are in lib/sitemap.ts.
+      filter: page => isInSitemap(page, LOCALES),
     }),
   ],
   i18n: {

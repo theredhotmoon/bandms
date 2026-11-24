@@ -1,12 +1,11 @@
 ---
 import type { Locale } from '@/types/shared'
-import { hreflangLinks, type Alternates } from '@/lib/locales'
+import { canonicalUrl, hreflangLinks, pageUrlOptions, type Alternates } from '@/lib/locales'
 
 export interface Props {
   title: string
   description: string
   image?: string | null
-  canonical?: string
   noindex?: boolean
   structuredData?: object
   lang?: Locale
@@ -17,12 +16,14 @@ export interface Props {
 }
 
 const {
-  title, description, image, canonical, noindex = false, structuredData,
+  title, description, image, noindex = false, structuredData,
   lang = 'en', alternates = {}, siteName = '',
 } = Astro.props
 const site = Astro.site?.toString().replace(/\/$/, '') ?? ''
 const ogImage = image ? (image.startsWith('http') ? image : `${site}${image}`) : `${site}/og-default.png`
-const canonicalUrl = canonical ?? Astro.url.href
+// From the route's own map, so a legacy unlocalised page points at its /en/ twin.
+const pageUrl = pageUrlOptions(Astro, lang)
+const canonical = canonicalUrl(alternates, pageUrl)
 ---
 
 <!-- Fonts: Anton (display) + Archivo (body) — used across all pages and Header -->
@@ -34,7 +35,7 @@ const canonicalUrl = canonical ?? Astro.url.href
 <title>{title}</title>
 <meta name="description" content={description} />
 {noindex && <meta name="robots" content="noindex,nofollow" />}
-<link rel="canonical" href={canonicalUrl} />
+<link rel="canonical" href={canonical} />
 
 <!-- Favicon -->
 <!-- SVG alone left Safari (macOS and every iOS browser) with no icon at all,
@@ -47,7 +48,7 @@ const canonicalUrl = canonical ?? Astro.url.href
 
 <!-- Open Graph -->
 <meta property="og:type"        content="website" />
-<meta property="og:url"         content={canonicalUrl} />
+<meta property="og:url"         content={canonical} />
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image"       content={ogImage} />
@@ -68,7 +69,7 @@ const canonicalUrl = canonical ?? Astro.url.href
   On /en/ it emitted /pl/en/, and on /pl/ it labelled /pl/ as the English page.
   Well-formed markup, green build, wrong on every page.
 -->
-{hreflangLinks(alternates, { site, currentLocale: lang, currentPath: Astro.url.pathname }).map(
+{hreflangLinks(alternates, pageUrl).map(
   ({ hreflang, href }) => <link rel="alternate" hreflang={hreflang} href={href} />
 )}
 

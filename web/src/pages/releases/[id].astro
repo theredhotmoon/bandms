@@ -10,7 +10,7 @@
 import { getReleases, getSiteConfig, findRelease } from '@/lib/cms'
 import { existingDetails, inEveryLocale } from '@/lib/existingDetails'
 import type { Release } from '@/types/release'
-import { getSlugMap } from '@/lib/slugs'
+import { getSlugMap, sectionAlternates } from '@/lib/slugs'
 import { LOCALES } from '@/lib/locales'
 import ReleaseDetail from '@/components/detail/ReleaseDetail.astro'
 
@@ -26,19 +26,13 @@ export async function getStaticPaths() {
   return found.map(({ item: r, detail }) => ({ params: { id: String(r.id) }, props: { release: detail.en } }))
 }
 
-const { id } = Astro.params
 const { release } = Astro.props as { release: Release }
 
 const siteConfig = await getSiteConfig()
 if (siteConfig.modules.releases === false) return Astro.redirect('/404', 307)
 
-// The Polish equivalent of THIS page, not the Polish list page, and resolved via
-// the slug map rather than a literal '/pl/releases' -- which 404s the moment the
-// Polish releases module carries a custom slug. `alternates` now feeds the real
-// <link rel="alternate">, so a wrong entry here is a wrong hreflang, not merely
-// a wrong footer link. The English row defaults to this page's own URL.
-const slugMap = await getSlugMap()
-const alternates = { pl: `/pl/${slugMap.pl.releases ?? 'releases'}/${id}` }
+// Every locale's path, /en/ included: that one is this page's canonical.
+const alternates = sectionAlternates(await getSlugMap(), 'releases', release.id)
 ---
 
 <ReleaseDetail lang="en" alternates={alternates} release={release} />

@@ -177,3 +177,23 @@ describe('sectionSlug', () => {
     expect(sectionSlug(map, 'en', 'posts')).toBe(map.en.posts ?? 'posts')
   })
 })
+
+describe('sectionAlternates', () => {
+  const map = { en: { posts: 'news' }, pl: { posts: 'aktualnosci' } }
+
+  it('gives a section its path in every locale, the default one included', async () => {
+    const { sectionAlternates } = await freshModule()
+    expect(sectionAlternates(map, 'posts')).toEqual({ en: '/en/news', pl: '/pl/aktualnosci' })
+  })
+
+  it('takes one slug for every locale, or a resolver per locale', async () => {
+    const { sectionAlternates } = await freshModule()
+    expect(sectionAlternates(map, 'posts', 7)).toEqual({ en: '/en/news/7', pl: '/pl/aktualnosci/7' })
+    expect(sectionAlternates(map, 'posts', l => `hi-${l}`)).toEqual({ en: '/en/news/hi-en', pl: '/pl/aktualnosci/hi-pl' })
+  })
+
+  it('falls back to the module key, as the routes do', async () => {
+    const { sectionAlternates } = await freshModule()
+    expect(sectionAlternates({ en: {}, pl: {} }, 'press')).toEqual({ en: '/en/press', pl: '/pl/press' })
+  })
+})

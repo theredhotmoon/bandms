@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-24 (one address per page for search engines)
+
+### Fixed
+- **Search engines are no longer offered every English page twice.** The old addresses without a language (`/posts/2`, `/concerts/…`, `/about` and the rest) each claimed to be the main address of a page that also lives under `/en/`. They now point to the `/en/` page. Old links still work.
+- **The sitemap lists only the pages under `/en/` and `/pl/`.** It also listed the old addresses, including ones that only redirect to the not-found page because their section is switched off.
+
 ## [Unreleased] — 2026-11-24 (fans sign in with a password and stay signed in)
 
 ### Added

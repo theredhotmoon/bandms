@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getSlugMap, sectionAlternates, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { getSiteConfig } from '@/lib/cms'
 
@@ -30,14 +30,6 @@ export async function getStaticPaths() {
     getSiteConfig(DEFAULT_LOCALE),
   ])
 
-  // Every locale's path for one section, keyed by locale. Built once per
-  // section rather than per (locale, section) pair: the map is the same
-  // whichever locale is being rendered.
-  const alternatesFor = (section: string) =>
-    Object.fromEntries(
-      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}`]),
-    ) as Alternates
-
   return LOCALES.flatMap(lang => {
     return ALL_SECTIONS
       .filter(sectionType => ALWAYS_ON.has(sectionType) || cfg.modules[sectionType] !== false)
@@ -49,7 +41,7 @@ export async function getStaticPaths() {
         props: {
           sectionType,
           lang,
-          alternates: alternatesFor(sectionType),
+          alternates: sectionAlternates(slugMap, sectionType),
         },
       }))
   })

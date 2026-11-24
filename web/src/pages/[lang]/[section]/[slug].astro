@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '@/types/shared'
-import { getSlugMap, LOCALES } from '@/lib/slugs'
+import { getSlugMap, sectionAlternates, LOCALES } from '@/lib/slugs'
 import { DEFAULT_LOCALE, type Alternates } from '@/lib/locales'
 import { postSlug } from '@/lib/i18n'
 import { getConcerts, getAllPosts, getReleases, getShopItems, getSiteConfig, getMembers, getAlbums, findConcert, findPost, findRelease, findShopItem } from '@/lib/cms'
@@ -38,15 +38,12 @@ export async function getStaticPaths() {
 
   const paths: object[] = []
 
-  // Every locale's path for one item. `slug` is either the same string in every
-  // locale (concerts and merch on their default-locale `slug` — there is no per-locale slug on those
-  // public routes) or a per-locale resolver (posts — postSlug() walks the
-  // locale's fallback chain over translations.slug, so /pl/ serves the Polish
-  // slug and falls back to the English one).
+  // Every locale's path for one item. Posts pass a per-locale resolver —
+  // postSlug() walks the locale's fallback chain over translations.slug, so /pl/
+  // serves the Polish slug and falls back to the English one. The rest have one
+  // slug in every locale.
   const alternatesFor = (section: string, slug: string | number | ((lang: Locale) => string)) =>
-    Object.fromEntries(
-      LOCALES.map(l => [l, `/${l}/${slugMap[l][section] ?? section}/${typeof slug === 'function' ? slug(l) : slug}`]),
-    ) as Alternates
+    sectionAlternates(slugMap, section, slug)
 
   // Each record's page is built from the detail fetched here, never from a
   // second fetch in the page: a record deleted after this listing would 404

@@ -1647,20 +1647,31 @@ page, well-formed markup, green build. `LanguageSelector` had the twin bug — a
 hardcoded EN/PL pair with both options pointing at one href.
 
 **A locale with no path is skipped, not guessed** — a wrong alternate is worse
-for a crawler than a missing one, which is why the legacy unlocalised `/epk`
-emits only `en` + `x-default`. And `x-default` points at the **default locale**,
-not the current page.
+for a crawler than a missing one. And `x-default` points at the **default
+locale**, not the current page.
+
+**The canonical is the current locale's entry in the same map**
+(`canonicalUrl()` in `web/src/lib/locales.ts`), never `Astro.url.href`. On a
+localised page the two agree. The legacy unlocalised routes (`/posts/{id}`,
+`/concerts/{slug}`, `/about` …) render the English page at a second URL, and
+each named *itself* canonical and sat in the sitemap — so search engines were
+offered every English page twice, while a comment defended leaving `en` out of
+their map as hreflang consistency. Build the map with `sectionAlternates()`,
+which always carries every locale. A page's JSON-LD `url` goes through
+`canonicalUrl()` too, and `isInSitemap()` (`web/src/lib/sitemap.ts`) lists only
+paths under a locale: a new unlocalised page is out by construction.
 
 **Every href is normalised to Astro's directory form** (trailing slash).
-`build.format` defaults to `'directory'`, so `Astro.url.href` — which `BaseHead`
-uses as the canonical — always ends in `/`. A self-referential alternate that
+`build.format` defaults to `'directory'`, so `Astro.url.pathname` always ends in
+`/`. A self-referential alternate that
 differs from the canonical by one slash is a broken hreflang cluster, and it is
 invisible unless you diff `canonical` against `hreflang` in `dist/` on the same
-page. `hreflangLinks()` owns that normalisation so the two cannot drift.
+page. `canonicalUrl()` and `hreflangLinks()` share that normalisation.
 
 **A hardcoded path in an `alternates` map is now a wrong hreflang**, not merely a
-wrong footer link — the legacy `/releases/{id}` route resolves its Polish twin
-through `getSlugMap()` for exactly this reason.
+wrong footer link — and a wrong canonical, when it is the page's own locale.
+`sectionAlternates()` resolves every section through the slug map for this
+reason.
 
 The alternates prop threads through 15 section/detail components that never read
 it. That pass-through is why the bug survived: the plumbing looked load-bearing,
