@@ -27,8 +27,7 @@ use Illuminate\Support\Str;
 function localeFan(string $email = 'locale-fan@example.com'): array
 {
     $fan   = FanAccount::create(['email' => $email, 'name' => 'Fan']);
-    $token = Str::random(64);
-    Cache::put("fan_session:{$token}", $fan->id, now()->addDays(30));
+    $token = fanToken($fan);
 
     return [$fan, $token];
 }

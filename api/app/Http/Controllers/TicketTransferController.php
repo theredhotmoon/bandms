@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\SendTicketTransferNotification;
 use App\Models\Ticket;
 use App\Models\TicketTransfer;
+use App\Support\FanEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +31,8 @@ class TicketTransferController extends Controller
             return response()->json(['message' => __('api.fan.ticket_not_active')], 422);
         }
 
-        // Fan must own the ticket
-        $isOwner = ($fan->email === $ticket->holder_email)
+        // Fan must own the ticket. Checkout keeps the address as the buyer typed it.
+        $isOwner = FanEmail::same($fan->email, $ticket->holder_email)
             || ($fan->id === $ticket->fan_account_id);
 
         if (! $isOwner) {
@@ -39,7 +40,7 @@ class TicketTransferController extends Controller
         }
 
         // Cannot transfer to yourself
-        if ($data['to_email'] === $ticket->holder_email) {
+        if (FanEmail::same($data['to_email'], $ticket->holder_email)) {
             return response()->json(['message' => __('api.fan.transfer_to_self')], 422);
         }
 

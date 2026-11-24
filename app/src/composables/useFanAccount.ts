@@ -2,6 +2,7 @@ import { ref, computed, getCurrentInstance } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { FanAccount } from '@/types/fan'
 import { logoutFan } from '@/api/fan'
+import { dropFanLists } from '@/utils/fanQueries'
 
 function loadStoredToken(): string | null {
   try {
@@ -37,8 +38,10 @@ export function useFanAccount() {
   const isLoggedIn = computed(() => !!token.value && !!fan.value)
 
   function setSession(newToken: string, newFan: FanAccount): void {
+    const replaced = token.value !== newToken
     token.value = newToken
     fan.value = newFan
+    if (replaced) dropFanLists(queryClient)
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('fan_token', newToken)

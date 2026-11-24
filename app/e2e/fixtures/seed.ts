@@ -102,9 +102,14 @@ export interface SeededFanSession {
  * creates the fan and the session directly. The fan is `e2e-…`, so the
  * teardown purge removes it, and its comments with it.
  */
-export function seedFanSession(displayName?: string): SeededFanSession {
+export function seedFanSession(
+  options?: string | { displayName?: string; password?: string },
+): SeededFanSession {
+  // A bare string is the display name — what the existing callers pass.
+  const { displayName, password } = typeof options === 'string' ? { displayName: options, password: undefined } : (options ?? {})
   const args = ['exec', CONTAINER, 'php', 'artisan', 'e2e:seed-fan-session', '--force']
   if (displayName) args.push(`--display-name=${displayName}`)
+  if (password) args.push(`--password=${password}`)
 
   let raw: string
   try {

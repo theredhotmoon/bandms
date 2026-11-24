@@ -23,6 +23,8 @@ test.describe('fan sign-in link', () => {
     // The signed-in portal loads tickets and orders with the stubbed session.
     await page.route('**/api/fan/tickets*', (r) => r.fulfill({ json: { data: [] } }))
     await page.route('**/api/fan/orders*', (r) => r.fulfill({ json: { data: [] } }))
+    // The account page re-reads the fan (password flags go stale) when it mounts.
+    await page.route('**/api/fan/me', (r) => r.fulfill({ json: FAN }))
   })
 
   test('signs the fan in and removes the token from the URL', async ({ page }) => {

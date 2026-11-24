@@ -125,7 +125,7 @@ export const POSTS_COPY = defineCopy([
   },
   {
     key: 'commentsSignInLead', label: 'Sign-in prompt', group: 'Comments', maxLength: 200,
-    defaults: { en: 'Sign in with your email to comment. We will send you a link — no password needed.', pl: 'Zaloguj się e-mailem, aby skomentować. Wyślemy ci link — bez hasła.' },
+    defaults: { en: 'Sign in to comment — with a password, or let us email you a link.', pl: 'Zaloguj się, aby skomentować — hasłem albo linkiem wysłanym e-mailem.' },
   },
   {
     key: 'commentsEmailLabel', label: 'Email field label', group: 'Comments', maxLength: 40,
@@ -136,8 +136,69 @@ export const POSTS_COPY = defineCopy([
     defaults: { en: 'Send me a sign-in link', pl: 'Wyślij mi link do logowania' },
   },
   {
+    key: 'commentsSendingLink', label: '"Send link" button while working', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Sending…', pl: 'Wysyłanie…' },
+  },
+  {
     key: 'commentsLinkSent', label: 'After the link is sent', group: 'Comments', maxLength: 160,
     defaults: { en: 'Check your inbox — the link brings you back to this post.', pl: 'Sprawdź skrzynkę — link przeniesie cię z powrotem do tego wpisu.' },
+  },
+  {
+    key: 'commentsPasswordLabel', label: 'Password field label', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Password', pl: 'Hasło' },
+  },
+  {
+    key: 'commentsSignIn', label: '"Sign in" button', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Sign in', pl: 'Zaloguj się' },
+  },
+  {
+    key: 'commentsSigningIn', label: '"Sign in" button while working', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Signing in…', pl: 'Logowanie…' },
+  },
+  {
+    key: 'commentsCreateAccount', label: '"Create an account" link', group: 'Comments', maxLength: 40,
+    defaults: { en: 'Create an account', pl: 'Załóż konto' },
+  },
+  {
+    key: 'commentsCreateAccountSubmit', label: '"Create account" button', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Create account', pl: 'Utwórz konto' },
+  },
+  {
+    key: 'commentsCreatingAccount', label: '"Create account" button while working', group: 'Comments', maxLength: 30,
+    defaults: { en: 'Creating your account…', pl: 'Tworzenie konta…' },
+  },
+  {
+    key: 'commentsBackToSignIn', label: '"Back to sign in" link', group: 'Comments', maxLength: 40,
+    defaults: { en: 'I already have an account', pl: 'Mam już konto' },
+  },
+  {
+    key: 'commentsRegisterSent', label: 'After creating an account', group: 'Comments', maxLength: 200,
+    defaults: {
+      en: 'Check your inbox and open the link to finish creating your account. It brings you back to this post.',
+      pl: 'Sprawdź skrzynkę i otwórz link, aby dokończyć zakładanie konta. Przeniesie cię z powrotem do tego wpisu.',
+    },
+  },
+  {
+    key: 'commentsLoginFailed', label: 'Wrong email or password', group: 'Comments', maxLength: 200,
+    defaults: {
+      en: 'That email and password do not match. If you forgot your password, email yourself a sign-in link instead.',
+      pl: 'Ten e-mail i hasło do siebie nie pasują. Jeśli zapomniałeś hasła, wyślij sobie link do logowania.',
+    },
+  },
+  {
+    key: 'commentsLoginLimit', label: 'Too many sign-in attempts', group: 'Comments', maxLength: 160,
+    defaults: {
+      en: 'Too many attempts. Wait a few minutes, or email yourself a sign-in link.',
+      pl: 'Zbyt wiele prób. Poczekaj kilka minut albo wyślij sobie link do logowania.',
+    },
+  },
+  {
+    key: 'commentsPasswordHint', label: 'Password hint when creating an account', group: 'Comments', maxLength: 100,
+    defaults: { en: 'At least 8 characters.', pl: 'Co najmniej 8 znaków.' },
+  },
+  {
+    key: 'commentsSignInFailed', label: 'Generic sign-in error', group: 'Comments', maxLength: 120,
+    defaults: { en: 'Could not sign you in. Please try again.', pl: 'Nie udało się zalogować. Spróbuj ponownie.' },
   },
   {
     key: 'commentsNameLabel', label: 'Display name label', group: 'Comments', maxLength: 60,

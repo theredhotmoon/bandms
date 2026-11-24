@@ -139,8 +139,15 @@ export function postCommentsCopy(siteConfig: SiteConfig, lang: string) {
   const t = moduleCopy(siteConfig, 'posts', POSTS_COPY, lang)
   return {
     title: t.commentsTitle, empty: t.commentsEmpty,
-    signInLead: t.commentsSignInLead, emailLabel: t.commentsEmailLabel,
-    sendLink: t.commentsSendLink, linkSent: t.commentsLinkSent,
+    signIn: {
+      lead: t.commentsSignInLead, emailLabel: t.commentsEmailLabel,
+      passwordLabel: t.commentsPasswordLabel, signIn: t.commentsSignIn, signingIn: t.commentsSigningIn,
+      emailLinkInstead: t.commentsSendLink, sendingLink: t.commentsSendingLink, createAccount: t.commentsCreateAccount,
+      createAccountSubmit: t.commentsCreateAccountSubmit, creatingAccount: t.commentsCreatingAccount, backToSignIn: t.commentsBackToSignIn,
+      linkSent: t.commentsLinkSent, registerSent: t.commentsRegisterSent,
+      loginFailed: t.commentsLoginFailed, loginLimit: t.commentsLoginLimit,
+      passwordHint: t.commentsPasswordHint, failed: t.commentsSignInFailed,
+    },
     nameLabel: t.commentsNameLabel, bodyLabel: t.commentsBodyLabel, submit: t.commentsSubmit,
     signedInAs: t.commentsSignedInAs, signOut: t.commentsSignOut,
     changeName: t.commentsChangeName, saveName: t.commentsSaveName,
