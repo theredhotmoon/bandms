@@ -75,6 +75,11 @@ services:
       # Welcome screen geo targeting (geoip:update); without them it fails open.
       MAXMIND_ACCOUNT_ID:          ${MAXMIND_ACCOUNT_ID:-}
       MAXMIND_LICENSE_KEY:         ${MAXMIND_LICENSE_KEY:-}
+      # Fan sign-in with Google / Facebook; a button appears only with both values.
+      GOOGLE_CLIENT_ID:           ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET:       ${GOOGLE_CLIENT_SECRET:-}
+      FACEBOOK_CLIENT_ID:         ${FACEBOOK_CLIENT_ID:-}
+      FACEBOOK_CLIENT_SECRET:     ${FACEBOOK_CLIENT_SECRET:-}
       # The crawler's sources (assistant:crawl). Each source runs only when its
       # key is here; the settings page shows which ones lack one. The nightly
       # run is off locally — dev and prod keep separate run ledgers, so a real

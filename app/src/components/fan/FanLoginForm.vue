@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref } from 'vue'
-import { loginFan, registerFan, requestMagicLink, type VerifyResponse } from '@/api/fan'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { fetchFanProviders, loginFan, registerFan, requestMagicLink, type VerifyResponse } from '@/api/fan'
+import FanProviderButtons from '@/components/fan/FanProviderButtons.vue'
 import { fanErrorMessage, serverRefused } from '@/utils/fanErrors'
-import { withNewClaim } from '@/utils/fanClaim'
+import { browserStore, withNewClaim } from '@/utils/fanClaim'
 
 const { t } = useI18n()
 
 const emit = defineEmits<{
   'magic-link-sent': [devLink: string | null]
   'signed-in': [result: VerifyResponse]
+  /** Signing in or registering with a password has begun. */
+  attempt: []
 }>()
 
 type Mode = 'signin' | 'register'
@@ -25,13 +28,15 @@ const inFlight = ref<Action | null>(null)
 const errorMessage = ref<string | null>(null)
 const notice = ref<string | null>(null)
 
-function browserStore(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
-}
+// Asked once and never waited for: the form is complete without the buttons,
+// and an answer that arrives after the form is gone is dropped.
+const providers = ref<string[]>([])
+let gone = false
+onMounted(async () => {
+  const found = await fetchFanProviders()
+  if (!gone) providers.value = found
+})
+onBeforeUnmount(() => { gone = true })
 
 function setMode(next: Mode) {
   mode.value = next
@@ -54,6 +59,8 @@ async function run(action: Action, work: () => Promise<void>) {
 }
 
 function handleSubmit() {
+  if (inFlight.value) return
+  emit('attempt')
   if (mode.value === 'signin') {
     return run('signin', async () => {
       emit('signed-in', await loginFan(email.value, password.value))
@@ -83,48 +90,54 @@ function handleLink() {
 </script>
 
 <template>
-  <div class="flf-card" data-testid="fan-login">
-    <h1>{{ $t('fan.login.title') }}</h1>
+  <div class="fan-card flf" data-testid="fan-login">
+    <h1 class="fan-title">{{ $t('fan.login.title') }}</h1>
 
-    <p v-if="notice" role="status" aria-live="polite" data-testid="fan-login-notice">{{ notice }}</p>
+    <p v-if="notice" class="fan-msg" role="status" aria-live="polite" data-testid="fan-login-notice">{{ notice }}</p>
 
-    <form v-else class="flf-form" @submit.prevent="handleSubmit">
-      <p>{{ $t('fan.login.lead') }}</p>
+    <form v-else class="fan-form" @submit.prevent="handleSubmit">
+      <p class="fan-text">{{ $t('fan.login.lead') }}</p>
 
-      <label for="fan-email" class="flf-label">{{ $t('fan.login.email') }}</label>
-      <input
-        id="fan-email"
-        ref="emailInput"
-        v-model="email"
-        type="email"
-        name="email"
-        autocomplete="email"
-        required
-        class="flf-input"
-        :disabled="inFlight !== null"
-        data-testid="fan-login-email"
-      />
+      <FanProviderButtons :providers="providers" />
 
-      <label for="fan-password" class="flf-label">{{ $t('fan.login.password') }}</label>
-      <input
-        id="fan-password"
-        v-model="password"
-        type="password"
-        name="password"
-        :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
-        :minlength="mode === 'register' ? 8 : undefined"
-        :aria-describedby="mode === 'register' ? 'fan-password-hint' : undefined"
-        required
-        class="flf-input"
-        :disabled="inFlight !== null"
-        data-testid="fan-login-password"
-      />
-      <p v-if="mode === 'register'" id="fan-password-hint" class="flf-hint">{{ $t('fan.login.passwordHint') }}</p>
+      <div class="fan-field">
+        <label for="fan-email" class="fan-label">{{ $t('fan.login.email') }}</label>
+        <input
+          id="fan-email"
+          ref="emailInput"
+          v-model="email"
+          type="email"
+          name="email"
+          autocomplete="email"
+          required
+          class="fan-input"
+          :disabled="inFlight !== null"
+          data-testid="fan-login-email"
+        />
+      </div>
 
-      <p v-if="errorMessage" class="flf-error" role="alert" data-testid="fan-login-error">{{ errorMessage }}</p>
+      <div class="fan-field">
+        <label for="fan-password" class="fan-label">{{ $t('fan.login.password') }}</label>
+        <input
+          id="fan-password"
+          v-model="password"
+          type="password"
+          name="password"
+          :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
+          :minlength="mode === 'register' ? 8 : undefined"
+          :aria-describedby="mode === 'register' ? 'fan-password-hint' : undefined"
+          required
+          class="fan-input"
+          :disabled="inFlight !== null"
+          data-testid="fan-login-password"
+        />
+        <p v-if="mode === 'register'" id="fan-password-hint" class="fan-hint">{{ $t('fan.login.passwordHint') }}</p>
+      </div>
+
+      <p v-if="errorMessage" class="fan-msg fan-msg--error" role="alert" data-testid="fan-login-error">{{ errorMessage }}</p>
 
       <div class="flf-actions">
-        <button type="submit" class="flf-btn" :disabled="inFlight !== null" data-testid="fan-login-submit">
+        <button type="submit" class="fan-btn" :disabled="inFlight !== null" data-testid="fan-login-submit">
           <template v-if="inFlight === 'signin'">{{ $t('fan.login.signingIn') }}</template>
           <template v-else-if="inFlight === 'register'">{{ $t('fan.login.creating') }}</template>
           <template v-else-if="mode === 'register'">{{ $t('fan.login.createSubmit') }}</template>
@@ -132,7 +145,7 @@ function handleLink() {
         </button>
         <button
           type="button"
-          class="flf-link"
+          class="fan-link"
           :disabled="inFlight !== null"
           data-testid="fan-login-mode"
           @click="setMode(mode === 'register' ? 'signin' : 'register')"
@@ -141,7 +154,7 @@ function handleLink() {
 
       <button
         type="button"
-        class="flf-link"
+        class="fan-link"
         :disabled="inFlight !== null"
         data-testid="fan-login-link"
         @click="handleLink"
@@ -150,10 +163,11 @@ function handleLink() {
   </div>
 </template>
 
+<style scoped src="./fan-styles.css" />
 <style scoped>
-.flf-form { display: flex; flex-direction: column; gap: 8px; max-width: 28rem; }
-.flf-input { width: 100%; box-sizing: border-box; }
-.flf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.flf-hint { margin: 0; font-size: 0.85em; }
-.flf-link { align-self: flex-start; background: none; border: none; padding: 4px 0; text-decoration: underline; cursor: pointer; color: inherit; }
+.flf { display: flex; flex-direction: column; gap: 1rem; }
+.flf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; }
+.flf-actions .fan-link { align-self: center; }
+/* The link is a 44px target round one line of text: take that space back. */
+.flf > .fan-form > .fan-link { margin-block: -0.5rem; }
 </style>

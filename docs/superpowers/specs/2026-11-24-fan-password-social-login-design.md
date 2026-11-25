@@ -242,7 +242,8 @@ applied, so the page can confirm it.
   for 10 minutes, sets the same value in an HttpOnly, SameSite=Lax cookie
   scoped to `/api/fan/auth`, and redirects to the provider. The page calls
   `rememberReturnPath()` before navigating, as it does before asking for a
-  link.
+  link. A provider with no keys, or a visitor over the limit, is sent to
+  `/account?auth_error=failed`: this is a page navigation, so never JSON.
 - `GET /api/fan/auth/{provider}/callback` — requires `state` to match both
   the cookie and a live cache entry (single use). Stateless Socialite checks
   no state of its own, so this is the login-CSRF defence; do not drop it.
@@ -252,8 +253,8 @@ applied, so the page can confirm it.
 | Case | Result |
 |---|---|
 | Identity `(provider, id)` already linked | sign in as that fan |
-| Not linked, provider **vouches** for the email | find or create the fan by email, link, stamp `email_verified_at`, sign in |
-| Not linked, email present but **not vouched** | mail the usual sign-in link to that address with the identity parked on its token, under the **same claim rule as a parked password** (below). The fan lands on `/account?auth_notice=confirm_email` |
+| Not linked, provider **vouches** for the email (see below: Google, for a mailbox it runs) | find or create the fan by email, link, stamp `email_verified_at`, sign in |
+| Not linked, email present but **not vouched** (Facebook; Google for any other address) | mail the usual sign-in link to that address with the identity parked on its token, under the **same claim rule as a parked password** (below). The fan lands on `/account?auth_notice=confirm_email` |
 | No email at all, user cancelled, provider error | `/account?auth_error=<code>` — a worded message and the ordinary form |
 
   **A parked identity needs the claim too.** Otherwise an attacker whose
@@ -273,7 +274,13 @@ applied, so the page can confirm it.
   `FRONTEND_URL/account?token=…&return=…`. Nothing new in the browser.
 
 - **Which provider vouches is config**, `config('fan_auth.providers')`:
-  Google yes — and only when its own `email_verified` claim is true;
+  Google yes — but only when its own `email_verified` claim is true **and**
+  Google runs the mailbox: the address is `@gmail.com` / `@googlemail.com`,
+  or its domain equals the account's `hd` (hosted domain) claim.
+  `email_verified` alone means "proven once": a Google account can be made on
+  any address, and keeps saying verified after that mailbox has changed hands
+  or its domain was sold. Any other Google account takes the mail path, once;
+  after that its identity is linked and signs in directly.
   **Facebook no**. Meta does not promise the address it returns is verified,
   and an email here opens tickets and orders. So a fan's *first* Facebook
   sign-in costs one mail click; every later one is instant, because the

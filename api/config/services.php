@@ -47,6 +47,14 @@ return [
         // long-lived PAGE token minted by a page admin — not the app token.
         'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
         'instagram_user_id' => env('INSTAGRAM_USER_ID'),
+
+        // Fan sign-in (App\Support\FanProviders) - an OAuth client of its own. Here
+        // and not under a second 'facebook' key, which would replace this one. The
+        // redirect reads config('newsletter'), which loads before 'services'.
+        'client_id'     => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect'      => rtrim(config('newsletter.frontend_url'), '/') . '/api/fan/auth/facebook/callback',
+        'guzzle'        => ['timeout' => 10, 'connect_timeout' => 10],
     ],
 
     // Admin assistant — the crawler. One Cloud project: Programmable Search
@@ -55,6 +63,12 @@ return [
     'google' => [
         'api_key' => env('GOOGLE_API_KEY'),
         'cse_id'  => env('GOOGLE_CSE_ID'),
+
+        // Fan sign-in, as for Facebook above - an OAuth client, not GOOGLE_API_KEY.
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => rtrim(config('newsletter.frontend_url'), '/') . '/api/fan/auth/google/callback',
+        'guzzle'        => ['timeout' => 10, 'connect_timeout' => 10],
     ],
 
     // Optional: a Reddit "script" app; unauthenticated access is throttled and

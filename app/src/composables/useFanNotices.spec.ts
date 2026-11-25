@@ -27,6 +27,37 @@ describe('useFanNotices', () => {
     expect(notices.devLink.value).toBeNull()
   })
 
+  it('drops what the last social sign-in reported once a link is on its way', () => {
+    const { notices } = setup(null)
+    notices.authError.value = 'failed'
+    notices.authNotice.value = 'confirm_email'
+    notices.linkSent(null)
+    expect(notices.authError.value).toBeNull()
+    expect(notices.authNotice.value).toBeNull()
+    expect(notices.magicLinkSent.value).toBe(true)
+  })
+
+  it('keeps what a social sign-in reported when the session on the page turns out to have lapsed', () => {
+    const { token, notices } = setup('stale')
+    notices.authError.value = 'cancelled'
+    notices.authNotice.value = 'confirm_email'
+    token.value = null
+    expect(notices.authError.value).toBe('cancelled')
+    expect(notices.authNotice.value).toBe('confirm_email')
+  })
+
+  it('drops it when a session begins, and on request', () => {
+    const { token, notices } = setup(null)
+    notices.authError.value = 'failed'
+    notices.authNotice.value = 'confirm_email'
+    token.value = 'new'
+    expect(notices.authError.value).toBeNull()
+    expect(notices.authNotice.value).toBeNull()
+    notices.authError.value = 'failed'
+    notices.clearAuth()
+    expect(notices.authError.value).toBeNull()
+  })
+
   it('forgets them when another session replaces this one', () => {
     const { token, notices } = setup(null)
     notices.linkSent(null)

@@ -138,6 +138,19 @@ describe('recording', function () {
         expect(json_encode($change->diff))->not->toContain('private@example.com');
     });
 
+    it('logs a fan identity by field name only', function () {
+        $this->actingAsAdmin();
+        $fan = \App\Models\FanAccount::factory()->create();
+        $identity = \App\Models\FanIdentity::create([
+            'fan_account_id' => $fan->id, 'provider' => 'google', 'provider_user_id' => 'sub-8675309',
+        ]);
+
+        $change = ActivityChange::where('subject_type', 'FanIdentity')->latest('id')->first();
+        expect($change->subject_id)->toBe($identity->id)
+            ->and($change->subject_label)->toBeNull();
+        expect(json_encode($change->diff))->not->toContain('sub-8675309');
+    });
+
     it('records no action for a write that names no record and changed nothing', function () {
         $this->actingAsAdmin();
         $before = ActivityLog::count();

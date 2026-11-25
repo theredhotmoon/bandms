@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FanAccount;
+use App\Models\FanIdentity;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Support\DisplayName;
@@ -80,13 +81,18 @@ class FanAccountController extends Controller
         // A password parked by register is applied only for the browser that
         // typed it (it holds the claim) and only onto an account with none.
         // The conditional update is the check, so two openings cannot both win.
-        $passwordSet = $magic['password_hash'] !== null
-            && FanMagicToken::claimMatches($magic['claim_hash'], $request->query('claim'))
+        $claimed     = FanMagicToken::claimMatches($magic['claim_hash'], $request->query('claim'));
+        $passwordSet = $claimed
+            && $magic['password_hash'] !== null
             && FanAccount::whereKey($fan->id)->whereNull('password_hash')->update(['password_hash' => $magic['password_hash']]) === 1;
 
         if ($passwordSet) {
             FanPassword::notify($fan, true);
         }
+
+        // A parked identity follows the same rule, or someone whose Facebook
+        // account carries this address would stay linked to it for good.
+        $linked = $claimed ? $this->linkParked($fan, $magic['identity']) : null;
 
         $fan->refresh();
         $sessionToken = FanSession::open($fan, $magic['method']);
@@ -95,8 +101,20 @@ class FanAccountController extends Controller
             'token'        => $sessionToken,
             'fan'          => FanPayload::for($fan, FanSession::rowFor($sessionToken)),
             'password_set' => $passwordSet,
-            'linked'       => null,
+            'linked'       => $linked,
         ]);
+    }
+
+    /** The provider now linked to this fan; null when the identity is another fan's, or none was parked. */
+    private function linkParked(FanAccount $fan, mixed $identity): ?string
+    {
+        if (! is_array($identity) || ! isset($identity['provider'], $identity['provider_user_id'])) {
+            return null;
+        }
+
+        $link = FanIdentity::linkTo($fan, $identity['provider'], $identity['provider_user_id']);
+
+        return $link?->fan_account_id === $fan->id ? $link->provider : null;
     }
 
     // GET /api/fan/me  (requires fan.auth middleware)

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Support\Activity\ActivityRecorder;
 use App\Support\AlbumLinks;
 use App\Support\ClipOwners;
+use App\Support\FanSignInLink;
 use App\Support\Geo\Locator;
 use App\Support\Geo\MaxMindLocator;
 use App\Support\MemberLinks;
@@ -75,6 +76,23 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(config('auth.login_max_attempts'))
                 ->by($request->ip());
+        });
+
+        // Both legs of a social sign-in are page navigations, so over the limit is the
+        // same redirect as any failure, never JSON. Two buckets: pressing the button
+        // must not spend the way back.
+        $refuse = fn (Request $request) => redirect()
+            ->away(FanSignInLink::errorUrl('failed', $request->query('lang')));
+
+        RateLimiter::for('fan-social-redirect', function (Request $request) use ($refuse) {
+            return Limit::perMinute(20)->by($request->ip())->response($refuse);
+        });
+
+        // The controller is not reached: the state and its cookie survive for a retry.
+        // Every callback follows a redirect, whose own limit is lower, so this is only
+        // the backstop.
+        RateLimiter::for('fan-social-callback', function (Request $request) use ($refuse) {
+            return Limit::perMinute(60)->by($request->ip())->response($refuse);
         });
     }
 }

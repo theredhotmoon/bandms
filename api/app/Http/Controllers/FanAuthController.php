@@ -7,6 +7,7 @@ use App\Support\FanEmail;
 use App\Support\FanMagicToken;
 use App\Support\FanPassword;
 use App\Support\FanPayload;
+use App\Support\FanProviders;
 use App\Support\FanSession;
 use App\Support\FanSignInLink;
 use Illuminate\Http\JsonResponse;
@@ -122,6 +123,13 @@ class FanAuthController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    // GET /api/fan/auth/providers
+    /** Which social buttons to show. Names only - never a client id. */
+    public function providers(): JsonResponse
+    {
+        return response()->json(['providers' => FanProviders::enabled()]);
     }
 
     // PUT /api/fan/me/password  (fan.auth)

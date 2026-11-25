@@ -18,6 +18,9 @@ import {
 
 export const CLAIM_KEY = 'fan_claim'
 
+/** What a provider button replaced: see newProviderClaim(). */
+export const KEPT_CLAIM_KEY = 'fan_claim_kept'
+
 function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 }
@@ -34,6 +37,38 @@ export async function newClaim(store: Store | null = browserStore()): Promise<st
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(claim))
     store.setItem(CLAIM_KEY, claim)
     return toHex(new Uint8Array(digest))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A fresh claim for a provider sign-in. Most of those end without using it, so
+ * the claim it replaces (a registration's mail may still need it) is kept aside
+ * beside the value that replaced it. Pressing again keeps what the first press
+ * kept, never the first press's own. Same rule and same entry in
+ * app/src/utils/fanClaim.ts, where /account puts it back or drops it.
+ */
+export async function newProviderClaim(store: Store | null = browserStore()): Promise<string | null> {
+  const previous = readClaim(store)
+  const kept = readKept(store)
+  const claimHash = await newClaim(store)
+  const own = claimHash === null ? null : readClaim(store)
+  if (own === null) return claimHash
+  const earlier = kept !== null && kept.own === previous ? kept.earlier : previous
+  try {
+    store?.setItem(KEPT_CLAIM_KEY, JSON.stringify({ own, earlier }))
+  } catch {
+    // Not kept: the earlier link still signs the fan in, without the password.
+  }
+  return claimHash
+}
+
+function readKept(store: Store | null): { own: string; earlier: string | null } | null {
+  try {
+    const kept = JSON.parse(store?.getItem(KEPT_CLAIM_KEY) ?? 'null') as { own?: unknown; earlier?: unknown } | null
+    if (typeof kept?.own !== 'string') return null
+    return { own: kept.own, earlier: typeof kept.earlier === 'string' ? kept.earlier : null }
   } catch {
     return null
   }
@@ -143,4 +178,55 @@ export function fanAuthErrorText(
     if (e.status === 422 && e.message) return e.message
   }
   return copy.failed
+}
+
+/**
+ * The sign-in providers the site knows how to present, by the name the API
+ * uses. Anything else the API lists is ignored, never rendered: a button needs
+ * a name and a mark, and a provider added server-side first has neither.
+ */
+const PROVIDER_NAMES: Readonly<Record<string, string>> = { google: 'Google', facebook: 'Facebook' }
+
+/** The proper name shown on a button; '' for a provider the site does not present. */
+export function providerName(provider: string): string {
+  return Object.hasOwn(PROVIDER_NAMES, provider) ? PROVIDER_NAMES[provider] : ''
+}
+
+/**
+ * Which providers the API has configured, in its order. Empty on any failure —
+ * a broken endpoint must never break the form around it.
+ */
+export async function fetchProviders(lang: string): Promise<string[]> {
+  try {
+    const res = await fetch('/api/fan/auth/providers', { headers: headers(lang, null, false) })
+    if (!res.ok) return []
+    const body = (await res.json()) as { providers?: unknown }
+    if (!Array.isArray(body.providers)) return []
+    return body.providers.filter(
+      (p): p is string => typeof p === 'string' && Object.hasOwn(PROVIDER_NAMES, p),
+    )
+  } catch {
+    return []
+  }
+}
+
+/** The address a provider button points at. A claim is optional; so is a usable return path. */
+export function providerUrl(
+  provider: string,
+  lang: string,
+  returnTo: string,
+  claimHash: string | null,
+): string {
+  const params = [`lang=${encodeURIComponent(lang)}`]
+  const path = cleanReturnPath(returnTo)
+  if (path) params.push(`return_to=${encodeURIComponent(path)}`)
+  if (claimHash) params.push(`claim_hash=${encodeURIComponent(claimHash)}`)
+  return `/api/fan/auth/${encodeURIComponent(provider)}/redirect?${params.join('&')}`
+}
+
+/** A click the page handles itself; a modified or middle click is the browser's (new tab, download…). */
+export function isPlainLeftClick(
+  e: Pick<MouseEvent, 'button' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
+): boolean {
+  return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 }

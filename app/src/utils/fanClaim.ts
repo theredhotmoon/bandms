@@ -8,7 +8,19 @@
  */
 export const CLAIM_KEY = 'fan_claim'
 
+/** What a provider button replaced: see newProviderClaim(). */
+export const KEPT_CLAIM_KEY = 'fan_claim_kept'
+
 type ClaimStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+
+/** localStorage, or null where the browser refuses it (private mode, site data off). */
+export function browserStore(): Storage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage
+  } catch {
+    return null
+  }
+}
 
 function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
@@ -26,6 +38,64 @@ export async function newClaim(store: ClaimStore | null): Promise<string | null>
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(claim)) // i18n-ignore: WebCrypto algorithm name
     store.setItem(CLAIM_KEY, claim)
     return toHex(new Uint8Array(digest))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A fresh claim for a provider sign-in. Most of those end without using it, so
+ * the claim it replaces (a registration's mail may still need it) is kept aside
+ * beside the value that replaced it. Pressing again keeps what the first press
+ * kept, never the first press's own. Same rule and same entry in
+ * web/src/lib/fanAuth.ts; only this page settles it.
+ */
+export async function newProviderClaim(store: ClaimStore | null): Promise<string | null> {
+  const previous = readClaim(store)
+  const kept = readKept(store)
+  const claimHash = await newClaim(store)
+  const own = claimHash === null ? null : readClaim(store)
+  if (own === null) return claimHash
+  const earlier = kept !== null && kept.own === previous ? kept.earlier : previous
+  try {
+    store?.setItem(KEPT_CLAIM_KEY, JSON.stringify({ own, earlier }))
+  } catch {
+    // Not kept: the earlier link still signs the fan in, without the password.
+  }
+  return claimHash
+}
+
+/**
+ * The provider sign-in ended without needing its claim: the kept one returns.
+ * Only over the claim that replaced it, or in its place when the exchange has
+ * just `consumed` it; any other claim belongs to something newer.
+ */
+export function putBackKeptClaim(store: ClaimStore | null, consumed: string | null = null): void {
+  const kept = readKept(store)
+  if (kept === null || (readClaim(store) ?? consumed) !== kept.own) return
+  try {
+    if (kept.earlier === null) store?.removeItem(CLAIM_KEY)
+    else store?.setItem(CLAIM_KEY, kept.earlier)
+  } catch {
+    // Not put back: the earlier link still signs the fan in, without the password.
+  }
+  dropKeptClaim(store)
+}
+
+/** The provider sign-in's own claim is the one that counts now. */
+export function dropKeptClaim(store: ClaimStore | null): void {
+  try {
+    store?.removeItem(KEPT_CLAIM_KEY)
+  } catch {
+    // Left behind: it is only ever put back over the claim it was kept for.
+  }
+}
+
+function readKept(store: ClaimStore | null): { own: string; earlier: string | null } | null {
+  try {
+    const kept = JSON.parse(store?.getItem(KEPT_CLAIM_KEY) ?? 'null') as { own?: unknown; earlier?: unknown } | null
+    if (typeof kept?.own !== 'string') return null
+    return { own: kept.own, earlier: typeof kept.earlier === 'string' ? kept.earlier : null }
   } catch {
     return null
   }

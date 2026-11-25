@@ -19,6 +19,7 @@ class FanPayload
             'comments_blocked'      => $fan->isCommentBlocked(),
             'has_password'          => $fan->password_hash !== null,
             'password_needs_current' => self::needsCurrent($fan, $session),
+            'providers'             => $fan->identities->pluck('provider')->unique()->sort()->values()->all(),
         ];
     }
 

@@ -18,11 +18,15 @@
 @source "../index.html";
 @source not "../src/**/*.spec.ts";
 
-@theme {
+/* The fan pages' own colours. `static` for the reason given at --radius-card
+   below: they are read from scoped styles, which Tailwind does not see. */
+@theme static {
   --color-ink: #121212;
   --color-paper: #EFE7D6;
   --color-accent: #176b5c;
+}
 
+@theme {
   /* Text whose meaning depends on fixed character width: codes read one
      character at a time (ticket codes, URLs, ids — 0/O and 1/l must
      not collide) and lyrics with chords aligned over syllables by spaces.

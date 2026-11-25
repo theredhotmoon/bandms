@@ -45,6 +45,12 @@ final class Locales
         return in_array($locale, self::codes(), true);
     }
 
+    /** What a query string called a language, if it is one of ours. */
+    public static function supportedOrNull(mixed $locale): ?string
+    {
+        return is_string($locale) && self::isSupported($locale) ? $locale : null;
+    }
+
     /**
      * Ordered resolution chain for a locale: itself, then its declared
      * fallbacks. An unregistered locale starts from the default instead of

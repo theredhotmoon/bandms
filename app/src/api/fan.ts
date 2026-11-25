@@ -1,6 +1,7 @@
 import { activeFanLocale, readStoredFanLocale, resolveFanLocale } from '@/utils/fanLocale'
 import { API_BASE, authHeaders, jsonHeaders, ApiError, ApiValidationError } from './client'
 import type { FanAccount, FanTicket, FanOrder } from '@/types/fan'
+import { knownProviders } from '@/utils/authQuery'
 
 export interface MagicLinkResponse {
   message: string
@@ -19,7 +20,7 @@ export interface VerifyResponse {
   fan: FanAccount
   /** True when the exchanged link also carried this browser's password claim. */
   password_set?: boolean
-  /** Set when the link connected a social account; not used by this page yet. */
+  /** The provider this link just connected, which the account page names; null or absent otherwise. */
   linked?: string | null
 }
 
@@ -48,6 +49,23 @@ function withFanLocale(headers: Record<string, string>): Record<string, string> 
     browser: typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]),
   })
   return { ...headers, 'Accept-Language': locale }
+}
+
+/**
+ * Which social providers the API has configured. Empty on any failure: a
+ * broken endpoint must not break the sign-in form around it.
+ */
+export async function fetchFanProviders(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE}/api/fan/auth/providers`, {
+      headers: withFanLocale({ Accept: 'application/json' }),
+    })
+    if (!response.ok) return []
+    const body = (await response.json()) as { providers?: unknown }
+    return Array.isArray(body.providers) ? knownProviders(body.providers) : []
+  } catch {
+    return []
+  }
 }
 
 /**

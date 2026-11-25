@@ -201,6 +201,15 @@ export const POSTS_COPY = defineCopy([
     defaults: { en: 'Could not sign you in. Please try again.', pl: 'Nie udało się zalogować. Spróbuj ponownie.' },
   },
   {
+    key: 'commentsContinueWith', label: '"Continue with" button (Google, Facebook)', group: 'Comments', maxLength: 40,
+    help: '{provider} is filled in with Google or Facebook. The buttons only appear once the band has set the provider up.',
+    defaults: { en: 'Continue with {provider}', pl: 'Kontynuuj z {provider}' },
+  },
+  {
+    key: 'commentsOrDivider', label: 'Divider under the provider buttons', group: 'Comments', maxLength: 20,
+    defaults: { en: 'or', pl: 'lub' },
+  },
+  {
     key: 'commentsNameLabel', label: 'Display name label', group: 'Comments', maxLength: 60,
     defaults: { en: 'Name shown with your comments', pl: 'Nazwa widoczna przy twoich komentarzach' },
   },

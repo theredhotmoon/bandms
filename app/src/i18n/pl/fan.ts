@@ -17,6 +17,9 @@ export default {
     signOut: 'Wyloguj się',
     myTickets: 'Moje bilety',
     orderHistory: 'Historia zamówień',
+    linked: 'Połączone konta logowania: {providers}.',
+    linkedNone: 'Nie masz jeszcze połączonego konta {providers}. Zaloguj się nim, używając tego samego adresu e-mail, aby je połączyć.',
+    linkedNow: 'Konto {provider} zostało połączone z twoim kontem.',
   },
 
   tickets: {
@@ -59,6 +62,14 @@ export default {
     sentBody: 'Wysłaliśmy link do logowania na twój adres e-mail.',
     devMode: 'Tryb deweloperski:',
     devSignIn: 'Kliknij tutaj, aby się zalogować',
+    continueWith: 'Kontynuuj z {provider}',
+    or: 'lub',
+    authError: {
+      cancelled: 'Logowanie zostało anulowane. Możesz spróbować ponownie.',
+      no_email: 'To konto nie udostępniło adresu e-mail, więc nie mogliśmy cię zalogować. Wybierz inny sposób logowania.',
+      failed: 'Nie udało się zalogować tym kontem. Spróbuj ponownie.',
+    },
+    confirmEmail: 'Wysłaliśmy ci link potwierdzający, że to ty. Otwórz go w tej przeglądarce, aby dokończyć logowanie.',
     linkInvalid: 'Link do logowania jest nieprawidłowy lub wygasł. Poproś o nowy.',
   },
 

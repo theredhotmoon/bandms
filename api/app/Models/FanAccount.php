@@ -65,6 +65,11 @@ class FanAccount extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function identities()
+    {
+        return $this->hasMany(FanIdentity::class);
+    }
+
     public function comments()
     {
         return $this->hasMany(PostComment::class);

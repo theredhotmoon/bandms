@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { rememberReturnPath, requestSignInLink, type FanSession } from '@/lib/comments'
-import { fanAuthErrorText, registerWithPassword, signInWithPassword } from '@/lib/fanAuth'
+import { fanAuthErrorText, fetchProviders, registerWithPassword, signInWithPassword } from '@/lib/fanAuth'
+import ProviderButtons from './ProviderButtons.vue'
 
 /**
  * The signed-out block under a news post: email + password, creating an
@@ -29,6 +30,9 @@ export interface FanSignInCopy {
   loginLimit: string
   passwordHint: string
   failed: string
+  /** Carries `{provider}`. */
+  continueWith: string
+  orDivider: string
 }
 
 const props = defineProps<{
@@ -49,6 +53,16 @@ const busy = computed(() => inFlight.value !== null)
 const notice = ref('')
 const error = ref('')
 const emailInput = ref<HTMLInputElement | null>(null)
+
+// Which provider buttons to offer. Asked once, in the browser, and never waited
+// for: the form is complete without them. An answer after unmount is dropped.
+const providers = ref<string[]>([])
+let gone = false
+onMounted(async () => {
+  const found = await fetchProviders(props.lang)
+  if (!gone) providers.value = found
+})
+onBeforeUnmount(() => { gone = true })
 
 function setMode(next: 'signin' | 'register') {
   mode.value = next
@@ -105,6 +119,8 @@ async function sendLink() {
 
     <form v-else class="fs-form" @submit.prevent="submit">
       <p class="fs-lead">{{ copy.lead }}</p>
+
+      <ProviderButtons :providers="providers" :copy="copy" :lang="lang" :return-path="returnPath" />
 
       <label class="fs-label" for="fs-email">{{ copy.emailLabel }}</label>
       <input

@@ -2044,6 +2044,15 @@ the exchange and puts it back after anything but a success or a 401
 (`linkWasRefused()`): a throttle, a 5xx, a page that is not JSON or no answer
 may leave the link good.
 
+**A provider button borrows the claim, and gives it back.** It makes a claim of
+its own (`newProviderClaim()`, both apps) and puts the one it replaced aside
+under `fan_claim_kept`, as `{own, earlier}`; a second press keeps the first
+press's `earlier`. `/account` settles it: `auth_notice=confirm_email` drops it
+(a mail now waits on the button's claim), and so does an exchange that set a
+password or linked an identity; `auth_error`, a 401, and an exchange that did
+neither put `earlier` back. It only ever goes back over `own`, so a claim made
+since is never replaced.
+
 **A `link` session under 15 minutes old may change the password without the
 current one.** That *is* forgot-password: opening the mailed link proves the
 mailbox. It is why a session records the **method its token carried**
@@ -2088,6 +2097,96 @@ Test ids differ by surface: `fan-signin-*` on the public site
 (`FanSignIn.vue`), `fan-login-*` on `/account`. E2E gets a fan from
 `php artisan e2e:seed-fan-session --password=…`; without it the account is
 link-only.
+
+### Google and Facebook — a provider's word about an address is not proof
+
+`FanSocialAuthController` (Socialite, stateless), `FanProviders`,
+`FanIdentity` (`fan_identities`, unique on provider + provider user id). The
+buttons are `ProviderButtons.vue` (under a post) and `FanProviderButtons.vue`
+(`/account`); both are plain links to
+`/api/fan/auth/{provider}/redirect`, so a middle click works, and a plain left
+click first makes this browser's claim (below) and adds `claim_hash`.
+
+**Which provider vouches for an address is config**
+(`config('fan_auth.providers.<p>.trust_email')`), because an email here opens
+tickets and orders:
+
+| Provider | Vouches? | Why |
+|---|---|---|
+| Google | only for `@gmail.com` / `@googlemail.com`, or when the address's domain equals the account's `hd` claim, **and** `email_verified` is true | `email_verified` alone means "proven once": a Google account can be made on any address and keeps saying verified after the mailbox changed hands or its domain was sold |
+| Facebook | never | Meta does not promise the address it returns is verified |
+
+An address that is not vouched for takes the **mail path**: the fan is mailed
+the usual sign-in link and lands on `/account?auth_notice=confirm_email`. So a
+fan's *first* Facebook sign-in costs one mail click; later ones are instant,
+because the identity is then linked. Flipping Facebook to `trust_email => true`
+removes that click and lets anyone whose Facebook account carries your address
+into your account — the band's call, not a default.
+
+- **The state cookie plus the cache entry is the login-CSRF defence.** Socialite
+  runs stateless and checks no `state` of its own. `redirect` stores
+  `{provider, return_to, lang, claim_hash}` in the cache under a random state
+  (10 min) and sets the same value in an HttpOnly `fan_oauth_state` cookie scoped to
+  `/api/fan/auth`; the callback requires both, single use, **before** it calls
+  `user()`. Drop that and anyone can sign a visitor in as themselves.
+- **`setScopes()`, not `scopes()`.** `scopes()` merges into the driver's
+  defaults and kept Google's `profile`; `setScopes()` replaces them (Google
+  `openid email`, Facebook `email`).
+- **A parked identity needs the claim**, exactly like a parked password. On the
+  mail path the identity rides the link's token with the browser's
+  `claim_hash`, and `verifyMagicLink` links it only when the exchange presents
+  the matching claim. Otherwise an attacker whose Facebook account carries your
+  address presses the button and you click a routine-looking mail. The notice
+  therefore says to open the link in this browser, and a fan who opens mail on
+  another device gets the sign-in with nothing linked.
+- **An identity is never re-pointed.** `FanIdentity::linkTo()` returns the
+  existing row when one holds the provider id, and the caller signs in as
+  *that* fan; a second callback racing the first lands on the same row. A linked
+  identity signs in as its fan whatever address the provider reports today.
+- **The callback is always a 302 to `/account`**, never JSON: a person arrives
+  from Google or Facebook, so every failure is `?auth_error=cancelled|no_email|failed`
+  and nothing escapes as an exception, from the redirect either (the log gets
+  the exception class, plus the provider's HTTP status and its OAuth `error`
+  code when that is a plain `[a-z_]` word — never the message or the rest of
+  the answer, which can hold a token or an address). **Both legs' limiters answer with
+  the same redirect** rather than the framework's JSON 429:
+  `fan-social-redirect` (20/min per IP) and `fan-social-callback` (60/min, a
+  backstop behind it) are named limiters with a bucket each.
+  `FanAccountView` shows the message, drops it from the URL together with the
+  `#_=_` Facebook appends, and settles the claim (above). The message outlives
+  a stored session that turns out to have lapsed; a new session, a sign-out or
+  another sign-in attempt clears it.
+- **`/account`'s buttons send `lang` only when the fan chose it**
+  (`chosenFanLocale()`): it comes back as `?lang=`, which `useFanLocale` stores
+  as a choice. The public site's is the page's own language, which is one.
+- **The callback clears the state cookie only when it is its own.** A browser
+  has one such cookie, so a second tab's sign-in replaces it; clearing it
+  because the *first* tab's return failed would kill the second. The returned
+  state's cache entry is spent either way.
+- **No key, no button — read at runtime, nothing baked.** `GET /api/fan/auth/providers`
+  lists only providers whose `services.<p>.client_id` and `client_secret` are
+  both set, and both UIs fetch it when a signed-out form shows. A key added
+  later needs no site rebuild; a failed request means no buttons and a
+  working password form. The redirect of an unconfigured provider is
+  `/account?auth_error=failed`; only a provider name the route constraint does
+  not know is a 404.
+- **Redirect URIs derive from `FRONTEND_URL`** (`services.<p>.redirect`,
+  `…/api/fan/auth/{provider}/callback`; Caddy already sends `/api/*` to the
+  backend). A wrong `FRONTEND_URL` is a provider error page, not a code bug.
+- **`services.google` and `services.facebook` are shared.** The crawler
+  (`api_key`, `cse_id`) and the Facebook page sync (`app_id`, `page_access_token`,
+  …) already live under those keys; fan sign-in only adds `client_id`,
+  `client_secret`, `redirect` and `guzzle` (the timeouts) beside them. A second `'facebook' => [...]`
+  entry in `config/services.php` silently *replaces* the first — it happened
+  while this was built, and nothing errored. Add keys inside the existing array.
+- **What we keep:** the email address and the provider's account id
+  (`fan_identities`). Never the provider's display name, photo or friends — a
+  new account's `name` is the email's local part and the first comment still
+  asks for a display name. `FanIdentity` is on `ActivityRecorder::PERSONAL`
+  (field names only). The privacy copy says so (`socialSignInBody`).
+- E2E: `e2e/tests/public/fan-social-login.spec.ts` serves the provider list
+  through `page.route` and stubs the redirect; **nothing reaches a provider and
+  the dev stack has no keys**.
 
 ## News comments are read and written at runtime — nothing about them is baked
 

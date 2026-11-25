@@ -95,6 +95,15 @@ export function resolveFanLocale(opts: {
 }
 
 /**
+ * The locale the fan chose, now or before; null when the page merely follows
+ * the browser. A provider sign-in may carry only this: it comes back as
+ * `?lang=`, which is stored as a choice.
+ */
+export function chosenFanLocale(opts: { search?: string; stored?: string | null }): UiLang | null {
+  return localeFromQuery(opts.search) ?? narrowToLocale(opts.stored)
+}
+
+/**
  * Read the fan's stored choice, guarded.
  *
  * `localStorage` throws — not returns null — in a private window or with site
