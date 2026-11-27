@@ -2302,6 +2302,33 @@ now that drafts are hidden. Use `->draft()` when the test needs one.
 dateless post with its `created_at`**, so hiding drafts removed nothing that
 was visible the day before. It runs once and is deliberately irreversible.
 
+### A post's dates: `content_updated_at`, and days rather than times
+
+`posts.content_updated_at` is the modified date search engines get (JSON-LD
+`dateModified`, `article:modified_time`, the sitemap's `lastmod`). **Never use
+`updated_at` for it**: pinning a post or linking an album moves that too, and
+until this column existed an edit to the body alone did not. `PostController::update()` sets it when the
+title, intro, main image or blocks of an *already published* post differ
+(`App\Support\PostContent`). Null means "never edited since the column
+existed", and then nothing is claimed. An article taken offline, rewritten and
+put back is not counted: nothing tells it from a draft.
+
+**Dates go out as a day, never a timestamp** (`web/src/lib/postDates.ts`).
+`published_at` is what the band typed, stored as if it were UTC, so its time of
+day has no zone; sent whole it told Google a post came out an hour or two later
+than it did. A modified day no later than the published one is left out.
+
+**The sitemap reads `noindex` and the article dates from the built page**
+(`sitemapItem()`, via `serialize` in `astro.config.mjs`), so it cannot
+disagree with the page. Non-articles get no `lastmod`, and neither does the
+sitemap *index*: the package stamps a whole file with its newest article's
+date, which would announce a later show as nothing new. The `sitemapDates`
+integration corrects the written XML, so it must stay after `sitemap()`.
+
+**`update()` locks and refreshes the post at the top of its transaction.** It
+is retried on a deadlock, and a model whose `save()` was rolled back believes it holds no
+changes: the retry saved nothing and answered 200.
+
 ### Draft previews are baked at a secret URL
 
 Every post carries `preview_token` (40 random chars, set on create, never

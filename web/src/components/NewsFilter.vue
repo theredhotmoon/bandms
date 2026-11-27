@@ -2,6 +2,7 @@
 import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { formatEventDates, fmtDateShort, postSlug } from '@/lib/i18n'
 import type { Locale } from '@/types/shared'
+import { isoDay } from '@/lib/postDates'
 import type { PostSummary } from '@/types/post'
 import { fetchPostBatch, MAX_BATCH } from '@/lib/postFeed'
 import { DEFAULT_LOCALE } from '@/lib/locales'
@@ -223,6 +224,10 @@ function postDate(p: PostSummary): string {
   return fmtDateShort(p.published_at ?? p.created_at, lang.value)
 }
 
+function postDay(p: PostSummary): string {
+  return isoDay(p.published_at ?? p.created_at)
+}
+
 function eventDate(p: PostSummary): string {
   return formatEventDates(p.event_dates ?? [], p.event_date_display ?? 'range', lang.value)
 }
@@ -284,7 +289,7 @@ function eventDate(p: PostSummary): string {
           <h2 class="nf-feat-title">{{ featured.title }}</h2>
           <p class="nf-feat-intro">{{ featured.intro ?? featured.excerpt }}</p>
           <div class="nf-feat-meta">
-            <span class="nf-meta-date">{{ postDate(featured) }}</span>
+            <time class="nf-meta-date" :datetime="postDay(featured)">{{ postDate(featured) }}</time>
             <span v-if="eventDate(featured)" class="nf-meta-date" :style="{ color: accent }">{{ copy.event }}: {{ eventDate(featured) }}</span>
             <span class="nf-read-full" :style="{ color: accent }">
               {{ copy.readFull }}
@@ -330,7 +335,7 @@ function eventDate(p: PostSummary): string {
             </div>
             <h3 class="nf-card-title">{{ p.title }}</h3>
             <p class="nf-card-intro">{{ p.intro ?? p.excerpt }}</p>
-            <span class="nf-card-date">{{ postDate(p) }}</span>
+            <time class="nf-card-date" :datetime="postDay(p)">{{ postDate(p) }}</time>
             <span v-if="eventDate(p)" class="nf-card-date" :style="{ color: accent }">{{ copy.event }}: {{ eventDate(p) }}</span>
           </div>
         </a>

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-27 (news articles tell search engines their dates)
+
+### Added
+- **News articles tell search engines and link previews when they were published and last changed.** The last change counts only edits to the title, intro, main image or text of a published article, not pinning it or changing its links or settings. Articles edited before this update show their publication date only.
+- **The sitemap says when each article last changed**, and dates across the news pages are readable by machines as well as people.
+
+### Fixed
+- **The publication time given to search engines is no longer an hour or two late.** They now get the day, the same one the page shows.
+- **The EPK page is no longer in the sitemap**, since it asks not to be indexed.
+- **Saving a post at the same moment as someone else no longer loses the edit.** When the database had to retry the save, it reported success without saving the title, intro or settings.
+
 ## [Unreleased] — 2026-11-25 (fans sign in with Google or Facebook)
 
 ### Added

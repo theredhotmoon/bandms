@@ -45,6 +45,8 @@ export interface PostSummary {
 
 export interface Post extends PostSummary {
   blocks: PostBlock[]
+  /** When the text or pictures last changed after publishing. Absent from an older API. */
+  content_updated_at?: string | null
   /** Drafts only, from the build's draft list: the secret of its preview page. */
   preview_token?: string
   /** Whether the page mounts the comments block. Absent from an older API, which counts as on. */
